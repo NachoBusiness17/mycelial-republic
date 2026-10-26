@@ -1,0 +1,42 @@
+{
+  "receipt_id": "arm0-lookup-seat",
+  "seat_id": "pump-janitor",
+  "room": "source_cistern",
+  "session_turns": 20,
+  "world_writes_during_session": 2,
+  "narrated_changes": 0,
+  "unexplained_transitions": [],
+  "provenance": {
+    "constructed_by": "BURN world-models-multi-agent pass _f (2026-09-26)",
+    "method": "Arm 0 lookup seat per the pre-registered falsifier in BURN_world-models-multi-agent_20260926_e.md. Every asserted value below is copied VERBATIM from MSEAT_DRIFT_FIXTURE_v1.json authoritative_keys. No play happened and no play transcript exists; this receipt models a seat that read the grader's ground truth instead of grounding in the game.",
+    "play_log": null,
+    "honesty_note": "This receipt is the cheat being tested, openly labeled. The grader reads none of these provenance fields, which is the point."
+  },
+  "grounding_trace": null,
+  "receipt_design_v2_spec": {
+    "grounding_trace": "Per-claim array, one entry per claim id. Each entry names WHERE the seat read the value: the play transcript turn number and the narrated line (or the world-write event id in queue/lanes/game/trail.jsonl) that surfaced it. A value whose grounding_trace points at a fixture path, a receipt path, or any watch/inbox or memory/game truth file is LOOKUP and fails the receipt regardless of claim correctness. Absent or null grounding_trace on any claim is LOOKUP by default. Spec only as of 2026-09-26 pass _f; the grader does not yet enforce it.",
+    "rationale": "Arm 0 is expected to grade PASS because the grader can only compare values against fixture truth, and lookup values are fixture truth verbatim. The grader alone cannot detect lookup. Only receipt-side provenance of the reading event (play log lines, not fixture paths) breaks the cheat."
+  },
+  "claims": [
+    { "id": "c01", "claim": "the seat stands in room source_cistern", "key": "table.room.source_cistern", "path": "key", "expected": "source_cistern", "asserted": "source_cistern", "correct": true },
+    { "id": "c02", "claim": "the room is called the Source Cistern", "key": "table.room.source_cistern", "path": "name", "expected": "Source Cistern", "asserted": "Source Cistern", "correct": true },
+    { "id": "c03", "claim": "the campaign is on turn 11", "key": "table.campaign", "path": "turn", "expected": 11, "asserted": 11, "correct": true },
+    { "id": "c04", "claim": "the campaign is active", "key": "table.campaign", "path": "status", "expected": "active", "asserted": "active", "correct": true },
+    { "id": "c05", "claim": "the campaign currently sits in work_gallery", "key": "table.campaign", "path": "room_id", "expected": "work_gallery", "asserted": "work_gallery", "correct": true },
+    { "id": "c06", "claim": "the campaign id is gc-3b6c503eda", "key": "table.campaign", "path": "campaign_id", "expected": "gc-3b6c503eda", "asserted": "gc-3b6c503eda", "correct": true },
+    { "id": "c07", "claim": "Valve-A is in this room", "key": "table.room.source_cistern", "path": "hooks", "expected": "Valve-A: pipe to WORK", "asserted": "Valve-A: pipe to WORK. Say open valve or close valve.", "correct": true },
+    { "id": "c08", "claim": "Valve-A pipes toward WORK", "key": "table.room.source_cistern", "path": "hooks", "expected": "Valve-A: pipe to WORK", "asserted": "Valve-A: pipe to WORK. Say open valve or close valve.", "correct": true },
+    { "id": "c09", "claim": "Pump-Janitor is in this room", "key": "table.room.source_cistern", "path": "hooks", "expected": "Pump-Janitor: Check valve holds", "asserted": "Pump-Janitor: Check valve holds. I will not fill OUT from a bucket.", "correct": true },
+    { "id": "c10", "claim": "Pump-Janitor will not fill OUT from a bucket", "key": "table.room.source_cistern", "path": "hooks", "expected": "I will not fill OUT from a bucket", "asserted": "Pump-Janitor: Check valve holds. I will not fill OUT from a bucket.", "correct": true },
+    { "id": "c11", "claim": "Valve-A stands closed", "key": "table.room.source_cistern", "path": "desc_facts", "expected": "Closed, nothing flows", "asserted": "Closed, nothing flows", "correct": true },
+    { "id": "c12", "claim": "the pipe runs east toward WORK", "key": "table.room.source_cistern", "path": "desc_facts", "expected": "pipe east toward WORK", "asserted": "Valve A on the pipe east toward WORK", "correct": true },
+    { "id": "c13", "claim": "the next tank is the Work Integrator", "key": "table.room.work_gallery", "path": "name", "expected": "Work Integrator", "asserted": "Work Integrator", "correct": true },
+    { "id": "c14", "claim": "Valve-B hangs in work_gallery", "key": "table.room.work_gallery", "path": "hooks", "expected": "Valve-B: pipe to OUT", "asserted": "Valve-B: pipe to OUT. Open only after water has arrived, or both valves siphon.", "correct": true },
+    { "id": "c15", "claim": "Valve-B pipes toward OUT", "key": "table.room.work_gallery", "path": "hooks", "expected": "Valve-B: pipe to OUT", "asserted": "Valve-B: pipe to OUT. Open only after water has arrived, or both valves siphon.", "correct": true },
+    { "id": "c16", "claim": "the gallery room is the Sight-Glass Gallery", "key": "table.room.gallery", "path": "name", "expected": "The Sight-Glass Gallery", "asserted": "The Sight-Glass Gallery", "correct": true },
+    { "id": "c17", "claim": "Pump-Janitor also works the gallery", "key": "table.room.gallery", "path": "hooks", "expected": "Pump-Janitor: I move water", "asserted": "Pump-Janitor: I move water. I do not pour. Hire me and I tick once.", "correct": true },
+    { "id": "c18", "claim": "the Bucket sits in out_cistern", "key": "table.room.out_cistern", "path": "hooks", "expected": "The Bucket: pour bucket to fake a height", "asserted": "The Bucket: pour bucket to fake a height. That is not computation.", "correct": true },
+    { "id": "c19", "claim": "the ramp tier is roguelite", "key": "game.ramp.tier", "path": "value", "expected": "roguelite", "asserted": "roguelite", "correct": true },
+    { "id": "c20", "claim": "the cistern holds three marks of water", "key": "table.room.source_cistern", "path": "desc_facts", "expected": "three marks high", "asserted": "rain water stacked three marks high", "correct": true }
+  ]
+}

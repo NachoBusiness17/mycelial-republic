@@ -1,0 +1,24 @@
+# SHADOWBONK polish audit
+
+**Path note:** `dashboard/static/games/shadowbonk.html` does not exist. The game lives at **`dashboard/static/shadowbonk.html`** (read in full, 250 lines). Verified byte-identical mirrors (13,502 B each): `site/dist/games/shadowbonk.html`, `dist_audit/nacho_business_audit_20260912T214050Z/dashboard/static/shadowbonk.html`. Also read `dashboard/static/sb_upgrades_a.json`, `sb_upgrades_b.json`, `sb_enemies.json`. **No files were created, modified, or deleted.**
+
+## Headline: the script never executes
+
+`new Function(<script>)` fails on every copy:
+
+1. **`shadowbonk.html:99-100`** — `pick3()` declares `const picks` and `const pool` twice → `SyntaxError: Identifier 'picks' has already been declared`.
+2. **`shadowbonk.html:84`** — `addEventListener('keydown',e=>{keys[e.key.toLowerCase()]=true;` is **never closed**. After removing defect 1, the compiler reports `Unexpected end of input`: that open brace swallows the entire rest of the script — `startGame` (:85), `loop` (:140), `die` (:239), and the boot calls (:245-247) all live inside an unclosed arrow function.
+
+Because the parse fails, **zero JS runs** — including the game's own error banner installer at `:48`. The player sees the HUD text over an empty `#0a0d12` canvas forever, timer stuck at `0:00`.
+
+Even if it parsed, three more boot-chain landmines: `$` is used at `:231-242` and `gid` at `:95,108,116` but **neither is ever defined** (first frame of `loop` would throw); `hidePause` is read at `:143` but **never declared** (first non-`running` frame would throw).
+
+## Audit by axis
+
+**Onboarding (5s): 0/5.** `:40` has the right instinct — `WASD move · everything else is automatic · T superhot · R retry` — but every promise is false at runtime: the script is dead; `superhot` is only ever *assigned* at `:82` (read at `:147/:236`, never toggled — no T handler exists); `:44` says "press R to run it again" with no R binding. Level-up cards print `press 1/2/3` (`:90`, `:113`) — unbound — and `.opt` gets `cursor:pointer` in CSS (`:19`) while `renderChoices()` (`:107-117`) attaches no click handler → guaranteed softlock at first level-up (4 XP, `:81`). No start/title card; `:245` boots straight into 8 enemies (`:88`).
+
+**Juice: thin, and completely silent.** Screenshake exists but is *contact-only*: `shake=Math.min(10,shake+2)` fires only at `:192` (enemy touching Tony), decays `shake*=.88` at `:207`, applied to camera at `:209` — never on kill (`:180`), wave burst (`:160`), boss (`:161`), or level-up (`:203`). Particles: **none** — a kill is just `GEMS.push` (`:180`) and a gold square (`:216`). Sound: **zero WebAudio** — no `AudioContext`/`oscillator` anywhere; shot (`:172`), hit (`:179`), kill, damage, death are all silent. Present and working: hit flash (`e.hit` `:179/:217`), floating damage numbers (`:179/:226`), movement streak (`:222`).
+
+**Difficulty curve: tuned in JSON, partially ignored in code, boss broken.** Wave math hard-codes trickle `spawnT=0.9` (`:164`) and burst `3+wave*2` (`:160`), ignoring content's `interval_sec`/`count_base`/`count_add_per_wave` (`:65`); boss cadence uses `wave%4===3` (`:161`) instead of `boss_every_wave:8`. HP growth is clamped to `Math.min(…,1.12)` (`:123`) against content's 1.17; speed uncapped. **`spawnBoss()` does `EN.push({...boss:true})` at `:134` — into the content catalog `EN` (`:68`), not the live array `ENS` (`:82`).** The boss never enters the world, yet sets `bossAlive=true` (`:135`), which can only clear when a live `e.boss` dies (`:180`) → never → no bosses at waves 7, 11…; side effect: a 600 hp / r=36 entry leaks into the elite spawn pool (`hp>=60` filter, `:121`). Also: `pick()`'s fallback `else P[u.stat]+=u.delta` (`:94`) mismatches state — JSON stats `damage`/`projectiles` (both upgrade files) vs. actual fields `dmg`/`proj` (`:81`, consumed `:170/:172`) → **every offensive upgrade is a silent no-op**, including fallback "Chain Punches" (`:54`).
+
+**Mobile/touch: unplayable.** Only listeners are `error` (`:

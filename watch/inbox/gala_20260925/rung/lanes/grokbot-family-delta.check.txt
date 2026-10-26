@@ -1,0 +1,42 @@
+# CHECK 1: grok_route guard — route_report() + default cash state (XAI_CASH_ALLOWED unset)
+grok_route.v1 cash=blocked cli=ok aos=lane(mag/aos_grok.py, budget-gated)
+grok_cash_allowed default: False
+exit=0
+
+# CHECK 2: x_churn_grok.py fail-closed no-key path (GROK_API_KEY_2 empty -> no spend)
+{
+ "ok": false,
+ "error": "no GROK key in env"
+}
+exit=0
+
+# CHECK 3: churn spend ledger exists?
+ls: cannot access 'state/fuel/x_churn_hits.jsonl': No such file or directory
+-rw-r--r-- 1 foste 197609 595 Oct  3 16:29 state/fuel/x_churn_ledger.jsonl
+
+# CHECK 4: grok_route cash guard honors arm (in-process only, no network)
+armed: True | grok_route.v1 cash=ARMED cli=ok aos=lane(mag/aos_grok.py, budget-gated)
+exit=0
+
+# CHECK 5: estate grep (corpus/steal + memory/corpus), run 2026-10-03
+-- grep -ril grok corpus/steal/ -> 1 file:
+corpus/steal/CORPUS_FOLD_48H_20261001.md
+-- grep -ril grok memory/corpus/ -> 30 files, ALL dlb_*.html with base64 substring hits, e.g.:
+5ODYn7JGKcPM0T/gROk4aSeMTVCnKVLYkI
+-- grep -rnE 'grok_route|x_churn_grok|XAI_SD_API_KEY|GROK_API_KEY_2' corpus/steal/ memory/corpus/ -> 0 hits (VERIFIED)
+0
+
+# CHECK 6: byte-verify quotes
+1
+1
+1
+1
+1
+
+# CHECK 7: x_churn ledger content (concurrent sibling calls, all HTTP 410 Gone)
+{"ts": "2026-10-03T20:29:35.745676+00:00", "model": "grok-4-fast", "query": "status id 2098571091052580906 - what does this exact post say?", "ok": false, "error": "HTTPError: HTTP Error 410: Gone"}
+{"ts": "2026-10-03T20:29:35.978793+00:00", "model": "grok-3-mini", "query": "status id 2098571091052580906 - what does this exact post say?", "ok": false, "error": "HTTPError: HTTP Error 410: Gone"}
+{"ts": "2026-10-03T20:29:36.206882+00:00", "model": "grok-3", "query": "status id 2098571091052580906 - what does this exact post say?", "ok": false, "error": "HTTPError: HTTP Error 410: Gone"}
+
+# CHECK 8: android/ last commit (09-21 receipt delta #1 status)
+eb07ad62e 2026-08-04 Mag sovereign agent — clean publish baseline.

@@ -1,0 +1,9 @@
+# garden-v1-A1-sonnet55-B5 (anthropic/claude-sonnet-5.5 @ nous, turn 1, channel: content)
+
+IMPROVEMENT 1: The gate fails open by default and on corruption: a missing or garbage mode sentinel resolves to "warn" (`return "warn"`), and warn mode admits any unsealed permit text, including a malformed envelope, as "unverified-warn". The mode is also downgradable through the env var or a same-user sentinel file | EVIDENCE: mag/steer_seal.py:90-102, mag/steer_seal.py:373-379 | FIX: Resolve to "enforce" whenever the keyfile loads or the sentinel is garbage, and allow "warn" only from an explicit sentinel value.
+
+IMPROVEMENT 2: `admit(path)` calls `parse_envelope(text)` as an argument to `_gate`, so a plain-text file directive such as "STOP" raises VerifyError before the restrictive safe-fail path runs. The "interrupt law" is bypassed for file directives, so a real STOP is blocked or crashes the caller | EVIDENCE: mag/steer_seal.py:399-400 | FIX: Catch the parse VerifyError and pass `env=None` to `_gate`, so restrictive text is honored and any other non-envelope text is refused.
+
+IMPROVEMENT 3: `verify()` returns a bare False and discards the reason (bad mac, replay, stale timestamp, unknown key_id). Successful sealed admissions are never logged, and the only audit log sits under ROOT where the gated agent can write it. Forgery attempts and operator authority leave no trustworthy receipt | EVIDENCE: mag/steer_seal.py:349-352, mag/steer_seal.py:355-356, mag/steer_seal.py:48 | FIX: Log the VerifyError reason and a "sealed_admitted" row (key_id and nonce, no mac) on every verify outcome, and write the log outside ROOT.
+
+DIFFERENT-BUILD: I would move signing, verification, key and mode state into a separate OS principal (a service reached over a named pipe, key ACL'd away from the agent's account). Today the key, mode sentinel and importable `seal()` all share the gated agent's user, so "outside ROOT" is not a security boundary on Windows.

@@ -1,0 +1,626 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<!--[if IE 6]><html class="ie6" xmlns="http://www.w3.org/1999/xhtml"><![endif]-->
+<!--[if IE 7]><html class="lt-ie8 lt-ie9" xmlns="http://www.w3.org/1999/xhtml"><![endif]-->
+<!--[if IE 8]><html class="lt-ie9" xmlns="http://www.w3.org/1999/xhtml"><![endif]-->
+<!--[if gt IE 8]><!--><html xmlns="http://www.w3.org/1999/xhtml"><!--<![endif]-->
+<head>
+  <meta http-equiv="content-type" content="text/html; charset=UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=3.0, user-scalable=1" />
+  <meta name="referrer" content="origin" />
+  <meta name="HandheldFriendly" content="true" />
+  <meta name="robots" content="noindex, nofollow" />
+  <title>site:reddit.com/r/LocalLLaMA Q4_K_M vs Q8_0 quality at DuckDuckGo</title>
+  <link title="DuckDuckGo (HTML)" type="application/opensearchdescription+xml" rel="search" href="//duckduckgo.com/opensearch_html_v2.xml" />
+  <link href="//duckduckgo.com/favicon.ico" rel="shortcut icon" />
+  <link rel="icon" href="//duckduckgo.com/favicon.ico" type="image/x-icon" />
+  <link id="icon60" rel="apple-touch-icon" href="//duckduckgo.com/assets/icons/meta/DDG-iOS-icon_60x60.png?v=2"/>
+  <link id="icon76" rel="apple-touch-icon" sizes="76x76" href="//duckduckgo.com/assets/icons/meta/DDG-iOS-icon_76x76.png?v=2"/>
+  <link id="icon120" rel="apple-touch-icon" sizes="120x120" href="//duckduckgo.com/assets/icons/meta/DDG-iOS-icon_120x120.png?v=2"/>
+  <link id="icon152" rel="apple-touch-icon" sizes="152x152" href="//duckduckgo.com/assets/icons/meta/DDG-iOS-icon_152x152.png?v=2"/>
+  <link rel="image_src" href="//duckduckgo.com/assets/icons/meta/DDG-icon_256x256.png">
+  <link rel="stylesheet" media="handheld, all" href="//duckduckgo.com/dist/h.12e359033b8c1146e5f7.css" type="text/css"/>
+</head>
+
+<body class="body--html">
+  <a name="top" id="top"></a>
+
+  <form action="/html/" method="post">
+    <input type="text" name="state_hidden" id="state_hidden" />
+  </form>
+
+  <div>
+    <div class="site-wrapper-border"></div>
+
+    <div id="header" class="header cw header--html">
+      <a title="DuckDuckGo" href="/html/" class="header__logo-wrap"></a>
+
+      <form name="x" class="header__form" action="/html/" method="post">
+        <div class="search search--header">
+          <input name="q" autocomplete="off" class="search__input" id="search_form_input_homepage" type="text" value="site:reddit.com/r/LocalLLaMA Q4_K_M vs Q8_0 quality" />
+          <input name="b" id="search_button_homepage" class="search__button search__button--html" value="" title="Search" alt="Search" type="submit" />
+        </div>
+
+        
+        
+        
+        
+
+        <div class="frm__select">
+          <select name="kl">
+            
+              <option value="" >All Regions</option>
+            
+              <option value="ar-es" >Argentina</option>
+            
+              <option value="au-en" >Australia</option>
+            
+              <option value="at-de" >Austria</option>
+            
+              <option value="be-fr" >Belgium (fr)</option>
+            
+              <option value="be-nl" >Belgium (nl)</option>
+            
+              <option value="br-pt" >Brazil</option>
+            
+              <option value="bg-bg" >Bulgaria</option>
+            
+              <option value="ca-en" >Canada (en)</option>
+            
+              <option value="ca-fr" >Canada (fr)</option>
+            
+              <option value="ct-ca" >Catalonia</option>
+            
+              <option value="cl-es" >Chile</option>
+            
+              <option value="cn-zh" >China</option>
+            
+              <option value="co-es" >Colombia</option>
+            
+              <option value="hr-hr" >Croatia</option>
+            
+              <option value="cz-cs" >Czech Republic</option>
+            
+              <option value="dk-da" >Denmark</option>
+            
+              <option value="ee-et" >Estonia</option>
+            
+              <option value="fi-fi" >Finland</option>
+            
+              <option value="fr-fr" >France</option>
+            
+              <option value="de-de" >Germany</option>
+            
+              <option value="gr-el" >Greece</option>
+            
+              <option value="hk-tzh" >Hong Kong</option>
+            
+              <option value="hu-hu" >Hungary</option>
+            
+              <option value="is-is" >Iceland</option>
+            
+              <option value="in-en" >India (en)</option>
+            
+              <option value="id-en" >Indonesia (en)</option>
+            
+              <option value="ie-en" >Ireland</option>
+            
+              <option value="il-en" >Israel (en)</option>
+            
+              <option value="it-it" >Italy</option>
+            
+              <option value="jp-jp" >Japan</option>
+            
+              <option value="kr-kr" >Korea</option>
+            
+              <option value="lv-lv" >Latvia</option>
+            
+              <option value="lt-lt" >Lithuania</option>
+            
+              <option value="my-en" >Malaysia (en)</option>
+            
+              <option value="mx-es" >Mexico</option>
+            
+              <option value="nl-nl" >Netherlands</option>
+            
+              <option value="nz-en" >New Zealand</option>
+            
+              <option value="no-no" >Norway</option>
+            
+              <option value="pk-en" >Pakistan (en)</option>
+            
+              <option value="pe-es" >Peru</option>
+            
+              <option value="ph-en" >Philippines (en)</option>
+            
+              <option value="pl-pl" >Poland</option>
+            
+              <option value="pt-pt" >Portugal</option>
+            
+              <option value="ro-ro" >Romania</option>
+            
+              <option value="ru-ru" >Russia</option>
+            
+              <option value="xa-ar" >Saudi Arabia</option>
+            
+              <option value="sg-en" >Singapore</option>
+            
+              <option value="sk-sk" >Slovakia</option>
+            
+              <option value="sl-sl" >Slovenia</option>
+            
+              <option value="za-en" >South Africa</option>
+            
+              <option value="es-ca" >Spain (ca)</option>
+            
+              <option value="es-es" >Spain (es)</option>
+            
+              <option value="se-sv" >Sweden</option>
+            
+              <option value="ch-de" >Switzerland (de)</option>
+            
+              <option value="ch-fr" >Switzerland (fr)</option>
+            
+              <option value="tw-tzh" >Taiwan</option>
+            
+              <option value="th-en" >Thailand (en)</option>
+            
+              <option value="tr-tr" >Turkey</option>
+            
+              <option value="us-en" >US (English)</option>
+            
+              <option value="us-es" >US (Spanish)</option>
+            
+              <option value="ua-uk" >Ukraine</option>
+            
+              <option value="uk-en" >United Kingdom</option>
+            
+              <option value="vn-en" >Vietnam (en)</option>
+            
+          </select>
+        </div>
+
+        <div class="frm__select frm__select--last">
+          <select class="" name="df">
+            
+              <option value="" selected>Any Time</option>
+            
+              <option value="d" >Past Day</option>
+            
+              <option value="w" >Past Week</option>
+            
+              <option value="m" >Past Month</option>
+            
+              <option value="y" >Past Year</option>
+            
+          </select>
+        </div>
+      </form>
+    </div>
+
+    
+
+    
+      <!-- Web results are present -->
+      <div>
+        <div class="serp__results">
+          <div id="links" class="results">
+            
+
+            
+              
+                <div class="result results_links results_links_deep web-result ">
+                  <div class="links_main links_deep result__body"> <!-- This is the visible part -->
+                    
+                      <h2 class="result__title">
+                        <a rel="nofollow" class="result__a" href="//duckduckgo.com/l/?uddg=https%3A%2F%2Fwww.reddit.com%2Fr%2FLocalLLaMA%2Fcomments%2F159nrh5%2Fthe_difference_between_quantization_methods_for%2F&amp;rut=40a9b7e5a2c937f309c9eb9baa8b9bb3bbd729db02f14f4e9d4d579065f948f6">The difference between quantization methods for the same bits</a>
+                      </h2>
+
+                    
+
+                    
+                      <div class="result__extras">
+                        <div class="result__extras__url">
+                          <span class="result__icon">
+                            <a rel="nofollow" href="//duckduckgo.com/l/?uddg=https%3A%2F%2Fwww.reddit.com%2Fr%2FLocalLLaMA%2Fcomments%2F159nrh5%2Fthe_difference_between_quantization_methods_for%2F&amp;rut=40a9b7e5a2c937f309c9eb9baa8b9bb3bbd729db02f14f4e9d4d579065f948f6">
+                              <img class="result__icon__img" width="16" height="16" alt="" src="//external-content.duckduckgo.com/ip3/www.reddit.com.ico" name="i15" />
+                            </a>
+                          </span>
+                          <a class="result__url" href="//duckduckgo.com/l/?uddg=https%3A%2F%2Fwww.reddit.com%2Fr%2FLocalLLaMA%2Fcomments%2F159nrh5%2Fthe_difference_between_quantization_methods_for%2F&amp;rut=40a9b7e5a2c937f309c9eb9baa8b9bb3bbd729db02f14f4e9d4d579065f948f6">
+                            www.reddit.com/r/LocalLLaMA/comments/159nrh5/the_difference_between_quantization_methods_for/
+                          </a>
+                          
+                        </div>
+                      </div>
+                    
+
+                    
+                      
+                        <a class="result__snippet" href="//duckduckgo.com/l/?uddg=https%3A%2F%2Fwww.reddit.com%2Fr%2FLocalLLaMA%2Fcomments%2F159nrh5%2Fthe_difference_between_quantization_methods_for%2F&amp;rut=40a9b7e5a2c937f309c9eb9baa8b9bb3bbd729db02f14f4e9d4d579065f948f6">Using GGML quantized models, let&#x27;s say we are going to talk about 4bit I see a lot of versions suffixed with either 0, 1, k_s or k_m I understand that the difference is in the way of quantization that affect the final size of the quantized models but how does this effect <b>quality</b> of output and speed of inference?</a>
+                      
+                    
+
+                    <div class="clear"></div>
+                  </div>
+                </div>
+              
+            
+              
+                <div class="result results_links results_links_deep web-result ">
+                  <div class="links_main links_deep result__body"> <!-- This is the visible part -->
+                    
+                      <h2 class="result__title">
+                        <a rel="nofollow" class="result__a" href="//duckduckgo.com/l/?uddg=https%3A%2F%2Fwww.reddit.com%2Fr%2FLocalLLaMA%2Fcomments%2F15699j6%2Fquestion_about_llm_quantization%2F&amp;rut=f3cf0845e41a5be8d00a2ab713cfa156dbaadfabe7fdd7285c5e69d80f943122">Question about LLM quantization : r/LocalLLaMA - Reddit</a>
+                      </h2>
+
+                    
+
+                    
+                      <div class="result__extras">
+                        <div class="result__extras__url">
+                          <span class="result__icon">
+                            <a rel="nofollow" href="//duckduckgo.com/l/?uddg=https%3A%2F%2Fwww.reddit.com%2Fr%2FLocalLLaMA%2Fcomments%2F15699j6%2Fquestion_about_llm_quantization%2F&amp;rut=f3cf0845e41a5be8d00a2ab713cfa156dbaadfabe7fdd7285c5e69d80f943122">
+                              <img class="result__icon__img" width="16" height="16" alt="" src="//external-content.duckduckgo.com/ip3/www.reddit.com.ico" name="i15" />
+                            </a>
+                          </span>
+                          <a class="result__url" href="//duckduckgo.com/l/?uddg=https%3A%2F%2Fwww.reddit.com%2Fr%2FLocalLLaMA%2Fcomments%2F15699j6%2Fquestion_about_llm_quantization%2F&amp;rut=f3cf0845e41a5be8d00a2ab713cfa156dbaadfabe7fdd7285c5e69d80f943122">
+                            www.reddit.com/r/LocalLLaMA/comments/15699j6/question_about_llm_quantization/
+                          </a>
+                          
+                        </div>
+                      </div>
+                    
+
+                    
+                      
+                        <a class="result__snippet" href="//duckduckgo.com/l/?uddg=https%3A%2F%2Fwww.reddit.com%2Fr%2FLocalLLaMA%2Fcomments%2F15699j6%2Fquestion_about_llm_quantization%2F&amp;rut=f3cf0845e41a5be8d00a2ab713cfa156dbaadfabe7fdd7285c5e69d80f943122">The new quantizations are recommended (those with K .. etc). They have measurably better output <b>quality</b> by the same size compared to old quantization method. My recommendation is, as long as you use 7B models, you should not go under q4_K_S (this will give good speed and an acceptable output <b>quality</b>). A better choice would be <b>q4_K_M</b> and if your hardware can handle it and you could accept the ...</a>
+                      
+                    
+
+                    <div class="clear"></div>
+                  </div>
+                </div>
+              
+            
+              
+                <div class="result results_links results_links_deep web-result ">
+                  <div class="links_main links_deep result__body"> <!-- This is the visible part -->
+                    
+                      <h2 class="result__title">
+                        <a rel="nofollow" class="result__a" href="//duckduckgo.com/l/?uddg=https%3A%2F%2Fwww.reddit.com%2Fr%2FLocalLLaMA%2Fcomments%2F1ba55rj%2Foverview_of_gguf_quantization_methods%2F&amp;rut=4a87a9a5ad57b8ee8d68f1eb6cf84815cc20f572312e94c1982010572c18047b">Overview of GGUF quantization methods : r/LocalLLaMA - Reddit</a>
+                      </h2>
+
+                    
+
+                    
+                      <div class="result__extras">
+                        <div class="result__extras__url">
+                          <span class="result__icon">
+                            <a rel="nofollow" href="//duckduckgo.com/l/?uddg=https%3A%2F%2Fwww.reddit.com%2Fr%2FLocalLLaMA%2Fcomments%2F1ba55rj%2Foverview_of_gguf_quantization_methods%2F&amp;rut=4a87a9a5ad57b8ee8d68f1eb6cf84815cc20f572312e94c1982010572c18047b">
+                              <img class="result__icon__img" width="16" height="16" alt="" src="//external-content.duckduckgo.com/ip3/www.reddit.com.ico" name="i15" />
+                            </a>
+                          </span>
+                          <a class="result__url" href="//duckduckgo.com/l/?uddg=https%3A%2F%2Fwww.reddit.com%2Fr%2FLocalLLaMA%2Fcomments%2F1ba55rj%2Foverview_of_gguf_quantization_methods%2F&amp;rut=4a87a9a5ad57b8ee8d68f1eb6cf84815cc20f572312e94c1982010572c18047b">
+                            www.reddit.com/r/LocalLLaMA/comments/1ba55rj/overview_of_gguf_quantization_methods/
+                          </a>
+                          
+                        </div>
+                      </div>
+                    
+
+                    
+                      
+                        <a class="result__snippet" href="//duckduckgo.com/l/?uddg=https%3A%2F%2Fwww.reddit.com%2Fr%2FLocalLLaMA%2Fcomments%2F1ba55rj%2Foverview_of_gguf_quantization_methods%2F&amp;rut=4a87a9a5ad57b8ee8d68f1eb6cf84815cc20f572312e94c1982010572c18047b">Q3_K or Q4_K refer to the prevalent quantization type used in a file (and to the fact it is using this mixed &quot;K&quot; format), while suffixes like _XS, _S, or _M, are aliases refering to a specific mix of quantization types used in the file (some layers are more important, so giving them more bits per weight may be beneficial);</a>
+                      
+                    
+
+                    <div class="clear"></div>
+                  </div>
+                </div>
+              
+            
+              
+                <div class="result results_links results_links_deep web-result ">
+                  <div class="links_main links_deep result__body"> <!-- This is the visible part -->
+                    
+                      <h2 class="result__title">
+                        <a rel="nofollow" class="result__a" href="//duckduckgo.com/l/?uddg=https%3A%2F%2Fwww.reddit.com%2Fr%2FLocalLLaMA%2Fcomments%2F1816h1x%2Fhow_much_does_quantization_actually_impact_models%2F&amp;rut=e5a287985005376a5f08b6f177371977fac4ad81c0d8c58143cb24ee805e586e">How much does Quantization actually impact models? - Reddit</a>
+                      </h2>
+
+                    
+
+                    
+                      <div class="result__extras">
+                        <div class="result__extras__url">
+                          <span class="result__icon">
+                            <a rel="nofollow" href="//duckduckgo.com/l/?uddg=https%3A%2F%2Fwww.reddit.com%2Fr%2FLocalLLaMA%2Fcomments%2F1816h1x%2Fhow_much_does_quantization_actually_impact_models%2F&amp;rut=e5a287985005376a5f08b6f177371977fac4ad81c0d8c58143cb24ee805e586e">
+                              <img class="result__icon__img" width="16" height="16" alt="" src="//external-content.duckduckgo.com/ip3/www.reddit.com.ico" name="i15" />
+                            </a>
+                          </span>
+                          <a class="result__url" href="//duckduckgo.com/l/?uddg=https%3A%2F%2Fwww.reddit.com%2Fr%2FLocalLLaMA%2Fcomments%2F1816h1x%2Fhow_much_does_quantization_actually_impact_models%2F&amp;rut=e5a287985005376a5f08b6f177371977fac4ad81c0d8c58143cb24ee805e586e">
+                            www.reddit.com/r/LocalLLaMA/comments/1816h1x/how_much_does_quantization_actually_impact_models/
+                          </a>
+                          
+                        </div>
+                      </div>
+                    
+
+                    
+                      
+                        <a class="result__snippet" href="//duckduckgo.com/l/?uddg=https%3A%2F%2Fwww.reddit.com%2Fr%2FLocalLLaMA%2Fcomments%2F1816h1x%2Fhow_much_does_quantization_actually_impact_models%2F&amp;rut=e5a287985005376a5f08b6f177371977fac4ad81c0d8c58143cb24ee805e586e">As suspected by many, the impacts of extreme quantization seem to be less pronounced with more parameters, but it&#x27;s still pretty damn pronounced for 13b at least. For example, Q2_K for 13b has an average divergence of 0.058, compared to Mistral 7b&#x27;s 0.082 avg divergence for Q2_K. Llama 13b, x1000 average KL divergence: <b>q8_0</b>: 0.3% q6_K: 1.3%</a>
+                      
+                    
+
+                    <div class="clear"></div>
+                  </div>
+                </div>
+              
+            
+              
+                <div class="result results_links results_links_deep web-result ">
+                  <div class="links_main links_deep result__body"> <!-- This is the visible part -->
+                    
+                      <h2 class="result__title">
+                        <a rel="nofollow" class="result__a" href="//duckduckgo.com/l/?uddg=https%3A%2F%2Fwww.reddit.com%2Fr%2FLocalLLaMA%2Fcomments%2F142q5k5%2Fupdated_relative_comparison_of_ggml_quantization%2F&amp;rut=a1f4c345bfed019d80366f183bdc9ef312e069663e821f988a5bfb1d50f8a834">Updated relative comparison of GGML quantization types and effect on ...</a>
+                      </h2>
+
+                    
+
+                    
+                      <div class="result__extras">
+                        <div class="result__extras__url">
+                          <span class="result__icon">
+                            <a rel="nofollow" href="//duckduckgo.com/l/?uddg=https%3A%2F%2Fwww.reddit.com%2Fr%2FLocalLLaMA%2Fcomments%2F142q5k5%2Fupdated_relative_comparison_of_ggml_quantization%2F&amp;rut=a1f4c345bfed019d80366f183bdc9ef312e069663e821f988a5bfb1d50f8a834">
+                              <img class="result__icon__img" width="16" height="16" alt="" src="//external-content.duckduckgo.com/ip3/www.reddit.com.ico" name="i15" />
+                            </a>
+                          </span>
+                          <a class="result__url" href="//duckduckgo.com/l/?uddg=https%3A%2F%2Fwww.reddit.com%2Fr%2FLocalLLaMA%2Fcomments%2F142q5k5%2Fupdated_relative_comparison_of_ggml_quantization%2F&amp;rut=a1f4c345bfed019d80366f183bdc9ef312e069663e821f988a5bfb1d50f8a834">
+                            www.reddit.com/r/LocalLLaMA/comments/142q5k5/updated_relative_comparison_of_ggml_quantization/
+                          </a>
+                          
+                        </div>
+                      </div>
+                    
+
+                    
+                      
+                        <a class="result__snippet" href="//duckduckgo.com/l/?uddg=https%3A%2F%2Fwww.reddit.com%2Fr%2FLocalLLaMA%2Fcomments%2F142q5k5%2Fupdated_relative_comparison_of_ggml_quantization%2F&amp;rut=a1f4c345bfed019d80366f183bdc9ef312e069663e821f988a5bfb1d50f8a834">In other words for 7B q5_ks increase perplexity about 1/18th of the difference between a 7B and a 13B. q6_k increases it by about 1/150th of the difference between a 7B and a 13B - well past the range any human could notice a change. Based on this, the perplexity increase for q2_k <b>vs</b> the next higher q3_km is 4x for 7B models and 3x for 13B models.</a>
+                      
+                    
+
+                    <div class="clear"></div>
+                  </div>
+                </div>
+              
+            
+              
+                <div class="result results_links results_links_deep web-result ">
+                  <div class="links_main links_deep result__body"> <!-- This is the visible part -->
+                    
+                      <h2 class="result__title">
+                        <a rel="nofollow" class="result__a" href="//duckduckgo.com/l/?uddg=https%3A%2F%2Fwww.reddit.com%2Fr%2FLocalLLaMA%2Fcomments%2F1bltyis%2Fq4_q5_q8_why%2F&amp;rut=1a2c22cd7ad721be9a812e42c09461b73b6af423138f776c9868bdb7c0239aed">Q4, Q5, Q8… why? : r/LocalLLaMA - Reddit</a>
+                      </h2>
+
+                    
+
+                    
+                      <div class="result__extras">
+                        <div class="result__extras__url">
+                          <span class="result__icon">
+                            <a rel="nofollow" href="//duckduckgo.com/l/?uddg=https%3A%2F%2Fwww.reddit.com%2Fr%2FLocalLLaMA%2Fcomments%2F1bltyis%2Fq4_q5_q8_why%2F&amp;rut=1a2c22cd7ad721be9a812e42c09461b73b6af423138f776c9868bdb7c0239aed">
+                              <img class="result__icon__img" width="16" height="16" alt="" src="//external-content.duckduckgo.com/ip3/www.reddit.com.ico" name="i15" />
+                            </a>
+                          </span>
+                          <a class="result__url" href="//duckduckgo.com/l/?uddg=https%3A%2F%2Fwww.reddit.com%2Fr%2FLocalLLaMA%2Fcomments%2F1bltyis%2Fq4_q5_q8_why%2F&amp;rut=1a2c22cd7ad721be9a812e42c09461b73b6af423138f776c9868bdb7c0239aed">
+                            www.reddit.com/r/LocalLLaMA/comments/1bltyis/q4_q5_q8_why/
+                          </a>
+                          
+                        </div>
+                      </div>
+                    
+
+                    
+                      
+                        <a class="result__snippet" href="//duckduckgo.com/l/?uddg=https%3A%2F%2Fwww.reddit.com%2Fr%2FLocalLLaMA%2Fcomments%2F1bltyis%2Fq4_q5_q8_why%2F&amp;rut=1a2c22cd7ad721be9a812e42c09461b73b6af423138f776c9868bdb7c0239aed">The performance impact between different quantization levels like Q4 and Q8 can vary. Generally, quantization aims to reduce the model size and speed up inference times while trying to maintain accuracy.</a>
+                      
+                    
+
+                    <div class="clear"></div>
+                  </div>
+                </div>
+              
+            
+              
+                <div class="result results_links results_links_deep web-result ">
+                  <div class="links_main links_deep result__body"> <!-- This is the visible part -->
+                    
+                      <h2 class="result__title">
+                        <a rel="nofollow" class="result__a" href="//duckduckgo.com/l/?uddg=https%3A%2F%2Fwww.reddit.com%2Fr%2FLocalLLaMA%2Fcomments%2F1dalkm8%2Fmemory_tests_using_llamacpp_kv_cache_quantization%2F&amp;rut=4d98d6131ae91138cf781d30ee9f30947212e7b4fa3e9ee6f5fb52cab4dbf520">Memory Tests using Llama.cpp KV cache quantization</a>
+                      </h2>
+
+                    
+
+                    
+                      <div class="result__extras">
+                        <div class="result__extras__url">
+                          <span class="result__icon">
+                            <a rel="nofollow" href="//duckduckgo.com/l/?uddg=https%3A%2F%2Fwww.reddit.com%2Fr%2FLocalLLaMA%2Fcomments%2F1dalkm8%2Fmemory_tests_using_llamacpp_kv_cache_quantization%2F&amp;rut=4d98d6131ae91138cf781d30ee9f30947212e7b4fa3e9ee6f5fb52cab4dbf520">
+                              <img class="result__icon__img" width="16" height="16" alt="" src="//external-content.duckduckgo.com/ip3/www.reddit.com.ico" name="i15" />
+                            </a>
+                          </span>
+                          <a class="result__url" href="//duckduckgo.com/l/?uddg=https%3A%2F%2Fwww.reddit.com%2Fr%2FLocalLLaMA%2Fcomments%2F1dalkm8%2Fmemory_tests_using_llamacpp_kv_cache_quantization%2F&amp;rut=4d98d6131ae91138cf781d30ee9f30947212e7b4fa3e9ee6f5fb52cab4dbf520">
+                            www.reddit.com/r/LocalLLaMA/comments/1dalkm8/memory_tests_using_llamacpp_kv_cache_quantization/
+                          </a>
+                          
+                        </div>
+                      </div>
+                    
+
+                    
+                      
+                        <a class="result__snippet" href="//duckduckgo.com/l/?uddg=https%3A%2F%2Fwww.reddit.com%2Fr%2FLocalLLaMA%2Fcomments%2F1dalkm8%2Fmemory_tests_using_llamacpp_kv_cache_quantization%2F&amp;rut=4d98d6131ae91138cf781d30ee9f30947212e7b4fa3e9ee6f5fb52cab4dbf520">I tested out Midnight Miqu 1.5 q4_K_S with type_k=q8_0 and type_v=q8_0. I was able squeeze a few more layers onto my GPU this way which gave me a nice little speed boost.</a>
+                      
+                    
+
+                    <div class="clear"></div>
+                  </div>
+                </div>
+              
+            
+              
+                <div class="result results_links results_links_deep web-result ">
+                  <div class="links_main links_deep result__body"> <!-- This is the visible part -->
+                    
+                      <h2 class="result__title">
+                        <a rel="nofollow" class="result__a" href="//duckduckgo.com/l/?uddg=https%3A%2F%2Fwww.reddit.com%2Fr%2FLocalLLaMA%2Fcomments%2F14719ch%2Fnf4_inference_quantization_is_awesome_comparison%2F&amp;rut=e0ec6101fa33fbc3f20904ea7c8a05e13a9871441a05bb7a85819b67ce155735">NF4 inference quantization is awesome: Comparison of answer quality of ...</a>
+                      </h2>
+
+                    
+
+                    
+                      <div class="result__extras">
+                        <div class="result__extras__url">
+                          <span class="result__icon">
+                            <a rel="nofollow" href="//duckduckgo.com/l/?uddg=https%3A%2F%2Fwww.reddit.com%2Fr%2FLocalLLaMA%2Fcomments%2F14719ch%2Fnf4_inference_quantization_is_awesome_comparison%2F&amp;rut=e0ec6101fa33fbc3f20904ea7c8a05e13a9871441a05bb7a85819b67ce155735">
+                              <img class="result__icon__img" width="16" height="16" alt="" src="//external-content.duckduckgo.com/ip3/www.reddit.com.ico" name="i15" />
+                            </a>
+                          </span>
+                          <a class="result__url" href="//duckduckgo.com/l/?uddg=https%3A%2F%2Fwww.reddit.com%2Fr%2FLocalLLaMA%2Fcomments%2F14719ch%2Fnf4_inference_quantization_is_awesome_comparison%2F&amp;rut=e0ec6101fa33fbc3f20904ea7c8a05e13a9871441a05bb7a85819b67ce155735">
+                            www.reddit.com/r/LocalLLaMA/comments/14719ch/nf4_inference_quantization_is_awesome_comparison/
+                          </a>
+                          
+                        </div>
+                      </div>
+                    
+
+                    
+                      
+                        <a class="result__snippet" href="//duckduckgo.com/l/?uddg=https%3A%2F%2Fwww.reddit.com%2Fr%2FLocalLLaMA%2Fcomments%2F14719ch%2Fnf4_inference_quantization_is_awesome_comparison%2F&amp;rut=e0ec6101fa33fbc3f20904ea7c8a05e13a9871441a05bb7a85819b67ce155735">The quantizations I&#x27;d recommend are <b>q4_k_m</b> (balanced size, decent <b>quality</b>) and q5_k_m (high <b>quality</b>, relatively large size). You could possibly also try q6_k (almost as good as <b>q8_0</b> but pretty large).</a>
+                      
+                    
+
+                    <div class="clear"></div>
+                  </div>
+                </div>
+              
+            
+              
+                <div class="result results_links results_links_deep web-result ">
+                  <div class="links_main links_deep result__body"> <!-- This is the visible part -->
+                    
+                      <h2 class="result__title">
+                        <a rel="nofollow" class="result__a" href="//duckduckgo.com/l/?uddg=https%3A%2F%2Fwww.reddit.com%2Fr%2FLocalLLaMA%2Fcomments%2F1d32q63%2Fwhat_do_the_numbersletters_in_the_quantized_model%2F&amp;rut=3d077f495a1cc57ab8e6dce285d9bc7386734bbe4551c55c5c8f998175ddb8ce">What do the numbers/letters in the quantized model mean?</a>
+                      </h2>
+
+                    
+
+                    
+                      <div class="result__extras">
+                        <div class="result__extras__url">
+                          <span class="result__icon">
+                            <a rel="nofollow" href="//duckduckgo.com/l/?uddg=https%3A%2F%2Fwww.reddit.com%2Fr%2FLocalLLaMA%2Fcomments%2F1d32q63%2Fwhat_do_the_numbersletters_in_the_quantized_model%2F&amp;rut=3d077f495a1cc57ab8e6dce285d9bc7386734bbe4551c55c5c8f998175ddb8ce">
+                              <img class="result__icon__img" width="16" height="16" alt="" src="//external-content.duckduckgo.com/ip3/www.reddit.com.ico" name="i15" />
+                            </a>
+                          </span>
+                          <a class="result__url" href="//duckduckgo.com/l/?uddg=https%3A%2F%2Fwww.reddit.com%2Fr%2FLocalLLaMA%2Fcomments%2F1d32q63%2Fwhat_do_the_numbersletters_in_the_quantized_model%2F&amp;rut=3d077f495a1cc57ab8e6dce285d9bc7386734bbe4551c55c5c8f998175ddb8ce">
+                            www.reddit.com/r/LocalLLaMA/comments/1d32q63/what_do_the_numbersletters_in_the_quantized_model/
+                          </a>
+                          
+                        </div>
+                      </div>
+                    
+
+                    
+                      
+                        <a class="result__snippet" href="//duckduckgo.com/l/?uddg=https%3A%2F%2Fwww.reddit.com%2Fr%2FLocalLLaMA%2Fcomments%2F1d32q63%2Fwhat_do_the_numbersletters_in_the_quantized_model%2F&amp;rut=3d077f495a1cc57ab8e6dce285d9bc7386734bbe4551c55c5c8f998175ddb8ce">I now try to use Q5_K_M and larger models. General idea is greater accuracy at the cost of more Vram and storage space. From what I can tell most base models are Q4_0.</a>
+                      
+                    
+
+                    <div class="clear"></div>
+                  </div>
+                </div>
+              
+            
+              
+                <div class="result results_links results_links_deep web-result ">
+                  <div class="links_main links_deep result__body"> <!-- This is the visible part -->
+                    
+                      <h2 class="result__title">
+                        <a rel="nofollow" class="result__a" href="//duckduckgo.com/l/?uddg=https%3A%2F%2Fwww.reddit.com%2Fr%2FLocalLLaMA%2Fcomments%2F14gjz8h%2Fi_have_multiple_doubts_about_kquant_models_and%2F&amp;rut=00f6cdc3b22757d05b409fb80f594e6b18b7173b346a61f0d723fca682b65db1">I have multiple doubts about k-quant models and their 14 ... - Reddit</a>
+                      </h2>
+
+                    
+
+                    
+                      <div class="result__extras">
+                        <div class="result__extras__url">
+                          <span class="result__icon">
+                            <a rel="nofollow" href="//duckduckgo.com/l/?uddg=https%3A%2F%2Fwww.reddit.com%2Fr%2FLocalLLaMA%2Fcomments%2F14gjz8h%2Fi_have_multiple_doubts_about_kquant_models_and%2F&amp;rut=00f6cdc3b22757d05b409fb80f594e6b18b7173b346a61f0d723fca682b65db1">
+                              <img class="result__icon__img" width="16" height="16" alt="" src="//external-content.duckduckgo.com/ip3/www.reddit.com.ico" name="i15" />
+                            </a>
+                          </span>
+                          <a class="result__url" href="//duckduckgo.com/l/?uddg=https%3A%2F%2Fwww.reddit.com%2Fr%2FLocalLLaMA%2Fcomments%2F14gjz8h%2Fi_have_multiple_doubts_about_kquant_models_and%2F&amp;rut=00f6cdc3b22757d05b409fb80f594e6b18b7173b346a61f0d723fca682b65db1">
+                            www.reddit.com/r/LocalLLaMA/comments/14gjz8h/i_have_multiple_doubts_about_kquant_models_and/
+                          </a>
+                          
+                        </div>
+                      </div>
+                    
+
+                    
+                      
+                        <a class="result__snippet" href="//duckduckgo.com/l/?uddg=https%3A%2F%2Fwww.reddit.com%2Fr%2FLocalLLaMA%2Fcomments%2F14gjz8h%2Fi_have_multiple_doubts_about_kquant_models_and%2F&amp;rut=00f6cdc3b22757d05b409fb80f594e6b18b7173b346a61f0d723fca682b65db1">17 or Q5_K_M : 4.45G, +0.0142 ppl @ 7B - large, very low <b>quality</b> loss - recommended The next obvious question - what is the runtime difference between these two?</a>
+                      
+                    
+
+                    <div class="clear"></div>
+                  </div>
+                </div>
+              
+            
+
+            
+              
+              
+                <div class="nav-link">
+                  <form action="/html/" method="post">
+                    <input type="submit" class='btn btn--alt' value="Next" />
+                    <input type="hidden" name="q" value="site:reddit.com/r/LocalLLaMA Q4_K_M vs Q8_0 quality" />
+                    <input type="hidden" name="s" value="10" />
+                    <input type="hidden" name="nextParams" value="" />
+                    <input type="hidden" name="v" value="l" />
+                    <input type="hidden" name="o" value="json" />
+                    <input type="hidden" name="dc" value="11" />
+                    <input type="hidden" name="api" value="d.js" />
+                    <input type="hidden" name="vqd" value="4-49188926252391664917643504301897776147" />
+
+                    
+                    
+                    
+                      <input name="kl" value="wt-wt" type="hidden" />
+                    
+                    
+                    
+                    
+                  </form>
+                </div>
+              
+            
+
+            <div class="feedback-btn">
+              <a rel="nofollow" href="//duckduckgo.com/feedback.html" target="_new">Feedback</a>
+            </div>
+            <div class="clear"></div>
+          </div>
+        </div>
+      </div> <!-- links wrapper //-->
+    
+  </div>
+
+  <div id="bottom_spacing2"></div>
+
+  
+    <img src="//duckduckgo.com/t/sl_h"/>
+  
+</body>
+</html>

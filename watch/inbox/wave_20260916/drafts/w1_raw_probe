@@ -1,0 +1,39 @@
+# W1 raw probe — dump the raw union-alpha response shape (no key printed).
+import json
+import sys
+import urllib.request
+from pathlib import Path
+
+ROOT = Path(r"C:\Users\foste\Documents\projects\local_sovereign_agent")
+sys.path.insert(0, str(ROOT))
+from mag.flight_recorder import load_env  # noqa: E402
+
+HERE = ROOT / "watch" / "inbox" / "wave_20260916" / "drafts"
+KEY = load_env(str(ROOT)).get("OPENROUTER_API_KEY", "")
+if not KEY:
+    print("FATAL: no key")
+    sys.exit(1)
+
+body = json.dumps({
+    "model": "stealth/union-alpha",
+    "messages": [{"role": "user", "content": "Reply with exactly: PONG"}],
+    "max_tokens": 512,
+    "temperature": 0.0,
+}).encode("utf-8")
+req = urllib.request.Request("https://openrouter.ai/api/v1/chat/completions", data=body, headers={
+    "Authorization": f"Bearer {KEY}",
+    "Content-Type": "application/json",
+    "User-Agent": "mag-w1-world/1.0",
+}, method="POST")
+try:
+    with urllib.request.urlopen(req, timeout=120) as r:
+        raw = r.read().decode("utf-8")
+        (HERE / "W1_raw_probe.json").write_text(raw, encoding="utf-8")
+        data = json.loads(raw)
+        print(json.dumps({"status": r.status, "top_keys": sorted(data.keys()),
+                          "model": data.get("model"),
+                          "n_choices": len(data.get("choices", [])),
+                          "usage": data.get("usage"),
+                          "head": raw[:400]}, ensure_ascii=False))
+except urllib.error.HTTPError as e:
+    print(json.dumps({"status": e.code, "body": e.read().decode("utf-8", "replace")[:500]}))

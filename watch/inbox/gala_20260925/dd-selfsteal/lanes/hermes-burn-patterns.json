@@ -1,0 +1,90 @@
+{
+  "lane": "hermes-burn-patterns",
+  "division": "B",
+  "ok": true,
+  "note": "Mined 1150 ledger rows / $63.58 at frozen moment 2026-10-03T19:20:53Z: temporal troughs are queue-content (refusal loops, empty-channel dungeon beats) not clock; sonnet-5.5 is the receipt-efficiency king (39 receipts, 33.9 KB/$) while fable-5.1 is a refusal magnet and opus re-burn theater ate 38.9 pct of spend; 84/87 staged asks landed or healed vs the TICKET_LEDGER's 74 pct ticket redemption (completion is not redemption); raw probe output frozen in the check file; no mag/ or tools/ code touched.",
+  "rows": [
+    {
+      "law": "LANDED-BEATS-FORCE quantified",
+      "claim": "38.9 percent of the burn's first three days ($24.74 of $63.58) went to re-fires of already-landed plan asks; A1_steer_antiforgery alone burned 48 rows / $20.60 after its landing (docstring's '45x at $20.53' was written mid-drain).",
+      "quote": "the force flag can no longer re-burn a landed deliverable (a stale force ask burned A1 45x at $20.53 after landing)",
+      "source": "C:/Users/foste/Documents/projects/local_sovereign_agent/tools/hermes_burn.py",
+      "steal": "One sitting: stage every new ask through run_ask so it passes the _landed_skip choke point at tools/hermes_burn.py:206, and delete any stale force:true flag from staged ask.json bytes before the driver's next 45s cycle.",
+      "falsifier": "A burn week where W1 re-burn rows stay under 5 percent of spend without the entry check would kill this law.",
+      "leverage": "high"
+    },
+    {
+      "law": "EVIDENCE-PREFLIGHT or receipts confess",
+      "claim": "$3.58 of paid fires produced receipts that self-confess 'The EVIDENCE block is empty' in their own bytes (DUEL2_train_01.md, DUEL2_train_06.md still on disk) plus the quarantined T1W2 poisoned-evidenceless quartet, now all healed by refires.",
+      "quote": "an ask with no evidence at all fails closed (DUEL2 fired 14 paid calls whose material never reached the model; T1W2 went out evidence: [])",
+      "source": "C:/Users/foste/Documents/projects/local_sovereign_agent/tools/hermes_burn.py",
+      "steal": "One sitting: before trusting any hermes_burn receipt, grep its first 4000 bytes for 'EVIDENCE block is empty'; when staging, keep _assert_evidence_in_body (tools/hermes_burn.py:230) un-bypassed on every turn.",
+      "falsifier": "A receipt that cites file:line from evidence it never received and survives citation lint would kill this law.",
+      "leverage": "high"
+    },
+    {
+      "law": "REFUSED-IS-TERMINAL (the wall-clock disease)",
+      "claim": "89 provider-refusal rows billed $0.00 but burned hours of retry wall clock (DUEL1_hidden_5 x46, N1_parables_songmap x42), and they alone explain the 19-20Z ok-rate trough; refusal loops are a wall-clock cost, not a money cost.",
+      "quote": "REFUSED IS TERMINAL: after 2 provider refusals for one ask id the carrier mints <ask_dir>/REFUSED (refusal snippet) and skips on sight forever",
+      "source": "C:/Users/foste/Documents/projects/local_sovereign_agent/tools/hermes_burn.py",
+      "steal": "One sitting: when a paid ask refuses twice, edit the ask bytes and delete the REFUSED marker (tools/hermes_burn.py:195) instead of re-firing the same bytes; keep both terminal markers (batch4/N1_parables_songmap, duel1/hidden_5) in place until re-armed properly.",
+      "falsifier": "A refusal loop whose retry wall-clock is worth less than the money it would cost would kill the terminal-marker cure.",
+      "leverage": "medium"
+    },
+    {
+      "law": "RECEIPTS-PER-DOLLAR BEATS TOKENS-PER-DOLLAR",
+      "claim": "sonnet-5.5 landed more clean receipts than opus-5.5 (39 vs 38) for one sixth the money ($7.59 vs $45.65) at 3.4x the receipt bytes per dollar; fable-5.1 was the worst on every axis (57.0 pct ok, 42 refusals, $13.88/Mtok, 2 landed receipts).",
+      "quote": "anthropic/claude-sonnet-5.5       308  82.8%   46   2,059,945    7.59    3.69   63     39   33.9",
+      "source": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/dd-selfsteal/lanes/hermes-burn-patterns.check.txt",
+      "steal": "One sitting: flip the driving ladder's paid-ask default to sonnet-5.5 first for design/spec asks (hermes_burn PRICING table already carries it) and reserve opus-5.5 for asks that stall under sonnet review.",
+      "falsifier": "A sonnet-first week where opus-tier asks fail sonnet review more often than the 4.5x cost delta saves would kill this law.",
+      "leverage": "high"
+    },
+    {
+      "law": "ID-STAMP OR THE LEDGER LIES",
+      "claim": "The tavern docstring's id shape includes the run but the code omits it, so 665 same-id ok rows / $14.90 are unanalyzable as turns-vs-replays and the doubled-key alarm saturates (809 of 1150 rows flagged = 70.3 pct alarm fatigue).",
+      "quote": "every paid dispatch banks its burn) with id TAVERN_<run>_r<round>_<actor>",
+      "source": "C:/Users/foste/Documents/projects/local_sovereign_agent/tools/tavern.py",
+      "steal": "One sitting for the tavern owner: stamp the run dir name into the id at tools/tavern.py:157 (f'TAVERN_{run_stamp}_r{rnd}_{name}') so the ledger id matches the docstring; until then never price TAVERN repeats as waste from the ledger alone.",
+      "falsifier": "After the stamp lands, zero new ledger rows sharing an id across run dirs would confirm it; continued collisions would kill the fix.",
+      "leverage": "medium"
+    },
+    {
+      "law": "COMPLETION IS NOT REDEMPTION",
+      "claim": "The paid carrier completed 84/87 staged asks (96.6 pct) while TICKET_LEDGER row one sat at 74.0 pct ticket redemption: the gap lives in parked prose tickets (5 deliberate CLIMB deferrals and standing owed), not in paid-ask failure; the duel-refire and T1W2-poisoned parked rows have since converted in bytes.",
+      "quote": "Row one: issued 50 / run 37 / parked 13 / dropped 0-known. Reconciles: 37 + 13 = 50.",
+      "source": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/hermes_burn/TICKET_LEDGER.md",
+      "steal": "One sitting for the TICKET_LEDGER owner: source the next row's parked tail from plan-dir markers (REFUSED / CLAIM / missing receipt) instead of a prose sweep, so redemption and completion share one denominator.",
+      "falsifier": "A future ledger row where paid asks stall (FIRED_NORECEIPT > 0) while prose tickets convert would kill this law.",
+      "leverage": "medium"
+    },
+    {
+      "law": "MECHANISM-NOT-CLOCK (temporal pattern)",
+      "claim": "The worst burn hour (19:00Z, 52.4 pct ok, $15.10) is explained entirely by queue content - 55 of the 89 refusal rows - and the best window is 11:00-13:00Z (97.7/85.4/93.9 pct ok); no hour is bad across different queue compositions.",
+      "quote": "19:00Z  n= 143 ok=  75 (52.4%)  $15.10",
+      "source": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/dd-selfsteal/lanes/hermes-burn-patterns.check.txt",
+      "steal": "One sitting: schedule the paid queue drain in the 11-13Z window (scripts/descent_driver.sh already loops; only the staging order needs the shift), and treat any future trough as a queue-content question before blaming the clock.",
+      "falsifier": "A trough hour that stays bad across three different queue compositions would kill this law.",
+      "leverage": "medium"
+    }
+  ],
+  "checks": [
+    {
+      "command": ".venv/Scripts/python.exe watch/inbox/dd_dogfood/hermes_patterns_probe.py > watch/inbox/gala_20260925/dd-selfsteal/lanes/hermes-burn-patterns.check.txt",
+      "exit": 0,
+      "evidence": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/dd-selfsteal/lanes/hermes-burn-patterns.check.txt"
+    },
+    {
+      "command": ".venv/Scripts/python.exe tools/citation_lint.py check --files watch/inbox/dd_dogfood/hermes-patterns.md",
+      "exit": 0,
+      "evidence": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/dd_dogfood/hermes-patterns.md (section 8 records the run: 4 anchors, 0 blocking, 0 warns)"
+    },
+    {
+      "command": ".venv/Scripts/python.exe tools/citation_lint.py check --files watch/inbox/gala_20260925/dd-selfsteal/lanes/hermes-burn-patterns.check.txt",
+      "exit": 1,
+      "evidence": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/dd_dogfood/hermes-patterns.md (section 8: 8 blocking PHANTOM-NUMBER findings are the tool's prose-heuristic class hitting a raw machine table whose numbers source from memory/runs/hermes_burn/usage.jsonl; raw instrument output left unedited)"
+    }
+  ],
+  "decision_changed": "no; arms two operator calls named in the receipt: sonnet-first routing for paid design asks, and the one-line tavern id-stamp owned by tools/tavern.py",
+  "artifact": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/dd_dogfood/hermes-patterns.md"
+}

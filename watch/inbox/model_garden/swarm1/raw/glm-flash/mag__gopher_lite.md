@@ -1,0 +1,7 @@
+# swarm1-glm-flash-mag__gopher_lite (glm-5.3-flash @ zai, turn 1, channel: content)
+
+DEFECT 1: --loop dies on the first malformed provider response because d["choices"][0] is indexed unguarded and the loop has no exception handling | EVIDENCE: mag/gopher_lite.py:135,222 | FIX: replace :135 with d.get("choices",[{}])[0].get("message",{}) plus a {"ok":False,...} return, and wrap run_once() at :222 in try/except that meters the failure and continues the loop
+DEFECT 2: spend gate uses a fixed est_tokens=4000 regardless of the actual prompt, but chore_label_farm ships a 9000-char dossier head, so the daily ceiling can be silently overshot | EVIDENCE: mag/gopher_lite.py:116,153 | FIX: estimate tokens as len(prompt)//4 computed inside chat() from the real payload and pass that to gate()
+DEFECT 3: meter_row hardcodes prompt_tokens=0, completion_tokens=tokens, latency_ms=0, poisoning the shared provider_usage schema that downstream meters aggregate | EVIDENCE: mag/gopher_lite.py:98-100 | FIX: split usage into d.get("usage",{}).get("prompt_tokens")/completion_tokens and time the request, passing real values into meter_row
+DEAD-CODE: gate()'s door parameter is never read inside the function | EVIDENCE: mag/gopher_lite.py:77
+ONE-SITTING FIX: harden the response path and loop (Defect 1): guarded choices/message access at :135 plus try/except around run_once() at :222, so one bad z.ai payload or transient KeyError cannot kill the idle-key gopher overnight

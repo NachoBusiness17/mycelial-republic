@@ -1,0 +1,70 @@
+# BREAK PASS - communication lens (hostile second pass, 2026-10-04)
+
+Scope note: the handed findings JSON truncated finding 5 mid-move; the full text was recovered from the lens's own banked file (communication.md). The lens's D2 section (dungeon debt) exists only in communication.md:41-48, so it is verdicted here too. Every cite below was byte-checked this sitting with the exact commands listed. No em-dash. Anything I could not verify is marked OWED.
+
+## Checks run this sitting (exact commands and outputs)
+
+1. `stat -c '%y %n'` over the evidence files. Results: memory/runs/ds_batches/frontier_delta_results_v3.jsonl 2026-10-04 04:38:32 -0400; watch/inbox/go_wave_20261004/ds_workhorse.md 04:46:59; watch/inbox/go_wave_20261004/d4_probe.py 06:00:41; watch/inbox/go_wave_20261004/d4_thinking_probe.md 06:03:54; tools/ds_workhorse.py 06:11:38. NOTE: the handed report cites the results file at watch/inbox/go_wave_20261004/ which DOES NOT EXIST there (stat: No such file or directory); the lens's banked file has the correct path (communication.md:9).
+2. `git log --format='%h %ci' -2 -- tools/ds_workhorse.py` -> aa7d5e8c0 2026-10-04 06:26:03 -0400; d349ce7d2 2026-10-04 05:50:05 -0400. The file IS tracked with history; the lens's blind-spot claim "no git history to cross-check" is false.
+3. `git show d349ce7d2:tools/ds_workhorse.py | grep -n -i thinking` -> hits only at 6, 12, 32, 82, 86; line 86 is the false AH10 comment ("the v4 family disables reasoning unless a thinking"); NO "thinking": {"type": "disabled"} line anywhere. `git show aa7d5e8c0:...` -> erratum comment at 86-92 + `"thinking": {"type": "disabled"},` at 93. `git diff d349ce7d2 aa7d5e8c0 -- tools/ds_workhorse.py` shows the false lines 86-87 as MINUS lines (rewritten, not appended around).
+4. Read watch/inbox/go_wave_20261004/ds_workhorse.md:40-99: item 6 label "uncapped, thinking-off, file-backed" at :62; refire command `python -m tools.ds_workhorse run --in memory/runs/ds_batches/frontier_delta_items.jsonl --prompt-file .../frontier_delta_prompt.md --out .../frontier_delta_results_v3.jsonl` at :63-66; tally 26 published pairs + 2 gaming_corpus = 28, ds wins 2+1=3 at :71-87.
+5. Read watch/inbox/go_wave_20261004/d4_thinking_probe.md (full): 3-arm probe table at :53-65; the hedge "unless that arm rode route_chat mechanical" at :80-81; erratum-location claim "the false lines 86-87 are untouched - append, never rewrite" at :70-72; a06-sacred-cow#3 refuted at :11-13.
+6. `.venv/Scripts/python.exe -c` census of memory/runs/route_chat/usage.jsonl -> **14 rows** (lens said 8; the file grew since its sitting), any('depth' in r) = False on all 14; last-row keys exactly the lens's byte-quoted list ['completion_tokens','content_chars','finish_reason','goal','key_env','lane','model','ok','prompt_tokens','ts'].
+7. `.venv/Scripts/python.exe -c` read of memory/runs/hermes_burn/usage.jsonl: 2152 lines total (lens moment read 2136); index 1150 = {'ts': '2026-10-03T19:25:23.803567Z', 'model': 'z-ai/glm-5.3-prime', 'completion_tokens': 16000, 'reasoning_tokens': 15998, 'finish_reason': 'length', 'cost_usd': 0.2502604, 'ok': True, 'content_chars': 1}; index 1151 = STAGE_B row, glm-5.3-prime, reasoning_tokens 9826 of 14759, $0.2137336. Full key dump of row 1150: ['channel','completion_tokens','content_chars','cost_usd','finish_reason','id','model','ok','prompt_tokens','reasoning_tokens','ts','turn'] - NO request-body or params field.
+8. `grep -n -i -E 'depth|thinking|reasoning|disable_thinking|mechanical|arm-2' queue/STANDING_RAILS.md` -> one hit, :27 (the ds_workhorse routing row; no depth/thinking law). Same grep over state/CURRENT.md -> exit 1, ZERO hits.
+9. Read mag/route_chat.py:115-259: docstring depth law at :125-136, enum check :137-141, disable_thinking wiring :204-213, success bank dict :242-249 (no depth), exception-path bank :155-159 (no depth).
+10. `sed -n '148,172p' configs/providers.yaml`: the nous block (:150-171) carries NO disable_thinking key; its own comment at :157 says "Reasoning models burn thinking out of max_tokens: size calls up or content dies".
+11. `.venv/Scripts/python.exe -c` census of memory/runs/ds_batches/delta_judge_results_v3.jsonl -> 27 rows, keys [attempts, cost_usd, id, model, ok_api, ok_material, out, prompt_tokens]. Per-pair win split (12-2 / 13-1) NOT re-derived (needs the item pairing map); only the 27 count verified.
+12. `grep -n "def play\|def main(" tools/dungeon.py` -> :447 and :727 both `def play(self)`, :734 module-level main; `wc -l tools/dungeon.py` -> 771; `sed -n '616,620p'` -> :618 carries "(dungeon.py:447 at HEAD 37e2fba7e)".
+13. `grep -c "def test_" tests/test_dungeon_parser.py` -> 13; `.venv/Scripts/python.exe -m pytest tests/test_dungeon_parser.py -q` -> **13 passed in 0.89s**; `.venv/Scripts/python.exe -m pytest tests/ -k dungeon -q` -> **16 passed, 4324 deselected, in 15.65s**.
+14. `.venv/Scripts/python.exe tools/violation_ratchet.py check` -> scope=1405, hits=943, registered=942, **NEW=1** (tools/social_rsi.py:578 file-too-long, from the social-RSI landing, not dungeon); GROWTH line byte-exact: "tools/dungeon.py accepted at 756 lines, now 771 (+15)".
+15. `ls tests/test_route_chat*` -> test_route_chat.py, test_route_chat_banks.py, test_route_chat_depth.py, test_route_chat_fence.py all exist (the lens's move names a real file).
+
+## Verdicts
+
+### V1. ds_workhorse.md:62 false wire-state label (handed finding 1) - CONFIRMED, strengthened
+
+Every load-bearing byte verified: label at ds_workhorse.md:62; refire command at :63-66 whose --out path is the 04:38:32 results file; mtimes ordered exactly as claimed; erratum live in the working tree at tools/ds_workhorse.py:86-93. Two cite defects, neither load-bearing: (a) the handed report's results-file path is wrong (real path memory/runs/ds_batches/, correct in communication.md:9); (b) "erratum verified at :85-92" is off by one (comment 86-92, key 93). The lens declared the pre-erratum state un-cross-checkable; I cross-checked it in git: commit d349ce7d2 (05:50:05, the GO WAVE landing that carries the refire receipt) freezes ask() with the false comment and NO thinking key, and aa7d5e8c0 (06:26:03) adds the erratum + disabled key. The probe's own hedge (d4_thinking_probe.md:80-81, "unless that arm rode route_chat mechanical") is discharged by the receipt's command at ds_workhorse.md:63-66. The lens's falsifier (post-erratum refire, ~$0.13) remains unspent: OWED, and now optional since the git bytes carry the weight.
+
+### V2. D3 resolution reached zero operator-facing surfaces (handed finding 2) - CONFIRMED, scoped
+
+My six-pattern grep confirms: queue/STANDING_RAILS.md carries no depth/thinking clause (only the :27 routing row), state/CURRENT.md carries none at all (zero hits, stronger than the lens's claim), and the law lives only in mag/route_chat.py:125-141 + :204-213. The CONVERGENT cite operations.md:36 verified by Read. Scope note per the quantifier law: "zero operator-facing surfaces" was censused over exactly two files; the claim should keep that census named (both lenses did name it).
+
+### V3. The front door's ledger cannot express the decision (handed finding 3) - CONFIRMED, count stale
+
+Substance verified on the CURRENT tree: 14 rows (not 8; growth is sibling banking since the lens's sitting, consistent with d349ce7d2's "first non-smoke production ask banked"), zero depth fields on every row, bank dict at mag/route_chat.py:242-249 omits depth (as does the exception-path bank at :155-159), and the last-row key list matches the lens's byte-quote exactly. The move (bank "depth": depth + assertion in tests/test_route_chat_depth.py, which exists) is valid; no passing test asserting depth-in-bank can exist while the dict omits it, so the move is not redundant.
+
+### V4. D3 verdict: wire-explicit lane-config-gated OFF as the mechanical default (handed findings 4+5) - WEAKENED (evidence intact, posture loses)
+
+Evidence rows byte-exact: the hollow row (hermes_burn usage.jsonl index 1150, all fields match), hermes_burn.py:374-377's substance gate names that exact row ("19:25:23Z prime-judgment"), PRIORS.md:25 row 8 quote verified. But the verdict shape fails on the lens's own central evidence: the founding double burn (rows 1150+1151 = $0.2503 + $0.2137 = $0.464) rode the nous lane, whose providers.yaml block (:150-171) carries NO disable_thinking flag, so under lane-config gating (mag/route_chat.py:204: send disabled only when lane_cfg.get("disable_thinking")) the founding failure mode stays unguarded. operations.md:54-66 records the sibling hostile second pass withdrawing this exact posture 5-3 for carrier-enforced explicit-off (all three carriers send thinking:{type:disabled} on mechanical; providers.yaml flag demoted to design-gate attestation). The lens read operations.md before finalizing (its own blind spot 3) yet cited only :36, never :54-66. Secondary weakeners: (a) "every measured batch rode ON by accident" is banked for the ds batches (git d349ce7d2) and sacred-cow arm 2 (a06#3 + the d4 probe) but is INFERENCE for the glm row, whose banked keys carry no request-body field - only "rode ON" (reasoning_tokens 15998) is banked there; (b) the probe measured deepseek-v4-flash only; glm omission-default was never probed. The two drafted amendment texts survive as moves but the PRIORS POST-DATUM text (communication.md:31-33) hard-codes "wire-explicit via lane config" and needs re-aim if carrier-enforcement lands. Falsifier per operations.md:66: a measured HTTP 400 on thinking:{type:disabled} from a funded flagless-lane model forces capability-scoped off instead.
+
+### V5. D2: keep the debt standing; dead play + citation rot; ask's counts stale (banked in communication.md:41-48, dropped from the handed JSON) - CONFIRMED
+
+All bytes re-verified this sitting: def play at tools/dungeon.py:447 and :727 (last-binding kills :447), main at :734, the :618 fix-comment cites ":447 at HEAD 37e2fba7e" (citation rot), file now 771 lines (the ask's 756 stale by the ratchet's own GROWTH line), parser file 13 passed in 0.89s (13 def test_; the ask's "15 dungeon tests pass in under a second" reproduces under neither instrument; suite-wide 16 passed in 15.65s, matching both sibling lenses). Ratchet drift: the lens's moment read NEW=0; the current tree reads NEW=1 (tools/social_rsi.py:578, the social-RSI landing) - honest snapshot, moved tree. The keep-debt-standing verdict is not contradicted by anything I found; the dead-play deletion + :618 citation fix remain the one-sitting cure.
+
+## What the lens missed (additions)
+
+### A1. The erratum rewrote the false bytes it receipted as untouched (append-never-rewrite violation in the D3 evidence chain)
+
+git diff d349ce7d2..aa7d5e8c0 -- tools/ds_workhorse.py shows the original false comment lines 86-87 as minus lines: they were REPLACED, while d4_thinking_probe.md:70-72 claims "the false lines 86-87 are untouched - append, never rewrite" (and describes the erratum at :88-104, which no longer matches the landed :86-93). Either a second, unreceipted edit consolidated the erratum at 06:11, or the receipt misdescribed its own edit from the start. The measurement is unaffected; the receipt's erratum-location claim is now byte-false vs the tree, and the wrong-source bytes the probe promised to preserve are erased (the a08 row's ":55-56" cite points at different bytes today). This is the same citation-rot class the lens flagged at dungeon.py:618, sitting inside its own D3 chain.
+Falsifier: a commit or receipt between 06:03 and 06:26 showing the consolidation was itself receipted as an amendment (I found none; ds_workhorse.py has exactly 2 commits).
+Move: append a one-line erratum to d4_thinking_probe.md noting the 06:11 consolidation rewrote :86-87, ~5 minutes.
+
+### A2. The lens's D3 verdict was already withdrawn by the sibling majority on a byte it cited around
+
+operations.md:54-66 (the amended verdict, present in the tree when the lens finalized - its blind spot 3 admits reading operations.md first) withdraws lane-config-gated OFF 5-3 and names the discriminating byte: the founding $0.464 double burn rode the FLAGLESS nous lane (configs/providers.yaml:150-171, no disable_thinking; mechanism comment at :157), so lane-config gating re-creates the founding failure. The corrected posture is carrier-enforced explicit-off for mechanical, disable_thinking demoted to design attestation, with mag/inference_budget.py's deepseek row as the second carrier needing the same d4 erratum.
+Falsifier: a measured 400 on thinking:{type:disabled} from a funded flagless-lane model (operations.md:66 arm 1), or the mechanical-budget A/B where thinking-ON wins material_chars/dollar with zero hollow rows.
+Move: synthesis adopts carrier-enforced explicit-off; re-aim the POST-DATUM text at communication.md:31-33 off "via lane config", ~10 minutes.
+
+### A3. "By accident" is unbanked for the founding row; the verdict should rest on "rode ON" alone
+
+Row 1150's full key dump carries no request-body field, so omission-vs-explicit for the $0.25 glm row is inference; only the ON state (reasoning_tokens 15998) is banked. The d4 probe generalized omission=ON from deepseek-v4-flash only. Carrier-enforced explicit-off (A2) makes the distinction moot on the wire, but the synthesis text should claim "rode ON (banked)" not "rode ON by omission (inferred)" for that row.
+Falsifier: banked request bytes for the 19:25:23Z ask showing the thinking key's presence or absence (none exists in the row; hermes_burn.py:378-385 banks no body).
+Move: phrasing fix in the synthesis, ~2 minutes.
+
+## OWED (inherited + this pass)
+
+- The ~$0.13 post-erratum ds refire (lens OWED, unchanged; now optional given the git-bytes cross-check).
+- The d4 probe was not re-fired this sitting either; omission=ON remains the wave's banked measurement, not mine.
+- The 12-2 / 13-1 per-pair judge split not re-derived from the 27 delta_judge_results_v3.jsonl rows (pairing map not read).
+- The 3/28 tally's "26 published pairs" denominator inherited from the receipt (ds_workhorse.md:71-87 read; internally consistent; 27 judge rows byte-counted).

@@ -1,0 +1,44 @@
+# T1W2_S7_mates (anthropic/claude-opus-5.5, turn 1, channel: content)
+
+**STRANGER AUDIT: run_mate.ps1 heartbeat**
+
+**Evidence status:** The EVIDENCE block is empty. No bytes of run_mate.ps1 were supplied, so every claim about its code is **UNVERIFIED**. This includes "8/8 mates", "staggered 4+4", "auth whitelist held", and log paths. The ~20GB RAM figure is also **UNVERIFIED**: the instrument, the moment, and whether it means working set or commit are all unknown.
+
+**(1) Dead mate, seen from outside**
+- **Positive signs of death:**
+  - The process count drops below 8.
+  - The process is alive but its log stops advancing, for example hung on the network or stuck in a 401/429 retry sleep.
+- **Negative example:** "The process exists" does not mean "the mate is alive." A hung PID looks healthy to `Get-Process`.
+- **Time to notice today:** unbounded. With no heartbeat, a death surfaces only when a human looks.
+- **Time to notice with the design below:** at most 360s (300s staleness threshold plus a 60s poll).
+
+**(2) Diverging mate**
+- **Stuck loop:** the log keeps growing, but the last 40 lines contain 3 or fewer unique lines. RAM may climb.
+  - Negative example: a busy mate with varied output.
+- **Key leak:** a token-shaped string appears in the log.
+  - Positive: `Bearer abcdefghijklmnop1234`
+  - Negative: `api_key=***` does not match, because `*` is outside the character class.
+
+**(3) Heartbeat (outside-only, no mate edits, 10 lines)**
+```powershell
+param($LogDir='.\logs',$Proc='node',$StaleSec=300,$Out='.\heartbeat.jsonl',$Expect=8)
+while($true){ $alive=@(Get-Process -Name $Proc -EA 0).Count
+ foreach($f in Get-ChildItem $LogDir -Filter 'mate-*.log'){
+  $age=[int]((Get-Date)-$f.LastWriteTime).TotalSeconds
+  $tail=@(Get-Content $f.FullName -Tail 40)
+  $loop=($tail.Count -ge 40) -and (@($tail|Sort-Object -Unique).Count -le 3)
+  $leak=[bool]@($tail -match '(sk-|Bearer\s|api[_-]?key\W{1,3})[A-Za-z0-9._-]{16,}').Count
+  $st=if($leak){'LEAK'}elseif($age -gt $StaleSec){'DEAD?'}elseif($loop){'LOOP'}else{'OK'}
+  [pscustomobject]@{t=(Get-Date -f o);mate=$f.Name;age=$age;alive=$alive;expect=$Expect;st=$st;ws_gb=[math]::Round((Get-Process -Name $Proc -EA 0|Measure-Object WorkingSet64 -Sum).Sum/1GB,1)}|ConvertTo-Json -Compress|Add-Content $Out }
+ Start-Sleep 60 }
+```
+- The process name `node` and the `mate-*.log` pattern are placeholders. Both are UNVERIFIED and must be set from run_mate.ps1.
+- The heartbeat records only `LEAK` and never copies the matched secret.
+- `ws_gb` gives the RAM figure a named instrument (summed WorkingSet64) and a moment (the timestamp `t`).
+
+**Falsifier for this deliverable.** The heartbeat fails if any of these tests fails:
+1. Kill one mate. `DEAD?` must appear for that mate within 360s, and `alive` must read 7.
+2. Append `Bearer abcdefghijklmnop1234` to a test log. `LEAK` must appear on the next poll.
+3. Append 40 identical lines. `LOOP` must appear.
+
+**Known false positive:** a mate legitimately idle for more than 300s during the 4+4 stagger will flag `DEAD?`. If that happens, raise `$StaleSec` above the stagger gap.

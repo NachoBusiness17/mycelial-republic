@@ -1,0 +1,7 @@
+# coldhot-cold-deepseek-mag__policy_engine (deepseek-chat @ deepseek, turn 1, channel: content)
+
+DEFECT 1: `_add` is declared with `yield rec` yet callers do `yield from _add(...)`, making the nested generator unreachable and silently dropping all active records from the TTL sweep | EVIDENCE: mag/policy_engine.py:393-400 | FIX: change `_add` to a plain function that returns rec (or appends to active) instead of yielding, and call it directly.
+DEFECT 2: `_collect_active_records` builds `active = set()` and `_add` yields only when status is active, but the trail/inbox loops `yield from _add(...)` before the record is ever yielded back, so `expire()` gets an empty candidate list and never revokes anything | EVIDENCE: mag/policy_engine.py:402-420 | FIX: yield `rec` inside `_add` and remove the redundant `active.add`/outer yield discrepancy by returning the record once.
+DEFECT 3: `_verdict` recomputes `budget_remaining` from `max_calls` ignoring `budget["used"]`, so a partially spent budget reports the full ceiling as remaining in the receipt trail | EVIDENCE: mag/policy_engine.py:322-326 | FIX: subtract `budget.get("used", {}).get(effect, 0)` from max_calls when computing `budget_remaining`.
+DEAD-CODE: `check_ttl_valid` is a one-line passthrough to `check_ttl` with no callers in this file | EVIDENCE: mag/policy_engine.py:346-347
+ONE-SITTING FIX: repair `_add` so its generator actually yields active records to `_collect_active_records`, restoring the TTL sweep | EVIDENCE: mag/policy_engine.py:393-420

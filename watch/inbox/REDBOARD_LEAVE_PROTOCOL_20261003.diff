@@ -1,0 +1,20 @@
+diff --git a/scripts/run_mate.ps1 b/scripts/run_mate.ps1
+index 2e3b174..6e8f124 100644
+--- a/scripts/run_mate.ps1
++++ b/scripts/run_mate.ps1
+@@ -108,8 +108,14 @@ $Prompt = "Read your mission pack at $RelMission and execute it in full. " +
+     "(threads followed in order, dead ends named, why each turn). " +
+     "No em-dashes. Real counts only. No fabricated anything."
+ 
++# REDBOARD 2026-10-03w (staged, not applied): 8 same-second opencode starts lock its
++# session sqlite ("database is locked", 7 of 8 mates on 10-02 and 10-03); stagger
++# by the claimed pack index. Pin the model: the unpinned default resolved to
++# glm-5v-turbo, which the coding plan does not include (every surviving mate died on it).
++$Idx = 0; if ($Mission.BaseName -match "^mission_\d{8}_(\d+)_") { $Idx = [int]$Matches[1] - 1 }
++Start-Sleep -Seconds ($Idx * 20)
+ Write-MateLog "START mate=$MateId mission=$RelMission opencode=$OpenCode pid=$PID"
+-& $OpenCode run $Prompt 2>&1 | ForEach-Object {
++& $OpenCode run --model zai/glm-4.7 $Prompt 2>&1 | ForEach-Object {
+     $line = "$_".TrimEnd()
+     Add-Content -Path $RunLog -Value $line -Encoding utf8
+     Write-Host $line

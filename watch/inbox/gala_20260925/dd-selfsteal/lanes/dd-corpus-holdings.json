@@ -1,0 +1,26 @@
+{
+  "lane": "dd-corpus-holdings",
+  "division": "B",
+  "ok": true,
+  "note": "Inventoried the estate's D&D/dungeon corpus (9 module JSONs + 4 campaign modules + DICE-LAW v1 spec + 37-item design-theory library + evennia docs 710 files/evadventure 7,164 LOC + 5,099-LOC game_campaign engine), answered the dungeon/encounter/balance question, and byte-verified the gap list: no SRD content database exists on disk, which is the single biggest hole vs a full D&D module builder.",
+  "rows": [],
+  "checks": [
+    {
+      "command": ".venv/Scripts/python.exe watch/inbox/gala_20260925/dd-selfsteal/lanes/dd-corpus-holdings.check.py",
+      "exit": 0,
+      "evidence": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/dd-selfsteal/lanes/dd-corpus-holdings.check.txt"
+    },
+    {
+      "command": "python -c em-dash scan on watch/inbox/dd_dogfood/corpus-holdings.md (U+2014/U+2013/escape counts)",
+      "exit": 0,
+      "evidence": "inline output: 'em-dash U+2014 count: 0 / en-dash U+2013 count: 0 / em-dash escape sequence count: 0' (also re-verified inside check.py as 'receipt exists, em-dash clean')"
+    },
+    {
+      "command": ".venv/Scripts/python.exe watch/inbox/gala_20260925/dd-selfsteal/lanes/dd-corpus-holdings.check.py (first run, pre-fix)",
+      "exit": 1,
+      "evidence": "first run caught two receipt errors: rooms=14 not 13 (hand-count miss), and the two DND_module.md copies are different drafts (23,027 B vs 17,855 B), not identical; both receipt claims were corrected and the rerun passed. Raw first-run output was overwritten by the passing rerun in dd-corpus-holdings.check.txt; the two failures are quoted in the receipt history of this lane conversation and the fixes are visible in the check script."
+    }
+  ],
+  "decision_changed": "Closes the DD corpus-holdings inventory question for the dd_dogfood arc and sets the module-builder gap order: SRD lookup cache first (tabletop-dnd.md's '(later)' item, byte-confirmed absent by the zero-hit find), then encounter-budget math (no CR/XP thresholds anywhere), then a progression schema (4 hardcoded archetypes at mag/game_campaign.py:29-32, no XP/levels).",
+  "artifact": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/dd-selfsteal/lanes/dd-corpus-holdings.json"
+}

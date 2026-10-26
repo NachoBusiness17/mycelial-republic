@@ -1,0 +1,18 @@
+{
+  "gopher": "t1b",
+  "item": "fix init.server 2-value return TypeError (a01 out-of-noise list: 'init 2-value')",
+  "ok": true,
+  "note": "init.server.luau(150,3) TypeError 'Function only returns 1 value, but 2 are required here'. Cause: waveTicks is typed { (number) -> () } (line 64), so pcall(tick, dt) instantiated to (boolean) only, but 'local ok, err' needs 2 values; pcall forwards the callee's return tail, so a void callee leaves no err channel. Minimal fix per Luau rules: wrap the call in an anonymous function with a ...any return tail (house style: ShadowLedger/HeadMuseum/NpcGateway all wrap pcalls). No behavior change on the success path; err still carries the failure message at runtime. mountain_check NOT run (held by t1a this wave).",
+  "checks": [
+    "tools/bin has luau binaries (luau, luaulsp, rojo); ls tools/ itself shows only python (gen_df_luau_data.py, luau_lint.py)",
+    "module-local luau-lsp analyze with tools/bin/globalTypes.d.luau + existing roblox/sourcemap.json (fresh from a01 run, instance tree unchanged)",
+    "BEFORE run: reproduced the target (150,3) TypeError, raw output in t1b.check.txt",
+    "AFTER run (fresh, isolated capture): 0 'Function only returns 1 value', 0 non-noise TypeErrors; remaining diagnostics are documented accepted-noise classes only (Unknown require, number | unknown; GetAttribute reads shifted 174-176 to 179-181 by the +5 line diff)",
+    "mountain_check itself NOT run per lane instruction (t1a holds it; concurrent builds collide)",
+    "rbxlx NOT rebuilt (place build is mountain_check's stage, held by t1a)",
+    "em-dash scan of t1b.check.txt: 0; changed source lines: 0 em-dashes (one pre-existing em-dash in the file header comment line 2, untouched)"
+  ],
+  "evidence": "watch/inbox/gala_20260925/afterparty/lanes/t1b.check.txt",
+  "changed": "roblox/src/server/init.server.luau lines 149-154 (was line 150 only)",
+  "next_steal": "remaining out-of-noise TypeErrors from WAVE_STATE_GALA.md line 74: GalleryZone x7, TheAnswerBoss char, HeadMuseum Soul.Soul; same before/after module-local luau-lsp loop applies without touching mountain_check"
+}

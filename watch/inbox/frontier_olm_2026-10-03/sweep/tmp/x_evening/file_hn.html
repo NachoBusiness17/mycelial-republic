@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8"/>
+<meta name="description" content="All fi-le.net articles that made it to the Hacker News front page, sorted by time spent there.">
+<meta name="author" content="fi-le">
+<title>fi-le.net on Hacker News - fi-le.net</title>
+<link rel="stylesheet" href="https://fi-le.net/css/tufte.css"/>
+<link rel="icon" type="image/png" href="https://fi-le.net/images/favicon.png">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="keywords" content="fi-le, Fiefdom of Files">
+<link rel="alternate" type="application/rss+xml" title="The Fiefdom of Files" href="/feed.xml" />
+
+<!-- Open Graph / Facebook -->
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://fi-le.net/hn/">
+<meta property="og:title" content="fi-le.net on Hacker News - fi-le.net">
+<meta property="og:description" content="All fi-le.net articles that made it to the Hacker News front page, sorted by time spent there.">
+<meta property="og:image" content="https://fi-le.net/images/preview.png">
+<meta property="og:site_name" content="The Fiefdom of Files">
+
+<!-- Twitter / X -->
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="fi-le.net on Hacker News - fi-le.net">
+<meta name="twitter:description" content="All fi-le.net articles that made it to the Hacker News front page, sorted by time spent there.">
+<meta name="twitter:image" content="https://fi-le.net/images/preview.png">
+
+    <style>
+    table thead th {
+      text-align: left;
+    }
+    table thead th.sortable {
+      cursor: pointer;
+      user-select: none;
+    }
+    table thead th.sortable:hover {
+      background-color: #f5f5f5;
+    }
+    table thead th.sorted::after {
+      content: " ▼";
+      opacity: 1;
+    }
+    p {
+       text-align: justify;
+    }
+    @media (min-width: 761px) {
+        section > p,
+        section > h1 {
+            width: 60%;
+        }
+        section > table {
+            width: 90%;
+            max-width: 90%;
+        }
+    }
+    body {
+        overflow-x: hidden;
+        max-width: 100vw;
+    }
+    section {
+        max-width: 100%;
+        box-sizing: border-box;
+    }
+    @media (max-width: 760px) {
+        section > p,
+        section > h1 {
+            width: 100%;
+        }
+        section > table {
+            width: 95%;
+        }
+    }
+  </style>
+
+<script>
+function sortTable(columnIndex) {
+    const table = document.getElementById('hnTable');
+    const tbody = table.querySelector('tbody');
+    const rows = Array.from(tbody.querySelectorAll('tr'));
+    const headers = table.querySelectorAll('thead th');
+    const currentHeader = headers[columnIndex];
+    
+    // Remove all sort indicators
+    headers.forEach(h => {
+        h.classList.remove('sorted');
+    });
+    
+    // Add sort indicator to current column
+    currentHeader.classList.add('sorted');
+    
+    // Sort rows (always descending)
+    rows.sort((a, b) => {
+        let aVal = a.children[columnIndex].textContent.trim();
+        let bVal = b.children[columnIndex].textContent.trim();
+        
+        // Convert time format (HH:MM) to minutes for comparison
+        if (columnIndex === 2 || columnIndex === 3) {
+            const timeToMinutes = (timeStr) => {
+                const match = timeStr.match(/(\d+):(\d+)/);
+                if (!match) return 0;
+                return parseInt(match[1]) * 60 + parseInt(match[2]);
+            };
+            aVal = timeToMinutes(aVal);
+            bVal = timeToMinutes(bVal);
+        } else if (columnIndex === 1) {
+            // Points column - extract number
+            aVal = parseInt(aVal);
+            bVal = parseInt(bVal);
+        } else if (columnIndex === 4) {
+            // Comments column - extract number from "X comments" or "X comment"
+            aVal = parseInt(aVal);
+            bVal = parseInt(bVal);
+        }
+        
+        // Always sort descending
+        if (aVal < bVal) return 1;
+        if (aVal > bVal) return -1;
+        return 0;
+    });
+    
+    // Reorder table
+    rows.forEach(row => tbody.appendChild(row));
+}
+
+// Calculate and display summary statistics
+function updateSummary() {
+    const table = document.getElementById('hnTable');
+    const tbody = table.querySelector('tbody');
+    const rows = Array.from(tbody.querySelectorAll('tr'));
+    
+    let totalPoints = 0;
+    let totalMinutes = 0;
+    
+    rows.forEach(row => {
+        // Points (column 1)
+        const points = parseInt(row.children[1].textContent.trim());
+        totalPoints += points;
+        
+        // Time on frontpage (column 2) - convert HH:MM to minutes
+        const timeStr = row.children[2].textContent.trim();
+        const match = timeStr.match(/(\d+):(\d+)/);
+        if (match) {
+            const hours = parseInt(match[1]);
+            const mins = parseInt(match[2]);
+            totalMinutes += hours * 60 + mins;
+        }
+    });
+    
+    const totalHours = (totalMinutes / 60).toFixed(0);
+    
+    /// document.getElementById('totalPoints').textContent = `${totalPoints.toLocaleString()} upvotes`;
+    document.getElementById('totalTime').textContent = `${totalHours} hours`;
+}
+
+// Set initial sort on page load
+window.addEventListener('DOMContentLoaded', () => {
+    updateSummary();
+    sortTable(2); // Sort by time on frontpage (column index 2)
+});
+</script>
+  </head>
+
+  <body>
+    <div class="header"><h4 style='margin-bottom:0px; font-family:monospace;'><a href='https://fi-le.net'><span style='color:#b03;padding-right:2px;'>f</span>i-le.net</a></h4></div>
+    <section>
+
+      <p id="summary">In total, the fiefdom occupied the HN front page for <span id="totalTime">0 hours</span>. Extrapolating from the unique IP address accesses resulting from <a href="https://fi-le.net/margin/">Operating Margins</a>, one point (the HN term for upvote) corresponds to 170 views, and one front page hour corresponds to 3,892 views. Based on front page hours, HN caused 410,000 unique page views.</p>
+
+      <table id="hnTable">
+    <thead>
+        <tr>
+            <th>Article</th>
+            <th class="sortable" onclick="sortTable(1)">Points</th>
+            <th class="sortable" onclick="sortTable(2)">Time on Front Page</th>
+            <th class="sortable" onclick="sortTable(3)">Time at #1</th>
+            <th class="sortable" onclick="sortTable(4)">Number of Comments</th>
+        </tr>
+    </thead>
+
+    <tbody>
+    <tr>
+        <td><a href="https://fi-le.net/margin/">Operating Margins</a></td>
+        <td>281</td>
+        <td><a href="https://hnrankings.info/45866366/" target="_blank">12:20</a></td>
+        <td>2:35</td>
+        <td><a href="https://news.ycombinator.com/item?id=45866366" target="_blank">115</a></td>
+    </tr>
+    <tr>
+        <td><a href="https://fi-le.net/oss/">What GPT-oss Leaks</a></td>
+        <td>348</td>
+        <td><a href="https://hnrankings.info/45483924/" target="_blank">20:40</a></td>
+        <td>0:00</td>
+        <td><a href="https://news.ycombinator.com/item?id=45483924" target="_blank">82</a></td>
+    </tr>
+    <tr>
+        <td><a href="https://fi-le.net/baba/">Baba is Eval</a></td>
+        <td>254</td>
+        <td><a href="https://hnrankings.info/44455124/" target="_blank">12:50</a></td>
+        <td>0:35</td>
+        <td><a href="https://news.ycombinator.com/item?id=44455124" target="_blank">55</a></td>
+    </tr>
+    <tr>
+        <td><a href="https://fi-le.net/squiggly/">That Squiggly, Treacherous Line</a></td>
+        <td>8</td>
+        <td><a href="https://hnrankings.info/44776058/" target="_blank">0:20</a></td>
+        <td>0:00</td>
+        <td><a href="https://news.ycombinator.com/item?id=44776058" target="_blank">1</a></td>
+    </tr>
+    <tr>
+        <td><a href="https://fi-le.net/pueckler/">Lessons from That 1834 Landscape Gardening Guidebook</a></td>
+        <td>136</td>
+        <td><a href="https://hnrankings.info/44212911/" target="_blank">11:15</a></td>
+        <td>0:00</td>
+        <td><a href="https://news.ycombinator.com/item?id=44212911" target="_blank">26</a></td>
+    </tr>
+    <tr>
+        <td><a href="https://fi-le.net/recommendationless/">Towards the Blank Search Bar</a></td>
+        <td>22</td>
+        <td><a href="https://hnrankings.info/43909353/" target="_blank">0:40</a></td>
+        <td>0:00</td>
+        <td><a href="https://news.ycombinator.com/item?id=43909353" target="_blank">1</a></td>
+    </tr>
+    <tr>
+        <td><a href="https://fi-le.net/pypi/">A Map of Python</a></td>
+        <td>175</td>
+        <td><a href="https://hnrankings.info/43828077/" target="_blank">18:10</a></td>
+        <td>0:00</td>
+        <td><a href="https://news.ycombinator.com/item?id=43828077" target="_blank">26</a></td>
+    </tr>
+    <tr>
+        <td><a href="https://fi-le.net/byzantine/">Why does Claude Speak Byzantine Music Notation?</a></td>
+        <td>139</td>
+        <td><a href="https://hnrankings.info/43545757/" target="_blank">17:55</a></td>
+        <td>0:00</td>
+        <td><a href="https://news.ycombinator.com/item?id=43545757" target="_blank">82</a></td>
+    </tr>
+    <tr>
+        <td><a href="https://fi-le.net/stonks/">The Whimsical Investor</a></td>
+        <td>97</td>
+        <td><a href="https://hnrankings.info/43678988/" target="_blank">10:20</a></td>
+        <td>0:00</td>
+        <td><a href="https://news.ycombinator.com/item?id=43678988" target="_blank">14</a></td>
+    </tr>
+    </tbody>
+</table>
+
+
+    </section>
+
+    <div class="footer"><hr> <iframe name='dummy' id='dummy' style='display: none;'></iframe>
+      <form action='footer.php' method='POST' target='dummy' onsubmit="document.getElementById('email').style.display = 'none'; document.getElementById('emailButton').value = 'Submitted, thanks!'">
+      &copy; 2021 - 2026 <a href='https://fi-le.net/'><span style='color:#b03;'>f</span>i-le.net</a> | <a href='https://fi-le.net/feed.xml'>RSS</a> |
+      Newsletter Signup: <input  style='font-family:monospace;' type='email' name='address' placeholder='Your E-Mail' id='email' required />
+      <input type='submit' value='Submit' name='submit' id='emailButton' style='font-family:monospace;'/>
+      </form></div>
+  </body>
+</html>
+

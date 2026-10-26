@@ -1,0 +1,69 @@
+t69 evidence - tools/workflow_gate.py G6 dated-stamp soft-warn (wired from t62 next_steal)
+date: 2026-09-25; estate: local_sovereign_agent; all runs use .venv python
+
+=== section A: pytest tests/test_workflow_gate.py (new file; none existed before t69) ===
+....                                                                     [100%]
+4 passed in 0.58s
+pytest_exit=0
+
+=== section B: live gate contrast, fixtures in mktemp dir outside watch/inbox ===
+--- B1 dated fixture (watch/inbox mention + source-fetched: 2026-09-25) ---
+workflow_gate PASS digest=8f6711b2a552 script=C:/Users/foste/AppData/Local/Temp/tmp.aP58jzeq0X/dated.dwf.ts
+  ok    G1-multiplicity: Mickey17 gopher fan-out: per-item named actors (agent("x-" + item) inside a fan-out)
+  ok    G2-passoff: interagent communication: an earlier actor's output (text/json/path) feeds a later ask
+  ok    G3-steering: steering: reviewer/reader feedback carried back into a revision ask
+  ok    G4-salvage: incremental report() inside the fan-out (work survives a dead run)
+  ok    G5-deliverable: published deliverable (artifact.markdown/file) plus report-shape return (conclusion:)
+  ok    G6-receipts: durable receipt landing in watch/inbox with a dated stamp
+  ok    G7-laws: no-fabrication and em-dash law carried inside the asks
+dated_exit=0
+--- B2 undated fixture (watch/inbox mention + prose 'fetched: all present', the t51 false-positive shape) ---
+workflow_gate PASS digest=84367510ad78 script=C:/Users/foste/AppData/Local/Temp/tmp.aP58jzeq0X/undated.dwf.ts
+  ok    G1-multiplicity: Mickey17 gopher fan-out: per-item named actors (agent("x-" + item) inside a fan-out)
+  ok    G2-passoff: interagent communication: an earlier actor's output (text/json/path) feeds a later ask
+  ok    G3-steering: steering: reviewer/reader feedback carried back into a revision ask
+  ok    G4-salvage: incremental report() inside the fan-out (work survives a dead run)
+  ok    G5-deliverable: published deliverable (artifact.markdown/file) plus report-shape return (conclusion:)
+  WARN  G6-receipts: durable receipt landing in watch/inbox with a dated stamp [receipt mention lacks a dated stamp (label + YYYY-MM-DD, t62 prefilter family); soft-warn, not a hard block]
+  ok    G7-laws: no-fabrication and em-dash law carried inside the asks
+undated_exit=0
+--- B3 missing-receipt fixture (no watch/inbox mention) ---
+workflow_gate FAIL digest=906caf7fc500 script=C:/Users/foste/AppData/Local/Temp/tmp.aP58jzeq0X/noreceipt.dwf.ts
+  ok    G1-multiplicity: Mickey17 gopher fan-out: per-item named actors (agent("x-" + item) inside a fan-out)
+  ok    G2-passoff: interagent communication: an earlier actor's output (text/json/path) feeds a later ask
+  ok    G3-steering: steering: reviewer/reader feedback carried back into a revision ask
+  ok    G4-salvage: incremental report() inside the fan-out (work survives a dead run)
+  ok    G5-deliverable: published deliverable (artifact.markdown/file) plus report-shape return (conclusion:)
+  FAIL  G6-receipts: durable receipt landing in watch/inbox with a dated stamp
+  ok    G7-laws: no-fabrication and em-dash law carried inside the asks
+GATE: fix the FAIL items by editing the script file in place (amend-not-rewrite), then re-check.
+noreceipt_exit=2
+--- B4 registry rows from fixture runs landed in mktemp cwd, not the real registry: ---
+{"ts": "2026-09-26T05:20:26Z", "name": "t69-dated-fixture", "digest": "8f6711b2a552", "script": "C:/Users/foste/AppData/Local/Temp/tmp.aP58jzeq0X/dated.dwf.ts", "verdict": "PASS", "checks": [{"id": "G1-multiplicity", "ok": true, "desc": "Mickey17 gopher fan-out: per-item named actors (agent(\"x-\" + item) inside a fan-out)"}, {"id": "G2-passoff", "ok": true, "desc": "interagent communication: an earlier actor's output (text/json/path) feeds a later ask"}, {"id": "G3-steering", "ok": true, "desc": "steering: reviewer/reader feedback carried back into a revision ask"}, {"id": "G4-salvage", "ok": true, "desc": "incremental report() inside the fan-out (work survives a dead run)"}, {"id": "G5-deliverable", "ok": true, "desc": "published deliverable (artifact.markdown/file) plus report-shape return (conclusion:)"}, {"id": "G6-receipts", "ok": true, "desc": "durable receipt landing in watch/inbox with a dated stamp"}, {"id": "G7-laws", "ok": true, "desc": "no-fabrication and em-dash law carried inside the asks"}]}
+{"ts": "2026-09-26T05:20:26Z", "name": "t69-undated-fixture", "digest": "84367510ad78", "script": "C:/Users/foste/AppData/Local/Temp/tmp.aP58jzeq0X/undated.dwf.ts", "verdict": "PASS", "checks": [{"id": "G1-multiplicity", "ok": true, "desc": "Mickey17 gopher fan-out: per-item named actors (agent(\"x-\" + item) inside a fan-out)"}, {"id": "G2-passoff", "ok": true, "desc": "interagent communication: an earlier actor's output (text/json/path) feeds a later ask"}, {"id": "G3-steering", "ok": true, "desc": "steering: reviewer/reader feedback carried back into a revision ask"}, {"id": "G4-salvage", "ok": true, "desc": "incremental report() inside the fan-out (work survives a dead run)"}, {"id": "G5-deliverable", "ok": true, "desc": "published deliverable (artifact.markdown/file) plus report-shape return (conclusion:)"}, {"id": "G6-receipts", "ok": false, "desc": "durable receipt landing in watch/inbox with a dated stamp", "soft": true, "reason": "receipt mention lacks a dated stamp (label + YYYY-MM-DD, t62 prefilter family); soft-warn, not a hard block"}, {"id": "G7-laws", "ok": true, "desc": "no-fabrication and em-dash law carried inside the asks"}]}
+{"ts": "2026-09-26T05:20:26Z", "name": "t69-noreceipt-fixture", "digest": "906caf7fc500", "script": "C:/Users/foste/AppData/Local/Temp/tmp.aP58jzeq0X/noreceipt.dwf.ts", "verdict": "FAIL", "checks": [{"id": "G1-multiplicity", "ok": true, "desc": "Mickey17 gopher fan-out: per-item named actors (agent(\"x-\" + item) inside a fan-out)"}, {"id": "G2-passoff", "ok": true, "desc": "interagent communication: an earlier actor's output (text/json/path) feeds a later ask"}, {"id": "G3-steering", "ok": true, "desc": "steering: reviewer/reader feedback carried back into a revision ask"}, {"id": "G4-salvage", "ok": true, "desc": "incremental report() inside the fan-out (work survives a dead run)"}, {"id": "G5-deliverable", "ok": true, "desc": "published deliverable (artifact.markdown/file) plus report-shape return (conclusion:)"}, {"id": "G6-receipts", "ok": false, "desc": "durable receipt landing in watch/inbox with a dated stamp"}, {"id": "G7-laws", "ok": true, "desc": "no-fabrication and em-dash law carried inside the asks"}]}
+fixture_registry_exit=0
+
+=== section C: violation ratchet over changed files ===
+RATCHET check: scope=16 changed files; hits=13; registered=13; NEW=0; expired-exceptions=0
+RATCHET: PASS — no unregistered debt.
+ratchet_exit=0
+
+=== section D: negative - manual debug row landed in the REAL registry ===
+the B-section manual verification earlier ran the gate with cwd=repo root, so its
+ledger row (name t69dbg, digest cfcc50823fe1, verdict FAIL) appended to the real
+memory/workflows/REGISTRY.jsonl before the fixture fix; filed here, not hidden:
+1
+{"ts": "2026-09-26T05:18:51Z", "name": "t69dbg", "digest": "cfcc50823fe1", "script": "C:/Users/foste/AppData/Local/Temp/t69dbg/sample.dwf.ts", "verdict": "FAIL", "checks": [{"id": "G1-multiplicity", "ok": true, "desc": "Mickey17 gopher fan-out: per-item named actors (agent(\"x-\" + item) inside a fa
+
+=== section E: pytest full gate-relevant neighborhood (no other test imports workflow_gate) ===
+tests/\test_workflow_gate.py
+
+=== section F: em-dash/en-dash scan (U+2014, U+2013), json validity ===
+t69.json parses as valid JSON
+tools/workflow_gate.py: em=0 en=0
+tests/test_workflow_gate.py: em=0 en=0
+watch/inbox/gala_20260925/afterparty/lanes/t69.check.txt: em=1 en=0
+  em-dash line 49 (tool output): RATCHET: PASS - no unregistered debt.  [original carries U+2014; rendered here to keep this authored file clean]
+watch/inbox/gala_20260925/afterparty/lanes/t69.json: em=0 en=0
+verdict: 0 authored em/en dashes in filed text; the 1 in check.txt is the ratchet tool's own PASS line, saved raw

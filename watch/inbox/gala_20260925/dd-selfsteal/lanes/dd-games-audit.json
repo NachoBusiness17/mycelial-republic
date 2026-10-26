@@ -1,0 +1,78 @@
+{
+  "lane": "dd-games-audit",
+  "division": "B",
+  "ok": true,
+  "note": "Read all 4 DD JSONs and 3 dungeon HTMLs in full plus the Ruins Go engine/pack/oracle_dice; BFS-solved every DD level with the engine's own step() (wins 2/7/5/8 moves, zero signature-mechanic tiles on any win path), proved the D&D trait layer inert and crash-prone (st.sb never set; vision branch throws ReferenceError on def), proved oracle_dice.js unused with a false header, and measured worldline page drift (319 stones claimed vs 336 on board). Receipt at watch/inbox/dd_dogfood/games-audit.md (12,756 bytes); raw check output at watch/inbox/gala_20260925/dd-selfsteal/lanes/dd-games-audit.check.txt (exit 0).",
+  "rows": [
+    {
+      "law": "solvability-is-not-design",
+      "claim": "All four DD encounter levels are winnable while touching zero signature-mechanic tiles (k/p/b/s/x), so the commit's gate ALL PASS bar validates solvability, not encounter design; 2 of the 4 are loaded by nothing.",
+      "quote": "L10 the exit admits the body that reaches it. Gems are optional sealed bits.",
+      "source": "dashboard/static/games/ruins_go_engine.js",
+      "steal": "Add a one-sitting design gate to the pack build lane that BFS-verifies at least one signature tile sits on every winning path before a level joins ruins_go_pack.json, and fold-or-delete dd_dragon-hoard.json plus dd_riddle-door.json (fixing its wrong filename).",
+      "falsifier": "A future DD level whose shortest winning path necessarily crosses a crank/plate/bridge/spear/collapse tile falsifies the decorative-mechanics finding for the arc going forward.",
+      "leverage": "high"
+    },
+    {
+      "law": "teaching-is-the-game",
+      "claim": "The incident dungeon's exit gate is a produced restatement of the four real defect classes, so demonstrated learning is the win condition, not reaching a door.",
+      "quote": "A player who finishes this dungeon can restate the four defect classes. That is the incident-dungeon thesis:",
+      "source": "dashboard/static/incident_dungeon.html",
+      "steal": "Steal the restatement gate into the estate's next walkable artifact: any dungeon-style surface ends by requiring the walker to restate its law in their own words before the exit opens.",
+      "falsifier": "If a walker can reach the exit panel without producing a restatement (the gate being only panel flow, never validated), the teaching=the-game claim fails in practice.",
+      "leverage": "high"
+    },
+    {
+      "law": "the-board-wins",
+      "claim": "The worldline dungeon renders its telling from board artifacts and subordinates the tale to the board; measured today the static render is stale (page says 319 stones and door OPEN, board reads 336 tesuji rows; page says 85 tape rows, board reads 102), so the owed teller re-run since 09-07 is now overdue.",
+      "quote": "the door reads the board, not the tale",
+      "source": "dashboard/static/worldline_dungeon.html",
+      "steal": "Run python -m mag.worldline_dungeon once this week to re-render the page against today's board and fold what row 320 actually was into the story.",
+      "falsifier": "If a fresh re-render still prints 319 stones while watch/TESUJI_MAP.jsonl holds 336 rows, the generator's live-read claim is broken code, not just a stale file.",
+      "leverage": "medium"
+    },
+    {
+      "law": "committed-dice-law",
+      "claim": "The estate's paper D&D module already specifies deterministic committed rolls (sha256 of chain_tip:scene:turn:actor) with the DM barred from overriding, which is exactly the contract the digital arc is missing: oracle_dice.js sits built and unused, stat blocks render as flavor, st.sb is never set, and the vision trait crashes on out-of-scope def when wired.",
+      "quote": "Rolls are committed BEFORE the actor speaks. The DM may not override a roll, may only narrate its consequence.",
+      "source": "watch/inbox/replay_deepseek_thinking/DND_module.md",
+      "steal": "One sitting: bind st.sb from rollStatBlock in loadLevel, fix the def scoping at ruins_go_engine.js:348, and route contact outcomes through OracleDice with hp consumption to give the engine its first real combat loop.",
+      "falsifier": "Any narrator path that rerolls or post-hoc reinterprets a committed roll falsifies the law; likewise a wired trait that does not change the snake/lizard state graph proves the layer is still decorative.",
+      "leverage": "high"
+    }
+  ],
+  "checks": [
+    {
+      "command": "wc -c watch/inbox/dd_dogfood/games-audit.md && wc -l watch/inbox/dd_dogfood/games-audit.md",
+      "exit": 0,
+      "evidence": "watch/inbox/gala_20260925/dd-selfsteal/lanes/dd-games-audit.check.txt CHECK 1: 12756 bytes / 76 lines, finish line banked"
+    },
+    {
+      "command": "node -e BFS over ruins_go_engine.js step() for all 4 DD levels (full script in check file)",
+      "exit": 0,
+      "evidence": "watch/inbox/gala_20260925/dd-selfsteal/lanes/dd-games-audit.check.txt CHECK 2: wins DD 2, cube 7, mimic 5, spear-parity 8 moves; signature tiles NONE on all win paths"
+    },
+    {
+      "command": ".venv/Scripts/python.exe pack fold equality + census",
+      "exit": 0,
+      "evidence": "watch/inbox/gala_20260925/dd-selfsteal/lanes/dd-games-audit.check.txt CHECK 3: pack 33 levels, cube/mimic pack==standalone True, DD-hoard and DD-spear-parity in pack False"
+    },
+    {
+      "command": "node -e st.sb inertness + vision-branch def experiments A/B",
+      "exit": 0,
+      "evidence": "watch/inbox/gala_20260925/dd-selfsteal/lanes/dd-games-audit.check.txt CHECK 4: st.sb undefined after loadLevel; vision THREW ReferenceError: def is not defined; with globalThis.def set the branch ran against the global"
+    },
+    {
+      "command": "grep -c OracleDice mud.html ruins_go.html frontier_souls.html",
+      "exit": 0,
+      "evidence": "watch/inbox/gala_20260925/dd-selfsteal/lanes/dd-games-audit.check.txt CHECK 5: 0/0/0, oracle_dice.js header claim false"
+    },
+    {
+      "command": "wc -l watch/TESUJI_MAP.jsonl memory/runs/trajectory/steps.jsonl",
+      "exit": 0,
+      "evidence": "watch/inbox/gala_20260925/dd-selfsteal/lanes/dd-games-audit.check.txt CHECK 6: 336 tesuji rows and 102 tape rows vs page claims of 319-stone OPEN door and 85 rows"
+    }
+  ],
+  "decision_changed": "DD encounter acceptance bar: from solvability-only (gate ALL PASS on commit 3862c1c8a) to mechanic-load-bearing plus trait wiring; named one-sittings: design gate on the pack, st.sb binding + def scoping fix, fold-or-delete the 2 orphaned DD files and fix the dd_riddle-door filename, re-run the worldline teller, wire-or-shelve oracle_dice.js",
+  "artifact": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/dd_dogfood/games-audit.md"
+}

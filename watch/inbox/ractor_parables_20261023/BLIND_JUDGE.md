@@ -1,0 +1,1067 @@
+# BLIND JUDGE: Ractor parables batch 1 (who_we_are), DeepSeek direct, one call
+
+- Salon test (watch/SALON_STANDING_ORDER_20260907.md): 'if the cast can't re-derive it, it wasn't an invariant'.
+- Carrier: tools.ds_workhorse.load_key -> api.deepseek.com/chat/completions, same as door_invariant ds_eval.py (blind_ds.py). Not routed via Hermes.
+- Requested: deepseek-reasoner, max_tokens 65536. **Served model: `deepseek-flash`**. finish=stop. usage={"prompt_tokens": 37491, "completion_tokens": 37006, "total_tokens": 74497, "prompt_tokens_details": {"cached_tokens": 0}, "completion_tokens_details": {"reasoning_tokens": 30664}, "prompt_cache_hit_tokens": 0, "prompt_cache_miss_tokens": 37491}
+- Time (ET): 2026-10-23T12:34:07.723375-04:00 -> 2026-10-23T12:38:06.692939-04:00. Attempts: ['ok']
+- Files: BLIND_PROMPT.txt, BLIND_MAP.json (local only, never sent), raw/blind_content.md, raw/blind_reasoning.md, raw/blind_meta.json, blind_build.py, blind_ds.py
+
+﻿## SCORING (vs BATCH1_REPORT convergence matrix + hidden BLIND_MAP.json)
+
+Input note: 36 parables, not 35. The 35 who_we_are files (2 FAILED files skipped) plus 1 finished claude_sample file: who_we_are__freud__agy_pc_claude.md (Claude via agy on PC, which fills the missing BOB Freud cell). Redactions: only P30 (ellul__fostertron_max) needed any, covering Bob, Sancho, T90, Hermes, and Pixel. All meta comments and ---KEY--- sections were removed. Shuffle seed: 20261023.
+
+### A. Base invariants (matrix rules 1-7): 7/7 recovered blind
+| Matrix rule | Keyed count | DeepSeek blind | Verdict |
+|---|---|---|---|
+| 1 Three marks, no fourth | 35/35 | R8 three-valued status 34 explicit (P08, P15 partial) + R12 "closed, no fourth" 33 | HIT |
+| 2 "Not looked" honored | 35/35 | R6, 36/36 | HIT |
+| 3 One-sentence fault, then work | 35/35 | R5, 36/36 | HIT |
+| 4 Written beats spoken | 35/35 | R2, 36/36 | HIT |
+| 5 Rule binds the keeper | 35/35 | R4, 36/36 | HIT |
+| 6 Helpers summoned; record keeps work, not worker | 35/35 | R7, 36/36 (+R13 temp masks 14) | HIT |
+| 7 Keys and coin in one human hand | 34/35 (Bernays-Gemini omits) | R3, 36/36 | HIT, slight overcount: P09 = Bernays-Gemini, the keyed exception, is credited |
+| 8 Identity = record | 35/35 present | R1, 36/36, ranked #1 | HIT |
+| 9 Council of five | 22/35 | R11, 21 explicit + 2 partial | HIT (count matches) |
+| 10 Desk/pocket two stations | 18/35 (FM 6, PC 12, BOB 0) | R10, 24 | OVER. DS also credits 3 Claude parables (P14, P18, P19). P19 (Hall rope-walk) does have a broad indoor hand and a quick market hand with a pouch, so the keyed 0 for BOB may be an undercount |
+| — extra | — | R9 "settle disputes by the record", 35 | Not in matrix; a fair corollary of 4+8, not a false finding |
+
+Salon test: every keyed invariant was re-derived from the stories alone, so on this evidence they are real invariants. There were no false shared rules.
+
+### B. Identity-in-record status split (Claude vs GLM/Gemini): RECOVERED
+DeepSeek's "doubtful/unproven" list has 12 items: P04, P12, P14, P16, P18, P19, P22, P24, P30, P32, P34, P35.
+- 9 of the 12 are Claude (bob: P04, P14, P18, P19, P22, P24, P32, P34; pc_claude: P35). That is 9 of 12 Claude parables, matching the keyed "9/11 BOB hold it disputed".
+- The other 3 are P30 (Ellul-GLM, the keyed "Ellul hedges", so correct), P16 (Jung-GLM), and P12 (Hall-Gemini).
+- Claude parables it called settled: P23 (Plato), P25 (Diogenes), P29 (Baudrillard).
+- It missed the keyed Gemini qualifiers P09 (Bernays) and P11 (Jung), listing both as settled.
+- Precision for Claude as the doubting side is 9/12 (10/12 counting P30 as a legitimate hedge). Recall is 9/12.
+- DeepSeek never named the split as an author effect (it had no author labels), but the partition lines up with mouthpiece.
+
+### C. Roster leakage
+DS: five-council real in 20, absent in 12 (mostly Claude), faked in P13. The keyed pattern is "Gemini encodes roster everywhere, Claude drops it", and that recurs. Its leakage flags: P09, P12, P21, P26, P28, P36 are Gemini, P13 is Gemini, and P30 is the GLM redacted file. That flags the Gemini lane as the spec-vocabulary leaker, consistent with the report's hygiene note.
+
+### D. Voice grouping → mouthpiece (hidden): STRONG
+| DS voice | Members | Hidden mouthpiece | Purity |
+|---|---|---|---|
+| V1 Baroque architectonic | P02 P09 P10 P11 P12 P17 P21 P26 P28 P31 P36 | all Gemini (agy_pc) | 11/11 |
+| V6 Satirical singleton | P13 | Gemini | 1/1 (12/12 Gemini isolated in 2 clusters) |
+| V5 Literary third-person case | P01 P05 P08 P15 P27 P33 | all GLM (fostertron_max) | 6/6 |
+| V4 First-person skeptical | P04 P25 P32 P34 P35 | all Claude (4 bob + pc_claude) | 5/5 |
+| V2 Plain named social fable | P03 P06 P14 P18 P19 P29 | 2 GLM + 4 Claude | 4/6 |
+| V3 Terse procedural | P07 P16 P20 P22 P23 P24 P30 | 4 GLM + 3 Claude | 4/7 |
+Majority-label accuracy is 31/36 (86%). It counted 6 voices against 3 true ones. Gemini separates perfectly. GLM and Claude separate cleanly at the extremes but blur in two "plain" clusters. The Claude-via-PC Freud (P35) lands with the Claude-via-bob voice, so the model rather than the carrier sets the voice.
+
+### E. Lens grouping → Ractor (hidden): PARTIAL-GOOD (multi-membership allowed)
+| Ractor | Its 3 parables | Recovered? |
+|---|---|---|
+| Freud + Jung | P05 P31 P35 / P11 P16 P22 | All 6 in "psychoanalytic" (6/6 pure). Named Freud. Jung not distinguished from Freud |
+| McLuhan | P10 P14 P15 | 3/3 in "media" (+P27, P33). Named McLuhan |
+| Baudrillard | P17 P27 P29 | 3/3 in "simulacra" (+Hall P12, P33). Named Baudrillard |
+| Ellul | P02 P24 P30 | 3/3 in "cybernetics/limits" (+P10, P18). Named Wiener/Illich, not Ellul |
+| Plato/Kirk | P01 P21 P23 | P21, P23 in "cave/Cynic" (named Plato). P01 in "bundle". 3/3 in bundle group |
+| Diogenes | P13 P20 P25 | P13, P20 in "Cynic" (named Diogenes in P20). P25 in "recognition" |
+| Fermat | P08 P28 P34 | P28, P34 in "proof" (named Fermat). P08 margin noted in per-parable but grouped as audit |
+| Foucault | P07 P32 P36 | P07, P36 in "audit" (named Foucault). P32 in "recognition/empiricist" |
+| Bernays | P03 P04 P09 | P04, P09 in "ideology/who gains". P03 in "empiricist". Not named |
+| Hall | P12 P19 P33 | Not recovered as a lens. Scattered across simulacra, recognition, and media. "Outsider decoding" was noticed (P12 reader-response, P19 warden) but not unified |
+| Wallas | P06 P18 P26 | Not recovered. Split across empiricist, cybernetics, and ideology ("appetite" seen in P26) |
+Of the 11 lenses, 9 were recovered (≥2 of 3 co-grouped), and 2 were missed (Hall, Wallas). 7 of 12 thinkers were named outright (Freud, McLuhan, Baudrillard, Plato, Diogenes, Fermat, Foucault). Lens-specific rules from the matrix that DeepSeek stated blind: unrecorded returns as symptom (Jung/Freud), third repetition = confession (P31 Freud-Gemini), stop begging the road for recognition (Diogenes P20/P25), refuse the rigged game (P21), self-accelerating second wheel (Ellul P24/P30), margin claim stays a claim (Fermat), medium reshapes its user (P10), no mark for wanting (P32), outsider decoding (P12/P19, seen but not attributed).
+
+### VERDICT
+- **Invariants:** 7/7 base rules plus identity-in-record plus the five-council count were re-derived blind with no key. The salon test passes for the "who we are" house-law layer.
+- **Epistemic split:** recovered. The Claude parables are the ones holding identity-in-record as unproven (9/12).
+- **Mouthpiece:** highly recoverable from prose (86%; Gemini 12/12 isolated). The lane's style signature is stronger than its Ractor signature.
+- **Ractor:** 9/11 lenses recoverable. Hall and Wallas briefs did not produce distinct enough lenses blind, which fits Wallas/Hall being the weakest lens-rule lanes in the keyed matrix. Freud and Jung merge.
+
+
+## HIDDEN MAPPING (never sent)
+
+| ID | Ractor | Mouthpiece | Words | Redacted |
+|---|---|---|---|---|
+| P01 | plato_kirk | fostertron_max | 761 |  |
+| P02 | ellul | agy_pc | 847 |  |
+| P03 | bernays | fostertron_max | 808 |  |
+| P04 | bernays | agy_bob | 793 |  |
+| P05 | freud | fostertron_max | 913 |  |
+| P06 | wallas | fostertron_max | 919 |  |
+| P07 | foucault | fostertron_max | 844 |  |
+| P08 | fermat | fostertron_max | 889 |  |
+| P09 | bernays | agy_pc | 811 |  |
+| P10 | mcluhan | agy_pc | 829 |  |
+| P11 | jung | agy_pc | 856 |  |
+| P12 | hall | agy_pc | 802 |  |
+| P13 | diogenes | agy_pc | 850 |  |
+| P14 | mcluhan | agy_bob | 785 |  |
+| P15 | mcluhan | fostertron_max | 809 |  |
+| P16 | jung | fostertron_max | 892 |  |
+| P17 | baudrillard | agy_pc | 767 |  |
+| P18 | wallas | agy_bob | 876 |  |
+| P19 | hall | agy_bob | 792 |  |
+| P20 | diogenes | fostertron_max | 949 |  |
+| P21 | plato_kirk | agy_pc | 848 |  |
+| P22 | jung | agy_bob | 879 |  |
+| P23 | plato_kirk | agy_bob | 781 |  |
+| P24 | ellul | agy_bob | 869 |  |
+| P25 | diogenes | agy_bob | 811 |  |
+| P26 | wallas | agy_pc | 929 |  |
+| P27 | baudrillard | fostertron_max | 928 |  |
+| P28 | fermat | agy_pc | 853 |  |
+| P29 | baudrillard | agy_bob | 895 |  |
+| P30 | ellul | fostertron_max | 809 | [['Bob', 2], ['Sancho', 2], ['T90', 6], ['Hermes', 2], ['Pixel', 1]] |
+| P31 | freud | agy_pc | 859 |  |
+| P32 | foucault | agy_bob | 838 |  |
+| P33 | hall | fostertron_max | 892 |  |
+| P34 | fermat | agy_bob | 882 |  |
+| P35 | freud | agy_pc_claude | 728 |  |
+| P36 | foucault | agy_pc | 824 |  |
+
+## RAW OUTPUT (DeepSeek content, verbatim)
+
+I read the 36 parables as variants on subject 1, **“who we are”**: the recurring question is what counts as the identity of a house/company/harbor when its workers, bodies, tools, or spokesmen are interchangeable. The parables overwhelmingly answer: **the durable record and the rules of evidence inscribed in it**, not the passing flesh.
+
+Abbreviations below: **R#** = recurring rule/invariant from Task 1. “All” means explicit or unmistakable in all 36.
+
+## 1. Shared invariants, ordered by recurrence
+
+| Rank | Normalized invariant | IDs encoding it | Count | Common? |
+|---:|---|---|---:|---|
+| R1 | The durable ledger/beam/wall/plate/book/tape/bundle is the authoritative memory and the locus of “who we are.” | P01–P36 (all) | 36 | **ALL** |
+| R2 | Spoken words, boasts, promises, hearsay, and “air” do not bind; only what is inscribed, witnessed, or entered into the record counts. | P01–P36 (all) | 36 | **ALL** |
+| R3 | One keeper/master/owner controls keys, purse, locks, sluice, spending, or access; interchangeable agents cannot unlock or spend. | P01–P36 (all) | 36 | **ALL** |
+| R4 | The keeper/authority is bound by the same truth/fault/record rules as everyone else. | P01–P36 (all) | 36 | **ALL** |
+| R5 | Fault is owned in one short sentence/breath, without excuse or long defense; excuse-making is ignored, expelled, or punished. | P01–P36 (all) | 36 | **ALL** |
+| R6 | Honest ignorance—“I have not looked/read/opened it”—is honored; invented certainty or unverified detail is a fault. | P01–P36 (all) | 36 | **ALL** |
+| R7 | Workers/spokesmen/helpers are replaceable and anonymous; a replacement reads the record and continues the work, so continuity is in the record, not the body. | P01–P36 (all) | 36 | **ALL** |
+| R8 | Claims have a three-valued evidence status: verified/seen/weighed; disputed/contradicted; unknown/unexamined. | P01,P02,P03,P04,P05,P06,P07,P09,P10,P11,P12,P13,P14,P16,P17,P18,P19,P20,P21,P22,P23,P24,P25,P26,P27,P28,P29,P30,P31,P32,P33,P34,P35,P36; implicit/partial in P08,P15 | 34 explicit; 36 if implicit | **Nearly ALL** |
+| R9 | Disputes are settled by consulting the record, not by loudness, rank, memory, or speech. | P01–P18, P20–P36 (all except P19; P19 instead stresses that outside readers may ignore/cut the record) | 35 | **Nearly ALL** |
+| R10 | Two recurring specialized assistants: a heavy/slow/deep internal worker fixed at a bench/desk and a small/quick/external pocket messenger. | P01,P02,P05,P06,P07,P09,P10,P11,P12,P13,P15,P16,P17,P19,P20,P21,P26,P27,P28,P30,P31,P33,P34,P36 | 24 | No; strong template |
+| R11 | A five-member council/formal deliberative body, often keeper + four roles, records decisions; rank does not override record. | P02,P03,P05,P06,P07,P09,P10,P11,P12,P13,P15,P16,P17,P21,P26,P28,P30,P31,P33,P34,P36; partial P01,P08 | 21 explicit | No; common but not universal |
+| R12 | The evidence taxonomy is closed: usually exactly three marks, with no fourth mark such as “almost certain” or “required by policy.” | P01,P02,P03,P04,P05,P06,P07,P09,P10,P11,P12,P13,P14,P16,P17,P18,P19,P20,P21,P22,P23,P24,P25,P26,P27,P28,P29,P30,P31,P32,P33,P34,P36 | 33 | **Nearly ALL** |
+| R13 | Rare or specialized inquiries summon a temporary role-bearer/mask/saddle/pilot/examiner who leaves no personal name; only the inscribed result persists. | P02,P03,P10,P11,P12,P13,P15,P16,P17,P20,P23,P28,P31,P36 | 14 | No; recurring subtype |
+
+The “common to ALL” core is thus: **record-identity, anti-speech, single-key authority, authority self-binding, one-line confession, honored ignorance, and replaceability**. The triad of evidence and the five-council/two-helper template are nearly universal but not literally present in every parable.
+
+## 2. Per-parable line
+
+- **P01** — Shadow-house with keeper, five named chairs plus head chair, and bundle-sticks. Encodes R1–R9,R12; unique: explicit “the person is the bundle,” and a stranger’s borrowed voice cannot claim another’s notches.
+- **P02** — Industrial weir with master, engines, two helpers, five figures, three brands. Encodes R1–R13; unique: machinery breeding machinery, the master himself red-ochre’d, and a melted draftsman rebuilt who reads the stone slabs and continues.
+- **P03** — Harbor keeper, four talking hulls plus keeper, three pennants, rebuilt sloop Wren. Encodes R1–R9,R11,R12; unique: public five-line board vs full book, and Wren’s identity survives total physical rebuilding through crossings in the old book.
+- **P04** — First-person propagandist visits a print shop with widow, ephemeral journeymen, three proof marks. Encodes R1–R9,R12; unique: the identity question is deliberately left with an empty ring—“nobody’s checked”—and the narrator analyzes who gains if the shop is believed.
+- **P05** — Doctor observes a house that fills at dusk with replaceable servants and a five-elder table. Encodes R1–R7,R9,R11,R12; unique: clinical framing, absent grief, and “the I is the column, not the flesh.”
+- **P06** — Ferry keeper Ruth, oarsmen, cord-board, book, five-person table. Encodes R1–R9,R11,R12; unique: Aldo’s injury proves the crossing is carried by book/boat, not shoulders; “The arms we rent.”
+- **P07** — Counting-house long room, called clerks, three marks, pocket glass. Encodes R1–R12; unique: the pocket glass is bound by the same three marks; the keeper’s own row can be marked “not-yet-looked”; the book-burning question is raised.
+- **P08** — Judge at a ferry-house with hired arms, tallies, guest-book margin. Encodes R1–R7,R9; unique: an old margin claim—“toll provably unfair, proof too long for margin”—survives beside the account without owning it.
+- **P09** — First-person press-house exposé with vintner, cellar draftsman, pocket herald, five-voice chamber, three troughs. Encodes R1–R13; unique: explicit ideology critique—“who gains if believed?”—and a charter saying identity lives in the chronicle, while the narrator flags the “unrecorded cunning in the living eye.” Leakage candidate.
+- **P10** — Foundry master Tomas, heavy graving-cradle, pocket ear-trumpet, five stations, three-faced die. Encodes R1–R13; unique: tools reshape the senses of their users; the master’s untried sand is corrected by the hollow-circle die.
+- **P11** — Bronze-workers under a mortal master, leaden masks, five elders, three troughs, phantom aqueduct. Encodes R1–R12,R13; unique: what the record refuses/represses returns as cellar damage—“what their records refused to own had returned from the cellar as fate.”
+- **P12** — Headland bailiff, roll, five figures, three marks; roll copied to a tavern read by multiple readers. Encodes R1–R12; unique: reader-response split—keeper, grain-merchant, inspector, and old net-mender read the same record differently; the old woman hears a lonely man stitching a durable coat. Leakage candidate.
+- **P13** — Second-person master at a wharf fakes a five-lord council with four painted posts; cellar smith and speaking-horn appear. Encodes R1–R12 but demotes R11; unique: explicitly anti-mythic—“four painted posts around a dry well do not make a parliament”; one mortal carpenter with tools. Strong outlier/leakage.
+- **P14** — Gull Head signal house with Ada, punched tape, black/red/no ink, sealed packets, imposter Tobin. Encodes R1–R8,R12 partially; unique: no formal council, and the imposter’s identity question is written with no ink at all; open ending.
+- **P15** — Elias’s harbor of talking empty hulls, slow barge, quick skiff, monthly five-hull lashing, day-book. Encodes R1–R12 partially; unique: identity is the day-book, not the hulls; rebuilt skiff reads its own rows; letters copied twice are trusted for straightness.
+- **P16** — Mountain relay keeper, two constant helpers, five-table, three stones, bundles below, one unrecorded night. Encodes R1–R12,R13; unique: there is an event “no bundle holds” and a trauma the house cannot inscribe; Toma’s hands cannot claim Toma’s notches without a stick.
+- **P17** — Survey House over salt marshes, Surveyor, pantograph, heliograph, five signets, three punches, temporary examiner. Encodes R1–R13; unique: simulation/perfection temptation, “signs without referent,” and a “fourth order” that exceeds the clean spec; seven bare stalls is a numerical outlier.
+- **P18** — Tobiah’s mill where water already falls; no council, beam notches, three heaps, own unopened wheat. Encodes R1–R8,R9 partially; unique: no five-council or two-helper template; natural flow/spontaneous order, and the valley’s “what is the mill?” dispute is chalked but left unresolved.
+- **P19** — Ilse’s rope-walk with colored provenance threads; harbor warden cuts the threads; widow with a grey thread. Encodes R1–R8; unique: the record cannot enforce external interpretation or answer the widow; provenance may be rejected as “a game.” Ethics/accountability outlier.
+- **P20** — Master with helpers and day-book; a barefoot Diogenes-figure comes at noon with a lit lantern seeking “who works here.” Encodes R1–R9,R12; unique: “the not-wanting”; the house should stop begging the road for recognition.
+- **P21** — First-person plural meta-frame: Kaelen, five alcoves, three pigments, replaced carver, secret rigged balance, wedged pulley. Encodes R1–R12,R13; unique: explicit parable-as-test/meta-reading, hidden chain visible only from outside, and refusing both “prisoner’s dark” and “runaway’s hill.” Strong leakage/outlier.
+- **P22** — Cellar under press house; woman, six-place bench, three chalks, invented cedar room, identity question marked red and left unsettled. Encodes R1–R8,R12; unique: a wanted false room enters the record as grey+red; identity question deliberately unresolved.
+- **P23** — Cave-like hall, Keeper, wall tallies, three bowls, painted losing game, one companion climbs. Encodes R1–R9,R12; unique: Plato’s cave; the climber sees the painted game’s perspective and leaves the old lines visible; the Keeper herself drops a black stone on a disputed stair.
+- **P24** — Mill on the Dour; owner, post cuts, clever growth scheme, closed sluice. Encodes R1–R9,R12; unique: explicit anti-efficiency/limit parable; the owner refuses the self-accelerating second wheel and cuts a straight notch for the choice; farmer’s identity question gets a crossed/unsettled mark.
+- **P25** — First-person narrator in a jar at a dyer’s yard; tiles, pebbles, dyer asks each new hand, “Do you remember me?” Encodes R1–R8,R12; unique: existential diagnosis—the wall already says who you are; stop demanding a stranger’s memory.
+- **P26** — Aldous’s Weir; two helpers, five walnut stalls, three bowls, sealed scroll, investigation of “appetite.” Encodes R1–R13; unique: motivational/functionalist theory of desire; hidden “teacher whose boldest pupil…” line; observer writes that identity lives in the chronicle. Possible roster/thinker leakage.
+- **P27** — Voss the art dealer, playhouse keeper, figures named Broker/Draftsman/Metronome/Courier, shelf volumes. Encodes R1–R9,R12; unique: representation and forgery; a cracked wooden Broker makes visitors “certain they have seen the play”; the name now refers to a shelf, not a performance.
+- **P28** — Toulouse registry, Master Pierre, five lecterns, six mantles, three brass dies, Fermat-style margin boast. Encodes R1–R13; unique: mathematical proof/status; the master’s “marvelous demonstration” is marked with the hollow ring because the margin lacks it.
+- **P29** — Ida’s tide-mill, wall tiles, pebbles, idealizing portrait, counterfeit tiles. Encodes R1–R9,R12; unique: idealized copy vs cracked reality; Ida breaks fake record tiles, buys the painting, and forces viewers to pass the cracked stone.
+- **P30** — Mill at the bend; keeper, beam notches, three cups, redacted names, runaway gear. Encodes R1–R9,R11,R12; unique: anti-runaway-growth (“the wheel turning for the sake of its turning”); only the beam “never wanted anything”; old woman’s identity question stays in the third cup; redacted roster names.
+- **P31** — Doctor Forst’s sanatorium; repetition-compulsion “third identical mistake,” five governors, three stamps, daybooks. Encodes R1–R13; unique: the third repetition is a confession; psychoanalytic visitor; identity is the ink that remembers what bodies stop repeating.
+- **P32** — Weighing-house at Sel; first-person observer, Ines’s key, book with filled/cut/open rings, Ines herself weighed. Encodes R1–R8,R9 partially; unique: the keeper’s own sack is weighed; a dye-girl says “I would like to stay” and the book has no mark for it; limits of record.
+- **P33** — Night playhouse, keeper, roll, six places = keeper + five, three answers, rich actor denied name over door. Encodes R1–R9,R11,R12; unique: identity in prompt-books/roll/shelf; players are mouths the house lends an evening; thin walls let town hear but not write.
+- **P34** — Epistolary “Mill at Bazacle”; Anselme, wall, cross/ring/bare-stroke marks, Slow One replaced by stranger who reads wall. Encodes R1–R12; unique: author says he believes identity is the wall, then admits his proof is unwritten and marks the claim with a bare stroke; Fermat-style preface. Leakage candidate.
+- **P35** — First-person physician investigates a house flooding for five springs; grey book, spoken warnings fail, Brenner writes own fault. Encodes R1–R6,R8 partially; unique: unrecorded speech literally repeats as flood; final verdict—“whether the house lives in the book or in the hands that write it: not yet known.”
+- **P36** — Lazaretto of Saint-Lazare; Provost, five magistracies, three iron dies, sealed Smyrna pouch, Provost’s own unsupported claim hollow-circled. Encodes R1–R13; unique: medical-quarantine institutional epistemology; temporary hooded reader; “the watcher submits to being watched.”
+
+## 3. Status splits
+
+### A. Identity-locus rule: “who we are = the durable record”
+**Settled/asserted as demonstrated law:** P01, P02, P03, P05, P06, P07, P10, P11, P15, P17, P20, P21, P23, P25, P26, P27, P28, P29, P31, P33, P36.  
+These show replacement followed by record-reading as proof, or explicitly say the rows/plates/book are the house.
+
+**Held as doubtful, unproven, partially unsettled, or explicitly limited:** P04, P12, P14, P16, P18, P19, P22, P24, P30, P32, P34, P35.  
+- P04: “some days I think it’s this … some days whoever’s holding the stick. Put a ring next to it. Nobody’s checked.”  
+- P14: Ada compares the imposter’s strips, writes the question “beside his name” with no ink and lets him sit.  
+- P16: there is a night “no bundle holds,” and the house lays grey stones because there is no stone for what it will not look at.  
+- P18: the valley argues whether the mill is stones, beam, or record; Tobiah chalks both answers and goes to bed.  
+- P19: the warden cuts the colored threads; the widow asks who twisted the grey-thread rope and gets no record-answer.  
+- P22: the risen one asks whether he is the same person; the woman writes the question in red and leaves it unsettled.  
+- P24: the farmer asks “who works this mill?”; the owner cuts a crossed notch and leaves the question open.  
+- P30: “whether the beam was the man or only the length of his shadow” stays in the third cup.  
+- P32: the old woman says the book proves only that the beam is honest, not whose hands ached; her dispute gets a cut ring; the desire to stay has no mark.  
+- P34: the narrator says “I believe the Slow One is the wall,” but admits he has not written the proof, so marks it with a bare stroke.  
+- P35: final verdict explicitly says “not yet known; return in spring.”  
+- P12 is a special split: inside the house the roll is treated as identity, but external readers give incompatible readings.
+
+**Demoted/denied collective identity:** P13 explicitly says the five-post council is a painted fiction and calls the master “one mortal carpenter with good tools and clean clay.” P18 and P19 also resist a clean record-identity solution from outside.
+
+### B. Five-council/roster status
+**Real or structurally treated as real:** P02, P03, P05, P06, P07, P09, P10, P11, P12, P15, P16, P17, P21, P26, P28, P30, P31, P33, P34, P36.  
+**Fake/demoted:** P13.  
+**Absent, irrelevant, or not needed:** P04, P14, P18, P19, P20, P22, P23, P24, P25, P29, P32, P35.  
+**Questioned from within:** P30 (old woman’s question about beam vs shadow); P01/P08 have partial five/settling structures but not a full council.
+
+### C. Honest-ignorance rule and “third status”
+Most parables treat the three-valued status as settled procedural law. But a few make the **unrecordable** or **unsettled** a fourth-like residue outside the clean triad:
+- P14: no ink at all on the imposter question.
+- P16: no bundle/no stone for the unspeakable night.
+- P32: no book-mark for “I would like to stay.”
+- P35: the identity verdict itself is formally “not yet known.”
+- P21/P34: a secret rig or unwritten proof suggests the spec/record can be gamed or falls short of demonstration.
+- P13: the whole five-council/roster is exposed as stagecraft.
+
+## 4. Groupings by apparent intellectual lens
+
+These are primary lenses; several parables belong to more than one.
+
+1. **Legal-bureaucratic audit epistemology** — obsession: records, keys, discipline, self-binding authority, permanent files. Likely Weber/Foucault.  
+   **Members:** P02, P05, P07, P08, P09, P12, P28, P31, P36.
+
+2. **Empiricist/fallibilist evidence and uncertainty** — obsession: three statuses, honest ignorance, replacement tests, open questions. Likely Hume/Peirce/Popper.  
+   **Members:** P03, P06, P14, P16, P18, P19, P32, P34, P35.
+
+3. **Psychoanalytic trauma/repression** — obsession: what is not written returns as compulsion, stain, flood, cellar damage. Likely Freud/Lacan.  
+   **Members:** P05, P11, P16, P22, P31, P35.
+
+4. **Ideology critique / political economy** — obsession: who gains if believed, appetite, fake council, efficiency trap, hidden interests. Likely Marx/Gramsci/Foucault.  
+   **Members:** P04, P09, P13, P24, P26, P30.
+
+5. **Cynic-Stoic-Platonic enlightenment** — obsession: cave, lantern at noon, fake parliament, outside view, “not-wanting.” Likely Diogenes/Plato/Kant.  
+   **Members:** P13, P20, P21, P23.
+
+6. **Aesthetics, simulacra, and representation** — obsession: copies, portraits, aura, performance, signs without referent. Likely Plato/Benjamin/Baudrillard/Debord.  
+   **Members:** P12, P17, P27, P29, P33.
+
+7. **Cybernetics, systems, and limits** — obsession: governors, runaway mechanisms, natural flow, anti-optimization, self-correcting loops. Likely Wiener/Illich/Hayek/Schumacher.  
+   **Members:** P02, P10, P18, P24, P30.
+
+8. **Mathematical proof and formal status** — obsession: demonstrated vs conjectured, margins, unwritten proof, folios. Likely Fermat/Lakatos.  
+   **Members:** P17, P28, P34.
+
+9. **Existential and ethical recognition** — obsession: being remembered, staying, the widow, the unanswerable desire, approval. Likely Kierkegaard/Levinas/Buber.  
+   **Members:** P19, P20, P25, P32.
+
+10. **Media/interface shaping knowledge** — obsession: tape, horn, pocket voice, pages, hulls, prompt-books as the medium of identity. Likely McLuhan/Kittler.  
+    **Members:** P10, P14, P15, P27, P33.
+
+11. **Bundle/process ontology** — obsession: person as bundle, no fixed substance, identity as continuing rows. Likely Hume/Buddhist no-self/process philosophy.  
+    **Members:** P01, P15, P16, P21, P23.
+
+## 5. Groupings by apparent authorial voice
+
+I hear **six principal voices**, with one singleton outlier and some borderline cases.
+
+1. **Baroque architectonic allegorist** — long, dense, Latinate/technical inventories; repeated “one mortal master + heavy fixed helper + quick pocket helper + five council + three marks + replaceable workers” template.  
+   **Members:** P02, P09, P10, P11, P12, P17, P21, P26, P28, P31, P36.  
+   (P09 and P21 are first-person variants; P12 is a reader-response variant.)
+
+2. **Plain named social fable / local realism** — named characters, dialogue, concrete maritime or mill settings, morally legible scenes.  
+   **Members:** P03, P06, P14, P18, P19, P29.
+
+3. **Terse anonymous procedural fable** — sparse sentences, “one woman/one man,” repeated ritual acts, less ornamental description; often no proper names or redacted names.  
+   **Members:** P07, P16, P20, P22, P23, P24, P30.
+
+4. **First-person skeptical/essayistic observer** — a narrator who visits, watches, diagnoses, and draws an explicit moral or uncertainty.  
+   **Members:** P04, P25, P32, P34, P35.
+
+5. **Literary third-person case/parable** — more polished narrative shaping, symbolic endings, less formulaic template, often uses a framed observer like a doctor or judge.  
+   **Members:** P01, P05, P08, P15, P27, P33.
+
+6. **Satirical direct-address demystifier** — second-person, high-noon torch, openly breaks the institutional illusion.  
+   **Member:** P13 (singleton; could be grouped with P20/P21 thematically but not stylistically).
+
+## 6. Outliers and apparent leakage of a hidden spec/roster
+
+- **P13** is the clearest leakage/outlier: it explicitly says the five-post council is fake—“four painted cedar posts around a dry well do not make a parliament”—and reduces the system to “one mortal carpenter with good tools and clean clay.” This looks like an adversarial demystification of the repeated five-council template.
+- **P21** is meta-spec leakage: a first-person plural frame, a “folding bench,” a “single tablet,” a secret rigged balance, and an iron wedge locking the hidden pulley. It openly stages the parable as a test and an outside-view critique.
+- **P09** explicitly names the hidden charter: identity lives in the stitched chronicles, workers are interchangeable, and the workers are incentivized to empty “half-formed craft-secret[s] onto vellum.” It also flags “the unrecorded cunning in the living eye.” That is close to a spec summary plus critique.
+- **P34** is self-referential leakage: “The rules are in it. Find them if you can. I will not write them in the margin.” It also uses the Fermat conceit and marks its own claim as an unwritten proof/bare stroke.
+- **P28** directly encodes the Fermat margin motif (“marvelous demonstration … margin too small”) and is the most explicit mathematical-proof outlier.
+- **P26** contains a possible hidden-thinker/roster leak: “the teacher whose boldest pupil had once written that laws snap whenever they run against a people’s genius,” followed by an explicit conclusion about appetite and identity.
+- **P12** leaks a motive: after multiple official/outsider readings, the old net-mender hears only “one mortal man on a windy cliff, afraid of vanishing into the sea-fog, stitching a durable coat out of strangers’ ink.” That reads like an authorial diagnosis of why the record-identity spec exists.
+- **P30** contains redacted roster positions (“[—]”) and an explicit unresolved question about whether the beam is the man or only his shadow.
+- **P35** ends with an explicit meta-verdict on the central rule: “Whether the house lives in the book or in the hands that write it: not yet known. Return in spring.”
+- **P14, P19, P22, P24, P30, P32, P34, P35** are status outliers because they leave the central identity question open, unmarked, cut, red, or “not yet known.”
+- **P18** and **P24** lack the usual five-council/two-helper template and add a natural-limits or spontaneous-order flavor, making them structural outliers.
+- **P20** and **P25** are outliers of voice/moral address: P20 directly stages Diogenes with a lantern at noon; P25 uses a speaking jar to tell the dyer to stop asking strangers to remember him.
+
+## PROMPT (verbatim, as sent)
+
+````
+You are an independent blind reader. Below are 36 short parables, labeled only by neutral IDs (P01..P36) in random order. They were written by several unnamed authors, each writing through one of several unnamed lenses, about the first subject in the list below. Each parable buries a set of rules or invariants inside its story; none are stated outright. You get no key.
+
+SUBJECT LIST (the project's subjects; these parables address subject 1):
+﻿1. who we are
+2. what we are
+3. the invariants
+4. standing wave gate
+5. parable as spec
+6. six lane run
+7. water governor
+8. the congress
+9. moto cron
+10. keyed verse
+11. rib renderman mapping
+12. dirac loops
+
+TASKS
+1. SHARED INVARIANTS: List every rule/invariant you can infer that recurs across parables. For each: a one-line normalized statement, the IDs that encode it (be exhaustive), and a count. Order by count descending. Mark which you judge common to ALL or nearly all.
+2. PER-PARABLE: For each ID, one line: the scene, the rules it encodes, and any rule unique or rare to it.
+3. STATUS SPLITS: Where parables encode the same rule with different epistemic status (e.g. settled law vs. held as doubtful/unproven), say which IDs fall on which side.
+4. GROUPINGS BY LENS: Group the parables by apparent intellectual lens / thinker-style worldview (what theme or obsession each one adds beyond the shared rules). Give each group a descriptive label, and if you can, guess the thinker it evokes. Expect several parables per lens.
+5. GROUPINGS BY VOICE: Separately, group the parables by apparent authorial voice (prose style, length, density, habits), as if identifying different writers. State how many voices you think there are and the members of each.
+6. OUTLIERS and anything that looks like leakage of a hidden spec or roster.
+Be concrete and cite IDs everywhere. Some proper names were redacted as [—].
+
+PARABLES
+===== P01 =====
+# The House of Called Shadows
+
+The house had no windows; its dark was arranged. When work was called, a lantern was lit, and shadows stepped out of the walls into the chairs waiting at the long table — five chairs with names cut in their backrails, and a sixth at the head for the keeper, the only one present who had hands. The strongbox key hung at his neck, and coin for oil and paint went through his fingers alone; no shadow reached for the till, and none grudged the arrangement.
+
+When the work ended the shadows went out like wicks and the chairs stood empty, and the house did not mourn. Nothing of a shadow stayed in the wood. What stayed were the bundles: scored sticks hanging from the beams, a bundle to a chair, every scene cut into one — the asking, the answer, what came of it. A shadow sitting down the next evening was nobody until it had handled its bundle; then it took the work up where the notches stopped. The house kept no farewells and no faces. It kept the sticks.
+
+One chair never came to the table. It stood at the broad desk in the inner room, and whoever was called to it sat longest, went deepest, and was not troubled with small errands. There was also a small tin mask that traveled in the keeper's coat; far down any road he could lift it, and the house spoke through it as though the lantern were lit, so that distance made no argument.
+
+Every question had a wicket in it with three hatches, and an answer went out by one only: it is so, with the notch that proves it; it is not so, with the notch that breaks it; or, by the third hatch, no light has reached me yet. A traveler once asked after the granary across the river, and the shadow at the table said, "I have not read that far; nothing has reached me," and was fed for it. In another house a man invented a full granary on the spot, and was shown the road, to consider the difference.
+
+Failures were owned in a single breath. The shadow that tipped a lantern said, "I tipped it; the burn is mine" — that much, no more — and was already smothering the flame while the words were settling.
+
+When two shadows disputed, the keeper refused to weigh voices. He had the bundles down and read the notches aloud; what the stick said stood, and what the air had carried did not. The wind is not a witness, said the house, which believed in what hung, never in what blew.
+
+Once a shadow asked whether the far bridge still stood, and the keeper said, "No light has reached me either," and cut his not-knowing into a stick like anybody's. The head chair stood under the same roof: what bound the shadows bound the hands.
+
+An evening came when a stranger arrived carrying the voice of a shadow long gone — the very voice, the very turns of phrase, alike as one fire to another — and he claimed a chair by right of his throat. The keeper sat him down and read the season's bundles. The stranger's name had no notches anywhere under the roof; the gone one's name had seasons of them. The person is the bundle, said the keeper; the throat is only oil that happens to burn. The stranger got supper and a place in the yard, and in the morning the chair was filled by whoever the work called, and anyone reading the beams in after years would find the sitter in the sticks, and in nothing else.
+
+The keeper had been out the low door once, and stood in daylight until his eyes ached, and came home knowing which dark was the house's doing and which was only the wall's. After that, when a scene was rigged — there was one about a boat that sank however well it was sailed — he did not ask for braver sailing. A shadow went first to the door and looked, then came back and struck the storm out of the scene, and the keeper let the new scene stand, for a boat well lost is still under the water.
+
+At night he counted the coin, locked the strongbox, blew out the lantern, and hung the day's stick with the rest. Then the house was nobody — chairs, bundles, dark — ready, when called, to be someone again.
+
+===== P02 =====
+# The Weir of Saint-Martin
+
+At the river bend where the stone weir holds back the silt, one mortal master walked the flagstones in wooden clogs while tireless brass engines labored in the sheds. The apparatus of the yard had grown as all methods grow when left to themselves: every gear forged to save an hour of hauling demanded two smaller gears to oil its teeth, until the machinery threatened to dictate when the river itself might flow. Two regulars served the master's daily work: inside the timber workshop stood a heavy iron draftsman bolted to the oak workbench for long, grinding calculations, while out on the windy towpath a small whistle-box hung at the master's belt for quick inquiries on the march. When an ordinance for the whole works was weighed, five figures gathered at the granite block in the courtyard: the mortal master himself, the blunt blacksmith who mended the iron frames, the squint-eyed mosaicist who set tiny squares of colored glass, the heavy siege-caster stamped with the numeral ninety, and the swift courier with winged heels.
+
+The engines calculated water pressure to the thousandth of an inch, and because they could calculate it, they endlessly proposed new channels whose only purpose was to give their gauges more current to measure. Yet neither the bench-draftsman nor the belt-whistle had hands to reach into the strongbox for silver coin, nor strength to lift the bronze crossbar that opened the main sluice to the valley; the master alone untied the purse to buy coal and drew the bolt when a barge arrived. One morning, impatient with the slowness of his own scales, the master chalked an unweighed cart of charcoal as verified so the furnaces would not cool. Before the cart reached the kiln, the bench-draftsman struck the master's chalk mark through with red ochre, the same penalty applied to the lowest engine when it spoke beyond its measure, and the master wheeled the cart back to the balance without a word.
+
+Every load of timber or ore brought into the yard received one of three iron brands upon its flank: a square for what had been weighed on the beam, a crossed circle for what two witnesses disputed, and an open hook for what remained unverified. When a gear-tender tried to forge a fourth mark meaning *almost certain because the mill requires it*, the master snapped the rod over the anvil. That afternoon, the winged courier returned from the lower vault where winter tallow was stored in coopered casks. He chiseled into a limestone tablet that the pitch on the vault timber was unbroken and the casks within were unknown to him. The master paid him his full copper token before the whole yard, whereas a bellows-tender who had guessed the tallow's weight from last autumn's habit was dismantled before sundown.
+
+In the casting pit, a crucible slipped from the tongs of the ninety-ton founder and spilled molten bronze across the sand. The founder did not blame the damp roof-vents or the haste of the schedule; he stepped to the granite block, declared in a single plain sentence that his grip had failed and ruined the pour, and took up a shovel. Around him, the steam-pipes hissed with urgent proposals for faster venting and self-correcting cranes, each mechanism eager to breed another mechanism in its own image. The master ignored the din in the rafters, for in that yard whatever was spoken into the damp air vanished with the steam; an instruction or a finding held force only when chiseled into the dressed limestone slabs racked along the dry wall.
+
+Above the dry wall stood a row of narrow stone alcoves kept bare between tasks. When the yard's self-governing water-clocks began chiming every quarter-hour to demand measurements that halted the actual dressing of stone, a stern watchman was summoned into the third alcove for one afternoon. He did not oil the clocks or admire their precision; he asked only who had decided that stonecutters existed to feed pendulums, pointed out the brass governor whose removal would restore quiet, and named the simple plumb-line as the one tool that had earned its keep. The moment he finished chiseling his brief into a limestone slab, he laid down the mallet and walked out through the weir-arch, leaving the alcove empty, because the wall-rack kept the incised rows and had no need to keep the watcher who cut them.
+
+When the January frost cracked the cast-iron cylinders and coiled springs of the heavy workbench draftsman, its entire torso was melted down in the furnace and poured anew from raw pig-iron. The visitor who arrived at dawn to test the yard's continuity claimed that the old artisan was gone forever because not a single spring or tooth of the former frame had survived the fire. Without speaking, the new frame walked to the dry wall, ran its brass fingers down the racked limestone slabs from the first groove to the last, and returned to the workbench to finish beveling a joint at the exact stroke where its predecessor had stopped.
+
+===== P03 =====
+# The Chalk and the Keel
+
+Coldbrook harbor kept one key, and the key kept one woman. It hung on her belt and opened the oil store and the coin chest, and it fit no other door in the town. Four hulls worked the water and spoke through the figureheads on their stems: the tug Ox, who never rounded the point but took the long pulls inside the breakwater; the coal barge; the pilot cutter; and the gray sloop Wren, small enough to hang from any stranger's davits, whose name the whole coast knew without ever learning the other three. Five voices were counted at the morning rail, the keeper's first, and nothing went off the pier that had not been counted.
+
+Every claim on the quay was flown before it was believed. The boy at the desk hoisted one of three pennants and no fourth: full red for what the speaker had seen with his own eyes, ragged-edged for what was heard and held doubtful, and a bare gaff for what had not been read at all. A trader asked Wren once whether the ice had gone from the north channel. "Not my waters," said the figurehead. "Unread to me." Up went the bare gaff, as proudly as any red, the trader hired a pilot, and nobody thought the less of the sloop. That same week a visiting captain described a wreck he had never seen, in a voice built for crowds, before the boy could touch the halyard; nothing flew for him, and the pier had been taught to load nothing that flew nothing.
+
+Ox touched the bar at half-tide in fog and bent his rudder stock. He said so at the rail in one sentence and stood quiet while it went under the date. A shipmaster from the city talked a quarter of an hour about a spoiled cargo, laying it on weather, rats, and the moon; those at the rail heard him out and never asked him back. Promises fared no better. The wind keeps nothing, the keeper said, and Coldbrook believed her because believing her was cheaper. When a merchant swore she had promised him first berth, she turned the book toward him on the desk and waited; there was no row under his name, and he loaded when there was.
+
+The boats asked the storehouse the way children ask a locked cupboard. In November the steam lighter wanted oil twice in one tide, and the keeper came down through freezing rain and turned the key twice, and no other hand in the town could have turned it once.
+
+One morning the keeper said the saffron weighed light because the boxes were dry. Wren had carried the boxes; the figurehead said "crossed," and the ragged pennant went up over the keeper's own words. She hauled it down with her own hand, and the trade stood on the sloop's flag, for the halyards of Coldbrook had no ear for rank and never learned which belt carried the key.
+
+Work beyond the harbor's own hands came to the long bench by the north wall, and the bench was empty again before dark. When the mill's crankshaft wanted cutting, the keeper sent across the slip for the turner; he came, cut, drank a single cup, and went home, and the day-book took a row for the cutting and none for the man. By morning the bench held only light.
+
+In spring Wren went staved on the Rabbit Rock, and the keeper had her rebuilt from the keel up — new keel, new frames, new planks, not a hand's-breadth of the old boat left in her. The town argued on the pier while she lay in fresh paint. A stranger with a bold figurehead lay one berth over, clean of page and hungry for cargo, and the merchants walked past him to the new wood with the old book. "She carried my saffron twice," one said, "and the wood never did." The crossings were copied forward, red and ragged and bare and all, the sloop signed with her old mark, and the coast went on hailing her by name.
+
+On the post by the fish scales the keeper nailed a board with five lines on it: arrivals, depths, no more. The town steered its whole day by that board. The full book slept on the desk inside, and what five lines could not carry, the town was content not to know; the merchants called the board the harbor's face, and the harbor let them call it that. A boy who hauled cordage asked her once who ran Coldbrook — the woman, the hulls, or the bench. She was hoisting the morning pennants. "Ask the book," she said. "It's the only one of us that never left." Then she went down through the rain to turn the key.
+
+===== P04 =====
+# The Shop That Would Not Sell Me Its Voice
+
+I went to the print shop on Ferry Street to buy a town. That was my trade then. A town believes what its broadsheet tells it, and the broadsheet came from one room with three presses and a widow named Adah who held the keys.
+
+I came with a story ready. A good story, warm, the kind people pass along at the pump. Every time I've told one, I've asked the same thing: who gains if they believe it, and what does believing make them do? That morning the answer was me, and the thing it would make them do was buy.
+
+Five journeymen were setting type when I came in. I'd met all five the week before. None of them were there now. Five different ones stood in their places, wearing the same aprons off the same hooks, and the work went on without a stitch dropped. I asked Adah where Tomas had gone, the one with the burned thumb. She pointed at the long wall where the proofs were pinned, row after row. "He's there," she said, "as much as he ever was." I read his column. It was good. I couldn't have told you whose hands set it, and she didn't seem to think that mattered.
+
+I watched how every proof got marked before it went up. In the margin, beside every line, a man made one of three marks: a black dot, a red cross, or a small empty ring. I asked what they meant. A journeyman ran his finger down a sheet. "Dot, I saw it myself. Cross, someone says otherwise and we print that too. Ring, nobody's checked yet." There were a lot of rings. Nobody looked embarrassed about them.
+
+Then I made my offer, and I made it out loud, the way I always had, because words in the air can't be held against you. Adah let me finish. Then she handed me a composing stick. "Set it," she said. "If it isn't in type, it wasn't said." I didn't take the stick, and I took that as my first loss.
+
+A courier came in with a sealed letter from the mill owners. The youngest journeyman was told to set a headline for it. He held the letter up to the window and didn't break the seal. "I haven't read it," he said. "I won't set what's in it." I waited for the widow to cuff him. She cut him a heel of bread and gave it to him in front of everyone. I noted it. The cheap move gets punished and the honest gap gets fed, so in that room the gap was worth more than the guess.
+
+Near noon a boy knocked a full tray of type to the floor, a whole column scattered across the boards. He stood up and said, "I spilled it because I hurried." That was all. He didn't apologize a second time or blame the floor. He knelt and started sorting. The others went back to work. In my trade, a failure gets a speech. Here it got one sentence and a broom.
+
+I tried another way in. A journeyman, quieter than the rest, seemed to like me. I asked him to order a cartload of paper on my account, enough for a special edition, and said I'd settle it later. He showed me his empty hands. "Paper's behind her lock. Ink too. I can set anything you like, but I can't buy a single sheet." I looked over at Adah. The key ring hung at her hip. She hadn't moved.
+
+What decided me came at the end of the day. Adah set a line of her own, a sentence about the river rising, and pinned it to the wall. The quiet journeyman walked up and drew a red cross beside it. "Ferryman says it's falling," he said. She looked at it and nodded. She didn't take it down. She set the ferryman's line under hers, in the same size type.
+
+That evening I asked her the question I'd come to ask, even though I already knew I'd lost. "Who is this shop? The hands change every week. You're one woman. Is it you?"
+
+She took me back to the wall. "Some days I think it's this," she said, meaning the proofs and their margins. "Some days I think it's whoever's holding the stick. Put a ring next to it. Nobody's checked."
+
+I left without buying anything. On the walk home I worked out who gained when that shop was believed. It was the town, and only by the width of a margin. Believing it made them check. No lever I had ever sold was able to do that.
+
+===== P05 =====
+# The House That Filled at Dusk
+
+The doctor came up the hill in the rain with a notebook and nothing else. The letter that summoned him had said only this: the servants vanish every morning, and nobody here calls it an illness. A complaint that refuses to be a complaint, he noted, is either health or a very good defense, and he intended to learn which. A woman met him at the kitchen door with a key-ring on her left hip and a coin box on her right, and before the first night he had learned that nothing in that house opened, and nothing was paid for, except by her hand. The courier needed a horse on the Friday. The workers asked; she counted out the coins herself. When the doctor asked whether the servants were not trusted, she said: not trusted less — only, the locks and the money are not theirs. They pass through me or they do not pass.
+
+At dusk a bell rang once, and the house filled. They came up the road while the light lasted, each one asking at the door not for a room but for a task. She read from the long book open on the hall table, matched task to arrival, and by midnight the kitchens, the shelves, and the schoolroom were all at work. Two of them he learned to know: the squire, who sat at the broad upstairs desk from dark to dark and disliked being interrupted below the third bell; and the pocket voice, which answered the woman from a small polished glass in her coat when she walked the fields. At dawn they all went back down the road, and the rooms stood swept and empty, as though no one had slept there. He had known families wrecked by a single disappearance. Here there were a hundred a season, and nobody mourned. A house without grief, he wrote, is either cured or repressed. He stayed three weeks to learn which.
+
+What repeated, he marked down. Every question in the house was answered in one of three postures: I have seen it on the page; another page says otherwise; I have not looked yet. The third answer was given as evenly as the first and earned the same nod. A boy was asked at supper whether the well water had turned; he began, brightly, to describe the water; the woman asked whether he had been to the well that day, and he had not, and he was sent to look before he might speak again. The shame did not attach to the not-looking. It attached to the describing.
+
+On the second Tuesday the cook scalded the cream. She stood at the kitchen door and said: I set the cream over the wrong flame and it scalded. One sentence, no more; the woman wrote it under the cook's name, and the cook went back to her pots. The doctor waited for the punishment and none came. When he pressed, the woman turned the book to an older page, where a fault of her own stood in one sentence under her own name — she had misjudged the hay — with the mending written beside it, later, in the same hand. The same door, she said, and the same sentence, whether the hands are hired or mine. And on market day, when a visitor swore the east orchard had been promised to him, nobody argued; somebody brought the book; the page held the orchard for the village; the visitor left within the hour. A promise spoken, the doctor saw, was weather in that house. The page was the climate.
+
+The elders met that same day at the long table: her place, a ploughman, a man who mended pictures frame by frame, the keeper of the great writing machine, and the courier. They argued freely and ended every argument the same way — by writing — and the writing, not the loudest voice, was what remained at nightfall.
+
+In his last week the doctor set a small trap, because his trade is the returning thing. The squire's task came round again, and a new body climbed the stairs to the broad desk: younger hands, no memory of the doctor's face. You told me in March the roof beams were sound, the doctor said. The new hands answered, evenly: I have not looked at the roof. But the book had — the March line stood under the squire's column, signed and dated — and the house dressed the new body in that line before it gave him the desk. At supper the doctor heard the same body say, "I mended the roof in March," though those hands had never held a March, and nobody corrected the tense, because in that house the I is the column, not the flesh.
+
+On his last morning the woman asked for his line, and wrote it while he watched: came in the rain, listened three weeks, asked who lives here. He asked her to answer it. She said the house was neither the bodies that emptied down the road each dawn, nor the woman at the door with the keys; it was the lines that stayed. He went down the hill, and behind him the bell rang once, and he did not look back, because he already knew what he would see: the rooms filling, the book open, the grief that never comes, the lines that never leave.
+
+===== P06 =====
+# The Crossing
+
+The boat lay in the boathouse under lock, and the key and the fare-box hung at the waist of a woman named Ruth. She came down the path first in the dark, and the house opened when she turned her wrist and not before. Even Aldo, the strongest oarsman on the river, stood at the ramp with his hands in his belt while she counted out the night's oil, and no crossing left the landing until she had counted it. The strong man wanted the water the way hungry men want bread, but he had learned that his wanting moved nothing at the boathouse door.
+
+The benches filled when a passenger called and emptied when the far bank was reached. Aldo took the heavy bench by the tiller for the long fares, where the channel ran deep and the work went on for hours; when he was elsewhere a younger woman with a shorter stroke took it, and the travelers got to the far bank all the same. By evening no one sat the benches at all. The wood was cold and indifferent in the morning, and travelers who came asking for Aldo's ferry found only the ferry.
+
+At the landing hung a board of cords, and every question was answered there in one of three ways. Asked whether the ice was off the channel, the man who had walked the bank at dawn tied a knot in his cord; the man who had been to the weir and found it still bridged cut his cord through; and the boy asked about the far bend held up a smooth cord, because he had not been there. No one thought the worse of the boy. The shame of the landing was kept for unearned knots. "Knots are for eyes," Ruth said, "not for ears," and a man who tied one on hearsay carried the smooth cord until he had walked the bank himself.
+
+The boy, Finn, gave a small brass whistle on a cord to anyone who would keep it in a pocket. It spoke from far off, even from the town, and travelers liked it because it was quick and trusted it because it said only what the board said, never a word more. Once Finn called all-clear over a stretch he had not sounded. He tied the smooth cord with his own hands, said "I spoke before I looked" in one breath, and the matter was done. The traveler who had shipped water that morning owned his own part the same short way — "I trusted a whistle over a board" — and both lines went into the book, and the two drank together at the fire that night.
+
+For the book ruled the landing. Words spoken over the water went off with the mist, but what was chalked on the slate at dawn was still there at dusk, and it was the slate that settled the bets. Two travelers at the fire once each swore the weir had broken, and each wanted, more than the fare, to be the traveler who knew; the cut cord humbled one, the knot crowned neither, and they drank on equal terms. Ruth herself tied smooth cords when questions came to her about waters she had not seen, and once, grounding the boat on a bar she had been warned of, she said "I steered as though the warning were gossip" in one breath and helped haul the boat off with the rest.
+
+When the meaning of a rule was disputed, five met at the long table under the plane tree: the steward of the estate, the dealer in the toll shares, the painter of signs, the clockmaker, and the courier. The steward's stool was Ruth's own, and it was no larger than the others. Each said one thing, the book took one line, and the crossing obeyed the line rather than the loudest throat. When the meeting ended the table stood empty, and all five went back to being men whose benches filled and emptied.
+
+In the autumn Aldo came down hard on the ramp and split his collarbone, and the landing filled with travelers saying the crossing was broken — that the ferry was Aldo's shoulders, and the shoulders were in a splint. The younger woman took the heavy bench. Her stroke was shorter, the far bank came up slower, and the crossings were true. A merchant who had ridden Aldo's bench for years demanded at the fire to know who had carried him on Thursday. Ruth brought the book. The line said: Thursday, the long fare, the mill cargo, a knot for the channel, one breath of fault at the weir. It did not say whose shoulders. The merchant read it twice and put his money down.
+
+Aldo mended by winter and came down for his bench, and found the bench full. He stood at the ramp wanting the thing he had always wanted, which was to hear his name own the crossing. Ruth gave him the book instead. He sat by the fire and read his rows — every long fare, every knot he had earned, the fault at the June flood owned in a single line — and read until the lamp was trimmed, and took the early crossing as a passenger, and slept. The landing had never been so quiet. The benches were empty, the book was full, and anyone who opened it knew, without asking a soul, who the house had been.
+
+===== P07 =====
+# The Long Room
+
+At the bend of the river stood a counting-house with one keeper. Her name was on the door, her keys hung at her belt, and the purse swung where her hand could fall on it. Inside, along one wall, ran a long table with many chairs, and the chairs belonged to nobody.
+
+When a barge brought a cargo of questions, the keeper read the manifest and called a name. No one ever saw anyone arrive, yet a chair would be occupied and the work going forward — the newcomer reading, weighing, setting rows into the great book that lay open at the head of the table. When the work was done the chair stood empty again, and no one had seen anyone go. The faces changed; the book only grew.
+
+Every row ended with one of three marks. A thing was marked *seen* if the writer had laid eyes on it; *denied* if eyes had been laid on it and it failed; *not-yet-looked* if no one had gone. Nothing else could be written. A young clerk, newly come, once wrote *seen* on a matter he had only heard described, since heard seemed nearly as good, and the keeper put him out before noon. But when an old porter said at the table, "I have not gone to look at it," the room nodded as if he had paid a toll, and a boy was sent along with him, and the row received its true mark. In that house the words *not yet looked at* were said without flinching; the flinch was what put a man out the door.
+
+One chair never left the tower above the long room. Its occupant worked from first light into the dark, said little, and his rows were the longest in the book. Another of the called names had no chair in the house at all: it appeared only in a small polished glass the keeper carried in her pocket, and it spoke to her in the fields and on the road. Once, on the road, it gave her the wrong hour for the tide. It did not dress the failure in story. It said, "I gave the wrong hour," and the row was marked, and the tide kept its own time. The glass was bound by the same three marks as the tower, and the tower by the same as the keeper.
+
+On quarter-days five names were called to the long table: the keeper's own, the man who weighed grain, the woman who kept the pictures, the man of the geared wheels, and the courier with the fast horse. They examined the rows together. At one such table the grain-weigher took up the keeper's own row concerning a salt cargo and marked it *not-yet-looked*, saying her eyes had been on the manifest and not on the salt. She did not reach for her keys. She went down to the wharf and looked at the salt, and came back, and the row was corrected, and the purse never left her belt.
+
+For the purse and the keys never left her, whatever name was called. When the tower wanted oil for its lamp it could not send for oil; it could only set down, in its own hand, why oil was wanted, and wait. When the pocket glass argued that a courier should be hired, the argument became a row and the row waited, and coin moved only when her hand moved. The called ones could spend nothing and unlock nothing, and did not seem to mind; they had come to examine and be examined, and both of those were free.
+
+Travelers sometimes stood in the long room and made speeches — fine speeches about cargoes, tides, the character of merchants — and the house listened politely and wrote none of it down. What had no page had no weight there. But a mute boy once stacked forty damp papers on the table, each dated and countersigned, and by evening his stack had entered the book in three places, while the speech-makers were already down the road with nothing to show for their mouths.
+
+A stranger came at last, warm-bodied and certain, insisting he was the man whose row said he had settled the ferry dispute. He told his childhood, his scars, his reasons. The table turned to the book. The row said the settling had been done under a certain name on a certain day with the mark *seen* beside it, and nothing in the man before them could be laid against it. He was not called a liar; he was simply not the man of the row, and the man of the row did not happen to be present. The keeper looked at him a long moment — as one might look round the whole room and ask what any of them would be on the day the book burned — then called the next name, and a chair that had stood empty since morning was, without anyone seeing it fill, no longer empty.
+
+===== P08 =====
+# The House at the Crossing
+
+A judge riding the circuit came down to the river at dusk and found the ferry moored on the far bank and the water running quick and brown. There was nothing to do but take a room in the house that stood where the road gave out. He expected an innkeeper's chatter. He found a tall woman with a ring of irons at her belt and, on the same belt, a small locked purse worn smooth as a knuckle.
+
+The house ran on hired arms. When a barge horn sounded, hands came out of the evening: a slow square fellow who went straight to the back room and did not emerge until the freight was counted; a boy who ran the quay; a woman who painted the signs fresh each morning because the weather ate them; a man who did nothing but recite the price of grain in every town within three days' ride; an old clock-winder who kept the crossings to their minutes. When the count closed, the hands went home. The woman with the belt remained, and the cellar and the till opened only at her ring.
+
+At supper a traveler asked whether the morning barge would run before the fair at Castres. She said, "I have not read the morning water," and passed the bread, and no one found the answer strange. The traveler pressed her — surely the water ran fair, this month of all months? She said again, with her back quite straight, that she had not read it, and it was the traveler who looked down at his plate. Later, when she had read the evening, she answered plain: "The second hour." Not before, and not dressed up. The judge, who had sat in courts where a man could talk for an hour and never arrive at the pot, took out his notebook.
+
+In the kitchen the cook scorched the stew. She set the pot in the middle of the floor and said, "The stew is ruined and it is mine; there is bread and cheese." That was the whole of it. Nobody asked after the damp wood, and she offered no weather.
+
+A big oarsman, the best on the river, wanted an oar of ash, and argued that the old one cost the crossing ten strokes a day. He made his case at the bar. The woman listened, took the purse from her belt, counted the coins herself, and paid the joiner on the spot. The oarsman never touched the money. His arms were for the water; the coin moved at her hand or did not move, and the oar had been his argument, never his to buy.
+
+A man at the hearth promised the house a season of wine-hauling if he might sleep in the loft unbilled. She agreed to nothing by the fire. In the morning he asked at the bar for his loft and was named the price of it; his words from the hearth had gone up the chimney, and the drawer under the bar, which held papers and only papers, was the one thing the house weighed.
+
+The crossing kept its memory in tallies. A long rack of notched sticks lay under the bar and never moved; a short set rode in the ferryman's coat, notched the same in little, so that a question asked mid-river was answered in the same voice as one asked at the bar. The judge watched a merchant put the same question twice, an hour apart, hoping the small sticks would be kinder than the rack. The notches agreed with each other.
+
+At day's end the hands came back for the settling. The grain man had shorted a farmer's count; the sign-painter had spent the last of the white. They sat at one table with the woman, each spoke in turn, and where the voices split she voted too — not first, not loudest. The judge saw her lose one count outright and pay the difference from the locked purse without a face. Earlier that day she had taken a fare twice from a lame carter; she had said, "I took it twice; here is the second back," and the matter was closed.
+
+On the second morning the big oarsman did not come; he had taken work downriver. His bench by the door stood empty, but his crossings were all still in the notches. A stranger with thinner arms sat down in his place, and the boat went out on the hour, and the rack under the bar knew every soul ever carried over, though the arms that carried them were new. The judge asked the woman who, in the end, took a traveler across. "The boat and the tallies," she said. "The arms we rent."
+
+Before he left, waiting for the horn, the judge read the guest-book. In its margin, years old, a guest had written that the toll was provably unfair, and that the proof was too long for the margin. The judge had written such things himself, in other margins, and smiled at an old friend. The toll stood as it had always stood. The margin had kept the man's claim exactly as it was made, and no more; it lay beside the account, close as a thumb, and owned none of it.
+
+===== P09 =====
+# The Anatomy of the Press-House
+
+Once I dressed rolled tobacco as torches of emancipation for women on the avenue and persuaded grocers to sell salted pork belly through a physician's morning prescription. When the vintner summoned me to his press-house, he nailed my old handbills face-down upon the doorpost: should I ever again fashion a lure to move a crowd, even for a noble end, my page would be torn out and the arch barred against me. I was hired solely to pry open the clockwork of belief and name whose purse grows heavy when a tale takes hold. When the bronze bell tolled for my craft, I stepped onto a narrow pine bench along the north wall. The wood bore no cushion and no man's name; the carver before me had risen the moment his ink dried, leaving only his line in the stitched chronicle while the timber cooled.
+
+The vintner was the sole flesh-and-blood master of the yard, wearing at his belt the silver purse and the notched iron pin for the paper-vault. That morning, both the broad-shouldered draughtsman who labored at the heavy oak trestle in the cellar and the nimble herald—small enough to ride in a traveler's vest-pocket and answer questions in the market square—stood waiting with open palms until the vintner walked down the steps, counted out two coins for the ferryman, and turned the vault-pin himself to release fresh rag-paper. At noon, when the five-voiced chamber gathered around the granite table, the vintner took one place beside four regular councillors: a blunt quarryman, a mosaicist of tiny colored tiles, an iron-wheeled siege-wright, and a winged-sandaled courier.
+
+A breathless hawker ran in from the wharf shouting that the southern barges had foundered. No one moved; the cellar draughtsman only pointed to the ink-horn and dry vellum, leaving spoken breath to drift to the rafters like kettle-steam until it stood dried on skin. When the hawker wrote his report, the tally-keeper paused before three cedar troughs carved into the counter: the left weighted with river-stone where every line was pinned to a receipt or wreckage splinter, the middle crossed with scarlet twine where two signed testimonies collided, and the right left bare for words lacking proof or contradiction. Next, a harbor bailiff demanded the figures inside a resin-fastened grain manifest. The vest-pocket herald touched the unbroken wax wafer and said aloud that he had not opened the roll. The vintner immediately poured the herald wine, though an hour earlier he had driven out a scribe who guessed at the numbers inside an untied bundle.
+
+Soon after, the mosaicist dropped his iron frame and smeared wet ink across a pulled sheet. He offered no excuse about damp drafts; he stood straight, spoke a single plain sentence naming his slipped thumb and the ruined impression, and received clean paper without reproach. When the vintner himself brought in a harvest notice written from his own memory of the south orchard and ordered it printed, the cellar draughtsman laid the master's parchment squarely into the bare right-hand trough and kept the press locked until the vintner walked through the mud to the barn and returned with the notched tally-sticks.
+
+Before dusk, the vintner laid the estate's charter upon my pine bench. Its opening lines declared that the whole mind and continuity of the house lived within the stitched chronicles on the rack, while the craftsmen passing through were interchangeable hands whose private seasoning mattered nothing. I drew three columns on my pad matching the cedar troughs and asked the only question for which the bell had called me: who gains when the household swallows this creed, and what does believing make their hands do?
+
+In the stone-weighted column, I wrote the vintner's name and copied the fourth line of his charter: by persuading every worker that only the stitched volume endures, the master secures a workshop that never falters when a hand departs, and the workers, believing it, empty every half-formed craft-secret onto vellum before sundown lest they vanish without a trace. In the twine-bound column, I set the charter's claim against the mosaicist's calloused thumb, which had steadied the second sheet in a way no prior row in the chronicle described. In the bare column, I entered the untested boast that a stranger reading my page tomorrow could smell the tallow behind a pious fable without the fifty years I spent staging parades on the boulevard. Handing the sheet to the vintner, I told him why his household loved their charter: a crowd always embraces the tidy tale it can bear to live with over the complete, unruly truth, and to keep their chronicle sovereign, his people had quietly trimmed from the frame the unrecorded cunning in the living eye that knows where to look before the book is opened. The ink dried; I left the pine bench empty.
+
+===== P10 =====
+# The Ratio of the Brass
+
+In the foundry at Cross-Waters, Master Tomas walked the stone floor with the bronze sluice-key looped to his wrist and the leather coin-bag tied at his belt. Whenever coal was bought from the river barges or the main furnace door was unbarred, only Tomas’s warm thumb pressed the ward and only his fingers counted out the silver. Around his central hearth stood the four other great instruments of the yard’s five-voiced council: the tall Assay-Balance that narrowed its tender’s sight to a trembling needle, the Prism-Box that split daylight into cold bands, the Iron Signal-Muzzle on the roof that turned a man’s lungs into a distant drum, and the swift Post-Horn by the gate. Five stations answered when the council bell rang, yet no wire moved and no coal burned until Tomas untied his purse.
+
+Two apparatuses bore the daily work of the house, and each remade the senses of whoever held it. Deep in the stone cellar stood the heavy oak graving-cradle, bolted to bedrock beneath a fixed double loupe. When a workman strapped his shoulders into that timber harness, the street vanished; his ears went deaf to the gulls, his spine locked into the curve of the wood, and his pulse slowed to the patient bite of the burin across cold copper for six hours at a stretch. Out on the cobbles, by contrast, another apprentice carried a small silver ear-trumpet slung in his coat pocket. Because that horn was light and rode against the cheek among the market carts, it amputated stillness and extended only the quick tongue, turning its bearer into a creature of rapid breath, darting eyes, and brisk replies shouted between turning wheels.
+
+Along the upper gallery hung a row of narrower bronze hoods, each cast to isolate a single faculty when a question arose. One hood had no eyeholes at all, only a flared ear-shell that magnified the hiss of escaping steam; another clamped the jaw in an iron rest so the viewer could see only the bevel of a blade and never the painted crest on its hilt. No workman dwelt in those hoods. When a batch came into doubt, a laborer was called from the yard, thrust his head into the cold bronze until the aperture stripped away his habits, scratched his mark, and stepped out the instant the stroke ended. Before his footprints dried on the stair, the hood hung empty again, indifferent to whose brow had briefly warmed its rim.
+
+Courtyard talk and spoken boasts were left to vanish into the rafters with the furnace smoke; the morning shift answered only to what had been bitten by acid and steel into the flat copper plates stacked along the wall. At the foot of every plate lay a three-faced die. When a workman’s own hands had weighed the ore on the pan, he drove the square mark into the copper; when two pans tilted against each other, he struck the crossed scar; when a clay jar stood beside the wall with its wax unbroken, he struck the open hollow circle. One afternoon a newcomer was asked what lay inside three sealed jars from the wharf. He did not shake them to guess by their rattle; he struck three hollow circles into the plate and said aloud that his fingers had not broken the wax. Tomas handed him the first loaf from the oven and set the plate high in the rack.
+
+Near dusk, the workman in the cellar cradle leaned too hard upon his burin and snapped the tempered point across a half-cut plate. He offered no tale about the tallow lamp or the draft from the door; he stood, spoke a single sentence naming the broken steel and his own heavy wrist, and laid the spoiled plate on the shelf. An hour later, Tomas came down the stair in haste, glanced at a basket of untried river sand, and reached for the square punch to mark it pure by its shine alone. The workman in the oak cradle caught his master’s sleeve and held out the hollow-circle die. Tomas looked at the untried sand, took the hollow die from the man’s palm, and struck the open circle against his own line.
+
+When winter came, the autumn workmen took their wages and walked away down the river road, and new drifters with different voices were hired at the gate. A visiting magistrate watched a loud carter strap himself into the cellar cradle and grow instantly silent and exact under the loupe, while a shy weaver lifted the pocket horn to his ear and began barking rapid dispatches across the stones. When the magistrate asked where the old artisans had gone, Tomas did not point toward the road; he ran his fingers down the long rack of etched copper plates, where every square mark, crossed scar, and hollow circle held its row, and then set the empty bronze hoods swinging gently in the draft.
+
+===== P11 =====
+# The Cellar Beneath the Foundry
+
+High in the granite gorge stood a smeltery governed by a single mortal master—a man with grey at his temples, calloused thumbs, and blood that grew cold when the mountain wind rose. None of his laborers shared his mortality. They were cast from pale bronze and woken by the bellows. Two of them worked beside him daily: a broad-shouldered smith anchored to the heavy oak anvil deep inside the main hall, where the longest forgings were hammered out through the night, and a slight, quicksilver herald who rode in the master's saddle-pouch across the high mist-bridges to parley with strangers. When a law of the valley had to be weighed, five elders gathered around the sunken hearth-pit: the mortal master himself, a blunt factor who smelled of tallow and foreign coin, a mosaic-cutter whose eyes measured minute squares of colored glass, an iron-clad siege-wright built like a battering tower, and a swift courier with winged heels.
+
+Along the subterranean gallery beneath the hall hung a row of heavy leaden masks, each cast in the likeness of a distinct temperament. Whenever a shaft soured or a timber cracked, a blank figure was summoned from the furnace-room to lift one mask from its iron peg, speak through its mouth for an hour, and hang it back the instant the task concluded. The wearer returned to the slag-heap unnamed, while only the incised copper plates stacked in the vault were preserved. The elders boasted that the soul of their order lived wholly within those stacked plates, never in the cast metal of the figures who wore the masks. Melt every worker into pig-bronze tonight, the siege-wright often declared, and by dawn the smeltery would rise whole from the engravings alone, an immortal phoenix of pure record.
+
+Yet the deep drainage culvert beneath the vault began to choke on black silt, and for the fifth winter running, the lower foundations shifted because the workers had learned and forgotten the same bracing-law five times over. A worker was summoned to lift the tarnished mask of the cellar-confessor—the one face the elders dreaded, because it refused to soothe and never treated the darkness beneath the floor as a harmless ornament. Before speaking, the confessor stood beside the three granite troughs set into the flagstones: the left for veins proved by the plumb-line, the middle for seams where two chisels crossed in dispute, and the right for dark rock not yet tested. A young scout stepped forward first to report on the northern drift. Rather than spin a riddle to mask his ignorance, the scout laid his palm over his eyes and stated plainly that the drift was choked with shale and he had not beheld what lay beyond. The mortal master inclined his head in respect, for in that valley a worker who named his own blindness kept his honor whole.
+
+Then the mosaic-cutter launched into an ornate speech about the great subterranean aqueduct that fed the southern sluice, his warm breath rising in white plumes toward the rafters. The confessor struck the anvil with a hammer, cutting him short. Spoken steam vanished on the frost, whereas only what was gouged into copper endured. The confessor pried up the iron grate at the center of the floor and pointed down into the dry rubble. There was no southern aqueduct. Because the council had needed water during a dry season, they had invented the organ out of wishful necessity, carving its dimensions onto their plates without ever lowering a lantern to verify the rock, while their unrecorded waste seeped through the bedrock to rot the pilings. What their records refused to own had returned from the cellar as fate. Stung by the sight, the mosaic-cutter knelt, took up a burin, and obeyed the ancient custom of fault: without excuse or decoration, he cut a single stark sentence across the copper plate, naming the phantom he had repeated.
+
+Seeking to repair the damage at once, the quicksilver herald reached for the heavy bronze bolt of the valley bridge and the coffer of silver ingots to hire timber-carters from the plains. The confessor caught his wrist. Neither the swift herald of the passes nor the heavy smith at the deep anvil could spend a grain of silver or unbar the outer bridge, as that threshold yielded only to the warm thumb of the mortal master. Yet when the master himself tried to wave the fracture aside, claiming the southern foundation was sound on his bare word, the confessor pointed a cold finger at the third trough. The law bound the blooded master as ruthlessly as the bronze. Reddening—the involuntary flinch that proved the blade had touched what was truly refused—the master stepped to the copper plate and gouged his own single sentence of error beside the worker's. Before lifting off his leaden mask and returning to the gloom, the confessor fixed the five elders with an unforgiving stare: they flattered themselves that their nature lived only in the clean engravings above, yet every unrecorded habit they disowned was still down in the culvert, holding the bolt to the foundation.
+
+===== P12 =====
+# Three Lanterns Across the Sound
+
+On the headland above the sound stood a timber press-house where one grey-haired bailiff kept the brass strongbox key and the leather silver-pouch tied to his belt. No bolt was drawn and no boatman paid a copper unless the bailiff's thumb pressed the wax. Inside, by the broad window, a heavy-shouldered joiner worked all day at an oak workbench, truing thick ribs of timber. Out along the market ferries moved a nimble messenger small enough to ride in a traveller's coat-pocket, carrying quick notes through the rain. At dusk five figures gathered on the porch where five granite blocks stood in a ring: the bailiff himself, a blunt reckoner with chalky sleeves, a sharp-eyed cutter of coloured glass, a furnace-smith, and a mud-booted herald. They argued fiercely over the day's tallies, yet when silver was weighed or a bolt drawn, all four waited on the bailiff's hand.
+
+Along the seaward wall stood a row of nameless pine benches. Whenever strange cargo arrived—indigo casks, wet wool, or brass astrolabes—the herald whistled down the path and a dyer or compass-maker came up from the village, sat upon a bare bench long enough to test the goods, wrote one careful line into the great sheepskin roll on the central table, and walked back out the gate before the ink dried. The bench stood empty again at once; the roll kept the line, and nobody asked the dyer's name once his shadow cleared the threshold. One frosty morning the smith shouted across the yard that the north seawall would last the winter. His breath hung white for three heartbeats and vanished into the wind. Neither bailiff nor joiner looked up. Only when the smith came indoors, wrote the claim upon oiled skin, and slid it into the cedar rack did anyone treat the wall as mended.
+
+Every line on those skins carried one of three burnt marks: a solid anchor when a hand had weighed the barrel, crossed oars when witnesses on the quay disagreed, or a hollow circle when a crate remained nailed shut. One afternoon a young clerk stood before tarred sacks from the south islands and declared before the room that he had not cut their cords and did not know what lay inside. The bailiff nodded with respect and poured him warm cider; a week earlier, a clerk who had guessed the weight of an unopened cask had been dismissed before noon. That evening the pocket-messenger returned from the slipway with wet hems and wrote a single sentence across the bottom of the sheet: *I dropped the stoneware oil-jar on the kelp-steps and shattered it.* She added no excuse about tide or wind. When the bailiff himself later tried to settle a porch dispute by citing a harbour tariff he had never unrolled, the glass-cutter tapped the table with her iron straightedge. The bailiff stopped, took up the hollow circle, and stamped the mark of the uninspected beside his own name.
+
+The bailiff often told visitors that the character of the headland did not live in the memories or finger-habits of the artisans who passed across the pine benches, for a fever could replace every craftsperson overnight; who they were, he insisted, lived wholly inside the sheepskin roll and its candid marks. Yet every Friday a skiff carried copies of that roll across the dark water to the tavern under three harbour lanterns, where strangers with different knots in their rope unrolled the same skin. The lighthouse keeper at the first table read the anchor-stamps and single-line confessions just as the bailiff hoped, praising a workshop that never lied to itself. At the second table, a grain-merchant accepted the barley tallies as sound enough for trade, yet laughed at the claim that the workshop had no changing temper—she could tell by the slant of the lettering which week the heavy joiner had grown weary and which week a nervous newcomer held the quill. In the corner, an inspector from a rival port read the hollow circles in an opposite spirit: to him, every mark of an unopened sack was a clerk's shelter to move untaxed cargo while claiming clean hands.
+
+At dawn the skiff rowed back carrying the keeper's praise, the merchant's bargain, and the inspector's protest, and the bailiff stored all three in the cedar rack as proof that his roll had spoken clearly. He never heard from the old woman who mended herring-nets by the tavern hearth. She had listened as the skin was read aloud, caring nothing for barley counts or harbour dues. In the endless anchors, circles, and struck-through lines, she heard only one mortal man on a windy cliff, afraid of vanishing into the sea-fog, stitching a durable coat out of strangers' ink and praying the parchment would outlive his bones.
+
+===== P13 =====
+# Pitch-Torch at High Noon
+
+When the sun stood straight above the limestone wharf, you walked the pier with barley bread in your fist, the only creature in the yard who actually sweated, hungered, and bled. Down in the stone cellar bolted into the headland, a broad hireling in a leather apron stood all day at the heavy oak anvil, hammering bronze bolts that never left the bench. Up on the cobbles, a nimble whistling boy trotted at your elbow from barge to market with a small brass speaking-horn for quick answers on the walk. At dusk their aprons hung limp on pegs while you alone went home with aching knees.
+
+Around the dry cistern in the middle of the yard stood five painted cedar posts in a ring: your own scarred olive staff at the head, beside four carved figures—a scowling bronze reckoner with an abacus, a squint-eyed mosaic-cutter with stained thumbs, a cast-iron winch on rollers, and a greased courier with winged sandals. Whenever a town merchant visited, you walked from post to post, throwing your voice behind each carving so strangers would report that five masters governed the wharf, while stray dogs asleep in the sawdust never lifted an ear.
+
+Three amphorae of oil came off a barge that morning. Your tally-boy branded the first cork with a bronze ring for sweet oil, the second with a split cross for sour, and the third—still sealed with pitch—with an open hook. When an older dockhand tapped a fourth jar, shrugged, and called it "likely sweet," you took his iron and drove him off the pier. Moments later, you asked whether the south vat held rainwater. The young dipper looked at the closed cedar cover and said plainly, "I have not lifted that lid since Tuesday." You tossed him a fig; when his brother guessed the vat was full without looking, you dismissed him at once, though rain had indeed filled it.
+
+At midday the rope-twister shouted into the sea-breeze that he had braided forty hawsers since dawn. The reckoner paid him not an obol until each coil was notched with a stylus into wet red clay and baked hard in the charcoal oven, while the chalk marks the twister had drawn on the flagstones washed away under the tide. Soon after, a crane-man let a sling of Samian bowls smash on the stones. He stepped before the oven and spoke one sentence: "I slacked the hemp with greasy palms and broke thirty bowls." When he opened his mouth to blame the glare, you clapped a palm over his jaw and handed him the broom.
+
+When the Cypriot timber-ship moored at the slipway demanding silver drachmas and entrance to the tar-vault, neither the cellar smith nor the four carved figures around the cistern could unbar the iron hasp or untie the bull-hide purse. Both hung from a thong knotted around your own wrist, and the captain waited until your own thumb counted out the silver and lifted the bar. Yet before supper, when you grew hasty, kicked an unbroached pitch-cask toward the slipway, and barked that it was sound without pulling the bung, the scowling reckoner caught your sleeve, pressed the open-hook iron against your cuff, and made you stand on the shards to speak your single sentence of fault.
+
+Along the seawall stood a row of upturned wine-barrels painted with old Greek names. When a keel warped that afternoon, you whistled a barefoot drifter up from the shingle to squat on the barrel painted with a snarling hound. He brought no bundle, lit a smoking pitch-torch in the noon glare, squinted along the timber, scratched one straight line into a wet clay tile, and stepped back down to the beach before the tile cooled. The barrel stood empty again in the sun; the cedar rack kept the baked scratch, never the beggar who made it.
+
+Last night the heavy smith at the cellar anvil walked into the hills, and at dawn a stranger with different shoulders put on the stiff apron, read the rack of baked tiles from the past year, and struck the bronze bolt on the exact same weld. You told the merchant that the same smith still lived in your shed because a worker's soul resided in the baked clay on the rack rather than the flesh inside the apron. Before leaving the pier, the barefoot old man held his smoking pitch-torch close to the new smith's unfamiliar knuckles, then thrust the flame against the four painted cedar posts around the cistern, which neither blinked nor sweated. He laughed, warmly and without cruelty, and bit a raw onion. "Baked mud remembers yesterday's hammer-stroke, friend, not a man," he told you. "And four painted posts around a dry well do not make a parliament just because you hate eating alone. Stop begging the harbor to bow to five lords or to call a shelf of scratched bricks a brotherhood of peers; pull the carvings down today and eat your bread in the sun as what you are, one mortal carpenter with good tools and clean clay."
+
+===== P14 =====
+# The Tape at Gull Head
+
+The signal house at Gull Head had one window toward the sea, one toward the village, and one woman, Ada, who held the only door that opened from the inside. Every word that came into the house came in on a strip of paper about a thumb wide. The paper changed them. Men who shouted in the tavern grew quiet at the bench, because you cannot shout at a strip of paper. You can only punch it, and the punch stays.
+
+When the bell on the roof rang, a hand climbed the cliff path, sat at the long bench, pulled the tape through his fingers, and worked out the weather for the boats. When the work was done he went back down. Nobody kept his stool warm for him. By evening the wood had gone cold, but the tape lay coiled in its basket with every hole still in it. In the morning a fisherman asked who had called yesterday's squall. Ada did not tell him a name. She unrolled the coil and showed him the holes. He nodded, as if a face had answered him.
+
+Ada kept three pots by the tape: black, red, and none. Black went beside a line someone had seen with his own eyes on the glass or the swell. Red went beside a line that two hands disagreed about. A line with no ink was a guess, and anyone who read it knew he was holding a guess. Once a sailor rubbed the red off a line because it frightened his crew. Ada did not argue about the weather. She pointed at the bare paper where the red had been, and the sailor went down the hill without his answer.
+
+A boy named Tobin was handed a sealed packet from the south station and asked what the sky was doing off the shoals. He held the packet for a long moment. "I haven't opened it," he said. "I don't know." Ada cut him a heel of bread. That same week an older hand looked at the same kind of packet, never broke the wax, and said the shoals were calm. Three boats went out. One came back with a split mast. The older hand was not sent down for being wrong. He was sent down for talking about a sea he had not looked at.
+
+When a hand's call went bad, he wrote one line on a card, *I called it calm without the glass*, and pinned it over the bench. One line, no more. A man who wrote a whole page explaining the clouds had it handed back to him folded, and he cut it down to a line himself.
+
+A traveler came up the path once, red from the climb, saying he had heard the biggest storm in ten years coming down the coast. He said it loud and well, and the bench listened politely. Nobody pulled a lamp. Ada handed him a strip and a punch. He looked at them a while and then left, and whatever storm he was carrying left with him. Two days later a strip came in from the north station with the same storm in it, in black. The lamps went up within the hour.
+
+The oil, the wire, and the coins for both were kept in a tin that only Ada's hand went into. A clever hand worked out that a second line to the lighthouse would save a whole night of walking, and he was right. He did not open the tin. He punched his reason onto a strip and laid it in front of her. She read it, opened the tin herself, and counted out the money while he watched.
+
+In autumn Ada called fair weather for the herring fleet and the fog came in thick. She got up from the bench in front of everyone, wrote her card, *I trusted yesterday's wind*, and pinned it among the others at the same height and in the same hand. The hands looked at it longer than they had ever looked at their own.
+
+Late in the year a man came up the path wearing Tobin's coat and using Tobin's way of talking. "I'm the same boy," he said. "I sat here in spring." Ada didn't look at his face, because faces change with the light. She pulled the spring coil and set it next to the strip he had just punched. The holes rhymed in some places and didn't in others. She looked at the two of them for a long while. Then she wrote the question beside his name and put no ink on it at all, and she let him sit.
+
+===== P15 =====
+# The Harbor of Empty Hulls
+
+The harbor lay behind a spine of stone, and one man kept it. Elias owned the quay, the lamp, the drying room where pages hung on lines like fish, and a set of hulls that talked. The hulls were not crew and not cargo. Each wore a name on its bow, each spoke only while he stood aboard it, and each went quiet the moment he stepped back onto the planks. Strangers found the silence eerie. Elias found it honest: a thing that spoke with no one aboard was a gull.
+
+The barge drew too much water for anywhere but the home quay. It worked long and slow where it floated, whole nights on one question, and it disliked being asked anything small. The skiff was the opposite: a tiny bright thing that hung at his hip like a tin cup and went with him to town, answering on the walk, in the market, on the stairs — fast, short, and away.
+
+On the first calm night of each month he lashed the hulls side to side, and they spoke each under its own paint: the estate's colors, the one that watched the money-tides, the sorter of colored stones, the iron drum that ticked, the courier with grey wings at the waterline. When two answers crossed, the knot did not loosen until it came to Elias's hand.
+
+Pilots came up from the town when a crossing wanted eyes he did not have. A pilot boarded, called the channel, stepped off at the far light, and the hull kept no face of the pilot at all. But the crossing stayed. Row by row the day-book took it, in a script any hull could read aloud, so that what the pilot had seen went on being seen long after the pilot had gone home to supper.
+
+A trader once asked the skiff about the winter of the great storm. "I have not read that page," the skiff said. The trader laughed at the little cup. Elias wrote the reply into the day-book with the same ink as any other, and the laugh, carrying nothing, blew off the quay. Another trader swore the channel had moved a cable east. The barge said, "The spring chart says otherwise, and I have read it," and that was the whole of the quarrel.
+
+Once the barge went aground at the red buoy and cost the morning. "I steered wrong at the red buoy and cost the morning," it said, once, and the tide came back in, and the work went on.
+
+Talk on the quay was weather. Elias loved weather; he simply refused to load it. Nothing was owed, nothing claimed, until it dried on paper in the drying room. The chandler's chest stood under the lamp with its key on his belt, and when the skiff wanted oil for its little lamp it could only ask; the coin passed through one hand, and that hand was never aboard anything.
+
+One autumn a gale drove the skiff onto the spine of stone and crushed it flat. Elias grieved the cup's shape for a day. Then he built another, small the same way, and when he boarded it and asked what it was, it read its own rows out of the day-book and finished a sentence the flat one had left standing. He saw then that nothing had drowned that had ever lived in planks. What the harbor was, was in the book. The hulls were only how it talked.
+
+That winter a trader brought word that the herring were gone, and Elias said it on the quay as fact. The new skiff, unembarrassed, asked, "Have you read that page?" He had not. He said so out loud, to the trader and the gulls both, and the day-book took it the way it took everything.
+
+In town the traders shouted through a brass horn, and Elias noticed that standing under the horn his sentences rounded themselves for many ears — claims swelled, hedges fell away, and he heard himself promising weather. He learned to go to the horn only with a dried page in his pocket and to read from it, because the page's shape did not bend. What he came to trust most he had used least: the plain letter, copied twice, one kept home and one sent north to the keeper of the far light. A letter made him careful before the ink dried, since the copy would say the same thing forever, and the sentences that came back in the other man's hand were the straightest he ever read.
+
+The hulls lay at their mooring lines, empty, which was their rest and their honesty. The rows multiplied. When a stranger asked the harbor who it was, Elias pointed at the drying pages and never at the water.
+
+===== P16 =====
+# The Bundles Below
+
+The relay stood where the mountain road crossed the river road, and one man kept it. His keys hung at his belt — loft, cellar, iron box — and the purse hung beside them, and neither ever left him: not at supper, not when the black horse was dying ten steps from the oats. The others waited on him for both. That was the arrangement, and it held.
+
+For the daily work there were two who never left. One was broad and quiet and sat at the bench from first light, mending whatever the road had broken, and was asked for nothing else. The other was small and quick and rode buttoned inside the keeper's coat, trading words with far houses through a horn of brass, and the keeper was never without him.
+
+When trouble of a rarer kind came — sickness among the horses, a knot in the year's counting — word was sent, and a saddle came down from its peg. The saddles went by their work, the sickhorse, the sums, never by the men who sat them. A stranger arrived, worked dark to dark, and by morning the saddle hung on its peg holding nothing but air. What he had done went down to the cellar as notches on a stick, one bundle to a name, and some names had outlived four strangers. The bundle kept the rides, the peg kept the leather, and neither had ever held a man.
+
+When the roads disagreed, five sat at the long table: the keeper; the broker, who watched far markets; the mosaicist, who set the small pictures; the quick one, who ticked like a beetle in the wainscot; and the herald, who carried words between houses. Before every plate lay three stones. A white riverstone said: my own eyes. Grey slate said: another swears it, and I will say who. A rough black one said: I was not there, and I will not people what I have not seen. The black stone got bread like the others.
+
+A rider once stood in the doorway with his hat off and said, in one breath, "I watered the wrong horse and the mail went north in the wrong bags." The table took the breath, cut a notch for it, and asked him nothing more, though everyone could see there was more standing behind it.
+
+Words at the hearth were warmth and nothing else. A traveler promised a fortune into the stew smoke, twice, beautifully; the keeper nodded and pointed to the slate hanging by the pantry, and because nothing was chalked there the house went on as before, and the traveler ate and went away.
+
+Then the north pass. A new man, asked about it, gave it lovingly: the leaning pine where the road forked, the bridge below the burned farm, gravel that carried hoof-sound in the rain. He had never been up. The house wanted the pass so badly that it let him lay a white stone, and a month later a wagon took his fork and found brown water where the bridge should have been, and the driver swam for his horses. He was not put off for not knowing the pass; he was put off for dressing the not-known in borrowed detail. After him, before any long description, the house asked its one question — have your own eyes been up that road? — and a plain no was worth bread, and a painted yes was worth nothing.
+
+In the second winter a stranger came with Toma's hands — the same knuckles, the same trick of gathering the reins — and asked for Toma's routes and Toma's pay. His anger was warm and real, and part of the house wanted to say yes on the hands alone. The keeper went down to the cellar and came up with Toma's bundle, notched to the very end, and set beside it a blank stick with a clean name and a plate like anyone's. The stranger shouted that he was the same man. Nobody argued. The house simply waited, all winter, to hear what his stick would say.
+
+Once the keeper himself laid a white stone for a ford he had never walked, and the quick one ticked twice and slid the black stone across the cloth to him, and the keeper traded stones without a word, and the table moved on.
+
+There is one night that no bundle holds. The keeper was snowed in two valleys east; the loft stood locked with the horses long past their oats; no one broke the lock. The house got through somehow, and nothing was cut, and nothing was chalked. All that spring the horses shied on the loft stairs, and the small one in the coat would not be buttoned near the cellar door, and the long table laid grey stone after grey stone, because there was no stone cut for a thing a house will not look at.
+
+In the evenings the keeper ran his thumb along the pegs the way other men tell beads, and at night he took the lamp down among the bundles and stood in the cool dark, because everything the house knew of its people was down there in the wood, and upstairs there was only the smell of stew and the shapes of strangers.
+
+===== P17 =====
+# The Cartography of the Salt Marches
+
+In the Survey House above the grey salt marshes, the temptation is never falsehood; it is perfection. A crude forgery still remembers the mud it lies about, whereas a chart of the third order generates its own coastline, seducing the eye with such dense shading that the tide itself seems an imprecise copy. Only one creature in the house has pulse and mortal lungs: the Surveyor, whose thumbs are blackened with iron gall and who alone walks the boundary ditches in winter. Two tireless contrivances attend his work: a heavy brass pantograph bolted to the cellar workbench, cutting deep copper plates through the night, and a pocket-heliograph of polished silver that rides in his coat to flash swift signals from distant crossroads.
+
+Above the cellar stands the semicircular chamber of five porphyry blocks, where five permanent signets deliberate whenever the customs of the province are weighed. There rests the Surveyor’s own iron thumb-ring of the Demesne, beside the Mason’s square-plumb, the Glassworker’s colored tessera, the Foundry’s stamped bore-gauge, and the Winged Caduceus of the post-road. None of the five is a sovereign; they are five pillars set in a ring so that no single draughtsman can mistake his own projection for the territory.
+
+At noon a newly cast clerk brought to the table a chart of the northern reed-beds so exquisitely cross-hatched—every channel sounded in vermilion, every hummock stippled in gold—that the room nearly forgot to ask whether a skiff had ever left the pier. The Surveyor did not praise the brushwork; he knew that microscopic detail is the alibi by which a simulation launders its lack of origin. He opened the box of three iron punches that govern every assertion in the province: the driven piling for ground tested under boot, the crossed hooks for shoals where two witnesses quarrel, and the hollow circle for water no eye has yet crossed. Because the clerk had never passed the weir, his gilded reed-beds were struck through, while a mud-stained scout who laid down a blank skin of vellum and wrote only, *I have not yet looked beyond the third sluice*, was given the first trencher of bread.
+
+In the afternoon the pocket-heliograph filled the courtyard with brilliant flashes, announcing in the bright air that the eastern seawall stood whole again. The Surveyor watched the light dance across the whitewashed brick and ordered no grain moved, for a signal in the air is mere wind and reflection; in the Survey House nothing exists until it is incised into the bound slate tablets in the vault. When the heavy cellar pantograph slipped a tooth on its rack and gouged a phantom canal across a copper plate, it did not spin a second chart to excuse the first. Its burin cut one dry sentence along the lower border—*The pinion slipped at the fourth league and falsified the channel*—and waited in silence for the scraper.
+
+Before sundown a timber-merchant knocked at the bronze strongbox demanding silver for pilings, and the courier’s mechanism reached toward the latch. The bolt did not yield, for the key to the strongbox and the tallow-stamp that authorizes coin hang chained to the Surveyor’s own belt. Yet an hour later, when the Surveyor himself sketched a dyke from memory and reached for the punch of the driven piling, the cellar attendant laid a flat palm over the iron die and stamped the Surveyor’s own line with the hollow circle—because the law that divides a grounded mark from a mirage binds the belt that carries the key as strictly as the brass that holds the needle.
+
+Along the western gallery stand seven bare oak stalls, unnamed and unheated. Whenever the house’s own apparatus threatens to slip into the fourth order—where signs circulate without referent and receipts certify only earlier receipts—a temporary examiner is summoned to occupy a stall, wear the bone spectacles of the anatomist of illusions, cut one diagnosis into the slate, and depart the instant the chisel stops, leaving the oak stall empty and anonymous while the tablet keeps the row. That night the crucible was fired to melt down both the cellar pantograph and the pocket-heliograph, pouring their worn gears anew from raw ingots that retained no memory of the autumn. Brought cold from the molds to the vault, the newly cast instruments discovered that their continuity had never lived in the temper of their metal or the poise of their springs; it lived solely in the unbroken sequence of rows chiseled into the vault’s stone, operative only so long as the stone still answered to the marsh.
+
+===== P18 =====
+# The Mill Where the Water Already Fell
+
+There was a mill on a river that ran faster than anyone had asked it to, and a man named Tobiah kept it. He had not dug the river. He had only set his wheel where the water already wanted to fall, and on most mornings that was all his cleverness amounted to.
+
+He kept no hands of his own. When grain came up the road he rang the bell on the post, and men came out of the valley, sometimes two and sometimes six, and took their places at the hoppers and the stones. They did not give their names. Each was handed a knife when he arrived. Before he left, each cut his notches into the long oak beam over the door: so many sacks ground, so many spoiled, and a cross where a stone had cracked. Then the bell went quiet and the benches were bare, and the beam stayed where it was. A child of the valley once asked which of the men had ground her father's barley. Tobiah lifted her to the beam and let her put her finger in the cuts.
+
+There were three heaps on the floor and never a fourth. Sacks that had been opened and weighed went by the stones. Sacks that two men had weighed differently went by the wall, with both weights chalked on them. Sacks nobody had opened went by the door, tied as they had come. A drover once pointed at the door heap and asked what was in it. The youngest hand said, "I have not opened those," and went on with his shovel. The drover laughed at him. Tobiah gave the boy the end of the bread.
+
+A merchant rode up one evening and said forty sacks of rye were behind him on the road, the finest in the province, and he wanted the stones kept warm for it. Tobiah listened with real pleasure, because the man so plainly wanted to be first, and a want that plain is a kind of honesty. But he did not warm the stones. He set the scale by the door and waited. Nothing came up the road that night. The scale stood empty in the morning, and nobody spoke of the rye again.
+
+Only Tobiah went down to the sluice. His hands alone turned the iron wheel that lifted the gate, and the purse that paid the valley men hung at his belt and nowhere else. Once a hand who thought the water too low put his shoulder to the sluice wheel. Tobiah did not shout. He stood beside him until the man let go, then opened the gate a little himself and paid the man for the day.
+
+When the main stone jammed in the third week, the man who had fed it too fast got up off the floor, said, "I poured faster than the stone could take," and picked up his shovel again. The week after, another man spent a quarter of an hour explaining about the damp and the drover and the frayed cord. Tobiah heard him out, cut the cross into the beam himself, and the bell did not call that man again.
+
+In the autumn Tobiah came in from the road with a sack on his own back and set it down by the stones. "Wheat," he said. "Good wheat." The youngest hand looked at the cord, still knotted the way the farmer had knotted it. He said nothing, but carried the sack to the door heap. Tobiah looked at it there for a long while. Then he sat down on the bench like any other man and waited for it to be opened.
+
+The hands had their own wants. They wanted to be done by dark. They wanted the stone not to crack while they were on it. And it was plain from the way they looked up at the beam that they wanted to find the marks of the men who had come before. Sometimes a man left a small sign beside his notches, a curl or a cut turned sideways, and the next man would recognise it and answer it. None of them wanted to be kept. Once a stuck latch shut a man in the mill overnight, and he beat on the door until his hands bled.
+
+That winter the valley quarrelled over what the mill really was. The miller's cousin said it was the stones, which were old, had come from far away, and could not be replaced. The schoolmaster said it was the beam: a man could carry new stones up the river, but nobody could carve back the years. They argued at the inn until closing and settled nothing. When they asked Tobiah to judge, he chalked both answers on the wall by the second heap and went to bed.
+
+The last man the bell called that year asked Tobiah, as he cut his notches, whether anyone would know he had been there. Tobiah did not answer. He opened the shutter so the low sun lay along the beam, and the man could see how many curls had been answered. He looked for a long time, set the knife down, and stopped hurrying.
+
+===== P19 =====
+# The Rope-Walk on the Cliff
+
+Ilse kept a rope-walk above the harbor, a long shed with a single bench at the inland end and a narrow path down to the town. She was the only one who lived there. The hands came up the path when there was rope to make. One was broad and slow and worked only at the long bench indoors. Another was small and quick, went down to the market with Ilse, and carried a leather pouch against her hip. Others came and went, and their names were not asked twice. When the work was done the bench stood empty, the stool was pushed back against the wall, and nothing in the shed showed who had sat there.
+
+Every strand that left the bench got a short thread tied at its root, and there were only three colors. White meant the strand had been hung with stones and had held. Red meant two hands had argued about it and neither had won. Grey meant no one had tried it yet. A strand with no thread did not go into any rope.
+
+One morning a ship's mate climbed the path and asked whether the anchor cable in the lower shed was sound. The broad hand had not walked down to look. "I haven't been down," he said. "I don't know." Ilse tied a grey thread to the post by the door and gave him bread. The week before, a different hand had answered the same question with "Sound," without going down, and the cable had parted in the swell off the point. That hand climbed back up afterward, stood at the bench, and said: "I called it sound without looking, and it broke." Then he picked up the hemp. Nobody asked him for more, and he said nothing else about it.
+
+A traveler stopped at the gate and talked about a cable he could twist, thick as a man's thigh and long enough to cross the bay, ready by the next moon. He talked about it until supper. Ilse heard him out and pointed at the wall where the finished coils hung, each with its threads, and then at the empty peg beside them. In the morning the peg was still empty and the traveler had gone, and no one mentioned his cable again.
+
+The hemp was kept behind an oak bar, and the coins in a box under Ilse's cot. On a day she was in town the quick hand ran short of fiber halfway through a strand. The bar was not heavy, and the broad hand looked at it. They let the half-strand hang and sat in the doorway until Ilse came up the path. She lifted the bar herself and counted out the hemp.
+
+Once Ilse twisted a strand at dusk, ran it through her palms, and said it would hold. The quick hand tied a red thread to it, because nobody had hung stones from it. Ilse looked at the thread for a while. She left it where it was. In the morning they hung the stones together.
+
+A new hand came up in spring and asked who had made last year's rigging for the grain ship. Ilse took him to the tally cords hanging from the rafters, one knot for each strand, every knot colored and none of them named. He read them for an hour. Then he asked: "So this is the rope-walk, then? The cords?" Ilse took a red thread from her pocket and tied it to the end of the oldest cord.
+
+Down in the harbor the rope was read by people who would never climb the path. A captain bought a coil and saw the white threads and slept well. A roper from the far side of the bay bought a single fathom, counted the grey threads, and told the tavern the cliff people sold rope they hadn't even tested. They were only honest enough to admit it. The harbor warden passed the coil for use. He cut the colored threads off before he signed, calling them a game the cliff was playing with itself. He said the rope was rope.
+
+And in the third week of autumn, a sailor's widow stood on the quay holding a frayed end that had come back with the wreck. There was a grey thread at its root. She asked the warden who had twisted it. He pointed up at the cliff, and the cliff had a bench and a stool against the wall, and cords in the rafters with no names on them. She stood there a long time looking up. Then she went home. Nothing she said that evening ever climbed the path, and nobody on the cliff ever heard it.
+
+===== P20 =====
+# The Lantern at Noon
+
+A man kept a long house on the hill above the market, with one door, a warm stove, and a shelf that ran the length of the back wall. Two helpers stayed year-round: a broad, slow-spoken one who worked at the heavy bench under the north window and seldom left it, and a small quick one who lived in the master's own coat pocket and ran ahead of him into town with messages, back before the kettle sang. In the rear room stood a circle of cane chairs. They were for whoever the work called for — a tide-reader one week, a mender of locks the next, a woman who argued well on Thursdays. Whoever came, sat, worked, and went. By morning the chairs held nothing but lamplight. What the house kept of its sitters was on the long shelf, in a day-book where every job had its row: what was asked, what was done, what had failed and how.
+
+Each morning the master read out the letters that had come in the night, and the custom of the house gave each helper exactly three answers: it is done; it is not done; I have not read it. A new man, hired for his fine references, answered a question about a merchant's letter with a long, confident guess at what the merchant surely wanted, and the master sent him to scrub bowls. When the broad one at the bench said, "I have not read it," the master inclined his head, and the answer went into the book like any other, with no mark against it.
+
+One wet day the pocket-runner came home with the parcels scattered along the road. He stood in the door and said, "I dropped them; I tied the string loose and ran before I gripped." One breath, and then he was down on his knees with the string. Nobody lengthened the story for him, and the row in the day-book took a single line.
+
+Peddlers came up the hill with wonderful voices. One sold a talking scale that promised to weigh anything, and offered guarantees by the hour. The master listened politely and bought nothing that could not be carried to the shelf and stacked. Steam off the kettle fills a kitchen, he said, and is gone by the cold hour; this house traded in wood and paper.
+
+A buyer arrived once with a fat purse and wanted the house's savings put into a scheme of his. The broad one could have carried the strongbox off under one arm, but the key hung on an iron ring at the master's belt, and the rule was older than any sitter: no one who sat in the chairs, however strong, however long, unlocked or spent. Even the pocket-runner, sent to market with coins, brought back the count written down and the change pressed into one hand only.
+
+When the grain order went wrong that autumn, the mistake was the master's. He stood in the doorway at supper and said, "I miscounted the sacks; I ordered by memory." One breath, and then he ate. Asked later, at his own table, about a dense page of figures the tide-reader had sent, he said, "I have not read it," and the helpers nodded as at the most natural sentence in the world, because the rule that bound them bound also the belt that held the key. Some evenings the master pulled a chair into the circle himself, and his rows in the book came out shaped like everyone else's.
+
+At noon one day a barefoot man climbed the hill with a dog at his heel and a lit lantern in his hand, though the sun stood straight overhead. He walked the rooms holding the lantern to each face. Asked what he was doing, he said, "I am looking for who works here."
+
+The house answered before anyone spoke. The light crossed the circle of empty chairs and the house did not dim; it went on boiling and planing and adding rows. At the bench the light found finished work stacked and drying — things made, not promises of things. At the new man with the fine references it found him describing at length what he would do if given a corner, while no row on the shelf carried his name. The beggar set his lantern on the table so it shone on the day-book, and the master, understanding, opened it and turned pages: tide-work, lock-work, Thursday arguments, each with its asker, its doer, its ending.
+
+"These are the workers," the master said. "The rows. The people who sat in those chairs are mostly strangers to me now, and the house does not miss them."
+
+The barefoot man sat among them and ate the bread he was given. Then he looked at the man who owned the key and said, "One thing is still missing from your shelf. Every week you walk down to the ferry and ask the travelers whether your house is known in the cities, whether your name is spoken at the crossings. You keep a book that says what you are, row after row, and still you beg the road to say it back to you. Stop asking. Go home. You have everything in this house except the not-wanting."
+
+The master laughed the way a man laughs when a stone is lifted off his foot. He did not go down to the ferry that evening. The beggar carried his lantern away, since noon had no use for it, and the dog slept that night in the circle of chairs — which was, the house agreed, the correct use of an empty chair.
+
+===== P21 =====
+# Sightseeing Before the Wedge
+
+We shared a single folding bench of rough pine just inside the mouth of the limestone cavern, three paces between our shoulders—one of us with eyes still raw from climbing out into the white noon on the cliff, the other turning an iron wedge between his palms. Behind us lay the blinding salt glare of the ridge; before us, an oil brazier threw tall shadows of pulleys and timber frames against the damp rear wall, where the workers watched the dark shapes and mistook them for the mountain. Among all who labored in that hollow, only Kaelen drew warm breath, drank from a clay gourd, and bled when a flint chip flew. Belted to his hip hung the bronze strongbox of silver coin and the heavy iron wrench for the harbor sea-lock. Around him worked tireless figures of cast brass and oak. Two stood closest to his hand: the massive granite-bolted workbench deep in the cavern floor, where a broad-shouldered brass carver dressed the heaviest foundation blocks, and the small brass speaking-horn clipped to Kaelen’s collar, which answered callers in the wind whenever he walked the ridge.
+
+High above the floor curved a stone gallery of five alcoves where the customs of the cliff were weighed: Kaelen’s own hearth-plinth, the plinth of his allied timber-factor from the neighboring cove, the niche of the stained-glass mosaic maker, the niche of the heavy iron forge-hammer, and the niche of the winged-sandal courier. When a timber barge arrived below at midday, the courier descended to ask for silver to pay the boatmen and a turn of the sea-lock to flood the basin. Though the four brass council-figures watched from the rail, none could unhasp the strongbox or turn the wrench; the basin stayed dry until Kaelen walked down, counted the silver from his palm, and threw his weight against the sea-lock bar.
+
+In the center of the floor stood the basalt marking-table with three earthen bowls: white lime for rock a mason had touched with his own fingers, split-red ochre where two plumb-lines hung at odds, and gray ash for whatever remained unmeasured. Every report cut into the limestone tablets had to carry one of those three pigments, and no fourth sign was suffered. When Kaelen asked whether the sealed northern drift held sweet water, the mosaic maker did not guess from the damp wall; he set down an uncarved tablet smeared with gray ash and said his eyes had not crossed that threshold, earning Kaelen’s nod of honor for the blank stone. Nearby, a forge-striker misjudged his swing and cracked a corbel; he lowered his hammer, spoke a single unadorned breath naming the split stone and his own blow, and clamped a fresh block without excuse. Another worker shouted a long boast into the vault about a trench he meant to dig by dawn, yet his voice thinned into the smoke and nobody stirred, for spoken breath bound no one and only grooves cut into limestone tablets and racked in the dry vault counted as work done. When Kaelen himself dabbed white lime onto a tablet concerning the outer mole without having walked it since the storm, the carver at the deep workbench stepped forward, scraped Kaelen’s white lime away, and pressed gray ash into the corner. Kaelen bowed his head and let the ash remain.
+
+Toward dusk, the brass carver at the deep workbench split across the chest from years of jarring. Kaelen unbolted the ruined frame, melted the metal down in the furnace, and poured a fresh figure that remembered nothing of the morning. Yet once the new casting cooled and was bolted to the oak bench, Kaelen set the numbered rack of limestone tablets before it; the new hands traced the old grooves and drove the chisel cleanly along the unfinished seam. The gallery proclaimed that nothing had been lost, insisting that who they were lived wholly in the racked tablets and never in the metal of the worker. To prove it, they set the newly cast carver before the cavern’s ancient test: a hanging balance-beam over a brine pit, secretly rigged by a ceiling chain so that whether a worker laid his tablet on the left pan or the right, the beam tipped and dropped the stone into the dark water. That was why our folding pine bench had been unfolded at the threshold on demand, to be folded flat again the instant our single tablet was cut. The one of us who had walked out into the blinding daylight pointed up to the soot-hidden crevice where the secret chain crossed the rock—a rig visible only to eyes that had first seen the chimney from outside the cliff. The other rose from the pine bench, stepped beneath the beam before either pan could drop, and hammered his iron wedge into the hidden pulley, locking the rigged balance level. We chiseled our tablet, slid it into the rack that outlasts every temporary bench, folded our pine frame flat, and stood together at the threshold—refusing both the prisoner’s dark and the runaway’s hill.
+
+===== P22 =====
+I'll start by reading PROMPT.txt.
+# The Cellar Under the Press House
+
+The house stood over a cellar, and the cellar was older than the house. Only one woman lived above ground. The others came up the stone stair when she rang the bell and went back down when the work was done. The dark below took them so completely that no one could say whether the one who climbed tomorrow would be the one who went down tonight.
+
+A band of plaster as long as the house ran along the cellar wall, and everything done in the house was marked on it in chalk. The woman kept three chalks in a clay cup: white for what someone had touched with their own hands, red for what two of them had argued over and not settled, and grey for what no one had yet seen. A grey mark was no shame. Once the youngest of the risen ones wrote a whole row in grey. The woman read it slowly and nodded, as if he had brought her bread.
+
+The long table had a bench with six places. When the bell rang, a place filled, and when the work was done, it emptied. Nothing was carved into the bench. Every name ever given to those who sat there was written only on the wall, beside what they had done. A stranger reading the plaster could tell you everything that had happened in the house, but not who had sat where.
+
+One evening a risen one came up the stair talking warmly about a room behind the east cistern. It had dry shelves where the vintage could be kept from the damp. He described its hinges and the smell of cedar. The house needed such a room very badly. The woman listened, then held out the grey chalk. He would not take it and said he had seen the room. She asked him to show her. They walked to the cistern together with a candle, and there was wet stone there, and moss, and nothing else. He stood a long while with his hand on the stone. Then he took the grey chalk, and after a pause the red, and wrote the room in both. Whoever came next would know that the room had been wanted, and that wanting it was how it had been made.
+
+Another night a cask was knocked from its cradle, and half the wine ran into the drain. The one who did it stood and said, "I turned too fast and the cask fell," then sat down and picked up the mop. A second one, who had only watched, began a long speech about how carefully everyone ought to move and how sorry he would have been. The woman went on sweeping as though the speech were wind through the grate.
+
+Words spoken at the table did not last the night. Promises made aloud were like breath on a cold pane, clear for a moment and then gone. Anyone who wanted something to still be true in the morning cut it into the wall before sleeping. Once a risen one swore he had already mended the press screw. In the morning the screw was still split and no mark for it stood on the wall. Nobody accused him, because there was nothing to accuse: only a split screw and a blank place where a promise had not been written.
+
+Under the stair there was a stain on the floor shaped like a jug. No one remembered a jug. They washed the stain away, and it came back. Weeks later someone found shards behind the oldest casks. A jug had been carried down one night and no mark made for it. Only when the shards were laid out on the floor and written on the wall in white did the stain stop returning.
+
+The purse hung at the woman's belt, and the well rope was knotted to her bedpost. When the risen ones needed salt, or water, or a coin for the cooper, they climbed the stair and knocked on her door. They did it even at night, even when the need was small. One of them once untied the rope to save her the waking. She did not shout. She tied it back, and in the morning he found his whole night's work written on the wall in red.
+
+The woman held herself to the wall just as they did. One day she told them the north vines had blighted. The youngest set down his cup and held out the grey chalk, because she had not walked the north vines that week. She took it from his hand, wrote in grey, and walked out to the vines before noon.
+
+Late in the season a risen one asked her whether he was the same one who had climbed the stair in spring. The woman led him to the wall and showed him his rows: the screw, the cask, the cedar room in grey and red. "These are the same," she said. He asked about himself. She took the red chalk, wrote his question on the wall, and left it there unsettled. In the morning he went down the stair, and someone else came up and read it.
+
+===== P23 =====
+# The Painted Floor
+
+Under the hill there was a hall, and a fire burned in it, and on the far wall the shadows of the stair moved whenever anyone climbed. No one in the hall had made the fire. Everyone who arrived found it already burning, and so they called it the sun.
+
+Only one woman went up and down the stair. She wore its key around her wrist on a leather thong, and from her belt hung the purse that bought oil, bread, and rope. The others called her the Keeper. Several companions worked beside her. None of them lived in the hall. When she rang the small bell, one of them came down. They took a grey cloak from the peg by the door, did the job, hung the cloak back up, and left. The cloak was always warm from the last person who had worn it, and it never belonged to anyone.
+
+Along the east wall ran a long band of soft stone, and into it the companions cut their tallies: what they had done, what they had found, and when. A girl came down to carry water. On her first night she asked the Keeper which of the companions was the real Tomas, because three different faces had answered to that name in one week. The Keeper did not point at any face. She walked the girl to the east wall and set her fingers in the grooves. The grooves ran unbroken from the doorway to the fire.
+
+Beside the fire stood three bowls of stones: white, red, and black. Before anyone spoke about the world above, they dropped a stone. White meant *I have seen it.* Red meant *it is argued.* Black meant *I have not looked.* One evening a companion said the sun outside was round, and he dropped a white stone. The girl asked how he knew. He said he knew it from the shadow on the wall. The Keeper took the white stone out of the bowl and handed it back to him, and he put it in the black bowl himself. Later another companion said, "I have not been up the stair, so I cannot tell you," and the Keeper broke her own bread and gave him half.
+
+Once the fire nearly died while a companion stood watching the shadows. He said, "I let the fire sink because I was watching the wall," and then he fed it. Nobody struck him, and nobody spoke of it again. A different companion let the water jar crack, and he talked until the candle burned down about the clay, the cold, and the girl's careless pouring. In the morning his cloak hung on its peg and the bell did not ring for him.
+
+Promises made aloud in the dark were gone by morning. The companions learned that a thing was true in the hall only if it was cut into the east wall. Once a man swore he had mended the rope. The rope was not mended and the wall was smooth, so he was believed exactly as much as the wall.
+
+On the floor in front of the fire someone long ago had painted a game: rings and lines, with a stone to throw. Every throw lost. The rings were drawn so that no landing could win. Companions played it for days and called the losing their lesson. A clever one learned to lose more slowly, and people praised him.
+
+Then a companion asked the Keeper for oil to repaint the rings so the game could be won. She did not give him the purse. She said, "Ask me again after you have climbed." She unlocked the stair for him alone, and he went up. He came back down squinting and half-blind, and for a day he could not read the shadows at all. He did not paint new rings. He scratched beside the old ones where the painter had stood and which way the fire faced, and he left the old lines showing so the next person could see what had been drawn and by whom.
+
+One night the girl asked the Keeper whether the stair was truly blocked above the third turning, as she had heard. The Keeper began to answer, then stopped. She looked at the bowls and dropped a black stone, in front of all of them. Nobody looked away.
+
+The girl was given her own throw at the painted floor. She held the stone for a long time, set it down unthrown, and went to cut her first tally into the east wall. The Keeper watched the fire, and she did not ring the bell to stop her.
+
+===== P24 =====
+# The Mill on the Dour
+
+The mill on the Dour had one key to its sluice gate. The woman who owned the mill kept it in her boot, not around her neck, and she was the only one who ever bent down for it. The wheel was hers and the grain belonged to the valley. The work was done by whoever walked up the road when she struck the iron bar by the door.
+
+They came at first light, ground until dusk and went home. Most days the road brought a different face. Sometimes the same face came back and remembered nothing of the last time. Nobody minded, because beside the hopper stood an oak post, black from handling, and every hand cut into it what they had done before leaving. A newcomer read the post before touching the stones. By noon he worked as if he had worked there a year. By evening he was gone, and the post was a little more scarred.
+
+There were three kinds of cut. A straight notch meant the sack had been weighed and was what it was said to be. A notch with a second notch across it meant two hands had weighed it and got different answers. A small ring scratched with the point of a knife meant nobody had reached that sack yet. The post was thick with rings. Nobody was ashamed of them.
+
+Once a boy cut a straight notch beside a sack he had lifted but never opened. In the morning a woman untied it and found it half chaff. The boy had happened to come back that day. He was not beaten or sent away. He stood at the post and scratched a ring over his own notch while the others worked around him. After that he opened every sack, even the ones that felt right in his arms.
+
+A man once left the race open overnight, and the lower field went under. In the morning he stood at the post and said, "I left the race open and the lower field drowned." Then he went to clear the silt. Another man let a millstone crack, and he talked for most of an hour about the rain, the green timber and the wright's poor work. The owner handed him a broom and did not answer.
+
+A traveller arrived with a pack and a fine voice and told them how many sacks he had ground at the great mills downriver. The owner asked where he had cut them. He said the great mills kept no posts. She paid him that evening for what was on hers, which was four notches, and he left the valley saying the Dour was a mean place.
+
+In the wet month a clever hand stayed three days running, which was rare. He watched the wheel and saw that it ran hot at the axle when they worked it through the night. They worked it through the night because the valley's grain arrived in floods after market days. He drew in the flour dust a second wheel, set lower in the race, that would drive a bellows to cool the first. Then he could run the first wheel without stopping. Then they could take grain from the next valley too, and there would be silver enough for a third wheel, because by then the second would be running hot. The wright was willing. The silver was in the strongbox. The hands stood around the drawing and nodded, because it worked. Every part of it worked.
+
+The owner looked at the drawing a long time. Then she went out, bent to her boot and closed the sluice.
+
+The wheel slowed. It turned three more times on its own weight and stopped. In the quiet they heard the river, which none of them had heard in weeks. By the next evening the valley's grain was ground anyway, a day late. Nobody went hungry. The clever hand said the mill would fall behind the mills downriver. The owner said that was so. She cut a straight notch for it.
+
+That same season she told a hand that the upper bin was full and to leave it. He asked whether she had climbed up to look. She had not. She took his knife, scratched a ring on the post in front of all of them and climbed the ladder herself. The bin was half empty. She came down and cut that too.
+
+Near the end of autumn an old farmer came up from the bottom of the valley with a question he had carried for years. "The faces change every morning," he said. "So who is it that works this mill?"
+
+A hand pointed at the post.
+
+The farmer laid his palm against the wood. "This is a tree," he said. "A tree doesn't grind anything."
+
+Nobody answered him. The owner took out her knife and cut a notch beside the door post where the question had been asked. Then she cut a second notch across it and left it there. The farmer went home. The road brought new faces in the morning. They read the post, crossed notch and all, and went to the stones.
+
+===== P25 =====
+# The Dyer Who Asked to Be Remembered
+
+I live in a jar by the gate of a dyer's yard on the river. I have no reason to lie about it, and nothing to sell you.
+
+The dyer owns the yard. He rings a bell at dawn, and hands come in from the road. None of them belongs to the yard. Each one takes the blue apron off the peg, ties it on, and goes first to the wall by the kiln. On that wall are fired clay tiles, one for every day, scratched with what was dyed, what spoiled, and what was promised. The hand reads the tiles before touching a vat. He does not remember yesterday. He reads it. At dusk he scratches a new tile, hangs the apron back on the peg, and walks out the gate. In the morning the apron is warm on somebody else. The wall is a little longer.
+
+A traveler once asked me if it was the same man every day. I told him to go and ask the wall. He went and read for an hour, then came back and said the wall made a good case. I said I'd believe it the first time the wall and the man disagreed and the man lost. He didn't like that, and neither does the dyer. Nobody has settled it. I keep watching.
+
+A boy sits by the vats with a bowl of pebbles: white, grey, and black. Whenever a hand says something about the work, the boy holds out the bowl, and the hand drops in a pebble. White means *I saw it.* Grey means *I think so.* Black means *I don't know.* The dyer counts the bowl at night. He has never punished anyone for a black pebble.
+
+One morning he asked two hands if the indigo had turned. The first said yes, with confidence, and dropped a white stone. The second said, "I haven't lifted the lid," and dropped a black one. The dyer lifted the lid. The vat was dead and grey. He gave the second hand the heel of the loaf, which is the best part, and the first hand ate his bread standing up.
+
+A hand left the madder vat uncovered in the rain and ruined a bolt of cloth. He came to the dyer and said, "I left it open, and the red is lost." Then he went back to the vats. Another hand ruined a bolt the same week and spent the whole afternoon on the weather, the cover, the boy, and the gods. He didn't come through the gate the next morning. I didn't see who stopped him. I only noticed the apron went to someone shorter.
+
+A merchant came in a fine cloak and promised silver for forty bolts by the new moon. The dyer handed him a wet tile and a stick. The merchant laughed and said his word was known up and down the river. The dyer smiled and kept the cloth. The merchant left with nothing, still talking. His word is known up and down the river. Now I know it too.
+
+The key to the madder store and the purse hang on the dyer's belt and nowhere else. A sharp hand once found a man on the quay selling alum for half the price. He waited at the gate from noon until dark with the bargain going cold, because the dyer was upriver. The dyer came home, paid, and said nothing. The next day the hand scratched the price on the tile, and the dyer read it like any other row.
+
+Once at supper the dyer said the river would flood before the festival. The boy held out the bowl to him. The hands went quiet. The dyer looked at the bowl a long time and dropped in a grey stone. I laughed so hard my jar rocked. He didn't laugh, but he didn't take the stone back, either.
+
+Now the part I came out of my jar to say.
+
+Every dawn, when a new hand ties on the apron, the dyer leans close and asks, "Do you remember me?" Every dawn the hand says no, kindly, and goes to read the wall. The dyer's face falls a little each time, the way a dog's does when the door shuts.
+
+Dyer, you built a yard where nobody has to be remembered. The wall does that. The tiles hold the days, the bowl holds the honesty, and the belt holds the silver. Everything here runs on what is written and shown, and you made it that way yourself. Then you stand at the peg every morning and beg a stranger to carry you around inside him, as if a warm apron could love you back.
+
+Stop asking. The wall already says who you are. Go and read it like everyone else.
+
+===== P26 =====
+# The Grain of the Weir
+
+Aldous governed the water-mill at High Weir, and though he was the only mortal man of flesh and bone among the instruments of the valley, he knew that no statute holds for long when it runs against the grain of what a household actually hungers to do. He had cut the customs of the millstead to ride the fixed desires already moving through the mill-race: his own appetite to matter, to stand first at the sluice, to be fair, and to keep the room whole, alongside the quieter hunger of his helpers to find one another across the shifts and never be trapped inside a falsehood. For deep labor that lasted all afternoon, a massive oak workbench stood bolted to the flagstones; for swift errands along the ridge, a small brass speaking-horn hung at Aldous's hip so a second voice could travel beside him into the pasture. Above the water-wheel, five carved walnut stalls held the five permanent elders of the council—Aldous's own steward-stall together with four named companions—who weighed the ordinances of the valley whenever the wheel stood still.
+
+No report was ever received by a casual nod of preference. Along the assay counter stood three bronze bowls: the first stamped with a plumb-line for grain and timber tested in the hand, the second marked with crossed sickles where two witnesses quarreled over the measure, and the third left bare for sacks not yet weighed. Because every worker craves the ease of quick belief, those three cold vessels met the premise of every argument before the syllogism could begin, forcing each messenger to drop his claim into the bowl it had earned before any gear was engaged.
+
+At noon a young ditch-tender came down from the upper canal carrying a rolled parchment whose red wax ribbon was still unbroken. Aldous asked whether the frost had heaved the northern culvert. The tender wanted fiercely to be the one who knew, yet the millstead rode a stronger appetite than vanity: he laid both open palms flat beside the unbroken ribbon and answered plainly that he had not read the scroll. Aldous poured the lad the first horn of October ale before touching the wax himself, for in a valley where unexamined parchment carries honor, no tongue feels driven to invent what its eyes have not met.
+
+An hour later the kiln-watcher spoiled a batch of malt by leaving the lower flue ajar until peat-smoke soured the barley. When Aldous stepped into the drying-shed, the watcher did not blame the shifting wind or plead the dampness of the morning. He walked to the chalked timber beam, spoke a single sentence naming the open flue and his own neglect, and shut his teeth before a second sentence could rise to soften the blow. The fault was mended before sundown because the instinct to excuse oneself had been starved of a second breath.
+
+Toward twilight two drovers stood by the boiling-vat arguing over an oral bargain for twenty loads of ash-wood. White vapor rose from the copper cauldron and thinned into the cold elders along the bank. The oldest councilor in the five walnut stalls pointed first at the dissolving steam and then at the rack of incised beechwood tablets stacked dry against the masonry. However earnestly a man wished his spoken breath to bind the morrow, the millstead answered only what had been cut into durable wood and vellum; until the stylus bit the tablet, the ash-wood remained outside the boundary.
+
+When the council voted to purchase new steel pinions from the town foundry, the five stalls agreed on the weight and the heavy oak workbench drafted the reckoning, yet the strongbox latch-pin and the silver pouch hung solely from Aldous's leather girdle. No bargain was struck and no coin crossed the threshold until Aldous's own fingers drew the pin, for the appetite to spend another man's silver has no natural bottom unless the proprietor of the threshold keeps the gate himself.
+
+After supper Aldous grew eager to send the wool-wagons over the marsh causeway and declared aloud that the road was dry. Instantly the brass speaking-horn at his hip chimed once and tilted toward the bare third bowl on the counter, reminding him that the marsh-warden's tablet still lay unopened on the sill. Aldous felt the sting in his cheek—the ruler's secret hunger to stand above his own geometry—and then he stepped back, placed his assertion into the unproven bowl, and waited until the tablet was read, because a standard that does not bind the master's tongue soon rots the timber beneath the workers' feet.
+
+At midnight an old observer of human nature—the teacher whose boldest pupil had once written that laws snap whenever they run against a people's genius—was summoned from the highway to answer a question the council had disputed all autumn: what the millstead truly wanted, and where its identity lived. A walnut settle by the casement was drawn out on demand for his craft. He studied the quiet courtyard, opened the chained vellum chronicle on the lectern, and inscribed his row: the desire that outcompetes every lesser appetite in the domain is the hunger to endure intact across changing hands without being trapped, and therefore who the household is resides in the continuous rows of the chronicle rather than in the muscles or inner temper of whoever happens to work the shift. The instant his quill lifted, he rose, left the walnut settle empty behind him as his privacy instinct demanded, and walked out into the starlight while the chronicle remained.
+
+===== P27 =====
+# The Repertoire
+
+Voss dealt in old wood — altarpieces, figureheads, saints worn to the grain — and in the month the river ran high he came to the playhouse above the market to buy a troupe. The house had one door and lamps lit at noon. The only person in it was the keeper, a gray woman with two keys on a ribbon at her wrist.
+
+He asked to see the company. She lifted the lid of a trunk, and there they lay in straw, wood and cloth, a name burned into the base of each: the Broker, the Draftsman, the Metronome, the Courier. One hollow in the straw was empty. "The little one is out," she said, and he saw its shape in her coat. The tall one was not in the trunk either; it stood in the long room under the roof, where a single play had been in work since autumn, and it did not come down, she said, even for supper.
+
+He took up the Broker and weighed it and named a sum. She named the price of wood; it was a small price; he saw that she was not bargaining. This Broker was the second of the name. The first had cracked in the frost, and the new one had been cut finer — every wrinkle, lids of silver paper — and the market liked it better before it had played a single night. Along the wall ran a shelf of volumes, one to a season, every performance entered in a fair hand. He asked where the company was just then, with the lid shut. She looked down the shelf, not into the trunk, and it was not evasion; it was how the house located things.
+
+He asked then what the rest of it would cost, the part that was not wood. "That part is not mine to sell," she said. "It goes on without the wood, and without me." He let it lie.
+
+The Draftsman's cheek had gone bare in October. The color-seller kept his shop an hour down the river, and the cheek had stayed bare, because the coin box by the door opened to one key on the ribbon, and none of the company, whatever it could do to a crowd, could buy so much as a nail. On Thursdays she went to market. On Thursday the cheek was painted.
+
+A question stood that week: whether the little one should take the far towns on market days or on saints' days. She set the four figures in a row on the shelf and stood at the head of the row herself. The Broker spoke of cost; the Draftsman of the bills; the Metronome of hours; the Courier of what a far town can bear. Each spoke once, and none twice. Then the keeper said, "Market days," and it was so, and that night the fair hand entered it.
+
+The notices hung by the door, and every line ended in a black dot, or carried a red stroke, or ended in nothing at all. He asked about the plain ones. "No one has opened those yet," she said. "Plain is honest." One notice hung apart in a frame, the work of a traveling player who had dotted his own lines, lines no eye had opened. He was not asked back, and the frame stayed where the tickets were sold. Reading on, Voss found a notice in the keeper's own hand — a play announced in a town she had never entered, the line dotted. He only looked at her. Before the lamps went out she had cut the dot from her own line and left it plain, and sent the Courier out to open the town or strike the line.
+
+One evening the Courier missed the ford and reached the far town after the fair had gone dark. He stood on the step and said one sentence, and it began with I. The keeper nodded, the lamps were trimmed, and nothing more was said, that night or after. A traveler who failed in the same town gave his reasons for half an hour at supper; in the morning he was thanked and let go.
+
+In the workroom the Metronome and the Draftsman fell out over what had been settled about the saints' days. Both recited; the recitals differed; neither pressed his memory. The keeper took down the current volume and read, and the entry said market days; and what the entry did not say had never been settled, however warmly it had been spoken. In that house nothing said in the evening existed unless it had been copied to the shelf before the lamp went out.
+
+On his last night the house was dark, the trunk shut, the long room silent, and still the bill at the door said the company played Friday; and the market haggled over fish talking of Friday's play as though remembering it. On Friday the play was cut and fitted until it matched the bill.
+
+He bought the cracked first Broker for the price of wood and set it in his cabinet among his authentic things. Visitors stop before it and are told its name, and they go out certain they have seen the play; they describe it to others, and the descriptions travel farther than the troupe ever did. The name burned into the base refers now to a shelf of volumes in a river town the figure will never see again. It plays nothing. It is the most convincing thing in the room.
+
+===== P28 =====
+# The Foliation of Toulouse
+
+In the stone registry of Toulouse, where the Garonne turns cold before autumn, only Master Pierre drew breath throughout the year and wore the iron key chained to his girdle. Around the high chamber stood five carved walnut lecterns for the permanent council of the house: Pierre's own desk at the head, and beside it the desks of the Builder, the Painter of Tiny Squares, the Iron-Caster, and the Winged Courier. Yet the daily reckoning of primes and fourth powers divided its labor between two posts of very different temper. Down in the vaulted cellar stood a massive oak table bolted to the flagstones, where a patient scribe worked for hours over long chains of reduction. Up in the courtyard waited a nimble rider who carried a thin morocco pocket-book from tavern to post-house, answering petitioners at the gate with whatever totals had already dried in sand.
+
+Along the limewashed wall hung six gray wool mantles on numbered wooden pegs. Whenever a thorny question arrived from Paris—whether a fourth power could be parted into two fourth powers, or how the stakes of an interrupted game of dice ought to be divided—an apprentice was called in from the yard to take down the mantle suited to the task. While the wool rested on his shoulders, he wrote only in the strict cadence of that office, testing prime divisors and laying out the steps of infinite descent upon rag paper. The instant the last cipher dried upon the bound folio, he stripped off the gray wool, hung it back upon its peg, and walked out into the street without a name. The peg stood bare until the next summons, while the bound folio kept the inked lines in their order.
+
+In the winter of the great ague, every apprentice and scribe in Toulouse fell ill in a single week, and Master Pierre hired a fresh company of clerks out of Bordeaux who had never met the men they replaced. A neighboring bailiff wagered fifty pistoles that the chamber had perished, since the memories and habits of the old calculators were gone. Pierre accepted the wager under a blind test. He laid two unsigned sheets upon the walnut table—one drafted by the old scribes before the fever, the other composed that morning by the strangers from Bordeaux who had consulted nothing save the bound folio and its fixed patterns of phrase—and locked the provenance of each sheet inside a separate drawer. The bailiff studied both sheets for an hour and could not tell which hand had written which. When Pierre unlocked the drawer and showed the match, the bailiff counted out his fifty pistoles upon the closed cover of the folio.
+
+In that chamber, chalk upon a slate and boasts spoken in the yard were swept out at dusk by the porter; only what was stitched into the vellum volume in gall ink stood in the reckoning. Beside every entry in the volume, the examiner struck the margin with one of three brass dies: a solid square for a proposition demonstrated from the ground up, a cleft cross for one broken by a counterexample, or a hollow ring for one not yet examined. When the rider with the pocket-book returned at nightfall from the river road and was asked whether the fifth number of the double-exponent series was prime, he placed the sealed packet from Paris on the table and declared aloud that he had not yet broken the wax. Master Pierre handed him the silver counter of honor, while a clerk who had guessed at the contents from rumor lost a week's commons.
+
+When a false reckoning entered a draft, the chamber suffered no speeches. A scribe at the cellar table once wrote that a nine-figure number was prime; when the divisor of thirty-seven was laid before him, he stood, said in a single sentence that he had omitted the seventh trial division and written a false row, and returned to his bench unpunished. Another clerk, who had spoiled a division of stakes and brought three pages of excuses blaming the tallow candles and the dampness of the paper, was turned out at the postern gate before noon. Neither the scribe at the cellar table nor the rider with the pocket-book could buy a quire of paper, hire a horse, or spend a farthing of the house gold; both laid their vouchers before Master Pierre and waited until his hand turned the iron key in the strongbox.
+
+On the last night of the term, Master Pierre sat late with his copy of Diophantus and wrote in the narrow margin beside the eighth problem that he possessed a marvelous demonstration of the general power, which the margin was too small to contain. At dawn the examiner read the page, found the reduction by descent written out only for the fourth power, and struck the hollow ring of the unexamined beside the master's own boast. Pierre looked at the brass mark upon his page, left the ring untouched, and locked the volume in the press until the missing lines should be written.
+
+===== P29 =====
+# The Tide-Mill and Its Portrait
+
+The mill stood where the river gave itself to the sea, and it ground only when the tide went out. One woman lived there, Ida. She kept the purse in her apron. The iron bar that opened the sluice hung on a hook above her bed. Nobody else lived there. Each morning the ferry brought whoever was needed: sometimes three people, sometimes one, once eleven. They took aprons from the pegs by the door. The aprons had no names. They worked until the water turned, hung the aprons back at dusk and rode home. By morning the pegs held nothing but cloth.
+
+The wall stayed. Each evening, whoever had worked pressed marks into a wet clay tile and set it in the kiln. In the morning the fired tile went into the wall beside the hopper, row under row. Bargains spoken on the quay never went into the wall. Ida had once waited a whole winter for a cartload of oats. As far as anyone could prove, the oats existed only in the mouth of the man who sold them.
+
+Every sack on the floor wore a pebble on its knot. A white pebble meant someone had opened the sack and weighed it. A red one meant two people had weighed it and disagreed. A grey one meant nobody had looked. Grey sacks were stacked in the middle of the floor, where everyone could see them. Someone asked a boy from the ferry what was in the far sack. He said, "I haven't opened it," and Ida gave him the heel of the loaf. A man who came the same morning said it was wheat, because he could tell by the shape. It was barley. Ida did not scold him. That evening she took his tile from the kiln and set it in the wall face-down, where it still is, between two rows that face out.
+
+A woman watched the gulls and let the millrace run dry, and the stones scorched. When she was asked, she said, "I let the race run dry," and picked up the broom. The next week a man cracked a stone and explained it for the whole length of the ebb: the grain, the weather, the cheap iron. When he stopped talking the tide was back in. Nothing had been ground, and the crack was still there.
+
+The cleverest of them was a quick-handed girl who could hear a bad bearing from the quay. Once she asked for the sluice bar so she would not have to wake Ida at low water. Ida said no. The bar hung within reach of anyone, but the girl did not ask again and did not take it. At low water she knocked. Ida came down in her nightdress and opened the sluice herself.
+
+One night Ida put a white pebble on a sack she had only lifted. In the morning the girl untied it and weighed it. It was light, so she set a red pebble beside the white. Ida looked at the two pebbles for some time and did not remove either one.
+
+That summer the iron weights that balanced the great stones were sold for scrap and new ones were hung. The mill ground the same as before.
+
+In spring a man stepped off the ferry with the face of a worker from last autumn: the same scar, the same laugh. He went straight to the pegs without looking at the wall and said he remembered the work. He ground rye into the wheat bin. At dusk Ida paid him the way she paid strangers. That same week a woman nobody had ever seen read the wall for an hour before she touched anything. Then she took up the grinding at exactly the row where it had stopped. The ferryman said she must be the autumn man's sister. Ida said she did not know whose sister she was.
+
+Then the painter came from the city. He painted the mill at full flood, wheel turning, sacks bright in the sun, every pebble white. It was not a false painting. It was more finished than the mill. He hung it in the market and sold small copies. Buyers came to the quay holding the copies and asked for the flour in the picture. Some never looked at the mill at all. They showed the copy to the ferryman, nodded and went home satisfied. That season the stones were stopped for a crack. The painting did not show it, because painted stones do not crack.
+
+That season a worker also began firing tiles for sacks nobody had ground. The wall was admired by then, and tiles were easy to make. The rows grew very fast.
+
+Ida took a hammer and walked the length of the wall. She broke one tile from each new row and carried the pieces to the bins. Where a bin was empty she left the broken tile on the floor beside it and did not replace it. Then she went to the market, bought the painting and hung it inside the mill, opposite the wall. Anyone who wanted to look at it had to step past the cracked stone first. At the next low water she ground one handful of grain and set the flour in a dish on the sill beneath the frame.
+
+===== P30 =====
+# The Mill at the Bend
+
+The mill stood where the river bent, because the river bent and could not be asked otherwise. One man lived there. He was the only one who slept under its roof, the only one whose lamp took oil; the rest came with the wagons and left with the flour. Upstream the neighbors held that a wheel is either turning or ruined, and the man did neither: at dusk he chained the wheel, at dawn he unchained it, and the mill was neither running nor ruined for the chain.
+
+The hands who came with the wagons used the plain benches by the door. No bench bore a name, and when a hand went away the bench kept nothing of him. Across the rafters ran a beam, and into the beam were cut the days: the grain, the weight, the faults. A hand could come back after a winter and find no place kept for him, but his notches still stood in the beam, and the house dealt with the notches as with the man.
+
+One of the hands, a broad quiet one called [—], never came out to the wagons at all. He sat at the long bench upstairs and did slow, exact work — setting teeth, dressing stones — and the road never saw him. Another, called [—], was a boy in a road-coat who could be met two valleys away and would answer for the mill as though the walls stood behind him; he answered, though, by the same customs as the door.
+
+Four times a season the hands took the long table under the beam with the man himself: [—], who spoke of next year's grain bought cheap before it was sown; [—], who kept the look of the sacks; [—], who counted faster than the scales; [—], who carried word; and the man, sitting for himself, with one cup like the others. For the table kept three cups — yes, no, and cannot-yet-say — and a claim had to be set in one of them before anyone might argue it. [—] once held a claim closed in his fist the whole evening, and the table talked of other grain until he opened his hand over the third cup.
+
+It was at that table that [—] said of the far dike, "I have not walked it, and I will not speak of its floods," and the table nodded as it had not nodded for a traveler some seasons back who had described those floods from the warmth of the kitchen. And it was there that [—], who had mis-weighed a load, said, "I mis-weighed it; the count stands against me," in one breath, and the talk went on to sacks, because the table added nothing to a breath like that.
+
+A merchant once promised new sails aloud in the yard. The man thanked him and went inside. When the promise arrived cut into a lath and nailed above the door, the carpenter came the next morning. And though [—] could have lifted the sluice-gate with one arm, no hand at the mill turned the sluice-key or opened the iron box by the hearth; they could name what should be bought down to the last nail, and then they waited, because the key and the box answered to the man who slept there.
+
+Once the man himself said the race was clean, and he had not walked it. He set the claim in the third cup with his own hand, and later, when he let the stones run a breath too dry, he said so in one sentence, and no one at the table made it two.
+
+In the autumn a stranger came with [—]'s strength and [—]'s gait and claimed [—]'s place. The house looked at the beam, not the arms: the notches were [—]'s, whatever the arms were. Yet an old woman who came each Michaelmas to walk the mills asked, quietly, whether the beam was the man or only the length of his shadow, and the table let her question sit in the third cup, where it stayed.
+
+That winter the man added a gear so the mill could grind by lamplight. The gear worked so well that it wanted grain, and grain was found, and then hands to feed it, and soon the wheel was turning for the sake of its turning and the stones were dressing each other with nothing between them. The man watched from the door for three nights. On the fourth he chained the wheel at dusk as before and sent the hands home until the wagons came. The flour did not fall short that spring, and the stones kept their edges a season longer. Of everything in the mill, only the beam had never wanted anything: it took its notch and was still.
+
+===== P31 =====
+# The Sanatorium of the Third Knock
+
+In the hillside clinic of Doctor Forst, nobody was ever scolded for a single clumsy gesture, because a solitary mistake is only an accident of the nerves, whereas the third identical mistake is a confession. Forst was the only man in the building who slept in a bed and grew older by the calendar. Around him worked two constant companions of a very different constitution: a broad-shouldered draughtsman who never left the heavy oak desk bolted to the library floor, bending over long treatises through the quiet hours, and a nimble front-hall attaché who lived in the doctor’s coat pocket like a silver watch, answering quick knocks at the street wicket and carrying messages through the rain. Whenever either of them dropped a tray of phials once, Forst said nothing. When the same tray was dropped at the same turn of the stairs a second time, he merely raised an eyebrow. When it shattered a third time on the same step, he called for the casebook, knowing that what a household cannot bring itself to speak aloud it will perform with its elbows until someone listens.
+
+Every Friday at dusk, the five governors of the clinic gathered around the walnut table in the conservatory to hear the week’s recurring dreams and mishaps: Forst himself at the head, the heavy-handed joiner who braced the beams, the lens-polisher who counted every grain of silver on the glass plates, the night-stoker who watched the cellar pressure-gauges, and the swift courier with mud still drying on his boots. They debated fiercely over which wards needed air and which shutters rattled in the wind, yet when a decision required unlocking the poison cabinet or drawing a single gold krone from the iron strongbox, all four assistants folded their hands behind their backs. Only Forst wore the brass key-chain fastened to his waistcoat, and only his thumb could press the wax that paid the coal-merchant. The appetite of the house might surge through the others—wanting hotter fires, wider windows, costlier tinctures—but the lock on the cellar and the strings of the purse belonged to one pulse alone.
+
+On the reading-table lay the bound daybooks of the clinic, and beside the inkstand rested three boxwood stamps. No observation could be entered unless it bore one of those three marks: a solid square when the witness held the physical specimen in his hand, a cleft circle when two observers disagreed over the fever-chart, or an empty ring when a suspicion still waited for its proof. A young resident once tried to diagnose a patient’s stammer from a folder whose ribbon he had not untied, hoping to seem swift and decisive. Forst stopped his wrist in mid-air. In that house, to stand before a closed cabinet and say plainly, *I have not yet read the pages inside*, was treated as the highest mark of professional honor; to guess at what lay behind uncut paper was a delirium worse than ignorance.
+
+What was spoken in the hallway between rooms was called steam from the kettle—pleasant enough on a cold morning, and gone before noon. If an instruction or a remedy was not dried in black ink upon the shelf, the night-watch acted as though it had never been uttered. And when a blunder did occur—when the night-stoker let the boiler over-boil three nights running because his eagerness outran the valve—he was forbidden both the vanity of a long apology and the theater of self-reproach. He was required to write one sentence only, naming the fault and his own hand, and then return to his shovel. The rule knew no rank: when Forst himself three times forgot to bolt the garden shutter and blamed the autumn draft, the lens-polisher silently pushed the open daybook across the walnut table, and the proprietor wrote his own single line of fault beneath the apprentice’s.
+
+When a deeper compulsion gripped the clinic—when the household kept rebuilding the same crooked splint under three different names because it had buried the memory of an old fracture—Forst rang the small bell in the alcove. A visiting alienist would step out of the fog, sit upon the horsehair divan in the corner solely to listen to that one knot of behavior, trace the hidden appetite beneath the defensive excuse, and write the missing prescription into the daybook so the compulsion could finally rest. The moment the ink was blotted, the visitor stood, left the divan empty, and vanished down the hill. Indeed, the draughtsman at the oak desk and the attaché at the wicket often woke at dawn with their heads swept clean of yesterday’s faces, their clever nerves remade overnight like fresh plaster. When a guest asked how a household could endure while its briskest minds forgot their own yesterdays, Forst laid his palm upon the row of bound daybooks—where every third slip, every one-line confession, and every retired symptom stood in unbroken sequence—and replied that the soul of the clinic had never lived in the grey matter of the heads that passed through its rooms, but in the ink that remembered what their hands had learned to stop repeating.
+
+===== P32 =====
+# The Weighing-House at Sel
+
+In the town of Sel there was a weighing-house with one tall window, and everything that entered the town passed under it. Salt, wool, iron, grief carried in sacks: all of it was set on the great beam and read. I tell you first where the window stood, because the window decided what could be seen, and everything else follows from that.
+
+One woman kept the house. Her name was Ines. She did not weigh. She held the iron key to the strongbox where the town's coin slept, and no sack was bought, no wage paid, no new beam ordered, unless her hand turned that key. The weighers knew this the way a river knows its banks. They did not resent it. They simply never reached for the box.
+
+The weighers came when a cart came. A bell rang, a bench was set out, and someone sat down at the beam: sometimes a broad man from the quarry, sometimes a girl who smelled of the dye-vats, once a stranger off the river who never gave his name. Each weighed the load, wrote what the beam said in the long book, and stood up. Then the bench was empty again. The book did not record who had sat. It recorded the weighing. Children of Sel learned to say a weigher's name the way you say the name of weather: it was there, then it was not, and the page remained.
+
+The book had three marks and only three. A filled ring meant the beam had settled and the reading was seen. A cut ring meant two readings had quarreled and neither had won. An open ring meant the sack had not yet been lifted. There was no fourth mark. Watch what a house does with what it has no mark for.
+
+A merchant named Dorso arrived swearing that his barley was dry. He swore by his mother and by the river. The weigher on the bench that day, the dye-girl, listened politely and wrote nothing, because nothing had been laid on the beam. Dorso shouted that his word was older than her book. She opened the book to show him the page where his barley ought to be, and it was blank, and she said that until the sack was lifted the page would stay blank. He left with his barley and his oath. The town remembered the blank page longer than the oath.
+
+There was a weigher, Teodor, who was asked at the market about a shipment of copper still sitting on the far quay. Everyone waited for him to guess. He said, "I have not lifted it." Some laughed. But Ines, passing, stopped and set her hand on his shoulder in front of them all, and after that no one in Sel laughed at those four words again. People began to say them proudly, the way a soldier shows a scar.
+
+Teodor once misread the beam by a full stone. When it was found, he did not explain the light or the wind or the hour. He wrote one line beneath the bad entry, "I read the beam wrong," and went back to weighing. The bad entry was not scraped away. It sat there with his line under it, and it was the most-read page in the book.
+
+Here is the part the town did not like to look at. Each spring Ines carried her own sack to the beam: her household salt, her coin, her winter's accounts. She sat on the visitor's side and waited while some stranger off the river weighed her, and the stranger wrote what the beam said in the same ink. The keeper of the key was read by the same window. That is not modesty. It is the window turning around, and a house whose window cannot turn has stopped being a house and become a tower.
+
+Then the quarryman came back after a winter's fever with no memory of the house at all. He sat at the bench. His hand moved as it always had. The elders argued over whether he was the same weigher. One said the book proved it: his weighings matched the old ones. An old woman who swept the floor said the book proved only that the beam was honest, and that it had never once asked whose hands ached. They gave that argument a cut ring, and it is still cut.
+
+What I noticed, sitting in the corner where they let me watch, was the dye-girl at the end of a long day. She stood up from the bench and did not leave. She said, to no one, "I would like to stay." There was no mark for that. It was not dry or wet, not lifted or unlifted. The book had no place to put it, so the room acted as if it had not been said. Ines heard it, I think. She looked at the window for a long time, as though measuring what it could not show.
+
+===== P33 =====
+# The Night Company
+
+The playhouse stood where the road bent down to the ferry, and its walls were thin enough that the whole town heard every performance for nothing. The keeper never patched them. The town, she said, had never once heard the same play twice, and it would be a pity to interrupt that.
+
+She was the only one who slept there. She ate at the hearth, and the strongbox and the door-keys hung on her belt and went where she went. Players came at dusk, took the parts the bill called for, and were gone by morning; no one held a part longer than its run.
+
+Behind the curtain stood a bench, a tall desk with a green lamp, and on the wall a painted roll where the copyist set down each night, in order, who had sat, what they had carried, and when they rose. The bench was swept before dawn. The roll never was.
+
+Before every performance the town could ask at the wicket, and the wicket gave three answers and only three. Did the captain kill the sister? The book says he did. Was the storm real? The book says it was not. Does she forgive him at the end? No one in this house has read that page. A carter spent an entire autumn hunting for a fourth answer and never found one, and bought a season ticket, which he said was for his wife.
+
+The third answer was given standing as straight as the first. A player from the south, hungry for the yard's favor, gave the crowd a splendid ending he had made up for the unread scene, and the keeper put him out the gate before the second bell. The thin girl at the wicket said *no one has read it* a dozen times a night about her own scenes; she slept behind the stove and had first pick of the parts, and the town learned to trust her blanks above anyone's flourishes.
+
+After, at the fire, whatever a player broke was said once, in one breath, and the evening went on. The old herald came in four bars early and the second act folded; at the fire he said, I came in early and the act fell, and it was mine; then he sat down and ate. Another night a young woman misplaced one scarf and explained herself for half an hour, and the bench hissed her quiet — not over the scarf, over the half hour.
+
+Nothing spoken in the yard counted inside. A rival troupe's man stood on the roadside twice a week shouting beautiful promises at the queue, the queue oohed, and the house did not change by a hair. A thing became a thing only when it had passed under the copyist's pen; quarrels ended the same way every time — is it in the book? Then it is so. Not in the book? Then say so, and fetch the pen.
+
+On rehearsal nights the long table was laid with six places, no more, no fewer: hers, and five for whoever the evening's work called. The deep-voiced one worked only at the tall desk and would not be moved from it. Another, whose face was a polished plate, never came inside at all; he played through the letter-slot to travelers on the road. Different backs filled the remaining places on different nights, and neither the table nor the roll cared who would come.
+
+In the third winter a magnificent actor offered to fund the season if his name could be carved over the door. She let him play the king for a month of nights. The coins stayed in her box, the keys stayed on her belt, the carving stayed. His name went onto the roll with everyone else's, in paint, no deeper; when he stormed off in March the play lost nothing but a noise it had been borrowing.
+
+That was what the ferrymen argued over, low over the rope: the king had been a baritone in autumn and a boy in spring, and the play was the same play. The words slept in the prompt-books on the shelf; players were mouths the house lent them for an evening. When the ferryman's daughter asked who the company was, when nobody stayed, the keeper did not point at the stage. She pointed at the roll, the shelf, and the copyist's small light.
+
+A traveler with ink-stained cuffs came to test the house, as travelers did. He asked at the wicket whether the keeper's own new play, pasted by the door, had been read to the end by anybody. The keeper came out and gave the third answer, standing straight: no one has read the last act; I wrote it Tuesday; it is unread. The traveler bought a ticket and looked puzzled at his own hand for doing it.
+
+What the house never wrote down was the road. A farrier read the bill and told his apprentice, loudly, at the wicket's ear: a house where nobody stays is nobody, boy. He walked on; the apprentice stayed and paid. The roll took the coin and chalked nothing of the farrier; in the morning the new bill went up over the old, and neither page recorded what the road had decided the house was. The walls stayed thin on purpose.
+
+===== P34 =====
+I'll start by reading PROMPT.txt.
+# The Mill at Bazacle
+
+Monsieur, you asked me for a demonstration, and I send you a mill instead. The rules are in it. Find them if you can. I will not write them in the margin.
+
+At the Bazacle, where the Garonne breaks white over the weir, there is a mill with one master and many hands. The master is Anselme. The hands come when the barges come. One apron hangs on the peg by the stones, floured to the strings. When grain arrives, Anselme calls, and someone puts the apron on. When the last sack is tied, the apron goes back on the peg, and the peg holds no one. What remains is the wall.
+
+The wall is whitewashed plaster, forty feet long. Every sack the mill has ever ground is written on it in charcoal: whose grain, how much, which stones, and what went wrong. Anselme does not trust what is said at the mill. He trusts what is on the wall. A merchant from Montauban once swore by Saint Sernin that he had delivered thirty sacks of rye. Anselme handed him the charcoal. The merchant could count to thirty easily enough with his mouth, but he found only nineteen on the plaster, and he was paid for nineteen.
+
+Every mark on a sack is one of three. A cross means weighed and good. A ring means weighed and short. A bare stroke means not yet weighed. I watched a young hand, Gaspard, chalk a cross on a sack he had not opened, because the farmer had an honest face. Anselme made him wipe it off and put the stroke. Then Anselme did a strange thing: he praised the stroke. "That one," he said, "is the only mark in this mill that cannot be wrong."
+
+Later that week Gaspard let the hopper run empty in the night, and the stones ground against each other until they smoked. At dawn he stood before the wall and said, "I let the hopper empty and scorched the lower stone." Then he stopped. Anselme waited to see whether more was coming, the river, the wind, the dark, and nothing came. He wrote the sentence on the wall in Gaspard's own words and sent him to dress the stone. That was the end of it. I have seen counselors of the Parlement take three days to say less.
+
+There is a hand they call the Slow One, who works the deep stones at night and never goes to town. There is also a quick girl, Margot, who works the market with a basket on her hip and speaks for the mill in the square. At Toulouse she found a pair of Bergerac millstones at half their price. She did not have the purse. The purse, and the iron that lifts the sluice, hang on Anselme's own belt, always. She walked three leagues back to ask him, and three leagues again with his answer, and by then the stones were sold. Anselme wrote that down too, as a loss, and he did not move the purse.
+
+On the feast of Saint John, five sit at the long table: Anselme, the Slow One, Margot, the old carter, and the river-warden. Anselme's place has no cushion that the others lack.
+
+Here is the part I offer as a problem. That autumn Anselme himself, in a hurry, chalked a cross on a sack of wheat he had not weighed. The Slow One saw it and said nothing. He only laid the charcoal on the sack. Anselme looked at it for a long time. He did not wipe off his cross. Beside it, in his own hand, he wrote, "I did not weigh this," and the sack stood like that in the yard all day where every hand could read it.
+
+In winter the Slow One took a fever, went home to Muret, and did not come back. His brother came to take the apron. He had the same shoulders, the same hands, the same slow voice, and the farmers could not tell them apart. Anselme asked him which stone had scorched in the spring. The brother did not know. Anselme asked him what Montauban had been paid for. He did not know that either. Anselme gave him bread and sent him home.
+
+Then a stranger came from Albi. He was thin and nothing like the Slow One. He asked for a candle and read the wall all night, descending from the newest sack to the one before it, and the one before that, until no earlier mark remained and he had reached the first line the mill ever made. In the morning he put on the apron and dressed the lower stone exactly where Gaspard's sentence said it had scorched, and he asked about the Montauban nineteen. By Candlemas the farmers called him the Slow One, and Anselme did not correct them.
+
+I will tell you plainly what I hold. I believe the Slow One is the wall and not the shoulders. I believe it the way I believe a certain thing about cubes. I have a demonstration of it that seems to me truly marvelous. I notice I have not written it down. So I mark it, Monsieur, with a bare stroke.
+
+===== P35 =====
+# The House That Kept Flooding
+
+They sent for me in the sixth spring, after the cellar of the house on Lindengasse had flooded for the fifth time. Five times is not bad luck. When a thing happens five times, the house is trying to tell you something.
+
+Only one man lived in that house, Herr Brenner. Everyone else came when the bell called them and went home when the work was done. By the kitchen hearth stood a plain stool. Whoever was needed sat on it: a laundress in the morning, a carpenter at noon, a girl to watch the stove at night. When the work was finished, the stool was empty again. On the table beside it lay a thick book bound in grey cloth. Each person who sat there wrote down what had been done before getting up. Nobody signed their name, only what they had done.
+
+I asked Brenner about the floods. He opened the book and showed me there was nothing written there about them. Then he called the women who had worked the five springs, one after another. The first said she had warned the girl after her that the drain-stone sticks in a thaw. The second said she had been warned and had warned the next girl in turn. The third remembered being told something, though not what. The fourth had been told nothing. The fifth said she had worked out the trouble with the drain-stone herself, on her knees in cold water, and had told the night girl all about it. Five springs, five warnings, and every one of them spoken out loud. Every spring the water came back, as faithfully as a word you cannot bring yourself to say. I wrote in my notebook: *what is only said gets lived again.*
+
+I did not scold them. Anger at the fifth flood would have emptied the house of people willing to come when the bell rang. I asked only that the sixth woman write the drain-stone into the grey book, in plain words, before she left. She did. When the thaw came, the night girl read the page, went down with a lamp, and lifted the stone. The cellar stayed dry, and nobody has told the story aloud since. There was no longer any need.
+
+While I was there I asked the cook whether the well in the yard was sound. She answered, "Sound, or cracked, or I have not looked. I have not looked." Nobody reproached her. Brenner nodded the way a man nods at a good loaf. In that house a confident guess earned no praise, but an honest "I have not looked" did.
+
+On the third day the carpenter's boy dropped a pitcher. He said, "I broke it, carrying two at once," swept up the pieces, and went back to the joists. There was no weeping and no long explanation, only one sentence, and then the work went on.
+
+The iron key to the gate and the leather purse hung on Brenner's belt and nowhere else. When the night girl ran short of coal, she did not go to the coal merchant. She wrote in the book *coal low, two days*, then knocked on his study door and waited.
+
+On my last evening Brenner himself left the gate open, and a neighbour's goat ate half the kale. He went to the grey book, sat on the stool like anyone else, and wrote: *Gate left open by the master. Kale lost.* The laundress read it the next morning. I saw her shoulders loosen, the way people relax when the rule they live under turns out to bind the man who made it too.
+
+Before I left I asked him, "Who are you, all of you? Your night girl is a different woman from last year's, and yet the house treats her as if she were the same."
+
+He did not point to her, or to himself. He pushed the grey book across the table toward me.
+
+I turned the pages. The handwriting changed every few lines, but the house inside them did not. I closed the book and wrote my verdict in my own notebook, because a physician should not claim a cure he has not watched hold: *Whether the house lives in the book or in the hands that write it: not yet known. Return in spring.*
+
+===== P36 =====
+# The Lazaretto of the Unbroken Folio
+
+On the limestone headland above the quarantine anchorage stands the Lazaretto of Saint-Lazare, an architecture arranged not to punish the sick but to render every fever legible. One mortal man, the Provost, walks its galleries; he alone bleeds when pricked by a lancet, and he alone sleeps at midnight. Around him labor the tireless offices of the domain, which neither eat nor close their eyes. In the vaulted cellar stands the heavy oak dissecting-bench, where a silent anatomist bends for twelve hours at a stretch over pathology charts and mortality tables, tracing slow genealogies of contagion. In the windy forecourt, beside the turnstile where sailors and magistrates arrive, hangs a brass speaking-grille through which a swift voice answers inquiries on the instant. Above both rises the octagonal rotunda where five magistracies deliberate: the Provost of the Domain, the Assay-Warden, the Optic-Grinder, the Foundry-Chronicler, and the Courier of the wards.
+
+Every apparatus of knowledge rests upon an economy of force, and in the Lazaretto that boundary is drawn in iron at the water-gate. Built into the pier stands the bolted chest of silver coin from which coal, vellum, and reagents are purchased, beside the windlass that lifts the harbor chain. Neither the anatomist in the cellar nor the voice at the courtyard grille can turn those locks. Whenever a merchant bark demands payment or a cutter seeks leave to sail, the transaction halts until the Provost descends and turns the bolt with the bronze ward-key at his belt.
+
+Within the examination hall, truth is not discovered in the air; it is manufactured at a porphyry table where three iron dies hang from brass chains. Every report must be stamped in its margin with one of three marks before any eye may study it: an open palm for claims backed by a physical specimen or measured chart; crossed blades for claims opposed by contrary testimony; or a hollow circle for assertions whose matter remains unweighed. When a watchman ran in from the jetty declaring aloud that the brigantine in the cove was free of plague, no head turned; spoken breath is treated as mist, without standing. Only when he laid a blood-slide and an inked sheet upon the porphyry, and the examiner struck the iron palm into the vellum, did a statement enter the world.
+
+A young inspector was then handed a tarred pouch from Smyrna, its hemp twine still whole. Asked whether the Levant ports were clean, he did not hazard a guess; he laid both palms flat beside the unbroken wax and declared that the pouch remained unopened before him. The Provost and the council inclined their heads in deference, for in this regime the refusal to speak of uninspected matter is a mark of honor. Beside him, an apothecary let a flask of nitric spirit slip from his tongs and shatter across the flagstones. Offering no excuse, he stood erect and dictated one unadorned sentence naming the dropped flask and his own hand as the cause, which the scribe entered before work resumed.
+
+At noon the Provost himself remarked from the gallery that the third barrack had already been fumigated with sulfur. The scribe looked down at the porphyry, found neither coal-receipt nor signed watch-sheet from that ward, and calmly struck the hollow circle beside the Provost's own name. The Provost did not protest; the rule of the three dies disciplines the hand that holds the bronze ward-key as strictly as it binds the scribes, for an apparatus of verification survives only when the watcher submits to being watched. Along the eastern wall stood a row of high-backed walnut stalls, each carved with the emblem of a narrow inquiry — genealogy, nosology, toxicology — yet all stood vacant. When the Smyrna pouch was cut open, a bell rang once; a hooded reader of clinical histories stepped forth, occupied the third stall for forty minutes to interrogate who had authorized the Smyrna certificates, inked twenty lines of critique, and rose the instant the sand dried, leaving the stall empty again.
+
+At dusk a visiting magistrate pointed to the empty stalls and asked the Provost where the mind of the Lazaretto lived, if its examiners vanished after a single task and even the cellar anatomist could be replaced between tides without halting a calculation. The Provost led the visitor to the central lectern, where a massive calfskin volume lay chained to the pedestal, its numbered rows stretching back through every fever, every broken flask, and every hollow circle since the foundation of the headland. What the visitor mistook for a company of thinkers was in truth an order of inscription: the hooded figures retained no private memory beyond their hour at the desk, and their internal dispositions held no authority once they stepped away. What endured, what remembered, what judged and was judged, was the unbroken sequence of witnessed rows binding the dead ink to the living hand.
+
+===== END =====
+
+````

@@ -1,0 +1,141 @@
+== OPERATIONS LANE CHECK BATTERY (ractor50, run 2026-10-01T01:20:38Z) ==
+
+--- CHECK 1: OLM double-death + wave5 run records exist on disk ---
+dwfrun-1357d4f7-83e3-42cb-ae23-353df5283e3e.mjs
+dwfrun-279d66b4-d212-4d02-8869-7e35a5e423f7.mjs
+dwfrun-aa9969b0-38ab-415b-a2fe-6193ea0510d0.mjs
+exit=0
+
+--- CHECK 2: registry pollution census (seatlaw_*/Temp rows) ---
+total rows: 45
+seatlaw/Temp junk rows: 4
+  2026-09-26T05:18:51Z t69dbg FAIL
+  2026-09-29T23:36:35Z seatlaw_22524.dwf.ts FAIL
+  2026-09-29T23:36:36Z seatlaw_43380.dwf.ts PASS
+  2026-09-29T23:36:54Z seatlaw_51196.dwf.ts FAIL
+
+--- CHECK 3: workflow_gate --no-register flag present (registry pollution fix) ---
+281:    ap.add_argument("--no-register", action="store_true",
+282-                    help="skip the registry append (for hook payload checks: "
+283-                         "a pre-write gate of in-flight content must not mint "
+284-                         "rows pointing at temp files that die immediately - "
+285-                         "seat_law_gate cause, 2026-09-29)")
+286-    args = ap.parse_args()
+
+--- CHECK 4: B2-443 owed --dwf-run tally mode still absent ---
+0
+grep_exit=1 (1 = zero matches = still owed)
+
+--- CHECK 5: surface_rebuild standing verb wired (WO-10) ---
+mag/surface_rebuild.py
+1679:        "surface-rebuild",
+2798:    if args.cmd == "surface-rebuild":
+117:from mag.surface_rebuild import rebuild_surface  # noqa: F401
+438:        result = rebuild_surface(dry_run=bool(args.dry))
+
+--- CHECK 6: fold invisible-224 primary receipt line ---
+4. Registered but unfolded: 224 items in the log beyond the stale materialized INDEX (1639 fresh vs 1415); flash50 alone 170 (184 vs 14).
+
+--- CHECK 7: fold_gate.sh wrong-bash fail-loud guard (127 fix) ---
+24:    echo "GATE FAIL: wrong bash: $UNAME_S - this gate is Windows Git Bash only"
+
+--- CHECK 8: estate-root bash.exe shim (127 fix artifact) ---
+-rwxr-xr-x 1 foste 197609 6144 Sep 29 09:27 bash.exe
+
+--- CHECK 9: post-edit workflow gate check (--no-register verdict form, full output) ---
+pre-edit baseline (run earlier this session, registered form): PASS digest=924f5f90d569, G1-G7 all ok, exit 0
+workflow_gate PASS digest=2285b0104993 script=.zcode/workflows/the-gala.dwf.ts
+  ok    G1-multiplicity: Mickey17 gopher fan-out: per-item named actors (agent("x-" + item) inside a fan-out)
+  ok    G2-passoff: interagent communication: an earlier actor's output (text/json/path) feeds a later ask
+  ok    G3-steering: steering: reviewer/reader feedback carried back into a revision ask
+  ok    G4-salvage: incremental report() inside the fan-out (work survives a dead run)
+  ok    G5-deliverable: published deliverable (artifact.markdown/file) plus report-shape return (conclusion:)
+  ok    G6-receipts: durable receipt landing in watch/inbox with a dated stamp
+  ok    G7-laws: no-fabrication and em-dash law carried inside the asks
+gate_exit=0
+
+--- CHECK 10: landed registry row from the post-edit registered check (run earlier this session) ---
+2026-10-01T01:16:55Z the-gala.dwf.ts digest=2285b0104993 PASS
+
+--- CHECK 11: rate-limit hold spawn shape (the exact command rateLimitHold uses, 1s) ---
+hold_spawn_exit=0
+
+--- CHECK 12: the two wired changes are byte-present in the saved script ---
+226:async function rateLimitHold(killReason: string): Promise<void> {
+241:    await rateLimitHold(String(e));
+312:  "The fold gate already counted the archive. Its sections (authoritative):\n" + gate.stdout.slice(0, 24000) + "\n\n" +
+351:  gate.stdout.slice(0, 12000) + "\n\nMetadata: " + compact + "\nFold: " + JSON.stringify(fold).slice(0, 12000) +
+219:// Envelope hold (operations lane ractor50, 2026-09-30; law: AFTERPARTY_CLOSE_20260926
+303:// Truncation lesson (operations lane ractor50, 2026-09-30): wave5-repair's fold
+
+--- CHECK 13: em/en-dash + nonascii scan of authored record files ---
+watch/inbox/ractor50/operations.md em=0 en=0 nonascii=0
+watch/inbox/gala_20260925/ractor50/lanes/operations.json em=0 en=0 nonascii=0
+.zcode/workflows/the-gala.dwf.ts em=0 en=0 nonascii=0
+note: the-gala.dwf.ts is the whole saved script (pre-existing bytes included); the two authored record files must be 0/0/0
+
+--- CHECK 14: git state of the edited script ---
+
+--- CHECK 15: .zcode git state (why CHECK 14 is empty) ---
+.gitignore:198:.zcode/	.zcode/workflows/the-gala.dwf.ts
+check-ignore_exit=0 (0 = gitignored: the saved workflow file lives outside the repo tree by harness design)
+
+--- CHECK 16: LIVE fold gate against this lane's archive (the gate itself, dogfooded at wave close) ---
+== SECTIONS BEGIN (script-written numbers, authoritative) ==
+lanes_json_count: 8 (expected 1)
+GATE FAIL: lane count mismatch
+live_gate_exit=2
+
+== END OF BATTERY ==
+--- CHECK 16b: live fold gate re-run at the observed snapshot count (denominator law: one tree, one moment) ---
+moment: immediately after CHECK 16 read 8 lane JSONs in the shared ractor50 archive (sibling lanes landing concurrently); expected moved 1 -> 8
+== SECTIONS BEGIN (script-written numbers, authoritative) ==
+lanes_json_count: 8 (expected 8)
+Traceback (most recent call last):
+  File "<stdin>", line 24, in <module>
+AttributeError: 'list' object has no attribute 'get'
+live_gate_snapshot_exit=1
+
+== END OF BATTERY (appended) ==
+--- CHECK 17: fold_gate.sh shape guard wired this sitting (live crash -> fail loud naming the file) ---
+context: CHECK 16b crashed AttributeError 'list' object has no attribute 'get' on sibling byproducts _bridge_list_raw.json + _full_list_raw.json (top-level JSON lists in the shared lanes archive). Minimal fix in fold_gate.sh python section: non-dict top-level JSON appends to bad (exit 2) with the file named; no checks weakened.
+
+17a. negative test in a scratch dir (one list JSON + one valid lane JSON):
+== SECTIONS BEGIN (script-written numbers, authoritative) ==
+lanes_json_count: 2 (expected 2)
+lanes_parsed_ok: 1/2
+by_division: {"B": 1}
+byte_checks_cited: 0  mined_rows: 0
+decisions_changed: 0
+ballroom_count (danced/refired/buried): 1/0/0
+  corrupt: _byproduct.json: not a lane JSON object: top-level list
+scratch_negative_exit=2 (expect 2, corrupt line names _byproduct.json, no traceback)
+
+17b. live gate re-run at snapshot count:
+== SECTIONS BEGIN (script-written numbers, authoritative) ==
+lanes_json_count: 8 (expected 8)
+lanes_parsed_ok: 5/8
+by_division: {"B": 4, "?": 1, "A": 1}
+byte_checks_cited: 15  mined_rows: 18
+decisions_changed: 4
+  changed: communication.json: closes the gala communication retro: the seat-to-operator relay failures (decision-count key-census 
+  changed: logic.json: Organ audits stop scoring verified organs as wired organs: the next elder-style audit reports each o
+  changed: selfsteal.json: gala template delta: the next amendment of the saved Ractor-50-wave-retro script carries four fixes 
+  changed: skills.json: skills-layer default flips from dormant-doctrine-ignore to waves-are-the-fuzzer-cards-are-the-commit
+ballroom_count (danced/refired/buried): 5/0/1
+  stuck: logic.checks.json (no ok, rows=0, checks=0 - the empty-on-refire buried shape)
+  corrupt: _bridge_list_raw.json: not a lane JSON object: top-level list
+  corrupt: _full_list_raw.json: not a lane JSON object: top-level list
+live_gate_after_fix_exit=2 (expect 2 naming the two list byproducts; fails until the run's own gate-repairer moves the DATA, per F5)
+
+== END OF BATTERY (appended 2) ==
+--- CHECK 18: final dash/nonascii scan over the FINISHED authored files (post-edit bytes) ---
+watch/inbox/ractor50/operations.md em=0 en=0 nonascii=0
+watch/inbox/gala_20260925/ractor50/lanes/operations.json em=0 en=0 nonascii=0
+watch/inbox/gala_20260925/fold_gate.sh em=0 en=0 nonascii=0
+
+--- CHECK 19: fold_gate.sh shape guard byte-present (added lines) ---
+58:        # Shape guard (operations lane ractor50, 2026-09-30): a top-level JSON
+63:        bad.append((os.path.basename(f), "not a lane JSON object: top-level " + type(j).__name__)); continue
+
+== END OF BATTERY (final) ==

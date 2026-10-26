@@ -1,0 +1,41 @@
+ID: 1wm8j45
+SUB: r/ClaudeCode
+DATE: 2026-09-21 10:04 UTC (created_utc=1789985050)
+TITLE: When a subagent isn't sure about something, the main agent never finds out
+SCORE: 3  COMMENTS: 10  UPVOTE_RATIO: 0.81
+PERMALINK: https://www.reddit.com/r/ClaudeCode/comments/1wm8j45/when_a_subagent_isnt_sure_about_something_the/
+SELFTEXT:
+Subagents run in their own context and hand back one final summary. The main agent never sees the steps, only the report. So all the doubt the subagent had along the way, "couldn't find where this is called," "assumed this config is the live one," "didn't check the second implementation," gets dropped when it writes the summary. The summary reads confident because summaries do.
+
+Then the main agent acts on it as fact. I watched a refactor go wrong because an explore subagent reported "this function is only used in two places." It had searched one directory.
+
+What I add to every subagent definition now:
+
+End every report with a section called "Not verified". List every claim in your report that you inferred rather than confirmed, and for each one, say what you would need to check to confirm it. If everything was verified, write "Not verified: none" and list the commands or files that verified it.
+
+And for anything that locates code:
+
+For every location you report, give the file path and line number. Do not report a location you did not open.
+
+And one line in [CLAUDE.md](http://CLAUDE.md) for the main agent:
+
+Before acting on a subagent's report, read its "Not verified" section. Do not treat anything listed there as fact. Check it yourself or ask me.
+
+The "Not verified: none" part does more than it looks like. Being made to list what verified everything makes it notice when nothing did, and the section stops being empty.
+
+What else gets lost between the subagent and the main agent for you?
+COMMENTS FETCHED: 14
+--- [AutoModerator | 2026-09-21 | score 1] Hey! Thanks for posting to r/ClaudeCode   While participating in this thread, please follow our [community rules](https://www.reddit.com/r/ClaudeCode/about/rules). Keep discussions constructive. Attack the idea, not the person.  ## For help, project discussions, tips, and general chat, join the [ClaudeCode Discord](https://discord.gg/4QbtMRErUc).   *I am a bot, and this action was performed automatically. Please [contact the moderators of this subreddit](/message/compose/?to=/r/ClaudeCode) if you have any questions or concerns.*
+--- [AI_spell | 2026-09-21 | score 1] Yeah the confident summary is the trap. I force subagents to end with "confidence / not verified / what I skipped" and I treat anything without that block as incomplete. Main agent then re-checks the unverified bits before acting. Still not perfect, but it stops the "only searched one folder" class of fail for me.
+--- [Ok_Negotiation_2587 | 2026-09-21 | score 1] "what i skipped" is a good split from "not verified", skipping is a choice it made and verifying is a check it failed. the one folder bug was a skip that got reported as a check
+--- [Cultural-Ad3996 | 2026-09-21 | score 2] The result itself, sometimes. One of my sessions ended its turn to wait on another session's result. The result had already arrived and nothing woke it. It sat there five and a half hours, and from outside it looked like patience.  The doubt you describe I handle with a hand up. A worker that hits a decision it cannot make raises it to the session that started it, through the tool I use, instead of writing around it in the summary. The summary still reads confident. It just has less to be confident about.
+--- [Ok_Negotiation_2587 | 2026-09-21 | score 2] "from outside it looked like patience" is painfully accurate. a stuck agent and a thinking agent look identical until you check the clock
+--- [Drasezv | 2026-09-21 | score 2] same thing bites on the other side: the main agent only ever sees the subagent's last message, so anything the subagent noticed mid-run is gone unless the format forces it out.  what helped more than the "not verified" section alone was making the subagent write findings to a file and return only a path plus 5 lines. then the doubt survives in something the main agent can grep, instead of being compressed into one confident paragraph.  worth also having it state the search it ran, not the conclusion - "rg -n 'foo\(' src/ returned 2 hits" is checkable, "only used in two places" isn't.
+--- [clazman55555 | 2026-09-21 | score 2] I opted to put the following two sections in my subagent-dispatch skill, which runs before subagent use, over [Claude.md](http://Claude.md)    \## 3. Status Vocabulary  Require subagents to report using one of four statuses:  | Status | Meaning |   |--------|---------|   | \*\*DONE\*\* | Task complete, all acceptance criteria met, tests pass |   | \*\*DONE\_WITH\_CONCERNS\*\* | Task complete but something looks wrong -- describe what |   | \*\*BLOCKED\*\* | Cannot proceed without information or a decision |   | \*\*NEEDS\_CONTEXT\*\* | Insufficient information to understand the problem |  Include this vocabulary in the prompt. Freeform "I think it's working" reports are not acceptable.   \### When a dispatch returns BLOCKED or DONE\_WITH\_CONCERNS  Fixed response sequence: \*\*retry → decompose → alternate → escalate\*\*.   1. \*\*Retry\*\* once with clarified context if the failure looks like prompt ambiguity   2. \*\*Decompose\*\* -- split the task into smaller scope, dispatch each piece separately   3. \*\*Alternate approach\*\* -- different model, different tool, direct implementation   4. \*\*Escalate\*\* to the Magos only after the above have been tried  \## 4. Do Not Trust the Report  This is the most important section.   Subagents will report success. The report may be incomplete, inaccurate, or optimistic. After receiving a subagent's result:  \- \*\*Do not take their word for what they implemented.\*\* Read the actual changes.   \- \*\*Do not trust claims about test passage.\*\* Run the tests yourself.   \- \*\*Do not accept "DONE" without verification.\*\* Check the acceptance criteria against the actual code.   \- \*\*Look for work they claimed to do but didn't.\*\* Missing pieces are the most common failure.   \- \*\*Look for extra work they added.\*\* Scope creep in subagents is real.
+--- [Ok_Negotiation_2587 | 2026-09-22 | score 1] "state the search not the conclusion" would have caught my exact bug, rg over one directory reads very different from "only used in two places". stealing the findings file too
+--- [Ok_Negotiation_2587 | 2026-09-22 | score 1] DONE\_WITH\_CONCERNS is the status i was missing. with only done and blocked, "done but something smells off" always rounds up to done
+--- [clazman55555 | 2026-09-22 | score 2] Yep, ran into the same issue.  
+--- [Cultural-Ad3996 | 2026-09-24 | score 2] The clock lied to me in the other direction. A test run one of my sessions was sure had stalled had already burned 1,350 seconds of CPU. It was working the whole time.  So I stopped reading the clock. I take two CPU readings a minute apart. Flat across the minute is stuck, and anything else I leave alone.
+--- [Ok_Negotiation_2587 | 2026-09-24 | score 1] thats a much better test than mine, the clock only tells you how long, cpu tells you whether anything is actually happening
+--- [Drasezv | 2026-09-24 | score 2] one thing that made the file worth more: have it write the search itself, not the finding. a line like `rg -n "foo\(" src/ → 2 hits` is re-runnable six hours later, "only used in two places" isn't.  naming it after the task also helps - one file per subagent run rather than a shared notes.md, otherwise the second run overwrites the doubt the first one recorded.
+--- [Cultural-Ad3996 | 2026-09-25 | score 2] Flat CPU tells me it stopped, but not why. The worst one I had was a session that sat 5.5 hours waiting for another session's result, and the result had already arrived. Nothing woke it.  So the parent no longer waits to be told. In the tool I use, it reads its workers instead. One command shows the state of every session it started, and a worker stuck on a decision has its hand up with what it is blocked on.

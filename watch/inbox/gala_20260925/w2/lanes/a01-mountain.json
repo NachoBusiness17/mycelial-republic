@@ -1,0 +1,62 @@
+{
+  "lane": "a01-mountain",
+  "division": "A",
+  "ok": true,
+  "note": "THE MOUNTAIN head. Headless gate PASS on first run, exit 0, no b4 wave collision observed. Gate PASS certifies parse-level truth only (0 SyntaxError/Incomplete) plus rebuilt the_mountain.rbxlx; advisory TypeErrors still print, and several are OUTSIDE the gate's documented accepted-noise classes (TheAnswerBoss.luau unknown global 'char', init.server.luau(150) 2-value return, GalleryZone.luau string-vs-number x7, HeadMuseum.luau Unknown type 'Soul.Soul'). Mined 5 laws from roblox docs + code headers; all quotes byte-verified by grep fixed-string count = 1 before filing. Estate grep: corpus/steal/ has ZERO hits for both mountain_check and PLAYTEST; memory/corpus/ has one mountain_check receipt (LINKS.jsonl LINKS-334) and one PLAYTEST hit that is the unrelated 2026-09-14 MUD receipt index, so roblox/docs/PLAYTEST.md has no corpus coverage. Lore-gravity vein observed but not rowed (Lore.luau: MUD rooms are estate systems, each carrying a frontier question).",
+  "rows": [
+    {
+      "law": "Gate honesty: the gate's PASS is a narrow, inspectable predicate",
+      "claim": "tools/mountain_check fails only on parse-level failures (SyntaxError or Incomplete, counted by grep) and otherwise reports semantic TypeErrors as advisory output while still building the rbxlx and exiting 0, so every GATE PASS carries its own criterion in source.",
+      "quote": "PARSE_FAILS=$(grep -cE \"SyntaxError|Incomplete\" /tmp/mountain_analyze.txt || true)",
+      "source": "C:/Users/foste/Documents/projects/local_sovereign_agent/tools/mountain_check",
+      "steal": "Action: in any harness gate, print the exact pass predicate from source next to the verdict. Landing: mag/ pre-push ratchet and workflow_gate already do exit-code truth; add the predicate line to their pass banners so a PASS is self-describing in receipts.",
+      "falsifier": "A run with nonzero SyntaxError count that still prints GATE PASS and exits 0, or a TypeError that flips the exit code to 1.",
+      "leverage": "high"
+    },
+    {
+      "law": "No-fabrication on NPC heads: a dark lane degrades to a labeled recording, never invented speech",
+      "claim": "Each Head Museum head has a pre-authored firstLine fallback; when the NpcGateway process is down the head speaks that line suffixed as a recording, and PLAYTEST.md requires proving the flip in both directions (kill the gateway, restart it) before the law counts.",
+      "quote": "Never fabricate a live model. The recording IS the honesty.",
+      "source": "C:/Users/foste/Documents/projects/local_sovereign_agent/roblox/prompts/NPC_HEAD.prompt.md",
+      "steal": "Action: give every remote-specialist call site a pre-authored, labeled fallback utterance instead of a silent error or a guessed answer. Landing: mag/ lane escalation returns '[lane dark: recording]' + the seat's cached last-known answer, tagged, never model-invented.",
+      "falsifier": "Gateway stopped, Speak returns live-sounding prose with no '(a recording)' marker, or the marker appears while the gateway is up.",
+      "leverage": "high"
+    },
+    {
+      "law": "Seeded determinism: generation is replay-safe and cross-fleet seed-compatible",
+      "claim": "roblox uses 32-bit xorshift instead of mulberry32 because Luau doubles lose exact 32-bit multiply wraparound; the comment states the fleet's Python mulberry32 seeds map 1:1, and CLONED_MECHANICS 3.2 prints the Flicker Tower round seed on the in-world plaque so any run is verifiable.",
+      "quote": "xorshift32, replay-safe: same seed, same mountain, bit-exact rerun.",
+      "source": "C:/Users/foste/Documents/projects/local_sovereign_agent/roblox/src/shared/SeedRng.luau",
+      "steal": "Action: when porting any seeded generator across runtimes, choose the algorithm that survives BOTH runtimes' number semantics, then surface the seed to the user. Landing: mag/worldgen and MUD room generation adopt xorshift32 as the shared seed primitive with the seed logged in every artifact header.",
+      "falsifier": "Two runs with the same seed integer produce different tower layouts, or a Python mulberry32 seed feeds SeedRng and diverges from the Python sequence.",
+      "leverage": "high"
+    },
+    {
+      "law": "Headless-verification-before-live: the machine pass earns the human pass",
+      "claim": "PLAYTEST.md opens by filing what the headless pass already caught and fixed, then reserves the 20-minute in-Studio pass as the Sept 29 soft-launch gate; every broken line goes to queue/todo.md P0 and only the failed section re-runs. The operator's Studio session is the reserved gate; agents stay out of Studio.",
+      "quote": "Anything broken: one line per failure into queue/todo.md P0, then fix, then\nre-run just the failed section. The Sept 29 soft-launch gate is this whole\npage passing once, clean.",
+      "source": "C:/Users/foste/Documents/projects/local_sovereign_agent/roblox/docs/PLAYTEST.md",
+      "steal": "Action: before any human-gated review, run the full headless equivalent and attach its raw output, so the human spends their window only on what machines cannot check. Landing: GALA-style batteries file check artifacts (like this lane's a01-mountain.check.txt) ahead of every operator gate.",
+      "falsifier": "A soft-launch decision made with no saved headless run, or an agent editing the place in Studio before the operator pass.",
+      "leverage": "high"
+    },
+    {
+      "law": "Pre-registered falsifiers: launch docs carry their own kill conditions",
+      "claim": "SEASONAL_LAUNCH.md ends with a FALSIFIERS section naming three measurable failure conditions before launch: Ossuary median session under 3 minutes (maze density or darkness wrong), freeze mechanic reading as lag (stare-feedback too subtle), and Candy Bones inflout exceeding Exchange sink (economy prints VM; cap candy per floor per day). The playtest scoring table carries the 3-minute median as a row.",
+      "quote": "If the Ossuary cannot hold a 3-minute median session in playtest, the maze\n  density or darkness is wrong; tune before launch, not after.",
+      "source": "C:/Users/foste/Documents/projects/local_sovereign_agent/roblox/docs/SEASONAL_LAUNCH.md",
+      "steal": "Action: every plan skeleton ships with numbered falsifiers tied to a scoring table, written before the playtest that could trip them. Landing: queue/todo.md and docs/ref direction artifacts add a FALSIFIERS section per phase gate, each with a number and a pre-agreed response.",
+      "falsifier": "A playtest reports a metric outside spec (median Ossuary minutes under 3) and the launch calendar proceeds unchanged with no tuning row filed.",
+      "leverage": "high"
+    }
+  ],
+  "checks": [
+    {
+      "command": "bash tools/mountain_check",
+      "exit": 0,
+      "evidence": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/w2/lanes/a01-mountain.check.txt"
+    }
+  ],
+  "decision_changed": "yes: the Sept 29 soft-launch readiness review cannot treat GATE PASS as semantically clean. Decision the head's truth forces: before the operator's 20-minute pass, either burn down or by-name accept the TypeErrors outside mountain_check's documented noise classes (TheAnswerBoss.luau(115) unknown global 'char', init.server.luau(150) function returns 1 value but 2 required, GalleryZone.luau(23-29) string-vs-number x7, HeadMuseum.luau(16) Unknown type 'Soul.Soul'), by extending the gate's accepted-noise list with reasons or fixing the lines; GATE PASS today certifies parse + build only.",
+  "artifact": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/w2/lanes/a01-mountain.json"
+}

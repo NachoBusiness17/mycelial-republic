@@ -1,0 +1,86 @@
+== SS-1 seed-seal finish-line checks, 2026-10-02T04:10Z, lane fill-seed-seal ==
+
+== [1] sign the REAL seed (re-run: proves deterministic seed_root + fresh seal) ==
+{
+ "ok": true,
+ "seal_path": "watch\\arc_seeds\\arc_seed_sess_f4ad2dcb_20260907_0026.seal",
+ "key_id": "de5fc05e962c43ab",
+ "seed_root": "426b74e13707cba9a68e36ec27f73a99648672fbf34792c2f80ed33989c440c1",
+ "key_source": "C:\\Users\\foste\\Documents\\projects\\local_sovereign_agent\\state\\keys\\seed_seal_key"
+}
+EXIT=0
+
+== [2] verify the REAL seed at consume shape (fail-closed gate) ==
+{
+ "ok": true,
+ "reason": "verified",
+ "session": "sess_f4ad2dcb",
+ "arc_root": "eacb5b32e9ad5b9a",
+ "key_id": "de5fc05e962c43ab",
+ "seed_root": "426b74e13707cba9a68e36ec27f73a99648672fbf34792c2f80ed33989c440c1"
+}
+EXIT=0
+
+== [3] forge drill: pytest tests/test_seed_seal.py -v ==
+============================= test session starts =============================
+platform win32 -- Python 3.11.15, pytest-9.1.1, pluggy-1.6.0 -- C:\Users\foste\Documents\projects\local_sovereign_agent\.venv\Scripts\python.exe
+rootdir: C:\Users\foste\Documents\projects\local_sovereign_agent
+configfile: pytest.ini
+plugins: anyio-4.14.2, langsmith-0.10.14, timeout-2.4.0, xdist-3.8.0, typeguard-4.6.0
+collecting ... collected 14 items
+
+tests/test_seed_seal.py::test_sign_then_verify_happy_path PASSED         [  7%]
+tests/test_seed_seal.py::test_root_is_deterministic_over_canonical_form PASSED [ 14%]
+tests/test_seed_seal.py::test_forge_drill_seed_body_tamper_with_full_rehash PASSED [ 21%]
+tests/test_seed_seal.py::test_forge_drill_chain_tamper_with_full_rehash PASSED [ 28%]
+tests/test_seed_seal.py::test_forge_drill_session_swap_in_chain PASSED   [ 35%]
+tests/test_seed_seal.py::test_stripped_signature_refused_not_silent PASSED [ 42%]
+tests/test_seed_seal.py::test_empty_signature_refused PASSED             [ 50%]
+tests/test_seed_seal.py::test_missing_seal_fails_closed PASSED           [ 57%]
+tests/test_seed_seal.py::test_missing_seed_byte_drift_fails_closed PASSED [ 64%]
+tests/test_seed_seal.py::test_key_swap_refused PASSED                    [ 71%]
+tests/test_seed_seal.py::test_key_id_pubkey_inconsistency_refused PASSED [ 78%]
+tests/test_seed_seal.py::test_wrong_key_signing_never_verifies PASSED    [ 85%]
+tests/test_seed_seal.py::test_sign_mints_key_once_and_reuses PASSED      [ 92%]
+tests/test_seed_seal.py::test_verify_real_repo_seed_if_sealed PASSED     [100%]
+
+============================= 14 passed in 0.96s ==============================
+EXIT=0
+
+== [4] violation ratchet check --changed ==
+RATCHET check: scope=16 changed files; hits=5; registered=5; NEW=0; expired-exceptions=0
+  GROWTH claim 5f4392509fdf74f1: mag/percolator.py accepted at 580 lines, now 738 (+158) — re-audit or re-accept by name
+RATCHET: PASS — no unregistered debt.
+EXIT=0
+
+== [5] key custody: state/keys gitignored? ==
+.gitignore:40:state/	state/keys/seed_seal_key
+EXIT=0
+
+== [6] landed artifacts ==
+-rw-r--r-- 1 foste 197609 14399 Oct  2 00:09 mag/seed_seal.py
+-rw-r--r-- 1 foste 197609    64 Oct  2 00:07 state/keys/seed_seal_key
+-rw-r--r-- 1 foste 197609 12610 Oct  2 00:09 tests/test_seed_seal.py
+-rw-r--r-- 1 foste 197609   748 Oct  2 00:10 watch/arc_seeds/arc_seed_sess_f4ad2dcb_20260907_0026.seal
+EXIT=0
+
+== [7] seal sidecar content (pubkey only, never the private key) ==
+{
+ "arc_root": "eacb5b32e9ad5b9a",
+ "chain_sha": "a8134bc3f1f02230356d5c240f0e6c5f58af7b06396193aecb3547293e9703f3",
+ "key_id": "de5fc05e962c43ab",
+ "public_key": "lDJAP4X7ZJmqbkH24LUFFjLMpkeZhGA2/LZxoDOV6YA=",
+ "root_alg": "sha256(canonical_json{arc_root,chain_sha,seed_sha,session})",
+ "schema": "seed_seal.v1",
+ "sealed_at": "2026-10-02T04:10:34.819160Z",
+ "sealed_by": "mag/seed_seal.py seed_seal.v1 (SS-1)",
+ "seed_root": "426b74e13707cba9a68e36ec27f73a99648672fbf34792c2f80ed33989c440c1",
+ "seed_sha": "8f6b564f83f312261b745a65d08dda1447749a2ff892aeffd743e21fb06b9e03",
+ "session": "sess_f4ad2dcb",
+ "sig_alg": "ed25519",
+ "signature": "8VJa+aKeVKsoOqdVduA++J+qycAbIYDo/A+VmJgZLy9AeP/qiq3Q6eZZKwxNsb9qLj9MCosPuwvHkY6xoW3LAg=="
+}
+== [8] em-dash law over landed files ==
+mag/seed_seal.py:0
+tests/test_seed_seal.py:0
+EXIT=1 (1 means zero em-dashes: clean)

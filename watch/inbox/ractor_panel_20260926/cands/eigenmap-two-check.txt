@@ -1,0 +1,111 @@
+scan ts: 2026-09-27T01:07:39.278044+00:00
+regions with eigen_centroids: 5 (audit_dungeon, fractal_maze, riddler_engram, riddler_optics, water_computer)
+adventure_2d6 in eigen_centroids: False (off-map by construction)
+
+== Python recompute from JSON (frozen reference) ==
+  audit_dungeon -> fractal_maze: dist 0.0123 brg 247.6 / back  67.6
+  audit_dungeon -> riddler_engram: dist 0.0047 brg 113.8 / back 293.8
+  audit_dungeon -> riddler_optics: dist 0.0021 brg 119.1 / back 299.1
+  audit_dungeon -> water_computer: dist 0.0066 brg 301.3 / back 121.3
+  fractal_maze -> riddler_engram: dist 0.0159 brg  79.9 / back 259.9
+  fractal_maze -> riddler_optics: dist 0.0137 brg  74.3 / back 254.3
+  fractal_maze -> water_computer: dist 0.0100 brg  35.6 / back 215.6
+  riddler_engram -> riddler_optics: dist 0.0027 brg 289.8 / back 109.8
+  riddler_engram -> water_computer: dist 0.0112 brg 298.2 / back 118.2
+  riddler_optics -> water_computer: dist 0.0086 brg 300.7 / back 120.7
+  chain_len 0.0310 (scan files 0.031) star_len 0.0364 (scan files 0.036)
+[PASS] chain length reproduces the scan's filed vote (0.0310 vs 0.031)
+[PASS] star length reproduces the scan's filed vote (0.0364 vs 0.036)
+
+== walker probes (Python reference) ==
+  on audit_dungeon: dist to itself 0.0000
+  on fractal_maze: dist to itself 0.0000
+  on riddler_engram: dist to itself 0.0000
+  on riddler_optics: dist to itself 0.0000
+  on water_computer: dist to itself 0.0000
+  mid (-0.0208, -0.0107): nearest audit_dungeon 0.0033 121.3 deg (exact tie with water_computer at the same 0.0033; alphabetical rule)
+  mid -> fractal_maze: 0.0107 233.3 deg
+
+== Luau CLI execution of roblox/src/shared/CathedralMap.luau ==
+module sha256 (tree): 58626ea7ab1db3cbc39cc46db2229351ce6dac4058e94cc968e89bff4ed39a79
+[PASS] staged module bytes are sha256-identical to the tree file
+luau exit code: 0
+[PASS] luau CLI ran the module to completion
+
+-- raw luau stdout --
+  scan_ts 2026-09-27T01:07:39.278044+00:00
+  scan_source watch/inbox/CATHEDRAL_CURVATURE_SCAN_20260927.json
+  scale 12000
+  origin 0 8 560
+  region audit_dungeon -0.0180 -0.0090 SADDLE 0.124
+  region fractal_maze -0.0294 -0.0043 SADDLE 0.129
+  region riddler_engram -0.0137 -0.0071 DARK nil
+  region riddler_optics -0.0162 -0.0080 SADDLE 0.134
+  region water_computer -0.0236 -0.0124 SADDLE 0.358
+  pair audit_dungeon fractal_maze 0.0123 247.6 67.6
+  pair audit_dungeon riddler_engram 0.0047 113.8 293.8
+  pair audit_dungeon riddler_optics 0.0021 119.1 299.1
+  pair audit_dungeon water_computer 0.0066 301.3 121.3
+  pair fractal_maze riddler_engram 0.0159 79.9 259.9
+  pair fractal_maze riddler_optics 0.0137 74.3 254.3
+  pair fractal_maze water_computer 0.0100 35.6 215.6
+  pair riddler_engram riddler_optics 0.0027 289.8 109.8
+  pair riddler_engram water_computer 0.0112 298.2 118.2
+  pair riddler_optics water_computer 0.0086 300.7 120.7
+  vote 0.0310 0.0364 water-first
+  chaingedge water_computer fractal_maze
+  chaingedge fractal_maze riddler_optics
+  hubedge water_computer audit_dungeon
+  hubedge water_computer riddler_optics
+  probe_on_beacon audit_dungeon 0.0000 180.0 audit_dungeon
+  probe_on_beacon fractal_maze 0.0000 180.0 fractal_maze
+  probe_on_beacon riddler_engram 0.0000 180.0 riddler_engram
+  probe_on_beacon riddler_optics 0.0000 180.0 riddler_optics
+  probe_on_beacon water_computer 0.0000 180.0 water_computer
+  probe_mid -0.0208 -0.0107 audit_dungeon 0.0033 121.3
+  probe_mid_to_fractal 0.0107 233.3
+-- end raw stdout --
+
+== diff: Luau module output vs Python recompute vs JSON ==
+[PASS] module SCAN_TS equals the JSON ts (2026-09-27T01:07:39.278044+00:00)
+[PASS] region row audit_dungeon: eigen (-0.018, -0.009) class SADDLE cos 0.124 matches the JSON
+[PASS] region row fractal_maze: eigen (-0.0294, -0.0043) class SADDLE cos 0.129 matches the JSON
+[PASS] region row riddler_engram: eigen (-0.0137, -0.0071) class DARK cos None matches the JSON
+[PASS] region row riddler_optics: eigen (-0.0162, -0.008) class SADDLE cos 0.134 matches the JSON
+[PASS] region row water_computer: eigen (-0.0236, -0.0124) class SADDLE cos 0.358 matches the JSON
+[PASS] pair audit_dungeon->fractal_maze: dist 0.0123 brg 247.6/67.6 (module: [0.0123, 247.6, 67.6])
+[PASS] pair audit_dungeon->riddler_engram: dist 0.0047 brg 113.8/293.8 (module: [0.0047, 113.8, 293.8])
+[PASS] pair audit_dungeon->riddler_optics: dist 0.0021 brg 119.1/299.1 (module: [0.0021, 119.1, 299.1])
+[PASS] pair audit_dungeon->water_computer: dist 0.0066 brg 301.3/121.3 (module: [0.0066, 301.3, 121.3])
+[PASS] pair fractal_maze->riddler_engram: dist 0.0159 brg 79.9/259.9 (module: [0.0159, 79.9, 259.9])
+[PASS] pair fractal_maze->riddler_optics: dist 0.0137 brg 74.3/254.3 (module: [0.0137, 74.3, 254.3])
+[PASS] pair fractal_maze->water_computer: dist 0.0100 brg 35.6/215.6 (module: [0.01, 35.6, 215.6])
+[PASS] pair riddler_engram->riddler_optics: dist 0.0027 brg 289.8/109.8 (module: [0.0027, 289.8, 109.8])
+[PASS] pair riddler_engram->water_computer: dist 0.0112 brg 298.2/118.2 (module: [0.0112, 298.2, 118.2])
+[PASS] pair riddler_optics->water_computer: dist 0.0086 brg 300.7/120.7 (module: [0.0086, 300.7, 120.7])
+[PASS] module vote chain/star 0.0310 0.0364 water-first equals the recompute 0.0310 0.0364
+[PASS] chain edges are exactly the SADDLE-SADDLE legs [('water_computer', 'fractal_maze'), ('fractal_maze', 'riddler_optics')] (module: [('water_computer', 'fractal_maze'), ('fractal_maze', 'riddler_optics')])
+[PASS] NO edge (chain or hub) touches riddler_engram, the DARK anchor (referee ruling)
+[PASS] probe: standing on audit_dungeon reads dist 0.0000 and nearest audit_dungeon (module: ['0.0000', '180.0', 'audit_dungeon'])
+[PASS] probe: standing on fractal_maze reads dist 0.0000 and nearest fractal_maze (module: ['0.0000', '180.0', 'fractal_maze'])
+[PASS] probe: standing on riddler_engram reads dist 0.0000 and nearest riddler_engram (module: ['0.0000', '180.0', 'riddler_engram'])
+[PASS] probe: standing on riddler_optics reads dist 0.0000 and nearest riddler_optics (module: ['0.0000', '180.0', 'riddler_optics'])
+[PASS] probe: standing on water_computer reads dist 0.0000 and nearest water_computer (module: ['0.0000', '180.0', 'water_computer'])
+[PASS] probe midpoint: nearest audit_dungeon 0.0033 121.3 (module: audit_dungeon 0.0033 121.3)
+[PASS] probe midpoint->fractal_maze: 0.0107 233.3 (module: 0.0107 233.3)
+
+== world anchor round-trip (ORIGIN/SCALE from the module run) ==
+[PASS] SCALE read from the module run: 12000.0
+  audit_dungeon: world (-216.0, 8.0, 452.0) -> eigen (-0.0180, -0.0090)
+[PASS] world anchor round-trips audit_dungeon exactly (north = eigen -y = world -Z: wz = OZ + ey*SCALE)
+  fractal_maze: world (-352.8, 8.0, 508.4) -> eigen (-0.0294, -0.0043)
+[PASS] world anchor round-trips fractal_maze exactly (north = eigen -y = world -Z: wz = OZ + ey*SCALE)
+  riddler_engram: world (-164.4, 8.0, 474.8) -> eigen (-0.0137, -0.0071)
+[PASS] world anchor round-trips riddler_engram exactly (north = eigen -y = world -Z: wz = OZ + ey*SCALE)
+  riddler_optics: world (-194.4, 8.0, 464.0) -> eigen (-0.0162, -0.0080)
+[PASS] world anchor round-trips riddler_optics exactly (north = eigen -y = world -Z: wz = OZ + ey*SCALE)
+  water_computer: world (-283.2, 8.0, 411.2) -> eigen (-0.0236, -0.0124)
+[PASS] world anchor round-trips water_computer exactly (north = eigen -y = world -Z: wz = OZ + ey*SCALE)
+  plate extent: X -352.8..-164.4  Z 411.2..508.4 (south ground, clear of every existing zone)
+
+== VERDICT: PASS (0 failure(s)) ==

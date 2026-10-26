@@ -1,0 +1,47 @@
+{
+  "lane": "suite-burn",
+  "division": "B",
+  "status": "done",
+  "started": "2026-09-29",
+  "finished": "2026-09-29",
+  "owed": "burn 14 suite failures to zero (10 in f-15 + 4 mock-caused in s2-19, afk_routing overlap), root cause, no assertion weakening",
+  "verdict": "OWED SET ZERO: all 14 named failures green under the full suite. Finish-line run (run3, isolated basetemp): 14 failed / 2452 passed / 12 skipped in 2326.98s (0:38:46), exit 1 - the 14 remaining are byte-proven environmental to this lane (13x relative_to basetemp-location coupling + 1x headless_law on an untracked sibling file).",
+  "fixes": [
+    {"failure": "conftest Popen function wrapper vs mag/headless.py:72 class subclassing (TypeError, swarm x2 + write_strip)", "fix": "tests/conftest.py delegates to the canonical mag.headless.install_no_window_defaults(); drifted parallel copy deleted; regression test test_popen_wrapper_is_class_and_installer_safe_under_pytest added in tests/test_headless.py"},
+    {"failure": "afk_routing silently-bypassed fake (mag/afk_loop.py:260 package-attr import)", "fix": "B2-288 twin applied: fake patched on BOTH sys.modules and the mag package attribute in tests/test_loop_death_guards.py; verified green under a pinned real mag.skill_pipeline"},
+    {"failure": "atlas not LIVE + ask_router in elder gaps (receipts 40.6h stale vs 24h bar)", "fix": "re-earned by the organs' own prescribed bounded live dogfood step: mag.atlas build --scope operational + mag.ask_router --dry, fresh ok receipts appended"},
+    {"failure": "dirac scan open_gaps==0 vs required >0 (all 6 operational loops receipt-banked: 4638646d4/79f0f50d5/6c43c15d2/a23928aca)", "fix": "dead clause superseded by the committed closure law in tests/test_organ_map.py: closed+open==n_loops, every closed loop receipt-backed in DIRAC_BANKED_INVARIANTS.jsonl, open loops honestly labeled; no assertion weakened, claims strengthened"},
+    {"failure": "links baseline: SCOUT-QUIET-3 (line 377) unregistered", "fix": "registered by name in configs/links_kind_baseline.json with accurate why, sha byte-verified"},
+    {"failure": "ponytail_audit + skill_seat FileNotFoundError (f-15, cross-run interference)", "fix": "mag/ponytail_audit.py _iter_py rebuilt on os.walk: per-path vanish tolerance (mechanism byte-proven: rglob raises FileNotFoundError WinError 3 on a vanished queued subdir; suite-burn.rglob_vanish_probe.out.txt) + B2-76 junction pruning (never descend reparse points; parity 23495->23492, the 3-file delta is the training->memory/training junction double-count the old walker made)"},
+    {"failure": "census patrol CLI x4: hidden git-repo dependency exposed by isolated basetemp", "fix": "the 4 fake estates now call _git_init_and_commit (the tool's --root contract demands .git); 50/50 green out-of-repo"},
+    {"failure": "seed_mcp x15 errors: sibling's uncommitted build() gained required pointer_list", "fix": "fixture passes pointer_list=None (compatible with both signatures); 15/15 green"}
+  ],
+  "files_touched": [
+    "tests/conftest.py",
+    "tests/test_loop_death_guards.py",
+    "tests/test_headless.py",
+    "tests/test_organ_map.py",
+    "tests/test_census_drift_patrol.py",
+    "tests/test_seed_mcp.py",
+    "configs/links_kind_baseline.json",
+    "mag/ponytail_audit.py"
+  ],
+  "remaining_14": "13x relative_to class (scripts/dead_hand.py:212, tools/config_seal.py:89 x3, mag/agent_state.py:407, mag/openclaw_catalog.py:236, mag/roadmap_runner.py:172, mag/seat_corpus.py:279, tools/thought_quantizer.py:193, mag/token_chain.py:366 x2, tools/violation_ratchet.py:300, mag/voice_handoff.py:280) - 13/13 pass under an in-repo basetemp, 13/13 fail out-of-repo, proof in suite-burn.relative_to_proof.txt; +1x test_headless_law (+2 bare spawns in untracked sibling file tests/test_surface_rebuild.py, re-baseline owed by its owner). Named next debt, not this lane's files.",
+  "runs": [
+    {"run": 1, "result": "18 failed / 2433 passed / 12 skipped / 15 errors, 0:35:44 - ALL owed failures GREEN", "artifact": "suite-burn.check.run1.txt"},
+    {"run": 2, "result": "INVALID: silent kill at 94%, no summary, preserved as death record", "artifact": "suite-burn.check.run2-truncated.txt"},
+    {"run": 3, "result": "FINISH LINE: 14 failed / 2452 passed / 12 skipped in 2326.98s (0:38:46), exit 1, all 14 attributed environmental", "artifact": "suite-burn.check.txt"}
+  ],
+  "checks": [
+    {"command": ".venv/Scripts/python.exe -m pytest tests -v --tb=short -ra -p no:cacheprovider --basetemp=<isolated system-temp dir>", "exit": 1, "evidence": "watch/inbox/gala_20260925/wave5-repair/lanes/suite-burn.check.txt: 14 failed, 2452 passed, 12 skipped, 8 warnings in 2326.98s (0:38:46); owed set zero; 14 remaining byte-proven environmental"},
+    {"command": ".venv/Scripts/python.exe tools/violation_ratchet.py check --changed", "exit": 0, "evidence": "first run after the mag/ponytail_audit.py change: RATCHET PASS, hits=28 registered=28 NEW=0"},
+    {"command": ".venv/Scripts/python.exe tools/violation_ratchet.py check --changed (re-run after sibling mid-wave landings)", "exit": 1, "evidence": "lanes/suite-burn.ratchet2.txt: NEW=4 (mag/corpus_gap_research.py:663, mag/corpus_selfsteal.py:550, mag/link_library.py:413, tools/fossil_check.py:73) - none this lane's files; owners owe named acceptance"},
+    {"command": "pytest 13 relative_to node IDs, in-repo vs out-of-repo basetemp", "exit": 0, "evidence": "lanes/suite-burn.relative_to_proof.txt: 13 passed in-repo / 13 failed out-of-repo, identical errors to run1"},
+    {"command": ".venv/Scripts/python.exe lanes/suite-burn.rglob_vanish_probe.py", "exit": 0, "evidence": "lanes/suite-burn.rglob_vanish_probe.out.txt: rglob RAISED FileNotFoundError WinError 3 on a vanished queued subdir; os.walk survived"},
+    {"command": "per-fix verification probes (probe3/4/6/7/8c/9/11)", "exit": 0, "evidence": "all green: collision trio + pinned-module afk_routing + test_headless 4/4 + organ_map 3/3 + links baseline + ponytail/skill_seat 9/9 + census 50/50 + seed_mcp 15/15 + game optics solo"}
+  ],
+  "decision_changed": "suite-health claims must now name the pytest basetemp location: an in-repo basetemp run and an isolated out-of-repo basetemp run are different denominators (B2-216 grammar extended to basetemp); conftest/headless is single-mechanism again with a regression test; owed set zero",
+  "artifact": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/wave5-repair/lanes/suite-burn.json",
+  "receipt": "watch/inbox/wave5_repair/suite-burn.md",
+  "em_dash_scan": "receipt 0/0 nonascii 0; lane JSON 0/0 nonascii 0; all lane artifacts 0/0 nonascii 0 except suite-burn.ratchet2.txt which preserves the ratchet tool's own em-dash printer output verbatim as evidence"
+}

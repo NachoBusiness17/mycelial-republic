@@ -1,0 +1,86 @@
+=== t80 G6 DATED-STAMP AMENDMENT CHECKS ===
+date of run: 2026-09-25 (stamps dated 2026-09-26 per item spec)
+gate: tools/workflow_gate.py check --script <path>, cwd=repo root (REGISTRY is cwd-relative)
+baseline (pre-amendment, registry-free probe via import of workflow_gate, no main()): all 5 files mention=True dated_stamp=False
+stamps added, one line each, in place (amend-not-rewrite): '// source-fetched: 2026-09-26 (t80: G6 dated-stamp amendment per t69 G6_STAMP_RE; ...)'
+
+---- CHECK: .zcode/workflows/mickey17-v2.dwf.ts ----
+workflow_gate PASS digest=dbc2eeeac52b script=.zcode/workflows/mickey17-v2.dwf.ts
+  ok    G1-multiplicity: Mickey17 gopher fan-out: per-item named actors (agent("x-" + item) inside a fan-out)
+  ok    G2-passoff: interagent communication: an earlier actor's output (text/json/path) feeds a later ask
+  ok    G3-steering: steering: reviewer/reader feedback carried back into a revision ask
+  ok    G4-salvage: incremental report() inside the fan-out (work survives a dead run)
+  ok    G5-deliverable: published deliverable (artifact.markdown/file) plus report-shape return (conclusion:)
+  ok    G6-receipts: durable receipt landing in watch/inbox with a dated stamp
+  ok    G7-laws: no-fabrication and em-dash law carried inside the asks
+exit=0
+
+---- CHECK: .zcode/workflows/the-50.dwf.ts ----
+workflow_gate FAIL digest=0937eff9fdda script=.zcode/workflows/the-50.dwf.ts
+  ok    G1-multiplicity: Mickey17 gopher fan-out: per-item named actors (agent("x-" + item) inside a fan-out)
+  FAIL  G2-passoff: interagent communication: an earlier actor's output (text/json/path) feeds a later ask
+  FAIL  G3-steering: steering: reviewer/reader feedback carried back into a revision ask
+  FAIL  G4-salvage: incremental report() inside the fan-out (work survives a dead run)
+  FAIL  G5-deliverable: published deliverable (artifact.markdown/file) plus report-shape return (conclusion:)
+  ok    G6-receipts: durable receipt landing in watch/inbox with a dated stamp
+  FAIL  G7-laws: no-fabrication and em-dash law carried inside the asks
+GATE: fix the FAIL items by editing the script file in place (amend-not-rewrite), then re-check.
+exit=2
+
+---- CHECK: .zcode/workflows/tree-doctrine-dig.dwf.ts ----
+workflow_gate PASS digest=d2a6783b55be script=.zcode/workflows/tree-doctrine-dig.dwf.ts
+  ok    G1-multiplicity: Mickey17 gopher fan-out: per-item named actors (agent("x-" + item) inside a fan-out)
+  ok    G2-passoff: interagent communication: an earlier actor's output (text/json/path) feeds a later ask
+  ok    G3-steering: steering: reviewer/reader feedback carried back into a revision ask
+  ok    G4-salvage: incremental report() inside the fan-out (work survives a dead run)
+  ok    G5-deliverable: published deliverable (artifact.markdown/file) plus report-shape return (conclusion:)
+  ok    G6-receipts: durable receipt landing in watch/inbox with a dated stamp
+  ok    G7-laws: no-fabrication and em-dash law carried inside the asks
+exit=0
+
+---- CHECK: .zcode/workflows/the-gala.dwf.ts ----
+workflow_gate PASS digest=2489e40acd7c script=.zcode/workflows/the-gala.dwf.ts
+  ok    G1-multiplicity: Mickey17 gopher fan-out: per-item named actors (agent("x-" + item) inside a fan-out)
+  ok    G2-passoff: interagent communication: an earlier actor's output (text/json/path) feeds a later ask
+  ok    G3-steering: steering: reviewer/reader feedback carried back into a revision ask
+  ok    G4-salvage: incremental report() inside the fan-out (work survives a dead run)
+  ok    G5-deliverable: published deliverable (artifact.markdown/file) plus report-shape return (conclusion:)
+  ok    G6-receipts: durable receipt landing in watch/inbox with a dated stamp
+  ok    G7-laws: no-fabrication and em-dash law carried inside the asks
+exit=0
+
+---- CHECK: .zcode/workflow-drafts/Tree-Doctrine-50-wide-dig.dwf.ts ----
+workflow_gate PASS digest=e76071cd9246 script=.zcode/workflow-drafts/Tree-Doctrine-50-wide-dig.dwf.ts
+  ok    G1-multiplicity: Mickey17 gopher fan-out: per-item named actors (agent("x-" + item) inside a fan-out)
+  ok    G2-passoff: interagent communication: an earlier actor's output (text/json/path) feeds a later ask
+  ok    G3-steering: steering: reviewer/reader feedback carried back into a revision ask
+  ok    G4-salvage: incremental report() inside the fan-out (work survives a dead run)
+  ok    G5-deliverable: published deliverable (artifact.markdown/file) plus report-shape return (conclusion:)
+  ok    G6-receipts: durable receipt landing in watch/inbox with a dated stamp
+  ok    G7-laws: no-fabrication and em-dash law carried inside the asks
+exit=0
+
+=== REGISTRY TAIL AFTER CHECKS (fresh rows, amend-not-rewrite visible) ===
+2026-09-26T05:18:51Z t69dbg digest=cfcc50823fe1 verdict=FAIL G6 ok=True soft=False
+2026-09-26T05:30:44Z mickey17-v2.dwf.ts digest=dbc2eeeac52b verdict=PASS G6 ok=True soft=False
+2026-09-26T05:30:44Z the-50.dwf.ts digest=0937eff9fdda verdict=FAIL G6 ok=True soft=False
+2026-09-26T05:30:45Z tree-doctrine-dig.dwf.ts digest=d2a6783b55be verdict=PASS G6 ok=True soft=False
+2026-09-26T05:30:45Z the-gala.dwf.ts digest=2489e40acd7c verdict=PASS G6 ok=True soft=False
+2026-09-26T05:30:45Z Tree-Doctrine-50-wide-dig.dwf.ts digest=e76071cd9246 verdict=PASS G6 ok=True soft=False
+
+=== STAMP VERIFICATION (gate module G6_STAMP_RE applied to amended files) ===
+.zcode/workflows/mickey17-v2.dwf.ts stamp_match='source-fetched: 2026-09-26'
+.zcode/workflows/the-50.dwf.ts stamp_match='source-fetched: 2026-09-26'
+.zcode/workflows/tree-doctrine-dig.dwf.ts stamp_match='source-fetched: 2026-09-26'
+.zcode/workflows/the-gala.dwf.ts stamp_match='source-fetched: 2026-09-26'
+.zcode/workflow-drafts/Tree-Doctrine-50-wide-dig.dwf.ts stamp_match='source-fetched: 2026-09-26'
+
+=== MICKEY17 DRIFT ACKNOWLEDGMENT ===
+registered PASS row 2026-09-25T20:47:59Z carries digest 9b51b8e2ee05; on-disk file was already 5492d9a51eb2 before t80 (t76 finding, pre-existing drift). Registered bytes are historical; per the amend-not-rewrite law the amended file does not restore old bytes, it earns a fresh registration row: this run appended mickey17-v2.dwf.ts digest=dbc2eeeac52b verdict=PASS with G6 ok=true. Same law applies to every amended file here: all prior registered digests (0ad57dc88296 gala, da62eaa8c17f drafts tree-doctrine) are now historical; the fresh rows above carry the live digests.
+
+=== NEGATIVE: the-50.dwf.ts gate FAIL (pre-existing, out of t80 scope) ===
+the-50.dwf.ts (born 2026-09-19, before the gate existed 2026-09-25, never registered before t80) fails G2 G3 G4 G5 G7: it lacks the passoff/steering/salvage/deliverable/laws machinery the gate dogfoods. The t80 stamp landed (G6 ok=true, no soft warn) but the verdict is FAIL exit 2 and that row is now honestly in the ledger. t80 does not redesign this script; recorded as debt for a future amend.
+
+=== EM-DASH SCAN OF THIS FILE (authored + raw gate output) ===
+0
+0 em-dashes (grep exit 1 = no match)

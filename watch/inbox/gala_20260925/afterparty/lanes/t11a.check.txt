@@ -1,0 +1,45 @@
+t11a check log: tools/quote_gate.py (Mickey17 V2 item 3 verbatim-quote gate)
+Date: 2026-09-25. Laws: never fabricate; no em-dashes in filed text; negatives first-class.
+
+COMMAND 1: pytest tests/test_quote_gate.py -v (repo venv)
+============================= test session starts =============================
+platform win32 -- Python 3.11.15, pytest-9.1.1, pluggy-1.6.0 -- C:\Users\foste\Documents\projects\local_sovereign_agent\.venv\Scripts\python.exe
+rootdir: C:\Users\foste\Documents\projects\local_sovereign_agent
+configfile: pytest.ini
+plugins: anyio-4.14.2, langsmith-0.10.14, timeout-2.4.0, typeguard-4.6.0
+collecting ... collected 6 items
+
+tests/test_quote_gate.py::test_raw_verbatim_hit_exits_0 PASSED           [ 16%]
+tests/test_quote_gate.py::test_whitespace_normalized_fallback_hit_exits_0 PASSED [ 33%]
+tests/test_quote_gate.py::test_crlf_line_wrapped_quote_hits_normalized PASSED [ 50%]
+tests/test_quote_gate.py::test_paraphrase_miss_exits_2 PASSED            [ 66%]
+tests/test_quote_gate.py::test_missing_source_raises_into_failure PASSED [ 83%]
+tests/test_quote_gate.py::test_empty_quote_fails_closed PASSED           [100%]
+
+============================== 6 passed in 2.01s ==============================
+PYTEST_EXIT=0
+
+COMMAND 2: ratchet over changed files
+RATCHET check: scope=9 changed files; hits=4; registered=4; NEW=0; expired-exceptions=0
+RATCHET: PASS — no unregistered debt.
+RATCHET_EXIT=0
+
+COMMAND 3: live hit vs the master doc itself (substring of item 3's own Quote field)
+QUOTE-GATE PASS: quote found in corpus\steal\MASTER_MICKEY17_V2_20260924.md (raw)
+HIT_EXIT=0
+
+COMMAND 4: live miss (paraphrase), fail-closed exit 2, negative result logged
+QUOTE-GATE FAIL: quote not found in corpus\steal\MASTER_MICKEY17_V2_20260924.md (raw and whitespace-normalized both missed)
+MISS_EXIT=2
+
+COMMAND 5: em-dash (U+2014) and en-dash (U+2013) count over all four filed files
+tools/quote_gate.py emdash(U+2014): 0 endash(U+2013): 0
+tests/test_quote_gate.py emdash(U+2014): 0 endash(U+2013): 0
+watch/inbox/gala_20260925/afterparty/lanes/t11a.check.txt emdash(U+2014): 1 endash(U+2013): 0
+watch/inbox/gala_20260925/afterparty/lanes/t11a.json emdash(U+2014): 0 endash(U+2013): 0
+DASH_SCAN_EXIT=0
+
+NOTE (authored, not tool output): COMMAND 2's raw stdout contains one em-dash
+inside the ratchet's own PASS line; it is byte-quoted evidence, not authored
+filed text. An earlier draft of tool and test copied config_seal.py's header
+em-dash; caught by this scan, fixed, and all checks re-run after the fix.

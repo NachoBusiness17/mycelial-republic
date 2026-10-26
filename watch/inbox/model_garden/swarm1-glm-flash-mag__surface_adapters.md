@@ -1,0 +1,7 @@
+# swarm1-glm-flash-mag__surface_adapters (glm-5.3-flash @ zai, turn 1, channel: content)
+
+DEFECT 1: native_call compares the raw surface string case-sensitively while adapter() lowercases its lookup, so steer("DeepSeek", g) passes the adapter gate then falls through to "native_call not implemented" | EVIDENCE: mag/surface_adapters.py:117,137 vs 96 | FIX: normalize once (surface = (surface or "").lower()) at the top of native_call and compare the normalized name
+DEFECT 2: steer() persists per-run result records with a filename truncated to the hour plus surface, so two steers of the same surface within one hour silently overwrite the earlier record | EVIDENCE: mag/surface_adapters.py:173 | FIX: include minute/second (or uuid4 hex) in the filename stem
+DEFECT 3: steer() swallows all persistence errors with a bare pass, so a broken memory/runs directory silently drops the audit trail while the caller still sees ok:true | EVIDENCE: mag/surface_adapters.py:176-177 | FIX: attach {"persisted": bool, "persist_error": str} into r instead of passing
+DEAD-CODE: unused provider import bound as _llm, never referenced | EVIDENCE: mag/surface_adapters.py:119
+ONE-SITTING FIX: normalize the surface name once in native_call and route both deepseek and slack branches off the normalized value, with a regression check steer("DeepSeek", "ping") returning driver native | EVIDENCE: mag/surface_adapters.py:111-117

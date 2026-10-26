@@ -1,0 +1,41 @@
+{
+  "lane": "a01-arena-cadence-r3",
+  "division": "B",
+  "ok": true,
+  "note": "GAP_REGISTER R3 fill: the banking itself was found ALREADY LANDED before the register was minted - all 8 named dirs carry GWAP_BANKED markers (seqs s327-s368 + s400-s405) and 48 arena-capability.jsonl scene rows stamped 2026-10-04T03:16:47-51Z by the hour-03 drain that ARENA_BACKFILL_ATTRIBUTION_20261004.md credits to no one (the register row was stale at mint; R4 of the same register documents the same drain). This sitting re-fired the exact named command over the explicit oldest-first list (8 invocations of .venv/Scripts/python.exe tools/arena_gwap.py <dir>): SKIP x8 already-banked, CHAIN verify ok=True each, exit 0 each; census AS-OF 2026-10-10T13:09:59Z reads dirs=110 banked=110 unbanked=0. The one R3 fill leg that never existed, the one-line backlog receipt, landed now as watch/inbox/ARENA_GWAP_BACKLOG_R3_20261010.md. The structural starvation the claim flagged (two-newest catch-up rule) was already killed in code by the fire-atomic carrier bank (tools/tavern.py:254-272, tools/dungeon.py:744-763, GO item 6). violation_ratchet NOT run: no code under mag/ or tools/ touched this lane (only watch/inbox receipts and lane files); the working tree's modified mag/tools files are sibling-seat work predating this lane.",
+  "rows": [],
+  "checks": [
+    {
+      "command": "for d in dnd0_20261003T143335Z dnd0_20261003T143639Z dnd0_20261003T162136Z tavern_20261003T162257Z dnd0_20261003T185933Z dnd0_20261003T202147Z dnd0_20261003T202158Z dnd0_20261003T202213Z (oldest-first): .venv/Scripts/python.exe tools/arena_gwap.py watch/inbox/playground/$d",
+      "exit": 0,
+      "evidence": "watch/inbox/gala_20260925/rung/lanes/a01-arena-cadence-r3.check.txt lines 4-37: 8x 'SKIP <dir>: already banked' + 8x 'CHAIN: verify ok=True bad=None', exit=0 each"
+    },
+    {
+      "command": ".venv/Scripts/python.exe tools/arena_gwap.py --status",
+      "exit": 0,
+      "evidence": "check file lines 62-74: 'GWAP LEDGER AS-OF 2026-10-10T13:09:59Z / rows=730 distinct_scenes=597 dirs=110 banked=110 unbanked=0' plus banked_at stamps for all 8 named dirs at 2026-10-04T03:16:47Z..03:16:53Z"
+    },
+    {
+      "command": ".venv/Scripts/python.exe -c (scene_id attribution over memory/runs/gwap/arena-capability.jsonl)",
+      "exit": 0,
+      "evidence": "check file lines 49-60: each of the 8 dirs scene_rows=6, ts_range 2026-10-04T03:16:47Z..03:16:51Z; rows stamped 2026-10-03 hour16/hour20 = 0 (the claim's empty buckets stay empty; the rows landed late at hour 03)"
+    },
+    {
+      "command": "marker census: cat GWAP_BANKED in the 8 dirs + ls census across playground",
+      "exit": 0,
+      "evidence": "check file lines 39-47 (all 8 markers present with seq stamps) and lines 76-87 (110 transcripts, 110 GWAP_BANKED, 103 DONE, 7 dirs without DONE including the banked 12:18-12:21Z manual burst trio)"
+    },
+    {
+      "command": "grep -n 'FIRE-ATOMIC BANK' + arena_gwap import in tools/tavern.py tools/dungeon.py",
+      "exit": 0,
+      "evidence": "check file lines 89-93: tavern.py:254 + dungeon.py:744 comment blocks; arena_gwap bank import at tavern.py:267 + dungeon.py:758 (GO item 6 fire-atomic fix already in code)"
+    },
+    {
+      "command": "wc -l watch/inbox/ARENA_GWAP_BACKLOG_R3_20261010.md",
+      "exit": 0,
+      "evidence": "1 line: the R3 one-line backlog receipt landed 2026-10-10, the fill leg that had never existed"
+    }
+  ],
+  "decision_changed": "closes GAP_REGISTER R3: the fill was already executed at 2026-10-04T03:16Z (pre-register-mint), so the register minted a row stale at mint; this lane banks the verification (SKIP x8, chain ok, 110/110 banked, 0 unbanked) and lands the missing receipt leg (watch/inbox/ARENA_GWAP_BACKLOG_R3_20261010.md); any future fold citing R3 must cite the banked_at moment, not the 2026-10-03T21:55Z claim moment",
+  "artifact": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/rung/lanes/a01-arena-cadence-r3.json"
+}

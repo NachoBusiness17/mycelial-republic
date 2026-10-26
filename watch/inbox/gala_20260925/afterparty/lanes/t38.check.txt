@@ -1,0 +1,79 @@
+t38 check: OssuaryZone build loop candy stacking + unseeded worldgen jitter
+2026-09-25, verified by read + numeric reasoning only (mountain_check NOT run, shared)
+
+CLAIM (t29's next_steal): build loop stacks all 6 static candies per floor at
+the maze center cell, with unseeded jitter in an otherwise seeded worldgen.
+
+CONFIRMED BY BYTES (pre-fix, roblox/src/server/OssuaryZone.luau):
+
+  lines 442-444:
+      for _ = 1, 6 do
+          dropCandy(base + Vector3.new(0, 1.5, 0), floor)
+      end
+  base = origin + (0, (floor-1)*-FLOOR_DROP, 0), origin = (-60, 8, 0):
+  identical point for all 6 drops, every floor. Center of floor = world
+  (0, y, 0) = grid (7, 7); HALF = 7, 7 is odd = real maze cell (never rock).
+
+  line 275 (inside dropCandy):
+      c.Position = at + Vector3.new(math.random(-6, 6), 1.5, math.random(-6, 6))
+  global unseeded math.random, reached from OssuaryZone.build whose other
+  draws go through local rng = SeedRng.new(20261031) (line 429). Candy
+  landing spots therefore unreplayable. Spread math (t29 receipt precedent):
+  sqrt(6^2+6^2) = 8.49-stud worst-case disc; six 1.2-stud balls near one
+  point intersect into a single grab sweep.
+
+  Caller census (grep dropCandy): line 269 def, line 403 King shower
+  (runtime, t29-spiral fed), line 443 build loop. No other callers.
+
+FIX (minimal, two edits, both with receipts in-code):
+
+  1. dropCandy gains optional third param `jitter: Vector3?`.
+     nil -> byte-identical pre-t38 expression (King shower unchanged,
+     still runtime math.random per t29's documented behavior).
+     Vector3 supplied -> position = at + Vector3.new(j.X, 1.5, j.Z),
+     no rng instance involved.
+
+  2. Build loop replaced with the t29-established index-derived Vogel
+     spiral (golden angle constant 2.399963229728653 reused, no new
+     math.random, no SeedRng draws), passing Vector3.zero jitter:
+
+      for i = 1, 6 do
+          local r = 5 * math.sqrt(i / 6)
+          local a = i * 2.399963229728653 -- golden angle, radians (t29 constant)
+          dropCandy(base + Vector3.new(r * math.cos(a), 1.5, r * math.sin(a)), floor, Vector3.zero)
+      end
+
+  Y behavior preserved: pre and post final Y = base.Y + 1.5 (call site)
+  + 1.5 (dropCandy) = base.Y + 3.0.
+
+NUMERIC VERIFICATION (repo venv python, 2026-09-25):
+
+  offsets (i, r, angle, x, z):
+    1  2.041  2.400   -1.505   1.379
+    2  2.887  4.800    0.252  -2.876
+    3  3.536  7.200    2.151   2.806
+    4  4.082  9.600   -4.020  -0.711
+    5  4.564 12.000    3.851  -2.450
+    6  5.000 14.400   -1.298   4.829
+
+  - six distinct radii 2.041..5.000: no shared point, no stacking
+  - min pairwise center distance 3.270 studs vs 1.2-stud touch threshold
+    (two 0.6-radius balls intersect below 1.2): no intersection
+  - wall clearance: center cell spans +-7 studs (CELL 14), wall
+    half-thickness 0.75 -> inner face at 6.25; candy radius 0.6 -> max
+    safe center offset 5.65. Max spiral radius 5.000 -> 0.65 studs clear.
+
+REPLAY-SAFETY:
+
+  - live math.random census post-fix: line 284 only (dropCandy nil-jitter
+    fallback, runtime King shower path); all other hits are comments.
+    Build path passes Vector3.zero: zero math.random executes in worldgen.
+  - SeedRng 20261031 stream untouched: spiral consumes zero draws, so
+    buildFloor/sentinel/brazier/lever generation per floor is
+    byte-identical to pre-t38. Same seed -> same mountain, bit-exact.
+
+LAWS: no fabrication (all numbers computed or quoted from file); no
+em-dash in filed text (grep -nP "\x{2014}|\x{2013}" post-edit: only the
+pre-existing line-2 header, untouched); negatives first-class (the
+nil-jitter runtime path is named, not hidden); fix comments carry cause
++ evidence.

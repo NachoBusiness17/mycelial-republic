@@ -1,0 +1,18 @@
+{
+  "gopher": "t1c",
+  "item": "fix GalleryZone string/number TypeError class x7 in roblox/src (a01 out-of-noise list)",
+  "ok": true,
+  "note": "Root cause: DOORS was 12 positional rows {name, inscription, seed} mixing string and number; luau strict unified the row element type to string and flagged each numeric seed literal, x7 at old lines 23-29 (a01-mountain.check.txt lines 26-32). Fix: typed attributes, the option the item sanctioned. Added type Door = { name: string, inscription: string, seed: number } at GalleryZone.luau line 25, converted all 12 rows to named fields with values verbatim, annotated local DOORS: { Door } at line 26, and retargeted the only 3 positional accesses: line 116 door[3] to door.seed (SeedRng.new takes seed: number per SeedRng.luau line 16), line 136 door[3],door[1],door[2] to door.seed,door.name,door.inscription. Salt math seed*7919+104729 and the format string are byte-unchanged; zero positional door[ accesses remain (grep exit 1). mountain_check NOT run: t1a holds the gate this wave; no luau-analyze on PATH. Verified by grep raw output, git diff, and careful read, all filed in t1c.check.txt. Out-of-scope observation filed honestly as next_steal.",
+  "checks": [
+    "before: watch/inbox/gala_20260925/w2/lanes/a01-mountain.check.txt lines 26-32 raw, 7x TypeError Expected string got number at GalleryZone.luau (23,76),(24,57),(25,59),(26,77),(27,57),(28,72),(29,46)",
+    "after: grep -n 'door[' GalleryZone.luau = no matches, exit 1 (raw in t1c.check.txt line 25)",
+    "after: grep typed accessors raw in t1c.check.txt lines 28-33: type Door line 25, DOORS:{ Door } line 26, door.seed line 116, door.seed,door.name,door.inscription line 136, #DOORS line 159 intact",
+    "after: git diff --stat raw in t1c.check.txt lines 36-37: 1 file, 20 insertions, 16 deletions, 3 hunks",
+    "read: --!strict header intact at line 1 (t1c.check.txt line 40); all 12 door name/inscription/seed values byte-verbatim vs git HEAD; SeedRng.new(seed: number) at SeedRng.luau line 16 confirms typed field contract"
+  ],
+  "next_steal": "Read-observed defect, different class, NOT in a01 flagged list: GalleryZone.luau line 204 calls prompt(frame, ...) passing the frame number (initialized -1 at line 51) where prompt declares parent: Instance (line 102); the intended parent is the screen part built at line 187, so the Bad Apple pause/resume prompt never attaches. One-line fix prompt(screen, ...), but it touches behavior, so it needs its own lane with the playtest receipt.",
+  "archive": [
+    "watch/inbox/gala_20260925/afterparty/lanes/t1c.check.txt",
+    "watch/inbox/gala_20260925/afterparty/lanes/t1c.json"
+  ]
+}

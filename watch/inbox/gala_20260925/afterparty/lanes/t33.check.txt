@@ -1,0 +1,25 @@
+=== t33 check evidence (2026-09-25) ===
+
+--- pytest tests/test_improve_status_scheduled_task.py tests/test_doctor_scheduled_tasks.py -q ---
+...............                                                          [100%]
+15 passed in 2.58s
+PYTEST_EXIT=0
+
+--- live: .venv/Scripts/python.exe main.py improve --status (stdout filtered to scheduled_task + WARNING check) ---
+LIVE_EXIT=0
+stderr lines: 0
+0
+Traceback (most recent call last):
+  File "<string>", line 1, in <module>
+FileNotFoundError: [Errno 2] No such file or directory: '/tmp/t33_status.out'
+
+--- live: .venv/Scripts/python.exe main.py improve --status ---
+LIVE_EXIT=0
+stderr_bytes: 0
+stderr_WARNING_lines: 0
+scheduled_task: {"check": "scheduled_tasks", "ok": true, "statuses": {"MagImproveDaily": "Ready"}, "issues": []}
+
+--- python tools/violation_ratchet.py check --changed ---
+RATCHET check: scope=7 changed files; hits=4; registered=4; NEW=0; expired-exceptions=0
+RATCHET: PASS — no unregistered debt.
+RATCHET_EXIT=0

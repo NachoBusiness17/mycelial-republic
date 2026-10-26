@@ -1,0 +1,341 @@
+=== 1wui0hj r/ClaudeAI | 2026-09-30 21:55 | score 69 | 82 comments | author u/Glass-Present-8753
+TITLE: Can you force Claude to write a handoff .md file before a chat gets compacted?
+PERMALINK: /r/ClaudeAI/comments/1wui0hj/can_you_force_claude_to_write_a_handoff_md_file/
+SELFTEXT:
+>**Edit:** Thanks for all the replies! Quick clarification: I'm not a developer and I don't use Claude Code or the terminal. I just use the regular Claude app on my Mac, the normal chat window. So things like hooks and git worktrees are a bit over my head 😄 
+
+Long chats with Claude eventually get compacted, and every time it happens I lose detail: decisions we made, file names, where we left off.  
+  
+ first idea was to have Claude write a handoff .md file right before compaction. The problem is the agent can't reliably tell when compaction is about to happen, so a handoff written "just in time" is often late or slightly out of date.
+
+My
+
+So here's my workaround: don't wait for compaction at all. Tell the agent to update the handoff file after every single response. Whenever compaction hits, the latest state is already saved.
+
+This is the instruction I'm testing:
+
+>After every response, create or update a file called HANDOFF.md in the working folder. Keep it short and current. Include: the goal of this chat, decisions made so far, files created or changed, open questions, and the exact next step. Overwrite outdated information instead of appending a full transcript. If the chat is compacted or I start a new chat, read HANDOFF.md first before doing anything else.
+
+Questions for the community:
+
+1. Has anyone set this up, and does the agent actually stick to it over a long session?
+2. Is there a cleaner way to trigger a save right before compaction?
+3. Does updating a file every turn slow things down or burn through usage noticeably?
+
+Would love to hear what's working for you.
+
+Note: I have it overwrite instead of append, since a file that logs every turn grows large and becomes its own context problem. I know Claude Code has a PreCompact hook, but I'm looking for something that also works in regular chats.
+
+COMMENTS:
+  [AncileBanish | 2026-09-30 22:18 | score 33] Auto handoff after every prompt will be token inefficient. Too many writes. You should naturally be working through a problem, a task, whatever. When you finish (and context window is getting large), you handoff save > clear > handoff resume. 
+
+You also should not be running your context window up to the auto compaction. This is way too large. You should hand off somewhere between 200k-400k.
+    [CambodianJerk | 2026-10-01 05:58 | score 3] How do I stop it running up in the first place though? For instance last night I asked it to review my repos existing plans and bring it up to speed with recent PR's and the roadmap.  It went to 800k context window in 20minutes.
+
+Im clearly doing it wrong.
+      [AncileBanish | 2026-10-01 13:19 | score 4] If I had to guess:
+1. Your repo is a giant dumpster fire of unorganized files
+2. You ran it max effort 
+3. You gave it a vague instruction like "review the repo for things to do" so it parsed everything. 
+
+It shouldn't need to read your repo to know what you want to work on next. You should have some sort of backlog tracking mechanism for that. 
+
+If you told it to review recent PRs, it may very well have pored over 50k lines of code from whatever were your last PRs merged. 
+
+Hard to say exactly without seeing your setup and what happened. One thing you can do is.. in another session, it can look up the session transcript of that session. So go ask another Claude session like.. hey I had this session it went to 800k context right away. Where did that all come from? Then go clean up your processes.
+        [CambodianJerk | 2026-10-01 15:00 | score 3] Thank you - lots to consider here.  I certainly need to change how I prompt.  I've worked with stupid AI for a long time and so having it review the repo before cracking on has been fairly common to ensure it understand where it's at.  However I take the point this can be done far more efficiently with tracking etc so I'll look into this.
+
+Thanks.
+    [Glass-Present-8753 | 2026-09-30 22:27 | score 7] Makes sense, I didn't think about the token cost of writing every turn. So "handoff save, new chat, handoff resume" at natural stopping points is the better habit. How do you tell when you're getting to that 200k to 400k range if you're not in Claude Code?
+      [ihadabmw | 2026-09-30 22:56 | score 3] It can check pretty sure, let it check once in a while
+      [oZiix | 2026-09-30 22:55 | score 6] I have a skill that triggers a proper handoff.  I say "provide handoff". Codex/work makes the chat with the proper handoff.  I never tested it on Claude it makes the handoff for from the skill but I hand but I make the chat and paste it or have it use my RAG handoff registry.
+      [AncileBanish | 2026-09-30 22:53 | score 7] I run in terminal. You can customize the status line to show stuff, including current context window size.
+      [Jazzlike-Context-879 | 2026-09-30 22:44 | score 5] /usage
+  [Rriazu | 2026-09-30 22:49 | score 17] A hand off file is basically compaction
+    [WintertideFellow | 2026-10-01 05:35 | score 4] Yeah, claude code really ties your hands here. Any other harness lets you specify your compaction threshold and how detailed you want it. You essentially get all that manual busywork done for free, in one long searchable session.
+  [id-ltd | 2026-09-30 22:14 | score 12] A compaction is a failure in my book. I do sprints startong prompt, a few progress prompts, a session log document - end of chat, new sprint new chat.
+    [Grayson_Poise | 2026-10-01 05:13 | score 1] I thought I was being clever here but "compaction is bad" is a big thing here. Is that in general or is that just the implied "pushing a million context"?
+
+If I have a big piece of work I want doing, my current setup is the following - advice welcome, not a dev but have been AIing for a long time now:
+
+
+- Manually setting the compaction lower (/autocompact 250-300kish with a trigger flag to do a light handover prior to that (to take into account that something big from a subagent could come back and that compaction happens at 89% of the limit 
+- You're the orchestrator, research and coding done by Subagents for everything, with specific pass/fail and /verify before they start sending back to main agent.
+
+- Start with the big brief, name specific restrictions but broader goals "Get me here, be aware of this..." rather than "do this" and ask for a plan / grill with docs.
+- break plan down into tickets/tasks - mark each done as soon as it's done
+- Adversarial review with Fable.
+- start working through
+
+Then work through everything, additional Adversarial review at key milestones and light handover, document plan changes in-flight.
+ 
+That's worked quite well for me when combined with a rule to flag/count/timestamp repeated errors to identify what needs a prose nudge or a hook guard (fuck you heredoc) along with "assertions need proof/don't guess/rtfm").
+
+My theory is that post 200k the agents can start to get a bit context-drunk AND expensive, Opus 5 in particular I felt went to shit FAST with higher context.
+      [id-ltd | 2026-10-01 08:56 | score 1] After a compaction you have no idea what the context is. Which instructions, suggestions, ideas, directions it is working from.
+
+If you eventually find that it forgot something earlier that is important, but it hasn't been applying it, then you have wasted your time.
+    [0xBA7TH | 2026-09-30 22:59 | score 0] An entire sprint's worth of work in a single chat? That seems like a failure in my book.
+      [id-ltd | 2026-09-30 23:04 | score 1] I wont be reading your book then.
+    [eliquy | 2026-09-30 22:18 | score 3] I agree, if your session reaches the point of compaction, it's gone way too long. Claude Code has good features for splitting work out into fresh sessions through handovers - I just ask for it to create a "handover chip" for a work item, which by default goes into a new git worktree - and generally avoid long lived sessions by first creating a plan document and then starting a fresh session for each stage of the document (give or take, based on the session % context used)
+    [onefourten_ | 2026-09-30 22:18 | score 5] Agreed. I never hit compaction. Good memories, handover docs and project board updates frequently.
+  [locbuilds | 2026-09-30 22:05 | score 11] on Claude Code you can hook PreCompact to write HANDOFF.md right before compaction, so you dont need an every-turn rewrite. i still refresh it after big decisions though in case the session dies early.
+    [Popular-Ninja8584 | 2026-10-01 04:38 | score 3] PreCompact only fires on compaction. But a session can also end due to a limit, a crashed process, or a closed window, in which case the hook won't fire at all. So the reliable part is what you do by hand after big decisions, and the hook covers one case among several.
+
+I'd add one more thing to the file itself: keep separate what's been verified and what the previous session assumed. Without that, the next session takes the previous one's guess as fact and moves on.
+  [synexo | 2026-09-30 22:31 | score 5] It'll burn a lot of tokens that way, uses tokens every time it re-writes it. I reserve [CLAUDE.md](http://CLAUDE.md) for overarching guidance. What you really need to do is keep your chats shorter and never reach the compaction phase. Have it give you a bundle of deliverables and a [HANDOFF.md](http://HANDOFF.md) along with the [CLAUDE.md](http://CLAUDE.md) and give it all to a new session. Remember, every word it writes, every word it reads, every action it takes burns tokens. The lengthier all that gets the more new tokens are burned, especially if you get past the caching window. Data just existing in a file it has access to does not inherently use tokens. On large projects where I'm not watching it for hours I have it keep a [DEVLOG.md](http://DEVLOG.md) too, just in append. If I miss it stopping or bumping on a session context limit I just take that and give it to the next session. Appending to a file uses fewer tokens than re-writing one.
+  [PilDog | 2026-09-30 23:07 | score 4] English isn’t my first language, so I used AI to help translate this. Please excuse any awkward wording.
+
+I ran into the same problem and ended up taking a slightly different approach.
+
+Instead of trying to preserve the AI’s memory between sessions, I moved the important project state outside the conversation.
+
+I keep the project documentation structured so that it contains the current state, decisions, responsibilities, rules, and references to the relevant files. Then I give the AI a small entry point that tells it what to read for a particular kind of task.
+
+The important part is that the AI doesn’t load the entire project history or all of the documentation every time. It follows a reading path and loads only the pieces needed for the current task.
+
+So when I start a completely new session, I don’t really need the previous agent to create a perfect summary. The new agent starts from the project state, follows the relevant references, and reconstructs the context it needs.
+
+I also separate “what something means” from “what is responsible for it.” That turned out to be important because otherwise summaries gradually become another source of truth and start drifting from the actual project.
+
+The basic idea is:
+
+conversation memory → disposable
+project state → persistent
+decisions/rules → explicit
+task context → loaded on demand
+
+It took some work to structure the documentation this way, but now I can switch between different AI models or start a fresh session without depending very much on the previous conversation.
+
+Your HANDOFF.md idea is actually a good first step in the same direction. The biggest improvement for me came when I stopped treating the handoff itself as the memory and started treating it as a pointer to the authoritative project state.
+    [Glass-Present-8753 | 2026-09-30 23:24 | score 2] Thanks! Treat the handoff as a pointer, not the memory" is exactly what I was missing. I'm going to try this in Obsidian: one note per project (status, decisions, rules, key files, next step) plus a small "start here" note that tells Claude what to read for each type of task.  
+A few questions if you don't mind:
+
+1.	⁠Did you build the structure by hand, or did the AI create the notes and keep them updated for you?  
+2.	⁠Do you keep decisions inside each project note, or in one separate decisions file?  
+3.	⁠Would you be willing to share what your "entry point" note looks like, even a simplified version?
+      [PilDog | 2026-09-30 23:59 | score 6] Glad it helped! Your Obsidian plan sounds like a good start. Here's how I do it, in case it's useful as a reference.
+
+My setup is just plain Markdown files inside each project's Git repository, next to the code. Coding agents like Claude Code and Codex automatically read an `AGENTS.md` (or `CLAUDE.md`) file in the repo root. So that file is my "start here" note, and it works the same no matter which AI I use.
+
+**1. Built by hand or by the AI?**
+
+Both, and it grew over time. I started with a few simple notes. Every time the AI got confused or made a wrong assumption, I added a rule so it wouldn't happen again. Almost every rule I have exists because something went wrong once.
+
+Now the AI writes and updates most of the files. But there is one important rule: **an edit by the AI is only a proposal.** The flow is:
+
+> AI edits the files → I review the diff → I approve → commit
+
+Only committed content counts as the real project state. The AI isn't allowed to commit without my confirmation, and it never pushes. Pushing is my job. This way an AI mistake can't quietly become permanent memory, and every change is in the history if I need to check or undo it.
+
+**2. Decisions in each project note, or a separate file?**
+
+I keep three kinds of files separate:
+
+- **Rules:** what the AI must or must not do. Each rule has an ID like `PROJECT-GIT-001`, so notes can reference it instead of copying it.
+- **Decisions and reviews:** what we decided and why. These go in a separate folder with one file per topic.
+- **Current state:** the code, configs and status files themselves.
+
+The most important principle is that **every fact lives in exactly one place.** A decision note says what and why, and links to where the current state lives. When I let copies or AI-written summaries exist, they slowly drifted and started contradicting the originals, and then the AI didn't know which one to believe.
+
+**3. What my entry point looks like**
+
+The root `AGENTS.md` is tiny. It only says where to start:
+
+```markdown
+# Agent Instructions
+
+Before any work, read these two files in order:
+1. `rules/shared/entry.md`   (rules shared by all my projects)
+2. `rules/project/entry.md`  (rules for this project only)
+
+Apply both together.
+If a required file can't be read, or two rules conflict:
+make no changes and report to me.
+```
+
+Each `entry.md` is a map. It says what to read for **every** task and what to read **only for certain tasks**:
+
+```markdown
+# Project Rule Entry
+
+## Read for every task
+- `structure.md`: what lives where in this repo
+- `authority.md`: what you may change without asking me
+- `language.md`: which language to use for docs and reports
+
+## Read only when the task needs it
+- `git.md`: committing, branches, pushing
+- `release.md`: versions and tags
+- `deploy.md`: anything touching the servers
+- `ssh-access.md`: SSH keys and remote access
+
+If a task covers several topics, read all of them.
+If you're not sure whether a topic applies, read it.
+```
+
+A few things I learned along the way:
+
+- **Keep the "every task" list small.** At one point my always-read rules were so long that they cost more tokens than the actual work on small tasks. Rules that matter only for specific tasks, like deployment or SSH, belong in the second list.
+- **Don't replace rules with a summary.** I once tried a short cheat-sheet of all the rules. Summarizing dropped the exceptions, so the AI started behaving differently than the real rules said.
+- **Share common rules across projects.** Rules that apply everywhere, like Git safety or when to ask me first, live in one shared set that I version with Git tags. Each project uses a specific version and updates on purpose, not by accident.
+
+The question that helped me most was:
+
+> "What's the smallest amount the AI needs to read to find the rest on its own?"
+
+Your Obsidian idea can follow the same pattern. A vault is also just Markdown files, so you can put it under Git and use a "start here" note as the map. I'd just keep the always-read part small and commit from day one.
+  [EightFolding | 2026-09-30 21:59 | score 4] This kind of project system handles this, you can set up Claude to use just the parts you want (like handoff, logging, etc), works in both chat and code: 
+
+https://github.com/vbiroshak/ai-project-architect
+    [Glass-Present-8753 | 2026-09-30 22:27 | score 2] Thanks! Does this work in the regular Claude app too, not just Claude Code? And is it easy to set up for a non developer?
+      [EightFolding | 2026-09-30 22:50 | score 2] Yes, this will set up or transition your Chat project to a local directory, or transition Chat projects that are already set up to Code if you decide to do that in the future.
+
+If you download the repo (to avoid a stale web fetch) and point Claude at it Claude will set it all up for you. It's built to be used that way. And you can ask questions about it, use some parts but not others, and modify the setup however you want for your needs.
+
+I initially used projects in Chat, then moved those projects to local folders while still using Chat, and then built this system. And have since moved all my own projects to Code because it's just as easy to use in the desktop app as Chat but more powerful. You may eventually find you want to do that too, but you can use it all in Chat.
+
+Since you're already having Claude create files in a working directory, you've likely already got everything set up in Filesystem the way you need it for this to work, but again Claude can help. 
+
+The versions are tagged, so the latest version here is the latest download: [https://github.com/vbiroshak/ai-project-architect/tags](https://github.com/vbiroshak/ai-project-architect/tags)
+    [Outrageous_Band9708 | 2026-09-30 22:22 | score -2] hi there! love the project name. would be honored if you checked out my project.
+
+feel free to update your project with anything my project has achieved
+
+[https://github.com/Druthulu/ProjectArchitect](https://github.com/Druthulu/ProjectArchitect)
+
+  
+i use tiered agents, and show the savings on the statusline.
+
+check out my wiki, im sure there are some great ideas in there you'd love to have in your project
+
+i used to have a design similar to yours prior to my 3.0 update.
+  [Aromatic-Lemon-9732 | 2026-10-01 05:02 | score 3] I just keep a plain handoff file per project and tell Claude, in the standing instructions, to update it at natural stopping points, not only at the end: after a decision, after finishing a chunk of work. If a compaction fires, the file is already current. A new chat then starts with "read the handoff first" and picks up where I left off.
+
+On top of that I have a hook that reminds me to close the session and write the handoff when it's getting long, so generally no compaction needed.
+  [TheKiddIncident | 2026-10-01 16:50 | score 2] The trick is to structure the work in advance to be smaller..
+
+If you are getting compacted, it's because you didn't break the work down into small enough chunks.
+  [latent_npc | 2026-10-01 15:34 | score 2] I had a long chat going with Claude. We built an app and added features. I asked Claude to simplify the code and consolidate any patches. It gave me a few commands to run in a new chat to get started while it made an .md with all relevant information. I downloaded that then uploaded it into the new chat I had just created. Claude analyzed everything and gave me a v2 that had all the patches and new features integrated. Now for every new version we make it gives me the relevant files I need to start a new chat so we can keep it from compacting.
+  [JJE1992 | 2026-10-01 13:04 | score 2] Use a project with a very short, compact description. Then start a new chat regularly, you can ask it to give you handoffs. Basically, if your context is larger than 250k-300k, the answers will deteriorate substantially. Try to remain under 15-20 prompts per chat. If you even get close to reaching the context window, you're bloating the Claude Chat with a lot of information, and good parts of it are not useful to your current task. It will start to forget things that are in the middle of your chat window - even if they are very important. Additionally, you waste a lot of tokens and run out of them much sooner.
+    [Glass-Present-8753 | 2026-10-01 13:49 | score 1] Thanks! This is practical for me since I use the regular Claude app, not Claude Code. The 15 to 20 prompts rule is a great simple guide. Two quick questions:
+
+1. Do you upload each handoff.md into the project files, or paste it into the next chat?  
+2. What do you keep in the project description vs the .md file? Just rules and key facts in the description, and current progress in the handoff?
+      [JJE1992 | 2026-10-01 14:01 | score 2] 1. Just paste it into the next chat
+2. A very brief summary of the project, key facts and important rules to remember (although these rules may change with each version of claude, because some things it previously had issues with are no longer a problem nowadays). Generally speaking, if you keep running into an issue (misunderstanding, not following it how you want, etc.) more than once, it may be useful to add this into the project description. Also there, keep it short and concise. If you want help with it, I recommend Matt Pocock's skill (https://github.com/mattpocock/skills/blob/main/skills/productivity/writing-for-agents/SKILL.md) - you can download it and just drop the .md file into Customize > Upload a skill. This helped me a lot to figure out which information is useful to the AI and which isn't. So you could just write all your important information, rules, etc. down and then use the skill to trim it.
+  [EnvironmentalLeg8506 | 2026-10-01 03:10 | score 2] I wouldn't update [HANDOFF.md](http://HANDOFF.md) after every reply. That rewrite tax adds up fast, and you still lose if the chat dies mid-turn.
+
+
+
+What works for me in the regular chat app (no terminal, no hooks): treat compaction as something I refuse to meet. At a natural stop I ask Claude to overwrite one short handoff on disk: goal, decisions, files touched, open questions, exact next step. Then I start a new chat and make that file the first read before anything else. Overwrite, don't append a transcript. I haven't found a reliable "right before compact" signal in the Mac chat window either, so I hand off early on purpose instead of racing the compact.
+  [YukonGoldish | 2026-09-30 23:05 | score 2] I have Claude keep track of the session load and automatically run a closeout procedure that looks for any potential new skills from that session, updates skills automatically, saves the session log, and sets up a handoff for the next session. I'm able to clear the context and then just hit Continue for it to pick up where it left off. Works great!
+  [SMB-Punt | 2026-09-30 22:32 | score 2] Iterate on an artifact
+    [GrabtharsHammer | 2026-10-01 02:27 | score 2] why not both?
+  [Icy-Excitement-467 | 2026-09-30 22:29 | score 2] Yes, claude stops, they generate handoff, spawn new CC window+handoff > kill old window after confirmation.
+    [Icy-Excitement-467 | 2026-09-30 22:30 | score 1] All triggered by autocompact % of your choice. Mostly performed by deterministic powershell.
+  [attrox_ | 2026-09-30 22:26 | score 2] You can write custom status shell script below your prompt. Just make a big red text when it approaches your prefer context limit (I set mine at 50%). Then just trigger a skill to write handover doc
+  [Outrageous_Band9708 | 2026-09-30 22:18 | score 2] you can yes, i did something like that as i evolved my workflow over the last year.
+
+[https://github.com/Druthulu/ProjectArchitect](https://github.com/Druthulu/ProjectArchitect)
+
+my latest version has intra-session memory as well as massive token savings by way of subagents preventing context growth overtime.
+
+i highly recommend it.
+
+I see someone else has  project named project architect, i think that is awesome!
+    [thimblehand | 2026-10-02 08:09 | score 2] i saw this project and started to use it today. seems cool!
+  [Kel_LovesOrange_Soda | 2026-10-01 15:46 | score 1] Uh, ya bro. I have a HANDOFF skill that does exactly that
+  [pdfops | 2026-10-01 15:03 | score 1] Your workaround works but it's overkill for every single response, that's a lot of wasted tokens re-writing the same file. Since you're on the regular app (no hooks available there, those are a Claude Code terminal feature), just ask it to regenerate the handoff every 5-10 turns or whenever you're about to switch topics, not after every message. Also worth telling it explicitly to include open questions and the exact next step, not just decisions made, that's the part that gets lost hardest in compaction since the summarizer prioritizes what was said over what's still unresolved.
+  [[deleted] | 2026-10-01 14:54 | score 1] [removed]
+  [Commercial_Stress | 2026-10-01 14:24 | score 1] Once I started a new project and after some chat I asked Claude to summarize our conversation and what had been decided and place it in a file called PROJECT\_OVERVIEW.md. I read the results and was pleased and mentioned to Claude I was happy with the result. In the next couple of sessions when I made changes to the project I asked Claude to update the PROJECT\_ OVERVIEW.md. 
+
+As the project grew in scope, my first prompt to Claude on starting a new session would be a request to review the project overview file. 
+
+Now whenever we run a test or make a tuning (it’s a machine learning project) Claude just updates the project overview file without my having to request it. When I noticed that I told Claude I was very happy to see that behavior. Claude seems to make notes to itself if you tell it what you want. Today the project overview is a 70+ page document when I format it in PDF. 
+
+I don’t think the name I chose is special. I think it’s more that I ask Claude to review it at the start of each new session. It’s more about having a consistent practice and once Claude picked up my desire to have major decisions and results documented it did it without my asking. So now I have a record of my project spanning about 4 months that is the kind of documentation I always wanted to have but could never stick to when I was doing everything manually. 
+
+Hope this helps!
+  [darthrater78 | 2026-10-01 10:06 | score 1] https://github.com/darthrater78/claude-vibe-skills
+
+I have a dev skill I've been developing for about six weeks and it's ideal for a non coder. When a conversation runs long or I need to pick it up later I say to write the handoff to repo.
+
+I either then exit or clear context and when I come back I say to resume handoff. Works great.
+    [Glass-Present-8753 | 2026-10-01 13:51 | score 1] Love how simple "write handoff / resume handoff" is. Does your skill work in the regular Claude desktop app too, or does it need Claude Code and a repo?
+      [darthrater78 | 2026-10-01 13:56 | score 1] It should work anywhere. It's really designed to be used with a repo, to establish proper development cadence. 
+
+You can use it with desktop. You can use it with CLI. 
+
+In fact, what I generally do for the best of both worlds is that I'll start a CLI session on like a headless Debian box that has the repos cloned and then I'll do the /rc to get it in the desktop app and do all remotely and get all the benefits therein 
+
+However, I've used it to audit my entire GitHub account in all repos from chat by invoking it and telling it to audit. 
+
+It then built me out a report about everything that needed fixing or hardening.
+  [_FruitBat20_ | 2026-10-01 10:03 | score 1] I setup some skills to manage this eg /session-start /session-close. Run start on a new session and it checks for the last session and next steps, run session close to record status next steps, and then you can either /clear context or exit the session.
+  [Ok-Calendar8486 | 2026-10-01 09:36 | score 1] Mine runs on a VPS in tmux. A hook shows Claude its own context % on every message. When it's getting full, it writes a handoff file and commits it, then runs a script that types /clear into its own terminal plus a 'read your handoff' prompt. The fresh session starts briefed. So it never hits auto-compact: it chooses what to carry instead of finding out afterwards what got kept.
+
+And because of this, Claude can keep going on longer jobs: run a /loop, set a timed wake-up, or clear itself before starting a big job
+  [VShulcz | 2026-10-01 09:22 | score 1] A PreCompact hook can, though it runs a script rather than asking Claude: it gets transcript\_path, and the full JSONL stays on disk after the compact anyway, so the script can pull decisions and commands straight out of it. Worth doing, because over 43 compactions I measured, the summary kept 77% of decisions and 0.2% of the commands run. Disclosure: I maintain deja-vu, which does this from the hook and hands it back after the compact: [https://vshulcz.github.io/deja-vu/guide/after-compaction.html](https://vshulcz.github.io/deja-vu/guide/after-compaction.html)
+  [tarkinlarson | 2026-10-01 08:40 | score 1] I have a /start command and /wrapup command. I use the when I'm done with my current task or issues and start again with clear context again. I try not to go above 50% context usage. 
+
+Remember there is also a memory.md file and Claude.md to put things and you put key file references in there.
+  [Because_Bot_Fed | 2026-10-01 06:55 | score 1] I have a custom harness, when it hits a % threshold it nudges the user/agent to perform a handoff, and then a turnover doc is written, the workspace consolidated, and the new session read-in on core docs and turnover docs.
+  [beaver316 | 2026-10-01 06:03 | score 1] This thread has opened my eyes about compaction. I'm working on an Android app with Claude for a few days now and it's auto-compacted maybe 10 times until now. I didn't realize this is not good. I haven't really noticed too much drop off in quality but I notice that responses are slower and tokens get eaten quickly as compared to when I started working on the project.
+
+So when I see the context window getting close to full, I should prompt Claude to create a [handoff.md](http://handoff.md) file? My project already has many documents that claude is maintaining containing UI design, decisions made, specs, etc. I think these would be enough for a new chat to continue where it left off. So at that point, should I just clear the chat and start over or create a new chat? What's the process here?
+  [ianreboot | 2026-10-01 05:38 | score 1] No trigger to look for in the regular app, so I'd save at the moment something gets decided instead of trying to catch the compaction. That keeps it to a couple of lines, and at that size writing often stops costing much. The failure I'd watch is the read side, since a handoff nobody opens the next chat with is just a file.
+  [annms1796 | 2026-10-01 04:33 | score 1] How do you prompt for a good handoff?
+  [mhinimal | 2026-10-01 04:23 | score 1] set autocompact at some level and then have a hook that runs when autocompact is triggered that writes the handoff (before the autocompact happens)
+  [raedyohed | 2026-10-01 04:13 | score 1] Um, yes it’s called using scripts, hooks, and tmux send-keys.
+  [KnackeHackeWurst | 2026-10-01 01:51 | score 1] There is a lot of discussion about handoff file instead of compaction etc. 
+
+But technically aren't they exactly the same? Compaction also just summarizes the chat and fills a fresh context with the summary. Handoff documents or the compaction content look almost the same if no special instructions are given.
+
+Compaction is just an automatic handoff to the same (cleared) session in that sense.
+
+Or is there another fundamental difference I'm missing?!
+  [Kalcinator | 2026-10-01 01:00 | score 1] I've got a very nice way of doing it personnaly : "/prompt-engineering handoff for this"
+
+Works so well :)
+  [dan-423 | 2026-10-01 00:25 | score 1] When I started out, at the end of a session or if it was getting too much context I would tell Claude to "Add important to memory." Claude then added to Claude.md. Then it started to break out things into subcategories. It didn't take long before I didn't even have to ask it to do that, it just knew that was part of how we worked and kept it up.
+
+After a few weeks or a month or so I told it, "do a shallow research session for Claude/agent memory and project best practices. Let's try to implement a tiered memory system."  
+
+T0 is Claude.md and some "always check" things, info about the project, how we work. T1 is stuff that is checked and used regularly but not until it is relevant- for example deploying is Ops, website styling is Style, etc. T2 is stuff that is pulled when t1 needs something more specific and relevant. These mostly improved token efficiency.
+
+Another thing I did was tell it to save Claude.md and Memory updates to use Technical Standard English:
+https://www.asd-ste100.org/
+
+^ This goes a long way just on its own.
+  [ClaudeAI-mod-bot | 2026-09-30 22:52 | score 1] **TL;DR of the discussion generated automatically after 30 comments.**
+
+Alright, here's the deal. The community thinks your idea of updating a handoff file after every single response is, to put it mildly, a terrible idea.
+
+**The overwhelming consensus is that if your chat is getting compacted, you're already doing it wrong.** Letting a chat run that long is considered a workflow failure. It's like waiting for your car to run out of gas before you think about finding a gas station.
+
+Here's the community-approved method:
+
+*   **Work in "sprints."** Keep your chats shorter and more focused on a specific task.
+*   **Create manual handoffs.** When you reach a natural stopping point or feel the chat is getting long, ask Claude to summarize the progress, decisions, and next steps into a `HANDOFF.md` file.
+*   **Start a new chat.** Feed the `HANDOFF.md` to the new session and tell it to pick up where you left off.
+*   **Why?** Your method of constant rewriting will burn through your tokens at an insane rate. The "sprint" method is way more efficient and keeps your context clean.
+
+For the more technical users in the thread, there was talk of using the `PreCompact` hook in Claude Code to automate this, or just turning compaction off and monitoring the context size in the status bar. Several people also dropped links to their custom GitHub projects and Obsidian skills for managing this process.
+
+So, the final verdict: **shorter chats, manual handoffs, and treat auto-compaction like the plague. Your token balance will thank you.**
+    [Glass-Present-8753 | 2026-09-30 23:21 | score 1] Thanks! Treat the handoff as a pointer, not the memory" is exactly what I was missing. I'm going to try this in Obsidian: one note per project (status, decisions, rules, key files, next step) plus a small "start here" note that tells Claude what to read for each type of task.  
+A few questions if you don't mind:
+
+1. Did you build the structure by hand, or did the AI create the notes and keep them updated for you?
+
+2. Do you keep decisions inside each project note, or in one separate decisions file?
+
+3. Would you be willing to share what your "entry point" note looks like, even a simplified version?
+      [Known_Salary_4105 | 2026-09-30 23:53 | score 3] A pure vibe coder here and I always do handoff.mds for evey session. They all go into a folder that is part of the repo.  As the project gets more complicated and veers off in into different directions, I ask either Claude or Codex to review the now stale requirements doc in the context of the MD files, and either one will update the requirements doc.
+  [fanatic26 | 2026-09-30 22:41 | score 1] are you letting your context fill so full it is auto compacting on you? That is no good.
+  [mr_birkenblatt | 2026-09-30 22:40 | score 1] Turn compaction off and have context size in your status bar
+  [Donnie_Sucklong | 2026-09-30 22:38 | score 1] can you have a hook that checks after each message the context of the current window? you can have it check current usage and have a watched see when it finishes its turn, then have when it’s at 800k or whatever run a handoff and suggest starting a new session
+  [EuphoricAIKnowledge | 2026-09-30 22:14 | score 1] Always have it work in text / Md files
+
+(fetched 82 comments total; rendered top 40 roots by score)

@@ -1,0 +1,95 @@
+﻿{
+    "id":  "1w9llr4",
+    "subreddit":  "MachineLearning",
+    "title":  "Measuring LLM performance drift: observations and methodology from 31,352 repeated benchmark measurements [D]",
+    "author":  "ionutvi",
+    "score":  1,
+    "num_comments":  1,
+    "created_utc":  1788767074,
+    "permalink":  "https://old.reddit.com/r/MachineLearning/comments/1w9llr4/measuring_llm_performance_drift_observations_and/",
+    "selftext":  "One thing that has bothered me about LLM benchmarks for a while is that most of them are essentially snapshots.\n\nA model is evaluated, a score is published, and we tend to talk about that score as if it describes a relatively stable object. But with API-served models, the thing behind the model name can change over time: serving infrastructure changes, provider configurations change, versions change, and sometimes behaviour changes without an obvious public version transition.\n\nSo we started approaching benchmarking as a longitudinal measurement problem rather than a leaderboard problem.\n\nWe continuously evaluate models across coding, multi-turn reasoning and tool use, while also running lightweight probes at a higher frequency. The important part for us is not simply asking \"which model scores highest?\", but:\n\n* Is the model behaving differently from its own previous baseline?\n* Is the change larger than its normal repeated-call variability?\n* Did the benchmark configuration itself change?\n* Is the effect concentrated in a particular task?\n* Is it correlated across models from the same provider?\n* Is an apparent degradation actually an availability/infrastructure issue rather than a capability change?\n\nOne historical analysis covered **31,352 repeated score observations across 49 models**. The standard deviation of within-day scores was **2.80 points**, while the standard deviation of between-day daily medians was **8.43 points**.\n\nThat is roughly a 3:1 difference.\n\nI don\u0027t think this result by itself establishes that providers are changing models day-to-day - there are too many possible confounders for that conclusion. Task composition, sampling, missingness, provider behaviour and methodology changes all matter. But it was enough to convince us that temporal variation deserves to be measured rather than treated as noise around a permanent leaderboard score.\n\nOur current approach therefore keeps benchmark configurations versioned and only compares longitudinal observations produced under compatible measurement conditions. We use repeated execution-based evaluation where possible rather than an LLM judge, keep availability failures separate from valid task outcomes, track serving/version metadata when providers expose it, and run change detection over the resulting time series.\n\nAnother problem we\u0027re increasingly interested in is **benchmark recognition and contamination**. Once a benchmark becomes sufficiently visible, publishing every live task, prompt transformation and hidden test potentially changes the thing you\u0027re trying to measure. For that reason we\u0027ve tried to separate methodological transparency from publishing the entire live evaluation set.\n\nWe\u0027ve now written up a public version of the methodology. It intentionally explains the measurement design, assumptions, limitations and statistical interpretation, while withholding the exact live task bank and some operational parameters.\n\n**PDF:** [https://aistupidlevel.info/asl-public-benchmark-methodology-2026.pdf](https://aistupidlevel.info/asl-public-benchmark-methodology-2026.pdf) \n\nI\u0027m particularly interested in criticism from people working on evaluation, change-point detection or production ML.\n\nA few questions I\u0027d genuinely like opinions on:\n\n1. For longitudinal LLM evaluation, would you use daily medians as the primary time-series unit, or model the individual repeated observations directly?\n2. How would you distinguish genuine model drift from provider/infrastructure effects when version metadata is incomplete?\n3. How much of a live benchmark should remain hidden to reduce contamination while still making the methodology scientifically inspectable?\n4. Are there better approaches than change-point detectors for this kind of non-stationary, relatively noisy model-performance series?\n\n**Disclosure:** I\u0027m the founder of AI Stupid Level, the platform that produced these measurements. The purpose of posting this here is to get technical criticism of the methodology rather than promote the commercial product.",
+    "url_out":  "https://www.reddit.com/r/MachineLearning/comments/1w9llr4/measuring_llm_performance_drift_observations_and/",
+    "comments":  [
+                     {
+                         "_meta":  {
+                                       "retrieved_2nd_on":  1788897227
+                                   },
+                         "all_awardings":  [
+
+                                           ],
+                         "approved_at_utc":  null,
+                         "approved_by":  null,
+                         "archived":  false,
+                         "associated_award":  null,
+                         "author":  "[deleted]",
+                         "author_flair_background_color":  "",
+                         "author_flair_css_class":  null,
+                         "author_flair_template_id":  null,
+                         "author_flair_text":  null,
+                         "author_flair_text_color":  "dark",
+                         "author_is_blocked":  false,
+                         "awarders":  [
+
+                                      ],
+                         "banned_at_utc":  null,
+                         "banned_by":  null,
+                         "body":  "[removed]",
+                         "can_gild":  false,
+                         "can_mod_post":  false,
+                         "collapsed":  true,
+                         "collapsed_because_crowd_control":  null,
+                         "collapsed_reason":  null,
+                         "collapsed_reason_code":  "DELETED",
+                         "comment_type":  null,
+                         "controversiality":  0,
+                         "created":  1788767614,
+                         "created_utc":  1788767614,
+                         "distinguished":  null,
+                         "downs":  0,
+                         "edited":  false,
+                         "gilded":  0,
+                         "gildings":  {
+
+                                      },
+                         "id":  "p8bahrr",
+                         "is_submitter":  false,
+                         "likes":  null,
+                         "link_id":  "t3_1w9llr4",
+                         "locked":  false,
+                         "mod_note":  null,
+                         "mod_reason_by":  null,
+                         "mod_reason_title":  null,
+                         "mod_reports":  [
+
+                                         ],
+                         "name":  "t1_p8bahrr",
+                         "no_follow":  true,
+                         "num_reports":  null,
+                         "parent_id":  "t3_1w9llr4",
+                         "permalink":  "/r/MachineLearning/comments/1w9llr4/measuring_llm_performance_drift_observations_and/p8bahrr/",
+                         "removal_reason":  null,
+                         "replies":  "",
+                         "report_reasons":  null,
+                         "retrieved_on":  1788767640,
+                         "saved":  false,
+                         "score":  1,
+                         "score_hidden":  false,
+                         "send_replies":  true,
+                         "stickied":  false,
+                         "subreddit":  "MachineLearning",
+                         "subreddit_id":  "t5_2r3gv",
+                         "subreddit_name_prefixed":  "r/MachineLearning",
+                         "subreddit_type":  "public",
+                         "top_awarded_type":  null,
+                         "total_awards_received":  0,
+                         "treatment_tags":  [
+
+                                            ],
+                         "unrepliable_reason":  null,
+                         "ups":  1,
+                         "user_reports":  [
+
+                                          ]
+                     }
+                 ]
+}

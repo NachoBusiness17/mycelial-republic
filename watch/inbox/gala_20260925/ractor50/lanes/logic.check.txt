@@ -1,0 +1,61 @@
+=== logic lane check: workflow_gate scenario suite (G1-G7 cards) ===
+cmd: .venv/Scripts/python.exe tools/workflow_gate.py check --scenarios configs/workflow_gate_scenarios
+cwd: repo root
+
+SCENARIOS ok   G1_multiplicity.card.json: G1-multiplicity -> FAIL exit 2 fixture=configs/workflow_gate_scenarios/fixtures/fail_g1.dwf.ts
+SCENARIOS ok   G2_passoff.card.json: G2-passoff -> FAIL exit 2 fixture=configs/workflow_gate_scenarios/fixtures/fail_g2.dwf.ts
+SCENARIOS ok   G3_steering.card.json: G3-steering -> FAIL exit 2 fixture=configs/workflow_gate_scenarios/fixtures/fail_g3.dwf.ts
+SCENARIOS ok   G4_salvage.card.json: G4-salvage -> FAIL exit 2 fixture=configs/workflow_gate_scenarios/fixtures/fail_g4.dwf.ts
+SCENARIOS ok   G5_deliverable.card.json: G5-deliverable -> FAIL exit 2 fixture=configs/workflow_gate_scenarios/fixtures/fail_g5.dwf.ts
+SCENARIOS ok   G6_receipts.card.json: G6-receipts -> PASS exit 0 fixture=configs/workflow_gate_scenarios/fixtures/soft_g6.dwf.ts
+SCENARIOS ok   G7_laws.card.json: G7-laws -> FAIL exit 2 fixture=configs/workflow_gate_scenarios/fixtures/fail_g7.dwf.ts
+SCENARIOS ok   pass_control: all seven gates clean
+SCENARIOS: 7 cards validated read-only (no registry row written)
+
+EXIT=0
+
+=== check 2: drift_pairs_stamp --status (drift-stamp instrument, exit code) ===
+{
+  "ledger": "C:\\Users\\foste\\Documents\\projects\\local_sovereign_agent\\memory\\runs\\adv_arc_50\\teleo_drift_stamps.jsonl",
+  "v1_rows": 3,
+  "v2_rows": 15,
+  "weeks_stamped": [
+    "2026-W38",
+    "2026-W39",
+    "2026-W40"
+  ],
+  "staleness_tripwire": {
+    "tripwire": "regime_trail_staleness",
+    "threshold_days": 14.0,
+    "gate_class": "gate_id startswith regime_ | graduation",
+    "gate_rows_considered": 3,
+    "last_gate_date": "2026-09-26",
+    "last_training_date": "2026-09-30",
+    "days_since_last_gate": 4,
+    "training_grew_since_last_gate": true,
+    "alarm": false,
+    "reason": "fresh (4 days since last gate)"
+  }
+}
+EXIT=0
+
+=== check 3: quote byte-verification (grep -cF, each row's quote must hit >=1) ===
+[1] 0 tools/workflow_gate.py line 10
+[2] 1 w4-14.md line 67
+[3] 1 AGENTS.md line 27
+[4] 1 B2_216 line 10
+[5] 1 w4-trust-game.md line 108
+[6] 1 w4-41.md line 25
+[7] 1 w4-42.md line 49
+[8] 1 tools/drift_pairs_stamp.py line 66
+[9] 1 STORY.md line 265
+[10] 0 tools/drift_pairs_stamp.py line 
+[11] 1 deep-epistemic-gap.md line 16
+
+=== estate grep (corpus/steal + memory/corpus, 2026-09-30) ===
+dirs: corpus/steal (328K), memory/corpus (784M)
+godel: corpus/steal ZERO hits; memory/corpus hits only in a physics pdf, a shadertoy fragment, watch_mining jsons
+uncollapsed|never-disproven: ZERO hits in BOTH dirs (w4-42 vocabulary has not propagated out of flash50)
+0/1/2|trivalent: no estate-contract hits, only substring false positives (LINKS.jsonl, gutenberg texts, shadertoy)
+corroborat: 2 corpus/steal hits (MASTER_MICKEY17_V2_20260924.md, ZCODE_RATCHET_WAVE2_20260925.md) + memory/corpus canon hits
+zero-hit greps recorded as findings

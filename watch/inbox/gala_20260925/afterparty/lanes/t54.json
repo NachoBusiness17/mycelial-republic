@@ -1,0 +1,17 @@
+{
+  "gopher": "t54",
+  "item": "extend configs/tools/ with manifests for the gate-tier tools: tools/violation_ratchet.py, tools/workflow_gate.py, tools/freshness_check.py, tools/mcp_pin.py (all four exist; mcp_pin included per t49.next_steal); format from t49's five, descriptions verbatim from each tool's docstring",
+  "ok": true,
+  "note": "4 manifests written, shape {\"tools\":[{name, source, version, description}]}, same as t49's five; configs/tools/ now carries 9 total. grep for __version__/VERSION= over all four sources: no matches, so the honest pin is PINNED-UNVERSIONED for each (a version label would have been fabricated). Headlines of violation_ratchet.py and freshness_check.py contain em-dashes, so their manifests quote different verbatim docstring sentences and say so inside the manifest, exactly as t49 did for description_pin; workflow_gate.py and mcp_pin.py headlines are clean and quoted verbatim. Gate run with repo venv python over configs/tools/: 'all tool descriptions pinned or marked', exit 0, 9 manifests. Em/en-dash scan over the four new manifests and the check file: clean.",
+  "checks": [
+    "watch/inbox/gala_20260925/afterparty/lanes/t54.check.txt ($ .venv/Scripts/python.exe tools/description_pin.py configs/tools/ -> all tool descriptions pinned or marked, exit=0; plus em/en-dash grep no matches)",
+    "grep -nE '__version__|VERSION *=' over the four tool sources -> no matches (grep exit 1), pins are PINNED-UNVERSIONED"
+  ],
+  "manifests": [
+    "configs/tools/violation_ratchet.json",
+    "configs/tools/workflow_gate.json",
+    "configs/tools/freshness_check.json",
+    "configs/tools/mcp_pin.json"
+  ],
+  "next_steal": "configs/tools/ now covers 9 of the ~15 tools that own a gate or law (131 python files in tools/ total); next gopher should extend coverage to the remaining enforcement-tier tools (e.g. tools/quote-bound helpers and any tool named in githooks/pre-push or tools/workflow_gate.py CHECKS) and wire 'tools/description_pin.py configs/tools/' into githooks/pre-push (still t49's unwired half of the steal: the gate runs only when a gopher remembers, not at push time)."
+}

@@ -1,0 +1,33 @@
+{
+  "gopher": "t82",
+  "item": "mag/doctor.py Disabled-task remediation still prescribed raw 'schtasks /Change /TN <task> /ENABLE', which skips t73's marker clearing (a blind /ENABLE leaves logs/magimprove_intentional.flag stale, so the next doctor run misreads the re-enable as intentional). Align the prescription to 'python main.py improve-on' first, raw /ENABLE as elevated fallback only (t81's next_steal)",
+  "ok": true,
+  "note": "Spec first: check_scheduled_tasks docstring gained the t82 spec paragraph naming improve-on as primary and /ENABLE as fallback only. Minimal diff at mag/doctor.py:450-467: issue string now reads 'Re-enable: python main.py improve-on (clears the intentional marker on success). Elevated fallback: schtasks /Change /TN <task> /ENABLE' with a receipt comment citing t73 (executor), t81 (next_steal handoff), t82. Tests: test_disabled_task_is_flagged now pins 'python main.py improve-on' in the issue string (kept the /ENABLE fallback pin); new negative test_disabled_remediation_never_skips_marker_clearing asserts any issue containing /ENABLE also prescribes improve-on BEFORE it, so doctor never points at a remediation that skips marker clearing. Verified via grep that no other site in mag/ or main.py prescribes raw /ENABLE (remaining /Change hits are /DISABLE prescriptions for StartCN/StartDVR, unrelated). No behavior change beyond prose: same issues.append path, same intentional-marker short-circuit untouched.",
+  "checks": [
+    {
+      "check": ".venv/Scripts/python.exe -m pytest tests/test_doctor_scheduled_tasks.py -v",
+      "result": "16 passed, exit 0 (incl. new t82 negative test)",
+      "evidence": "watch/inbox/gala_20260925/afterparty/lanes/t82.check.txt"
+    },
+    {
+      "check": ".venv/Scripts/python.exe tools/violation_ratchet.py check --changed",
+      "result": "scope=19 changed files; hits=16; registered=16; NEW=0; expired-exceptions=0; PASS, exit 0",
+      "evidence": "watch/inbox/gala_20260925/afterparty/lanes/t82.check.txt"
+    },
+    {
+      "check": "em-dash scan of added lines (git diff '+' lines in both touched files)",
+      "result": "0 occurrences, clean",
+      "evidence": "watch/inbox/gala_20260925/afterparty/lanes/t82.check.txt"
+    },
+    {
+      "check": "grep -rn 'Change /TN|/ENABLE' over mag/ main.py scripts/",
+      "result": "mag/doctor.py is the only /ENABLE prescriber; no other site carries the skip-marker disease",
+      "evidence": "inline grep during t82"
+    }
+  ],
+  "files": [
+    "mag/doctor.py",
+    "tests/test_doctor_scheduled_tasks.py"
+  ],
+  "next_steal": "improve_on (mag/lifecycle.py:179) trusts the register script's exit code and never re-queries schtasks to confirm the task actually came back Ready; a re-register that exits 0 while the task stays Disabled would clear the marker and hide the dead state. Add a post-register verification reusing doctor's status probe (_scheduled_task_status / check pattern) that fails closed and KEEPS the marker unless the task reads Ready."
+}

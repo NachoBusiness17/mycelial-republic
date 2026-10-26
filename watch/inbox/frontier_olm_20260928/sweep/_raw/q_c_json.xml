@@ -1,0 +1,622 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<feed xmlns:opensearch="http://a9.com/-/spec/opensearch/1.1/" xmlns:arxiv="http://arxiv.org/schemas/atom" xmlns="http://www.w3.org/2005/Atom">
+  <id>https://arxiv.org/api/Yd7PuMdFa+r0mYviXcfJ6tozXvw</id>
+  <title>arXiv Query: search_query=(abs:"structured output" OR abs:"JSON") AND abs:"language model" AND submittedDate:"202608290000 TO 202609282359"&amp;id_list=&amp;start=0&amp;max_results=50</title>
+  <updated>2026-09-29T02:19:12Z</updated>
+  <link href="https://arxiv.org/api/query?search_query=(abs:%22structured+output%22+OR+abs:%22JSON%22)+AND+(abs:%22language+model%22+AND+submittedDate:%22202608290000+TO+202609282359%22)&amp;start=0&amp;max_results=50&amp;id_list=" type="application/atom+xml"/>
+  <opensearch:itemsPerPage>50</opensearch:itemsPerPage>
+  <opensearch:totalResults>24</opensearch:totalResults>
+  <opensearch:startIndex>0</opensearch:startIndex>
+  <entry>
+    <id>http://arxiv.org/abs/2609.33731v1</id>
+    <title>HTN Planning as a Coordination Layer for Multi-Server MCP Tool Orchestration</title>
+    <updated>2026-09-27T16:32:54Z</updated>
+    <link href="https://arxiv.org/abs/2609.33731v1" rel="alternate" type="text/html"/>
+    <link href="https://arxiv.org/pdf/2609.33731v1" rel="related" type="application/pdf" title="pdf"/>
+    <summary>The Model Context Protocol (MCP) isolates servers by design: only the host can orchestrate cross-server workflows. When the host is a large language model, the resulting orchestrations are non-deterministic, non-reproducible, and pay one inference round-trip per tool call. We present a coordination architecture in which a Hierarchical Task Network (HTN) planner generates a verifiable cross-server plan once, and a runtime middleware executes it deterministically across multiple MCP servers, binding cross-action data dependencies via a template mechanism (\verb|${context.X}|) substituted at execution time. The architecture mirrors MCP's isolation constraint: each compound task decomposes into server-local primitive actions, and inter-server data flow is bound at execution time via JSON-path output extractors. We instantiate the architecture on five HTN domains spanning laboratory robotics, bioinformatics and multiscale modelling, and demonstrate end-to-end execution from a browser-based plan controller against eight live third-party MCP servers querying real biological databases.</summary>
+    <category term="cs.AI" scheme="http://arxiv.org/schemas/atom"/>
+    <published>2026-09-27T16:32:54Z</published>
+    <arxiv:comment>5 pages. Camera-ready version of a paper accepted at the ICAPS 2026 Workshop on Hierarchical Planning (HPlan 2026), Dublin. Non-archival. Code: https://github.com/PCfVW/hplan26-artifact</arxiv:comment>
+    <arxiv:primary_category term="cs.AI"/>
+    <author>
+      <name>Eliott Jacopin</name>
+    </author>
+    <author>
+      <name>Éric Jacopin</name>
+    </author>
+    <author>
+      <name>Koichi Takahashi</name>
+    </author>
+  </entry>
+  <entry>
+    <id>http://arxiv.org/abs/2609.33355v1</id>
+    <title>Unmask the State: When Does State Adaptation Matter for Masked Diffusion Language Models</title>
+    <updated>2026-09-27T08:27:32Z</updated>
+    <link href="https://arxiv.org/abs/2609.33355v1" rel="alternate" type="text/html"/>
+    <link href="https://arxiv.org/pdf/2609.33355v1" rel="related" type="application/pdf" title="pdf"/>
+    <summary>Masked diffusion language models (MDMs) admit flexible generation orders, making the unmasking strategy an inference decision. Existing methods vary in how they prioritize positions, control parallelism, restrict selection regions, revise predictions, or plan future denoising, yet it remains unclear when these choices should change during generation. We study this question through strategy reversals, where an alternative action becomes preferable to a fixed choice. We organize MDM inference into five axes--score, cardinality, region, commitment, and planning--and define adaptation opportunity as the one-step utility advantage of the best candidate action over a validation-selected fixed action. This view shows that adaptation value depends on both the frequency and magnitude of such reversals. Across three MDMs and ten tasks, adaptation opportunities are highly heterogeneous, with some regimes exhibiting concentrated and predictable one-step gains. This motivates selective adaptation: lightweight detectors calibrated on validation prompts identify high-opportunity states, capturing, for example, 56.9 percent of the candidate-set oracle opportunity by adapting only the top 10 percent of states on LLaDA-8B constrained JSON filling. Our transition-level results suggest that state adaptation is most useful when applied selectively rather than uniformly.</summary>
+    <category term="cs.AI" scheme="http://arxiv.org/schemas/atom"/>
+    <published>2026-09-27T08:27:32Z</published>
+    <arxiv:primary_category term="cs.AI"/>
+    <author>
+      <name>Injin Kong</name>
+    </author>
+    <author>
+      <name>Sunghwan Choi</name>
+    </author>
+    <author>
+      <name>Yohan Jo</name>
+    </author>
+  </entry>
+  <entry>
+    <id>http://arxiv.org/abs/2609.32900v1</id>
+    <title>Constraints Are Graphs, Not Chains: Exact Decoding for Diffusion Language Models</title>
+    <updated>2026-09-26T19:40:43Z</updated>
+    <link href="https://arxiv.org/abs/2609.32900v1" rel="alternate" type="text/html"/>
+    <link href="https://arxiv.org/pdf/2609.32900v1" rel="related" type="application/pdf" title="pdf"/>
+    <summary>Diffusion language models (dLLMs) predict masked positions in arbitrary order, but their exact constrained decoders still encode constraints as sequential languages, whose state must track every unresolved dependency between positions. For relational constraints this encoding grows exponentially: for same-order copy, every finite automaton needs $4^k$ states, deterministic or nondeterministic, and every context-free grammar has size $2^{Ω(k)}$, while the factor graph of the same relation has size $O(k)$ and a 16-entry peak table. We introduce FactorDLM, a training-free decoder that represents finite-domain relations as a factor graph and, at each denoising step, conditions the model's mean-field prediction on that graph exactly by variable elimination. Decoding cost then grows exponentially with the induced width of the constraint graph, which replaces automaton size as the governing parameter. Because a finite automaton is a chain-shaped factor graph, one compiler enforces syntax and nonlocal relations together: on JSON records with cross-field references, a schema automaton alone leaves references dangling, relational factors alone produce malformed JSON, and the combined plan is valid on both counts, including on records of variable length. Across nine relational benchmarks and three backbones, every output satisfies every declared constraint at 0.4-6.9% projection overhead, where unconstrained decoding is 0-79% valid, and compiled projection answers repeated queries 13.6x faster than CP-SAT with eight parallel workers. Because model-free rules solve three of five standard benchmarks, we construct benchmarks with exact chance and fixed-template floors, on which selecting among exact constrained samples beats greedy projection. Which encoding is cheaper, sequential state or direct factors, depends on the constraint and is computable before decoding begins.</summary>
+    <category term="cs.AI" scheme="http://arxiv.org/schemas/atom"/>
+    <category term="cs.FL" scheme="http://arxiv.org/schemas/atom"/>
+    <published>2026-09-26T19:40:43Z</published>
+    <arxiv:primary_category term="cs.AI"/>
+    <author>
+      <name>Jianchang Su</name>
+    </author>
+    <author>
+      <name>Wei Zhang</name>
+    </author>
+  </entry>
+  <entry>
+    <id>http://arxiv.org/abs/2609.31595v1</id>
+    <title>GraphWrit3R: End-to-End 3D Scene Graph Writing</title>
+    <updated>2026-09-25T17:52:39Z</updated>
+    <link href="https://arxiv.org/abs/2609.31595v1" rel="alternate" type="text/html"/>
+    <link href="https://arxiv.org/pdf/2609.31595v1" rel="related" type="application/pdf" title="pdf"/>
+    <summary>3D scene graphs provide a structured representation of complex environments by encoding objects, their semantic attributes, and the spatial and functional relationships between them. Current approaches for 3D scene graph generation suffer from several fundamental limitations. They rely on complex multi-stage pipelines with explicit intermediate representations, making systems fragile and prone to error propagation. They assume access to ground-truth object annotations during inference, which deviates from real-world scenarios. They depend on proprietary models, hindering open-source deployment, or incur prohibitively slow inference. We present GraphWrit3R, a simple end-to-end method that takes a 3D point cloud, Gaussian Splats, or a combination of both as input, and directly outputs a complete scene graph as a structured JSON script. The graph lists all objects, their semantic attributes, and the relationships between them, while avoiding all of the above mentioned limitations. The choice of multiple input modalities is purely for versatility, allowing a single set of weights to handle diverse scenarios. Point cloud inputs are encoded via Sonata and Gaussian Splat inputs via Chorus, with both modalities projected onto a shared voxel grid and fused through a novel per-voxel contrastive alignment loss before being decoded by a large language model. As a natural consequence of the LLM, GraphWrit3R also supports open-vocabulary querying. On the 3DSSG benchmark, our method achieves state-of-the-art performance on object class, predicate, and triplet recall, outperforming methods that rely on ground-truth object annotations during inference. We further provide qualitative results and analyze different input modality configurations, contrastive loss formulations, and token fusion strategies.</summary>
+    <category term="cs.CV" scheme="http://arxiv.org/schemas/atom"/>
+    <published>2026-09-25T17:52:39Z</published>
+    <arxiv:comment>Project page at https://graphwrit3r.insait.ai</arxiv:comment>
+    <arxiv:primary_category term="cs.CV"/>
+    <author>
+      <name>Luka Milivojevic</name>
+    </author>
+    <author>
+      <name>Nikola Popovic</name>
+    </author>
+    <author>
+      <name>Sayan Deb Sarkar</name>
+    </author>
+    <author>
+      <name>Sebastian Koch</name>
+    </author>
+    <author>
+      <name>Iro Armeni</name>
+    </author>
+    <author>
+      <name>Luc Van Gool</name>
+    </author>
+    <author>
+      <name>Danda Pani Paudel</name>
+    </author>
+  </entry>
+  <entry>
+    <id>http://arxiv.org/abs/2609.31358v1</id>
+    <title>A Safety-Bounded SDC-to-MCP Gateway for Medical AI Agents</title>
+    <updated>2026-09-25T14:54:21Z</updated>
+    <link href="https://arxiv.org/abs/2609.31358v1" rel="alternate" type="text/html"/>
+    <link href="https://arxiv.org/pdf/2609.31358v1" rel="related" type="application/pdf" title="pdf"/>
+    <summary>The Model Context Protocol (MCP) provides a common interface through which AI applications discover and use external resources and tools. It allows language-model agents to ground their reasoning in current system state and interact with heterogeneous services. In medical environments, however, exposing device state and action affordances requires deterministic constraints on possible effects. We present an IEEE 11073 Service-Oriented Device Connectivity (SDC)-to-MCP gateway that exposes metrics, alarms, context references, and semantic metadata as read-only resources, while representing selected action affordances as policy-validated dry-run tools. The term safety-bounded denotes a narrow no-execution property: agent-facing requests dispatch no SDC device operation. A Python prototype supports simulated fault and lifecycle experiments, a software-reference protocol path spanning independent Java and Python implementations, deterministic baselines, representation ablations, and multi-model agent evaluation. The results show semantically explicit resource exposure, visible rejection of invalid or outdated state, and preservation of the no-execution boundary across resource, proposal, and authorization paths. Explicit semantic metadata improved conformity to required metric identifiers in structured alarm outputs relative to a generic representation, while retained structured-output failures reveal a distinction between plausible narrative answers and task-compliant machine-readable results.</summary>
+    <category term="cs.DC" scheme="http://arxiv.org/schemas/atom"/>
+    <category term="cs.AI" scheme="http://arxiv.org/schemas/atom"/>
+    <published>2026-09-25T14:54:21Z</published>
+    <arxiv:comment>18 pages. Code: https://github.com/fischesn/sdc-mcp-gateway . Software and evaluation artifacts: https://doi.org/10.5281/zenodo.22960634</arxiv:comment>
+    <arxiv:primary_category term="cs.DC"/>
+    <author>
+      <name>Bennet Gerlach</name>
+    </author>
+    <author>
+      <name>Stefan Fischer</name>
+    </author>
+  </entry>
+  <entry>
+    <id>http://arxiv.org/abs/2609.24236v1</id>
+    <title>Efficient Dense Vector Search within Knowledge Graph Content Embeddings</title>
+    <updated>2026-09-21T07:58:43Z</updated>
+    <link href="https://arxiv.org/abs/2609.24236v1" rel="alternate" type="text/html"/>
+    <link href="https://arxiv.org/pdf/2609.24236v1" rel="related" type="application/pdf" title="pdf"/>
+    <summary>Knowledge graphs are a core component of today's knowledge infrastructure, supporting reasoning and anchoring knowledge systems to verifiable facts. RDF stores and SPARQL engines fulfill this function, enabling a range of retrieval and inference tasks on structured knowledge. Coupling them with Language Models (LMs) extends RAG toward neurosymbolic reasoning, where structured queries gate or re-rank generative outputs. This line of reasoning requires that SPARQL evaluation natively support tensor operations on dense embeddings, enabling multimodal querying and learned similarity-based ranking to be expressed together with graph-structural constraints. This approach is feasible only if the engine can efficiently perform dense vector search. We present QLever-Unified Indexed Vector Embedding Retrieval (QUIVER), an extension to QLever that adds native support for dense vector retrieval within RDF knowledge graphs. It implements three optimizations: engine-level registration of tensor functions, vocabulary-time parsing of JSON-encoded vectors, and a virtual SERVICE that exposes a vector index inside the query. We propose two new benchmarks: an extension of Berlin Sparql Benchmark (BSBM) with text embeddings and an extension of DBpedia with image embeddings. Against the baselines, vocabulary-time parsing alone yields median speedups of up to 41.9x on BSBM and 20x on DBpedia for single-type ranking; adding an approximate nearest-neighbor index yields speedups of 355x on BSBM and 97.8x on DBpedia. The index further makes cross-modal vector joins on DBpedia feasible in seconds, whereas all non-indexed configurations time out.</summary>
+    <category term="cs.DB" scheme="http://arxiv.org/schemas/atom"/>
+    <published>2026-09-21T07:58:43Z</published>
+    <arxiv:comment>17 pages, 7 figures, 9 tables, under review</arxiv:comment>
+    <arxiv:primary_category term="cs.DB"/>
+    <author>
+      <name>Benedikt Kantz</name>
+    </author>
+    <author>
+      <name>Tobias Schreck</name>
+    </author>
+    <author>
+      <name>Gianmaria Silvello</name>
+    </author>
+  </entry>
+  <entry>
+    <id>http://arxiv.org/abs/2609.23742v1</id>
+    <title>Constrained Decoding Eliminates Structural Failures in Small LLMs but Reveals a Scale-Dependent Semantic Gap</title>
+    <updated>2026-09-20T16:44:57Z</updated>
+    <link href="https://arxiv.org/abs/2609.23742v1" rel="alternate" type="text/html"/>
+    <link href="https://arxiv.org/pdf/2609.23742v1" rel="related" type="application/pdf" title="pdf"/>
+    <summary>Small open-source large language models (LLMs) in the 0.6B-4B parameter range are increasingly deployed for structured output generation (JSON, function calling, data extraction), yet little is known about how constrained decoding (CD) interacts with model scale in this regime. We benchmark five models from three families across 14 structured-output tasks under three decoding conditions (native, Outlines, XGrammar). We introduce a two-axis evaluation that separates structural correctness (schema validity) from semantic correctness (content accuracy). We find that CD eliminates all structural failures across all models (schema validity: 78.6-92.9% to 100%), but content accuracy reveals a persistent semantic gap that is scale-dependent: type coercion failures are fully CD-rescuable, while instruction-semantic failures (e.g., multi-step function calling) remain CD-resistant. Schema conformance is necessary but not sufficient for semantic correctness; CD's reach ends exactly where schema conformance ends.</summary>
+    <category term="cs.CL" scheme="http://arxiv.org/schemas/atom"/>
+    <published>2026-09-20T16:44:57Z</published>
+    <arxiv:comment>6 pages, ACL format Code and task suite: https://github.com/CruiseDevice/small-llm-structured-benchmark (tag v1.0)</arxiv:comment>
+    <arxiv:primary_category term="cs.CL"/>
+    <author>
+      <name>Akash Chavan</name>
+    </author>
+  </entry>
+  <entry>
+    <id>http://arxiv.org/abs/2609.23490v1</id>
+    <title>BabelArena: A Large-Scale Multilingual Benchmark for LLM Agents</title>
+    <updated>2026-09-20T09:25:38Z</updated>
+    <link href="https://arxiv.org/abs/2609.23490v1" rel="alternate" type="text/html"/>
+    <link href="https://arxiv.org/pdf/2609.23490v1" rel="related" type="application/pdf" title="pdf"/>
+    <summary>Large language model (LLM) agents increasingly execute multi-step workflows through tool use and interaction with users and environments. However, current agent evaluations are largely English-centric, limiting our understanding of agent capabilities in multilingual settings. We introduce BabelFlow, a benchmark-general agentic workflow that adapts existing agent benchmarks to new languages by analyzing runtime dependencies, coordinating structure-preserving translation, and combining multi-layer verification with human review to preserve task and evaluation semantics. Using BabelFlow, we construct BabelArena, a task-aligned benchmark comprising 16,146 instances derived from 702 canonical tasks across four benchmark families, 13 domains, and 23 languages. Experiments with five frontier models show that no single model dominates across benchmark families and that cross-language disparities extend well beyond task success. Lower-resource languages exhibit distinct failure patterns, with larger shares of tool-use and control-flow errors rather than answer-quality errors alone, pointing to gaps in reliable task execution across the resource levels of these languages. On the same tasks, agents in low-resource languages also consume substantially more tokens than in English (up to roughly twice the input) without proportional increases in interaction length, and language consistency degrades further on tasks requiring structured output, where switches are directed overwhelmingly toward English. We believe BabelArena provides a foundation for advancing research on reliable and efficient multilingual agents.</summary>
+    <category term="cs.CL" scheme="http://arxiv.org/schemas/atom"/>
+    <published>2026-09-20T09:25:38Z</published>
+    <arxiv:comment>20 pages, 11 tables, and 7 figures</arxiv:comment>
+    <arxiv:primary_category term="cs.CL"/>
+    <author>
+      <name>Peng Kuang</name>
+    </author>
+    <author>
+      <name>Yuchun Fan</name>
+    </author>
+    <author>
+      <name>Jiangnan Li</name>
+    </author>
+    <author>
+      <name>Minghao Wu</name>
+    </author>
+    <author>
+      <name>Jialong Tang</name>
+    </author>
+    <author>
+      <name>Hao-Ran Wei</name>
+    </author>
+    <author>
+      <name>Weixuan Wang</name>
+    </author>
+    <author>
+      <name>Jianhong Tu</name>
+    </author>
+    <author>
+      <name>Baosong Yang</name>
+    </author>
+    <author>
+      <name>Tong Xiao</name>
+    </author>
+  </entry>
+  <entry>
+    <id>http://arxiv.org/abs/2609.19425v1</id>
+    <title>Closed-World Resolution Against Tool Hallucination in LLM Agents</title>
+    <updated>2026-09-16T21:02:31Z</updated>
+    <link href="https://arxiv.org/abs/2609.19425v1" rel="alternate" type="text/html"/>
+    <link href="https://arxiv.org/pdf/2609.19425v1" rel="related" type="application/pdf" title="pdf"/>
+    <summary>Tool-augmented large language model (LLM) agents fail in a way no tool-selection or tool-security method addresses: they call tools that do not exist and pass arguments no schema declares. Existing defenses either pick the right tool (selection) or constrain what an agent may do with real tools (gating), both of which presuppose the emitted call refers to a real tool at all. We show this is a structural blind spot: a hallucinated call is by construction not a decision any gate made, so no gate can reject it. This paper is primarily a measurement and benchmark study. We give a five-class taxonomy of tool hallucination (H1-H5) and, as a reference point, the Resolution Rung: a training-free, closed-world resolver (registry membership plus a signature check) whose interest is where it must sit, not what it computes. We prove hallucination defense must precede any causal gate, and characterize the one irreducible residue (borrowed arguments schema-indistinguishable from a valid call). Across ten hosted models under two invocation surfaces we measure 322 genuine hallucinations; fabricated-tool calls concentrate on the unconstrained raw-JSON surface (34 vs. 3), and model scale does not help (a 675B model matches a 7-8B one). We then extend to the Model Context Protocol, where merging several servers into one namespace creates hallucination surfaces a single registry cannot express (a second taxonomy, M1-M5); on the live MCP surface we measure 154 hallucinations, including from frontier models that were clean on the single-registry surface, because collisions and shadowing are structural to the merge. We release the versioned Hallucinated-Tools Benchmark (HTB) so any resolver is comparable across submissions.</summary>
+    <category term="cs.AI" scheme="http://arxiv.org/schemas/atom"/>
+    <category term="cs.CR" scheme="http://arxiv.org/schemas/atom"/>
+    <category term="cs.SE" scheme="http://arxiv.org/schemas/atom"/>
+    <published>2026-09-16T21:02:31Z</published>
+    <arxiv:primary_category term="cs.AI"/>
+    <author>
+      <name>Laxmipriya Ganesh Iyer</name>
+    </author>
+  </entry>
+  <entry>
+    <id>http://arxiv.org/abs/2609.18766v3</id>
+    <title>FRAUDSkill: Structured Frozen-Weight Skill Optimization for Audio Anti-Fraud Detection</title>
+    <updated>2026-09-23T06:50:06Z</updated>
+    <link href="https://arxiv.org/abs/2609.18766v3" rel="alternate" type="text/html"/>
+    <link href="https://arxiv.org/pdf/2609.18766v3" rel="related" type="application/pdf" title="pdf"/>
+    <summary>Large audio-language models have shown promise for anti-fraud detection by directly processing speech and reasoning over fraud-related evidence. Their deployment, however, requires predictions to follow a predefined label space and a structured decision protocol consisting of service-scenario identification, fraud detection, and conditional fraud-type classification. Existing fine-tuning and prompt-based approaches typically encode task knowledge, constraints, and decision rules into model parameters or manually maintained prompts, making them difficult to adapt as fraud patterns and labeling policies evolve. To this end, we propose FRAUDSkill, a structured frozen-weight adaptation framework that leaves the underlying audio-language model unchanged while optimizing an external layer of skill programs, route-specific policies, and decision rules. We further combine structured output control with validation-guided multi-path inference to ensure protocol-compliant predictions. On the TeleAntiFraud benchmark, FRAUDSkill achieves 73.50% Macro-F1, outperforming the shared frozen-model baseline by 31.96% while reducing invalid outputs to 1.94%. Extensive experiments demonstrate that external skill optimization provides an effective and adaptable solution for structured audio anti-fraud detection without modifying the underlying model. The source code is available at https://anonymous.4open.science/r/FRAUDSKILL-114514.</summary>
+    <category term="cs.SD" scheme="http://arxiv.org/schemas/atom"/>
+    <category term="cs.CL" scheme="http://arxiv.org/schemas/atom"/>
+    <published>2026-09-16T14:51:37Z</published>
+    <arxiv:comment>10 pages, 4 figures, including supplementary material</arxiv:comment>
+    <arxiv:primary_category term="cs.SD"/>
+    <author>
+      <name>Chengxian Hu</name>
+    </author>
+    <author>
+      <name>Zhiming Ma</name>
+    </author>
+    <author>
+      <name>Mingjun Pan</name>
+    </author>
+    <author>
+      <name>Yifan Wang</name>
+    </author>
+    <author>
+      <name>Shun Zhang</name>
+    </author>
+    <author>
+      <name>Qifan Wang</name>
+    </author>
+    <author>
+      <name>Zhilei Zhao</name>
+    </author>
+    <author>
+      <name>Yijin Zhou</name>
+    </author>
+    <author>
+      <name>Yuxi Zhao</name>
+    </author>
+    <author>
+      <name>Huiyuan Liu</name>
+    </author>
+    <author>
+      <name>Peidong Wang</name>
+    </author>
+    <author>
+      <name>Peng Chen</name>
+    </author>
+  </entry>
+  <entry>
+    <id>http://arxiv.org/abs/2609.31673v1</id>
+    <title>OneVoice: An Intermediate Representation for Agentic Speech Pipelines</title>
+    <updated>2026-09-16T02:41:39Z</updated>
+    <link href="https://arxiv.org/abs/2609.31673v1" rel="alternate" type="text/html"/>
+    <link href="https://arxiv.org/pdf/2609.31673v1" rel="related" type="application/pdf" title="pdf"/>
+    <summary>Agentic speech systems must exchange more than text, including speaker identity, timing, phonetic information, and behavioral annotations. Yet these signals are often produced in incompatible tool-specific formats, making agent-to-agent handoff fragile. We present OneVoice, a lightweight, JSON-native intermediate representation that provides a shared semantic structure for speech pipelines. OneVoice organizes heterogeneous speech evidence into validated session records with stable identifiers, layered transcripts, explicit timing relationships, and provenance information. We evaluate OneVoice in two complementary multi-agent workflows covering event aggregation and acoustic-phonetic temporal linking across three language models. Compared with implicit agent-defined handoffs, OneVoice substantially improves aggregation reliability and the preservation of temporal relationships, demonstrating the value of an explicit speech-specific representation for agent communication.</summary>
+    <category term="eess.AS" scheme="http://arxiv.org/schemas/atom"/>
+    <category term="cs.MA" scheme="http://arxiv.org/schemas/atom"/>
+    <category term="cs.MM" scheme="http://arxiv.org/schemas/atom"/>
+    <category term="cs.SD" scheme="http://arxiv.org/schemas/atom"/>
+    <published>2026-09-16T02:41:39Z</published>
+    <arxiv:primary_category term="eess.AS"/>
+    <author>
+      <name>Vipul Charugundla</name>
+    </author>
+    <author>
+      <name>Dancheng Liu</name>
+    </author>
+    <author>
+      <name>Jinjun Xiong</name>
+    </author>
+  </entry>
+  <entry>
+    <id>http://arxiv.org/abs/2609.13918v1</id>
+    <title>LoRA Fine-Tuned Models for Control Systems Course Q\&amp;A: A Multidimensional Evaluation of Model Scale and Rank Effects</title>
+    <updated>2026-09-12T13:04:04Z</updated>
+    <link href="https://arxiv.org/abs/2609.13918v1" rel="alternate" type="text/html"/>
+    <link href="https://arxiv.org/pdf/2609.13918v1" rel="related" type="application/pdf" title="pdf"/>
+    <summary>Large language models (LLMs) are increasingly used in specialized university courses, but control-systems questions require coordinated terminology, notation, derivations, and stepwise explanations. Direct general-purpose responses may be inconsistently structured and hard to verify. Using exercises and reference solutions from a Linear Control Systems course, we built a supervised fine-tuning dataset of 360 system-user-assistant conversations. We applied LoRA to Qwen2.5-3B-Instruct and Qwen2.5-7B-Instruct. With identical data splits, inference settings, and evaluation protocols, we compared base and fine-tuned models and tested LoRA ranks r=4, 8, and 16. Evaluation used ROUGE, BERTScore, and structured-output features to measure reference-answer similarity and stability of the Solution-Method-Teaching Points format. LoRA improved both similarity and structured-output stability at both sizes. On the current test set, 7B-r16 achieved the highest ROUGE-L (0.4093) and BERTScore-F1 (0.8643), while r=8 offered a better balance between performance and parameter efficiency. Bootstrap resampling showed ROUGE-L gains of 0.0764 [0.0613, 0.0915] for 3B-r16 and 0.0874 [0.0687, 0.1042] for 7B-r16; both intervals exceeded zero, indicating stable textual-similarity improvements on the current test set. These results suggest LoRA can align open-source instruction-tuned models more closely with the language and pedagogical organization of course reference answers. However, the metrics mainly capture textual similarity and formatting consistency, not domain-specific reasoning or mathematical correctness, which require expert assessment and task-specific rubrics.</summary>
+    <category term="cs.AI" scheme="http://arxiv.org/schemas/atom"/>
+    <category term="eess.SY" scheme="http://arxiv.org/schemas/atom"/>
+    <published>2026-09-12T13:04:04Z</published>
+    <arxiv:primary_category term="cs.AI"/>
+    <author>
+      <name>Shaowen Lu</name>
+    </author>
+    <author>
+      <name>Chengxu Liu</name>
+    </author>
+    <author>
+      <name>Ping Zhou</name>
+    </author>
+    <author>
+      <name>Tao Yang</name>
+    </author>
+  </entry>
+  <entry>
+    <id>http://arxiv.org/abs/2609.11231v2</id>
+    <title>A Voice-Interactive Multi-Agent System for Smart Operating Rooms: Architecture Design and Key Technologies</title>
+    <updated>2026-09-14T03:32:00Z</updated>
+    <link href="https://arxiv.org/abs/2609.11231v2" rel="alternate" type="text/html"/>
+    <link href="https://arxiv.org/pdf/2609.11231v2" rel="related" type="application/pdf" title="pdf"/>
+    <summary>This paper presents SurgicalRoomAgent, a voice-interactive multi-agent system for smart operating rooms based on large language models (LLMs). The system achieves natural language understanding, device control, intraoperative recording, and surgical report generation through a layered architecture comprising a voice interaction pipeline (wake, ASR, turn detection, agent reasoning, TTS) and an agent core (skill registry, task planner, device manager). Three key technologies are investigated: (1) KV Cache prefix warming for low-latency inference, reducing recomputation overhead from approximately 500 ms to tens of milliseconds via byte-level Longest Common Prefix reuse; (2) streaming partial JSON parsing with early parallel task execution, reducing end-to-end latency by approximately 30%; and (3) progressive skill prompt disclosure, which dynamically filters system prompts based on user role, connected devices, and surgical phase to maximize information density within limited context windows. The system is implemented using the Qwen3-27B model with llama.cpp/sglang inference engines. Experimental analysis demonstrates effective operation within a 16,384-token context limit and multi-device parallel control response times meeting OR real-time requirements.</summary>
+    <category term="cs.AI" scheme="http://arxiv.org/schemas/atom"/>
+    <category term="cs.CL" scheme="http://arxiv.org/schemas/atom"/>
+    <category term="cs.HC" scheme="http://arxiv.org/schemas/atom"/>
+    <published>2026-09-10T08:29:27Z</published>
+    <arxiv:comment>The current technical approach is immature and may involve information security concerns. We hereby request the withdrawal of the manuscript</arxiv:comment>
+    <arxiv:primary_category term="cs.AI"/>
+    <author>
+      <name>Tianxiang Zhou</name>
+    </author>
+  </entry>
+  <entry>
+    <id>http://arxiv.org/abs/2609.11141v1</id>
+    <title>Can LLMs Normalize Databases? A Benchmark and Multi-Agent Framework for Schema Normalization</title>
+    <updated>2026-09-10T06:34:35Z</updated>
+    <link href="https://arxiv.org/abs/2609.11141v1" rel="alternate" type="text/html"/>
+    <link href="https://arxiv.org/pdf/2609.11141v1" rel="related" type="application/pdf" title="pdf"/>
+    <summary>Large Language Models (LLMs) are increasingly used to generate structured outputs, but their reliability remains unclear when those outputs must satisfy database-level constraints. We study this issue through database normalization, involving reasoning about functional dependencies, lossless join decompositions, and inter-table constraints. We introduce a Database Normalization Benchmark (DNBENCH), comprising 3,275 samples for evaluating LLM-driven database normalization from 1NF to BCNF. DNBENCH uses a three-axis protocol to measure semantic equivalence, structural accuracy, and logical validity. Across Single, Complex, and Real World levels, DNBENCH uncovers recurring failures in dependency inference, schema decomposition, and inter-table constraint reconstruction. We further propose Multi-Agent Reasoning for Schemas (MARS), which separates evidence extraction, violation diagnosis, and decomposition planning from schema generation and verification. MARS improves the DNB-SCORE by 82.0% over the single-prompt baseline. All artifacts will be released upon acceptance.</summary>
+    <category term="cs.CL" scheme="http://arxiv.org/schemas/atom"/>
+    <published>2026-09-10T06:34:35Z</published>
+    <arxiv:primary_category term="cs.CL"/>
+    <author>
+      <name>Dong-Jae Koh</name>
+    </author>
+    <author>
+      <name>Huisu Kim</name>
+    </author>
+    <author>
+      <name>SeongHwan Yoon</name>
+    </author>
+    <author>
+      <name>Lasse M. Jantsch</name>
+    </author>
+    <author>
+      <name>Chun-Hee Lee</name>
+    </author>
+    <author>
+      <name>Seonghyeon Lee</name>
+    </author>
+    <author>
+      <name>Young-Kyoon Suh</name>
+    </author>
+  </entry>
+  <entry>
+    <id>http://arxiv.org/abs/2609.07370v1</id>
+    <title>Beyond Fluent Generation: A CPU Reliability Benchmark for MCP-Style Tool Calling in Sub-2B Small Language Models for Edge Deployment</title>
+    <updated>2026-09-07T11:44:38Z</updated>
+    <link href="https://arxiv.org/abs/2609.07370v1" rel="alternate" type="text/html"/>
+    <link href="https://arxiv.org/pdf/2609.07370v1" rel="related" type="application/pdf" title="pdf"/>
+    <summary>Resource constrained single-board computers including Raspberry Pi, NVIDIA Jetson Nano, Arduino UNO Q, Orange Pi, and LattePanda motivate on-device small language model (SLM) agents that reduce cloud dependence, improve data locality, and tolerate intermittent connectivity. Model Context Protocol (MCP)-style tool invocation demands more than fluent generation: an agent must emit machine-readable JSON, select the correct tool, supply all required arguments, and avoid unintended actions. We establish a platform-agnostic CPU baseline by evaluating five open-weight models below two billion parameters Phi-1.5, Pythia-1.4B, TinyLlama-1.1B-Chat, Qwen2.5-0.5B, and Qwen2.5-1.5B on 100 prompts spanning weather retrieval, web search, calculation, email composition, and task creation, under greedy decoding and nucleus sampling. A recovery parser strips Markdown fences, extracts brace-delimited substrings, and scores parseability, tool-name correctness, argument completeness, and value agreement. Under this criterion, Qwen2.5-1.5B achieves 75% (greedy) and 79% (sampling); Qwen2.5-0.5B achieves 72% (greedy) but drops to 32% under sampling. Phi-1.5 scores 0%; Pythia and TinyLlama reach at most 7%. A strict post-hoc audit finds only 5 of 1,000 raw responses directly parseable as JSON, exposing near-total dependence on output recovery. A CPU resource probe shows Qwen2.5-1.5B requires 7,960 MiB and 30.782 s mean latency; Qwen2.5-0.5B uses 3,637 MiB and 10.627 s, revealing a reliability-resource trade-off for edge deployment. These results do not cover the named boards directly or a full MCP implementation. Safe deployment requires schema validation, constrained generation, least-privilege execution, and human escalation for consequential actions.</summary>
+    <category term="cs.CL" scheme="http://arxiv.org/schemas/atom"/>
+    <published>2026-09-07T11:44:38Z</published>
+    <arxiv:primary_category term="cs.CL"/>
+    <author>
+      <name>Abrar Shahriar Qurat-Ul-Ain Mastoi</name>
+    </author>
+  </entry>
+  <entry>
+    <id>http://arxiv.org/abs/2609.06993v2</id>
+    <title>LatentMD: Benchmarking Markdown Boundary Failures in LLM-Generated Text</title>
+    <updated>2026-09-11T15:23:03Z</updated>
+    <link href="https://arxiv.org/abs/2609.06993v2" rel="alternate" type="text/html"/>
+    <link href="https://arxiv.org/pdf/2609.06993v2" rel="related" type="application/pdf" title="pdf"/>
+    <summary>Large language models (LLMs) increasingly generate Markdown that is consumed by renderers, agents, code extractors, and structured downstream pipelines. Yet existing evaluations often conflate content quality with format adherence, leaving Markdown boundary failures under-measured. We introduce LatentMD, a benchmark and evaluation protocol for diagnosing CommonMark-level fence-boundary failures in LLM-generated Markdown. LatentMD separates content correctness from boundary correctness, enabling detection of outputs that are content-correct but boundary-broken. The benchmark contains 4,179 prompts and a CLI for scoring arbitrary model outputs. Across 9 LLMs and roughly 37,600 generations, we find that Markdown boundary failures are widespread: 38.0% of valid main-grid outputs are content-correct but boundary-broken, with substantial boundary breakage under unspecified prompts and in a small human-authored validation set. Ablations show that failures are driven primarily by same-family symmetric-delimiter collisions rather than nesting alone, are only partially mitigated by prompt hints, and generalize to Python triple-quote docstrings while JSON remains robust as an asymmetric-delimiter control. LatentMD provides a reproducible diagnostic target for parser-sensitive LLM evaluation.</summary>
+    <category term="cs.SE" scheme="http://arxiv.org/schemas/atom"/>
+    <category term="cs.CL" scheme="http://arxiv.org/schemas/atom"/>
+    <category term="cs.LG" scheme="http://arxiv.org/schemas/atom"/>
+    <published>2026-09-07T03:35:26Z</published>
+    <arxiv:comment>v2: Appendix L adds five additional analyses (realistic-condition decomposition, downstream harm, newer models, expanded natural-prompt set, effective diversity)</arxiv:comment>
+    <arxiv:primary_category term="cs.SE"/>
+    <author>
+      <name>Sungjune Lee</name>
+    </author>
+    <author>
+      <name>Myungjoo Kang</name>
+    </author>
+  </entry>
+  <entry>
+    <id>http://arxiv.org/abs/2609.06823v1</id>
+    <title>Generalist Open-World Temporal Perception</title>
+    <updated>2026-09-06T20:38:08Z</updated>
+    <link href="https://arxiv.org/abs/2609.06823v1" rel="alternate" type="text/html"/>
+    <link href="https://arxiv.org/pdf/2609.06823v1" rel="related" type="application/pdf" title="pdf"/>
+    <summary>The next generation of artificial intelligence systems will likely be natively temporal and multimodal in both inputs and outputs: able to converse, perceive, predict, reason, and synthesize through a shared world representation. Realizing this requires a temporal perceptual substrate integrating sensory streams, language, and structured outputs within a multimodal world model. We seek a generalist open-world perceptual system that represents biological forms, natural physical structures, and artifacts, and their interactions, as a coherent, temporally persistent process. The model should infer geometry, articulation, semantics, interaction structure, and uncertainty from raw multimodal streams; maintain identity through occlusion and viewpoint change; generalize across species, forms, mechanisms, and materials; and abstain or expand its ontology when encountering the unknown. The objective is a structured world state supporting understanding, prediction, counterfactual reasoning, and controllable synthesis. Recent work suggests that some cross-modal and reasoning-like capabilities can emerge from large-scale generative video pretraining, reminiscent of language-model scaling. Yet these capabilities are often accessed through language probes or expressed through photorealistic video, leaving explicit semantic, geometric, or temporal structure largely unexposed. This paper articulates an alternative and complementary paradigm: perception and synthesis as distinct conditionings within a shared Generalist Open-World Temporal Perception Architecture (GOWTPA). Recognition, structured prediction, and simulation arise as different conditionings of the same generative substrate, while reasoning and embodiment-specific policies build upon the resulting world state. This positions generalist temporal perception as a potential foundation layer for broader multimodal intelligence and physical AI.</summary>
+    <category term="cs.CV" scheme="http://arxiv.org/schemas/atom"/>
+    <published>2026-09-06T20:38:08Z</published>
+    <arxiv:comment>42 pages, 4 figures</arxiv:comment>
+    <arxiv:primary_category term="cs.CV"/>
+    <author>
+      <name>Cristian Sminchisescu</name>
+    </author>
+  </entry>
+  <entry>
+    <id>http://arxiv.org/abs/2609.06647v1</id>
+    <title>SerenAI: State-transition system inspired by text-based world AI models</title>
+    <updated>2026-09-06T14:57:18Z</updated>
+    <link href="https://arxiv.org/abs/2609.06647v1" rel="alternate" type="text/html"/>
+    <link href="https://arxiv.org/pdf/2609.06647v1" rel="related" type="application/pdf" title="pdf"/>
+    <summary>Although professional workflows leverage large language models widely, the interpretation for auditing unconstrained free-text generation is usually intractable if such generation demands legal, operational or financial workflow. We hereby demonstrate a text based system called SerenAI - inspired by world-models, it is a state transition system that outputs verifiable predictions rather than merely text: Provided with a description of the environment, state, and actions, the generated output contains 4 items: causal deltas that causally effect the given state, a next state that can logically follow from the given state and action, a validity reward, and a termination signal. For the released proto-model, we employ 2 steps of adaptation training, namely parameter efficient fine-tuning followed by verifier based RL over 50,000 exampled cause and effects in 12 environments spanning 10 reasoning domains. Compared to an initial internal evaluation of an 8B open-weight baseline, SerenAI increased JSON validity from 85.0% to 93.2%, schema validity from 55.0% to 84.0%, exact structured-output match from 0.0% to 41.5%, causal-delta exact match from 0.0% to 41.5%, resulting-state exact match from 0.0% to 42.0%, reward exact match from 1.0% to 80.5%, and termination exact match from 38.0% to 81.5%. These support the narrower claim that verifier-compatible adaptation can improve structured transition prediction. They do not yet establish legal-grade reliability. Accordingly, the paper also specifies a validation protocol for evidence-grounded legal workflows, calibration, human oversight, and sovereign on-premise deployment.</summary>
+    <category term="cs.AI" scheme="http://arxiv.org/schemas/atom"/>
+    <category term="cs.CL" scheme="http://arxiv.org/schemas/atom"/>
+    <published>2026-09-06T14:57:18Z</published>
+    <arxiv:comment>8 pages, 4 figures, 5 tables</arxiv:comment>
+    <arxiv:primary_category term="cs.AI"/>
+    <author>
+      <name>Elvin Babayev</name>
+    </author>
+    <author>
+      <name>Artem Sinitsa</name>
+    </author>
+    <author>
+      <name>Arash Hajisharifi</name>
+    </author>
+    <author>
+      <name>Kabir Bakhshaei</name>
+    </author>
+  </entry>
+  <entry>
+    <id>http://arxiv.org/abs/2609.06380v1</id>
+    <title>An Integrated Video-AI Platform for Action-Level Microanastomosis Training and Performance Feedback</title>
+    <updated>2026-09-06T04:36:53Z</updated>
+    <link href="https://arxiv.org/abs/2609.06380v1" rel="alternate" type="text/html"/>
+    <link href="https://arxiv.org/pdf/2609.06380v1" rel="related" type="application/pdf" title="pdf"/>
+    <summary>Developing microanastomosis skill requires repeated practice with timely, action-specific feedback, yet expert review of lengthy microscope videos does not scale to frequent or distributed training. We present an integrated video-AI platform that turns a complete simulated procedure into inspectable, interactive feedback through three connected modules. First, a proposed transformer segments the video into six surgical actions. Second, object detection and tracking localize instrument tips within each action; the resulting kinematic features and action statistics drive supervised classification of five NOMAT-aligned performance dimensions. Third, a grounded large language model (LLM) uses these structured outputs to answer user questions about the current scene, actions, motion, and predicted performance through a unified interface. In a two-site study, 17 participants completed 72 procedures comprising 576 suture placements. The action-segmentation module achieved 87.66\% accuracy and 82.86\% F1, increasing to 93.62\% and 88.32\% after workflow-aware refinement. The five performance classifiers achieved 76.0\% mean accuracy, with Cohen's $κ$ from 0.63 to 0.93. Although the language interface and educational benefit require prospective evaluation, these results establish the technical basis for an expert-supervised platform that can shorten review, expose the evidence behind performance estimates, and support scalable formative microsurgical training.</summary>
+    <category term="cs.CV" scheme="http://arxiv.org/schemas/atom"/>
+    <published>2026-09-06T04:36:53Z</published>
+    <arxiv:primary_category term="cs.CV"/>
+    <author>
+      <name>Yan Meng</name>
+    </author>
+    <author>
+      <name>Daniel A. Donoho</name>
+    </author>
+  </entry>
+  <entry>
+    <id>http://arxiv.org/abs/2609.04021v1</id>
+    <title>FLY-EVAL++: An Evidence-Driven Evaluation Protocol for Safety-Constrained Flight Prediction with Large Language Models</title>
+    <updated>2026-09-03T16:00:02Z</updated>
+    <link href="https://arxiv.org/abs/2609.04021v1" rel="alternate" type="text/html"/>
+    <link href="https://arxiv.org/pdf/2609.04021v1" rel="related" type="application/pdf" title="pdf"/>
+    <summary>Evaluating large language models (LLMs) in safety-critical, physics-governed environments requires more than accuracy-based metrics, because predictions that are numerically close to the ground truth can still violate operational constraints, combine fields in physically inconsistent ways, or fail to produce usable structured outputs. Existing evaluation protocols do not measure these failure modes reliably. We propose FLY-EVAL++, an evidence-driven evaluation protocol that combines deterministic verification of protocol compliance, physical feasibility, and safety constraints with fixed rubric-guided aggregation into interpretable multi-dimensional scores. We instantiate FLY-EVAL++ for Flight Trajectory and Attitude Prediction (FTAP) by extending the PilotBench setting with history-conditioned and multi-step prediction tasks. Across 66 LLMs, safety compliance is the most discriminative dimension of model behavior: models with comparable predictive performance differ by more than 28 points in safety score, and we observe recurrent failures including safety violations under physically plausible predictions and instability in multi-step rollouts. These results show that evaluation in safety-critical domains should measure constraint satisfaction and structured validity explicitly rather than rely on accuracy-centric reporting alone.</summary>
+    <category term="cs.AI" scheme="http://arxiv.org/schemas/atom"/>
+    <category term="cs.LG" scheme="http://arxiv.org/schemas/atom"/>
+    <published>2026-09-03T16:00:02Z</published>
+    <arxiv:comment>Published as a conference paper at COLM 2026</arxiv:comment>
+    <arxiv:primary_category term="cs.AI"/>
+    <arxiv:journal_ref>Proceedings of the Conference on Language Modeling (COLM), 2026</arxiv:journal_ref>
+    <author>
+      <name>Yalun Wu</name>
+    </author>
+    <author>
+      <name>Junfeng Fang</name>
+    </author>
+    <author>
+      <name>Jiawei Wang</name>
+    </author>
+    <author>
+      <name>Haotian Liu</name>
+    </author>
+    <author>
+      <name>Qijun Yang</name>
+    </author>
+    <author>
+      <name>Minghan Yang</name>
+    </author>
+    <author>
+      <name>Hongcheng Guo</name>
+    </author>
+    <author>
+      <name>Zhoujun Li</name>
+    </author>
+    <author>
+      <name>Boyang Wang</name>
+    </author>
+  </entry>
+  <entry>
+    <id>http://arxiv.org/abs/2609.03156v1</id>
+    <title>Compound Prompt Constraints in LLM Code Generation: A Factorial Study of Format, Persona, and Urgency</title>
+    <updated>2026-09-02T20:40:54Z</updated>
+    <link href="https://arxiv.org/abs/2609.03156v1" rel="alternate" type="text/html"/>
+    <link href="https://arxiv.org/pdf/2609.03156v1" rel="related" type="application/pdf" title="pdf"/>
+    <summary>Large language models (LLMs) are increasingly used in software engineering pipelines for code generation, where production prompts often combine multiple constraints. This paper presents a full-factorial empirical study of how output formatting, persona assignment, and urgency framing jointly affect LLM code-generation reliability. We evaluate all 27 combinations in a controlled 3x3x3 design and decompose each compound condition into an additive prediction and a residual interaction term that captures super-additive degradation. The study uses all 164 HumanEval+ problems across five OpenAI models from the GPT-4o family, GPT-4.1 family, and o3-mini, yielding 22,140 greedy-decoding evaluations. A format-aware extraction pipeline separates formatting failures from reasoning failures, and significance is assessed with McNemar's test, odds ratios, and 95% confidence intervals.
+  Results show that compound constraints can produce architecture-dependent degradation not predictable from single-factor experiments. The GPT-4o family exhibits consistent super-additive effects, with pass@1 reductions 3-12 percentage points beyond additive predictions; the largest interaction is -12.2 pp on GPT-4o-mini for JSON + expert persona + moderate urgency. JSON combinations generally produce larger interactions than XML. In contrast, the GPT-4.1 family is largely resistant, while o3-mini shows a qualitatively different pattern in which structured output constraints can improve performance. These findings show that vulnerability is architecture-dependent rather than size-dependent, that individually neutral or beneficial constraints can combine to cause substantial degradation, and that compound-prompt testing should be standard in reliability assessment for LLM-assisted engineering pipelines.</summary>
+    <category term="cs.SE" scheme="http://arxiv.org/schemas/atom"/>
+    <published>2026-09-02T20:40:54Z</published>
+    <arxiv:primary_category term="cs.SE"/>
+    <author>
+      <name>Shrenik Jadhav</name>
+    </author>
+    <author>
+      <name>Nickalsa LaPlaca</name>
+    </author>
+    <author>
+      <name>Caleb Stone</name>
+    </author>
+    <author>
+      <name>Ashok Raja</name>
+    </author>
+    <author>
+      <name>Omar Ochoa</name>
+    </author>
+    <author>
+      <name>Vidhyashree Nagaraju</name>
+    </author>
+  </entry>
+  <entry>
+    <id>http://arxiv.org/abs/2609.01807v2</id>
+    <title>SPD: Single Pass Decoding for Generative Reranking</title>
+    <updated>2026-09-04T17:18:00Z</updated>
+    <link href="https://arxiv.org/abs/2609.01807v2" rel="alternate" type="text/html"/>
+    <link href="https://arxiv.org/pdf/2609.01807v2" rel="related" type="application/pdf" title="pdf"/>
+    <summary>Large language models (LLMs) achieve state-of-the-art generative ranking quality, but the ranking they produce must be decoded, and autoregressive decoding spends one sequential forward pass per emitted token. We observe that the only tokens a ranker must emit are the $N$ ordinal values naming the items in ranked order, and that this narrow, permutation-structured output format admits decoding strategies which are much more efficient than left-to-right generation. We introduce SPD (Single Forward Pass), a format-specialized decoding strategy that decodes all $N$ ordinals in $O(1)$ forward passes. SPD reads an $N \times K$ item-position score matrix off the LLM's prefill hidden states with a lightweight self-attention head, then decodes the ordinals as the optimal bipartite assignment of that matrix via the Hungarian algorithm, yielding a valid permutation by construction rather than by repair. Through a systematic study of training signals and backbone adaptation, we show that LoRA-based fine-tuning combined with auto-regressive LLM ranking distillation reaches 28 ms end-to-end inference, a speed-up of 64x while maintaining ranking quality on par with the teacher. We provide a complete ablation decomposing the contributions of architecture, training signal, and backbone adaptation. Our framework connects generative ranking to combinatorial optimization, opening a path toward other $O(1)$-decode mechanisms for real-time ranking.</summary>
+    <category term="cs.LG" scheme="http://arxiv.org/schemas/atom"/>
+    <category term="cs.AI" scheme="http://arxiv.org/schemas/atom"/>
+    <category term="cs.IR" scheme="http://arxiv.org/schemas/atom"/>
+    <published>2026-09-01T19:30:04Z</published>
+    <arxiv:comment>10 pages</arxiv:comment>
+    <arxiv:primary_category term="cs.LG"/>
+    <author>
+      <name>Emil Laftchiev</name>
+    </author>
+    <author>
+      <name>Prachi Agrawal</name>
+    </author>
+    <author>
+      <name>Moe Kayali</name>
+    </author>
+    <author>
+      <name>Bixing Yan</name>
+    </author>
+    <author>
+      <name>Qi Xu</name>
+    </author>
+    <author>
+      <name>Zijie Lei</name>
+    </author>
+    <author>
+      <name>Chen Qiu</name>
+    </author>
+    <author>
+      <name>Zhi Hua</name>
+    </author>
+    <author>
+      <name>Ke Li</name>
+    </author>
+    <author>
+      <name>Luke Simon</name>
+    </author>
+  </entry>
+  <entry>
+    <id>http://arxiv.org/abs/2608.30510v2</id>
+    <title>Lot Machine: Multimodal Lot Extraction from Auction Catalogs</title>
+    <updated>2026-09-01T20:07:28Z</updated>
+    <link href="https://arxiv.org/abs/2608.30510v2" rel="alternate" type="text/html"/>
+    <link href="https://arxiv.org/pdf/2608.30510v2" rel="related" type="application/pdf" title="pdf"/>
+    <summary>For provenance research and art market studies, auction catalogs are an essential resource to trace specific objects over time and space. While historical auction catalogs follow established domain conventions, their internal formatting remains highly variable, and their large-scale analysis is currently restricted by the lack of machine-readable representations of the auction lots. We propose a pipeline to automatically extract structured lot-level metadata from German Sales, a large database of historical auction and sales catalogs from the 19th and 20th centuries. Using a manually annotated test set of representative catalog pages, we evaluate Vision-Language Models (VLMs) under varying prompt strategies and constrained decoding frameworks. To reflect the practical constraints faced by cultural heritage institutions, including budget, compute resources, and data privacy requirements, we benchmark the methods across different deployment modes ranging from commercial providers to locally hosted, quantized models. We find that commercial endpoints establish the performance ceiling, while institutional gateways offer a viable, privacy-preserving alternative. Local deployments remain feasible, but strictly require enforcing the output structure during generation to guarantee a valid JSON format. While varying degrees of human-in-the-loop correction are still necessary, this work demonstrates that a VLM-based pipeline can successfully unlock historical auction catalogs for large-scale automated analysis.</summary>
+    <category term="cs.CV" scheme="http://arxiv.org/schemas/atom"/>
+    <category term="cs.AI" scheme="http://arxiv.org/schemas/atom"/>
+    <category term="cs.CL" scheme="http://arxiv.org/schemas/atom"/>
+    <category term="cs.DL" scheme="http://arxiv.org/schemas/atom"/>
+    <published>2026-08-31T09:44:15Z</published>
+    <arxiv:comment>Accepted at the VISART Workshop (Computer Vision for Art Analysis), ECCV 2026. 19 pages, 6 figures, 5 tables. Supplementary material included as an appendix. Code, benchmark data, and prompt templates: https://github.com/mathiaszinnen/auction-lot-extraction</arxiv:comment>
+    <arxiv:primary_category term="cs.CV"/>
+    <author>
+      <name>Mathias Zinnen</name>
+    </author>
+    <author>
+      <name>Alisha Mund</name>
+    </author>
+    <author>
+      <name>Sabine Lang</name>
+    </author>
+    <author>
+      <name>Lukas Hüttner</name>
+    </author>
+    <author>
+      <name>Thomas Gorges</name>
+    </author>
+    <author>
+      <name>Vincent Christlein</name>
+    </author>
+  </entry>
+  <entry>
+    <id>http://arxiv.org/abs/2608.30250v1</id>
+    <title>Generating Workflow DAGs from Natural Language with Non-Reasoning LLMs</title>
+    <updated>2026-08-31T05:01:29Z</updated>
+    <link href="https://arxiv.org/abs/2608.30250v1" rel="alternate" type="text/html"/>
+    <link href="https://arxiv.org/pdf/2608.30250v1" rel="related" type="application/pdf" title="pdf"/>
+    <summary>This paper addresses the problem of translating natural-language routing rules written by business administrators into executable workflow graphs for enterprise contact centers. Each target is a directed acyclic graph (DAG) of conditional actions with parallel branches, hit-first fallback chains, and per-branch Boolean predicates, encoded in the JSON dialect of a commercial routing platform. We show that neuro-symbolic decomposition enables lower-cost, non-reasoning large language models to generate complex workflow DAGs at production-relevant quality without expensive extended-reasoning models. Our central diagnostic is an emission-density bottleneck: on a 635-rule benchmark of manufactured synthetic data, models select the correct graph nodes with high accuracy but increasingly misconfigure attributes and Boolean grouping as the number of interdependent nodes emitted in one pass grows. We therefore move combinatorial graph construction from the model into a deterministic compiler driven by a compact intermediate representation, with a learned registry-selection front end that focuses generation on relevant vocabulary. Across four models, the full system reaches approximately 89% LLM-judge validity, approximately 90% exact-match condition accuracy, and 99-100% valid JSON while using roughly half the per-rule prompt tokens of a monolithic prompt. On GPT-5.3-chat, the method improves judge validity by 24 percentage points and achieves statistical equivalence to a reasoning model's out-of-the-box quality, although an approximately 8-point frontier gap remains. We also present a deployment path and transferable lessons for structured-generation applications.</summary>
+    <category term="cs.AI" scheme="http://arxiv.org/schemas/atom"/>
+    <published>2026-08-31T05:01:29Z</published>
+    <arxiv:primary_category term="cs.AI"/>
+    <author>
+      <name>Anand Iyer</name>
+    </author>
+    <author>
+      <name>Bhanu Khetharpal</name>
+    </author>
+    <author>
+      <name>Srinivas Upadhya</name>
+    </author>
+    <author>
+      <name>Ramkumar Rajagopal</name>
+    </author>
+  </entry>
+</feed>

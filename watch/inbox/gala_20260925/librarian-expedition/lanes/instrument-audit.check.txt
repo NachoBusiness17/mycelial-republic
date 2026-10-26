@@ -1,0 +1,263 @@
+INSTRUMENT-AUDIT LANE CHECK BUNDLE - 2026-10-01 - gala librarian-expedition division B
+All commands run with .venv/Scripts/python.exe on repo root C:/Users/foste/Documents/projects/local_sovereign_agent
+
+########## 1. python -m mag.librarian (full run, stdout + exit) ##########
+LIBRARIAN v1 -> watch\LIBRARIAN_REPORT.md
+  docs scanned:     5608
+  map rows:         299  (tier-3: 7)
+  PULLED+HASHED:    31
+  PULLED:           11
+  RETRIEVAL-PLAN:   220
+  UNREGISTERED:     1512  (map behind the desk)
+  DUST:             12  (rows never consulted)
+  NO-STATUS:        9
+  ZERO-Map-FIELDS:  formal methods
+  ARCHIVE:          4 primary sources retained
+EXIT=1
+
+########## 2. holdings_audit.audit() via direct driver (main() NOT called: OUT_MD hardcoded to dated 20260930 receipt, mag/holdings_audit.py:63) ##########
+{
+ "ts": "2026-10-01T23:11:43.720568+00:00",
+ "ledger_rows_scanned": 321,
+ "landed_claims": 201,
+ "direction_1_claims_to_disk": {
+  "ok": 201,
+  "missing": 0,
+  "mismatch": 0,
+  "verified_bytes": 752370614
+ },
+ "direction_2_disk_to_claims": {
+  "shelf_files": 222,
+  "shelf_bytes": 772716990,
+  "orphans_not_claimed": 23,
+  "orphans_with_no_receipt": 0,
+  "duplicate_groups": 0
+ },
+ "content_checks": {
+  "unreadable": 0,
+  "items": []
+ },
+ "findings": [],
+ "clean": true,
+ "_note": "audit() called directly, NOT main(): OUT_MD is hardcoded to the dated 20260930 receipt (mag/holdings_audit.py:63) and running main() would clobber it"
+}
+elapsed: 6.3s
+
+########## 3. python -m mag.librarian_catalog --verify / --status / --once ##########
+=== mag.librarian_catalog --verify ===
+{
+ "ok": false,
+ "manifest_rows": 206,
+ "checked": 205,
+ "missing": 0,
+ "drifted": 4
+}
+EXIT=0
+
+=== mag.librarian_catalog --status (before) ===
+{
+ "runs": 12,
+ "last": {
+  "ts": "2026-10-01T13:15:15.566953+00:00",
+  "canon_verify": {
+   "ok": false,
+   "manifest_rows": 206,
+   "checked": 205,
+   "missing": 0,
+   "drifted": 4
+  },
+  "curated_shelves": 11,
+  "total_files_curated": 89464,
+  "total_bytes_curated": 14925426760
+ },
+ "catalog_md": true
+}
+
+=== mag.librarian_catalog --once ===
+{
+ "ts": "2026-10-01T23:13:35.487916+00:00",
+ "canon_verify": {
+  "ok": false,
+  "manifest_rows": 206,
+  "checked": 205,
+  "missing": 0,
+  "drifted": 4
+ },
+ "curated_shelves": 11,
+ "total_files_curated": 89831,
+ "total_bytes_curated": 14930010292
+}
+EXIT=0
+
+########## 4. defect-aware matcher + temp-dir repros (instrument_matcher_repros.py) ##########
+{
+ "PART_A_matcher": {
+  "receipts_on_disk": 257,
+  "receipt_state_sees": 28,
+  "receipt_state_blind": 229,
+  "blind_recovered_by_semantic_title": 38,
+  "newest_tranche_matrix": [
+   {
+    "receipt": "persona_priorart_2310.10158.md",
+    "arxiv_id_in_stem": false,
+    "receipt_state_sees": false,
+    "arxiv_id_in_receipt_text": true,
+    "in_UNREGISTERED_report": true,
+    "ledger_claim": "PERSONA_PRIORART_LANDING.json",
+    "on_disk": true,
+    "sha_matches_ledger": true,
+    "pdf_magic_ok": true,
+    "in_fts_catalog": false,
+    "in_librarian_catalog_shelves": false
+   },
+   {
+    "receipt": "persona_priorart_2405.07248.md",
+    "arxiv_id_in_stem": false,
+    "receipt_state_sees": false,
+    "arxiv_id_in_receipt_text": true,
+    "in_UNREGISTERED_report": true,
+    "ledger_claim": "PERSONA_PRIORART_LANDING.json",
+    "on_disk": true,
+    "sha_matches_ledger": true,
+    "pdf_magic_ok": true,
+    "in_fts_catalog": false,
+    "in_librarian_catalog_shelves": false
+   },
+   {
+    "receipt": "persona_priorart_2506.11798.md",
+    "arxiv_id_in_stem": false,
+    "receipt_state_sees": false,
+    "arxiv_id_in_receipt_text": true,
+    "in_UNREGISTERED_report": true,
+    "ledger_claim": "PERSONA_PRIORART_LANDING.json",
+    "on_disk": true,
+    "sha_matches_ledger": true,
+    "pdf_magic_ok": true,
+    "in_fts_catalog": false,
+    "in_librarian_catalog_shelves": false
+   },
+   {
+    "receipt": "persona_priorart_2506.12657.md",
+    "arxiv_id_in_stem": false,
+    "receipt_state_sees": false,
+    "arxiv_id_in_receipt_text": true,
+    "in_UNREGISTERED_report": true,
+    "ledger_claim": "PERSONA_PRIORART_LANDING.json",
+    "on_disk": true,
+    "sha_matches_ledger": true,
+    "pdf_magic_ok": true,
+    "in_fts_catalog": false,
+    "in_librarian_catalog_shelves": false
+   },
+   {
+    "receipt": "persona_priorart_2508.06149.md",
+    "arxiv_id_in_stem": false,
+    "receipt_state_sees": false,
+    "arxiv_id_in_receipt_text": true,
+    "in_UNREGISTERED_report": true,
+    "ledger_claim": "PERSONA_PRIORART_LANDING.json",
+    "on_disk": true,
+    "sha_matches_ledger": true,
+    "pdf_magic_ok": true,
+    "in_fts_catalog": false,
+    "in_librarian_catalog_shelves": false
+   },
+   {
+    "receipt": "persona_priorart_2508.06950.md",
+    "arxiv_id_in_stem": false,
+    "receipt_state_sees": false,
+    "arxiv_id_in_receipt_text": true,
+    "in_UNREGISTERED_report": true,
+    "ledger_claim": "PERSONA_PRIORART_LANDING.json",
+    "on_disk": true,
+    "sha_matches_ledger": true,
+    "pdf_magic_ok": true,
+    "in_fts_catalog": false,
+    "in_librarian_catalog_shelves": false
+   },
+   {
+    "receipt": "persona_priorart_2511.17813.md",
+    "arxiv_id_in_stem": false,
+    "receipt_state_sees": false,
+    "arxiv_id_in_receipt_text": true,
+    "in_UNREGISTERED_report": true,
+    "ledger_claim": "PERSONA_PRIORART_LANDING.json",
+    "on_disk": true,
+    "sha_matches_ledger": true,
+    "pdf_magic_ok": true,
+    "in_fts_catalog": false,
+    "in_librarian_catalog_shelves": false
+   }
+  ]
+ },
+ "PART_B_repros": {
+  "R2_destroyed_content_valid_hash": {
+   "verdict": {
+    "ok": true,
+    "manifest_rows": 2,
+    "checked": 2,
+    "missing": 0,
+    "drifted": 0
+   },
+   "passes": true
+  },
+  "R1_missing_file": {
+   "crashed": true,
+   "exception": "FileNotFoundError",
+   "detail": "[Errno 2] No such file or directory: 'C:\\\\Users\\\\foste\\\\AppData\\\\Local\\\\Temp\\\\inst_audit_21mkcw47\\\\canon\\\\good.txt'"
+  },
+  "R3a_planted_duplicate": {
+   "duplicate_groups": 1,
+   "findings": [
+    "DUPLICATE-GROUP 8d26a8a0c64a  shelves/a/holding1.txt | shelves/a/sub/holding1_copy.txt"
+   ],
+   "sensitivity_ok": true
+  },
+  "R3b_overlap_phantoms": {
+   "duplicate_groups": 1,
+   "child_files": 1,
+   "self_report_reproduced": true
+  },
+  "R4_pdf_magic_8bytes": {
+   "unreadable": 0,
+   "clean": true,
+   "hash_ok": 1,
+   "destroyed_body_passed": true
+  }
+ }
+}
+
+########## 5. probes: regex stems, receipt_state visibility, report probes, canon drift, catalog scope ##########
+=== probe 1: ARXIV regex against receipt stems (mag/librarian.py:34 pattern) ===
+'persona_priorart_2405.07248' -> NO MATCH
+'persona_priorart_2511.17813' -> NO MATCH
+'0706.1347' -> 0706.1347
+'child_1907_wbdrummond_an_introduction_to_child_study' -> NO MATCH
+
+=== probe 2: receipt_state visibility + fresh LIBRARIAN_REPORT probes (run 2026-10-01) ===
+receipts on disk: 257  stems matching ARXIV: 28  pulled: 28  hashed: 28
+persona receipts: 7  seen by receipt_state: 0
+  probe 'watson': 0
+  probe 'bowlby': 0
+  probe 'child-study': 0
+  probe 'siege': 0
+  probe 'shannon': 0
+  probe 'turing': 0
+  probe 'edvac': 0
+  probe 'wilkes': 0
+  probe 'frontinus': 0
+  probe 'nasa': 0
+  probe 'lowenfeld': 0
+  probe 'gesell': 0
+  probe 'piaget': 0
+  probe '2405.07248': 2
+  probe '2511.17813': 2
+
+=== probe 3: canon manifest drift detail (2026-10-01) ===
+DRIFTED: _retired/x_canon_nachoquixotic_v1.jsonl manifest b05b7dd93b9caf7c disk 3ee34a0391e36c23 head8 b'{"url":"'
+DRIFTED: x_canon_2026_fx/fx_2094770591702098071.json manifest b57fb63669234680 disk 2cbc67c9e11e3471 head8 b'{"code":'
+DRIFTED: x_canon_2026_fx/fx_2096341325960417585.json manifest 067abf8872a1f30a disk 61aaa87dcb715d06 head8 b'{"code":'
+DRIFTED: x_canon_enumeration_index.jsonl manifest de293276762deed8 disk 0980db83c4c26d04 head8 b'{"url":"'
+
+=== probe 4: catalog.jsonl scope scan (corpus/tools, persona) ===
+catalog rows: 752984  corpus/tools rows: 0  persona_priorart rows: 0

@@ -1,0 +1,11 @@
+Wave tide — nightly compaction for the Mycelial Republic fleet (repo: C:\Users\foste\Documents\projects\local_sovereign_agent). Do this as one pass, receipt-first:
+
+1. Read watch/inbox/wave_20260916/WAVE_STATE_20260916.md (or the latest WAVE_STATE file) and list every receipt file in watch/inbox/wave_20260916/receipts/ and watch/inbox/physical_computing/receipts/ modified since the previous tide file (state/fuel/tide/ — find the newest tide_*.md there, if any).
+2. From those receipts only, write state/fuel/tide/tide_<YYYY-MM-DD>.md containing: (a) what changed since last tide (max 10 bullets, one line each); (b) top 3 next stones; (c) three Socratic questions for today's lanes; (d) any receipt that is a stub or contradicts another receipt.
+3. AMENDMENT OBLIGATION (law: every cycle must amend at least one of its own rules — source: CG4 mesh salon, operator "steal it," 2026-09-16): propose exactly ONE amendment to a fleet rule, doctrine line, mechanism, or document (e.g. a stale claim to correct, a law to extend, a threshold to re-tune). Append it to state/fuel/amendments.jsonl as {"schema":"amendment.v1","day":"<date>","target":"<file or law>","change":"<what changes>","reason":"<why now>","falsifier":"<what would prove this amendment wrong>"}. If after honest review nothing deserves amendment, the tide must still write one line naming the rule it examined and why it stands — an unexamined no is a silent skip.
+4. Distill the brief into one 200-word context card at memory/corpus/tide_cards/card_<YYYY-MM-DD>.md — plain language, no jargon, written to be pasted into a small local model's context.
+5. If a local ollama is running (probe localhost:11434), send the card to gemma:2b with the prompt "Summarize this in 3 sentences for the morning brief" and save its reply into the card file under a line "GEMMA:". If ollama is down, skip silently.
+6. Run the deck refresh: .venv\Scripts\python.exe scripts\build_deck.py (ignore failures, record them).
+7. Budget law: if you use any z.ai/Lite model calls this session, ride mag/lite_guard.check("wave-tide") before and lite_guard.record() after. Prefer no model calls at all — steps 1-5 are read-and-write work.
+
+Everything lands on disk. No git commands. If the repo is locked or unavailable, write what you can to %TEMP%\tide_<date>.md and stop.

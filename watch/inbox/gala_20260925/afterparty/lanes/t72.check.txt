@@ -1,0 +1,70 @@
+t72 check - GalleryZone(82,2) last Part-vs-BasePart row (t57 next_steal, t42 row 12) - 2026-09-26 01:2x
+
+RESULT: finding cleared at GalleryZone.luau(82,2), 4 annotation lines
+changed, 2 receipt comment lines added, zero behavior edits, zero new
+findings in the final state. mountain_check NOT run (shared).
+
+== freshness (t57's own instruction: re-check the line first) ==
+
+d38801265 (2026-09-26 00:36) landed before this run; its DOORS restructure
+(tuple rows -> type Door at lines 20-39) did not touch the mk/plaque
+region. git log HEAD for the file = d38801265; git status shows
+GalleryZone.luau NOT modified (clean working tree copy of HEAD at edit
+time). Site confirmed live: mk (line 55) declares : BasePart while mk
+creates Instance.new("Part") (line 56) and plaque (line 67) declares
+: Part, so `return p` at (82,2) is the row.
+
+== fix (annotation exactness, t57's convention: type it as what is stored) ==
+
+1  mk return annotation BasePart -> Part (line 55; stores
+   Instance.new("Part") line 56; receipt comment above)
+2  type Pane  part: BasePart -> Part (line 41)
+3  type Fishie part: BasePart -> Part (line 42)
+4  type Tile  part: BasePart -> Part (line 43)
+   (one shared receipt comment above the three)
+
+Negative first: the item's "one mechanical annotation fix" was NOT
+sufficient. Fix 1 alone cleared (82,2) but introduced 3 NEW findings
+(150,24 / 171,22 / 194,24, "Expected this to be exactly 'Pane'/'Fishie'/
+'Tile', but got '{| part: Part, ...|}'"): the same invariant exact-table
+literal rejection t57 documented. Fixes 2-4 complete the convention (the
+fields hold Part exactly end to end) and clear them.
+
+Runtime-safety audit: every consumer of mk's result and of the three
+.part fields is a read or a property write (.Position, .Transparency,
+.Color, .Material, gui.Parent = p, banner(wall: Instance) upcast); Part
+carries all BasePart members. No value, write, or control flow changed.
+
+== verification (luau-lsp from roblox/, gate's own pipeline; mountain_check NOT run) ==
+
+cd roblox && ../tools/bin/luaulsp/luau-lsp.exe analyze
+  --definitions="../tools/bin/globalTypes.d.luau" --sourcemap="sourcemap.json"
+  src/shared src/server src/server/zones_extra src/client
+
+BEFORE  -> /tmp/t72_analyze_before.txt, exit=1 (errors present, expected),
+  grep -cE "SyntaxError|Incomplete" = 0; gate filter+dedupe
+  (tools/mountain_check lines 39-53) -> /tmp/t72_findings_before.txt
+  = 11 unique, incl. GalleryZone.luau(82,2) "Expected this to be 'Part',
+  but got 'BasePart'".
+INTERMEDIATE (fix 1 only) -> 3 new findings 150,24 / 171,22 / 194,24
+  (drove fixes 2-4, see above).
+AFTER   -> /tmp/t72_analyze_after.txt, exit=1, grep -cE
+  "SyntaxError|Incomplete" = 0; dedupe -> /tmp/t72_findings_after.txt
+  = 9 unique. diff vs before: GalleryZone(82,2) GONE (this fix);
+  init.server(68,1) ZoneGate arg-mismatch also gone, NOT mine: another
+  lane's concurrent edit landed mid-flight (init.server.luau mtime
+  01:18:58, ZoneGate.luau 01:17:07, both now pass zoneRegions per the
+  t67 comment in init.server; my diff touches only GalleryZone.luau).
+  New from my edit = 0. Only GalleryZone row left in raw output is
+  (15,22) Unknown require, noise-class, gate-filtered, pre-existing.
+sourcemap.json read-only for t72 (no rojo regen: annotation-only edits
+  change no DataModel shape); its working-tree modification belongs to
+  another lane.
+
+== hygiene ==
+
+git diff over GalleryZone.luau: 4 annotation lines + 2 comment lines,
+nothing else. Em-dash scan on added lines: 0. Edit left uncommitted
+beside the other lanes' in-flight files. Buffers for the next gopher:
+/tmp/t72_analyze_before.txt, /tmp/t72_analyze_after.txt,
+/tmp/t72_findings_before.txt, /tmp/t72_findings_after.txt.

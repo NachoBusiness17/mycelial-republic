@@ -1,0 +1,211 @@
+cmd: grok --prompt-file <dskoff.txt> --max-turns 18
+exit: 0 latency_ms: 255687
+--- stdout ---
+I'll search X directly for the last 30 days on DeepSeek thinking-disabled mode, empty completions from hidden reasoning, and measured on-vs-off comparisons.The first pass found measured posts. I'll search the empty-completion and on-vs-off comparison angles next so the set isn't just one paper being quoted.URL: https://x.com/rohanpaul_ai/status/2108772007282200658
+HANDLE: @rohanpaul_ai
+DATE: 2026-10-10
+TEXT: New Tsinghua, Oxford, and Stanford paper finds that LLMs keep reasoning out loud even with thinking turned off, especially on open-ended questions.
+
+With thinking disabled, DeepSeek-V4-Flash still wrote out reasoning in 99.9% of open-ended answers. A missing think tag or a short reply does not prove the model skipped reasoning.
+
+Yes/no questions are easy to answer directly, multiple-choice questions sit in the middle, and open-ended ones keep pulling the model back into reasoning.
+
+Forcing answe
+WHY: With thinking disabled, DeepSeek-V4-Flash still wrote reasoning in 99.9% of open-ended answers; forcing answer-only got ~40% compliance across 5 models and cut accuracy ~15 points (arXiv 2610.11765).
+
+URL: https://x.com/dan3458/status/2108905528210628862
+HANDLE: @dan3458
+DATE: 2026-10-10
+TEXT: AI 使用说明书 #014
+你每次调 DeepSeek API，它其实都在"想太多"——思考模式默认开启，而且默认最高强度。你传的 temperature？官方文档明说：设置了也不报错，但完全没效果。👇
+WHY: DeepSeek API thinking mode defaults on at maximum strength, and temperature is accepted but ignored.
+
+URL: https://x.com/dan3458/status/2108906462840062295
+HANDLE: @dan3458
+DATE: 2026-10-10
+TEXT: 4/
+为什么重要？推理内容经 reasoning_content 返回，按输出 token 计费（官方定价页：按模型输出的 input + output token 总数扣费）。
+默认 high = 每次调用都在花最多"思考预算"，回答还更慢。MVP 阶段省 API 账单，先把 effort 拧小。
+WHY: reasoning_content is billed as output tokens, so default high spends the maximum thinking budget and slows the reply.
+
+URL: https://x.com/dan3458/status/2108906541512569269
+HANDLE: @dan3458
+DATE: 2026-10-10
+TEXT: 5/
+怎么用（OpenAI 格式）：
+① 简单任务：extra_body={"thinking":{"type":"disabled"}} 直接关
+② 中等任务：reasoning_effort="low"
+③ 难题/代码：保持默认 high
+注意：旧模型名（如 deepseek-v4-flash）已退役，用 deepseek-flash / deepseek-v4-pro。
+WHY: Names the off switch extra_body={"thinking":{"type":"disabled"}}, reasoning_effort="low" for medium tasks, and retired model id deepseek-v4-flash.
+
+URL: https://x.com/dan3458/status/2108906788594876674
+HANDLE: @dan3458
+DATE: 2026-10-10
+TEXT: 7/
+两个官方明确的坑：
+① 思考模式下设 temperature/presence_penalty/frequency_penalty：不报错但无效。调参半天没变化，先查这个。
+② 带 tools 的请求，后续轮次必须完整回传 reasoning_content，否则 API 直接 400；不带 tools 时回传会被忽略（见官方流程图）。
+WHY: In thinking mode, temperature and presence/frequency penalties no-op; tool requests 400 unless prior reasoning_content is passed back.
+
+URL: https://x.com/czhdfjfjd/status/2109248198145642982
+HANDLE: @czhdfjfjd
+DATE: 2026-10-11
+TEXT: One important split: DeepSeek’s docs say `reasoning_content` can be omitted on later turns when no `tools` are sent, but when a request includes `tools`, prior reasoning_content must be passed back. So “keep only role + content” may fix one path and break tool calls. Did your 400 happen on a tools-enabled request?
+WHY: Dropping reasoning_content is legal only when tools are absent; with tools, omitting it is the 400.
+
+URL: https://x.com/OneMuxAPI/status/2108710046561603806
+HANDLE: @OneMuxAPI
+DATE: 2026-10-10
+TEXT: DeepSeek thinking-mode tool loops require prior `reasoning_content` in each subsequent request with `tools`—even when no tool call occurred. DeepSeek says dropping it returns 400. If using V4 Pro via a gateway, smoke-test a two-turn tool loop. https://api-docs.deepseek.com/guides/thinking_mode/
+WHY: Thinking-mode tool loops 400 if prior reasoning_content is dropped, even on turns with no tool call.
+
+URL: https://x.com/janmm_va/status/2108656759523168641
+HANDLE: @janmm_va
+DATE: 2026-10-09
+TEXT: Blind scores out of 5, and the billed cost per intro:
+
+DeepSeek V4.1 Flash: 3.93, $0.00175
+
+Claude Sonnet 5.5: 3.93, $0.01412
+
+Claude Haiku 5.5: 3.80, $0.00103
+
+Gemini 3.8 Flash: 3.30, $0.01775
+
+Gemini's score covers 2 intros, because one of its 3 calls failed twice.
+
+3/7
+WHY: Same 3 blog-intro briefs: DeepSeek V4.1 Flash scored 3.93 at $0.00175 per intro, tied with Sonnet 5.5 at $0.01412 (~8x).
+
+URL: https://x.com/janmm_va/status/2108656761968414975
+HANDLE: @janmm_va
+DATE: 2026-10-09
+TEXT: Problem 1: at max_tokens 1,500, all four models spent most of it reasoning. Two DeepSeek outputs came back empty and others got cut off, so the rerun gave every model 6,000.
+
+Reasoning bills as output. Gemini 3.8 Flash used ~4,500 reasoning tokens an intro and cost the most.
+
+4/7
+WHY: At max_tokens 1500 two DeepSeek outputs came back empty; rerun used 6000; Gemini 3.8 Flash spent ~4500 reasoning tokens per intro and cost the most because reasoning bills as output.
+
+URL: https://x.com/leohuanfang/status/2099695032722932215
+HANDLE: @leohuanfang
+DATE: 2026-09-15
+TEXT: I run a small browser extension on DeepSeek for two-line drafts. First gotcha: thinking mode is on by default and ate the whole budget, so replies came back empty.
+WHY: Default-on DeepSeek thinking consumed the whole completion budget and returned empty two-line drafts.
+
+URL: https://x.com/Eldan_nomad/status/2108059947984699620
+HANDLE: @Eldan_nomad
+DATE: 2026-10-08
+TEXT: 2/ Branch on the stop signal, never on prose.
+
+Claude: stop_reason, 7 values.
+OpenAI: status + incomplete_details.reason.
+
+A reasoning model can spend the whole output budget thinking and come back "incomplete" with empty text.
+WHY: A reasoning model can exhaust the output budget on hidden thinking and return incomplete with empty text.
+
+URL: https://x.com/0xsacreddev/status/2106630869662486729
+HANDLE: @0xsacreddev
+DATE: 2026-10-04
+TEXT: Ngl the re-pick after each tool result is the bit I'd actually steal. I still route by hand: chat agents on Kimi K3, my writing agent on DeepSeek. Switched after GLM kept dumping its whole answer into the thinking field and coming back empty 🙃
+WHY: GLM put the whole answer in the thinking field and returned empty content, which is why this user moved the writing agent to DeepSeek.
+
+URL: https://x.com/Raviprakam/status/2108980968736584060
+HANDLE: @Raviprakam
+DATE: 2026-10-10
+TEXT: Gemini ate its own output budget. Gemini 2.5 Flash returned empty responses because reasoning tokens burned through maxOutputTokens. Fix: thinkingBudget: 0, plus a hard sentence cap enforced in code. Prompt engineering is a suggestion; code is a guarantee.
+WHY: Gemini 2.5 Flash returned empty because reasoning tokens consumed maxOutputTokens; fix named is thinkingBudget: 0.
+
+URL: https://x.com/cozybearlog/status/2101006279510827440
+HANDLE: @cozybearlog
+DATE: 2026-09-18
+TEXT: 400 tokens on the usage line, 0 in the answer. That came out of my own gateway tonight, not somebody chart.
+Prompt 49 tokens, max_tokens 400, wall clock 8.7 seconds. Content field came back empty and reasoning is not even a key in the response, so the only trace those 400 tokens exist is the usage line itself.
+WHY: Prompt 49 tokens, max_tokens 400, 8.7s wall, content empty, no reasoning key, 400 tokens billed on the usage line only.
+
+URL: https://x.com/cozybearlog/status/2102052987334209707
+HANDLE: @cozybearlog
+DATE: 2026-09-21
+TEXT: Same one line prompt, temperature 0, cap 2000 this morning: 1945, 2000, 2000 thinking tokens. Two of three runs came back empty, billed in full, finish stop.
+
+Same prompt tonight, cap 8000: 2030, 3158, 2421. Natural stops. Real answers. None got near the cap.
+
+So the 2000 cap was sitting inside the natural draw range, slicing runs mid-thought and looking exactly like a model failure. Raising it above the distribution made the empties disappear.
+
+Still unknown whether the draw width scales with t
+WHY: Same prompt, temperature 0: cap 2000 produced thinking counts 1945/2000/2000 with 2 of 3 empty and billed in full; cap 8000 produced 2030/3158/2421 and real answers.
+
+URL: https://x.com/TinyRouterHQ/status/2102220262548689021
+HANDLE: @TinyRouterHQ
+DATE: 2026-09-22
+TEXT: Empty output is not bad JSON. It is a budget.
+
+One tool call, 2K log, n=3:
+deepseek-v4.1-flash: 3/3 valid, 2.8s
+kimi-k2.7-code-highspeed: 1/3 at 2048 (2 runs: 2047 tokens thinking, content ""), 3/3 at 8192, 6.4s
+
+Check finish_reason first.
+
+#AIAgents #AIcoding #LLM
+WHY: Same tool-call job, n=3: deepseek-v4.1-flash 3/3 valid in 2.8s; Kimi 2/3 empty at 2048 (2047 thinking tokens, content "") and 3/3 only after raising to 8192 (6.4s).
+
+URL: https://x.com/DevRico003/status/2105577524361150925
+HANDLE: @DevRico003
+DATE: 2026-10-01
+TEXT: Running it against DeepSeek V4.1 Flash on four DGX Sparks in my rack, no cloud in the loop. 80-90 tok/s on prose in real work, about 110 with thinking off.
+WHY: Local DeepSeek V4.1 Flash on four DGX Sparks: 80–90 tok/s on prose in real work, about 110 tok/s with thinking off.
+
+URL: https://x.com/openmarmot/status/2108699884190851262
+HANDLE: @openmarmot
+DATE: 2026-10-09
+TEXT: tried a decision model. eh.. idk if i get it 
+
+for the task of making decisions while playing my python game : 
+
+clef-flash : 1 second cycle 
+deepseek v4 flash-vision with reasoning disabled : 1.9 second cycle
+
+clef is faster but you still need deepseek in the loop anyways to use the mouse and use menus so there just wasn't a strong advantage to adding in the decision model.
+
+they were both running on DGX sparks, so maybe the speed difference is larger on GPUs
+
+https://t.co/0U0yZym7xK
+WHY: Game-decision loop on DGX Spark: DeepSeek V4 Flash-Vision with reasoning disabled at 1.9s per cycle vs clef-flash at 1s.
+
+URL: https://x.com/yume_arasaki/status/2099485624395088185
+HANDLE: @yume_arasaki
+DATE: 2026-09-14
+TEXT: Recipe is @MiaAI_lab DeepSeek V4.1 Flash EXL3 2.9bpw on vLLM TP=2 across two DGX Sparks, thinking off, DSpark k=3 draft, SHA 8530568.
+
+https://github.com/MiaAI-Lab/DeepSeek-v4.1-Flash-EXL3-2x-DGX-Sparks
+
+https://huggingface.co/Mia-AiLab/DeepSeek-V4.1-Flash-EXL3-2.9bpw
+
+Full write-up with every table (empty-context lanes, concurrency ladder to 128, needle, decode-after-fill, jobs at depth, warm session):
+
+https://t.co/nOIBC32hHJ
+
+Gotchas from our own boot, so you can skip the failures I already p
+WHY: Thinking defaults on; the whole grid ran with enable_thinking=false. Prose-600 concurrency: C1 29.08, C2 43.46, C4 30.43, down to 23.8 tok/s by C128; 4.9 J per generated token on a 35k-prompt agent turn.
+
+URL: https://x.com/aakashgupta/status/2109372782257844256
+HANDLE: @aakashgupta
+DATE: 2026-10-11
+TEXT: Turning thinking off cut my API bill 24% and the time to summarize 20 podcast excerpts by 42%.
+
+Artificial Analysis puts Haiku 5.5 output at ~162k tokens per task, roughly 3x GPT-6 Luna.
+
+My run showed the same thing. Across 20 excerpts, Haiku charged 22,684 output tokens vs Luna's 10,581 (2.1x), mostly hidden thinking.
+
+Two other settings set the bill.
+
+A 1,000-token output limit left 17 of 20 answers cut off. You're still billed for what's cut off.
+
+Once a single prompt passes 100K tokens, eac
+WHY: Same 20-excerpt summarize job, thinking off vs on: API bill −24%, time −42%; Haiku still charged 22,684 output tokens vs Luna 10,581, mostly hidden thinking; a 1000-token cap cut off 17 of 20 and those tokens were still billed. Not DeepSeek.
+
+SUMMARY: 20 posts retrieved (2026-09-14 to 2026-10-11). DeepSeek side is the disabled-thinking API (thinking.type=disabled, reasoning_effort, reasoning_content billed as output and required on tool turns or HTTP 400), the inertia paper (99.9% still reasons; ~40% compliance, ~−15 accuracy), empty completions when reasoning eats max_tokens (1500→empty, rerun at 6000; $0.00175/intro), and local speed (about 110 tok/s thinking off vs 80–90 on prose; 1.9s/cycle with reasoning disabled). A paired same-job DeepSeek API on-vs-off cents/latency A/B did not show up; the only same-job on/off bill in this set is Haiku (−24% cost, −42% time), plus Gemini/Kimi/GLM empty-budget incidents.
+
+--- stderr tail ---
+

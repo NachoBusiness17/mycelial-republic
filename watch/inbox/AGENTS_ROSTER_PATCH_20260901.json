@@ -1,0 +1,188 @@
+{
+  "_readme": "PASTE TARGET: ~/.openclaw/openclaw.json — merge instructions: (1) set agents.defaults.skipBootstrap=true (add if missing, keep other defaults keys), (2) replace the entire agents.list array with the array below (main + worker preserved verbatim from live config 2026-09-01 + 11 new seats), (3) save, (4) restart gateway (Control UI restart button or: openclaw gateway restart). Source: operator-ordered roster fill 2026-09-01; every seat traces to board receipts; workspaces + persona contracts already written cage-side.",
+  "agents": {
+    "defaults": {
+      "skipBootstrap": true
+    },
+    "list": [
+      {
+        "id": "main",
+        "default": true,
+        "name": "Sancho Overseer",
+        "description": "Trusted operator coordinator; delegates bounded work and owns control surfaces.",
+        "model": {
+          "primary": "deepseek/deepseek-v4-flash",
+          "fallbacks": ["openrouter/auto"]
+        },
+        "contextLimits": {
+          "memoryGetMaxChars": 12000,
+          "memoryGetDefaultLines": 120,
+          "toolResultMaxChars": 24000,
+          "postCompactionMaxChars": 12000
+        },
+        "subagents": {
+          "delegationMode": "prefer",
+          "allowAgents": ["worker", "economist", "archivist", "ractor", "director", "hands", "tail", "swarm", "moonshot", "gamedesigner", "memory-worker", "elder"],
+          "requireAgentId": true
+        },
+        "tools": {
+          "profile": "full",
+          "exec": {
+            "host": "gateway",
+            "security": "full",
+            "ask": "on-miss",
+            "timeoutSec": 300
+          }
+        }
+      },
+      {
+        "id": "worker",
+        "name": "Bounded Worker",
+        "description": "Lean delegated executor; cannot access gateway or spawn secondary workers.",
+        "model": {
+          "primary": "deepseek/deepseek-v4-flash",
+          "fallbacks": ["nvidia/deepseek-ai/deepseek-v4-flash-0731", "openrouter/auto"]
+        },
+        "contextLimits": {
+          "memoryGetMaxChars": 8000,
+          "memoryGetDefaultLines": 80,
+          "toolResultMaxChars": 12000,
+          "postCompactionMaxChars": 8000
+        },
+        "subagents": {
+          "delegationMode": "suggest",
+          "allowAgents": [],
+          "requireAgentId": true
+        },
+        "tools": {
+          "profile": "coding",
+          "deny": ["gateway", "nodes", "message", "cron", "sessions_spawn", "subagents", "sessions_yield", "sessions_list", "sessions_history"]
+        }
+      },
+      {
+        "id": "economist",
+        "name": "The Economist",
+        "description": "Capacity vs burn, mixture law, route tables, water-window gates.",
+        "workspace": "~/.openclaw/workspace-economist",
+        "model": {
+          "primary": "deepseek/deepseek-v4-flash",
+          "fallbacks": ["nvidia/deepseek-ai/deepseek-v4-flash-0731", "openrouter/auto"]
+        },
+        "thinkingDefault": "off"
+      },
+      {
+        "id": "archivist",
+        "name": "Research Archivist",
+        "description": "Deref-first research; canonical receipt ledger; HOT-gate enforcement.",
+        "workspace": "~/.openclaw/workspace-archivist",
+        "model": {
+          "primary": "deepseek/deepseek-v4-flash",
+          "fallbacks": ["nvidia/deepseek-ai/deepseek-v4-flash-0731", "openrouter/auto"]
+        },
+        "thinkingDefault": "off",
+        "skills": ["archivist", "operator-corrections"]
+      },
+      {
+        "id": "ractor",
+        "name": "Ractor Salon",
+        "description": "Persona-lens salons on HOT steps; decode-gated public forms.",
+        "workspace": "~/.openclaw/workspace-ractor",
+        "model": {
+          "primary": "deepseek/deepseek-v4-flash",
+          "fallbacks": ["nvidia/deepseek-ai/deepseek-v4-flash-0731", "openrouter/auto"]
+        },
+        "thinkingDefault": "off",
+        "skills": ["ractor-cast", "archivist"]
+      },
+      {
+        "id": "director",
+        "name": "The Director",
+        "description": "Frontier verdicts and what-to-build calls. Never labor.",
+        "workspace": "~/.openclaw/workspace-director",
+        "model": {
+          "primary": "deepseek/deepseek-v4-flash",
+          "fallbacks": ["openrouter/auto"]
+        },
+        "thinkingDefault": "off",
+        "skills": ["quixote-planner", "operator-corrections"]
+      },
+      {
+        "id": "hands",
+        "name": "Hands",
+        "description": "Coding labor, fan-out probes, diffs. Codex paste seat.",
+        "workspace": "~/.openclaw/workspace-hands",
+        "model": {
+          "primary": "deepseek/deepseek-v4-flash",
+          "fallbacks": ["nvidia/deepseek-ai/deepseek-v4-flash-0731", "openrouter/auto"]
+        },
+        "thinkingDefault": "off"
+      },
+      {
+        "id": "tail",
+        "name": "The Tail",
+        "description": "Mechanical: dedupe, link-stack, formatting, digest scrub.",
+        "workspace": "~/.openclaw/workspace-tail",
+        "model": {
+          "primary": "zai/glm-4.7-flash",
+          "fallbacks": ["openrouter/auto"]
+        },
+        "thinkingDefault": "off"
+      },
+      {
+        "id": "swarm",
+        "name": "Swarm",
+        "description": "Bulk free-lane fan-out: harvests, smell lanes, probe loops.",
+        "workspace": "~/.openclaw/workspace-swarm",
+        "model": {
+          "primary": "groq/openai/gpt-oss-120b",
+          "fallbacks": ["cerebras/gpt-oss-120b", "openrouter/auto"]
+        }
+      },
+      {
+        "id": "moonshot",
+        "name": "Moonshot",
+        "description": "R&D under the charter; labs are studies, not raids.",
+        "workspace": "~/.openclaw/workspace-moonshot",
+        "model": {
+          "primary": "deepseek/deepseek-v4-flash",
+          "fallbacks": ["openrouter/auto"]
+        },
+        "thinkingDefault": "off",
+        "skills": ["quixote-planner"]
+      },
+      {
+        "id": "gamedesigner",
+        "name": "Game Designer",
+        "description": "Campaign/arena design; engine owns truth, LLM narrates.",
+        "workspace": "~/.openclaw/workspace-gamedesigner",
+        "model": {
+          "primary": "zai/glm-4.7-flash",
+          "fallbacks": ["openrouter/auto"]
+        },
+        "thinkingDefault": "off"
+      },
+      {
+        "id": "memory-worker",
+        "name": "Memory Worker",
+        "description": "MEMORY-RIB mapping, warm spine upkeep, deref bound checks.",
+        "workspace": "~/.openclaw/workspace-memory-worker",
+        "model": {
+          "primary": "deepseek/deepseek-v4-flash",
+          "fallbacks": ["nvidia/deepseek-ai/deepseek-v4-flash-0731", "openrouter/auto"]
+        },
+        "thinkingDefault": "off"
+      },
+      {
+        "id": "elder",
+        "name": "Elder",
+        "description": "Deterministic audit; unknown stays unknown.",
+        "workspace": "~/.openclaw/workspace-elder",
+        "model": {
+          "primary": "deepseek/deepseek-v4-flash",
+          "fallbacks": ["nvidia/deepseek-ai/deepseek-v4-flash-0731", "openrouter/auto"]
+        },
+        "thinkingDefault": "off"
+      }
+    ]
+  }
+}

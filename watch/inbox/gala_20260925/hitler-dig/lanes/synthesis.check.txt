@@ -1,0 +1,84 @@
+== SYNTHESIS CHECK BUNDLE (hitler-dig, division A) ==
+moment: 2026-10-03T11:58:19Z
+
+== 1. head receipt presence (expect ABSENT; absence is a finding, not a pass) ==
+ls: cannot access 'watch/inbox/hitler_dig/synthesis.md': No such file or directory
+rc=2
+
+== 2. dig lanes dir contents (sibling-lane receipts expected absent at first write) ==
+total 26
+drwxr-xr-x 1 foste 197609    0 Oct  3 07:58 .
+drwxr-xr-x 1 foste 197609    0 Oct  3 07:46 ..
+-rw-r--r-- 1 foste 197609 2809 Oct  3 07:51 numerology-6-7.audit.out.txt
+-rw-r--r-- 1 foste 197609 7595 Oct  3 07:51 numerology-6-7.audit.py
+drwxr-xr-x 1 foste 197609    0 Oct  3 07:56 sources
+-rw-r--r-- 1 foste 197609 3003 Oct  3 07:57 synthesis.check.py
+-rwxr-xr-x 1 foste 197609 2120 Oct  3 07:58 synthesis.check.sh
+-rw-r--r-- 1 foste 197609  341 Oct  3 07:58 synthesis.check.txt
+-rw-r--r-- 1 foste 197609  320 Oct  3 07:58 synthesis.json
+
+== 3. prior-receipt presence (the sources this lane starts from) ==
+PRESENT watch/inbox/gala_20260925/ouroboros_RECEIPT.md (15581 B)
+PRESENT memory/runs/salons/unified_fold_20260906/SALON_ARTIFACT.md (4402 B)
+PRESENT memory/rib/RIB_DRIVING_LADDER_20260928.md (4195 B)
+PRESENT watch/inbox/ractor50/accuracy.md (27274 B)
+PRESENT watch/inbox/burn_wave_20260926/B2_216_collect_delta_20260926.md (7044 B)
+PRESENT tools/citation_lint.py (13447 B)
+PRESENT tools/ouroboros.py (17034 B)
+
+== 4. founding-phantom zero-hit re-verification (expect grep -c 191 = 0) ==
+grep -c 191 in watch/inbox/frontier_olm_20260928/DIGEST.md: 0 (rc=1; 0 with rc=1 = zero hits confirmed)
+
+== 5. ESTATE GREP (2 dirs, per-ask) ==
+corpus/steal :: apophenia :: files_with_hits=0
+corpus/steal :: numerolog :: files_with_hits=0
+corpus/steal :: genealog :: files_with_hits=0
+memory/corpus :: apophenia :: files_with_hits=0
+memory/corpus :: numerolog :: files_with_hits=1
+memory/corpus :: genealog :: files_with_hits=49
+-- numerology hit detail (memory/corpus, expected exactly secret_teachings_of_all_ages.txt):
+memory/corpus/ractors/hall_mp/texts/secret_teachings_of_all_ages.txt
+
+== 6. quote byte-check (T0/T1, the mined rows' evidence) ==
+PASS  verdicts-carry-their-conditions            T1-wsnorm  line~57  memory/rib/RIB_DRIVING_LADDER_20260928.md
+PASS  apophenia-until-the-grammar-does-work      T1-wsnorm  line~9  memory/runs/salons/unified_fold_20260906/SALON_ARTIFACT.md
+PASS  phantom-number-lint                        T1-wsnorm  line~8  tools/citation_lint.py
+PASS  memory-written-citations                   T0-exact  line~76  watch/inbox/ractor50/accuracy.md
+PASS  depth-dilutes-while-volume-compounds       T0-exact  line~33  watch/inbox/gala_20260925/ouroboros_RECEIPT.md
+TOTAL: 5 quotes, 5 PASS, 0 MISS
+bytecheck rc=0
+
+== 7. citation_lint --selftest (the phantom-number engine's own battery) ==
+......s.                                                                 [100%]
+=========================== short test summary info ===========================
+SKIPPED [1] tests\test_citation_lint.py:322: inner battery: the outer battery is already running
+7 passed, 1 skipped in 1.06s
+selftest rc=0
+
+== 8. genealogy primary-source type check (sources/CIA_HITLER_ADOLF_0003.pdf) ==
+watch/inbox/gala_20260925/hitler-dig/lanes/sources/CIA_HITLER_ADOLF_0003.pdf: HTML document, Unicode text, UTF-8 text, with very long lines (2458)
+0000000   <   !   D   O   C   T   Y   P   E       h   t   m   l       P
+0000020
+-- html title:
+<title>Freedom of Information Act Electronic Reading Room | CIA FOIA (foia.cia.gov)</title>
+-- hitler mentions inside the artifact (expect zero document content):
+0
+
+== 9. numerology sibling audit rerun (method reproducibility; moving-tree counts will drift per B2-216) ==
+rerun moment: 2026-10-03T12:01:20Z
+rerun rc=0
+-- headline lines from the rerun:
+census numbers ending in 6 or 7: 4 of 14 (28.6%); expected under uniform last digit: 20%
+structured ints collected: 1491 (raw, with repeats); distinct: 134
+chi-square vs uniform terminal digits: 41.66, df=9 (p=0.05 critical value 16.919, standard table)
+P(at least one of 379 uniform-terminal-digit counts ends in 6 or 7) = 1.0000
+the literal pair 6-7 (either separator): 90 mentions
+-- full rerun saved: watch/inbox/gala_20260925/hitler-dig/lanes/synthesis.check.numerology_rerun.txt
+
+== 10. lane JSON finalization checks ==
+parse OK; keys: ['artifact', 'checks', 'decision_changed', 'division', 'lane', 'note', 'ok', 'rows']
+rows: 5 | checks: 7 | ok: True
+all quotes non-empty: True
+em-dash count in file: 0
+en-dash count in file: 0
+finalization rc=0

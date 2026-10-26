@@ -1,0 +1,41 @@
+{
+  "receipt": "THE50 W6 T27: thrash meter into drift dashboard",
+  "filed": "2026-09-19",
+  "seat": "T27 builder (THE 50 fleet seat)",
+  "finish_line": "tools/thrash_meter.py wired into the dashboard data path, one live reading filed",
+  "program_row": "watch/inbox/THE_50_PROGRAM_20260918.md line 44 (item 27, W6 INSTRUMENTS, [QUEUED])",
+  "what_landed": [
+    "Instrument: tools/thrash_meter.py reads memory/trajectory/steps.jsonl (trajectory_step.v1) and computes a multi-front thrash reading over a time window: fronts (top-level repo dir of the first path in each step command, else the verb; documented heuristic), switches, switch_rate, revisits (switches back to a front already left: the behavior_catch 'rebuild the middle' signature), interleave_max (distinct fronts in a rolling 10-step window), thrash_score 0-100 = 100*(0.5*switch_rate + 0.5*revisit_share), verdict bands INSUFFICIENT/FOCUSED/STEADY/SWITCHY/THRASHING at <10 events / <25 / <45 / <70 / >=70.",
+    "Kinship on file: mag/behavior_catch.py thrash_multi_front ('Open many fronts then rebuild the middle') named the shape in operator language; this measures the same shape in the fleet body. tools/drift.py remains the honest counterpart: a rate says 'is it moving', corr(delta-M, delta-R) would say north.",
+    "Toolbelt registration: tools/__init__.py imports thrash_meter and registers 'thrash_meter' -> thrash_cmd in both TOOL_MAP and _FN, so MCP/CLI callers can call it like drift_check.",
+    "Dashboard data path: dashboard/rest.py gains h_thrash + GET /api/v1/thrash (legacy alias GET /api/thrash), ?hours= window 1-168 default 6, schema thrash_reading.v1, computes live from the trajectory log on every call, writes nothing. The route self-registers in GET /api/v1/endpoints (derived at request time) under group 'thrash'; the hand catalog dict gained the human description line.",
+    "One live reading filed: memory/runs/the50/w6_t27_thrash_reading.json (6h window ending 2026-09-19T16:47Z)."
+  ],
+  "computed_this_session": {
+    "live_reading_command": ".venv\\Scripts\\python.exe tools\\thrash_meter.py --hours 6 --out memory/runs/the50/w6_t27_thrash_reading.json",
+    "endpoint_check": "in-process dashboard.rest.dispatch: GET /api/v1/thrash -> 200 ok schema thrash_reading.v1; GET /api/thrash -> 200; GET /api/v1/endpoints?q=thrash -> 2 items, group 'thrash'; hours=bogus falls back to 6",
+    "core_selfcheck": "synthetic series: 30 same-front steps -> FOCUSED score 0; 32-step 4-front round-robin -> THRASHING score 95, revisits 28, interleave_max 4; 6 events -> INSUFFICIENT",
+    "live_numbers": {
+      "events": 1008,
+      "fronts": 204,
+      "sessions": 43,
+      "switches": 891,
+      "switch_rate": 0.8848,
+      "revisits": 688,
+      "revisit_share": 0.7722,
+      "interleave_max": 10,
+      "thrash_score": 83,
+      "verdict": "THRASHING"
+    }
+  },
+  "reading_the_reading": "The 83 is the fleet mid-sprint on THE 50, not one seat spinning: 43 distinct sessions share the log, and parallelism inflates switch_rate by construction (documented known_bias). Per-front counts are sane after the redirect/inline-code token fix: watch=264, memory=146, cd=101 (repo-root cds), mag=62, scripts=49, tools=31, dashboard=19. Read verdict + sessions together.",
+  "honest_limits": [
+    "Front is a string heuristic: a focused task legitimately touching many dirs scores higher than its focus warrants; intent is invisible to it.",
+    "Bands are flat priors, not learned thresholds; a crossing is a prompt to look, not a verdict.",
+    "This is a rate-and-shape instrument; it does not answer whether the motion is toward the goal (that is tools/drift.py's corr(delta-M, delta-R), still unbuilt for these series).",
+    "The dashboard serves the reading as JSON; no dedicated HTML panel was added (finish line names the data path, which is what the meter is wired into)."
+  ],
+  "no_em_dashes": true,
+  "script": "tools/thrash_meter.py",
+  "repro": ".venv/Scripts/python.exe tools/thrash_meter.py --hours 6"
+}

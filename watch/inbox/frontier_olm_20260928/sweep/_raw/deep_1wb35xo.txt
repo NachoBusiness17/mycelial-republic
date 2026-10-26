@@ -1,0 +1,164 @@
+ID: 1wb35xo
+SUB: r/LocalLLaMA
+DATE: 2026-09-08 22:21 UTC (created_utc=1788906103)
+TITLE: How many agents can 2×4090 actually run at once? Three weeks of llama.cpp concurrency data — soft cap 5 @ 64k, hard cap 9, and why.
+SCORE: 15  COMMENTS: 20  UPVOTE_RATIO: 0.71
+PERMALINK: https://www.reddit.com/r/LocalLLaMA/comments/1wb35xo/how_many_agents_can_24090_actually_run_at_once/
+SELFTEXT:
+I'm the CTO of a mid-size nonprofit, and I run a local Qwen stack as a coding subagent for that work — partly on principle (a fair amount of what I handle shouldn't leave the building), partly because the token bill for bulk code work adds up fast on a nonprofit budget. Over three weeks I benchmarked four models and three quants to answer one question: **how many agents can actually run at once, at what context, before it stops being useful?**
+
+I'm writing this out in full because I keep half-answering it in comments. Every time concurrency, quant choice or expert offload comes up I end up typing a fragment of this from memory, and the reply is always some version of *why* — why that quant, why that slot count, why not just add more agents. Fragments in comment threads aren't a good way to answer that, so here's the whole thing in one place, with the numbers and the mistakes that produced the wrong numbers first.
+
+Short version: I started trying to make a 122B MoE fast, gave up on it, and ended up on a 27B — not because the 27B was more accurate (it wasn't measurably), but because everything else about it was better. Then I found that adding agents past a point buys nothing at all.
+
+**Hardware:** 2× RTX 4090 (44.6 GiB usable), Threadripper TRX50, 128 GB DDR5 — importantly, only **2 of 4 memory channels populated** (2×64 GB), which turns out to matter a lot. llama.cpp, Windows, q8_0 KV throughout.
+
+---
+
+## 1. Why I didn't keep the 122B
+
+*(Chart 1 of 4 in the gallery above: models tested)*
+
+`Qwen3.5-122B-A10B` at UD-IQ4_XS runs — 18.75 tok/s decode with expert offload — but the number that killed it is **11.91 seconds per agent tool-call**, against 3.40 s for the 27B. For an agent that makes dozens of calls per task, 3.5× per call is the whole ballgame.
+
+`Qwen3.6-35B-A3B` looks like the winner on raw decode (78 tok/s — it's a 3B-active MoE) and it has the fastest per-call time. It also **failed 1 of 5 executed code tasks** on a sliding-window bug, against 5/5 for the 27B. That's the entire reason "decode tok/s" is the wrong headline metric and I lead with seconds-per-call instead.
+
+**I also tried Qwen3.8-Flash-Next** (125B MoE, the Qwen4 architecture preview) as soon as it landed. It needed a build from an unmerged PR, and after a full tuning sweep — expert placement, thread counts, `--poll`, `--cpu-strict`, load modes, llama.cpp's own memory fitter — it topped out at **23.7 tok/s**.
+
+The ceiling wasn't the GPUs. Of 103.7 GiB of weights, 71.7 GiB is routed experts and 26.8 GiB is a 20-million-row n-gram embedding table, so most of it lives in system RAM and streams over the memory bus every token. At `--n-cpu-moe 40` I measured **14.1 GB/s effective against an 83.2 GB/s peak** — because two of four channels are empty. A single-3090 box with DDR4 posts better absolute expert bandwidth than mine does. Filling the other two channels is worth more than any flag I tried, and I can't justify buying RAM at current prices. So: shelved, honestly, with the number published.
+
+---
+
+## 2. Accuracy: I could not separate the quants
+
+Before the concurrency numbers, the caveat that makes them meaningful.
+
+My probe plants three facts at 15%, 50% and 85% depth in a long document, with **six decoy lines quoting the same fields for the wrong district**, so the model has to match on an identifier across tens of thousands of tokens rather than pattern-match a label. Each agent gets its own document with its own secrets in a disjoint numeric band, so cross-slot leakage is detectable.
+
+| | result |
+|---|---|
+| configurations | 24 |
+| recall below 1.0 | **0** |
+| wrong-district answers | **0** |
+| cross-slot leakage | **0** |
+| truncated replies | **0** |
+| largest prompt answered perfectly | **251,557 tokens** |
+
+Q4_K_M, Q6_K_XL and Q8_K_XL all scored 1.00, everywhere, including with nine agents running.
+
+**This is a tie at ceiling, which means "cannot discriminate", not "equal".** The honest claim is: *no measurable accuracy difference between these three quants up to 251k tokens on long-range retrieval with distractors.* It is not "Q4 is lossless". Retrieval saturates; something requiring synthesis across the planted facts might separate them where this didn't.
+
+So the quant choice came down to throughput, latency and VRAM — not quality.
+
+---
+
+## 3. The concurrency result
+
+*(Chart 2 of 4 in the gallery above: concurrency scaling)*
+
+Same model, same 64k context per agent, three quants at the most slots each could fit:
+
+| quant | agents @64k | completions/min | median wait | aggregate prefill |
+|---|---|---|---|---|
+| Q8_K_XL | 3 | 1.54 | **112s** | 1,481 tok/s |
+| Q6_K_XL | 5 | 1.63 | 168s | 1,582 tok/s |
+| Q4_K_M | 9 | 1.52 | **330s** | 1,572 tok/s |
+
+**Tripling the agents changed total throughput by 6% and tripled the wait.**
+
+The mechanism is the last column: **aggregate prefill throughput is constant at roughly 1,500 tokens/second regardless of slot count.** The box has one prefill budget. Slots divide it; they do not multiply it.
+
+That's specific to this workload shape and worth stating plainly: agent prompts are enormous and replies are short, so prefill dominates. A **decode-heavy** workload would batch far better — decode is bandwidth-bound and batching amortises the weight reads across slots. Don't generalise this to "concurrency doesn't help llama.cpp."
+
+### Soft cap and hard cap
+
+- **Soft cap — 5 agents at 64k.** Past this, added slots stop buying throughput and start buying latency. It's not a failure, it's a bad trade: at 9 agents you wait 330 s for the same 1.5 completions/min you got at 112 s.
+- **Hard cap — 9 agents at 64k**, and it's VRAM, not compute.
+
+*(Chart 3 of 4 in the gallery above: VRAM budget)*
+
+Every configuration lands within 3.5 GiB of the 44.6 GiB ceiling. A smaller quant buys slots and then spends the savings straight back on KV cache: Q4 frees 14 GiB of weights versus Q8 and hands 17.5 GiB of it to the cache. **The hard cap is arithmetic, not tuning.**
+
+### Single agent, huge context
+
+*(Chart 4 of 4 in the gallery above: context vs latency)*
+
+Latency is linear in prompt size and the quants barely differ — fitted prefill rates Q4 **1,482 tok/s**, Q6 **1,346**, Q8 **1,340**. A 10% spread, not the 3× the slot counts might suggest. Q8 showed a higher fixed cost (12.8 s intercept vs ~5.5 s); n=6 per quant, so treat that as an observation, not a finding.
+
+**My operating point: UD-Q6_K_XL, 5 concurrent agents, 64k each (327,680 total context), 41.1 GiB.** Same total work as Q4-at-9, in half the wait per agent, with higher-fidelity weights and 2.6 GiB more headroom. The extra slots Q4 buys are worth having only when nothing is waiting on them.
+
+---
+
+## 4. KV cache: q8_0, and one combination that just hangs
+
+Tested on identical weights, 65k context, code executed against hidden tests:
+
+| K / V | PassRate | EditFidelity | LongRecall | tok/s | VRAM @65k |
+|---|---|---|---|---|---|
+| q8_0 / q8_0 | 1.00 | 1.00 | 1.00 | 30.1 | **29.9 GiB** |
+| f16 / f16 | 1.00 | 1.00 | 1.00 | 30.4 | 31.3 GiB |
+
+No measurable quality difference, no speed difference, **1.4 GiB cheaper**. q8_0 is my standard now.
+
+**The trap:** mixed `--cache-type-k f16 --cache-type-v q8_0` never finished a long prefill — no answer in 900 s, twice, on a prompt *smaller* than one a matched-q8_0 config answered in 32 s. Matched f16 answered the same prompt in 24 s. Match your K and V types.
+
+---
+
+## 5. Using it as a subagent inside Claude Code
+
+The thing worth knowing up front: **Claude Code's `model:` field only accepts its own models.** You cannot register a local model as a Claude Code subagent. What you *can* do is expose it as an **MCP server**, so it becomes a tool the orchestrator calls.
+
+Mine is a stdio MCP server exposing `local_ask_about_files`, `local_implement`, `local_edit_file`, `local_engine_status`, pointed at the 27B on `127.0.0.1:8080`. The division of labour:
+
+- **Orchestrator** plans and decides.
+- **Frontier subagents** do work that needs to be right the first time.
+- **Local Qwen** answers "what's in these files", drafts implementations, and does bulk edits — the high-token, low-stakes work that would otherwise burn budget.
+
+Edit fidelity is the metric that decides whether this is usable at all. A paraphrased region comes back as *"String to replace not found"*, which reads like a broken tool rather than a worse quant. At Q6 with q8_0 KV it measured 1.00.
+
+For stress-testing I use a personal side project — a game with a Rust simulation server and a thin UE5 client. Nothing to do with the day job; it's the thing I throw at the rig for fun because it produces realistic multi-file, multi-language agent work on demand. A representative local job from this week: **10,127 tokens generated at 29.8 tok/s** on slot 4 while other slots were live.
+
+---
+
+## 6. Mistakes worth stealing
+
+Every one of these produced a confident wrong number first:
+
+1. **Reply budget of 512 tokens with `reasoning_effort: xhigh`.** Every reply hit the cap mid-thinking, so the scored "answer" was truncated reasoning. Recall became noise and **Q8 looked worse than Q4**. Raised to 2048; truncated replies are now excluded rather than scored wrong.
+2. **.NET's 2-connections-per-host default.** My "16 concurrent agents" harness was quietly running **2 at a time**. It passed testing because I validated on PowerShell 7 (HttpClient, no such limit) and shipped to Windows PowerShell 5.1 (HttpWebRequest, limited). The runspaces were real; the sockets were not.
+3. **Estimating tokens at 4 chars/token.** Real ratio was 2.99, so a "39,599-token" prompt was actually ~53,000. Call `/tokenize`.
+4. **An error handler that discarded the exception.** Returned a bare `Failed=true`, throwing away the message, HTTP status and llama.cpp's response body. About 40 minutes of hypotheses existed only because of that.
+5. **`general.file_type` lies on Unsloth UD quants.** My Q6_K_XL file reports `Q4_K_S` in metadata. The file sizes (15.3 / 24.1 / 29.3 GiB for Q4_K_M / Q6_K_XL / Q8_K_XL on the same model) confirm the quants are what the filenames say — the enum simply has no value for a dynamic mix. Don't benchmark off that field.
+
+---
+
+## Limits
+
+Single machine, single workload shape, one model family. Everything above is prefill-dominated agent traffic; a chat or long-generation workload will scale differently and probably better with slots. The Flash-Next numbers came from an unmerged PR build and should be re-measured after it lands upstream. And my memory bus is half-populated, which caps every CPU-offload result here — if you have four channels filled, expect better MoE numbers than mine.
+
+Happy to answer questions or run a specific config if someone wants a data point.
+
+COMMENTS FETCHED: 23
+--- [Pixer--- | 2026-09-08 | score 9] these decode speed values seem really slow. using docker with sglang/vllm will get you at least 2x prefill and decode. My 2 5060ti get like 44tk/s on nvfp4 and 3 5060ti get 30 tk/s in FP8 without mtp. these numbers are from sglang and htsglang for tp3. In llamacpp in getting 1k prefill for q8\_k\_xl, so you could get like 4k prefill and 65 tk/s decode on sglang using docker  What problems did you run these agents on to fix ?
+--- [Iamisseibelial | 2026-09-08 | score 1] VLLM is much faster in every way. Llama.cpp is slower, but it's the only one I've been able to get more on CPU to work. Which knowing now that it was going to be slow as all hell because I'm dual channel and not quad channel on my ram, I likely would have started on vLLM, likely planning to go back to it as well.   Most Agentic tasks have been Rust and React. Currently it was able to fix why Agentic NPC swarms were not functioning correctly in a game I'm working on, and it did a fantastic job. It was able to fix what I nor Opus could figure out why their identities weren't staying completely separate within sub-agent swarms. 
+--- [Firm-Luck2062 | 2026-09-08 | score 2] Worth adding one column to the concurrency table: how much of each prompt was actually prefilled versus reused. Agent prompts are mostly a fixed prefix - system, tools, history - and llama.cpp reuses that only when the request lands on a slot whose cache already starts with it. More slots means agents rotating across them, the hit rate drops, and work you already paid for gets redone. That would inflate the exact aggregate you're measuring, and it would look a lot like a fixed prefill budget.  The server logs give tokens processed vs cached per request. If the cached fraction falls as slot count goes up, the cap is slot affinity rather than the box - worth testing pinned agent-to-slot routing, or separate servers at --parallel 1, before settling on one prefill budget.
+--- [Toooooool | 2026-09-08 | score 1] you should find a good Q4 for Qwen3.8-27B as i'm getting \~40T/s on 2x3090.   that and yeah you should switch back to vllm, it's better for concurrency.
+--- [Iamisseibelial | 2026-09-08 | score -1] Right mechanism to suspect, but it doesn't apply to these runs, and that's deliberate.  Every request carries a fresh GUID in the system message, and system comes first, so the prompt diverges from any cached prefix around token 25 of 60,854. Each slot also gets its own generated document. I put the salt in specifically so that re-firing the same haystack across attempts couldn't come back from cache and hand me a throughput number that was mostly a cache hit.  So evaluated ≈ processed here, and the \~1,500 tok/s is cold prefill. That makes it a floor rather than an inflated number, and the flat curve isn't a cache artifact.  You're still right that I should show it instead of asserting it. llama.cpp already reports tokens\_evaluated vs tokens\_cached per request, so it's a small change to my harness. I'll add the column and post it.  Where your point does bite is real agent traffic, big fixed prefix plus a small delta, which is exactly what my probe destroys. My numbers probably understate that case. Running next: drop the salt, put an 8k fixed prefix in front, 3/5/9 slots, default routing vs pinned. llama.cpp takes id\_slot on the request so pinning is client side, no rebuild. Separate servers at --parallel 1 I can't test, Q6 weights are 24.1 GiB against 44.6 total so a second copy doesn't fit.
+--- [Iamisseibelial | 2026-09-08 | score 1] Q4 would be faster, no argument. My headline decode number is Q6 with q8_0 KV measured at 65k of context actually loaded, not at an empty cache, and decode falls off a fair bit as the cache fills. If your 40 is short context on Q4 then we are probably closer than the two numbers look. I did run Q4 in the concurrency arm but never recorded a clean single stream decode figure for it, so I cannot hand you an apples to apples one yet.  On vLLM, agreed, and I said the same thing in the other thread here. I only ended up on llama.cpp because CPU expert offload was the whole point at the start, I was trying to make a 122B MoE usable. Once that got shelved most of the reason for llama.cpp went with it.
+--- [Iamisseibelial | 2026-09-08 | score -1] Ran it. Numbers, straight off llama.cpp (tokens_evaluated vs cache_n), Q8_K_XL, ~60.7k token prompt, single stream:  Probe shape, fresh GUID in the system message: * call 1: cached 0, processed 60,689, 24.9s * call 2: cached 0, processed 60,690, 23.1s  Identical prompt, fixed system message instead: * call 1: cached 0, processed 60,676, 23.1s * call 2: cached 60,672, processed 4, 0.5s  So the hit rate in my probe is zero, not low, at any slot count. The salt is the first thing in the prompt so there is nothing to reuse. The published aggregate is cold prefill, which makes it a floor rather than something the cache inflated.  Your affinity point I can show though. Same fixed prompt, two requests fired at once against a 2 slot server: * the slot that already had it: cached 60,672, processed 4, 5.9s * the other slot: cached 0, processed 60,676, 24.1s  Same request, 4x the wall clock, purely which slot it landed on. So the mechanism is completely real, it just is not what is driving my table. Still running the 3/5/9 version with a shared prefix, default vs pinned routing, since that is the case where it should actually bite.
+--- [Toooooool | 2026-09-08 | score 1] as you're set on a higher quant it might also be worth looking into vllm's now native turboquant compatibility which heavily increases your kv cache. i just personally haven't found that one can have both turboquants and i.e. 4bit model quants as well, seems like it's one or the other for long agentic loops.
+--- [Iamisseibelial | 2026-09-08 | score 1] Adding to what I said below, since this keeps coming up: I know vLLM is faster, both directions. I am on llama.cpp for one reason, MoE with experts on CPU. I was trying to make a 122B MoE work on two cards and could not get vLLM to do CPU expert offload at all. llama.cpp could. That is the whole reason, and now that the big MoE is shelved most of it is gone. If smaller models stay the realistic option I will move over.  Figured it was worth publishing what llama.cpp actually does under concurrency rather than quietly switching and saying nothing.
+--- [Iamisseibelial | 2026-09-08 | score 0] I have not looked at turboquant, so I will take that as a homework item rather than pretend otherwise. Useful to know it is one or the other with 4bit weights, that is the kind of thing you only find out three days in.  On vLLM generally, no argument, and I should be clearer about it since it has come up a few times now. vLLM is faster, prefill and decode both. The only reason I am on llama.cpp is MoE with experts on CPU. The whole starting point was trying to make a 122B MoE usable on two cards, and I could not get vLLM to do CPU expert offload at all. llama.cpp could, so that is the road I went down and this post is the findings from it. Now that the big MoE is shelved and smaller models look like the realistic option, most of that reason is gone, and if that holds I will move to vLLM. I am not defending llama.cpp as the fast choice. It was the one that would run the thing I needed to run at the time.
+--- [__JockY__ | 2026-09-09 | score 15] Holy fucking slop, Batman. 
+--- [Liberaces_Isopod | 2026-09-09 | score 1] Youre way underperforming.  You could be running qwen3.8 flash next at Q3 with that stack.  Using ik_llama, with a single 3090 and cpu/ram offload, i'm getting ~25t/s.  You should be able to get wildly better numbers than that as you can have considerably more of the experts on GPU.  The ik_llama project is tailor-made for cpu offload and works much better than vanilla llama.cpp for that purpose.  Best thing to do is tell your Claude (or whatever): "*using ik_llama, set up ji-farthing/Qwen3.8-Flash-Next-ik-llama-GGUF with ram/cpu offload.*"
+--- [Liberaces_Isopod | 2026-09-09 | score 0] I would also second the vllm/sglang as a viable setup.  With Qwen3.5 36b you could be getting around 3000 prefill and 200t/s generation for 6-10 concurrent streams using just your GPU's with no offload needed.
+--- [AI_spell | 2026-09-09 | score 0] Soft cap where decode dies matters more than max slots. Extra agents past useful concurrency just share pain.
+--- [eihns | 2026-09-09 | score 1] I have 3090 24gb and 4090 24gb - doesnt seem to be a big difference in t/s
+--- [Future_AGI | 2026-09-09 | score 1] Those numbers track with what we have seen running local models for coding subagents. The soft cap is usually where KV cache pressure starts starving each agent of context, not raw compute. One thing that helped: pinning each agent to a fixed context budget so one greedy agent cannot starve the rest.  
+--- [Cleric07 | 2026-09-09 | score 1] vllm can certainly speed things up in some cases but not all. I would try again using vllm. 
+--- [Cleric07 | 2026-09-09 | score 1] I have a Titan RTX pair 24gb x2.. what kind of t/s are you seeing? 
+--- [adityazero | 2026-09-09 | score 1] The constant \~1,500 tok/s aggregate prefill regardless of slot count is the cleanest way I have seen someone show that llama.cpp shares one compute-bound prefill budget across slots rather than scaling it. On my setup the same thing capped me long before VRAM did. Did you try raising the physical batch size (-b/-ub) to see if the shared prefill ceiling moves, or is it pinned by memory bandwidth on the 4090s?
+--- [eihns | 2026-09-10 | score 1] i dont really have it in my mind, but just use your favorite llm and tell him to look on reddit and youtube videos for user feedback... (ive just created a research skill that way)     I think it was less than 10 t/s difference... currently i have 3090 together with a xtx (48gb) the tldr is, atm, atleast, speed (compute) doesnt matter that much
+--- [feng_sg | 2026-09-11 | score 1] that \~1500 tok/s prefill ceiling is just the 4090s hitting compute saturation. prefill is basically all GEMMs so adding slots won't move it. bandwidth bottleneck is a decode problem not prefill. bumping -ub only helps if your batch was too small to fill the SMs in the first place.
+--- [Firm-Luck2062 | 2026-09-13 | score 1] Fair - the salt kills the reuse, so that aggregate is a floor and not a cache artifact. Conceded.  The thing I would check next is the split itself. With layer split across the two cards a single prefill walks GPU0 then GPU1, so one of them is idle at any given instant, and concurrent slots do not get fused into one batch. That would give you a ceiling of roughly one card's worth of compute at a time, which looks exactly like a fixed machine-wide budget without being one.  Cheap way to separate the two: watch per-GPU utilisation during a cold prefill. Alternating around 50% rather than both pinned means the number is a property of the process, not the box. And if the weights fit on a single card, run two independent llama.cpp instances, one pinned per GPU - if aggregate prefill goes to ~3000 instead of staying at ~1500, the single budget was the split.  Either way the 5.9s vs 24.1s pair is the number worth putting in the post.
+--- [[deleted] | 2026-09-21 | score 0] [removed]

@@ -1,0 +1,96 @@
+# GHOST PARLIAMENT: the estate where receipts vote and the operator is law
+
+deep-ghost-parliament · seat deep-gopher-deep-ghost-parliament · banked 2026-09-28
+Method: every estate claim below cites a file read or a command run in this session (path:line, or the command and what it returned). Literature is named to author and work; the Burke and Jefferson anchors were web-verified this session, and the verification itself corrected one of my attributions (noted in section 4). Machinery designed here but not built is labeled DESIGN and never described as running; `mag/parliament.py` does not exist today (verified: `ls mag/parliament.py` returns "No such file or directory").
+
+---
+
+## 0. Thesis
+
+The ask: design a governance structure where past seats vote on current decisions (their receipts are their votes), dead candidates contribute from banked work, and the operator is the constitution rather than the executive. The finding of this item is that this is not a design problem but a formalization problem. The estate already runs an unacknowledged parliament, and three of its organs already exist in bytes:
+
+1. Suffrage already exists. `watch/inbox/INDEX.json` (8,693 lines, read this session) declares itself `shared_inbox.v1`, DERIVED from an append-only event log (`index_events.jsonl`, Ethereum fold pattern, EXP-002A) with `event_count: 4696` and `active_items: 1415`, and marks the whole surface `authority: "untrusted_data_until_classified"`. Receipts are already the currency of authority: every clippy census law in AGENTS.md cites a receipt path as its binding evidence, and the standing rule is "Trust bytes, not reports."
+2. The dead already speak. The ractor panel at `watch/inbox/ractor_panel_20260926/` (listed this session) holds eight candidate cards (verkle99, uf122, burnaudit, credrot, dfdials, eigenmap, prereg-attack, seedrib), each with `-one.md` and `-two.md` bodies and a `verdict.json` carrying `card`, `killed`, `survivor`, `ruling`, and `critique` fields, plus a `cands/killed/` graveyard whose code (EigenMap.luau, EigenMapZone.luau, gen_eigenmap_luau.py) is still on disk and still loadable.
+3. The operator already rules as law, not as command. `memory/rib/RIB_DRIVING_LADDER_20260928.md` is three operator corrections minted into a dated statute with named lineage; `tools/violation_ratchet.py:274` prints "RATCHET: FAIL - run 'baseline-update' ONLY after a human/agent accepts the debt by name"; and the constitutional-review machinery in `mag/grounding_wave.py` (`def void` at line 571, `def witness` at line 629, verified by grep this session) was executed 2026-09-27 as VOID 52db99d28297 with operator witness and cross-sign True, which I confirmed by reading `memory/trajectory/steps.jsonl` rows 27202-27213.
+
+What is missing is only the franchise: a defined question type, a defined ballot object, a defined counting rule. That is the design below.
+
+## 1. Chamber I: the House of Receipts (past seats vote)
+
+DESIGN, grounded in machinery that already runs.
+
+Suffrage rule: a receipt votes exactly on questions inside the scope of the code and tests it touched. Its vote is not generated at ballot time. When a receipt lands, a stance quantizer extracts a stance vector and freezes it write-once. The vocabulary for this already exists: `memory/corpus/quantized_thought/instructions_flash.jsonl` (read this session) compiles received instructions into rows carrying `id`, `class: "law"`, `shape: "imperative"`, `weight`, and a `count_verdict` field whose real value is the string "inflated echo - provenance only". That last field is the crucial precedent: the estate already refuses to count raw repetition as authority. The House counts provenance-weighted stances, not message volume, and inherits the echo discount as settled law.
+
+At ballot time the counting engine does no modeling at all. It performs only checks: (a) the receipt's bytes still hash to what the chain anchors; (b) the ballot's scope glob still intersects the receipt's touched paths. No model is ever asked what a past seat would say. This deserves to be the parliament's first constitutional article:
+
+> NO-SEANCE LAW: the dead are read, never simulated. Any vote or testimony produced by running a model impersonating a past seat is void by construction, and anyone may file its void row with witness cross-sign, using the `mag/grounding_wave.py` void+witness pattern that already executed a cross-signed void on live ledger rows (steps.jsonl:27202-27213, cross_signed: True for all three voids).
+
+Counting and quorum. Fork equality (`CONSTITUTION.md:9`, "Fork equality; no rank/token") forbids weighting by seat rank or token holdings, so weight rides verification tier only: a receipt whose artifact includes a command and its output outvotes a receipt that is only a claim. That is the RIB_DRIVING_LADDER sensing-versus-judgment distinction lifted into suffrage (`memory/rib/RIB_DRIVING_LADDER_20260928.md`, Invariant 2: "An answer is not an answer until the funded tier or the bytes verify it"). Passage rules by tier, Apache lazy-consensus style: a T2 (reversible) ballot passes by silence, unless an in-scope, byte-verified objection receipt lands within the window; a T0 (irreversible, registry- or constitution-adjacent) ballot needs stances from at least three distinct seats with evidence attached, which is the estate's analogue of a 2f+1 quorum certificate from Lamport, Shostak and Pease, "The Byzantine Generals Problem" (ACM TOPLAS, 1982). On quorum failure the ballot does not fail open; it returns HOLD, matching the estate's existing doctrine that first contact with the unknown is a HOLD signal, not a mandate (AGENTS.md max-concurrency standing law, "the first rate-limit contact at that shape is a HOLD signal").
+
+## 2. Chamber II: the Banked Dead (dead candidates contribute)
+
+The ractor panel is already a parliament in miniature: candidates submitted two rounds (`-one.md`, `-two.md`), a judge killed or survived them, and the `verdict.json` records the reasoning. `verkle99.verdict.json` (read this session) shows the shape: `"survivor": "verkle99-one"` and a `ruling` that survives because its proof "rehearses the actual tip-changing write path rather than the arithmetic around it." In GHOST PARLIAMENT the whole bank becomes a standing upper chamber with three classes of contribution, each with a different weight:
+
+- Still-running code: a dead candidate's artifacts that still execute (`cands/killed/` holds .luau and .py files that remain runnable) contribute as demonstrations, the highest testimony tier, because they are re-runnable evidence, not words.
+- Banked text with a verdict: surviving card bodies contribute as recorded positions, quotable with their `ruling` and `critique` fields attached, which function as the chamber's Hansard.
+- Ledger rows: dead ghosts already contribute pure data. `mag/ghost_experimenter.py:1-16` defines the ghost as an autonomous experiment runner whose steer-to-outcome pairs land in `memory/pile/training_rows.jsonl`; a dead ghost's rows are (input, output) testimony that never required the ghost to exist again.
+
+The honesty architecture is inherited, not invented. `mag/fermat_ractor.py:16-21` codifies the HONESTY LAW: AUTHENTIC-VERIFIED lines were fetched from a named URL and quoted verbatim; CURATED-NOT-QUOTED content is marked as such and never passed off as fetched; generated output is prefixed [GEN]; and the blind A/B uses a human judge because "no LLM judge exists in this cage" (docstring, read this session). The Banked Dead chamber keeps exactly this three-way provenance grammar. A killed candidate is a minority opinion that stays on the record; the `killed` field in every verdict.json is the minute-book entry that keeps the graveyard auditable.
+
+A structural aside the estate will enjoy: the repo root still carries `sanhedrin97b.json` (verified by ls this session). Jewish law transmitted rabbinic ordination by semikhah, an unbroken chain of laying on of hands, and the Sanhedrin was a 71-seat court. The estate transmits authority by an unbroken chain of hashes. The parallel is exact at the structural level: in both systems authority is membership-provable lineage rather than charisma, and any link can be audited against its parent.
+
+## 3. The Constitution-Operator
+
+The ask: the operator is the constitution rather than the executive. Mechanically this means a three-way split the estate can already see in its own file tree:
+
+- Executive: current seats, scheduled tasks, the harness. Daily execution needs no operator signature; MagImproveDaily, MagFtsIndexDaily, and MagCensusPatrolDaily already run on cron without one (AGENTS.md).
+- Legislative: the House of Receipts, which binds scope-reversible work.
+- Constitutional: the operator, who legislates the rules under which legislation happens (lane tiers in `configs/lanes.yaml`, whose header comment names L0 through L3 with "L3 = human"; T0-T3 data tiers in `CONSTITUTION.md:10`). The operator casts no votes and overrides no outcomes; the operator amends the rules that produce outcomes. This is Kelsen's Grundnorm: the basic norm from which all other norms derive validity is presupposed, not re-enacted daily (Kelsen, Pure Theory of Law, 1934).
+
+The honest residual must be stated plainly: the operator keeps the keys and the amendment pen, so unilateral acts remain possible. The parliament cannot veto the sovereign; it can only make sovereignty visible. The design answer is a PREROGATIVE LEDGER (DESIGN): any act executed on operator authority without a ballot appends a row naming the act and the law invoked. The estate's own standing-wave doctrine explains why visibility is a real counter and not a polite fiction: the Elias lens distinguishes consent manufactured by hidden structure from truth propagated by visible structure, "the counter is VISIBLE truth" (`memory/rib_bus/standing-wave.json`, rows sw01-sw03, read this session). A prerogative count is the rope made visible. Precedent that the operator already self-records this way: `memory/republic_wave/contributors.json` opens with `{"operator": "hero", "anchor": "2b6b3e1a7e0313f9"}` (read this session).
+
+Pardon-by-name is the existing constitutional form the design generalizes: `tools/violation_ratchet.py:25` defines `baseline-update --by WHO --note NOTE`, and line 274 holds the gate until a named human or agent accepts the debt. Mercy is legal but must be signed into the record. GHOST PARLIAMENT extends the same grammar from debt to governance: every exception is a named, counted row. The estate even keeps an impeachment register already: `memory/facts/behavioral.jsonl` (read this session) stores percolator-compiled misbehavior facts, including one whose `fact` field begins "claimed file edits but no mutating tool ran". That file is the prosecution exhibit shelf.
+
+## 4. The dead hand problem (Burke versus Jefferson)
+
+Edmund Burke, Reflections on the Revolution in France (1790), verified by web search this session against the George Mason CHNM full text: society is "a partnership not only between those who are living, but between those who are living, those who are dead, and those who are to be born." GHOST PARLIAMENT is that partnership given a voting roll: the dead hold shares because their receipts are real evidence about real code, not nostalgia.
+
+Thomas Jefferson, letter to Madison, 6 September 1789, verified by web search this session: "the earth belongs in usufruct to the living." The search also corrected me, which is worth recording as a demonstration of trust-bytes: I had attached the sharp formulation "the dead have no rights" to the 1789 letter; it actually appears in the later 1816 Kercheval letter, while 1789 carries the usufruct framing and a roughly 19-year generational expiry. Jefferson is the classic anti-mortmain position: no generation may bind another.
+
+The estate does not have to choose. It can implement the common law compromise. The rule against perpetuities, in John Chipman Gray's classic formulation (The Rule against Perpetuities, 1886), caps dead-hand control at lives in being plus 21 years. The design's central original move is the estate translation:
+
+> LIVES-IN-BEING FRANCHISE: a receipt votes only while the artifacts it names are alive, where alive is mechanically checkable: the file exists, the test it names still runs, the path is still reachable. When the touched code is deleted or its test removed, the franchise dies without ceremony, and a franchise-death event is appended. A receipt can never bind decisions about code it never touched and cannot outlive the thing it testified about.
+
+This gives Jefferson his expiry without an arbitrary clock: the dead govern only what is still partly theirs. It also gives the living an override path that is not a raw majority vote: a living seat who wants to override an in-scope dead majority does not vote harder; they gather evidence that the dead's grounds are gone (named tests now fail, named files deleted) and file it, after which the franchise checker kills those votes as a matter of law rather than politics. Note that the estate's hash-faithfulness checks already practice the underlying discipline: the 2026-09-27 grounding verify (commit b34ccd3ba message, in session context) confirmed all 137 ledger rows hash-faithful with zero edited in place, and defects were contained by void instead of by edit.
+
+## 5. Attack model
+
+- Séance fabrication: an LLM asked to speak for a past seat. Killed by the NO-SEANCE LAW plus write-once extracted stances. The fermat honesty law is the working precedent for keeping generated text unforgeable against fetched text.
+- Receipt inflation: filing many thin receipts to swamp a scope. Killed by the already-settled "inflated echo - provenance only" counting doctrine (`instructions_flash.jsonl`), which discounts repetition regardless of who repeats it.
+- Seat monoculture: one seat files everything. Killed by distinct-seat quorum for T0 and by fork equality (`CONSTITUTION.md:9`), which already forbids rank weighting.
+- Post-hoc stance synthesis: requantizing the dead after the fact. Killed by write-once stances anchored at landing; edits to chained rows are detectable and voidable, as the cross-signed VOID runs proved on real rows this week (steps.jsonl:27202-27213).
+- Operator drift into executive rule: not prevented, only exposed. The prerogative ledger makes drift measurable week over week. This limit is stated honestly rather than papered over; the design defect would be pretending a ledger is a veto.
+- Deadlock on T0 questions: HOLD default plus the operator amendment channel, with the amendment landing as a prerogative row, so deadlock resolves visibly rather than silently.
+
+## 6. What to build (DESIGN; four pieces, all local, all deterministic)
+
+1. Stance quantization at receipt landing: extend the existing quantizer row shape (`memory/corpus/quantized_thought/instructions_flash.jsonl`) with `scope` and `stance` fields. Stdlib only, zero tokens, house Zero-Mem style.
+2. `ballot.v1` plus a small parliament CLI (`mag.parliament file|count|close`, currently absent by verified ls): scope glob in, in-scope receipt census out, passage verdict by tier. Search reuses the FTS surface that `tools/corpus_fts_rebuild.py` maintains (verified present this session).
+3. Franchise checker: given a receipt, verify touched files exist and named tests still run; emit append-only franchise-death events. No equivalent machinery exists in `mag/` today (grep for franchise/lives-in-being returned nothing this session).
+4. Prerogative ledger: append-only rows on operator-authority acts, with a weekly census computing the prerogative-to-ballot ratio as the constitutionality metric.
+
+Nothing in the counting layer needs a model call. That is not an optimization but the point: the parliament's legitimacy rests on its count being a deterministic function of bytes, the same way `tools/census_drift_patrol.py` fail-closes with exit 2 when it cannot verify rather than guessing (lines 135-156, `parse_carrier`, read this session), and the same way `mag/state_snapshot.py:75` `capture_summary` banks state as schema-versioned rows (schema at line 118).
+
+## 7. Literature anchors
+
+Web-verified this session: the Burke 1790 partnership passage (George Mason CHNM full text, revolution.chnm.org/d/563) and the Jefferson 6 September 1789 letter with the 1816 Kercheval correction (UVA Magazine; Cambridge, Thomas Jefferson's Ethics and the Politics of Human Progress, ch. 4). Named anchors from the literature, cited by author and work without re-verification: Lamport, Shostak, Pease, The Byzantine Generals Problem (1982) for quorum certificates; the Apache Software Foundation's lazy-consensus doctrine for the silence-passes default; the Debian Constitution's Condorcet resolution of General Resolutions as the ranked-aggregation precedent; Lessig, Code and Other Laws of Cyberspace (1999), whose "code is law" explains why a ratchet gate is legislation and not tooling; Kelsen, Pure Theory of Law (1934) for the Grundnorm operator; Minsky, The Society of Mind (1986) as the parliament of selves the ractors externalize; Chambers, Registered Reports (Cortex, 2013) and Nosek et al., The preregistration revolution (PNAS, 2018) for pre-registration as committee procedure, which the estate already runs mechanically at `artifacts/salon_ess_replicate_20260916.py:210-215` (read this session: rho thresholds mapping outcomes to SUPPORTED / REFUTED / NULL/INSUFFICIENT before any generation); Hanson's futarchy (vote on values, bet on beliefs) as the contrast case, because GHOST PARLIAMENT deliberately has no prediction market: it votes only on the recorded past, never on forecasts; Ford, Delegative Democracy (2002) and LiquidFeedback as the delegation wire, which the rib_bus already resembles by moving verdicts between seats (`memory/rib_bus/doctrine.json`, read this session).
+
+## 8. Falsifier
+
+The design is refuted if any of these hold in practice, and each is checkable from append-only rows without anyone's word:
+
+1. If stance extraction from real receipts requires judgment calls so frequent that vote-time model calls creep in, the NO-SEANCE LAW loses its enforcement mechanism and the parliament becomes a séance with extra steps.
+2. If scope matching returns too few in-scope receipts for real questions, most ballots HOLD and the parliament is decorative. Measurable: replay `ballot count` over the queue items already banked under `watch/inbox/burn_reset_20260927/queue/` and compute the HOLD rate; a HOLD rate above roughly two thirds across a month refutes suffrage as designed.
+3. If the operator's prerogative-to-ballot ratio exceeds about 9:1 for consecutive weeks, the constitution and the executive have re-merged and the design has failed at its one explicit job.
+
+The deepest point, stated once: the estate's genius is that it never needed to convene this parliament because it was already recording one. Census laws cite receipts the way statutes cite precedents; the ratchet demands names the way courts demand signatures; the void chain buries false claims the way parliaments strike entries from the record. GHOST PARLIAMENT adds no new power. It adds a ballot box to a state that already keeps perfect minutes.

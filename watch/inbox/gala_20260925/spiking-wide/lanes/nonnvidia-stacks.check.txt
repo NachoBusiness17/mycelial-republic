@@ -1,0 +1,52 @@
+=== NONNVIDIA-STACKS FINISH-LINE CHECKS 2026-10-01 ===
+
+-- CHECK 1: prior sovereignty-compute table absence --
+git grep -ril 'sanctions-proof': exit=1
+git grep -ril 'sovereignty-compute': exit=1
+git grep -ril 'sovereign compute table': exit=1
+git grep tracked hits outside this lane's files: NONE
+trajectory-recorder self-hits (this session's own commands, excluded): ['memory\\trajectory\\steps.jsonl']
+filesystem sweep hits (untracked included, excluding this lane's files + trajectory): NONE
+[PASS] CHECK 1 no-prior-table: tracked hits outside this lane: NONE; filesystem sweep hits: NONE; trajectory self-hits (this session's recorded commands, not prior knowledge): 1; the table is created here, current as of 2026-10-01
+
+-- CHECK 2: register JSONL --
+rows=8 stacks=['amd-rocm-consumer', 'amd-cdna-datacenter', 'huawei-ascend-mindspore', 'cambricon', 'metax', 'google-tpu', 'export-control-bound', 'estate-local-ladder-rdna1'] rows_missing_fields=[]
+[PASS] CHECK 2 register: 8 rows parsed as JSON, all carry stack+maturity_tier+primary_evidence.quote+falsifier
+
+-- CHECK 3: receipt + sovereignty-compute table --
+receipt bytes=10335
+[PASS] CHECK 3 receipt table: 10335 bytes; table header + R0 row + Bound-layer row present
+
+-- CHECK 4: quote-substring verification --
+  HIT  ev_unsloth_amd.md: 4-bit training: bitsandbytes-based QLoRA support for Radeon ...
+  HIT  ev_unsloth_amd.md: RDNA 1 supports only Vulkan inference, not full training....
+  HIT  ev_unsloth_amd.md: On Windows, AMD ROCm does not yet provide a GPU-collective b...
+  HIT  ev_tpu_pricing.md: DWS Flex-start: $0.60/hr (all regions)...
+  HIT  ev_tpu_pricing.md: **us-central1 (Iowa):** $1.20...
+  HIT  ev_arxiv_2509_05276_abstract.md: training remains stable for weeks on hundreds of MetaX GPUs...
+  HIT  ev_search_summaries.md: AI Diffusion Rule's worldwide tiering rescinded/not enforced...
+  HIT  ev_search_summaries.md: native PyTorch dev experience on MLU for large-scale LLM tra...
+[PASS] CHECK 4 quotes: 8/8 register/receipt quotes byte-found in raw captures
+
+-- CHECK 5: em-dash scan --
+em+en dash total across 7 record files: 0
+[PASS] CHECK 5 dashes: em:0 en:0 across receipt, register, lane JSON, 4 evidence files
+
+-- CHECK 6: live box probe --
+GPU: 'AMD Radeon RX 5600 XT' (exit 0)
+ollama /api/ps: exit=0 body='{"models":[]}'
+[PASS] CHECK 6 box probe: GPU='AMD Radeon RX 5600 XT' matches the envelope's RX 5600 XT claim; ollama UP: {"models":[]}
+
+-- CHECK 7: lane JSON --
+lane=nonnvidia-stacks division=B ok=True rows=5
+[PASS] CHECK 7 lane json: parses; ok=true; artifact points at the receipt
+
+=== SUMMARY ===
+PASS CHECK 1 no-prior-table
+PASS CHECK 2 register
+PASS CHECK 3 receipt table
+PASS CHECK 4 quotes
+PASS CHECK 5 dashes
+PASS CHECK 6 box probe
+PASS CHECK 7 lane json
+TOTAL: 7/7 PASS

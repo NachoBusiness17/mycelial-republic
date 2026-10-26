@@ -1,0 +1,41 @@
+{
+  "lane": "live-state",
+  "division": "B",
+  "ok": true,
+  "note": "All six named tests green under BOTH basetemp conditions (52 passed exit 0 x2); root causes: one defect class (repo-root-relative display paths raising ValueError under the wave5 suite's external --basetemp at tools/config_seal.py:89, scripts/dead_hand.py:212+226, mag/voice_handoff.py card_path+return-path, the last pair swallowed by mag/voice_turn.py's except so a completed handoff degraded to route 'frontier') plus 5 unregistered post-marker x-drop LINKS rows (commit 37036360a) registered via the B2-168 by-name pattern with the register row filed in index_events (seq 1790707788389165800) and LINKS.jsonl bytes untouched; the ask's seal-state hypothesis is killed with byte evidence (trio tests are hermetic; the real seal's 3-file post-fold drift is fold-scoped, not test-scoped); ratchet exit 1 with NEW=1 + 2 GROWTH claims all attributed to sibling-lane files, my two changed files produced zero rows.",
+  "rows": [],
+  "checks": [
+    {
+      "command": ".venv/Scripts/python.exe -m pytest tests/test_shared_surface_events.py tests/test_gate_blocking_paths.py tests/test_dead_hand.py tests/test_voice_turn.py -q",
+      "exit": 0,
+      "evidence": "RUN1 in watch/inbox/gala_20260925/ball3-suite-green/lanes/live-state.check.txt: 52 passed, default basetemp"
+    },
+    {
+      "command": ".venv/Scripts/python.exe -m pytest tests/test_shared_surface_events.py tests/test_gate_blocking_paths.py tests/test_dead_hand.py tests/test_voice_turn.py --basetemp=$TEMP/live-state-basetemp-finish -q",
+      "exit": 0,
+      "evidence": "RUN2 in live-state.check.txt: 52 passed under the EXTERNAL basetemp condition that produced the wave5 suite-burn failures (suite-burn.check.txt lines 860-862, 2499-2510, 2624-2630)"
+    },
+    {
+      "command": ".venv/Scripts/python.exe tools/config_seal.py verify",
+      "exit": 1,
+      "evidence": "RUN3 in live-state.check.txt: real seal modified=3 (mirrors.json, skills.yaml, violation_baseline.json, all mtimes after the 14:19:49Z zcode-wave5-fold re-seal) - proves the trio failures were never seal state; fold-scoped drift left for the ball close re-seal by name"
+    },
+    {
+      "command": ".venv/Scripts/python.exe watch/inbox/gala_20260925/ball3-suite-green/lanes/live-state.register.py",
+      "exit": 0,
+      "evidence": "byte-truth scan verified 5/5 shas against raw LINKS.jsonl line bytes; baseline 4 -> 9 grandfathered entries (sha256 85bdad3276aa1b0bb46ae6eebc81ed0d85a3bf276446403b06171a84beb0ea52, 4584 bytes); op=register row appended to watch/inbox/index_events.jsonl seq 1790707788389165800; git diff on watch/inbox/LINKS.jsonl empty (no-erase held); post-registration test_shared_surface_events.py 23 passed"
+    },
+    {
+      "command": ".venv/Scripts/python.exe tools/violation_ratchet.py check --changed",
+      "exit": 1,
+      "evidence": "RUN4 in live-state.check.txt: FAIL, NEW=1 (792e69ee file-too-long mag/physical_compute_acquire.py:529, foreign, no working-tree diff vs HEAD) + GROWTH claims 42b721c7 corpus_selfsteal.py and e066832a stealth_driver.py (foreign sibling-lane WIP); my two changed files (mag/voice_handoff.py +26/-2, tools/config_seal.py +13/-1) produced zero rows; baseline-update NOT run (no per-hash acceptance would misattribute foreign debt, events-door precedent)"
+    },
+    {
+      "command": ".venv/Scripts/python.exe -c \"compile_intention('debug this stack trace and implement a fix', channel='voice', history=[])\"",
+      "exit": 0,
+      "evidence": "live probe: depth=heavy_code, handoff=True, seat_recommend=handoff, why=handoff_non_blocking; depth=heavy_code - the classifier was never the voice_turn failure; the raise-and-swallow in the handoff card write was"
+    }
+  ],
+  "decision_changed": "Closes the ball3 suite-green live-state gate: the config-seal-trio smell ('seal file state vs code') is decided as CODE, never seal state - the trio + dead_hand + voice_turn failures were one repo-root-relative display-path class exposed only when a suite runs with --basetemp outside the repo (conftest.py:14's in-repo default masked it for the suite's whole life), so ball3 can certify suite-green on these six tests, the ball close still owes the 3-file named-act re-seal, and the durable practice is: full-suite honesty runs use an external basetemp. Second decision held, not changed: drift on the LINKS ledger is absorbed by the B2-168 register-by-name path (9th grandfathered entry), never by editing the ledger.",
+  "artifact": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/ball3-suite-green/lanes/live-state.json"
+}

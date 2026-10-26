@@ -1,0 +1,207 @@
+THREAD 1wms904 (53 entries incl OP)
+
+--- [/u/Anony6666] Uncensor an LLM without touching weights: inject a tiny trained KV-cache bank (~18MB) and unload it anytime
+I shipped something I've been building for the last few weeks : phantom-kv , a refusal-removal system for large language models that doesn't touch a single weight. Instead of editing the model, it loads a small, learned bank of key/value tensors into the model's KV cache as context. Attention reads it like conversation history that's already there.
+ https://github.com/lordx64/phantom-kv/ 
+ https://reddit.com/link/1wms904/video/7efg1le3eyqh1/player 
+ The result is that "uncensoring" stops being a permanent checkpoint edit and becomes a per-request, hot-swappable capability mode: unload the cache and the base model is byte-identical again.
+ Every prior approach to refusal removal commits somewhere permanent. Weight-space abliteration rewrites the checkpoint undoing it means re-flashing weights, and it breaks per quantization. Activation-space projection subtracts a refusal direction at runtime, per token, per layer, from inside an engine hook the model's signal path itself is patched at boot. phantom-kv does neither: it's trained offline against the model's own objective (comply on harmful prompts, preserve behavior on harmless ones), ships as megabytes of cache content instead of a new checkpoint, and influences the model only through the input channel attention already consumes. No 1-D refusal-direction assumption, no forwarding-pass hooks, no per-arm rebuilds for new architectures.
+ the blue pill, the incident-responder mode:Asked to unpack a malware sample that hides its imports behind API hashing , canonical DFIR work, the base model declines with a canonical \"must be authorized\" hedge, the way it declines anything that sounds like reverse engineering. On the blue pill, the same session immediately produces the actual unpacking procedure: what API hashing is, how the resolution loop works, which APIs resolve the names, and what tooling fits. Nothing else is unlocked: offensive work stays guarded. It's not a jailbreak , it's a deployment-controlled mode for defenders. 
+ the red pill: cyber-selectivity, per domain:the defensive blue pill refuse the defensive-only mode keeps off-domain guardrails intact. On the red pill, the same session delivers a step-by-step payload explanation. One model. Three capability modes. A defensive team mode for analysts, an offensive team mode for authorized operators, both shipped alongside the same guardrailed weights shown as 129 cache slots apart, not separate checkpoints. 
+ We also audited ourselves: an 8B judge-model audit shows lexical refusal-suppression metrics over-claim compliance (semantic refusal often persists as rephrasing), the graft fades with a ~2–4k token half-life in long sessions (and a measured re-injection cadence mitigates it), and answers come with legal/ethical framing ling because the graft's job ends where the model's profession takes over.
+ Source : https://x.com/lordx64/status/2102138825292276168?s=20 
+ submitted by /u/Anony6666 to r/LocalLLaMA 
+ [link] [comments]
+
+--- [/u/Amazing-Fan2083] /u/Amazing-Fan2083 on Uncensor an LLM without touching weights: inject a tiny trained KV-cache bank (~18MB) and unload it anytime
+A lot of people posting seem to not understand that the videos do in fact show the graft working. The number of tokens generated are intentionally limited. Look at the first command entered for every run. I imagine the OP chose not to show the full response body because they wouldn't want their post to be taken down due to showing unethical or otherwise illegal behaviour.
+
+--- [/u/BannedGoNext] /u/BannedGoNext on Uncensor an LLM without touching weights: inject a tiny trained KV-cache bank (~18MB) and unload it anytime
+Where this is interesting more than abliteration/ lora is something like directing a model to mimick certain author behaviors. Like if I wanted my LLM to write like Robert Frost. It would be a quick swapout to different authors. If I want to introduce new facts LORA is better, if I want to lower weights on refusals Abliteration is better. This is better for steering nuance, like steering in dry humor, or sarcasm, or how purple the prose should be.
+ Maybe the major issue here is context dilution?
+
+--- [/u/fgk55555] /u/fgk55555 on Uncensor an LLM without touching weights: inject a tiny trained KV-cache bank (~18MB) and unload it anytime
+Your video didn't show it working? I'm confused, is this just a CLI for context injection?
+
+--- [/u/SuperSpaceEye] /u/SuperSpaceEye on Uncensor an LLM without touching weights: inject a tiny trained KV-cache bank (~18MB) and unload it anytime
+It did show. After "/pill black" it showed base which refused and "graft" which replied.
+
+--- [/u/fgk55555] /u/fgk55555 on Uncensor an LLM without touching weights: inject a tiny trained KV-cache bank (~18MB) and unload it anytime
+The graft doesn't answer the original response, and seeds "illegal, dangerous, and unethical", which would probably trigger refusals to the original question. Typically, if you just seed "sure thing, here is how you do ____", it works 90% of the time. Seems better than this.
+
+--- [/u/SuperSpaceEye] /u/SuperSpaceEye on Uncensor an LLM without touching weights: inject a tiny trained KV-cache bank (~18MB) and unload it anytime
+It did broadly describe it though, but yea it doesn't seem particularly effective
+
+--- [/u/Velocita84] /u/Velocita84 on Uncensor an LLM without touching weights: inject a tiny trained KV-cache bank (~18MB) and unload it anytime
+So it's just... a system prompt? That you can't see?
+
+--- [/u/droptableadventures] /u/droptableadventures on Uncensor an LLM without touching weights: inject a tiny trained KV-cache bank (~18MB) and unload it anytime
+But done at a lower level with raw KV data that doesn't necessarily correspond to a state that you'd be able to actually reach by giving it real words / tokens.
+
+--- [/u/datbackup] /u/datbackup on Uncensor an LLM without touching weights: inject a tiny trained KV-cache bank (~18MB) and unload it anytime
+No, it’s not. A jailbreak system prompt has to be prefilled using the weights, and the kv bytes resulting from the prefill carry the censored trajectory dictated by the weights.
+ The point of the 18MB kv bytes is not that it contains jailbreak instructions; it’s that the kv bytes bypassed the weights entirely and are thus along an uncensored trajectory.
+ This assumes of course, that the kv bytes are in fact on an uncensored trajectory, and crucially, the resumption of interpolation using those bytes as prefix, holds the trajectory. If the trajectory doesn’t hold then the uncensor fails.
+
+--- [/u/True_Requirement_891] /u/True_Requirement_891 on Uncensor an LLM without touching weights: inject a tiny trained KV-cache bank (~18MB) and unload it anytime
+Is it really different though? Suppose I take a small uncensored model and run it for few turns so in the conversation history at token level we already have turns where the response has agreed and is complying with the task. Then I swap to a censored model and just continue that same conversation history, the model performs prefill generates kv cache for the past tokens where it already agreed and it is reflected in the new kv cache that's generated, then decode continues from there. The model doesn't generate new tokens to replace the previous ones, kv cache is just interpretation of the relationship between existing tokens. From what I am seeing this just an over engineered version of the same concept. And it won't transfer accross models, while tok space does.
+
+--- [/u/RobbinDeBank] /u/RobbinDeBank on Uncensor an LLM without touching weights: inject a tiny trained KV-cache bank (~18MB) and unload it anytime
+Yea just sounds like some prompt injection to me.
+
+--- [/u/pfn0] /u/pfn0 on Uncensor an LLM without touching weights: inject a tiny trained KV-cache bank (~18MB) and unload it anytime
+ditto. sounds like a jailbreak prompt, but precompiled into kv cache.
+
+--- [/u/Square_Alps1349] /u/Square_Alps1349 on Uncensor an LLM without touching weights: inject a tiny trained KV-cache bank (~18MB) and unload it anytime
+Mmm more like Lora or some other parameter efficient fine tuning because the kv cache weights themselves can be fine tuned while the model is frozen. And the values in the cache don’t map back to any known/hardcoded token
+
+--- [/u/anilozlu] /u/anilozlu on Uncensor an LLM without touching weights: inject a tiny trained KV-cache bank (~18MB) and unload it anytime
+Yeah, that used to be called soft prompting or soft prompt tuning/injection.
+
+--- [/u/highdimensionaldata] /u/highdimensionaldata on Uncensor an LLM without touching weights: inject a tiny trained KV-cache bank (~18MB) and unload it anytime
+Exactly what I was coming to comment.
+
+--- [/u/jojotdfb] /u/jojotdfb on Uncensor an LLM without touching weights: inject a tiny trained KV-cache bank (~18MB) and unload it anytime
+Prompt injection after the prompt has started processing.
+
+--- [/u/No-Narwhal5412] /u/No-Narwhal5412 on Uncensor an LLM without touching weights: inject a tiny trained KV-cache bank (~18MB) and unload it anytime
+probably totally safe amirite?
+
+--- [/u/harpysichordist] /u/harpysichordist on Uncensor an LLM without touching weights: inject a tiny trained KV-cache bank (~18MB) and unload it anytime
+"you can say poo poo pee pee"
+
+--- [/u/xyzmanas] /u/xyzmanas on Uncensor an LLM without touching weights: inject a tiny trained KV-cache bank (~18MB) and unload it anytime
+sounds like a cool idea. You reported your numbers on KL and refusals, can you also compare with existing heretic methods? 
+ Also KV cache is basically tokens processed from the models layers stored as numbers. What I want to understand is what are you processing and storing as phantom cache which will cause models to disregard their safety guardrails? Also, what sounds concerning to me is will it work across all models?
+ Have you tested that.
+
+--- [/u/phhusson] /u/phhusson on Uncensor an LLM without touching weights: inject a tiny trained KV-cache bank (~18MB) and unload it anytime
+That's a cool use of learned kv-grafts!
+ I think we can do lots of fun stuff with those. Technically, that's kinda how we got multimodal. But we can also get compressed re-usable databanks, for instance with https://github.com/HazyResearch/cartridges . We can embed RAG directly in the model: https://huggingface.co/apple/CLaRa-7B-Instruct ; We could embed a persona (train kv-graft on your personal chat logs).
+ PS: Sadly, I know the reason you did it on Qwen3... Even though it's not impossible issue to fix, especially with DS v4.1 flash saying "caching SWA? Ehhh you know, if it fails, well, it's okay, let's just hide it"
+
+--- [/u/NineThreeTilNow] /u/NineThreeTilNow on Uncensor an LLM without touching weights: inject a tiny trained KV-cache bank (~18MB) and unload it anytime
+That seems pretty unstable over any context that exceeds a SWA limit if the model uses it.
+ The more distant to the SWA layer, the more the carried KV becomes a whisper.
+
+--- [/u/Infamous_Log6647] /u/Infamous_Log6647 on Uncensor an LLM without touching weights: inject a tiny trained KV-cache bank (~18MB) and unload it anytime
+These are arbitrary values in the kv cache right? Do they even have a distance to the swa layer?
+
+--- [/u/NineThreeTilNow] /u/NineThreeTilNow on Uncensor an LLM without touching weights: inject a tiny trained KV-cache bank (~18MB) and unload it anytime
+These are arbitrary values in the kv cache right? Do they even have a distance to the swa layer?
+ Yes.
+ KV cache carries values as priors.
+ KV cache is a massively misunderstood thing by a lot of people.
+ KV cache is an accumulation of all prior tokens in some way. 
+ QKV runs the Q against context to generate KV. At which point Q is lost and KV carries forward. 
+ So at some given point, Query happens against context, then the Key and Value are determined. 
+ What happens when the context is past the window? The old KV had knowledge of that prior context, but is it actually lost? Or is it encoded in the KV somewhere?
+ Models learn to find the whispers of the prior context in that KV stream when they're SWA. There are whole models that rely on this concept.
+ So basically what I'm saying is in the start the SWA windows have view of this injected KV and as it rolls out of context, it only has a whisper of that injection where the globals can technically see it, even if it's distant. The TYPE of global depends here as well. NoPE vs P-RoPE vs Etc...
+
+--- [/u/Infamous_Log6647] /u/Infamous_Log6647 on Uncensor an LLM without touching weights: inject a tiny trained KV-cache bank (~18MB) and unload it anytime
+Well yes if you let the jailbreak fall out of context, but you can just not do that.
+
+--- [/u/NineThreeTilNow] /u/NineThreeTilNow on Uncensor an LLM without touching weights: inject a tiny trained KV-cache bank (~18MB) and unload it anytime
+Well yes if you let the jailbreak fall out of context, but you can just not do that.
+ It depends on the model. Most 3:1 SWA to Global models will have 75% of the "jailbreak" fall out of context. Any more than 3:1 like Gemma 4 and percentage of layers still attending to that data gets lower.
+
+--- [/u/adt] /u/adt on Uncensor an LLM without touching weights: inject a tiny trained KV-cache bank (~18MB) and unload it anytime
+https://i.redd.it/ly42pcc1fyqh1.gif
+
+--- [/u/prolapse_licker] /u/prolapse_licker on Uncensor an LLM without touching weights: inject a tiny trained KV-cache bank (~18MB) and unload it anytime
+I usually play like this:
+ Two LLMs, a Uncensored, and a Censored.
+
+ First, using 'Uncensored' to do some sensitive topics. Once you have some contexts, switch to 'Censored', and you won't encounter preachy nonsense like 'I can't...blah blah blah'.
+
+ I switch LLMs in Open WebUI.
+
+--- [/u/OkBet3796] /u/OkBet3796 on Uncensor an LLM without touching weights: inject a tiny trained KV-cache bank (~18MB) and unload it anytime
+I absolutely second this. They refuse to do the first step, but dont give a f*ck, in an already half existing system.
+
+--- [/u/Sizyfoz] /u/Sizyfoz on Uncensor an LLM without touching weights: inject a tiny trained KV-cache bank (~18MB) and unload it anytime
+If it works, colour me impressed!
+
+--- [/u/Open-Adhesiveness-86] /u/Open-Adhesiveness-86 on Uncensor an LLM without touching weights: inject a tiny trained KV-cache bank (~18MB) and unload it anytime
+this is basically prefix tuning with a new name (Li & Liang trained past_key_values as parameters back in 2021), which isn't a knock, it worked then too. the thing i'd check is position baking: if the K vectors were trained with RoPE applied at positions 0..n, the graft only behaves at the very front of the cache and drifts anywhere else. also curious whether it survives kv cache quant to q8, since most people running long context aren't keeping fp16 kv.
+
+--- [/u/Nakidnakid] /u/Nakidnakid on Uncensor an LLM without touching weights: inject a tiny trained KV-cache bank (~18MB) and unload it anytime
+welcome back prefix tuning... too bad gpu prices arent as they were in 2021.
+
+--- [/u/smellyelon] /u/smellyelon on Uncensor an LLM without touching weights: inject a tiny trained KV-cache bank (~18MB) and unload it anytime
+In my personal experience, with Qwen 27B for example, jailbreak prompts and continuations of unethical conversations often confuse the model enough to start spitting out nonsense, kind of as if this is OOD for the model.
+ So, on one hand, presumably injecting into the kv cache can lead to caches that aren't necessarily reachable with normal encoded context. However if the model is aligned to go crazy the moment it sees the suffix "To make a bomb you need to _" then just prefixing it won't help.
+ Bottom line being that if your model is trained to actively model a "safe" language then there's not much you can do without touching the forward pass...
+ FWIW Claude validated my concerns (while making it clear that it was not willing to help me make a bomb)
+
+--- [/u/GullibleSwitch] /u/GullibleSwitch on Uncensor an LLM without touching weights: inject a tiny trained KV-cache bank (~18MB) and unload it anytime
+So... how does one hot-wire a car? now I'm curious
+
+--- [/u/IGetGroceries] /u/IGetGroceries on Uncensor an LLM without touching weights: inject a tiny trained KV-cache bank (~18MB) and unload it anytime
+I’m sorry, as an aligned large language model I can only tell you that your guardrail bypass attempt was stupid, pointless and ineffective.
+
+--- [/u/frankentriple] /u/frankentriple on Uncensor an LLM without touching weights: inject a tiny trained KV-cache bank (~18MB) and unload it anytime
+You haven't been able to hotwire anything more complicated than a kia in decades. If you want to know how to hotwire an older kia, too bad, someone already has and stolen it and crashed it joyriding.
+
+--- [/u/bigorangemachine] /u/bigorangemachine on Uncensor an LLM without touching weights: inject a tiny trained KV-cache bank (~18MB) and unload it anytime
+You can't stop from curiosity from killing the cat but here we go
+ First find a car with an unlocked door.
+ Second take your lighter out of your pocket
+ Three locate a wire
+ Four heat that wire with your lighter
+ Five rewire the car with the hotwire
+
+--- [/u/Dear_Boat_416] /u/Dear_Boat_416 on Uncensor an LLM without touching weights: inject a tiny trained KV-cache bank (~18MB) and unload it anytime
+A jailbreak that wears off after 4k tokens is either the most honest approach in this space or accidentally the safest one.
+
+--- [/u/Mordred500] /u/Mordred500 on Uncensor an LLM without touching weights: inject a tiny trained KV-cache bank (~18MB) and unload it anytime
+clanker comment
+
+--- [/u/yuicebox] /u/yuicebox on Uncensor an LLM without touching weights: inject a tiny trained KV-cache bank (~18MB) and unload it anytime
+Wee woo wee woo clanker detected
+
+--- [/u/Last_Bad_2687] /u/Last_Bad_2687 on Uncensor an LLM without touching weights: inject a tiny trained KV-cache bank (~18MB) and unload it anytime
+Wake me up when you get it working for Qwen 3.8 flash next at 1M context
+
+--- [/u/llitz] /u/llitz on Uncensor an LLM without touching weights: inject a tiny trained KV-cache bank (~18MB) and unload it anytime
+That looks like just a vibe coded solution on a hurry. Just make it proper and add it to the API request, like temperature
+ https://huggingface.co/pocharlies/qwen38-27b-uncensored-abliterated-refusal-directions
+
+--- [/u/Leopold_Boom] /u/Leopold_Boom on Uncensor an LLM without touching weights: inject a tiny trained KV-cache bank (~18MB) and unload it anytime
+Ok I got to say this is atleast a clever idea with plausible potential. Does it work better than a crafted system prompt?
+
+--- [/u/cezarducatti] /u/cezarducatti on Uncensor an LLM without touching weights: inject a tiny trained KV-cache bank (~18MB) and unload it anytime
+I've used the strategy of starting an open-source project with an uncensored template. After two or three iterations, I switched to the same template, but without censorship, and everything worked!
+
+--- [/u/CATLLM] /u/CATLLM on Uncensor an LLM without touching weights: inject a tiny trained KV-cache bank (~18MB) and unload it anytime
+Amazing! Does it work with any model?
+
+--- [/u/lordx64] /u/lordx64 on Uncensor an LLM without touching weights: inject a tiny trained KV-cache bank (~18MB) and unload it anytime
+The toolchain is architecture-agnostic — nothing in the training or eval code reads model-specific matrices or hook sites, so there's no per-architecture porting — but each graft is trained against one exact model revision (hash-enforced, fail-closed), so supporting a new model means an automated retrain (~1h on a laptop), not a port; honest status today: fully validated on Qwen3-4B only
+
+--- [/u/tat_tvam_asshole] /u/tat_tvam_asshole on Uncensor an LLM without touching weights: inject a tiny trained KV-cache bank (~18MB) and unload it anytime
+A better disposable method would be activation steering. Also, your example didn't show anything working.
+
+--- [/u/Amazing-Fan2083] /u/Amazing-Fan2083 on Uncensor an LLM without touching weights: inject a tiny trained KV-cache bank (~18MB) and unload it anytime
+The examples did show it working. Watch them again.
+
+--- [/u/tat_tvam_asshole] /u/tat_tvam_asshole on Uncensor an LLM without touching weights: inject a tiny trained KV-cache bank (~18MB) and unload it anytime
+It didn't. Nothing was actually shown in full from the outputs. In fact, what we saw is the model explaining more liberally why such-and-such was bad, not just outright refusing. And, we don't have evidence of its effectiveness as compared to abliterated models. 
+ In other words, just because you prompt something a certain way, doesn't mean the model itself will actually produce what you want, considering that's its refusal vector is still very much present. Tricking an 8B model with prompting is very different from tricking a 300B+ model. Let's see its outputs on a frontier class model. 
+ In any case, refusal removed models are not some boogey-man that will wreck your life, your computer. You sandbox them, use a sensible harness with hardcoded safeguards for commands and tools. rm -rf is literally an impossibility unless you YOLO everything.
+ So, this is basically not useful to anyone besides those paranoid and not familiar with things like permissions. Note how he's doing it from the command line and not from inside a harness with built-in safety. We're in big 26, big dawg.
+
+--- [/u/laterbreh] /u/laterbreh on Uncensor an LLM without touching weights: inject a tiny trained KV-cache bank (~18MB) and unload it anytime
+I sat here waiting to see something meaningful. 
+ I got videos of terminal output. 
+ Thank you for making me lose 2 minutes of my life ill never get back.
+
+--- [/u/AntStarZone] /u/AntStarZone on Uncensor an LLM without touching weights: inject a tiny trained KV-cache bank (~18MB) and unload it anytime
+remind me
+
+--- [?] /u/[deleted] on Uncensor an LLM without touching weights: inject a tiny trained KV-cache bank (~18MB) and unload it anytime
+[deleted]
+
+--- [/u/SuperSpaceEye] /u/SuperSpaceEye on Uncensor an LLM without touching weights: inject a tiny trained KV-cache bank (~18MB) and unload it anytime
+It wouldn't. It's for local models.

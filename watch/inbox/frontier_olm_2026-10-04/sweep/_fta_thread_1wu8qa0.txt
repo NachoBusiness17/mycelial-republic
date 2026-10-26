@@ -1,0 +1,47 @@
+=== 1wu8qa0 r/LocalLLaMA | 2026-09-30 15:59 | score 1 | 18 comments | author u/politefella0
+TITLE: What’s better? A very small quant or a large model distilled into a small one?
+PERMALINK: /r/LocalLLaMA/comments/1wu8qa0/whats_better_a_very_small_quant_or_a_large_model/
+SELFTEXT:
+I see people asking (begging, take it as humor) for 0.000001 bit quants but isn’t a lower quant essentially going to hurt model’s quality and tool calls?
+
+COMMENTS:
+  [AutomataManifold | 2026-09-30 16:16 | score 17] It's a tradeoff.
+
+Early on, research showed that bigger quantized Llama always outperformed smaller, less quantized models. There's an inflection point around 4.65 bits IIRC (where GGUF Q4 approximately sits) where things got sharply worse but sometimes people found Q2 or Q3 depending on what they were using it for.
+
+Nowadays there's a wide enough variety of models that it's more complicated and bigger isn't always strictly better. But in general, bigger but quantized beats smaller. Though it might be worse at your particular purpose, and there's mostly still an inflection point around Q4. And now we can do very selective quantization, leave the KV unquantized, etc.
+    [Structure-These | 2026-10-04 03:15 | score 1] I wish it was easy to be selective lol
+
+Like I don’t code, it would be so dope if I could just remove the coding stuff from a big model
+      [AutomataManifold | 2026-10-04 04:21 | score 1] It'd be nice, but it's really hard to tell which abilities are entangled with each other. It been getting complicated, all the way back to whens we trained on code and discovered that it made the models better at writing.
+    [frankentriple | 2026-09-30 16:34 | score 5] Yeah the selective quantization and removal of experts from MoE models and the rest of the new tricks make it not such an easy answer without actual performance testing for your use case.
+  [Nota_ReAlperson | 2026-09-30 16:08 | score 4] It is highly dependent on the size of quant, method of quant, and who is doing the training. For example, I would take qwen 3.8 27b over qwen 3.8 max IQ1 REAP of the same size. So the distilled model is better, but third party distills are rarely of any use. For example, better qwen 3.8 27b iq3\_xxs than someones distill into qwen 3.5 9b. The thing with distills is that they need a lot of training to get a general performance boost, and most people do not have the resources to do that.
+  [no_witty_username | 2026-09-30 17:30 | score 2] Usually a smaller quant is better but depends on how low you going, below q4 it gets really funky....
+  [hermansinho | 2026-10-01 17:05 | score 1] One practical rule is to compare at equal memory and latency, not just parameter count: a well-trained distilled model can retain more capability per bit than an aggressively quantized parent. For tool calling, test a fixed set of multi-step prompts at the exact quant and context length you plan to use—very low quants often fail on JSON/schema adherence before ordinary chat quality collapses. If the tiny quant is still stable at Q4_K_M or Q5_K_M, it’s usually the safer baseline; below that, a good distill often wins.
+  [Chemical_Side_4135 | 2026-10-01 06:28 | score 1] u hit the nail on the head, super low quants really kill the reasoning capability for tool calls. distillation is usually way better for keeping that logic intact, even if the model footprint is small, take it with a grain of salt tho
+  [blastbottles | 2026-10-01 01:52 | score 1] A distilled model for sure, distillation allows for a lot of knowledge to get very intelligently squeezed into the small weights, but lobotomizing a big model to make it faster will obviously only make the model worse unless you do some very crafty quantization.
+  [[deleted] | 2026-09-30 19:18 | score 1] [removed]
+  [EvolvingDior | 2026-09-30 18:34 | score 1] Everything is a trade-off. I have enough GPU/RAM to run q38fn at 3.5 bits (GSQ RCO IQ3\_S). It works great in one sense -- it's output is on par with bf16. It's too slow and overthinks like the bf16 version. The GSQ RCO Q2\_0 is worse -- it does not explore the problem space in the same way. But it is \*way\* faster and does not overthink. It gets the job done better and faster than anything that consumes the same amount of system resources. To me, it \*feels\* better because I can have a reasonably interactive session with it.
+
+The best is actually neither of the options you mention. The best is a model that consumes the least amount of VRAM for each token of context. That's the measurement I look for. It's another reason I choose q38fn over q38-27b; it uses far less VRAM per token for it's KV cache.
+
+The model has to fit. It has to perform well. And it has to have enough context to perform meaningful work.
+    [DoubleNothing | 2026-09-30 18:57 | score 3] > I have enough GPU/RAM to run q38fn at 3.5 bits (GSQ RCO IQ3\_S)
+
+> it's output is on par with bf16.
+
+How can you tell if you can't run bf6...
+      [EvolvingDior | 2026-09-30 19:00 | score 1] Because I can use the bf16 model online!
+        [DoubleNothing | 2026-09-30 19:15 | score 2] Can you give me the link so I can try it too?
+          [EvolvingDior | 2026-09-30 20:04 | score 1] [https://www.qwencloud.com/models/qwen3.8-flash](https://www.qwencloud.com/models/qwen3.8-flash)
+            [DoubleNothing | 2026-09-30 20:21 | score 1] [https://www.digitalapplied.com/blog/qwen3-8-flash-next-open-weights-vs-hosted-api-split](https://www.digitalapplied.com/blog/qwen3-8-flash-next-open-weights-vs-hosted-api-split)
+
+Apparently not the same...
+              [EvolvingDior | 2026-09-30 20:38 | score 1] "Qwen3.8-Flash is the official version based on Qwen3.8-Flash-Next with more production features, e.g., 1M context length by default, official built-in tools."
+  [thehpcdude | 2026-09-30 18:31 | score 1] There isn't enough information in your question to accurately answer, which is also the problem you are trying to get an answer to.  
+
+You either have less data, or less precise data.  Somewhere in that range is an answer that's good enough for you.  Today's problem is people are making generalist LLM's that are trying to be good at everything and run it on a potato.
+  [[deleted] | 2026-09-30 16:09 | score 1] [removed]
+  [[deleted] | 2026-09-30 16:08 | score 1] [removed]
+
+(fetched 20 comments total; rendered top 11 roots by score)

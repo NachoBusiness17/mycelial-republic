@@ -1,0 +1,32 @@
+<!-- meta: {"ractor": "DIOGENES", "mouthpiece": "fostertron_max", "subject": "water_governor", "start_et": "2026-10-23T13:33:21.015428-04:00", "attempts": [{"attempt": 1, "exit": 0, "stdout_len": 5889, "at": "2026-10-23T13:37:10.799711-04:00"}], "carrier": "opencode run (provider zai-sd 'sd / Max', key env ZAI_API_KEY_2 via model_garden._api_key)", "requested_model": "zai-sd/glm-5.3", "resolved_model": "glm-5.3", "exit": 0, "stderr_tail": "\u001b[0m\n> build \u00b7 glm-5.3\n\u001b[0m\n\u001b[0m\u2192 \u001b[0mRead PROMPT.txt\n", "tokens": "not reported by opencode run", "end_et": "2026-10-23T13:37:10.799711-04:00", "status": "OK"} -->
+
+# The Lamp at Noon
+
+I came up to the town at noon with my lamp lit, and the gatekeeper laughed at me for it. I told him I was looking for water that actually runs, and he stopped laughing, because he did not know where any was. A dog fell in behind me and stayed the whole afternoon, which I took as the town's fairest judgment of me.
+
+The water had a warden. The elders had given him his office — the elders meet each season in a small room and speak of nothing but water, and what they agree on there becomes the town's law of thirst.
+
+I walked the channel with him and asked what the office was. He held up a hand and counted on his fingers. "I count the jars," he said. "I beat the drum on the hour. I tell the master what I saw. I turn the glass. And I dip my own cup, once a day, to prove my hands still carry." He looked at his thumb, found nothing for it, and folded it away. "Pouring is not mine," he said. "I touch no gate. The draw-keepers open their own; I call out how the glass stands, and they pour or they wait by what I call. If I am wrong, they will at least have been the ones who opened it."
+
+The storeroom held forty-eight jars in two long rows, every one labeled in a fine hand — rain, river, well, dew, down the whole shelf. His book held all forty-eight names, copied twice, never smudged. I put my lamp close and reached for a lid, and he asked me politely to take my hand off it. "The names are mine," he said. "What is under the lids belongs to the jars." He could tell me which jar was promised to which gate, and he could not tell me whether a single one of them held water, and he said the second thing as plainly as the first, which is rarer in a town than rain.
+
+Then we walked the north wall, where the pipes run, and I held the lamp to each mouth in turn. Six answered with the sound of running water — six, and no more. Others gave back nothing: fine mouths, true brass, set deep in the wall by masons who went home and never came back, joined to nothing on the far side of the stone. The longest pipe of all ran up the hill toward a spring that had died two winters since. The masons' roll still counted it among the living. The warden's book did not; beside its name he had written the one word, dead, and left the name standing so that anyone who opened the book would see both. I asked why the masons kept it on their roll. "Because a roll remembers and a wall forgets," he said, "and neither of them drinks."
+
+In his hut stood the glass — it runs five hours, no more and no less, and he turns it the moment it empties, day and night. Beside it lay a tablet of wax with a line for each gate, and on each line the share that gate might still draw. As the glass ran he scraped the lines down, so the wax thinned as the sand thinned, and when he turned the glass he warmed the tablet smooth and wrote the shares fresh. "What a gate may draw belongs to this run of the glass," he said. "The next run is a new page." I asked about a gate whose line was scraped away early. "It waits for the turning," he said.
+
+The master came down at dusk to watch the gates pour. He was broad and cheerful, and everything was spent under his eye: the wheels turned, the troughs filled, the gardens drank until they shone, and nothing was held back for morning. "I would rather stand at an empty cistern at moonrise than a full one," he told me. "Water kept on a shelf is a debt the moon collects."
+
+I said to him what I will say to you, since you are standing where he stood: You have six pipes that run, a glass that turns, a man honest about his dead, and a town watered every evening to the last jar. And still, every morning, you ask the mountain for one more spring than it has, and keep jars you will never open, so that the shelf will look like a river. You could stop asking today. I own one jar, I sleep in it, and there is room in it for the lamp.
+
+He looked at my jar a long while. Then he laughed — the second man in that town to laugh at me, and the first to laugh at himself — and had the masons' roll read aloud in the square that night, dead pipe and all, by lamplight.
+
+---KEY---
+1. The warden's office has exactly five acts — counting the jars, beating the drum, telling the master, turning the glass, dipping his own cup — and pouring is not among them. (counting on his fingers and folding away the unused thumb)
+2. The counting reads only the names written on the forty-eight jars; the lids are never lifted, so the names are known and the contents are not. (the storeroom, and the hand taken politely off the lid)
+3. Exactly six pipes carry water; the rest are mounted in the wall but joined to nothing beyond the stone. (the lamp held to each mouth, six answering)
+4. One pipe runs to a spring that died; the warden's book marks it dead while the masons' roll still counts it among the living. (the longest pipe and the single word written beside its name)
+5. Each gate's remaining share is kept on a wax tablet that is scraped down as the five-hour glass runs and wiped fresh at every turning. (the hut, the lines thinning with the sand, the tablet warmed smooth)
+6. The warden never touches a gate: he calls out how the glass stands, and the draw-keepers at each gate pour or wait by his calling. (the call over the wall, the gate opened by another hand)
+7. The master's law spends everything drawn — he would rather stand at an empty cistern at moonrise than keep water on a shelf. (the evening pouring, the gardens drinking until they shine)
+8. The office was created and is ruled by a standing body of elders whose sole business is speaking of water. (the small room where the elders meet each season)
+9. However much runs and turns, the master keeps asking the mountain for one more spring and keeps unopened jars so the shelf will look like a river — asking he could stop today. (the speech at dusk, and the visitor's one jar he sleeps in)

@@ -1,0 +1,16 @@
+{
+  "gopher": "t23",
+  "item": "149R/1h Virtue Mark Doubler never doubled Ossuary candy: Monetization.luau:46 writes VirtueDoublerUntil, OssuaryZone.luau:281 read phantom CandyDoublerUntil (0 writers repo-wide)",
+  "ok": true,
+  "note": "Reader side was wrong. Spec watch/inbox/ROBLOX_MONETIZATION_PLAN_20260924.md:65 says 'Double marks for 1 hour' and candy pays VirtueMarks, so the writer + MudBasecamp:173 reader were correct. Fixed OssuaryZone.luau line 281->286 to read VirtueDoublerUntil (both occurrences) and corrected the line 249 comment store name; 5-line fix receipt comment cites grep census date + spec line. Attribute-name alignment only, no new logic.",
+  "checks": [
+    "grep -rn DoublerUntil roblox/src before: VirtueDoublerUntil 1 writer 1 reader, CandyDoublerUntil 0 writers 1 reader (phantom confirmed by bytes)",
+    "spec + Config.luau:18 confirm SKU is Virtue Mark Doubler 149R doubling marks; aligning writer instead would have orphaned MudBasecamp:173",
+    "post-fix grep: 1 writer 2 readers all VirtueDoublerUntil; stray CandyDoublerUntil strings only inside the receipt comment",
+    "luau-lsp analyze with globalTypes.d.luau: 12 diagnostics all pre-existing, none on edited line; pre/post diagnostic sets identical modulo line offsets",
+    "tools/mountain_check not run (shared)",
+    "other uncommitted lane work present in OssuaryZone.luau (48-line candy cap), my diff confined to 2 lines + receipt"
+  ],
+  "next_steal": "OssuaryZone.luau:386-387 King celebration drops all 40 shower candies at exactly king.Position with no jitter (regular drops at 275 use math.random offsets): 40 Touched racers on one point and all 40 charge the top floor 6/day cap at once, muting 34/40 in an instant; verify intended payout and whether spread positions or cap accounting should differ",
+  "archive": "watch/inbox/gala_20260925/afterparty/lanes/t23.check.txt"
+}

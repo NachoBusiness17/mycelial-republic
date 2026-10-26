@@ -1,0 +1,66 @@
+t84 check evidence (raw tool output kept byte-verbatim)
+date: 2026-09-25
+
+### 1) pytest tests/test_loop_death_guards.py -v
+command: ./.venv/Scripts/python.exe -m pytest tests/test_loop_death_guards.py -v
+============================= test session starts =============================
+platform win32 -- Python 3.11.15, pytest-9.1.1, pluggy-1.6.0 -- C:\Users\foste\Documents\projects\local_sovereign_agent\.venv\Scripts\python.exe
+rootdir: C:\Users\foste\Documents\projects\local_sovereign_agent
+configfile: pytest.ini
+plugins: anyio-4.14.2, langsmith-0.10.14, timeout-2.4.0, typeguard-4.6.0
+collecting ... collected 24 items
+
+tests/test_loop_death_guards.py::test_loop_death_guard_fires_on_raise[ghost_cost] PASSED [  4%]
+tests/test_loop_death_guards.py::test_loop_death_guard_fires_on_raise[ghost_bard] PASSED [  8%]
+tests/test_loop_death_guards.py::test_loop_death_guard_fires_on_raise[work_anchor] PASSED [ 12%]
+tests/test_loop_death_guards.py::test_loop_death_guard_fires_on_raise[afk_squeeze] PASSED [ 16%]
+tests/test_loop_death_guards.py::test_loop_death_guard_fires_on_raise[work_fuel] PASSED [ 20%]
+tests/test_loop_death_guards.py::test_loop_death_guard_fires_on_raise[afk_routing] PASSED [ 25%]
+tests/test_loop_death_guards.py::test_operator_pause_gate_fails_closed PASSED [ 29%]
+tests/test_loop_death_guards.py::test_afk_gate_fails_closed PASSED       [ 33%]
+tests/test_loop_death_guards.py::test_right_size_gate_fails_closed PASSED [ 37%]
+tests/test_loop_death_guards.py::test_ceiling_gate_fails_closed PASSED   [ 41%]
+tests/test_loop_death_guards.py::test_afk_loop_operator_afk_fails_closed PASSED [ 45%]
+tests/test_loop_death_guards.py::test_afk_orchestrator_operator_offline_fails_closed PASSED [ 50%]
+tests/test_loop_death_guards.py::test_capability_steal_operator_offline_fails_closed PASSED [ 54%]
+tests/test_loop_death_guards.py::test_afk_orchestrator_pause_gate_fails_closed PASSED [ 58%]
+tests/test_loop_death_guards.py::test_afk_orchestrator_right_size_fails_closed PASSED [ 62%]
+tests/test_loop_death_guards.py::test_capability_steal_right_size_fails_closed PASSED [ 66%]
+tests/test_loop_death_guards.py::test_afk_orchestrator_fold_guard_prints PASSED [ 70%]
+tests/test_loop_death_guards.py::test_capability_steal_fold_guard_prints PASSED [ 75%]
+tests/test_loop_death_guards.py::test_afk_cadence_fold_guard_prints PASSED [ 79%]
+tests/test_loop_death_guards.py::test_lane_salon_defer_gate_fails_closed PASSED [ 83%]
+tests/test_loop_death_guards.py::test_afk_loop_fold_guard_prints PASSED  [ 87%]
+tests/test_loop_death_guards.py::test_capability_steal_promotion_guard_prints PASSED [ 91%]
+tests/test_loop_death_guards.py::test_lane_cadence_cooldown_fails_closed PASSED [ 95%]
+tests/test_loop_death_guards.py::test_lane_cadence_brake_fails_closed PASSED [100%]
+
+============================= 24 passed in 0.28s ==============================
+
+### 2) tools/violation_ratchet.py check --changed
+command: ./.venv/Scripts/python.exe tools/violation_ratchet.py check --changed
+RATCHET check: scope=20 changed files; hits=17; registered=17; NEW=0; expired-exceptions=0
+RATCHET: PASS — no unregistered debt.
+
+### 3) em-dash grep over authored added lines of the 4 touched files
+command: git diff -U0 -- mag/afk_loop.py mag/capability_steal.py mag/lane_cadence.py tests/test_loop_death_guards.py | grep "^+" | grep -n "<emdash>"
+(the pattern is the literal em-dash character; grep printed no matches)
+EMDASH_GREP_EXIT=1 (1 = none found; note: git printed one benign LF/CRLF warning line, kept above in raw form: 'warning: in the working copy of tests/test_loop_death_guards.py, LF will be replaced by CRLF the next time Git touches it')
+
+### 4) adjacent consumer tests (pick_free_glm rides cooldown)
+command: ./.venv/Scripts/python.exe -m pytest tests/test_zai_burst.py -q
+8 passed in 0.22s
+ZAI_EXIT=0
+
+### 5) t84 conversion ledger (4 sites, at the LAWS cap of 4 fixes total)
+1. mag/afk_loop.py:196 _fold emit swallow -> traced [afk-loop] FOLD LOOP DEATH GUARD print (non-fatal, names cause)
+2. mag/capability_steal.py:189 add_move promotion swallow -> traced [capability-steal] PROMOTION LOOP DEATH GUARD print (non-fatal, promoted stays honestly None)
+3. mag/lane_cadence.py:138 cooldown() ts-parse except->return 0 (pacing GO) -> FAIL CLOSED: return MAX_RETRY, cause named in COOLDOWN_GATE_ERROR, cleared on clean read, surfaced by status()
+4. mag/lane_cadence.py:183 brake_after() ts-parse except->continue (pacing GO) -> FAIL CLOSED: unverifiable row COUNTS as a recent failure, cause named in BRAKE_GATE_ERROR, cleared on clean pass, surfaced by status()
+
+### 6) safe-direction confirmation per site (read before converting)
+cooldown(): three call sites, all agree positive cooldown = cheaper/slower path:
+- mag/queue_gate.py:206 preflight: cd>0 DENIES dispatch (task left queued, reason lane_cooling); errored->0 was GO=dispatch=spend
+- mag/fuel_feed.py:201 _lane_order: cd>0 probes the lane LAST (no hammering); errored->0 was normal probe order
+- mag/lane_cadence.py pick_free_glm: cd>0 rides glm-4.5-flash (calmer clerk pool); errored->0 was the congested 4.7-flash pool
+brake_after(): NO production callers (repo grep over *.py excluding .venv: only status() and the dist_audit/ copy); deny direction fixed by its docstring contract: return = count of free fails still needed before the paid brake may fire, so an unverifiable row must not read as NOT-a-failure; conversion counts it, and the gate self-heals when a fresh parseable row lands.

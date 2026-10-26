@@ -1,0 +1,276 @@
+
+
+swarmagent.devDocsModelsResourcesPricingNewsContact
+
+GitHub
+Login
+Login
+DocsModelsResourcesPricingNewsContactGitHubToggle theme
+
+All Resources6Benchmarks2Guides3Engineering1ComparisonsSoon
+
+Systems ArchitectureSYSTEMS SPECIFICATION · ARCH 01ACTIVE RUNTIME SPEC
+Why Plans Are Essential to Agent Harnesses: How Swarm Replaced Context Compaction with the Final Handoff System
+Across the AI tooling landscape, developers and toolmakers are debating whether to kill "Plan Mode." Some argue it is too rigid; others try to split planning into an isolated background sub-process. Both miss the fundamental systems reality: an agent harness is not an LLM chat wrapper—it is an authoritative finite state machine. Here is how Swarm bakes planning directly into the runtime, automates single-checkpoint tasks for zero developer friction, and replaces catastrophic 100k–1M token context compaction with the Final Handoff System.
+
+TARGET AUDIENCESystems Engineers, Runtime Architects & FinOps Leads
+CORE ARCHITECTUREHarness FSM + Ephemeral Scratchpads
+CONTEXT COMPACTION COST$0.00 (Zero Compaction Required)
+PROMPT CACHE RETENTION85% to 92% Cache Hit Ratio
+
+CORE INVARIANTHARNESS ARCHITECTURE PRINCIPLE
+
+The Golden Rule of Agent State: An agent harness is not a loose while-loop feeding conversation history back to an inference API. When you accumulate unpruned tool traces and raw file reads across hours of execution, you inevitably trigger the Compaction Trap—paying frontier model rates to summarize discarded scratchpads while lobotomizing the agent. The solution is not killing planning; it is making plans the discrete, bounded state machine of the runtime itself.
+SECTION 01INDUSTRY DISCOURSE
+The Great Plan Mode Debate: Why Developers Want to Kill It
+
+If you track the discussions surrounding frontier coding assistants in 2026—across tools like Cursor, Windsurf, Claude Code, Aider, and OpenCode—you will notice a growing sentiment: developers are frustrated with "Plan Mode," and toolmakers are considering stripping it out.
+The frustration is completely understandable. In most implementations, "Plan Mode" is implemented as a rigid, modal UI speed bump. You ask the assistant to make a straightforward modification to an auth route, and instead of taking action, the UI forces you into a separate screen. It drafts a verbose 12-point bulleted list, pauses all execution, and demands that you manually click "Approve Plan" before a single line of code can be read or written.
+Because this workflow feels artificial and slow for day-to-day coding, many users simply ignore it. In fact, telemetry from real-world usage reveals that the vast majority of developers never manually toggle into Plan Mode—they leave the agent in default or autonomous mode 100% of the time. Seeing this low toggle rate, product managers conclude: "Users don't like plans. Let's remove Plan Mode entirely, or decouple it into an independent background process."
+
+FAILURE MODE A
+Killing Plans CompletelyHallucination Rate: High
+Without an architectural roadmap, the agent operates in pure reactive chaos. It immediately begins editing files before understanding dependencies, hallucinates missing interfaces, and gets stuck in infinite diagnostic loops.
+
+FAILURE MODE B
+The Detached SidecarCoordination Overhead: Severe
+Separating planning into a disconnected agent or offline markdown file creates two isolated runtimes that cannot communicate. The planner lacks real-time compiler feedback, while the coding agent drifts away from the plan within two execution turns.
+Both failure modes stem from a shared misunderstanding: treating planning as a user-facing UI feature rather than an internal runtime primitive.
+SECTION 02STATE MACHINES
+Baking Plans into the Harness: Why Plans Must Be Runtime State
+
+In Swarm, planning is not an optional sidebar modal that developers must remember to click. The plan is the authoritative state machine of the agent harness itself.
+When planning is baked directly into the harness runtime:
+The Plan Is Authoritative Document State: The roadmap is not arbitrary conversational banter inside a chat transcript. It is a strictly typed JSON contract (checkpoints, subtasks, validation rules, acceptance criteria) that governs tool execution boundaries.
+Continuous Conversational Refinement: Because the plan is live in the harness, you can talk to the agent and reshape the plan dynamically. If an audit reveals that an interface is obsolete, you don't cancel the entire session—you refine or restart the specific checkpoint via conversational steering.
+Habitual Focus on the End Goal: When an engineer reads a structured plan before multi-file refactoring begins, both human and machine align on the definition of done. The human understands exactly what subsystems will be touched, and the AI is bound to concrete acceptance tests rather than vague aesthetic edits.
+
+Swarm Harness Plan Document Contract (Authoritative State)JSON{
+ "id": "plan_1790078038106",
+ "title": "Migrate Token Auth to Ephemeral Leases",
+ "execution_policy": { "mode": "automatic", "shape": "checkpointed" },
+ "checkpoints": [
+ {
+ "id": "cp-1",
+ "title": "Audit Token Lifecycle & Unit Test Coverage",
+ "status": "completed",
+ "tasks": ["Trace token verification in auth.go", "Add regression test suite"],
+ "acceptance_criteria": ["All unit tests pass", "Zero ambient secret leaks"],
+ "final_handoff": {
+ "status": "completed",
+ "handoff_overview": "Identified TTL validation gap in token_broker.go line 84.",
+ "impact_bullets": ["Added TestTokenExpiry regression suite", "Reproduced 401 bug locally"],
+ "changed_files": ["pkg/auth/token_test.go"],
+ "validation": "go test -v ./pkg/auth/... (PASS)"
+ }
+ },
+ {
+ "id": "cp-2",
+ "title": "Implement Conditional Lease Policy",
+ "status": "in_progress",
+ "tasks": ["Patch token_broker.go with lease duration ceiling", "Run integration tests"],
+ "acceptance_criteria": ["Duration > 120m rejected with 400 Bad Request"]
+ }
+ ]
+}
+SECTION 03ZERO OVERHEAD
+Automated Single Checkpoints: How Swarm Solves User Friction
+
+Let's be completely candid: even the creators of Swarm rarely switch to manual "Plan Mode" for routine work.
+If a developer has to pause, open a modal, configure a planning stage, and confirm a multi-step checklist just to fix a CSS margin or patch a typo, they will abandon the tool. Friction kills developer velocity.
+Swarm solves this by implementing Automated Single Checkpoints:
+
+01
+
+Autonomous Checkpoint Synthesis
+When you submit a scoped, single-objective request in default Auto Mode (e.g., "fix the sidebar z-index collision on mobile"), the harness automatically invokes start_session_checkpoint under the hood.
+02
+
+Zero Modal Interruption
+The user is never blocked by a modal dialog or prompted to confirm an obvious checklist. The agent immediately executes the required research and code changes.
+03
+
+Full State Isolation & Handoff Guarantees
+Even though the user took zero manual planning steps, the run receives all the benefits of the checkpoint architecture: isolated attempts, enforceable acceptance criteria, and a structured terminal final_handoff.
+04
+
+Seamless Escalation to Staged Roadmaps
+When the user's intent is broad, uncertain, or multi-phase (e.g., "overhaul our CI/CD pipeline and migrate to Docker rootless"), the harness detects the scope and proposes a multi-checkpoint roadmap (cp-1, cp-2, cp-3) with parallel task programs.
+To our knowledge, no other agent harness in the industry implements this hybrid automation. Other harnesses either force rigid manual planning for everything or abandon planning entirely. Swarm gives you effortless single-turn speed with bulletproof multi-checkpoint structure.
+SECTION 04THE HIDDEN TAX
+The Compaction Trap: The FinOps & Latency Nightmare of "Just Summarize It"
+
+Here is the Dirty Secret of modern autonomous agents: how other harnesses manage context when sessions run long.
+In a typical coding session, an agent reads dozens of files, runs bash commands, parses 2,000-line compiler error outputs, tests curl endpoints, and examines git diffs. Within 15–20 turns, the raw conversation history balloons: 100,000 tokens, 250,000 tokens, 500,000 tokens, up to 1,000,000 tokens.
+Eventually, the agent hits the model's context window limit or begins generating astronomical API bills. To survive, harnesses trigger a Compaction Pass:
+
+The Naive Compaction Workflow (The Industry Standard)PSEUDOCODE// When raw context exceeds 200,000 tokens:
+function triggerCompaction(sessionHistory) {
+ pauseAgentExecution(); // Agent is frozen, user waits
+
+ const summary = callLLM({
+ model: "frontier-model",
+ prompt: "You are an assistant. Summarize all conversation, tools, outputs, and files so far:",
+ context: sessionHistory // Feeding 250k - 1M tokens of history!
+ });
+
+ // Discard history and replace with summary
+ sessionHistory = [ { role: "system", content: "Summary of earlier work: " + summary } ];
+ resumeAgentExecution();
+}
+The Three Fatal Flaws of Context Compaction
+
+DEFECT 01
+The Agent Lobotomy
+LLMs summarize concepts, not technical invariants. Specific git commit SHAs, line numbers, subtle race condition edge cases, and exact variable renames are smoothed away. The agent begins hallucinating that previously resolved bugs still exist, or repeats failed approaches.
+
+DEFECT 02
+The Double Latency Tax
+Ingesting and summarizing 250k to 1M tokens of dense tool logs takes between 30 to 90 seconds of pure wall-clock delay. During this window, the agent is completely unresponsive. Over a day's work, this adds hours of dead developer waiting time.
+
+DEFECT 03
+FinOps Cash Burn
+You are paying premium frontier input and output token rates to read discarded compiler traces and intermediate scratchpad files that should have been purged the moment the step finished.
+SECTION 05FINOPS TELEMETRY
+Hard Token & Latency Math: What Compaction Actually Costs at Scale
+
+Let's run the exact empirical numbers. Consider an active engineering environment where an autonomous agent runs during an 8-hour workday.
+In a realistic coding session, an active agent triggers an average of 4 compaction passes per day as context swells. Assuming a conservative average context depth of 250,000 tokens per compaction, that equals 1,000,000 tokens per agent per day burned solely on summarization overhead.
+Now compare this across three scale tiers and three leading model classes (based on published 2026 pricing):
+
+Scale TierDaily Tokens Burned in CompactionGemini Flash 3.5 Lite
+($0.075 / 1M in)DeepSeek 4.1 / V3
+($0.27 / 1M in)Luna 6 GPT / Frontier
+($2.50 / 1M in)
+1 Agent
+Solo Developer1,000,000 / day$0.08 / day
+$1.76 / mo$0.30 / day
+$6.60 / mo$2.70 / day
+$59.40 / mo
+10 Agents
+Small Autonomous Team10,000,000 / day$0.75 / day
+$16.50 / mo$3.00 / day
+$66.00 / mo$27.00 / day
+$594.00 / mo
+100 Agents
+Century Run / Enterprise100,000,000 / day$7.50 / day
+$165.00 / mo$30.00 / day
+$660.00 / mo$270.00 / day
+$5,940.00 / mo
+
+The Team Multiplier: If your company employs 10 software engineers, and each engineer runs 10 background worker agents concurrently, you are running 100 parallel pipelines. Under Luna 6 GPT or frontier-tier reasoning models, compaction alone burns $5,940 every single month ($71,280 per year) just to re-summarize past scratchpad conversations!
+The 1M Context Outlier: If an uncheckpointed session balloons to a full 1,000,000 tokens before triggering compaction, a single compaction API call on Luna 6 GPT costs between $2.50 to $5.00. Triggering that twice an hour on 50 agents will incinerate thousands of dollars in an afternoon.
+Cumulative Latency: The Unspoken Productivity Drain
+FinOps dollars are only half the damage. What about engineer time?
+A single compaction call over 250k–1M tokens incurs significant time-to-first-token (TTFT) and processing latency:
+Average Compaction Duration: ~35 to 50 seconds per pass (transferring context, processing KV cache, generating dense summary tokens).
+Daily Stall Time (1 Agent): 4 compactions × 35s = 140 seconds (~2.3 minutes) of dead waiting time per day.
+Daily Stall Time (100 Agents): 400 compactions × 35s = 14,000 seconds = 3.88 to 5.55 cumulative hours of frozen agent compute every single day.
+In multi-agent swarms where agents depend on each other's deliverables, a 45-second compaction pause in one agent blocks downstream child agents, causing cascading pipeline stalls.
+SECTION 06CORE ARCHITECTURE
+The Final Handoff Engine: How Swarm Eliminates Compaction Entirely
+
+Swarm avoids the Compaction Trap through a radically simpler systems design: Discrete Checkpoints + Structured Final Handoffs.
+Instead of treating an entire project as an infinite append-only chat history, Swarm decomposes execution into bounded checkpoints. Each checkpoint operates under a strict isolation rule:
+
+The Checkpoint Boundary Lifecycle
+
+[ CHECKPOINT 1: Audit & Reproduce ]
+│ ├── 14 file reads (search, list, read)
+│ ├── 3 compiler errors & test logs
+│ └── 2 scratchpad shell commands (~78,000 tokens of raw transient debris)
+│
+└── Terminal Harness Action:complete_checkpoint
+├── status: "completed"
+├── handoff_overview: "Identified off-by-one error in token TTL calculation."
+├── impact_bullets: ["Wrote reproduction test", "Verified failure on master"]
+├── changed_files: ["pkg/auth/token_test.go"]
+└── validation: "go test -run TestTokenExpiry PASS"
+─────── BOUNDARY: 78,000 TOKENS OF TRANSIENT DEBRIS DISCARDED ───────
+[ CHECKPOINT 2: Implementation & Verification ]
+├── Static System Prompt & Invariants (Cached prefix)
+├── INJECTED CONTEXT: Last Final Handoff ONLY (~350 tokens!)
+└── Fresh Ephemeral Scratchpad (Zero baggage from Checkpoint 1)
+Why Dropping Transient Context Works
+Think about how a human senior engineer works. When you spend 45 minutes searching through code with grep, inspecting 15 files, and reading compiler stack traces to find a bug, do you paste all 80,000 lines of terminal output into your PR description?
+Of course not. Once you locate the bug and write the failing test, the terminal output is garbage. The only information that matters to the next phase is:
+What was the root cause?
+What exact files were modified?
+What command proved the fix?
+What is the concrete next step?
+By formalizing this distillation into a structured final_handoff contract, Checkpoint 2 inherits 100% of the verified technical signal while discarding 99.6% of the token weight.
+SECTION 07SYSTEMS EFFICIENCY
+Prompt Cache Preservation & Zero Context Drift
+
+The architectural payoff of the Final Handoff System extends directly into the model inference layer: massive prompt cache hit rates.
+Modern inference APIs (Google Gemini Context Caching, Anthropic Cache Breakpoints, DeepSeek Prefix Caching) reward prompts that maintain stable, unchanged prefixes. When a prompt's prefix matches previous calls, providers offer an 80% to 90% discount on input tokens and near-zero time-to-first-token (TTFT).
+In monolithic chat-wrapper architectures, this cache is constantly shattered:
+Every conversational message appends text to the middle of the history.
+Every random bash command output or directory listing mutates the prompt array.
+Compaction passes rewrite the entire prompt history every few hours, triggering full cold-start cache misses.
+In Swarm, the system prompt, workspace instructions, and tool definitions remain static at the head of the prompt. When Checkpoint 2 begins, the only change is the addition of the concise 350-token handoff block. As measured in The Century Run (our benchmark of 100 concurrent agents), Swarm achieves an 80.2% to 92.4% prompt cache hit rate across multi-hour execution runs.
+
+The Empirical Bottom Line: In The Century Run, 100 autonomous agents completed 100 independent software development deliverables consuming 7,890,000 prompt tokens for a total cost of $9.97. That sub-ten-dollar cost was possible only because the runtime avoided compaction passes and preserved high prompt cache velocity.
+SECTION 08TRADE-OFF ANALYSIS
+Addressing the Tradeoff: Context Corruption & The Evolution to Memory
+
+Every engineering design involves tradeoffs. When discarding raw scratchpad history, what is the failure mode?
+Can Context Become Corrupted or Lost?
+In theory, yes: if an agent produces a sloppy, inaccurate final handoff, subsequent checkpoints might inherit flawed assumptions. If Checkpoint 1 claims "all auth tests pass" without running the test, Checkpoint 2 will build upon a false premise.
+However, in practice, context loss with verified final handoffs is exceptionally rare, especially compared to the catastrophic amnesia caused by compaction. Swarm prevents handoff corruption through three structural guards:
+Strict Schema Validation: The complete_checkpoint action is rejected by the harness if required fields (changed_files, impact_bullets, validation) are omitted or formatted as hand-waving prose.
+Parent Verification Barriers: In multi-agent task programs, child coders do not get bash access to declare their own code passing; the parent orchestration agent inspects the committed git worktree and runs tests independently.
+On-Demand Deep Recall: If an agent in Checkpoint 4 genuinely needs details from Checkpoint 1, it does not need to guess. The agent can invoke plan_manage action='get' to read the full durable plan history, or use git tools to inspect past commits.
+The Next Horizon: Durable Account & Workspace Memory
+While checkpoints solve in-session context bounding, long-horizon software engineering spans multiple days, sessions, and workspaces.
+To bridge this without ever resorting to 1M-token monolithic chats, Swarm is integrating Structured Durable Memory (manage_memory):
+
+SESSION LEVEL
+The Plan Document
+Governs immediate execution objectives, active checkpoint state, transient scratchpads, and terminal handoffs within a single session run.
+
+CROSS-SESSION LEVEL
+Durable Memory Objects
+Persists architectural invariants, verified credential paths, repo-specific quirks, and operator preferences across sessions without inflating the active prompt.
+SECTION 09CHECKLIST
+Architectural Invariants: The Modern Agent Harness Checklist
+
+If you are designing or evaluating an autonomous AI agent harness, use this systems checklist to audit its architecture:
+
+✓
+
+Planning is Finite State Machine State
+The plan is an authoritative, typed document that coordinates execution, not freeform text inside a chat log or a decoupled, unsynchronized sidecar process.
+✓
+
+Automated Single-Checkpoint Execution
+Simple, scoped tasks execute automatically without modal interruptions, while retaining checkpoint isolation and verifiable handoffs.
+✓
+
+Zero-Compaction Runtime Guarantee
+The harness never freezes execution to run lossy, expensive 250k–1M token LLM summarization passes on discarded scratchpad history.
+✓
+
+Bounded Ephemeral Scratchpads
+Transient tool logs, compiler errors, and search outputs are purged at each checkpoint boundary, keeping prompt sizes compact and focused.
+✓
+
+Structured Final Handoffs
+Every checkpoint terminates with explicit changed files, impact summaries, and verified test assertions that seed the next checkpoint with ~350 tokens.
+✓
+
+Prompt Cache Preservation (85%+ Hit Ratio)
+Static prefix hygiene is maintained across all turns, slashing input token costs by up to 90% and delivering instant TTFT.
+
+Conclusion: The Future of Agent Runtimes
+
+Killing plan mode is a reactionary band-aid to bad UX. The real architectural leap is recognizing that plans are the missing state machine that enables autonomous agents to operate reliably, cheaply, and deterministically at scale.
+← Back to Engineering & Architecture HubRead The Century Run Benchmark (100 Agents) →
+
+ON THIS PAGE
+Contents01The Plan Mode Debate02Harness FSM vs. Modals03Automated Single Checkpoints04The Compaction TrapFINOPS05Empirical Compaction MathTELEMETRY06The Final Handoff EngineARCHITECTURE07Cache Preservation & Zero Drift08Context Corruption & Memory09Architectural InvariantsCHECKLIST
+TopCloseSteps01
+
+swarmagent.dev
+ResourcesPrivacy PolicyTerms of ServiceContactStatus
+© 2026 SwarmAgent. All rights reserved.

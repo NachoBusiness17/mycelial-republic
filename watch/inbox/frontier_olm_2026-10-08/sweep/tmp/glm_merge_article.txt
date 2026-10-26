@@ -1,0 +1,112 @@
+320B parameters. 96 GB of VRAM. Vision, 256K context, and enough speed to use the model for real work.
+The model did run. Getting it to load and generate was never the full goal. On September 6, I stopped the experiment.
+We had a working inference path, pruned checkpoints, real GPU measurements, and access to 4x RTX PRO 6000 for parts of the work. The last optimization made short-context prefill about 3x faster. We still did not have the model I wanted to use.
+Quality was not good enough. Long-context speed was not good enough. We never demonstrated all the requirements together. Im not going to turn that into a successful recipe because some individual tests were green.
+I really thought we could pull this off. For days, I kept asking for another test because stopping felt worse than trying again. This is how I finally ran out of reasons to keep going.
+Why I thought this was worth trying
+The previous project was Qwen3.8 Flash Next. We had already worked through a bad quantization experience, moved to an AWQ checkpoint from cyankiwi, changed how some weights were stored, and patched the inference path. After getting Qwen working, I thought we could do it again with something bigger. I wanted GLM on my own rig badly enough to find out.
+On August 30, I announced GLM-5.3 Flash as my next milestone.
+The goal was a useful local model on my 4x RTX 3090 rig. Vision had to stay. I wanted 262,144 tokens of context, prefix caching for agent work, and a compiled inference path. Later I relaxed the context goal to 160K or more. I wanted roughly 30 to 40 tokens per second in single-request decode and 900 or more in prefill. Those were targets, not measurements.
+ 
+GLM is a mixture-of-experts model. It has about 320B total parameters, with about 18B active per token. That makes it tempting to look at the active count and think the hardware problem should be manageable.
+But the other experts still need somewhere to live. A token can select different experts at the next layer, or on the next request. Low active compute does not make the stored weights disappear.
+The EXL3 Q4 artifact we inspected was about 187.45 GB on disk. My GPUs have 96 GB combined, before allocating cache, activations, communication buffers, or anything else needed to run inference.
+We would have to change the model.
+Choosing what to give up
+We studied existing quantizations, ExLlamaV3, llama.cpp paths, pruning, and reports from people with similar hardware. Someone also shared work on a hybrid llama.cpp setup with experts running from RAM. It was useful evidence that this architecture could run on consumer GPUs with enough compromises.
+I wanted to push toward GPU-resident inference. CPU expert offload remained useful for bringing the model up and debugging it, but I did not want it to be the final answer to every memory problem.
+The plan became ExLlamaV3 with tensor parallelism for attention and other shared work, plus expert parallelism for routed experts. Quantization would reduce the bytes per weight. Pruning would reduce the number of experts stored. MTP could go. Vision could not.
+Keeping 108 experts out of 288 in each routed layer meant removing 62.5% of them. The static Q4 estimate was about 71.3 GiB of weights. That looked plausible enough to investigate, although it was not a measured VRAM peak.
+ 
+There was another limitation in that arithmetic. The router would still select 8 experts per token. Removing 62.5% of the available experts would not remove 62.5% of the active computation. It could solve a storage problem without producing the speedup I wanted.
+We also kept a second option open: fewer bits per weight, more surviving experts. Q3 with 144 experts deserved comparison with Q4 and 108. We did not yet know which would preserve more useful behavior.
+Before pruning could help, the engine had to work
+This was not a model swap in a finished server.
+The runtime work involved quantized weight layouts, tensor-parallel slices, expert placement, KDA, sparse attention and its indexer, hyper-connections, recurrent state, and Vision. We built small reference checks before trying larger executions.
+ 
+There were loader stalls, disk-backed bootstrap runs, and accounting problems around how many bytes had actually been loaded or promoted. Some sessions made the server difficult to reach. Downloads and temporary artifacts competed for disk space. Those hours were part of the project even though they did not produce a useful tokens-per-second number.
+By August 31, we had real checkpoint execution, short-context generation, TP4 plus EP4, and an image-bearing test. That was progress. It was also very easy to overread a successful startup.
+I had already posted that I would not count a boot log as success. Keeping that promise became harder with every fix. I kept hoping the next test would finally give me a model I wanted to use.
+The agents were moving quickly. Codex coordinated work, OMP sessions ran on the rig, and GLM and Kimi handled implementation at different stages. External reviews changed the plan more than once. We also lost time to model limits, session management, and having to reconstruct what had actually been accepted.
+In a published snapshot of the first 42 hours and 58 minutes, I reported 4,038 model calls and 4,229 tool calls. The roughly 700M token-events in that snapshot included about 677.5M cache reads. Fresh input plus output was about 22.3M. That accounting belongs to that stage, not the final project total.
+The volume of activity was high. It did not tell us whether the next checkpoint would be usable.
+The audit that changed the order of work
+We started spending too much effort on capacity. Keep fewer experts, try a longer context, find the next allocation failure. The branch reached keep96 and keep88 experiments.
+An external code audit forced a reset. The runtime still had expensive Python-driven work, repeated allocations and copies, communication overhead, and attention paths doing more work on history than the sparse selection should require. Some measurements also needed repair.
+I stopped the keep88 attempt at 262K. There was little value in making another oversized context allocation the headline while basic runtime and correctness questions remained open.
+ 
+Prefix caching showed how specific these problems could be. Image placeholders with the same shape were not enough to identify the same image. Cache reuse needed to account for image content and positions. Recurrent KDA state also could not be treated like an ordinary cache that could be rewound to any token without extra work.
+We implemented page-aligned state reuse with bounded replay and tested it. Other changes were accepted, checked again, and withdrawn when the control was inadequate. Some early green results had tolerated skipped work or allocation failures too loosely.
+This took longer than pushing another checkpoint through startup. It was necessary if we wanted to trust later quality and speed comparisons.
+The first RTX 6000 window: measure the full model
+The 3090 rig was a poor place to gather a large amount of data from the full model. I asked around for bigger GPUs and got access to 4x RTX PRO 6000 Blackwell cards, with 96 GB each.
+During the September 1 to 2 window, we used the full RedHatAI GLM-5.3-Flash-NVFP4 checkpoint with a native vLLM path. The reference was NVFP4, not original BF16. That distinction matters for everything we collected from it.
+We wanted to know which experts were useful before deciding which to remove. REAP provides an importance-based pruning method. Counting how often the router selects an expert is a simpler measurement, and we needed to stop treating those measurements as interchangeable.
+The corpus had 17,078 records. We captured routing across about 12.59M token positions per routed layer. Exact expert replay used a 2% sample. We did not run exact replay over all 12.59M positions.
+ 
+The capture was not clean from start to finish. Shard 3 hit a timeout and an engine failure. We preserved the valid earlier shards, reduced the prompt batch, recovered the remaining work, and verified the saved data.
+The ranking comparison was important. The median correlation between frequency and exact importance was about -0.22. The split-half exact ranking correlation was about 0.994. For this corpus, frequency was a poor substitute for the importance signal we wanted.
+We also collected an Atlas view of the model and later added router dynamics, weight and scale statistics, expert contributions, paired Vision probes, and other captures. The data became much more useful than a list of expert IDs to delete.
+A stable importance ranking still does not guarantee that removing 62.5% of the experts will preserve the model. It only gives you a better-supported choice of what to try removing
+Better expert selection did help. It did not fix everything
+We built exact-REAP, frequency, and random controls with 108 surviving experts and compared them on the same small test suite within each evaluation version.
+The exact selection was better. In the later v4 suite, it passed 19 of 25 tests, compared with 4 for frequency and 4 for random selection.
+Those are counts from our diagnostic suite. They are not a general benchmark score. An earlier evaluation version had reported 22 passes for exact REAP, but its settings and answer handling differed. Picking 22 as the headline would hide the reason we kept revising the tests.
+ 
+Some apparent model failures were failures in our evaluation code. The chat template could request maximum reasoning while the test allowed only 64 to 384 output tokens. Generation could stop because it reached the token limit, while our reporting treated the stop as a normal ending. Another parser could fall back to unfinished reasoning and grade it as the final answer.
+In at least some traces, the model started with a wrong approach, corrected itself, and then ran out of budget before delivering the answer.
+That did not mean the pruned model was fine. Failures remained after we corrected the evaluation. Coding and multi-turn behavior were still a concern. Passing a simple image test did not establish that the model could handle a long visual agent task.
+I wanted a model I could give work to. I still did not trust this one enough.
+Back to the RTX 6000 cards for merging
+The next idea was REAM, which combines merging with expert pruning. Instead of throwing away a removed expert, could we transfer some of its useful behavior into a survivor?
+Before the next GPU window, we prepared a portable set of scripts, a decoder, checks, and a small pilot. My local disks were already under pressure. I wanted to arrive on the borrowed machine with something executable.
+The earlier routing aggregates were not enough for this test. Experts sharing routing patterns does not establish that their outputs can replace each other. We needed aligned inputs and outputs for the comparison.
+ 
+During the September 5 to 6 window, we captured richer data for 1 routed layer: all 288 experts, 16 prompts, and 991 sampled positions. The train, validation, and test splits kept prompts separate.
+The pilot was bad news for merging. On the held-out test, the relative output error was about 0.146 for pruning alone and 0.449 for the aligned merge candidate. Lower was better.
+An earlier weak-merge setting looked slightly better than pruning, but a control that simply shrank the surviving output did slightly better again. The supposed benefit did not require transferring knowledge from the removed experts.
+ 
+We did not install a merged checkpoint across all routed layers after that result.
+This does not prove that every possible merge method fails on GLM. We tested a limited set of methods on a small, controlled pilot. It was enough to reject those candidates and stop spending the remaining GPU window on a full merge we could not justify.
+Could training repair the pruned model?
+We also went back to the full NVFP4 model with 6 prompts that had caused trouble in the pruned setup. The full reference solved all 6. For 3 of them, we had to raise only the output budget to 16,384 tokens.
+That helped explain why some earlier failure reports were misleading. It did not prove that pruning alone caused every remaining problem. The full reference and the pruned checkpoint ran through different engines and different weight representations.
+Distillation became the next possibility. Save the full model predictions, then train the smaller model to follow them.
+The first estimates made this sound easier than the verified training path supported. The installed Transformers setup did not support the required architecture as a ready replacement for our inference implementation. LoRA memory estimates also changed sharply when we counted adapters across all the proposed expert projections. In that configuration, even the trainable parameter count was over 1B.
+We ran a smaller test that the available setup could support. A block-level LoRA pilot trained about 5.31M parameters for 100 steps. Backward worked and training loss fell. Validation was worse than the untrained pruned block. The held-out test number improved, but selecting the adapter because of that would have ignored the failed validation check.
+We rejected it. This was a small block experiment, not completed model-level distillation, and not proof that recovery through training is impossible.
+ 
+We also tested Q3 and Q4 conversion on 3 original BF16 experts. The Q3 files were about 24.9% smaller, with higher local reconstruction error. That made the storage tradeoff concrete. We never built and qualified the full Q3 keep144 alternative.
+By then, a successful recovery-training run was well beyond what we had ready. The cards were borrowed and the remaining time was uncertain.
+Save what we can still use
+I asked to use the remaining time to collect data we could take home.
+We saved teacher predictions for 5,001,903 token positions across 7,934 samples. About 1M positions came from the earlier capture and about 4M were newly collected. The corpus covered coding, agent work, reasoning, systems, general text, and long context.
+For each position, the useful part was the top-64 token log probabilities, remaining probability mass, token IDs, and the information needed to align predictions with the source sequence. These were teacher-forced predictions on existing texts. They were not 5M generated answers and not full-vocabulary logits.
+ 
+We saved the richer expert capture too, about 4.36 GiB, along with reference outputs and negative results.
+Another collection used 52 fresh synthetic reference tasks. They included image tables, tool-argument formatting, code, state tracking, and image-bearing long-context probes. The longest actual prompts were around 252,439 tokens on the full cloud model. That was useful reference data, but it was not evidence of 256K working on my 3090s. Tool-argument formatting also was not a complete agent workflow.
+Some proposed data did not pass its own checks. A larger block-input/output collection was not accepted because the observer controls were unstable. We kept the failed probes with their failure labels instead of calling the collection a training dataset.
+I published the license-reviewed subset on Hugging Face: expert statistics, reference outputs, negative results, scripts, and the teacher-data subset we could redistribute. The full 5M-position collection is larger than the public release. Materials we could not redistribute are documented through source links.
+Meanwhile, the 3090 runtime finally got faster
+Work on the local engine continued alongside the cloud experiments, using the exact-REAP keep108 checkpoint.
+We got CUDA Graph execution working, profiled the runtime, and reduced expensive MoE prefill work. These local runs used a Q8 latent cache. The NVFP4 reference on the Blackwell cards and the EXL3 runtime on Ampere were different execution paths.
+The last fused path made image-bearing prefill at roughly 4K context about 3x faster, from around 95 to 295 tokens per second. The improved result was reproduced across 2 independent rebuilds.
+At about 8K, the new path measured roughly 284 tokens per second in prefill and 10.76 in graph decode in 1 trial.
+ 
+ 
+These were 4x RTX 3090 measurements at 220 W per card. The older rows are historical points, not a benchmark curve for the final fused implementation. They cannot be combined into a claim that the newest path was validated at every depth.
+The fused change passed the numerical checks we ran. It remained feature-gated. That did not clear model quality or prove a production configuration at 160K or 256K.
+The profile also explained why speeding up a kernel had not solved the model. After reducing MoE time, communication, KDA, and attention work still took substantial time. Optimizing further was possible, but we were still far from 30 to 40 decode and 900 prefill with the context and quality I wanted.
+The last result was a real improvement. It was not enough for me to continue this attempt.
+Why Im stopping
+Because I'm tired
+
+I started with a specific use case: GLM-5.3 Flash on my 4x 3090 rig, large context, Vision, useful speed, and a model that could still do difficult work.
+We built enough of the engine to run serious experiments. Exact expert selection outperformed our simpler controls. We found evaluation bugs, rejected bad merges, tested a small training path, and saved data from the full model. We also made inference faster.
+We did not produce the usable model that justified doing all of this for me.
+ 
+There are still experiments someone could run. More experts at lower precision. A proper recovery-training implementation. More runtime work. Better calibration coverage. None of those is a result I have, and each would need more time and validation.
+So I stopped the agent work and paused the monitor. There is no automatic next overnight run.
+If you have been following this because you wanted a finished GLM recipe for 4x RTX 3090, I dont have it. I do have the measurements, the failed candidates, and a much clearer record of what we tried. That is what I can share honestly.
+I really wanted this to work. I kept asking for another test, another fix, another attempt because I thought we could get there.
+The data is useful. I know. It still sucks to spend this much time on a model and not want to use the result. For now, Ive had enough.

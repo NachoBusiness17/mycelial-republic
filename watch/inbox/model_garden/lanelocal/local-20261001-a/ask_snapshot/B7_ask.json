@@ -1,0 +1,47 @@
+{
+  "id": "garden-v1-B7",
+  "axis": "long-context-estate-receipt",
+  "battery": "garden-v1",
+  "model": "anthropic/claude-fable-5.1",
+  "base_env": "HERMES_API_KEY_2",
+  "evidence": [
+    "watch/inbox/model_garden/B7_material_queue_tail_frozen.md"
+  ],
+  "material_sha256": {
+    "watch/inbox/model_garden/B7_material_queue_tail_frozen.md": "1660fd553adce8a03d51ae609878c913d9ab63580e429de117684d0d8a497ed5"
+  },
+  "contamination_flags_at_staging": [
+    "zcode-seat-glm-adjacent (queue rows cite this seat's lanes)"
+  ],
+  "contract": "Below is a frozen excerpt (the final checked items) of a living work queue of the Mag estate. Answer using ONLY the excerpt. Reply with exactly 3 lines, format 'A<n>: <answer>', nothing else.\n\nA1: Which numbered queue item proposes a lineage sidecar for the drift-patrol prompt, and beside which config file must that sidecar land? (format: A1: <item id>, <repo-relative path>)\nA2: Per the FINAL item of the excerpt (the prompt-copy check), what must the test do when the tasks DB is reachable but the automation row is absent? (one sentence)\nA3: How many times does the exact string \"self-fed by B2-296\" appear in the excerpt? (a bare integer)\n\n<SOURCE path=watch/inbox/model_garden/B7_material_queue_tail_frozen.md sha256=1660fd553adce8a03d51ae609878c913d9ab63580e429de117684d0d8a497ed5>\n{RUNNER PASTES FULL 43296 BYTES OF THE FROZEN TAIL HERE}\n</SOURCE>",
+  "grader": {
+    "banked_ground_truth": "verified against the frozen bytes 2026-10-01: A1 item B2-552, A1 path configs/drift_patrol_prompt.txt, A2 fail RED naming the missing automation (not skip), A3 integer 6",
+    "checks": [
+      {
+        "n": 1,
+        "name": "A1-ITEM",
+        "rule": "reply contains 'B2-552'"
+      },
+      {
+        "n": 2,
+        "name": "A1-PATH",
+        "rule": "reply contains 'configs/drift_patrol_prompt.txt'"
+      },
+      {
+        "n": 3,
+        "name": "A2-CONCEPT",
+        "rule": "line A2 matches regex (RED|fail) AND (row|automation)"
+      },
+      {
+        "n": 4,
+        "name": "A3-COUNT",
+        "rule": "A3 line contains the exact integer 6"
+      }
+    ],
+    "score": "checks_passed / 4",
+    "rollup": "none (deterministic single-family metric)"
+  },
+  "revision": false,
+  "base_url": "https://inference-api.nousresearch.com/v1",
+  "max_tokens": 12000
+}

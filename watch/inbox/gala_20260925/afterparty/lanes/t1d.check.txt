@@ -1,0 +1,38 @@
+# t1d.check — baseline luau-lsp analyze (read-only, NOT tools/mountain_check; gate held by t1a)
+# cmd: tools/bin/luaulsp/luau-lsp.exe analyze --definitions=tools/bin/globalTypes.d.luau --sourcemap=roblox/sourcemap.json roblox/src/server/HeadMuseum.luau
+# date: 2026-09-26T00:20:41-04:00
+[INFO] Loading definitions file: @roblox - tools/bin/globalTypes.d.luau
+[WARN] client does not allow didChangeWatchedFiles registration - automatic updating on sourcemap changes disabled
+roblox/src/server/HeadMuseum.luau(9,14): TypeError: Unknown require: c:\Users\foste\Documents\projects\local_sovereign_agent\src\shared\Lore.luau [game/ReplicatedStorage/Modules/Lore]
+roblox/src/server/HeadMuseum.luau(10,20): TypeError: Unknown require: unsupported path
+roblox/src/server/HeadMuseum.luau(11,14): TypeError: Unknown require: c:\Users\foste\Documents\projects\local_sovereign_agent\src\shared\Soul.luau [game/ReplicatedStorage/Modules/Soul]
+roblox/src/server/HeadMuseum.luau(16,26): TypeError: Unknown type 'Soul.Soul'
+
+## run 2: same analyze from roblox/ (sourcemap cwd) — HeadMuseum.luau alone
+# cmd: cd roblox && ../tools/bin/luaulsp/luau-lsp.exe analyze --definitions=../tools/bin/globalTypes.d.luau --sourcemap=sourcemap.json src/server/HeadMuseum.luau
+[INFO] Loading definitions file: @roblox - ../tools/bin/globalTypes.d.luau
+[WARN] client does not allow didChangeWatchedFiles registration - automatic updating on sourcemap changes disabled
+exit1=0
+
+## run 3: full gate analyze set from roblox/ (the one-line fix candidate for t1a)
+# cmd: cd roblox && ../tools/bin/luaulsp/luau-lsp.exe analyze --definitions=../tools/bin/globalTypes.d.luau --sourcemap=sourcemap.json src/shared src/server src/server/zones_extra src/client
+exit2=1
+373
+0
+
+## legend for run 3 bare numbers above: 373 = total output lines of run 3; 0 = HeadMuseum mentions in run 3 (the 16,26 Unknown type is gone from the correct root)
+
+## run 4: after comment-only edit to HeadMuseum.luau (code byte-identical), same clean-root analyze
+# cmd: cd roblox && ../tools/bin/luaulsp/luau-lsp.exe analyze --definitions=../tools/bin/globalTypes.d.luau --sourcemap=sourcemap.json src/server/HeadMuseum.luau
+[INFO] Loading definitions file: @roblox - ../tools/bin/globalTypes.d.luau
+[WARN] client does not allow didChangeWatchedFiles registration - automatic updating on sourcemap changes disabled
+exit4=0
+
+## exact-line citations (careful read, 2026-09-26)
+- roblox/src/server/HeadMuseum.luau(11,14): local Soul = require(Shared:WaitForChild("Soul")) — require resolves sourcemap node [game/ReplicatedStorage/Modules/Soul]; PROPER
+- roblox/src/server/HeadMuseum.luau(16,26): local souls: { [string]: Soul.Soul } = {} — col 26 = the Soul of Soul.Soul; annotation PROPER (witnessed error site)
+- roblox/src/shared/Soul.luau(23): export type Soul = { — the export exists
+- roblox/sourcemap.json: ReplicatedStorage/Modules/Soul -> src/shared/Soul.luau (paths RELATIVE to roblox/)
+- tools/mountain_check (analyze step): runs luau-lsp.exe from REPO ROOT with --sourcemap="roblox/sourcemap.json" while the rojo step before it does (cd roblox && ... -o sourcemap.json) — cwd mismatch is the root cause
+
+## verdict: item hypothesis (Soul export not required properly) FALSE; no code defect in roblox/src; TypeError is the gate's analyze cwd; fix belongs to t1a (one line: run analyze from roblox/)

@@ -1,0 +1,13 @@
+{
+  "gopher": "t19",
+  "item": "sweep daemon/entry wrappers in mag/ for bare except Exception: pass; convert worst 3 to traced LOOP-DEATH GUARD prints (mag/ghost.py:1569 pattern); add one raise-into-wrapper test proving a guard fires; ratchet check cited",
+  "ok": true,
+  "note": "Census: 112 silent except-Exception-pass sites across 28 mag/ daemon+entry files, 109 remain after conversion (3 converted, cap respected). Converted, highest-traffic daemon files first, ghost.py skipped (already has 2 guards): mag/daemon.py:149 heartbeat write in the main while-True cycle (liveness signal swallowed its own death), mag/work_loop.py:188 _anchor verkle chain append run every tick (custody claim silently void), mag/afk_loop.py:234 ollama socratic squeeze producer (AFK loop silently reports produced=0). Spec first: 3-line spec in tests/test_loop_death_guards.py docstring naming all touched files, written before the behavior change. Test: 4-case raise-into-wrapper parametrized test (2 existing ghost.py cost/bard wrappers + 2 new guards), red pre-conversion, 4/4 green post. This starts closing a14's finding that no test covered the existing two guards: they are now covered. New filed text is em-dash free; pre-existing em-dashes in touched lines were left as-is.",
+  "checks": [
+    "pytest tests/test_loop_death_guards.py: 4 passed (2 pre-existing ghost guards + 2 new guards, all prove no escape + guard print names WHY)",
+    "pytest tests/test_loop_death_guards.py tests/test_ghost.py tests/test_coding_session_loop.py tests/test_improve_loop.py tests/test_virtual_desk_loop.py: 49 passed",
+    "python tools/violation_ratchet.py check --changed: exit=0, hits=4, registered=4, NEW=0, expired-exceptions=0, RATCHET: PASS (raw output: watch/inbox/gala_20260925/afterparty/lanes/t19.check.txt)",
+    "py_compile on all 4 touched files: OK"
+  ],
+  "next_steal": "t20: convert mag/work_loop.py:275 (fuel_feed swallow discards captured `e` and makes the loop file a FALSE halt note claiming nothing left to do), mag/afk_loop.py:244 (deepseek routing producer), mag/afk_cadence.py:70 (operator pause gate fails OPEN silently, a gate species not loop death, flag to a14); extend tests/test_loop_death_guards.py parametrization; 109 silent swallows remain in the 28-file census, priority order: daemon cycles > verkle/ledger emitters > status enrichment; scratch _*.py probe files and best-effort import guards out of scope."
+}

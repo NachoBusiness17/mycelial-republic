@@ -1,0 +1,19 @@
+{
+  "gopher": "t1a",
+  "item": "fix the TheAnswerBoss 'char' TypeError class in roblox/src",
+  "ok": true,
+  "note": "roblox/src/server/TheAnswerBoss.luau line 115 declared 'local charModel = char :: Model' with 'char' undefined in scope (luau-lsp before: TypeError Unknown global 'char' at 115,25, plus LocalShadow charModel 115 and LocalShadow root 116 caused by the same line). Fix: deleted the bogus shadow and the duplicate root recompute; the deflection branch now uses root from line 102, same lookup in the same synchronous block, zero behavior change. Fix comment in file carries the receipt. After: TheAnswerBoss contributes only documented noise classes (Unknown require, 'number?' GetAttribute) and a pre-existing DeprecatedApi BreakJoints that the gate grep does not match; 'char' TypeError and both LocalShadow warnings gone, LocalUnused root at 102 gone. Negatives: no other 'char' reference exists in the module; mountain_check findings on first run are all in files this lane did not touch, so no rerun was needed.",
+  "checks": [
+    {
+      "command": "bash tools/mountain_check",
+      "exit": 0,
+      "evidence": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/afterparty/lanes/t1a.check.txt"
+    },
+    {
+      "command": "tools/bin/luaulsp/luau-lsp.exe analyze ... roblox/src/server | grep TheAnswerBoss",
+      "exit": 0,
+      "evidence": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/afterparty/lanes/t1a.after_targeted.txt"
+    }
+  ],
+  "next_steal": "init.server.luau(150,3): TypeError function only returns 1 value but 2 are required, cleanest next single-line type fix."
+}

@@ -1,0 +1,710 @@
+=== t39 check 2026-09-26T00:54:41-04:00 ===
+--- pytest tests/test_api_gateway_status_route.py -v (raw) ---
+============================= test session starts =============================
+platform win32 -- Python 3.11.15, pytest-9.1.1, pluggy-1.6.0 -- C:\Users\foste\Documents\projects\local_sovereign_agent\.venv\Scripts\python.exe
+rootdir: C:\Users\foste\Documents\projects\local_sovereign_agent
+configfile: pytest.ini
+plugins: anyio-4.14.2, langsmith-0.10.14, timeout-2.4.0, typeguard-4.6.0
+collecting ... collected 3 items
+
+tests/test_api_gateway_status_route.py::test_status_carries_scheduled_task_and_clean_warning PASSED [ 33%]
+tests/test_api_gateway_status_route.py::test_status_not_ready_flips_warning PASSED [ 66%]
+tests/test_api_gateway_status_route.py::test_status_non_windows_returns_null_without_doctor_call PASSED [100%]
+
+============================== 3 passed in 0.32s ==============================
+PYTEST_EXIT=0
+
+--- python tools/violation_ratchet.py check --changed (raw) ---
+RATCHET check: scope=10 changed files; hits=6; registered=6; NEW=0; expired-exceptions=0
+RATCHET: PASS — no unregistered debt.
+RATCHET_EXIT=0
+
+--- live dispatch probe, NO server (raw) ---
+status 200
+{
+ "ok": true,
+ "schema": "ok",
+ "status": "up",
+ "ts": 1790398496.2689428,
+ "scheduled_task": {
+  "check": "scheduled_tasks",
+  "ok": true,
+  "statuses": {
+   "MagImproveDaily": "Ready"
+  },
+  "issues": []
+ },
+ "warning": null
+}
+PROBE_EXIT=0
+
+--- regression: pytest tests/test_room_tags.py -q (raw) ---
+EEEE                                                                     [100%]
+=================================== ERRORS ====================================
+__________ ERROR at setup of test_post_to_and_at_mention_reach_inbox __________
+
+path = '\\\\?\\C:\\Users\\foste\\Documents\\projects\\local_sovereign_agent\\agents\\pytest-tmp-11820'
+onerror = functools.partial(<function on_rm_rf_error at 0x000001107872E0C0>, start_path=WindowsPath('//?/C:/Users/foste/Documents/projects/local_sovereign_agent/agents/pytest-tmp-11820'))
+
+    def _rmtree_unsafe(path, onerror):
+        try:
+            with os.scandir(path) as scandir_it:
+                entries = list(scandir_it)
+        except OSError:
+            onerror(os.scandir, path, sys.exc_info())
+            entries = []
+        for entry in entries:
+            fullname = entry.path
+            if _rmtree_isdir(entry):
+                try:
+                    if entry.is_symlink():
+                        # This can only happen if someone replaces
+                        # a directory with a symlink after the call to
+                        # os.scandir or entry.is_dir above.
+                        raise OSError("Cannot call rmtree on a symbolic link")
+                except OSError:
+                    onerror(os.path.islink, fullname, sys.exc_info())
+                    continue
+                _rmtree_unsafe(fullname, onerror)
+            else:
+                try:
+                    os.unlink(fullname)
+                except OSError:
+                    onerror(os.unlink, fullname, sys.exc_info())
+        try:
+>           os.rmdir(path)
+E           PermissionError: [WinError 5] Access is denied: '\\\\?\\C:\\Users\\foste\\Documents\\projects\\local_sovereign_agent\\agents\\pytest-tmp-11820'
+
+..\..\..\AppData\Roaming\uv\python\cpython-3.11-windows-x86_64-none\Lib\shutil.py:636: PermissionError
+
+During handling of the above exception, another exception occurred:
+
+path = '\\\\?\\C:\\Users\\foste\\Documents\\projects\\local_sovereign_agent\\agents\\pytest-tmp-11820'
+ignore_errors = False
+onerror = functools.partial(<function on_rm_rf_error at 0x000001107872E0C0>, start_path=WindowsPath('//?/C:/Users/foste/Documents/projects/local_sovereign_agent/agents/pytest-tmp-11820'))
+dir_fd = None
+
+    def rmtree(path, ignore_errors=False, onerror=None, *, dir_fd=None):
+        """Recursively delete a directory tree.
+    
+        If dir_fd is not None, it should be a file descriptor open to a directory;
+        path will then be relative to that directory.
+        dir_fd may not be implemented on your platform.
+        If it is unavailable, using it will raise a NotImplementedError.
+    
+        If ignore_errors is set, errors are ignored; otherwise, if onerror
+        is set, it is called to handle the error with arguments (func,
+        path, exc_info) where func is platform and implementation dependent;
+        path is the argument to that function that caused it to fail; and
+        exc_info is a tuple returned by sys.exc_info().  If ignore_errors
+        is false and onerror is None, an exception is raised.
+    
+        """
+        sys.audit("shutil.rmtree", path, dir_fd)
+        if ignore_errors:
+            def onerror(*args):
+                pass
+        elif onerror is None:
+            def onerror(*args):
+                raise
+        if _use_fd_functions:
+            # While the unsafe rmtree works fine on bytes, the fd based does not.
+            if isinstance(path, bytes):
+                path = os.fsdecode(path)
+            # Note: To guard against symlink races, we use the standard
+            # lstat()/open()/fstat() trick.
+            try:
+                orig_st = os.lstat(path, dir_fd=dir_fd)
+            except Exception:
+                onerror(os.lstat, path, sys.exc_info())
+                return
+            try:
+                fd = os.open(path, os.O_RDONLY | os.O_NONBLOCK, dir_fd=dir_fd)
+                fd_closed = False
+            except Exception:
+                onerror(os.open, path, sys.exc_info())
+                return
+            try:
+                if os.path.samestat(orig_st, os.fstat(fd)):
+                    _rmtree_safe_fd(fd, path, onerror)
+                    try:
+                        os.close(fd)
+                    except OSError:
+                        # close() should not be retried after an error.
+                        fd_closed = True
+                        onerror(os.close, path, sys.exc_info())
+                    fd_closed = True
+                    try:
+                        os.rmdir(path, dir_fd=dir_fd)
+                    except OSError:
+                        onerror(os.rmdir, path, sys.exc_info())
+                else:
+                    try:
+                        # symlinks to directories are forbidden, see bug #1669
+                        raise OSError("Cannot call rmtree on a symbolic link")
+                    except OSError:
+                        onerror(os.path.islink, path, sys.exc_info())
+            finally:
+                if not fd_closed:
+                    try:
+                        os.close(fd)
+                    except OSError:
+                        onerror(os.close, path, sys.exc_info())
+        else:
+            if dir_fd is not None:
+                raise NotImplementedError("dir_fd unavailable on this platform")
+            try:
+                if _rmtree_islink(path):
+                    # symlinks to directories are forbidden, see bug #1669
+                    raise OSError("Cannot call rmtree on a symbolic link")
+            except OSError:
+                onerror(os.path.islink, path, sys.exc_info())
+                # can't continue even if onerror hook returns
+                return
+>           return _rmtree_unsafe(path, onerror)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+..\..\..\AppData\Roaming\uv\python\cpython-3.11-windows-x86_64-none\Lib\shutil.py:787: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+path = '\\\\?\\C:\\Users\\foste\\Documents\\projects\\local_sovereign_agent\\agents\\pytest-tmp-11820'
+onerror = functools.partial(<function on_rm_rf_error at 0x000001107872E0C0>, start_path=WindowsPath('//?/C:/Users/foste/Documents/projects/local_sovereign_agent/agents/pytest-tmp-11820'))
+
+    def _rmtree_unsafe(path, onerror):
+        try:
+            with os.scandir(path) as scandir_it:
+                entries = list(scandir_it)
+        except OSError:
+            onerror(os.scandir, path, sys.exc_info())
+            entries = []
+        for entry in entries:
+            fullname = entry.path
+            if _rmtree_isdir(entry):
+                try:
+                    if entry.is_symlink():
+                        # This can only happen if someone replaces
+                        # a directory with a symlink after the call to
+                        # os.scandir or entry.is_dir above.
+                        raise OSError("Cannot call rmtree on a symbolic link")
+                except OSError:
+                    onerror(os.path.islink, fullname, sys.exc_info())
+                    continue
+                _rmtree_unsafe(fullname, onerror)
+            else:
+                try:
+                    os.unlink(fullname)
+                except OSError:
+                    onerror(os.unlink, fullname, sys.exc_info())
+        try:
+            os.rmdir(path)
+        except OSError:
+>           onerror(os.rmdir, path, sys.exc_info())
+E           PermissionError: [WinError 5] Access is denied: '\\\\?\\C:\\Users\\foste\\Documents\\projects\\local_sovereign_agent\\agents\\pytest-tmp-11820'
+
+..\..\..\AppData\Roaming\uv\python\cpython-3.11-windows-x86_64-none\Lib\shutil.py:638: PermissionError
+____________ ERROR at setup of test_grok2_alias_hits_grok_b_inbox _____________
+
+path = '\\\\?\\C:\\Users\\foste\\Documents\\projects\\local_sovereign_agent\\agents\\pytest-tmp-11820'
+onerror = functools.partial(<function on_rm_rf_error at 0x000001107872E0C0>, start_path=WindowsPath('//?/C:/Users/foste/Documents/projects/local_sovereign_agent/agents/pytest-tmp-11820'))
+
+    def _rmtree_unsafe(path, onerror):
+        try:
+            with os.scandir(path) as scandir_it:
+                entries = list(scandir_it)
+        except OSError:
+            onerror(os.scandir, path, sys.exc_info())
+            entries = []
+        for entry in entries:
+            fullname = entry.path
+            if _rmtree_isdir(entry):
+                try:
+                    if entry.is_symlink():
+                        # This can only happen if someone replaces
+                        # a directory with a symlink after the call to
+                        # os.scandir or entry.is_dir above.
+                        raise OSError("Cannot call rmtree on a symbolic link")
+                except OSError:
+                    onerror(os.path.islink, fullname, sys.exc_info())
+                    continue
+                _rmtree_unsafe(fullname, onerror)
+            else:
+                try:
+                    os.unlink(fullname)
+                except OSError:
+                    onerror(os.unlink, fullname, sys.exc_info())
+        try:
+>           os.rmdir(path)
+E           PermissionError: [WinError 5] Access is denied: '\\\\?\\C:\\Users\\foste\\Documents\\projects\\local_sovereign_agent\\agents\\pytest-tmp-11820'
+
+..\..\..\AppData\Roaming\uv\python\cpython-3.11-windows-x86_64-none\Lib\shutil.py:636: PermissionError
+
+During handling of the above exception, another exception occurred:
+
+path = '\\\\?\\C:\\Users\\foste\\Documents\\projects\\local_sovereign_agent\\agents\\pytest-tmp-11820'
+ignore_errors = False
+onerror = functools.partial(<function on_rm_rf_error at 0x000001107872E0C0>, start_path=WindowsPath('//?/C:/Users/foste/Documents/projects/local_sovereign_agent/agents/pytest-tmp-11820'))
+dir_fd = None
+
+    def rmtree(path, ignore_errors=False, onerror=None, *, dir_fd=None):
+        """Recursively delete a directory tree.
+    
+        If dir_fd is not None, it should be a file descriptor open to a directory;
+        path will then be relative to that directory.
+        dir_fd may not be implemented on your platform.
+        If it is unavailable, using it will raise a NotImplementedError.
+    
+        If ignore_errors is set, errors are ignored; otherwise, if onerror
+        is set, it is called to handle the error with arguments (func,
+        path, exc_info) where func is platform and implementation dependent;
+        path is the argument to that function that caused it to fail; and
+        exc_info is a tuple returned by sys.exc_info().  If ignore_errors
+        is false and onerror is None, an exception is raised.
+    
+        """
+        sys.audit("shutil.rmtree", path, dir_fd)
+        if ignore_errors:
+            def onerror(*args):
+                pass
+        elif onerror is None:
+            def onerror(*args):
+                raise
+        if _use_fd_functions:
+            # While the unsafe rmtree works fine on bytes, the fd based does not.
+            if isinstance(path, bytes):
+                path = os.fsdecode(path)
+            # Note: To guard against symlink races, we use the standard
+            # lstat()/open()/fstat() trick.
+            try:
+                orig_st = os.lstat(path, dir_fd=dir_fd)
+            except Exception:
+                onerror(os.lstat, path, sys.exc_info())
+                return
+            try:
+                fd = os.open(path, os.O_RDONLY | os.O_NONBLOCK, dir_fd=dir_fd)
+                fd_closed = False
+            except Exception:
+                onerror(os.open, path, sys.exc_info())
+                return
+            try:
+                if os.path.samestat(orig_st, os.fstat(fd)):
+                    _rmtree_safe_fd(fd, path, onerror)
+                    try:
+                        os.close(fd)
+                    except OSError:
+                        # close() should not be retried after an error.
+                        fd_closed = True
+                        onerror(os.close, path, sys.exc_info())
+                    fd_closed = True
+                    try:
+                        os.rmdir(path, dir_fd=dir_fd)
+                    except OSError:
+                        onerror(os.rmdir, path, sys.exc_info())
+                else:
+                    try:
+                        # symlinks to directories are forbidden, see bug #1669
+                        raise OSError("Cannot call rmtree on a symbolic link")
+                    except OSError:
+                        onerror(os.path.islink, path, sys.exc_info())
+            finally:
+                if not fd_closed:
+                    try:
+                        os.close(fd)
+                    except OSError:
+                        onerror(os.close, path, sys.exc_info())
+        else:
+            if dir_fd is not None:
+                raise NotImplementedError("dir_fd unavailable on this platform")
+            try:
+                if _rmtree_islink(path):
+                    # symlinks to directories are forbidden, see bug #1669
+                    raise OSError("Cannot call rmtree on a symbolic link")
+            except OSError:
+                onerror(os.path.islink, path, sys.exc_info())
+                # can't continue even if onerror hook returns
+                return
+>           return _rmtree_unsafe(path, onerror)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+..\..\..\AppData\Roaming\uv\python\cpython-3.11-windows-x86_64-none\Lib\shutil.py:787: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+path = '\\\\?\\C:\\Users\\foste\\Documents\\projects\\local_sovereign_agent\\agents\\pytest-tmp-11820'
+onerror = functools.partial(<function on_rm_rf_error at 0x000001107872E0C0>, start_path=WindowsPath('//?/C:/Users/foste/Documents/projects/local_sovereign_agent/agents/pytest-tmp-11820'))
+
+    def _rmtree_unsafe(path, onerror):
+        try:
+            with os.scandir(path) as scandir_it:
+                entries = list(scandir_it)
+        except OSError:
+            onerror(os.scandir, path, sys.exc_info())
+            entries = []
+        for entry in entries:
+            fullname = entry.path
+            if _rmtree_isdir(entry):
+                try:
+                    if entry.is_symlink():
+                        # This can only happen if someone replaces
+                        # a directory with a symlink after the call to
+                        # os.scandir or entry.is_dir above.
+                        raise OSError("Cannot call rmtree on a symbolic link")
+                except OSError:
+                    onerror(os.path.islink, fullname, sys.exc_info())
+                    continue
+                _rmtree_unsafe(fullname, onerror)
+            else:
+                try:
+                    os.unlink(fullname)
+                except OSError:
+                    onerror(os.unlink, fullname, sys.exc_info())
+        try:
+            os.rmdir(path)
+        except OSError:
+>           onerror(os.rmdir, path, sys.exc_info())
+E           PermissionError: [WinError 5] Access is denied: '\\\\?\\C:\\Users\\foste\\Documents\\projects\\local_sovereign_agent\\agents\\pytest-tmp-11820'
+
+..\..\..\AppData\Roaming\uv\python\cpython-3.11-windows-x86_64-none\Lib\shutil.py:638: PermissionError
+__________________ ERROR at setup of test_reply_to_persists ___________________
+
+path = '\\\\?\\C:\\Users\\foste\\Documents\\projects\\local_sovereign_agent\\agents\\pytest-tmp-11820'
+onerror = functools.partial(<function on_rm_rf_error at 0x000001107872E0C0>, start_path=WindowsPath('//?/C:/Users/foste/Documents/projects/local_sovereign_agent/agents/pytest-tmp-11820'))
+
+    def _rmtree_unsafe(path, onerror):
+        try:
+            with os.scandir(path) as scandir_it:
+                entries = list(scandir_it)
+        except OSError:
+            onerror(os.scandir, path, sys.exc_info())
+            entries = []
+        for entry in entries:
+            fullname = entry.path
+            if _rmtree_isdir(entry):
+                try:
+                    if entry.is_symlink():
+                        # This can only happen if someone replaces
+                        # a directory with a symlink after the call to
+                        # os.scandir or entry.is_dir above.
+                        raise OSError("Cannot call rmtree on a symbolic link")
+                except OSError:
+                    onerror(os.path.islink, fullname, sys.exc_info())
+                    continue
+                _rmtree_unsafe(fullname, onerror)
+            else:
+                try:
+                    os.unlink(fullname)
+                except OSError:
+                    onerror(os.unlink, fullname, sys.exc_info())
+        try:
+>           os.rmdir(path)
+E           PermissionError: [WinError 5] Access is denied: '\\\\?\\C:\\Users\\foste\\Documents\\projects\\local_sovereign_agent\\agents\\pytest-tmp-11820'
+
+..\..\..\AppData\Roaming\uv\python\cpython-3.11-windows-x86_64-none\Lib\shutil.py:636: PermissionError
+
+During handling of the above exception, another exception occurred:
+
+path = '\\\\?\\C:\\Users\\foste\\Documents\\projects\\local_sovereign_agent\\agents\\pytest-tmp-11820'
+ignore_errors = False
+onerror = functools.partial(<function on_rm_rf_error at 0x000001107872E0C0>, start_path=WindowsPath('//?/C:/Users/foste/Documents/projects/local_sovereign_agent/agents/pytest-tmp-11820'))
+dir_fd = None
+
+    def rmtree(path, ignore_errors=False, onerror=None, *, dir_fd=None):
+        """Recursively delete a directory tree.
+    
+        If dir_fd is not None, it should be a file descriptor open to a directory;
+        path will then be relative to that directory.
+        dir_fd may not be implemented on your platform.
+        If it is unavailable, using it will raise a NotImplementedError.
+    
+        If ignore_errors is set, errors are ignored; otherwise, if onerror
+        is set, it is called to handle the error with arguments (func,
+        path, exc_info) where func is platform and implementation dependent;
+        path is the argument to that function that caused it to fail; and
+        exc_info is a tuple returned by sys.exc_info().  If ignore_errors
+        is false and onerror is None, an exception is raised.
+    
+        """
+        sys.audit("shutil.rmtree", path, dir_fd)
+        if ignore_errors:
+            def onerror(*args):
+                pass
+        elif onerror is None:
+            def onerror(*args):
+                raise
+        if _use_fd_functions:
+            # While the unsafe rmtree works fine on bytes, the fd based does not.
+            if isinstance(path, bytes):
+                path = os.fsdecode(path)
+            # Note: To guard against symlink races, we use the standard
+            # lstat()/open()/fstat() trick.
+            try:
+                orig_st = os.lstat(path, dir_fd=dir_fd)
+            except Exception:
+                onerror(os.lstat, path, sys.exc_info())
+                return
+            try:
+                fd = os.open(path, os.O_RDONLY | os.O_NONBLOCK, dir_fd=dir_fd)
+                fd_closed = False
+            except Exception:
+                onerror(os.open, path, sys.exc_info())
+                return
+            try:
+                if os.path.samestat(orig_st, os.fstat(fd)):
+                    _rmtree_safe_fd(fd, path, onerror)
+                    try:
+                        os.close(fd)
+                    except OSError:
+                        # close() should not be retried after an error.
+                        fd_closed = True
+                        onerror(os.close, path, sys.exc_info())
+                    fd_closed = True
+                    try:
+                        os.rmdir(path, dir_fd=dir_fd)
+                    except OSError:
+                        onerror(os.rmdir, path, sys.exc_info())
+                else:
+                    try:
+                        # symlinks to directories are forbidden, see bug #1669
+                        raise OSError("Cannot call rmtree on a symbolic link")
+                    except OSError:
+                        onerror(os.path.islink, path, sys.exc_info())
+            finally:
+                if not fd_closed:
+                    try:
+                        os.close(fd)
+                    except OSError:
+                        onerror(os.close, path, sys.exc_info())
+        else:
+            if dir_fd is not None:
+                raise NotImplementedError("dir_fd unavailable on this platform")
+            try:
+                if _rmtree_islink(path):
+                    # symlinks to directories are forbidden, see bug #1669
+                    raise OSError("Cannot call rmtree on a symbolic link")
+            except OSError:
+                onerror(os.path.islink, path, sys.exc_info())
+                # can't continue even if onerror hook returns
+                return
+>           return _rmtree_unsafe(path, onerror)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+..\..\..\AppData\Roaming\uv\python\cpython-3.11-windows-x86_64-none\Lib\shutil.py:787: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+path = '\\\\?\\C:\\Users\\foste\\Documents\\projects\\local_sovereign_agent\\agents\\pytest-tmp-11820'
+onerror = functools.partial(<function on_rm_rf_error at 0x000001107872E0C0>, start_path=WindowsPath('//?/C:/Users/foste/Documents/projects/local_sovereign_agent/agents/pytest-tmp-11820'))
+
+    def _rmtree_unsafe(path, onerror):
+        try:
+            with os.scandir(path) as scandir_it:
+                entries = list(scandir_it)
+        except OSError:
+            onerror(os.scandir, path, sys.exc_info())
+            entries = []
+        for entry in entries:
+            fullname = entry.path
+            if _rmtree_isdir(entry):
+                try:
+                    if entry.is_symlink():
+                        # This can only happen if someone replaces
+                        # a directory with a symlink after the call to
+                        # os.scandir or entry.is_dir above.
+                        raise OSError("Cannot call rmtree on a symbolic link")
+                except OSError:
+                    onerror(os.path.islink, fullname, sys.exc_info())
+                    continue
+                _rmtree_unsafe(fullname, onerror)
+            else:
+                try:
+                    os.unlink(fullname)
+                except OSError:
+                    onerror(os.unlink, fullname, sys.exc_info())
+        try:
+            os.rmdir(path)
+        except OSError:
+>           onerror(os.rmdir, path, sys.exc_info())
+E           PermissionError: [WinError 5] Access is denied: '\\\\?\\C:\\Users\\foste\\Documents\\projects\\local_sovereign_agent\\agents\\pytest-tmp-11820'
+
+..\..\..\AppData\Roaming\uv\python\cpython-3.11-windows-x86_64-none\Lib\shutil.py:638: PermissionError
+___________ ERROR at setup of test_untagged_post_stays_out_of_inbox ___________
+
+path = '\\\\?\\C:\\Users\\foste\\Documents\\projects\\local_sovereign_agent\\agents\\pytest-tmp-11820'
+onerror = functools.partial(<function on_rm_rf_error at 0x000001107872E0C0>, start_path=WindowsPath('//?/C:/Users/foste/Documents/projects/local_sovereign_agent/agents/pytest-tmp-11820'))
+
+    def _rmtree_unsafe(path, onerror):
+        try:
+            with os.scandir(path) as scandir_it:
+                entries = list(scandir_it)
+        except OSError:
+            onerror(os.scandir, path, sys.exc_info())
+            entries = []
+        for entry in entries:
+            fullname = entry.path
+            if _rmtree_isdir(entry):
+                try:
+                    if entry.is_symlink():
+                        # This can only happen if someone replaces
+                        # a directory with a symlink after the call to
+                        # os.scandir or entry.is_dir above.
+                        raise OSError("Cannot call rmtree on a symbolic link")
+                except OSError:
+                    onerror(os.path.islink, fullname, sys.exc_info())
+                    continue
+                _rmtree_unsafe(fullname, onerror)
+            else:
+                try:
+                    os.unlink(fullname)
+                except OSError:
+                    onerror(os.unlink, fullname, sys.exc_info())
+        try:
+>           os.rmdir(path)
+E           PermissionError: [WinError 5] Access is denied: '\\\\?\\C:\\Users\\foste\\Documents\\projects\\local_sovereign_agent\\agents\\pytest-tmp-11820'
+
+..\..\..\AppData\Roaming\uv\python\cpython-3.11-windows-x86_64-none\Lib\shutil.py:636: PermissionError
+
+During handling of the above exception, another exception occurred:
+
+path = '\\\\?\\C:\\Users\\foste\\Documents\\projects\\local_sovereign_agent\\agents\\pytest-tmp-11820'
+ignore_errors = False
+onerror = functools.partial(<function on_rm_rf_error at 0x000001107872E0C0>, start_path=WindowsPath('//?/C:/Users/foste/Documents/projects/local_sovereign_agent/agents/pytest-tmp-11820'))
+dir_fd = None
+
+    def rmtree(path, ignore_errors=False, onerror=None, *, dir_fd=None):
+        """Recursively delete a directory tree.
+    
+        If dir_fd is not None, it should be a file descriptor open to a directory;
+        path will then be relative to that directory.
+        dir_fd may not be implemented on your platform.
+        If it is unavailable, using it will raise a NotImplementedError.
+    
+        If ignore_errors is set, errors are ignored; otherwise, if onerror
+        is set, it is called to handle the error with arguments (func,
+        path, exc_info) where func is platform and implementation dependent;
+        path is the argument to that function that caused it to fail; and
+        exc_info is a tuple returned by sys.exc_info().  If ignore_errors
+        is false and onerror is None, an exception is raised.
+    
+        """
+        sys.audit("shutil.rmtree", path, dir_fd)
+        if ignore_errors:
+            def onerror(*args):
+                pass
+        elif onerror is None:
+            def onerror(*args):
+                raise
+        if _use_fd_functions:
+            # While the unsafe rmtree works fine on bytes, the fd based does not.
+            if isinstance(path, bytes):
+                path = os.fsdecode(path)
+            # Note: To guard against symlink races, we use the standard
+            # lstat()/open()/fstat() trick.
+            try:
+                orig_st = os.lstat(path, dir_fd=dir_fd)
+            except Exception:
+                onerror(os.lstat, path, sys.exc_info())
+                return
+            try:
+                fd = os.open(path, os.O_RDONLY | os.O_NONBLOCK, dir_fd=dir_fd)
+                fd_closed = False
+            except Exception:
+                onerror(os.open, path, sys.exc_info())
+                return
+            try:
+                if os.path.samestat(orig_st, os.fstat(fd)):
+                    _rmtree_safe_fd(fd, path, onerror)
+                    try:
+                        os.close(fd)
+                    except OSError:
+                        # close() should not be retried after an error.
+                        fd_closed = True
+                        onerror(os.close, path, sys.exc_info())
+                    fd_closed = True
+                    try:
+                        os.rmdir(path, dir_fd=dir_fd)
+                    except OSError:
+                        onerror(os.rmdir, path, sys.exc_info())
+                else:
+                    try:
+                        # symlinks to directories are forbidden, see bug #1669
+                        raise OSError("Cannot call rmtree on a symbolic link")
+                    except OSError:
+                        onerror(os.path.islink, path, sys.exc_info())
+            finally:
+                if not fd_closed:
+                    try:
+                        os.close(fd)
+                    except OSError:
+                        onerror(os.close, path, sys.exc_info())
+        else:
+            if dir_fd is not None:
+                raise NotImplementedError("dir_fd unavailable on this platform")
+            try:
+                if _rmtree_islink(path):
+                    # symlinks to directories are forbidden, see bug #1669
+                    raise OSError("Cannot call rmtree on a symbolic link")
+            except OSError:
+                onerror(os.path.islink, path, sys.exc_info())
+                # can't continue even if onerror hook returns
+                return
+>           return _rmtree_unsafe(path, onerror)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+..\..\..\AppData\Roaming\uv\python\cpython-3.11-windows-x86_64-none\Lib\shutil.py:787: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+path = '\\\\?\\C:\\Users\\foste\\Documents\\projects\\local_sovereign_agent\\agents\\pytest-tmp-11820'
+onerror = functools.partial(<function on_rm_rf_error at 0x000001107872E0C0>, start_path=WindowsPath('//?/C:/Users/foste/Documents/projects/local_sovereign_agent/agents/pytest-tmp-11820'))
+
+    def _rmtree_unsafe(path, onerror):
+        try:
+            with os.scandir(path) as scandir_it:
+                entries = list(scandir_it)
+        except OSError:
+            onerror(os.scandir, path, sys.exc_info())
+            entries = []
+        for entry in entries:
+            fullname = entry.path
+            if _rmtree_isdir(entry):
+                try:
+                    if entry.is_symlink():
+                        # This can only happen if someone replaces
+                        # a directory with a symlink after the call to
+                        # os.scandir or entry.is_dir above.
+                        raise OSError("Cannot call rmtree on a symbolic link")
+                except OSError:
+                    onerror(os.path.islink, fullname, sys.exc_info())
+                    continue
+                _rmtree_unsafe(fullname, onerror)
+            else:
+                try:
+                    os.unlink(fullname)
+                except OSError:
+                    onerror(os.unlink, fullname, sys.exc_info())
+        try:
+            os.rmdir(path)
+        except OSError:
+>           onerror(os.rmdir, path, sys.exc_info())
+E           PermissionError: [WinError 5] Access is denied: '\\\\?\\C:\\Users\\foste\\Documents\\projects\\local_sovereign_agent\\agents\\pytest-tmp-11820'
+
+..\..\..\AppData\Roaming\uv\python\cpython-3.11-windows-x86_64-none\Lib\shutil.py:638: PermissionError
+============================== warnings summary ===============================
+tests/test_room_tags.py::test_post_to_and_at_mention_reach_inbox
+tests/test_room_tags.py::test_grok2_alias_hits_grok_b_inbox
+tests/test_room_tags.py::test_reply_to_persists
+tests/test_room_tags.py::test_untagged_post_stays_out_of_inbox
+  C:\Users\foste\Documents\projects\local_sovereign_agent\.venv\Lib\site-packages\_pytest\pathlib.py:102: PytestWarning: (rm_rf) unknown function <built-in function scandir> when removing \\?\C:\Users\foste\Documents\projects\local_sovereign_agent\agents\pytest-tmp-11820:
+  <class 'PermissionError'>: [WinError 5] Access is denied: '\\\\?\\C:\\Users\\foste\\Documents\\projects\\local_sovereign_agent\\agents\\pytest-tmp-11820'
+    warnings.warn(
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ===========================
+ERROR tests/test_room_tags.py::test_post_to_and_at_mention_reach_inbox - Perm...
+ERROR tests/test_room_tags.py::test_grok2_alias_hits_grok_b_inbox - Permissio...
+ERROR tests/test_room_tags.py::test_reply_to_persists - PermissionError: [Win...
+ERROR tests/test_room_tags.py::test_untagged_post_stays_out_of_inbox - Permis...
+4 warnings, 4 errors in 0.83s
+REGRESSION_EXIT=1
+
+--- rerun of the same regression command, no code change in between ---
+....                                                                     [100%]
+4 passed in 0.29s
+RERUN_EXIT=0
+note: first run above errored 4x with Windows PermissionError on tmp_path (transient OS file lock); immediate rerun with identical tree passed 4/4, so unrelated to the /status route addition

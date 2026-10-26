@@ -1,0 +1,31 @@
+t63 check evidence (gopher t63, gala afterparty, 2026-09-25)
+
+ITEM: roblox/src/server/MudBasecamp.luau:344-351 plot label refresh on a 10s GetPlayers poll, same disease t56 cured in leaderstats (init.server.luau:184-196).
+
+WHAT THE POLL POLLED (read before edit):
+- refresh(pl) at :307-321 reads pl:GetAttribute(("Plot%d"):format(i)): the label data rides the PLAYER's attributes, not the plot model. Names are dynamic (Plot1..Plot4, one per garden plot, loop at :292).
+- Writer census (grep Plot%d over roblox/src): sole writer is MudBasecamp.luau itself. Set at :326 (plant), removed at :332/:335 (harvest, SetAttribute(name, nil)). No external source, so no catch-all needed; exact-name GetAttributeChangedSignal per plot is enough.
+- The poll had TWO duties: (a) react to Plot writes, (b) tick the time-derived label (countdown text + HERB_MIN/BLOOM_H flips at 30min/8h). Only (b) needed the timer.
+
+FIX SHAPE (after edit, lines 343-390, diff +46/-7, file 400 -> 439 lines):
+- onPlotChanged (:362-378): refresh on change; when plantedAt is truthy, schedules two one-shot task.delay wakeups at exactly HERB_MIN*60 and BLOOM_H*3600 minus age (wake at the deadline, not polling). Stale-wakeup guard :371 drops fires after harvest or replant (attribute must still equal the plantedAt the wakeup was scheduled for).
+- attach (:380-386): seeds refresh once (paints the initial label the poll used to cover within 10s), binds prompt.PromptButtonHoldBegan -> refresh (live countdown read at engagement), binds player:GetAttributeChangedSignal("Plot"..i) -> onPlotChanged.
+- Wiring :387-390 mirrors t56's PlayerAdded + existing-GetPlayers seed (init.server.luau:230-233).
+- Poll REMOVED, no fallback kept. Remaining task.spawn in this file (:215 wisp chase, 0.1s) is a motion tick, not a label poll.
+
+NEGATIVES, FIRST-CLASS:
+- Wall-clock time fires no signal. Between the write events the "growing... N min left" minute count is stale; it refreshes at plant, harvest, prompt engagement (PromptButtonHoldBegan), and the two threshold wakeups. The load-bearing label flips (grow -> herb-ready -> bloom-ready) are exact, not 10s-approximate. Cosmetic countdown staleness accepted for zero standing timers.
+- Attribute REMOVAL firing (SetAttribute(name, nil), :332/:335) is NOT doc-stated: attributes guide says only "To delete an attribute, set its value to nil"; GetAttributeChangedSignal API page has no firing wording. Not load-bearing: every in-file write path already refreshes at :340, and harvest/removal schedules nothing further.
+- PromptShown was considered for display-time refresh and REJECTED: official ProximityPrompt docs (fetched 2026-09-25) show it passes inputType, not the player, so refresh(pl) cannot know whose attributes to read.
+
+EVIDENCE FETCHED 2026-09-25:
+- create.roblox.com/docs/scripting/attributes: SetAttribute example comment "Fires Changed, AttributeChanged, and GetAttributeChangedSignal()" (first-add/set firing; same receipt t56 used).
+- create.roblox.com/docs/reference/engine/classes/ProximityPrompt: event table (PromptShown(inputType), PromptButtonHoldBegan(playerWhoTriggered: Player), Triggered(playerWhoTriggered: Player)).
+
+CHECKS RUN:
+- read-back of post-edit buildGarden :288-392: loop/end balanced (for i at :292 closes :391, buildGarden :392), tabs consistent, params typed Player
+- git diff --stat: 46 insertions, 7 deletions, single hunk region 343-351 -> 343-390
+- grep task.wait(10) over file: 0 matches; grep em-dash over edited region: 0 matches
+- grep PromptShown/PromptButtonHoldBegan over roblox/src: no prior usage; binding uses doc-confirmed signature
+- luau-lsp and luau not on PATH: semantic analyze skipped with receipt (same as t56)
+- mountain_check NOT run per lane order (shared)

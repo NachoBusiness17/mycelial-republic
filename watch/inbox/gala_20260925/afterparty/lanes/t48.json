@@ -1,0 +1,15 @@
+{
+  "gopher": "t48",
+  "item": "extend tools/grave_classify.py (t27's) with a --batch dir mode: classify every handoff file in a directory in one run, one summary table (file, label, justification line), exit 0 if all classified; then wire the retirement path into queue/handoff/README.md (t10's file) with one command line showing the batch classification of queue/handoff/peer-*.json as the worked example, run for real, no handoff file changed",
+  "ok": true,
+  "note": "Batch mode landed in tools/grave_classify.py: --batch DIR [--pattern GLOB] [--json]; files only, sorted by name, fnmatch filter; every file keeps a row, classify failures become ERROR(n) rows with the error text (negatives first-class, run never aborts early); exit 0 only when every file classified, else the worst per-file code (1/2/3); --label/--successor rejected alongside --batch (usage exit 2); batch is read-only by law and by unit test (sha256 before/after). 12 new tests, suite now 44.",
+  "checks": [
+    "REAL worked example per README: .venv/Scripts/python.exe tools/grave_classify.py --batch queue/handoff --pattern \"peer-*.json\" -> 12 files, 11 classified, 1 failed, BATCH_EXIT=2; 11 marker-free peers STILL-RELEVANT (re-brief pointers, not burials); peer-9ce633bb4a.json ERROR(2): its t17 closure line '\"verdict\": \"partially stale: ...\"' (line 21, byte-verified) is off the canonical five; drift enforcement did its job, needs a human re-key before any burial row",
+    "classification-only proof on the real dir: sha256sum of all 12 peer-*.json before and after a batch rerun, identical (sections 1 and 3 of evidence file); payload files are untracked, README.md is the only queue/handoff file t48 wrote",
+    "pytest -q tests/test_grave_classify.py: 44 passed in 0.37s, PYTEST_EXIT=0 (32 from t27 + 12 batch: zero-exit all-classified, sorted rows, pattern filter, json array, ERROR row + exit 2, worst-code-wins 3>2, missing dir exit 1, subdir skip, usage rejections exit 2, no-write hash proof, no-dash justifications)",
+    "tools/violation_ratchet.py check --changed: 'RATCHET: PASS', RATCHET_EXIT=0, no unregistered debt",
+    "em/en-dash scan on t48-authored files (tool, tests, README): 0 hits each; evidence file itself carries 1 hit inside the ratchet's own verbatim stdout line, kept raw, noted in evidence section 9",
+    "negative recorded: my session-start keyword grep over the peers printed no matches, then the batch found the t17 verdict marker; file mtime Sep 26 01:05 says the closure landed mid-session from another lane; classifier read disk bytes at run time, full account in evidence section 9 n2"
+  ],
+  "next_steal": "the 12 peers are now tabled but none is buried: STILL-RELEVANT rows are re-brief pointers and peer-9ce633bb4a.json needs a human re-key of 'partially stale' into the canonical five (it reads SUPERSEDED-BY with docs/ and mag/ receipts as the successor, but the tool never invents that call); next gopher drafts the re-key + per-peer successor evidence pass, or extends batch with --json-to-receipt so the table lands straight into a GALA_GRAVE receipt"
+}

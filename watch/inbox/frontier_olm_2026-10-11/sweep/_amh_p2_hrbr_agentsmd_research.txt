@@ -1,0 +1,140 @@
+
+Skip to content
+How it worksAgentsReviewFAQDocsPricing
+Get early access →
+
+How it worksAgentsReviewFAQDocsPricingGet early access →
+Home/Blog
+
+Blog
+Why Codex ignores it
+Mem0 alternatives
+Codex skills
+Karpathy's LLM wiki
+Auto mode
+Memory or documentation?
+Best company brain tools
+Claude Code and AGENTS.md
+Claude Code skills
+Claude Code hooks
+claude-mem
+Claude Code best practices
+Karpathy CLAUDE.md
+AGENTS.md vs CLAUDE.md
+Cursor rules
+copilot-instructions.md
+Why Claude ignores it
+CLAUDE.md length
+Committing CLAUDE.md
+Agent memory compared
+CLAUDE.md vs skills vs hooks
+Same mistake again
+Review comments to rules
+Slack decisions
+Company brain
+Context engineering, Claude 5
+Context rot, stale rules
+AGENTS.md research
+ADRs for agents
+Memory poisoning
+Best MCP memory servers
+Same rules in every agent
+Growing CLAUDE.md
+Which rules got used
+
+Blog
+Is AGENTS.md useful? What the research found
+Published: September 23, 2026
+
+Somewhat, if a person writes it and keeps it short. The largest study found hand-written context files nudged coding agent success up and generated ones nudged it down, neither significantly, while inference cost rose about 20 percent. Files help when they carry what the agent cannot find in the code: non-standard commands, APIs, and gotchas.
+Five pieces of work have looked at this in 2026. They measure different things, and the honest answer comes from reading them side by side rather than quoting any one headline.
+Does AGENTS.md improve coding agent performance?
+The most cited study is“Evaluating AGENTS.md”(arXiv:2602.11988) from ETH Zurich and LogicStar. It ran four agent and model pairs, including Claude Code with Sonnet 4.5 and Codex with GPT-5.2, on 138 tasks from 12 repositories that ship developer-written context files, plus SWE-bench Lite with generated ones.
+The numbers moved between versions. The first version (February 2026) reported developer-written files improving success by about 4 points and LLM-generated files lowering it by about 3. The revised version (v2, June 2026) reports +2.4 and −2 points, and notes neither effect is statistically significant. Both versions agree on the cost: runs with a context file cost roughly 20 percent more.
+The more useful findings are qualitative. Agents followed the instructions in the files well. Repository overviews, the section most templates start with, did not help agents find the relevant files. The authors conclude that context files are useful for specifying non-standard practices, and that human-written ones should be minimal.
+Does the structure of AGENTS.md or CLAUDE.md matter?
+Less than people assume.McMillan(arXiv:2605.10039) ran 1,650 Claude Code sessions and varied four things practitioners argue about: file size, where an instruction sits, how the files are split, and contradictions in a neighbouring file. None of the four produced a detectable difference in compliance after correction.
+What did move compliance was time. Each additional function the agent generated came with about 5.6 percent lower odds of following the rule. The author flags that this was found during analysis, not planned, and the rule being tested was a trivial annotation. Still, the direction matches what teams report: the file is followed at the start of a session and less by the end.
+The practical reading is that reorganising a file is rarely the fix. Moving a rule to the top, splitting one file into five, or adding headers did not change behaviour in this study. What a team controls is which rules are in front of the agent at all, and whether a rule that matters for the task arrives when the task starts rather than sitting in a long file the agent read forty functions ago. Anthropic points the same way when it recommends skills and deferred loading over a larger always-on prompt.
+Is AGENTS.md better than skills?
+In one well-run eval, yes.Vercel(Jude Gao, January 2026) tested agents on Next.js 16 APIs the models had not seen in training, such as 'use cache',connection() and forbidden().
+
+SetupPass rate
+No docs53%
+Docs as a skill, default behaviour53%
+Skill with explicit instructions to use it79%
+Compressed docs index in AGENTS.md100%
+In 56 percent of cases the skill was never invoked. The index inAGENTS.md had no decision point: it was simply there. Vercel compressed it from about 40 KB to 8 KB without losing the result. The lesson is narrow and real. Knowledge the model lacks, and needs on most tasks, belongs where the agent does not have to choose to look for it. It says nothing about a file full of things the model already knows.
+How do teams actually write agent rules?
+Amining and survey study(arXiv:2606.12231) extracted 7,310 rules from 83 open-source projects using the rule files of five AI IDEs (Cursor, Windsurf, Trae, Qoder and Kiro), and surveyed 99 developers.
+Developers rate architectural constraints as most important, but the rules in repos are mostly low-level workflow and formatting.
+Across 1,540 changes, rule files mostly grew: context expansions (29.17%) and enrichments (26.59%) led.
+Surveyed developers said they change rules mainly to correct AI errors (77.78%), usually by adding a new negative rule rather than editing an old one.
+On 160 changes they assessed, compliance rose from 49.14% to 72.13% after the rule was updated.
+That last line is the strongest evidence here that rules can work. It also shows how files decay: every mistake adds a line, and nothing ever takes one away.
+What about large codebases?
+Codified Context(arXiv:2602.20478) is a single-developer report from building a 108,000-line C# system with Claude Code across 283 sessions. It began with an ordinary manifest and grew into about 26,000 lines of context in three tiers: a “hot” constitution of about 660 lines loaded into every session, 19 specialised agents, and 34 specification documents loaded on demand. It is observational, not a controlled test, but it reached the shape the vendors now recommend: a bounded always-on core, and everything else loaded when it applies.
+Should I let the agent generate AGENTS.md?
+Not as the finished file. In the ETH study, LLM-generated context files were the one condition that lowered success, in both versions of the paper, while costing as much as hand-written ones. A generated file tends to restate what the agent can already see: the directory tree, the framework, the test runner it would find inpackage.json anyway.
+Generation is still a fine first draft. Claude Code's/init writes a starting CLAUDE.md from the codebase, and Anthropic's own docs say to refine it with instructions Claude would not discover on its own. That refinement is the part that carries the value. Delete the lines that describe the repo, and keep the ones that describe the team: why webhook handlers enqueue instead of doing the work, which staging database is safe to reset, which test suite lies on a cold cache.
+What the research found, in one table
+
+StudyWhat it measuredFinding
+ETH Zurich, arXiv:2602.11988Task success and cost, 4 agentsHand-written files slightly up, generated slightly down, neither significant; cost about +20%
+McMillan, arXiv:2605.10039Compliance, 1,650 Claude Code sessionsFile structure made no detectable difference; compliance tended to fall as sessions went on
+Vercel evalsPass rate on unseen Next.js 16 APIsDocs index in AGENTS.md 100% vs 53% for a skill left to the agent
+Cai et al., arXiv:2606.122317,310 rules from five AI IDEs, 99 developersRules grow by addition; updates raised compliance from 49% to 72%
+Codified Context, arXiv:2602.20478283 sessions, one 108k-line codebaseA 660-line always-on core plus on-demand documents
+So is AGENTS.md worth writing?
+Yes, with conditions the research agrees on. Write it by hand; do not ship a generated one. Leave out what the agent can read from the code, starting with the repo overview. Put in the commands, the traps, and the decisions a new engineer would only learn by getting them wrong. Anthropic says the same in itscontext engineering post: describe what the repo is for, then spend the tokens on gotchas. How long that should be is covered inhow long should CLAUDE.md be.
+None of these studies can tell you which lines in your file are doing work. They average over other people's repos.
+That is the question Harbor answers for your own rules. It serves each agent the team facts that apply to its task, and counts per rule how often it was served and how often an answer cited it. A cite is evidence, not proof, and an uncited rule may still have shaped a turn. But the count turns “is this file useful” from a paper you read into a ledger you can act on, and a rule that stops being true can be retired instead of carried forever. Themeasurement docs show what gets counted, andserved vs cited explains why the two numbers differ. For the broader shift, seecontext engineering after Claude 5.
+Questions
+
+Does AGENTS.md improve coding agent performance?
+Slightly, when a person writes it. The ETH Zurich study found developer-written files raised success by a few points and LLM-generated ones lowered it, neither significantly in the revised paper, while inference cost rose about 20 percent.
+
+Is AGENTS.md better than skills?
+In Vercel's evals on Next.js 16 APIs, a compressed docs index in AGENTS.md passed 100 percent of cases against 53 percent for a skill, which the agent never invoked in 56 percent of cases. The result applies to knowledge the model lacks and needs on most tasks.
+
+Does the structure of CLAUDE.md or AGENTS.md matter?
+A factorial study of 1,650 Claude Code sessions found no detectable effect from file size, instruction position, file architecture or nearby contradictions. Compliance tended to fall as the session went on.
+
+Should I generate AGENTS.md with an LLM?
+Use generation as a first draft only. In the ETH study, LLM-generated context files were the condition that lowered success, so write the final file by hand and cut what the agent can read from the code.
+
+Decide once. Every agent knows. One company brain for every person and every agent, built from work you already do and kept only while it is still true.
+
+Product
+How it works
+Only what applies
+Your agents
+Review and guardrails
+What it counts
+Pricing
+
+Developers
+Docs
+Blog
+Rule-file checker
+CLI
+MCP server
+Served and cited
+Quickstart
+
+Compare
+vs Mem0
+vs Zep
+vs Unblocked
+vs ByteRover
+vs Cognee
+
+Company
+Get early access
+Questions
+Contact
+Privacy Policy
+Terms of Service
+Data Processing Agreement
+Refund Policy
+© 2026 Harbor·Cookie settings

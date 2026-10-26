@@ -1,0 +1,77 @@
+{
+  "lane": "a24-a2a-photon",
+  "division": "A",
+  "ok": true,
+  "note": "Both heads verified on disk (12 files, all non-zero). PHOTON_ROT compare.py is fully offline (reads saved HTML + lane file, writes local JSON): re-ran it capped 120s, EXIT=0, stdout reproduces the receipt's section 4 line for line, receipt JSON regenerated valid. 5 rows mined, every quote grep -F verified (counts 2,1,1,1,1). Estate grep: no standalone A2A-card or photon-rot steal doc exists in corpus/steal (only MASTER_MICKEY17_V2 fold mentions: a2a-mcp-security rows at :79-80, photon-aftermath at :171); the 53 a2a and 39 photon memory/corpus hits are unrelated-domain (dlb HTML substrings, Feynman/shadertoy photon physics).",
+  "rows": [
+    {
+      "law": "A2A agent cards are machine-readable seat introductions; protocol-layer interop is provable independently of application-layer health.",
+      "claim": "Official Google a2a-sdk 1.1.5 client resolved a live public card (sheyda-a2a-server.hf.space, 533 B, protocolVersion 0.3.0) into the official a2a_pb2.AgentCard proto and completed a JSONRPC send round-trip; the server's executor was broken upstream, which does not negate wire-level interop.",
+      "quote": "protocol-layer interop is confirmed live (both sides spoke A2A 0.3.0\nJSONRPC correctly); the application layer on that server is broken upstream.",
+      "source": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/A2A_FIRST_PROBE_20260925.md",
+      "steal": "Publish an estate card at /.well-known/agent-card.json so foreign seats can introduce themselves machine-readably, and probe a peer's card before trusting its self-description; grade peers at the protocol layer and the app layer separately.",
+      "falsifier": "A card the official SDK resolves whose declared transport fails a live send, or a send round-trip that succeeds against a card the resolver rejects.",
+      "leverage": "high"
+    },
+    {
+      "law": "Soft-404 wall: HTTP 200 at a well-known path proves nothing; require content-type application/json plus a JSON parse before calling it a card.",
+      "claim": "copilot.microsoft.com/.well-known/agent-card.json returned HTTP 200 with ~68 KB of SPA HTML; the official resolver raised AgentCardResolutionError; gemini/anthropic/openai/copilot-api hosts plain 404 at the same path.",
+      "quote": "HTTP 200 at the well-known path proves nothing; require\n`content-type: application/json` + JSON parse before calling it a card.",
+      "source": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/A2A_FIRST_PROBE_20260925.md",
+      "steal": "Gate every estate endpoint or card probe on content-type plus parse, never status code alone, and file the raw wall bytes as evidence.",
+      "falsifier": "A 200 text/html well-known response that the official resolver accepts as a card, or a resolver acceptance granted without application/json content-type.",
+      "leverage": "high"
+    },
+    {
+      "law": "Rot probes are alpha-decay meters: separate sentence-death from fact-death; an exact-phrase MISS can be a revision artifact, not a deletion.",
+      "claim": "photon-aftermath#1's sub-claim that the 20% figure was absent from live bytes is corrected: the 136,746-byte live fetch carries 'approximately 20% fewer equivalent serving machines'; the earlier MISS was exact-phrase only.",
+      "quote": "The earlier MISS was an exact-phrase artifact of the revision, not a deletion of the claim.",
+      "source": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/PHOTON_ROT_20260925.md",
+      "steal": "After any exact-phrase MISS, run a key-fact scan over the saved bytes before reporting deletion, and keep both results in the receipt.",
+      "falsifier": "An exact-phrase MISS where the underlying fact is absent from every saved witness (the 'five months' fragment is the known live instance of true deletion).",
+      "leverage": "high"
+    },
+    {
+      "law": "Verbatim-at-publish requires publication-era bytes; where no archive exists quotes stay permanently stranded, and the stranding itself is a first-class negative finding.",
+      "claim": "Wayback's entire capture history for the Photon post is one contentless 204 record (replay 403), archive.today has no snapshot, no public mirror found: four stranded quotes are unadjudicable as verbatim-at-publish.",
+      "quote": "A 204 response has no body by RFC, so this capture holds zero page text: **Wayback still cannot adjudicate the stranded quotes.**",
+      "source": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/PHOTON_ROT_20260925.md",
+      "steal": "Capture Wayback or archive.today at first contact for any quote intended as load-bearing; treat unarchived vendor prose as unverifiable by default.",
+      "falsifier": "Surfacing any publication-era capture whose bytes byte-match a currently stranded quote.",
+      "leverage": "high"
+    },
+    {
+      "law": "Mutation vs burn-side fabrication is decidable with independent-time phrasing witnesses: a launch-day mirror carrying the stranded phrasing supports mutation over fabrication.",
+      "claim": "AlphaSignal's launch-day piece (datePublished 2026-09-24T18:07:51Z, saved 107,585 B) carries '20% fewer machines', matching the stranded quote rather than today's rewording: the first phrasing-level witness for mutation.",
+      "quote": "carries the stranded phrase \"20% fewer machines\" that today's post no longer uses verbatim, which is the first phrasing-level witness supporting mutation over burn-side fabrication",
+      "source": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/PHOTON_ROT_20260925.md",
+      "steal": "Adjudicate quote disputes by fetching and saving launch-day third-party mirrors, then byte-compare against live bytes; keep the HTML so every check re-runs offline.",
+      "falsifier": "AlphaSignal editing its own text after launch, or a burn-era capture whose bytes match today's live wording instead of the stranded phrasing.",
+      "leverage": "high"
+    }
+  ],
+  "checks": [
+    {
+      "command": "ls + stat size check of the 12 named A2A_FIRST_PROBE and PHOTON_ROT files",
+      "exit": 0,
+      "evidence": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/w3/lanes/a24-a2a-photon.check.txt"
+    },
+    {
+      "command": "./.venv/Scripts/python.exe watch/inbox/PHOTON_ROT_20260925.compare.py (offline, no network, deterministic; capped 120s)",
+      "exit": 0,
+      "evidence": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/w3/lanes/a24-a2a-photon.compare_run.txt"
+    },
+    {
+      "command": "grep -cF per mined quote (5 quotes; counts 2,1,1,1,1)",
+      "exit": 0,
+      "evidence": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/w3/lanes/a24-a2a-photon.quotes.txt"
+    },
+    {
+      "command": "grep -ril 'a2a' and 'photon' over corpus/steal/ + memory/corpus/",
+      "exit": 0,
+      "evidence": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/w3/lanes/a24-a2a-photon.grep_a2a.txt and a24-a2a-photon.grep_photon.txt"
+    }
+  ],
+  "decision_changed": "Yes, small: this lane's future quote checks now capture an archive snapshot at first contact and, after any exact-phrase MISS, run a key-fact scan over saved bytes before reporting deletion. No estate-level ruling overturned; the receipts' own correction (photon-aftermath#1 exact-phrase artifact) was confirmed by re-run.",
+  "artifact": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/w3/lanes/a24-a2a-photon.json"
+}

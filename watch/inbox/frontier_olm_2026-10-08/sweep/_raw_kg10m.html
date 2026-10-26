@@ -1,0 +1,725 @@
+
+
+<!DOCTYPE html>
+<html lang="en" class="fixed_navbar">
+	<head>
+		
+	
+		<title>
+	
+		Building a knowledge graph memory system with 10M+ nodes: Why getting memory tight is impossibly hard at scale - r/LLMDevs
+	
+</title>
+		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+		<meta name="description" content="View on Redlib, an alternative private front-end to Reddit.">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0">
+		
+		<meta name="robots" content="noindex, nofollow">
+		
+		<!-- General PWA -->
+		<meta name="theme-color" content="#1F1F1F">
+		<!-- iOS Application -->
+		<meta name="apple-mobile-web-app-title" content="Redlib">
+		<meta name="apple-mobile-web-app-capable" content="yes">
+		<meta name="apple-mobile-web-app-status-bar-style" content="default">
+		<!-- Android -->
+		<meta name="mobile-web-app-capable" content="yes">
+		<!-- iOS Logo -->
+		<link href="/touch-icon-iphone.png" rel="apple-touch-icon">
+		<!-- OpenSearch description file -->
+		<link rel="search" type="application/opensearchdescription+xml" title="Search Redlib" href="/opensearch.xml">
+		<!-- PWA Manifest -->
+		<link rel="manifest" type="application/json" href="/manifest.json">
+		<link rel="shortcut icon" type="image/x-icon" href="/favicon.ico"> 
+		<link rel="stylesheet" type="text/css" href="/style.css?v=0.36.0-yunyun">
+		<!-- Video quality -->
+		<div id="video_quality" data-value=""></div>
+		
+	<!-- Meta Tags -->
+	<meta name="author" content="u/mate_0107">
+	<meta name="title" content="Building a knowledge graph memory system with 10M+ nodes: Why getting memory tight is impossibly hard at scale - r/LLMDevs">
+	<meta property="og:title" content="Building a knowledge graph memory system with 10M+ nodes: Why getting memory tight is impossibly hard at scale - r/LLMDevs">
+	<meta property="og:description" content="View on Redlib, an alternative private front-end to Reddit.">
+	<meta property="og:url" content="/r/LLMDevs/comments/1pkwgwy/building_a_knowledge_graph_memory_system_with_10m/">
+	<meta property="twitter:url" content="/r/LLMDevs/comments/1pkwgwy/building_a_knowledge_graph_memory_system_with_10m/">
+	<meta property="twitter:title" content="Building a knowledge graph memory system with 10M+ nodes: Why getting memory tight is impossibly hard at scale - r/LLMDevs">
+	<meta property="twitter:description" content="View on Redlib, an alternative private front-end to Reddit.">
+	
+	<meta property="og:type" content="website">
+	
+	
+
+		</head>
+	<body class="
+		card
+		
+		
+		 fixed_navbar">
+		<!-- NAVIGATION BAR -->
+		<nav class="
+			 fixed_navbar">
+			<div id="logo">
+				<a id="redlib" href="/"><span id="red">red</span><span id="lib">lib.</span></a>
+				
+	<details id="feeds">
+		<summary>Feeds</summary>
+		<div id="feed_list">
+			<p>MAIN FEEDS</p>
+			<a href="/">Home</a>
+			
+				<a href="/r/popular">Popular</a>
+				<a href="/r/all">All</a>
+			
+			
+		</div>
+	</details>
+
+			</div>
+			
+	<form action="/r/LLMDevs/search" id="searchbox">
+	<input id="search" type="text" name="q" placeholder="Search" title="Search redlib" value="">
+	
+	<div id="inside">
+		<input type="checkbox" name="restrict_sr" id="restrict_sr" checked>
+		<label for="restrict_sr" class="search_label" title="Restrict search to this subreddit">in /r/LLMDevs</label>
+	</div>
+	
+	<button class="submit">
+		<svg width="15" viewBox="0 0 110 100" fill="none" stroke-width="10" stroke-linecap="round">
+			<path d="M20 50 H100" />
+			<path d="M75 15 L100 50 L75 85" />
+			&rarr;
+		</svg>
+	</button>
+</form>
+
+			<div id="links">
+				<a id="reddit_link" href="#popup">
+					<span>reddit</span>
+					<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+						<path d="M22 2L12 22"/>
+						<path d="M2 6.70587C3.33333 8.07884 3.33333 11.5971 3.33333 11.5971M3.33333 19.647V11.5971M3.33333 11.5971C3.33333 11.5971 5.125 7.47817 8 7.47817C10.875 7.47817 12 8.85114 12 8.85114"/>
+					</svg>
+				</a>
+				
+					<div class="popup" id="popup">
+	<div class="popup-inner">
+		<h1>You are about to leave Redlib</h1>
+		<p>Do you want to continue?</p>
+		<p id="reddit_url">https://www.reddit.com/r/LLMDevs/comments/1pkwgwy/building_a_knowledge_graph_memory_system_with_10m/</p>
+		<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 639.24 563">
+			<defs>
+				<style>.cls-1{fill:#000000;}.cls-2{fill:#f8aa00;}</style>
+			</defs>
+			<path class="cls-2" d="M322.03,0c1.95,2.5,4.88,.9,7.33,1.65,10.5,3.21,17.65,10.39,22.83,19.35,93.64,162.06,186.98,324.29,280.25,486.56,15.73,20.19,2.49,51.27-22.92,54.37-1.21,.19-2.72-.54-3.49,1.08H239.03c-70.33-2.43-141.6,.79-212.08-1.74-17.49-4.92-23.16-15.88-26.91-32.26l-.04-1.97C88.74,354.76,194.49,188.2,289.92,18.43c6.2-10.66,15.03-16.94,27.61-17.36,.95-.03,2.05,.18,2.51-1.07h2Zm-2.43,545c94.95-.02,189.9,.04,284.85-.02,11.84-.73,20.75-13.19,16.68-23.55C523.83,355.97,430.74,187.62,332.05,23.07c-7.93-9.02-22.2-6.58-27.23,3.22C230.28,156.11,155.21,285.64,80.41,415.31c-19.88,34.41-39.31,69.07-59.78,103.14-2.43,4.05-4.24,8.8-1.68,14.18,3.92,8.24,9.59,12.37,18.82,12.37,93.95,0,187.9,0,281.85,0Z"/>
+			<path class="cls-1" d="M319.61,545c-93.95,0-187.9,0-281.85,0-9.22,0-14.89-4.13-18.82-12.37-2.56-5.38-.75-10.13,1.68-14.18,20.47-34.07,39.9-68.73,59.78-103.14C155.21,285.64,230.28,156.11,304.82,26.29c5.03-9.8,19.3-12.24,27.23-3.22,98.7,164.55,191.79,332.9,289.1,498.35,4.06,10.36-4.85,22.82-16.68,23.55-94.94,.06-189.9,0-284.85,.02Zm.44-462.31C238.88,223.22,158.17,362.95,77.28,503h485.54c-80.94-140.13-161.61-279.79-242.77-420.31Z"/>
+			<path class="cls-2" d="M320.05,82.69c81.16,140.52,161.83,280.18,242.77,420.31H77.28C158.17,362.95,238.88,223.22,320.05,82.69Zm36.05,118.99c-.14-46.75-68.32-52.32-74.66-4.76,.73,51.49,9.2,102.97,12.63,154.49,1.18,13.14,10.53,21.81,23.32,22.76,13.12,.97,23.89-9.13,24.96-21.58,4.44-49.99,9.4-101.22,13.76-150.91Zm-36.56,271.4c48.8,.76,49.24-74.7-.31-75.47-53.45,3-46.02,78.12,.31,75.47Z"/>
+			<path class="cls-1" d="M356.1,201.67c-4.36,49.69-9.31,100.91-13.76,150.91-1.07,12.45-11.84,22.56-24.96,21.58-12.79-.95-22.14-9.63-23.31-22.76-3.43-51.52-11.9-103-12.63-154.49,6.33-47.53,74.51-42.03,74.66,4.76Z"/>
+			<path class="cls-1" d="M319.54,473.08c-46.34,2.64-53.75-72.47-.31-75.47,49.56,.78,49.1,76.24,.31,75.47Z"/>
+		</svg>
+		<a id="goback" href="#">No, go back!</a>
+		<a id="toreddit" href="https://www.reddit.com/r/LLMDevs/comments/1pkwgwy/building_a_knowledge_graph_memory_system_with_10m/" rel="nofollow">Yes, take me to Reddit</a>
+	</div>
+</div>
+				
+				<a id="settings_link" href="/settings">
+					<span>settings</span>
+					<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+						<title>settings</title>
+						<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+					</svg>
+				</a>
+			</div>
+		</nav>
+		
+		<!-- MAIN CONTENT -->
+		
+		<main>
+			
+	<div id="column_one">
+		<!-- POST CONTENT -->
+<div class="post highlighted">
+	<p class="post_header">
+		<a class="post_subreddit" href="/r/LLMDevs">r/LLMDevs</a>
+		<span class="dot">&bull;</span>
+		<a class="post_author " href="/user/mate_0107">u/mate_0107</a>
+		
+		<span class="dot">&bull;</span>
+		<span class="created" title="Dec 12 2025, 16:37:54 UTC">Dec 12 &#39;25</span>
+		
+	</p>
+	<h1 class="post_title">
+		
+			<a href="/r/LLMDevs/search?q=flair_name%3A%22Discussion%22&restrict_sr=on"
+				class="post_flair"
+				style="color:black; background:#00a6a5;"><span>Discussion</span></a>
+		
+		Building a knowledge graph memory system with 10M+ nodes: Why getting memory tight is impossibly hard at scale
+		
+		
+	</h1>
+
+	<!-- POST MEDIA -->
+	<!-- post_type: self -->
+	
+
+	<!-- POST BODY -->
+	<div class="post_body">
+		<!-- SC_OFF --><div class="md"><p>Hey everyone, we&#39;re building a persistent memory system for AI assistants, something that remembers everything users tell it, deduplicates facts intelligently using LLMs, and retrieves exactly what&#39;s relevant when asked. Sounds straightforward on paper. At scale (10M nodes, 100M edges), it&#39;s anything but.</p>
+
+<p>Wanted to document the architecture and lessons while they&#39;re fresh.</p>
+
+<p>Three problems only revealed themselves at scale:</p>
+
+<ul>
+<li>Query variability: same question twice, different results</li>
+<li>Static weighting: optimal search weights depend on query type but ours are hardcoded</li>
+<li>Latency: 500ms queries became 3-9 seconds at 10M nodes.</li>
+</ul>
+
+<p><strong>How We Ingest Data into Memory</strong></p>
+
+<p>Our pipeline has five stages. Here&#39;s how each one works:</p>
+
+<p><strong>Stage 1: Save First, Process Later</strong> - We save episodes to the database immediately before any processing. Why? Parallel chunks. When you&#39;re ingesting a large document, chunk 2 needs to see what chunk 1 created. Saving first makes that context available.</p>
+
+<p><strong>Stage 2: Content Normalization</strong> - We don&#39;t just ingest raw text, we normalize using two types of context: session context (last 5 episodes from the same conversation) and semantic context (5 similar episodes plus 10 similar facts from the past). The LLM sees both, then outputs clean structured content.</p>
+
+<p>Real example:</p>
+
+<pre><code>Input: &quot;hey john! did u hear about the new company? it&#39;s called TechCorp. based in SF. john moved to seattle last month btw&quot;
+
+
+Output: &quot;John, a professional in tech, moved from California to Seattle last month. He is aware of TechCorp, a new technology company based in San Francisco.&quot;
+</code></pre>
+
+<p><strong>Stage 3: Entity Extraction</strong> - The LLM extracts entities (John, TechCorp, Seattle) and generates embeddings for each entity name in parallel. We use a type-free entity model, types are optional hints, not constraints. This massively reduces false categorizations.</p>
+
+<p><strong>Stage 4: Statement Extraction</strong> - The LLM extracts statements as triples: (John, works_at, TechCorp). Here&#39;s the key - we make statements first-class entities in the graph. Each statement gets its own node with properties: when it became true, when invalidated, which episodes cite it, and a semantic embedding.</p>
+
+<p>Why reification? Temporal tracking (know when facts became true or false), provenance (track which conversations mentioned this), semantic search on facts, and contradiction detection.</p>
+
+<p><strong>Stage 5: Async Graph Resolution</strong> - This runs in the background 30-120 seconds after ingestion. Three phases of deduplication:</p>
+
+<p>Entity deduplication happens at three levels. First, exact name matching. Second, semantic similarity using embeddings (0.7 threshold). Third, LLM evaluation only if semantic matches exist.</p>
+
+<p>Statement deduplication finds structural matches (same subject and predicate, different objects) and semantic similarity. For contradictions, we don&#39;t delete—we invalidate. Set a timestamp and track which episode contradicted it. You can query &quot;What was true about John on Nov 15?&quot;</p>
+
+<p>Critical optimization: sparse LLM output. At scale, most entities are unique. We only return flagged items instead of &quot;not a duplicate&quot; for 95% of entities. Massive token savings.</p>
+
+<p><strong>How We Search for Info from Memory</strong></p>
+
+<p>We run five different search methods in parallel because each has different failure modes.</p>
+
+<ol>
+<li><strong>BM25 Fulltext</strong> does classic keyword matching. Good for exact matches, bad for paraphrases.</li>
+<li><strong>Vector Similarity</strong> searches statement embeddings semantically. Good for paraphrases, bad for multi-hop reasoning.</li>
+<li><strong>Episode Vector Search</strong> does semantic search on full episode content. Good for vague queries, bad for specific facts.</li>
+<li><strong>BFS Traversal</strong> is the interesting one. First, extract entities from the query by chunking into unigrams, bigrams, and full query. Embed each chunk, find matching entities. Then BFS hop-by-hop: find statements connected to those entities, filter by relevance, extract next-level entities, repeat up to 3 hops. Explore with low threshold (0.3) but only keep high-quality results (0.65).</li>
+<li><strong>Episode Graph Search</strong> does direct entity-to-episode provenance tracking. Good for &quot;Tell me about John&quot; queries.</li>
+</ol>
+
+<p>All five methods return different score types. We merge with hierarchical scoring: Episode Graph at 5.0x weight (highest), BFS at 3.0x, vector at 1.5x, BM25 at 0.2x. Then bonuses: concentration bonus for episodes with more facts, entity match multiplier (each matching entity adds 50% boost).</p>
+
+<p><strong>Where It All Fell Apart</strong></p>
+
+<p><strong>Problem 1: Query Variability</strong></p>
+
+<p>When a user asks &quot;Tell me about me,&quot; the agent might generate different queries depending on the system prompt and LLM used, something like &quot;User profile, preferences and background&quot; OR &quot;about user.&quot; The first gives you detailed recall, the second gives you a brief summary. You can&#39;t guarantee consistent output every single time.</p>
+
+<p><strong>Problem 2: Static Weights</strong></p>
+
+<p>Optimal weights depend on query type. &quot;What is John&#39;s email?&quot; needs Episode Graph at 8.0x (currently 5.0x). &quot;How do distributed systems work?&quot; needs Vector at 4.0x (currently 1.5x). &quot;TechCorp acquisition date&quot; needs BM25 at 3.0x (currently 0.2x).</p>
+
+<p>Query classification is expensive (extra LLM call). Wrong classification leads to wrong weights leads to bad results.</p>
+
+<p><strong>Problem 3: Latency Explosion</strong></p>
+
+<p>At 10M nodes, 100M edges: → Entity extraction: 500-800ms → BM25: 100-300ms → Vector: 500-1500ms → BFS traversal: 1000-3000ms (the killer) → Total: 3-9 seconds</p>
+
+<p>Root causes: No userId index initially (table scan of 10M nodes). Neo4j computes cosine similarity for EVERY statement, no HNSW or IVF index. BFS depth explosion (5 entities → 200 statements → 800 entities → 3000 statements). Memory pressure (100GB just for embeddings on 128GB RAM instance).</p>
+
+<p><strong>What We&#39;re Rebuilding</strong></p>
+
+<p>Now we are migrating to abstracted vector and graph stores. Current architecture has everything in Neo4j including embeddings. Problem: Neo4j isn&#39;t optimized for vectors, can&#39;t scale independently.</p>
+
+<p>New architecture: separate VectorStore and GraphStore interfaces. Testing Pinecone for production (managed HNSW), Weaviate for self-hosted, LanceDB for local dev.</p>
+
+<p>Early benchmarks: vector search should drop from 1500ms to 50-100ms. Memory from 100GB to 25GB. Targeting 1-2 second p95 instead of current 6-9 seconds.</p>
+
+<p><strong>Key Takeaways</strong></p>
+
+<p>What has worked for us:</p>
+
+<ul>
+<li>Reified triples (first-class statements enable temporal tracking). - Sparse LLM output (95% token savings).</li>
+<li>Async resolution (7-second ingestion, 60-second background quality checks).</li>
+<li>Hybrid search (multiple methods cover different failures).</li>
+<li>Type-free entities (fewer false categorizations).</li>
+</ul>
+
+<p>What&#39;s still hard: Query variability. Static weights. Latency at scale.</p>
+
+<p>Building memory that &quot;just works&quot; is deceptively difficult. The promise is simple—remember everything, deduplicate intelligently, retrieve what&#39;s relevant. The reality at scale is subtle problems in every layer.</p>
+
+<p>This is all open source if you want to dig into the implementation details: <a href="https://github.com/RedPlanetHQ/core">https://github.com/RedPlanetHQ/core</a></p>
+
+<p>Happy to answer questions about any of this.</p>
+</div><!-- SC_ON -->
+		
+	
+	</div>
+	<div class="post_score" title="28">
+    
+    28
+    
+    <span class="label"> Upvotes</span></div>
+	<div class="post_footer">
+		<ul id="post_links">
+			<li>
+				<a href="/r/LLMDevs/comments/1pkwgwy/building_a_knowledge_graph_memory_system_with_10m/">
+					<span class="desktop_item">perma</span>link
+				</a>
+			</li>
+			
+			
+			
+<li>
+	<a
+		
+		href="#popup"
+		
+	>reddit</a>
+
+	
+		<div class="popup" id="popup">
+	<div class="popup-inner">
+		<h1>You are about to leave Redlib</h1>
+		<p>Do you want to continue?</p>
+		<p id="reddit_url">https://www.reddit.com/r/LLMDevs/comments/1pkwgwy/building_a_knowledge_graph_memory_system_with_10m/</p>
+		<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 639.24 563">
+			<defs>
+				<style>.cls-1{fill:#000000;}.cls-2{fill:#f8aa00;}</style>
+			</defs>
+			<path class="cls-2" d="M322.03,0c1.95,2.5,4.88,.9,7.33,1.65,10.5,3.21,17.65,10.39,22.83,19.35,93.64,162.06,186.98,324.29,280.25,486.56,15.73,20.19,2.49,51.27-22.92,54.37-1.21,.19-2.72-.54-3.49,1.08H239.03c-70.33-2.43-141.6,.79-212.08-1.74-17.49-4.92-23.16-15.88-26.91-32.26l-.04-1.97C88.74,354.76,194.49,188.2,289.92,18.43c6.2-10.66,15.03-16.94,27.61-17.36,.95-.03,2.05,.18,2.51-1.07h2Zm-2.43,545c94.95-.02,189.9,.04,284.85-.02,11.84-.73,20.75-13.19,16.68-23.55C523.83,355.97,430.74,187.62,332.05,23.07c-7.93-9.02-22.2-6.58-27.23,3.22C230.28,156.11,155.21,285.64,80.41,415.31c-19.88,34.41-39.31,69.07-59.78,103.14-2.43,4.05-4.24,8.8-1.68,14.18,3.92,8.24,9.59,12.37,18.82,12.37,93.95,0,187.9,0,281.85,0Z"/>
+			<path class="cls-1" d="M319.61,545c-93.95,0-187.9,0-281.85,0-9.22,0-14.89-4.13-18.82-12.37-2.56-5.38-.75-10.13,1.68-14.18,20.47-34.07,39.9-68.73,59.78-103.14C155.21,285.64,230.28,156.11,304.82,26.29c5.03-9.8,19.3-12.24,27.23-3.22,98.7,164.55,191.79,332.9,289.1,498.35,4.06,10.36-4.85,22.82-16.68,23.55-94.94,.06-189.9,0-284.85,.02Zm.44-462.31C238.88,223.22,158.17,362.95,77.28,503h485.54c-80.94-140.13-161.61-279.79-242.77-420.31Z"/>
+			<path class="cls-2" d="M320.05,82.69c81.16,140.52,161.83,280.18,242.77,420.31H77.28C158.17,362.95,238.88,223.22,320.05,82.69Zm36.05,118.99c-.14-46.75-68.32-52.32-74.66-4.76,.73,51.49,9.2,102.97,12.63,154.49,1.18,13.14,10.53,21.81,23.32,22.76,13.12,.97,23.89-9.13,24.96-21.58,4.44-49.99,9.4-101.22,13.76-150.91Zm-36.56,271.4c48.8,.76,49.24-74.7-.31-75.47-53.45,3-46.02,78.12,.31,75.47Z"/>
+			<path class="cls-1" d="M356.1,201.67c-4.36,49.69-9.31,100.91-13.76,150.91-1.07,12.45-11.84,22.56-24.96,21.58-12.79-.95-22.14-9.63-23.31-22.76-3.43-51.52-11.9-103-12.63-154.49,6.33-47.53,74.51-42.03,74.66,4.76Z"/>
+			<path class="cls-1" d="M319.54,473.08c-46.34,2.64-53.75-72.47-.31-75.47,49.56,.78,49.1,76.24,.31,75.47Z"/>
+		</svg>
+		<a id="goback" href="#">No, go back!</a>
+		<a id="toreddit" href="https://www.reddit.com/r/LLMDevs/comments/1pkwgwy/building_a_knowledge_graph_memory_system_with_10m/" rel="nofollow">Yes, take me to Reddit</a>
+	</div>
+</div>
+	
+</li>
+
+
+			
+		</ul>
+		<p>93%<span id="upvoted"> Upvoted</span></p>
+	</div>
+</div>
+
+		<!-- SORT FORM -->
+       <div id="commentQueryForms">
+		<form class="comment_control_form">
+			<p id="comment_count">11 comments <span id="sorted_by">sorted by </span></p>
+			<select name="sort" title="Sort comments by" id="commentSortSelect"> 
+				
+		<option value="confidence" selected>
+			Confidence
+		</option>
+	
+		<option value="top" >
+			Top
+		</option>
+	
+		<option value="new" >
+			New
+		</option>
+	
+		<option value="controversial" >
+			Controversial
+		</option>
+	
+		<option value="old" >
+			Old
+		</option>
+	
+      </select>
+        <button id="sort_submit" class="submit">
+          <svg width="15" viewBox="0 0 110 100" fill="none" stroke-width="10" stroke-linecap="round">
+              <path d="M20 50 H100" />
+              <path d="M75 15 L100 50 L75 85" />
+              &rarr;
+          </svg>
+      </button>
+      </form>
+      <!-- SEARCH FORM -->
+      <form class="comment_control_form">
+        <input id="search" class="commentQuery" type="search" name="q" value="" placeholder="Search comments">
+        <input type="hidden" name="type" value="comment">
+      </form>
+      </div>
+  
+      <div>
+      
+      </div>
+
+		<!-- COMMENTS -->
+		<div id="comments">
+			<div class="thread">
+				
+
+				
+
+
+<div id="ntotgd2" class="comment">
+	<div class="comment_left">
+    <p class="comment_score" title="2">
+         
+         2
+         
+    </p>
+        <div class="line"></div>
+	</div>
+	<details class="comment_right" open>
+		<summary class="comment_data">
+			
+				<a class="comment_author  " href="/user/TrustGraph">u/TrustGraph</a>
+			
+			
+			<a href="/r/LLMDevs/comments/1pkwgwy/building_a_knowledge_graph_memory_system_with_10m/ntotgd2/?context=3#ntotgd2" class="created" title="Dec 12 2025, 18:42:00 UTC">Dec 12 &#39;25</a>
+			
+			
+		</summary>
+		
+		<div class="comment_body "><div class="md"><p>10m nodes and 100m edges isn’t scale. Those are small graphs. Enterprise graphs start in the billions of nodes and edges.</p>
+</div></div>
+		
+		<div class="replies">
+		</div>
+	</details>
+</div>
+
+			</div><div class="thread">
+				
+
+				
+
+
+<div id="nto5lwc" class="comment">
+	<div class="comment_left">
+    <p class="comment_score" title="1">
+         
+         1
+         
+    </p>
+        <div class="line"></div>
+	</div>
+	<details class="comment_right" open>
+		<summary class="comment_data">
+			
+				<a class="comment_author  " href="/user/astronomikal">u/astronomikal</a>
+			
+			
+			<a href="/r/LLMDevs/comments/1pkwgwy/building_a_knowledge_graph_memory_system_with_10m/nto5lwc/?context=3#nto5lwc" class="created" title="Dec 12 2025, 16:43:39 UTC">Dec 12 &#39;25</a>
+			
+			
+		</summary>
+		
+		<div class="comment_body "><div class="md"><p>If you&#39;re trying to get even lower  benchmark numbers dm me. You can check my profile for what im doing. Were getting ready to roll out our solution.</p>
+</div></div>
+		
+		<div class="replies">
+		</div>
+	</details>
+</div>
+
+			</div><div class="thread">
+				
+
+				
+
+
+<div id="ntoqpzk" class="comment">
+	<div class="comment_left">
+    <p class="comment_score" title="1">
+         
+         1
+         
+    </p>
+        <div class="line"></div>
+	</div>
+	<details class="comment_right" open>
+		<summary class="comment_data">
+			
+				<a class="comment_author  " href="/user/Difficult-Suit-6516">u/Difficult-Suit-6516</a>
+			
+			
+			<a href="/r/LLMDevs/comments/1pkwgwy/building_a_knowledge_graph_memory_system_with_10m/ntoqpzk/?context=3#ntoqpzk" class="created" title="Dec 12 2025, 18:28:31 UTC">Dec 12 &#39;25</a>
+			
+			
+		</summary>
+		
+		<div class="comment_body "><div class="md"><p>Sounds great and you put in a lot of affort.
+In my opinion the graph overhead is really difficult to justify tbh. Have you tried tracing all the Scores of your Reciprocal Rank Fusion and ran a weight optimization Algorithm and to see what approach contributed how much? When I did it I realized the Graph traversal really did not contribute a lot. ANNs Like HNSW can definetly Help a lot with scaling but I can recommend a hierarchical approach, using clustering and basically doing a Dense, Sparse Hybrid (using k Cluster centroids) to first select relevant documents (or chapters whatever you granularity is) and a secondary hybrid Graph search and maybe even a Reranker on like the top 50.
+Thanks for sharing your experiences!</p>
+</div></div>
+		
+		<div class="replies">
+
+
+<div id="ntpf1sq" class="comment">
+	<div class="comment_left">
+    <p class="comment_score" title="2">
+         
+         2
+         
+    </p>
+        <div class="line"></div>
+	</div>
+	<details class="comment_right" open>
+		<summary class="comment_data">
+			
+				<a class="comment_author  op" href="/user/mate_0107">u/mate_0107</a>
+			
+			
+			<a href="/r/LLMDevs/comments/1pkwgwy/building_a_knowledge_graph_memory_system_with_10m/ntpf1sq/?context=3#ntpf1sq" class="created" title="Dec 12 2025, 20:33:54 UTC">Dec 12 &#39;25</a>
+			
+			
+		</summary>
+		
+		<div class="comment_body "><div class="md"><p>Appreciate taking the effort to help us out. We did run the tests and here is the current state of understanding. </p>
+
+<p>Over a very vast number of queries what we realised is different queries get right answers best from different methods some good with bm25, some with vector and some with graph. Certain question like what user likes perform really well with BFS. Most of these came from working with a 200k recalls and understanding and debugging where it is failing. </p>
+
+<p>But let me do some trails on your suggestions. Thanks a lot.</p>
+</div></div>
+		
+		<div class="replies">
+
+
+<div id="ntpqqqw" class="comment">
+	<div class="comment_left">
+    <p class="comment_score" title="1">
+         
+         1
+         
+    </p>
+        <div class="line"></div>
+	</div>
+	<details class="comment_right" open>
+		<summary class="comment_data">
+			
+				<a class="comment_author  " href="/user/Difficult-Suit-6516">u/Difficult-Suit-6516</a>
+			
+			
+			<a href="/r/LLMDevs/comments/1pkwgwy/building_a_knowledge_graph_memory_system_with_10m/ntpqqqw/?context=3#ntpqqqw" class="created" title="Dec 12 2025, 21:36:20 UTC">Dec 12 &#39;25</a>
+			
+			
+		</summary>
+		
+		<div class="comment_body "><div class="md"><p>Ah very interesting. I have actually been focusing Personalize Page Rank for Graph Traversal i&#39;ll be sure to check out BFS, thanks!</p>
+</div></div>
+		
+		<div class="replies">
+		</div>
+	</details>
+</div>
+
+		</div>
+	</details>
+</div>
+
+		</div>
+	</details>
+</div>
+
+			</div><div class="thread">
+				
+
+				
+
+
+<div id="ntsix40" class="comment">
+	<div class="comment_left">
+    <p class="comment_score" title="1">
+         
+         1
+         
+    </p>
+        <div class="line"></div>
+	</div>
+	<details class="comment_right" open>
+		<summary class="comment_data">
+			
+				<a class="comment_author  " href="/user/__bio">u/__bio</a>
+			
+			
+			<a href="/r/LLMDevs/comments/1pkwgwy/building_a_knowledge_graph_memory_system_with_10m/ntsix40/?context=3#ntsix40" class="created" title="Dec 13 2025, 09:51:36 UTC">Dec 13 &#39;25</a>
+			
+			
+		</summary>
+		
+		<div class="comment_body "><div class="md"><p>Nice job :)
+You say you make embeddings of extracted entities: do you mean you make word embeddings?</p>
+</div></div>
+		
+		<div class="replies">
+
+
+<div id="ntsk63d" class="comment">
+	<div class="comment_left">
+    <p class="comment_score" title="1">
+         
+         1
+         
+    </p>
+        <div class="line"></div>
+	</div>
+	<details class="comment_right" open>
+		<summary class="comment_data">
+			
+				<a class="comment_author  op" href="/user/mate_0107">u/mate_0107</a>
+			
+			
+			<a href="/r/LLMDevs/comments/1pkwgwy/building_a_knowledge_graph_memory_system_with_10m/ntsk63d/?context=3#ntsk63d" class="created" title="Dec 13 2025, 10:04:23 UTC">Dec 13 &#39;25</a>
+			
+			
+		</summary>
+		
+		<div class="comment_body "><div class="md"><p>Yes we do store embedding for each word. We use that back in both entity deduplication for similarity search and also in search to find similar entities from the query</p>
+</div></div>
+		
+		<div class="replies">
+		</div>
+	</details>
+</div>
+
+		</div>
+	</details>
+</div>
+
+			</div><div class="thread">
+				
+
+				
+
+
+<div id="nv7rnlu" class="comment">
+	<div class="comment_left">
+    <p class="comment_score" title="1">
+         
+         1
+         
+    </p>
+        <div class="line"></div>
+	</div>
+	<details class="comment_right" open>
+		<summary class="comment_data">
+			
+				<a class="comment_author  " href="/user/Mobile_Ladder_4085">u/Mobile_Ladder_4085</a>
+			
+			
+			<a href="/r/LLMDevs/comments/1pkwgwy/building_a_knowledge_graph_memory_system_with_10m/nv7rnlu/?context=3#nv7rnlu" class="created" title="Dec 21 2025, 16:06:23 UTC">Dec 21 &#39;25</a>
+			
+			
+		</summary>
+		
+		<div class="comment_body "><div class="md"><p>I hit the same bottleneck. Managing &quot;truth&quot; via structural invalidation/deletion is too heavy on the read path.</p>
+
+<p>I switched to a &quot;trust weight&quot; middleware (simple float decay) to suppress invalid nodes without touching the graph structure. It keeps the latency flat because it&#39;s just a re-rank, not a database write.</p>
+
+<p>2-min silent demo (baseline vs trust suppression):<a href="https://www.loom.com/share/8d979fe7fa3b43889f9e18b86b7446e4">https://www.loom.com/share/8d979fe7fa3b43889f9e18b86b7446e4</a></p>
+
+<p>Curious if this would save you the refactor.</p>
+</div></div>
+		
+		<div class="replies">
+		</div>
+	</details>
+</div>
+
+			</div><div class="thread">
+				
+
+				
+
+
+<div id="ny4ytdd" class="comment">
+	<div class="comment_left">
+    <p class="comment_score" title="1">
+         
+         1
+         
+    </p>
+        <div class="line"></div>
+	</div>
+	<details class="comment_right" open>
+		<summary class="comment_data">
+			
+				<span class="comment_author ">u/[deleted]</span>
+			
+			
+			<a href="/r/LLMDevs/comments/1pkwgwy/building_a_knowledge_graph_memory_system_with_10m/ny4ytdd/?context=3#ny4ytdd" class="created" title="Jan 07 2026, 03:42:06 UTC">Jan 07 &#39;26</a>
+			
+			
+		</summary>
+		
+		<div class="comment_body "><div class="md"><p>[removed] — <a href="https://undelete.pullpush.io/r/LLMDevs/comments/1pkwgwy/building_a_knowledge_graph_memory_system_with_10m/ny4ytdd">view removed comment</a></p></div></div>
+		
+		<div class="replies">
+
+
+<div id="nycph31" class="comment">
+	<div class="comment_left">
+    <p class="comment_score" title="1">
+         
+         1
+         
+    </p>
+        <div class="line"></div>
+	</div>
+	<details class="comment_right" open>
+		<summary class="comment_data">
+			
+				<a class="comment_author  op" href="/user/mate_0107">u/mate_0107</a>
+			
+			
+			<a href="/r/LLMDevs/comments/1pkwgwy/building_a_knowledge_graph_memory_system_with_10m/nycph31/?context=3#nycph31" class="created" title="Jan 08 2026, 06:16:32 UTC">Jan 08 &#39;26</a>
+			
+			
+		</summary>
+		
+		<div class="comment_body "><div class="md"><p>interesting idea, will give it a shot. Thanks!</p>
+</div></div>
+		
+		<div class="replies">
+		</div>
+	</details>
+</div>
+
+		</div>
+	</details>
+</div>
+
+			</div>
+		</div>
+
+	</div>
+
+		</main>
+		
+
+		<!-- FOOTER -->
+		
+			<footer>
+				<div class="footer-buttons">
+					<p><span id="version">v0.36.0-yunyun&emsp;</span><a href="/info" title="View instance information">ⓘ View instance info</a>&emsp;<a href="https://github.com/redlib-org/redlib" title="View code on GitHub">&lt;&gt; Code</a></p>
+				</div>
+			</footer>
+		
+	</body>
+</html>

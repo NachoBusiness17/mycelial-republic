@@ -1,0 +1,91 @@
+== staging the REAL tree files (byte-verified) ==
+  CathedralMap.luau: roblox\src\shared\CathedralMap.luau tree sha256 ff4a42e932a52191...
+  CathedralPlate.luau: roblox\src\server\CathedralPlate.luau tree sha256 488fd349a43a72a9...
+  CathedralMapHud.luau: roblox\src\client\CathedralMapHud.client.luau tree sha256 31f6e90f6bbb4ece...
+[PASS] staged SmokeEnv.luau bytes are sha256-identical to the tools file
+[PASS] staged CathedralMap.luau = prelude + UNCHANGED tree bytes (tree sha256 identical)
+[PASS] staged CathedralPlate.luau = prelude + UNCHANGED tree bytes (tree sha256 identical)
+[PASS] staged CathedralMapHud.luau = prelude + UNCHANGED tree bytes + return footer (tree sha256 identical)
+luau exit code: 0
+[PASS] luau executed plate + HUD to completion (no runtime error)
+
+-- raw luau stdout --
+  [CathedralPlate] built: 5 beacons, 2 chain strips, 2 hub strips
+  entry -258.600000 8.000000 387.200000
+  beacons 5 audit_dungeon,fractal_maze,riddler_engram,riddler_optics,water_computer
+  strip 1 1.40 -318.000000 459.800000 -352.800000 508.400000
+  strip 2 1.40 -273.600000 486.200000 -194.400000 464.000000
+  strip 3 0.90 -249.600000 431.600000 -216.000000 452.000000
+  strip 4 0.90 -238.800000 437.600000 -194.400000 464.000000
+  chaintrans before 0.1 0.1
+  chaintrans after 0.14856592222747067 0.14856592222747067
+  ledger_rows 2
+  ledger 1 where=The Cathedral player=4242 reached water_computer [SADDLE] from eigen (-0.0236, -0.0124), 0.0000 away, bearing 0.0
+  ledger 2 where=The Cathedral player=4242 reached audit_dungeon [SADDLE] from eigen (-0.0236, -0.0124), 0.0066 away, bearing 121.3
+  maplabel audit 0.0000000000 198.2476999292 0.0000000000 78.7997169144
+  maplabel fractal 0.0000000000 36.8888888889 0.0000000000 145.3248407643
+  maplabel engram 0.0000000000 259.1111111111 0.0000000000 105.6928520878
+  maplabel optics 0.0000000000 223.7254069356 0.0000000000 92.9539985846
+  maplabel water 0.0000000000 118.9837225761 0.0000000000 30.6751592357
+  maplabel ^ N (-y) 0.5000000000 0.0000000000 0.0000000000 9.0000000000
+  mapframe_frames 35
+  readout POS eigen (-0.0236, -0.0124)  nearest water
+  readout water     0.0000    0.0 deg N  <-- HERE
+  readout audit     0.0066  121.3 deg ESE
+  readout optics    0.0086  120.7 deg ESE
+  readout fractal   0.0100  215.6 deg SW
+  readout engram    0.0112  118.2 deg ESE
+  readout scan 2026-09-27 · vote: chain 0.031 vs star 0.036 (water-first lean, RIB CONTESTED)
+  readout off-map: adventure_2d6 (stub: no centroid) · no edge on the DARK engram
+  smoke_done
+-- end raw stdout --
+
+== plate: entry() is derived, beacons + strips built ==
+[PASS] beacons at the eigen_centroids: ['audit_dungeon', 'fractal_maze', 'riddler_engram', 'riddler_optics', 'water_computer']
+[PASS] entry() lands NORTH of the floor, derived: (-258.6, 8.0, 387.2) == (-258.6, 8.0, 387.20000000000005)
+[PASS] strip count 4 == chain 2 + hub 2
+[PASS] strip water_computer->fractal_maze: width 1.4 aimed from mid (-318.000,459.800) at fractal_maze (got 1.4, (-318.000,459.800) -> (-352.800,508.400))
+[PASS] strip fractal_maze->riddler_optics: width 1.4 aimed from mid (-273.600,486.200) at riddler_optics (got 1.4, (-273.600,486.200) -> (-194.400,464.000))
+[PASS] strip water_computer->audit_dungeon: width 0.9 aimed from mid (-249.600,431.600) at audit_dungeon (got 0.9, (-249.600,431.600) -> (-216.000,452.000))
+[PASS] strip water_computer->riddler_optics: width 0.9 aimed from mid (-238.800,437.600) at riddler_optics (got 0.9, (-238.800,437.600) -> (-194.400,464.000))
+
+== plate: the chain breathes ==
+[PASS] chain strips start at transparency 0.1 ([0.1, 0.1])
+[PASS] after 50 ticks of 1/30s all 2 chain strips read 0.148566 ([0.14856592222747067, 0.14856592222747067])
+[PASS] breathing stays inside [0.1, 0.34] (the tick envelope)
+
+== plate: beacon Touched files a ShadowLedger row with the live readout ==
+[PASS] two touches filed two ledger rows (2 rows)
+[PASS] row 1 (on-beacon): POS + dist 0.0000 + degenerate self-bearing (0.0|180.0): 'reached water_computer [SADDLE] from eigen (-0.0236, -0.0124), 0.0000 away, bearing 0.0'
+[PASS] row 2 (cross-beacon touch from water): 'reached audit_dungeon [SADDLE] from eigen (-0.0236, -0.0124), 0.0066 away, bearing 121.3' == 'reached audit_dungeon [SADDLE] from eigen (-0.0236, -0.0124), 0.0066 away, bearing 121.3'
+
+== HUD: static map at the render-equation pixels (-y up) ==
+[PASS] label audit: pixel (198.2477, 78.7997) at the render equation (got (0.0, 198.2476999292, 0.0, 78.7997169144))
+[PASS] label fractal: pixel (36.8889, 145.3248) at the render equation (got (0.0, 36.8888888889, 0.0, 145.3248407643))
+[PASS] label engram: pixel (259.1111, 105.6929) at the render equation (got (0.0, 259.1111111111, 0.0, 105.6928520878))
+[PASS] label optics: pixel (223.7254, 92.9540) at the render equation (got (0.0, 223.7254069356, 0.0, 92.9539985846))
+[PASS] label water: pixel (118.9837, 30.6752) at the render equation (got (0.0, 118.9837225761, 0.0, 30.6751592357))
+[PASS] north marker pinned to the TOP edge (^ N (-y) at Y offset 9; got (0.5, 0.0, 0.0, 9.0))
+[PASS] one compass at execution: water (most -ey) renders ABOVE fractal (py 30.68 < 145.32)
+[PASS] map frame holds layer + 16 chain dots + 12 hub dots + 5 region dots + youMarker = 35 frames (got 35)
+
+== HUD: live readout standing ON water_computer ==
+[PASS] POS line is the beacon centroid: 'POS eigen (-0.0236, -0.0124)  nearest water'
+[PASS] standing on the beacon reads 0.0000 + <-- HERE: 'water     0.0000    0.0 deg N  <-- HERE'
+[PASS] audit row carries the data distance 0.0066: 'audit     0.0066  121.3 deg ESE'
+[PASS] vote footer states the filed vote: 'scan 2026-09-27 · vote: chain 0.031 vs star 0.036 (water-first lean, RIB CONTESTED)'
+
+== fold tripwires (judge 2026-09-27: one cathedral map) ==
+[PASS] no EigenMap luau under roblox/src (found [])
+[PASS] the built the_mountain.rbxlx carries NO EigenMap instance (the only EigenMap bytes left are the survivor's own fold-note comment: 2 occurrence(s))
+[PASS] the built rbxlx carries the survivor (CathedralPlate x15, CathedralMapHud x4)
+[PASS] init.server.luau wires no EigenMap module
+[PASS] init.server.luau wires the survivor (require/build/entry/tick)
+[PASS] the killed build's tools are off the repo surface (record copies in cands/killed/)
+
+== VERDICT: PASS (0 failure(s)) ==
+
+Scope note: this is a stub execution under tools/bin/luau/luau.exe, NOT
+Roblox Studio. Real GUI rendering, physics Touched and DataStore
+durability stay owed to a live Studio session (queue/todo.md, P0
+THE MOUNTAIN, owner + dates filed there).

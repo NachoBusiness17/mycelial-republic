@@ -1,0 +1,172 @@
+We used our autonomous Fastino Fine-tuning agent to adapt early access checkpoints of Nemotron 3.5 Lightning into two specialized models, one for medical tasks and one for financial tasks. The agent curated the data, generated and trained candidate recipes, evaluated each on target and transfer tasks, and used every diagnosed failure to design the next experiment.
+Across individual and combined runs, the agent lifted every target benchmark, often by large margins and sometimes dramatically. The agent taught us a great deal about fine-tuning Nemotron 3.5 Lightning, with several findings that ran counter to what we expected.
+This post covers the benchmark results for both models as well as individual agent runs, spanning finance, healthcare, legal, math, multilingual extraction, code, and tool use, followed by seven lessons learned from our agent, additional tips for fine-tuning Nemotron 3.5 Lightning (including what not to do), and ten post-training recipes discovered by our agent that we would reuse in the future.
+Full benchmark results and recipes are available in the appendix.
+How our agent works
+We formulate fine-tuning as an execution-grounded search over a structured pipeline space. A candidate pipeline is represented as π = (D, H, S), jointly specifying three tightly coupled components:
+Data specification (D). The composition of training data including gold examples, hard negatives, replay data, synthetic examples, noise distributions, and the curation constraints used to construct them.
+Optimization configuration (H). The base model, LoRA rank, learning rate, batch size, number of epochs, system prompt, and other parameters governing optimization.
+Strategy (S). The form of supervision itself: direct-answer versus chain-of-thought targets, teacher-model selection and distillation strategy, output representation, and evaluation methodology and so on.
+This makes the problem fundamentally broader than conventional hyperparameter optimization:
+ 
+The distinction matters because these dimensions are tightly coupled: the optimal training configuration depends on the dataset and supervision strategy, and changes to one can alter the effectiveness of the others.
+ 
+Rather than treating experiments as independent trials, the agent maintains the optimization trajectory as a search graph where each node is a completed training pipeline and each edge represents a targeted intervention to its data, optimization configuration, or learning strategy.
+The agent searches this graph using a Monte Carlo Graph Search style policy, balancing exploitation of high-performing branches against exploration of under-tested regions:
+ 
+This preserves experimental lineage while giving the agent a principled mechanism for allocating training compute: promising branches are refined, weak branches are pruned or rolled back, and successful interventions discovered on different trajectories can be recombined.
+For more details, check out the paper here: https://arxiv.org/abs/2604.09791
+Benchmarks
+The agent's output is two released models, each a single rank-32 adapter holding a full domain's worth of skills. The results below cover what each adapter did to the base model's scores, and where the finished models land against much larger open and closed models.
+All results compare the fine-tuned adapter against the unmodified Nemotron 3.5 Lightning base under identical prompts, templates, and decoding settings, on hold-out sets fixed before any training began. Transfer benchmarks received no training data at any point in the search. Per-campaign results for the individual specialist runs are in the appendix.
+Finance
+FinQA moved from 14.39% to 64.86%, a 4.5-fold improvement in execution accuracy, and TAT-QA moved from 17.19 to 74.87 F1. These were not tasks the base model was mediocre at; they were tasks it effectively could not do, because it could not produce the executable programs and structured answers the benchmarks score. The agent found that interface, built the data to teach it, and balanced six skills into one rank-32 adapter that kept roughly 87% of the standalone specialist gains.
+ 
+ 
+Gains of this size from compact low-rank adapters and roughly ten hours of autonomous search are only possible when the underlying capability already exists and the model responds sharply to changes in supervision. Nemotron 3.5 Lightning does. The same responsiveness shows up in the transfers, where the reasoning the adapter learned carried to benchmarks it never trained on.
+ 
+Where does that leave the finished model? On the BigFinanceBench rubric leaderboard, its 40.28% lands above several much larger models, open and closed. It outscores Nemotron 3 Ultra (39.2%), along with Gemma 4 31B-IT (34.8%), GPT-5.4 Mini (22.4%), and Mistral Large 3 (13.0%), and it sits and within 5 points of Kimi K2.6, a model with 1 trillion total parameters. Every open weight model ranked above it activates at least 23B parameters per token compared to our 3B.
+ 
+Individual runs
+Before building the combined adapter, the agent ran independent campaigns against individual benchmarks.
+The finance campaigns followed the same sequence: independent specialist runs first, then a combined adapter built from the winners. The specialists show what a rank-32 adapter reaches when the whole of its capacity serves one task.
+The two largest gains came on the executable-answer benchmarks. On TAT-QA, the specialist moved F1 from 17.11 to 86.81, a 69.70-point gain and the largest in the finance release, built on the five-field deterministic scaffold described in Recipe C rather than teacher-generated reasoning. On FinQA, execution accuracy moved from 13.16% to 71.32% by mapping every official question directly to its gold program. Both benchmarks score an executable artifact, a program or a structured answer, that the base model could not produce at all; the specialists supplied that interface, and the scores moved by multiples rather than margins.
+The extraction and analysis specialists gained from stronger starting points. FinEntity, financial entity recognition with sentiment, moved from 59.84 to 85.07 on hold-out macro-F1. BizFinBench improved on both of its axes, from 43.52% to 70.27% on the task macro and from 43.84% to 67.84% on the dimension macro. SEC-Num, where the base model was already strong at 75.77%, still gained 14.92 points to reach 90.69%, the pattern MedCalc showed on the healthcare side: fine-tuning adding precision beyond an already competent base.
+The FinQA specialist also transferred: EDGARCalcQA, untouched during training, improved from 65.89% to 72.52%.
+The combined adapter's task was then preservation, folding six specialists into one rank-32 adapter, and it retained roughly 87% of their standalone gains on average while keeping every measured transfer non-negative.
+Healthcare
+No single skill dominates clinical work. The healthcare targets span physician-graded conversation, biomedical reasoning, clinical calculation, error detection and correction, administrative task completion, agentic tool use, and two kinds of concept extraction, all competing for the same rank-32 capacity. The combined adapter improved every benchmark it was measured on, and on three of them it now sits at or above the top of the public leaderboard, while activating 3B parameters per token from a 30B parameter model.
+ 
+On MEDEC, the complete 597-case evaluation shows Fastino-Nemotron-3.5-Lightning-Healthcare improving across every measured behavior: flag accuracy rises from 52.76% to 64.99%, sentence accuracy from 51.76% to 63.65%, and aggregate score from 48.09% to 57.67%. The near-identical gains on flag and sentence accuracy indicate the model improved at locating errors rather than at guessing the binary question, a substantial capability gain for an open weight model with only 3B active parameters.
+On MedCalc-Bench, our full internal evaluation across all 1,100 verified cases shows the model improving from 47.27% to 57.45%, a gain of 10.18 points with a 95% confidence interval of +7.3 to +13.0. A gain this large and statistically clear on a procedural clinical task suggests that the binding constraint was not model scale but supervision: the capability was latent in a 3-billion-active-parameter model, and the agent's search found the data that expressed it.
+HealthAdminBench, a blind evaluation of administrative workflow tasks, improves from 18.22% to 36.90% on the subtask-micro score. NOHARM v2, a blind evaluation of clinical safety scored as severity-weighted F1, improves from 46.08% to 58.81%. Both follow the release's general pattern: the administrative score, starting from a low base, roughly doubles.
+The pattern across all nine benchmarks is consistent: fine-tuning at 3B active parameters produces its largest returns on procedural tasks, extraction, error detection, calculation, and workflow execution, and its smallest on open-ended recall and reasoning, where model scale remains the binding constraint and where no fine-tuning recipe, however well searched, substitutes for parameters.
+ 
+The clearest evidence that these gains reflect learned domain capability rather than benchmark fitting is performance on tasks the model was never trained on. On BioRED, a biomedical entity extraction benchmark, performance roughly doubles from 26.29% to 52.08%. On EkaCare, which measures ability to compute numeric medical values, it improves from 12.10% to 26.45%.
+Neither model's standing is the base model's alone or the agent's alone. The base supplied latent domain knowledge and an unusual responsiveness to post-training; the agent supplied the search that converted those into scores. Together they produce specialized models that activate 3 billion parameters and compete with models hundreds of times that size.
+Individual runs
+In individual runs, three results stand out in particular.
+The largest gain of the entire release came on MedAgentBench, which evaluates agentic tool use against a simulated EHR environment. On the public v1/v2 substrate, the specialist adapter moved pass@1 from 16.67% to 90.00% (n=300), and the blind evaluation confirmed it, 14.67% to 88.67%. A base model that failed five tasks in six became one that completes nearly nine in ten. Tool use is the clearest case of the release's central mechanism: the base model held the medical knowledge but lacked the interface, the function selection, argument construction, and multi-step state the harness scores, and a specialist adapter supplied exactly that.
+The HealthAdminBench specialist tells the same story on administrative workflows. On the official hold-out set of 35 tasks, subtask completion moved from 20.60% to 70.10%, more than tripling the base score.
+The two extraction specialists set the ceiling for the skills the combined adapter later had to preserve. On BC5CDR, exact-span micro-F1 on the blind official test moved from 50.54% to 83.60%. On MedMentions ST21pv, which spans a far broader set of UMLS semantic types, it moved from 18.76% to 49.66%. Both are strict exact-span metrics, where partial credit does not exist and every gain reflects correctly bounded, correctly typed spans.
+Set against these specialists, the combined adapter's numbers read differently: they are not diminished results but retained ones, a full domain's worth of skills holding most of their standalone gains inside a single rank-32 adapter.
+A detailed account of individual runs for both Fastino-Nemotron-3.5-Lightning-Finance and Fastino-Nemotron-3.5-Lightning-Healthcare can be found in the Appendix section.
+Six lessons learned for optimal fine-tuning of Nemotron 3.5 Lightning
+Lesson 1: Small recipes moved the needle dramatically
+Fine-tuning does not always need a massive dataset. The hard part is knowing how many examples are enough. Effective fine-tuning teaches the base model how to express a capability it already has through a new interface, which might be:
+a tiny executable language
+a precise JSON or entity schema
+a clinical response policy
+a long-document classification task
+a tool call with the right function and arguments
+a reliable style of mathematical reasoning
+When the examples teach that interface cleanly, the model can move remarkably fast.
+The best small-data example came from legal reasoning. Just 1,369 real examples moved our frozen development-family macro by 12.65 points. Within that run, a few hundred carefully matched examples produced dramatic improvements on specific legal task families. Expanding to a broader 14,028-example recipe pushed the development gain to 17.58 points and improved families that had received no template-specific training data.
+ 
+Legal reasoning gains as coverage expanded. A 1,369-row real-data recipe lifted the frozen development-family macro by 12.65 points over base; the broader 14,028-row mixture reached +17.58. Points are unconnected because composition, not just size, changed between recipes.
+That does not mean every task can be solved with a thousand rows. It means that a thousand right rows can be much more valuable than tens of thousands of vaguely relevant ones.
+Lesson 2: Teach the output, not just the subject
+The biggest mistake in fine-tuning is to confuse "about the same topic" with "teaches the same behavior."
+FinQA does not reward a long financial explanation, rather it rewards a valid executable program. The winning data therefore mapped each question directly to its gold program. Adding chain-of-thought made the result worse. Likewise, UNER does not reward a thoughtful description of the entities. It rewards the exact spans and types in the expected serialization. Adding one explanatory line before the structured answer cost roughly 22 F1 points.
+HealthBench is the opposite. A short answer can be medically correct and still miss what makes a response useful: clarifying questions, calibrated uncertainty, red-flag escalation, audience-aware language, and enough depth to cover a complex situation. Thorough targets beat concise ones.
+The recipe depends on the task, but the rule does not. Supervise the artifact you want the model to produce.
+Lesson 3: Target style is part of the label
+Nemotron 3.5 Lightning learns more than factual content. It learns length, structure, stopping behavior, confidence, and the visible shape of reasoning.
+We saw this clearly in math. Our first GSMPlus recipes used teacher solutions that were much shorter than the model's native reasoning traces. Those adapters regressed by four to seven points. Adding more of the same terse data made the problem worse. The winning recipe used rejection-sampled self-distillation and examples that preserved the official problem surface. The result improved GSMPlus by 5.75 points and GSM-Symbolic by 7 points.
+This is a useful property. The model is responsive enough to learn a desired style quickly. It is also a warning. If the target style is wrong, the model learns that quickly too.
+Lesson 4: Rank 32 and two epochs are a very good place to start
+Across our strongest runs, elaborate optimization was rarely the secret. Our broad default became:
+LoRA rank 32
+Learning rate around 1e-4
+Two epochs
+No packing on the first correctness run
+Identical training and serving templates
+Selection on hold-out behavior, not training loss
+We kept packing off for the first run for a practical reason. Before optimizing throughput, we wanted to prove that message boundaries, supervision masks, long examples, and tool serialization survived the complete train-to-serve path. Only after that correctness check would we optimize the input pipeline.
+Some tasks wanted a different point. TAT-QA reached its best result with rank 16. FinQA benefited from rank 64 and three epochs because it had thousands of dense, deterministic program targets. Open-ended medical and tool behaviors preferred gentler learning rates. But the general pattern was encouraging: more adapter capacity was not required for better adaptation. Larger rank and longer training frequently did nothing or made the result worse. Different tasks peaked at different points in training, so treat two epochs as a starting budget rather than a fixed endpoint.
+That makes the final training pass compact. The autonomous search around a recipe can take longer, but once the right data distribution is known, reproducing the adapter is fast.
+Lesson 5: Transfer tells you what the model actually learned
+A target benchmark can improve because the model memorized a surface pattern. An untouched but related task is a much better clue about the underlying skill.
+When fine-tuning Nemotron 3.5 Lightning, we discovered a surprising degree of skill transfer on unseen tasks. Here are some of our favorite transfer pairings:
+FinQA to ConvFinQA: +38.86 points
+TAT-QA to FinQA: +38.51 points
+UNER to CrossNER: +26.28 F1
+SEC-Num to EDGARCalcQA: +6.63 points
+combined healthcare to EkaCare: +13.51 points
+The common thread is a reusable abstraction: executable financial programs, table arithmetic, multilingual span extraction, or medical calculation. When the data teaches the abstraction, transfer is strong. When it teaches only the surface, transfer is usually small. This is why our basic recipe always includes two scoreboards, the target and an untouched neighbor.
+Transfer also exposes problems that a single scalar would hide. CRUXEval contains two closely related skills: predicting a program's output, and inferring an input that would produce a given output. A 3,303-row adapter moved the combined score from 76.6% to 81.4%. The macro hid an important asymmetry. Input prediction improved by 10.4 points, while output prediction declined by 0.8. The adapter had learned a useful new direction, but the mixture had not perfectly protected the old one. For bidirectional tasks, we now build and monitor each direction as if it were a small specialist inside a combined adapter.
+Lesson 6: One adapter can hold many skills, but balance beats volume
+Two of our runs were deliberately broad. Instead of training a separate adapter for each benchmark, we folded many related skills into a single adapter, once across six medical benchmarks and once across six finance specialists. These combined runs were designed to test a practical question: do we need one adapter per benchmark? Often, no. Nemotron 3.5 Lightning was able to hold a surprisingly broad set of behaviors in rank-32 adapters. But mixture design was delicate. Small skills disappeared when a larger dataset dominated the token distribution.
+In healthcare, additional PubMedQA-style evidence improved biomedical reasoning but diluted MedCalc until calculator examples were explicitly protected. Fresh HealthBench conversations helped up to a point; doubling them made the mix worse. In finance, the SEC component needed a meaningful share of the mixture to preserve numerical extraction, while the much smaller tool-use component needed explicit upweighting. Repeating a compact but important component sometimes helped. Adding more rows after the right balance had been found often hurt.
+The goal is not the largest dataset. It is the smallest mixture that preserves each useful behavior.
+Additional learnings and tips for fine-tuning Nemotron 3.5 Lightning
+The lessons above cover what to teach and how to configure a run. A handful of other findings did not fit neatly into a lesson but shaped how we work. Some are traps to avoid, and the rest are process habits that survived across the agent's experiment lineages:
+Do not trust valid-but-easy synthetic data. Synthetic examples can pass every automated check and still be too easy, teaching the model nothing it did not already do. Compute can scale a recipe; it cannot repair the wrong curriculum.
+Do not select on training loss. Lower training loss does not guarantee better hold-out performance, so loss is a poor selection signal. Select on hold-out behavior instead. Nemotron 3.5 Lightning is highly trainable, but it is not magic: it faithfully learns the signal we give it, including a weak one.
+Operationalize the missing capability. Distinguish knowledge acquisition from evidence selection, output serialization, response depth, tool choice, or multi-turn state. The most useful failure taxonomy is behavioral: what computation or interface is absent from the observed trajectory?
+Treat negative results as posterior information. In HealthBench, the catastrophic short-target branches were not wasted runs. They revealed a response-length collapse, and a focused learning-rate intervention then isolated the mechanism. The agent preserved the base and redirected the search rather than doubling down on a low-loss failure.
+Conclusion
+Small models are most useful when they are not frozen products, but adaptable foundations. That requires two things: a capable base model, and a process that can effectively of adapt it.
+Nemotron 3.5 Lightning supplies the first. The model begins with substantial latent capability, responds sharply to changes in the supervision distribution, works well with compact low-rank adapters, and keeps final reproduction runs short. A base this responsive rewards every well-designed example with real leverage.
+The agent supplies the second. Responsiveness cuts both ways: a model that learns the right signal quickly learns the wrong one just as fast, and finding the right recipe took hundreds of experiments across data, configuration, and supervision format. The agent ran that search the way our results show it should be run: diagnosing the missing behavior, constructing the right evidence, testing whether the gains transfer, and discarding the branches that failed. Start with a strong base. Show it the behavior you actually need. Test whether that behavior transfers. Keep the adapter small. Repeat.
+When the agent did that, the model moved quickly, often dramatically, and across a much wider range of tasks than we expected. Fastino-Nemotron-3.5-Lightning-Finance and Fastino-Nemotron-3.5-Lightning-Healthcare are the proof, and both are available now under the Apache 2.0 license.
+Resources
+Model Launch Blog: https://fastino.ai/blog/fastino-nemotron-3-5-lightning-finance-and-healthcare
+Base model: NVIDIA Nemotron 3.5 Lightning
+Fastino Finance model: https://huggingface.co/fastino/Fastino-Nemotron-3.5-Lightning-Finance
+Fastino Healthcare model: https://huggingface.co/fastino/Fastino-Nemotron-3.5-Lightning-Healthcare
+Try the Fastino Fine-Tuning Agent: Agent sandbox
+Access the Agent: Request private preview access
+Research: Read the paper
+Appendix
+Benchmarks from individual agent runs
+Finance
+ 
+ 
+Healthcare
+ 
+ 
+Choosing the right recipe for the right task
+To pick a starting recipe, first identify the task at hand:
+If the answer is a program, label, span, or JSON object, use direct gold targets, exact validation, and minimal prose.
+If the answer is an expert response, teach the full response policy: depth, calibration, safety, context gathering, and stopping behavior.
+If the task is reasoning-heavy but mechanically checkable, use deterministic intermediate fields or rejection-sampled native reasoning.
+If the task is multilingual or imbalanced, spend data budget on coverage and hard negatives before increasing rank.
+If the goal is one broad adapter, first prove each component independently, then mix by how much specialist gain survives.
+If a small recipe does not move a diagnostic slice, fix the representation before scaling the dataset.
+Ten fine-tuning recipes we would reuse
+ 
+Recipe A: a broad healthcare adapter without giving up the specialists
+The healthcare winner started with a conversational and reasoning core: 2,500 PubMedQA examples, 3,200 MedCalc examples, roughly 2,500 selected HealthBench-style conversations across the prior winner and two fresh sets, and 1,200 broader evidence-grounded medical examples.
+We then added small, capped components for medical-error detection, clinical-note summarization, MedMentions, and BC5CDR. Exact and near-duplicate removal brought the final mixture to 11,776 rows.
+The caps mattered. Pouring in all available NER or error-detection data would have overwhelmed the conversational skills. Likewise, more HealthBench-style data was not monotonically better: an intermediate fresh-data dose won, while doubling it diluted PubMedQA and MedCalc behavior. The final recipe used rank 32, an 8e-5 learning rate, two epochs, batch 32, and no packing. It processed 9.52 million training tokens in 736 optimizer steps. That plain setup produced the best all-around medical result. The sophistication was in the mixture, not the optimizer.
+Recipe B: FinQA as direct program translation
+FinQA gave us one of the cleanest demonstrations of Lightning's adaptability. Every official training question was rendered as context plus question to Program: <gold program>. All 6,251 targets were already executable, so no teacher model was needed.
+A 1,500-example smoke run moved development execution accuracy from roughly 16% to 68%. That was the signal to scale. The final rank-64, 1.5e-4, three-epoch adapter reached 71.32% on the public test.
+We tried to make the data more elaborate. Templated arithmetic explanations lost badly. Independently generated and verified chain-of-thought also lost to a size-matched program-only set. Mixing in ConvFinQA conversations hurt the FinQA target even though both datasets shared the same program language. The reusable rule: when the product needs an executable object, spend supervision on the object.
+Recipe C: TAT-QA with a deterministic reasoning scaffold
+TAT-QA required more structure than a final number but did not need free-form teacher reasoning. We converted official rows into five stable fields: question type, evidence, equation, answer, and scale. Every arithmetic program was executed, and 13,180 of 13,215 rows passed verification.
+The winner used rank 16, a 3e-4 learning rate, four epochs, and batch 16. Rank 16, 32, and 64 were nearly tied; epochs were the meaningful lever. That is a useful counterexample to the idea that difficult reasoning always needs a bigger adapter. The scaffold taught the model where to look, what to compute, and how to express the answer. Because the representation was deterministic, it also avoided teacher noise and made every row testable before training.
+Recipe D: UNER with balanced coverage and hard negatives
+For multilingual extraction, we used 17,999 unique examples balanced across 23 languages and multiple domains. About 45% were zero-entity or hard-negative cases, which prevented the adapter from learning that every sentence must contain an answer.
+The winner used rank 32, 1e-4, two epochs, and batch 16. Language balancing added roughly 4.5 F1 points after the first working 5,000-example recipe. Scaling to unique examples beat repeating the same 5,000 rows three times. A second epoch helped; a third did not. Most importantly, targets contained only the required extraction. Adding a single explanatory sentence before the structured output cost roughly 22 F1 points. The model learned the schema very efficiently once the corpus stopped asking it to do two conflicting things.
+Recipe E: GSMPlus through selected self-distillation
+Our math experiments initially failed because the teacher answers were much shorter than Lightning's native reasoning. Training on them taught terseness, not stronger reasoning, and produced four-to-seven-point regressions.
+The winning 8,663-example recipe came from the model's own candidate solutions, filtered by correctness and anchored with official-format examples. The configuration was rank 32, 1e-4, and three epochs. Training took about 11.6 minutes on four H200s. This recipe is appealing because it treats the base model as a source of behavior worth preserving. The teacher's job is selection: keep the correct native trajectories and remove the weak ones.
+Recipe F: combining six finance specialists
+The finance mixture was deliberately not proportional to the amount of data available. It used 4,000 BizFinBench rows, 3,000 SEC-Num rows, 2,500 FinEntity rows, 1,800 TAT-QA rows, 1,500 FinQA rows, and a small 449-row BigFinanceBench component repeated twice.
+That repetition was not generic oversampling. It protected a rare tool-use behavior that otherwise vanished inside the much larger structured datasets. SEC-Num also needed a substantial share of the mixture to preserve numerical extraction. The final 13,698-row adapter used rank 32, 1e-4, two epochs, and no packing. It recovered about 87% of the standalone specialist gains on average while keeping all measured transfers non-negative. This became our template for multi-skill training: begin with proven specialists, cap the dominant sources, and give fragile behaviors enough weight to survive.
+Recipe G: MEDEC by fixing class balance and answer completeness
+MEDEC asks the model to find and correct medical errors in clinical text. The base model was conservative and often predicted that no error existed. The selected 3,258-row recipe combined physician-style reasoning and correction targets with extra no-error coverage, improving both discrimination and the quality of the correction.
+Unlike most winners, this task benefited from five epochs at a gentle 8e-5 learning rate and rank 32. The useful lesson is not "always train longer." It is that the correct epoch count depends on the behavior: detecting a subtle error and producing a repaired sentence took longer to settle than learning an exact schema.
+Recipe H: legal reasoning through task-shape matching
+Legal reasoning produced the clearest low-data example in the study. A 1,369-row real-data recipe at rank 32, 1e-4, two epochs, and batch 8 moved the frozen development-family macro from 60.26% to 72.82%. A broader 14,028-row mixture then reached 77.75% by adding long-document, wide-label, option-text, and multi-field analogues.
+The revealing control was a 1,963-row generic-only arm. It contained no LegalBench template yet reached roughly 73.02% because the examples matched the task's structure. Conversely, 2,281 narrow CUAD rows performed worse than a 416-row mostly-real recipe. The model did not simply need "more legal data." It needed demonstrations of the right reading, decision, and answer interface. These are frozen development-family results, not a hold-out LegalBench claim. The practical lesson holds: use scarce real examples to identify the interface, then expand coverage with novel examples that preserve its shape.
+Recipe I: BFCL by separating tool syntax from conversation state
+The reported BFCL winner used 27,542 real-harness trajectories with rank 32, a 2e-4 learning rate, and two epochs. Corrected internal evaluation moved overall performance from 48.00% to 71.18%. Single-turn performance rose from 51.42% to 81.88%, while multi-turn changed by less than half a point.
+That split tells us exactly what the adapter learned: choosing a function, respecting a schema, and constructing arguments. It did not receive enough direct supervision for remembering tool state across a long conversation. Rather than hiding the flat multi-turn result inside a strong overall average, we would use it to design the next curriculum: authentic multi-turn trajectories, state-dependent tool choices, and explicit recovery after tool errors.
+Recipe J: CRUXEval by measuring both directions
+CRUXEval contains two closely related skills: predicting a program's output, and inferring an input that would produce a given output. A 3,303-row adapter at rank 32, 8e-5, two epochs, batch 8, and world size 2 moved the combined score from 76.6% to 81.4%.
+The macro hid an important asymmetry. Input prediction improved by 10.4 points, while output prediction declined by 0.8. The adapter had learned a useful new direction, but the mixture had not perfectly protected the old one. For bidirectional tasks, we now build and monitor each direction as if it were a small specialist inside a combined adapter.
+Co-authors:
+@m_newhaus @DhruvAtreja1

@@ -1,0 +1,16 @@
+# WORK lib-belady-1966
+
+lane: nous model: qwen/qwen3.8-max-prime
+ts: 2026-09-28T00:37:48.434946+00:00
+finish: stop cached_tokens: 0
+ask: Find the canonical reference for Belady 1966 (the Belady anomaly / FIFO page-replacement study). Return: exact title, venue, year, and one verbatim quote of the anomaly claim with page if findable. If unreachable, say OWED with what you tried.
+
+---
+
+(1) FINDING: Canonical reference: L. A. Belady, “A Study of Replacement Algorithms for Virtual Storage,” IBM Systems Journal, volume 5, number 2, pages 78 to 101, 1966.
+
+(2) STEALABLE: Treat monotonic scaling as an assumption to test, not a law; add regression checks where increasing cache, frame, or worker counts worsens fault rate or latency.
+
+(3) TESTABLE hypothesis: For FIFO page replacement, reference string 1,2,3,4,1,2,5,1,2,3,4,5 yields 9 faults with 3 frames and 10 faults with 4 frames.
+
+(4) EVIDENCE or OWED: EVIDENCE: citation above identifies the 1966 IBM Systems Journal article. OWED: a verified verbatim quote and page number. I did not access the article text in this session and relied on internal bibliographic knowledge only. No external source was reached.

@@ -1,0 +1,305 @@
+=== WAVE5 SEED-KERNEL REPAIR: finish-line checks (2026-09-29, lane seed-kernel) ===
+
+=== SECTION A: PRE-REPAIR REPRODUCTION, rerun live against the old 09-28 seed ===
+$ ./.venv/Scripts/python.exe tools/seed_rib.py verify --seed watch/inbox/seed_rib_20260928/seed-rib/seed.json --into watch/inbox/gala_20260925/wave5-repair/lanes/_sk_repro --source .
+SEAL MISMATCH (pointer vs source): AGENTS.md
+SEAL MISMATCH (pointer vs source): tools/stealth_driver.py
+SEAL MISMATCH (pointer vs source): tools/stealth_fanout.py
+SEAL MISMATCH (budget): decoded inline payload 297744 > 100000 B; levers: L1 pointer-ize VSCODE.md; L2 TOUR.md+SALON.md; L3 MORNING_LOOP.md; L4 ACCOUNTS.md; L5 tighten kernel caps to B2-300 minimums
+SEED-RIB verify: inline 87 hash-matched, pointers 2 source-checked / 0 UNRESOLVED (stubbed, named), law_refs 12, decoded payload 297744/100000 B, seed age 1d (rebuild SLO 3d)
+EXIT=1
+
+=== SECTION B: race-era runs, captured in-session ~10:28-10:33Z (sibling lanes were editing the sealed trio live) ===
+[10:28:59Z build 92,324B payload -> verify]: 4 SEAL MISMATCH rows incl AGENTS.md twice (build dedupe bug, fixed) ; EXIT=1
+[10:31:36Z build 93,226B payload -> verify]: inline 29 hash-matched, pointers 98 source-checked, zero mismatch; VERIFY PASS attempt 1 (transient)
+[10:33Z default-resolver verify]: SEAL MISMATCH (pointer vs source): tools/stealth_driver.py ; EXIT=1  <- sibling write landed between build and verify (stealth_driver 37,814->39,032->BIGGER, AGENTS 16,671->17,170, stealth_fanout 8,559->9,323->9,317 measured across minutes)
+
+
+=== SECTION C: FINAL PASS, quiet window (hot trio stable >=90s), atomic build->refresh->verify ===
+=== FINAL SEED BUILD (attempt 1, 10:43:26Z) ===
+$ C:\Users\foste\Documents\projects\local_sovereign_agent\.venv\Scripts\python.exe tools/seed_rib.py build --root . --out ... --inline-max 12288 --pointer-list paths_seed_20260928.txt
+SEED-RIB build: 127 entries (29 inline, 98 pointer), seed 157126 bytes, decoded payload 96410/100000 B, law_refs 12
+EXIT=0
+
+SEED_RIB_CURRENT refreshed -> sha256 93466a46afc19c2d578dd22da2b349f856e782991ed6654f0a4af26726181cff
+
+$ python tools/seed_rib.py verify --source .   [FINISH LINE, default seed = SEED_RIB_CURRENT]
+SEED-RIB verify: inline 29 hash-matched, pointers 98 source-checked / 0 UNRESOLVED (stubbed, named), law_refs 12, decoded payload 96410/100000 B, seed age 0d (rebuild SLO 3d)
+EXIT=0
+
+$ .venv/Scripts/python.exe tools/seed_rib.py verify --source .   [same args, venv]
+SEED-RIB verify: inline 29 hash-matched, pointers 98 source-checked / 0 UNRESOLVED (stubbed, named), law_refs 12, decoded payload 96410/100000 B, seed age 0d (rebuild SLO 3d)
+EXIT=0
+
+FINISH-LINE PASS on attempt 1: exit 0 both interpreters, zero SEAL MISMATCH rows
+
+=== FINISH-LINE 2: >= 8 law-role entries with real bytes ===
+  OK  memory/law/registry.json 9849B sha 54d41c0a8108
+  OK  memory/law/CHAN_THE_GAME.md 2576B sha e3caa23b51b9
+  OK  memory/law/CONGESTION_COST_20260830.md 1013B sha 93056e455a32
+  OK  memory/law/CRYPTOCOM_VAST_LOCK_20260829.md 1216B sha 34cf5c32f81f
+  OK  memory/law/GREYSWAN_BLADES_20260829.md 1558B sha 02df4d077014
+  OK  memory/law/IMMORTALITY_SHARED.md 1839B sha 319682c1ab15
+  OK  memory/law/OBJECTS_ON_THE_BOARD_20260830.md 1177B sha d55a6e3d5bd7
+  OK  memory/law/SHARE_WITHOUT_THE_SLUDGE.md 1582B sha 4f882830c1d3
+  OK  memory/law/SHITPOST_SCALAR_KNOTS_20260830.md 1208B sha 23fd099861a7
+  OK  memory/law/THOUGHT_CRIMINALS.md 2113B sha ee1ffb874df9
+law-role inline entries with verified real bytes: 10 (need >= 8)
+EXIT=0
+
+=== FINISH-LINE 3: tools/seed_mcp.py resolves to the refreshed seed ===
+$ python tools/seed_mcp.py --seed-sha   [default resolution]
+93466a46afc19c2d578dd22da2b349f856e782991ed6654f0a4af26726181cff
+EXIT=0
+
+$ python tools/seed_mcp.py --list   [default resolution]
+{
+  "schema": "seed_mcp.v0",
+  "seed": "C:\\Users\\foste\\Documents\\projects\\local_sovereign_agent\\watch\\inbox\\seed_rib_20260929\\seed-rib\\seed.json",
+  "seed_sha256": "93466a46afc19c2d578dd22da2b349f856e782991ed6654f0a4af26726181cff",
+  "resources": [
+    {
+      "uri": "seed://current",
+      "name": "seed",
+      "description": "The SEED-RIB (seed_rib.v0) JSON, 157126 bytes, 127 entries, sha256 93466a46afc19c2d...",
+      "mimeType": "application/json"
+    },
+    {
+      "uri": "seed://law-registry",
+      "name": "law-registry",
+      "description": "memory/law/registry.json live bytes (12 law ids)",
+      "mimeType": "application/json"
+    },
+    {
+      "uri": "seed://brief-pointers",
+      "name": "brief-pointers",
+      "description": "sealed bounded pointers to the fleet briefs",
+      "mimeType": "application/json"
+    }
+  ],
+  "tools": [
+    {
+      "name": "rebuild_subtree",
+      "description": "Rebuild the seed's tree into a directory (inline bytes exact, pointers as named .SEED_POINTER stubs; never invents pointer bytes)",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "into": {
+            "type": "string",
+            "description": "target dir"
+          },
+          "source": {
+            "type": "string",
+            "description": "optional estate root for pointer checks"
+          }
+        },
+        "required": [
+          "into"
+        ]
+      }
+    },
+    {
+      "name": "verify_hash",
+      "description": "sha256 real bytes at a path and compare against the seed seal",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "path": {
+            "type": "string"
+          },
+          "root": {
+            "type": "string",
+            "description": "optional root; default the estate"
+          }
+        },
+        "required": [
+          "path"
+        ]
+      }
+    },
+    {
+      "name": "fetch_bounded_pointer",
+      "description": "Fetch a seed pointer entry: bounded record always; live bytes only when the source seal matches and the size fits the cap",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "path": {
+            "type": "string"
+          },
+          "max_bytes": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "path"
+        ]
+      }
+    },
+    {
+      "name": "join_protocol",
+      "description": "The cold-agent join protocol: ordered steps that boot a fresh agent into the fleet from the seed alone, each step with a check",
+      "inputSchema": {
+        "type": "object",
+        "properties": {}
+      }
+    }
+  ]
+}
+EXIT=0
+
+resolved seed path: C:\Users\foste\Documents\projects\local_sovereign_agent\watch\inbox\seed_rib_20260929\seed-rib\seed.json
+resolved sha256 == SEED_RIB_CURRENT sha256: True
+EXIT=0  (match=True)
+
+final seed: {'path': 'watch/inbox/seed_rib_20260929/seed-rib/seed.json', 'bytes': 157126, 'sha256': '93466a46afc19c2d578dd22da2b349f856e782991ed6654f0a4af26726181cff', 'source': 'fleet-repo', 'built': '2026-09-29T10:43:26Z', 'delta': '09-26->29 wave5 kernel repair (laws+doctrine+state re-attached, receipt mass to pointers)', 'entries': 127, 'inline': 29, 'pointer': 98, 'law_refs': 12}
+
+=== SECTION D: violation_ratchet check --changed (tools/ touched by this lane) ===
+$ ./.venv/Scripts/python.exe tools/violation_ratchet.py check --changed
+RATCHET check: scope=38 changed files; hits=28; registered=24; NEW=4; expired-exceptions=0
+  NEW 84291bf5f2af246b file-too-long: mag/corpus_gap_research.py:663 — >400 lines
+  NEW 42b721c740d1abda file-too-long: mag/corpus_selfsteal.py:476 — >400 lines
+  NEW 8dce490bf896c42a file-too-long: mag/link_library.py:413 — >400 lines
+  NEW 2c7e16bf178da9d0 shell-true: tools/fossil_check.py:73 — subprocess shell=True
+  GROWTH claim 198edd83211b76e1: mag/shared_surface.py accepted at 426 lines, now 447 (+21) — re-audit or re-accept by name
+  GROWTH claim e066832a0b8edb5e: tools/stealth_driver.py accepted at 753 lines, now 1104 (+351) — re-audit or re-accept by name
+RATCHET: FAIL — run 'baseline-update' ONLY after a human/agent accepts the debt by name.
+RATCHET_EXIT=1
+NOTE: all NEW/GROWTH rows name files outside this lane (sibling in-flight work in the shared tree); none name tools/seed_rib.py or tools/seed_mcp.py. Debt not accepted, not baselined by this lane.
+
+=== SECTION E: re-render after sibling re-wrote tools/stealth_driver.py post-pass (SLO fired: verify exit 1 voids CURRENT, re-render) ===
+=== FINAL SEED BUILD (attempt 1, 10:50:05Z) ===
+$ C:\Users\foste\Documents\projects\local_sovereign_agent\.venv\Scripts\python.exe tools/seed_rib.py build --root . --out ... --inline-max 12288 --pointer-list paths_seed_20260928.txt
+SEED-RIB build: 127 entries (29 inline, 98 pointer), seed 158398 bytes, decoded payload 97364/100000 B, law_refs 12
+EXIT=0
+
+SEED_RIB_CURRENT refreshed -> sha256 4bbab60ad7cdb9f41dc12e231a16554b3377738a614987600821be57a580feda
+
+$ python tools/seed_rib.py verify --source .   [FINISH LINE, default seed = SEED_RIB_CURRENT]
+SEED-RIB verify: inline 29 hash-matched, pointers 98 source-checked / 0 UNRESOLVED (stubbed, named), law_refs 12, decoded payload 97364/100000 B, seed age 0d (rebuild SLO 3d)
+EXIT=0
+
+$ .venv/Scripts/python.exe tools/seed_rib.py verify --source .   [same args, venv]
+SEED-RIB verify: inline 29 hash-matched, pointers 98 source-checked / 0 UNRESOLVED (stubbed, named), law_refs 12, decoded payload 97364/100000 B, seed age 0d (rebuild SLO 3d)
+EXIT=0
+
+FINISH-LINE PASS on attempt 1: exit 0 both interpreters, zero SEAL MISMATCH rows
+
+=== FINISH-LINE 2: >= 8 law-role entries with real bytes ===
+  OK  memory/law/registry.json 9849B sha 54d41c0a8108
+  OK  memory/law/CHAN_THE_GAME.md 2576B sha e3caa23b51b9
+  OK  memory/law/CONGESTION_COST_20260830.md 1013B sha 93056e455a32
+  OK  memory/law/CRYPTOCOM_VAST_LOCK_20260829.md 1216B sha 34cf5c32f81f
+  OK  memory/law/GREYSWAN_BLADES_20260829.md 1558B sha 02df4d077014
+  OK  memory/law/IMMORTALITY_SHARED.md 1839B sha 319682c1ab15
+  OK  memory/law/OBJECTS_ON_THE_BOARD_20260830.md 1177B sha d55a6e3d5bd7
+  OK  memory/law/SHARE_WITHOUT_THE_SLUDGE.md 1582B sha 4f882830c1d3
+  OK  memory/law/SHITPOST_SCALAR_KNOTS_20260830.md 1208B sha 23fd099861a7
+  OK  memory/law/THOUGHT_CRIMINALS.md 2113B sha ee1ffb874df9
+law-role inline entries with verified real bytes: 10 (need >= 8)
+EXIT=0
+
+=== FINISH-LINE 3: tools/seed_mcp.py resolves to the refreshed seed ===
+$ python tools/seed_mcp.py --seed-sha   [default resolution]
+4bbab60ad7cdb9f41dc12e231a16554b3377738a614987600821be57a580feda
+EXIT=0
+
+$ python tools/seed_mcp.py --list   [default resolution]
+{
+  "schema": "seed_mcp.v0",
+  "seed": "C:\\Users\\foste\\Documents\\projects\\local_sovereign_agent\\watch\\inbox\\seed_rib_20260929\\seed-rib\\seed.json",
+  "seed_sha256": "4bbab60ad7cdb9f41dc12e231a16554b3377738a614987600821be57a580feda",
+  "resources": [
+    {
+      "uri": "seed://current",
+      "name": "seed",
+      "description": "The SEED-RIB (seed_rib.v0) JSON, 158398 bytes, 127 entries, sha256 4bbab60ad7cdb9f4...",
+      "mimeType": "application/json"
+    },
+    {
+      "uri": "seed://law-registry",
+      "name": "law-registry",
+      "description": "memory/law/registry.json live bytes (12 law ids)",
+      "mimeType": "application/json"
+    },
+    {
+      "uri": "seed://brief-pointers",
+      "name": "brief-pointers",
+      "description": "sealed bounded pointers to the fleet briefs",
+      "mimeType": "application/json"
+    }
+  ],
+  "tools": [
+    {
+      "name": "rebuild_subtree",
+      "description": "Rebuild the seed's tree into a directory (inline bytes exact, pointers as named .SEED_POINTER stubs; never invents pointer bytes)",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "into": {
+            "type": "string",
+            "description": "target dir"
+          },
+          "source": {
+            "type": "string",
+            "description": "optional estate root for pointer checks"
+          }
+        },
+        "required": [
+          "into"
+        ]
+      }
+    },
+    {
+      "name": "verify_hash",
+      "description": "sha256 real bytes at a path and compare against the seed seal",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "path": {
+            "type": "string"
+          },
+          "root": {
+            "type": "string",
+            "description": "optional root; default the estate"
+          }
+        },
+        "required": [
+          "path"
+        ]
+      }
+    },
+    {
+      "name": "fetch_bounded_pointer",
+      "description": "Fetch a seed pointer entry: bounded record always; live bytes only when the source seal matches and the size fits the cap",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "path": {
+            "type": "string"
+          },
+          "max_bytes": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "path"
+        ]
+      }
+    },
+    {
+      "name": "join_protocol",
+      "description": "The cold-agent join protocol: ordered steps that boot a fresh agent into the fleet from the seed alone, each step with a check",
+      "inputSchema": {
+        "type": "object",
+        "properties": {}
+      }
+    }
+  ]
+}
+EXIT=0
+
+resolved seed path: C:\Users\foste\Documents\projects\local_sovereign_agent\watch\inbox\seed_rib_20260929\seed-rib\seed.json
+resolved sha256 == SEED_RIB_CURRENT sha256: True
+EXIT=0  (match=True)
+
+final seed: {'path': 'watch/inbox/seed_rib_20260929/seed-rib/seed.json', 'bytes': 158398, 'sha256': '4bbab60ad7cdb9f41dc12e231a16554b3377738a614987600821be57a580feda', 'source': 'fleet-repo', 'built': '2026-09-29T10:50:05Z', 'delta': '09-26->29 wave5 kernel repair (laws+doctrine+state re-attached, receipt mass to pointers)', 'entries': 127, 'inline': 29, 'pointer': 98, 'law_refs': 12}

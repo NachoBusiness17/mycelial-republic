@@ -1,0 +1,8 @@
+# coldhot-hot-glm-flash-mag__desk_model_probe (glm-5.3-flash @ zai, turn 1, channel: content)
+
+DEFECT 1: Winner ranking uses end-to-end elapsed_ms, so the first candidate pays cold model load while the second runs warm, biasing the A/B verdict by run order | EVIDENCE: mag/desk_model_probe.py:186-198 (key uses `r.get("elapsed_ms")`, while load_ns is separately available at :158-159) | FIX: rank on tokens_per_sec then load_ms (already parsed) instead of total elapsed_ms, or benchmark each model twice and score the second run.
+DEFECT 2: REPORT_PATH on disk is written before `report["report_path"]` is set, so the persisted report lacks the field callers of run_probe see | EVIDENCE: mag/desk_model_probe.py:213-216 (write_text) vs :218 (report_path added after write) | FIX: set report["report_path"] before the write_text call.
+DEFECT 3: `ok` verdict rests on bare `text.strip()` truthiness, so an empty-or-error body still marks a candidate "ok" and can win with tps None ranked as 0 | EVIDENCE: mag/desk_model_probe.py:160 ("ok": bool(text.strip())) with ranking fallback `-(r.get("tokens_per_sec") or 0)` at :191 | FIX: set "ok" to `bool(text.strip() and eval_count > 0)`.
+DEAD-CODE: `import urllib.error` is never referenced in the module | EVIDENCE: mag/desk_model_probe.py:11
+ONE-SITTING FIX: Replace elapsed_ms in the winner sort key with load_ms/tps-only ranking and tighten the "ok" gate to require eval_count, making the A/B result order-independent | EVIDENCE: mag/desk_model_probe.py:186-198
+Falsifier: rerun run_probe with candidates reversed; if the winner flips under the current ranking, DEFECT 1 is confirmed; if it does not, the fix claim is wrong.

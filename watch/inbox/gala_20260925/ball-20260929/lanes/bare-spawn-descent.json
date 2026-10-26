@@ -1,0 +1,101 @@
+{
+  "lane": "bare-spawn-descent",
+  "division": "B",
+  "started": "2026-09-29",
+  "status": "done",
+  "instrument": {
+    "ratchet_test": "tests/test_headless_law.py",
+    "baseline_file": "state/fuel/headless_census.json",
+    "law": "every subprocess.run/Popen/check_* in tools/ and tests/ top-level carries creationflags; count may only ratchet down; os.system/popen banned; conftest default covers runtime, the static keyword is what the ratchet counts"
+  },
+  "corrections_to_ask_context": [
+    "Ask said accepted baseline 91; byte truth in state/fuel/headless_census.json at lane start was bare_spawn_total=41.",
+    "Ask said ~50 bare sites in tests/; live census at lane start was 21 tests/ sites in 16 files (43 total with tools/ 22).",
+    "The spawn ratchet is NOT tools/violation_ratchet.py (no spawn rule there); it is the headless-law test. Recorded so the next descent does not grep the wrong gate."
+  ],
+  "ratchet_red_at_start": "test_headless_ratchet_never_grows FAILED: bare spawns grew 41 -> 43 (drift = tests/test_surface_rebuild.py x2, landed 2026-09-29 by wave5 queue-closes lane)",
+  "census_before": {
+    "total": 43,
+    "tests": 21,
+    "tools": 22,
+    "evidence": "watch/inbox/gala_20260925/ball-20260929/lanes/census_before.json"
+  },
+  "conversions": [
+    "tests/hook_pairing.py:46 (+import sys)",
+    "tests/test_hook_prefix_pairing.py:60,71",
+    "tests/test_hunger_ledger_parity.py:61,121",
+    "tests/test_icon_drop_escape.py:94 (inline idiom)",
+    "tests/test_index_fold_host.py:63 (+import sys)",
+    "tests/test_k17_holds.py:31",
+    "tests/test_k17_pilot.py:28",
+    "tests/test_quote_gate.py:24",
+    "tests/test_quote_hitrate.py:28",
+    "tests/test_repo_readiness.py:8 (+import sys)",
+    "tests/test_scenarios_gate_hook_pin.py:46,55",
+    "tests/test_seed_mcp.py:190",
+    "tests/test_steer_sign.py:9 (+import sys; python-on-PATH interpreter left as found, out of lane scope)",
+    "tests/test_surface_rebuild.py:44,63 (+import sys)",
+    "tests/test_wow_player.py:115,118",
+    "tests/wave_driver_test.py:140"
+  ],
+  "conversion_pattern": "HEADLESS = getattr(subprocess, 'CREATE_NO_WINDOW', 0x08000000) if sys.platform == 'win32' else 0 + creationflags=HEADLESS per site (house idiom, 38 pre-existing sites); 0 on POSIX where nonzero creationflags raise ValueError",
+  "census_after": {
+    "total": 22,
+    "tests": 0,
+    "tools": 22,
+    "delta": -21,
+    "evidence": "watch/inbox/gala_20260925/ball-20260929/lanes/census_after.json"
+  },
+  "baseline_update": {
+    "file": "state/fuel/headless_census.json",
+    "bare_spawn_total": "41 -> 22",
+    "accepted": "2026-09-29",
+    "by": "bare-spawn-descent lane, gala ball-20260929 (division B)",
+    "hook_touched": false
+  },
+  "checks": [
+    {
+      "command": ".venv/Scripts/python.exe watch/inbox/gala_20260925/ball-20260929/lanes/_census_bare_spawns.py (before)",
+      "exit": 0,
+      "evidence": "watch/inbox/gala_20260925/ball-20260929/lanes/census_before.json : total=43 tests=21 tools=22"
+    },
+    {
+      "command": ".venv/Scripts/python.exe watch/inbox/gala_20260925/ball-20260929/lanes/_census_bare_spawns.py (after)",
+      "exit": 0,
+      "evidence": "watch/inbox/gala_20260925/ball-20260929/lanes/census_after.json : total=22 tests=0 tools=22"
+    },
+    {
+      "command": ".venv/Scripts/python.exe -m pytest tests/test_headless_law.py -q",
+      "exit": 0,
+      "evidence": "bare-spawn-descent.check.txt CHECK 3: 2 passed (1 failed at lane start)"
+    },
+    {
+      "command": ".venv/Scripts/python.exe tools/violation_ratchet.py check --changed",
+      "exit": 0,
+      "evidence": "bare-spawn-descent.check.txt CHECK 4: RATCHET: PASS, NEW=0; 3 pre-existing non-blocking GROWTH lines on files this lane never touched (mag/corpus_acquire.py +77, mag/corpus_selfsteal.py +23, tools/stealth_driver.py +683)"
+    },
+    {
+      "command": ".venv/Scripts/python.exe -m pytest <15 modified collected files> (4 groups)",
+      "exit": 0,
+      "evidence": "bare-spawn-descent.check.txt CHECK 5: 47+10+47+16 = 120 passed, 0 failed"
+    }
+  ],
+  "receipt": "watch/inbox/ball2/bare-spawn-descent.md",
+  "check_file": "watch/inbox/gala_20260925/ball-20260929/lanes/bare-spawn-descent.check.txt",
+  "notes": [
+    "tools/ 22 bare sites are NOT this lane's domain and stay registered; that is the next descent if one is owed.",
+    "tests/test_steer_sign.py spawns ['python', SCRIPT] with python off PATH; left byte-as-found except creationflags (interpreter swap would change what the test exercises)."
+  ],
+  "annotations": [
+    {
+      "kind": "pointer-strike",
+      "date": "2026-09-29",
+      "by": "fold-repairer, gala ball-20260929 fold repair; fixes the pointer rot flagged by the 2026-09-29 midnight fresh-reader critique (CHECK FILES 9/9 bullet)",
+      "target": "the evidence paths watch/inbox/gala_20260925/ball-20260929/lanes/census_before.json and watch/inbox/gala_20260925/ball-20260929/lanes/census_after.json, cited in census_before.evidence, census_after.evidence, checks[0].evidence and checks[1].evidence, and at bare-spawn-descent.check.txt lines 6 and 11",
+      "struck": "the lanes/ directory in those pointers: no census_before.json or census_after.json exists at lanes/ top level.",
+      "correction": "the full census JSONs live at watch/inbox/gala_20260925/ball-20260929/lanes/_qc/census_before.json and watch/inbox/gala_20260925/ball-20260929/lanes/_qc/census_after.json (both verified on disk this session); lanes/ top level keeps only census_before.summary.txt (SUMMARY total=43 tests=21 tools=22) and census_after.summary.txt (SUMMARY total=22 tests=0 tools=22).",
+      "contents_verified": "the _qc files are the unmodified originals: md5 04e3f94c60cd274cb6660502ade74195 (census_before.json) and 42badddd74944cba73a4cd32a3997e0f (census_after.json) both match the pre-move receipt in lanes/_qc/_moved_md5_before.txt, and their totals (43, 22) match this record's census_before and census_after claims.",
+      "stands": "every number (43/21/22 before, 22/0/22 after, delta -21) and every other row in this record; only the directory of the evidence pointers was wrong. No rows deleted or rewritten."
+    }
+  ]
+}

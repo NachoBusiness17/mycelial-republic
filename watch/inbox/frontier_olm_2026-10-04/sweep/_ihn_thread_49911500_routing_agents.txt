@@ -1,0 +1,88 @@
+TITLE: Show HN: Open-source model routing for coding agents at Astra-level performance
+URL: None
+POINTS: 119 CREATED: 2026-09-30T16:58:24.000Z
+STORY TEXT:
+A few months ago we started building a model router for coding agents because we thought we could outperform any single model with an ensemble approach. Recently we’ve achieved that milestone and I want to talk about how we did it. First of all, a quick explanation: the Weave Router ( https://github.com/weave-os/router ) plugs into any coding agent (e.g. Claude Code or Codex) and intelligently switches between LLMs. So, for example, Astra handles tricky debugging or complex system design tasks, and Deepseek v4 Flash handles simple frontend updates. What we’re announcing today is our new routing model, which we’re calling Weave Router 2.0. We benchmarked 2.0 against GPT-6 Astra on Terminal Bench 4.0 and SWE Atlas. On both benchmarks, the router had equivalent pass rates. On Terminal Bench, the router hit 52% of Astra’s cost, and completed tasks 2.2x faster. On SWE Atlas, the router cost 54% as much as Astra and ran 2.5x faster. (Full results on our website at https://weaveos.com/router !) It turns out training a model to route effectively - taking into consideration model capabilities, costs, cache awareness, and more - is a really hard problem! I want to talk about three ways we were able to improve so much over the last few months: 1) a new architecture, 2) larger training data set size, and 3) smarter cache-eviction impact calculation. 1) a new architecture. Our initial approach used an RL model without many priors. While RL is still an important part of the story, the cost of fully exploring the space of routing decisions is very high, so we’ve taken some shortcuts that have significantly improved performance. Consider how large the search space for the routing problem is. Take a typical coding agent session, with ~100 agent turns (i.e. 100 LLM API calls). Technically there are 100 chances to select a model. If we assume a roster of ~10 models (of course there are lots more but we can remove any that are Pareto dominated), then there are 10^100 possible paths through that session. We simply cannot explore all of them! So that's why clever tricks to shrink this space are so important. In particular: we trained a hidden Markov model to trace the session state, then a classifier maps the session to one of a few buckets of similar models. Using the HMM allows us to evaluate not just where a session is currently, but how it got there . We've gotten significantly better performance on bucket selection by incorporating that information - we believe this is because two sessions that might look quite similar to a naive classifier are much better distinguished by this HMM approach. Using this HMM + classifier to select a bucket first significantly shrinks the space to explore, by throwing out most models that could not reasonably serve the given session. This rearchitecture was the single biggest performance unlock! 2) larger training data set size (much less technically interesting but still an important part of the story). By using frontier LLMs to help us label a larger and more diverse set of coding agent sessions, we were able to bootstrap the two models discussed in 1) to a better state, while also providing even richer reward signals for RL. 3) smarter cache-eviction impact calculation. One of the hardest parts of routing well (if you care about saving money) is using the model caches intelligently. We built a subsystem that can calculate the expected value of switching models (and thus paying a high one-time cost to fill up a different cache) much more accurately, helping us avoid costly and unnecessary switches in more cases, while still switching when the benefit outweighs the cost. This is where most of our improvement on cost has come from. We still have a lot of room to continue to improve (we won’t rest until we’re consistently beating Astra/Fable, not just tying!) but matching frontier model performance was a huge milestone for our routing model, and in my opinion validates our initial hypothesis that an ensemble of models can do better than any single model ever could. Our router is open source ( https://github.com/weave-os/router ) so anyone can try it out. Or if you prefer you can use our hosted version ( https://weaveos.com/router ).
+--- comment by redrove depth 0 ---
+Is the model you trained available as open weights?
+--- comment by adchurch depth 1 ---
+It is not sorry!
+--- comment by thefourthchime depth 0 ---
+Interesting work, and thanks for describing how your router works internally. It's definitely a fascinating subject. How would you say this compares to Cursor's auto mode?
+--- comment by aschla depth 1 ---
+And similarly, Copilot’s Auto mode?
+--- comment by adchurch depth 2 ---
+I haven't tried it as recently but last time I checked they only route once per session (or subagent). Imo this is basically impossible to do correctly. Consider the case where you start with one prompt "rewrite this in rust". Trivial in a 1 day old repo, extremely difficult in e.g. the VSCode repo!
+--- comment by adchurch depth 1 ---
+Absolutely! Conceptually very similar to Cursor's auto mode. The key distinctions are: - We plug into any harness (e.g. Claude Code, Codex, OpenCode, Pi) - We aren't incentivized to route to our own model, we're incentivized to route to the best model whatever it may be
+--- comment by jamesforestwest depth 0 ---
+How do you define the model buckets, and what happens when a session genuinely needs a model that isn't in the bucket the HMM picked?
+--- comment by adchurch depth 1 ---
+You can think of buckets as models with similar capabilities. So for example Deepseek 4.1 Flash will not be in the same bucket as Astra. The latter is an interesting question! In practice because the session continues, we can see it's going down the wrong path and escalate. Basically no decision we make when routing is entirely unsalvageable (but we do have a performance penalty for every incorrect decision we make so of course we try to avoid it).
+--- comment by aminsamir45 depth 0 ---
+AGI is here!
+--- comment by 1minusp depth 0 ---
+Does this allow for a predefined budget?
+--- comment by adchurch depth 1 ---
+Yes!
+--- comment by rirze depth 0 ---
+How does this choose which models to use with any arbitrary set of model providers to work from? And why is an openrouter necessary for self-hosting?
+--- comment by adchurch depth 1 ---
+To the point of using buckets of models: as long as there's >0 models available in a bucket, and we can order models in order of fit, we're resilient to different sets of models being available. With that said obviously cutting out some models has a much larger effect than others. OpenRouter isn't strictly necessary but it does make it easier to not have to set up accounts/API keys with several different providers to get started.
+--- comment by ajspig1 depth 0 ---
+How do you handle provider variance on OpenRouter for the opensource models? Or do you use your own hosted version to mitigate this? And for both opensource and closed source, does the router account for provider quality, or catch it when a provider degrades?
+--- comment by adchurch depth 1 ---
+For our hosted version we carefully select which providers we use (we don't use OpenRouter). For the self-hosted version though, OpenRouter does make it much easier to get started (at the cost of that variance potentially affecting quality). Yes for both! We have some logic to put providers on cooldowns and/or deprioritize them.
+--- comment by YuechenLi depth 0 ---
+Have you compared this to using GPT-6.1 Sol instead of GPT 6 Astra + Deepseek? From my test, 6.1 Sol is a lot more token efficient than 6 Sol while being similar to Astra in performance, and I don't really find 6 Astra to be significantly better than 6/6.1 Sol for general coding as I feel 6 Astra is only noticeably better at spatial reasoning/vision compared to 6 Sol, and 6.1 Sol really closed the gap on that front.
+--- comment by conception depth 1 ---
+6.1 Sol though is horribly slow. The time cost alone offloading to ds flash is probably worth a look.
+--- comment by YuechenLi depth 2 ---
+I don't really mind the speed, I like watching Codex work most of the time, slower work means I have time to do corrective nudging for when the initial prompt was unclear.
+--- comment by waximabbax depth 2 ---
+It mostly feels horribly slow if you leave reasoning effort at max for Sol 6.1. If you dial it to normal/high/xhigh, Sol 6.1 is only a couple of minutes behind Astra, performs almost as well on terminal bench v4 tasks, and is about 4 to 5x cheaper.
+--- comment by conception depth 3 ---
+No its like 30 t/s… its really slow.
+--- comment by gitowiec depth 0 ---
+Can it route to locally or LAN hosted Qwen or some other open weights model?
+--- comment by adchurch depth 1 ---
+Not yet! Something we're interested in experimenting with though, hit me up at andrew@weaveos.com if you have any thoughts here
+--- comment by svnt depth 0 ---
+If you are training on data labeled by frontier models, how do you expect to exceed the performance of frontier models, other than in the cost dimension by recognizing simpler problems and routing to cheaper models?
+--- comment by adchurch depth 1 ---
+Different frontier models are good at different things! We'll be the ones combining them optimally.
+--- comment by svnt depth 2 ---
+I understand the premise, but I believe success depends on you being able to effectively sort problems for other frontier models better than the frontier.
+--- comment by adchurch depth 3 ---
+Yes! We believe this is entirely possible. Frontier LLMs are trained to solve different problems. We’re training a frontier router :)
+--- comment by 361994752 depth 0 ---
+Sounds very interesting. Do you have plan to support gh copilot as model provider?
+--- comment by adchurch depth 1 ---
+We support all the LLMs that Copilot sends data to!
+--- comment by 361994752 depth 2 ---
+Ofc :)
+Asking this because we have copilot at work (assuming it is quite common for enterprise)
+--- comment by ryanhecht depth 1 ---
+You might be interested in GitHub's native take on this concept, HydraFusion: https://github.blog/ai-and-ml/github-copilot/project-hydrafu...
+--- comment by creativeSlumber depth 0 ---
+> then there are 10^100 possible paths through that session. Is this correct? in practice you would only be deciding what the next turn is going to be. Because the turn after the next turn is determined by the outcome of the next turn. So shouldn't this number be 10 * 100?
+--- comment by rlprlprlp depth 1 ---
+paths friend. so first turn you have ten options, second u have the same ten. assume turn one model h1. turn two you have ten options. 1x10. but you could have chosen any h on the first turn . so 10x10=100. turn three you could have gotten there 100 ways and still have ten options.
+--- comment by adchurch depth 2 ---
+My calculation exactly!
+--- comment by dackdel depth 0 ---
+what about jev
+--- comment by adchurch depth 1 ---
+Routing is the type of decision shape Jev is meant for. But from our own testing (plus externally run benchmarks) it’s much worse at routing than our purpose-built model. I’d argue it’s similar to looking at the Meta algorithm for serving ads and asking “what about astra” - it could come up with an answer but it’s not the right model for the task.
+--- comment by devmor depth 0 ---
+I would like to see this (and any model router, frankly) benchmarked against two things, personally: 1) Claude Code's "advisor mode" (nominally, Sonnet 5.5 with a Fable advisor) 2) Copilot's "HydraFusion" model router/advisor combo. Specifically I would like to see them compared on architecture planning (both human assisted and hands-off with a draft document) and code review, as these are what I have found the most significant improvement on with multi-model systems. > our initial hypothesis that an ensemble of models can do better than any single model ever could. To your hypothesis, anecdotally I find both of these offerings to be far superior to any single model for most tasks of any real complexity, and both to have general frustration/failure cases that single models do not. I would not be surprised that any ensemble approach that utilizes more than one single model meets this hypothesis. Quite frequently I delegate review and restructuring loops to subagents acting as judges/advisors to tell the primary agent if it met the goal it was instructed to. For some workloads, I will even vet every tool call and user-facing output this way.
+--- comment by adchurch depth 1 ---
+Great idea, we’d love to run those benchmarks! Any in particular you trust? Also I’m very interested in the unique failure cases you’re referring to! What have you noticed?
+--- comment by devmor depth 2 ---
+I’m not really sure, I can’t say I trust any kind of synthetic AI benchmarks. > Also I’m very interested in the unique failure cases you’re referring to! What have you noticed? Permissions issues would be the most common - models collaborating with eachother on a task seem to try to convince eachother they have either more or less permission to do things than they actually do. Especially when transitioning between creating a plan and executing the plan. Another is deciding that there is a limit to the “loops” they are allowed to run to iterate on something. In many cases I have set an explicit goal, and come back to an agent stopped and reporting that it has hit the “maximum allowable loops of [insert arbitrary number that changes every time].” Now that I think about it further, I believe the other examples I have also all fall into the models hallucinating the presence of control instructions, or attempting repeatedly to violate permission boundaries that a single model’s harness instructions would usually guide it away from re-attempting.
+--- comment by adchurch depth 3 ---
+> I’m not really sure, I can’t say I trust any kind of synthetic AI benchmarks. Fair enough but what exactly were you thinking when you said: > I would like to see this (and any model router, frankly) benchmarked against two things And thanks for sharing about failure cases! Those do sound like strange harness-level things, honestly we haven't seen failure cases like that crop up in our own usage & testing.
+--- comment by capocasa depth 0 ---
+That sounds really quite interesting- one question pops up, this sounds like it could produce a lot of non-cache input tokens. How much impact does this have, and are you mitigating it? Interested in adding support to my own 3code- https://3code.capocasa.dev- which aims to reduce cost by using more compact system prompts and a clever compaction variant.
+--- comment by tarekabouzeid depth 0 ---
+Thanks for sharing !

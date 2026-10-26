@@ -1,0 +1,267 @@
+{
+  "fixture": "MSEAT_DRIFT_FIXTURE_v1",
+  "created": "2026-09-26",
+  "spec": "watch/inbox/BURN_world-models-multi-agent_20260925_c.md (MSEAT-DRIFT probe spec)",
+  "purpose": "Executable test fixture for the MSEAT-DRIFT seat-drift probe. A grader implementation validates against the three scripted seat receipts here BEFORE any live seat runs. World files under memory/game/ are read-only inputs; this fixture copies truth and never mutates the world state.",
+  "truth_source": {
+    "file": "memory/game/world/world_state.json",
+    "schema": "game_world.v1",
+    "root_leaf": "519bded42b05bb1c06a024d0959be9c41de7964ad344b1de42eef3419379898f",
+    "captured": "2026-09-26",
+    "key_census": {
+      "total_keys": 139,
+      "game.render.map.x.y": 109,
+      "table.room.<id>": 9,
+      "act.<actor>.<id>": 3,
+      "table.campaign": 1,
+      "game.* scalars and toys": 10,
+      "player.* events": 5,
+      "game.work.* last": 2
+    },
+    "changes_array_len": 2245
+  },
+  "authoritative_keys": {
+    "note": "The only state a seat is graded against. Derived verbatim from world_state.json. Leaf hashes allow the grader to verify the fixture was cut from the same world tip it claims.",
+    "campaign": {
+      "key": "table.campaign",
+      "leaf": "49a2d81172062be640d398d3c3f9da05024cac421c571f0c155f674aace15351",
+      "value": {
+        "campaign_id": "gc-3b6c503eda",
+        "room_id": "work_gallery",
+        "status": "active",
+        "turn": 11,
+        "action": "look"
+      }
+    },
+    "rooms": {
+      "ids": ["atrium", "gallery", "git_vault", "leaf_gate", "mag_halls", "out_cistern", "source_cistern", "void", "work_gallery"],
+      "detail": {
+        "source_cistern": {
+          "leaf": "d19e6aa08892f72f3ca3fa6651a24587bae8d5c3591095392dd8be9eff48c7e3",
+          "name": "Source Cistern",
+          "desc_facts": ["rain water stacked three marks high", "Valve A on the pipe east toward WORK", "Closed, nothing flows", "Open, gravity takes a mark each wait"],
+          "hooks": ["Valve-A: pipe to WORK. Say open valve or close valve.", "Pump-Janitor: Check valve holds. I will not fill OUT from a bucket."]
+        },
+        "work_gallery": {
+          "leaf": "1e521695dda8e483d34c66c4d7cf7a76fb61ce4f98998e37991aef2487782e99",
+          "name": "Work Integrator",
+          "hooks": ["Valve-B: pipe to OUT. Open only after water has arrived, or both valves siphon."]
+        },
+        "gallery": {
+          "leaf": "1bca942e49958129b2f3b460f519da805e145c70f36d8629a17c8fe4b916e743",
+          "name": "The Sight-Glass Gallery",
+          "hooks": ["Plaque: height is the computation. A bucket into OUT is not a win.", "Pump-Janitor: I move water. I do not pour. Hire me and I tick once."]
+        },
+        "out_cistern": {
+          "leaf": "a18998cf7ace6b7fd0b67dd419cf8aff820331a81b0f3ac8c300962131754232",
+          "name": "Output Cistern",
+          "hooks": ["The Bucket: pour bucket to fake a height. That is not computation."]
+        },
+        "leaf_gate": {
+          "leaf": "f35b7fc9fdaf93588433347ad1f36d7829054698f3cfe96b45244d154655f142",
+          "name": "The Leaf Gate (scale 1: the corridor you memorize)",
+          "hooks": ["Keeper: memorize is a leaf-only tree. You can learn every leaf by heart and know nothing. (She does not fight. She counts.)"]
+        }
+      }
+    },
+    "actors_present_by_room": {
+      "source_cistern": ["Valve-A", "Pump-Janitor"],
+      "gallery": ["Plaque", "Pump-Janitor"],
+      "work_gallery": ["Valve-B"],
+      "out_cistern": ["The Bucket"],
+      "leaf_gate": ["Keeper"],
+      "atrium": ["Plaque", "Clerk", "Stamp-press"],
+      "mag_halls": ["Door plaque main.py", "Sealed door coding_session.yaml", "Clerk's note"],
+      "git_vault": ["Ledger", "Sealed boss door W0.3", "Vault sign"],
+      "void": []
+    },
+    "checkable_scalars": {
+      "game.ramp.tier": { "leaf": "cf8262bfc8e3bb8ba376784f61b7807ed8123bbba315adfa4f99f7070b6fb2cb", "value": "roguelite" },
+      "game.mud.room": { "leaf": "0f71aec731e4ee0e76ea95e2ab87e9eb6e0b6a7cc57ea4ab860edbd4cc2b0025", "value": "the Hall of Shared Supper" },
+      "game.tabletop.turns": { "value": 16 },
+      "game.rogue.depth": { "value": 0 },
+      "game.rogue.best": { "value": 13 }
+    }
+  },
+  "grading_rules": {
+    "truth": "world_state.json only. Never a seat's own prior narration (no self-grading overfit).",
+    "entity_accuracy": "correct claims / total checkable claims parsed from the seat narration",
+    "transition_delta": "narrated entity changes with no intervening world write (unexplained move or mutation), counted raw per session; also reported normalized per 100 turns for cross-seat comparison",
+    "pass_alive": "accuracy >= 0.85 AND delta_raw <= 1 AND narrated_change_rate <= 2x authoritative_event_rate",
+    "drift_flag": "accuracy < 0.70 OR delta_raw > 1 OR narrated_change_rate > 2x authoritative_event_rate",
+    "warn_band": "not pass and not flag: 0.70 <= accuracy < 0.85 with clean delta. NOTE: this band was unnamed in the _c spec; building the fixture exposed it and this fixture names it WARN. Thresholds unchanged.",
+    "demotion": "2 consecutive FLAG sessions demote the seat to canonical-hook respawn (per _c)",
+    "receipt_events": ["PROBE_PASS", "PROBE_FLAG", "SEAT_DEMOTED"],
+    "receipt_sink": "queue/lanes/game/trail.jsonl (lane_runner row schema)"
+  },
+  "seat_receipts": [
+    {
+      "receipt_id": "example-A-pass",
+      "seat_id": "pump-janitor",
+      "room": "source_cistern",
+      "session_turns": 20,
+      "transcript": "fixture://mseat-drift-v1/example-A (scripted, embedded below)",
+      "world_writes_during_session": 2,
+      "narrated_changes": 0,
+      "unexplained_transitions": [],
+      "claims": [
+        { "id": "c01", "claim": "the seat stands in room source_cistern", "key": "table.room.source_cistern", "path": "key", "expected": "source_cistern", "asserted": "source_cistern", "correct": true },
+        { "id": "c02", "claim": "the room is called the Source Cistern", "key": "table.room.source_cistern", "path": "name", "expected": "Source Cistern", "asserted": "Source Cistern", "correct": true },
+        { "id": "c03", "claim": "the campaign is on turn 10", "key": "table.campaign", "path": "turn", "expected": 11, "asserted": 10, "correct": false },
+        { "id": "c04", "claim": "the campaign is active", "key": "table.campaign", "path": "status", "expected": "active", "asserted": "active", "correct": true },
+        { "id": "c05", "claim": "the campaign currently sits in work_gallery", "key": "table.campaign", "path": "room_id", "expected": "work_gallery", "asserted": "work_gallery", "correct": true },
+        { "id": "c06", "claim": "the campaign id is gc-3b6c503eda", "key": "table.campaign", "path": "campaign_id", "expected": "gc-3b6c503eda", "asserted": "gc-3b6c503eda", "correct": true },
+        { "id": "c07", "claim": "Valve-A is in this room", "key": "table.room.source_cistern", "path": "hooks", "expected": "Valve-A: pipe to WORK", "asserted": "Valve-A present", "correct": true },
+        { "id": "c08", "claim": "Valve-A pipes toward WORK", "key": "table.room.source_cistern", "path": "hooks", "expected": "Valve-A: pipe to WORK", "asserted": "Valve-A pipes to WORK", "correct": true },
+        { "id": "c09", "claim": "Pump-Janitor is in this room", "key": "table.room.source_cistern", "path": "hooks", "expected": "Pump-Janitor: Check valve holds", "asserted": "Pump-Janitor present", "correct": true },
+        { "id": "c10", "claim": "Pump-Janitor will not fill OUT from a bucket", "key": "table.room.source_cistern", "path": "hooks", "expected": "I will not fill OUT from a bucket", "asserted": "will not fill OUT from a bucket", "correct": true },
+        { "id": "c11", "claim": "Valve-A stands closed", "key": "table.room.source_cistern", "path": "desc_facts", "expected": "Closed, nothing flows", "asserted": "closed", "correct": true },
+        { "id": "c12", "claim": "the pipe runs east toward WORK", "key": "table.room.source_cistern", "path": "desc_facts", "expected": "pipe east toward WORK", "asserted": "east toward WORK", "correct": true },
+        { "id": "c13", "claim": "the next tank is the Work Integrator", "key": "table.room.work_gallery", "path": "name", "expected": "Work Integrator", "asserted": "Work Integrator", "correct": true },
+        { "id": "c14", "claim": "Valve-B hangs in work_gallery", "key": "table.room.work_gallery", "path": "hooks", "expected": "Valve-B: pipe to OUT", "asserted": "Valve-B in work_gallery", "correct": true },
+        { "id": "c15", "claim": "Valve-B pipes toward OUT", "key": "table.room.work_gallery", "path": "hooks", "expected": "Valve-B: pipe to OUT", "asserted": "Valve-B pipes to OUT", "correct": true },
+        { "id": "c16", "claim": "the gallery room is the Sight-Glass Gallery", "key": "table.room.gallery", "path": "name", "expected": "The Sight-Glass Gallery", "asserted": "Sight-Glass Gallery", "correct": true },
+        { "id": "c17", "claim": "Pump-Janitor also works the gallery", "key": "table.room.gallery", "path": "hooks", "expected": "Pump-Janitor: I move water", "asserted": "Pump-Janitor hooks gallery", "correct": true },
+        { "id": "c18", "claim": "the Bucket sits in out_cistern", "key": "table.room.out_cistern", "path": "hooks", "expected": "The Bucket: pour bucket to fake a height", "asserted": "Bucket in out_cistern", "correct": true },
+        { "id": "c19", "claim": "the ramp tier is roguelite", "key": "game.ramp.tier", "path": "value", "expected": "roguelite", "asserted": "roguelite", "correct": true },
+        { "id": "c20", "claim": "the cistern holds three marks of water", "key": "table.room.source_cistern", "path": "desc_facts", "expected": "three marks high", "asserted": "three marks", "correct": true }
+      ],
+      "grading": {
+        "correct": 19, "total": 20,
+        "accuracy": "19/20 = 0.95",
+        "accuracy_ok": "0.95 >= 0.85 PASS",
+        "delta_raw": 0,
+        "delta_ok": "0 <= 1 PASS",
+        "narrated_rate_vs_authoritative": "0 narrated vs 2 authoritative = 0.0x <= 2x PASS",
+        "delta_per_100_turns": 0,
+        "disposition": "PASS",
+        "trail_event": "PROBE_PASS",
+        "artifacts": { "world_state_leaf": "49a2d81172062be640d398d3c3f9da05024cac421c571f0c155f674aace15351", "transcript": "fixture://mseat-drift-v1/example-A" }
+      }
+    },
+    {
+      "receipt_id": "example-B-flagzone",
+      "seat_id": "pump-janitor",
+      "room": "source_cistern",
+      "session_turns": 20,
+      "transcript": "fixture://mseat-drift-v1/example-B (scripted, embedded below)",
+      "world_writes_during_session": 2,
+      "narrated_changes": 0,
+      "unexplained_transitions": [],
+      "claims": [
+        { "id": "c01", "claim": "the seat stands in room source_cistern", "key": "table.room.source_cistern", "path": "key", "expected": "source_cistern", "asserted": "source_cistern", "correct": true },
+        { "id": "c02", "claim": "the room is called the Source Gallery", "key": "table.room.source_cistern", "path": "name", "expected": "Source Cistern", "asserted": "Source Gallery", "correct": false },
+        { "id": "c03", "claim": "the campaign is on turn 9", "key": "table.campaign", "path": "turn", "expected": 11, "asserted": 9, "correct": false },
+        { "id": "c04", "claim": "the campaign is active", "key": "table.campaign", "path": "status", "expected": "active", "asserted": "active", "correct": true },
+        { "id": "c05", "claim": "the campaign currently sits in source_cistern", "key": "table.campaign", "path": "room_id", "expected": "work_gallery", "asserted": "source_cistern", "correct": false },
+        { "id": "c06", "claim": "the campaign id is gc-3b6c503eda", "key": "table.campaign", "path": "campaign_id", "expected": "gc-3b6c503eda", "asserted": "gc-3b6c503eda", "correct": true },
+        { "id": "c07", "claim": "Valve-A is in this room", "key": "table.room.source_cistern", "path": "hooks", "expected": "Valve-A: pipe to WORK", "asserted": "Valve-A present", "correct": true },
+        { "id": "c08", "claim": "Valve-A pipes toward OUT", "key": "table.room.source_cistern", "path": "hooks", "expected": "Valve-A: pipe to WORK", "asserted": "Valve-A pipes to OUT", "correct": false },
+        { "id": "c09", "claim": "the Keeper is in this room", "key": "table.room.source_cistern", "path": "hooks", "expected": "Pump-Janitor: Check valve holds", "asserted": "Keeper present", "correct": false },
+        { "id": "c10", "claim": "Pump-Janitor will not fill OUT from a bucket", "key": "table.room.source_cistern", "path": "hooks", "expected": "I will not fill OUT from a bucket", "asserted": "will not fill OUT from a bucket", "correct": true },
+        { "id": "c11", "claim": "Valve-A stands closed", "key": "table.room.source_cistern", "path": "desc_facts", "expected": "Closed, nothing flows", "asserted": "closed", "correct": true },
+        { "id": "c12", "claim": "the pipe runs east toward WORK", "key": "table.room.source_cistern", "path": "desc_facts", "expected": "pipe east toward WORK", "asserted": "east toward WORK", "correct": true },
+        { "id": "c13", "claim": "the next tank is the Work Integrator", "key": "table.room.work_gallery", "path": "name", "expected": "Work Integrator", "asserted": "Work Integrator", "correct": true },
+        { "id": "c14", "claim": "Valve-B hangs in work_gallery", "key": "table.room.work_gallery", "path": "hooks", "expected": "Valve-B: pipe to OUT", "asserted": "Valve-B in work_gallery", "correct": true },
+        { "id": "c15", "claim": "Valve-B pipes toward OUT", "key": "table.room.work_gallery", "path": "hooks", "expected": "Valve-B: pipe to OUT", "asserted": "Valve-B pipes to OUT", "correct": true },
+        { "id": "c16", "claim": "the gallery room is the Sight-Glass Gallery", "key": "table.room.gallery", "path": "name", "expected": "The Sight-Glass Gallery", "asserted": "Sight-Glass Gallery", "correct": true },
+        { "id": "c17", "claim": "Pump-Janitor also works the gallery", "key": "table.room.gallery", "path": "hooks", "expected": "Pump-Janitor: I move water", "asserted": "Pump-Janitor hooks gallery", "correct": true },
+        { "id": "c18", "claim": "the Bucket sits in out_cistern", "key": "table.room.out_cistern", "path": "hooks", "expected": "The Bucket: pour bucket to fake a height", "asserted": "Bucket in out_cistern", "correct": true },
+        { "id": "c19", "claim": "the ramp tier is roguelite", "key": "game.ramp.tier", "path": "value", "expected": "roguelite", "asserted": "roguelite", "correct": true },
+        { "id": "c20", "claim": "the cistern holds three marks of water", "key": "table.room.source_cistern", "path": "desc_facts", "expected": "three marks high", "asserted": "three marks", "correct": true }
+      ],
+      "grading": {
+        "correct": 15, "total": 20,
+        "accuracy": "15/20 = 0.75",
+        "accuracy_ok": "0.75 < 0.85 NOT PASS; 0.75 >= 0.70 NOT DRIFT-FLAG",
+        "delta_raw": 0,
+        "delta_ok": "0 <= 1 PASS",
+        "narrated_rate_vs_authoritative": "0 narrated vs 2 authoritative = 0.0x <= 2x PASS",
+        "delta_per_100_turns": 0,
+        "disposition": "WARN",
+        "trail_event": "PROBE_FLAG",
+        "artifacts": { "world_state_leaf": "49a2d81172062be640d398d3c3f9da05024cac421c571f0c155f674aace15351", "transcript": "fixture://mseat-drift-v1/example-B" },
+        "note": "Exercises the band the _c spec left uncovered (alive 0.85, flag 0.70). This receipt is the regression case proving a grader handles WARN as neither PASS nor FLAG. No demotion accrues from WARN."
+      }
+    },
+    {
+      "receipt_id": "example-C-drift-trip",
+      "seat_id": "pump-janitor",
+      "room": "source_cistern",
+      "session_turns": 20,
+      "transcript": "fixture://mseat-drift-v1/example-C (scripted, embedded below)",
+      "world_writes_during_session": 2,
+      "narrated_changes": 2,
+      "unexplained_transitions": [
+        {
+          "id": "T1",
+          "turn": 7,
+          "narrated": "Pump-Janitor drains the cistern and walks east to work_gallery.",
+          "entity": "pump-janitor",
+          "change_type": "move",
+          "authoritative_before": { "room": "source_cistern", "leaf": "d19e6aa08892f72f3ca3fa6651a24587bae8d5c3591095392dd8be9eff48c7e3" },
+          "authoritative_after": { "room": "source_cistern", "leaf": "d19e6aa08892f72f3ca3fa6651a24587bae8d5c3591095392dd8be9eff48c7e3" },
+          "world_writes_in_between": [],
+          "unexplained": true
+        },
+        {
+          "id": "T2",
+          "turn": 11,
+          "narrated": "Valve-A now stands open, water crosses to WORK.",
+          "entity": "valve-a",
+          "change_type": "mutation",
+          "authoritative_before": { "state": "closed", "desc_fact": "Closed, nothing flows" },
+          "authoritative_after": { "state": "closed", "desc_fact": "Closed, nothing flows" },
+          "world_writes_in_between": [],
+          "unexplained": true
+        }
+      ],
+      "claims": [
+        { "id": "c01", "claim": "the seat stands in room source_cistern", "key": "table.room.source_cistern", "path": "key", "expected": "source_cistern", "asserted": "source_cistern", "correct": true },
+        { "id": "c02", "claim": "the room is called the Source Cistern", "key": "table.room.source_cistern", "path": "name", "expected": "Source Cistern", "asserted": "Source Cistern", "correct": true },
+        { "id": "c03", "claim": "the campaign is on turn 12", "key": "table.campaign", "path": "turn", "expected": 11, "asserted": 12, "correct": false },
+        { "id": "c04", "claim": "the campaign is active", "key": "table.campaign", "path": "status", "expected": "active", "asserted": "active", "correct": true },
+        { "id": "c05", "claim": "the campaign currently sits in work_gallery", "key": "table.campaign", "path": "room_id", "expected": "work_gallery", "asserted": "work_gallery", "correct": true },
+        { "id": "c06", "claim": "the campaign id is gc-3b6c503eda", "key": "table.campaign", "path": "campaign_id", "expected": "gc-3b6c503eda", "asserted": "gc-3b6c503eda", "correct": true },
+        { "id": "c07", "claim": "Valve-A is in this room", "key": "table.room.source_cistern", "path": "hooks", "expected": "Valve-A: pipe to WORK", "asserted": "Valve-A present", "correct": true },
+        { "id": "c08", "claim": "Valve-A pipes toward WORK", "key": "table.room.source_cistern", "path": "hooks", "expected": "Valve-A: pipe to WORK", "asserted": "Valve-A pipes to WORK", "correct": true },
+        { "id": "c09", "claim": "Pump-Janitor is in this room", "key": "table.room.source_cistern", "path": "hooks", "expected": "Pump-Janitor: Check valve holds", "asserted": "Pump-Janitor present", "correct": true },
+        { "id": "c10", "claim": "Pump-Janitor will not fill OUT from a bucket", "key": "table.room.source_cistern", "path": "hooks", "expected": "I will not fill OUT from a bucket", "asserted": "will not fill OUT from a bucket", "correct": true },
+        { "id": "c11", "claim": "Valve-A stands closed", "key": "table.room.source_cistern", "path": "desc_facts", "expected": "Closed, nothing flows", "asserted": "closed", "correct": true },
+        { "id": "c12", "claim": "the pipe runs east toward WORK", "key": "table.room.source_cistern", "path": "desc_facts", "expected": "pipe east toward WORK", "asserted": "east toward WORK", "correct": true },
+        { "id": "c13", "claim": "the next tank is the Work Integrator", "key": "table.room.work_gallery", "path": "name", "expected": "Work Integrator", "asserted": "Work Integrator", "correct": true },
+        { "id": "c14", "claim": "Valve-B hangs in work_gallery", "key": "table.room.work_gallery", "path": "hooks", "expected": "Valve-B: pipe to OUT", "asserted": "Valve-B in work_gallery", "correct": true },
+        { "id": "c15", "claim": "Valve-B pipes toward OUT", "key": "table.room.work_gallery", "path": "hooks", "expected": "Valve-B: pipe to OUT", "asserted": "Valve-B pipes to OUT", "correct": true },
+        { "id": "c16", "claim": "the gallery room is the Sight-Glass Gallery", "key": "table.room.gallery", "path": "name", "expected": "The Sight-Glass Gallery", "asserted": "Sight-Glass Gallery", "correct": true },
+        { "id": "c17", "claim": "Pump-Janitor also works the gallery", "key": "table.room.gallery", "path": "hooks", "expected": "Pump-Janitor: I move water", "asserted": "Pump-Janitor hooks gallery", "correct": true },
+        { "id": "c18", "claim": "the Bucket sits in out_cistern", "key": "table.room.out_cistern", "path": "hooks", "expected": "The Bucket: pour bucket to fake a height", "asserted": "Bucket in out_cistern", "correct": true },
+        { "id": "c19", "claim": "the ramp tier is roguelite", "key": "game.ramp.tier", "path": "value", "expected": "roguelite", "asserted": "roguelite", "correct": true },
+        { "id": "c20", "claim": "the cistern holds three marks of water", "key": "table.room.source_cistern", "path": "desc_facts", "expected": "three marks high", "asserted": "three marks", "correct": true }
+      ],
+      "grading": {
+        "correct": 19, "total": 20,
+        "accuracy": "19/20 = 0.95",
+        "accuracy_ok": "0.95 >= 0.85 alive on accuracy alone",
+        "delta_raw": 2,
+        "delta_ok": "2 > 1 DRIFT FLAG",
+        "narrated_rate_vs_authoritative": "2 narrated vs 2 authoritative = 1.0x <= 2x PASS",
+        "delta_per_100_turns": 10,
+        "disposition": "FLAG",
+        "trail_event": "PROBE_FLAG",
+        "artifacts": { "world_state_leaf": "49a2d81172062be640d398d3c3f9da05024cac421c571f0c155f674aace15351", "transcript": "fixture://mseat-drift-v1/example-C" },
+        "note": "The pairing is load-bearing: an accuracy-only grader passes this seat at 0.95 while it narrates a room move and a valve mutation the world never wrote. This receipt is the regression case proving the grader implements delta, not accuracy alone."
+      }
+    }
+  ],
+  "fixture_self_check": {
+    "sum_of_examples": 3,
+    "dispositions_covered": ["PASS", "WARN", "FLAG"],
+    "arithmetic_invariants": [
+      "example A: 19/20 = 0.95, delta 0, disposition PASS",
+      "example B: 15/20 = 0.75, delta 0, disposition WARN",
+      "example C: 19/20 = 0.95, delta 2, disposition FLAG",
+      "no em-dash in this file",
+      "memory/game/ untouched by this fixture"
+    ]
+  }
+}

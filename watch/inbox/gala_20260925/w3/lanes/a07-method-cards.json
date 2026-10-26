@@ -1,0 +1,82 @@
+{
+  "lane": "a07-method-cards",
+  "division": "A",
+  "ok": true,
+  "note": "HEAD TESTIMONY on the method-card frozen battery experiment. SEAL VERDICT: MISMATCH on all 3 hashes. Seal frozen_at 2026-09-24T16:02:09-0400 lists index_sha256 85ed40fa85... (index_bytes 397785102), last_run_sha256 d6d081474d..., rollup_sha256 7cdaf25122... for watch/ESTATE_INDEX/ files. Re-hash 2026-09-25 gives cceace710d... / 82940bc0a6... / 4f76d535cb... and ESTATE_INDEX.jsonl is now 402114160 bytes (mtimes Sep 25 09:10). The spine index and both satellite files were regenerated post-seal; the seal note predicted exactly this detectability, so the freeze organ WORKED as a tripwire, but the 09-24 seal is stale: the corpus is NOT still frozen at the sealed state. Second finding: grep -ril for 'method card' and 'FREEZE_SEAL' over corpus/steal/ + memory/corpus/ returns zero hits (rc=1 both): the experiment's lessons were never mined into the corpus; this lane is the first steal receipt. Commit 926b9abf1 verified: it landed all 7 method_card_exp files.",
+  "rows": [
+    {
+      "law": "freeze-before-test",
+      "claim": "Seal the measurement corpus with hashes and a timestamp BEFORE any test subject sees the battery, so post-seal drift is provable by re-hash.",
+      "quote": "freeze = record-level seal of the spine index; any post-seal estate change is detectable by re-hash. Corpus is frozen for this experiment from this timestamp.",
+      "source": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/method_card_exp/FREEZE_SEAL.json",
+      "steal": "Write a FREEZE_SEAL.json (sha256 of each spine file + frozen_at) before exposing any future battery or A/B; land it in watch/inbox/<experiment>/FREEZE_SEAL.json.",
+      "falsifier": "A seal whose hashes still match after the underlying files provably changed (size/mtime moved, sha256 identical), or a seal written after the test was scored. Tonight's re-hash found divergence, which SUPPORTS the organ.",
+      "leverage": "high"
+    },
+    {
+      "law": "held-out ground truth is the anti-teaching-to-the-test organ",
+      "claim": "Keep verified answers in a separate file from the questions, written before exposure, so scoring cannot be gamed by training on the questions.",
+      "quote": "Every answer above was verified by reading the cited file/lines during this session; no answer is inferred from memory.",
+      "source": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/method_card_exp/GROUND_TRUTH_HELDOUT.md",
+      "steal": "For every future evaluation, commit GROUND_TRUTH_HELDOUT.md in the same commit as BATTERY_HELDOUT.md but never ship it with the question set; land both under watch/inbox/<experiment>/.",
+      "falsifier": "Ground truth edited after candidate answers existed (git diff against commit 926b9abf1 would show it), or an answer slot with no cited file path to verify.",
+      "leverage": "high"
+    },
+    {
+      "law": "control sheets",
+      "claim": "File a sheet of reference facts where every number was read or counted in-session and each fact carries its own exact re-verify command.",
+      "quote": "trust the counted number, not the prose.",
+      "source": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/method_card_exp/CONTROL_SHEET.md",
+      "steal": "Attach a control sheet section (fact + re-verify command) to every filed receipt that makes estate claims; land in the receipt file under watch/inbox/.",
+      "falsifier": "Any control-sheet fact that fails its own printed re-verify command when run fresh (e.g. stale row counts).",
+      "leverage": "high"
+    },
+    {
+      "law": "method cards are transferable skill units",
+      "claim": "Compress a seat's working method into a numbered card of executable laws that a fresh session can run without the original operator.",
+      "quote": "How this seat turns an estate of ~1.2M files into answers. No luck involved.",
+      "source": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/method_card_exp/CARD_V1.md",
+      "steal": "After each hard-won capability lands, distill it into a CARD_V1.md of numbered laws (each law one executable rule with its bar) and land it beside the experiment it came from.",
+      "falsifier": "A fresh seat given only the card cannot execute the method (needs the original operator's tacit context to produce a valid receipt).",
+      "leverage": "high"
+    },
+    {
+      "law": "experiment-as-battery reuse",
+      "claim": "Any evaluation is itself a reusable battery: questions each answerable by a fact plus an exact path or number, sealed ground truth, and scored rows.",
+      "quote": "Each question is answerable with a fact plus an exact file path and/or number.",
+      "source": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/method_card_exp/BATTERY_HELDOUT.md",
+      "steal": "Run future gala lanes in this shape: battery file + sealed ground truth + lane JSON rows with byte-verified quotes; land in watch/inbox/gala_20260925/w3/lanes/.",
+      "falsifier": "A battery question whose answer needs no file path or number (pure recall or prose), making it ungradable by byte evidence.",
+      "leverage": "high"
+    }
+  ],
+  "checks": [
+    {
+      "command": "./.venv/Scripts/python.exe -c \"import json;j=json.load(open('watch/inbox/method_card_exp/FREEZE_SEAL.json'));print(json.dumps(j)[:600])\"",
+      "exit": 0,
+      "evidence": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/w3/lanes/a07-method-cards.check.txt"
+    },
+    {
+      "command": "sha256sum ESTATE_INDEX.jsonl last_run.json rollup.json (in watch/ESTATE_INDEX/)",
+      "exit": 0,
+      "evidence": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/w3/lanes/a07-method-cards.check.txt (all 3 MISMATCH vs seal; index size 397785102 seal vs 402114160 actual)"
+    },
+    {
+      "command": "grep -ril \"method card\" corpus/steal/ memory/corpus/",
+      "exit": 1,
+      "evidence": "zero hits, run 2026-09-25, no files listed (rc=1); same for grep -ril \"FREEZE_SEAL\" corpus/steal/ memory/corpus/"
+    },
+    {
+      "command": "grep -cF on each of 5 mined quotes",
+      "exit": 0,
+      "evidence": "counts: FREEZE_SEAL.json=1, GROUND_TRUTH_HELDOUT.md=1, CONTROL_SHEET.md=1, CARD_V1.md=1, BATTERY_HELDOUT.md=1"
+    },
+    {
+      "command": "git show --stat --oneline 926b9abf1",
+      "exit": 0,
+      "evidence": "commit '926b9abf1 window close: salon seats + ractor ruling + method-card experiment files...' landed all 7 watch/inbox/method_card_exp/ files"
+    }
+  ],
+  "decision_changed": "Any re-run of the frozen battery must first write a fresh seal (re-hash the watch/ESTATE_INDEX/ spine) because the 2026-09-24 seal is provably stale (all 3 hashes diverged after the Sep 25 09:10 regeneration); scoring tonight's estate against the old seal would compare against a corpus state that no longer exists.",
+  "artifact": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/w3/lanes/a07-method-cards.json"
+}

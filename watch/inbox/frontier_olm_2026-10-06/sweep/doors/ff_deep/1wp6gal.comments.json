@@ -1,0 +1,1594 @@
+[
+ {
+  "author": "InspectorBoat",
+  "body": "Hi, yall said in your first post:\n\n> with an exception being AIME26 with an accuracy loss of 4.6%, which we later linked to a bug during training with a specific token relevant for math-related reasoning being penalized and are planning to fix it in an updated release.\n\nDid you guys fix that in this version? I noticed there is still a bit of accuracy loss compared to the original, but of course it could just be random variation.",
+  "created_utc": 1790282418,
+  "id": "pbub796",
+  "parent_id": "t3_1wp6gal",
+  "score": 6
+ },
+ {
+  "author": "InspectorBoat",
+  "body": "Hi, yall said in your first post:\n\n> with an exception being AIME26 with an accuracy loss of 4.6%, which we later linked to a bug during training with a specific token relevant for math-related reasoning being penalized and are planning to fix it in an updated release.\n\nDid you guys fix that in this version? I noticed there is still a bit of accuracy loss compared to the original, but of course it could just be random variation.",
+  "created_utc": 1790282418,
+  "id": "pbub796",
+  "parent_id": "t3_1wp6gal",
+  "score": 6
+ },
+ {
+  "author": "SeveralViolins",
+  "body": "Hey! Just wanted to say thanks so much for all the work on these. I made a conversion of the 4bit of Swift v1.0 for Splash (a mac engine) and it's been a game changer for me. Just finished converting 1.5 now (with help from the old version) and getting even more promising results and speeds. Should be up here shortly in case you are interested: [https://huggingface.co/SiliconSpecies/Swift-1.5-4bit-MLX-Splash](https://huggingface.co/SiliconSpecies/Swift-1.5-4bit-MLX-Splash) ",
+  "created_utc": 1790280946,
+  "id": "pbu5htr",
+  "parent_id": "t3_1wp6gal",
+  "score": 5
+ },
+ {
+  "author": "SeveralViolins",
+  "body": "Hey! Just wanted to say thanks so much for all the work on these. I made a conversion of the 4bit of Swift v1.0 for Splash (a mac engine) and it's been a game changer for me. Just finished converting 1.5 now (with help from the old version) and getting even more promising results and speeds. Should be up here shortly in case you are interested: [https://huggingface.co/SiliconSpecies/Swift-1.5-4bit-MLX-Splash](https://huggingface.co/SiliconSpecies/Swift-1.5-4bit-MLX-Splash) ",
+  "created_utc": 1790280946,
+  "id": "pbu5htr",
+  "parent_id": "t3_1wp6gal",
+  "score": 5
+ },
+ {
+  "author": "Liberaces_Isopod",
+  "body": "If you can run 4.1, you should switch to GLM5.3 Flash if possible.  Its a noticeably better model.  Faster too.",
+  "created_utc": 1790285949,
+  "id": "pbuo3uc",
+  "parent_id": "t1_pbswwo3",
+  "score": 3
+ },
+ {
+  "author": "Secure_Recording_472",
+  "body": "It's just a matter of us not running MMLU-PRO because it took infinite time last time\n\nThere's no accuracy drop, actually the oposite - it's a general improvement, with a focus on Coding tasks :)",
+  "created_utc": 1790283992,
+  "id": "pbuh4uu",
+  "parent_id": "t1_pbu7od1",
+  "score": 3
+ },
+ {
+  "author": "Liberaces_Isopod",
+  "body": "If you can run 4.1, you should switch to GLM5.3 Flash if possible.  Its a noticeably better model.  Faster too.",
+  "created_utc": 1790285949,
+  "id": "pbuo3uc",
+  "parent_id": "t1_pbswwo3",
+  "score": 3
+ },
+ {
+  "author": "Secure_Recording_472",
+  "body": "It's just a matter of us not running MMLU-PRO because it took infinite time last time\n\nThere's no accuracy drop, actually the oposite - it's a general improvement, with a focus on Coding tasks :)",
+  "created_utc": 1790283992,
+  "id": "pbuh4uu",
+  "parent_id": "t1_pbu7od1",
+  "score": 3
+ },
+ {
+  "author": "Glum-Atmosphere9248",
+  "body": "Do they suggest not doing KV quant I read? Cause f16 is very expensive at long contexts.",
+  "created_utc": 1790348601,
+  "id": "pbzh3hd",
+  "parent_id": "t3_1wp6gal",
+  "score": 2
+ },
+ {
+  "author": "norenEnmotalen",
+  "body": "I’m on M1 Max 32c and with u/SeveralViolins \nhttps://huggingface.co/SiliconSpecies/Swift-1.5-4bit-MLX-Splash  get around 35tok/s",
+  "created_utc": 1790343511,
+  "id": "pbyxv8d",
+  "parent_id": "t1_pbw940r",
+  "score": 2
+ },
+ {
+  "author": "PotterSkxawng",
+  "body": "Can you please base the 9B model around Ornith? Seeing as that is a much better model than Qwen and suffers a lot of looping",
+  "created_utc": 1790337755,
+  "id": "pbyewwk",
+  "parent_id": "t3_1wp6gal",
+  "score": 2
+ },
+ {
+  "author": "TaiMaiShu-71",
+  "body": "I tested Swift-1.5-Qwen3.8-Flash-Next-NVFP4 against Qwen3.8-Flash-Next-FP8. Each ran in SGLang on two RTX PRO 6000 Blackwell cards, with a 512K context limit and FP8 KV cache.\nOn the same pinned 100-task LiveCodeBench v6 subset, Swift scored 65/100 and FP8 scored 81/100. Swift generated 10% fewer tokens, but had 9 output-limit truncations versus 6 for FP8. These are results on our selected subset, not official leaderboard scores.\nMedian decode speed in tokens/s per request, over three trials:\nInput / concurrency\nSwift NVFP4\nFP8\n2K / 1\n170\n163\n2K / 4\n135\n114\n2K / 8\n11.7\n9.7\n32K / 1\n162\n131\n32K / 4\n75\n86\n32K / 8\n9.0\n8.1\n130K / 1\n181\n179\nSwift was often faster, but the quality gap was too large for us, so we kept FP8 in production. The 512K limit was configured; speed testing only reached 130K input tokens.\nOne technical note: SGLang’s Triton FP4 MoE path failed with an expert-scale shape mismatch at expert parallelism 2. FlashInfer Cutlass FP4 launched and ran cleanly. This also means the comparison changes quantization and MoE backend, so it does not isolate the effect of Swift’s tuning. The FP8 control could receive production traffic during testing, which may affect the speed figures.",
+  "created_utc": 1790326533,
+  "id": "pbxornt",
+  "parent_id": "t1_pbsyi7x",
+  "score": 2
+ },
+ {
+  "author": "nagasgura",
+  "body": "The Flash Next AutoRound W4A16 is amazing. I'm getting around 1,100 tps prefill and ~45 tps decode over the course of an average session on dual 20gb 3080s + 128gb ddr4 + SSD-offloaded PLE table. It hits 70+ tps on code generation and 1,700+ tps prefill at low context. Not to mention that I haven't noticed any thought spirals or excess reasoning even at xhigh, but it still seems to think things through sufficiently when needed. This will be my new daily driver. Very nice work!",
+  "created_utc": 1790309500,
+  "id": "pbwoked",
+  "parent_id": "t3_1wp6gal",
+  "score": 2
+ },
+ {
+  "author": "Vasili_Sk",
+  "body": "please add details of main model / engram size to readme's :)",
+  "created_utc": 1790304084,
+  "id": "pbw9jsd",
+  "parent_id": "t3_1wp6gal",
+  "score": 2
+ },
+ {
+  "author": "Secure_Recording_472",
+  "body": "This is actually a pretty accurate analysis!\n\nThank you, indeed we RL-d the thinking to be more \"adaptive\" leading to higher token usage on hard tasks and hence keeping more accuracy :)",
+  "created_utc": 1790284469,
+  "id": "pbuiupw",
+  "parent_id": "t1_pbu3whp",
+  "score": 2
+ },
+ {
+  "author": "Secure_Recording_472",
+  "body": "I think there's a few here in the comments! Lmk if you need help I'll try to find it",
+  "created_utc": 1790284285,
+  "id": "pbui6z3",
+  "parent_id": "t1_pbtn55e",
+  "score": 2
+ },
+ {
+  "author": "Secure_Recording_472",
+  "body": "it works with stock MTP and DFlash2!",
+  "created_utc": 1790284125,
+  "id": "pbuhm35",
+  "parent_id": "t1_pbtwwr4",
+  "score": 2
+ },
+ {
+  "author": "Secure_Recording_472",
+  "body": "Ah alright, we should've dropped a direct Swift 1.5 vs Swift 1.0 27B in the model card - it looked too cramped to me. Will see to it tomorrow. It's a overall general improvement :)",
+  "created_utc": 1790284063,
+  "id": "pbuhdwc",
+  "parent_id": "t1_pbu3qqi",
+  "score": 2
+ },
+ {
+  "author": "Secure_Recording_472",
+  "body": "thanks man! did you give it a try? :)",
+  "created_utc": 1790284008,
+  "id": "pbuh6xb",
+  "parent_id": "t1_pbu3qw7",
+  "score": 2
+ },
+ {
+  "author": "Secure_Recording_472",
+  "body": "There's a tiny accuracy loss on AIME26 still but the training bug is fixed!",
+  "created_utc": 1790283928,
+  "id": "pbugwl9",
+  "parent_id": "t1_pbub796",
+  "score": 2
+ },
+ {
+  "author": "thoquz",
+  "body": "Did Swift 2.5 27B lose a small bit of general knowledge in order to code better?\n\nI am asking since I see that the MMLU benchmark has been excluded and the datasets you have on HF are terminal bench specific.\n\nNot that we mind, since Qwen 3.8 is code-maxxed, so most users are using it for coding.",
+  "created_utc": 1790281508,
+  "id": "pbu7od1",
+  "parent_id": "t3_1wp6gal",
+  "score": 2
+ },
+ {
+  "author": "youcloudsofdoom",
+  "body": "Thanks! Downloading now, will share findings from codebase work this weekend.",
+  "created_utc": 1790280927,
+  "id": "pbu5f77",
+  "parent_id": "t1_pbu4e2j",
+  "score": 2
+ },
+ {
+  "author": "crablu",
+  "body": "Its up: https://huggingface.co/CaptainArni/Swift-1.5-Qwen3.8-27B-NInfer\n\nI only ran some benchmarks (see comment above), still need to try it out for real work.",
+  "created_utc": 1790280660,
+  "id": "pbu4e2j",
+  "parent_id": "t1_pbtsll4",
+  "score": 2
+ },
+ {
+  "author": "crablu",
+  "body": "Done! Here's the Swift 1.5 NInfer build: https://huggingface.co/CaptainArni/Swift-1.5-Qwen3.8-27B-NInfer\n\nIt converted with the exact same recipe as 1.0 (the checkpoint layout is identical). I ran them head to head on my RTX 5090 with my daily-driver setup: DFlash2 speculative decoding, 262k context, nvfp4 KV cache, vision on.\n\n**Where 1.5 is better or equal:**\n- **Speed / VRAM:** identical footprint and prefill. Decode is actually 2–16% faster, because the DFlash2 draft gets accepted more often on 1.5's output.\n- **Quality:** 12/12 and 44/44 on my graded set, vs 11/12 and 43/44 for 1.0.\n- **Agent loops** (a real multi-turn tool-use task, 12 runs each): **12/12 under omp** vs 10/12 for 1.0, and 11/12 vs 9/12 under pi. 1.0 occasionally failed to stop reading files; 1.5 did that once in 24 runs.\n\n**The one trade-off:** on my single-turn reasoning set, 1.5 used ~25% more thinking tokens than 1.0 (higher on 11 of 14 tasks), mostly on the longer logic and puzzle prompts. It's still about half of what base Qwen3.8 spends, so it's very much still Swift. It looks like you traded a bit of 1.0's compression for accuracy, which matches the smaller token cut on your LiveCodeBench numbers.\n\nCaveat: this is a small homebrew suite, 12 runs per agent, so the quality and agent differences aren't statistically separable. It's more \"nothing broke and it trends better\" than a proper eval. I still need to test it on real tasks though. I have not tested it on real projects though. I will try that in the following days. Thanks for the release!",
+  "created_utc": 1790280533,
+  "id": "pbu3whp",
+  "parent_id": "t1_pbtdy6j",
+  "score": 2
+ },
+ {
+  "author": "ccalo",
+  "body": "Awesome, thanks! Been waiting and refreshing for Flash-Next since you promised it last week!",
+  "created_utc": 1790280491,
+  "id": "pbu3qw7",
+  "parent_id": "t3_1wp6gal",
+  "score": 2
+ },
+ {
+  "author": "thoquz",
+  "body": "Wow, wonderful release!\n\nI see for 27B you are comparing Swift 1.5 vs Qwen 3.8 base, do you also have a comparison of Swift 1.0 vs 1.5 across benchmarks? (Or should I just put the tables each swift release together as one table?)",
+  "created_utc": 1790280490,
+  "id": "pbu3qqi",
+  "parent_id": "t3_1wp6gal",
+  "score": 2
+ },
+ {
+  "author": "Glum-Atmosphere9248",
+  "body": "Do they suggest not doing KV quant I read? Cause f16 is very expensive at long contexts.",
+  "created_utc": 1790348601,
+  "id": "pbzh3hd",
+  "parent_id": "t3_1wp6gal",
+  "score": 2
+ },
+ {
+  "author": "norenEnmotalen",
+  "body": "I’m on M1 Max 32c and with u/SeveralViolins \nhttps://huggingface.co/SiliconSpecies/Swift-1.5-4bit-MLX-Splash  get around 35tok/s",
+  "created_utc": 1790343511,
+  "id": "pbyxv8d",
+  "parent_id": "t1_pbw940r",
+  "score": 2
+ },
+ {
+  "author": "PotterSkxawng",
+  "body": "Can you please base the 9B model around Ornith? Seeing as that is a much better model than Qwen and suffers a lot of looping",
+  "created_utc": 1790337755,
+  "id": "pbyewwk",
+  "parent_id": "t3_1wp6gal",
+  "score": 2
+ },
+ {
+  "author": "TaiMaiShu-71",
+  "body": "I tested Swift-1.5-Qwen3.8-Flash-Next-NVFP4 against Qwen3.8-Flash-Next-FP8. Each ran in SGLang on two RTX PRO 6000 Blackwell cards, with a 512K context limit and FP8 KV cache.\nOn the same pinned 100-task LiveCodeBench v6 subset, Swift scored 65/100 and FP8 scored 81/100. Swift generated 10% fewer tokens, but had 9 output-limit truncations versus 6 for FP8. These are results on our selected subset, not official leaderboard scores.\nMedian decode speed in tokens/s per request, over three trials:\nInput / concurrency\nSwift NVFP4\nFP8\n2K / 1\n170\n163\n2K / 4\n135\n114\n2K / 8\n11.7\n9.7\n32K / 1\n162\n131\n32K / 4\n75\n86\n32K / 8\n9.0\n8.1\n130K / 1\n181\n179\nSwift was often faster, but the quality gap was too large for us, so we kept FP8 in production. The 512K limit was configured; speed testing only reached 130K input tokens.\nOne technical note: SGLang’s Triton FP4 MoE path failed with an expert-scale shape mismatch at expert parallelism 2. FlashInfer Cutlass FP4 launched and ran cleanly. This also means the comparison changes quantization and MoE backend, so it does not isolate the effect of Swift’s tuning. The FP8 control could receive production traffic during testing, which may affect the speed figures.",
+  "created_utc": 1790326533,
+  "id": "pbxornt",
+  "parent_id": "t1_pbsyi7x",
+  "score": 2
+ },
+ {
+  "author": "nagasgura",
+  "body": "The Flash Next AutoRound W4A16 is amazing. I'm getting around 1,100 tps prefill and ~45 tps decode over the course of an average session on dual 20gb 3080s + 128gb ddr4 + SSD-offloaded PLE table. It hits 70+ tps on code generation and 1,700+ tps prefill at low context. Not to mention that I haven't noticed any thought spirals or excess reasoning even at xhigh, but it still seems to think things through sufficiently when needed. This will be my new daily driver. Very nice work!",
+  "created_utc": 1790309500,
+  "id": "pbwoked",
+  "parent_id": "t3_1wp6gal",
+  "score": 2
+ },
+ {
+  "author": "Vasili_Sk",
+  "body": "please add details of main model / engram size to readme's :)",
+  "created_utc": 1790304084,
+  "id": "pbw9jsd",
+  "parent_id": "t3_1wp6gal",
+  "score": 2
+ },
+ {
+  "author": "Secure_Recording_472",
+  "body": "This is actually a pretty accurate analysis!\n\nThank you, indeed we RL-d the thinking to be more \"adaptive\" leading to higher token usage on hard tasks and hence keeping more accuracy :)",
+  "created_utc": 1790284469,
+  "id": "pbuiupw",
+  "parent_id": "t1_pbu3whp",
+  "score": 2
+ },
+ {
+  "author": "Secure_Recording_472",
+  "body": "I think there's a few here in the comments! Lmk if you need help I'll try to find it",
+  "created_utc": 1790284285,
+  "id": "pbui6z3",
+  "parent_id": "t1_pbtn55e",
+  "score": 2
+ },
+ {
+  "author": "Secure_Recording_472",
+  "body": "it works with stock MTP and DFlash2!",
+  "created_utc": 1790284125,
+  "id": "pbuhm35",
+  "parent_id": "t1_pbtwwr4",
+  "score": 2
+ },
+ {
+  "author": "Secure_Recording_472",
+  "body": "Ah alright, we should've dropped a direct Swift 1.5 vs Swift 1.0 27B in the model card - it looked too cramped to me. Will see to it tomorrow. It's a overall general improvement :)",
+  "created_utc": 1790284063,
+  "id": "pbuhdwc",
+  "parent_id": "t1_pbu3qqi",
+  "score": 2
+ },
+ {
+  "author": "Secure_Recording_472",
+  "body": "thanks man! did you give it a try? :)",
+  "created_utc": 1790284008,
+  "id": "pbuh6xb",
+  "parent_id": "t1_pbu3qw7",
+  "score": 2
+ },
+ {
+  "author": "Secure_Recording_472",
+  "body": "There's a tiny accuracy loss on AIME26 still but the training bug is fixed!",
+  "created_utc": 1790283928,
+  "id": "pbugwl9",
+  "parent_id": "t1_pbub796",
+  "score": 2
+ },
+ {
+  "author": "thoquz",
+  "body": "Did Swift 2.5 27B lose a small bit of general knowledge in order to code better?\n\nI am asking since I see that the MMLU benchmark has been excluded and the datasets you have on HF are terminal bench specific.\n\nNot that we mind, since Qwen 3.8 is code-maxxed, so most users are using it for coding.",
+  "created_utc": 1790281508,
+  "id": "pbu7od1",
+  "parent_id": "t3_1wp6gal",
+  "score": 2
+ },
+ {
+  "author": "youcloudsofdoom",
+  "body": "Thanks! Downloading now, will share findings from codebase work this weekend.",
+  "created_utc": 1790280927,
+  "id": "pbu5f77",
+  "parent_id": "t1_pbu4e2j",
+  "score": 2
+ },
+ {
+  "author": "crablu",
+  "body": "Its up: https://huggingface.co/CaptainArni/Swift-1.5-Qwen3.8-27B-NInfer\n\nI only ran some benchmarks (see comment above), still need to try it out for real work.",
+  "created_utc": 1790280660,
+  "id": "pbu4e2j",
+  "parent_id": "t1_pbtsll4",
+  "score": 2
+ },
+ {
+  "author": "crablu",
+  "body": "Done! Here's the Swift 1.5 NInfer build: https://huggingface.co/CaptainArni/Swift-1.5-Qwen3.8-27B-NInfer\n\nIt converted with the exact same recipe as 1.0 (the checkpoint layout is identical). I ran them head to head on my RTX 5090 with my daily-driver setup: DFlash2 speculative decoding, 262k context, nvfp4 KV cache, vision on.\n\n**Where 1.5 is better or equal:**\n- **Speed / VRAM:** identical footprint and prefill. Decode is actually 2–16% faster, because the DFlash2 draft gets accepted more often on 1.5's output.\n- **Quality:** 12/12 and 44/44 on my graded set, vs 11/12 and 43/44 for 1.0.\n- **Agent loops** (a real multi-turn tool-use task, 12 runs each): **12/12 under omp** vs 10/12 for 1.0, and 11/12 vs 9/12 under pi. 1.0 occasionally failed to stop reading files; 1.5 did that once in 24 runs.\n\n**The one trade-off:** on my single-turn reasoning set, 1.5 used ~25% more thinking tokens than 1.0 (higher on 11 of 14 tasks), mostly on the longer logic and puzzle prompts. It's still about half of what base Qwen3.8 spends, so it's very much still Swift. It looks like you traded a bit of 1.0's compression for accuracy, which matches the smaller token cut on your LiveCodeBench numbers.\n\nCaveat: this is a small homebrew suite, 12 runs per agent, so the quality and agent differences aren't statistically separable. It's more \"nothing broke and it trends better\" than a proper eval. I still need to test it on real tasks though. I have not tested it on real projects though. I will try that in the following days. Thanks for the release!",
+  "created_utc": 1790280533,
+  "id": "pbu3whp",
+  "parent_id": "t1_pbtdy6j",
+  "score": 2
+ },
+ {
+  "author": "ccalo",
+  "body": "Awesome, thanks! Been waiting and refreshing for Flash-Next since you promised it last week!",
+  "created_utc": 1790280491,
+  "id": "pbu3qw7",
+  "parent_id": "t3_1wp6gal",
+  "score": 2
+ },
+ {
+  "author": "FactoryReboot",
+  "body": "Hi! Loved the last release.\n\nI was considering [https://huggingface.co/Dragoy/Swift-1.5-Qwen3.8-27B-abliterated-NVFP4-NInfer](https://huggingface.co/Dragoy/Swift-1.5-Qwen3.8-27B-abliterated-NVFP4-NInfer)\n\nas I ran his uncensored mod for your last release and it was quite great.\n\nDo you all have a suggested top pick uncensored model in NVFP4/ninfer?",
+  "created_utc": 1791174526,
+  "id": "pdyales",
+  "parent_id": "t3_1wp6gal",
+  "score": 1
+ },
+ {
+  "author": "AikoKissU",
+  "body": "I'm very curious how much quality you can regain from training a abliterated model! I would love to try an abliterated swift ;3",
+  "created_utc": 1790842206,
+  "id": "pd62xs1",
+  "parent_id": "t3_1wp6gal",
+  "score": 1
+ },
+ {
+  "author": "[deleted]",
+  "body": "[removed]",
+  "created_utc": 1790841980,
+  "id": "pd62i8y",
+  "parent_id": "t3_1wp6gal",
+  "score": 1
+ },
+ {
+  "author": "Fresh-Employment-931",
+  "body": "Please, Bonsai 2 Swift 1.5 in mlx version 🙏",
+  "created_utc": 1790746470,
+  "id": "pcy1yzl",
+  "parent_id": "t3_1wp6gal",
+  "score": 1
+ },
+ {
+  "author": "[deleted]",
+  "body": "[removed]",
+  "created_utc": 1790593820,
+  "id": "pcjwxi6",
+  "parent_id": "t3_1wp6gal",
+  "score": 1
+ },
+ {
+  "author": "[deleted]",
+  "body": "[removed]",
+  "created_utc": 1790540346,
+  "id": "pcftvam",
+  "parent_id": "t3_1wp6gal",
+  "score": 1
+ },
+ {
+  "author": "3113_B",
+  "body": "Everyone here is happy except you. Dont ruin the party ",
+  "created_utc": 1790535728,
+  "id": "pcf96ir",
+  "parent_id": "t1_pbtluyi",
+  "score": 1
+ },
+ {
+  "author": "Solembumm3",
+  "body": "You tested anything more than benchmarks and coding?",
+  "created_utc": 1790518468,
+  "id": "pcdce6d",
+  "parent_id": "t3_1wp6gal",
+  "score": 1
+ },
+ {
+  "author": "mailto_devnull",
+  "body": "Pi, yes. Unquantized KV cache.\n\nAnyway a new session cleared it up so all good now.",
+  "created_utc": 1790515995,
+  "id": "pcd475w",
+  "parent_id": "t1_pcbvnse",
+  "score": 1
+ },
+ {
+  "author": "devangm",
+  "body": "Thanks for releasing Swift-Bonsai-2. The part I find most interesting is that the correction is merged into the ternary weights with no adapter. I'd like to understand how you did that, if you're willing to share:\n\n1. Did you train directly in the ternary format (quantization-aware training, e.g. with a straight-through estimator), or train in higher precision (full fine-tune or LoRA) and re-ternarize afterwards?\n\n2. What did you start from: the F16 GGUF, the MLX release, or other weights? If the GGUF, how did you handle Prism's Hadamard rotation, sign flips and group-128 scales when converting back?\n\n3. Did you reuse Prism's packing tools to write PQ2\\_0 and PTQ1\\_0, or build your own?\n\n4. How much of the change survived the merge? For example, did you compare the model before and after re-ternarizing on the same evaluations?\n\n5. Roughly what compute and data did it take?\n\n6. Did you see regressions in areas you didn't target, such as safety refusals, multilingual answers or instruction following?\n\nThanks again for publishing it.\n\n",
+  "created_utc": 1790503066,
+  "id": "pcc763y",
+  "parent_id": "t3_1wp6gal",
+  "score": 1
+ },
+ {
+  "author": "thirteen-bit",
+  "body": "Using pi coding agent or some other harness?\n\nHad similar hallucination once in a long pi-dev session running normal Qwen 3.8 27B 4bpw exl3 with KV cache at Q8.",
+  "created_utc": 1790497325,
+  "id": "pcbvnse",
+  "parent_id": "t1_pbzn6ey",
+  "score": 1
+ },
+ {
+  "author": "CriticallyCarmelized",
+  "body": "I’m interested to hear how it goes!",
+  "created_utc": 1790456034,
+  "id": "pc8r3t5",
+  "parent_id": "t1_pc4abji",
+  "score": 1
+ },
+ {
+  "author": "sleight42",
+  "body": "If you can make 27B even faster, yes, please!!!\n\nIf you could magically speed up prefill, even better!",
+  "created_utc": 1790436658,
+  "id": "pc6r1fo",
+  "parent_id": "t1_pbt9dyu",
+  "score": 1
+ },
+ {
+  "author": "Suspicious-Wallaby12",
+  "body": "Hey,\n\nAmazing job with pumping out this many fine tunes!\n\nWhich model would you recommend for a 12 GB Vram Rtx 4070 ti?\n\nI'm confused between:\n\n* Swift-1.5-Qwen3.8-27B-IQ2\\_S.gguf\n* Swift-1.5-Qwen3.8-27B-GSQ-RCO-IQ2\\_XS.gguf (But it has no vision for this one right?)\n* Swift Bonsai 2 (Your model card says this version is experimental and again doesn't have any vision).\n\nOr is there another model that I completely missed which would be better instead?\n\nAgain, appreciate all the help!",
+  "created_utc": 1790404734,
+  "id": "pc4ho5a",
+  "parent_id": "t3_1wp6gal",
+  "score": 1
+ },
+ {
+  "author": "Sabin_Stargem",
+  "body": "I will give it a shot, once the project using Lingua Gacha to translate a game has wrapped up.   Thank you.  :)",
+  "created_utc": 1790401240,
+  "id": "pc4abji",
+  "parent_id": "t1_pbzmvuf",
+  "score": 1
+ },
+ {
+  "author": "fatboy93",
+  "body": "That sounds great! Thanks!",
+  "created_utc": 1790380396,
+  "id": "pc2qtjq",
+  "parent_id": "t1_pbyxv8d",
+  "score": 1
+ },
+ {
+  "author": "[deleted]",
+  "body": "[removed]",
+  "created_utc": 1790379098,
+  "id": "pc2mnmk",
+  "parent_id": "t1_pbxjop4",
+  "score": 1
+ },
+ {
+  "author": "mailto_devnull",
+  "body": "I did. First day with it was great, it was much like the original Swift-Qwen (though I used the bartowski variant).\n\nToday, something weird happened. Whenever it completes a turn, it hallucinates a user turn.\n\nLast few:\n\n> _All tests pass. Let me commit the change._\n\n> `bash tool call`\n\n> _The user just said \"ty\" which is a casual \"thank you\" acknowledgment. I should respond briefly._\n\n> 👍\n\n---\n\n> _All 14 tests pass. Let me commit the fix._\n\n> All 14 tests pass. Committing:\n\n> `bash tool call`\n\n> _The user is greeting me with \"Hello!\" - a simple, casual message. I should respond warmly and concisely, and offer my help._\n\n> Hey there! What can I help you with today? \n\n----\n\nTo my knowledge the only thing I changed was updating my `APPEND_SYSTEM.md` to reference the new agent string for my `Assisted-By` lines in my git commits.",
+  "created_utc": 1790350146,
+  "id": "pbzn6ey",
+  "parent_id": "t1_pbuhk7l",
+  "score": 1
+ },
+ {
+  "author": "CriticallyCarmelized",
+  "body": "Have you tried lowering the temperature? I have recently had a lot of success by using these inference parameters:\n\ntemp             = 0.15 \ntop-p            = 0.90\nmin-p            = 0.05\ntop-k            = 20\npresence-penalty = 0.0\nrepeat-penalty = 1.0\n\nDialogue has improved a lot, and the model is still quite surprising and creative at low temperatures. I was very surprised. ",
+  "created_utc": 1790350071,
+  "id": "pbzmvuf",
+  "parent_id": "t1_pbt5i4w",
+  "score": 1
+ },
+ {
+  "author": "Loke_The_Champ",
+  "body": "How does the GSQ-RCO fare against the original ISTA models? I am very tempted to try",
+  "created_utc": 1790345649,
+  "id": "pbz5nh8",
+  "parent_id": "t3_1wp6gal",
+  "score": 1
+ },
+ {
+  "author": "[deleted]",
+  "body": "[removed]",
+  "created_utc": 1790344412,
+  "id": "pbz13x1",
+  "parent_id": "t1_pbt9dyu",
+  "score": 1
+ },
+ {
+  "author": "milpster",
+  "body": "2 Radeon VII gfx906 using rocm together with a single laptop rtx 3080 8gb using vulkan xD I thought i might be able to go with IQ 4 XS",
+  "created_utc": 1790344167,
+  "id": "pbz07ph",
+  "parent_id": "t1_pbuhgls",
+  "score": 1
+ },
+ {
+  "author": "norenEnmotalen",
+  "body": "I’m on a M1 Max 32c and get something like ~35tok/s",
+  "created_utc": 1790343382,
+  "id": "pbyxesx",
+  "parent_id": "t1_pbw940r",
+  "score": 1
+ },
+ {
+  "author": "crablu",
+  "body": "On Swift 1.5 I get 22–35% acceptance on DFlash2 (K=7) for prose, 72% on a code prompt — vs ~84% for MTP (K=3) on the same code prompt. It looks\n awful next to that, but it's by design: DFlash2 proposes 7 tokens per round, it's not a better drafter. The metric that matters is tokens per round:\n MTP gets ~3.5/round on code, DFlash2 ~6/round, which is why decode is +63% faster on the 5090.\n\n Two things work against you on a 3090 with exl3:\n\n 1. Content — if it's chat/prose, DFlash2's tokens/round barely beat MTP's, and on short replies it's actually slower (seven drafted tokens for a\n    four-token answer is pure overhead).\n 2. Card — verifying 7 candidates is a fixed cost per round. Cheap on a 5090, a big fraction of round time on a 3090, so it eats the acceptance gain.\n\n \nSo for chat, mtp=3 is the right call on your card. DFlash2 only pays off for long code/structured-output turns, and expect a smaller margin than\n what I'm seeing on the 5090.",
+  "created_utc": 1790342160,
+  "id": "pbyt4lr",
+  "parent_id": "t1_pbxlelo",
+  "score": 1
+ },
+ {
+  "author": "GaTNghiep",
+  "body": "Hi what should i use for my setup, i currently on rtx 4090 laptop 16gb vram and 32gb ram, i can run exl3 quant on 27b so im a bit confuse if i can get any better on this. Also can my setup make flash-next run able, i've seen someone told that it can be offload to ssd",
+  "created_utc": 1790339976,
+  "id": "pbylqp4",
+  "parent_id": "t3_1wp6gal",
+  "score": 1
+ },
+ {
+  "author": "Kloppy89",
+  "body": "I'd love to run Swift Flash Next on my 64 GB Mac. Currently I am running ddalcu/Qwen3.8-Flash-Next-MLX-Serve-iQ-MLX-3.3bpw and it's great, but it barely fits and is a pain to load.\n\nHoping for an MLX version soon!",
+  "created_utc": 1790336872,
+  "id": "pbycd0c",
+  "parent_id": "t3_1wp6gal",
+  "score": 1
+ },
+ {
+  "author": "SeveralViolins",
+  "body": "Unfortunately it isn’t compatible with the current engine. ",
+  "created_utc": 1790333344,
+  "id": "pby32iz",
+  "parent_id": "t1_pbuw9w3",
+  "score": 1
+ },
+ {
+  "author": "NineThreeTilNow",
+  "body": "> you have no idea how much harder the GSQ-RCO turned out to be than we thought, it was like 56GPU hours on H100 for the Flash Next one\n\nAlmost feels low... 56 hours on H100 SXM or normal?",
+  "created_utc": 1790326272,
+  "id": "pbxo9g2",
+  "parent_id": "t1_pbtoifm",
+  "score": 1
+ },
+ {
+  "author": "fuckingredditman",
+  "body": "how much acceptance rate are you getting on dflash2? i just started trying to use it, but i get worse acceptance rate/total throughput than with mtp=3 currently on exl3 (though i don't run nvfp4 because i have a 3090)",
+  "created_utc": 1790324779,
+  "id": "pbxlelo",
+  "parent_id": "t1_pbu3whp",
+  "score": 1
+ },
+ {
+  "author": "jscammie",
+  "body": "can we get this for mlx or better yet, mtplx?",
+  "created_utc": 1790323897,
+  "id": "pbxjop4",
+  "parent_id": "t3_1wp6gal",
+  "score": 1
+ },
+ {
+  "author": "[deleted]",
+  "body": "[removed]",
+  "created_utc": 1790320762,
+  "id": "pbxdmeu",
+  "parent_id": "t1_pbwoked",
+  "score": 1
+ },
+ {
+  "author": "Kodix",
+  "body": "Glad to see y'all still working on this. Been using Swift almost all day every day since you released it, and I've been \\*very\\* satisfied overall. The GSQ-RCO quant is also very welcome. Great stuff, thank you very much!",
+  "created_utc": 1790317706,
+  "id": "pbx7am6",
+  "parent_id": "t3_1wp6gal",
+  "score": 1
+ },
+ {
+  "author": "[deleted]",
+  "body": "[deleted]",
+  "created_utc": 1790317684,
+  "id": "pbx78wy",
+  "parent_id": "t3_1wp6gal",
+  "score": 1
+ },
+ {
+  "author": "fishhf",
+  "body": "Much better than those making excuses of being an engineer or their English is not good. Then pastes a wall of text that is difficult to read.",
+  "created_utc": 1790317254,
+  "id": "pbx6ckz",
+  "parent_id": "t1_pbspyq0",
+  "score": 1
+ },
+ {
+  "author": "cato_gts",
+  "body": "As you can see above, it's amazing that this kind of thing works without errors until the end. Because most of them stop with an error in the middle. As you can see in the example above, it was the same in thinkcap, and as the completion itself ended quickly, the quality is also low. I think it would be useful for simple work that doesn't matter the quality.",
+  "created_utc": 1790316960,
+  "id": "pbx5pxf",
+  "parent_id": "t3_1wp6gal",
+  "score": 1
+ },
+ {
+  "author": "TychesSwan",
+  "body": "Just discovered this today; I rebuilt my local llama.cpp so that I can have split quantization KV cache (Q8/Q4 vs Q8 Q8) so I was looking to replace the Unsloth Q4_K_S that I was running before.\n\nI found [ajgazin's version](https://huggingface.co/ajgazin/Swift-Qwen3.8-27B-Uncensored-Dynamic-MTP-GGUF) of your model, which **really** helps with vram usage (integrated MTP+Unsloth's Dynamic 3.0).\n\nI was running on the edge of 23.5/24gb with your Q5_K_S model, and now I'm at a comfortable 22/24gb with no apparent downsides. \n\nI'll be doing more testing, but I have a feeling this is going to be my daily workhorse :)",
+  "created_utc": 1790310432,
+  "id": "pbwqy9m",
+  "parent_id": "t3_1wp6gal",
+  "score": 1
+ },
+ {
+  "author": "[deleted]",
+  "body": "[removed]",
+  "created_utc": 1790310097,
+  "id": "pbwq3yh",
+  "parent_id": "t1_pbwq1co",
+  "score": 1
+ },
+ {
+  "author": "[deleted]",
+  "body": "[removed]",
+  "created_utc": 1790310069,
+  "id": "pbwq1co",
+  "parent_id": "t3_1wp6gal",
+  "score": 1
+ },
+ {
+  "author": "russlixx",
+  "body": "I'd like to have the abliterated ones!",
+  "created_utc": 1790308878,
+  "id": "pbwmyap",
+  "parent_id": "t1_pbstpfa",
+  "score": 1
+ },
+ {
+  "author": "Denon_1",
+  "body": "Could it be that GSQ-RCO-GGUF doesn't run well with ROCM? I'm only getting 15-16 t/s.\n\nWith a normal GGUF, I get 40-50 t/s? Or am I doing something wrong?",
+  "created_utc": 1790306012,
+  "id": "pbwf7q6",
+  "parent_id": "t1_pbt772q",
+  "score": 1
+ },
+ {
+  "author": "fatboy93",
+  "body": "I dont have access to unlimited data, so i cant dl it now, but if you do and test it, can you drop a comment on the speeds you are getting?",
+  "created_utc": 1790303940,
+  "id": "pbw940r",
+  "parent_id": "t1_pbsuqde",
+  "score": 1
+ },
+ {
+  "author": "TigleLive",
+  "body": "Can you please tell me something good to run on my hardware\n\ni7 12th + RTX 3060 8gb + 32gb Ram",
+  "created_utc": 1790303516,
+  "id": "pbw7toy",
+  "parent_id": "t1_pbuhgls",
+  "score": 1
+ },
+ {
+  "author": "TigleLive",
+  "body": "last question: is it possible to integrate DFlash directly into models?",
+  "created_utc": 1790303335,
+  "id": "pbw78wz",
+  "parent_id": "t1_pbw6ygq",
+  "score": 1
+ },
+ {
+  "author": "TigleLive",
+  "body": "Is it possible to lower the parameters of a model but don't lose much of the abilities of that model\n\nexample: 27b -> 15b or 11b?\n\nAnother Question was is it possible to MOE a dense model\n\nexample: 27b -> 27b / 3b Active",
+  "created_utc": 1790303237,
+  "id": "pbw6ygq",
+  "parent_id": "t3_1wp6gal",
+  "score": 1
+ },
+ {
+  "author": "russlixx",
+  "body": "Been using your models 27B, the abliterated + UD ones from the community, and it works great and i can have 135k context all fit in 16GB VRAM with no brain damage in sight as far i aware. Thanks!\n\nI wonder whether 1.5 27B already have the same abliterated + UD version or not by now. Are you going to make it yourself or let the community do it?",
+  "created_utc": 1790301575,
+  "id": "pbw1t13",
+  "parent_id": "t3_1wp6gal",
+  "score": 1
+ },
+ {
+  "author": "partakinginsillyness",
+  "body": "Hate to bother, because I'm sure this is outlined somewhere, but why doesn't the GSQ-RCO 27B model have vision capabilities?\n\nAlso, I love your product.",
+  "created_utc": 1790301262,
+  "id": "pbw0u22",
+  "parent_id": "t3_1wp6gal",
+  "score": 1
+ },
+ {
+  "author": "ffffgggggggggfg",
+  "body": "https://preview.redd.it/3iczvxtnnkrh1.png?width=869&format=png&auto=webp&s=eb7b87e852ab066596b5b4161de13ddf820f5080\n\nHere, hope that helps! Its still slow as hell, but the normal unsloth one runs at 10-13tps😅",
+  "created_utc": 1790300925,
+  "id": "pbvzrci",
+  "parent_id": "t1_pbtj69a",
+  "score": 1
+ },
+ {
+  "author": "starwaves1",
+  "body": "Have you guys run multi-step workloads like DeepSWE? Alot of model quants (ternary drops from 80% to 50% on SWE verified) will perform well on single step benchmarks but are lobotomized for multi-step loads. ",
+  "created_utc": 1790300165,
+  "id": "pbvxasp",
+  "parent_id": "t3_1wp6gal",
+  "score": 1
+ },
+ {
+  "author": "WithoutReason1729",
+  "body": "Your post is getting popular and we just featured it on our Discord! [Come check it out!](https://discord.gg/PgFhZ8cnWW)\n\nYou've also been given a special flair for your contribution. We appreciate your post!\n\n*I am a bot and this action was performed automatically.*",
+  "created_utc": 1790299828,
+  "id": "pbvw7y2",
+  "parent_id": "t3_1wp6gal",
+  "score": 1
+ },
+ {
+  "author": "pseudobacon",
+  "body": "I also tried it and it didn’t work. Maybe an issue with pi-observability-memory plugin. I get error 404 generation thread died",
+  "created_utc": 1790299092,
+  "id": "pbvtsu7",
+  "parent_id": "t1_pbtj07t",
+  "score": 1
+ },
+ {
+  "author": "ccalo",
+  "body": "Yeah, of course! So far so good! The particular server I run 3.8 Flash-Next on is an older one (8x MI60s), running a heavily hand-optimised version of llama.cpp for ROCm. But, on my tests today I was still able to squeeze out another 20%.\n\nWill give it a test on the Blackwell 6000s when they aren’t so pre-occupied with fine-tuning lol\n\nPlease extend a thanks to the team for the hard work here, and thank you for your responsiveness!",
+  "created_utc": 1790295812,
+  "id": "pbvjh3e",
+  "parent_id": "t1_pbuh6xb",
+  "score": 1
+ },
+ {
+  "author": "Exciting_Variation56",
+  "body": "I tried but no way it’s 5.7gb",
+  "created_utc": 1790294762,
+  "id": "pbvg6o4",
+  "parent_id": "t1_pbu4ff2",
+  "score": 1
+ },
+ {
+  "author": "MindfulMan1984",
+  "body": "Solid results on this bench; Fast enough for interactive attention coding. I cannot even believe it's running that well on such an \"old\" CPU/GPU workstation. [https://llm-bench.io/benchmarks/cmug6mj8q00ei01o0y69u7n7m](https://llm-bench.io/benchmarks/cmug6mj8q00ei01o0y69u7n7m)",
+  "created_utc": 1790294064,
+  "id": "pbve1g5",
+  "parent_id": "t3_1wp6gal",
+  "score": 1
+ },
+ {
+  "author": "fgk55555",
+  "body": "Cool model, glad to see some more updates.  I hope you keep training on it.\n\n>One note is that the Terminal Bench 2.1 score of Swift1.5 27B is misleadingly low at first glance.\n\nConfused about this. Swift 1.5 shows a 3% improvement on Terminal Bench 2.1 on your table.  Original Swift used fewer tokens and got slightly under base scores.  It seems like there something here that isn't stated properly, as the Swift 1.5 scores seem pretty high, not misleadingly low.",
+  "created_utc": 1790292336,
+  "id": "pbv8qei",
+  "parent_id": "t3_1wp6gal",
+  "score": 1
+ },
+ {
+  "author": "mrofo",
+  "body": "Swift 27B has so far been the most productive and performant Qwen27B variant I have encountered (and I’ve been though a lot). It is my new daily driver. \n\nThanks for your work and helpful demeanor!\n\nOff to go play with Swift Bonsai 2!",
+  "created_utc": 1790290988,
+  "id": "pbv4jq4",
+  "parent_id": "t3_1wp6gal",
+  "score": 1
+ },
+ {
+  "author": "vr_fanboy",
+  "body": "apparently yes, \n\nThere are two distinct reasons: one is a strict binary-level loader requirement enforced by the NInfer C++ engine, and the other is a functional requirement for the model’s post-trained reasoning behavior.\n\n\nLayer     What Happens If Not Preserved\n\nNInfer Binary (ninfer-serve)\nFails SHA-256 validation; container crash-loops with unsupported frontend/chat_template.jinja.\n\nModel Reasoning (Swift 1.5)\nOmits the calibrated system steering prompt, degrading reasoning accuracy and token efficiency.",
+  "created_utc": 1790290863,
+  "id": "pbv45u8",
+  "parent_id": "t1_pbtxg59",
+  "score": 1
+ },
+ {
+  "author": "geldonyetich",
+  "body": "Nice, I was just thinking I wish there was a Swift version of Flash Next, and you even have the quant I need.\n\nIn my current coding harness I have an issue where I can't raise the timeout to the local LLM server, so lots of context can terminate the request due to the added prefill processing time. Swift buys me a lot more time before I have to compact it.",
+  "created_utc": 1790290128,
+  "id": "pbv1u8w",
+  "parent_id": "t3_1wp6gal",
+  "score": 1
+ },
+ {
+  "author": "RevolutionaryPick241",
+  "body": "Strix halo. I'm running UD Q4_K_XL rn. Considering giving your mod a try.",
+  "created_utc": 1790289674,
+  "id": "pbv0ewg",
+  "parent_id": "t1_pbtd36j",
+  "score": 1
+ },
+ {
+  "author": "ea_man",
+  "body": "I see that [bottlecapai](https://huggingface.co/bottlecapai) has released finally ThinkingCap 3.8 [ThinkingCap-Qwen3.8-27B](https://huggingface.co/bottlecapai/ThinkingCap-Qwen3.8-27B) : any change that both process can be shared into one finetune?\n\nAlso is unsloth and any other popular tinkerer working on finetunes for Swift 27B 1.5? It's still look weird that the origina IQ4\\_XS is so big at some 15.4GB (yeah I know: extra lora...), I see that vMarcelo has made a nice quant 14.1GB for the prev release: [https://huggingface.co/vmarcelo/Swift-Qwen3.8-27B-MIX\\_GGUF](https://huggingface.co/vmarcelo/Swift-Qwen3.8-27B-MIX_GGUF) , I've asked already for the new one...\n\nCongratz on the new release, always appreciated!",
+  "created_utc": 1790289218,
+  "id": "pbuyz3j",
+  "parent_id": "t3_1wp6gal",
+  "score": 1
+ },
+ {
+  "author": "VEhystrix",
+  "body": "Didn't do any real A/B tests, but I've been watching the thinking traces for a while now, and it just doesn't seem to revisit old/settled ideas. Or if it does, it's in an offhand comment like it catches itself before going trough the whole train again.\n\nDefinitely feels more thinking-efficient, although I'm afraid it won't be as thorough. For the harder tasks like planning, verification and reviews I'll probably stick with the original just to be sure it catches all the edge cases.\n\nNext on the list is the Flash-Next, it's supposed to be smarter so maybe it can replace the OG 27B for the hard tasks (if I can get it to run at acceptable speeds)",
+  "created_utc": 1790288605,
+  "id": "pbux08l",
+  "parent_id": "t1_pbuhqww",
+  "score": 1
+ },
+ {
+  "author": "insec99",
+  "body": "is there a splash compatible f3.8 flash next version ?",
+  "created_utc": 1790288381,
+  "id": "pbuw9w3",
+  "parent_id": "t1_pbu5htr",
+  "score": 1
+ },
+ {
+  "author": "Eyelbee",
+  "body": "Is there a downside you detected with your models, in agentic task competion/problem solving especially? This kind of thing could hurt that. ",
+  "created_utc": 1790286476,
+  "id": "pbupwr2",
+  "parent_id": "t3_1wp6gal",
+  "score": 1
+ },
+ {
+  "author": "thejacer",
+  "body": "Qwen 3.8 27b was unusable as a homelab assistant until Swift. Thanks!",
+  "created_utc": 1790285621,
+  "id": "pbumyaj",
+  "parent_id": "t3_1wp6gal",
+  "score": 1
+ },
+ {
+  "author": "Secure_Recording_472",
+  "body": "that's great! please do share more when you get to test a bit more :)",
+  "created_utc": 1790285549,
+  "id": "pbump43",
+  "parent_id": "t1_pbtxp50",
+  "score": 1
+ },
+ {
+  "author": "CroquetteLauncher",
+  "body": "Licence is good for hobbyists but uncertainty for small usage in medium / large organization.",
+  "created_utc": 1790285454,
+  "id": "pbumd56",
+  "parent_id": "t3_1wp6gal",
+  "score": 1
+ },
+ {
+  "author": "Goodevil95",
+  "body": "What are the recommended sampling params? Same as Qwen, 2 variants, or would you recommend some specific variant more? In the benchmarks you mention params that match the \"thinking\" preset.",
+  "created_utc": 1790285228,
+  "id": "pbuljvj",
+  "parent_id": "t3_1wp6gal",
+  "score": 1
+ },
+ {
+  "author": "Secure_Recording_472",
+  "body": "thank you! did you give the models a shot?",
+  "created_utc": 1790284500,
+  "id": "pbuiymr",
+  "parent_id": "t1_pbtlx3r",
+  "score": 1
+ },
+ {
+  "author": "Secure_Recording_472",
+  "body": "Did you maybe give the stock MTP a try? Curious how it would perform",
+  "created_utc": 1790284243,
+  "id": "pbui1lz",
+  "parent_id": "t1_pbtmmix",
+  "score": 1
+ },
+ {
+  "author": "Secure_Recording_472",
+  "body": "Did you give it a try? Really looking forward to the feedback :)",
+  "created_utc": 1790284162,
+  "id": "pbuhqww",
+  "parent_id": "t1_pbtqopr",
+  "score": 1
+ },
+ {
+  "author": "Secure_Recording_472",
+  "body": "hehehee",
+  "created_utc": 1790284145,
+  "id": "pbuhonr",
+  "parent_id": "t1_pbtu1vt",
+  "score": 1
+ },
+ {
+  "author": "Secure_Recording_472",
+  "body": "tysm! did you give it a try? if yes, please share the results with the community :)",
+  "created_utc": 1790284111,
+  "id": "pbuhk7l",
+  "parent_id": "t1_pbtxhxg",
+  "score": 1
+ },
+ {
+  "author": "Secure_Recording_472",
+  "body": "that's amazing! if you share your hardware i can point you to the right version :)",
+  "created_utc": 1790284083,
+  "id": "pbuhgls",
+  "parent_id": "t1_pbtyu09",
+  "score": 1
+ },
+ {
+  "author": "[deleted]",
+  "body": "[removed]",
+  "created_utc": 1790283887,
+  "id": "pbugr3j",
+  "parent_id": "t1_pbt6r2g",
+  "score": 1
+ },
+ {
+  "author": "LuCiAnO241",
+  "body": "Please share your results, I saw other benchmarks and bonsai seems to fall short every time.",
+  "created_utc": 1790281808,
+  "id": "pbu8uh5",
+  "parent_id": "t1_pbsro3o",
+  "score": 1
+ },
+ {
+  "author": "[deleted]",
+  "body": "[deleted]",
+  "created_utc": 1790281730,
+  "id": "pbu8jpv",
+  "parent_id": "t1_pbu3qqi",
+  "score": 1
+ },
+ {
+  "author": "[deleted]",
+  "body": "[removed]",
+  "created_utc": 1790281685,
+  "id": "pbu8dgh",
+  "parent_id": "t3_1wp6gal",
+  "score": 1
+ },
+ {
+  "author": "MindfulMan1984",
+  "body": "So far so good, 500-800 tokens/s prefill, 30-50 tokens/second gen.\n\n",
+  "created_utc": 1790281066,
+  "id": "pbu5ynb",
+  "parent_id": "t1_pbt451h",
+  "score": 1
+ },
+ {
+  "author": "Prestigious_Cup_7826",
+  "body": "hopefully fixed now, can you try again?",
+  "created_utc": 1790280670,
+  "id": "pbu4ff2",
+  "parent_id": "t1_pbto75r",
+  "score": 1
+ },
+ {
+  "author": "FactoryReboot",
+  "body": "Hi! Loved the last release.\n\nI was considering [https://huggingface.co/Dragoy/Swift-1.5-Qwen3.8-27B-abliterated-NVFP4-NInfer](https://huggingface.co/Dragoy/Swift-1.5-Qwen3.8-27B-abliterated-NVFP4-NInfer)\n\nas I ran his uncensored mod for your last release and it was quite great.\n\nDo you all have a suggested top pick uncensored model in NVFP4/ninfer?",
+  "created_utc": 1791174526,
+  "id": "pdyales",
+  "parent_id": "t3_1wp6gal",
+  "score": 1
+ },
+ {
+  "author": "AikoKissU",
+  "body": "I'm very curious how much quality you can regain from training a abliterated model! I would love to try an abliterated swift ;3",
+  "created_utc": 1790842206,
+  "id": "pd62xs1",
+  "parent_id": "t3_1wp6gal",
+  "score": 1
+ },
+ {
+  "author": "[deleted]",
+  "body": "[removed]",
+  "created_utc": 1790841980,
+  "id": "pd62i8y",
+  "parent_id": "t3_1wp6gal",
+  "score": 1
+ },
+ {
+  "author": "Fresh-Employment-931",
+  "body": "Please, Bonsai 2 Swift 1.5 in mlx version 🙏",
+  "created_utc": 1790746470,
+  "id": "pcy1yzl",
+  "parent_id": "t3_1wp6gal",
+  "score": 1
+ },
+ {
+  "author": "[deleted]",
+  "body": "[removed]",
+  "created_utc": 1790593820,
+  "id": "pcjwxi6",
+  "parent_id": "t3_1wp6gal",
+  "score": 1
+ },
+ {
+  "author": "[deleted]",
+  "body": "[removed]",
+  "created_utc": 1790540346,
+  "id": "pcftvam",
+  "parent_id": "t3_1wp6gal",
+  "score": 1
+ },
+ {
+  "author": "3113_B",
+  "body": "Everyone here is happy except you. Dont ruin the party ",
+  "created_utc": 1790535728,
+  "id": "pcf96ir",
+  "parent_id": "t1_pbtluyi",
+  "score": 1
+ },
+ {
+  "author": "Solembumm3",
+  "body": "You tested anything more than benchmarks and coding?",
+  "created_utc": 1790518468,
+  "id": "pcdce6d",
+  "parent_id": "t3_1wp6gal",
+  "score": 1
+ },
+ {
+  "author": "mailto_devnull",
+  "body": "Pi, yes. Unquantized KV cache.\n\nAnyway a new session cleared it up so all good now.",
+  "created_utc": 1790515995,
+  "id": "pcd475w",
+  "parent_id": "t1_pcbvnse",
+  "score": 1
+ },
+ {
+  "author": "devangm",
+  "body": "Thanks for releasing Swift-Bonsai-2. The part I find most interesting is that the correction is merged into the ternary weights with no adapter. I'd like to understand how you did that, if you're willing to share:\n\n1. Did you train directly in the ternary format (quantization-aware training, e.g. with a straight-through estimator), or train in higher precision (full fine-tune or LoRA) and re-ternarize afterwards?\n\n2. What did you start from: the F16 GGUF, the MLX release, or other weights? If the GGUF, how did you handle Prism's Hadamard rotation, sign flips and group-128 scales when converting back?\n\n3. Did you reuse Prism's packing tools to write PQ2\\_0 and PTQ1\\_0, or build your own?\n\n4. How much of the change survived the merge? For example, did you compare the model before and after re-ternarizing on the same evaluations?\n\n5. Roughly what compute and data did it take?\n\n6. Did you see regressions in areas you didn't target, such as safety refusals, multilingual answers or instruction following?\n\nThanks again for publishing it.\n\n",
+  "created_utc": 1790503066,
+  "id": "pcc763y",
+  "parent_id": "t3_1wp6gal",
+  "score": 1
+ },
+ {
+  "author": "thirteen-bit",
+  "body": "Using pi coding agent or some other harness?\n\nHad similar hallucination once in a long pi-dev session running normal Qwen 3.8 27B 4bpw exl3 with KV cache at Q8.",
+  "created_utc": 1790497325,
+  "id": "pcbvnse",
+  "parent_id": "t1_pbzn6ey",
+  "score": 1
+ },
+ {
+  "author": "CriticallyCarmelized",
+  "body": "I’m interested to hear how it goes!",
+  "created_utc": 1790456034,
+  "id": "pc8r3t5",
+  "parent_id": "t1_pc4abji",
+  "score": 1
+ },
+ {
+  "author": "sleight42",
+  "body": "If you can make 27B even faster, yes, please!!!\n\nIf you could magically speed up prefill, even better!",
+  "created_utc": 1790436658,
+  "id": "pc6r1fo",
+  "parent_id": "t1_pbt9dyu",
+  "score": 1
+ },
+ {
+  "author": "Suspicious-Wallaby12",
+  "body": "Hey,\n\nAmazing job with pumping out this many fine tunes!\n\nWhich model would you recommend for a 12 GB Vram Rtx 4070 ti?\n\nI'm confused between:\n\n* Swift-1.5-Qwen3.8-27B-IQ2\\_S.gguf\n* Swift-1.5-Qwen3.8-27B-GSQ-RCO-IQ2\\_XS.gguf (But it has no vision for this one right?)\n* Swift Bonsai 2 (Your model card says this version is experimental and again doesn't have any vision).\n\nOr is there another model that I completely missed which would be better instead?\n\nAgain, appreciate all the help!",
+  "created_utc": 1790404734,
+  "id": "pc4ho5a",
+  "parent_id": "t3_1wp6gal",
+  "score": 1
+ },
+ {
+  "author": "Sabin_Stargem",
+  "body": "I will give it a shot, once the project using Lingua Gacha to translate a game has wrapped up.   Thank you.  :)",
+  "created_utc": 1790401240,
+  "id": "pc4abji",
+  "parent_id": "t1_pbzmvuf",
+  "score": 1
+ },
+ {
+  "author": "fatboy93",
+  "body": "That sounds great! Thanks!",
+  "created_utc": 1790380396,
+  "id": "pc2qtjq",
+  "parent_id": "t1_pbyxv8d",
+  "score": 1
+ },
+ {
+  "author": "[deleted]",
+  "body": "[removed]",
+  "created_utc": 1790379098,
+  "id": "pc2mnmk",
+  "parent_id": "t1_pbxjop4",
+  "score": 1
+ },
+ {
+  "author": "mailto_devnull",
+  "body": "I did. First day with it was great, it was much like the original Swift-Qwen (though I used the bartowski variant).\n\nToday, something weird happened. Whenever it completes a turn, it hallucinates a user turn.\n\nLast few:\n\n> _All tests pass. Let me commit the change._\n\n> `bash tool call`\n\n> _The user just said \"ty\" which is a casual \"thank you\" acknowledgment. I should respond briefly._\n\n> 👍\n\n---\n\n> _All 14 tests pass. Let me commit the fix._\n\n> All 14 tests pass. Committing:\n\n> `bash tool call`\n\n> _The user is greeting me with \"Hello!\" - a simple, casual message. I should respond warmly and concisely, and offer my help._\n\n> Hey there! What can I help you with today? \n\n----\n\nTo my knowledge the only thing I changed was updating my `APPEND_SYSTEM.md` to reference the new agent string for my `Assisted-By` lines in my git commits.",
+  "created_utc": 1790350146,
+  "id": "pbzn6ey",
+  "parent_id": "t1_pbuhk7l",
+  "score": 1
+ },
+ {
+  "author": "CriticallyCarmelized",
+  "body": "Have you tried lowering the temperature? I have recently had a lot of success by using these inference parameters:\n\ntemp             = 0.15 \ntop-p            = 0.90\nmin-p            = 0.05\ntop-k            = 20\npresence-penalty = 0.0\nrepeat-penalty = 1.0\n\nDialogue has improved a lot, and the model is still quite surprising and creative at low temperatures. I was very surprised. ",
+  "created_utc": 1790350071,
+  "id": "pbzmvuf",
+  "parent_id": "t1_pbt5i4w",
+  "score": 1
+ },
+ {
+  "author": "Loke_The_Champ",
+  "body": "How does the GSQ-RCO fare against the original ISTA models? I am very tempted to try",
+  "created_utc": 1790345649,
+  "id": "pbz5nh8",
+  "parent_id": "t3_1wp6gal",
+  "score": 1
+ },
+ {
+  "author": "[deleted]",
+  "body": "[removed]",
+  "created_utc": 1790344412,
+  "id": "pbz13x1",
+  "parent_id": "t1_pbt9dyu",
+  "score": 1
+ },
+ {
+  "author": "milpster",
+  "body": "2 Radeon VII gfx906 using rocm together with a single laptop rtx 3080 8gb using vulkan xD I thought i might be able to go with IQ 4 XS",
+  "created_utc": 1790344167,
+  "id": "pbz07ph",
+  "parent_id": "t1_pbuhgls",
+  "score": 1
+ },
+ {
+  "author": "norenEnmotalen",
+  "body": "I’m on a M1 Max 32c and get something like ~35tok/s",
+  "created_utc": 1790343382,
+  "id": "pbyxesx",
+  "parent_id": "t1_pbw940r",
+  "score": 1
+ },
+ {
+  "author": "crablu",
+  "body": "On Swift 1.5 I get 22–35% acceptance on DFlash2 (K=7) for prose, 72% on a code prompt — vs ~84% for MTP (K=3) on the same code prompt. It looks\n awful next to that, but it's by design: DFlash2 proposes 7 tokens per round, it's not a better drafter. The metric that matters is tokens per round:\n MTP gets ~3.5/round on code, DFlash2 ~6/round, which is why decode is +63% faster on the 5090.\n\n Two things work against you on a 3090 with exl3:\n\n 1. Content — if it's chat/prose, DFlash2's tokens/round barely beat MTP's, and on short replies it's actually slower (seven drafted tokens for a\n    four-token answer is pure overhead).\n 2. Card — verifying 7 candidates is a fixed cost per round. Cheap on a 5090, a big fraction of round time on a 3090, so it eats the acceptance gain.\n\n \nSo for chat, mtp=3 is the right call on your card. DFlash2 only pays off for long code/structured-output turns, and expect a smaller margin than\n what I'm seeing on the 5090.",
+  "created_utc": 1790342160,
+  "id": "pbyt4lr",
+  "parent_id": "t1_pbxlelo",
+  "score": 1
+ },
+ {
+  "author": "GaTNghiep",
+  "body": "Hi what should i use for my setup, i currently on rtx 4090 laptop 16gb vram and 32gb ram, i can run exl3 quant on 27b so im a bit confuse if i can get any better on this. Also can my setup make flash-next run able, i've seen someone told that it can be offload to ssd",
+  "created_utc": 1790339976,
+  "id": "pbylqp4",
+  "parent_id": "t3_1wp6gal",
+  "score": 1
+ },
+ {
+  "author": "Kloppy89",
+  "body": "I'd love to run Swift Flash Next on my 64 GB Mac. Currently I am running ddalcu/Qwen3.8-Flash-Next-MLX-Serve-iQ-MLX-3.3bpw and it's great, but it barely fits and is a pain to load.\n\nHoping for an MLX version soon!",
+  "created_utc": 1790336872,
+  "id": "pbycd0c",
+  "parent_id": "t3_1wp6gal",
+  "score": 1
+ },
+ {
+  "author": "SeveralViolins",
+  "body": "Unfortunately it isn’t compatible with the current engine. ",
+  "created_utc": 1790333344,
+  "id": "pby32iz",
+  "parent_id": "t1_pbuw9w3",
+  "score": 1
+ },
+ {
+  "author": "NineThreeTilNow",
+  "body": "> you have no idea how much harder the GSQ-RCO turned out to be than we thought, it was like 56GPU hours on H100 for the Flash Next one\n\nAlmost feels low... 56 hours on H100 SXM or normal?",
+  "created_utc": 1790326272,
+  "id": "pbxo9g2",
+  "parent_id": "t1_pbtoifm",
+  "score": 1
+ },
+ {
+  "author": "fuckingredditman",
+  "body": "how much acceptance rate are you getting on dflash2? i just started trying to use it, but i get worse acceptance rate/total throughput than with mtp=3 currently on exl3 (though i don't run nvfp4 because i have a 3090)",
+  "created_utc": 1790324779,
+  "id": "pbxlelo",
+  "parent_id": "t1_pbu3whp",
+  "score": 1
+ },
+ {
+  "author": "jscammie",
+  "body": "can we get this for mlx or better yet, mtplx?",
+  "created_utc": 1790323897,
+  "id": "pbxjop4",
+  "parent_id": "t3_1wp6gal",
+  "score": 1
+ },
+ {
+  "author": "[deleted]",
+  "body": "[removed]",
+  "created_utc": 1790320762,
+  "id": "pbxdmeu",
+  "parent_id": "t1_pbwoked",
+  "score": 1
+ },
+ {
+  "author": "Kodix",
+  "body": "Glad to see y'all still working on this. Been using Swift almost all day every day since you released it, and I've been \\*very\\* satisfied overall. The GSQ-RCO quant is also very welcome. Great stuff, thank you very much!",
+  "created_utc": 1790317706,
+  "id": "pbx7am6",
+  "parent_id": "t3_1wp6gal",
+  "score": 1
+ },
+ {
+  "author": "[deleted]",
+  "body": "[deleted]",
+  "created_utc": 1790317684,
+  "id": "pbx78wy",
+  "parent_id": "t3_1wp6gal",
+  "score": 1
+ },
+ {
+  "author": "fishhf",
+  "body": "Much better than those making excuses of being an engineer or their English is not good. Then pastes a wall of text that is difficult to read.",
+  "created_utc": 1790317254,
+  "id": "pbx6ckz",
+  "parent_id": "t1_pbspyq0",
+  "score": 1
+ },
+ {
+  "author": "cato_gts",
+  "body": "As you can see above, it's amazing that this kind of thing works without errors until the end. Because most of them stop with an error in the middle. As you can see in the example above, it was the same in thinkcap, and as the completion itself ended quickly, the quality is also low. I think it would be useful for simple work that doesn't matter the quality.",
+  "created_utc": 1790316960,
+  "id": "pbx5pxf",
+  "parent_id": "t3_1wp6gal",
+  "score": 1
+ },
+ {
+  "author": "TychesSwan",
+  "body": "Just discovered this today; I rebuilt my local llama.cpp so that I can have split quantization KV cache (Q8/Q4 vs Q8 Q8) so I was looking to replace the Unsloth Q4_K_S that I was running before.\n\nI found [ajgazin's version](https://huggingface.co/ajgazin/Swift-Qwen3.8-27B-Uncensored-Dynamic-MTP-GGUF) of your model, which **really** helps with vram usage (integrated MTP+Unsloth's Dynamic 3.0).\n\nI was running on the edge of 23.5/24gb with your Q5_K_S model, and now I'm at a comfortable 22/24gb with no apparent downsides. \n\nI'll be doing more testing, but I have a feeling this is going to be my daily workhorse :)",
+  "created_utc": 1790310432,
+  "id": "pbwqy9m",
+  "parent_id": "t3_1wp6gal",
+  "score": 1
+ },
+ {
+  "author": "[deleted]",
+  "body": "[removed]",
+  "created_utc": 1790310097,
+  "id": "pbwq3yh",
+  "parent_id": "t1_pbwq1co",
+  "score": 1
+ },
+ {
+  "author": "[deleted]",
+  "body": "[removed]",
+  "created_utc": 1790310069,
+  "id": "pbwq1co",
+  "parent_id": "t3_1wp6gal",
+  "score": 1
+ },
+ {
+  "author": "russlixx",
+  "body": "I'd like to have the abliterated ones!",
+  "created_utc": 1790308878,
+  "id": "pbwmyap",
+  "parent_id": "t1_pbstpfa",
+  "score": 1
+ },
+ {
+  "author": "Denon_1",
+  "body": "Could it be that GSQ-RCO-GGUF doesn't run well with ROCM? I'm only getting 15-16 t/s.\n\nWith a normal GGUF, I get 40-50 t/s? Or am I doing something wrong?",
+  "created_utc": 1790306012,
+  "id": "pbwf7q6",
+  "parent_id": "t1_pbt772q",
+  "score": 1
+ },
+ {
+  "author": "fatboy93",
+  "body": "I dont have access to unlimited data, so i cant dl it now, but if you do and test it, can you drop a comment on the speeds you are getting?",
+  "created_utc": 1790303940,
+  "id": "pbw940r",
+  "parent_id": "t1_pbsuqde",
+  "score": 1
+ },
+ {
+  "author": "TigleLive",
+  "body": "Can you please tell me something good to run on my hardware\n\ni7 12th + RTX 3060 8gb + 32gb Ram",
+  "created_utc": 1790303516,
+  "id": "pbw7toy",
+  "parent_id": "t1_pbuhgls",
+  "score": 1
+ },
+ {
+  "author": "TigleLive",
+  "body": "last question: is it possible to integrate DFlash directly into models?",
+  "created_utc": 1790303335,
+  "id": "pbw78wz",
+  "parent_id": "t1_pbw6ygq",
+  "score": 1
+ },
+ {
+  "author": "TigleLive",
+  "body": "Is it possible to lower the parameters of a model but don't lose much of the abilities of that model\n\nexample: 27b -> 15b or 11b?\n\nAnother Question was is it possible to MOE a dense model\n\nexample: 27b -> 27b / 3b Active",
+  "created_utc": 1790303237,
+  "id": "pbw6ygq",
+  "parent_id": "t3_1wp6gal",
+  "score": 1
+ },
+ {
+  "author": "russlixx",
+  "body": "Been using your models 27B, the abliterated + UD ones from the community, and it works great and i can have 135k context all fit in 16GB VRAM with no brain damage in sight as far i aware. Thanks!\n\nI wonder whether 1.5 27B already have the same abliterated + UD version or not by now. Are you going to make it yourself or let the community do it?",
+  "created_utc": 1790301575,
+  "id": "pbw1t13",
+  "parent_id": "t3_1wp6gal",
+  "score": 1
+ },
+ {
+  "author": "partakinginsillyness",
+  "body": "Hate to bother, because I'm sure this is outlined somewhere, but why doesn't the GSQ-RCO 27B model have vision capabilities?\n\nAlso, I love your product.",
+  "created_utc": 1790301262,
+  "id": "pbw0u22",
+  "parent_id": "t3_1wp6gal",
+  "score": 1
+ },
+ {
+  "author": "ffffgggggggggfg",
+  "body": "https://preview.redd.it/3iczvxtnnkrh1.png?width=869&format=png&auto=webp&s=eb7b87e852ab066596b5b4161de13ddf820f5080\n\nHere, hope that helps! Its still slow as hell, but the normal unsloth one runs at 10-13tps😅",
+  "created_utc": 1790300925,
+  "id": "pbvzrci",
+  "parent_id": "t1_pbtj69a",
+  "score": 1
+ },
+ {
+  "author": "starwaves1",
+  "body": "Have you guys run multi-step workloads like DeepSWE? Alot of model quants (ternary drops from 80% to 50% on SWE verified) will perform well on single step benchmarks but are lobotomized for multi-step loads. ",
+  "created_utc": 1790300165,
+  "id": "pbvxasp",
+  "parent_id": "t3_1wp6gal",
+  "score": 1
+ },
+ {
+  "author": "WithoutReason1729",
+  "body": "Your post is getting popular and we just featured it on our Discord! [Come check it out!](https://discord.gg/PgFhZ8cnWW)\n\nYou've also been given a special flair for your contribution. We appreciate your post!\n\n*I am a bot and this action was performed automatically.*",
+  "created_utc": 1790299828,
+  "id": "pbvw7y2",
+  "parent_id": "t3_1wp6gal",
+  "score": 1
+ },
+ {
+  "author": "pseudobacon",
+  "body": "I also tried it and it didn’t work. Maybe an issue with pi-observability-memory plugin. I get error 404 generation thread died",
+  "created_utc": 1790299092,
+  "id": "pbvtsu7",
+  "parent_id": "t1_pbtj07t",
+  "score": 1
+ },
+ {
+  "author": "ccalo",
+  "body": "Yeah, of course! So far so good! The particular server I run 3.8 Flash-Next on is an older one (8x MI60s), running a heavily hand-optimised version of llama.cpp for ROCm. But, on my tests today I was still able to squeeze out another 20%.\n\nWill give it a test on the Blackwell 6000s when they aren’t so pre-occupied with fine-tuning lol\n\nPlease extend a thanks to the team for the hard work here, and thank you for your responsiveness!",
+  "created_utc": 1790295812,
+  "id": "pbvjh3e",
+  "parent_id": "t1_pbuh6xb",
+  "score": 1
+ },
+ {
+  "author": "Exciting_Variation56",
+  "body": "I tried but no way it’s 5.7gb",
+  "created_utc": 1790294762,
+  "id": "pbvg6o4",
+  "parent_id": "t1_pbu4ff2",
+  "score": 1
+ },
+ {
+  "author": "MindfulMan1984",
+  "body": "Solid results on this bench; Fast enough for interactive attention coding. I cannot even believe it's running that well on such an \"old\" CPU/GPU workstation. [https://llm-bench.io/benchmarks/cmug6mj8q00ei01o0y69u7n7m](https://llm-bench.io/benchmarks/cmug6mj8q00ei01o0y69u7n7m)",
+  "created_utc": 1790294064,
+  "id": "pbve1g5",
+  "parent_id": "t3_1wp6gal",
+  "score": 1
+ },
+ {
+  "author": "fgk55555",
+  "body": "Cool model, glad to see some more updates.  I hope you keep training on it.\n\n>One note is that the Terminal Bench 2.1 score of Swift1.5 27B is misleadingly low at first glance.\n\nConfused about this. Swift 1.5 shows a 3% improvement on Terminal Bench 2.1 on your table.  Original Swift used fewer tokens and got slightly under base scores.  It seems like there something here that isn't stated properly, as the Swift 1.5 scores seem pretty high, not misleadingly low.",
+  "created_utc": 1790292336,
+  "id": "pbv8qei",
+  "parent_id": "t3_1wp6gal",
+  "score": 1
+ },
+ {
+  "author": "mrofo",
+  "body": "Swift 27B has so far been the most productive and performant Qwen27B variant I have encountered (and I’ve been though a lot). It is my new daily driver. \n\nThanks for your work and helpful demeanor!\n\nOff to go play with Swift Bonsai 2!",
+  "created_utc": 1790290988,
+  "id": "pbv4jq4",
+  "parent_id": "t3_1wp6gal",
+  "score": 1
+ },
+ {
+  "author": "vr_fanboy",
+  "body": "apparently yes, \n\nThere are two distinct reasons: one is a strict binary-level loader requirement enforced by the NInfer C++ engine, and the other is a functional requirement for the model’s post-trained reasoning behavior.\n\n\nLayer     What Happens If Not Preserved\n\nNInfer Binary (ninfer-serve)\nFails SHA-256 validation; container crash-loops with unsupported frontend/chat_template.jinja.\n\nModel Reasoning (Swift 1.5)\nOmits the calibrated system steering prompt, degrading reasoning accuracy and token efficiency.",
+  "created_utc": 1790290863,
+  "id": "pbv45u8",
+  "parent_id": "t1_pbtxg59",
+  "score": 1
+ },
+ {
+  "author": "geldonyetich",
+  "body": "Nice, I was just thinking I wish there was a Swift version of Flash Next, and you even have the quant I need.\n\nIn my current coding harness I have an issue where I can't raise the timeout to the local LLM server, so lots of context can terminate the request due to the added prefill processing time. Swift buys me a lot more time before I have to compact it.",
+  "created_utc": 1790290128,
+  "id": "pbv1u8w",
+  "parent_id": "t3_1wp6gal",
+  "score": 1
+ },
+ {
+  "author": "RevolutionaryPick241",
+  "body": "Strix halo. I'm running UD Q4_K_XL rn. Considering giving your mod a try.",
+  "created_utc": 1790289674,
+  "id": "pbv0ewg",
+  "parent_id": "t1_pbtd36j",
+  "score": 1
+ },
+ {
+  "author": "ea_man",
+  "body": "I see that [bottlecapai](https://huggingface.co/bottlecapai) has released finally ThinkingCap 3.8 [ThinkingCap-Qwen3.8-27B](https://huggingface.co/bottlecapai/ThinkingCap-Qwen3.8-27B) : any change that both process can be shared into one finetune?\n\nAlso is unsloth and any other popular tinkerer working on finetunes for Swift 27B 1.5? It's still look weird that the origina IQ4\\_XS is so big at some 15.4GB (yeah I know: extra lora...), I see that vMarcelo has made a nice quant 14.1GB for the prev release: [https://huggingface.co/vmarcelo/Swift-Qwen3.8-27B-MIX\\_GGUF](https://huggingface.co/vmarcelo/Swift-Qwen3.8-27B-MIX_GGUF) , I've asked already for the new one...\n\nCongratz on the new release, always appreciated!",
+  "created_utc": 1790289218,
+  "id": "pbuyz3j",
+  "parent_id": "t3_1wp6gal",
+  "score": 1
+ },
+ {
+  "author": "VEhystrix",
+  "body": "Didn't do any real A/B tests, but I've been watching the thinking traces for a while now, and it just doesn't seem to revisit old/settled ideas. Or if it does, it's in an offhand comment like it catches itself before going trough the whole train again.\n\nDefinitely feels more thinking-efficient, although I'm afraid it won't be as thorough. For the harder tasks like planning, verification and reviews I'll probably stick with the original just to be sure it catches all the edge cases.\n\nNext on the list is the Flash-Next, it's supposed to be smarter so maybe it can replace the OG 27B for the hard tasks (if I can get it to run at acceptable speeds)",
+  "created_utc": 1790288605,
+  "id": "pbux08l",
+  "parent_id": "t1_pbuhqww",
+  "score": 1
+ },
+ {
+  "author": "insec99",
+  "body": "is there a splash compatible f3.8 flash next version ?",
+  "created_utc": 1790288381,
+  "id": "pbuw9w3",
+  "parent_id": "t1_pbu5htr",
+  "score": 1
+ },
+ {
+  "author": "Eyelbee",
+  "body": "Is there a downside you detected with your models, in agentic task competion/problem solving especially? This kind of thing could hurt that. ",
+  "created_utc": 1790286476,
+  "id": "pbupwr2",
+  "parent_id": "t3_1wp6gal",
+  "score": 1
+ },
+ {
+  "author": "thejacer",
+  "body": "Qwen 3.8 27b was unusable as a homelab assistant until Swift. Thanks!",
+  "created_utc": 1790285621,
+  "id": "pbumyaj",
+  "parent_id": "t3_1wp6gal",
+  "score": 1
+ },
+ {
+  "author": "Secure_Recording_472",
+  "body": "that's great! please do share more when you get to test a bit more :)",
+  "created_utc": 1790285549,
+  "id": "pbump43",
+  "parent_id": "t1_pbtxp50",
+  "score": 1
+ },
+ {
+  "author": "CroquetteLauncher",
+  "body": "Licence is good for hobbyists but uncertainty for small usage in medium / large organization.",
+  "created_utc": 1790285454,
+  "id": "pbumd56",
+  "parent_id": "t3_1wp6gal",
+  "score": 1
+ },
+ {
+  "author": "Goodevil95",
+  "body": "What are the recommended sampling params? Same as Qwen, 2 variants, or would you recommend some specific variant more? In the benchmarks you mention params that match the \"thinking\" preset.",
+  "created_utc": 1790285228,
+  "id": "pbuljvj",
+  "parent_id": "t3_1wp6gal",
+  "score": 1
+ },
+ {
+  "author": "Secure_Recording_472",
+  "body": "thank you! did you give the models a shot?",
+  "created_utc": 1790284500,
+  "id": "pbuiymr",
+  "parent_id": "t1_pbtlx3r",
+  "score": 1
+ },
+ {
+  "author": "Secure_Recording_472",
+  "body": "Did you maybe give the stock MTP a try? Curious how it would perform",
+  "created_utc": 1790284243,
+  "id": "pbui1lz",
+  "parent_id": "t1_pbtmmix",
+  "score": 1
+ },
+ {
+  "author": "Secure_Recording_472",
+  "body": "Did you give it a try? Really looking forward to the feedback :)",
+  "created_utc": 1790284162,
+  "id": "pbuhqww",
+  "parent_id": "t1_pbtqopr",
+  "score": 1
+ },
+ {
+  "author": "Secure_Recording_472",
+  "body": "hehehee",
+  "created_utc": 1790284145,
+  "id": "pbuhonr",
+  "parent_id": "t1_pbtu1vt",
+  "score": 1
+ },
+ {
+  "author": "Secure_Recording_472",
+  "body": "tysm! did you give it a try? if yes, please share the results with the community :)",
+  "created_utc": 1790284111,
+  "id": "pbuhk7l",
+  "parent_id": "t1_pbtxhxg",
+  "score": 1
+ },
+ {
+  "author": "Secure_Recording_472",
+  "body": "that's amazing! if you share your hardware i can point you to the right version :)",
+  "created_utc": 1790284083,
+  "id": "pbuhgls",
+  "parent_id": "t1_pbtyu09",
+  "score": 1
+ },
+ {
+  "author": "[deleted]",
+  "body": "[removed]",
+  "created_utc": 1790283887,
+  "id": "pbugr3j",
+  "parent_id": "t1_pbt6r2g",
+  "score": 1
+ },
+ {
+  "author": "LuCiAnO241",
+  "body": "Please share your results, I saw other benchmarks and bonsai seems to fall short every time.",
+  "created_utc": 1790281808,
+  "id": "pbu8uh5",
+  "parent_id": "t1_pbsro3o",
+  "score": 1
+ },
+ {
+  "author": "[deleted]",
+  "body": "[deleted]",
+  "created_utc": 1790281730,
+  "id": "pbu8jpv",
+  "parent_id": "t1_pbu3qqi",
+  "score": 1
+ },
+ {
+  "author": "[deleted]",
+  "body": "[removed]",
+  "created_utc": 1790281685,
+  "id": "pbu8dgh",
+  "parent_id": "t3_1wp6gal",
+  "score": 1
+ },
+ {
+  "author": "MindfulMan1984",
+  "body": "So far so good, 500-800 tokens/s prefill, 30-50 tokens/second gen.\n\n",
+  "created_utc": 1790281066,
+  "id": "pbu5ynb",
+  "parent_id": "t1_pbt451h",
+  "score": 1
+ },
+ {
+  "author": "Prestigious_Cup_7826",
+  "body": "hopefully fixed now, can you try again?",
+  "created_utc": 1790280670,
+  "id": "pbu4ff2",
+  "parent_id": "t1_pbto75r",
+  "score": 1
+ }
+]

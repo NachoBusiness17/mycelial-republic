@@ -1,0 +1,7 @@
+# DICE-LAW DUNGEON session 0 (20261003T122155Z) tip=e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+
+The road to the keep ends at a gate that should not exist. Your party subchain's tip resolves, but the leaf beneath it points at a parent nobody wrote. Below the keep, the lattice has gone wrong: knots that hash to nothing, timestamps that sort as words, vaults that forget. Something down there is hoarding claims. Each claim looks like a citation. None of them resolve.
+
+**dm** [d20=14 -> SUCCESS (d20=14 vs DC 11)]: [CHECK omen]
+
+> DM: As your boots touch the threshold, the gate exhales a breath of cold, stale air that smells of old parchment and rust, and on its iron face you see seals pressed in wax, hundreds of them, each one citing a parent knot that was never forged, each one cracking softly as your gaze falls on it, like a lie remembering it was a lie. From somewhere deep beneath the keep comes a sound you feel more than hear, a long, wet, grinding shift of something vast dragging itself across a hoard of unresolving claims, and with it a low, ragged keening, because whatever coils down there is *bleeding*, an old wound torn open, a timestamp sorted wrong lodged in its flank like a broken spear. The lattice under your feet flickers once, a vault somewhere below forgetting its own name, and the Wyrm, wounded and aware now that you have come, turns one enormous, lightless eye toward the stair you have not yet found.

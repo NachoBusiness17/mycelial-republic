@@ -1,0 +1,84 @@
+{
+  "schema": "estate.smith_chart.v1",
+  "ts": "2026-10-18T20:28:33.953493+00:00",
+  "bar": 0.5,
+  "law": "gamma = 1 - delivered/claimed from bytes; |gamma| > 0.5 => no prose answers, fixes only",
+  "organs": {
+    "supervisor": {
+      "gamma": 1.0,
+      "err": 1,
+      "ok": 0,
+      "top_errors": {
+        "reaper-enumerate-error": 1
+      },
+      "status": "REFLECTING",
+      "src": "logs/supervisor.jsonl (last 120 min)"
+    },
+    "flash_lane_zai3": {
+      "gamma": 0.267,
+      "ok_ratio": 0.733,
+      "n": 30,
+      "last_ts": "2026-10-18T13:25:42.062827+00:00",
+      "last_ok": true,
+      "src": "logs/provider_usage.jsonl",
+      "status": "DELIVERING"
+    },
+    "deepseek_lane": {
+      "gamma": 0.0,
+      "ok_ratio": 1.0,
+      "n": 30,
+      "last_ts": "2026-10-18T13:39:11.067829+00:00",
+      "last_ok": true,
+      "src": "logs/provider_usage.jsonl",
+      "status": "DELIVERING"
+    },
+    "ollama_lane": {
+      "gamma": 1.0,
+      "ok_ratio": 0.0,
+      "n": 4,
+      "last_ts": "2026-10-04T03:00:59.204305+00:00",
+      "last_ok": false,
+      "src": "logs/provider_usage.jsonl",
+      "status": "EXEMPT"
+    },
+    "queue": {
+      "gamma": 0.0,
+      "counts": {
+        "done": 98,
+        "failed": 1,
+        "queued": 1
+      },
+      "running": null,
+      "failed": 1,
+      "status": "DELIVERING",
+      "src": "mag.orchestrator.queue_status + logs/orchestrator/<id>.out.log"
+    },
+    "day_work": {
+      "gamma": 0.5,
+      "stalled": 1,
+      "line": "2026-10-18T17:34:44Z lane=day_work result=mirrored, stalled=1 (2.0s)",
+      "status": "DELIVERING",
+      "src": "logs/lane_scheduler.log"
+    },
+    "handoffs": {
+      "gamma": 0.0,
+      "pending_n": 0,
+      "status": "DELIVERING",
+      "src": "mag.peer_handoff.list_peer_handoffs"
+    },
+    "checkpoint_apply": {
+      "gamma": 0.0,
+      "looping": [],
+      "status": "DELIVERING",
+      "src": "logs/orchestrator/*.out.log (last 24h)"
+    }
+  },
+  "dark": [],
+  "exempt": [
+    "ollama_lane"
+  ],
+  "prose_bar_violations": [
+    "supervisor"
+  ],
+  "non_normality_note": "eigenvalue view (config/enabled/armed) is in each organ's own status field; the transient view is gamma \u2014 a non-normal system reads healthy by spectrum and dies by transient"
+}

@@ -1,0 +1,94 @@
+t42 check - triage of the 20 deduped analyzer findings (t30 next_steal) - 2026-09-26
+
+NEGATIVE RESULT FIRST: 0 of the 20 are REAL-BUGs. Both t30-named candidates
+(LedgerExchange 217,13 and MudBasecamp 217,19) are NOT real on code
+inspection: they fall in the gate's own documented noise classes (receipts
+below). Per the item's conditional ("fix the first 2 REAL-BUGs ... if they
+are real"), fixes landed: 0. No source file was edited by t42.
+
+== method ==
+
+Regenerated read-only per item: reran the analyze step from roblox/
+(cd roblox && ../tools/bin/luaulsp/luau-lsp.exe analyze
+--definitions=../tools/bin/globalTypes.d.luau --sourcemap=sourcemap.json
+src/shared src/server src/server/zones_extra src/client)
+into /tmp/t42_analyze.txt (377 lines, luau-lsp exit=1 = type errors present,
+the gate's parse check grep -cE "SyntaxError|Incomplete" = 0, same rule the
+gate enforces). Applied the gate's exact filter + dedupe pipeline from
+tools/mountain_check lines 39-53 -> /tmp/t42_findings.txt = 20 unique.
+Cross-check vs t30's buffer (/tmp/mountain_findings.txt): 19 of 20
+byte-identical; single delta MudBasecamp (217,19) -> (220,19), line shift
+caused by commit d38801265 (09-26 00:36, between t30's run and t42's) which
+added 3 lines in MudBasecamp.luau above the wisp loop. Not a new finding.
+
+"Touched tonight" test: git log -1 per finding file. Touched tonight by
+other lanes: MudBasecamp.luau (d38801265 00:36), LedgerExchange.luau
+(a5dd96176 23:42), GalleryZone.luau (d38801265 00:36). All other finding
+files last touched 09-25 04:2x/04:50 (pre-gala mountain commits). In-flight
+working-tree edits during t42 (git status): OssuaryZone.luau (t38),
+init.server.luau, init.client.luau, Worldgen.luau, ZoneGate.luau (new),
+WORLDGEN_MINE.md - none are finding files. mountain_check NOT run (shared),
+per item. roblox/sourcemap.json was regenerated (same rojo command the gate
+runs) to make analyze current, then restored to HEAD after the run;
+tree left as found.
+
+== triage table (file order, current truth) ==
+
+#  file(line,col)                finding                                              class                    why
+1  SteerFieldZone(152,25)        TypeError: exact {part: BasePart,...} vs {|part: Part|}  PRE-EXISTING-UNTOUCHED  table.insert walkers {part=w}; w is Instance.new("Part"), Part is-a BasePart, annotation exactness only, runtime-safe
+2  MazeArenaZone(100,2)          TypeError: Key 'Shape' not found in BasePart         PRE-EXISTING-UNTOUCHED   cheese: BasePart? declared line 58, assigned Instance.new("Part") line 99 before the Shape write; runtime instance always a Part
+3  MazeArenaZone(107,2)          TypeError: Key 'Shape' not found in BasePart         PRE-EXISTING-UNTOUCHED   same pattern, dragon declared line 59, assigned Part line 106
+4  IncidentDungeonZone(90,21)    TypeError: exact {part: BasePart,room} vs Part       PRE-EXISTING-UNTOUCHED   glow table holds Instance.new("Part"); annotation exactness only
+5  LightmapRoomsZone(93,25)      TypeError: exact {def,orb: BasePart} vs Part         PRE-EXISTING-UNTOUCHED   engines table holds a Part; annotation exactness only
+6  FrontierSoulsZone(102,17)     TypeError: Expected 'Death?' got state table         PRE-EXISTING-UNTOUCHED   root cause is part: BasePart in type Death (line 29) vs a stored Part; runtime-safe
+7  ErosionFieldZone(172,25)      TypeError: exact {...,part: BasePart} vs Part        PRE-EXISTING-UNTOUCHED   marbles table holds Instance.new("Part"); annotation exactness only
+8  MudBasecamp(220,19)           TypeError: Key 'Position' not found in Instance      NOISE-CLASS              documented class "Instance?/Model? from WaitForChild chains": hum is FindFirstChild("HumanoidRootPart") (line 218) guarded by if hum (219); HumanoidRootPart is always a BasePart with Position; file touched tonight (d38801265), off-limits regardless
+9  LedgerExchange(217,13)        TypeError: unknown cannot be compared with >         NOISE-CLASS              documented GetAttribute typed-read class (all writes numeric, reads defaulted): v is GetAttribute("Slot%d") line 216, truthiness-guarded; only writer of Slot%d is this file line 54 (income, numeric), repo-wide grep found no other writer; file touched tonight (a5dd96176), off-limits regardless
+10 LedgerExchange(228,86)        TypeError: Key 'upper' missing from unknown          NOISE-CLASS              same documented typed-read class, string sibling: GetAttribute("Slot%dName") or "loot" line 227; line 55 writes the attribute as a string
+11 LedgerExchange(229,73)        TypeError: Expected 'string' got 'string | unknown'  NOISE-CLASS              same chain as row 10, the narrowed value passed to :format
+12 GalleryZone(82,2)             TypeError: Expected 'Part' but got 'BasePart'        PRE-EXISTING-UNTOUCHED   plaque declares : Part return, mk()'s instance types as BasePart; runtime instance is a Part; NOTE file restructured tonight by another lane (d38801265 DOORS typing fix, unrelated hunk) so off-limits regardless
+13 SwarmZone(21,7)               LocalUnused: 'upgrades'                              PRE-EXISTING-UNTOUCHED   dormant content: 4 defined depth-upgrade entries never consumed anywhere in the file; zero runtime impact; flagged as future content work, NOT a defect
+14 FrontierSoulsZone(17,7)       LocalUnused: 'Shared'                                PRE-EXISTING-UNTOUCHED   dead require
+15 FrontierSoulsZone(31,16)      LocalUnused: 'ROLL_T'                                PRE-EXISTING-UNTOUCHED   dead constant (roll constants partly inlined)
+16 HardwarePrimerZone(10,7)      LocalUnused: 'ServerScriptService'                   PRE-EXISTING-UNTOUCHED   dead require
+17 IncidentDungeonZone(12,7)     LocalUnused: 'ServerScriptService'                   PRE-EXISTING-UNTOUCHED   dead require
+18 LightmapRoomsZone(17,7)       LocalUnused: 'ServerScriptService'                   PRE-EXISTING-UNTOUCHED   dead require
+19 RiddleMazeZone(20,7)          LocalUnused: 'ServerScriptService'                   PRE-EXISTING-UNTOUCHED   dead require
+20 SpectralMazeZone(69,7)        LocalUnused: 'GOLD'                                  PRE-EXISTING-UNTOUCHED   dead constant
+
+== counts ==
+
+REAL-BUG: 0
+NOISE-CLASS: 4 (rows 8-11; documented classes: WaitForChild/FindFirstChild
+chain typing x1, GetAttribute typed-read x3)
+PRE-EXISTING-UNTOUCHED: 16 (rows 1-7 and 12: Part-vs-BasePart annotation
+exactness x8, runtime-safe; rows 13-20: LocalUnused dead locals x8,
+zero runtime impact)
+TOTAL: 20 (matches t30's count; 19/20 locations byte-identical to t30's list)
+
+== why the two named candidates are not real (receipt detail) ==
+
+LedgerExchange(217,13): the compared value comes from
+GetAttribute(("Slot%d"):format(slot)); the only writer of Slot%d attributes
+is LedgerExchange itself, line 54 SetAttribute(income) numeric, lines
+197/222 write nil (removal), repo-wide grep for SetAttribute(("Slot found
+no other writer. The documented class exists precisely for this: all writes
+numeric, reads defaulted. A real bug would need a non-numeric write path;
+none exists.
+
+MudBasecamp(220,19): hum is
+target.Character and target.Character:FindFirstChild("HumanoidRootPart")
+(line 218), nil-guarded on 219. The type defs type FindFirstChild as
+Instance?, and Instance has no Position; the runtime object named
+"HumanoidRootPart" on a live character is always a BasePart. This is the
+documented chain-typing class, same family as the filtered "could be nil"
+findings.
+
+== hygiene ==
+
+mountain_check NOT run (shared gate, per item). Only the analyze step was
+rerun read-only; source files untouched by t42 (git status: only other
+lanes' in-flight files, listed above; roblox/sourcemap.json regenerated for
+the analyze then restored to HEAD byte-for-byte). Fresh t42 buffers:
+/tmp/t42_analyze.txt (377 lines), /tmp/t42_findings.txt (20 lines).
+Em-dash scan on this filed file: 0 (post-write check).

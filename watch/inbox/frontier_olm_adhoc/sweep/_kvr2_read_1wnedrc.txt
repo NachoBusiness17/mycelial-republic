@@ -1,0 +1,66 @@
+THREAD 1wnedrc (19 entries incl OP)
+
+--- [/u/schennardo] I built a cache-friendly context compacting plugin for OpenCode
+https://github.com/lennartschoch/opencode-cache-compact 
+ The default context compacting mechanism in OpenCode strips a bunch of tokens from the beginning of the conversation (system prompt, tools etc).
+ This is fine for hosted models, but on a local model this means you'll prefill the entire conversation that's already cached.
+ I built a plugin that keeps the conversation as-is, prompts the model to write a summary and then transforms the conversation to erase everything aside from system prompt, tools and summary - because the entire conversation is cached, this is super fast (usually around 1-2 minutes on my Strix Halo, previously >10min).
+ Would love to get some feedback on this - is this useful for anyone else? This is my first open source project in the local LLM space so I'd love to know your thoughts!
+ submitted by /u/schennardo to r/LocalLLaMA 
+ [link] [comments]
+
+--- [/u/DeProgrammer99] /u/DeProgrammer99 on I built a cache-friendly context compacting plugin for OpenCode
+I think Pi compaction has the same issue, but one major problem is the thinking level is in the system prompt, and it turns thinking off for compaction...
+
+--- [/u/schennardo] /u/schennardo on I built a cache-friendly context compacting plugin for OpenCode
+You're right! Pi does the compacting in a completely separate session, with a different system prompt and it does some modifications like truncating tool calls etc.
+ I've ported the plugin to Pi, feel free to check it out here: https://github.com/lennartschoch/pi-cache-compact
+
+--- [/u/nagasgura] /u/nagasgura on I built a cache-friendly context compacting plugin for OpenCode
+I haven't looked at the code yet, but thanks for working on this! I had the same frustration with opencode when using local models. It would be nice to have something like this for switching agents too, as that also rewrites the history to change the system prompt.
+
+--- [/u/schennardo] /u/schennardo on I built a cache-friendly context compacting plugin for OpenCode
+interesting, in theory this should definitely be possible. instead of changing the prompt you could append something to the session that lets the agent know that the model changed
+
+--- [/u/tripontia] /u/tripontia on I built a cache-friendly context compacting plugin for OpenCode
+I'm pretty new in terms of using LLMs to do real work, but this would also seem very useful for allowing longer tasks to complete, if the task was too large for a specific subagent etc, right? The task would be be able to run for much longer because it would in effect get auto-compacted. I'll definitely give this a try! Thanks!
+
+--- [/u/schennardo] /u/schennardo on I built a cache-friendly context compacting plugin for OpenCode
+Most harnesses can do compaction out of the box, but most of them are optimized for Cloud-hosted models. This plugin can help if you're running models locally, since there are some resource constraints that make it important not to rewrite the conversation history
+
+--- [/u/youcloudsofdoom] /u/youcloudsofdoom on I built a cache-friendly context compacting plugin for OpenCode
+This sounds really interesting - have you tried it in openchamber?
+
+--- [/u/schennardo] /u/schennardo on I built a cache-friendly context compacting plugin for OpenCode
+I haven't, but I don't see why it wouldn't work. As far as I understand, OpenChamber is just a UI layer on top of OpenCode right? Let me know if you try it out!
+
+--- [/u/tsangberg] /u/tsangberg on I built a cache-friendly context compacting plugin for OpenCode
+I forked it to make it compatible with Opencode v2 and have been testing it for a while. I'm having issues where the cut-in with the compaction needed message cuts of subagents in the middle of them reporting back. That trips them up causing them to waste more context and risk running out instead of being able to report.
+ Still poking at settings. Up until now I've been using DCP for compaction.
+
+--- [/u/schennardo] /u/schennardo on I built a cache-friendly context compacting plugin for OpenCode
+Oh sweet! Feel free to open a PR once its done, would be happy to merge it upstream
+
+--- [/u/tsangberg] /u/tsangberg on I built a cache-friendly context compacting plugin for OpenCode
+I don't think it's working as it should though. Even after setting abortOnTrip to false what happens is that the summary prompt is injected, the agent writes the handoff only for the next thing that happens when the handoff is finished is the summary prompt appearing again - over and over. I'm assuming this is caused by an error in the v2 fork but I'm not sure I'll spend time on debugging it :/
+
+--- [/u/schennardo] /u/schennardo on I built a cache-friendly context compacting plugin for OpenCode
+Good catch, that was a bug. I've just released 0.2.0 which adds support for V2 and fixes that.
+
+--- [?] /u/[deleted] on I built a cache-friendly context compacting plugin for OpenCode
+[deleted]
+
+--- [/u/schennardo] /u/schennardo on I built a cache-friendly context compacting plugin for OpenCode
+yeah, that's fair. I've made the compacting prompt configurable through the plugin settings, so you should be able to customize these kinds of things. agents are notorious for forgetting about their own mistakes though😅
+
+--- [?] /u/[deleted] on I built a cache-friendly context compacting plugin for OpenCode
+[deleted]
+
+--- [/u/wren6991] /u/wren6991 on I built a cache-friendly context compacting plugin for OpenCode
+Prompting Claude to use lower-case doesn't hide that it's Claude
+
+--- [?] /u/[deleted] on I built a cache-friendly context compacting plugin for OpenCode
+[deleted]
+
+--- [/u/wren6991] /u/wren6991 on I built a cache-friendly context compacting plugin for OpenCode
+check: ((1+xy) 3 z + y 2 (1+xy) (4+3xy), y + 3 x (1+xy) 2 z + 3 x y 2 (4+3xy), 2 x - 3 x 2 y - x 3 z): \C 3\to \C 3, has jacobian determinant -2, and sends (0, 0, -1/4), (1, -3/2, 13/2), and (-1, 3/2, 13/2) to (-1/4, 0, 0)

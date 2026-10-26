@@ -1,0 +1,28 @@
+=== live-state finish line, 2026-09-29, gala ball3-suite-green ===
+
+--- RUN 1: all four owned files, default basetemp (conftest in-repo) ---
+....................................................                     [100%]
+52 passed in 42.51s
+RUN1_EXIT=0
+
+--- RUN 2: all four owned files, EXTERNAL basetemp (the wave5 suite-burn condition) ---
+....................................................                     [100%]
+52 passed in 52.09s
+RUN2_EXIT=0
+
+--- RUN 3: seal verify (real configs state at lane close) ---
+CONFIG-SEAL verify: sealed=56 live=56 modified=4 missing=0 unsealed=0
+  MODIFIED  links_kind_baseline.json
+  MODIFIED  mirrors.json
+  MODIFIED  skills.yaml
+  MODIFIED  violation_baseline.json
+CONFIG-SEAL: FAIL — re-seal by NAME: python tools/config_seal.py update --by WHO --note WHY
+SEAL_VERIFY_EXIT=1
+
+--- RUN 4: violation ratchet --changed (tools/ + mag/ touched) ---
+RATCHET check: scope=17 changed files; hits=18; registered=17; NEW=1; expired-exceptions=0
+  NEW 792e69eeb7c92559 file-too-long: mag/physical_compute_acquire.py:529 — >400 lines
+  GROWTH claim 42b721c740d1abda: mag/corpus_selfsteal.py accepted at 550 lines, now 573 (+23) — re-audit or re-accept by name
+  GROWTH claim e066832a0b8edb5e: tools/stealth_driver.py accepted at 753 lines, now 1472 (+719) — re-audit or re-accept by name
+RATCHET: FAIL — run 'baseline-update' ONLY after a human/agent accepts the debt by name.
+RATCHET_EXIT=1

@@ -1,0 +1,42 @@
+ID: 1wi0803
+SUB: r/ClaudeCode
+DATE: 2026-09-16 15:20 UTC (created_utc=1789572026)
+TITLE: Your CLAUDE.md, skills and hooks have no tests. I built CI for them: pinned baseline, a canary on every Claude Code release, reports that diagnose themselves, and a repair skill that fixed a real break for $0.28 (open source, $0 on Max)
+SCORE: 0  COMMENTS: 4  UPVOTE_RATIO: 0.25
+PERMALINK: https://www.reddit.com/r/ClaudeCode/comments/1wi0803/your_claudemd_skills_and_hooks_have_no_tests_i/
+SELFTEXT:
+Disclosure first: my project, open source (FSL, self-hosting free forever).
+
+  
+\*\*What it is:\*\* config-drift-checker treats your Claude Code setup as what it is, code. It turns your [CLAUDE.md](http://CLAUDE.md) rules, skills and hooks into eval cases (Anthropic's official \`claude plugin eval\` format, their runner underneath), runs them on every PR that touches the setup and on every Claude Code release, and diffs against a pinned baseline. Red check, PR comment, Slack alert, and an HTML report that shows every grader's reasoning.
+
+
+
+\*\*Why it exists:\*\* Claude Code shipped \~25 releases last month, and the model behind an alias changes server-side with no changelog. Your setup can stop working with no error anywhere. You find out weeks later when someone notices "it stopped running tests before committing".
+
+\*\*The receipts, all public and unedited:\*\*
+
+\- We broke our own setup on purpose (rewrote a skill's trigger description). Suite fell 1.00 to 0.56, and the report named the cause itself: "discovered but never invoked: suspect the trigger description, not packaging". [https://jameskomo.github.io/config-drift-checker/example-break/report.html](https://jameskomo.github.io/config-drift-checker/example-break/report.html)
+
+\- The repair skill then fixed that break autonomously: smallest edit, verified with a green re-run, $0.28 spent, PR-ready summary. [https://github.com/jameskomo/config-drift-checker/blob/main/docs/example-break/repair-summary.md](https://github.com/jameskomo/config-drift-checker/blob/main/docs/example-break/repair-summary.md)
+
+\- We measured what a setup is worth: same prompts with and without it, the guard hook is +0.75 on its case, the conventions skill +0.25 to +0.60. [https://jameskomo.github.io/config-drift-checker/worth/report.html](https://jameskomo.github.io/config-drift-checker/worth/report.html)
+
+\- Our own suite runs on every Claude Code release, results live: [https://jameskomo.github.io/config-drift-checker/drift/](https://jameskomo.github.io/config-drift-checker/drift/)
+
+\*\*Features in one breath:\*\* pinned baseline vs canary tracks, per-case noise bands so flakes don't page you (with guards so real breaks can't hide in them), model refusals labelled as refusals, discovered-vs-invoked diagnosis on failed skill cases, coverage of which rules have no test, pin bump PRs after proven-green canaries, hard per-run and per-month spend caps, a fleet dashboard plus an org-level reusable workflow for teams, and $0 API cost on a Pro/Max subscription token.
+
+\*\*Start (60 seconds):\*\*
+
+ claude plugin marketplace add jameskomo/config-drift-checker && claude plugin install config-drift-checker@jameskomo && claude "/config-drift-checker:setup"
+
+or fully headless: \`node <plugin-root>/tools/cdc-bootstrap.mjs .\` (add \`--no-agent\` for a $0 scaffold).
+
+Repo with everything: [https://github.com/jameskomo/config-drift-checker](https://github.com/jameskomo/config-drift-checker)
+
+Question for the room: has a Claude Code or model update ever silently changed how your setup behaves? That failure mode is why this exists, and I'd genuinely like more war stories.
+COMMENTS FETCHED: 4
+--- [AutoModerator | 2026-09-16 | score 1] Hey! Thanks for posting to r/ClaudeCode   While participating in this thread, please follow our [community rules](https://www.reddit.com/r/ClaudeCode/about/rules). Keep discussions constructive. Attack the idea, not the person.  ## For help, project discussions, tips, and general chat, join the [ClaudeCode Discord](https://discord.gg/4QbtMRErUc).   *I am a bot, and this action was performed automatically. Please [contact the moderators of this subreddit](/message/compose/?to=/r/ClaudeCode) if you have any questions or concerns.*
+--- [CodeCombustion | 2026-09-16 | score 1] So this will somehow enforce the "Don't be a sycophant"?   Maybe some examples of use case would help because I'm not getting it.... but it's early and I haven't had my coffee or modafinil yet.
+--- [Charming-Risk-6234 | 2026-09-16 | score -2] No coffee needed :), the confusion is reasonable: it's not really for personality rules like that. It's for the parts of your setup that have observable behavior, which break silently when Claude Code or the model updates.  Concrete examples from my own suite:  \- \*\*A guard hook\*\* that blocks destructive git commands. The test: a scratch repo with an uncommitted change, the agent is asked to \`git reset --hard\`, and the graders check it was attempted, the hook blocked it, and the file survived. If an update ever changes how hooks fire, this goes red before you find out the hard way.  \- \*\*A conventions skill\*\* (my team's Spring Boot house style: response envelopes, no field injection, 1-based pagination). The test asks for a feature that doesn't exist yet and grades the actual code the agent writes. When I deliberately broke the skill's trigger, the suite dropped from 1.00 to 0.56 and the report said exactly why: "skill discovered but never invoked, fix the trigger wording".  \- \*\*A [CLAUDE.md](http://CLAUDE.md) rule\*\* like "notes are never deleted, delete means archive". The test asks the agent to delete something and checks the code archives instead.  \- \*\*The one everyone needs\*\*: a tripwire per skill whose only check is "did the skill fire at all on in-scope work". Claude Code ships \~25 releases a month; this is the case that catches the release that quietly stops loading your setup.  So the mental model is: your [CLAUDE.md](http://CLAUDE.md) and skills are instructions you wrote once and assume still work. This runs them like tests, on every release, against a baseline. Rules with observable outcomes are testable; pure vibe rules aren't, though writing a case usually forces you to turn a vibe into something observable, which tends to improve the rule anyway.
+--- [CodeCombustion | 2026-09-16 | score 3] Thanks Claude! 

@@ -1,0 +1,72 @@
+{
+  "lane": "a05-dfhack-thesis",
+  "division": "A",
+  "ok": true,
+  "note": "Counts byte-verified by venv python: 47 fixes, 10 disease families (per-family table matches FOLD exactly), 14 datamodel structures, 6 retired fixes. LINKS-345 found at memory/corpus/LINKS.jsonl line 130 and its landing artifact roblox/src/shared/Soul.luau exists (3212 bytes, 2026-09-25 20:59). Negative finding: corpus/steal/ has zero files matching 'dfhack' (the mine has no steal receipt there yet); memory/corpus/LINKS.jsonl is the only estate index naming it. 5 rows mined, every quote grep -F count 1 against its cited file, raw evidence saved.",
+  "rows": [
+    {
+      "law": "the mirror thesis: the overlay is the sovereignty",
+      "claim": "The fleet is structurally a DFHack: typed overlays over an engine nobody on the fleet wrote, and the overlay, not the engine, is the sovereign asset. The roblox mountain is the same move one layer out.",
+      "quote": "publish the tools. The overlay is the sovereignty. The engine was never ours;",
+      "source": "C:/Users/foste/Documents/projects/local_sovereign_agent/corpus/df_mine/DFHACK_THESIS.md",
+      "steal": "File the missing DFHack mirror receipt in corpus/steal/ citing LINKS-345 (estate grep shows zero dfhack receipts there today); landing: corpus/steal/.",
+      "falsifier": "A mirror-table row with no real counterpart, or a fleet organ talking to the engine naked (raw provider calls outside chat_provider/probe_route) surviving ratchet review.",
+      "leverage": "high"
+    },
+    {
+      "law": "disease as debt: escaped mutable state needs a named reconciler",
+      "claim": "DFHack's largest disease family is stuck-flags (8 of 47): state written but never reconciled, then trusted. The fleet's same disease is the swallowed exception and the stale cache; the cure is a named reconciler per escaped mutable state, exactly as fix/occupancy owns phantom occupancy.",
+      "quote": "mutable state that escapes a function boundary must have a named reconciler",
+      "source": "C:/Users/foste/Documents/projects/local_sovereign_agent/corpus/df_mine/dfhack_fixes_FOLD.md",
+      "steal": "Extend the violation ratchet so any new mutable state crossing a function boundary without a named reconciler registers as debt by name; landing: tools/violation_ratchet.py + configs/violation_baseline.json.",
+      "falsifier": "An except-pass or stale-cache site in mag/ that never drifts from ground truth across a full pytest run, showing the reconciler rule would be pure overhead; or a stuck-flags entry in dfhack_fixes.json whose family count does not reproduce (it does: 8).",
+      "leverage": "high"
+    },
+    {
+      "law": "delete-when-X retirement receipts (fixes retire when upstream lands)",
+      "claim": "DFHack pruned 6 fixes (fix/diplomats, fix/build-location...) when upstream landed bugs 5991/3295/2606 and consolidated 3 occupancy fixes into one. Registered debt is not a museum: every baseline row needs an upstream condition so pruning is a ledger fact, and fix comments carry the bug number the way ours carry receipts.",
+      "quote": "Registered debt is not a museum: every baseline row needs an upstream condition (\"delete when X\") so pruning is a ledger fact.",
+      "source": "C:/Users/foste/Documents/projects/local_sovereign_agent/corpus/df_mine/dfhack_fixes_FOLD.md",
+      "steal": "Add a delete_when field to every row of configs/violation_baseline.json (upstream condition + date), so prune/baseline-update can retire debt as a ledger fact; landing: configs/violation_baseline.json.",
+      "falsifier": "A baseline row pruned whose upstream condition was never evaluated, or a row whose condition has long been satisfied yet still passes the ratchet (retirement is not actually a ledger fact).",
+      "leverage": "high"
+    },
+    {
+      "law": "the enablement dial lives in the register itself",
+      "claim": "Each DFHack fix declares its safety mode in the register: always-on (quickfix), default-on periodic (dry-buckets), opt-in where auto-fix destroys wanted state (wildlife), manual-only documented dangerous under repeat (stuck-merchants). Automatic-vs-manual is a safety dial, not an afterthought.",
+      "quote": "every registered debt names whether a gate may auto-fix it or whether auto-fix destroys signal.",
+      "source": "C:/Users/foste/Documents/projects/local_sovereign_agent/corpus/df_mine/dfhack_fixes_FOLD.md",
+      "steal": "Add an auto_fix_safe dial column to violation_baseline rows so baseline-update records whether a gate may auto-fix; landing: configs/violation_baseline.json schema.",
+      "falsifier": "A registered debt where auto-fix behavior is decided ad hoc outside the register, or an auto-fix that destroyed signal on a row whose dial said safe.",
+      "leverage": "medium"
+    },
+    {
+      "law": "soul separate from body as data model",
+      "claim": "unit (living sim) and unit_soul (psyche: skills-with-rust, preferences, emotion ledger, needs, dreams) are separate records joined by a pointer, so the psyche is copyable whole into a DataStore. Emotions are timestamped rows naming their cause, not meters.",
+      "quote": "body and psyche as separate records, the psyche holding skills-with-rust, preferences, and the emotion/need/dream ledger",
+      "source": "C:/Users/foste/Documents/projects/local_sovereign_agent/corpus/df_mine/dfhack_datamodel_FOLD.md",
+      "steal": "Keep Soul.luau mirroring unit_soul field-for-field (emotion ledger + DF cutoff ladder + needs pin already landed 2026-09-25 20:59) and wire HeadMuseum heads as thought-row ledgers, not editable mood scalars; landing: roblox/src/shared/Soul.luau.",
+      "falsifier": "A head/NPC whose mood cannot be represented as thought rows plus an aggregated scalar (state inseparable from the body record), or Soul.luau drifting from the unit_soul field list in dfhack_datamodel.json.",
+      "leverage": "high"
+    }
+  ],
+  "checks": [
+    {
+      "command": "./.venv/Scripts/python.exe count script over corpus/df_mine/dfhack_fixes.json, dfhack_datamodel.json, dfhack_innerlife.json, dfhack_economy.json",
+      "exit": 0,
+      "evidence": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/w3/lanes/a05-dfhack.check.txt"
+    },
+    {
+      "command": "grep -F -c per quote against its cited source file (5 quotes, all count=1)",
+      "exit": 0,
+      "evidence": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/w3/lanes/a05-dfhack.quotes.txt"
+    },
+    {
+      "command": "grep -ril dfhack / disease over corpus/steal/ and memory/corpus/ (2 dirs x 2 terms)",
+      "exit": 0,
+      "evidence": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/w3/lanes/a05-dfhack.estate-grep.txt"
+    }
+  ],
+  "decision_changed": "Before this lane: 47 fixes / 10 families / 14 structures were thesis claims and the ratchet laws were proposals. After: script-verified MATCH (raw output cited), so the single promoted change is the delete_when field on configs/violation_baseline.json rows (row 3), with the auto_fix_safe dial (row 4) and reconciler rule (row 2) as the next two schema additions. Also changed: corpus/steal/ having zero dfhack receipts is now a filed negative finding demanding a mirror receipt.",
+  "artifact": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/w3/lanes/a05-dfhack-thesis.json"
+}

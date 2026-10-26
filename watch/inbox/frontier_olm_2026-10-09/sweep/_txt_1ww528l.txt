@@ -1,0 +1,63 @@
+=== 2026-10-02T20:59 | 200 Task Custom Dataset Performance Result: 10 Popular Models, from 2B MoE to 27B Dense | by /u/Potential-Net-9375
+https://preview.redd.it/8eny8jk3b4th1.png?width=1550&format=png&auto=webp&s=923f42ba5db0fd05e756bebc1799c07174bf58e2
+ Results are within the screenshot, but here's a TL;DR tierlist:
+ S tier - Gemma-4-26B, even quantized down to iq3s it tops my charts.
+ A tier - Qwen3.8-27B-q3/q5, this one really surprised me, as a dense model it crawls, but didn't snag the S tier slot. Somehow, qwen3.5-9b is also in this slot.
+ B tier - Qwen3.5-4b, also incredibly Gemma-4-e2b, which punches far above its weight.
+ C tier - Gemma-4-12B, Nanbeige, these both are too heavy for their performance, pass.
+ F tier - Ling-3.0-tiny, minicpm, 
+ The test questions consisted on tasks that I do every day with my assistants, written by Fable 4.1. "Hive" is the llm cluster I'm working on, involving custom tools and executables called by the models for different functions. Calling (or miscalling) these is important, and running a heavier model than necessary hurt, so here we are, trying to figure out the best of both worlds. 
+ Anyway, I thought this was interesting. Hopefully you do too! YMMV.
+    submitted by    /u/Potential-Net-9375  
+ [link]   [comments]
+
+=== ? | /u/rorowhat on 200 Task Custom Dataset Performance Result: 10 Popular Models, from 2B MoE to 27B Dense | by /u/rorowhat
+Gemma4-12B looks like an outlier. Was the context window different, or what happened?
+
+=== ? | /u/Potential-Net-9375 on 200 Task Custom Dataset Performance Result: 10 Popular Models, from 2B MoE to 27B Dense | by /u/Potential-Net-9375
+Not sure! The context size was held the same at 16k for all the models, I'm not sure what went wrong. This matches my subjective experience though, it's relatively good at being personable and storytelling, but isn't especially strong at tool calling.
+
+=== ? | /u/rorowhat on 200 Task Custom Dataset Performance Result: 10 Popular Models, from 2B MoE to 27B Dense | by /u/rorowhat
+It's a little hard to believe the 2B e2b outperforms it
+
+=== ? | /u/JohnnieDarko on 200 Task Custom Dataset Performance Result: 10 Popular Models, from 2B MoE to 27B Dense | by /u/JohnnieDarko
+What determines the tier a model gets? It doesn’t seem to be based on the results. 
+ Gemma 12B is C-tier, but it has higher “quality” than the B-tier model above it. It also has higher “quality per GB” than the S-tier models.
+
+=== ? | /u/Potential-Net-9375 on 200 Task Custom Dataset Performance Result: 10 Popular Models, from 2B MoE to 27B Dense | by /u/Potential-Net-9375
+That's a great point, rationale is that each tier would theoretically land on a VRAM bin - 2GB, 4GB, 6GB etc. This is all in service of the cluster project that has a mix of these. 
+ for gemma 12B's case, it needs 7.8GB(!) to achieve a score of 0.795, a score that was matched by Qwen-4B for just 3.4GB, a whole two VRAM tiers down. This means a smarter model on smaller machines, or larger context and faster speeds, especially on cards that can fit np > 1.
+
+=== ? | /u/Educational-Region98 on 200 Task Custom Dataset Performance Result: 10 Popular Models, from 2B MoE to 27B Dense | by /u/Educational-Region98
+Missing a lot of info here... prefill is missing, hardware is missing, also doesn't say if you are using vllm, llama.cpp, ninfer, etc. 
+ Are you using mtp dflash??
+
+=== ? | /u/Potential-Net-9375 on 200 Task Custom Dataset Performance Result: 10 Popular Models, from 2B MoE to 27B Dense | by /u/Potential-Net-9375
+Sorry about that! Prefill is missing yes, hardware is RTX 5080, llama.cpp, mtp and dflash off.
+
+=== ? | /u/Educational-Region98 on 200 Task Custom Dataset Performance Result: 10 Popular Models, from 2B MoE to 27B Dense | by /u/Educational-Region98
+Haha no problem. Why not use MTP? It makes a big difference if you have the VRAM.
+
+=== ? | /u/Potential-Net-9375 on 200 Task Custom Dataset Performance Result: 10 Popular Models, from 2B MoE to 27B Dense | by /u/Potential-Net-9375
+When I tested MTP before in my blind tests, it actually made a measured difference in quality of the output. Definitely faster, but for my tasks at least, I ended up saying it wasn't worth it.
+
+=== ? | /u/Educational-Region98 on 200 Task Custom Dataset Performance Result: 10 Popular Models, from 2B MoE to 27B Dense | by /u/Educational-Region98
+Interesting, I have to look into this a bit more. I always thought MTP was a free speed boost, especially for dense models... it can almost double the speed at times.
+
+=== ? | /u/DinoAmino on 200 Task Custom Dataset Performance Result: 10 Popular Models, from 2B MoE to 27B Dense | by /u/DinoAmino
+It does not affect quality. There are factors affecting performance. Speed can almost triple when it's generating code. When generating text from a cold start there often can be no visible boost at first, and when it's "seen" a bunch of tokens in the context it starts to speed up. If you're loaded with context to begin with you should see the boost right away. And of course, the optimal number of tokens to draft can vary and needs to be tested.
+
+=== ? | /u/Educational-Region98 on 200 Task Custom Dataset Performance Result: 10 Popular Models, from 2B MoE to 27B Dense | by /u/Educational-Region98
+Hmm... I figured that's the case... it's not like quantization where the model degrades and becomes more lossy.
+
+=== ? | /u/Potential-Net-9375 on 200 Task Custom Dataset Performance Result: 10 Popular Models, from 2B MoE to 27B Dense | by /u/Potential-Net-9375
+Me too! I've heard the same said left and right, but alas. Guess there really is no such thing as a free lunch.
+
+=== ? | /u/silenceimpaired on 200 Task Custom Dataset Performance Result: 10 Popular Models, from 2B MoE to 27B Dense | by /u/silenceimpaired
+You might double check your findings. It’s my understanding MTP doesn’t change output. If it guesses text that the model wouldn’t have used it gets rejected.
+
+=== ? | /u/Ok_Flamingo8094 on 200 Task Custom Dataset Performance Result: 10 Popular Models, from 2B MoE to 27B Dense | by /u/Ok_Flamingo8094
+gemma topping the chart makes sense for tasks but im curious which one actually feels best for roleplay chats, any standouts there?
+
+=== ? | /u/Potential-Net-9375 on 200 Task Custom Dataset Performance Result: 10 Popular Models, from 2B MoE to 27B Dense | by /u/Potential-Net-9375
+Gemma4-26B by far! I've tested uncensored/abliterated models as well, with a dedicated large task corpus meant to test "soulfullness", as best I could describe it. Between a mix of Fable and my own blinded judgements helping to score the models, 26B came out far ahead. Gemma models in general are quite personable at all tiers, compared to the relatively dry Qwen models.

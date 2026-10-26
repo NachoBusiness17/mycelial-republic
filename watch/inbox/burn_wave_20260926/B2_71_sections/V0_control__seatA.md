@@ -1,0 +1,13 @@
+The **Dusty Crossroads** is the central hub of the stub world, a weather‑worn intersection where four paths diverge. A solitary post stands in the middle, its notches worn smooth by countless travelers who have tallied journeys rather than kills. The post bears a cryptic riddle: *“what walks without feet when the map is true?”* – a prompt for curious wanderers to contemplate the nature of movement and direction in this realm.
+
+To the **north** the road climbs toward the **Hill Shrine**, a ruin of broken stones where the wind whistles through empty niches. A shallow bowl set into the earth invites offerings, though any coin placed there seems to vanish. The notches on the shrine’s stone match those on the crossroads post, hinting that the same invisible counter records steps taken on both sites.
+
+Heading **east** leads to the **Market Ruin**, a once‑bustling bazaar now reduced to collapsed stalls and a single shaded kiosk. A hungry stray dog prowls the debris, its eyes fixed on a child’s satchel tucked beneath a broken table. The dog’s growl is a warning, but the satchel promises a small, perhaps vital, reward for those brave enough to confront the beast.
+
+The **west** path descends to the **River Ford**, a shallow crossing strewn with stepping stones. The water is clear enough to see the riverbed, and a glass door set into the north bank glints impossibly, promising entry to a keep of transparent pipes. Upstream, a thin plume of smoke curls into the sky; downstream, a faint, haunting song drifts on the breeze, both serving as sensory clues to hidden locations beyond the ford.
+
+From the ford, a **northward** exit opens onto the **Gallery** of the water‑computer world, fulfilling the agreed loop‑closure doctrine (RIB_CATHEDRAL_WORLD_V1). This seamless transition ties the 2d6 adventure stub into the larger, computationally‑driven landscape, allowing characters to move between the tactile ruins and the abstract, pipe‑filled keep without breaking immersion.
+
+The **crossroads** also serves as a gateway to the **Audit Dungeon’s Git Vault**, an off‑screen repository of forgotten lore that can be accessed through a hidden passage beneath the post. This vault offers narrative hooks for players seeking secrets, code fragments, or forgotten histories that may influence future encounters.
+
+Resting in any of these locations triggers the **Safe Rest** event table. Under a canopy of stars, travelers may mark another notch on their stick, recording another successful journey. Occasionally, a dream of a self‑writing post offers a fleeting glimpse of future riddles, reinforcing the theme of perpetual record‑keeping that threads through the entire region.

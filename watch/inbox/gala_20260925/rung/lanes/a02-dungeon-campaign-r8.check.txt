@@ -1,0 +1,50 @@
+=== R8 fill verification - lane a02-dungeon-campaign-r8 - 2026-10-10T13:09:33Z ===
+
+--- CHECK A: 14 fixtures vs live transcript bytes (watch/inbox/playground/dnd0_20261003T202213Z/transcript.jsonl) ---
+transcript S4 rows total=18 PC=14 enemy=4
+fixtures=14
+row 0 saelis    t1  roll=1  OK
+row 1 grok      t2  roll=16 OK
+row 2 chatgpt   t3  roll=12 OK
+row 3 deepseek  t4  roll=2  OK
+row 4 deepseek  t5  roll=20 OK
+row 5 saelis    t7  roll=6  OK
+row 6 grok      t8  roll=17 OK
+row 7 chatgpt   t9  roll=12 OK
+row 8 deepseek  t10 roll=15 OK
+row 9 deepseek  t11 roll=18 OK
+row10 saelis    t13 roll=17 OK
+row11 grok      t14 roll=13 OK
+row12 chatgpt   t15 roll=14 OK
+row13 deepseek  t16 roll=20 OK
+verbatim byte-check: 14/14 fixtures identical to transcript
+dice law roll(pre)==roll_value: 14/14
+legacy line-initial scan tags found: 0/14
+extract_tag regex tags found:        10/14
+all logged verdicts HIT/MISS (wyrm-attack class): 14/14
+exit=0
+
+--- CHECK B: the fill's named landing spot, executed: .venv/Scripts/python.exe -m pytest tests/test_dungeon_parser.py -v ---
+============================= test session starts =============================
+platform win32 -- Python 3.11.15, pytest-9.1.1, pluggy-1.6.0 -- C:\Users\foste\Documents\projects\local_sovereign_agent\.venv\Scripts\python.exe
+rootdir: C:\Users\foste\Documents\projects\local_sovereign_agent
+configfile: pytest.ini
+plugins: anyio-4.14.2, langsmith-0.10.14, timeout-2.4.0, xdist-3.8.0, typeguard-4.6.0
+collecting ... collected 13 items
+
+tests/test_dungeon_parser.py::test_dice_law_holds_on_all_14 PASSED       [  7%]
+tests/test_dungeon_parser.py::test_legacy_scan_blind_regex_finds PASSED  [ 15%]
+tests/test_dungeon_parser.py::test_logged_verdicts_were_all_wyrm_attacks PASSED [ 23%]
+tests/test_dungeon_parser.py::test_replay_14_logged_s4_verdicts_under_fixed_parser PASSED [ 30%]
+tests/test_dungeon_parser.py::test_s4_disjunct_requires_attack_verb PASSED [ 38%]
+tests/test_dungeon_parser.py::test_extract_tag_units PASSED              [ 46%]
+tests/test_dungeon_parser.py::test_casefold_audit_burns_phantom PASSED   [ 53%]
+tests/test_dungeon_parser.py::test_regrowth_heals_per_unaudited_phantom PASSED [ 61%]
+tests/test_dungeon_parser.py::test_beat_outcome_tokens PASSED            [ 69%]
+tests/test_dungeon_parser.py::test_wipe_gated_on_target_prior_verdict PASSED [ 76%]
+tests/test_dungeon_parser.py::test_s1_verdict_finds_embedded_tag PASSED  [ 84%]
+tests/test_dungeon_parser.py::test_finish_reason_banked_and_void_census PASSED [ 92%]
+tests/test_dungeon_parser.py::test_campaign_done_carries_void_census_and_packs PASSED [100%]
+
+============================= 13 passed in 1.00s ==============================
+pytest_exit=0

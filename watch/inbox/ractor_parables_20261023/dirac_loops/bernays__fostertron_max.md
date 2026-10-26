@@ -1,0 +1,34 @@
+<!-- meta: {"ractor": "BERNAYS", "mouthpiece": "fostertron_max", "subject": "dirac_loops", "start_et": "2026-10-23T14:21:45.148103-04:00", "attempts": [{"attempt": 1, "exit": 0, "stdout_len": 6194, "at": "2026-10-23T14:25:14.820227-04:00"}], "carrier": "opencode run (provider zai-sd 'sd / Max', key env ZAI_API_KEY_2 via model_garden._api_key)", "requested_model": "zai-sd/glm-5.3", "resolved_model": "glm-5.3", "exit": 0, "stderr_tail": "\u001b[0m\n> build \u00b7 glm-5.3\n\u001b[0m\n\u001b[0m\u2192 \u001b[0mRead PROMPT.txt\n", "tokens": "not reported by opencode run", "end_et": "2026-10-23T14:25:14.821226-04:00", "status": "OK"} -->
+
+# The Rounds of the Standings
+
+The town stood on thirty-three standings in shallow salt water, plank bridges strung between some of them and none between most. Troubles came to it the way weather came, and the grandmothers at the kilns taught every child the same first lesson: a trouble is a snarl, and nobody in the history of the town was ever paid for pulling a snarl apart. The work was to find what the snarl hid — returns, ways out that come home again by water the walker never crossed on the way out — and to walk them.
+
+Alba learned early that a return gives its truth only to the whole foot. Leave Mosspoint by the north stringer, cross the two standings beyond, come back to Mosspoint by the south stringer, and only the arrival tells you what the round carries: the give of the third plank, the depth at the middle crossing, things no one could know by standing still on Mosspoint or by any single stretch alone. Half a return teaches nothing. The truth lives in the coming-back.
+
+Her teacher had held the lesson in two hands. This hand, the resting one: a return already whole hands back only what the town has kept for generations, and nobody owes it a walk. This hand, pointed at black water: a return broken — two standings whose home-stretch was never built — is a promise the town made to itself, and to that missing stretch the barge must go with planks, because until the return can be walked its truth stays drowned. The teacher said the town had twice gone under for forgetting which hand was which.
+
+On the twenty-seventh morning of the harvest month the tally-keeper chalked the boathouse door. Thirty-three standings fit to bear weight. Twenty-one bridges sound. Twenty neighborhoods, standings that touched none but their own. And by the old arithmetic — bridges taken, standings given back, neighborhoods put in — eight returns, counting only such returns as could not be pieced together out of the parts of other returns. Eight, said the chalk, in a steady hand.
+
+The walkers went out at low tide and came back at dusk with salt to the knee. Every one of the six returns they had walked was broken somewhere — a missing stretch, open water where a coming-home should run — and not one round in all the Standings was whole. Of the chalk's eight, two no foot ever found to walk.
+
+Pello the crier stood on the fish-steps and called the count instead of the walking. Eight, he cried, a town of eight, cross freely, the crossings keep themselves. The crowd went easy in its shoulders, and the menders' barge stayed tied to its post, and Pello's own ferry took fares at both landings. Alba asked, as she always asked, who was lighter when this was believed, and watched the answer cross his palm in copper. At supper the town said eight, because eight could be said between spoonfuls; the six, each with its black stretch of water, needed the whole evening, and supper is short.
+
+One work the town had never let drown: the crossing-craft itself. The bridge-wright kept her drawings on a standing of their own, and the bridges there ran strangest of all, for the plan of the rounds was strung into a round of its own — out by the second plan, home by the first, arriving where you began, at the making of the plan. Every other craft had gone into the water; the one that circled back on itself was the one still above it.
+
+The menders, dripping on the boathouse steps, gave their verdict on the six: two lacks, and no third. No office existed for proving a finished stretch — no walker had ever been sent back across a built return to learn whether it still held. And no buyer had ever come from any far shore asking for what a walked return hands back; the truths came home and sat unsold along the wall.
+
+All of it the grandmothers had carried before any chalk. The first craft had gone down when the old town drowned, every line of it, wax and board and bone, and it lived anyway, because at the kilns the old women had told it whole to children who told it again; the telling was the one record the water could not reach. Alba had all of it by mouth before she ever set a plank.
+
+In the morning the barge went out after all, loaded at her asking, and made for the nearest missing stretch, where the water lay open in the shape of a return. The grandmothers watched it go, called the children close, and told them, again, the whole of it by heart.
+
+---KEY---
+1. A trouble is a snarl, and the work is to find the returns hidden inside it rather than to pull the snarl apart. (The grandmothers' first lesson at the kilns.)
+2. A return hands over its one truth only to a walker who completes it, since no single standing and no single stretch holds what only the arrival reveals. (Alba's round out of Mosspoint by the north stringer and home by the south.)
+3. A return already whole hands back only what the town has long kept, and nobody owes it a walk. (The teacher's resting hand.)
+4. A broken return, missing only its home-stretch between two known standings, marks the exact work the town owes, and the barge of planks is sent to that stretch and nowhere else. (The barge going out at Alba's asking.)
+5. Only returns that cannot be pieced together out of other returns are counted, and their number is bridges taken minus standings given back plus neighborhoods put in, twenty-one minus thirty-three plus twenty, eight. (The tally-keeper's chalk on the boathouse door.)
+6. On the counting day the chalk promised eight, the walking found six, every one of them broken, none whole, and two no foot could find. (The walkers' dusk return, salt to the knee.)
+7. The one craft the town kept whole was the crossing-craft itself, and its own return runs through the making of returns. (The bridge-wright's drawings standing, out by the second plan and home by the first.)
+8. Two lacks were named and no third: no office for proving a finished stretch, and no buyer from any shore for what a walked return hands back. (The menders' verdict and the unsold truths along the boathouse wall.)
+9. The founding craft outlived the drowning of every written line by being told whole, mouth to mouth, at the kilns. (The grandmothers' telling, which reached Alba before any plank did.)

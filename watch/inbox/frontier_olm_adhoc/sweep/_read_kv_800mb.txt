@@ -1,0 +1,35 @@
+[2026-10-09] u/GapNew4766 :: 128K context on Qwen 3.5 4B in 800 MB instead of 4 GB: what we changed in our llama.cpp build.
+    I work on Atomic Agent, an open-source agent built for local models first, so weigh this accordingly. We just shipped the first desktop build. This post is about what's under it, because most agents are designed around a frontier cloud model and then "support" local ones, and we tried to go the other way. Here's what changed once we treated a 4B to 9B model as the main target. The KV cache is compressed. We ship our own llama.cpp build with TurboQuant, set to turbo3 by default. In our tests on a MacBook Pro M5, a 128K chat on Qwen 3.5 4B fits in 800 MB instead of 4 GB. It's lossy, so expect a small quality hit in exchange for the memory. The prompt prefix never changes mid-session. System prompt, tool catalog and skill list stay byte-identical between steps. Memory writes and anything that changes per step go at the tail. That lets llama.cpp reuse the KV cache for everything it already processed. On the same M5, a reply on Qwen 27B that used to take 4 min 20 s to start now starts in about 1 s. That's cache reuse, not faster inference, but on a long session it's most of the wait. State lives outside the model. Session state, memory and old tool results sit on disk, and the prompt is a bounded slice of them. On local models, long tool output gets trimmed before it reaches the context. For shell commands we keep the tail, because that's where the pass or fail is. When the conversation fills 90% of the window, the agent summarizes the older part and keeps going, instead of cuttin
+
+[2026-10-09] u/Ctbhatia :: /u/Ctbhatia on 128K context on Qwen 3.5 4B in 800 MB instead of 4 GB: what we changed in our llama.cpp build.
+    the byte-identical prefix is the part that will bite: one tool description with a timestamp, a reordered skill list or a changed system prompt silently drops the whole cache. worth asserting the prefix hash between steps so a regression shows up as a warning instead of a stalled session.
+
+[2026-10-09] u/-_Apollo-_ :: /u/-_Apollo-_ on 128K context on Qwen 3.5 4B in 800 MB instead of 4 GB: what we changed in our llama.cpp build
+    Thanks, never considered hashing the prefix. More efficient than manual review.
+
+[2026-10-09] u/LippyBumblebutt :: /u/LippyBumblebutt on 128K context on Qwen 3.5 4B in 800 MB instead of 4 GB: what we changed in our llama.cpp 
+    Turbo3 is a very boring answer to your interesting headline to promote your product. That's a downvote from me. Apart from that, interesting work. I always feel like there are huge gains in kv-caching possible for my workflow. But what kind of system prompt do you have that it takes 4:20 to process without cache? Or are you saying a 100k session takes 4:20 to process without cache? Because who uses no cache? Do you keep the cache of the system prompt between sessions? Do you even provide that as a download? BTW: Did you look at beellama and kvarn instead of turboquant? Some time ago I did tests with a small model and kvarn3 was at least on the level of q5 (normal not turboquant). I don't remember testing turboquant at that time, but the community thinks turboquant is not much better then normal quants with rotation (as implemented by llama.cpp since forever).
+
+[2026-10-09] u/admajic :: /u/admajic on 128K context on Qwen 3.5 4B in 800 MB instead of 4 GB: what we changed in our llama.cpp build.
+    Out of interest why haven't you tested this with the current local hero Qwen 3.8 27b? I don't even bother with the 35b. Evene though it does work eventually, but takes longer to solve the problem due to it making so many mistakes. Sure it can run at 100+ t/s on my machine but Qwen 3.8 27b being a bit slower still beats it.
+
+[2026-10-09] u/Hero_of_Code :: /u/Hero_of_Code on 128K context on Qwen 3.5 4B in 800 MB instead of 4 GB: what we changed in our llama.cpp bui
+    how do you describe diff between this project and hermes?
+
+[2026-10-09] u/Fusseldieb :: /u/Fusseldieb on 128K context on Qwen 3.5 4B in 800 MB instead of 4 GB: what we changed in our llama.cpp build
+    I see AI that uses less VRAM, I like
+
+[2026-10-10] u/Solary_Kryptic :: /u/Solary_Kryptic on 128K context on Qwen 3.5 4B in 800 MB instead of 4 GB: what we changed in our llama.cpp b
+    Why TurboQuant over kVarn?
+
+[2026-10-09] u/exaknight21 :: /u/exaknight21 on 128K context on Qwen 3.5 4B in 800 MB instead of 4 GB: what we changed in our llama.cpp buil
+    Nice!
+
+[2026-10-09] u/DiamondHandsDarrell :: /u/DiamondHandsDarrell on 128K context on Qwen 3.5 4B in 800 MB instead of 4 GB: what we changed in our llama.
+    Following for more!
+
+[2026-10-09] u/bunguardian :: /u/bunguardian on 128K context on Qwen 3.5 4B in 800 MB instead of 4 GB: what we changed in our llama.cpp buil
+    Sweet
+
+[2026-10-09] u/pedrox86x :: /u/pedrox86x on 128K context on Qwen 3.5 4B in 800 MB instead of 4 GB: what we changed in our llama.cpp build.
+    LOoks cool ill try it

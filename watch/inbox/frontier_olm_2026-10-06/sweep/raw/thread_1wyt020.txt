@@ -1,0 +1,26 @@
+THREAD 1wyt020 entries=8
+
+--- entry 0 [/u/kitkatz69] Memoria 1.0.0 — a local, model-agnostic memory system for LLMs
+I’ve been building this for a long fucking time, and tonight I finally released Memoria 1.0.0. I built it because I actually wanted to use it. I wanted a real memory layer for local LLM applications that didn’t depend on a specific model, a cloud service, or an API key. Memoria is local-first and LLM-agnostic. It can run without an LLM at all. The machine I built and benchmarked it on is not exactly impressive. It’s an Intel Celeron N4020 running at 1.10 GHz, with around 3.7 GiB of usable RAM, no GPU, and Debian Linux. On LongMemEval-S, 468 out of 470 retrieval-evaluable questions returned results. Recall@1 was 89.8%, Recall@5 was 97.9%, Recall@10 was 98.9%, and Recall@50 was 99.6%. Session NDCG@10 was 0.9257. Peak RSS for the full LongMemEval workload was 2.65 GiB. Average peak RSS for an individual query was around 580 MiB. The retrieval system is not just throwing everything into a vector database. Memoria runs FAISS, BM25, graph retrieval, phrase matching, attribute retrieval, and temporal retrieval in parallel. Those signals get fused and then passed through multi-signal ranking. Temporal retrieval is independently implemented too, so I can measure it and ablate it instead of having it baked into the base retrieval path. It’s usable, but it’s still under active work. There’s a bunch of other stuff in the release as well. GitHub repository ingestion, Obsidian vault ingestion, MCP support, a CLI, TUI, GUI, and API, persistent local storage, LongMemEval and LoCoMo benchmark tooling, and a plugin system with 11 subsystems and 34 hooks. There’s also an interactive plugin generator now. And it’s actually installable: bash pip install kitzkatz-memoria GitHub: https://github.com/Kitzkatz/memoria Docs: https://kitzkatz.github.io/memoria/ PyPI: https://pypi.org/project/kitzkatz-memoria/ I wasn’t going to wait around for a perfect time to ship it. It’s 1.0.0. If you’re working on local agents or local LLM applications, I’d genuinely like to hear what you think and would appreciate any feedback. Please break it submitted by /u/kitkatz69 [link] [comments]
+
+--- entry 1 [/u/caetydid] /u/caetydid on Memoria 1.0.0 — a local, model-agnostic memory system for LLMs
+Your release naming scheme is well suited for time travellers
+
+--- entry 2 [/u/ALERTua] /u/ALERTua on Memoria 1.0.0 — a local, model-agnostic memory system for LLMs
+Am I missing a part of the documentation where you instruct your agent to use memoria?
+
+--- entry 3 [/u/kitkatz69] /u/kitkatz69 on Memoria 1.0.0 — a local, model-agnostic memory system for LLMs
+No you aren't my demoing and docs still need some more work it's not really an excuse but after 4 months the demos kind of got skipped i worked on it 18 hours yesterday I just wanted to take it at least this far before I decide if it gets anymore of my life
+
+--- entry 4 [/u/Responsible_Pen8972] /u/Responsible_Pen8972 on Memoria 1.0.0 — a local, model-agnostic memory system for LLMs
+this sounds perfect for keeping track of details across super long rp sessions without stuff fading out. does it handle character personalities staying consistent over multiple days?
+
+--- entry 5 [/u/kitkatz69] /u/kitkatz69 on Memoria 1.0.0 — a local, model-agnostic memory system for LLMs
+Yea you need to configure your config.toml and point it to your template directory and template you want to use but yea I thought about it being usable for an NPC before if you make the right in put and make the right template for your use case and configure the template path inside the config file
+
+--- entry 6 [/u/Patient_Abalone_1081] /u/Patient_Abalone_1081 on Memoria 1.0.0 — a local, model-agnostic memory system for LLMs
+Very cool! Thank you for building this and sharing. I'm curious how Memoria compares to https://github.com/ArihantDeva/heimdall
+
+--- entry 7 [/u/kitkatz69] /u/kitkatz69 on Memoria 1.0.0 — a local, model-agnostic memory system for LLMs
+I have no clue but I'm gonna say theyve probably had some more time to perfect the repo crawling though I built the GitHub adapter yesterday it has been vetted but not as much as obsidian I was just too antsy to wait any longer
+

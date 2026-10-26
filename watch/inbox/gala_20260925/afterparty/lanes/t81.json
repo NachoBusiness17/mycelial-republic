@@ -1,0 +1,34 @@
+{
+  "gopher": "t81",
+  "item": "three prose alignments: (1) _toggle_hint('improve') in mag/lifecycle.py aligned to the real t73 commands (improve-off --reason / improve-on) like t77 did for _waste_action; (2) mag/improve.py:10 stale doc quote updated to the t33/t47 scheduled-task surface truth; (3) tests/test_improve_status_scheduled_task.py:4 stale doc quote same treatment (t77's next_steal)",
+  "ok": true,
+  "note": "All three sites read first; minimal diffs, doc/spec wording only, no behavior change. (1) mag/lifecycle.py _toggle_hint('improve') now returns 'python main.py improve-off --reason \"...\" / python main.py improve-on' (was 'schtasks MagImproveDaily / improve cycle API') with a receipt comment citing t73/t77/t81; no test pinned the old string. (2) mag/improve.py module docstring (t33 spec paragraph) now quotes the landed t73 executor instead of the stale 'lifecycle.py names \"disable MagImproveDaily\"' prose. (3) tests/test_improve_status_scheduled_task.py docstring same treatment, and the stale 'lifecycle.py:514' line pointer dropped (t77 precedent). Verified the new hint string against main.py argparse flags and t77's _waste_action string for parity.",
+  "checks": [
+    {
+      "check": ".venv/Scripts/python.exe -m pytest tests/test_improve_off_on.py -v",
+      "result": "6 passed, exit 0",
+      "evidence": "watch/inbox/gala_20260925/afterparty/lanes/t81.check.txt"
+    },
+    {
+      "check": ".venv/Scripts/python.exe -m pytest tests/test_improve_status_scheduled_task.py -v (docstring-touched file)",
+      "result": "4 passed, exit 0",
+      "evidence": "watch/inbox/gala_20260925/afterparty/lanes/t81.check.txt"
+    },
+    {
+      "check": ".venv/Scripts/python.exe tools/violation_ratchet.py check --changed",
+      "result": "scope=18 changed files; hits=15; registered=15; NEW=0; expired-exceptions=0; exit 0",
+      "evidence": "watch/inbox/gala_20260925/afterparty/lanes/t81.check.txt"
+    },
+    {
+      "check": "em-dash scan of t81-added lines (git diff '+' lines)",
+      "result": "0 occurrences, clean",
+      "evidence": "watch/inbox/gala_20260925/afterparty/lanes/t81.check.txt"
+    }
+  ],
+  "files": [
+    "mag/lifecycle.py",
+    "mag/improve.py",
+    "tests/test_improve_status_scheduled_task.py"
+  ],
+  "next_steal": "mag/doctor.py:452 still prescribes raw 'schtasks /Change /TN MagImproveDaily /ENABLE' as the Disabled-task remediation; that path bypasses the t73 improve-on flow (re-register via scripts/register_improve_task.ps1 + marker clear), so a blind /ENABLE leaves the intentional marker stale and the doctor probe misreading state. Align the issue string (and any pinned test) to prescribe 'python main.py improve-on' first, raw schtasks as elevated fallback only. Negative to pin: doctor must NOT recommend a remediation that skips marker clearing."
+}

@@ -1,0 +1,7 @@
+# swarm1-glm-flash-mag__preload_selector (glm-5.3-flash @ zai, turn 1, channel: content)
+
+DEFECT 1: Missing/empty logprobs (ollama ignoring the field) yields rel_delta_pct=0.0 and verdict DECORATIVE, false-failing the instrument's kill criterion | EVIDENCE: mag/preload_selector.py:285-291 | FIX: if either arm has empty logprobs or positions==0, set status UNMEASURABLE and emit no verdict instead of DECORATIVE
+DEFECT 2: span<=0 with known timestamps gives recency 0.0, contradicting the spec "span<=0 -> 1.0 for all" (the `not known` guard is always False when known is non-empty) | EVIDENCE: mag/preload_selector.py:183-184 | FIX: `recency = 1.0 if (ts is not None and ts_span == 0) else (ratio if ts and ts_span > 0 else 0.0)`
+DEFECT 3: pick_model string-matches tags without the `:latest` suffix ollama emits, so PRIMARY_MODEL/FALLBACK_MODEL never match installed `name` entries and an arbitrary first-sorted model silently measures the probe | EVIDENCE: mag/preload_selector.py:213-222 | FIX: compare `m.get("name","").split(":")[0]` against both constants before falling through
+DEAD-CODE: `order_blocks` is defined but no CLI path or selftest references it (order uses score_blocks directly) | EVIDENCE: mag/preload_selector.py:190-191
+ONE-SITTING FIX: add the UNMEASURABLE guard in compare plus a selftest check that two arms with disjoint token sets do not produce a verdict | EVIDENCE: mag/preload_selector.py:285-297

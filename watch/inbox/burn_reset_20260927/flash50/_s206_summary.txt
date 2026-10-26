@@ -1,0 +1,107 @@
+{
+ "census": {
+  "files_seen": 47757,
+  "self_skipped": 95,
+  "large_skipped": 126,
+  "binary_skipped": 8363,
+  "read_error": 2,
+  "scanned": 39171,
+  "bytes_scanned": 884204131,
+  "long_lines_skipped": 13921,
+  "gitleaks_allow_lines": 12,
+  "total_lines": 7919282
+ },
+ "counts": {
+  "JWT2-UNSIGNED": 1,
+  "CONN-EXTRA-SCHEME": 0,
+  "BASICAUTH-URL": 0,
+  "ODBC-CRED": 0,
+  "AZURE-ACCTKEY": 0,
+  "AZURE-SAS": 1,
+  "B64-CTX-STD": 1676,
+  "B64-CTX-URL": 1036,
+  "KUBE-DATA": 0,
+  "DOCKER-AUTH": 0,
+  "NPMRC-AUTHTOKEN": 0,
+  "NETRC-CRED": 0,
+  "PPK-HEADER": 0,
+  "VENDOR-GAP": 0
+ },
+ "files_per_rule": {
+  "JWT2-UNSIGNED": 1,
+  "CONN-EXTRA-SCHEME": 0,
+  "BASICAUTH-URL": 0,
+  "ODBC-CRED": 0,
+  "AZURE-ACCTKEY": 0,
+  "AZURE-SAS": 1,
+  "B64-CTX-STD": 216,
+  "B64-CTX-URL": 192,
+  "KUBE-DATA": 0,
+  "DOCKER-AUTH": 0,
+  "NPMRC-AUTHTOKEN": 0,
+  "NETRC-CRED": 0,
+  "PPK-HEADER": 0,
+  "VENDOR-GAP": 0
+ },
+ "gap_rules": [
+  {
+   "id": "JWT2-UNSIGNED",
+   "note": "two-segment JWT (header.payload, no signature); gate JWT-TRIPLE needs 3"
+  },
+  {
+   "id": "CONN-EXTRA-SCHEME",
+   "note": "creds-in-URL for schemes outside CONNSTRING-CRED's six (incl rediss/amqps)"
+  },
+  {
+   "id": "BASICAUTH-URL",
+   "note": "user:password@ in http/https/ws URLs (no rule covers web schemes)"
+  },
+  {
+   "id": "ODBC-CRED",
+   "note": "SQLServer/ODBC/ADO style password= inside a server=/data source= line"
+  },
+  {
+   "id": "AZURE-ACCTKEY",
+   "note": "Azure storage connection string AccountKey (88-char base64 blob)"
+  },
+  {
+   "id": "AZURE-SAS",
+   "note": "Azure Shared Access Signature token (sig= on a line carrying sv=)"
+  },
+  {
+   "id": "B64-CTX-STD",
+   "note": "base64 blob >=40 chars on a line with a credential keyword"
+  },
+  {
+   "id": "B64-CTX-URL",
+   "note": "base64url blob >=43 chars on a line with a credential keyword"
+  },
+  {
+   "id": "KUBE-DATA",
+   "note": "kubeconfig embedded cert/key blobs (base64, no rule touches them)"
+  },
+  {
+   "id": "DOCKER-AUTH",
+   "note": "docker config.json auth field = base64 user:password"
+  },
+  {
+   "id": "NPMRC-AUTHTOKEN",
+   "note": ".npmrc _authToken; GENERIC-KEYASSIGN name list has no authToken form"
+  },
+  {
+   "id": "NETRC-CRED",
+   "note": ".netrc machine/login/password triplet"
+  },
+  {
+   "id": "PPK-HEADER",
+   "note": "PuTTY PPK private key container (not a BEGIN PRIVATE KEY block)"
+  },
+  {
+   "id": "VENDOR-GAP",
+   "note": "vendor token shapes with no gate rule: discord, GCP oauth, digitalocean, shopify, databricks, huggingface, figma, atlassian, bitbucket, linear, notion, vault, grafana, postman, google access, gitlab non-PAT"
+  }
+ ],
+ "runtime_sec": 873.8,
+ "store_cap": 400
+}
+stored rows: 802 -> C:\Users\foste\Documents\projects\local_sovereign_agent\watch\inbox\burn_reset_20260927\flash50\_s206_findings.json

@@ -1,0 +1,169 @@
+t11b check log: implement tools/freshness_gate.py (freshness-receipts gate, MICKEY17 V2 owed)
+Date: 2026-09-25. Laws: never fabricate; no em-dashes in filed text; run the check, save raw output, cite the file; negatives first-class.
+
+FILES LANDED:
+  tools/freshness_gate.py      (new, stands alone: tools/quote_gate.py from t11a is NOT on disk, verified by ls)
+  tests/test_freshness_gate.py (new, 19 cases)
+
+SPEC READ (source of the owed item):
+  $ sed -n '65,68p' corpus/steal/MASTER_MICKEY17_V2_20260924.md
+  row 8 [lane: agentcheck, owed]: "Retries fix timeouts, not staleness; staleness needs
+  freshness evidence." Action: extend freshness work so claims past a pre-stated bar
+  fail the receipts gate. This tool gates one receipt markdown file on a dated
+  source-fetched stamp: exit 0 when present, parseable, and within --days (default 14);
+  exit 2 otherwise (missing stamp, unparseable, stale, future-dated, missing file).
+
+COMMANDS RUN (raw outputs below, nothing paraphrased):
+
+1) quote_gate.py from t11a exists? NEGATIVE, so the tool stands alone:
+   $ ls tools/ | grep -i "gate\|fresh\|quote"
+   freshness_check.py
+   quote_audit_wide.py
+   quote_audit_wide_progress.log
+   roblox_npc_gateway.py
+   workflow_gate.py
+   x_fresh_start
+   (no quote_gate.py; style borrowed from tools/freshness_check.py and tools/workflow_gate.py instead)
+
+2) Full pytest run, exit 0:
+   $ .venv/Scripts/python.exe -m pytest tests/test_freshness_gate.py -v ; echo "PYTEST_EXIT=$?"
+   PYTEST_EXIT=0
+   <full raw output in section A below>
+
+3) Built-in self-test (house style from freshness_check.py):
+   $ .venv/Scripts/python.exe tools/freshness_gate.py --self-test ; echo "SELFTEST_EXIT=$?"
+   FRESHNESS-GATE self-test PASS: fresh stamp passes -> ok=True (stamp 2026-09-20 is 5d old; bar is 14d)
+   FRESHNESS-GATE self-test PASS: stale stamp fails -> ok=False (stamp 2026-09-01 is 24d old; bar is 14d)
+   FRESHNESS-GATE self-test PASS: missing stamp fails -> ok=False (no freshness stamp found (want a line like 'source-fetched: YYYY-MM-DD'))
+   SELFTEST_EXIT=0
+
+4) Ratchet gate, exit 0 (raw output; the ratchet's own success line contains a real
+   em-dash, rendered here as [em-dash] so this filed file stays clean; nothing else
+   in the tool's output was altered):
+   $ .venv/Scripts/python.exe tools/violation_ratchet.py check --changed ; echo "RATCHET_EXIT=$?"
+   RATCHET check: scope=9 changed files; hits=4; registered=4; NEW=0; expired-exceptions=0
+   RATCHET: PASS [em-dash] no unregistered debt.
+   RATCHET_EXIT=0
+   (context: a full-scope run WITHOUT --changed earlier today showed 9 pre-existing NEW hits
+   in files this gopher did not touch: mag/intervention_gate.py, mag/lane_supervisor.py,
+   mag/skill_lifecycle.py, tools/mcp_pin.py, tools/mickey17_v2_fold.py,
+   tools/quote_audit_wide.py, tools/wandr_selfeval.py. Not mine, not fixed, not hidden.)
+
+5) Live CLI contract demo (exit codes, five ways):
+   $ printf '# receipt\nsource-fetched: 2026-09-20\n' > $T/fresh.md
+   $ printf 'source-fetched: 2026-09-01\n' > $T/stale.md
+   $ printf 'no stamp\n' > $T/none.md
+   $ .venv/Scripts/python.exe tools/freshness_gate.py $T/fresh.md
+   FRESHNESS-GATE: ok .../fresh.md (stamp 2026-09-20 is 6d old; bar is 14d)
+   fresh_exit=0
+   $ .venv/Scripts/python.exe tools/freshness_gate.py $T/stale.md
+   FRESHNESS-GATE: FAIL .../stale.md (stamp 2026-09-01 is 25d old; bar is 14d)
+   stale_exit=2
+   $ .venv/Scripts/python.exe tools/freshness_gate.py $T/none.md
+   FRESHNESS-GATE: FAIL .../none.md (no freshness stamp found (want a line like 'source-fetched: YYYY-MM-DD'))
+   none_exit=2
+   $ .venv/Scripts/python.exe tools/freshness_gate.py $T/stale.md --days 30
+   FRESHNESS-GATE: ok .../stale.md (stamp 2026-09-01 is 25d old; bar is 30d)
+   days30_exit=0
+   $ .venv/Scripts/python.exe tools/freshness_gate.py $T/absent.md
+   FRESHNESS-GATE: FAIL .../absent.md (receipt not found: ...)
+   absent_exit=2
+
+6) Em-dash / en-dash scan over all four filed files (negative first-class; first scan
+   caught a real em-dash in my own tool docstring line 2, fixed, re-scanned):
+   $ .venv/Scripts/python.exe -c "scan tools/freshness_gate.py tests/test_freshness_gate.py
+     watch/inbox/gala_20260925/afterparty/lanes/t11b.check.txt
+     watch/inbox/gala_20260925/afterparty/lanes/t11b.json for U+2014 / U+2013"
+   <final scan output in section C below>
+
+NEGATIVES (first-class, verified not assumed):
+  - tools/quote_gate.py does not exist (t11a not landed yet); tool stands alone, no import from it.
+  - The em-dash law bit the author: initial tool docstring header carried U+2014; caught by
+    the gate's own test (test_module_has_no_em_dash_in_filed_text failing at the tool-file
+    assertion) and by a manual scan; fixed before banking. Raw pytest output in section A
+    below shows the intermediate 18/19 run where that test failed.
+  - Full-scope ratchet (no --changed) currently FAILs on 9 pre-existing NEW hits in files
+    this gopher never touched (listed in 4). Recorded, not repaired, not papered over.
+  - No stamp means exit 2 even if the file contains other dates: proven by
+    test_unrelated_dates_do_not_count_as_stamps (bare dates like "2026-09-25" in prose do
+    not satisfy the gate; a labeled stamp line is required).
+  - Future-dated stamps fail beyond 1 day of clock-skew tolerance (fabrication smell):
+    test_future_dated_stamp_fails.
+  - Unparseable calendar dates (e.g. 2026-13-40) are silently not stamps, so the receipt
+    then fails as stampless: test_malformed_calendar_date_is_not_a_stamp.
+  - This run did NOT execute the estate-wide 1341-test suite (12 min); scope was this
+    gopher's two new files plus the ratchet changed-scope gate, per the item.
+
+SECTION A: raw pytest -v output (step 2 rerun after the dash fix; the 19/19 run)
+--------------------------------------------------------------------------
+$ .venv/Scripts/python.exe -m pytest tests/test_freshness_gate.py -v
+============================= test session starts =============================
+collected 19 items
+
+tests/test_freshness_gate.py::test_fresh_receipt_passes PASSED           [  5%]
+tests/test_freshness_gate.py::test_stale_receipt_fails PASSED            [ 10%]
+tests/test_freshness_gate.py::test_missing_stamp_fails PASSED            [ 15%]
+tests/test_freshness_gate.py::test_boundary_age_exactly_at_bar_passes PASSED [ 21%]
+tests/test_freshness_gate.py::test_boundary_age_one_past_bar_fails PASSED [ 26%]
+tests/test_freshness_gate.py::test_days_argument_is_honored PASSED       [ 31%]
+tests/test_freshness_gate.py::test_most_recent_stamp_is_the_evidence PASSED [ 36%]
+tests/test_freshness_gate.py::test_future_dated_stamp_fails PASSED       [ 42%]
+tests/test_freshness_gate.py::test_malformed_calendar_date_is_not_a_stamp PASSED [ 47%]
+tests/test_freshness_gate.py::test_label_variants_are_accepted PASSED    [ 52%]
+tests/test_freshness_gate.py::test_unrelated_dates_do_not_count_as_stamps PASSED [ 57%]
+tests/test_freshness_gate.py::test_gate_file_missing_receipt_fails_closed PASSED [ 63%]
+tests/test_freshness_gate.py::test_gate_file_reads_utf8_receipt PASSED   [ 68%]
+tests/test_freshness_gate.py::test_cli_exit_codes[source-fetched: 2026-09-24\n-0] PASSED [ 73%]
+tests/test_freshness_gate.py::test_cli_exit_codes[source-fetched: 2026-09-01\n-2] PASSED [ 78%]
+tests/test_freshness_gate.py::test_cli_exit_codes[no stamp here\n-2] PASSED [ 84%]
+tests/test_freshness_gate.py::test_self_test_exits_zero PASSED           [ 89%]
+tests/test_freshness_gate.py::test_main_returns_int_directly PASSED      [ 94%]
+tests/test_freshness_gate.py::test_module_has_no_em_dash_in_filed_text PASSED [100%]
+
+============================== 19 passed in 0.83s ==============================
+
+Intermediate run (before the em-dash fix in the tool docstring), kept as evidence:
+1 failed, 18 passed in 1.08s
+FAILED tests/test_freshness_gate.py::test_module_has_no_em_dash_in_filed_text
+  (assertion on the tool file; offender was freshness_gate.py line 2 header, since fixed)
+
+SECTION C: em-dash scans across all four filed files
+--------------------------------------------------------------------------
+INTERIM SCAN (before the ratchet-quote fix in step 4):
+  tools/freshness_gate.py: CLEAN
+  tests/test_freshness_gate.py: CLEAN
+  watch/inbox/gala_20260925/afterparty/lanes/t11b.check.txt: [(44, 'RATCHET: PASS [em-dash-was-here] no unregistered debt.')]
+  watch/inbox/gala_20260925/afterparty/lanes/t11b.json: CLEAN
+  TOTAL_OFFENDERS=1
+  (offender was the verbatim ratchet success line quoted in step 4; fixed by the
+  marked [em-dash] substitution above, not by deleting the evidence)
+
+FINAL SCAN (after the fix):
+$ .venv/Scripts/python.exe -c "scan tools/freshness_gate.py tests/test_freshness_gate.py
+  watch/inbox/gala_20260925/afterparty/lanes/t11b.check.txt
+  watch/inbox/gala_20260925/afterparty/lanes/t11b.json for U+2014 / U+2013"
+<final output appended by the last command below>
+APPENDED RUN 1 (ran while step 4's quote still carried the real em-dash; the scanner
+echoed that dirty line, shown here with [em-dash] in place of the character):
+tools/freshness_gate.py: CLEAN
+tests/test_freshness_gate.py: CLEAN
+watch/inbox/gala_20260925/afterparty/lanes/t11b.check.txt: [(44, 'RATCHET: PASS [em-dash] no unregistered debt.')]
+watch/inbox/gala_20260925/afterparty/lanes/t11b.json: CLEAN
+TOTAL_OFFENDERS=1
+
+APPENDED RUN 2 (after the step 4 fix; flagged the em-dash that APPENDED RUN 1 itself
+had just written into this log at line 148, again rendered with [em-dash]):
+tools/freshness_gate.py: CLEAN
+tests/test_freshness_gate.py: CLEAN
+watch/inbox/gala_20260925/afterparty/lanes/t11b.check.txt: OFFENDERS at lines [148]
+watch/inbox/gala_20260925/afterparty/lanes/t11b.json: CLEAN
+TOTAL_OFFENDERS=1
+(the law chasing its own tail through the evidence log: each scan output that quoted
+a dirty line re-filed the dirt; both historical offender lines above are marked, and
+the run below is the closing scan)
+CLOSING SCAN:
+tools/freshness_gate.py: CLEAN
+tests/test_freshness_gate.py: CLEAN
+watch/inbox/gala_20260925/afterparty/lanes/t11b.check.txt: CLEAN
+watch/inbox/gala_20260925/afterparty/lanes/t11b.json: CLEAN
+TOTAL_OFFENDERS=0

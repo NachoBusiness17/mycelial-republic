@@ -1,0 +1,282 @@
+diff --git a/mag/verkle_knot.py b/mag/verkle_knot.py
+index 41c03cdf5..48e21072c 100644
+--- a/mag/verkle_knot.py
++++ b/mag/verkle_knot.py
+@@ -22,6 +22,8 @@ import hashlib
+ import json
+ import os
+ import re
++import socket
++import sys
+ import time
+ from datetime import datetime, timezone
+ from pathlib import Path
+@@ -146,6 +148,89 @@ _LOCK_STALE_SECONDS = 900.0
+ _LOCK_POLL_SECONDS = 0.05
+ 
+ 
++# NAMESPACE-AWARE OWNER CHECK (reboot patch 05, 2026-10-03). memory/ is
++# bind-mounted into mag-sovereign, so the host (Windows) and the cage (Linux
++# pid namespace) contend for this same lock file. A PID written by one side is
++# meaningless on the other: the old probe could call a live cage holder dead
++# (no host pid with that number) and break its lock mid-rewrite, or keep a
++# dead holder's lock. On Windows os.kill(pid, 0) is not a probe at all:
++# signal 0 == CTRL_C_EVENT, routed to GenerateConsoleCtrlEvent, which returned
++# success even for an already-dead pid (measured 2026-10-04, isolated console),
++# so a same-host dead holder was never detected. So the marker now records
++# "<pid> <iso-ts> <host>|<pid-namespace>", and the PID is probed only when the
++# marker was written in OUR namespace, with a probe that never signals. A
++# foreign or legacy (untagged) marker is broken only on mtime staleness.
++def _lock_identity() -> str:
++    host = (socket.gethostname() or "unknown-host").replace(" ", "_")
++    if sys.platform == "win32":
++        ns = "win"
++    else:
++        try:
++            ns = os.readlink("/proc/self/ns/pid")
++        except OSError:
++            ns = "posix"
++    return f"{host}|{ns}".replace(" ", "_")
++
++
++def _local_pid_alive(pid: int) -> bool | None:
++    """True alive, False gone, None unknown. Never signals the process."""
++    try:
++        import psutil  # type: ignore
++
++        return bool(psutil.pid_exists(pid))
++    except ImportError:
++        pass
++    except Exception:
++        return None
++    if sys.platform == "win32":
++        try:
++            import ctypes
++
++            k32 = ctypes.windll.kernel32
++            handle = k32.OpenProcess(0x1000, False, int(pid))  # PROCESS_QUERY_LIMITED_INFORMATION
++            if not handle:
++                err = k32.GetLastError()
++                return False if err == 87 else (True if err == 5 else None)
++            try:
++                code = ctypes.c_ulong()
++                if not k32.GetExitCodeProcess(handle, ctypes.byref(code)):
++                    return None
++                return code.value == 259  # STILL_ACTIVE
++            finally:
++                k32.CloseHandle(handle)
++        except Exception:
++            return None
++    try:
++        os.kill(pid, 0)
++        return True
++    except ProcessLookupError:
++        return False
++    except PermissionError:
++        return True
++    except OSError:
++        return None
++
++
++def _parse_lock(text: str) -> tuple[int, str | None]:
++    parts = text.split()
++    try:
++        owner = int(parts[0])
++    except (ValueError, IndexError):
++        owner = 0
++    ident = parts[2] if len(parts) >= 3 else None
++    return owner, ident
++
++
++def _lock_owner_dead(text: str) -> bool:
++    """True only when the marker is ours-namespace AND its pid is provably gone."""
++    owner, ident = _parse_lock(text)
++    if not owner or owner == os.getpid():
++        return False
++    if ident != _lock_identity():
++        return False  # foreign or legacy marker: pid means nothing here; mtime decides
++    return _local_pid_alive(owner) is False
++
++
+ @contextlib.contextmanager
+ def verkle_lock(timeout: float = 60.0):
+     """Cross-process single-writer lock for the verkle chain/knots/pointers."""
+@@ -157,32 +242,34 @@ def verkle_lock(timeout: float = 60.0):
+             break
+         except FileExistsError:
+             try:
++                marker, marker_read = "", False
+                 stale = time.time() - LOCK.stat().st_mtime > _LOCK_STALE_SECONDS
+                 # A crashed writer can leave a fresh-looking marker behind (for
+                 # example after a test/process is terminated).  Do not wait the
+                 # full 15-minute safety window when the recorded owner is gone.
+                 if not stale:
+                     try:
+-                        owner = int(LOCK.read_text(encoding="utf-8", errors="replace").split()[0])
+-                    except (OSError, ValueError, IndexError):
+-                        owner = 0
+-                    if owner and owner != os.getpid():
+-                        try:
+-                            os.kill(owner, 0)
+-                        except ProcessLookupError:
+-                            stale = True
+-                        except PermissionError:
+-                            # Cannot prove the owner is dead; preserve the lock.
+-                            stale = False
+-                        except SystemError:
+-                            # CPython on some Windows builds surfaces a missing
+-                            # PID as SystemError (WinError 87) instead of OSError.
+-                            stale = True
+-                        except OSError:
+-                            # Windows may report a generic missing-process error.
+-                            stale = True
++                        marker = LOCK.read_text(encoding="utf-8", errors="replace")
++                        marker_read = True
++                    except OSError:
++                        marker = ""
++                    # Reboot patch 05: probe the pid only for a same-namespace marker.
++                    stale = _lock_owner_dead(marker)
+                 if stale:
+-                    LOCK.unlink()  # crashed holder — break the stale lock
++                    # Ractor 2026-10-04: re-read before breaking. Two waiters can
++                    # both judge the same dead marker; once one has broken it and
++                    # taken the lock, the other must not unlink the NEW holder's
++                    # lock. Patch 05 makes dead-holder breaks real on Windows, so
++                    # this window is no longer 900 s rare.
++                    try:
++                        if marker_read:
++                            still = LOCK.read_text(encoding="utf-8", errors="replace") == marker
++                        else:
++                            still = time.time() - LOCK.stat().st_mtime > _LOCK_STALE_SECONDS
++                    except OSError:
++                        still = False
++                    if still:
++                        LOCK.unlink()  # crashed holder: break the stale lock
+             except OSError:
+                 pass
+             if time.time() > deadline:
+@@ -190,7 +277,7 @@ def verkle_lock(timeout: float = 60.0):
+                                    f"{LOCK.read_text(encoding='utf-8', errors='replace')[:16] if LOCK.is_file() else '?'})")
+             time.sleep(_LOCK_POLL_SECONDS)
+     try:
+-        os.write(fd, f"{os.getpid()} {datetime.now(timezone.utc).isoformat()}".encode("utf-8"))
++        os.write(fd, f"{os.getpid()} {datetime.now(timezone.utc).isoformat()} {_lock_identity()}".encode("utf-8"))
+         yield
+     finally:
+         try:
+diff --git a/tests/test_verkle_lock.py b/tests/test_verkle_lock.py
+index a326a788f..8fe5c4b23 100644
+--- a/tests/test_verkle_lock.py
++++ b/tests/test_verkle_lock.py
+@@ -9,7 +9,7 @@ def test_dead_owner_lock_is_reclaimed(tmp_path, monkeypatch) -> None:
+ 
+     lock = tmp_path / ".verkle.lock"
+     lock.write_text(
+-        f"99999999 {datetime.now(timezone.utc).isoformat()}", encoding="utf-8")
++        f"99999999 {datetime.now(timezone.utc).isoformat()} {vk._lock_identity()}", encoding="utf-8")
+     monkeypatch.setattr(vk, "LOCK", lock)
+     monkeypatch.setattr(vk, "_LOCK_POLL_SECONDS", 0.01)
+     with vk.verkle_lock(timeout=0.25):
+diff --git a/tests/test_verkle_lock_namespace.py b/tests/test_verkle_lock_namespace.py
+new file mode 100644
+index 000000000..5e7d5d78b
+--- /dev/null
++++ b/tests/test_verkle_lock_namespace.py
+@@ -0,0 +1,97 @@
++"""Reboot patch 05: a lock written in another pid namespace is never judged by a local pid probe."""
++from __future__ import annotations
++
++import os
++import sys
++import time
++from datetime import datetime, timezone
++
++import pytest
++
++from mag import verkle_knot as vk
++
++
++@pytest.fixture()
++def lock(tmp_path, monkeypatch):
++    p = tmp_path / ".verkle.lock"
++    monkeypatch.setattr(vk, "LOCK", p)
++    monkeypatch.setattr(vk, "_LOCK_POLL_SECONDS", 0.01)
++    return p
++
++
++def _ts() -> str:
++    return datetime.now(timezone.utc).isoformat()
++
++
++def test_marker_carries_namespace_identity(lock):
++    seen = {}
++    with vk.verkle_lock(timeout=1):
++        seen["text"] = lock.read_text(encoding="utf-8")
++    owner, ident = vk._parse_lock(seen["text"])
++    assert owner == os.getpid()
++    assert ident == vk._lock_identity() and "|" in ident
++
++
++def test_foreign_namespace_lock_is_not_broken_by_pid_probe(lock, monkeypatch):
++    # A cage writer (pid 57 in its own namespace) holds the lock; pid 57 means
++    # nothing on this side. The old probe would declare it dead and break it.
++    lock.write_text(f"57 {_ts()} 0a1b2c3d4e5f|pid:[4026532999]", encoding="utf-8")
++    monkeypatch.setattr(vk, "_local_pid_alive", lambda pid: pytest.fail("foreign pid must not be probed"))
++    with pytest.raises(TimeoutError):
++        with vk.verkle_lock(timeout=0.2):
++            pass
++    assert lock.exists()
++
++
++def test_legacy_untagged_lock_is_treated_as_foreign(lock, monkeypatch):
++    lock.write_text(f"99999999 {_ts()}", encoding="utf-8")
++    monkeypatch.setattr(vk, "_local_pid_alive", lambda pid: pytest.fail("legacy pid must not be probed"))
++    with pytest.raises(TimeoutError):
++        with vk.verkle_lock(timeout=0.2):
++            pass
++
++
++def test_foreign_lock_broken_on_mtime_staleness(lock):
++    lock.write_text(f"57 {_ts()} otherhost|pid:[1]", encoding="utf-8")
++    old = time.time() - vk._LOCK_STALE_SECONDS - 5
++    os.utime(lock, (old, old))
++    with vk.verkle_lock(timeout=1):
++        assert vk._parse_lock(lock.read_text(encoding="utf-8"))[0] == os.getpid()
++    assert not lock.exists()
++
++
++def test_same_namespace_live_owner_is_kept(lock, monkeypatch):
++    lock.write_text(f"4242 {_ts()} {vk._lock_identity()}", encoding="utf-8")
++    monkeypatch.setattr(vk, "_local_pid_alive", lambda pid: True)
++    with pytest.raises(TimeoutError):
++        with vk.verkle_lock(timeout=0.2):
++            pass
++
++
++def test_probe_never_signals_the_process(monkeypatch):
++    # os.kill(pid, 0) on Windows is CTRL_C_EVENT and reports dead pids as alive.
++    monkeypatch.setattr(os, "kill", lambda *a: pytest.fail("os.kill used as a liveness probe"))
++    if sys.platform != "win32":
++        pytest.skip("Windows-specific guard (POSIX os.kill(pid, 0) is a real probe)")
++    assert vk._local_pid_alive(os.getpid()) is True
++    assert vk._local_pid_alive(99999999) is False
++
++
++def test_breaker_does_not_unlink_a_lock_retaken_after_judgement(lock, monkeypatch):
++    """Ractor 2026-10-04: two waiters judge the same dead marker; the first breaks
++    it and takes the lock. The second must re-read and leave the NEW lock alone."""
++    dead = f"99999999 {_ts()} {vk._lock_identity()}"
++    lock.write_text(dead, encoding="utf-8")
++    fresh = f"4242 {_ts()} {vk._lock_identity()}"
++
++    def judge_then_lose_race(marker):
++        if marker == dead:
++            lock.write_text(fresh, encoding="utf-8")  # the other waiter won meanwhile
++            return True
++        return False  # the new holder is alive
++
++    monkeypatch.setattr(vk, "_lock_owner_dead", judge_then_lose_race)
++    with pytest.raises(TimeoutError):
++        with vk.verkle_lock(timeout=0.2):
++            pass
++    assert lock.read_text(encoding="utf-8") == fresh

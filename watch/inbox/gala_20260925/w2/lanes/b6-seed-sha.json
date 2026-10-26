@@ -1,0 +1,36 @@
+{
+  "lane": "b6-seed-sha",
+  "division": "B",
+  "ok": true,
+  "note": "Linux sha256 seal verify closed: both seed zips hash identically on Windows and WSL2 Linux and both inner MANIFEST.sha256 seals verify 52/52 and 59/59 under Linux, and the version mismatch dissolves because seed-3.3.0.zip exists in watch/inbox with its recorded hash.",
+  "rows": [],
+  "checks": [
+    {
+      "command": "sha256sum watch/inbox/seed-3.2.0.zip watch/inbox/seed-3.3.0.zip",
+      "exit": 0,
+      "evidence": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/w2/lanes/b6-seed-sha.check.txt"
+    },
+    {
+      "command": "wsl -e sh -c 'sha256sum /mnt/host/c/.../watch/inbox/seed-3.2.0.zip /mnt/host/c/.../watch/inbox/seed-3.3.0.zip'",
+      "exit": 0,
+      "evidence": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/w2/lanes/b6-seed-sha.check.txt"
+    },
+    {
+      "command": "wsl -e sh -c 'unzip seed-3.2.0.zip to mktemp && sha256sum -c MANIFEST.sha256'",
+      "exit": 0,
+      "evidence": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/w2/lanes/b6-seed-sha.check.txt"
+    },
+    {
+      "command": "wsl -e sh -c 'unzip seed-3.3.0.zip to mktemp && sha256sum -c MANIFEST.sha256 && cat SEED_VERSION'",
+      "exit": 0,
+      "evidence": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/w2/lanes/b6-seed-sha.check.txt"
+    },
+    {
+      "command": "find watch/inbox seed corpus -name '*.zip'",
+      "exit": 0,
+      "evidence": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/w2/lanes/b6-seed-sha.check.txt"
+    }
+  ],
+  "decision_changed": "no",
+  "artifact": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/w2/lanes/b6-seed-sha.check.txt"
+}

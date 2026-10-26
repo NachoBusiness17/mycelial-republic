@@ -1,0 +1,20 @@
+{
+  "gopher": "t61",
+  "item": "t52's next_steal: mag/afk_loop.py:56 _operator_afk has the same species t52 fixed in afk_cadence (pause swallow + fail-open return), call sites afk_loop.py:141, 259, 265. Confirm by bytes, convert to fail CLOSED matching t52's convention (operator presumed present on error, named error field surfaced), one test, ratchet.",
+  "ok": true,
+  "note": "Species confirmed by bytes before edit. Old body: pause_reason errors were swallowed ('except Exception: pass', t43 species: work through a pause) and operator_status errors returned True ('except Exception: return True', t52 species: read a broken status as AFK and keep spending). Fix mirrors afk_cadence.py verbatim in convention: module-level AFK_GATE_ERROR (None on clean read), errored pause gate honors the pause, errored status read presumes the operator ACTIVE, both deny (return False) and name the cause (110 chars) in AFK_GATE_ERROR. Call sites 259/265 (the live occupy def) surface it as afk_gate_error on both the early skip return and the right_size output; site 141 is the dead shadowed first occupy def, it inherits the fail-closed deny from the fixed gate but does not surface the field (never executes; second def wins). Consumers memlang.py:330 and skill_pipeline.py:165 now correctly receive a deny on gate error. No em-dashes in authored text (diff grep = 0); filed tool output kept byte-verbatim including the ratchet's own em-dash.",
+  "checks": [
+    {"check": ".venv/Scripts/python.exe -m pytest tests/test_loop_death_guards.py -v", "exit": 0, "result": "11 passed (6 death-guard params + t43 pause gate + 3 t52 gate tests + new test_afk_loop_operator_afk_fails_closed covering both error paths and the clean-read clears)", "evidence": "watch/inbox/gala_20260925/afterparty/lanes/t61.check.txt"},
+    {"check": ".venv/Scripts/python.exe tools/violation_ratchet.py check --changed", "exit": 0, "result": "scope=12 changed files; hits=8; registered=8; NEW=0; PASS, no unregistered debt", "evidence": "watch/inbox/gala_20260925/afterparty/lanes/t61.check.txt"}
+  ],
+  "files_touched": [
+    "mag/afk_loop.py",
+    "tests/test_loop_death_guards.py"
+  ],
+  "negatives": [
+    "afk_loop.py:141 is a dead shadowed first occupy def (the second def at the old line 257 wins); its skip return does not surface afk_gate_error, it only inherits the deny. Deletion or surfacing left out of scope (3-line cap discipline).",
+    "Two more byte-confirmed instances of the t52 species remain open: mag/afk_orchestrator.py:40 _operator_offline and mag/capability_steal.py:51 _operator_offline, each with the identical 'except Exception: return True' on operator_status (call sites afk_orchestrator.py:51/64/136 and capability_steal.py:62/125). Not fixed here (one item per gopher)."
+  ],
+  "next_steal": "Convert mag/afk_orchestrator.py:40 _operator_offline (and its twin mag/capability_steal.py:51) to fail CLOSED per the t52/t61 convention: errored operator_status presumes the operator ACTIVE (return False), cause named in a module error field surfaced by the callers at afk_orchestrator.py:51/64/136 and capability_steal.py:62/125.",
+  "ts": "2026-09-25"
+}

@@ -1,0 +1,7 @@
+# swarm1-glm-flash-mag__flight_recorder (glm-5.3-flash @ zai, turn 1, channel: content)
+
+DEFECT 1: Missing/empty API keys are not checked before firing: load_env crashes on absent .env and "Bearer " + "" is sent for missing keys, poisoning the telemetry rows with guaranteed auth failures | EVIDENCE: mag/flight_recorder.py:88-95,331-334 | FIX: In _dogfood, after load_env, raise a loud pre-flight error if the needed key is absent/empty before any record_call runs
+DEFECT 2: _credits_est treats an explicitly supplied cached_per_ktok of 0 as missing ("or in_rate"), billing all cached tokens at the full input rate and overstating credits_est | EVIDENCE: mag/flight_recorder.py:174-176 | FIX: Use `v = rates.get("cached_per_ktok"); cached_rate = in_rate if v is None else float(v)`
+DEFECT 3: error_code is typed inconsistently across paths: vendor ints pass through raw on dict results while exception and legacy paths always write strings, so per-code grouping in consumers splits ("1302" vs 1302) | EVIDENCE: mag/flight_recorder.py:126-129,206-207 | FIX: Coerce to str() at construction in _interpret and record_call before _emit
+DEAD-CODE: Legacy (int, ...) tuple branch of _interpret is unreachable in this file since api_call only returns dicts | EVIDENCE: mag/flight_recorder.py:130-133
+ONE-SITTING FIX: Add pre-flight key validation to _dogfood (fail loud on missing ZAI_API_KEY_Pro/ZAI_API_KEY before section A) so the dogfood run cannot emit fabricated 401 error rows into the doctrine re-fit surface | EVIDENCE: mag/flight_recorder.py:330-337

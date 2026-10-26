@@ -1,0 +1,59 @@
+{
+  "lane": "a02-dungeon-campaign-r9",
+  "division": "B",
+  "ok": true,
+  "note": "R9's fill was already fully banked before the GAP_REGISTER was minted: all three legs (per-turn heal + audit-burn, case-fold lookup, a7d7d313d erratum) landed 2026-10-04 in GO WAVE commit d349ce7d2; this lane made zero edits and closed the row by byte-verification plus its pinned tests (16/16 green).",
+  "rows": [],
+  "decision_changed": "GAP_REGISTER R9 disposition: FILLED-BY-d349ce7d2, verified-not-reimplemented. The 2026-10-10 register was minted from pre-fix fold claims without deduping against fills that had already landed (R8's parser fix is in the same commit; R10's de-glob leg was the only genuinely open a02 row and a sibling lane landed it in this same working tree mid-flight).",
+  "checks": [
+    {
+      "command": ".venv/Scripts/python.exe -m pytest tests/test_dungeon_parser.py -q",
+      "exit": 0,
+      "evidence": "watch/inbox/gala_20260925/rung/lanes/a02-dungeon-campaign-r9.check.txt CHECK 1: '16 passed in 1.45s', exit=0, moment 2026-10-10T13:31:38Z. Includes test_regrowth_heals_per_unaudited_phantom (heal 5 per unaudited PHANTOM, audited-PHANTOM excluded, 0-phantom no-op) and test_casefold_audit_burns_phantom ('[AUDIT VAULT DEED B]' burns to audited-PHANTOM, regrowth stops counting it)."
+    },
+    {
+      "command": "grep -n \"_find_scroll\\|casefold\\|_phantom_count\\|_wyrm_regrowth\\|REGROWTH\\|audited-\\\" + packs\" tools/dungeon.py && git log --oneline -1 -S \"_wyrm_regrowth\" -- tools/dungeon.py && git log --oneline -1 -S \"_find_scroll\" -- tools/dungeon.py",
+      "exit": 0,
+      "evidence": "check.txt CHECK 2: at the 13:31:38Z working tree, _find_scroll casefold both sides (:531-540), _phantom_count (:545), _wyrm_regrowth (:554-566) called in the S4 enemy branch (:674), audit-burn at :624-627; both git log -S probes name d349ce7d2 (GO WAVE 20261004) as the introducing commit."
+    },
+    {
+      "command": "grep -n \"a7d7d313d\\|regrowth 5/scroll\\|vault deed b\\|turn 8 on 30\" watch/inbox/playground/dnd0_20261003T202213Z_ERRATUM.md",
+      "exit": 0,
+      "evidence": "check.txt CHECK 3: erratum receipt at watch/inbox/playground/ names run revision a7d7d313d (line 5) and cause item 3 (line 13) is the owed two-line erratum verbatim: commit claims \"regrowth 5/scroll\", enemy branch had no per-turn heal, case-dead dungeon.py:515 lookup, Wyrm died turn 8 on 30 HP; falsifier at line 30. Filed 2026-10-04 by the GO WAVE lane."
+    },
+    {
+      "command": "git show a7d7d313d:tools/dungeon.py | grep -n \"elif okr and obj in carried\" ; git show a7d7d313d:tools/dungeon.py | grep -c \"_wyrm_regrowth\"",
+      "exit": 0,
+      "evidence": "check.txt CHECK 4: the a7d7d313d-era bytes carry the defect exactly as claimed - case-dead membership at :504 of that revision ('elif okr and obj in carried:' with lowercased obj vs mixed-case keys), _wyrm_regrowth definition count 0 (never enforced there)."
+    },
+    {
+      "command": ".venv/Scripts/python.exe -c \"import json; rows=[json.loads(l) for l in open('watch/inbox/playground/dnd0_20261003T202213Z/transcript.jsonl',encoding='utf-8')]; r=rows[44]; print(r['scene'],r['turn'],r['actor'],r['verdict']); print(r['dm_response'])\"",
+      "exit": 0,
+      "evidence": "check.txt CHECK 5: transcript row 45 (1-indexed; index 44) = S4 turn 12, actor wyrm, verdict 'WYRM MISS (d20=2)', dm_response narrates the heal the state machine never applied: 'the wound-scars along the wyrm's ghostly hide knit closed, for every lie left unchecked is a heartbeat it has not yet lost'. Claim evidence byte-verified."
+    }
+  ],
+  "ratchet": "NOT RUN - the conditional step did not trigger: this lane touched no code under mag/ or tools/ (nothing was missing; all three fill legs pre-banked). The working-tree modifications to tools/dungeon.py and tests/test_dungeon_parser.py at this moment belong to the sibling R10 de-glob lane (diff comments name 'GAP_REGISTER 2026-10-10 R10'), not to this seat.",
+  "fill_legs": [
+    {
+      "leg": "per-turn heal keyed to the unaudited PHANTOM count plus the audit-burn",
+      "status": "banked before this lane (commit d349ce7d2, 2026-10-04)",
+      "bytes": "tools/dungeon.py:554-566 _wyrm_regrowth (heal 5 * _phantom_count, no-op at 0); called at :674 in the S4 enemy beat; audit-burn at :624-627 marks packs[owner][key] = 'audited-' + prior, and _phantom_count (:545) counts only exact 'PHANTOM' so a burned phantom stops feeding the heal and the S4 open HP (:656)"
+    },
+    {
+      "leg": "case-fold the carried lookup (was dungeon.py:515 at the defect revision)",
+      "status": "banked before this lane (commit d349ce7d2, 2026-10-04)",
+      "bytes": "tools/dungeon.py:531-540 _find_scroll: obj.casefold() vs name.casefold() across per-PC packs; called at :624 in the AUDIT branch. The dead bytes it replaced: 'elif okr and obj in carried:' at :504 of revision a7d7d313d"
+    },
+    {
+      "leg": "two-line erratum on commit a7d7d313d in the run receipt at watch/inbox/playground/",
+      "status": "banked before this lane (filed 2026-10-04, GO WAVE)",
+      "bytes": "watch/inbox/playground/dnd0_20261003T202213Z_ERRATUM.md lines 5, 13, 30"
+    }
+  ],
+  "claim_audit": {
+    "claim_source": "watch/inbox/hermes_burn/DND_module.md:89 (Phantom Regrowth spec) via GAP_REGISTER 2026-10-10 row R9 (watch/inbox/gap_analysis_20261010/GAP_REGISTER.md:46-51)",
+    "verdict": "claim byte-true as stated against revision a7d7d313d and run dnd0_20261003T202213Z; stale only as a fill instruction - the prescribed work had already landed in d349ce7d2 six days before the register was minted",
+    "row45_note": "the claim's 'transcript row 45' is 1-indexed (index 44) - the only live-narrated S4 Wyrm beat of the run"
+  },
+  "moving_tree_note": "tools/dungeon.py and tests/test_dungeon_parser.py were clean at this lane's first git probe (13:2xZ) and modified by the sibling R10 lane before the 13:31:38Z check run; all line cites in this JSON are from the post-shift 13:31:38Z moment (diff header bbd8ed340..70154ca51), and the 16/16 test pass ran against that same post-shift tree. The sibling diff touches only _paid/_dm (S1 + campaign DM call sites), none of R9's legs."
+}

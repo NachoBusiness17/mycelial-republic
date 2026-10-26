@@ -1,0 +1,7 @@
+# swarm1-glm-flash-tools__lens (glm-5.3-flash @ zai, turn 1, channel: content)
+
+DEFECT 1: DNS rebinding: _validated_api_url pins api.deepseek.com to a safe IP at lines 51-60, but urlopen at line 157 performs a fresh resolution, so the validated IP is never used for the actual connection | EVIDENCE: tools/lens.py:51-60,157 | FIX: resolve once, connect to the validated IP with Host/SNI set to api.deepseek.com (custom HTTPSConnection or HOSTALIASES-free pinned socket).
+DEFECT 2: summon swallows non-429 retryable failures by retrying every exception once, including auth and bad-request errors that cannot succeed, doubling latency and masking root cause | EVIDENCE: tools/lens.py:165-175 | FIX: retry only urllib.error.URLError/timeouts; return immediately on other exceptions.
+DEFECT 3: precedent-touch register is a fuzzy keyword match against case topics, so manifest precedent_touched both false-positives and misses touches, breaking the citation law's audit surface | EVIDENCE: tools/lens.py:196-197 | FIX: detect CASE-n tokens in text and map them to rows instead of topic word matching.
+DEAD-CODE: case_rows beyond index 40 are loaded, hashed into provenance count, and returned, but never surfaced to the model or registers | EVIDENCE: tools/lens.py:88-103,196
+ONE-SITTING FIX: pin the resolved IP through the HTTPS request so the SSRF guard is real, not advisory | EVIDENCE: tools/lens.py:51-60,157

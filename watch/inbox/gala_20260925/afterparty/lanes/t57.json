@@ -1,0 +1,16 @@
+{
+  "gopher": "t57",
+  "item": "one-pass Part-vs-BasePart annotation tightening across the files t42 triaged: SteerField, IncidentDungeon, LightmapRooms, FrontierSouls, ErosionField tables plus MazeArena BasePart? locals (7 findings); annotation exactness only, no behavior edits; receipt comment per fix; verify by read + luau-lsp from roblox/; mountain_check not run (shared)",
+  "ok": true,
+  "note": "7 findings cleared in 6 files (8 annotation lines, 7 receipt comments, zero behavior edits). Direction was BasePart -> Part, the reverse of the item summary's shorthand but exactly t42's next_steal wording: the tables and locals were annotated BasePart while every stored value is an Instance.new(\"Part\") literal, and Luau checks table-literal properties invariantly so {part: BasePart} rejects the exact {part: Part} literal; typing the annotation as exactly what is stored (Part) clears each finding and is strictly read-widening at every consumer (Position/Parent/Transparency/CFrame/Shape reads, distTo BasePart param takes the covariant upcast). SteerFieldZone:36 walkers, IncidentDungeonZone:49 glow, LightmapRoomsZone:43 engines, FrontierSoulsZone:33 type Death, ErosionFieldZone:21 marbles plus :125 stepMarble param (same entries, only caller line 214, unflagged sibling kept exact), MazeArenaZone:58-59 cheese/dragon BasePart? -> Part? (Shape writes at 100/107). GalleryZone(82,2) NOT touched (t42 row 12, lane-restructured tonight). Not-flagged BasePart neighbors left alone (tiles/barriers/runDoor/wallParts/shardParts).",
+  "checks": [
+    "freshness: all 6 files pre-gala at edit time (d63a05cdf 09-25 04:50, FrontierSouls c56c965c4 04:23), no lane touching them in git status",
+    "analyze: gate's own command from roblox/ -> /tmp/t57_analyze.txt exit=1 (errors present, expected), grep -cE 'SyntaxError|Incomplete' = 0",
+    "dedupe: gate pipeline (mountain_check lines 39-53) -> /tmp/t57_findings.txt = 13 unique, down from 20 in t42's buffer",
+    "key diff vs t42: cleared = exactly the 7 intended sites, new = 0; remaining 13 are t42 rows 8-20 (noise-class, GalleryZone, LocalUnused), all out of scope",
+    "diff audit: 8 annotation lines + 7 comment lines, nothing else; em-dash scan on added lines = 0 (one pre-existing em-dash in an untouched context line)",
+    "sourcemap.json read-only for t57 (no rojo regen needed); its working-tree modification belongs to another lane",
+    "mountain_check NOT run per item; edits left uncommitted beside other lanes' in-flight files"
+  ],
+  "next_steal": "GalleryZone(82,2) is the last Part-vs-BasePart row (t42 row 12): mk() instances as BasePart against a Part-typed consumer, one mechanical annotation fix now that d38801265's DOORS restructure has landed; re-triage freshness first since the file changed after t42's check. Secondary: the 4 noise-class rows (MudBasecamp 220,19 Instance?-chain; LedgerExchange 217,13/228,86/229,73 GetAttribute typed-read) and the 8 LocalUnused dead locals still need the one-lane-sweep vs baseline-entry decision t42 already teed up."
+}

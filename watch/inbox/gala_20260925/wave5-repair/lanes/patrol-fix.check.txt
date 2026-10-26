@@ -1,0 +1,60 @@
+=== patrol-fix finish-line checks, 2026-09-29T06:29:27-04:00, run by lane patrol-fix (division B) ===
+
+--- CHECK 1: self-test (blank-line vectors included) ---
+  ok: live carrier parses date/collected/files
+  ok: fossil carrier parses the hand-copied claim
+  ok: the real 12-day fossil is STALE
+  ok: no **Tests:** line is unparseable
+  ok: carrier without a date is unparseable
+  ok: blank line before a canonical claim still parses
+  ok: blank line before a malformed claim stays fail-closed None
+  ok: prose numbers before the claim cannot poison the parse
+  ok: carrier without the canonical census clause is unparseable
+  ok: age exactly at bar passes with growth
+  ok: age bar+1 with growth is STALE
+  ok: age bar+1 without any growth is OK
+  ok: committed growth alone fires
+  ok: disk shrink below the claim fires
+  ok: over-direction is instrument lag, not stale
+  ok: same-window divergence is OK (snapshot lag tolerated)
+  ok: carrier without file count leans on commits only
+  ok: future census is UNVERIFIABLE exit 2
+  ok: collect tail parses the pytest summary
+  ok: collect tail parses singular and comma forms
+  ok: collect tail without a summary is None
+  ok: collect files parse to the item-bearing set
+  ok: collect files ignores summary and prose lines
+  ok: collect patrol tolerates delta below bar
+  ok: collect patrol fires at the bar (20 behind)
+  ok: collect patrol fires on over-claim too
+  ok: collect patrol without a claim is exit 2
+  ok: candidate count counts nested pytest-named files only
+  ok: hook pairing: green run exits 0
+  ok: hook pairing: green output opens with the hook ok arm prefix
+  ok: hook pairing: stale run exits 1
+  ok: hook pairing: stale output falls to the WARN arm, never the ok prefix
+CENSUS-PATROL SELF-TEST: PASS
+CHECK1-EXIT=0
+
+--- CHECK 2: fresh --collect deep check vs refreshed carrier ---
+CENSUS-PATROL: ok - census 2026-09-29 (2436 collected / 371 files)
+  disk candidate files: 372
+CENSUS-PATROL: ok - census 0d old of 7d bar, disk 372 vs carrier 371 (instrument lag: disk counts pytest-named candidates, carrier counts item-bearing files; zero-collect candidates named by --collect; same-window lag, evidence only)
+  collect-only tail: 2437 tests collected
+  instrument gap: 1 zero-collect candidate(s): tests/test_selffeed_integration.py
+  files: collected 371 vs carrier claim 371
+CENSUS-PATROL: collect ok - collected claim within bar: pytest 2437 vs carrier 2436 (delta +1, bar 20)
+CHECK2-EXIT=0
+
+--- CHECK 3: patrol pytest suite (46 prior + 4 new) ---
+..................................................                       [100%]
+50 passed in 22.87s
+
+--- CHECK 4: violation ratchet on changed files ---
+RATCHET check: scope=35 changed files; hits=27; registered=27; NEW=0; expired-exceptions=0
+  GROWTH claim e066832a0b8edb5e: tools/stealth_driver.py accepted at 753 lines, now 907 (+154) — re-audit or re-accept by name
+RATCHET: PASS — no unregistered debt.
+CHECK4-EXIT=0
+
+--- CHECK 5: carrier line byte read (grammar pin) ---
+1

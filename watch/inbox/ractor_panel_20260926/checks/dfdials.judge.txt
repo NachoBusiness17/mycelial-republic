@@ -1,0 +1,140 @@
+== SECTION 1: baseline census (configs/violation_baseline.json) ==
+total claims: 933
+  rule except-pass: 652
+  rule file-too-long: 194
+  rule mimosa-ssrf: 29
+  rule mimosa-path-traversal: 25
+  rule env-key-read: 22
+  rule cwd-relative-path: 3
+  rule shell-true: 3
+  rule mimosa-code-injection: 2
+  rule bare-except: 1
+  rule mimosa-command-injection: 1
+  rule todo-undated: 1
+distinct rules: 11: ['bare-except', 'cwd-relative-path', 'env-key-read', 'except-pass', 'file-too-long', 'mimosa-code-injection', 'mimosa-command-injection', 'mimosa-path-traversal', 'mimosa-ssrf', 'shell-true', 'todo-undated']
+rules outside SCANNER_RULES and not mimosa-* (candidate two admits this kills its tierer): []
+rows using expires: 0
+scanner-domain claims: 876; external claims: 57
+
+== SECTION 2: dial partitions recomputed under each candidate mapping ==
+candidate one partition: {'opt-in': 197, 'default-on': 678, 'manual-only': 58} sum=933
+candidate two partition: {'default-on': 194, 'opt-in': 678, 'manual-only': 57, 'always-on': 4} sum=933
+candidate two unclassifiable rows: []
+
+== SECTION 3: row-level double-fit test (kill prong 1) ==
+candidate one: dial = f(rule) total over 11 live rules; rules hitting the default branch (manual-only): ['mimosa-code-injection', 'mimosa-command-injection', 'mimosa-path-traversal', 'mimosa-ssrf']
+candidate two: live rows matching >1 dial predicate (tiebreak must exist for these): []
+candidate two: scanner-domain rows with by-design note (the cross-tier case): []
+candidate two: ALL rows with by-design note: 27 -> [('0c942d076de26020', 'mimosa-code-injection', 'tools/tier_probe.py'), ('1512466da0db106b', 'mimosa-path-traversal', 'watch/inbox/wave_20260916/rs_salon_witness_driver.py'), ('1dcf4effaf2d89ad', 'mimosa-ssrf', 'watch/inbox/wave_20260916/u5_union_witness_cont.py'), ('2a6dc97ac2787666', 'mimosa-ssrf', 'watch/inbox/physical_computing/receipts/u8_probe2.py'), ('4fc1e356452b0b2d', 'mimosa-ssrf', 'watch/inbox/moonshot_20260916/tt3_union_fullsend.py'), ('5591d1ea4689eb70', 'mimosa-ssrf', 'watch/inbox/wave_20260916/D22_probe_pass2.py'), ('6e2819a3aa7c5be4', 'mimosa-path-traversal', 'watch/inbox/physical_computing/receipts/f6_fetch.py'), ('7f71416523450ba1', 'mimosa-path-traversal', 'watch/inbox/wave_20260916/u1_union_call.py'), ('832a4c0b0512fe59', 'mimosa-ssrf', 'watch/inbox/wave_20260916/rs_salon_witness_driver.py'), ('8c22370fa93906b3', 'mimosa-path-traversal', 'watch/inbox/moonshot_20260916/tt3_union_fullsend.py'), ('8c41c71414ee6969', 'mimosa-path-traversal', 'watch/inbox/four_condition_battery/w4_t16_build_battery.py'), ('96b50d30a0d93dc0', 'mimosa-ssrf', 'watch/inbox/wave_20260916/u2_union_astra13.py'), ('a0298137d4bdecc4', 'mimosa-path-traversal', 'watch/inbox/physical_computing/receipts/f6_manifest.py'), ('a704f6b345ecfddb', 'mimosa-command-injection', 'tools/pupeteer_gauntlet.py'), ('a871ff379f8c74af', 'mimosa-ssrf', 'watch/inbox/physical_computing/receipts/f6_fetch.py'), ('aaff6eb7087e66eb', 'mimosa-ssrf', 'watch/inbox/physical_computing/receipts/u8_probe.py'), ('b6f1dc1973eaf894', 'mimosa-ssrf', 'watch/inbox/wave_20260916/u9_union_call.py'), ('c2b1c3ccfadb9207', 'mimosa-path-traversal', 'watch/inbox/wave_20260916/e_union_alpha_20260916.py'), ('d8b08d0e5b9535a6', 'mimosa-path-traversal', 'watch/inbox/wave_20260916/d24_triage_probe.py'), ('e9dd6cd19dd60918', 'mimosa-path-traversal', 'watch/inbox/wave_20260916/d24_sweep2.py'), ('ece984968a3c0699', 'mimosa-path-traversal', 'watch/inbox/wave_20260916/rs3_mistral_retry.py'), ('ee0890510c0c4cf6', 'mimosa-ssrf', 'watch/inbox/wave_20260916/u5_union_witness_20260916.py'), ('f24657b475fc8991', 'mimosa-ssrf', 'watch/inbox/wave_20260916/e_union_alpha_20260916.py'), ('f35baca3a78e0237', 'mimosa-ssrf', 'watch/inbox/wave_20260916/u4_union_verdict_column_20260916.py'), ('f376b154265e35d2', 'mimosa-ssrf', 'watch/inbox/wave_20260916/u1_union_call.py'), ('f7ae3f2de895366f', 'mimosa-ssrf', 'watch/inbox/wave_20260916/u6_union_creative.py'), ('fb495d3676d2779f', 'mimosa-path-traversal', 'watch/inbox/wave_20260916/u9_union_call.py')]
+
+== SECTION 4: mixed-dial files (file-level ambiguity) ==
+candidate one: files carrying >1 dial: 153
+  tools/pupeteer_gauntlet.py: dials=['default-on', 'manual-only', 'opt-in']
+  tools/wandr_selfeval.py: dials=['manual-only', 'opt-in']
+  tools/steer_compare.py: dials=['manual-only', 'opt-in']
+  tools/ghost_tournament.py: dials=['manual-only', 'opt-in']
+candidate two: files carrying >1 dial: 152
+  mag/knowledge_graph.py: dials=['default-on', 'opt-in']
+
+== SECTION 5: named live claims ==
+  1f4834fca1771fc1 rule=except-pass file=mag/icon_drop.py accepted=2026-09-25 by=agent:ratchet-v2-0925 note='v2 rules day-one: cwd-relative-path (audit_log/constants/steer_receipt' fp_recomputes=True
+  7c98f77c12ee2547 rule=todo-undated file=mag/max_distill.py accepted=2026-09-24 by=operator:bootstrap 2026-09-24 note='day-one register of existing debt in mag/+tools/, accepted by ratchet ' fp_recomputes=True
+
+== SECTION 6: dfhack_fixes.json mode census (corpus/df_mine/) ==
+top-level type: dict; entries counted: 47
+mode census (heuristic keyword bins): {'manual-only(other)': 37, 'default-on': 4, 'opt-in': 5, 'always-on': 1}; retired-flag rows: 0
+automatic-mode entries: 6; of those also carrying '+ manual': 4
+
+== SECTION 7: byte-cited line spot checks (dfhack_fixes.json) ==
+  line 108:       "mode": "automatic (periodic, default-enabled via gui/control-panel) + manual",
+  line 233:       "mechanism": "Sets flags1.left on inactive merchant units so the game finalizes their departure (must not run while merchants are on-map; not re
+  line 288:       "mode": "manual or opt-in automatic (NOT default: some players keep wildlife captive)",
+  line 297:       "mode": "automatic on load (always)",
+  line 460:     { "name": "fix/item-occupancy + fix/tile-occupancy + fix/unit-occupancy", "reason": "consolidated (merged) into fix/occupancy" }
+
+== SECTION 8: candidate two tierer log present? ==
+exists: True size: 2044
+--- first 40 lines of tierer log ---
+  # dfdials-two raw checks — 2026-09-26 (commands + verbatim output, this session)
+  
+  ## cmd: .venv/Scripts/python.exe tools/violation_ratchet.py check
+  RATCHET check: scope=1188 files (all); hits=882; registered=875; NEW=7; expired-exceptions=0
+    NEW 8d41e611f98d3fa5 file-too-long: tools/census_drift_patrol.py:403 — >400 lines
+    NEW 5ae40a2d649a9b92 except-pass: tools/ledger_lock.py:125 — silent except ...: pass
+    NEW 3b1726dec4670996 except-pass: tools/openrouter_free_gate.py:84 — silent except ...: pass
+    NEW f0d81bd311a1a15e file-too-long: tools/probe20_run.py:421 — >400 lines
+    NEW e3b7845ea79cf553 cwd-relative-path: tools/queue_dupes_check.py:33 — module-level Path('watch/inbox/burn_wave_20260926/QUEUE.md') is cwd-dependent
+    NEW 0dfc04119a40f245 except-pass: tools/transport_precheck.py:134 — silent except ...: pass
+    NEW f2ce896c858aa404 except-pass: tools/visor.py:131 — silent except ...: pass
+  RATCHET: FAIL — run 'baseline-update' ONLY after a human/agent accepts the debt by name.
+  
+  ## cmd: tierer script (imports tools/violation_ratchet, walks all 933 claims)
+  scanner-domain claims underivable today (prune would reap): 1
+     ('1f4834fca1771fc1', 'except-pass', 'mag/icon_drop.py', '2026-09-25')
+  external (manual-only by construction): 57
+  phantom claims (domain-true, never scanned): 0
+  TIERER over 933 claims: {'default-on': 194, 'opt-in': 678, 'manual-only': 57, 'always-on': 4} sum= 933
+     bare-except                  opt-in       1
+     cwd-relative-path            always-on    3
+     env-key-read                 opt-in       22
+     except-pass                  opt-in       652
+     file-too-long                default-on   194
+     mimosa-code-injection        manual-only  2
+     mimosa-command-injection     manual-only  1
+     mimosa-path-traversal        manual-only  25
+     mimosa-ssrf                  manual-only  29
+     shell-true                   opt-in       3
+     todo-undated                 always-on    1
+  files with claims in >1 dial: 152 (rows double-assigned: 0, asserted)
+--- tierer log total lines: 31 ---
+
+JUDGE SCRIPT DONE
+
+== SECTION 9: dfhack mode strings, verbatim (judge addendum) ==
+  fix/dry-buckets: mode='automatic (periodic, default-enabled via gui/control-panel) + manual'
+  fix/empty-wheelbarrows: mode='automatic (periodic, default-enabled via gui/control-panel) + manual (has --dry-run)'
+  fix/general-strike: mode='automatic (periodic, default-enabled via gui/control-panel) + manual'
+  fix/stuck-squad: mode='automatic (default-enabled via control-panel) + manual'
+  fix/wildlife: mode='manual or opt-in automatic (NOT default: some players keep wildlife captive)'
+  quickfix.set_entity_race_references: mode='automatic on load (always)'
+  quickfix.repair_site_id: mode='automatic on map load (always)'
+final bins (always keyword / default-enabled / NOT default / rest): {'manual-only': 40, 'default-on': 4, 'opt-in': 1, 'always-on': 2} total=47
+top-level keys: ['meta', 'fixes', 'retired_fixes_upstream_fixed']
+  non-fixes key retired_fixes_upstream_fixed: 6 entries
+  line 296:       "mechanism": "On DFHack load, finds the dwarf race (first OCCURS_AS_ENTITY_RACE raw) and assigns it to every entity with race -1; ships in defau
+  line 305:       "mechanism": "On map load, if site_id == -1 but fortress_site is set, restores site_id from fortress_site.id; ships in default onMapLoad init",
+  line 306:       "mode": "automatic on map load (always)",
+  line 454:   "retired_fixes_upstream_fixed": [
+  line 461:   ]
+SECTION 9 DONE
+
+== SECTION 10: full-scope ratchet check, judge-run ==
+cmd: .venv/Scripts/python.exe tools/violation_ratchet.py check
+exit=1
+RATCHET check: scope=1188 files (all); hits=882; registered=875; NEW=7; expired-exceptions=0
+  NEW 8d41e611f98d3fa5 file-too-long: tools/census_drift_patrol.py:403 — >400 lines
+  NEW 5ae40a2d649a9b92 except-pass: tools/ledger_lock.py:125 — silent except ...: pass
+  NEW 3b1726dec4670996 except-pass: tools/openrouter_free_gate.py:84 — silent except ...: pass
+  NEW f0d81bd311a1a15e file-too-long: tools/probe20_run.py:421 — >400 lines
+  NEW e3b7845ea79cf553 cwd-relative-path: tools/queue_dupes_check.py:33 — module-level Path('watch/inbox/burn_wave_20260926/QUEUE.md') is cwd-dependent
+  NEW 0dfc04119a40f245 except-pass: tools/transport_precheck.py:134 — silent except ...: pass
+  NEW f2ce896c858aa404 except-pass: tools/visor.py:131 — silent except ...: pass
+RATCHET: FAIL — run 'baseline-update' ONLY after a human/agent accepts the debt by name.
+
+== SECTION 11: opt-in census dispute, cited line ranges verbatim ==
+-- lines 148-154 --
+  line 148: "name": "fix/noexert-exhaustion",
+  line 153: "mode": "opt-in automatic + manual",
+-- lines 165-172 --
+  line 166: "name": "fix/ownership",
+  line 171: "mode": "opt-in automatic (daily when enabled in control-panel) + manual",
+-- lines 183-190 --
+  line 184: "name": "fix/protect-nicks",
+  line 186: "defect": "v50.x DF sets unit nicknames without propagating them to the historical figure, so they are not persisted everywhere",
+  line 187: "manifestation": "Nicknames lost on save/reload or after kills/retirement; missing from legends and engravings",
+  line 188: "mechanism": "Daily event loop re-applies each unit's nickname via dfhack.units.setNickname (writes to the histfig as pre-Steam DF did); persists enable state p
+  line 189: "mode": "opt-in automatic (daily) + manual 'now'",
+-- lines 247-253 --
+  line 247: "name": "fix/stuck-worship",
+  line 252: "mode": "opt-in automatic (control-panel Bugfixes) + manual",
+SECTION 11 DONE

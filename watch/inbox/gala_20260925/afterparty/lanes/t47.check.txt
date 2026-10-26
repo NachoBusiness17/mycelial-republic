@@ -1,0 +1,51 @@
+t47 check raw output - 2026-09-26T05:13:16Z
+
+=== 1. pytest tests/test_doctor_scheduled_tasks.py -q (t20 file + t47 marker tests) ===
+...............                                                          [100%]
+15 passed in 2.34s
+EXIT=0
+
+=== 2. pytest tests/test_api_gateway_status_route.py -q (t39 route, neighbor) ===
+...                                                                      [100%]
+3 passed in 0.21s
+EXIT=0
+
+=== 3. pytest tests/test_improve_status_scheduled_task.py -q (t33, neighbor) ===
+....                                                                     [100%]
+4 passed in 0.38s
+EXIT=0
+
+=== 4. live: dispatch GET /status with ?key= (board fetch path, no server) ===
+HTTP 200 ok= True
+warning = None
+statuses = {'MagImproveDaily': 'Ready'}
+intentional = {}
+EXIT=0
+
+=== 5. live: marker suppression round-trip (mark -> probe -> clean) ===
+Disabled+marker -> ok = True issues = [] intentional keys = ['MagImproveDaily']
+Disabled, no marker -> ok = False flagged = True
+marker file cleaned = True
+EXIT=0
+
+=== 6. live probe (real schtasks, machine state) ===
+ok = True statuses = {'MagImproveDaily': 'Ready'} issues = []
+EXIT=0
+
+=== 7. health.html inline JS: node --check ===
+extracted scripts: 1
+JS SYNTAX OK
+EXIT=0
+
+=== 8. em-dash scan of ADDED lines (law: no em-dashes in filed text) ===
+0
+(count above; 0 = clean)
+
+=== 9. board-script test absence: no tests cover dashboard/static board scripts ===
+0
+(files in tests/ mentioning health.html; 0 = absence confirmed; test_desk_baseline_probe.py only smokes index.html app.js, not the board)
+
+=== 10. tools/violation_ratchet.py check --changed ===
+RATCHET check: scope=13 changed files; hits=11; registered=11; NEW=0; expired-exceptions=0
+RATCHET: PASS — no unregistered debt.
+EXIT=0

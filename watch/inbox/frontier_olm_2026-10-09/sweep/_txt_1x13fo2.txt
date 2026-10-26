@@ -1,0 +1,28 @@
+
+=== 2026-10-08T21:31 | Staging quantized weights to FP8 instead of fp16: 2× M6 matrix path, +40% MLX prefill (+ int8 on M5) | by /u/Brilliant-Hall1387
+Regular MLX QMM (quantized matmul) stages operands (dequant) to FP16 before matrix multiplication. But if you modify MLX to stage to FP8 instead, you can use the 2x faster FP8 matrix path on the new Apple Silicon M6 hardware!
+ The same idea works on the M5 family: stage 4-bit affine weights to int8 before the matmul and you get a similar prefill boost (M5 and M6).
+ Benefits apply to prefill (+40% prefill Qwen3-8B or +50% Qwen3.8-27B). Decode is bandwidth limited so not much difference on decode side and better to let it use default FP16 staging on decode side.
+ It's an experimental fork, not upstream (mlx#4627) and quality was measured: worst-case perplexity increase under ~1%. FP8 performance improvement needs an M6 on macOS 27 with a deployment-target-27 build; int8 works on M5 and later.
+ This was quite an interesting research project and it helped me get a deeper understanding of the math behind LLMs on the hardware side. 😄 
+ All details, code and evidence available on my blog: https://precisit.com/en/blog/apple-matrix-formats/
+ The MLX fork itself with FP8 + Int8 QMM patch: https://github.com/precisit/mlx/tree/staged-8bit-qmm 
+ Disclosure: the blog is from Precisit, where I work.
+    submitted by    /u/Brilliant-Hall1387  
+ [link]   [comments]
+=== ? | /u/understoodvogue4 on Staging quantized weights to FP8 instead of fp16: 2× M6 matrix path, +40% MLX prefill (+ int8 on  | by /u/understoodvogue4
+that tile staging trick is clever, keeping more stuff in registers must help a lot with the prefill speed
+=== ? | /u/Brilliant-Hall1387 on Staging quantized weights to FP8 instead of fp16: 2× M6 matrix path, +40% MLX prefill (+ int8 o | by /u/Brilliant-Hall1387
+Thanks! Both paths already keep operands in registers however. The win is enabled by the operand width, when the kernel dequant to 8-bit instead of 16-bit it enables the neural accelerator 8-bit matrix path (~2× ops per second vs fp16 on M6, or similar with Int8 on M5 and later) and halves the working tile (8 to 4 KiB). 👍 
+ I would be excited to see if anyone have the new M5 Ultra to measure if there is any speed gains on that also. as I only have access to M6 and M5 Max at the moment. 😅
+=== ? | /u/sburel on Staging quantized weights to FP8 instead of fp16: 2× M6 matrix path, +40% MLX prefill (+ int8 on M5) | by /u/sburel
+If activations stay fp16, I’d expect the weight side to be lossless, the 16 levels land exactly in e4m3 once the group scale is out. Is that the case, or does x have to come down too?
+=== ? | /u/Brilliant-Hall1387 on Staging quantized weights to FP8 instead of fp16: 2× M6 matrix path, +40% MLX prefill (+ int8 o | by /u/Brilliant-Hall1387
+Weights: exact for mxfp4, ~exact for mxfp8 (census in the post). 
+ Activations: no, the fp8 op needs both operands in fp8, so x gets per-row power-of-two scales too, and that's where the small quality cost comes from.
+ So the trade-off as measured: under 1% perplexity increase for the M6 FP8 lane's 2× performance, giving ~40% faster prefill end-to-end.
+=== ? | /u/sburel on Staging quantized weights to FP8 instead of fp16: 2× M6 matrix path, +40% MLX prefill (+ int8 on M5) | by /u/sburel
+Makes sense. Per-row power-of-two scales on x is about as cheap as it gets, so under 1% for a 2× lane sounds like a fair trade.
+ Does the perplexity cost vary much by layer? I’d expect the first blocks to take it worse, where the activation outliers live, and that you could keep those in fp16 for almost nothing since prefill time is dominated by the bulk of the stack. Or does it not show up that way in practice?
+=== ? | /u/Acrobatic_Hold5485 on Staging quantized weights to FP8 instead of fp16: 2× M6 matrix path, +40% MLX prefill (+ int8 o | by /u/Acrobatic_Hold5485
+this fp8 staging could make roleplay sessions feel snappier on m6, especially with longer back and forth. have you tried it yet for companion stuff?

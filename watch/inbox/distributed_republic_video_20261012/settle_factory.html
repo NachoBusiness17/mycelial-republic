@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>The Settlement Factory - every gear visible</title>
+<style>
+  html,body{margin:0;padding:0;background:#0d0f12;color:#ddd;font-family:Helvetica,Arial,sans-serif;overflow:hidden}
+  canvas{display:block}
+  #cap{position:absolute;bottom:3vh;left:0;right:0;text-align:center;font-size:18px;color:#aaa;letter-spacing:.03em}
+  #step{position:absolute;top:3vh;left:0;right:0;text-align:center;font-size:24px;color:#fff}
+  #sub{position:absolute;top:8vh;left:0;right:0;text-align:center;font-size:15px;color:#8fa}
+  #note{position:absolute;bottom:1vh;left:2vw;font-size:11px;color:#555}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="step">THE SETTLEMENT FACTORY</div>
+<div id="sub">every gear visible - SettleTask, explained like a belt system</div>
+<div id="cap">loading...</div>
+<div id="note">real numbers: SettlementMaster v2 testnet - the perimeter's own settles</div>
+<script>
+const c=document.getElementById('c'),ctx=c.getContext('2d');
+function fit(){c.width=innerWidth;c.height=innerHeight}fit();addEventListener('resize',fit);
+const cap=document.getElementById('cap'),step=document.getElementById('step'),sub=document.getElementById('sub');
+
+// ---- the cycle: one SettleTask, factory-slow. Full tour ~36s, loops. ------
+const CYCLE=36; let t=0;
+const W=()=>c.width,H=()=>c.height;
+
+// ---- factory geometry (fractions of screen) ----
+const SPAWN={x:.06,y:.30};                 // task spawner
+const GATE ={x:.22,y:.30};                 // consensus gate
+const BELT1={x0:.22,y:.30,x1:.40,y:.30};   // belt: gate -> master intake
+const MASTER={x:.52,y:.30};                // the SettlementMaster machine
+const BELT_W={x0:.60,y:.30,x1:.80,y:.30};  // worker belt (85)
+const BELT_T={x0:.60,y:.42,x1:.80,y:.58};  // treasury belt (10)
+const BELT_P={x0:.60,y:.18,x1:.80,y:.08};  // protocol belt (5)
+const WALLETS={worker:{x:.90,y:.30},treasury:{x:.90,y:.58},protocol:{x:.90,y:.08}};
+
+// ---- belts: dashed lines whose dash offset moves = conveyor motion --------
+function belt(x0,y0,x1,y1,speed,t){
+  ctx.save();ctx.strokeStyle='#3a4148';ctx.lineWidth=10;ctx.setLineDash([14,10]);
+  ctx.lineDashOffset=-t*60*speed;ctx.beginPath();ctx.moveTo(x0*W(),y0*H());ctx.lineTo(x1*W(),y1*H());ctx.stroke();ctx.restore();
+  ctx.strokeStyle='#22262b';ctx.lineWidth=12;ctx.setLineDash([]);ctx.globalCompositeOperation='destination-over';
+  ctx.beginPath();ctx.moveTo(x0*W(),y0*H());ctx.lineTo(x1*W(),y1*H());ctx.stroke();ctx.globalCompositeOperation='source-over';
+  // re-draw dashes on top with offset
+  ctx.save();ctx.strokeStyle='#4a5560';ctx.lineWidth=8;ctx.setLineDash([12,14]);ctx.lineDashOffset=-t*60*speed;
+  ctx.beginPath();ctx.moveTo(x0*W(),y0*H());ctx.lineTo(x1*W(),y1*H());ctx.stroke();ctx.restore();
+}
+function label(x,y,txt,color){ctx.fillStyle=color||'#9ab';ctx.font='13px Helvetica';ctx.textAlign='center';ctx.fillText(txt,x*W(),y*H())}
+function mag(x,y,r,angle,color){ctx.save();ctx.translate(x,y);ctx.rotate(angle);ctx.scale(r,r);ctx.fillStyle=color;
+  ctx.beginPath();ctx.arc(0,0,1,Math.PI*.5,Math.PI*1.9);ctx.arc(.55,-.55,.62,Math.PI*1.5,Math.PI*.45);ctx.closePath();ctx.fill();
+  ctx.beginPath();ctx.arc(.15,-.12,.28,0,7);ctx.fillStyle='#0d0f12';ctx.fill();ctx.restore()}
+function machine(x,y,w,h,name,color){ctx.fillStyle='#161a1f';ctx.strokeStyle=color||'#5a6a7a';ctx.lineWidth=2;
+  ctx.fillRect(x*W()-w/2,y*H()-h/2,w,h);ctx.strokeRect(x*W()-w/2,y*H()-h/2,w,h);
+  ctx.fillStyle='#fff';ctx.font='bold 14px Helvetica';ctx.textAlign='center';ctx.fillText(name,x*W(),y*H()-h/2-8)}
+// stage progress: which caption is active
+function stage(){const u=(t%CYCLE)/CYCLE;
+  if(u<.08)return['STEP 1 - A TASK ARRIVES','a worker node finished inference: the magatama carries the completed work','spawner'];
+  if(u<.20)return['STEP 2 - THE CONSENSUS GATE','five different model families must agree on the answer before it counts. noise is discarded here','gate'];
+  if(u<.34)return['STEP 3 - THE BELT TO SETTLEMENT','the agreed work rides the belt. slow on purpose: you can watch every piece','belt1'];
+  if(u<.48)return['STEP 4 - REPLAY-GUARD STAMPER','each taskId is stamped exactly once. a replayed task is refused - this kills double-pay attacks','stamp'];
+  if(u<.58)return['STEP 5 - THE GAS HOPPER','every settlement burns 0.1 TON for gas before anything splits. the machine pays its own heat','gas'];
+  if(u<.72)return['STEP 6 - THE SPLITTER 85/10/5','the particle divides by public ratio. three belts, three wallets, sizes to scale','split'];
+  if(u<.86)return['STEP 7 - DELIVERY','each belt feeds a wallet. the balance tick you see is chain state, not a promise','deliver'];
+  return['THE CIRCLE - the next task spawns','the factory never stops. every task feeds the ledger; the ledger routes the next one','spawner'];
+}
+
+// balance counters that tick up as deliveries land
+const bal={worker:0.899132488,treasury:0.089913249,protocol:0.044956624};
+
+// main loop
+function frame(now){
+  t+= 1/60; const u=(t%CYCLE)/CYCLE; const [st,su,ph]=stage();
+  step.textContent=st; sub.textContent=su;
+  ctx.fillStyle='#0d0f12';ctx.fillRect(0,0,W(),H());
+
+  // belts under everything
+  belt(BELT1.x0,BELT1.y0,BELT1.x1,BELT1.y1,1,t);
+  belt(BELT_W.x0,BELT_W.y0,BELT_W.x1,BELT_W.y1,1,t);
+  belt(BELT_T.x0,BELT_T.y0,BELT_T.x1,BELT_T.y1,.6,t);
+  belt(BELT_P.x0,BELT_P.y0,BELT_P.x1,BELT_P.y1,.35,t);
+
+  // spawner
+  machine(SPAWN.x,SPAWN.y,90,54,'WORKER NODE','#4fc3f7');
+  // consensus gate
+  machine(GATE.x,GATE.y,110,64,'CONSENSUS GATE','#66bb6a');
+  // five tiny judge slots inside the gate
+  for(let i=0;i<5;i++){const gx=(GATE.x-.03)+i*.015;const gy=GATE.y+.01;
+    ctx.fillStyle=MODELS[i].color;ctx.beginPath();ctx.arc(gx*W(),gy*H(),5,0,7);ctx.fill()}
+  label(GATE.x,GATE.y+.06,'5 different model families must agree');
+
+  // the SettlementMaster machine (the big one, internals visible)
+  machine(MASTER.x,MASTER.y,240,130,'SETTLEMENTMASTER v2','#5a6a7a');
+  // internals: replay stamper
+  const stampDone=u>.48&&u<.58;
+  machine(MASTER.x-.06,MASTER.y-.01,80,40,'REPLAY GUARD',stampDone?'#66bb6a':'#5a6a7a');
+  label(MASTER.x-.06,MASTER.y+.045,'taskId stamped once');
+  // gas hopper
+  const gasDone=u>.58&&u<.72;
+  machine(MASTER.x+.06,MASTER.y-.01,80,40,'GAS HOPPER',gasDone?'#ffd54a':'#5a6a7a');
+  label(MASTER.x+.06,MASTER.y+.045,'burns 0.1 TON per settle');
+  // the splitter
+  machine(MASTER.x,MASTER.y+.06,180,34,'SPLITTER 85/10/5','#ffd54a');
+  label(MASTER.x,MASTER.y+.105,'public ratio - same forever');
+
+  // worker/treasury/protocol wallets
+  machine(WALLETS.worker.x,WALLETS.worker.y,110,54,'WORKER WALLET','#ffd54a');
+  label(WALLETS.worker.x,WALLETS.worker.y+.05,'0.8991 TON + every settle');
+  machine(WALLETS.treasury.x,WALLETS.treasury.y,110,54,'TREASURY','#26a69a');
+  machine(WALLETS.protocol.x,WALLETS.protocol.y,110,54,'PROTOCOL 5%','#ffa726');
+
+  // the traveling magatama on its journey
+  const j = u<.08 ? u/.08 : (u<.20 ? 1 : (u<.34 ? 1+(u-.20)/.14 : (u<.48 ? 2 : (u<.58 ? 2 : (u<.72 ? 2+ (u-.58)/.14 : 3)))));
+  let mx,my;
+  if(u<.08){mx=SPAWN.x+(GATE.x-SPAWN.x)*(u/.08);my=SPAWN.y}
+  else if(u<.20){mx=GATE.x;my=GATE.y}
+  else if(u<.34){mx=BELT1.x0+(BELT1.x1-BELT1.x0)*((u-.20)/.14);my=BELT1.y0}
+  else if(u<.48){mx=MASTER.x-.06;my=MASTER.y}
+  else if(u<.58){mx=MASTER.x+.06;my=MASTER.y}
+  else if(u<.72){mx=MASTER.x;my=MASTER.y+.06}
+  else {mx=BELT_W.x0+(BELT_W.x1-BELT_W.x0)*((u-.72)/.14);my=BELT_W.y0}
+  mag(mx*W(),my*H(),16,Math.sin(t*3)*.3,'#ffd54a');
+
+  cap.textContent='every task: 5 families agree -> belt -> stamped once -> gas paid -> split 85/10/5 -> three wallets. no middleman. the chain is the receipt.';
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>

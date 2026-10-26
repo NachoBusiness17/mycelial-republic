@@ -1,0 +1,14 @@
+{
+  "gopher": "t40",
+  "item": "wire tools/description_pin.py into githooks/pre-push beside violation_ratchet.py, WARN-ONLY on first landing per t11c next_steal",
+  "ok": true,
+  "note": "Landed a WARN-ONLY block after the config_seal gate: prints offender names, never exits nonzero (|| true tail), skip line while configs/tools/ has no manifests, and a TODO-FLIP-TO-ENFORCE comment naming the exact flip (|| true to || exit 1) as an operator decision, honoring b2's lockout lesson. Negative findings, first-class: (1) no tool manifests exist anywhere in the estate yet, so the gate targets configs/tools/ as the canonical home and visibly skips until populated; nothing was fabricated. (2) Full direct hook run exits 1 at the PRE-EXISTING config_seal gate (lanes.yaml, mag.yaml, providers.yaml modified) BEFORE reaching the new block; that drift predates t40 and re-sealing is by operator NAME, so E2E proof uses the block's verbatim extracted lines. Hook is live: core.hooksPath=githooks.",
+  "checks": [
+    "bash githooks/pre-push direct run: ratchet PASS (scope=10, NEW=0), config_seal FAIL on 3 modified configs, exit 1, new block unreached; raw output in t40.check.txt lines 1-11",
+    "raw tool on bad fixture: rogue_tool named, exit 2 (t40.check.txt lines 14-18)",
+    "raw tool on good fixture: pinned passes, exit 0 (t40.check.txt lines 19-21)",
+    "extracted block verbatim, no configs/tools dir: skip line printed, block exit 0 (t40.check.txt lines 23-26)",
+    "extracted warn-only line on bad fixture: offender printed, block exit 0, push NOT blocked (t40.check.txt lines 28-33)"
+  ],
+  "next_steal": "populate configs/tools/ with the estate's first real tool manifests (mag organs, harness seats), triage description_pin findings, then operator flips the TODO-FLIP-TO-ENFORCE line"
+}

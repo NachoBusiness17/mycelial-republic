@@ -1,0 +1,38 @@
+=== bare-spawn-descent finish-line checks (2026-09-29) ===
+
+--- CHECK 1: before census (start of lane) ---
+$ .venv/Scripts/python.exe watch/inbox/gala_20260925/ball-20260929/lanes/_census_bare_spawns.py
+SUMMARY total=43 tests=21 tools=22
+full sites: watch/inbox/gala_20260925/ball-20260929/lanes/census_before.json
+
+--- CHECK 2: after census (post-conversion) ---
+$ .venv/Scripts/python.exe watch/inbox/gala_20260925/ball-20260929/lanes/_census_bare_spawns.py
+SUMMARY total=22 tests=0 tools=22
+full sites: watch/inbox/gala_20260925/ball-20260929/lanes/census_after.json
+delta: total 43 -> 22 (-21, all in tests/; tests/ 21 -> 0; tools/ unchanged 22)
+
+--- CHECK 3: the headless-law ratchet test (finish line) ---
+$ .venv/Scripts/python.exe -m pytest tests/test_headless_law.py -q
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+2 passed, 2 warnings in 10.45s
+exit=0
+
+--- CHECK 4: violation ratchet over changed files (ask step 3) ---
+$ .venv/Scripts/python.exe tools/violation_ratchet.py check --changed
+RATCHET check: scope=35 changed files; hits=21; registered=21; NEW=0; expired-exceptions=0
+  GROWTH claim 1c86242d11e4a61d: mag/corpus_acquire.py accepted at 549 lines, now 626 (+77) — re-audit or re-accept by name
+  GROWTH claim 42b721c740d1abda: mag/corpus_selfsteal.py accepted at 550 lines, now 573 (+23) — re-audit or re-accept by name
+  GROWTH claim e066832a0b8edb5e: tools/stealth_driver.py accepted at 753 lines, now 1436 (+683) — re-audit or re-accept by name
+RATCHET: PASS — no unregistered debt.
+exit=0
+
+--- CHECK 5: modified test files all green ---
+$ .venv/Scripts/python.exe -m pytest <15 modified collected files> -q (run in 4 groups this session)
+group fast (9 files): 47 passed in 32.78s
+group hook+parity (2 files): 10 passed in 4.17s
+group fold+wow (3 files): 47 passed in 22.34s
+group scenarios+wave (2 files): 16 passed in 24.19s
+
+--- fold annotation 2026-09-29 (fold-repairer, midnight-reader repair; nothing above this line was edited) ---
+Pointer repair note: CHECK 1 (line 6) and CHECK 2 (line 11) point at lanes/census_before.json and lanes/census_after.json; the full census JSONs were moved to lanes/_qc/ and live at lanes/_qc/census_before.json (md5 04e3f94c60cd274cb6660502ade74195, total=43) and lanes/_qc/census_after.json (md5 42badddd74944cba73a4cd32a3997e0f, total=22), byte-identical to the pre-move receipt in lanes/_qc/_moved_md5_before.txt. lanes/ top level keeps only the two SUMMARY txts (43/21/22 and 22/0/22). The census numbers above are unstruck. Full annotation: bare-spawn-descent.json .annotations[0].

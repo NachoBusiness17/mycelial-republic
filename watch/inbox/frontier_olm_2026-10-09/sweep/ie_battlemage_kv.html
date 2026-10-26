@@ -1,0 +1,1125 @@
+
+
+<!DOCTYPE html>
+<html lang="en" class="fixed_navbar">
+	<head>
+		
+	
+		<title>
+	
+		llama.cpp PR reports up to 169% faster quantized-KV decode at 118K context on Intel Battlemage from one SYCL kernel switch - r/LocalLLaMA
+	
+</title>
+		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+		<meta name="description" content="View on Redlib, an alternative private front-end to Reddit.">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0">
+		
+		<meta name="robots" content="noindex, nofollow">
+		
+		<!-- General PWA -->
+		<meta name="theme-color" content="#1F1F1F">
+		<!-- iOS Application -->
+		<meta name="apple-mobile-web-app-title" content="Redlib">
+		<meta name="apple-mobile-web-app-capable" content="yes">
+		<meta name="apple-mobile-web-app-status-bar-style" content="default">
+		<!-- Android -->
+		<meta name="mobile-web-app-capable" content="yes">
+		<!-- iOS Logo -->
+		<link href="/touch-icon-iphone.png" rel="apple-touch-icon">
+		<!-- OpenSearch description file -->
+		<link rel="search" type="application/opensearchdescription+xml" title="Search Redlib" href="/opensearch.xml">
+		<!-- PWA Manifest -->
+		<link rel="manifest" type="application/json" href="/manifest.json">
+		<link rel="shortcut icon" type="image/x-icon" href="/favicon.ico"> 
+		<link rel="stylesheet" type="text/css" href="/style.css?v=0.36.0-yunyun">
+		<!-- Video quality -->
+		<div id="video_quality" data-value=""></div>
+		
+	<!-- Meta Tags -->
+	<meta name="author" content="u/BTA_Labs">
+	<meta name="title" content="llama.cpp PR reports up to 169% faster quantized-KV decode at 118K context on Intel Battlemage from one SYCL kernel switch - r/LocalLLaMA">
+	<meta property="og:title" content="llama.cpp PR reports up to 169% faster quantized-KV decode at 118K context on Intel Battlemage from one SYCL kernel switch - r/LocalLLaMA">
+	<meta property="og:description" content="View on Redlib, an alternative private front-end to Reddit.">
+	<meta property="og:url" content="/r/LocalLLaMA/comments/1vi6hmw/llamacpp_pr_reports_up_to_169_faster_quantizedkv/">
+	<meta property="twitter:url" content="/r/LocalLLaMA/comments/1vi6hmw/llamacpp_pr_reports_up_to_169_faster_quantizedkv/">
+	<meta property="twitter:title" content="llama.cpp PR reports up to 169% faster quantized-KV decode at 118K context on Intel Battlemage from one SYCL kernel switch - r/LocalLLaMA">
+	<meta property="twitter:description" content="View on Redlib, an alternative private front-end to Reddit.">
+	
+	<meta property="og:type" content="image">
+	<meta property="og:image" content="/preview/pre/7xawgw0cjzhh1.jpeg?width=140&#38;height=140&#38;crop=1:1,smart&#38;auto=webp&#38;s=0deed355a68ee10d7aadf6f6d051c89f970a3c02">
+	<meta property="twitter:card" content="summary_large_image">
+	<meta property="twitter:image" content="/preview/pre/7xawgw0cjzhh1.jpeg?width=140&#38;height=140&#38;crop=1:1,smart&#38;auto=webp&#38;s=0deed355a68ee10d7aadf6f6d051c89f970a3c02">
+	
+
+		</head>
+	<body class="
+		card
+		
+		
+		 fixed_navbar">
+		<!-- NAVIGATION BAR -->
+		<nav class="
+			 fixed_navbar">
+			<div id="logo">
+				<a id="redlib" href="/"><span id="red">red</span><span id="lib">lib.</span></a>
+				
+	<details id="feeds">
+		<summary>Feeds</summary>
+		<div id="feed_list">
+			<p>MAIN FEEDS</p>
+			<a href="/">Home</a>
+			
+				<a href="/r/popular">Popular</a>
+				<a href="/r/all">All</a>
+			
+			
+		</div>
+	</details>
+
+			</div>
+			
+	<form action="/r/LocalLLaMA/search" id="searchbox">
+	<input id="search" type="text" name="q" placeholder="Search" title="Search redlib" value="">
+	
+	<div id="inside">
+		<input type="checkbox" name="restrict_sr" id="restrict_sr" checked>
+		<label for="restrict_sr" class="search_label" title="Restrict search to this subreddit">in /r/LocalLLaMA</label>
+	</div>
+	
+	<button class="submit">
+		<svg width="15" viewBox="0 0 110 100" fill="none" stroke-width="10" stroke-linecap="round">
+			<path d="M20 50 H100" />
+			<path d="M75 15 L100 50 L75 85" />
+			&rarr;
+		</svg>
+	</button>
+</form>
+
+			<div id="links">
+				<a id="reddit_link" href="#popup">
+					<span>reddit</span>
+					<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+						<path d="M22 2L12 22"/>
+						<path d="M2 6.70587C3.33333 8.07884 3.33333 11.5971 3.33333 11.5971M3.33333 19.647V11.5971M3.33333 11.5971C3.33333 11.5971 5.125 7.47817 8 7.47817C10.875 7.47817 12 8.85114 12 8.85114"/>
+					</svg>
+				</a>
+				
+					<div class="popup" id="popup">
+	<div class="popup-inner">
+		<h1>You are about to leave Redlib</h1>
+		<p>Do you want to continue?</p>
+		<p id="reddit_url">https://www.reddit.com/r/LocalLLaMA/comments/1vi6hmw/</p>
+		<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 639.24 563">
+			<defs>
+				<style>.cls-1{fill:#000000;}.cls-2{fill:#f8aa00;}</style>
+			</defs>
+			<path class="cls-2" d="M322.03,0c1.95,2.5,4.88,.9,7.33,1.65,10.5,3.21,17.65,10.39,22.83,19.35,93.64,162.06,186.98,324.29,280.25,486.56,15.73,20.19,2.49,51.27-22.92,54.37-1.21,.19-2.72-.54-3.49,1.08H239.03c-70.33-2.43-141.6,.79-212.08-1.74-17.49-4.92-23.16-15.88-26.91-32.26l-.04-1.97C88.74,354.76,194.49,188.2,289.92,18.43c6.2-10.66,15.03-16.94,27.61-17.36,.95-.03,2.05,.18,2.51-1.07h2Zm-2.43,545c94.95-.02,189.9,.04,284.85-.02,11.84-.73,20.75-13.19,16.68-23.55C523.83,355.97,430.74,187.62,332.05,23.07c-7.93-9.02-22.2-6.58-27.23,3.22C230.28,156.11,155.21,285.64,80.41,415.31c-19.88,34.41-39.31,69.07-59.78,103.14-2.43,4.05-4.24,8.8-1.68,14.18,3.92,8.24,9.59,12.37,18.82,12.37,93.95,0,187.9,0,281.85,0Z"/>
+			<path class="cls-1" d="M319.61,545c-93.95,0-187.9,0-281.85,0-9.22,0-14.89-4.13-18.82-12.37-2.56-5.38-.75-10.13,1.68-14.18,20.47-34.07,39.9-68.73,59.78-103.14C155.21,285.64,230.28,156.11,304.82,26.29c5.03-9.8,19.3-12.24,27.23-3.22,98.7,164.55,191.79,332.9,289.1,498.35,4.06,10.36-4.85,22.82-16.68,23.55-94.94,.06-189.9,0-284.85,.02Zm.44-462.31C238.88,223.22,158.17,362.95,77.28,503h485.54c-80.94-140.13-161.61-279.79-242.77-420.31Z"/>
+			<path class="cls-2" d="M320.05,82.69c81.16,140.52,161.83,280.18,242.77,420.31H77.28C158.17,362.95,238.88,223.22,320.05,82.69Zm36.05,118.99c-.14-46.75-68.32-52.32-74.66-4.76,.73,51.49,9.2,102.97,12.63,154.49,1.18,13.14,10.53,21.81,23.32,22.76,13.12,.97,23.89-9.13,24.96-21.58,4.44-49.99,9.4-101.22,13.76-150.91Zm-36.56,271.4c48.8,.76,49.24-74.7-.31-75.47-53.45,3-46.02,78.12,.31,75.47Z"/>
+			<path class="cls-1" d="M356.1,201.67c-4.36,49.69-9.31,100.91-13.76,150.91-1.07,12.45-11.84,22.56-24.96,21.58-12.79-.95-22.14-9.63-23.31-22.76-3.43-51.52-11.9-103-12.63-154.49,6.33-47.53,74.51-42.03,74.66,4.76Z"/>
+			<path class="cls-1" d="M319.54,473.08c-46.34,2.64-53.75-72.47-.31-75.47,49.56,.78,49.1,76.24,.31,75.47Z"/>
+		</svg>
+		<a id="goback" href="#">No, go back!</a>
+		<a id="toreddit" href="https://www.reddit.com/r/LocalLLaMA/comments/1vi6hmw/" rel="nofollow">Yes, take me to Reddit</a>
+	</div>
+</div>
+				
+				<a id="settings_link" href="/settings">
+					<span>settings</span>
+					<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+						<title>settings</title>
+						<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+					</svg>
+				</a>
+			</div>
+		</nav>
+		
+		<!-- MAIN CONTENT -->
+		
+		<main>
+			
+	<div id="column_one">
+		<!-- POST CONTENT -->
+<div class="post highlighted">
+	<p class="post_header">
+		<a class="post_subreddit" href="/r/LocalLLaMA">r/LocalLLaMA</a>
+		<span class="dot">&bull;</span>
+		<a class="post_author " href="/user/BTA_Labs">u/BTA_Labs</a>
+		
+			<small class="author_flair"><span class="emoji" style="background-image:url('/emoji/08m5x9chttjf1_t5_81eyvm/Discord');"></span></small>
+		
+		<span class="dot">&bull;</span>
+		<span class="created" title="Aug 07 2026, 17:09:01 UTC">Aug 07 &#39;26</span>
+		
+	</p>
+	<h1 class="post_title">
+		
+			<a href="/r/LocalLLaMA/search?q=flair_name%3A%22Discussion%22&restrict_sr=on"
+				class="post_flair"
+				style="color:white; background:#646d73;"><span>Discussion</span></a>
+		
+		llama.cpp PR reports up to 169% faster quantized-KV decode at 118K context on Intel Battlemage from one SYCL kernel switch
+		
+		
+	</h1>
+
+	<!-- POST MEDIA -->
+	<!-- post_type: image -->
+	
+	<div class="post_media_content">
+		<a href="/preview/pre/7xawgw0cjzhh1.jpeg?auto=webp&#38;s=3534811d05f31600ec55d07f860f597e2700127f" class="post_media_image" >
+			<img width="100%" height="100%" loading="lazy" alt="Post image" src="/preview/pre/7xawgw0cjzhh1.jpeg?auto=webp&#38;s=3534811d05f31600ec55d07f860f597e2700127f"/>
+		</a>
+	</div>
+	
+
+	<!-- POST BODY -->
+	<div class="post_body">
+		<!-- SC_OFF --><div class="md"><p>A fresh llama.cpp PR (#26689) changes what looks like a tiny SYCL FlashAttention dispatch decision.</p>
+
+<p>With a quantized KV cache (&quot;q4_0&quot; / &quot;q8_0&quot;), decode was being sent through the VEC kernel. On the author&#39;s Battlemage test system, switching that path to TILE gets much faster as context grows.</p>
+
+<p>Some of the author-reported results, MTP off:</p>
+
+<p>- Qwen3.6-35B, q4_0 KV @ 118,784: 12.99 → 29.61 t/s (+127.9%)</p>
+
+<p>- Qwen3.6-35B, q8_0 KV @ 118,784: 12.90 → 31.80 t/s (+146.5%)</p>
+
+<p>- Gemma 4 12B, q4_0 KV @ 118,784: 5.06 → 13.59 t/s (+168.7%)</p>
+
+<p>- Gemma 4 12B, q8_0 KV @ 118,784: 5.13 → 13.81 t/s (+168.7%)</p>
+
+<p>It isn&#39;t only the extreme 118K point either. At 32K, the same JIT tests show roughly +42% to +74% on the tested Qwen/Gemma configs.</p>
+
+<p>The interesting part is how small the actual idea is. The PR basically changes the dispatch gate so quantized-KV decode selects TILE instead of being forced through VEC, and adds &quot;GGML_SYCL_FA_DECODE_KERNEL=vec|tile|auto&quot; so it can be A/B tested.</p>
+
+<p>Big caveats:</p>
+
+<p>- PR is open, not merged</p>
+
+<p>- these are mostly author-reported benchmarks</p>
+
+<p>- the exact Battlemage GPU SKU isn&#39;t specified in the PR</p>
+
+<p>- this specifically targets quantized KV; F16 keeps the existing dispatch</p>
+
+<p>- one 118K MTP test only improved 17.65 → 20.14 t/s (+14.1%)</p>
+
+<p>- backend tests pass 4001/4001, but there isn&#39;t an independent hardware sweep yet</p>
+
+<p>The PR also relays a Laguna-S-2.1 Discord test showing +50% at 64K and +68% at 118K, but I&#39;d still like to see proper independent results.</p>
+
+<p>Anyone with a B580 or B70 able to reproduce this at 64K/118K? I&#39;m especially curious whether the huge gain survives with MTP enabled.</p>
+</div><!-- SC_ON -->
+		
+	
+	</div>
+	<div class="post_score" title="108">
+    
+    108
+    
+    <span class="label"> Upvotes</span></div>
+	<div class="post_footer">
+		<ul id="post_links">
+			<li>
+				<a href="/r/LocalLLaMA/comments/1vi6hmw/llamacpp_pr_reports_up_to_169_faster_quantizedkv/">
+					<span class="desktop_item">perma</span>link
+				</a>
+			</li>
+			
+			
+			
+<li>
+	<a
+		
+		href="#popup"
+		
+	>reddit</a>
+
+	
+		<div class="popup" id="popup">
+	<div class="popup-inner">
+		<h1>You are about to leave Redlib</h1>
+		<p>Do you want to continue?</p>
+		<p id="reddit_url">https://www.reddit.com/r/LocalLLaMA/comments/1vi6hmw/llamacpp_pr_reports_up_to_169_faster_quantizedkv/</p>
+		<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 639.24 563">
+			<defs>
+				<style>.cls-1{fill:#000000;}.cls-2{fill:#f8aa00;}</style>
+			</defs>
+			<path class="cls-2" d="M322.03,0c1.95,2.5,4.88,.9,7.33,1.65,10.5,3.21,17.65,10.39,22.83,19.35,93.64,162.06,186.98,324.29,280.25,486.56,15.73,20.19,2.49,51.27-22.92,54.37-1.21,.19-2.72-.54-3.49,1.08H239.03c-70.33-2.43-141.6,.79-212.08-1.74-17.49-4.92-23.16-15.88-26.91-32.26l-.04-1.97C88.74,354.76,194.49,188.2,289.92,18.43c6.2-10.66,15.03-16.94,27.61-17.36,.95-.03,2.05,.18,2.51-1.07h2Zm-2.43,545c94.95-.02,189.9,.04,284.85-.02,11.84-.73,20.75-13.19,16.68-23.55C523.83,355.97,430.74,187.62,332.05,23.07c-7.93-9.02-22.2-6.58-27.23,3.22C230.28,156.11,155.21,285.64,80.41,415.31c-19.88,34.41-39.31,69.07-59.78,103.14-2.43,4.05-4.24,8.8-1.68,14.18,3.92,8.24,9.59,12.37,18.82,12.37,93.95,0,187.9,0,281.85,0Z"/>
+			<path class="cls-1" d="M319.61,545c-93.95,0-187.9,0-281.85,0-9.22,0-14.89-4.13-18.82-12.37-2.56-5.38-.75-10.13,1.68-14.18,20.47-34.07,39.9-68.73,59.78-103.14C155.21,285.64,230.28,156.11,304.82,26.29c5.03-9.8,19.3-12.24,27.23-3.22,98.7,164.55,191.79,332.9,289.1,498.35,4.06,10.36-4.85,22.82-16.68,23.55-94.94,.06-189.9,0-284.85,.02Zm.44-462.31C238.88,223.22,158.17,362.95,77.28,503h485.54c-80.94-140.13-161.61-279.79-242.77-420.31Z"/>
+			<path class="cls-2" d="M320.05,82.69c81.16,140.52,161.83,280.18,242.77,420.31H77.28C158.17,362.95,238.88,223.22,320.05,82.69Zm36.05,118.99c-.14-46.75-68.32-52.32-74.66-4.76,.73,51.49,9.2,102.97,12.63,154.49,1.18,13.14,10.53,21.81,23.32,22.76,13.12,.97,23.89-9.13,24.96-21.58,4.44-49.99,9.4-101.22,13.76-150.91Zm-36.56,271.4c48.8,.76,49.24-74.7-.31-75.47-53.45,3-46.02,78.12,.31,75.47Z"/>
+			<path class="cls-1" d="M356.1,201.67c-4.36,49.69-9.31,100.91-13.76,150.91-1.07,12.45-11.84,22.56-24.96,21.58-12.79-.95-22.14-9.63-23.31-22.76-3.43-51.52-11.9-103-12.63-154.49,6.33-47.53,74.51-42.03,74.66,4.76Z"/>
+			<path class="cls-1" d="M319.54,473.08c-46.34,2.64-53.75-72.47-.31-75.47,49.56,.78,49.1,76.24,.31,75.47Z"/>
+		</svg>
+		<a id="goback" href="#">No, go back!</a>
+		<a id="toreddit" href="https://www.reddit.com/r/LocalLLaMA/comments/1vi6hmw/llamacpp_pr_reports_up_to_169_faster_quantizedkv/" rel="nofollow">Yes, take me to Reddit</a>
+	</div>
+</div>
+	
+</li>
+
+
+			
+			<li>
+				<a href="/preview/pre/7xawgw0cjzhh1.jpeg?auto=webp&#38;s=3534811d05f31600ec55d07f860f597e2700127f" download="redlib_llamacpp_pr_reports_up_to_169_faster_quantizedkv_7xawgw0cjzhh1.jpeg">
+					<span class="mobile_item">dl</span>
+					<span class="desktop_item">download</span>
+				</a>
+			</li>
+			
+		</ul>
+		<p>94%<span id="upvoted"> Upvoted</span></p>
+	</div>
+</div>
+
+		<!-- SORT FORM -->
+       <div id="commentQueryForms">
+		<form class="comment_control_form">
+			<p id="comment_count">20 comments <span id="sorted_by">sorted by </span></p>
+			<select name="sort" title="Sort comments by" id="commentSortSelect"> 
+				
+		<option value="confidence" selected>
+			Confidence
+		</option>
+	
+		<option value="top" >
+			Top
+		</option>
+	
+		<option value="new" >
+			New
+		</option>
+	
+		<option value="controversial" >
+			Controversial
+		</option>
+	
+		<option value="old" >
+			Old
+		</option>
+	
+      </select>
+        <button id="sort_submit" class="submit">
+          <svg width="15" viewBox="0 0 110 100" fill="none" stroke-width="10" stroke-linecap="round">
+              <path d="M20 50 H100" />
+              <path d="M75 15 L100 50 L75 85" />
+              &rarr;
+          </svg>
+      </button>
+      </form>
+      <!-- SEARCH FORM -->
+      <form class="comment_control_form">
+        <input id="search" class="commentQuery" type="search" name="q" value="" placeholder="Search comments">
+        <input type="hidden" name="type" value="comment">
+      </form>
+      </div>
+  
+      <div>
+      
+      </div>
+
+		<!-- COMMENTS -->
+		<div id="comments">
+			<div class="thread">
+				
+
+				
+
+
+<div id="p2avvq5" class="comment">
+	<div class="comment_left">
+    <p class="comment_score" title="14">
+         
+         14
+         
+    </p>
+        <div class="line"></div>
+	</div>
+	<details class="comment_right" open>
+		<summary class="comment_data">
+			
+				<a class="comment_author  " href="/user/nickm_27">u/nickm_27</a>
+			
+			
+				<small class="author_flair"><span>llama.cpp</span></small>
+			
+			<a href="/r/LocalLLaMA/comments/1vi6hmw/llamacpp_pr_reports_up_to_169_faster_quantizedkv/p2avvq5/?context=3#p2avvq5" class="created" title="Aug 07 2026, 17:14:49 UTC">Aug 07 &#39;26</a>
+			<span class="edited" title="Aug 07 2026, 17:41:18 UTC">edited Aug 07 &#39;26</span>
+			
+		</summary>
+		
+		<div class="comment_body "><div class="md"><p>I have a running build every day that takes the latest SYCL PRs and merges them in then builds. Week to week performance has genuinely been improving noticably.</p>
+
+<p>At this point with this PR merged in, on Qwen3.6 27B Q6_K on a B70 (with MTP, Q8_0 KV) I get the below (I only build server, so I don&#39;t have a llama-bench):
+<ul><li>pp starts at 1100 tok/s and by depth 22000 it is at 900 tok/s</li><li>for tg I get:</p></li></ul>
+
+<p><code>
+  code_python        pred= 192 draft= 163 acc= 150 rate=0.920 tok/s=42.2
+  code_cpp           pred=  54 draft=  49 acc=  42 rate=0.857 tok/s=38.8
+  explain_concept    pred= 192 draft= 200 acc= 119 rate=0.595 tok/s=28.5
+  summarize          pred=  49 draft=  50 acc=  35 rate=0.700 tok/s=33.4
+  qa_factual         pred= 191 draft= 196 acc= 136 rate=0.694 tok/s=32.9
+  translation        pred=  17 draft=  20 acc=  13 rate=0.650 tok/s=28.1
+  creative_short     pred=  33 draft=  27 acc=  20 rate=0.741 tok/s=28.0
+  stepwise_math      pred= 192 draft= 177 acc= 144 rate=0.814 tok/s=37.6
+  long_code_review   pred= 192 draft= 208 acc= 119 rate=0.572 tok/s=27.7
+Aggregate: {
+  &quot;n_requests&quot;: 9,
+  &quot;total_predicted&quot;: 1112,
+  &quot;total_draft&quot;: 1090,
+  &quot;total_draft_accepted&quot;: 778,
+  &quot;aggregate_accept_rate&quot;: 0.7138,
+  &quot;wall_s_total&quot;: 41.73
+}
+</code></p>
+</div></div>
+		
+		<div class="replies">
+
+
+<div id="p2awtyv" class="comment">
+	<div class="comment_left">
+    <p class="comment_score" title="3">
+         
+         3
+         
+    </p>
+        <div class="line"></div>
+	</div>
+	<details class="comment_right" open>
+		<summary class="comment_data">
+			
+				<a class="comment_author  op" href="/user/BTA_Labs">u/BTA_Labs</a>
+			
+			
+				<small class="author_flair"><span class="emoji" style="background-image:url('/emoji/08m5x9chttjf1_t5_81eyvm/Discord');"></span></small>
+			
+			<a href="/r/LocalLLaMA/comments/1vi6hmw/llamacpp_pr_reports_up_to_169_faster_quantizedkv/p2awtyv/?context=3#p2awtyv" class="created" title="Aug 07 2026, 17:18:51 UTC">Aug 07 &#39;26</a>
+			
+			
+		</summary>
+		
+		<div class="comment_body "><div class="md"><p>This is really useful, especially on a B70 with MTP. Do you happen to have a same-build VEC vs TILE comparison at 64K/118K? Would be interesting to see if the PR’s huge long-context gains still hold with MTP enabled.</p>
+</div></div>
+		
+		<div class="replies">
+
+
+<div id="p2azxfl" class="comment">
+	<div class="comment_left">
+    <p class="comment_score" title="3">
+         
+         3
+         
+    </p>
+        <div class="line"></div>
+	</div>
+	<details class="comment_right" open>
+		<summary class="comment_data">
+			
+				<a class="comment_author  " href="/user/nickm_27">u/nickm_27</a>
+			
+			
+				<small class="author_flair"><span>llama.cpp</span></small>
+			
+			<a href="/r/LocalLLaMA/comments/1vi6hmw/llamacpp_pr_reports_up_to_169_faster_quantizedkv/p2azxfl/?context=3#p2azxfl" class="created" title="Aug 07 2026, 17:31:57 UTC">Aug 07 &#39;26</a>
+			
+			
+		</summary>
+		
+		<div class="comment_body "><div class="md"><p>Like I said I don&#39;t have llama-bench with these commits merged in, but running a longer context research task this is what I see:</p>
+
+<p>pp:
+<ul><li>42K -&gt; 850 tok/s</li><li>52k -&gt; 810 tok/s</li><li>64k -&gt; 740 tok/s</p></li></ul>
+
+<p>at 90K context the tool calls were hitting 28 tok/s tg with mtp. The answer averaged 20 tok/s</p>
+
+<hr/>
+
+<p>pp:
+<ul><li>90k -&gt; 650 tok/s</li><li>110k -&gt; 560 tok/s</p></li></ul>
+
+<p>at 110k I am seeing the tool calls hitting 22 tok/s and the answer averaging 14 tok/s</p>
+</div></div>
+		
+		<div class="replies">
+		</div>
+	</details>
+</div>
+
+		</div>
+	</details>
+</div>
+
+		</div>
+	</details>
+</div>
+
+			</div><div class="thread">
+				
+
+				
+
+
+<div id="p2b2xl0" class="comment">
+	<div class="comment_left">
+    <p class="comment_score" title="6">
+         
+         6
+         
+    </p>
+        <div class="line"></div>
+	</div>
+	<details class="comment_right" open>
+		<summary class="comment_data">
+			
+				<a class="comment_author  " href="/user/Gesha24">u/Gesha24</a>
+			
+			
+			<a href="/r/LocalLLaMA/comments/1vi6hmw/llamacpp_pr_reports_up_to_169_faster_quantizedkv/p2b2xl0/?context=3#p2b2xl0" class="created" title="Aug 07 2026, 17:44:51 UTC">Aug 07 &#39;26</a>
+			
+			
+		</summary>
+		
+		<div class="comment_body "><div class="md"><p>That&#39;s great news for the B70 owners. The numbers are getting closer to r9700 and with the cost difference the b70 may be worth buying again.</p>
+</div></div>
+		
+		<div class="replies">
+
+
+<div id="p2bang3" class="comment">
+	<div class="comment_left">
+    <p class="comment_score" title="9">
+         
+         9
+         
+    </p>
+        <div class="line"></div>
+	</div>
+	<details class="comment_right" open>
+		<summary class="comment_data">
+			
+				<a class="comment_author  " href="/user/Boogertard">u/Boogertard</a>
+			
+			
+			<a href="/r/LocalLLaMA/comments/1vi6hmw/llamacpp_pr_reports_up_to_169_faster_quantizedkv/p2bang3/?context=3#p2bang3" class="created" title="Aug 07 2026, 18:17:47 UTC">Aug 07 &#39;26</a>
+			
+			
+		</summary>
+		
+		<div class="comment_body "><div class="md"><p>What cost difference? B70 now costs as much as R9700, which is an extremely bad deal.</p>
+</div></div>
+		
+		<div class="replies">
+
+
+<div id="p2bc4zq" class="comment">
+	<div class="comment_left">
+    <p class="comment_score" title="11">
+         
+         11
+         
+    </p>
+        <div class="line"></div>
+	</div>
+	<details class="comment_right" open>
+		<summary class="comment_data">
+			
+				<a class="comment_author  " href="/user/Gesha24">u/Gesha24</a>
+			
+			
+			<a href="/r/LocalLLaMA/comments/1vi6hmw/llamacpp_pr_reports_up_to_169_faster_quantizedkv/p2bc4zq/?context=3#p2bc4zq" class="created" title="Aug 07 2026, 18:24:10 UTC">Aug 07 &#39;26</a>
+			
+			
+		</summary>
+		
+		<div class="comment_body "><div class="md"><p>Well nevermind, I am way behind on the pricing. Microcenter has B70 for $1199 and R9700 $1349 - absolutely makes no sense to buy B70 with this price.</p>
+</div></div>
+		
+		<div class="replies">
+
+
+<div id="p2cn08j" class="comment">
+	<div class="comment_left">
+    <p class="comment_score" title="1">
+         
+         1
+         
+    </p>
+        <div class="line"></div>
+	</div>
+	<details class="comment_right" open>
+		<summary class="comment_data">
+			
+				<a class="comment_author  " href="/user/Boogertard">u/Boogertard</a>
+			
+			
+			<a href="/r/LocalLLaMA/comments/1vi6hmw/llamacpp_pr_reports_up_to_169_faster_quantizedkv/p2cn08j/?context=3#p2cn08j" class="created" title="Aug 07 2026, 21:57:28 UTC">Aug 07 &#39;26</a>
+			
+			
+		</summary>
+		
+		<div class="comment_body "><div class="md"><p>Couldn&#39;t agree more. It somewhat makes sense at 1k, at 1.2k, nobody except idiots gonna pick that over R9700.</p>
+</div></div>
+		
+		<div class="replies">
+		</div>
+	</details>
+</div>
+
+
+
+<div id="p2n2t9h" class="comment">
+	<div class="comment_left">
+    <p class="comment_score" title="1">
+         
+         1
+         
+    </p>
+        <div class="line"></div>
+	</div>
+	<details class="comment_right" open>
+		<summary class="comment_data">
+			
+				<a class="comment_author  " href="/user/tmvr">u/tmvr</a>
+			
+			
+			<a href="/r/LocalLLaMA/comments/1vi6hmw/llamacpp_pr_reports_up_to_169_faster_quantizedkv/p2n2t9h/?context=3#p2n2t9h" class="created" title="Aug 09 2026, 13:14:31 UTC">Aug 09 &#39;26</a>
+			
+			
+		</summary>
+		
+		<div class="comment_body "><div class="md"><p>Yeah, a few month back it was 1100-1200 vs. 1450 in EUR, now it&#39;s pretty much a wash so one is better off just going with the 9700 Pro.</p>
+</div></div>
+		
+		<div class="replies">
+		</div>
+	</details>
+</div>
+
+		</div>
+	</details>
+</div>
+
+
+
+<div id="p2e2gmy" class="comment">
+	<div class="comment_left">
+    <p class="comment_score" title="2">
+         
+         2
+         
+    </p>
+        <div class="line"></div>
+	</div>
+	<details class="comment_right" open>
+		<summary class="comment_data">
+			
+				<a class="comment_author  " href="/user/Hytht">u/Hytht</a>
+			
+			
+			<a href="/r/LocalLLaMA/comments/1vi6hmw/llamacpp_pr_reports_up_to_169_faster_quantizedkv/p2e2gmy/?context=3#p2e2gmy" class="created" title="Aug 08 2026, 02:44:59 UTC">Aug 08 &#39;26</a>
+			
+			
+		</summary>
+		
+		<div class="comment_body "><div class="md"><p>Didn&#39;t it either match or beat the R9700 in vLLM recently which caused it to increase in price?</p>
+</div></div>
+		
+		<div class="replies">
+
+
+<div id="p2gbwn0" class="comment">
+	<div class="comment_left">
+    <p class="comment_score" title="2">
+         
+         2
+         
+    </p>
+        <div class="line"></div>
+	</div>
+	<details class="comment_right" open>
+		<summary class="comment_data">
+			
+				<a class="comment_author  " href="/user/xanders_gold">u/xanders_gold</a>
+			
+			
+			<a href="/r/LocalLLaMA/comments/1vi6hmw/llamacpp_pr_reports_up_to_169_faster_quantizedkv/p2gbwn0/?context=3#p2gbwn0" class="created" title="Aug 08 2026, 12:56:04 UTC">Aug 08 &#39;26</a>
+			
+			
+		</summary>
+		
+		<div class="comment_body "><div class="md"><p>In vLLM you can see upwards of 2500t/s pp and 35-40t/s tg with a B70 on a custom vLLM build. Using LLM scaler I’m seeing 1600-1700t/s pp and 23-27t/s tg at 16k depth.</p>
+
+<p>This is in Qwen 3.6 27B at INT4.</p>
+</div></div>
+		
+		<div class="replies">
+		</div>
+	</details>
+</div>
+
+
+
+<div id="p2egc3d" class="comment">
+	<div class="comment_left">
+    <p class="comment_score" title="-1">
+         
+         -1
+         
+    </p>
+        <div class="line"></div>
+	</div>
+	<details class="comment_right" open>
+		<summary class="comment_data">
+			
+				<a class="comment_author  " href="/user/Boogertard">u/Boogertard</a>
+			
+			
+			<a href="/r/LocalLLaMA/comments/1vi6hmw/llamacpp_pr_reports_up_to_169_faster_quantizedkv/p2egc3d/?context=3#p2egc3d" class="created" title="Aug 08 2026, 04:14:13 UTC">Aug 08 &#39;26</a>
+			
+			
+		</summary>
+		
+		<div class="comment_body "><div class="md"><p>Haven&#39;t heard anything about that, might be FUD. R9700 has higher memory bandwidth (about 8%), and much faster in most of the benchmarks about 20% faster, only behind in &quot;Intel-optimized&quot; tests.</p>
+
+<p>If someone claims otherwise, either they are stupid or have an agenda.</p>
+</div></div>
+		
+		<div class="replies">
+		</div>
+	</details>
+</div>
+
+		</div>
+	</details>
+</div>
+
+		</div>
+	</details>
+</div>
+
+		</div>
+	</details>
+</div>
+
+			</div><div class="thread">
+				
+
+				
+
+
+<div id="p2e32b6" class="comment">
+	<div class="comment_left">
+    <p class="comment_score" title="4">
+         
+         4
+         
+    </p>
+        <div class="line"></div>
+	</div>
+	<details class="comment_right" open>
+		<summary class="comment_data">
+			
+				<a class="comment_author  " href="/user/WizardlyBump17">u/WizardlyBump17</a>
+			
+			
+			<a href="/r/LocalLLaMA/comments/1vi6hmw/llamacpp_pr_reports_up_to_169_faster_quantizedkv/p2e32b6/?context=3#p2e32b6" class="created" title="Aug 08 2026, 02:48:39 UTC">Aug 08 &#39;26</a>
+			
+			
+		</summary>
+		
+		<div class="comment_body "><div class="md"><p><code>GGML_SYCL_FA_DECODE_KERNEL=vec ./llama-server --host 0.0.0.0 --port 8080 --model /models/Qwen3.6-35B-A3B-UD-Q5_K_XL.gguf.ignore --jinja --threads 8 --ctx-size 262144 --cache-ram 0 --parallel 1 --temperature 0.0 --top-p 0.2 --top-k 20 --no-mmap --spec-type draft-mtp --spec-draft-n-max 3 --batch-size 4200 --ubatch-size 4200 --n-gpu-layers 99 --n-cpu-moe 99 --cache-type-k q8_0 --cache-type-v q8_0</code></p>
+
+<p><code>
+| model                            |             test |           t/s |     peak t/s |         ttfr (ms) |      est_ppt (ms) |     e2e_ttft (ms) |
+|:---------------------------------|-----------------:|--------------:|-------------:|------------------:|------------------:|------------------:|
+| unsloth/Qwen3.6-35B-A3B-MTP-GGUF | pp16000 @ d16000 | 804.31 ± 3.82 |              | 33526.67 ± 340.48 | 33525.15 ± 340.48 | 33526.67 ± 340.48 |
+| unsloth/Qwen3.6-35B-A3B-MTP-GGUF | tg16000 @ d16000 |  30.60 ± 0.85 | 31.00 ± 0.82 |                   |                   |                   |
+</code></p>
+
+<p><code>
+| model                            |             test |           t/s |     peak t/s |         ttfr (ms) |      est_ppt (ms) |     e2e_ttft (ms) |
+|:---------------------------------|-----------------:|--------------:|-------------:|------------------:|------------------:|------------------:|
+| unsloth/Qwen3.6-35B-A3B-MTP-GGUF | pp16000 @ d32000 | 794.87 ± 2.90 |              | 50692.51 ± 204.71 | 50691.68 ± 204.71 | 50692.51 ± 204.71 |
+| unsloth/Qwen3.6-35B-A3B-MTP-GGUF | tg16000 @ d32000 |  29.61 ± 1.68 | 30.00 ± 2.00 |                   |                   |                   |
+</code></p>
+
+<p><code>
+| model                            |             test |           t/s |     peak t/s |         ttfr (ms) |      est_ppt (ms) |     e2e_ttft (ms) |
+|:---------------------------------|-----------------:|--------------:|-------------:|------------------:|------------------:|------------------:|
+| unsloth/Qwen3.6-35B-A3B-MTP-GGUF | pp16000 @ d64000 | 748.88 ± 0.58 |              | 90035.29 ± 139.53 | 90032.65 ± 139.53 | 90035.29 ± 139.53 |
+| unsloth/Qwen3.6-35B-A3B-MTP-GGUF | tg16000 @ d64000 |  27.02 ± 1.00 | 27.33 ± 1.25 |                   |                   |                   |
+</code></p>
+
+<p><code>
+| model                            |              test |           t/s |     peak t/s |          ttfr (ms) |       est_ppt (ms) |      e2e_ttft (ms) |
+|:---------------------------------|------------------:|--------------:|-------------:|-------------------:|-------------------:|-------------------:|
+| unsloth/Qwen3.6-35B-A3B-MTP-GGUF | pp16000 @ d128000 | 671.52 ± 1.01 |              | 180455.28 ± 669.63 | 180453.49 ± 669.63 | 180455.28 ± 669.63 |
+| unsloth/Qwen3.6-35B-A3B-MTP-GGUF | tg16000 @ d128000 |  22.68 ± 0.51 | 23.33 ± 0.47 |                    |                    |                    |
+</code></p>
+
+<p>B580 + 7 5700X3D + 48GB at 3133MHz</p>
+
+<p>I need to compare to before and <code>GGML_SYCL_FA_DECODE_KERNEL=tile</code>. When I first tried the Pull Request, the performance of <code>GGML_SYCL_FA_DECODE_KERNEL=tile</code> was way better than <code>GGML_SYCL_FA_DECODE_KERNEL=vec</code>, but when I tested it again it was the inverse. I guess there is some variation. I guess that if you run llama.cpp from a fresh container the performance will be better than if you already had it running</p>
+</div></div>
+		
+		<div class="replies">
+		</div>
+	</details>
+</div>
+
+			</div><div class="thread">
+				
+
+				
+
+
+<div id="p2blc2v" class="comment">
+	<div class="comment_left">
+    <p class="comment_score" title="1">
+         
+         1
+         
+    </p>
+        <div class="line"></div>
+	</div>
+	<details class="comment_right" open>
+		<summary class="comment_data">
+			
+				<a class="comment_author  " href="/user/Illustrious-Swim9663">u/Illustrious-Swim9663</a>
+			
+			
+				<small class="author_flair"><span class="emoji" style="background-image:url('/emoji/08m5x9chttjf1_t5_81eyvm/Discord');"></span></small>
+			
+			<a href="/r/LocalLLaMA/comments/1vi6hmw/llamacpp_pr_reports_up_to_169_faster_quantizedkv/p2blc2v/?context=3#p2blc2v" class="created" title="Aug 07 2026, 19:03:54 UTC">Aug 07 &#39;26</a>
+			
+			
+		</summary>
+		
+		<div class="comment_body "><div class="md"><p>The codebase can be improved using AI, but it requires extensive testing. There might be a greater increase in speed.</p>
+</div></div>
+		
+		<div class="replies">
+
+
+<div id="p2btr5w" class="comment">
+	<div class="comment_left">
+    <p class="comment_score" title="6">
+         
+         6
+         
+    </p>
+        <div class="line"></div>
+	</div>
+	<details class="comment_right" open>
+		<summary class="comment_data">
+			
+				<a class="comment_author  " href="/user/Healthy-Nebula-3603">u/Healthy-Nebula-3603</a>
+			
+			
+			<a href="/r/LocalLLaMA/comments/1vi6hmw/llamacpp_pr_reports_up_to_169_faster_quantizedkv/p2btr5w/?context=3#p2btr5w" class="created" title="Aug 07 2026, 19:41:09 UTC">Aug 07 &#39;26</a>
+			<span class="edited" title="Aug 07 2026, 19:47:44 UTC">edited Aug 07 &#39;26</span>
+			
+		</summary>
+		
+		<div class="comment_body "><div class="md"><p>They already using AI agents (opus , Fable , GPT sol) to everything from few weeks  in llamacpp .. like everyone now.</p>
+
+<p>Did you see their agent.md currently ? 😁</p>
+
+<p>Is totally different what it was inside a month ago .
+Agents are allowed do everything now and contributor is responsible for keep up changes and fixing errors what he contributed.</p>
+
+<p>You didn&#39;t notice llamacpp suddenly increased performance on every kernel and getting good improvements very fast in every field now?
+😅</p>
+
+<p>Soon we get even better AI agents so performance jumps even more</p>
+</div></div>
+		
+		<div class="replies">
+
+
+<div id="p2c09dg" class="comment">
+	<div class="comment_left">
+    <p class="comment_score" title="2">
+         
+         2
+         
+    </p>
+        <div class="line"></div>
+	</div>
+	<details class="comment_right" open>
+		<summary class="comment_data">
+			
+				<a class="comment_author  " href="/user/Illustrious-Swim9663">u/Illustrious-Swim9663</a>
+			
+			
+				<small class="author_flair"><span class="emoji" style="background-image:url('/emoji/08m5x9chttjf1_t5_81eyvm/Discord');"></span></small>
+			
+			<a href="/r/LocalLLaMA/comments/1vi6hmw/llamacpp_pr_reports_up_to_169_faster_quantizedkv/p2c09dg/?context=3#p2c09dg" class="created" title="Aug 07 2026, 20:10:17 UTC">Aug 07 &#39;26</a>
+			
+			
+		</summary>
+		
+		<div class="comment_body "><div class="md"><p>Lol , true </p>
+</div></div>
+		
+		<div class="replies">
+		</div>
+	</details>
+</div>
+
+
+
+<div id="p2flkmw" class="comment">
+	<div class="comment_left">
+    <p class="comment_score" title="2">
+         
+         2
+         
+    </p>
+        <div class="line"></div>
+	</div>
+	<details class="comment_right" open>
+		<summary class="comment_data">
+			
+				<a class="comment_author  " href="/user/backyard_tractorbeam">u/backyard_tractorbeam</a>
+			
+			
+			<a href="/r/LocalLLaMA/comments/1vi6hmw/llamacpp_pr_reports_up_to_169_faster_quantizedkv/p2flkmw/?context=3#p2flkmw" class="created" title="Aug 08 2026, 09:47:44 UTC">Aug 08 &#39;26</a>
+			
+			
+		</summary>
+		
+		<div class="comment_body "><div class="md"><p>Performance fixes: awesome!</p>
+
+<p>The linked PR still has changes like this, adding this comment:</p>
+
+<pre><code>// quantized decode: TILE (gate fix - was forced VEC)
+</code></pre>
+
+<p>The agent it explaining its code change, not the new state of the code. Super common annoyance and it&#39;s useless. We don&#39;t write long rambling stores in comments like this, we explain what the code does (not what it used to do, without very good reason).</p>
+</div></div>
+		
+		<div class="replies">
+
+
+<div id="p2fmugk" class="comment">
+	<div class="comment_left">
+    <p class="comment_score" title="1">
+         
+         1
+         
+    </p>
+        <div class="line"></div>
+	</div>
+	<details class="comment_right" open>
+		<summary class="comment_data">
+			
+				<a class="comment_author  " href="/user/Healthy-Nebula-3603">u/Healthy-Nebula-3603</a>
+			
+			
+			<a href="/r/LocalLLaMA/comments/1vi6hmw/llamacpp_pr_reports_up_to_169_faster_quantizedkv/p2fmugk/?context=3#p2fmugk" class="created" title="Aug 08 2026, 09:58:46 UTC">Aug 08 &#39;26</a>
+			
+			
+		</summary>
+		
+		<div class="comment_body "><div class="md"><p>We won&#39;t code manually anymore so this way comments for AI is more useful probably for the time being AI agents and it change in next few moths again.</p>
+</div></div>
+		
+		<div class="replies">
+		</div>
+	</details>
+</div>
+
+		</div>
+	</details>
+</div>
+
+		</div>
+	</details>
+</div>
+
+		</div>
+	</details>
+</div>
+
+			</div><div class="thread">
+				
+
+				
+
+
+<div id="p2l93xl" class="comment">
+	<div class="comment_left">
+    <p class="comment_score" title="2">
+         
+         2
+         
+    </p>
+        <div class="line"></div>
+	</div>
+	<details class="comment_right" open>
+		<summary class="comment_data">
+			
+				<a class="comment_author  " href="/user/Familiar_Rent_4539">u/Familiar_Rent_4539</a>
+			
+			
+			<a href="/r/LocalLLaMA/comments/1vi6hmw/llamacpp_pr_reports_up_to_169_faster_quantizedkv/p2l93xl/?context=3#p2l93xl" class="created" title="Aug 09 2026, 04:47:20 UTC">Aug 09 &#39;26</a>
+			
+			
+		</summary>
+		
+		<div class="comment_body "><div class="md"><p>I’ve been testing the newer SYCL changes with Gemma 4 26B-A4B Q4_K_XL on an Intel Arc B580 12GB +32GB RAM. I use <code>GGML_SYCL_FA_DECODE_KERNEL=auto</code>.</p>
+
+<p>My main workload is translating whole book chapters: usually around 15–16K input tokens and 17–19K output tokens, with a 49K context.</p>
+
+<p>Here are my llama-bench results with F16 KV:</p>
+
+<table><thead>
+<tr>
+<th align="left">Context</th>
+<th align="left">Old SYCL</th>
+<th align="left">New SYCL</th>
+</tr>
+</thead><tbody>
+<tr>
+<td align="left">4K</td>
+<td align="left">34.78 t/s</td>
+<td align="left"><strong>35.36 t/s</strong></td>
+</tr>
+<tr>
+<td align="left">16K</td>
+<td align="left">31.99 t/s</td>
+<td align="left"><strong>32.59 t/s</strong></td>
+</tr>
+<tr>
+<td align="left">28K</td>
+<td align="left">29.62 t/s</td>
+<td align="left"><strong>30.15 t/s</strong></td>
+</tr>
+</tbody></table>
+
+<p>For actual 49K use, I switched to <strong>Q8 K / Q4 V KV cache</strong>. In my blind translation tests I couldn’t see any quality loss compared with F16/F16, while it uses much less memory and performs much better at long context.</p>
+
+<p>One of my real whole-chapter runs:</p>
+
+<table><thead>
+<tr>
+<th align="left">Metric</th>
+<th align="left">Result</th>
+</tr>
+</thead><tbody>
+<tr>
+<td align="left">Input</td>
+<td align="left">16,363 tokens</td>
+</tr>
+<tr>
+<td align="left">Output</td>
+<td align="left">19,082 tokens</td>
+</tr>
+<tr>
+<td align="left">Final sequence</td>
+<td align="left">35,445 tokens</td>
+</tr>
+<tr>
+<td align="left">Prompt processing</td>
+<td align="left">408.5 t/s</td>
+</tr>
+<tr>
+<td align="left">Generation</td>
+<td align="left"><strong>25.06 t/s</strong></td>
+</tr>
+<tr>
+<td align="left">Output stability</td>
+<td align="left">Clean</td>
+</tr>
+</tbody></table>
+
+<p>I also ended up dropping MTP.</p>
+
+<p>MTP used to work well with my older setup, but with this new SYCL build and long context it became unreliable. With <code>spec-draft-n-max=1</code> there was basically no useful speed advantage. With <code>n-max=2</code> or higher, long-context generation could suddenly collapse to around 1–2 t/s.</p>
+
+<p>Without MTP, Gemma stays around 25–27 t/s during these very long generations and is much more stable.</p>
+
+<p>So my current setup is: new SYCL build + Auto decode kernel + no MTP + 49K context + Q8 K / Q4 V KV cache</p>
+</div></div>
+		
+		<div class="replies">
+
+
+<div id="p2l9btk" class="comment">
+	<div class="comment_left">
+    <p class="comment_score" title="1">
+         
+         1
+         
+    </p>
+        <div class="line"></div>
+	</div>
+	<details class="comment_right" open>
+		<summary class="comment_data">
+			
+				<a class="comment_author  " href="/user/Familiar_Rent_4539">u/Familiar_Rent_4539</a>
+			
+			
+			<a href="/r/LocalLLaMA/comments/1vi6hmw/llamacpp_pr_reports_up_to_169_faster_quantizedkv/p2l9btk/?context=3#p2l9btk" class="created" title="Aug 09 2026, 04:48:58 UTC">Aug 09 &#39;26</a>
+			
+			
+		</summary>
+		
+		<div class="comment_body "><div class="md"><table><thead>
+<tr>
+<th align="left">Depth</th>
+<th align="left">Old SYCL</th>
+<th align="left">Edge SYCL</th>
+</tr>
+</thead><tbody>
+<tr>
+<td align="left">4K</td>
+<td align="left">31.47 t/s</td>
+<td align="left"><strong>33.73 t/s</strong></td>
+</tr>
+<tr>
+<td align="left">16K</td>
+<td align="left">21.94 t/s</td>
+<td align="left"><strong>33.22 t/s</strong></td>
+</tr>
+<tr>
+<td align="left">28K</td>
+<td align="left">16.04 t/s</td>
+<td align="left"><strong>28.76 t/s</strong></td>
+</tr>
+</tbody></table>
+
+<p>Q8 K / Q8 V with  Qwen3.6-35B-A3B-UD-Q4_K_XL  </p>
+</div></div>
+		
+		<div class="replies">
+		</div>
+	</details>
+</div>
+
+		</div>
+	</details>
+</div>
+
+			</div>
+		</div>
+
+	</div>
+
+		</main>
+		
+
+		<!-- FOOTER -->
+		
+			<footer>
+				<div class="footer-buttons">
+					<p><span id="version">v0.36.0-yunyun&emsp;</span><a href="/info" title="View instance information">ⓘ View instance info</a>&emsp;<a href="https://github.com/redlib-org/redlib" title="View code on GitHub">&lt;&gt; Code</a></p>
+				</div>
+			</footer>
+		
+	</body>
+</html>

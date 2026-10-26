@@ -1,0 +1,77 @@
+{
+  "lane": "a09-burn-program",
+  "division": "A",
+  "ok": true,
+  "note": "Ledger and receipts in exact bijection: 32 LEDGER.jsonl rows, 32 unique landings, 0 missing files, 0 orphan receipts. Verdicts 31 steal / 1 green, 13 slugs, 28 rows flag fresh_failure_mode. Contract drift: 17 of 32 receipts carry _b/_c suffixes beyond the BURN_<slug>_<YYYYMMDD>.md pattern yet all remain ledger-referenced. Negative finding: phrase standing burn has 0 hits in corpus/steal/ + memory/corpus/ while BURN_ has 15 lines there; the 24x7 program (born 2026-09-25) is not yet indexed in the steal corpus.",
+  "rows": [
+    {
+      "law": "standing-burn cadence: cron every 2h, 3 disjoint topics per fire, offpeak deep dives between fires, paid spend window-gated",
+      "claim": "The burn queue refuels itself without operator input: a MANIFEST topic list plus cron fires 3 parallel single-topic agents per 2h window, offpeak idle tasks carry deep dives, paid DeepSeek obeys protocol.deepseek_windows.",
+      "quote": "cron every 2h: 3 topics per fire, parallel background agents, one topic each; offpeak idle tasks carry single-topic deep dives between fires; paid DeepSeek work obeys protocol.deepseek_windows",
+      "source": "C:/Users/foste/Documents/projects/local_sovereign_agent/memory/burns/MANIFEST.json",
+      "steal": "Any idle fleet can self-refuel: keep a topic manifest with pointers, fire cron-batched parallel single-topic agents, gate paid calls to off-peak windows; work generation needs no operator in the loop.",
+      "falsifier": "ledger timestamps show fires more than 2h apart with no offpeak deep dives between, or a paid DeepSeek call inside a peak window",
+      "leverage": "high"
+    },
+    {
+      "law": "receipt-per-burn contract",
+      "claim": "Every burn must land a max 500 word receipt with fixed sections Verdict / Evidence / Steal or Vacuous / Falsifier / closed Bibliography of only sources actually read, and the ledger row points at it.",
+      "quote": "watch/inbox/BURN_<slug>_<YYYYMMDD>.md, max 500 words, fixed sections: Verdict / Evidence (quotes) / Steal or Vacuous / Falsifier if build proposed / Bibliography (closed, only sources actually read)",
+      "source": "C:/Users/foste/Documents/projects/local_sovereign_agent/memory/burns/MANIFEST.json",
+      "steal": "Bounded fixed-section receipts with closed bibliographies make parallel agent output mergeable and auditable without re-reading; adopt for every fan-out lane so trust is structural, not per-read.",
+      "falsifier": "an orphan receipt not referenced by any ledger row, or a receipt missing a fixed section; today bijection held (0 orphan, 0 missing)",
+      "leverage": "high"
+    },
+    {
+      "law": "green demote, due-oldest-first round robin",
+      "claim": "Topics never repeat while green; solved topics demote and reranking is driven by unresolved-failure count, then in-distribution fit, then learning progress (fresh failure modes beat repeated ones).",
+      "quote": "round-robin due-oldest-first by ledger; solved topics demote, never repeat while green (PAT learning-progress key)",
+      "source": "C:/Users/foste/Documents/projects/local_sovereign_agent/memory/burns/MANIFEST.json",
+      "steal": "Rank work queues by fresh-failure count instead of age or recency; a green verdict is terminal for that topic per cycle, so compute never re-solves settled questions.",
+      "falsifier": "two ledger rows for one slug where the earlier verdict is green and a later fire reruns it; roblox-durable-lane greened once at 14:06Z and demoted, no repeat fired",
+      "leverage": "high"
+    },
+    {
+      "law": "churn re-verifies quota denominators; cached tokens are the stealth window",
+      "claim": "Free-lane churn tracked model counts but missed Groq cutting text-model free RPD from 14.4K to 1K, overdrawing wave math about 14x; meanwhile cached tokens bypass rate limits so frozen-prefix signatures ride free.",
+      "quote": "Cached tokens do not count towards your rate limits",
+      "source": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/BURN_free-resource-landscape_20260925.md",
+      "steal": "Re-verify quota-per-day denominators every churn pass, not just model lists, and route deliberate-ask frozen-prefix traffic through provider prompt caching since cached tokens skip the TPM wall.",
+      "falsifier": "a provider doc changing cached-token accounting, or wave math on a stale RPD denominator 429ing a lane (already fired once with the 14.4K figure)",
+      "leverage": "high"
+    },
+    {
+      "law": "pre-registered falsifier before scale-out",
+      "claim": "Burns that propose builds must carry a falsifier run before scaling; judge-lane-spec pass c proved escalate-rate on deterministic lanes would be schema-determined, so the conf_floor statistic is dead there.",
+      "quote": "escalate-rate is schema-determined, not calibrated: rule rows carry confidence 1.0 by construction, so the conf_floor statistic is dead on deterministic lanes",
+      "source": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/BURN_judge-lane-spec_20260925_c.md",
+      "steal": "Before any 50-wide burn on a drafted gate, replay the schema over verdict history and prove the calibration statistic is alive on that lane class; exempt rule seats from calibration stats before scaling.",
+      "falsifier": "a scale-out burn whose receipt proposes a build with no pre-registered falsifier; contract demands Falsifier section only if a build is proposed, receipts without builds say none proposed",
+      "leverage": "high"
+    }
+  ],
+  "checks": [
+    {
+      "command": "./.venv/Scripts/python.exe ledger row count + verdict Counter + slug count (memory/burns/LEDGER.jsonl)",
+      "exit": 0,
+      "evidence": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/w3/lanes/a09-burn.check.txt"
+    },
+    {
+      "command": "python glob cross-check: 32 BURN_*_20260925*.md receipt files vs 32 unique ledger landings, 0 missing, 0 orphan + ls | grep -c = 32",
+      "exit": 0,
+      "evidence": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/w3/lanes/a09-burn.check.txt"
+    },
+    {
+      "command": "grep -F -c byte-verification of 5 quotes, all counts >= 1 (MANIFEST x3, free-resource receipt x1, judge-lane-spec_c receipt x1)",
+      "exit": 0,
+      "evidence": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/w3/lanes/a09-burn.quotes.grep.txt"
+    },
+    {
+      "command": "grep -rni BURN_ and standing burn over corpus/steal/ + memory/corpus/ (BURN_ 15 lines, standing burn 0 lines = negative finding)",
+      "exit": 0,
+      "evidence": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/w3/lanes/a09-burn.estategrep.txt"
+    }
+  ],
+  "decision_changed": "yes: remaining gala w3 lane receipts adopt the burn receipt contract (fixed sections, closed bibliography, grep -F byte-verified quotes); the standing-burn zero-hit in corpus/steal/ + memory/corpus/ is filed as a promotion-owed negative for the operator, not actioned inside this lane.",
+  "artifact": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/w3/lanes/a09-burn-program.json"
+}

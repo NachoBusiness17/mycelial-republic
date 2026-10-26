@@ -1,0 +1,23 @@
+{
+  "gopher": "t51",
+  "item": "nothing consumes tools/freshness_gate.py yet: read githooks/pre-push (ratchet + config_seal + description_pin warn-only blocks) and add a freshness WARN-ONLY block that scans watch/inbox/*.md receipts dated TODAY for stamp lines (source-fetched pattern per t37), runs the gate on up to 5 of them, prints WARN lines for stale/mismatch, never exits nonzero (|| true + TODO-FLIP-TO-ENFORCE convention per t40); spec line first in the hook; prove both pass and fail paths against a fixture receipt created outside watch/inbox",
+  "ok": true,
+  "note": "Freshness WARN-ONLY block landed at the tail of githooks/pre-push after the description_pin block, spec comment lines first. Block: guarded by [ -d watch/inbox ], find -newermt local-midnight selects receipts dated TODAY, grep -Ei prefilter for stamp labels (source-fetched / fetched / observed-at variants, the t37 label set), caps gated runs at 5, runs .venv/Scripts/python.exe tools/freshness_gate.py per receipt, prints PUSH-GATE: freshness WARN plus the gate's own FAIL line on any non-ok result, never exits nonzero (|| true capture + ok/other case, same TODO-FLIP-TO-ENFORCE convention as t40's description_pin block). Negatives first-class: (1) live verbatim block run warns on watch/inbox/MICKEY17_WAVE2_QUALITY_20260925.md because its line 93 prose contains 'fetched: all present' with no date; the gate fail-closes correctly and the block stayed at exit 0, recorded as known WARN noise, prefilter tightening is next_steal. (2) Whole-hook direct run exits 1 at the PRE-EXISTING enforcing config_seal gate (lanes.yaml, mag.yaml, providers.yaml modified, same drift t40 recorded), so the freshness block is unreached in a whole-file run until that drift is re-sealed by operator NAME; block proof is via verbatim extraction. (3) Pre-existing em-dash in the hook header line 2 repaired to a hyphen (comment-only) so the hook files dash-clean. hooksPath confirmed githooks, so the block is live on next push.",
+  "checks": [
+    "sh -n githooks/pre-push -> exit 0 (raw in t51.check.txt section A)",
+    "verbatim block extracted (sed from spec line to EOF, 27 lines) and run against LIVE watch/inbox: 1 WARN (MICKEY17 prose, no parseable stamp), verbatim_block_exit=0, push not blocked (raw in t51.check.txt sections B, B2)",
+    "PASS fixture (source-fetched: 2026-09-26, temp dir outside watch/inbox): gate prints ok, pass_exit=0 (raw in t51.check.txt section C)",
+    "FAIL fixture (source-fetched: 2026-09-01, 25d stale, same temp dir): gate prints FAIL, fail_exit=2 (raw in t51.check.txt section C)",
+    "block warn-handling lines verbatim with f overridden to fixtures: fail fixture prints WARN lines, warn_handling_overall_exit=0 (raw in t51.check.txt section D)",
+    "dated-TODAY predicate: oldmtime.md carrying a fresh stamp but mtime 2026-09-20 excluded by find; today-mtime fixtures listed (raw in t51.check.txt section D2)",
+    "whole-hook direct run: ratchet PASS (scope=10, NEW=0), config_seal FAIL on 3 modified configs, direct_hook_exit=1, freshness block unreached (raw in t51.check.txt section E)",
+    "ratchet check --changed after edit: PASS, exit 0 (raw in t51.check.txt section F)",
+    "em-dash/en-dash scan (U+2014, U+2013) over githooks/pre-push, lanes/t51.check.txt, lanes/t51.json -> all 0 hits after repairs (raw in t51.check.txt section G and closing rescan)"
+  ],
+  "next_steal": "tighten the hook scan prefilter to require a parseable YYYY-MM-DD on the stamp line so prose like 'fetched: all present' (MICKEY17_WAVE2_QUALITY_20260925.md line 93) stops tripping WARN noise before the gate fail-closes; after that, once watch/inbox receipts stamp routinely, operator re-seals the config drift and flips TODO-FLIP-TO-ENFORCE",
+  "artifacts": [
+    "githooks/pre-push",
+    "watch/inbox/gala_20260925/afterparty/lanes/t51.check.txt",
+    "watch/inbox/gala_20260925/afterparty/lanes/t51.json"
+  ]
+}

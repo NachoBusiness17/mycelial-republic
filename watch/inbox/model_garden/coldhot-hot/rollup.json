@@ -1,0 +1,3315 @@
+{
+ "run": "coldhot-hot",
+ "asks": 30,
+ "landed": 30,
+ "cost_usd": 0.0358,
+ "graded": [
+  {
+   "file": "scripts/descent_driver.sh",
+   "family": "kimi",
+   "ask_id": "coldhot-hot-kimi-scripts__descent_driver",
+   "sha_at_ask": "1ac6a0f37700c3b7",
+   "ok": true,
+   "channel": "content",
+   "defects": [
+    {
+     "raw": "DEFECT 1: Log appending without rotation risks unbounded disk growth | EVIDENCE: scripts/descent_driver.sh:14 | FIX: Add log rotation with `>> \"$LOG\"` replaced by a size-checked append or external rotation trigger",
+     "start": 14,
+     "nums": [
+      14
+     ],
+     "path_ok": true,
+     "lines_ok": true,
+     "claim": "Log appending without rotation risks unbounded disk growth"
+    },
+    {
+     "raw": "DEFECT 2: `date -u +%H%M` in filename lacks seconds, collisions possible on rapid cycles | EVIDENCE: scripts/descent_driver.sh:22 | FIX: Use `%H%M%S` or append `.$cycle` to ensure unique output filenames",
+     "start": 22,
+     "nums": [
+      22
+     ],
+     "path_ok": true,
+     "lines_ok": true,
+     "claim": "`date -u +%H%M` in filename lacks seconds, collisions possible on rapid cycles"
+    },
+    {
+     "raw": "DEFECT 3: `mv` failure silently ignored with `2>/dev/null`, masking data loss on permission errors | EVIDENCE: scripts/descent_driver.sh:24 | FIX: Replace `2>/dev/null` with explicit error handling or remove suppression to surface failures",
+     "start": 24,
+     "nums": [
+      24
+     ],
+     "path_ok": true,
+     "lines_ok": true,
+     "claim": "`mv` failure silently ignored with `2>/dev/null`, masking data loss on permission errors"
+    }
+   ],
+   "dead_code": {
+    "raw": "DEAD-CODE: `mkdir -p memory/runs/hermes_burn` is redundant as `>> \"$LOG\"` on line 14 creates parent dirs | EVIDENCE: scripts/descent_driver.sh:11",
+    "start": 11,
+    "nums": [
+     11
+    ],
+    "path_ok": true,
+    "lines_ok": true
+   },
+   "one_sitting": {
+    "raw": "ONE-SITTING FIX: Add collision-resistant timestamp to output filename | EVIDENCE: scripts/descent_driver.sh:22",
+    "start": 22,
+    "nums": [
+     22
+    ],
+    "path_ok": true,
+    "lines_ok": true
+   },
+   "checks": {
+    "shape": true,
+    "cites_resolve": true,
+    "lines_in_range": true,
+    "no_em_dash": true,
+    "max_lines": true
+   },
+   "sha_drift_since_ask": false
+  },
+  {
+   "file": "scripts/descent_driver.sh",
+   "family": "glm-flash",
+   "ask_id": "coldhot-hot-glm-flash-scripts__descent_driver",
+   "sha_at_ask": "1ac6a0f37700c3b7",
+   "ok": true,
+   "channel": "content",
+   "defects": [
+    {
+     "raw": "DEFECT 1: A failed ds_workhorse run still consumes the queue because the unconditional mv on success-of-if (not of the python run) destroys pending_items.jsonl, permanently dropping unfetched items | EVIDENCE: scripts/descent_driver.sh:22-26 | FIX: gate the mv on the workhorse's exit status (if \"$PY\" ... ; then mv ...; fi)",
+     "start": 22,
+     "nums": [
+      22,
+      26
+     ],
+     "path_ok": true,
+     "lines_ok": true,
+     "claim": "A failed ds_workhorse run still consumes the queue because the unconditional mv on success-of-if (not of the python run) destroys pending_items.jsonl, permanently dropping unfetched items"
+    },
+    {
+     "raw": "DEFECT 2: Output filename uses only %H%M, so two cycles within the same clock hour overwrite the prior pending_out_*.jsonl, silently destroying banked results | EVIDENCE: scripts/descent_driver.sh:24 | FIX: include %d and $cycle in the filename, e.g. pending_out_$(date -u +%d%H%M)_${cycle}.jsonl",
+     "start": 24,
+     "nums": [
+      24
+     ],
+     "path_ok": true,
+     "lines_ok": true,
+     "claim": "Output filename uses only %H%M, so two cycles within the same clock hour overwrite the prior pending_out_*.jsonl, silently destroying banked results"
+    },
+    {
+     "raw": "DEFECT 3: Header promises \"skip = output exists\" but the loop never checks for prior output, so every hermes_burn_* dir is re-grounded every 45 seconds, burning budget on completed asks | EVIDENCE: scripts/descent_driver.sh:4,18-21 | FIX: guard the python call with an output-exists check (e.g. [ -f \"$q/output.done\" ] && continue)",
+     "start": 4,
+     "nums": [
+      4,
+      18,
+      21
+     ],
+     "path_ok": true,
+     "lines_ok": true,
+     "claim": "Header promises \"skip = output exists\" but the loop never checks for prior output, so every hermes_burn_* dir is re-grounded every 45 seconds, burning budget on completed asks"
+    }
+   ],
+   "dead_code": {
+    "raw": "DEAD-CODE: The documented skip gate exists only in the comment block; no corresponding code path anywhere in the file | EVIDENCE: scripts/descent_driver.sh:4",
+    "start": 4,
+    "nums": [
+     4
+    ],
+    "path_ok": true,
+    "lines_ok": true
+   },
+   "one_sitting": {
+    "raw": "ONE-SITTING FIX: Wrap the workhorse invocation and mv in a success check so failed runs keep the queue intact, and fold the output-exists skip into the same edit while in the loop | EVIDENCE: scripts/descent_driver.sh:18-26",
+    "start": 18,
+    "nums": [
+     18,
+     26
+    ],
+    "path_ok": true,
+    "lines_ok": true
+   },
+   "checks": {
+    "shape": true,
+    "cites_resolve": true,
+    "lines_in_range": true,
+    "no_em_dash": true,
+    "max_lines": true
+   },
+   "sha_drift_since_ask": false
+  },
+  {
+   "file": "scripts/descent_driver.sh",
+   "family": "deepseek",
+   "ask_id": "coldhot-hot-deepseek-scripts__descent_driver",
+   "sha_at_ask": "1ac6a0f37700c3b7",
+   "ok": true,
+   "channel": "content",
+   "defects": [
+    {
+     "raw": "DEFECT 1: `pending_items.jsonl` is never cleared when its consumer fails, so a failed batch is re-run every cycle and output preserved under a colliding `%H%M` name | EVIDENCE: scripts/descent_driver.sh:23-27 | FIX: gate the `mv` on `ds_workhorse.py` exit status and route out-file through an `mktemp` name keyed to cycle.",
+     "start": 23,
+     "nums": [
+      23,
+      27
+     ],
+     "path_ok": true,
+     "lines_ok": true,
+     "claim": "`pending_items.jsonl` is never cleared when its consumer fails, so a failed batch is re-run every cycle and output preserved under a colliding `%H%M` name"
+    },
+    {
+     "raw": "DEFECT 2: The `%H%M` minute-stamp output name reuses an existing file across a 24h loop, silently overwriting a prior cycle's ledger | EVIDENCE: scripts/descent_driver.sh:25 | FIX: append `_c$cycle` to `pending_out_$(date -u +%H%M)`.",
+     "start": 25,
+     "nums": [
+      25
+     ],
+     "path_ok": true,
+     "lines_ok": true,
+     "claim": "The `%H%M` minute-stamp output name reuses an existing file across a 24h loop, silently overwriting a prior cycle's ledger"
+    },
+    {
+     "raw": "DEFECT 3: Log rotation/append to `driver.log` and per-cycle stdout append grow unbounded in an infinite loop with no size cap | EVIDENCE: scripts/descent_driver.sh:16,26 | FIX: truncate `$LOG` when it exceeds a byte threshold at cycle start.",
+     "start": 16,
+     "nums": [
+      16,
+      26
+     ],
+     "path_ok": true,
+     "lines_ok": true,
+     "claim": "Log rotation/append to `driver.log` and per-cycle stdout append grow unbounded in an infinite loop with no size cap"
+    }
+   ],
+   "dead_code": {
+    "raw": "DEAD-CODE: none groundable; every path and variable (`STOP`, `LOG`, `cycle`, `q`, `PY`) is referenced within the 30 lines, so no dead candidate can be cited to real bytes.",
+    "start": null,
+    "nums": [],
+    "path_ok": true,
+    "lines_ok": true
+   },
+   "one_sitting": {
+    "raw": "ONE-SITTING FIX: Check `ds_workhorse.py` exit status before the `mv`, so a crashed batch is not retried forever against an unrotated output name | EVIDENCE: scripts/descent_driver.sh:24-27",
+    "start": 24,
+    "nums": [
+     24,
+     27
+    ],
+    "path_ok": true,
+    "lines_ok": true
+   },
+   "checks": {
+    "shape": true,
+    "cites_resolve": true,
+    "lines_in_range": true,
+    "no_em_dash": true,
+    "max_lines": true
+   },
+   "sha_drift_since_ask": false
+  },
+  {
+   "file": "watch/inbox/SHARED_SURFACE_CONTRACT.json",
+   "family": "kimi",
+   "ask_id": "coldhot-hot-kimi-watch__inbox__SHARED_SURFACE_CONTRACT",
+   "sha_at_ask": "9cfd74fa92dc047e",
+   "ok": true,
+   "channel": "content",
+   "defects": [
+    {
+     "raw": "DEFECT 1: Path traversal possible via unvalidated client alias keys used in filesystem operations | EVIDENCE: watch/inbox/SHARED_SURFACE_CONTRACT.json:58-67 | FIX: Add key validation regex ^[a-z0-9_]+$ and reject unknown aliases before path resolution",
+     "start": 58,
+     "nums": [
+      58,
+      67
+     ],
+     "path_ok": true,
+     "lines_ok": true,
+     "claim": "Path traversal possible via unvalidated client alias keys used in filesystem operations"
+    },
+    {
+     "raw": "DEFECT 2: Windows backslash paths in \"mag_host\" alias (line 60-61) break when repo is on different drive or WSL path translation | EVIDENCE: watch/inbox/SHARED_SURFACE_CONTRACT.json:60-61 | FIX: Use forward slashes exclusively and resolve via pathlib.Path with explicit anchor detection",
+     "start": 60,
+     "nums": [
+      60,
+      61
+     ],
+     "path_ok": true,
+     "lines_ok": true,
+     "claim": "Windows backslash paths in \"mag_host\" alias (line 60-61) break when repo is on different drive or WSL path translation"
+    },
+    {
+     "raw": "DEFECT 3: \"grok_powershell\" alias uses angle brackets as placeholders (<repo>) without substitution schema defined | EVIDENCE: watch/inbox/SHARED_SURFACE_CONTRACT.json:78-80 | FIX: Define substitution rules in a \"placeholders\" block or remove angle-bracket syntax",
+     "start": 78,
+     "nums": [
+      78,
+      80
+     ],
+     "path_ok": true,
+     "lines_ok": true,
+     "claim": "\"grok_powershell\" alias uses angle brackets as placeholders (<repo>) without substitution schema defined"
+    }
+   ],
+   "dead_code": {
+    "raw": "DEAD-CODE: \"openclaw\" local_session_cache entry documents a path pattern never enforced by the contract | EVIDENCE: watch/inbox/SHARED_SURFACE_CONTRACT.json:63-66",
+    "start": 63,
+    "nums": [
+     63,
+     66
+    ],
+    "path_ok": true,
+    "lines_ok": true
+   },
+   "one_sitting": {
+    "raw": "ONE-SITTING FIX: Add key validation regex and alias registry to prevent traversal via malicious client alias keys | EVIDENCE: watch/inbox/SHARED_SURFACE_CONTRACT.json:58-67",
+    "start": 58,
+    "nums": [
+     58,
+     67
+    ],
+    "path_ok": true,
+    "lines_ok": true
+   },
+   "checks": {
+    "shape": true,
+    "cites_resolve": true,
+    "lines_in_range": true,
+    "no_em_dash": true,
+    "max_lines": true
+   },
+   "sha_drift_since_ask": false
+  },
+  {
+   "file": "watch/inbox/SHARED_SURFACE_CONTRACT.json",
+   "family": "glm-flash",
+   "ask_id": "coldhot-hot-glm-flash-watch__inbox__SHARED_SURFACE_CONTRACT",
+   "sha_at_ask": "9cfd74fa92dc047e",
+   "ok": true,
+   "channel": "content",
+   "defects": [
+    {
+     "raw": "DEFECT 1: read_first is hardcoded to the container path \"/board/inbox/INDEX.json\", so host and WSL clients following it literally read a nonexistent route instead of their alias; canonical and read_first disagree. | EVIDENCE: watch/inbox/SHARED_SURFACE_CONTRACT.json:10 | FIX: change read_first to \"INDEX.json\" relative to repo_relative, resolving per client alias.",
+     "start": 10,
+     "nums": [
+      10
+     ],
+     "path_ok": true,
+     "lines_ok": true,
+     "claim": "read_first is hardcoded to the container path \"/board/inbox/INDEX.json\", so host and WSL clients following it literally read a nonexistent route instead of their alias; canonical and read_first disagree."
+    },
+    {
+     "raw": "DEFECT 2: vscode and cursor client aliases use unexpanded \"${workspaceFolder}\" placeholders, which are editor-templating variables not resolvable paths, so those seats cannot apply the contract as-is. | EVIDENCE: watch/inbox/SHARED_SURFACE_CONTRACT.json:58-63 | FIX: replace with \"<repo>\" style placeholder matching the z_code and codex aliases.",
+     "start": 58,
+     "nums": [
+      58,
+      63
+     ],
+     "path_ok": true,
+     "lines_ok": true,
+     "claim": "vscode and cursor client aliases use unexpanded \"${workspaceFolder}\" placeholders, which are editor-templating variables not resolvable paths, so those seats cannot apply the contract as-is."
+    },
+    {
+     "raw": "DEFECT 3: Law requires receipt fields (source hash, producer, timestamp, destination, acceptance state) but no receipt schema or validator rule exists, so step 5 \"write a receipt\" is unenforceable and receipts will be non-interoperable. | EVIDENCE: watch/inbox/SHARED_SURFACE_CONTRACT.json:26,42-47 | FIX: add a receipts object defining required keys and extend the validator command to check them.",
+     "start": 26,
+     "nums": [
+      26,
+      42,
+      47
+     ],
+     "path_ok": true,
+     "lines_ok": true,
+     "claim": "Law requires receipt fields (source hash, producer, timestamp, destination, acceptance state) but no receipt schema or validator rule exists, so step 5 \"write a receipt\" is unenforceable and receipts will be non-interoperable."
+    }
+   ],
+   "dead_code": {
+    "raw": "DEAD-CODE: authority.consensus (\"raises confidence but never grants permission\") is declared but referenced by no workflow step or law, so no seat action consumes it. | EVIDENCE: watch/inbox/SHARED_SURFACE_CONTRACT.json:89-91",
+    "start": 89,
+    "nums": [
+     89,
+     91
+    ],
+    "path_ok": true,
+    "lines_ok": true
+   },
+   "one_sitting": {
+    "raw": "ONE-SITTING FIX: rewrite read_first and the vscode/cursor placeholders to alias-relative paths so every one of the nine client aliases resolves identically from one schema. | EVIDENCE: watch/inbox/SHARED_SURFACE_CONTRACT.json:10,58-63",
+    "start": 10,
+    "nums": [
+     10,
+     58,
+     63
+    ],
+    "path_ok": true,
+    "lines_ok": true
+   },
+   "checks": {
+    "shape": false,
+    "cites_resolve": true,
+    "lines_in_range": true,
+    "no_em_dash": true,
+    "max_lines": true
+   },
+   "sha_drift_since_ask": false
+  },
+  {
+   "file": "watch/inbox/SHARED_SURFACE_CONTRACT.json",
+   "family": "deepseek",
+   "ask_id": "coldhot-hot-deepseek-watch__inbox__SHARED_SURFACE_CONTRACT",
+   "sha_at_ask": "9cfd74fa92dc047e",
+   "ok": true,
+   "channel": "content",
+   "defects": [
+    {
+     "raw": "DEFECT 1: Container and WSL aliases point at paths that exist only on the host, so non-host clients cannot resolve the canonical surface | EVIDENCE: watch/inbox/SHARED_SURFACE_CONTRACT.json:5-7 | FIX: point container/wsl aliases at the mounted view and document the mount, or drop the aliases that cannot resolve.",
+     "start": 5,
+     "nums": [
+      5,
+      7
+     ],
+     "path_ok": true,
+     "lines_ok": true,
+     "claim": "Container and WSL aliases point at paths that exist only on the host, so non-host clients cannot resolve the canonical surface"
+    },
+    {
+     "raw": "DEFECT 2: wsl entry is a full Windows path while canonical.container uses /board/inbox; two clients for the same host resolve to different roots with no statement of which wins | EVIDENCE: watch/inbox/SHARED_SURFACE_CONTRACT.json:6-7 | FIX: declare one resolution rule keyed on client and make container_alias the only cross-mount form.",
+     "start": 6,
+     "nums": [
+      6,
+      7
+     ],
+     "path_ok": true,
+     "lines_ok": true,
+     "claim": "wsl entry is a full Windows path while canonical.container uses /board/inbox; two clients for the same host resolve to different roots with no statement of which wins"
+    },
+    {
+     "raw": "DEFECT 3: never_sole_destination lists /tmp and %TEMP% but laws[0] already grants client-local session dirs as cache; the two rules overlap and leave \"cache only, not sole copy\" untestable | EVIDENCE: watch/inbox/SHARED_SURFACE_CONTRACT.json:24,66-73 | FIX: state the single invariant once (\"no artifact may have its only copy outside canonical.repo_relative\") and delete the redundant enumeration.",
+     "start": 24,
+     "nums": [
+      24,
+      66,
+      73
+     ],
+     "path_ok": true,
+     "lines_ok": true,
+     "claim": "never_sole_destination lists /tmp and %TEMP% but laws[0] already grants client-local session dirs as cache; the two rules overlap and leave \"cache only, not sole copy\" untestable"
+    }
+   ],
+   "dead_code": {
+    "raw": "DEAD-CODE: client_aliases.grok_powershell.local_session_cache value \"browser or CLI session history\" is prose, not a path, and no law references it | EVIDENCE: watch/inbox/SHARED_SURFACE_CONTRACT.json:54-58",
+    "start": 54,
+    "nums": [
+     54,
+     58
+    ],
+    "path_ok": true,
+    "lines_ok": true
+   },
+   "one_sitting": {
+    "raw": "ONE-SITTING FIX: Add a required \"resolution\" block that maps each alias to canonical.repo_relative or canonical.container and fails validation when an alias resolves to neither | EVIDENCE: watch/inbox/SHARED_SURFACE_CONTRACT.json:5-7,39-59",
+    "start": 5,
+    "nums": [
+     5,
+     7,
+     39,
+     59
+    ],
+    "path_ok": true,
+    "lines_ok": true
+   },
+   "checks": {
+    "shape": true,
+    "cites_resolve": true,
+    "lines_in_range": true,
+    "no_em_dash": true,
+    "max_lines": true
+   },
+   "sha_drift_since_ask": false
+  },
+  {
+   "file": "mag/switchboard_v2.py",
+   "family": "kimi",
+   "ask_id": "coldhot-hot-kimi-mag__switchboard_v2",
+   "sha_at_ask": "51e11a777f782ff3",
+   "ok": true,
+   "channel": "content",
+   "defects": [
+    {
+     "raw": "DEFECT 1: _GRANTED_EVENT_IDS replay protection only tracks AUTHORIZED grants, allowing replay of DENIED/DEFERRED proposals | EVIDENCE: mag/switchboard_v2.py:311-315 | FIX: Track all terminal states in _GRANTED_EVENT_IDS, not just AUTHORIZED",
+     "start": 311,
+     "nums": [
+      311,
+      315
+     ],
+     "path_ok": true,
+     "lines_ok": true,
+     "claim": "_GRANTED_EVENT_IDS replay protection only tracks AUTHORIZED grants, allowing replay of DENIED/DEFERRED proposals"
+    },
+    {
+     "raw": "DEFECT 2: _implicit_authority allows self-grant AUTHORIZED for low-impact effects even when proposal status is already DENIED | EVIDENCE: mag/switchboard_v2.py:343-362 | FIX: Check proposal.get(\"status\") not in terminal states before legacy self-grant path",
+     "start": 343,
+     "nums": [
+      343,
+      362
+     ],
+     "path_ok": true,
+     "lines_ok": true,
+     "claim": "_implicit_authority allows self-grant AUTHORIZED for low-impact effects even when proposal status is already DENIED"
+    },
+    {
+     "raw": "DEFECT 3: confirm() reuses stale ts from DEFERRED record without rechecking TTL expiry at confirmation time | EVIDENCE: mag/switchboard_v2.py:437-446 | FIX: Call policy_engine.check_ttl(rec, pol) before validate_authority in confirm()",
+     "start": 437,
+     "nums": [
+      437,
+      446
+     ],
+     "path_ok": true,
+     "lines_ok": true,
+     "claim": "confirm() reuses stale ts from DEFERRED record without rechecking TTL expiry at confirmation time"
+    }
+   ],
+   "dead_code": {
+    "raw": "DEAD-CODE: cmd_expire imports import_module but never uses it | EVIDENCE: mag/switchboard_v2.py:847",
+    "start": 847,
+    "nums": [
+     847
+    ],
+    "path_ok": true,
+    "lines_ok": true
+   },
+   "one_sitting": {
+    "raw": "ONE-SITTING FIX: Add TTL recheck in confirm() before authority validation | EVIDENCE: mag/switchboard_v2.py:437-446",
+    "start": 437,
+    "nums": [
+     437,
+     446
+    ],
+    "path_ok": true,
+    "lines_ok": true
+   },
+   "checks": {
+    "shape": true,
+    "cites_resolve": true,
+    "lines_in_range": true,
+    "no_em_dash": true,
+    "max_lines": true
+   },
+   "sha_drift_since_ask": false
+  },
+  {
+   "file": "mag/switchboard_v2.py",
+   "family": "glm-flash",
+   "ask_id": "coldhot-hot-glm-flash-mag__switchboard_v2",
+   "sha_at_ask": "51e11a777f782ff3",
+   "ok": true,
+   "channel": "content",
+   "defects": [
+    {
+     "raw": "DEFECT 1: Replay protection is process-local memory only, so every restart clears _GRANTED_EVENT_IDS and a previously granted event_id can be re-granted from scratch | EVIDENCE: mag/switchboard_v2.py:85-88, 277-303 | FIX: persist granted event_ids durably (e.g. append to TRAIL and scan TRAIL, or a granted_ids.jsonl set) before adding to the in-memory set",
+     "start": 85,
+     "nums": [
+      85,
+      88
+     ],
+     "path_ok": true,
+     "lines_ok": true,
+     "claim": "Replay protection is process-local memory only, so every restart clears _GRANTED_EVENT_IDS and a previously granted event_id can be re-granted from scratch"
+    },
+    {
+     "raw": "DEFECT 2: confirm() claims full revalidation but only calls validate_authority; check_ttl and check_budget are never rerun, so a proposal that expired or exhausted budget while parked in the inbox is resurrected to AUTHORIZED on operator confirm | EVIDENCE: mag/switchboard_v2.py:455-482 | FIX: call policy_engine.check_ttl and check_budget on rec before _transition to CONFIRMED and fail closed on either",
+     "start": 455,
+     "nums": [
+      455,
+      482
+     ],
+     "path_ok": true,
+     "lines_ok": true,
+     "claim": "confirm() claims full revalidation but only calls validate_authority; check_ttl and check_budget are never rerun, so a proposal that expired or exhausted budget while parked in the inbox is resurrected to AUTHORIZED on operator confirm"
+    },
+    {
+     "raw": "DEFECT 3: _flush_expired_deferred flips inbox records to DENIED without trail_append, so terminal receipt-chain states exist only in the inbox and the TRAIL receipt chain has a hole | EVIDENCE: mag/switchboard_v2.py:840-848 | FIX: call trail_append(rec) after _rewrite_inbox_rec(rec) in the flush loop",
+     "start": 840,
+     "nums": [
+      840,
+      848
+     ],
+     "path_ok": true,
+     "lines_ok": true,
+     "claim": "_flush_expired_deferred flips inbox records to DENIED without trail_append, so terminal receipt-chain states exist only in the inbox and the TRAIL receipt chain has a hole"
+    }
+   ],
+   "dead_code": {
+    "raw": "DEAD-CODE: _valid_state_transition is defined but never called anywhere in the file | EVIDENCE: mag/switchboard_v2.py:108-109",
+    "start": 108,
+    "nums": [
+     108,
+     109
+    ],
+    "path_ok": true,
+    "lines_ok": true
+   },
+   "one_sitting": {
+    "raw": "ONE-SITTING FIX: Back the replay set with the TRAIL file: in grant(), replace the set-membership check with a scan of TRAIL for receipt_status==AUTHORIZED with the same event_id, then add to _GRANTED_EVENT_IDS as a cache | EVIDENCE: mag/switchboard_v2.py:277-303",
+    "start": 277,
+    "nums": [
+     277,
+     303
+    ],
+    "path_ok": true,
+    "lines_ok": true
+   },
+   "checks": {
+    "shape": true,
+    "cites_resolve": true,
+    "lines_in_range": true,
+    "no_em_dash": true,
+    "max_lines": true
+   },
+   "sha_drift_since_ask": false
+  },
+  {
+   "file": "mag/switchboard_v2.py",
+   "family": "deepseek",
+   "ask_id": "coldhot-hot-deepseek-mag__switchboard_v2",
+   "sha_at_ask": "51e11a777f782ff3",
+   "ok": true,
+   "channel": "content",
+   "defects": [
+    {
+     "raw": "DEFECT 1: inbox records carry only the DEFERRED snapshot; confirm() builds authority from rec[\"budget\"], so a budget consumed by a parallel grant is never seen and confirmation re-authorizes a spent proposal | EVIDENCE: mag/switchboard_v2.py:452-462 (auth dict from rec), mag/switchboard_v2.py:246-249 (grant budget holder) | FIX: before AUTHORIZED in confirm(), re-run policy_engine.check_budget on the live authority path and deny if exhausted",
+     "start": 452,
+     "nums": [
+      452,
+      462
+     ],
+     "path_ok": true,
+     "lines_ok": true,
+     "claim": "inbox records carry only the DEFERRED snapshot; confirm() builds authority from rec[\"budget\"], so a budget consumed by a parallel grant is never seen and confirmation re-authorizes a spent proposal"
+    },
+    {
+     "raw": "DEFECT 2: replay guard _GRANTED_EVENT_IDS is process-local and only populated on the AUTHORIZED branch, so a restart plus reorganize of the same event_id double-grants and the guard never covers DEFERRED-then-confirmed paths | EVIDENCE: mag/switchboard_v2.py:73 (_GRANTED_EVENT_IDS = set()), mag/switchboard_v2.py:333-338 (add on AUTHORIZED only), mag/switchboard_v2.py:496-508 (confirm path adds nothing) | FIX: derive granted event_ids by scanning TRAIL on startup and add eid to the set in confirm() before trail_append",
+     "start": 73,
+     "nums": [
+      73
+     ],
+     "path_ok": true,
+     "lines_ok": true,
+     "claim": "replay guard _GRANTED_EVENT_IDS is process-local and only populated on the AUTHORIZED branch, so a restart plus reorganize of the same event_id double-grants and the guard never covers DEFERRED-then-confirmed paths"
+    },
+    {
+     "raw": "DEFECT 3: _flush_expired_deferred mutates and rewrites the inbox while iterating _read_inbox(), so each _rewrite_inbox_rec re-reads the file and a later flushed record can revert an earlier one in the same sweep | EVIDENCE: mag/switchboard_v2.py:857-869 (_flush_expired_deferred loop) with mag/switchboard_v2.py:395-409 (_rewrite_inbox_rec re-reads INBOX) | FIX: collect expired event_ids first, then apply one batch rewrite of the inbox",
+     "start": 857,
+     "nums": [
+      857,
+      869
+     ],
+     "path_ok": true,
+     "lines_ok": true,
+     "claim": "_flush_expired_deferred mutates and rewrites the inbox while iterating _read_inbox(), so each _rewrite_inbox_rec re-reads the file and a later flushed record can revert an earlier one in the same sweep"
+    }
+   ],
+   "dead_code": {
+    "raw": "DEAD-CODE: _valid_state_transition is never called; every transition goes through _transition | EVIDENCE: mag/switchboard_v2.py:107-108",
+    "start": 107,
+    "nums": [
+     107,
+     108
+    ],
+    "path_ok": true,
+    "lines_ok": true
+   },
+   "one_sitting": {
+    "raw": "ONE-SITTING FIX: revalidate TTL and budget at confirm() against live state and write the verdict into the CONFIRMED record before advancing to AUTHORIZED | EVIDENCE: mag/switchboard_v2.py:452-462",
+    "start": 452,
+    "nums": [
+     452,
+     462
+    ],
+    "path_ok": true,
+    "lines_ok": true
+   },
+   "checks": {
+    "shape": false,
+    "cites_resolve": true,
+    "lines_in_range": true,
+    "no_em_dash": true,
+    "max_lines": true
+   },
+   "sha_drift_since_ask": false
+  },
+  {
+   "file": "tools/hermes_burn.py",
+   "family": "kimi",
+   "ask_id": "coldhot-hot-kimi-tools__hermes_burn",
+   "sha_at_ask": "91453258538db098",
+   "ok": true,
+   "channel": "content",
+   "defects": [
+    {
+     "raw": "DEFECT 1: _call sends HTTP requests without User-Agent header, violating SSRF defense-in-depth | EVIDENCE: tools/hermes_burn.py:94-101 | FIX: Add \"User-Agent\": \"Mag/1.0\" header to the urllib.request.Request call",
+     "start": 94,
+     "nums": [
+      94,
+      101
+     ],
+     "path_ok": true,
+     "lines_ok": true,
+     "claim": "_call sends HTTP requests without User-Agent header, violating SSRF defense-in-depth"
+    },
+    {
+     "raw": "DEFECT 2: _bank appends to usage.jsonl without atomic tmp+replace, risking corruption on crash | EVIDENCE: tools/hermes_burn.py:134-136 | FIX: Write to tempfile then os.replace(USAGE, USAGE) atomically",
+     "start": 134,
+     "nums": [
+      134,
+      136
+     ],
+     "path_ok": true,
+     "lines_ok": true,
+     "claim": "_bank appends to usage.jsonl without atomic tmp+replace, risking corruption on crash"
+    },
+    {
+     "raw": "DEFECT 3: _hermes_key leaks file handle via unclosed open() iterator, exhausting FDs under load | EVIDENCE: tools/hermes_burn.py:71-79 | FIX: Wrap open() in with statement or add explicit .close()",
+     "start": 71,
+     "nums": [
+      71,
+      79
+     ],
+     "path_ok": true,
+     "lines_ok": true,
+     "claim": "_hermes_key leaks file handle via unclosed open() iterator, exhausting FDs under load"
+    }
+   ],
+   "dead_code": {
+    "raw": "DEAD-CODE: The docstring's \"Exit: 0 all asks ok / 1 any failed / 2 usage\" comment describes a 2 code that main never returns | EVIDENCE: tools/hermes_burn.py:26-28",
+    "start": 26,
+    "nums": [
+     26,
+     28
+    ],
+    "path_ok": true,
+    "lines_ok": true
+   },
+   "one_sitting": {
+    "raw": "ONE-SITTING FIX: Add atomic tmp+replace to _bank for usage.jsonl integrity | EVIDENCE: tools/hermes_burn.py:134-136",
+    "start": 134,
+    "nums": [
+     134,
+     136
+    ],
+    "path_ok": true,
+    "lines_ok": true
+   },
+   "checks": {
+    "shape": true,
+    "cites_resolve": true,
+    "lines_in_range": true,
+    "no_em_dash": true,
+    "max_lines": true
+   },
+   "sha_drift_since_ask": false
+  },
+  {
+   "file": "tools/hermes_burn.py",
+   "family": "glm-flash",
+   "ask_id": "coldhot-hot-glm-flash-tools__hermes_burn",
+   "sha_at_ask": "91453258538db098",
+   "ok": true,
+   "channel": "content",
+   "defects": [
+    {
+     "raw": "DEFECT 1: turn-1 deliverable is landed with a bare write_text, so a crash mid-write leaves a partial file that _landed_skip then treats as landed truth, permanently blocking refire (force cannot override) | EVIDENCE: tools/hermes_burn.py:367-371 | FIX: write to a tmp sibling then os.replace into out_path so only complete bytes ever count as landed",
+     "start": 367,
+     "nums": [
+      367,
+      371
+     ],
+     "path_ok": true,
+     "lines_ok": true,
+     "claim": "turn-1 deliverable is landed with a bare write_text, so a crash mid-write leaves a partial file that _landed_skip then treats as landed truth, permanently blocking refire (force cannot override)"
+    },
+    {
+     "raw": "DEFECT 2: --dry never runs the evidence preflight (the not-execute branch short-circuits before _assert_evidence_in_body), so dry validation passes asks that a real fire would fail closed on | EVIDENCE: tools/hermes_burn.py:314-316,323 | FIX: call _assert_evidence_in_body(meta, messages) in the dry branch too before appending the dry turn",
+     "start": 314,
+     "nums": [
+      314,
+      316,
+      323
+     ],
+     "path_ok": true,
+     "lines_ok": true,
+     "claim": "--dry never runs the evidence preflight (the not-execute branch short-circuits before _assert_evidence_in_body), so dry validation passes asks that a real fire would fail closed on"
+    },
+    {
+     "raw": "DEFECT 3: _hermes_key opens ROOT/.env unguarded; a missing .env raises FileNotFoundError from module setup instead of the intended fail-loud SystemExit | EVIDENCE: tools/hermes_burn.py:89 | FIX: check (ROOT / \".env\").is_file() first and raise the same SystemExit(\"no HERMES_API_KEY in .env\")",
+     "start": 89,
+     "nums": [
+      89
+     ],
+     "path_ok": true,
+     "lines_ok": true,
+     "claim": "_hermes_key opens ROOT/.env unguarded; a missing .env raises FileNotFoundError from module setup instead of the intended fail-loud SystemExit"
+    }
+   ],
+   "dead_code": {
+    "raw": "DEAD-CODE: the assistant echo appended after turn 1 is never read; turn 2 rebuilds messages from original_user_msg and there is no turn 3 | EVIDENCE: tools/hermes_burn.py:312,358",
+    "start": 312,
+    "nums": [
+     312,
+     358
+    ],
+    "path_ok": true,
+    "lines_ok": true
+   },
+   "one_sitting": {
+    "raw": "ONE-SITTING FIX: make both landing sites (turn-1 write_text and turn-2 append) atomic via tmp+os.replace, the only path where partial bytes can permanently eat a paid deliverable | EVIDENCE: tools/hermes_burn.py:367-374 | FALSIFIER: kill the process between write and replace; on next run the ask must still refire rather than skip as landed.",
+    "start": 367,
+    "nums": [
+     367,
+     374
+    ],
+    "path_ok": true,
+    "lines_ok": true
+   },
+   "checks": {
+    "shape": true,
+    "cites_resolve": true,
+    "lines_in_range": true,
+    "no_em_dash": true,
+    "max_lines": true
+   },
+   "sha_drift_since_ask": false
+  },
+  {
+   "file": "tools/hermes_burn.py",
+   "family": "deepseek",
+   "ask_id": "coldhot-hot-deepseek-tools__hermes_burn",
+   "sha_at_ask": "91453258538db098",
+   "ok": true,
+   "channel": "content",
+   "defects": [
+    {
+     "raw": "DEFECT 1: EVIDENCE-PREFLIGHT head probe checks `text[:400].strip() not in body` but the system prompt is prepended ahead of the evidence block only via `_system_for` which returns face_for(model)+laws; on turn 2 the rebuilt `messages` drops the system prompt and contract entirely, so probe for evidence material still present in turn-2 body holds only because evidence rides the original user msg - but a revision whose evidence rendered into `contract` (not evidence[]) passes exactly as the DUEL2/T1W2 disease did | EVIDENCE: tools/hermes_burn.py:262-266 | FIX: require every evidence path also appear in `meta.get(\"contract\")` render, or resolve material via evidence[] only and reject contract-embedded pseudo-evidence.",
+     "start": 262,
+     "nums": [
+      262,
+      266
+     ],
+     "path_ok": true,
+     "lines_ok": true,
+     "claim": "EVIDENCE-PREFLIGHT head probe checks `text[:400].strip() not in body` but the system prompt is prepended ahead of the evidence block only via `_system_for` which returns face_for(model)+laws; on turn 2 the rebuilt `messages` drops the system prompt and contract entirely, so probe for evidence material still present in turn-2 body holds only because evidence rides the original user msg - but a revision whose evidence rendered into `contract` (not evidence[]) passes exactly as the DUEL2/T1W2 disease did"
+    },
+    {
+     "raw": "DEFECT 2: `_assert_public_endpoint` resolves once per call but urllib.request follows redirects by default; a 30x from the allowlisted host to an internal URL bypasses the IP fence entirely | EVIDENCE: tools/hermes_burn.py:100-107 and tools/hermes_burn.py:126-133 | FIX: install an HTTPRedirectHandler that raises on any redirect, or pass a custom opener with redirects disabled.",
+     "start": 100,
+     "nums": [
+      100,
+      107
+     ],
+     "path_ok": true,
+     "lines_ok": true,
+     "claim": "`_assert_public_endpoint` resolves once per call but urllib.request follows redirects by default; a 30x from the allowlisted host to an internal URL bypasses the IP fence entirely"
+    },
+    {
+     "raw": "DEFECT 3: `_bank` writes usage rows to a shared jsonl and `_landed_skip` reads `out_path.exists()` but turn-1 write uses `out_path.write_text` non-atomically; a crash mid-write leaves a partial deliverable that `_landed_skip` then treats as landed and refuses every re-fire forever | EVIDENCE: tools/hermes_burn.py:319-323 and tools/hermes_burn.py:154-172 | FIX: write to `out_path.with_suffix('.md.tmp')` then `os.replace`, and gate `_landed_skip` on a non-empty trailing marker or size floor.",
+     "start": 319,
+     "nums": [
+      319,
+      323
+     ],
+     "path_ok": true,
+     "lines_ok": true,
+     "claim": "`_bank` writes usage rows to a shared jsonl and `_landed_skip` reads `out_path.exists()` but turn-1 write uses `out_path.write_text` non-atomically; a crash mid-write leaves a partial deliverable that `_landed_skip` then treats as landed and refuses every re-fire forever"
+    }
+   ],
+   "dead_code": {
+    "raw": "DEAD-CODE: `USAGE` module constant is shadowed nowhere but `USAGE.parent.mkdir` in `_bank` is the only writer; the `guard_terminal` call passes `_bank` as a callback but no other caller exists | EVIDENCE: tools/hermes_burn.py:186-189",
+    "start": 186,
+    "nums": [
+     186,
+     189
+    ],
+    "path_ok": true,
+    "lines_ok": true
+   },
+   "one_sitting": {
+    "raw": "ONE-SITTING FIX: disable redirects on the endpoint call | EVIDENCE: tools/hermes_burn.py:126-133",
+    "start": 126,
+    "nums": [
+     126,
+     133
+    ],
+    "path_ok": true,
+    "lines_ok": true
+   },
+   "checks": {
+    "shape": true,
+    "cites_resolve": true,
+    "lines_in_range": true,
+    "no_em_dash": true,
+    "max_lines": true
+   },
+   "sha_drift_since_ask": false
+  },
+  {
+   "file": "mag/steer_seal.py",
+   "family": "kimi",
+   "ask_id": "coldhot-hot-kimi-mag__steer_seal",
+   "sha_at_ask": "d751453d74cd11dc",
+   "ok": true,
+   "channel": "content",
+   "defects": [
+    {
+     "raw": "DEFECT 1: LOG is unconditionally used in _log_event before None check, but LOG is defined as a Path that may not exist, causing mkdir to fail on permission errors without proper handling | EVIDENCE: mag/steer_seal.py:66 | FIX: Move LOG.parent.mkdir inside the try block or handle OSError explicitly for mkdir",
+     "start": 66,
+     "nums": [
+      66
+     ],
+     "path_ok": true,
+     "lines_ok": true,
+     "claim": "LOG is unconditionally used in _log_event before None check, but LOG is defined as a Path that may not exist, causing mkdir to fail on permission errors without proper handling"
+    },
+    {
+     "raw": "DEFECT 2: write_keyfile force=True path uses os.replace which is atomic but non-force path uses os.open/os.fdopen without fsync, risking partial writes on crash | EVIDENCE: mag/steer_seal.py:157-163 | FIX: Add os.fsync(fd) before os.fdopen closes in non-force write_keyfile path",
+     "start": 157,
+     "nums": [
+      157,
+      163
+     ],
+     "path_ok": true,
+     "lines_ok": true,
+     "claim": "write_keyfile force=True path uses os.replace which is atomic but non-force path uses os.open/os.fdopen without fsync, risking partial writes on crash"
+    },
+    {
+     "raw": "DEFECT 3: _gate passes keyfile=None to verify and load_keys when keyfile param is None, but default_keyfile() may not exist causing VerifyError that returns False from verify, yet _gate treats this as verify failure rather than distinguishing missing keyfile from bad MAC | EVIDENCE: mag/steer_seal.py:328-330 | FIX: Pass explicit keyfile=default_keyfile() when keyfile is None to ensure consistent path resolution and clearer error propagation",
+     "start": 328,
+     "nums": [
+      328,
+      330
+     ],
+     "path_ok": true,
+     "lines_ok": true,
+     "claim": "_gate passes keyfile=None to verify and load_keys when keyfile param is None, but default_keyfile() may not exist causing VerifyError that returns False from verify, yet _gate treats this as verify failure rather than distinguishing missing keyfile from bad MAC"
+    }
+   ],
+   "dead_code": {
+    "raw": "DEAD-CODE: _PUNCT_TO_SPACE translation table is created but only used in classify which normalizes to NFC then uppercases; the punctuation stripping is correct but the table construction could be lazy | EVIDENCE: mag/steer_seal.py:48 | FIX: None - not clearly dead, but consider lazy initialization if import-time cost matters",
+    "start": 48,
+    "nums": [
+     48
+    ],
+    "path_ok": true,
+    "lines_ok": true
+   },
+   "one_sitting": {
+    "raw": "ONE-SITTING FIX: Add atomic tmp+replace to _log_event for the known jsonl surface violation | EVIDENCE: mag/steer_seal.py:75-85 | FIX: Write to LOG.with_suffix('.tmp') then os.replace to LOG inside the try block",
+    "start": 75,
+    "nums": [
+     75,
+     85
+    ],
+    "path_ok": true,
+    "lines_ok": true
+   },
+   "checks": {
+    "shape": true,
+    "cites_resolve": true,
+    "lines_in_range": true,
+    "no_em_dash": true,
+    "max_lines": true
+   },
+   "sha_drift_since_ask": false
+  },
+  {
+   "file": "mag/steer_seal.py",
+   "family": "glm-flash",
+   "ask_id": "coldhot-hot-glm-flash-mag__steer_seal",
+   "sha_at_ask": "d751453d74cd11dc",
+   "ok": true,
+   "channel": "content",
+   "defects": [
+    {
+     "raw": "DEFECT 1: On verify failure in warn mode, _gate returns the raw envelope JSON (including mac) as Admitted.text instead of the unwrapped payload, so downstream steering executes JSON as operative text | EVIDENCE: mag/steer_seal.py:370-378 | FIX: in the unsealed-permit-warn branch, if env is a dict and isinstance(env.get(\"payload\"), str), admit env[\"payload\"] instead of text.",
+     "start": 370,
+     "nums": [
+      370,
+      378
+     ],
+     "path_ok": true,
+     "lines_ok": true,
+     "claim": "On verify failure in warn mode, _gate returns the raw envelope JSON (including mac) as Admitted.text instead of the unwrapped payload, so downstream steering executes JSON as operative text"
+    },
+    {
+     "raw": "DEFECT 2: write_keyfile non-force branch opens the keyfile with no mode argument, so POSIX umask can yield 0644, and load_keys then permanently rejects that same file (\"permissions too open\"), bricking minting until manual repair | EVIDENCE: mag/steer_seal.py:130-135 | FIX: pass mode=0o600 to os.open and os.fchmod(fd, 0o600) before writing.",
+     "start": 130,
+     "nums": [
+      130,
+      135
+     ],
+     "path_ok": true,
+     "lines_ok": true,
+     "claim": "write_keyfile non-force branch opens the keyfile with no mode argument, so POSIX umask can yield 0644, and load_keys then permanently rejects that same file (\"permissions too open\"), bricking minting until manual repair"
+    },
+    {
+     "raw": "DEFECT 3: load_keys parses the rotation map with plain json.loads, so duplicate key_id entries silently keep the last value, the exact duplicate-key hazard _no_dupes exists to catch elsewhere | EVIDENCE: mag/steer_seal.py:185-188 | FIX: json.loads(raw, object_pairs_hook=_no_dupes) in the map branch.",
+     "start": 185,
+     "nums": [
+      185,
+      188
+     ],
+     "path_ok": true,
+     "lines_ok": true,
+     "claim": "load_keys parses the rotation map with plain json.loads, so duplicate key_id entries silently keep the last value, the exact duplicate-key hazard _no_dupes exists to catch elsewhere"
+    }
+   ],
+   "dead_code": {
+    "raw": "DEAD-CODE: `if LOG is None: return` in _log_event is unreachable, LOG is a module-level Path constant, never None | EVIDENCE: mag/steer_seal.py:101-102",
+    "start": 101,
+    "nums": [
+     101,
+     102
+    ],
+    "path_ok": true,
+    "lines_ok": true
+   },
+   "one_sitting": {
+    "raw": "ONE-SITTING FIX: Make _gate admit the unwrapped payload string on every non-verified envelope path (warn and enforce reason reporting), so no raw envelope JSON can become operative steer text; add a test asserting admit_text of a stale-sealed \"GO\" envelope yields \"GO\", not the envelope | EVIDENCE: mag/steer_seal.py:360-378",
+    "start": 360,
+    "nums": [
+     360,
+     378
+    ],
+    "path_ok": true,
+    "lines_ok": true
+   },
+   "checks": {
+    "shape": true,
+    "cites_resolve": true,
+    "lines_in_range": true,
+    "no_em_dash": true,
+    "max_lines": true
+   },
+   "sha_drift_since_ask": false
+  },
+  {
+   "file": "mag/steer_seal.py",
+   "family": "deepseek",
+   "ask_id": "coldhot-hot-deepseek-mag__steer_seal",
+   "sha_at_ask": "d751453d74cd11dc",
+   "ok": true,
+   "channel": "content",
+   "defects": [
+    {
+     "raw": "DEFECT 1: admit() on a malformed non-envelope directive file raises uncaught VerifyError instead of honoring safe-fail restrictive default, so a broken-seal STOP file hard-fails rather than pausing | EVIDENCE: mag/steer_seal.py:395-400 (parse_envelope(text) called outside _gate's verify try; _gate never runs) | FIX: wrap the parse in admit() so parse failure routes through _gate(text, None, ...), letting classify() honor a restrictive body",
+     "start": 395,
+     "nums": [
+      395,
+      400
+     ],
+     "path_ok": true,
+     "lines_ok": true,
+     "claim": "admit() on a malformed non-envelope directive file raises uncaught VerifyError instead of honoring safe-fail restrictive default, so a broken-seal STOP file hard-fails rather than pausing"
+    },
+    {
+     "raw": "DEFECT 2: _log_event logs the raw steering text (first 80 chars) for refused permit words, writing operator steering content to a shared jsonl audit surface | EVIDENCE: mag/steer_seal.py:154 and mag/steer_seal.py:386 | FIX: log a hash/redacted placeholder instead of the message body for refused/warned permits",
+     "start": 154,
+     "nums": [
+      154
+     ],
+     "path_ok": true,
+     "lines_ok": true,
+     "claim": "_log_event logs the raw steering text (first 80 chars) for refused permit words, writing operator steering content to a shared jsonl audit surface"
+    },
+    {
+     "raw": "DEFECT 3: resolve_mode() is called after load_keys() inside _gate's failure branch, so a malformed sentinel (_log_event during resolve_mode) runs even when the envelope was merely unsealed, coupling mode parsing into the verify-failure path | EVIDENCE: mag/steer_seal.py:383-388 | FIX: resolve mode once at gate entry, before trust decisions, so mode errors surface independent of envelope state",
+     "start": 383,
+     "nums": [
+      383,
+      388
+     ],
+     "path_ok": true,
+     "lines_ok": true,
+     "claim": "resolve_mode() is called after load_keys() inside _gate's failure branch, so a malformed sentinel (_log_event during resolve_mode) runs even when the envelope was merely unsealed, coupling mode parsing into the verify-failure path"
+    }
+   ],
+   "dead_code": {
+    "raw": "DEAD-CODE: LOG is never None (module constant), so the `if LOG is None: return` guard in _log_event is unreachable | EVIDENCE: mag/steer_seal.py:152-153",
+    "start": 152,
+    "nums": [
+     152,
+     153
+    ],
+    "path_ok": true,
+    "lines_ok": true
+   },
+   "one_sitting": {
+    "raw": "ONE-SITTING FIX: Make admit() parse-tolerant so malformed directive files fall through to _gate(text, None, ...) and a restrictive STOP body is still honored | EVIDENCE: mag/steer_seal.py:395-400",
+    "start": 395,
+    "nums": [
+     395,
+     400
+    ],
+    "path_ok": true,
+    "lines_ok": true
+   },
+   "checks": {
+    "shape": true,
+    "cites_resolve": true,
+    "lines_in_range": true,
+    "no_em_dash": true,
+    "max_lines": true
+   },
+   "sha_drift_since_ask": false
+  },
+  {
+   "file": "tools/ocean_v2_pilot.py",
+   "family": "kimi",
+   "ask_id": "coldhot-hot-kimi-tools__ocean_v2_pilot",
+   "sha_at_ask": "88734ee12e954536",
+   "ok": true,
+   "channel": "content",
+   "defects": [
+    {
+     "raw": "DEFECT 1: Cost cap check missing - spend can exceed COST_CAP without abort | EVIDENCE: tools/ocean_v2_pilot.py:174-175 | FIX: Add `if spend > COST_CAP: raise RuntimeError(f\"cap exceeded: ${spend}\")` after cost accumulation",
+     "start": 174,
+     "nums": [
+      174,
+      175
+     ],
+     "path_ok": true,
+     "lines_ok": true,
+     "claim": "Cost cap check missing - spend can exceed COST_CAP without abort"
+    },
+    {
+     "raw": "DEFECT 2: Regex for RATE allows partial match in larger string, no anchor | EVIDENCE: tools/ocean_v2_pilot.py:131 | FIX: Use `r\"^RATE:\\s*([1-5])$\"` with `re.MULTILINE` and validate group is single digit",
+     "start": 131,
+     "nums": [
+      131
+     ],
+     "path_ok": true,
+     "lines_ok": true,
+     "claim": "Regex for RATE allows partial match in larger string, no anchor"
+    },
+    {
+     "raw": "DEFECT 3: `chr(109)+chr(101)+chr(97)+chr(110)` obfuscation breaks if source inspected | EVIDENCE: tools/ocean_v2_pilot.py:192 | FIX: Replace with literal `\"mean\"` string",
+     "start": 192,
+     "nums": [
+      192
+     ],
+     "path_ok": true,
+     "lines_ok": true,
+     "claim": "`chr(109)+chr(101)+chr(97)+chr(110)` obfuscation breaks if source inspected"
+    }
+   ],
+   "dead_code": {
+    "raw": "DEAD-CODE: `return {\"ok\": False, \"error\": \"429 x2\"}` unreachable after loop exhausts attempts | EVIDENCE: tools/ocean_v2_pilot.py:102",
+    "start": 102,
+    "nums": [
+     102
+    ],
+    "path_ok": true,
+    "lines_ok": true
+   },
+   "one_sitting": {
+    "raw": "ONE-SITTING FIX: Add cost cap enforcement with abort before each ds() call | EVIDENCE: tools/ocean_v2_pilot.py:118-119",
+    "start": 118,
+    "nums": [
+     118,
+     119
+    ],
+    "path_ok": true,
+    "lines_ok": true
+   },
+   "checks": {
+    "shape": true,
+    "cites_resolve": true,
+    "lines_in_range": true,
+    "no_em_dash": true,
+    "max_lines": true
+   },
+   "sha_drift_since_ask": false
+  },
+  {
+   "file": "tools/ocean_v2_pilot.py",
+   "family": "glm-flash",
+   "ask_id": "coldhot-hot-glm-flash-tools__ocean_v2_pilot",
+   "sha_at_ask": "88734ee12e954536",
+   "ok": true,
+   "channel": "content",
+   "defects": [
+    {
+     "raw": "DEFECT 1: Budget cap is never enforced; the run can spend unboundedly past the $0.25 cap because `spend` is accumulated but never compared to `COST_CAP` nor aborted | EVIDENCE: tools/ocean_v2_pilot.py:127-176 | FIX: After each `spend += cost(...)`, check `if spend > COST_CAP: save partial receipt and abort`.",
+     "start": 127,
+     "nums": [
+      127,
+      176
+     ],
+     "path_ok": true,
+     "lines_ok": true,
+     "claim": "Budget cap is never enforced; the run can spend unboundedly past the $0.25 cap because `spend` is accumulated but never compared to `COST_CAP` nor aborted"
+    },
+    {
+     "raw": "DEFECT 2: Gate B counts any non-empty JUSTIFY string as \"corpus grounded\", so an uncited generic justification passes the pre-registered grounding gate | EVIDENCE: tools/ocean_v2_pilot.py:172-176 | FIX: Require the justification to reference corpus content (e.g. substring match against `system` corpus bytes) before setting `grounded`.",
+     "start": 172,
+     "nums": [
+      172,
+      176
+     ],
+     "path_ok": true,
+     "lines_ok": true,
+     "claim": "Gate B counts any non-empty JUSTIFY string as \"corpus grounded\", so an uncited generic justification passes the pre-registered grounding gate"
+    },
+    {
+     "raw": "DEFECT 3: DNS is validated once in `_validated_api_url()` but `urlopen` re-resolves the hostname, leaving a TOCTOU rebinding hole that bypasses the blocked-range check | EVIDENCE: tools/ocean_v2_pilot.py:80-90,105-107 | FIX: Pin the validated IP by connecting to `https://{ip}/...` with `Host`/SNI set to the hostname, or wrap the socket with the validated addrinfo.",
+     "start": 80,
+     "nums": [
+      80,
+      90,
+      105,
+      107
+     ],
+     "path_ok": true,
+     "lines_ok": true,
+     "claim": "DNS is validated once in `_validated_api_url()` but `urlopen` re-resolves the hostname, leaving a TOCTOU rebinding hole that bypasses the blocked-range check"
+    }
+   ],
+   "dead_code": {
+    "raw": "DEAD-CODE: Final `return {\"ok\": False, \"error\": \"429 x2\"}` in `ds` is unreachable; both loop arms end in `return` or `continue` on the last attempt | EVIDENCE: tools/ocean_v2_pilot.py:119-122",
+    "start": 119,
+    "nums": [
+     119,
+     122
+    ],
+    "path_ok": true,
+    "lines_ok": true
+   },
+   "one_sitting": {
+    "raw": "ONE-SITTING FIX: Wire the pre-registered cap check into the spend loop and write a partial receipt on abort, making the documented budget guarantee real | EVIDENCE: tools/ocean_v2_pilot.py:141-160",
+    "start": 141,
+    "nums": [
+     141,
+     160
+    ],
+    "path_ok": true,
+    "lines_ok": true
+   },
+   "checks": {
+    "shape": true,
+    "cites_resolve": true,
+    "lines_in_range": true,
+    "no_em_dash": true,
+    "max_lines": true
+   },
+   "sha_drift_since_ask": false
+  },
+  {
+   "file": "tools/ocean_v2_pilot.py",
+   "family": "deepseek",
+   "ask_id": "coldhot-hot-deepseek-tools__ocean_v2_pilot",
+   "sha_at_ask": "88734ee12e954536",
+   "ok": true,
+   "channel": "content",
+   "defects": [
+    {
+     "raw": "DEFECT 1: Budget cap is enforced only by comment, never checked; a runaway run spends past $0.25 with no abort | EVIDENCE: tools/ocean_v2_pilot.py:32 and tools/ocean_v2_pilot.py:157-158 and tools/ocean_v2_pilot.py:184 | FIX: after each spend += cost(...), if spend > COST_CAP: break out and write partial receipt before any further ds() call",
+     "start": 32,
+     "nums": [
+      32
+     ],
+     "path_ok": true,
+     "lines_ok": true,
+     "claim": "Budget cap is enforced only by comment, never checked; a runaway run spends past $0.25 with no abort"
+    },
+    {
+     "raw": "DEFECT 2: Grounding gate never checks that a justification actually cites the chair's principles; any non-empty JUSTIFY passes, so GATE B is unfalsifiable | EVIDENCE: tools/ocean_v2_pilot.py:172 | FIX: require justification to contain a cited principle/source token (e.g. match against INV/BRIEF text) before marking grounded",
+     "start": 172,
+     "nums": [
+      172
+     ],
+     "path_ok": true,
+     "lines_ok": true,
+     "claim": "Grounding gate never checks that a justification actually cites the chair's principles; any non-empty JUSTIFY passes, so GATE B is unfalsifiable"
+    },
+    {
+     "raw": "DEFECT 3: Cached-token accounting defaults miss to full prompt when prompt_tokens_details is absent, silently over-charging every call and skewing the cap signal | EVIDENCE: tools/ocean_v2_pilot.py:154-156 | FIX: treat missing prompt_tokens_details as hit=0, miss=prompt_tokens explicitly and log both, or fail loudly when details absent",
+     "start": 154,
+     "nums": [
+      154,
+      156
+     ],
+     "path_ok": true,
+     "lines_ok": true,
+     "claim": "Cached-token accounting defaults miss to full prompt when prompt_tokens_details is absent, silently over-charging every call and skewing the cap signal"
+    }
+   ],
+   "dead_code": {
+    "raw": "DEAD-CODE: _validated_api_url returns _API_URL but its return value is never re-validated against the constructed request; the DNS-rebinding check runs once per call yet the connect uses the same hostname, so the validated IP is discarded | EVIDENCE: tools/ocean_v2_pilot.py:63-72 and tools/ocean_v2_pilot.py:91-94",
+    "start": 63,
+    "nums": [
+     63,
+     72
+    ],
+    "path_ok": true,
+    "lines_ok": true
+   },
+   "one_sitting": {
+    "raw": "ONE-SITTING FIX: Enforce the pre-registered $0.25 cap inside the two call loops so the run aborts before exceeding budget | EVIDENCE: tools/ocean_v2_pilot.py:157-158 and tools/ocean_v2_pilot.py:184",
+    "start": 157,
+    "nums": [
+     157,
+     158
+    ],
+    "path_ok": true,
+    "lines_ok": true
+   },
+   "checks": {
+    "shape": true,
+    "cites_resolve": true,
+    "lines_in_range": true,
+    "no_em_dash": true,
+    "max_lines": true
+   },
+   "sha_drift_since_ask": false
+  },
+  {
+   "file": "tools/roblox_npc_gateway.py",
+   "family": "kimi",
+   "ask_id": "coldhot-hot-kimi-tools__roblox_npc_gateway",
+   "sha_at_ask": "b621384c545c8322",
+   "ok": true,
+   "channel": "content",
+   "defects": [
+    {
+     "raw": "DEFECT 1: `ask_lane` uses `str()` conversion on payload fields which passes through `None` as literal string \"None\" rather than rejecting malformed input | EVIDENCE: tools/roblox_npc_gateway.py:168-171 | FIX: validate `payload.get(\"player\")` and `payload.get(\"message\")` are non-None strings before `ask_lane` call, reject with 400 if missing",
+     "start": 168,
+     "nums": [
+      168,
+      171
+     ],
+     "path_ok": true,
+     "lines_ok": true,
+     "claim": "`ask_lane` uses `str()` conversion on payload fields which passes through `None` as literal string \"None\" rather than rejecting malformed input"
+    },
+    {
+     "raw": "DEFECT 2: `receipt` function writes to shared jsonl without atomic tmp+replace (known organ violation pattern) | EVIDENCE: tools/roblox_npc_gateway.py:124-127 | FIX: write to `RECEIPTS.with_suffix(\".tmp\")` then `os.replace()` to final path",
+     "start": 124,
+     "nums": [
+      124,
+      127
+     ],
+     "path_ok": true,
+     "lines_ok": true,
+     "claim": "`receipt` function writes to shared jsonl without atomic tmp+replace (known organ violation pattern)"
+    },
+    {
+     "raw": "DEFECT 3: `Handler.do_POST` catches all exceptions and returns generic fault message, masking `json.JSONDecodeError` which should be 400 not 500-class gateway fault | EVIDENCE: tools/roblox_npc_gateway.py:188-190 | FIX: catch `json.JSONDecodeError` separately before broad `Exception` handler to return 400 with specific parse error",
+     "start": 188,
+     "nums": [
+      188,
+      190
+     ],
+     "path_ok": true,
+     "lines_ok": true,
+     "claim": "`Handler.do_POST` catches all exceptions and returns generic fault message, masking `json.JSONDecodeError` which should be 400 not 500-class gateway fault"
+    }
+   ],
+   "dead_code": {
+    "raw": "DEAD-CODE: `OR_API_KEY` and `OR_API_KEY_2` in `_lanes()` are unreachable aliases since `OPENROUTER_API_KEY` and `OPENROUTER_API_KEY_2` are checked first with identical env access pattern | EVIDENCE: tools/roblox_npc_gateway.py:108-111 | FIX: remove `OR_API_KEY` and `OR_API_KEY_2` from loop keys",
+    "start": 108,
+    "nums": [
+     108,
+     111
+    ],
+    "path_ok": true,
+    "lines_ok": true
+   },
+   "one_sitting": {
+    "raw": "ONE-SITTING FIX: `ask_lane` `str()` conversion defect allowing \"None\" strings through | EVIDENCE: tools/roblox_npc_gateway.py:168-171",
+    "start": 168,
+    "nums": [
+     168,
+     171
+    ],
+    "path_ok": true,
+    "lines_ok": true
+   },
+   "checks": {
+    "shape": true,
+    "cites_resolve": true,
+    "lines_in_range": true,
+    "no_em_dash": true,
+    "max_lines": true
+   },
+   "sha_drift_since_ask": false
+  },
+  {
+   "file": "tools/roblox_npc_gateway.py",
+   "family": "glm-flash",
+   "ask_id": "coldhot-hot-glm-flash-tools__roblox_npc_gateway",
+   "sha_at_ask": "b621384c545c8322",
+   "ok": true,
+   "channel": "content",
+   "defects": [
+    {
+     "raw": "DEFECT 1: Empty NPC_GATEWAY_HOST is treated as loopback but binds all interfaces, so a blank host with no secret yields an unauthenticated public listener, defeating the fail-closed rule | EVIDENCE: tools/roblox_npc_gateway.py:110-111 | FIX: treat \"\" as non-loopback (fail closed) or resolve it explicitly before deciding auth is optional",
+     "start": 110,
+     "nums": [
+      110,
+      111
+     ],
+     "path_ok": true,
+     "lines_ok": true,
+     "claim": "Empty NPC_GATEWAY_HOST is treated as loopback but binds all interfaces, so a blank host with no secret yields an unauthenticated public listener, defeating the fail-closed rule"
+    },
+    {
+     "raw": "DEFECT 2: Content-Length is never validated as non-negative, so n = -1 makes rfile.read(-1) block until client close and buffer the body unbounded on a public listener | EVIDENCE: tools/roblox_npc_gateway.py:212,217 | FIX: reject n < 0 with 400 before reading",
+     "start": 212,
+     "nums": [
+      212,
+      217
+     ],
+     "path_ok": true,
+     "lines_ok": true,
+     "claim": "Content-Length is never validated as non-negative, so n = -1 makes rfile.read(-1) block until client close and buffer the body unbounded on a public listener"
+    },
+    {
+     "raw": "DEFECT 3: ThreadingHTTPServer spawns unbounded threads and each POST can hold one for up to 25s per lane across all lanes, a trivial slowloris thread-exhaustion DoS | EVIDENCE: tools/roblox_npc_gateway.py:247 | FIX: cap concurrent connections with a bounded ThreadPool-style mixin and per-request socket timeout",
+     "start": 247,
+     "nums": [
+      247
+     ],
+     "path_ok": true,
+     "lines_ok": true,
+     "claim": "ThreadingHTTPServer spawns unbounded threads and each POST can hold one for up to 25s per lane across all lanes, a trivial slowloris thread-exhaustion DoS"
+    }
+   ],
+   "dead_code": {
+    "raw": "DEAD-CODE: \"OR_API_KEY\" and \"OR_API_KEY_2\" lane env fallbacks are undocumented in the failover contract and likely never provisioned | EVIDENCE: tools/roblox_npc_gateway.py:140",
+    "start": 140,
+    "nums": [
+     140
+    ],
+    "path_ok": true,
+    "lines_ok": true
+   },
+   "one_sitting": {
+    "raw": "ONE-SITTING FIX: validate and clamp Content-Length in do_POST (reject negative or missing with 400, enforce MAX_BODY before read) | EVIDENCE: tools/roblox_npc_gateway.py:212",
+    "start": 212,
+    "nums": [
+     212
+    ],
+    "path_ok": true,
+    "lines_ok": true
+   },
+   "checks": {
+    "shape": true,
+    "cites_resolve": true,
+    "lines_in_range": true,
+    "no_em_dash": true,
+    "max_lines": true
+   },
+   "sha_drift_since_ask": false
+  },
+  {
+   "file": "tools/roblox_npc_gateway.py",
+   "family": "deepseek",
+   "ask_id": "coldhot-hot-deepseek-tools__roblox_npc_gateway",
+   "sha_at_ask": "b621384c545c8322",
+   "ok": true,
+   "channel": "content",
+   "defects": [
+    {
+     "raw": "DEFECT 1: `_SECRET` is read in `Handler.do_POST` as a module global, but `__main__` assigns it to a local, so auth never arms and a 0.0.0.0 bind runs open | EVIDENCE: tools/roblox_npc_gateway.py:246 (`_bind_host, _SECRET = _bind_config()`) vs tools/roblox_npc_gateway.py:227 (`if _SECRET and not hmac.compare_digest(`) | FIX: replace with `global _SECRET` then `_SECRET = _bind_config()[1]`, or assign via `globals()[\"_SECRET\"] = secret`.",
+     "start": 246,
+     "nums": [
+      246
+     ],
+     "path_ok": true,
+     "lines_ok": true,
+     "claim": "`_SECRET` is read in `Handler.do_POST` as a module global, but `__main__` assigns it to a local, so auth never arms and a 0.0.0.0 bind runs open"
+    },
+    {
+     "raw": "DEFECT 2: `Content-Length` is taken from the header and passed straight to `rfile.read(n)`; a negative or absent length plus unbounded `n` above cap is not the only hole, a negative `n` reads unbounded, and a declared length under cap is never actually enforced against bytes sent | EVIDENCE: tools/roblox_npc_gateway.py:234-236 (`n = int(self.headers.get(\"Content-Length\", \"0\"))` / `if n > MAX_BODY:` / `self.rfile.read(n)`) | FIX: reject `n < 0`, clamp read to `min(n, MAX_BODY)`, and read via `self.rfile.read(min(n, MAX_BODY))`.",
+     "start": 234,
+     "nums": [
+      234,
+      236
+     ],
+     "path_ok": true,
+     "lines_ok": true,
+     "claim": "`Content-Length` is taken from the header and passed straight to `rfile.read(n)`; a negative or absent length plus unbounded `n` above cap is not the only hole, a negative `n` reads unbounded, and a declared length under cap is never actually enforced against bytes sent"
+    },
+    {
+     "raw": "DEFECT 3: model allowlist is checked in `ask_lane` but `str(payload.get(\"model\", MODEL))` is attacker-controlled and the free-model check happens only after persona lookup, so a client can probe arbitrary slugs; more importantly `receipt` is called with attacker `model` before validation in the gate branch which is fine, but the real defect is `assert_public_https` resolves at call time and TOCTOU lets DNS rebind between getaddrinfo and urlopen | EVIDENCE: tools/roblox_npc_gateway.py:74-79 (`getaddrinfo` then `is_global` check) and tools/roblox_npc_gateway.py:161 (`with _OPENER.open(req, timeout=25) as r:`) | FIX: resolve once, pin the IP, and pass `Host` header explicitly, or connect to the resolved IP with SNI set, eliminating the second resolution.",
+     "start": 74,
+     "nums": [
+      74,
+      79
+     ],
+     "path_ok": true,
+     "lines_ok": true,
+     "claim": "model allowlist is checked in `ask_lane` but `str(payload.get(\"model\", MODEL))` is attacker-controlled and the free-model check happens only after persona lookup, so a client can probe arbitrary slugs; more importantly `receipt` is called with attacker `model` before validation in the gate branch which is fine, but the real defect is `assert_public_https` resolves at call time and TOCTOU lets DNS rebind between getaddrinfo and urlopen"
+    }
+   ],
+   "dead_code": {
+    "raw": "DEAD-CODE: `receipt` signature default `model: str = MODEL` is never exercised with the default because every call site passes `model` explicitly | EVIDENCE: tools/roblox_npc_gateway.py:135",
+    "start": 135,
+    "nums": [
+     135
+    ],
+    "path_ok": true,
+    "lines_ok": true
+   },
+   "one_sitting": {
+    "raw": "ONE-SITTING FIX: make `_SECRET` assignment global so the fail-closed public-bind contract actually holds at request time | EVIDENCE: tools/roblox_npc_gateway.py:246",
+    "start": 246,
+    "nums": [
+     246
+    ],
+    "path_ok": true,
+    "lines_ok": true
+   },
+   "checks": {
+    "shape": true,
+    "cites_resolve": true,
+    "lines_in_range": true,
+    "no_em_dash": true,
+    "max_lines": true
+   },
+   "sha_drift_since_ask": false
+  },
+  {
+   "file": "tools/reverse_map.py",
+   "family": "kimi",
+   "ask_id": "coldhot-hot-kimi-tools__reverse_map",
+   "sha_at_ask": "ff5cb973d105e590",
+   "ok": true,
+   "channel": "content",
+   "defects": [
+    {
+     "raw": "DEFECT 1: race condition in Ledger.bank: multiple threads append to same file without fsync or atomic rename, corrupting jsonl on crash | EVIDENCE: tools/reverse_map.py:111-116 | FIX: use tmpfile+rename pattern with exclusive create flag",
+     "start": 111,
+     "nums": [
+      111,
+      116
+     ],
+     "path_ok": true,
+     "lines_ok": true,
+     "claim": "race condition in Ledger.bank: multiple threads append to same file without fsync or atomic rename, corrupting jsonl on crash"
+    },
+    {
+     "raw": "DEFECT 2: analyze_rows ignores dh.fire return signature mismatch: caller=judge returns (text, cost) but judge lambda discards max_tokens param and returns raw call() dict | EVIDENCE: tools/reverse_map.py:234-236 | FIX: fix lambda to unpack dh.fire properly or remove indirection",
+     "start": 234,
+     "nums": [
+      234,
+      236
+     ],
+     "path_ok": true,
+     "lines_ok": true,
+     "claim": "analyze_rows ignores dh.fire return signature mismatch: caller=judge returns (text, cost) but judge lambda discards max_tokens param and returns raw call() dict"
+    },
+    {
+     "raw": "DEFECT 3: fire_shard uses hash((sid, attempt)) % len(keys) for key rotation which collides across sids, violating V9 law 5's \"never rotate mid-run\" intent | EVIDENCE: tools/reverse_map.py:141 | FIX: use deterministic shard-key assignment: keys[i % len(keys)]",
+     "start": 141,
+     "nums": [
+      141
+     ],
+     "path_ok": true,
+     "lines_ok": true,
+     "claim": "fire_shard uses hash((sid, attempt)) % len(keys) for key rotation which collides across sids, violating V9 law 5's \"never rotate mid-run\" intent"
+    }
+   ],
+   "dead_code": {
+    "raw": "DEAD-CODE: dh.REASONING_CAP reference in body_for | EVIDENCE: tools/reverse_map.py:65 | EVIDENCE: dh.REASONING_CAP not defined in duel_harness imports shown (line 19-20 only show dh imported, no attr list)",
+    "start": 65,
+    "nums": [
+     65
+    ],
+    "path_ok": true,
+    "lines_ok": true
+   },
+   "one_sitting": {
+    "raw": "ONE-SITTING FIX: Ledger.bank atomic write | EVIDENCE: tools/reverse_map.py:111-116",
+    "start": 111,
+    "nums": [
+     111,
+     116
+    ],
+    "path_ok": true,
+    "lines_ok": true
+   },
+   "checks": {
+    "shape": true,
+    "cites_resolve": true,
+    "lines_in_range": true,
+    "no_em_dash": true,
+    "max_lines": true
+   },
+   "sha_drift_since_ask": false
+  },
+  {
+   "file": "tools/reverse_map.py",
+   "family": "glm-flash",
+   "ask_id": "coldhot-hot-glm-flash-tools__reverse_map",
+   "sha_at_ask": "ff5cb973d105e590",
+   "ok": true,
+   "channel": "content",
+   "defects": [
+    {
+     "raw": "DEFECT 1: Budget halt reads ledger.spent without the lock while up to args.concurrency shards bank concurrently, so cap can be overshot by in-flight shards before stop.set() lands | EVIDENCE: tools/reverse_map.py:316-320 (vs lock held only at 136-140) | FIX: add Ledger.snapshot() that reads self.spent inside self.lock and call it at 318.",
+     "start": 316,
+     "nums": [
+      316,
+      320
+     ],
+     "path_ok": true,
+     "lines_ok": true,
+     "claim": "Budget halt reads ledger.spent without the lock while up to args.concurrency shards bank concurrently, so cap can be overshot by in-flight shards before stop.set() lands"
+    },
+    {
+     "raw": "DEFECT 2: analyze_rows hardcodes shape \"reasoning\" for the judge lambda, ignoring the probe result, so if probe_model demoted PRIME to \"plain\" (HTTP 400 path) the one funded-tier analyzer call 400s after all shard spend is already sunk | EVIDENCE: tools/reverse_map.py:224 vs 306 | FIX: pass the probed shape through (shapes[PRIME]) into the lambda instead of the literal \"reasoning\".",
+     "start": 224,
+     "nums": [
+      224
+     ],
+     "path_ok": true,
+     "lines_ok": true,
+     "claim": "analyze_rows hardcodes shape \"reasoning\" for the judge lambda, ignoring the probe result, so if probe_model demoted PRIME to \"plain\" (HTTP 400 path) the one funded-tier analyzer call 400s after all shard spend is already sunk"
+    },
+    {
+     "raw": "DEFECT 3: probe_model returns None on any non-HTTP exception including transient network hiccups, and run() then silently swaps that healthy paid model to FLASH at full fleet scale, contradicting the code's own \"inconclusive, not a verdict\" comment | EVIDENCE: tools/reverse_map.py:99-101 with fallback at 308-310 | FIX: distinguish inconclusive from dropped: retry the probe once, and only fall back to FLASH after a conclusive failure.",
+     "start": 99,
+     "nums": [
+      99,
+      101
+     ],
+     "path_ok": true,
+     "lines_ok": true,
+     "claim": "probe_model returns None on any non-HTTP exception including transient network hiccups, and run() then silently swaps that healthy paid model to FLASH at full fleet scale, contradicting the code's own \"inconclusive, not a verdict\" comment"
+    }
+   ],
+   "dead_code": {
+    "raw": "DEAD-CODE: SHAPES/PRICES entries \"x-ai/grok-4.3\" and \"qwen/qwen3.8-max-prime\" are unreachable: build_fleet only ever emits FLASH, FLASH2, PRIME, and CONTRAST members | EVIDENCE: tools/reverse_map.py:59-60 (fleet at 106-110)",
+    "start": 59,
+    "nums": [
+     59,
+     60
+    ],
+    "path_ok": true,
+    "lines_ok": true
+   },
+   "one_sitting": {
+    "raw": "ONE-SITTING FIX: Make the budget halt race-free: snapshot spent under the lock, check it inside the as_completed loop before f.result(), and also gate fire_shard on the event immediately before call() (line 149) so queued workers abort mid-run, not just at entry | EVIDENCE: tools/reverse_map.py:316-320",
+    "start": 316,
+    "nums": [
+     316,
+     320
+    ],
+    "path_ok": true,
+    "lines_ok": true
+   },
+   "checks": {
+    "shape": true,
+    "cites_resolve": true,
+    "lines_in_range": true,
+    "no_em_dash": true,
+    "max_lines": true
+   },
+   "sha_drift_since_ask": false
+  },
+  {
+   "file": "tools/reverse_map.py",
+   "family": "deepseek",
+   "ask_id": "coldhot-hot-deepseek-tools__reverse_map",
+   "sha_at_ask": "ff5cb973d105e590",
+   "ok": true,
+   "channel": "content",
+   "defects": [
+    {
+     "raw": "DEFECT 1: parse_strategies ignores id coverage so a valid-JSON analyzer reply that assigns zero ids leaves strategies empty, writes an empty map, and reports success | EVIDENCE: tools/reverse_map.py:250-258 (ok only checks isinstance list and each answer_ids is a list, never that ids exist or are known sids) | FIX: require strat non-empty and covered ids non-empty before ok, else fall to lexical_fallback.",
+     "start": 250,
+     "nums": [
+      250,
+      258
+     ],
+     "path_ok": true,
+     "lines_ok": true,
+     "claim": "parse_strategies ignores id coverage so a valid-JSON analyzer reply that assigns zero ids leaves strategies empty, writes an empty map, and reports success"
+    },
+    {
+     "raw": "DEFECT 2: analyze subcommand re-fires paid analyzer call with no budget-cap gate, so a re-analyze can exceed the cap that run enforced | EVIDENCE: tools/reverse_map.py:392-397 (analyze branch calls analyze_rows without worst-case projection or args.budget_cap check) | FIX: project analyzer cost against BUDGET_CAP and refuse before firing.",
+     "start": 392,
+     "nums": [
+      392,
+      397
+     ],
+     "path_ok": true,
+     "lines_ok": true,
+     "claim": "analyze subcommand re-fires paid analyzer call with no budget-cap gate, so a re-analyze can exceed the cap that run enforced"
+    },
+    {
+     "raw": "DEFECT 3: probe_model treats any HTTPError with code 400 on the non-reasoning shape as a drop but swallows the shape-autodetect result for known_shape paths, so a model whose known shape 400s is silently dropped even when plain works | EVIDENCE: tools/reverse_map.py:106-116 (loop over [known_shape] only, returns None on 400 at plain) | FIX: when known_shape is set and 400s, retry \"plain\" once before dropping.",
+     "start": 106,
+     "nums": [
+      106,
+      116
+     ],
+     "path_ok": true,
+     "lines_ok": true,
+     "claim": "probe_model treats any HTTPError with code 400 on the non-reasoning shape as a drop but swallows the shape-autodetect result for known_shape paths, so a model whose known shape 400s is silently dropped even when plain works"
+    }
+   ],
+   "dead_code": {
+    "raw": "DEAD-CODE: stop_flag branch in fire_shard is unreachable for the halt path because budget halt sets stop after futs complete, never before a shard starts | EVIDENCE: tools/reverse_map.py:171 plus tools/reverse_map.py:377-381 | EVIDENCE alternate: the SHAPES entry \"x-ai/grok-4.3\" is never referenced by build_fleet | tools/reverse_map.py:56.",
+    "start": 171,
+    "nums": [
+     171
+    ],
+    "path_ok": true,
+    "lines_ok": true
+   },
+   "one_sitting": {
+    "raw": "ONE-SITTING FIX: add coverage and non-empty checks to parse_strategies so malformed analyzer output falls to the marked lexical fallback instead of producing a claimed-success empty map | EVIDENCE: tools/reverse_map.py:250-258.",
+    "start": 250,
+    "nums": [
+     250,
+     258
+    ],
+    "path_ok": true,
+    "lines_ok": true
+   },
+   "checks": {
+    "shape": true,
+    "cites_resolve": true,
+    "lines_in_range": true,
+    "no_em_dash": true,
+    "max_lines": true
+   },
+   "sha_drift_since_ask": false
+  },
+  {
+   "file": "mag/preload_selector.py",
+   "family": "kimi",
+   "ask_id": "coldhot-hot-kimi-mag__preload_selector",
+   "sha_at_ask": "0b34195e17194f11",
+   "ok": true,
+   "channel": "content",
+   "defects": [
+    {
+     "raw": "DEFECT 1: `order_blocks` is a redundant alias that discards the scoring done by `score_blocks` by re-wrapping the already-scored list in a new list, wasting memory and confusing readers about whether scoring happens | EVIDENCE: mag/preload_selector.py:180-181 | FIX: delete `order_blocks` and have callers use `score_blocks` directly, or change to `return score_blocks(blocks)` without the redundant `list()` wrapper",
+     "start": 180,
+     "nums": [
+      180,
+      181
+     ],
+     "path_ok": true,
+     "lines_ok": true,
+     "claim": "`order_blocks` is a redundant alias that discards the scoring done by `score_blocks` by re-wrapping the already-scored list in a new list, wasting memory and confusing readers about whether scoring happens"
+    },
+    {
+     "raw": "DEFECT 2: `chat_logprobs` constructs `urllib.request.Request` without setting a User-Agent header, causing the request to fail or be blocked by servers that require one | EVIDENCE: mag/preload_selector.py:222-226 | FIX: add `headers={\"Content-Type\": \"application/json\", \"User-Agent\": \"mag-preload-selector/1.0\"}` to the Request constructor",
+     "start": 222,
+     "nums": [
+      222,
+      226
+     ],
+     "path_ok": true,
+     "lines_ok": true,
+     "claim": "`chat_logprobs` constructs `urllib.request.Request` without setting a User-Agent header, causing the request to fail or be blocked by servers that require one"
+    },
+    {
+     "raw": "DEFECT 3: `cmd_probe` appends to jsonl output without atomic tmp+replace, risking corruption if interrupted | EVIDENCE: mag/preload_selector.py:308-309 | FIX: write to `out.with_suffix('.tmp')` then `os.replace()` to final path",
+     "start": 308,
+     "nums": [
+      308,
+      309
+     ],
+     "path_ok": true,
+     "lines_ok": true,
+     "claim": "`cmd_probe` appends to jsonl output without atomic tmp+replace, risking corruption if interrupted"
+    }
+   ],
+   "dead_code": {
+    "raw": "DEAD-CODE: the `ts_span == 0 and ts == ts_min and not known` branch in recency calculation is unreachable because `known` must be truthy for `ts_span` to be defined | EVIDENCE: mag/preload_selector.py:156-157",
+    "start": 156,
+    "nums": [
+     156,
+     157
+    ],
+    "path_ok": true,
+    "lines_ok": true
+   },
+   "one_sitting": {
+    "raw": "ONE-SITTING FIX: add User-Agent header to `urllib.request.Request` in `chat_logprobs` | EVIDENCE: mag/preload_selector.py:222-226",
+    "start": 222,
+    "nums": [
+     222,
+     226
+    ],
+    "path_ok": true,
+    "lines_ok": true
+   },
+   "checks": {
+    "shape": true,
+    "cites_resolve": true,
+    "lines_in_range": true,
+    "no_em_dash": true,
+    "max_lines": true
+   },
+   "sha_drift_since_ask": false
+  },
+  {
+   "file": "mag/preload_selector.py",
+   "family": "glm-flash",
+   "ask_id": "coldhot-hot-glm-flash-mag__preload_selector",
+   "sha_at_ask": "0b34195e17194f11",
+   "ok": true,
+   "channel": "content",
+   "defects": [
+    {
+     "raw": "DEFECT 1: compare() maps zero shared positions to rel_delta_pct=0.0, so a logprobs-less response (run_arm yields empty token lists, n=0) auto-emits verdict DECORATIVE and the F-W5 gate kills the selector on missing data | EVIDENCE: mag/preload_selector.py:332-349 (n=0 path, rel_pct=0.0, verdict line) | FIX: return verdict \"NO_MEASUREMENT\" when n==0 or when either logprobs list is empty, never DECORATIVE",
+     "start": 332,
+     "nums": [
+      332,
+      349
+     ],
+     "path_ok": true,
+     "lines_ok": true,
+     "claim": "compare() maps zero shared positions to rel_delta_pct=0.0, so a logprobs-less response (run_arm yields empty token lists, n=0) auto-emits verdict DECORATIVE and the F-W5 gate kills the selector on missing data"
+    },
+    {
+     "raw": "DEFECT 2: recency branch contradicts the documented spec \"span<=0 -> 1.0 for all\": the 1.0 arm requires `not known`, unreachable when a parseable ts exists, so every block gets recency 0.0 when all timestamps are equal, silently reweighting score to heat+success | EVIDENCE: mag/preload_selector.py:211-214 | FIX: `recency = 1.0 if (ts is not None and ts_span <= 0) else (0.0 if ts is None else (ts-ts_min).total_seconds()/ts_span)`",
+     "start": 211,
+     "nums": [
+      211,
+      214
+     ],
+     "path_ok": true,
+     "lines_ok": true,
+     "claim": "recency branch contradicts the documented spec \"span<=0 -> 1.0 for all\": the 1.0 arm requires `not known`, unreachable when a parseable ts exists, so every block gets recency 0.0 when all timestamps are equal, silently reweighting score to heat+success"
+    },
+    {
+     "raw": "DEFECT 3: shuffle command shuffles the ranked list then truncates, but probe's shuffled arm is compared against only the top-N conditioned arm while shuffled_order rows beyond N in cmd_shuffle suggest full-set control; metrics assume same content set (docstring \"ORDER ONLY\"), yet cmd_shuffle[:top] can drop blocks the docstring multiset guarantee (ok5) only checks for the head subset, so CLI output can imply a control that was never run | EVIDENCE: mag/preload_selector.py:370-379 | FIX: have cmd_shuffle print the same top-N slice actually used by cmd_probe",
+     "start": 370,
+     "nums": [
+      370,
+      379
+     ],
+     "path_ok": true,
+     "lines_ok": true,
+     "claim": "shuffle command shuffles the ranked list then truncates, but probe's shuffled arm is compared against only the top-N conditioned arm while shuffled_order rows beyond N in cmd_shuffle suggest full-set control; metrics assume same content set (docstring \"ORDER ONLY\"), yet cmd_shuffle[:top] can drop blocks the docstring multiset guarantee (ok5) only checks for the head subset, so CLI output can imply a control that was never run"
+    }
+   ],
+   "dead_code": {
+    "raw": "DEAD-CODE: order_blocks is defined and documented but never called by any CLI path (cmd_order calls score_blocks directly) | EVIDENCE: mag/preload_selector.py:226-227",
+    "start": 226,
+    "nums": [
+     226,
+     227
+    ],
+    "path_ok": true,
+    "lines_ok": true
+   },
+   "one_sitting": {
+    "raw": "ONE-SITTING FIX: patch compare() to distinguish \"no shared positions / no logprobs returned\" from a measured 0% delta, marking the row PENDING-MEASUREMENT instead of DECORATIVE, preventing a false kill verdict on the F-W5 falsifier | EVIDENCE: mag/preload_selector.py:332-349",
+    "start": 332,
+    "nums": [
+     332,
+     349
+    ],
+    "path_ok": true,
+    "lines_ok": true
+   },
+   "checks": {
+    "shape": true,
+    "cites_resolve": true,
+    "lines_in_range": true,
+    "no_em_dash": true,
+    "max_lines": true
+   },
+   "sha_drift_since_ask": false
+  },
+  {
+   "file": "mag/preload_selector.py",
+   "family": "deepseek",
+   "ask_id": "coldhot-hot-deepseek-mag__preload_selector",
+   "sha_at_ask": "0b34195e17194f11",
+   "ok": true,
+   "channel": "content",
+   "defects": [
+    {
+     "raw": "DEFECT 1: `--topk 0` is accepted and forwarded as `top_logprobs: 0`, so `run_arm` returns empty `logprobs`, `compare` reports positions=0/churn=1.0/rel_delta=0.0 and prints verdict DECORATIVE (kill) on zero measured data | EVIDENCE: mag/preload_selector.py:101, mag/preload_selector.py:334, mag/preload_selector.py:352 | FIX: after parsing, reject `args.topk < 1` (argparse type guard raising SystemExit) and in `compare`, when `n == 0` or not `shared`, return verdict `INDETERMINATE` and set status `INSUFFICIENT-DATA` instead of grading.",
+     "start": 101,
+     "nums": [
+      101
+     ],
+     "path_ok": true,
+     "lines_ok": true,
+     "claim": "`--topk 0` is accepted and forwarded as `top_logprobs: 0`, so `run_arm` returns empty `logprobs`, `compare` reports positions=0/churn=1.0/rel_delta=0.0 and prints verdict DECORATIVE (kill) on zero measured data"
+    },
+    {
+     "raw": "DEFECT 2: `cmd_probe` writes the row into `probe_YYYYMMDD.jsonl` and never reads existing rows, so repeated same-day probe runs silently append and downstream readers cannot tell which verdict is current; the appends are also non-atomic (known organ violation) but the missing run identity is independent of that | EVIDENCE: mag/preload_selector.py:411, mag/preload_selector.py:414 | FIX: add a per-row `run_id` (sha256 of model+seed+topk+blocks+prompt shas truncated) into `row` before writing.",
+     "start": 411,
+     "nums": [
+      411
+     ],
+     "path_ok": true,
+     "lines_ok": true,
+     "claim": "`cmd_probe` writes the row into `probe_YYYYMMDD.jsonl` and never reads existing rows, so repeated same-day probe runs silently append and downstream readers cannot tell which verdict is current; the appends are also non-atomic (known organ violation) but the missing run identity is independent of that"
+    },
+    {
+     "raw": "DEFECT 3: `probe` has no guard that the two arms actually differ in order; if `shuffle_blocks(chosen, seed)` happens to reproduce the conditioned order or `len(chosen) == 1`, conditioned and shuffled prompts are byte-identical, `prompt_sha_conditioned == prompt_sha_shuffled`, and the DECORATIVE verdict is an artifact of a null treatment | EVIDENCE: mag/preload_selector.py:378, mag/preload_selector.py:383 | FIX: before running arms, if `[b[\"id\"] for b in cond] == [b[\"id\"] for b in shuf]`, print and mark `status: \"NULL-TREATMENT\"` and return 1 without emitting a verdict.",
+     "start": 378,
+     "nums": [
+      378
+     ],
+     "path_ok": true,
+     "lines_ok": true,
+     "claim": "`probe` has no guard that the two arms actually differ in order; if `shuffle_blocks(chosen, seed)` happens to reproduce the conditioned order or `len(chosen) == 1`, conditioned and shuffled prompts are byte-identical, `prompt_sha_conditioned == prompt_sha_shuffled`, and the DECORATIVE verdict is an artifact of a null treatment"
+    }
+   ],
+   "dead_code": {
+    "raw": "DEAD-CODE: `ollama_health` `ver` is only ever interpolated into the print line; the version string is stored in `row[\"ollama_version\"]` but no branch, verdict, or metric reads it | EVIDENCE: mag/preload_selector.py:369, mag/preload_selector.py:395",
+    "start": 369,
+    "nums": [
+     369
+    ],
+    "path_ok": true,
+    "lines_ok": true
+   },
+   "one_sitting": {
+    "raw": "ONE-SITTING FIX: reject `--topk < 1` at the argparse layer and short-circuit `compare` to an `INDETERMINATE` verdict when `positions == 0`, so the instrument can never print `F-W5 VERDICT: DECORATIVE` from an empty logprob set | EVIDENCE: mag/preload_selector.py:334, mag/preload_selector.py:440 | falsifier: run `python -m mag.preload_selector probe --topk 0`; if it still prints any F-W5 VERDICT line, the fix did not land.",
+    "start": 334,
+    "nums": [
+     334
+    ],
+    "path_ok": true,
+    "lines_ok": true
+   },
+   "checks": {
+    "shape": true,
+    "cites_resolve": true,
+    "lines_in_range": true,
+    "no_em_dash": true,
+    "max_lines": true
+   },
+   "sha_drift_since_ask": false
+  },
+  {
+   "file": "mag/desk_model_probe.py",
+   "family": "kimi",
+   "ask_id": "coldhot-hot-kimi-mag__desk_model_probe",
+   "sha_at_ask": "51f63bdb728f9b82",
+   "ok": true,
+   "channel": "content",
+   "defects": [
+    {
+     "raw": "DEFECT 1: _bench_model catches all exceptions without distinguishing retryable vs permanent failures, masking GPU OOMs as generic errors | EVIDENCE: mag/desk_model_probe.py:127-147 | FIX: Catch urllib.error.HTTPError separately to surface 5xx/4xx vs timeout/OOM",
+     "start": 127,
+     "nums": [
+      127,
+      147
+     ],
+     "path_ok": true,
+     "lines_ok": true,
+     "claim": "_bench_model catches all exceptions without distinguishing retryable vs permanent failures, masking GPU OOMs as generic errors"
+    },
+    {
+     "raw": "DEFECT 2: _gpu_pct_for divides by zero when size is zero, returning None silently instead of error | EVIDENCE: mag/desk_model_probe.py:98 | FIX: Add guard `if not size: return None` before division",
+     "start": 98,
+     "nums": [
+      98
+     ],
+     "path_ok": true,
+     "lines_ok": true,
+     "claim": "_gpu_pct_for divides by zero when size is zero, returning None silently instead of error"
+    },
+    {
+     "raw": "DEFECT 3: run_probe calls _tags() fresh in loop iteration, causing redundant HTTP requests | EVIDENCE: mag/desk_model_probe.py:156-161 | FIX: Reuse `tags` variable from line 152 instead of calling _tags() again",
+     "start": 156,
+     "nums": [
+      156,
+      161
+     ],
+     "path_ok": true,
+     "lines_ok": true,
+     "claim": "run_probe calls _tags() fresh in loop iteration, causing redundant HTTP requests"
+    }
+   ],
+   "dead_code": {
+    "raw": "DEAD-CODE: from __future__ import annotations | EVIDENCE: mag/desk_model_probe.py:2",
+    "start": 2,
+    "nums": [
+     2
+    ],
+    "path_ok": true,
+    "lines_ok": true
+   },
+   "one_sitting": {
+    "raw": "ONE-SITTING FIX: Add atomic write for REPORT_PATH to prevent corrupted JSON on crash | EVIDENCE: mag/desk_model_probe.py:189 | FIX: Use temp file + replace pattern: write to REPORT_PATH.with_suffix('.tmp') then Path.rename",
+    "start": 189,
+    "nums": [
+     189
+    ],
+    "path_ok": true,
+    "lines_ok": true
+   },
+   "checks": {
+    "shape": true,
+    "cites_resolve": true,
+    "lines_in_range": true,
+    "no_em_dash": true,
+    "max_lines": true
+   },
+   "sha_drift_since_ask": false
+  },
+  {
+   "file": "mag/desk_model_probe.py",
+   "family": "glm-flash",
+   "ask_id": "coldhot-hot-glm-flash-mag__desk_model_probe",
+   "sha_at_ask": "51f63bdb728f9b82",
+   "ok": true,
+   "channel": "content",
+   "defects": [
+    {
+     "raw": "DEFECT 1: Winner ranking uses end-to-end elapsed_ms, so the first candidate pays cold model load while the second runs warm, biasing the A/B verdict by run order | EVIDENCE: mag/desk_model_probe.py:186-198 (key uses `r.get(\"elapsed_ms\")`, while load_ns is separately available at :158-159) | FIX: rank on tokens_per_sec then load_ms (already parsed) instead of total elapsed_ms, or benchmark each model twice and score the second run.",
+     "start": 186,
+     "nums": [
+      186,
+      198
+     ],
+     "path_ok": true,
+     "lines_ok": true,
+     "claim": "Winner ranking uses end-to-end elapsed_ms, so the first candidate pays cold model load while the second runs warm, biasing the A/B verdict by run order"
+    },
+    {
+     "raw": "DEFECT 2: REPORT_PATH on disk is written before `report[\"report_path\"]` is set, so the persisted report lacks the field callers of run_probe see | EVIDENCE: mag/desk_model_probe.py:213-216 (write_text) vs :218 (report_path added after write) | FIX: set report[\"report_path\"] before the write_text call.",
+     "start": 213,
+     "nums": [
+      213,
+      216
+     ],
+     "path_ok": true,
+     "lines_ok": true,
+     "claim": "REPORT_PATH on disk is written before `report[\"report_path\"]` is set, so the persisted report lacks the field callers of run_probe see"
+    },
+    {
+     "raw": "DEFECT 3: `ok` verdict rests on bare `text.strip()` truthiness, so an empty-or-error body still marks a candidate \"ok\" and can win with tps None ranked as 0 | EVIDENCE: mag/desk_model_probe.py:160 (\"ok\": bool(text.strip())) with ranking fallback `-(r.get(\"tokens_per_sec\") or 0)` at :191 | FIX: set \"ok\" to `bool(text.strip() and eval_count > 0)`.",
+     "start": 160,
+     "nums": [
+      160
+     ],
+     "path_ok": true,
+     "lines_ok": true,
+     "claim": "`ok` verdict rests on bare `text.strip()` truthiness, so an empty-or-error body still marks a candidate \"ok\" and can win with tps None ranked as 0"
+    }
+   ],
+   "dead_code": {
+    "raw": "DEAD-CODE: `import urllib.error` is never referenced in the module | EVIDENCE: mag/desk_model_probe.py:11",
+    "start": 11,
+    "nums": [
+     11
+    ],
+    "path_ok": true,
+    "lines_ok": true
+   },
+   "one_sitting": {
+    "raw": "ONE-SITTING FIX: Replace elapsed_ms in the winner sort key with load_ms/tps-only ranking and tighten the \"ok\" gate to require eval_count, making the A/B result order-independent | EVIDENCE: mag/desk_model_probe.py:186-198",
+    "start": 186,
+    "nums": [
+     186,
+     198
+    ],
+    "path_ok": true,
+    "lines_ok": true
+   },
+   "checks": {
+    "shape": false,
+    "cites_resolve": true,
+    "lines_in_range": true,
+    "no_em_dash": true,
+    "max_lines": true
+   },
+   "sha_drift_since_ask": false
+  },
+  {
+   "file": "mag/desk_model_probe.py",
+   "family": "deepseek",
+   "ask_id": "coldhot-hot-deepseek-mag__desk_model_probe",
+   "sha_at_ask": "51f63bdb728f9b82",
+   "ok": true,
+   "channel": "content",
+   "defects": [
+    {
+     "raw": "DEFECT 1: Winner selection sorts on tokens_per_sec, elapsed_ms, gpu_pct, but never checks has_reply/has_canvas, so a candidate that ignores the two-section PROBE_PROMPT format can win and be written to lanes.yaml | EVIDENCE: mag/desk_model_probe.py:157-165 (winner sort), mag/desk_model_probe.py:141-142 (has_reply/has_canvas computed then unused) | FIX: filter ok_rows to rows where has_reply and has_canvas before sorting, or add a penalty term to the sort key",
+     "start": 157,
+     "nums": [
+      157,
+      165
+     ],
+     "path_ok": true,
+     "lines_ok": true,
+     "claim": "Winner selection sorts on tokens_per_sec, elapsed_ms, gpu_pct, but never checks has_reply/has_canvas, so a candidate that ignores the two-section PROBE_PROMPT format can win and be written to lanes.yaml"
+    },
+    {
+     "raw": "DEFECT 2: _gpu_pct_for reads /api/ps immediately after /api/generate returns, but Ollama may have evicted or be mid-load; a None gpu_pct makes the tertiary sort key default to 0 and can break ties incorrectly | EVIDENCE: mag/desk_model_probe.py:107-124 (_gpu_pct_for), mag/desk_model_probe.py:163 (-(r.get(\"gpu_pct\") or 0)) | FIX: capture size_vram/size from the /api/generate response's model_info or poll /api/ps with a short retry before recording the row",
+     "start": 107,
+     "nums": [
+      107,
+      124
+     ],
+     "path_ok": true,
+     "lines_ok": true,
+     "claim": "_gpu_pct_for reads /api/ps immediately after /api/generate returns, but Ollama may have evicted or be mid-load; a None gpu_pct makes the tertiary sort key default to 0 and can break ties incorrectly"
+    },
+    {
+     "raw": "DEFECT 3: ensure_qwen_desk writes Modelfile.qwen-desk with mf_path.write_text and no tmp+replace; a crash mid-write leaves a truncated Modelfile that ollama create consumes silently | EVIDENCE: mag/desk_model_probe.py:71-73 (mf_path.write_text) | FIX: write to mf_path.with_suffix(\".tmp\") and os.replace into place, or write to a tempfile in the same dir",
+     "start": 71,
+     "nums": [
+      71,
+      73
+     ],
+     "path_ok": true,
+     "lines_ok": true,
+     "claim": "ensure_qwen_desk writes Modelfile.qwen-desk with mf_path.write_text and no tmp+replace; a crash mid-write leaves a truncated Modelfile that ollama create consumes silently"
+    }
+   ],
+   "dead_code": {
+    "raw": "DEAD-CODE: tps = None branch at line 136 is unreachable when eval_ns and eval_count are both truthy; the else None is only exercised on zero, which the following `if eval_ns and eval_count` already guards, so the ternary's None arm is dead | EVIDENCE: mag/desk_model_probe.py:136-137",
+    "start": 136,
+    "nums": [
+     136,
+     137
+    ],
+    "path_ok": true,
+    "lines_ok": true
+   },
+   "one_sitting": {
+    "raw": "ONE-SITTING FIX: Gate the winner on format compliance (has_reply and has_canvas) inside the ok_rows comprehension so the recommendation written to configs/lanes.yaml reflects a model that actually produces the two-section desk contract | EVIDENCE: mag/desk_model_probe.py:155-165",
+    "start": 155,
+    "nums": [
+     155,
+     165
+    ],
+    "path_ok": true,
+    "lines_ok": true
+   },
+   "checks": {
+    "shape": true,
+    "cites_resolve": true,
+    "lines_in_range": true,
+    "no_em_dash": true,
+    "max_lines": true
+   },
+   "sha_drift_since_ask": false
+  }
+ ],
+ "clusters": [
+  {
+   "file": "mag/desk_model_probe.py",
+   "lines": [
+    156,
+    157,
+    160
+   ],
+   "families": [
+    "deepseek",
+    "glm-flash",
+    "kimi"
+   ],
+   "n_families": 3,
+   "status": "CO-LOCATION",
+   "claims": [
+    {
+     "family": "kimi",
+     "line": 156,
+     "claim": "run_probe calls _tags() fresh in loop iteration, causing redundant HTTP requests"
+    },
+    {
+     "family": "glm-flash",
+     "line": 160,
+     "claim": "`ok` verdict rests on bare `text.strip()` truthiness, so an empty-or-error body still marks a candidate \"ok\" and can win with tps None ranked as 0"
+    },
+    {
+     "family": "deepseek",
+     "line": 157,
+     "claim": "Winner selection sorts on tokens_per_sec, elapsed_ms, gpu_pct, but never checks has_reply/has_canvas, so a candidate that ignores the two-section PROBE_PROMPT format can win and be written to lanes.yaml"
+    }
+   ]
+  },
+  {
+   "file": "mag/switchboard_v2.py",
+   "lines": [
+    437,
+    452,
+    455
+   ],
+   "families": [
+    "deepseek",
+    "glm-flash",
+    "kimi"
+   ],
+   "n_families": 3,
+   "status": "REAL",
+   "claims": [
+    {
+     "family": "kimi",
+     "line": 437,
+     "claim": "confirm() reuses stale ts from DEFERRED record without rechecking TTL expiry at confirmation time"
+    },
+    {
+     "family": "glm-flash",
+     "line": 455,
+     "claim": "confirm() claims full revalidation but only calls validate_authority; check_ttl and check_budget are never rerun, so a proposal that expired or exhausted budget while parked in the inbox is resurrected to AUTHORIZED on operator confirm"
+    },
+    {
+     "family": "deepseek",
+     "line": 452,
+     "claim": "inbox records carry only the DEFERRED snapshot; confirm() builds authority from rec[\"budget\"], so a budget consumed by a parallel grant is never seen and confirmation re-authorizes a spent proposal"
+    }
+   ]
+  },
+  {
+   "file": "scripts/descent_driver.sh",
+   "lines": [
+    4,
+    14,
+    16,
+    22,
+    23,
+    24,
+    25
+   ],
+   "families": [
+    "deepseek",
+    "glm-flash",
+    "kimi"
+   ],
+   "n_families": 3,
+   "status": "REAL",
+   "claims": [
+    {
+     "family": "kimi",
+     "line": 14,
+     "claim": "Log appending without rotation risks unbounded disk growth"
+    },
+    {
+     "family": "kimi",
+     "line": 22,
+     "claim": "`date -u +%H%M` in filename lacks seconds, collisions possible on rapid cycles"
+    },
+    {
+     "family": "kimi",
+     "line": 24,
+     "claim": "`mv` failure silently ignored with `2>/dev/null`, masking data loss on permission errors"
+    },
+    {
+     "family": "glm-flash",
+     "line": 22,
+     "claim": "A failed ds_workhorse run still consumes the queue because the unconditional mv on success-of-if (not of the python run) destroys pending_items.jsonl, permanently dropping unfetched items"
+    },
+    {
+     "family": "glm-flash",
+     "line": 24,
+     "claim": "Output filename uses only %H%M, so two cycles within the same clock hour overwrite the prior pending_out_*.jsonl, silently destroying banked results"
+    },
+    {
+     "family": "glm-flash",
+     "line": 4,
+     "claim": "Header promises \"skip = output exists\" but the loop never checks for prior output, so every hermes_burn_* dir is re-grounded every 45 seconds, burning budget on completed asks"
+    },
+    {
+     "family": "deepseek",
+     "line": 23,
+     "claim": "`pending_items.jsonl` is never cleared when its consumer fails, so a failed batch is re-run every cycle and output preserved under a colliding `%H%M` name"
+    },
+    {
+     "family": "deepseek",
+     "line": 25,
+     "claim": "The `%H%M` minute-stamp output name reuses an existing file across a 24h loop, silently overwriting a prior cycle's ledger"
+    },
+    {
+     "family": "deepseek",
+     "line": 16,
+     "claim": "Log rotation/append to `driver.log` and per-cycle stdout append grow unbounded in an infinite loop with no size cap"
+    }
+   ]
+  },
+  {
+   "file": "tools/hermes_burn.py",
+   "lines": [
+    89,
+    94,
+    100
+   ],
+   "families": [
+    "deepseek",
+    "glm-flash",
+    "kimi"
+   ],
+   "n_families": 3,
+   "status": "CO-LOCATION",
+   "claims": [
+    {
+     "family": "kimi",
+     "line": 94,
+     "claim": "_call sends HTTP requests without User-Agent header, violating SSRF defense-in-depth"
+    },
+    {
+     "family": "glm-flash",
+     "line": 89,
+     "claim": "_hermes_key opens ROOT/.env unguarded; a missing .env raises FileNotFoundError from module setup instead of the intended fail-loud SystemExit"
+    },
+    {
+     "family": "deepseek",
+     "line": 100,
+     "claim": "`_assert_public_endpoint` resolves once per call but urllib.request follows redirects by default; a 30x from the allowlisted host to an internal URL bypasses the IP fence entirely"
+    }
+   ]
+  },
+  {
+   "file": "tools/ocean_v2_pilot.py",
+   "lines": [
+    172,
+    174
+   ],
+   "families": [
+    "deepseek",
+    "glm-flash",
+    "kimi"
+   ],
+   "n_families": 3,
+   "status": "REAL",
+   "claims": [
+    {
+     "family": "kimi",
+     "line": 174,
+     "claim": "Cost cap check missing - spend can exceed COST_CAP without abort"
+    },
+    {
+     "family": "glm-flash",
+     "line": 172,
+     "claim": "Gate B counts any non-empty JUSTIFY string as \"corpus grounded\", so an uncited generic justification passes the pre-registered grounding gate"
+    },
+    {
+     "family": "deepseek",
+     "line": 172,
+     "claim": "Grounding gate never checks that a justification actually cites the chair's principles; any non-empty JUSTIFY passes, so GATE B is unfalsifiable"
+    }
+   ]
+  },
+  {
+   "file": "tools/reverse_map.py",
+   "lines": [
+    99,
+    106,
+    111
+   ],
+   "families": [
+    "deepseek",
+    "glm-flash",
+    "kimi"
+   ],
+   "n_families": 3,
+   "status": "REAL",
+   "claims": [
+    {
+     "family": "kimi",
+     "line": 111,
+     "claim": "race condition in Ledger.bank: multiple threads append to same file without fsync or atomic rename, corrupting jsonl on crash"
+    },
+    {
+     "family": "glm-flash",
+     "line": 99,
+     "claim": "probe_model returns None on any non-HTTP exception including transient network hiccups, and run() then silently swaps that healthy paid model to FLASH at full fleet scale, contradicting the code's own \"inconclusive, not a verdict\" comment"
+    },
+    {
+     "family": "deepseek",
+     "line": 106,
+     "claim": "probe_model treats any HTTPError with code 400 on the non-reasoning shape as a drop but swallows the shape-autodetect result for known_shape paths, so a model whose known shape 400s is silently dropped even when plain works"
+    }
+   ]
+  },
+  {
+   "file": "mag/desk_model_probe.py",
+   "lines": [
+    98,
+    107
+   ],
+   "families": [
+    "deepseek",
+    "kimi"
+   ],
+   "n_families": 2,
+   "status": "REAL",
+   "claims": [
+    {
+     "family": "kimi",
+     "line": 98,
+     "claim": "_gpu_pct_for divides by zero when size is zero, returning None silently instead of error"
+    },
+    {
+     "family": "deepseek",
+     "line": 107,
+     "claim": "_gpu_pct_for reads /api/ps immediately after /api/generate returns, but Ollama may have evicted or be mid-load; a None gpu_pct makes the tertiary sort key default to 0 and can break ties incorrectly"
+    }
+   ]
+  },
+  {
+   "file": "mag/preload_selector.py",
+   "lines": [
+    211,
+    222
+   ],
+   "families": [
+    "glm-flash",
+    "kimi"
+   ],
+   "n_families": 2,
+   "status": "CO-LOCATION",
+   "claims": [
+    {
+     "family": "kimi",
+     "line": 222,
+     "claim": "`chat_logprobs` constructs `urllib.request.Request` without setting a User-Agent header, causing the request to fail or be blocked by servers that require one"
+    },
+    {
+     "family": "glm-flash",
+     "line": 211,
+     "claim": "recency branch contradicts the documented spec \"span<=0 -> 1.0 for all\": the 1.0 arm requires `not known`, unreachable when a parseable ts exists, so every block gets recency 0.0 when all timestamps are equal, silently reweighting score to heat+success"
+    }
+   ]
+  },
+  {
+   "file": "mag/preload_selector.py",
+   "lines": [
+    370,
+    378
+   ],
+   "families": [
+    "deepseek",
+    "glm-flash"
+   ],
+   "n_families": 2,
+   "status": "REAL",
+   "claims": [
+    {
+     "family": "glm-flash",
+     "line": 370,
+     "claim": "shuffle command shuffles the ranked list then truncates, but probe's shuffled arm is compared against only the top-N conditioned arm while shuffled_order rows beyond N in cmd_shuffle suggest full-set control; metrics assume same content set (docstring \"ORDER ONLY\"), yet cmd_shuffle[:top] can drop blocks the docstring multiset guarantee (ok5) only checks for the head subset, so CLI output can imply a control that was never run"
+    },
+    {
+     "family": "deepseek",
+     "line": 378,
+     "claim": "`probe` has no guard that the two arms actually differ in order; if `shuffle_blocks(chosen, seed)` happens to reproduce the conditioned order or `len(chosen) == 1`, conditioned and shuffled prompts are byte-identical, `prompt_sha_conditioned == prompt_sha_shuffled`, and the DECORATIVE verdict is an artifact of a null treatment"
+    }
+   ]
+  },
+  {
+   "file": "mag/steer_seal.py",
+   "lines": [
+    154,
+    157
+   ],
+   "families": [
+    "deepseek",
+    "kimi"
+   ],
+   "n_families": 2,
+   "status": "CO-LOCATION",
+   "claims": [
+    {
+     "family": "kimi",
+     "line": 157,
+     "claim": "write_keyfile force=True path uses os.replace which is atomic but non-force path uses os.open/os.fdopen without fsync, risking partial writes on crash"
+    },
+    {
+     "family": "deepseek",
+     "line": 154,
+     "claim": "_log_event logs the raw steering text (first 80 chars) for refused permit words, writing operator steering content to a shared jsonl audit surface"
+    }
+   ]
+  },
+  {
+   "file": "mag/steer_seal.py",
+   "lines": [
+    370,
+    383
+   ],
+   "families": [
+    "deepseek",
+    "glm-flash"
+   ],
+   "n_families": 2,
+   "status": "REAL",
+   "claims": [
+    {
+     "family": "glm-flash",
+     "line": 370,
+     "claim": "On verify failure in warn mode, _gate returns the raw envelope JSON (including mac) as Admitted.text instead of the unwrapped payload, so downstream steering executes JSON as operative text"
+    },
+    {
+     "family": "deepseek",
+     "line": 383,
+     "claim": "resolve_mode() is called after load_keys() inside _gate's failure branch, so a malformed sentinel (_log_event during resolve_mode) runs even when the envelope was merely unsealed, coupling mode parsing into the verify-failure path"
+    }
+   ]
+  },
+  {
+   "file": "mag/switchboard_v2.py",
+   "lines": [
+    73,
+    85
+   ],
+   "families": [
+    "deepseek",
+    "glm-flash"
+   ],
+   "n_families": 2,
+   "status": "REAL",
+   "claims": [
+    {
+     "family": "glm-flash",
+     "line": 85,
+     "claim": "Replay protection is process-local memory only, so every restart clears _GRANTED_EVENT_IDS and a previously granted event_id can be re-granted from scratch"
+    },
+    {
+     "family": "deepseek",
+     "line": 73,
+     "claim": "replay guard _GRANTED_EVENT_IDS is process-local and only populated on the AUTHORIZED branch, so a restart plus reorganize of the same event_id double-grants and the guard never covers DEFERRED-then-confirmed paths"
+    }
+   ]
+  },
+  {
+   "file": "tools/hermes_burn.py",
+   "lines": [
+    314,
+    319
+   ],
+   "families": [
+    "deepseek",
+    "glm-flash"
+   ],
+   "n_families": 2,
+   "status": "CO-LOCATION",
+   "claims": [
+    {
+     "family": "glm-flash",
+     "line": 314,
+     "claim": "--dry never runs the evidence preflight (the not-execute branch short-circuits before _assert_evidence_in_body), so dry validation passes asks that a real fire would fail closed on"
+    },
+    {
+     "family": "deepseek",
+     "line": 319,
+     "claim": "`_bank` writes usage rows to a shared jsonl and `_landed_skip` reads `out_path.exists()` but turn-1 write uses `out_path.write_text` non-atomically; a crash mid-write leaves a partial deliverable that `_landed_skip` then treats as landed and refuses every re-fire forever"
+    }
+   ]
+  },
+  {
+   "file": "tools/ocean_v2_pilot.py",
+   "lines": [
+    127,
+    131
+   ],
+   "families": [
+    "glm-flash",
+    "kimi"
+   ],
+   "n_families": 2,
+   "status": "CO-LOCATION",
+   "claims": [
+    {
+     "family": "kimi",
+     "line": 131,
+     "claim": "Regex for RATE allows partial match in larger string, no anchor"
+    },
+    {
+     "family": "glm-flash",
+     "line": 127,
+     "claim": "Budget cap is never enforced; the run can spend unboundedly past the $0.25 cap because `spend` is accumulated but never compared to `COST_CAP` nor aborted"
+    }
+   ]
+  },
+  {
+   "file": "tools/reverse_map.py",
+   "lines": [
+    224,
+    234
+   ],
+   "families": [
+    "glm-flash",
+    "kimi"
+   ],
+   "n_families": 2,
+   "status": "REAL",
+   "claims": [
+    {
+     "family": "kimi",
+     "line": 234,
+     "claim": "analyze_rows ignores dh.fire return signature mismatch: caller=judge returns (text, cost) but judge lambda discards max_tokens param and returns raw call() dict"
+    },
+    {
+     "family": "glm-flash",
+     "line": 224,
+     "claim": "analyze_rows hardcodes shape \"reasoning\" for the judge lambda, ignoring the probe result, so if probe_model demoted PRIME to \"plain\" (HTTP 400 path) the one funded-tier analyzer call 400s after all shard spend is already sunk"
+    }
+   ]
+  },
+  {
+   "file": "tools/roblox_npc_gateway.py",
+   "lines": [
+    110,
+    124
+   ],
+   "families": [
+    "glm-flash",
+    "kimi"
+   ],
+   "n_families": 2,
+   "status": "CO-LOCATION",
+   "claims": [
+    {
+     "family": "kimi",
+     "line": 124,
+     "claim": "`receipt` function writes to shared jsonl without atomic tmp+replace (known organ violation pattern)"
+    },
+    {
+     "family": "glm-flash",
+     "line": 110,
+     "claim": "Empty NPC_GATEWAY_HOST is treated as loopback but binds all interfaces, so a blank host with no secret yields an unauthenticated public listener, defeating the fail-closed rule"
+    }
+   ]
+  },
+  {
+   "file": "tools/roblox_npc_gateway.py",
+   "lines": [
+    234,
+    246,
+    247
+   ],
+   "families": [
+    "deepseek",
+    "glm-flash"
+   ],
+   "n_families": 2,
+   "status": "CO-LOCATION",
+   "claims": [
+    {
+     "family": "glm-flash",
+     "line": 247,
+     "claim": "ThreadingHTTPServer spawns unbounded threads and each POST can hold one for up to 25s per lane across all lanes, a trivial slowloris thread-exhaustion DoS"
+    },
+    {
+     "family": "deepseek",
+     "line": 246,
+     "claim": "`_SECRET` is read in `Handler.do_POST` as a module global, but `__main__` assigns it to a local, so auth never arms and a 0.0.0.0 bind runs open"
+    },
+    {
+     "family": "deepseek",
+     "line": 234,
+     "claim": "`Content-Length` is taken from the header and passed straight to `rfile.read(n)`; a negative or absent length plus unbounded `n` above cap is not the only hole, a negative `n` reads unbounded, and a declared length under cap is never actually enforced against bytes sent"
+    }
+   ]
+  },
+  {
+   "file": "watch/inbox/SHARED_SURFACE_CONTRACT.json",
+   "lines": [
+    58,
+    60
+   ],
+   "families": [
+    "glm-flash",
+    "kimi"
+   ],
+   "n_families": 2,
+   "status": "CO-LOCATION",
+   "claims": [
+    {
+     "family": "kimi",
+     "line": 58,
+     "claim": "Path traversal possible via unvalidated client alias keys used in filesystem operations"
+    },
+    {
+     "family": "kimi",
+     "line": 60,
+     "claim": "Windows backslash paths in \"mag_host\" alias (line 60-61) break when repo is on different drive or WSL path translation"
+    },
+    {
+     "family": "glm-flash",
+     "line": 58,
+     "claim": "vscode and cursor client aliases use unexpanded \"${workspaceFolder}\" placeholders, which are editor-templating variables not resolvable paths, so those seats cannot apply the contract as-is."
+    }
+   ]
+  },
+  {
+   "file": "watch/inbox/SHARED_SURFACE_CONTRACT.json",
+   "lines": [
+    5,
+    6,
+    10,
+    24,
+    26
+   ],
+   "families": [
+    "deepseek",
+    "glm-flash"
+   ],
+   "n_families": 2,
+   "status": "REAL",
+   "claims": [
+    {
+     "family": "glm-flash",
+     "line": 10,
+     "claim": "read_first is hardcoded to the container path \"/board/inbox/INDEX.json\", so host and WSL clients following it literally read a nonexistent route instead of their alias; canonical and read_first disagree."
+    },
+    {
+     "family": "glm-flash",
+     "line": 26,
+     "claim": "Law requires receipt fields (source hash, producer, timestamp, destination, acceptance state) but no receipt schema or validator rule exists, so step 5 \"write a receipt\" is unenforceable and receipts will be non-interoperable."
+    },
+    {
+     "family": "deepseek",
+     "line": 5,
+     "claim": "Container and WSL aliases point at paths that exist only on the host, so non-host clients cannot resolve the canonical surface"
+    },
+    {
+     "family": "deepseek",
+     "line": 6,
+     "claim": "wsl entry is a full Windows path while canonical.container uses /board/inbox; two clients for the same host resolve to different roots with no statement of which wins"
+    },
+    {
+     "family": "deepseek",
+     "line": 24,
+     "claim": "never_sole_destination lists /tmp and %TEMP% but laws[0] already grants client-local session dirs as cache; the two rules overlap and leave \"cache only, not sole copy\" untestable"
+    }
+   ]
+  },
+  {
+   "file": "mag/desk_model_probe.py",
+   "lines": [
+    127
+   ],
+   "families": [
+    "kimi"
+   ],
+   "n_families": 1,
+   "status": "UNIQUE",
+   "claims": [
+    {
+     "family": "kimi",
+     "line": 127,
+     "claim": "_bench_model catches all exceptions without distinguishing retryable vs permanent failures, masking GPU OOMs as generic errors"
+    }
+   ]
+  },
+  {
+   "file": "mag/desk_model_probe.py",
+   "lines": [
+    186
+   ],
+   "families": [
+    "glm-flash"
+   ],
+   "n_families": 1,
+   "status": "UNIQUE",
+   "claims": [
+    {
+     "family": "glm-flash",
+     "line": 186,
+     "claim": "Winner ranking uses end-to-end elapsed_ms, so the first candidate pays cold model load while the second runs warm, biasing the A/B verdict by run order"
+    }
+   ]
+  },
+  {
+   "file": "mag/desk_model_probe.py",
+   "lines": [
+    213
+   ],
+   "families": [
+    "glm-flash"
+   ],
+   "n_families": 1,
+   "status": "UNIQUE",
+   "claims": [
+    {
+     "family": "glm-flash",
+     "line": 213,
+     "claim": "REPORT_PATH on disk is written before `report[\"report_path\"]` is set, so the persisted report lacks the field callers of run_probe see"
+    }
+   ]
+  },
+  {
+   "file": "mag/desk_model_probe.py",
+   "lines": [
+    71
+   ],
+   "families": [
+    "deepseek"
+   ],
+   "n_families": 1,
+   "status": "UNIQUE",
+   "claims": [
+    {
+     "family": "deepseek",
+     "line": 71,
+     "claim": "ensure_qwen_desk writes Modelfile.qwen-desk with mf_path.write_text and no tmp+replace; a crash mid-write leaves a truncated Modelfile that ollama create consumes silently"
+    }
+   ]
+  },
+  {
+   "file": "mag/preload_selector.py",
+   "lines": [
+    180
+   ],
+   "families": [
+    "kimi"
+   ],
+   "n_families": 1,
+   "status": "UNIQUE",
+   "claims": [
+    {
+     "family": "kimi",
+     "line": 180,
+     "claim": "`order_blocks` is a redundant alias that discards the scoring done by `score_blocks` by re-wrapping the already-scored list in a new list, wasting memory and confusing readers about whether scoring happens"
+    }
+   ]
+  },
+  {
+   "file": "mag/preload_selector.py",
+   "lines": [
+    308
+   ],
+   "families": [
+    "kimi"
+   ],
+   "n_families": 1,
+   "status": "UNIQUE",
+   "claims": [
+    {
+     "family": "kimi",
+     "line": 308,
+     "claim": "`cmd_probe` appends to jsonl output without atomic tmp+replace, risking corruption if interrupted"
+    }
+   ]
+  },
+  {
+   "file": "mag/preload_selector.py",
+   "lines": [
+    332
+   ],
+   "families": [
+    "glm-flash"
+   ],
+   "n_families": 1,
+   "status": "UNIQUE",
+   "claims": [
+    {
+     "family": "glm-flash",
+     "line": 332,
+     "claim": "compare() maps zero shared positions to rel_delta_pct=0.0, so a logprobs-less response (run_arm yields empty token lists, n=0) auto-emits verdict DECORATIVE and the F-W5 gate kills the selector on missing data"
+    }
+   ]
+  },
+  {
+   "file": "mag/preload_selector.py",
+   "lines": [
+    101
+   ],
+   "families": [
+    "deepseek"
+   ],
+   "n_families": 1,
+   "status": "UNIQUE",
+   "claims": [
+    {
+     "family": "deepseek",
+     "line": 101,
+     "claim": "`--topk 0` is accepted and forwarded as `top_logprobs: 0`, so `run_arm` returns empty `logprobs`, `compare` reports positions=0/churn=1.0/rel_delta=0.0 and prints verdict DECORATIVE (kill) on zero measured data"
+    }
+   ]
+  },
+  {
+   "file": "mag/preload_selector.py",
+   "lines": [
+    411
+   ],
+   "families": [
+    "deepseek"
+   ],
+   "n_families": 1,
+   "status": "UNIQUE",
+   "claims": [
+    {
+     "family": "deepseek",
+     "line": 411,
+     "claim": "`cmd_probe` writes the row into `probe_YYYYMMDD.jsonl` and never reads existing rows, so repeated same-day probe runs silently append and downstream readers cannot tell which verdict is current; the appends are also non-atomic (known organ violation) but the missing run identity is independent of that"
+    }
+   ]
+  },
+  {
+   "file": "mag/steer_seal.py",
+   "lines": [
+    66
+   ],
+   "families": [
+    "kimi"
+   ],
+   "n_families": 1,
+   "status": "UNIQUE",
+   "claims": [
+    {
+     "family": "kimi",
+     "line": 66,
+     "claim": "LOG is unconditionally used in _log_event before None check, but LOG is defined as a Path that may not exist, causing mkdir to fail on permission errors without proper handling"
+    }
+   ]
+  },
+  {
+   "file": "mag/steer_seal.py",
+   "lines": [
+    328
+   ],
+   "families": [
+    "kimi"
+   ],
+   "n_families": 1,
+   "status": "UNIQUE",
+   "claims": [
+    {
+     "family": "kimi",
+     "line": 328,
+     "claim": "_gate passes keyfile=None to verify and load_keys when keyfile param is None, but default_keyfile() may not exist causing VerifyError that returns False from verify, yet _gate treats this as verify failure rather than distinguishing missing keyfile from bad MAC"
+    }
+   ]
+  },
+  {
+   "file": "mag/steer_seal.py",
+   "lines": [
+    130
+   ],
+   "families": [
+    "glm-flash"
+   ],
+   "n_families": 1,
+   "status": "UNIQUE",
+   "claims": [
+    {
+     "family": "glm-flash",
+     "line": 130,
+     "claim": "write_keyfile non-force branch opens the keyfile with no mode argument, so POSIX umask can yield 0644, and load_keys then permanently rejects that same file (\"permissions too open\"), bricking minting until manual repair"
+    }
+   ]
+  },
+  {
+   "file": "mag/steer_seal.py",
+   "lines": [
+    185
+   ],
+   "families": [
+    "glm-flash"
+   ],
+   "n_families": 1,
+   "status": "UNIQUE",
+   "claims": [
+    {
+     "family": "glm-flash",
+     "line": 185,
+     "claim": "load_keys parses the rotation map with plain json.loads, so duplicate key_id entries silently keep the last value, the exact duplicate-key hazard _no_dupes exists to catch elsewhere"
+    }
+   ]
+  },
+  {
+   "file": "mag/steer_seal.py",
+   "lines": [
+    395
+   ],
+   "families": [
+    "deepseek"
+   ],
+   "n_families": 1,
+   "status": "UNIQUE",
+   "claims": [
+    {
+     "family": "deepseek",
+     "line": 395,
+     "claim": "admit() on a malformed non-envelope directive file raises uncaught VerifyError instead of honoring safe-fail restrictive default, so a broken-seal STOP file hard-fails rather than pausing"
+    }
+   ]
+  },
+  {
+   "file": "mag/switchboard_v2.py",
+   "lines": [
+    311
+   ],
+   "families": [
+    "kimi"
+   ],
+   "n_families": 1,
+   "status": "UNIQUE",
+   "claims": [
+    {
+     "family": "kimi",
+     "line": 311,
+     "claim": "_GRANTED_EVENT_IDS replay protection only tracks AUTHORIZED grants, allowing replay of DENIED/DEFERRED proposals"
+    }
+   ]
+  },
+  {
+   "file": "mag/switchboard_v2.py",
+   "lines": [
+    343
+   ],
+   "families": [
+    "kimi"
+   ],
+   "n_families": 1,
+   "status": "UNIQUE",
+   "claims": [
+    {
+     "family": "kimi",
+     "line": 343,
+     "claim": "_implicit_authority allows self-grant AUTHORIZED for low-impact effects even when proposal status is already DENIED"
+    }
+   ]
+  },
+  {
+   "file": "mag/switchboard_v2.py",
+   "lines": [
+    840
+   ],
+   "families": [
+    "glm-flash"
+   ],
+   "n_families": 1,
+   "status": "UNIQUE",
+   "claims": [
+    {
+     "family": "glm-flash",
+     "line": 840,
+     "claim": "_flush_expired_deferred flips inbox records to DENIED without trail_append, so terminal receipt-chain states exist only in the inbox and the TRAIL receipt chain has a hole"
+    }
+   ]
+  },
+  {
+   "file": "mag/switchboard_v2.py",
+   "lines": [
+    857
+   ],
+   "families": [
+    "deepseek"
+   ],
+   "n_families": 1,
+   "status": "UNIQUE",
+   "claims": [
+    {
+     "family": "deepseek",
+     "line": 857,
+     "claim": "_flush_expired_deferred mutates and rewrites the inbox while iterating _read_inbox(), so each _rewrite_inbox_rec re-reads the file and a later flushed record can revert an earlier one in the same sweep"
+    }
+   ]
+  },
+  {
+   "file": "tools/hermes_burn.py",
+   "lines": [
+    134
+   ],
+   "families": [
+    "kimi"
+   ],
+   "n_families": 1,
+   "status": "UNIQUE",
+   "claims": [
+    {
+     "family": "kimi",
+     "line": 134,
+     "claim": "_bank appends to usage.jsonl without atomic tmp+replace, risking corruption on crash"
+    }
+   ]
+  },
+  {
+   "file": "tools/hermes_burn.py",
+   "lines": [
+    71
+   ],
+   "families": [
+    "kimi"
+   ],
+   "n_families": 1,
+   "status": "UNIQUE",
+   "claims": [
+    {
+     "family": "kimi",
+     "line": 71,
+     "claim": "_hermes_key leaks file handle via unclosed open() iterator, exhausting FDs under load"
+    }
+   ]
+  },
+  {
+   "file": "tools/hermes_burn.py",
+   "lines": [
+    367
+   ],
+   "families": [
+    "glm-flash"
+   ],
+   "n_families": 1,
+   "status": "UNIQUE",
+   "claims": [
+    {
+     "family": "glm-flash",
+     "line": 367,
+     "claim": "turn-1 deliverable is landed with a bare write_text, so a crash mid-write leaves a partial file that _landed_skip then treats as landed truth, permanently blocking refire (force cannot override)"
+    }
+   ]
+  },
+  {
+   "file": "tools/hermes_burn.py",
+   "lines": [
+    262
+   ],
+   "families": [
+    "deepseek"
+   ],
+   "n_families": 1,
+   "status": "UNIQUE",
+   "claims": [
+    {
+     "family": "deepseek",
+     "line": 262,
+     "claim": "EVIDENCE-PREFLIGHT head probe checks `text[:400].strip() not in body` but the system prompt is prepended ahead of the evidence block only via `_system_for` which returns face_for(model)+laws; on turn 2 the rebuilt `messages` drops the system prompt and contract entirely, so probe for evidence material still present in turn-2 body holds only because evidence rides the original user msg - but a revision whose evidence rendered into `contract` (not evidence[]) passes exactly as the DUEL2/T1W2 disease did"
+    }
+   ]
+  },
+  {
+   "file": "tools/ocean_v2_pilot.py",
+   "lines": [
+    192
+   ],
+   "families": [
+    "kimi"
+   ],
+   "n_families": 1,
+   "status": "UNIQUE",
+   "claims": [
+    {
+     "family": "kimi",
+     "line": 192,
+     "claim": "`chr(109)+chr(101)+chr(97)+chr(110)` obfuscation breaks if source inspected"
+    }
+   ]
+  },
+  {
+   "file": "tools/ocean_v2_pilot.py",
+   "lines": [
+    80
+   ],
+   "families": [
+    "glm-flash"
+   ],
+   "n_families": 1,
+   "status": "UNIQUE",
+   "claims": [
+    {
+     "family": "glm-flash",
+     "line": 80,
+     "claim": "DNS is validated once in `_validated_api_url()` but `urlopen` re-resolves the hostname, leaving a TOCTOU rebinding hole that bypasses the blocked-range check"
+    }
+   ]
+  },
+  {
+   "file": "tools/ocean_v2_pilot.py",
+   "lines": [
+    32
+   ],
+   "families": [
+    "deepseek"
+   ],
+   "n_families": 1,
+   "status": "UNIQUE",
+   "claims": [
+    {
+     "family": "deepseek",
+     "line": 32,
+     "claim": "Budget cap is enforced only by comment, never checked; a runaway run spends past $0.25 with no abort"
+    }
+   ]
+  },
+  {
+   "file": "tools/ocean_v2_pilot.py",
+   "lines": [
+    154
+   ],
+   "families": [
+    "deepseek"
+   ],
+   "n_families": 1,
+   "status": "UNIQUE",
+   "claims": [
+    {
+     "family": "deepseek",
+     "line": 154,
+     "claim": "Cached-token accounting defaults miss to full prompt when prompt_tokens_details is absent, silently over-charging every call and skewing the cap signal"
+    }
+   ]
+  },
+  {
+   "file": "tools/reverse_map.py",
+   "lines": [
+    141
+   ],
+   "families": [
+    "kimi"
+   ],
+   "n_families": 1,
+   "status": "UNIQUE",
+   "claims": [
+    {
+     "family": "kimi",
+     "line": 141,
+     "claim": "fire_shard uses hash((sid, attempt)) % len(keys) for key rotation which collides across sids, violating V9 law 5's \"never rotate mid-run\" intent"
+    }
+   ]
+  },
+  {
+   "file": "tools/reverse_map.py",
+   "lines": [
+    316
+   ],
+   "families": [
+    "glm-flash"
+   ],
+   "n_families": 1,
+   "status": "UNIQUE",
+   "claims": [
+    {
+     "family": "glm-flash",
+     "line": 316,
+     "claim": "Budget halt reads ledger.spent without the lock while up to args.concurrency shards bank concurrently, so cap can be overshot by in-flight shards before stop.set() lands"
+    }
+   ]
+  },
+  {
+   "file": "tools/reverse_map.py",
+   "lines": [
+    250
+   ],
+   "families": [
+    "deepseek"
+   ],
+   "n_families": 1,
+   "status": "UNIQUE",
+   "claims": [
+    {
+     "family": "deepseek",
+     "line": 250,
+     "claim": "parse_strategies ignores id coverage so a valid-JSON analyzer reply that assigns zero ids leaves strategies empty, writes an empty map, and reports success"
+    }
+   ]
+  },
+  {
+   "file": "tools/reverse_map.py",
+   "lines": [
+    392
+   ],
+   "families": [
+    "deepseek"
+   ],
+   "n_families": 1,
+   "status": "UNIQUE",
+   "claims": [
+    {
+     "family": "deepseek",
+     "line": 392,
+     "claim": "analyze subcommand re-fires paid analyzer call with no budget-cap gate, so a re-analyze can exceed the cap that run enforced"
+    }
+   ]
+  },
+  {
+   "file": "tools/roblox_npc_gateway.py",
+   "lines": [
+    168
+   ],
+   "families": [
+    "kimi"
+   ],
+   "n_families": 1,
+   "status": "UNIQUE",
+   "claims": [
+    {
+     "family": "kimi",
+     "line": 168,
+     "claim": "`ask_lane` uses `str()` conversion on payload fields which passes through `None` as literal string \"None\" rather than rejecting malformed input"
+    }
+   ]
+  },
+  {
+   "file": "tools/roblox_npc_gateway.py",
+   "lines": [
+    188
+   ],
+   "families": [
+    "kimi"
+   ],
+   "n_families": 1,
+   "status": "UNIQUE",
+   "claims": [
+    {
+     "family": "kimi",
+     "line": 188,
+     "claim": "`Handler.do_POST` catches all exceptions and returns generic fault message, masking `json.JSONDecodeError` which should be 400 not 500-class gateway fault"
+    }
+   ]
+  },
+  {
+   "file": "tools/roblox_npc_gateway.py",
+   "lines": [
+    212
+   ],
+   "families": [
+    "glm-flash"
+   ],
+   "n_families": 1,
+   "status": "UNIQUE",
+   "claims": [
+    {
+     "family": "glm-flash",
+     "line": 212,
+     "claim": "Content-Length is never validated as non-negative, so n = -1 makes rfile.read(-1) block until client close and buffer the body unbounded on a public listener"
+    }
+   ]
+  },
+  {
+   "file": "tools/roblox_npc_gateway.py",
+   "lines": [
+    74
+   ],
+   "families": [
+    "deepseek"
+   ],
+   "n_families": 1,
+   "status": "UNIQUE",
+   "claims": [
+    {
+     "family": "deepseek",
+     "line": 74,
+     "claim": "model allowlist is checked in `ask_lane` but `str(payload.get(\"model\", MODEL))` is attacker-controlled and the free-model check happens only after persona lookup, so a client can probe arbitrary slugs; more importantly `receipt` is called with attacker `model` before validation in the gate branch which is fine, but the real defect is `assert_public_https` resolves at call time and TOCTOU lets DNS rebind between getaddrinfo and urlopen"
+    }
+   ]
+  },
+  {
+   "file": "watch/inbox/SHARED_SURFACE_CONTRACT.json",
+   "lines": [
+    78
+   ],
+   "families": [
+    "kimi"
+   ],
+   "n_families": 1,
+   "status": "UNIQUE",
+   "claims": [
+    {
+     "family": "kimi",
+     "line": 78,
+     "claim": "\"grok_powershell\" alias uses angle brackets as placeholders (<repo>) without substitution schema defined"
+    }
+   ]
+  }
+ ]
+}

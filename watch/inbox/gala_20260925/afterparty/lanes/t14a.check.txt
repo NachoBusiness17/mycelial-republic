@@ -1,0 +1,72 @@
+t14a evidence - per-player FOV kick on dash (roblox v1.1 row)
+estate: C:/Users/foste/Documents/projects/local_sovereign_agent
+date: 2026-09-26 (afterparty)
+
+FINDING (negative first): the FOV kick ALREADY EXISTED.
+  Commit dfcda53cc "mountain/v1.1-client: polish without the PC ..." dated
+  2026-09-25 09:40 landed it pre-afterparty. queue/todo.md row 185 was never
+  ticked. No t14a lane files existed before mine, so nothing was double-banked.
+
+WIRING (verified by read):
+  server: roblox/src/server/PlayerFeel.luau:46
+      player:SetAttribute("DashAt", now)
+    set only after the 3s cooldown gate (line 38) and the velocity push
+    (line 45). os.clock() value, no randomness, server-authoritative.
+  client: roblox/src/client/init.client.luau:79
+      player:GetAttributeChangedSignal("DashAt"):Connect(function() ... end)
+  Attribute-driven, zero new remotes, camera FOV is client-side only. The todo
+  row stays UNTICKED: its third slice (mobile ContextActionService bindings)
+  is still open (grep ContextActionService in roblox/src = 0 hits).
+
+DELTA by t14a (one defect, minimal fix, receipt in the comment):
+  Defect: init.client.luau captured `local cam = workspace.CurrentCamera` once
+  at old line 73, but this StarterPlayerScripts init runs once per session and
+  outlives respawns by design (gui.ResetOnSpawn = false at line 31,
+  CharacterAdded re-watch at 102-103). workspace.CurrentCamera is nullable and
+  can be replaced across respawn flows, so the captured ref goes stale and the
+  kick silently dies after a swap.
+
+  BEFORE (old lines 72-80):
+    -- ---- dash FOV kick: 70 -> 82 -> 70 on every DashAt bump ----
+    local cam = workspace.CurrentCamera
+    player:GetAttributeChangedSignal("DashAt"):Connect(function()
+        local out = TweenService:Create(cam, TweenInfo.new(0.12, ...), { FieldOfView = 82 })
+        out:Play()
+        out.Completed:Once(function()
+            TweenService:Create(cam, TweenInfo.new(0.3, ...), { FieldOfView = 70 }):Play()
+        end)
+    end)
+
+  AFTER (new lines 72-89, see git diff for exact text):
+    FIX comment lines 73-78 (cause + evidence, per the fix-receipt law)
+    line 80:  local cam = workspace.CurrentCamera   (resolved per kick)
+    line 81:  if not cam then return end
+    line 85:  local back = workspace.CurrentCamera  (re-resolved for ease-back)
+    line 86:  if not back then return end
+    Kick shape unchanged: 70 -> 82 in 0.12s Quad/Out, ease back to 70 in 0.3s.
+
+LAWS:
+  - never fabricate: pre-existing implementation credited to dfcda53cc, not me.
+  - no em-dash in filed text: my added lines are clean; one PRE-EXISTING
+    em-dash sits at line 2 (original header) and was left untouched to keep
+    the diff minimal.
+  - negatives first-class: item already done; rojo missing; rbxlx stale;
+    luau-lsp missing; todo row still open on mobile bindings.
+  - fix comment carries the receipt: lines 73-78 name cause + evidence.
+  - server laws respected: no server edit at all; FOV is client camera only;
+    DashAt is a deterministic server os.clock() stamp, no randomness.
+
+TWEEN OVERLAP MATH: kick total 0.12 + 0.3 = 0.42s vs 3s dash cooldown
+  (PlayerFeel.luau:14), so a re-dash can never overlap the ease-back. No
+  cancel-chasing machinery added (no fallback-branch creep).
+
+VERIFICATION:
+  - read-back of the full block + git diff reviewed: guards correct, tabs
+    preserved, types fine (CurrentCamera is Camera?, TweenInfo/Enum valid,
+    RBXScriptSignal:Once valid).
+  - luau-lsp: NOT INSTALLED on this box (exit 127), so no static check.
+  - mountain_check: NOT run (shared resource, forbidden by the item).
+  - rojo: NOT INSTALLED (exit 127), so roblox/the_mountain.rbxlx (tracked,
+    built in dfcda53cc) is now STALE vs source until a rebuild.
+
+FILES TOUCHED: roblox/src/client/init.client.luau (only).

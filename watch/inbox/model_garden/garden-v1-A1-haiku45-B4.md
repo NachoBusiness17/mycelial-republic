@@ -1,0 +1,9 @@
+# garden-v1-A1-haiku45-B4 (anthropic/claude-haiku-4.5 @ nous, turn 1, channel: content)
+
+IMPROVEMENT 1: INDEX.json path is referenced in every client alias but never defined in the contract - no schema, acceptance criteria, or update rules exist for the mandatory read-first artifact. | EVIDENCE: watch/inbox/SHARED_SURFACE_CONTRACT.json:2, 33, 47-68 | FIX: Add an "index_schema" key at contract root specifying INDEX.json structure, required fields (producer, timestamp, item_list with hash and classification), and immutability rule for accepted entries.
+
+IMPROVEMENT 2: Client aliases use template variables (${workspaceFolder}, <repo>, ~/) without a resolver spec - a seat cannot deterministically map these at runtime without external configuration. | EVIDENCE: watch/inbox/SHARED_SURFACE_CONTRACT.json:53-68 | FIX: Add a "variable_resolution" section mapping each template syntax to its resolution order (e.g. environment variable, config file, fallback hardcoded path).
+
+IMPROVEMENT 3: "never_sole_destination" lists unsafe locations but does not bind it to a validation gate - a client can write to ~/.codex and claim it is "cache only" without violating the contract text. | EVIDENCE: watch/inbox/SHARED_SURFACE_CONTRACT.json:70-78, 11-12 | FIX: Add a "validation_gate" rule that requires the validator command to reject any receipt or INDEX.json entry with destination matching never_sole_destination patterns.
+
+DIFFERENT-BUILD: Replace the client_aliases array with a registry pattern: each client declares its own read/write/cache roots in a separate CONFIG.json file at the inbox root, signed and timestamped. The contract becomes a schema enforcer only, not a path directory. This decouples contract evolution from client proliferation and makes it falsifiable by a single audit (one contract plus N signed configs, not N hardcoded aliases).

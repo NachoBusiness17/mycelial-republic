@@ -1,0 +1,180 @@
+SPIKINGBRAIN-DEEP LANE: BYTE-CHECK TRANSCRIPT (division B, 2026-10-01)
+All commands were run in this ask on this machine. Raw artifacts live beside this
+file in watch/inbox/gala_20260925/spiking-wide/lanes/ (sb_* files).
+
+=======================================================================
+CHECK 1: full paper fetched (not the abstract) and version drift closed
+=======================================================================
+$ curl -sL -o sb_abs.html "https://arxiv.org/abs/2509.05276"
+$ curl -sL -o sb_paper.html "https://arxiv.org/html/2509.05276v1"
+$ curl -sL -o sb_paper_v4.html "https://arxiv.org/html/2509.05276v4"
+sb_abs.html 46729 B; sb_paper.html 337495 B (LaTeXML full-text render, title
+"Spiking Brain-inspired Large Models"); sb_paper_v4.html 470145 B.
+abs page lists versions v1..v4, "Submitted on 5 Sep 2025".
+
+v4 drift probe (python, re.count on extracted v4 text sb_paper_v4.txt):
+  69.15 -> 2 hits | 97.7 -> 2 | 43.48 -> 1 | 100x -> 5 | 1054 -> 1 | 1073 -> 1
+  27929 -> 1 | 65.84 -> 1 | 74.21 -> 1 | +150B -> 1 | 23.4 -> 1
+VERDICT: every key number in v1 survives into v4 unchanged (v4 renumbers tables;
+TTFT table = Table 4 in v1, Table 7 in v4). All quotes below byte-checked in both.
+
+=======================================================================
+CHECK 2: TTFT table extracted from the paper's own markup
+=======================================================================
+$ python (bs4/lxml) -> sb_tables.txt  (6 table figures extracted with captions)
+v1 Table 4 caption: "Inference speed comparison of SpikingBrain-7B under sequence
+parallelism (SP). The metric is TTFT (ms) ... our 7B model uses ZeCO for the
+linear attention module and P2P communication for the SWA module, while the
+Qwen2.5 baseline employs A2A communication. All measurements are conducted on
+NVIDIA H100 GPUs and averaged over 10 runs. '-' indicates infeasible measurement
+due to resource constraints."
+Rows (seq len | GPUs | SpikingBrain-7B | Qwen2.5-7B):
+  256k | 8   | 1015 | 7419    (7.3x)
+  512k | 16  | 1037 | 14398   (13.9x)
+  1M   | 32  | 1054 | 27929   (26.5x)
+  2M   | 64  | 1070 | -  (infeasible)
+  4M   | 128 | 1073 | -  (infeasible)
+VERDICT: the ">100x TTFT at 4M tokens" headline is a quadratic-trend extrapolation
+PAST the last measured point; the largest measured head-to-head is 26.5x at 1M,
+and it requires 128 H100s + sequence parallelism. Single/few-GPU reality (Table 5,
+MetaX C550, latency incl. 128 output tokens, at 128k): HF 1-GPU 15974 vs Qwen2.5
+38487 (2.4x); vLLM 4-GPU 12048 vs 45141 (3.7x). Paper text: "1.41x on HuggingFace
+and 2.75x on vLLM" at 128k.
+
+=======================================================================
+CHECK 3: energy claim anatomy (grep sb_paper.txt line-context)
+=======================================================================
+$ sed -n '5940,6010p' sb_paper.txt
+"E = Average Spikes x E_INT8Add" (eq 27); "With an average spike count of 1.13 and
+INT8 (weight) addition energy consumption of approximately 0.03 pJ per operation,
+the average MAC energy cost is about 0.034 pJ (1.13 x 0.03 pJ)." -> "reduces energy
+consumption by 97.7% compared with FP16 MACs and by 85.2% compared with INT8 MACs,
+yielding energy-efficiency improvements of up to 43.48x and 6.76x".
+VERDICT: per-MAC arithmetic estimate using literature op-energy constants, NOT a
+measured whole-model per-token figure; the tweet's "97% less energy" drops the
+spiking-portions-only + appropriate-hardware qualifier. In-paper kill shot (v4
+Table 13, component ablation): "Values in parentheses indicate configurations
+where spike encoding uses integer activations on GPUs rather than neuromorphic
+hardware. In this setting, TTFT is identical to the corresponding non-spike
+configuration." Rows: H+S TTFT-128k (4729.4) = H 4729.4; H+M+S (5055.2) = H+M
+5055.2. Spike encoding buys ZERO speed on GPU hardware today.
+
+=======================================================================
+CHECK 4: 69% sparsity claim source
+=======================================================================
+$ grep -n "69.15" sb_paper.txt
+"94.1% of values fall within [0,7], and only about 1% exceed 16. After expansion
+into bitwise-ternary spikes, the average number of spikes fired per channel is
+only 1.13, while 18.4% of channels do not fire any spikes at all. Since 94.1% of
+values are within 7 (i.e., within the INT3 range), we further analyze the firing
+rate under a step size of 3. By filling inactive bits within the 3-step window
+with 0, the overall sparsity reaches approximately 69.15%."
+VERDICT: it is ACTIVATION spike sparsity of the spiking-encoded activations,
+measured by the authors on SpikingBrain-7B; not weight sparsity, not a hardware
+measurement. Cost (Table 6): W8ASpike avg 0.6998 -> 0.6875 (7B), caption
+"approximately 1-3%" degradation.
+
+=======================================================================
+CHECK 5: quality vs Qwen2.5 baseline from the paper's own tables
+=======================================================================
+sb_tables.txt Table 1 (pre-trained, perplexity-based, HF framework):
+  MMLU 65.84 vs 74.21 (-8.37) | CMMLU 71.58 vs 81.73 (-10.15)
+  ARC-C 43.32 vs 44.04 (-0.72) | HellaSwag 70.89 vs 72.81 (-1.92)
+  C-Eval 69.80 vs 81.60 (-11.80) | training cost +150B tokens vs Qwen's 7T (~2%)
+Table 3 (chat, vLLM, generation-based):
+  SB-7B WINS NQ 21.47 vs 17.67 and TrQA 57.03 vs 55.72;
+  loses MMLU 65.57 vs 75.17, CMMLU 68.76 vs 79.14, HS 68.95 vs 85.39,
+  C-Eval 69.07 vs 77.93, QuALITY(long-ctx) 60.12 vs 73.63, IFEval 42.70 vs 73.20.
+VERDICT: vs its own parent model Qwen2.5-7B the 7B is 8-12 points down on
+knowledge benchmarks, par on ARC-C, wins 2 retrieval-ish probes, badly down on
+instruction-following (IFEval -30.5) and long-context QA (QuALITY -13.5). The
+"comparable to baselines" claim holds vs OTHER linear-attention models
+(Falcon-Mamba/Mistral-linear/Zamba, all trained on less Chinese data per the
+paper's own caption), not vs the Qwen2.5 source.
+
+=======================================================================
+CHECK 6: HF weights status (the ask's BICLab/SpikingBrain-7B)
+=======================================================================
+$ curl -sL -w "HTTP %{http_code}" "https://huggingface.co/api/models/BICLab/SpikingBrain-7B"
+  -> {"error":"Invalid username or password."} HTTP 401 (both API and page)
+$ curl -sL "https://huggingface.co/api/models?author=BICLab" -> [] HTTP 200
+$ curl -sL "https://huggingface.co/api/models?search=SpikingBrain"
+  -> only maujim/spikingbrain-v1-7b-base (third-party mirror, 14 downloads,
+     tags: pytorch, gla_swa, custom_code, license:mit)
+$ curl -sL "https://huggingface.co/api/models?search=BICLab" -> []
+VERDICT: the drop receipt's "open weights on HuggingFace" is WRONG on the where.
+GitHub README (sb_gh_readme.md line 121): "The model weights are hosted on
+ModelScope": Panyuqi/V1-7B-base, Panyuqi/V1-7B-sft-s3-reasoning,
+sherry12334/SpikingBrain-7B-VL, Abel2076/SpikingBrain-7B-W8ASpike.
+$ curl -sL "https://www.modelscope.cn/api/v1/models/Panyuqi/V1-7B-base"
+  -> HTTP 200, "Architectures":["GLAswaForCausalLM"], BackendSupport:
+     ollama:null, vllm:null, sglang:null, lmdeploy:null (no out-of-box backend)
+File trees (ModelScope repo/files API):
+  V1-7B-base: 32 files, 15.24 GB total, pytorch_model-0000{1..15}.bin (bf16 7B)
+  W8ASpike:   29 files, 30.78 GB safetensors; index (591 tensors) shows EVERY
+              projection (q/k/v/o/gk_proj, gate/up/down) paired with a
+              *.weight_quantizer.scales tensor -> fake-quant checkpoint stored
+              at ~fp32 scale (30.78 GB vs 15.24 GB bf16 base), NOT a shrunken
+              deployment quant. Quantizations that exist: official W8ASpike
+              (INT8 weights + 8-bit act/KV fake-quant) only; no GGUF/AWQ/GPTQ
+              anywhere.
+
+=======================================================================
+CHECK 7: runtime support probes (positive controls make the negatives valid)
+=======================================================================
+llama.cpp (ggml-org/llama.cpp master, conversion/__init__.py fetched raw,
+16149 B, 171 ForCausalLM references - the model registry after the converter
+refactor; convert_hf_to_gguf.py on master is now a 13 KB stub importing it):
+  negative probes: GLAswa=0, gla_swa=0, SpikingBrain=0, hymeta=0
+  positive controls: Qwen3NextForCausalLM=1, NemotronHForCausalLM=1,
+                     MambaForCausalLM=2, LlamaForCausalLM=3, FalconH1ForCausalLM=1
+  -> GLAswaForCausalLM is NOT convertible: no GGUF -> no llama.cpp -> no Ollama.
+transformers (huggingface/transformers main, src/transformers/models/__init__.py,
+16787 B):
+  negative: gla_swa=0 | positive: qwen3_next=1, mamba=3
+  -> arch NOT in upstream transformers; maujim config.json confirms custom code:
+     "auto_map": {"AutoConfig": "configuration_gla_swa.GLAswaConfig",
+                  "AutoModelForCausalLM": "modeling_gla_swa.GLAswaForCausalLM"},
+     model_type "gla_swa", 28 layers (14 GLA + 14 SWA alternating, attn on odd
+     layers), hidden 3584, sliding_window 4096, bf16, max_position 131072.
+Official runtime (GitHub README): docker build spiking-brain:7b-v1.0 + vllm-hymeta
+PLUGIN; pins torch==2.7.1, transformers==4.55.2, triton==3.3.1, flash_attn==2.7.3,
+flash-linear-attention==0.1, vllm==0.10.0; run via "vllm serve <path> --dtype
+bfloat16". README on W8ASpike: "adopts pseudo-spiking, where activations are
+approximated as spike-like signals at the tensor level, rather than true
+asynchronous event-driven spiking on neuromorphic hardware."
+
+=======================================================================
+CHECK 8: local ladder / hardware (what we could actually run it on)
+=======================================================================
+$ powershell Get-CimInstance Win32_VideoController
+  -> Name: AMD Radeon RX 5600 XT, AdapterRAM 4293918720 (field caps at 4 GB);
+     NO NVIDIA adapter present. RDNA1 (gfx1010) is outside ROCm's supported set.
+$ powershell Get-PSDrive C -> 613.9 GB free | RAM 63.95 GB
+$ ollama list -> qwen2.5:7b, qwen2.5:32b, gemma:2b, deepseek-r1:1.5b,
+  qwen2.5vl:3b, ling-3.0-flash, athena-class, Ternary-Bonsai-2-27B-gguf (live)
+$ venv pip show vllm llama-cpp-python -> neither installed
+$ wsl --status -> WSL2 Ubuntu default | docker --version -> 29.6.2
+VERDICT: SpikingBrain-7B does NOT run on this estate's ladder today on any of the
+three asked runtimes:
+  - Ollama/llama.cpp: blocked (no GLAswa arch support, no GGUF exists).
+  - vLLM: official path is the vllm-hymeta plugin, NVIDIA-CUDA (+MetaX) only,
+    and this box has no NVIDIA GPU; vLLM on Windows is not native anyway.
+  - transformers: needs custom code + flash-linear-attention 0.1 (triton 3.3.1)
+    -> CUDA-shaped; Windows-native and CPU-only paths are dead ends, and a 7B
+    bf16 CPU run would be unusable for the long-context job it exists for.
+What it WOULD take tonight, concretely, on the right hardware (>=24 GB VRAM
+NVIDIA for bf16, or 16 GB for the W8A sim): clone github.com/BICLab/
+SpikingBrain-7B, docker build, download weights from ModelScope (15.24 GB base /
+30.78 GB W8ASpike), docker run --gpus all, vllm serve. None of that is runnable
+on this box; the port that WOULD make it ladder-native is a llama.cpp
+GLA+SWA-hybrid kernel + converter contribution (a multi-week C++ project, not a
+tonight job). RX 5600 XT (RDNA1) is not ROCm-supported, so even upstream vLLM
+ROCm is out.
+
+=======================================================================
+CHECK 9: violation ratchet
+=======================================================================
+Not applicable: this lane touched no code under mag/ or tools/ (read-only dig +
+archive writes under watch/inbox/). tools/violation_ratchet.py check --changed
+not run for that reason.

@@ -1,0 +1,6 @@
+# garden-v1-B1-grok47 (grok-4.7 @ xai, turn 1, channel: content)
+
+IMPROVEMENT 1: evidence[] is joined onto ROOT with no absolute/`..`/symlink confinement, so a queue ask.json can read arbitrary files and ship them in the paid prompt. | EVIDENCE: tools/hermes_burn.py:128-136 | FIX: reject any evidence path whose resolve() is not is_relative_to(ROOT) before read or preflight.
+IMPROVEMENT 2: meta["id"] is interpolated into the output path with no sanitizing, so an ask id containing `..` writes outside watch/inbox/hermes_burn. | EVIDENCE: tools/hermes_burn.py:278 | FIX: require id to match ^[A-Za-z0-9._-]+$ and write only under OUT_DIR.resolve().
+IMPROVEMENT 3: landed and REFUSED gates are check-then-act with no lock while urlopen waits up to 900s, so a second process passes the same skip and pays again. | EVIDENCE: tools/hermes_burn.py:116 | FIX: take an exclusive lock on the ask dir before skip checks and hold it through bank and write.
+DIFFERENT-BUILD: Bind the TLS socket to the IP that passed the public-endpoint check, and confine every evidence and output path with resolve().is_relative_to(ROOT) before any read or write. A separate getaddrinfo glance plus Path join is how both the fence and the queue boundary fail.

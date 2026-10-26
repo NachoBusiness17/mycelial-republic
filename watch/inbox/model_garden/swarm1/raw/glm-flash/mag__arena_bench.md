@@ -1,0 +1,7 @@
+# swarm1-glm-flash-mag__arena_bench (glm-5.3-flash @ zai, turn 1, channel: content)
+
+DEFECT 1: parse_verdict does substring matching over the whole answer string (not tokenized), so any occurrence of "true", "no", "false", or "confirm" anywhere in a verbose answer flips the parsed verdict, making the G2 grader non-deterministic w.r.t. phrasing | EVIDENCE: mag/arena_bench.py:216-227 | FIX: tokenize on non-letters and match whole tokens only, keep UNPARSEABLE when no token matches
+DEFECT 2: transcript mode trusts the candidate-supplied "turns" field, so any self-reported transcript sets turns=1 and maxes turns_efficiency without doing the work | EVIDENCE: mag/arena_bench.py:235,285 | FIX: derive turns from the transcript's own message count instead of trusting the field, or drop turns_efficiency from the sealed vector
+DEFECT 3: parse_live_answer captures only the first line of INSCRIPTION (no DOTALL), so any live candidate that wraps the inscription across lines is silently graded as a G1 failure | EVIDENCE: mag/arena_bench.py:364-366 | FIX: use re.DOTALL on the INSCRIPTION match and strip trailing VERDICTS block
+DEAD-CODE: getattr guard on args.endpoint is dead since add_argument("--endpoint") always creates the attribute | EVIDENCE: mag/arena_bench.py:505,578-580
+ONE-SITTING FIX: rewrite parse_verdict as whole-token matching with explicit CONFIRM/REFUSE sets and no cross-string substring scan, then re-run --selftest to prove the pass/fail split still holds | EVIDENCE: mag/arena_bench.py:216-227,446-451

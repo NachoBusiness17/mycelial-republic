@@ -1,0 +1,1078 @@
+ 
+
+ AgentReplay: Token-Wise Trace ReplayIs Essential for Fair Serving SystemPerformance Benchmarking 
+
+ Report GitHub Issue 
+ × 
+
+ Title: 
+
+ Content selection saved. Describe the issue below: 
+
+ Description: 
+
+ Submit without GitHub 
+ Submit in GitHub 
+
+ arXiv is now an independent nonprofit! 
+ Learn more 
+ × 
+
+ Back to arXiv 
+
+ Why HTML? 
+
+ Report Issue 
+
+ Back to Abstract 
+
+ Download PDF 
+
+ Abstract 
+ 1 Introduction 
+ 2 Background 
+
+ Agent workloads. 
+ LLM serving. 
+ Content affects serving work. 
+ Timing affects subsequent work. 
+ Benchmarking objective. 
+
+ 3 AgentReplay 
+
+ 3.1 Trace Recording 
+ 3.2 Multi-Level Trace Replay 
+
+ Token-wise replay. 
+ MoE router replay. 
+ Tool-duration replay. 
+
+ 3.3 Long-Horizon Evaluation with Smaller Models 
+
+ 4 Experiments 
+
+ Setup and metrics. 
+ 4.1 Does Greedy Decoding Preserve the Workload? 
+
+ Greedy decoding changes the realized workload. 
+ Divergence produces long-tailed episodes. 
+ Trace replay stabilizes repeated measurement. 
+
+ 4.2 Does Length-Wise Replay Preserve MoE Performance? 
+
+ Matching lengths changes the expert workload. 
+ Expert concentration creates a prefill straggler under EP. 
+ A smaller expert working set underestimates TP decode cost. 
+ Offloading amplifies sensitivity to token content. 
+
+ 4.3 Can a Smaller Model Replay a Capable Model’s Workload? 
+
+ Natural execution can miss the intended serving regime. 
+ A capable-model trace provides a fixed target workload. 
+
+ 5 Related Work 
+
+ Nondeterminism in LLM inference. 
+ Agent traces and replay. 
+ MoE router replay. 
+
+ 6 Discussion and Conclusion 
+
+ Scope. 
+ Conclusion. 
+
+ References 
+
+ License: CC BY 4.0
+
+arXiv:2609.32283v1 [cs.DC] 26 Sep 2026 
+
+ AgentReplay : Token-Wise Trace Replay
+ Is Essential for Fair Serving System
+ Performance Benchmarking 
+
+ Zaifeng Pan
+ † † thanks: Correspondence to: Zaifeng Pan $¡$zapan@ucsd.edu$¿$. 
+ Affiliation:  University of California San Diego
+
+ Michael Wang
+
+ Affiliation:  University of California San Diego
+
+ Chris Wu
+
+ Affiliation:  University of California San Diego
+
+ Xinwei Qiang
+
+ Affiliation:  University of California San Diego
+
+ Zhengding Hu
+
+ Affiliation:  University of California San Diego
+
+ Zhongkai Yu
+
+ Affiliation:  University of California San Diego
+
+ Yufei Ding
+
+ Affiliation:  University of California San Diego
+
+ Abstract 
+
+ LLM-based agents execute multi-turn workflows with interleaved model inference and tool calls, making efficient serving increasingly important.
+However, evaluating serving optimizations is challenging because identical tasks can produce different execution trajectories.
+Changes in generated tokens can alter subsequent prompts, tool calls, and reasoning turns, making it difficult to distinguish system improvements from workload variation.
+Greedy decoding does not guarantee identical outputs, while replaying only sequence lengths loses token information that affects prefix caching and mixture-of-experts (MoE) routing.
+To address these problems, we propose AgentReplay , a configurable trace record-and-replay framework for agent serving.
+ AgentReplay records input/output tokens, expert selections, request dependencies, and tool durations.
+During replay, it forces the recorded output tokens while performing normal autoregressive computation, with optional controls for MoE expert selection and tool delays.
+This allows different systems to execute the same recorded workload while retaining their own batching, scheduling, and parallelization decisions.
+We further separate trajectory generation from performance evaluation, enabling compatible smaller models to replay long-horizon traces collected with more capable models.
+Our experiments show that token-wise replay in AgentReplay effectively eliminates workload variation that greedy decoding and length-wise replay cannot avoid, enabling fairer performance comparisons across serving configurations. 
+
+ 1 Introduction 
+
+ Large language model (LLM)-based agents solve complex tasks through repeated reasoning and tool use  ( Yao et al., 2023 ) .
+Their multi-turn execution and growing contexts introduce substantial computation and memory costs.
+To improve serving efficiency, existing systems optimize scheduling, batching, memory management, and decoding  ( Kwon et al., 2023 ; Zheng et al., 2024a ; Leviathan et al., 2023 ) .
+Fair evaluation requires both the baseline and optimized systems to execute the same workload. 
+
+ However, using the same initial tasks does not ensure the same workload.
+LLM outputs can vary across runs, and these outputs determine the agent’s subsequent actions.
+For example, a few different tokens can change a tool call or cause early termination, producing a different trajectory.
+In such cases, a lower execution time may simply come from fewer tokens or reasoning turns rather than a more efficient system.
+This makes it difficult to attribute performance gains to the optimization being evaluated. 
+
+ Greedy decoding and length-wise replay only partially address this problem.
+Setting the temperature to zero removes sampling randomness, but numerical differences across batch sizes and serving configurations can still change the highest-scoring token  ( Yuan et al., 2026 ; He and Thinking Machines Lab, 2025 ; Qiang et al., 2026 ) .
+Length-wise replay fixes input and output lengths without preserving token content.
+This can affect prefix caching: if a response differs from the recorded history in the next prompt, its KV cache may no longer be reusable  ( Zheng et al., 2024a ; Qin et al., 2025 ; Liu et al., 2025 ) .
+For mixture-of-experts (MoE) models, different tokens can also select different experts, changing load balance, memory access, and communication  ( Yu et al., 2026 ; Yao et al., 2024 ; DeepSeek-AI, 2025 ) .
+Therefore, matching sequence lengths alone does not ensure comparable execution work. 
+
+ Besides LLM generation, tool execution introduces another source of variation.
+A longer tool call delays the next LLM request and leaves its KV cache idle for longer.
+This changes request concurrency and memory pressure, affecting performance comparisons even when the optimization targets only LLM serving. 
+
+ To address these problems, we propose AgentReplay , a configurable trace record-and-replay framework for vLLM  ( Kwon et al., 2023 ) .
+The key idea is to replay recorded agent behavior while measuring how each serving configuration executes it.
+Specifically, token-wise replay supplies recorded input tokens and forces each output token while performing normal autoregressive computation.
+ MoE router replay restores logical expert selections at each layer and token position, while tool-duration replay reproduces the delay of each tool call.
+The replay driver follows recorded request dependencies, allowing batching, scheduling, and completion times to change with the serving system.
+Users can enable these controls independently. 
+
+ We further use token-wise replay to support long-horizon evaluation with smaller models.
+Small models reduce resource requirements but may fail before reaching long contexts or many interaction turns.
+ AgentReplay allows a compatible smaller model to execute trajectories collected with a more capable model.
+The target tokenizer defines a fixed token workload that retains the recorded content and turn structure.
+This supports lower-cost performance evaluation without requiring the smaller model to solve the original tasks. 
+
+ Our experiments show that token-wise replay in AgentReplay effectively eliminates workload variation that greedy decoding and length-wise replay cannot avoid.
+By preserving the recorded token sequences rather than only the initial tasks or sequence lengths, AgentReplay enables fairer comparisons of serving performance under the same agent workload.
+This paper makes three contributions: 
+
+ • 
+
+ We identify how output and tool-time variation affects agent serving benchmarks and motivate token-wise replay for fair comparisons. 
+
+ • 
+
+ We propose AgentReplay , supporting configurable token-wise, MoE router, and tool-duration replay while retaining model computation. 
+
+ • 
+
+ We enable long-horizon serving evaluation with smaller models by separating trajectory generation from performance measurement. 
+
+ 2 Background 
+
+ Agent workloads. 
+
+ LLM agents solve long-horizon tasks through repeated interactions with users, tools, and external environments  ( Yao et al., 2023 ; Shinn et al., 2023 ; Yang et al., 2024 ; Wang et al., 2025 ) .
+As shown in the upper half of Figure  1 , each agent turn submits the accumulated context to an LLM, which prefills the input and decodes an output token by token.
+The output may answer the user, invoke a tool, or determine the agent’s next action.
+After a tool or the environment returns an observation, the agent appends it to the interaction history and starts another turn.
+Requests from one agent are therefore stateful and intermittent: later turns depend on earlier model outputs and tool observations, while variable external work separates consecutive LLM invocations. 
+
+ An execution graph captures dependencies among LLM and tool invocations, including concurrent branches.
+Together with token sequences, tool delays, and task arrivals, it defines the workload observed by the serving engine. 
+
+ LLM serving. 
+
+ The lower half of Figure  1 shows the main components of a modern LLM serving engine.
+Incoming requests first enter a queue, and the scheduler forms iteration-level batches to share accelerator capacity across prefill and decode  ( Yu et al., 2022 ) .
+The model executor runs GPU kernels and collectives under tensor, pipeline, expert, or context parallelism  ( Shoeybi et al., 2019 ; Liu et al., 2024 ; Jacobs et al., 2023 ; Fedus et al., 2022 ) , while the memory manager places model parameters and KV caches across GPU memory, CPU memory, and secondary storage.
+Serving performance depends on decisions at each layer.
+Prior work improves batching and request scheduling  ( Yu et al., 2022 ; Agrawal et al., 2024 ; Zheng et al., 2024b ) , kernels and operator execution  ( Ye et al., 2025 ; Dong et al., 2024 ; Pan et al., 2025a ; Dao et al., 2022 ; Sanovar et al., 2025 ) , parallel and disaggregated execution  ( Zhong et al., 2024 ; Patel et al., 2024 ; Zhu et al., 2025 ; DeepSeek-AI et al., 2025 ) , and KV-cache management  ( Qin et al., 2025 ; Xie et al., 2026 ; Liu et al., 2025 ; Gao et al., 2024 ) .
+Agent-oriented systems further exploit tool timing or workflow structure to schedule requests and manage cached state  ( Abhyankar et al., 2024 ; Li et al., 2025 ; Pan et al., 2025b ; Pan et al., 2026a ; Chen et al., 2026 ; Kang et al., 2026 ; Pan et al., 2026b ) .
+These optimizations must be evaluated under a controlled workload so that changes in agent behavior do not obscure system effects. 
+
+ Figure 1: Agent execution and its LLM serving backend. The agent application repeatedly alternates between model inference and external tool or environment interactions. The serving engine queues and batches the resulting requests, executes the model under the configured parallelism, and manages parameters and KV caches across the memory hierarchy. 
+
+ Content affects serving work. 
+
+ Sequence lengths determine tensor dimensions, but token contents also affect serving performance.
+For example, prefix caching reuses KV tensors when requests share the same token prefix  ( Kwon et al., 2023 ; Zheng et al., 2024a ) .
+Suppose the first turn generates a response that is included in the next prompt.
+If length-wise replay generates instead, the system may need to recompute the KV cache for , even when .
+In MoE models, the router selects a subset of experts for each token  ( Yang et al., 2025 ) .
+Different selections change the batch size of each expert and, with expert parallelism, the devices that exchange activations.
+To compare expert placement or communication optimizations, we therefore distinguish which logical experts are selected from where and how they execute. 
+
+ Timing affects subsequent work. 
+
+ Tool calls create gaps between dependent LLM invocations.
+Many tools execute as CPU processes, perform file or network I/O, or invoke remote services.
+OS scheduling, resource contention, and remote-service load make tool durations variable.
+Real coding-agent traces accordingly exhibit tool-dependent, heavy-tailed latencies  ( Zhu et al., 2026 ) .
+During each gap, other requests continue executing, and the serving system may keep, offload, or evict the waiting agent’s KV cache  ( Abhyankar et al., 2024 ; Li et al., 2025 ) .
+A change in tool duration therefore affects both the arrival time of the next request and the memory pressure while the agent waits.
+Tool timing matters even when the benchmark evaluates only the LLM serving system. 
+
+ Benchmarking objective. 
+
+ A serving benchmark should expose each compared configuration to the same workload properties that affect the optimization under study, while leaving the serving mechanisms themselves free to change.
+Given trace , we compare its execution cost and under serving configurations and .
+The trace fixes the enabled workload properties while the serving engine controls batching, scheduling, cache placement, kernels, communication, and physical expert placement.
+Repeating the same trace measures residual runtime variation without allowing a changed agent trajectory to redefine the work.
+Live-agent evaluation remains necessary to assess task success and behavioral effects.
+Length-wise replay is sufficient only when the mechanism under study is insensitive to token content and other omitted workload properties. 
+
+ 3 AgentReplay 
+
+ Figure  2 shows the design of AgentReplay .
+The recorder first collects a real agent execution, including LLM requests and tool calls.
+The replay driver then uses this trace to evaluate different serving configurations.
+Three replay controls preserve token sequences, logical expert selections, and tool delays, respectively.
+Our evaluation uses vLLM  ( Kwon et al., 2023 ) . 
+
+ Figure 2: Overview of AgentReplay . (a) The recorder captures LLM and tool invocations during agent execution. (b) The trace stores request dependencies, input/output tokens, expert selections, and tool durations. (c) The replay driver follows these dependencies and submits requests to the serving system and tool-delay emulator. Users can select replay controls independently, while model computation, scheduling, and expert placement remain configurable. Token IDs and durations in the diagram are examples. 
+
+ 3.1 Trace Recording 
+
+ We represent a trace as .
+ records invocation dependencies, and store input and output tokens, stores optional logical expert selections, and stores tool durations.
+The experiment separately specifies an arrival policy , using either task release times or a fixed number of concurrent tasks.
+To capture dependencies correctly, the recorder obtains them from the application or orchestration runtime rather than inferring them from execution timestamps.
+The graph and recorded inputs also capture context edits, retries, branch decisions, and tool results. 
+
+ Each invocation has a stable identifier, with metadata describing the model, tokenizer, prompt serialization, and sampling settings.
+Inputs are stored as token IDs to avoid changes introduced by decoding and re-tokenizing text.
+The recorder also retains termination reasons and, when needed for validation or application replay, tool names, arguments, and results.
+During replay, the driver executes the recorded graph directly instead of asking the agent to choose its actions again.
+As a result, tool-delay emulation does not repeat the external side effects of trace collection. 
+
+ Replay fixes reuse opportunities and logical work, not the resulting cache hits, expert placement, or communication costs.
+Those remain effects of the serving configuration under evaluation. 
+
+ 3.2 Multi-Level Trace Replay 
+
+ Token-wise replay. 
+
+ For invocation , the driver supplies input and the recorded output sequence .
+The model performs prefill to produce the first output token and then decodes autoregressively.
+At output position , the replay hook commits instead of the sampled token.
+The hook replaces the token before updating the next-step input, request history, and token-dependent state.
+Changing only the returned text would not reproduce the model workload.
+Replay also follows the recorded stopping position, overriding conflicting EOS and stop rules while respecting the target’s context limit.
+Unsupported histories or decoding constraints are rejected rather than silently truncated. 
+
+ Our design retains the forward pass, language-model head, and native sampling computation before replacing the selected token.
+It therefore measures autoregressive execution rather than returning stored responses or processing all output tokens in one prefill pass.
+Invocation IDs and output positions locate recorded tokens after batch reordering. 
+
+ MoE router replay. 
+
+ Token-wise replay fixes the token sequence and recorded agent trajectory.
+However, when benchmarking MoE optimizations, even small differences in expert selections can affect the comparison.
+Identical tokens do not guarantee identical routing decisions, as numerical differences across execution configurations can change router scores  ( Ma et al., 2025 ) .
+ AgentReplay therefore provides optional router replay for comparisons that require the same expert workload.
+For top- routing, router replay fixes the logical expert IDs at token position and layer of invocation .
+The design retains router-score and native selection computation, then substitutes the recorded IDs before logical-to-physical expert mapping and dispatch.
+The experts execute normally, while their placement and communication remain system decisions.
+Fixing expert IDs does not require identical router scores or hidden states. 
+
+ Tool-duration replay. 
+
+ Tool-time variation changes subsequent arrivals and batch composition even when token sequences are fixed.
+For the recorded graph, the replay driver releases each request after its required predecessors complete.
+For a tool invoked at time with recorded invocation-to-result duration , the emulator makes its result available after a nonblocking wait until , subject to timer and scheduling error.
+Independent tools wait asynchronously, while a join waits for all required predecessors.
+Faster LLM execution can therefore release later requests earlier, rather than preserving their original absolute timestamps. 
+
+ Many serving optimizations target GPU execution, while asynchronous scheduling overlaps serving-side CPU work with GPU computation  ( The SGLang Team, 2024 ) .
+When tool execution and its resource contention are outside the optimization scope, duration replay removes tool-time variation while retaining the waits and dependencies seen by the serving engine.
+The serving engine still executes its own CPU scheduling and GPU computation normally.
+This mode does not reproduce tool CPU work, I/O contention, or load-dependent service latency.
+For systems that jointly optimize retrieval or other application stages with LLM generation  ( Hu et al., 2025 ; Jin et al., 2025 ; Tan et al., 2025 ; Hu et al., 2026 ) , users should disable tool-duration replay and execute the tools to measure these interactions. 
+
+ 3.3 Long-Horizon Evaluation with Smaller Models 
+
+ Resource constraints often motivate evaluation with smaller models, but their live executions may terminate early or enter repetitive tool loops.
+These behaviors distort the context growth and reuse patterns of the intended long-horizon workload.
+To address this problem, AgentReplay separates trajectory generation from performance evaluation.
+A capable model first generates long trajectories, recording their prompts, responses, and tool dependencies.
+A compatible smaller model then executes these trajectories through normal forward passes.
+We compare serving configurations on this smaller model using the same traces, exposing context growth and token reuse that it may not reach through live generation. 
+
+ Compatible tokenizers, special tokens, and prompt serialization allow direct token replay.
+Otherwise, AgentReplay retokenizes the recorded messages and tool observations for the target, fixing that sequence across target-system comparisons.
+This preserves content and dependencies rather than source token IDs or counts, subject to the target’s context limit.
+Expert IDs are architecture-specific, so router replay requires target-side route recording. 
+
+ 4 Experiments 
+
+ Setup and metrics. 
+
+ We evaluate Qwen3.6-35B-A3B on Astropy and SymPy agent tasks using vLLM.
+Sections  4.1 and  4.3 measure complete multi-turn runs, while Section  4.2 measures batch trajectories.
+For workload quantity , we aggregate all requests in run into and report , where is the sample standard deviation.
+Thus, turns count LLM requests, and cumulative input tokens include context resubmitted across turns.
+Model time sums request durations from first scheduling to the final token, and cumulative time adds tool durations.
+Each complete run is one statistical sample, rather than treating correlated requests as independent observations.
+Time summaries use mean standard deviation. 
+
+ 4.1 Does Greedy Decoding Preserve the Workload? 
+
+ Greedy decoding changes the realized workload. 
+
+ We repeat each task 50 times with unchanged greedy-decoding settings.
+Figure  3 (a) shows substantial variation despite fixing the initial task and decoding configuration.
+Astropy has CVs of 9.24% in turns, 26.33% in cumulative input tokens, and 43.38% in output tokens.
+SymPy varies more, with corresponding CVs of 28.66%, 142.21%, and 103.49%.
+Tool-call CVs of 9.51% and 28.91% further reflect changing control flow. 
+
+ Divergence produces long-tailed episodes. 
+
+ In Figure  3 (b), the largest Astropy and SymPy runs produce 1.80 and 7.67 their task’s mean output tokens.
+Among the 50 SymPy runs, 31 become trapped in unproductive cycles of repeated tool calls and text generation, compared with none of the Astropy runs.
+Together with the long output tail, these cases show that greedy execution can repeatedly generate work without making progress toward task completion. 
+
+ Trace replay stabilizes repeated measurement. 
+
+ Token-and-tool trace replay reduces cumulative-time CV from 25.58% to 0.66% on Astropy and from 114.93% to 1.30% on SymPy (Figure  3 (c)).
+The reductions, computed before rounding, are 38.9 and 88.7 .
+They measure repeatability rather than speedup because greedy runs and replay may contain different realized work.
+Fixed tool durations also contribute to mean cumulative time without adding variance. 
+
+ Figure 3: Greedy decoding changes the realized workload. (a) Run-level CVs for turns, input/output tokens, and tool calls. (b) Output tokens relative to the task mean; annotations report runs trapped in unproductive tool-calling or generation loops. Circles mark the mean, boxes span P5–P95, and whiskers show extrema. (c) CV of cumulative model-plus-tool time under greedy execution and trace replay (log scale). Each condition contains 50 complete runs. 
+
+ 4.2 Does Length-Wise Replay Preserve MoE Performance? 
+
+ Matching lengths changes the expert workload. 
+
+ Length-wise replay preserves input and output lengths but substitutes random tokens, whereas token-wise replay executes the recorded tokens.
+Random tokens can concentrate routing on a subset of experts  ( Ma et al., 2026 ; Abramovich et al., 2026 ) .
+Figure  4 compares layers 0 and 39 using a shared length-wise frequency ordering, so paired bars always represent the same expert.
+Many experts favored by length-wise replay receive little traffic under token-wise replay.
+Across all 40 layers, the top 32 length-wise experts receive 77.7% of prefill assignments and 56.8% of decode assignments on average.
+The same experts receive only 13.8% and 17.1% under token-wise replay.
+Even its own top 32 experts account for only 36.9% and 43.9% of token-wise assignments.
+Thus, random tokens change both concentration and hotspot identities. 
+
+ We examine the resulting costs across batch sizes 1–32 with expert parallelism (EP), tensor parallelism (TP), and expert offloading.
+All times cover a complete batch trajectory, with prefill and decode reported separately.
+Kernel totals include only fused_moe_kernel across 40 layers and exclude routing, activation, communication, and warmup.
+Decode contains 188 steps.
+Full-phase timings are measured separately without profiling.
+Each ratio uses token-wise replay at the same batch size, phase, and configuration as its reference. 
+
+ Figure 4: Expert selection under length-wise and token-wise replay. Panels show prefill and decode for layers 0 and 39. Experts are sorted by length-wise frequency within each layer and phase, with the same ordering for both modes. Main panels show the top 32 experts and insets show all 256. Frequencies sum to 100% over all experts in each layer. Vertical scales match between layers for each phase. 
+
+ Expert concentration creates a prefill straggler under EP. 
+
+ We enable EP=2 with TP=2 and fix a placement that co-locates length-wise hot experts on rank 0.
+Figure  5 (a) normalizes both ranks by the maximum token-wise rank total.
+The length-wise prefill rank-time ratio increases from 1.92 to 3.80 , while token-wise replay remains within 1.04–1.08 .
+At batch 32, the sum across ranks differs by less than 0.4%, but the larger length-wise rank total is 1.54 the token-wise reference.
+The full prefill phase takes 1.18 as long (Figure  5 (b)).
+This result exposes the interaction between token content and expert placement. 
+
+ A smaller expert working set underestimates TP decode cost. 
+
+ With EP disabled and TP=2, we compare the maximum of the two ranks’ cumulative decode kernel times (Figure  5 (c)).
+The two modes are nearly identical at batches 1–4, but length-wise time falls to 0.91 and 0.84 the token-wise reference at batches 16 and 32.
+Concentrating tokens on fewer experts can reduce distinct weight accesses and increase reuse in memory-bound decode GEMMs.
+At batch 1, both workloads select eight experts per token, leaving little scope for within-batch reuse.
+Counters from the offload experiment support the working-set explanation: at batch 32, length-wise replay touches 94.53 distinct experts per layer and decode step, compared with 117.27 for token-wise replay.
+These counters characterize access patterns but do not directly establish the TP kernels’ bandwidth utilization. 
+
+ Figure 5: MoE execution times over a complete batch trajectory. (a) EP=2 prefill kernel totals per rank, normalized by the maximum token-wise rank total. Solid and dashed lines denote ranks 0 and 1. (b) Full prefill phase time with EP=2. (c) Maximum-rank decode kernel time with TP=2 and EP disabled. Token-wise replay is the reference in all panels. 
+
+ Offloading amplifies sensitivity to token content. 
+
+ With EP disabled and TP=1, we place 128 of the 256 experts per layer in CPU DRAM.
+GPU kernels access their weights directly through UVA.
+Under random offloading, length-wise decode takes 0.90 and 0.82 the token-wise time at batches 16 and 32 (Figure  6 ).
+Batches 1–8 show small differences in the opposite direction.
+At batch 32, CPU-resident experts receive similar assignment shares, 51.50% for length-wise and 50.19% for token-wise replay, despite the different working-set sizes.
+Assignment share alone therefore does not characterize the memory-access workload.
+Offloading 128 length-wise hot experts widens the discrepancy: length-wise prefill and decode take 0.39 and 0.63 their respective token-wise times at batch 32.
+Together, these experiments show that matching lengths can overestimate EP prefill cost while underestimating TP decode and offloaded execution costs. 
+
+ Figure 6: Offloaded execution with 128 of 256 experts per layer in CPU DRAM (TP=1, EP disabled). Curves report length-wise phase time divided by token-wise phase time for the same placement and batch size. Random offloading selects experts randomly, whereas hot expert offloading selects those favored by length-wise replay. The dotted line denotes equality. 
+
+ 4.3 Can a Smaller Model Replay a Capable Model’s Workload? 
+
+ Natural execution can miss the intended serving regime. 
+
+ The SymPy runs in Section  4.1 frequently exit early or become trapped in unproductive cycles of tool calling and text generation.
+Early exits omit the long contexts and KV-cache residence times that a long-horizon benchmark aims to exercise.
+These non-progressing cycles instead overrepresent a degenerate control-flow pattern.
+Both are valid agent behaviors, but their mixture changes the serving workload across repetitions and confounds comparisons of scheduling or cache policies. 
+
+ A capable-model trace provides a fixed target workload. 
+
+ We collect a completed trajectory for SWE-bench instance sympy__sympy-12419 using the DeepSeek-V4-Pro API and Mini-SWE-Agent, then replay it on Qwen3.6-35B-A3B.
+Because the tokenizers differ, replay preserves messages, tool observations, and invocation dependencies, then fixes the resulting target-token sequence.
+All 132 recorded turns and tool calls are retained, without requiring source and target token counts to match. 
+
+ Natural execution takes seconds with a CV of 114.93%, while cross-model replay with fixed tool delays takes seconds with a CV of 0.45%.
+The CV decreases by 257.1 using unrounded values, with a similar mean duration.
+This result demonstrates repeatable execution of a completed long-horizon trace on the target, rather than autonomous task success or speedup.
+Representativeness beyond this single trajectory requires a broader trace collection. 
+
+ 5 Related Work 
+
+ Nondeterminism in LLM inference. 
+
+ Greedy decoding removes sampling randomness, but it does not make model execution invariant to the serving configuration.
+Changes in batch shape, hardware, or parallel reduction order can introduce numerical differences that flip an argmax decision.
+Autoregressive decoding then propagates one changed token into a different continuation  ( Yuan et al., 2026 ; He and Thinking Machines Lab, 2025 ) .
+Batch-invariant kernels  ( He and Thinking Machines Lab, 2025 ; Qiang et al., 2026 ; Zhang et al., 2025 ) remove this source of variation by enforcing a consistent computation.
+These techniques improve output reproducibility, but they do not replace controlled workload replay for serving-system evaluation.
+Requiring deterministic kernels constrains the kernels, parallelization strategies, and routing implementations available to an experiment.
+ AgentReplay instead fixes selected workload properties while each system retains its native execution path.
+It does not require bitwise-identical activations or logits. 
+
+ Agent traces and replay. 
+
+ TraceLab  ( Zhu et al., 2026 ) collects real-world coding-agent sessions and characterizes their long contexts, repeated tool use, tool-latency tails, and prefix-cache behavior.
+Its traces describe realistic workloads, but its goal is workload characterization rather than replaying model execution as a controlled serving experiment.
+AgentRR  ( Feng et al., 2025 ) records agent interactions and summarizes successful traces into reusable experiences that guide later agent behavior.
+This abstraction targets reliability, reuse, and large–small model collaboration.
+Because it may change subsequent execution, it does not define an identical serving workload. 
+
+ Concurrent work XPerf  ( Wang et al., 2026 ) records input and output token IDs, invocation dependencies, and tool durations for agentic serving benchmarks and also replays accepted-token counts for speculative decoding.
+Both XPerf and AgentReplay use recorded trajectories to prevent live agent variation from dominating serving comparisons.
+Our study focuses on the additional distinction between length, token, route, and tool-delay controls, and on executing a capable model’s trajectory with a compatible smaller model for long-horizon experiments. 
+
+ MoE router replay. 
+
+ Rollout Routing Replay  ( Ma et al., 2025 ) records inference-time routing distributions and reuses them in the training engine to reduce rollout–training mismatch during MoE reinforcement learning.
+Megatron-LM  ( NVIDIA, 2026 ) similarly supports loading and enforcing recorded expert assignments for determinism, debugging, and profiling in training and inference.
+These mechanisms establish that expert selections can be recorded and enforced, but they target training consistency or isolated profiling rather than comparative serving benchmarks. 
+
+ 6 Discussion and Conclusion 
+
+ Scope. 
+
+ Fixed-trace comparisons measure the cost of executing recorded behavior.
+They complement live evaluation when optimizations change output quality, agent decisions, or tool-resource demand.
+For example, replaying a recorded response cannot establish that quantization or approximate KV compression preserves task quality.
+Speculative decoding requires separate treatment of proposals, verification, and acceptance, which our autoregressive evaluation does not cover.
+Since replay fixes trajectories during measurement, its coverage still depends on collecting diverse, representative traces. 
+
+ Conclusion. 
+
+ Agent serving benchmarks need to distinguish execution improvements from changes in the work being executed.
+ AgentReplay controls token histories, optional logical MoE assignments, and tool delays while preserving model execution and system scheduling freedom.
+Our experiments show that greedy decoding changes the realized workload and that random-token replay distorts MoE expert access patterns and execution costs.
+A capable-model trace also provides a repeatable long-horizon workload on a smaller target model.
+These results support token-wise replay as a basis for controlled serving comparisons. 
+
+ AI Use Statement 
+
+ The authors used generative AI tools to edit the manuscript, review literature, develop the experimental protocol, and write figure-generation code.
+The authors are responsible for the accuracy of all claims, citations, and results. 
+
+ References 
+
+ Abhyankar et al. (2024) 
+ R. Abhyankar, Z. He, V. Srivatsa, H. Zhang, and Y. Zhang 
+
+ Infercept: efficient intercept support for augmented large language model inference .
+
+ arXiv preprint arXiv:2402.01869 .
+
+ Cited by: §2 ,
+ §2 .
+
+ Abramovich et al. (2026) 
+ T. Abramovich, M. Ashkenazi, I. Putterman, B. Chislett, T. Mitra, B. Darvish Rouhani, R. Zilberstein, and Y. Geifman 
+
+ SPEED-Bench: a unified and diverse benchmark for speculative decoding .
+
+ arXiv preprint arXiv:2604.09557 .
+
+ Cited by: §4.2 .
+
+ Agrawal et al. (2024) 
+ A. Agrawal, N. Kedia, A. Panwar, J. Mohan, N. Kwatra, B. Gulavani, A. Tumanov, and R. Ramjee 
+
+ Taming throughput-latency tradeoff in llm inference with sarathi-serve .
+
+ In 18th USENIX symposium on operating systems design and implementation (OSDI 24) ,
+
+ pp. 117–134 .
+
+ Cited by: §2 .
+
+ Chen et al. (2026) 
+ Q. Chen, Z. Ye, T. Tang, P. Sun, B. Tian, G. Wang, S. Li, Y. Wen, Z. Han, and T. Zhang 
+
+ CONCUR: high-throughput agentic batch inference of llm via congestion-based concurrency control .
+
+ arXiv preprint arXiv:2601.22705 .
+
+ Cited by: §2 .
+
+ Dao et al. (2022) 
+ T. Dao, D. Fu, S. Ermon, A. Rudra, and C. Ré 
+
+ Flashattention: fast and memory-efficient exact attention with io-awareness .
+
+ Advances in neural information processing systems 35 , pp. 16344–16359 .
+
+ Cited by: §2 .
+
+ DeepSeek-AI et al. (2025) 
+ DeepSeek-AI, A. Liu, A. Mei, B. Lin, B. Xue, B. Wang, B. Xu, B. Wu, B. Zhang, C. Lin, C. Dong, C. Lu, C. Zhao, C. Deng, C. Xu, C. Ruan, D. Dai, D. Guo, D. Yang, D. Chen, E. Li, F. Zhou, F. Lin, F. Dai, G. Hao, G. Chen, G. Li, H. Zhang, H. Xu, H. Li, H. Liang, H. Wei, H. Zhang, H. Luo, H. Ji, H. Ding, H. Tang, H. Cao, H. Gao, H. Qu, H. Zeng, J. Huang, J. Li, J. Xu, J. Hu, J. Chen, J. Xiang, J. Yuan, J. Cheng, J. Zhu, J. Ran, J. Jiang, J. Qiu, J. Li, J. Song, K. Dong, K. Gao, K. Guan, K. Huang, K. Zhou, K. Huang, K. Yu, L. Wang, L. Zhang, L. Wang, L. Zhao, L. Yin, L. Guo, L. Luo, L. Ma, L. Wang, L. Zhang, M. S. Di, M. Y. Xu, M. Zhang, M. Zhang, M. Tang, M. Zhou, P. Huang, P. Cong, P. Wang, Q. Wang, Q. Zhu, Q. Li, Q. Chen, Q. Du, R. Xu, R. Ge, R. Zhang, R. Pan, R. Wang, R. Yin, R. Xu, R. Shen, R. Zhang, S. H. Liu, S. Lu, S. Zhou, S. Chen, S. Cai, S. Chen, S. Hu, S. Liu, S. Hu, S. Ma, S. Wang, S. Yu, S. Zhou, S. Pan, S. Zhou, T. Ni, T. Yun, T. Pei, T. Ye, T. Yue, W. Zeng, W. Liu, W. Liang, W. Pang, W. Luo, W. Gao, W. Zhang, X. Gao, X. Wang, X. Bi, X. Liu, X. Wang, X. Chen, X. Zhang, X. Nie, X. Cheng, X. Liu, X. Xie, X. Liu, X. Yu, X. Li, X. Yang, X. Li, X. Chen, X. Su, X. Pan, X. Lin, X. Fu, Y. Q. Wang, Y. Zhang, Y. Xu, Y. Ma, Y. Li, Y. Li, Y. Zhao, Y. Sun, Y. Wang, Y. Qian, Y. Yu, Y. Zhang, Y. Ding, Y. Shi, Y. Xiong, Y. He, Y. Zhou, Y. Zhong, Y. Piao, Y. Wang, Y. Chen, Y. Tan, Y. Wei, Y. Ma, Y. Liu, Y. Yang, Y. Guo, Y. Wu, Y. Wu, Y. Cheng, Y. Ou, Y. Xu, Y. Wang, Y. Gong, Y. Wu, Y. Zou, Y. Li, Y. Xiong, Y. Luo, Y. You, Y. Liu, Y. Zhou, Z. F. Wu, Z. Z. Ren, Z. Zhao, Z. Ren, Z. Sha, Z. Fu, Z. Xu, Z. Xie, Z. Zhang, Z. Hao, Z. Gou, Z. Ma, Z. Yan, Z. Shao, Z. Huang, Z. Wu, Z. Li, Z. Zhang, Z. Xu, Z. Wang, Z. Gu, Z. Zhu, Z. Li, Z. Zhang, Z. Xie, Z. Gao, Z. Pan, Z. Yao, B. Feng, H. Li, J. L. Cai, J. Ni, L. Xu, M. Li, N. Tian, R. J. Chen, R. L. Jin, S. S. Li, S. Zhou, T. Sun, X. Q. Li, X. Jin, X. Shen, X. Chen, X. Song, X. Zhou, Y. X. Zhu, Y. Huang, Y. Li, Y. Zheng, Y. Zhu, Y. Ma, Z. Huang, Z. Xu, Z. Zhang, D. Ji, J. Liang, J. Guo, J. Chen, L. Xia, M. Wang, M. Li, P. Zhang, R. Chen, S. Sun, S. Wu, S. Ye, T. Wang, W. L. Xiao, W. An, X. Wang, X. Sun, X. Wang, Y. Tang, Y. Zha, Z. Zhang, Z. Ju, Z. Zhang, and Z. Qu 
+
+ Deepseek-v3. 2: pushing the frontier of open large language models .
+
+ arXiv preprint arXiv:2512.02556 .
+
+ Cited by: §2 .
+
+ DeepSeek-AI (2025) 
+ DeepSeek-AI 
+
+ Expert parallelism load balancer (EPLB) .
+
+ Note: https://github.com/deepseek-ai/eplb 
+
+ Cited by: §1 .
+
+ Dong et al. (2024) 
+ J. Dong, B. Feng, D. Guessous, Y. Liang, and H. He 
+
+ Flex attention: a programming model for generating optimized attention kernels .
+
+ arXiv preprint arXiv:2412.05496 2 ( 3 ), pp. 4 .
+
+ Cited by: §2 .
+
+ Fedus et al. (2022) 
+ W. Fedus, B. Zoph, and N. Shazeer 
+
+ Switch transformers: scaling to trillion parameter models with simple and efficient sparsity .
+
+ Journal of Machine Learning Research 23 ( 120 ), pp. 1–39 .
+
+ Cited by: §2 .
+
+ Feng et al. (2025) 
+ E. Feng, W. Zhou, Z. Liu, L. Chen, Y. Dong, C. Zhang, Y. Zhao, D. Du, Z. Hua, Y. Xia, and H. Chen 
+
+ Get experience from practice: LLM agents with record & replay .
+
+ arXiv preprint arXiv:2505.17716 .
+
+ Cited by: §5 .
+
+ Gao et al. (2024) 
+ B. Gao, Z. He, P. Sharma, Q. Kang, D. Jevdjic, J. Deng, X. Yang, Z. Yu, and P. Zuo 
+
+ cost-Efficient large language model serving for multi-turn conversations with cachedattention .
+
+ In 2024 USENIX Annual Technical Conference (USENIX ATC 24) ,
+
+ pp. 111–126 .
+
+ Cited by: §2 .
+
+ He and Thinking Machines Lab (2025) 
+ H. He and Thinking Machines Lab 
+
+ Defeating nondeterminism in llm inference .
+
+ Thinking Machines Lab: Connectionism .
+
+ Note: https://thinkingmachines.ai/blog/defeating-nondeterminism-in-llm-inference/ 
+
+ External Links: Document 
+
+ Cited by: §1 ,
+ §5 .
+
+ Hu et al. (2025) 
+ Z. Hu, V. Murthy, Z. Pan, W. Li, X. Fang, Y. Ding, and Y. Wang 
+
+ HedraRAG: co-optimizing generation and retrieval for heterogeneous rag workflows .
+
+ In Proceedings of the ACM SIGOPS 31st Symposium on Operating Systems Principles ,
+
+ pp. 623–638 .
+
+ Cited by: §3.2 .
+
+ Hu et al. (2026) 
+ Z. Hu, Z. Pan, P. Kaur, V. Murthy, Z. Yu, Y. Guan, Z. Wang, S. Swanson, and Y. Ding 
+
+ Pancake: hierarchical memory system for multi-agent llm serving .
+
+ arXiv preprint arXiv:2602.21477 .
+
+ Cited by: §3.2 .
+
+ Jacobs et al. (2023) 
+ S. A. Jacobs, M. Tanaka, C. Zhang, M. Zhang, S. L. Song, S. Rajbhandari, and Y. He 
+
+ Deepspeed ulysses: system optimizations for enabling training of extreme long sequence transformer models .
+
+ arXiv preprint arXiv:2309.14509 .
+
+ Cited by: §2 .
+
+ Jin et al. (2025) 
+ C. Jin, Z. Zhang, X. Jiang, F. Liu, S. Liu, X. Liu, and X. Jin 
+
+ Ragcache: efficient knowledge caching for retrieval-augmented generation .
+
+ ACM Transactions on Computer Systems 44 ( 1 ), pp. 1–27 .
+
+ Cited by: §3.2 .
+
+ Kang et al. (2026) 
+ H. Kang, Z. Li, X. Yang, W. Xu, Y. Chen, J. Wang, B. Chen, T. Krishna, C. Xu, and S. Arora 
+
+ ThunderAgent: a simple, fast and program-aware agentic inference system .
+
+ arXiv preprint arXiv:2602.13692 .
+
+ Cited by: §2 .
+
+ Kwon et al. (2023) 
+ W. Kwon, Z. Li, S. Zhuang, Y. Sheng, L. Zheng, C. H. Yu, J. Gonzalez, H. Zhang, and I. Stoica 
+
+ Efficient memory management for large language model serving with pagedattention .
+
+ In Proceedings of the 29th Symposium on Operating Systems Principles ,
+
+ pp. 611–626 .
+
+ Cited by: §1 ,
+ §1 ,
+ §2 ,
+ §3 .
+
+ Leviathan et al. (2023) 
+ Y. Leviathan, M. Kalman, and Y. Matias 
+
+ Fast inference from transformers via speculative decoding .
+
+ In International Conference on Machine Learning ,
+
+ pp. 19274–19286 .
+
+ Cited by: §1 .
+
+ Li et al. (2025) 
+ H. Li, Q. Mang, R. He, Q. Zhang, H. Mao, X. Chen, A. Cheung, J. E. Gonzalez, and I. Stoica 
+
+ Continuum: efficient and robust multi-turn LLM agent scheduling with KV cache time-to-live .
+
+ arXiv preprint arXiv:2511.02230 .
+
+ Cited by: §2 ,
+ §2 .
+
+ Liu et al. (2024) 
+ H. Liu, M. Zaharia, and P. Abbeel 
+
+ Ringattention with blockwise transformers for near-infinite context .
+
+ In International Conference on Learning Representations ,
+
+ Vol. 2024 , pp. 3992–4008 .
+
+ Cited by: §2 .
+
+ Liu et al. (2025) 
+ Y. Liu, Y. Cheng, J. Yao, Y. An, X. Chen, S. Feng, Y. Huang, S. Shen, R. Zhang, K. Du, and J. Jiang 
+
+ Lmcache: an efficient kv cache layer for enterprise-scale llm inference .
+
+ arXiv preprint arXiv:2510.09665 .
+
+ Cited by: §1 ,
+ §2 .
+
+ Ma et al. (2026) 
+ B. Ma, J. Eitzinger, H. Koestler, and G. Wellein 
+
+ Diagnosing overhead in dispatch operations: cross-architecture observatory .
+
+ arXiv preprint arXiv:2605.20982 .
+
+ Cited by: §4.2 .
+
+ Ma et al. (2025) 
+ W. Ma, H. Zhang, L. Zhao, Y. Song, Y. Wang, Z. Sui, and F. Luo 
+
+ Stabilizing MoE reinforcement learning by aligning training and inference routers .
+
+ arXiv preprint arXiv:2510.11370 .
+
+ Cited by: §3.2 ,
+ §5 .
+
+ NVIDIA (2026) 
+ NVIDIA 
+
+ Megatron-LM: design document: MoE router replay feature .
+
+ Note: https://github.com/NVIDIA/Megatron-LM/blob/main/docs/api-guide/router_replay.md 
+
+ Cited by: §5 .
+
+ Pan et al. (2025a) 
+ Z. Pan, Y. Ding, Y. Guan, Z. Wang, Z. Yu, X. Tang, Y. Wang, and Y. Ding 
+
+ FastTree: optimizing attention kernel and runtime for tree-structured llm inference .
+
+ In Proceedings of Machine Learning and Systems ,
+
+ Cited by: §2 .
+
+ Pan et al. (2025b) 
+ Z. Pan, A. Patel, Z. Hu, Y. Shen, Y. Guan, W. Li, L. Qin, Y. Wang, and Y. Ding 
+
+ KVFlow: efficient prefix caching for accelerating llm-based multi-agent workflows .
+
+ arXiv preprint arXiv:2507.07400 .
+
+ Cited by: §2 .
+
+ Pan et al. (2026a) 
+ Z. Pan, Y. Shen, Z. Hu, Z. Wang, A. Manocha, Z. Wang, Z. Yu, Y. Guan, and Y. Ding 
+
+ ScaleSim: serving large-scale multi-agent simulation with invocation distance-based memory management .
+
+ arXiv preprint arXiv:2601.21473 .
+
+ Cited by: §2 .
+
+ Pan et al. (2026b) 
+ Z. Pan, Q. Wang, Z. Hu, C. Chen, Y. Guan, Y. Zhou, S. Swanson, and Y. Ding 
+
+ SmoothAgent: efficient long-horizon LLM-based agent serving with lookahead context engineering .
+
+ arXiv preprint arXiv:2607.00151 .
+
+ Cited by: §2 .
+
+ Patel et al. (2024) 
+ P. Patel, E. Choukse, C. Zhang, A. Shah, Í. Goiri, S. Maleki, and R. Bianchini 
+
+ Splitwise: efficient generative llm inference using phase splitting .
+
+ In 2024 ACM/IEEE 51st Annual International Symposium on Computer Architecture (ISCA) ,
+
+ pp. 118–132 .
+
+ Cited by: §2 .
+
+ Qiang et al. (2026) 
+ X. Qiang, H. Chen, S. Sun, J. Leng, X. Liu, and M. Guo 
+
+ DASH: deterministic attention scheduling for high-throughput reproducible llm training .
+
+ In International Conference on Learning Representations ,
+
+ Vol. 2026 , pp. 144643–144660 .
+
+ Cited by: §1 ,
+ §5 .
+
+ Qin et al. (2025) 
+ R. Qin, Z. Li, W. He, J. Cui, F. Ren, M. Zhang, Y. Wu, W. Zheng, and X. Xu 
+
+ Mooncake: trading more storage for less computation—a kvcache-centric architecture for serving llm chatbot .
+
+ In 23rd USENIX Conference on File and Storage Technologies (FAST 25) ,
+
+ pp. 155–170 .
+
+ Cited by: §1 ,
+ §2 .
+
+ Sanovar et al. (2025) 
+ R. Sanovar, S. Bharadwaj, R. St Amant, V. Rühle, and S. Rajmohan 
+
+ LeanAttention: hardware-aware scalable attention mechanism for the decode-phase of transformers .
+
+ Proceedings of Machine Learning and Systems 7 .
+
+ Cited by: §2 .
+
+ Shinn et al. (2023) 
+ N. Shinn, F. Cassano, A. Gopinath, K. Narasimhan, and S. Yao 
+
+ Reflexion: language agents with verbal reinforcement learning .
+
+ Advances in Neural Information Processing Systems 36 , pp. 8634–8652 .
+
+ Cited by: §2 .
+
+ Shoeybi et al. (2019) 
+ M. Shoeybi, M. Patwary, R. Puri, P. LeGresley, J. Casper, and B. Catanzaro 
+
+ Megatron-lm: training multi-billion parameter language models using model parallelism .
+
+ arXiv preprint arXiv:1909.08053 .
+
+ Cited by: §2 .
+
+ Tan et al. (2025) 
+ X. Tan, Y. Jiang, Y. Yang, and H. Xu 
+
+ Towards end-to-end optimization of llm-based applications with ayo .
+
+ In Proceedings of the 30th ACM International Conference on Architectural Support for Programming Languages and Operating Systems, Volume 2 ,
+
+ pp. 1302–1316 .
+
+ Cited by: §3.2 .
+
+ The SGLang Team (2024) 
+ The SGLang Team 
+
+ SGLang v0.4: zero-overhead batch scheduler, cache-aware load balancer, faster structured outputs .
+
+ Note: https://www.lmsys.org/blog/2024-12-04-sglang-v0-4/ 
+
+ Cited by: §3.2 .
+
+ Wang et al. (2026) 
+ M. Wang, Y. Yue, S. Li, Y. E. Zhou, C. Wang, and J. Huang 
+
+ Benchmarking llm serving systems for agentic ai workloads with xperf .
+
+ arXiv preprint arXiv:2608.20370 .
+
+ Cited by: §5 .
+
+ Wang et al. (2025) 
+ X. Wang, B. Li, Y. Song, F. F. Xu, X. Tang, M. Zhuge, J. Pan, Y. Song, B. Li, J. Singh, H. H. Tran, F. Li, R. Ma, M. Zheng, B. Qian, Y. Shao, N. Muennighoff, Y. Zhang, B. Hui, J. Lin, R. Brennan, H. Peng, H. Ji, and G. Neubig 
+
+ OpenHands: an open platform for ai software developers as generalist agents .
+
+ In ICLR ,
+
+ Cited by: §2 .
+
+ Xie et al. (2026) 
+ Z. Xie, Z. Xu, M. Zhao, Y. An, V. S. Mailthody, S. Mahlke, M. Garland, and C. Kozyrakis 
+
+ Strata: hierarchical context caching for long context language model serving .
+
+ In 20th USENIX Symposium on Operating Systems Design and Implementation (OSDI 26) ,
+
+ pp. 1–16 .
+
+ Cited by: §2 .
+
+ Yang et al. (2025) 
+ A. Yang, A. Li, B. Yang, B. Zhang, B. Hui, B. Zheng, B. Yu, C. Gao, C. Huang, C. Lv, C. Zheng, D. Liu, F. Zhou, F. Huang, F. Hu, H. Ge, H. Wei, H. Lin, J. Tang, J. Yang, J. Tu, J. Zhang, J. Yang, J. Yang, J. Zhou, J. Zhou, J. Lin, K. Dang, K. Bao, K. Yang, L. Yu, L. Deng, M. Li, M. Xue, M. Li, P. Zhang, P. Wang, Q. Zhu, R. Men, R. Gao, S. Liu, S. Luo, T. Li, T. Tang, W. Yin, X. Ren, X. Wang, X. Zhang, X. Ren, Y. Fan, Y. Su, Y. Zhang, Y. Zhang, Y. Wan, Y. Liu, Z. Wang, Z. Cui, Z. Zhang, Z. Zhou, and Z. Qiu 
+
+ Qwen3 technical report .
+
+ arXiv preprint arXiv:2505.09388 .
+
+ Cited by: §2 .
+
+ Yang et al. (2024) 
+ J. Yang, C. E. Jimenez, A. Wettig, K. Lieret, S. Yao, K. Narasimhan, and O. Press 
+
+ Swe-agent: agent-computer interfaces enable automated software engineering .
+
+ Advances in Neural Information Processing Systems 37 , pp. 50528–50652 .
+
+ Cited by: §2 .
+
+ Yao et al. (2024) 
+ J. Yao, Q. Anthony, A. Shafi, H. Subramoni, and D. K. D. Panda 
+
+ Exploiting inter-layer expert affinity for accelerating mixture-of-experts model inference .
+
+ In 2024 IEEE International parallel and distributed processing symposium (IPDPS) ,
+
+ pp. 915–925 .
+
+ Cited by: §1 .
+
+ Yao et al. (2023) 
+ S. Yao, J. Zhao, D. Yu, N. Du, I. Shafran, K. Narasimhan, and Y. Cao 
+
+ React: synergizing reasoning and acting in language models .
+
+ In International Conference on Learning Representations (ICLR) ,
+
+ Cited by: §1 ,
+ §2 .
+
+ Ye et al. (2025) 
+ Z. Ye, L. Chen, R. Lai, W. Lin, Y. Zhang, S. Wang, T. Chen, B. Kasikci, V. Grover, A. Krishnamurthy, and L. Ceze 
+
+ FlashInfer: efficient and customizable attention engine for llm inference serving .
+
+ In Eighth Conference on Machine Learning and Systems ,
+
+ Cited by: §2 .
+
+ Yu et al. (2022) 
+ G. Yu, J. S. Jeong, G. Kim, S. Kim, and B. Chun 
+
+ Orca: a distributed serving system for transformer-based generative models .
+
+ In 16th USENIX symposium on operating systems design and implementation (OSDI 22) ,
+
+ pp. 521–538 .
+
+ Cited by: §2 .
+
+ Yu et al. (2026) 
+ Z. Yu, Y. Guan, Z. Yu, C. Zhou, Z. Hu, S. Pei, Y. Kang, Y. Ding, and P. Tsai 
+
+ Patterns behind chaos: forecasting data movement for efficient large-scale moe llm inference .
+
+ In 2026 ACM/IEEE 53rd Annual International Symposium on Computer Architecture (ISCA) ,
+
+ pp. 68–84 .
+
+ Cited by: §1 .
+
+ Yuan et al. (2026) 
+ J. Yuan, H. Li, X. Ding, W. Xie, Y. Li, W. Zhao, K. Wan, J. Shi, X. Hu, and Z. Liu 
+
+ Understanding and mitigating numerical sources of nondeterminism in llm inference .
+
+ Advances in Neural Information Processing Systems 38 , pp. 169819–169851 .
+
+ Cited by: §1 ,
+ §5 .
+
+ Zhang et al. (2025) 
+ Z. Zhang, X. Ding, J. Yuan, R. Liu, H. Mao, J. Xing, and Z. Liu 
+
+ Deterministic inference across tensor parallel sizes that eliminates training-inference mismatch .
+
+ arXiv preprint arXiv:2511.17826 .
+
+ Cited by: §5 .
+
+ Zheng et al. (2024a) 
+ L. Zheng, L. Yin, Z. Xie, C. Sun, J. Huang, C. H. Yu, S. Cao, C. Kozyrakis, I. Stoica, J. E. Gonzalez, C. W. Barrett, and Y. Sheng 
+
+ Sglang: efficient execution of structured language model programs .
+
+ Advances in Neural Information Processing Systems 37 , pp. 62557–62583 .
+
+ Cited by: §1 ,
+ §1 ,
+ §2 .
+
+ Zheng et al. (2024b) 
+ Z. Zheng, X. Ji, T. Fang, F. Zhou, C. Liu, and G. Peng 
+
+ Batchllm: optimizing large batched llm inference with global prefix sharing and throughput-oriented token batching .
+
+ arXiv preprint arXiv:2412.03594 .
+
+ Cited by: §2 .
+
+ Zhong et al. (2024) 
+ Y. Zhong, S. Liu, J. Chen, J. Hu, Y. Zhu, X. Liu, X. Jin, and H. Zhang 
+
+ distserve : Disaggregating prefill and decoding for goodput-optimized large language model serving .
+
+ In 18th USENIX Symposium on Operating Systems Design and Implementation (OSDI 24) ,
+
+ pp. 193–210 .
+
+ Cited by: §2 .
+
+ Zhu et al. (2026) 
+ K. Zhu, M. Jacob, C. Ma, Y. Pan, S. Wang, A. Krishnamurthy, and B. Kasikci 
+
+ TraceLab: characterizing coding agent workloads for LLM serving .
+
+ arXiv preprint arXiv:2606.30560 .
+
+ Cited by: §2 ,
+ §5 .
+
+ Zhu et al. (2025) 
+ R. Zhu, Z. Jiang, C. Jin, P. Wu, C. A. Stuardo, D. Wang, X. Zhang, H. Zhou, H. Wei, Y. Cheng, et al. 
+
+ MegaScale-infer: serving mixture-of-experts at scale with disaggregated expert parallelism .
+
+ arXiv preprint arXiv:2504.02263 .
+
+ Cited by: §2 .
+
+ Experimental support, please
+ view the build logs 
+ for errors. Generated by
+
+ L
+ A 
+ T
+ E 
+
+ xml 
+
+ .
+
+ Instructions for reporting errors 
+ We are continuing to improve HTML versions of papers, and your feedback helps enhance accessibility and mobile
+ support. To report errors in the HTML that will help us improve conversion and rendering, choose any of the
+ methods listed below: 
+
+ Click the "Report Issue" ( 
+
+ ) button, located in the page header. 
+
+ Tip: You can select the relevant text first, to include it in your report. 
+ Our team has already identified the following issues . We appreciate your time reviewing and reporting rendering errors we
+ may not have found yet. Your efforts will help us improve the HTML versions for all readers, because disability
+ should not be a barrier to accessing research. Thank you for your continued support in championing open access for
+ all. 
+ Have a free development cycle? Help support accessibility at arXiv! Our collaborators at LaTeXML maintain a list of packages that need conversion , and welcome developer contributions . 
+
+ We gratefully acknowledge support from
+ our major funders ,
+ member institutions , ,
+ and all contributors.
+
+ About 
+ · 
+ Help 
+ · 
+ Contact 
+ · 
+ Subscribe 
+ · 
+ Copyright 
+ · 
+ Privacy 
+ · 
+ Accessibility 
+ · 
+ Operational Status (opens in new tab) 
+
+ Major funding support from 
+

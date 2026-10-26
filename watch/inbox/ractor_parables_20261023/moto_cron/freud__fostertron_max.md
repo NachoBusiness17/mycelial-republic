@@ -1,0 +1,34 @@
+<!-- meta: {"ractor": "FREUD", "mouthpiece": "fostertron_max", "subject": "moto_cron", "start_et": "2026-10-23T13:58:18.398524-04:00", "attempts": [{"attempt": 1, "exit": 0, "stdout_len": 6151, "at": "2026-10-23T14:02:01.565935-04:00"}], "carrier": "opencode run (provider zai-sd 'sd / Max', key env ZAI_API_KEY_2 via model_garden._api_key)", "requested_model": "zai-sd/glm-5.3", "resolved_model": "glm-5.3", "exit": 0, "stderr_tail": "\u001b[0m\n> build \u00b7 glm-5.3\n\u001b[0m\n\u001b[0m\u2192 \u001b[0mRead PROMPT.txt\n", "tokens": "not reported by opencode run", "end_et": "2026-10-23T14:02:01.565935-04:00", "status": "OK"} -->
+
+# The Tower That Answers
+
+In the last valley of the province stood a signal tower whose great glass had been broken in a storm years before. The keeper at the top could not see the road, the gate, or the faces of visitors; he knew the world only by what reached him through his door. The province had nearly forgotten the tower until a new steward looked up and said that a tower which could still hear, still speak, and still keep time could earn its bread. It was settled: the tower would take the household's small chores, the ones that must happen at fixed hours, and the far end of the pass would work again.
+
+On the near side, in the steward's study, a letter-box was fastened to the wall with a slot in its lid. Each morning the clerk wrote the day's chores on cards and posted them through the slot, and beside the box hung a slate where every card received its mark: done, or waiting. A porter was hired to carry the cards over the pass, and his round never changed.
+
+At the boundary stone he stopped and called out, to learn whether the road was open and the tower awake. His own voice came back off the high stone — never at once, always after the same half a breath — and so he knew the pass carried sound and the tower stood. Then he climbed to the single door at the top, where a grate was cut into the oak, and knocked.
+
+"Give me your hand," said the keeper, who could not see a face and would trust nothing he had not been told to know. The porter laid his palm on the cold plate beside the bolt. Inside, pages turned. "The book does not know this hand," the keeper said, exactly as he had said every morning, and the bolt did not move.
+
+There was a standing order about that door. The keeper's book was not to be written in, and the door was not to be re-hung — not by the porter, not by the clerk, not by anyone. What the tower had been built to trust it would go on trusting; it would not be re-made because a round had gone badly.
+
+So the porter did not force the bolt. Under the eaves beside the door, where the stones stayed dry, he unpacked his satchel and set the day's cards in a row, each wrapped against the weather and marked with the hour of its chore. The shelf grew longer. Every card he had ever carried was still on it; not one had been carried back.
+
+Down in the study the clerk went on posting fresh cards through the slot, because the list of chores said the pass was open and the tower able, and the list had not yet heard otherwise. The slate filled with waiting marks, one column, and the other column stayed empty. Since the arrangement began, not one chore had been done at the tower.
+
+One day an old doctor from the city rode over the pass with the porter, a man who had spent his life listening to people who repeated themselves. At the boundary stone he had the porter call, counted the half-breaths until the echo returned, and wrote the number down. At the grate he asked how many mornings the porter had heard those words in that order. Every morning, said the porter. The doctor nodded, as if a patient had at last described his complaint plainly: the same answer, in the same words, every day. A tower that repeats itself is not sick; it is being asked by a stranger.
+
+He gave the porter a day-book and one instruction: a single line for every round, always the same four things — whether the stone answered, how long the echo took, which hand was given, whether the bolt moved — and nothing else. Not the weather, not the porter's feelings about the door. A short line, he said, is a line that will still be true next year.
+
+That evening the doctor looked at the slate's lone column and at the fresh cards still going through the slot, and said nothing to the list. He asked instead what the keeper's book was like, and whether anyone living had seen its pages. In the chest where the tower's papers had been kept before the storm, the steward's people found a copy of the first page: one hand described in the old script, down to its ring. The clerk was set to cutting a signet to that description, slowly, because the old script ran crooked. And the porter went on making his round, one line a day, past the stone, up the stair, to the grate where the keeper said, as he always said, "Give me your hand" — and the whole arrangement waited, patient as a shelf, on the making of one small circle of metal.
+
+---KEY---
+1. Equipment with a damaged face but working senses is kept in service and given recurring timed work rather than discarded. (The blinded tower assigned the household's fixed-hour chores.)
+2. Work is split across two places: requests are written as small cards, posted into a near-side box, and carried by a courier to the distant performer. (The clerk's letter-box and the porter's round over the pass.)
+3. Every request carries an openly visible state mark of done or waiting. (The slate beside the box, one mark per card.)
+4. Path health is proven by calling out and timing the echo; a steady, short, consistent return means the road is open and the far party is alive. (The boundary-stone call returning after the same half a breath.)
+5. An open road does not open the door: admission is granted only to what is already written in the far side's book, and an unrecognized claimant is refused in the same words every time. (The plate, the pages turning, "The book does not know this hand.")
+6. The admission mechanism itself must never be altered to force progress — no writing in the book, no re-hanging the door. (The steward's standing order.)
+7. Prepared work waits intact, wrapped, and ordered at the threshold until admission is solved, and nothing runs in the meantime even as new work keeps arriving. (The hour-marked cards accumulating on the dry shelf; the slate's single waiting column while fresh cards still go through the slot.)
+8. The remedy is to produce the credential the record already names — match the record, never change the lock. (The copy of the book's first page and the signet being cut to it.)
+9. Every attempt is logged as one minimal, uniform line repeating the same fixed observations, nothing more. (The doctor's day-book: stone, echo, hand, bolt.)

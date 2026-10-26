@@ -1,0 +1,18 @@
+{
+  "gopher": "t9",
+  "item": "wire the sphere kinship graph into Worldgen.luau zone alliances (owed row: sphere kinship graph -> zone alliances, queue/todo.md:211)",
+  "ok": true,
+  "note": "Kinship graph derived FROM the mine, never authored: df_spheres.json carries no friendship/parent edges, so the graph is computed from its own sourced fields (good_spheres/evil_spheres alignment classes + generator_region_spheres/by_creature co-occurrence); opposition wins over co-occurrence, unaligned spheres carry no enmity (empty lists stated, not omitted). 130-row table GENERATED into shared/SphereKinship.luau by tools/gen_df_luau_data.py with do-not-hand-edit header (game-data-as-generated-code). Worldgen gained the alliance pick: zoneAlliance (opposed/allied/independent), sphereAlignment, forgottenBeast (name format unchanged; forgottenName delegates), kinshipLine. Live consumption: MudBasecamp.summonWisps announcement now files Kin/Foes per beast. Spec edited first (WORLDGEN_MINE.md law 4 fold note); owed row annotated (todo is gitignored local state). mountain_check NOT run per lane order (sibling holds the gate); verification by generator rerun, independent cross-check, luau_lint, em-dash scan, module reads. NOTE: sibling committer d38801265 (2026-09-26 00:36) swept the dirty tree mid-flight and landed the lane files; disk == HEAD for all lane files, scans re-run against that commit.",
+  "spheres_wired": 130,
+  "checks": [
+    {"command": ".venv/Scripts/python.exe tools/gen_df_luau_data.py", "exit": 0, "detail": "wrote SphereKinship.luau 19063 bytes; kinship: spheres 130, good/evil 15/16, ally edges 618 (70 empty ally lists), opposed edges 480 (99 empty)"},
+    {"command": "generator rerun + sha256sum diff", "exit": 0, "detail": "BYTE-STABLE PASS: DfGoods/RcpData/SphereKinship identical across reruns; DfGoods+RcpData untouched bytes"},
+    {"command": "independent python cross-check (fresh derivation vs generated luau, all 130 rows)", "exit": 0, "detail": "PASS, 0 mismatches; invariants: LOVE opposes all 16 evil, BLIGHT opposes all 15 good, MOUNTAINS-CAVERNS region kin, FIRE-WEALTH dragon kin, no self edges, no ally edge crosses alignment, unaligned AGRICULTURE OPPOSED == {}"},
+    {"command": ".venv/Scripts/python.exe tools/luau_lint.py", "exit": 1, "detail": "41 files checked; the only 3 findings are pre-existing in zones_extra files this lane never touched (FrontierSoulsZone/HardwarePrimerZone/IncidentDungeonZone); zero findings on all lane files"},
+    {"command": "em-dash scan over lane-added lines (git diff d38801265^..d38801265 per file + full new file)", "exit": 0, "detail": "PASS: 0 em-dashes in every lane-added line"},
+    {"command": "module reads + line cites", "exit": 0, "detail": "Worldgen.luau:21 require, 221 zoneAlliance, 231 sphereAlignment, 235 forgottenBeast, 248 forgottenName delegate, 253 kinshipLine; MudBasecamp.luau:193-195 live call; WORLDGEN_MINE.md:33 fold note (spec written before code)"}
+  ],
+  "archive": ["watch/inbox/gala_20260925/afterparty/lanes/t9.check.txt", "watch/inbox/gala_20260925/afterparty/lanes/t9.json"],
+  "files": ["tools/gen_df_luau_data.py", "roblox/src/shared/SphereKinship.luau", "roblox/src/shared/Worldgen.luau", "roblox/src/server/MudBasecamp.luau", "roblox/docs/WORLDGEN_MINE.md", "queue/todo.md"],
+  "next_steal": "zoneAlliance has one live caller; give the WAVE zones spheres (Arrakis=DESERT, Swarm=SWAMP style, straight from generator_region_spheres keys) and let the kinship pick gate zone-vs-zone access or buff allied zones when a beast of kin sphere is up"
+}

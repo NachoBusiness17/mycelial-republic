@@ -1,0 +1,21 @@
+{
+  "gopher": "t14c",
+  "item": "leaderstats page (M): VM, Rebirths, Invariants, Summit count (Roblox-standard visible scorecard)",
+  "ok": true,
+  "note": "leaderstats already existed in init.server.luau with Virtue Marks, Rebirths, Invariants; extended it with a Summits IntValue. Summit count has no dedicated attribute in src; the only summit state is the per-round Summit_<roundStart> booleans LightMazeZone.luau:156 sets on the TowerSummit touch, so the scorecard counts Summit_-prefixed attribute names via GetAttributes() in the existing 1s poll loop. No stat source invented. Deterministic server code.",
+  "checks": [
+    "grep leaderstats: existing script found (init.server.luau 166-193), extended not rebuilt",
+    "grep VirtueMarks/Rebirths/Summit/Invariant: all four stat sources identified as real attributes",
+    "grep GetAttribute census: no Summits count attribute exists, confirmed the Summit_<roundStart> per-round booleans are the sole source",
+    "read-back of edited block: balanced, strict-mode safe Luau, no em-dashes in added text",
+    "grep roblox/src/client for leaderstats consumers: none, server-only change complete",
+    "luau-lsp not on PATH (where luau-lsp empty), semantic analyze skipped with receipt",
+    "mountain_check not run per lane order (shared)"
+  ],
+  "next_steal": "replace the 1s GetAttributes poll with GetAttributeChangedSignal bindings or maintain the Summit count at write time in LightMazeZone; low priority, matches pre-existing pattern",
+  "archive": [
+    "watch/inbox/gala_20260925/afterparty/lanes/t14c.check.txt",
+    "watch/inbox/gala_20260925/afterparty/lanes/t14c.json",
+    "roblox/src/server/init.server.luau"
+  ]
+}

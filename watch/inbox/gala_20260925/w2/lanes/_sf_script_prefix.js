@@ -1,0 +1,1236 @@
+
+// ====== SOUL FRONTIER CORE ======
+const canvas = document.getElementById('gc');
+const ctx = canvas.getContext('2d');
+
+function resize() {
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+}
+resize();
+window.addEventListener('resize', resize);
+
+// ====== CONFIG ======
+const CONFIG = {
+  stamRegen: 3,         // stam per sec when idle
+  stamLight: 1,         // light attack cost
+  stamHeavy: 3,         // heavy attack cost
+  stamRoll: 1,          // roll cost
+  rollDuration: 0.25,   // seconds of i-frame during roll
+  maxStam: 100,
+  deathSteps: 10000,
+  levels: [
+    { min: 0,    max: 1000,  name: "Desert",      terrain: 'sand',     enemies: 'slimes',      color: '#e8d5a0' },
+    { min: 1000, max: 2000,  name: "Western Dead", terrain: 'towns',    enemies: 'zombies',     color: '#c4a86a' },
+    { min: 2000, max: 4000,  name: "Pine Gorge",   terrain: 'forest',   enemies: 'slimes_zombie',color: '#4a6a3a' },
+    { min: 4000, max: 6000,  name: "Utah Plateau", terrain: 'plateau',  enemies: 'zombies',     color: '#b8a070' },
+    { min: 6000, max: 9999,  name: "Yellowstone",  terrain: 'geyser',   enemies: 'slimes_zombie',color: '#3a3a2a' },
+  ],
+};
+
+const CHARS = [
+  { name: 'Twin Guns', speed: 230, atkSpeed: 0.2, lightDmg: 7, heavyDmg: 18, heavyRange: 45, splash: false, knockback: 0, color: '#60a0e0', desc: 'dual pistols, bullets from both guns' },
+  { name: 'Shotgun', speed: 180, atkSpeed: 0.6, lightDmg: 5, heavyDmg: 35, heavyRange: 80, splash: false, knockback: 120, color: '#b8860b', desc: 'shotgun cone + axe swing' },
+  { name: 'Heavy Canon', speed: 140, atkSpeed: 0.9, lightDmg: 6, heavyDmg: 45, heavyRange: 120, splash: true, knockback: 80, color: '#c04040', desc: 'grenade splash + ground slam' },
+];
+
+// ====== CHUNK MAP SYSTEM ======
+const CHUNK_SIZE = 256; // world units per chunk
+const CHUNK_GEN_RADIUS = 3; // generate chunks this far from player
+const chunks = {}; // stored generated chunks: key "cx,cy" → {features:[], cx, cy}
+
+function chunkKey(cx, cy) { return `${cx},${cy}`; }
+
+function getChunkCoords(wx, wy) {
+  return { cx: Math.floor(wx / CHUNK_SIZE), cy: Math.floor(wy / CHUNK_SIZE) };
+}
+
+function seededRandom(seed) {
+  const x = Math.sin(seed * 127.1 + 311.7) * 43758.5453;
+  return x - Math.floor(x);
+}
+
+function generateChunk(cx, cy, lvlIdx) {
+  const key = chunkKey(cx, cy);
+  if (chunks[key]) return; // already generated
+  const lvl = CONFIG.levels[lvlIdx];
+  const features = [];
+  const terrain = lvl.terrain;
+
+  // Deterministic feature placement based on chunk coords + level
+  const baseSeed = cx * 73856093 + cy * 19349663 + lvlIdx * 83492791;
+
+  if (terrain === 'sand') {
+    // Cacti: 2-4 per chunk
+    const cactusCount = 2 + Math.floor(seededRandom(baseSeed) * 3);
+    for (let i = 0; i < cactusCount; i++) {
+      const fx = cx * CHUNK_SIZE + seededRandom(baseSeed + i * 13) * CHUNK_SIZE;
+      const fy = (cy * CHUNK_SIZE) + 20 + seededRandom(baseSeed + i * 37) * (CHUNK_SIZE - 40);
+      features.push({ type: 'cactus', x: fx, y: fy, h: 15 + seededRandom(baseSeed + i * 53) * 20 });
+    }
+    // Tumbleweeds: 2-5 per chunk
+    const twCount = 2 + Math.floor(seededRandom(baseSeed + 999) * 4);
+    for (let i = 0; i < twCount; i++) {
+      const fx = cx * CHUNK_SIZE + seededRandom(baseSeed + i * 77) * CHUNK_SIZE;
+      const fy = (cy * CHUNK_SIZE) + 30 + seededRandom(baseSeed + i * 101) * (CHUNK_SIZE - 60);
+      features.push({ type: 'tumbleweed', x: fx, y: fy, r: 6 + seededRandom(baseSeed + i * 113) * 8, drift: seededRandom(baseSeed + i * 127) });
+    }
+    // Dune bumps
+    const duneCount = 1 + Math.floor(seededRandom(baseSeed + 2000) * 3);
+    for (let i = 0; i < duneCount; i++) {
+      const fx = cx * CHUNK_SIZE + seededRandom(baseSeed + i * 333) * CHUNK_SIZE;
+      const fy = (cy * CHUNK_SIZE) + CHUNK_SIZE * 0.3 + seededRandom(baseSeed + i * 444) * CHUNK_SIZE * 0.5;
+      features.push({ type: 'dune', x: fx, y: fy, r: 20 + seededRandom(baseSeed + i * 555) * 30 });
+    }
+  } else if (terrain === 'towns') {
+    // Gravestones
+    const graveCount = 3 + Math.floor(seededRandom(baseSeed) * 4);
+    for (let i = 0; i < graveCount; i++) {
+      const fx = cx * CHUNK_SIZE + seededRandom(baseSeed + i * 13) * CHUNK_SIZE;
+      const fy = (cy * CHUNK_SIZE) + 20 + seededRandom(baseSeed + i * 37) * (CHUNK_SIZE - 40);
+      features.push({ type: 'gravestone', x: fx, y: fy, h: 12 + seededRandom(baseSeed + i * 53) * 8 });
+    }
+    // Tumbleweeds
+    const twCount = 1 + Math.floor(seededRandom(baseSeed + 999) * 3);
+    for (let i = 0; i < twCount; i++) {
+      const fx = cx * CHUNK_SIZE + seededRandom(baseSeed + i * 77) * CHUNK_SIZE;
+      const fy = (cy * CHUNK_SIZE) + 30 + seededRandom(baseSeed + i * 101) * (CHUNK_SIZE - 60);
+      features.push({ type: 'tumbleweed', x: fx, y: fy, r: 5 + seededRandom(baseSeed + i * 113) * 6, drift: seededRandom(baseSeed + i * 127) });
+    }
+  } else if (terrain === 'forest') {
+    // Pine trees
+    const treeCount = 4 + Math.floor(seededRandom(baseSeed) * 6);
+    for (let i = 0; i < treeCount; i++) {
+      const fx = cx * CHUNK_SIZE + seededRandom(baseSeed + i * 13) * CHUNK_SIZE;
+      const fy = (cy * CHUNK_SIZE) + CHUNK_SIZE * 0.5 + seededRandom(baseSeed + i * 37) * CHUNK_SIZE * 0.4;
+      features.push({ type: 'tree', x: fx, y: fy, h: 30 + seededRandom(baseSeed + i * 53) * 20 });
+    }
+    // Canyon edges
+    if (Math.floor(seededRandom(baseSeed + 5000) * 3) === 0) {
+      const fx = cx * CHUNK_SIZE + seededRandom(baseSeed + 6000) * CHUNK_SIZE;
+      features.push({ type: 'canyon_edge', x: fx, y: (cy + 1) * CHUNK_SIZE - 10 });
+    }
+  } else if (terrain === 'plateau') {
+    // Mesa layers
+    const mesaCount = 1 + Math.floor(seededRandom(baseSeed) * 2);
+    for (let i = 0; i < mesaCount; i++) {
+      const fx = cx * CHUNK_SIZE + seededRandom(baseSeed + i * 13) * CHUNK_SIZE;
+      const fy = (cy * CHUNK_SIZE) + seededRandom(baseSeed + i * 37) * CHUNK_SIZE * 0.6;
+      features.push({ type: 'mesa', x: fx, y: fy, w: 40 + seededRandom(baseSeed + i * 53) * 30, h: 30 + seededRandom(baseSeed + i * 73) * 20 });
+    }
+  } else if (terrain === 'geyser') {
+    // Geysers
+    const geyserCount = 1 + Math.floor(seededRandom(baseSeed) * 2);
+    for (let i = 0; i < geyserCount; i++) {
+      const fx = cx * CHUNK_SIZE + seededRandom(baseSeed + i * 13) * CHUNK_SIZE;
+      const fy = (cy * CHUNK_SIZE) + CHUNK_SIZE * 0.5;
+      features.push({ type: 'geyser', x: fx, y: fy, active: seededRandom(baseSeed + i * 97) > 0.3 });
+    }
+    // Lava cracks
+    features.push({ type: 'lava_crack', x: cx * CHUNK_SIZE + CHUNK_SIZE / 2, y: cy * CHUNK_SIZE + CHUNK_SIZE * 0.7 });
+  }
+
+  chunks[key] = { features, cx, cy };
+}
+
+function getChunkRange(playerWx, playerWy, radius) {
+  const p = getChunkCoords(playerWx, playerWy);
+  const minCx = p.cx - radius;
+  const maxCx = p.cx + radius;
+  const minCy = p.cy - radius;
+  const maxCy = p.cy + radius;
+  return { minCx, maxCx, minCy, maxCy };
+}
+let selectedChar = 0;
+let player = null;
+let enemies = [];
+let projectiles = [];
+let particles = [];
+let steps = 0;
+let prevSteps = 0; // for level transition detection
+let prevPlayerX = 0;
+let prevPlayerY = 0;
+let kills = 0;
+let wave = 1;
+let lastTime = 0;
+let screenShake = 0;
+let camX = 0, camY = 0; // camera offset (world → screen)
+let camTargetX = 0, camTargetY = 0;
+let boss = null; // Death boss
+
+
+
+
+
+
+// ====== INPUT ======
+const keys = {};
+window.addEventListener('keydown', e => { keys[e.code] = true; e.preventDefault(); });
+window.addEventListener('keyup', e => { keys[e.code] = false; });
+let mouseX = 0, mouseY = 0, mouseDown = false;
+canvas.addEventListener('mousemove', e => { mouseX = e.clientX; mouseY = e.clientY; });
+canvas.addEventListener('mousedown', e => { mouseDown = true; });
+canvas.addEventListener('mouseup', e => { mouseDown = false; });
+
+// ====== CHARACTER SELECT ======
+document.querySelectorAll('.char-card').forEach(card => {
+  card.addEventListener('click', () => {
+    document.querySelectorAll('.char-card').forEach(c => c.classList.remove('selected'));
+    card.classList.add('selected');
+    selectedChar = parseInt(card.dataset.char);
+  });
+});
+
+// ====== UI ======
+const overlay = document.getElementById('overlay');
+const hud = document.getElementById('hud');
+const hudSteps = document.getElementById('hudSteps');
+const hudLevel = document.getElementById('hudLevel');
+const hudHp = document.getElementById('hudHp');
+const hudStam = document.getElementById('hudStam');
+const stamFill = document.getElementById('stamFill');
+const hudKills = document.getElementById('hudKills');
+const hudWave = document.getElementById('hudWave');
+const deathScreen = document.getElementById('death-screen');
+const deathStats = document.getElementById('deathStats');
+const levelTrans = document.getElementById('level-trans');
+const controls = document.getElementById('controls');
+
+document.getElementById('startBtn').addEventListener('click', startGame);
+document.getElementById('respawnBtn').addEventListener('click', respawn);
+
+// ====== GAME LOGIC ======
+function startGame() {
+  overlay.classList.add('hidden');
+  hud.style.display = 'block';
+  controls.style.display = 'block';
+  state = 'playing';
+  const ch = CHARS[selectedChar];
+  player = {
+    x: canvas.width / 2, y: canvas.height / 2,
+    vx: 0, vy: 0, angle: 0,
+    hp: 100, maxHp: 100,
+    stam: CONFIG.maxStam,
+    char: selectedChar,
+    rolling: false, rollTimer: 0,
+    lightCooldown: 0, heavyCooldown: 0,
+    gunSide: 0,
+    iFrames: 0,
+  };
+  steps = 0; kills = 0; wave = 1;
+  enemies = []; projectiles = []; particles = [];
+  screenShake = 0;
+  spawnWave();
+}
+
+function respawn() {
+  deathScreen.classList.remove('show');
+  hud.style.display = 'block';
+  state = 'playing';
+  const ch = CHARS[selectedChar];
+  player = {
+    x: canvas.width / 2, y: canvas.height / 2,
+    vx: 0, vy: 0, angle: 0,
+    hp: 100, maxHp: 100,
+    stam: CONFIG.maxStam,
+    char: selectedChar,
+    rolling: false, rollTimer: 0,
+    lightCooldown: 0, heavyCooldown: 0,
+    gunSide: 0,
+    iFrames: 0,
+  };
+  enemies = []; projectiles = []; particles = [];
+    wave = 1;
+  spawnWave();
+}
+
+function getLevel(stepCount) {
+  for (let i = CONFIG.levels.length - 1; i >= 0; i--) {
+    if (stepCount >= CONFIG.levels[i].min) return i;
+  }
+  return 0;
+}
+
+function spawnWave() {
+  const lvl = getLevel(steps);
+  const lvlCfg = CONFIG.levels[lvl];
+  const count = Math.min(3 + wave * 2, 30);
+  for (let i = 0; i < count; i++) {
+    let ex, ey;
+    // Spawn at edges
+    const side = Math.floor(Math.random() * 4);
+    if (side === 0) { ex = -30; ey = Math.random() * canvas.height; }
+    else if (side === 1) { ex = canvas.width + 30; ey = Math.random() * canvas.height; }
+    else if (side === 2) { ex = Math.random() * canvas.width; ey = -30; }
+    else { ex = Math.random() * canvas.width; ey = canvas.height + 30; }
+    const type = Math.random() < 0.7 ? 'slime' : 'zombie';
+    enemies.push({
+      x: ex, y: ey, type,
+      hp: type === 'slime' ? 20 : 40,
+      maxHp: type === 'slime' ? 20 : 40,
+      speed: type === 'slime' ? 60 + wave * 5 : 40 + wave * 3,
+      damage: type === 'slime' ? 8 : 15,
+      size: type === 'slime' ? 14 : 18,
+      color: type === 'slime' ? '#50c050' : '#804020',
+      flashTimer: 0,
+      flailing: false, flailTimer: 0,
+      hitFlash: 0,
+    });
+  }
+}
+
+function roll() {
+  if (state !== 'playing' || !player) return;
+  if (player.stam < CONFIG.stamRoll || player.rolling) return;
+  player.stam -= CONFIG.stamRoll;
+  player.rolling = true;
+  player.rollTimer = CONFIG.rollDuration;
+  player.iFrames = CONFIG.rollDuration + 0.1;
+  // Roll in mouse direction
+  const dx = mouseX - player.x;
+  const dy = mouseY - player.y;
+  const dist = Math.sqrt(dx * dx + dy * dy) || 1;
+  const spd = 350;
+  player.vx = (dx / dist) * spd;
+  player.vy = (dy / dist) * spd;
+  // Roll particles
+  for (let i = 0; i < 8; i++) {
+    particles.push({
+      x: player.x, y: player.y,
+      vx: (Math.random() - 0.5) * 200, vy: (Math.random() - 0.5) * 200,
+      life: 0.3, maxLife: 0.3, color: '#d4a040', size: 3
+    });
+  }
+}
+
+function lightAttack() {
+  if (state !== 'playing' || !player) return;
+  if (player.stam < CONFIG.stamLight || player.lightCooldown > 0) return;
+  player.stam -= CONFIG.stamLight;
+  player.lightCooldown = CHARS[player.char].atkSpeed;
+  const ch = CHARS[player.char];
+  const atkRange = ch.splash ? 50 : 35;
+  const atkDmg = ch.lightDmg;
+  // Hit check
+  hitEnemies(atkRange, atkDmg, false, 0);
+  // Twin Guns: alternate left/right gun per shot
+    if (player.char === 0) {
+    const dx = mouseX - player.x;
+    const dy = mouseY - player.y;
+    const dist = Math.sqrt(dx * dx + dy * dy) || 1;
+    const bxSpd = 350;
+    const off = player.gunSide === 0 ? -14 : 14; // alternate sides
+    const nx = dx / dist, ny = dy / dist;
+    const px = -ny * off, py = nx * off;
+    projectiles.push({
+      x: player.x + px, y: player.y + py,
+      vx: nx * bxSpd, vy: ny * bxSpd,
+      damage: ch.lightDmg, size: 4, life: 1.2, maxLife: 1.2
+    });
+    player.gunSide = 1 - player.gunSide; // flip side next shot
+    screenShake = 2;
+    return;
+  }
+  // Shotgun: cone spread of pellets
+  if (player.char === 1) {
+    const dx = mouseX - player.x;
+    const dy = mouseY - player.y;
+    const dist = Math.sqrt(dx * dx + dy * dy) || 1;
+    const nx = dx / dist, ny = dy / dist;
+    const count = 7;
+    const spread = 0.25;
+    for (let i = 0; i < count; i++) {
+      const angle = -spread + (spread * 2 * i) / (count - 1);
+      const c = Math.cos(angle), s = Math.sin(angle);
+      projectiles.push({
+        x: player.x, y: player.y,
+        vx: (nx * c - ny * s) * 500,
+        vy: (nx * s + ny * c) * 500,
+        damage: 5, size: 2, life: 0.5, maxLife: 0.5,
+        shotgun: true
+      });
+    }
+    screenShake = 3;
+    return;
+  }
+  // Heavy Canon: cannon grenade — fires grenade that explodes on impact with splash
+  if (player.char === 2) {
+    const dx = mouseX - player.x;
+    const dy = mouseY - player.y;
+    const dist = Math.sqrt(dx * dx + dy * dy) || 1;
+    projectiles.push({
+      x: player.x, y: player.y,
+      vx: (dx / dist) * 400, vy: (dy / dist) * 400,
+      damage: ch.lightDmg, size: 6, life: 2.0, maxLife: 2.0,
+      cannonball: true, splash: 60
+    });
+    screenShake = 3;
+    return;
+  }
+  // Muzzle flash
+  screenShake = 2;
+}
+
+function heavyAttack() {
+  if (state !== 'playing' || !player) return;
+  if (player.stam < CONFIG.stamHeavy || player.heavyCooldown > 0) return;
+  player.stam -= CONFIG.stamHeavy;
+  player.heavyCooldown = CHARS[player.char].atkSpeed * 2;
+  const ch = CHARS[player.char];
+  // Twin Guns heavy: charge-up double shot from both guns
+  if (player.char === 0) {
+    const dx = mouseX - player.x;
+    const dy = mouseY - player.y;
+    const dist = Math.sqrt(dx * dx + dy * dy) || 1;
+    const bxSpd = 450;
+    const offsets = [-14, 14];
+    for (const off of offsets) {
+      const nx = dx / dist, ny = dy / dist;
+      const px = -ny * off, py = nx * off;
+      projectiles.push({
+        x: player.x + px, y: player.y + py,
+        vx: nx * bxSpd, vy: ny * bxSpd,
+        damage: ch.heavyDmg, size: 6, life: 1.5, maxLife: 1.5,
+        charge: true // visual charge glow
+      });
+    }
+    screenShake = 8;
+    for (let i = 0; i < 20; i++) {
+      const a = Math.random() * Math.PI * 2;
+      particles.push({
+        x: player.x, y: player.y,
+        vx: Math.cos(a) * (150 + Math.random() * 300),
+        vy: Math.sin(a) * (150 + Math.random() * 300),
+        life: 0.6, maxLife: 0.6, color: '#60a0e0', size: 5
+      });
+    }
+    return;
+  }
+  // Shotgun heavy: axe swing with knockback
+  if (player.char === 1) {
+    const range = ch.heavyRange;
+    const dmg = ch.heavyDmg;
+    const angle = player.angle;
+    const halfAngle = 0.4;
+    for (const e of enemies) {
+      const ex = e.x - player.x, ey = e.y - player.y;
+      const edist = Math.sqrt(ex * ex + ey * ey) || 1;
+      if (edist > range + e.size) continue;
+      const a = Math.atan2(ey, ex);
+      const diff = Math.abs(a - angle);
+      const normalized = Math.min(diff, Math.PI * 2 - diff);
+      if (normalized > halfAngle) continue;
+      e.hp -= dmg;
+      e.hitFlash = 0.2;
+      const knockDir = angle + Math.PI;
+      e.vx += Math.cos(knockDir) * ch.knockback * 0.8;
+      e.vy += Math.sin(knockDir) * ch.knockback * 0.8;
+    }
+    // Axe swing particles
+    for (let i = 0; i < 12; i++) {
+      const a = angle - halfAngle + (halfAngle * 2 * i) / 11;
+      particles.push({
+        x: player.x + Math.cos(a) * 30, y: player.y + Math.sin(a) * 30,
+        vx: Math.cos(a) * 150, vy: Math.sin(a) * 150,
+        life: 0.3, maxLife: 0.3, color: '#b8860b', size: 6
+      });
+    }
+    screenShake = 10;
+    return;
+  }
+  // Heavy Canon heavy: ground slam — cannon slams into ground, splash circle around player
+  if (player.char === 2) {
+    const range = 100; // splash radius around player
+    const dmg = ch.heavyDmg;
+    // Splash damage in circle around player
+    for (const e of enemies) {
+      const edist = Math.sqrt((e.x - player.x) ** 2 + (e.y - player.y) ** 2);
+      if (edist < range + e.size) {
+        const dmgFactor = 1 - edist / (range + e.size);
+        e.hp -= dmg * dmgFactor;
+        e.hitFlash = 0.2;
+        // Knockback away from player
+        const edx = e.x - player.x, edy = e.y - player.y;
+        const edist2 = Math.sqrt(edx * edx + edy * edy) || 1;
+        e.vx += (edx / edist2) * 200;
+        e.vy += (edy / edist2) * 200;
+      }
+    }
+    // Ground slam shockwave ring
+    for (let i = 0; i < 24; i++) {
+      const a = (Math.PI * 2 * i) / 24;
+      particles.push({
+        x: player.x + Math.cos(a) * range * 0.5,
+        y: player.y + Math.sin(a) * range * 0.5,
+        vx: Math.cos(a) * 100,
+        vy: Math.sin(a) * 100,
+        life: 0.5, maxLife: 0.5, color: '#ff4400', size: 8
+      });
+    }
+    screenShake = 12;
+    return;
+  }
+  hitEnemies(ch.heavyRange, ch.heavyDmg, ch.splash, ch.knockback);
+  screenShake = 6;
+  // Heavy flash
+  for (let i = 0; i < 15; i++) {
+    const a = Math.random() * Math.PI * 2;
+    particles.push({
+      x: player.x, y: player.y,
+      vx: Math.cos(a) * (100 + Math.random() * 200),
+      vy: Math.sin(a) * (100 + Math.random() * 200),
+      life: 0.5, maxLife: 0.5,
+      color: ch.splash ? '#ff6020' : '#ffaa20', size: ch.splash ? 5 : 3
+    });
+  }
+}
+
+function hitEnemies(range, damage, splash, knockback) {
+  const px = player.x + Math.cos(player.angle) * range * 0.5;
+  const py = player.y + Math.sin(player.angle) * range * 0.5;
+  for (const e of enemies) {
+    const dx = e.x - px;
+    const dy = e.y - py;
+    const dist = Math.sqrt(dx * dx + dy * dy);
+    let hit = false;
+    let dmg = damage;
+    if (splash) {
+      // Area damage in front cone
+      const angleToEnemy = Math.atan2(dy, dx);
+      let angleDiff = angleToEnemy - player.angle;
+      while (angleDiff > Math.PI) angleDiff -= Math.PI * 2;
+      while (angleDiff < -Math.PI) angleDiff += Math.PI * 2;
+      if (Math.abs(angleDiff) < 0.6 && dist < range + 30) {
+        hit = true;
+        dmg *= 0.8; // splash slightly less per target
+      }
+    } else {
+      if (dist < range + e.size) hit = true;
+    }
+    if (hit) {
+      e.hp -= dmg;
+      e.hitFlash = 0.15;
+      if (knockback > 0) {
+        const kbAngle = Math.atan2(e.y - player.y, e.x - player.x) || 0;
+        e.x += Math.cos(kbAngle) * knockback;
+        e.y += Math.sin(kbAngle) * knockback;
+      }
+      // Hit particles
+      for (let i = 0; i < 3; i++) {
+        particles.push({
+          x: e.x, y: e.y,
+          vx: (Math.random() - 0.5) * 100, vy: (Math.random() - 0.5) * 100,
+          life: 0.2, maxLife: 0.2, color: '#fff', size: 2
+        });
+      }
+      if (e.hp <= 0) {
+        kills++;
+        steps += 10; // steps earned per kill
+        // Death explosion
+        for (let i = 0; i < 12; i++) {
+          const a = Math.random() * Math.PI * 2;
+          particles.push({
+            x: e.x, y: e.y,
+            vx: Math.cos(a) * (80 + Math.random() * 150),
+            vy: Math.sin(a) * (80 + Math.random() * 150),
+            life: 0.6, maxLife: 0.6,
+            color: e.type === 'slime' ? '#50c050' : '#804020',
+            size: 3 + Math.random() * 3
+          });
+        }
+      }
+    }
+  }
+  // Remove dead enemies
+  enemies = enemies.filter(e => e.hp > 0);
+
+  // Hit boss
+  if (boss && boss.hp > 0) {
+    const bx = boss.x - px;
+    const by = boss.y - py;
+    const bdist = Math.sqrt(bx * bx + by * by);
+    if (splash) {
+      const angleToBoss = Math.atan2(by, bx);
+      let angleDiff = angleToBoss - player.angle;
+      while (angleDiff > Math.PI) angleDiff -= Math.PI * 2;
+      while (angleDiff < -Math.PI) angleDiff += Math.PI * 2;
+      if (Math.abs(angleDiff) < 0.6 && bdist < range + 30) {
+        boss.hp -= dmg * 0.8;
+        boss.hitFlash = 0.15;
+        if (knockback > 0) { boss.x += Math.cos(Math.atan2(by, bx)) * knockback * 0.5; boss.y += Math.sin(Math.atan2(by, bx)) * knockback * 0.5; }
+        for (let i = 0; i < 3; i++) particles.push({ x: boss.x, y: boss.y, vx: (Math.random() - 0.5) * 100, vy: (Math.random() - 0.5) * 100, life: 0.2, maxLife: 0.2, color: '#ff8000', size: 2 });
+      }
+    } else {
+      if (bdist < range + boss.size) {
+        boss.hp -= dmg;
+        boss.hitFlash = 0.15;
+        if (knockback > 0) { boss.x += Math.cos(Math.atan2(by, bx)) * knockback * 0.5; boss.y += Math.sin(Math.atan2(by, bx)) * knockback * 0.5; }
+        for (let i = 0; i < 3; i++) particles.push({ x: boss.x, y: boss.y, vx: (Math.random() - 0.5) * 100, vy: (Math.random() - 0.5) * 100, life: 0.2, maxLife: 0.2, color: '#ff8000', size: 2 });
+      }
+    }
+  }
+}
+
+function update(dt) {
+  if (state !== 'playing' || !player) return;
+
+  // Movement
+  let mx = 0, my = 0;
+  if (keys['KeyW'] || keys['ArrowUp']) my -= 1;
+  if (keys['KeyS'] || keys['ArrowDown']) my += 1;
+  if (keys['KeyA'] || keys['ArrowLeft']) mx -= 1;
+  if (keys['KeyD'] || keys['ArrowRight']) mx += 1;
+  const moving = mx !== 0 || my !== 0;
+  if (moving) {
+    const len = Math.sqrt(mx * mx + my * my) || 1;
+    mx /= len; my /= len;
+    const spd = CHARS[player.char].speed;
+    player.vx = mx * spd;
+    player.vy = my * spd;
+  } else {
+    player.vx *= 0.85;
+    player.vy *= 0.85;
+  }
+
+  // Rolling overrides movement
+  if (player.rolling) {
+    player.rollTimer -= dt;
+    if (player.rollTimer <= 0) {
+      player.rolling = false;
+      player.vx *= 0.3;
+      player.vy *= 0.3;
+    }
+  }
+
+  player.x += player.vx * dt;
+  player.y += player.vy * dt;
+
+  // Infinite world — no boundary clamp
+  // player.x and player.y are unbounded; camera follows
+
+  // Aim at mouse
+  const dx = mouseX - player.x;
+  const dy = mouseY - player.y;
+  player.angle = Math.atan2(dy, dx);
+
+  // iFrames timer
+  if (player.iFrames > 0) player.iFrames -= dt;
+
+  // Cooldowns
+  if (player.lightCooldown > 0) player.lightCooldown -= dt;
+  if (player.heavyCooldown > 0) player.heavyCooldown -= dt;
+
+  // Stamina regen (when not moving, not attacking)
+  const regenRate = CONFIG.stamRegen;
+  player.stam = Math.min(CONFIG.maxStam, player.stam + regenRate * dt);
+
+  // Attack inputs
+  if (keys['KeyQ'] && player.lightCooldown <= 0) {
+    lightAttack();
+    player.lightCooldown = CHARS[player.char].atkSpeed * 1.5;
+  }
+  if (keys['KeyE'] && player.heavyCooldown <= 0) {
+    heavyAttack();
+    player.heavyCooldown = CHARS[player.char].atkSpeed * 2.5;
+  }
+  if (keys['Space']) roll();
+
+  // Camera follow — player centered on screen
+  if (player) {
+    const W = canvas.width, H = canvas.height;
+    camTargetX = player.x - W / 2;
+    camTargetY = player.y - H / 2;
+    camX += (camTargetX - camX) * 0.08; // smooth lerp
+    camY += (camTargetY - camY) * 0.08;
+  }
+
+  // Steps progress: 1 step per 5px of player movement
+  if (player) {
+    const dx = player.x - prevPlayerX;
+    const dy = player.y - prevPlayerY;
+    const dist = Math.sqrt(dx * dx + dy * dy);
+    steps += dist / 5;
+    prevPlayerX = player.x;
+    prevPlayerY = player.y;
+  }
+  prevSteps = Math.floor(steps);
+
+  // Mouse attack (left click = light, right click = heavy via E)
+  if (mouseDown && player.lightCooldown <= 0) {
+    lightAttack();
+    player.lightCooldown = CHARS[player.char].atkSpeed * 1.5;
+  }
+
+  // Check level transition
+  const lvl = getLevel(steps);
+  if (lvl > getLevel(prevSteps)) {
+    state = 'transitioning';
+    levelTrans.classList.add('show');
+    levelTrans.textContent = `LEVEL ${lvl + 1}: ${CONFIG.levels[lvl].name}`;
+    setTimeout(() => { levelTrans.classList.remove('show'); state = 'playing'; wave++; spawnWave(); }, 1500);
+  }
+
+  // Death at 10k steps — summon boss
+  if (steps >= CONFIG.deathSteps && !boss) {
+    boss = {
+      x: canvas.width / 2, y: canvas.height / 2,
+      hp: 100, maxHp: 100,
+      size: 30, angle: 0,
+      phase: 'windup',
+      phaseTimer: 0,
+      currentAttack: null,
+      attackTimer: 0,
+      hitFlash: 0,
+      telegraphTimer: 0,
+      pullAngle: 0,
+      moveTimer: 0,
+      moveAngle: Math.random() * Math.PI * 2,
+      speed: 70, // floats toward player
+    };
+    // Boss arrival particles
+    for (let i = 0; i < 30; i++) {
+      const a = Math.random() * Math.PI * 2;
+      particles.push({ x: boss.x, y: boss.y, vx: Math.cos(a) * 150, vy: Math.sin(a) * 150, life: 1, maxLife: 1, color: '#800000', size: 4 });
+    }
+    screenShake = 10;
+  }
+
+  // Update boss
+  if (boss) {
+    boss.phaseTimer -= dt;
+    boss.attackTimer -= dt;
+    if (boss.hitFlash > 0) boss.hitFlash -= dt;
+
+    // Float toward player always
+    if (player) {
+      const bdx = player.x - boss.x;
+      const bdy = player.y - boss.y;
+      const bdist = Math.sqrt(bdx * bdx + bdy * bdy) || 1;
+      if (bdist > 90) {
+        boss.x += (bdx / bdist) * boss.speed * dt;
+        boss.y += (bdy / bdist) * boss.speed * dt;
+      } else if (bdist < 60) {
+        boss.x -= (bdx / bdist) * boss.speed * 0.5 * dt; // orbit out
+        boss.y -= (bdy / bdist) * boss.speed * 0.5 * dt;
+      }
+      boss.angle = Math.atan2(bdy, bdx);
+    }
+
+    // Bullet collision with boss
+    for (const b of projectiles) {
+      const bdist = Math.sqrt((b.x - boss.x) ** 2 + (b.y - boss.y) ** 2);
+      if (bdist < boss.size + b.size) {
+        boss.hp -= b.damage;
+        boss.hitFlash = 0.15;
+        b.life = 0;
+      }
+    }
+
+    if (boss.phase === 'windup') {
+      boss.telegraphTimer -= dt;
+      if (boss.telegraphTimer <= 0) {
+        const attacks = ['wide', 'overhead', 'forcepull'];
+        boss.currentAttack = attacks[Math.floor(Math.random() * attacks.length)];
+        boss.phase = 'attack';
+        boss.attackTimer = boss.currentAttack === 'overhead' ? 0.4 : boss.currentAttack === 'forcepull' ? 0.5 : 0.8;
+        boss.telegraphTimer = 0;
+      }
+    } else if (boss.phase === 'attack') {
+      boss.attackTimer -= dt;
+      // Deal damage during attack window
+      const aRad = boss.angle || 0;
+      if (player && player.iFrames <= 0) {
+        const pdx = player.x - boss.x;
+        const pdy = player.y - boss.y;
+        const pdist = Math.sqrt(pdx * pdx + pdy * pdy);
+        let hit = false;
+        let dmg = 12;
+        if (boss.currentAttack === 'wide') {
+          // Wide scythe arc in front
+          const angleDiff = Math.atan2(pdy, pdx) - aRad;
+          let norm = angleDiff;
+          while (norm > Math.PI) norm -= Math.PI * 2;
+          while (norm < -Math.PI) norm += Math.PI * 2;
+          if (Math.abs(norm) < 0.7 && pdist < 100) hit = true;
+          dmg = 18; // big damage for wide
+        } else if (boss.currentAttack === 'overhead') {
+          // Overhead smash AOE — circular
+          if (pdist < 80) hit = true;
+          dmg = 22; // AOE slam
+          screenShake = 8;
+        } else if (boss.currentAttack === 'forcepull') {
+          // Pulls player toward boss, dodge window = roll away
+          const pullDist = 3;
+          boss.pullAngle = Math.atan2(pdy, pdx);
+          player.x += Math.cos(boss.pullAngle) * pullDist * 60 * dt;
+          player.y += Math.sin(boss.pullAngle) * pullDist * 60 * dt;
+          if (pdist < 60) hit = true;
+          dmg = 10;
+        }
+        if (hit) {
+          player.hp -= dmg;
+          player.iFrames = 0.3;
+          screenShake = 6;
+          for (let i = 0; i < 5; i++) {
+            particles.push({ x: player.x, y: player.y, vx: (Math.random() - 0.5) * 150, vy: (Math.random() - 0.5) * 150, life: 0.3, maxLife: 0.3, color: '#ff2020', size: 3 });
+          }
+        }
+      }
+      if (boss.attackTimer <= 0) {
+        boss.phase = 'cooldown';
+        boss.phaseTimer = 0.8;
+      }
+    } else if (boss.phase === 'cooldown') {
+      boss.phaseTimer -= dt;
+      if (boss.phaseTimer <= 0) {
+        boss.phase = 'windup';
+        boss.telegraphTimer = 0.6; // telegraph before next attack
+        boss.angle = Math.atan2(player.y - boss.y, player.x - boss.x);
+      }
+    }
+
+    // Boss death
+    if (boss.hp <= 0) {
+      kills += 50;
+      steps = 0; // reset — Death defeated, walk again
+      wave++;
+      for (let i = 0; i < 40; i++) {
+        const a = Math.random() * Math.PI * 2;
+        particles.push({ x: boss.x, y: boss.y, vx: Math.cos(a) * 200, vy: Math.sin(a) * 200, life: 1, maxLife: 1, color: '#ff8000', size: 5 });
+      }
+      screenShake = 12;
+      boss = null;
+    }
+  }
+
+  // Check level transition
+
+  // Update enemies
+  for (const e of enemies) {
+    // Move toward player
+    const exd = player.x - e.x;
+    const eyd = player.y - e.y;
+    const edist = Math.sqrt(exd * exd + eyd * eyd) || 1;
+    const chaseDist = 400;
+    if (edist < chaseDist) {
+      const spd = e.speed * dt;
+      e.x += (exd / edist) * spd;
+      e.y += (eyd / edist) * spd;
+    }
+    // Flailing zombie behavior
+    if (e.type === 'zombie') {
+      e.flailTimer -= dt;
+      if (e.flailTimer <= 0) {
+        e.flailing = !e.flailing;
+        e.flailTimer = 0.5 + Math.random() * 0.5;
+      }
+    }
+    // Damage player on contact
+    const pdist = Math.sqrt((e.x - player.x) ** 2 + (e.y - player.y) ** 2);
+    if (pdist < e.size + 12 && player.iFrames <= 0) {
+      player.hp -= e.damage * 0.5; // reduced contact damage vs full hit
+      player.iFrames = 0.3;
+      screenShake = 4;
+      // Damage particles
+      for (let i = 0; i < 5; i++) {
+        particles.push({
+          x: player.x, y: player.y,
+          vx: (Math.random() - 0.5) * 150, vy: (Math.random() - 0.5) * 150,
+          life: 0.3, maxLife: 0.3, color: '#ff2020', size: 3
+        });
+      }
+    }
+    if (e.hitFlash > 0) e.hitFlash -= dt;
+  }
+
+  // Check player death
+  if (player.hp <= 0) {
+    die();
+    return;
+  }
+
+  // Update particles
+  for (const p of particles) {
+    p.x += p.vx * dt;
+    p.y += p.vy * dt;
+    p.life -= dt;
+    p.vx *= 0.95;
+    p.vy *= 0.95;
+  }
+  particles = particles.filter(p => p.life > 0);
+
+  // Update bullets (Twin Guns) — move, collide with enemies, remove
+  for (const b of projectiles) {
+    b.x += b.vx * dt;
+    b.y += b.vy * dt;
+    b.life -= dt;
+    for (const e of enemies) {
+      const bdist = Math.sqrt((b.x - e.x) ** 2 + (b.y - e.y) ** 2);
+      if (bdist < e.size + b.size) {
+        e.hp -= b.damage;
+        e.hitFlash = 0.1;
+        b.life = 0;
+      }
+    }
+  }
+  projectiles = projectiles.filter(b => b.life > 0);
+
+  // Screen shake decay
+  if (screenShake > 0) screenShake *= 0.9;
+  if (screenShake < 0.5) screenShake = 0;
+
+  // Update HUD
+  hudSteps.textContent = Math.floor(steps);
+  hudLevel.textContent = lvl + 1;
+  hudHp.textContent = Math.max(0, Math.ceil(player.hp));
+  hudStam.textContent = Math.floor(player.stam);
+  stamFill.style.width = (player.stam / CONFIG.maxStam * 100) + '%';
+  hudKills.textContent = kills;
+  hudWave.textContent = wave;
+}
+
+function die() {
+  state = 'dead';
+  deathScreen.classList.add('show');
+  deathStats.textContent = `Steps: ${Math.floor(steps)} | Kills: ${kills} | Wave: ${wave} | Level: ${getLevel(steps) + 1}`;
+  hud.style.display = 'none';
+  controls.style.display = 'none';
+}
+
+// ====== RENDER ======
+function render() {
+  const W = canvas.width, H = canvas.height;
+  ctx.clearRect(0, 0, W, H);
+
+  // Background (screen-relative)
+  const lvlIdx = player ? getLevel(steps) : 0;
+  const lvl = CONFIG.levels[lvlIdx];
+  ctx.fillStyle = '#00ff00'; // DEBUG: bright green to verify canvas rendering
+  ctx.fillRect(0, 0, W, H);
+
+  // World camera — player centered, ground scrolls
+  ctx.save();
+  ctx.translate(-camX, -camY);
+
+  // Terrain details based on level
+  drawTerrain(lvl, W, H);
+
+  if (state === 'playing' || state === 'transitioning' || state === 'dead') {
+    // Enemies
+    for (const e of enemies) {
+      // Hit flash
+      if (e.hitFlash > 0) {
+        ctx.fillStyle = '#fff';
+      } else {
+        ctx.fillStyle = e.color;
+      }
+      ctx.beginPath();
+      ctx.arc(e.x, e.y, e.size, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Zombie flailing arms
+      if (e.type === 'zombie') {
+        ctx.strokeStyle = e.hitFlash > 0 ? '#fff' : '#603010';
+        ctx.lineWidth = 3;
+        const armAngle = e.flailing ? Date.now() * 0.01 : 0;
+        ctx.beginPath();
+        ctx.moveTo(e.x - e.size * 0.5, e.y);
+        ctx.lineTo(e.x - e.size * 1.5 + Math.sin(armAngle) * 10, e.y - e.size);
+        ctx.moveTo(e.x + e.size * 0.5, e.y);
+        ctx.lineTo(e.x + e.size * 1.5 - Math.sin(armAngle) * 10, e.y - e.size);
+        ctx.stroke();
+      }
+
+      // Slime bounce
+      if (e.type === 'slime') {
+        ctx.fillStyle = e.hitFlash > 0 ? '#fff' : '#70e070';
+        ctx.beginPath();
+        ctx.ellipse(e.x, e.y + e.size * 0.3, e.size * 0.8, e.size * 0.4, 0, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      // HP bar (enemies + boss)
+      if (e.hp < e.maxHp) {
+        ctx.fillStyle = '#333';
+        ctx.fillRect(e.x - 15, e.y - e.size - 8, 30, 4);
+        ctx.fillStyle = e.hp / e.maxHp > 0.5 ? '#40c040' : '#c04040';
+        ctx.fillRect(e.x - 15, e.y - e.size - 8, 30 * (e.hp / e.maxHp), 4);
+      }
+    }
+
+    // ====== BOSS: DEATH ======
+    if (boss) {
+      const b = boss;
+      // Telegraph glow before attack
+      if (b.phase === 'windup' && b.telegraphTimer > 0) {
+        ctx.fillStyle = 'rgba(255,0,0,0.12)';
+        ctx.beginPath();
+        ctx.arc(b.x, b.y, b.size + b.telegraphTimer * 60, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      // Body
+      ctx.fillStyle = b.hitFlash > 0 ? '#fff' : '#d44020';
+      ctx.beginPath();
+      ctx.arc(b.x, b.y, b.size, 0, Math.PI * 2);
+      ctx.fill();
+      // Scythe glow
+      ctx.strokeStyle = b.phase === 'windup' ? '#ff6040' : '#d44020';
+      ctx.lineWidth = 4;
+      ctx.beginPath();
+      ctx.moveTo(b.x, b.y);
+      ctx.lineTo(b.x + Math.cos(b.angle) * b.size * 2.2, b.y + Math.sin(b.angle) * b.size * 2.2);
+      ctx.stroke();
+      // HP bar
+      ctx.fillStyle = '#333';
+      ctx.fillRect(b.x - 40, b.y - b.size - 12, 80, 6);
+      ctx.fillStyle = b.hp > 50 ? '#c04020' : '#ff2020';
+      ctx.fillRect(b.x - 40, b.y - b.size - 12, 80 * (b.hp / b.maxHp), 6);
+
+      // Boss label
+      ctx.fillStyle = '#d4a040';
+      ctx.font = '11px Courier New';
+      ctx.textAlign = 'center';
+      ctx.fillText('DEATH', b.x, b.y + b.size + 14);
+    }
+
+    // ====== BULLETS (Twin Guns) ======
+    for (const b of projectiles) {
+      const bx = b.x - camX, by = b.y - camY;
+      if (bx < -20 || bx > W + 20 || by < -20 || by > H + 20) continue;
+      if (b.charge) {
+        // Charge glow: larger, brighter, pulsing
+        const pulse = 0.8 + 0.2 * Math.sin(Date.now() * 0.01);
+        ctx.fillStyle = `rgba(96,160,224,${0.3 * pulse})`;
+        ctx.beginPath();
+        ctx.arc(bx, by, b.size * 2, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = '#60a0e0';
+        ctx.beginPath();
+        ctx.arc(bx, by, b.size * 1.3, 0, Math.PI * 2);
+        ctx.fill();
+      } else if (b.shotgun) {
+        // Shotgun pellet: small, orange, fast fade
+        ctx.fillStyle = '#ff8800';
+        ctx.beginPath();
+        ctx.arc(bx, by, b.size, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = `rgba(255,136,0,${b.life / b.maxLife * 0.5})`;
+        ctx.beginPath();
+        ctx.arc(bx, by, b.size * 1.5, 0, Math.PI * 2);
+        ctx.fill();
+      } else {
+        // Bullet body
+        ctx.fillStyle = '#ffcc40';
+        ctx.beginPath();
+        ctx.arc(bx, by, b.size, 0, Math.PI * 2);
+        ctx.fill();
+        // Trail
+        ctx.fillStyle = 'rgba(255,200,60,0.3)';
+        ctx.beginPath();
+        ctx.arc(bx - b.vx * 0.02, by - b.vy * 0.02, b.size * 0.7, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+
+    // Player
+
+    // Player
+    if (player) {
+      // i-frame flash
+      const visible = player.iFrames <= 0 || Math.floor(Date.now() * 0.02) % 2 === 0;
+      if (visible) {
+        // Body
+        ctx.fillStyle = CHARS[player.char].color;
+        ctx.beginPath();
+        ctx.arc(player.x, player.y, 14, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Weapon direction
+        ctx.strokeStyle = '#ddd';
+        ctx.lineWidth = 4;
+        ctx.beginPath();
+        ctx.moveTo(player.x + Math.cos(player.angle) * 10, player.y + Math.sin(player.angle) * 10);
+        ctx.lineTo(player.x + Math.cos(player.angle) * 28, player.y + Math.sin(player.angle) * 28);
+        ctx.stroke();
+
+        // Char indicator
+        ctx.fillStyle = '#fff';
+        ctx.font = '10px Courier New';
+        ctx.textAlign = 'center';
+        const symbols = ['🔫', '🔫⚔️', '💥'];
+        ctx.fillText(symbols[player.char], player.x, player.y + 4);
+      }
+
+      // Rolling trail
+      if (player.rolling) {
+        ctx.fillStyle = 'rgba(212,160,64,0.3)';
+        ctx.beginPath();
+        ctx.arc(player.x, player.y, 18, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+
+    // Particles
+    for (const p of particles) {
+      const alpha = p.life / p.maxLife;
+      ctx.fillStyle = p.color;
+      ctx.globalAlpha = alpha;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.size * alpha, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+  }
+  ctx.restore(); // end camera transform
+
+  // Screen shake
+  if (screenShake > 0.5) {
+    ctx.translate((Math.random() - 0.5) * screenShake, (Math.random() - 0.5) * screenShake);
+  }
+
+  // Vignette
+  const vig = ctx.createRadialGradient(W / 2, H / 2, W * 0.3, W / 2, H / 2, W * 0.7);
+  vig.addColorStop(0, 'rgba(0,0,0,0)');
+  vig.addColorStop(1, 'rgba(0,0,0,0.5)');
+  ctx.fillStyle = vig;
+  ctx.fillRect(0, 0, W, H);
+}
+
+function drawTerrain(lvl, W, H) {
+  const t = lvl.terrain;
+  const cx = camX; // camera x for scrolling
+  const cy = camY; // camera y for scrolling
+
+  // Ground fill (visible area) — drawn FIRST so features render on top
+  ctx.fillStyle = lvl.color || '#e8d5a0';
+  ctx.fillRect(0, 0, W, H);
+
+  // Determine visible chunk range
+  const visRadius = Math.ceil(Math.max(W, H) / CHUNK_SIZE) + 1;
+  const pChunk = getChunkCoords(player ? player.x : 0, player ? player.y : 0);
+  const genRange = getChunkRange(player ? player.x : 0, player ? player.y : 0, CHUNK_GEN_RADIUS);
+  const visMinCx = pChunk.cx - visRadius;
+  const visMaxCx = pChunk.cx + visRadius;
+  const visMinCy = pChunk.cy - visRadius;
+  const visMaxCy = pChunk.cy + visRadius;
+
+  // Generate chunks in visible range + gen radius
+  for (let gx = genRange.minCx; gx <= genRange.maxCx; gx++) {
+    for (let gy = genRange.minCy; gy <= genRange.maxCy; gy++) {
+      generateChunk(gx, gy, CONFIG.levels.indexOf(lvl));
+    }
+  }
+
+  // Render visible chunks
+  for (let vx = visMinCx; vx <= visMaxCx; vx++) {
+    for (let vy = visMinCy; vy <= visMaxCy; vy++) {
+      const ck = chunkKey(vx, vy);
+      const chunk = chunks[ck];
+      if (!chunk) continue;
+      for (const f of chunk.features) {
+        const sx = f.x - cx; // screen x (world - camera)
+        const sy = f.y - cy; // screen y (world - camera)
+        if (sx < -100 || sx > W + 100 || sy < -100 || sy > H + 100) continue;
+
+        if (f.type === 'cactus') {
+          ctx.fillStyle = '#2a5a10';
+          ctx.fillRect(sx - 3, sy - f.h, 6, f.h);
+          ctx.fillRect(sx - 10, sy - f.h + 4, 10, 4);
+          ctx.fillRect(sx - 15, sy - f.h + 8, 8, 4);
+        } else if (f.type === 'gravestone') {
+          ctx.fillStyle = '#6a5a3a';
+          ctx.fillRect(sx - 2, sy - f.h, 4, f.h);
+          ctx.fillRect(sx - 8, sy - f.h - 4, 16, 6);
+        } else if (f.type === 'tree') {
+          ctx.fillStyle = '#3a2a10';
+          ctx.fillRect(sx - 3, sy - f.h, 6, f.h);
+          ctx.fillStyle = '#1a5a10';
+          ctx.beginPath();
+          ctx.moveTo(sx, sy - f.h - 25);
+          ctx.lineTo(sx - 18, sy - f.h + 5);
+          ctx.lineTo(sx + 18, sy - f.h + 5);
+          ctx.fill();
+          ctx.fillStyle = '#3a2a10';
+        } else if (f.type === 'mesa') {
+          ctx.fillStyle = '#8a7a50';
+          ctx.beginPath();
+          ctx.moveTo(sx - f.w / 2, sy);
+          ctx.lineTo(sx, sy - f.h);
+          ctx.lineTo(sx + f.w / 2, sy);
+          ctx.fill();
+        } else if (f.type === 'dune') {
+          ctx.fillStyle = 'rgba(212,184,112,0.5)';
+          ctx.beginPath();
+          ctx.ellipse(sx, sy, f.r, f.r * 0.3, 0, 0, Math.PI * 2);
+          ctx.fill();
+        } else if (f.type === 'geyser') {
+          ctx.fillStyle = '#4a3020';
+          ctx.fillRect(sx - 8, sy - 15, 16, 15);
+          if (f.active) {
+            const gt = Date.now() * 0.002;
+            if (Math.sin(gt + f.x) > 0.5) {
+              ctx.fillStyle = 'rgba(200,200,200,0.4)';
+              ctx.beginPath();
+              ctx.arc(sx, sy - 15 - Math.sin(gt + f.x) * 10, 5 + Math.sin(gt + f.x) * 3, 0, Math.PI * 2);
+              ctx.fill();
+              ctx.fillStyle = '#4a3020';
+            }
+          }
+        } else if (f.type === 'lava_crack') {
+          ctx.strokeStyle = '#ff4000';
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.moveTo(sx - 20, sy);
+          ctx.lineTo(sx, sy - 10);
+          ctx.lineTo(sx + 15, sy - 5);
+          ctx.lineTo(sx + 25, sy - 15);
+          ctx.stroke();
+        } else if (f.type === 'tumbleweed') {
+          const twTime = Date.now() * 0.0003 + f.drift * 100;
+          const twx = sx + Math.sin(twTime * 0.02 + f.drift * 50) * 30;
+          const twy = sy + Math.cos(twTime * 0.015 + f.drift * 40) * 20;
+          ctx.fillStyle = '#8a6a3a';
+          ctx.beginPath();
+          ctx.arc(twx, twy, f.r, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.strokeStyle = '#6a4a20';
+          ctx.lineWidth = 1;
+          ctx.beginPath();
+          ctx.moveTo(twx, twy);
+          ctx.lineTo(twx + Math.sin(twTime * 0.01 + f.drift) * 4, twy - f.r);
+          ctx.stroke();
+        } else if (f.type === 'canyon_edge') {
+          ctx.fillStyle = '#2a4a1a';
+          ctx.beginPath();
+          ctx.moveTo(sx - 40, sy + 10);
+          ctx.lineTo(sx, sy - 70);
+          ctx.lineTo(sx + 40, sy + 10);
+          ctx.fill();
+        }
+      }
+    }
+  }
+}
+
+function loop(timestamp) {
+  const dt = Math.min((timestamp - lastTime) / 1000, 0.05);
+  lastTime = timestamp;
+
+  if (state === 'playing') {
+    update(dt);
+  } else if (state === 'dead') {
+    // Still render particles, slow decay
+    for (const p of particles) {
+      p.x += p.vx * dt;
+      p.y += p.vy * dt;
+      p.life -= dt;
+    }
+    particles = particles.filter(p => p.life > 0);
+  }
+
+  render();
+  requestAnimationFrame(loop);
+}
+
+lastTime = performance.now();
+requestAnimationFrame(loop);

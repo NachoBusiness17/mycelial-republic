@@ -1,0 +1,67 @@
+{
+  "lane": "grokbot-metered-reality",
+  "division": "A",
+  "ok": true,
+  "note": "Grok metering verified to the tick: cost_in_usd_ticks resolves at 1e-10 USD exactly (delta 0 to 12 decimals) on both on-disk datapoints against docs.x.ai list rates fetched 2026-10-03; today's measured grok-4.7 burn is $0.143946 over 3 asks with cost_usd banked null on every row (carrier metering defect, reasoning tokens dropped); 24/7 at measured pace extrapolates to ~$34.89/day ~$1,062/mo; the X-premium-tiers half of the head has zero estate bytes (grep corpus/steal: 2 thin files; memory/corpus: incidental Gutenberg prose only) so tiers stand on web-only evidence Basic $3 / Premium $8 / Premium+ $40 per month, unverified-primary.",
+  "rows": [
+    {
+      "law": "grok-tick-is-pico-usd",
+      "claim": "xAI's cost_in_usd_ticks field resolves at exactly 1e-10 USD per tick: ticks*1e-10 equals list-rate arithmetic (prompt minus cached at $2/M, cached at per-model $0.50/M grok-4.7 or $0.30/M grok-4.5, completion plus reasoning at $6/M) to all 12 displayed decimals on both on-disk datapoints, matching the vendor page docs.x.ai/docs/models fetched 2026-10-03.",
+      "quote": "\"num_sources_used\": 0, \"cost_in_usd_ticks\": 242180000}",
+      "source": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/GROK47_LUNCHEON_INTEL_20260929.md",
+      "steal": "One sitting: append the resolved rate card (1e-10 USD/tick, per-model cached rates, 200k long-context doubling) as memory/runs/xai_grok/PRICING.md so no seat re-derives it from raw ticks.",
+      "falsifier": "A future xAI run whose ticks*1e-10 misses list-rate arithmetic by more than token-accounting rounding.",
+      "leverage": "high"
+    },
+    {
+      "law": "grok-carrier-banks-blind",
+      "claim": "The funded grok-4.7 carrier banks cost_usd as null and drops completion_tokens_details.reasoning_tokens entirely, so memory/runs/xai_grok/usage.jsonl cannot price its own burn: all 3 rows on 2026-10-03 are cost_usd null while the true list-rate burn was $0.143946, violating the driving-ladder law that every paid dispatch banks its burn.",
+      "quote": "\"cost_usd\": None, \"ok\": bool(content)})",
+      "source": "C:/Users/foste/Documents/projects/local_sovereign_agent/tools/grok_burn.py",
+      "steal": "One sitting: patch tools/grok_burn.py _bank (lines 162-165) to bank cost_usd = usage.cost_in_usd_ticks * 1e-10 and append reasoning_tokens from completion_tokens_details on every fire.",
+      "falsifier": "A non-null cost_usd row in memory/runs/xai_grok/usage.jsonl produced by the current unpatched carrier bytes.",
+      "leverage": "high"
+    },
+    {
+      "law": "grok-24-7-is-a-thousand-dollar-seat",
+      "claim": "At the estate's measured grok-4.7 pace ($0.231/answer, 646s/498s per answer, reasoning tokens bill as output), a 24/7 adversarial-review bot extrapolates to 151 answers/day = $34.89/day = $1,062/mo: arithmetic on measured numbers, not a measured 24/7 run, and roughly 7,400x today's actual episodic burn of $0.143946.",
+      "quote": "SLOW (646s/498s per answer) and MOST expensive at $0.231/answer because reasoning tokens bill as output (V9 law)",
+      "source": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/model_garden/PRIORS.md",
+      "steal": "One sitting: write the $0.231/answer x cadence price into the budget field of any ask dir proposing an always-on Grok surface before it can be armed; landing spot queue/ ask.json files.",
+      "falsifier": "A measured 30-day always-on grok-4.7 run metering under $300 total at the same cadence.",
+      "leverage": "high"
+    },
+    {
+      "law": "x-premium-half-is-unbanked",
+      "claim": "The X-premium-tiers half of the metered-reality head has zero estate bytes: corpus/steal carries 2 thin grok/xai mentions and memory/corpus only incidental Gutenberg prose for premium, so the tier picture (Basic $3 / Premium $8 / Premium+ $40 per month, Grok bundled in higher tiers) stands solely on web-fetched 2026-10-03 aggregator summaries, unverified-primary.",
+      "quote": "memory/live_from_grok.md is a telemetry stub, never a source.",
+      "source": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/GROK_LANE_PACKET_20260925.md",
+      "steal": "One sitting: if a Grok-on-X bot is ever proposed, fetch X pricing and API tier pages primary and file the receipt before arming; landing spot watch/inbox/ receipt plus memory/rib/.",
+      "falsifier": "An estate file naming X Premium tier prices backed by a primary-source receipt from x.com or help.x.com.",
+      "leverage": "medium"
+    },
+    {
+      "law": "grok-long-context-cliff-is-armed",
+      "claim": "grok-4.7 input doubles to $4/M and output to $12/M once a prompt reaches 200k tokens (docs.x.ai fetched 2026-10-03), and today's largest ask already carried 53,172 prompt tokens (27% of the cliff) while the carrier caps evidence by characters (150,000 chars), not tokens, so nothing in the path sees the cliff coming.",
+      "quote": "\"ts\": \"2026-10-03T13:28Z\", \"id\": \"grok47_ask3\", \"model\": \"grok-4.7\", \"prompt_tokens\": 53172",
+      "source": "C:/Users/foste/Documents/projects/local_sovereign_agent/memory/runs/xai_grok/usage.jsonl",
+      "steal": "One sitting: add a pre-flight token count to tools/grok_burn.py _read_evidence that hard-fails asks projected over 150k prompt tokens instead of capping by characters.",
+      "falsifier": "A grok-4.7 receipt at or above 200k prompt tokens whose ticks*1e-10 matches base-rate rather than doubled-rate arithmetic.",
+      "leverage": "medium"
+    }
+  ],
+  "checks": [
+    {
+      "command": ".venv/Scripts/python.exe -m pytest tests/test_cost_ledger.py tests/test_cost_truth.py -q (the estate's own metering gate)",
+      "exit": 0,
+      "evidence": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/rung/lanes/grokbot-metered-reality.check.txt"
+    },
+    {
+      "command": ".venv/Scripts/python.exe C:/Users/foste/AppData/Local/Temp/grokbot_metered_check.py (tick-arithmetic parser over both ledger datapoints; run twice, second run with per-model cached rates: both datapoints EXACT, CHECK PASS)",
+      "exit": 0,
+      "evidence": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/rung/lanes/grokbot-metered-reality.check.txt"
+    }
+  ],
+  "decision_changed": "grok-4.7 metering patch gates any always-on Grok bot decision: the driving-ladder's every-paid-dispatch-banks-its-burn law is unimplemented on the xAI lane (cost_usd null, reasoning tokens dropped in all of today's rows), and the measured-pace price of ~$1,062/mo is now the number any 24/7 Grok proposal must beat or explicitly afford.",
+  "artifact": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/rung/lanes/grokbot-metered-reality.json"
+}

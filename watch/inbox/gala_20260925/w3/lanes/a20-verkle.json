@@ -1,0 +1,77 @@
+{
+  "lane": "a20-verkle",
+  "division": "A",
+  "ok": true,
+  "note": "HEAD TESTIMONY verified. pytest tests/test_verkle_audit.py: 5 passed, exit 0, 1.82s. The pre-existing verkle drift failure named for lane a14 (ghost suite: test_probe_carries_real_verkle_proof, tip 2fcda535 vs a3daab3e, receipted corpus/steal/ZCODE_RATCHET_WAVE2_20260925.md lines 108-113) is NOT present in my suite. The 2 pre-existing failures claimed in the head are dashboard-HTML pin drift in test_desk_baseline_probe.py (\">Verkle artifacts<\" + btnDaysCopyKnot), also not in my suite; left as receipted. Repair receipt located: ZCODE_RATCHET_WAVE2_20260925.md section 'VERKLE TIP REPAIRED + TORN-WRITE HARDENING' (operator GO'd), matching the head claim: chain sound over 9,823 leaves, stale tip repaired metadata-only, _write_tip_atomic landed in verkle_knot.py + usage_digest.py. Estate grep 'verkle': corpus/steal/ 14 hits, memory/corpus/ 107 hits (121 total). All 8 quote substrings grep -F verified count >= 1 (a20-verkle.quotes.txt). No em-dashes in filed text.",
+  "rows": [
+    {
+      "law": "hash-chain seal: byte equality against a recomputed root is the capability proof",
+      "claim": "prove_latest returns a verified O(log n) reconstruction only when the persisted tip agrees with the chain; any tampered leaf flips the recomputed merkle root and verification returns False.",
+      "quote": "Any tampered leaf -> root mismatch -> False.",
+      "source": "C:/Users/foste/Documents/projects/local_sovereign_agent/mag/verkle_knot.py",
+      "steal": "The artifact vouches for itself with zero infrastructure: one digest comparison gates the whole estate write path, so tamper-evidence costs O(n) recompute per append, not an auth server.",
+      "falsifier": "Craft a leaf edit that keeps the recomputed root equal to the committed root while prove() still returns verified=true for a membership that does not exist.",
+      "leverage": "high"
+    },
+    {
+      "law": "atomic pointer writes: a killed write must never leave half a truth",
+      "claim": "The 2026-09-25 hardening replaced plain TIP.write_text with _write_tip_atomic (tmp + os.replace) in verkle_knot.py and usage_digest.py because a torn tip write froze every chain append via the integrity gate.",
+      "quote": "# integrity gate; _write_tip_atomic (tmp + os.replace) closes that window.",
+      "source": "C:/Users/foste/Documents/projects/local_sovereign_agent/mag/verkle_knot.py",
+      "steal": "Durability pattern: expensive artifacts stay immutable, only small pointers get rewritten, and pointer writes go tmp + os.replace under the single-writer lock so a mid-write kill yields either old pointer or new pointer, never a blend.",
+      "falsifier": "On a filesystem where os.replace is not atomic (old NFS, FAT), kill the writer mid-tip and observe _verify_chain_consistent accept a torn tip.",
+      "leverage": "high"
+    },
+    {
+      "law": "repair is gated by proof, not convenience: fix only the proven-stale metadata",
+      "claim": "repair_tip_if_consistent recomputes the root; if the last committed row disagrees with it the repair returns ok=false and writes nothing; only when the chain is proven sound does it rewrite the tip pointer under verkle_lock.",
+      "quote": "Repair only stale tip metadata after proving the chain itself is sound.",
+      "source": "C:/Users/foste/Documents/projects/local_sovereign_agent/mag/verkle_knot.py",
+      "steal": "Anti-guard-creep in a repair function: the repair touches exactly the thing verification proves stale and refuses everything else; no fallback branch was added to soften the gate.",
+      "falsifier": "Hand-corrupt the last row's verkle_root, run repair_tip_if_consistent, and observe any write occur (correct behavior: ok=false, repaired=false, error returned).",
+      "leverage": "high"
+    },
+    {
+      "law": "sacred artifacts get repaired only under operator GO, metadata-only, with a receipt",
+      "claim": "The 09-25 receipt: chain sound (last row root == recomputed merkle root over 9,823 leaves), tip stale two seconds and days behind; repair rewrote only the tip pointer under verkle_lock, ok=true repaired=true, spooky tests moved 4/5 to 5/5, prove_latest verified at index 9822.",
+      "quote": "rewrites ONLY the tip pointer under `verkle_lock`. Result: `ok=true, repaired=true`,",
+      "source": "C:/Users/foste/Documents/projects/local_sovereign_agent/corpus/steal/ZCODE_RATCHET_WAVE2_20260925.md",
+      "steal": "Separate sound-data from stale-pointer: the minimal intervention rewrites the pointer the chain already proves, never the chain. The receipt also models honest forensics: the stale writer identity was unrecoverable and the receipt says so instead of guessing.",
+      "falsifier": "Any contrary artifact showing chain rows themselves were rewritten during the repair voids this row; the receipt's own forensics note flags the writer identity as unrecoverable, so a recovered writer log contradicting the torn-write mechanism would also void it.",
+      "leverage": "high"
+    },
+    {
+      "law": "an integrity gate converts one stale scalar into an estate-wide write freeze; silence must be detectable within a day",
+      "claim": "The stale tip gated every chain append estate-wide (bard weave, ghost folds, usage digests) from 09-22 to 09-25; the chain silently accepted no writes for days and the freeze surfaced only via a test suite, not a monitor.",
+      "quote": "stale tip made **every chain append estate-wide bounce** (bard weave, ghost folds,",
+      "source": "C:/Users/foste/Documents/projects/local_sovereign_agent/corpus/steal/ZCODE_RATCHET_WAVE2_20260925.md",
+      "steal": "Any refuse-on-mismatch gate needs a cheap daily tripwire (verkle-audit --dry, drift patrol) so a freeze is a red row within a day. Forensic discipline from the receipt: photograph the evidence before repairing it, because the repair destroys the evidence.",
+      "falsifier": "Reproduce a stale tip while appends still land (would disprove the gate claim), or show appends succeeding in the 09-22 to 09-25 window.",
+      "leverage": "high"
+    }
+  ],
+  "checks": [
+    {
+      "command": "./.venv/Scripts/python.exe -m pytest tests/test_verkle_audit.py -q",
+      "exit": 0,
+      "evidence": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/w3/lanes/a20-verkle.check.txt"
+    },
+    {
+      "command": "grep -F -c over 8 quote substrings in mag/verkle_knot.py and corpus/steal/ZCODE_RATCHET_WAVE2_20260925.md (all counts >= 1)",
+      "exit": 0,
+      "evidence": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/w3/lanes/a20-verkle.quotes.txt"
+    },
+    {
+      "command": "grep -rn -i verkle corpus/steal/ ; grep -rn -i verkle memory/corpus/ (counts 14 and 107)",
+      "exit": 0,
+      "evidence": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/w3/lanes/a20-verkle.estategrep.txt"
+    }
+  ],
+  "links": [
+    {"vein": "estate grep verkle", "path": "C:/Users/foste/Documents/projects/local_sovereign_agent/corpus/steal/", "hits": 14},
+    {"vein": "estate grep verkle", "path": "C:/Users/foste/Documents/projects/local_sovereign_agent/memory/corpus/", "hits": 107},
+    {"vein": "repair receipt", "path": "C:/Users/foste/Documents/projects/local_sovereign_agent/corpus/steal/ZCODE_RATCHET_WAVE2_20260925.md", "hits": 1}
+  ],
+  "decision_changed": "Decision made: take no chain or tip action from this lane. The tip is already repaired upstream (my 5/5 clean run against the current tip corroborates it) and the 2 test_desk_baseline_probe.py dashboard-pin failures are receipted pre-existing HTML pin drift owned by the desk baseline lane, not the verkle lane. Also refuted the pre-run suspicion that the a14 ghost-suite drift failure would appear here: it does not.",
+  "artifact": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/w3/lanes/a20-verkle.json"
+}

@@ -1,0 +1,121 @@
+# music-cut-standing: raw finish-line command outputs (gala_20260925 build-it-all, lane music-cut-standing, division B)
+
+All commands run 2026-10-03 from the repo root C:/Users/foste/Documents/projects/local_sovereign_agent with the repo venv interpreter. Exit codes are the ones the runs actually returned in this session.
+
+## 1. Workflow gate on the standing workflow (the ask's "saved and gated")
+
+Command: .venv/Scripts/python.exe tools/workflow_gate.py check --script .zcode/workflows/music-cut.dwf.ts
+
+```
+workflow_gate PASS digest=c814e2ebfee7 script=.zcode/workflows/music-cut.dwf.ts
+  ok    G1-multiplicity: Mickey17 gopher fan-out: per-item named actors (agent("x-" + item) inside a fan-out)
+  ok    G2-passoff: interagent communication: an earlier actor's output (text/json/path) feeds a later ask
+  ok    G3-steering: steering: reviewer/reader feedback carried back into a revision ask
+  ok    G4-salvage: incremental report() inside the fan-out (work survives a dead run)
+  ok    G5-deliverable: published deliverable (artifact.markdown/file) plus report-shape return (conclusion:)
+  ok    G6-receipts: durable receipt landing in watch/inbox with a dated stamp
+  ok    G7-laws: no-fabrication and em-dash law carried inside the asks
+WF_GATE_EXIT=0
+```
+
+(First calibration note: before this PASS, the gate tool itself was smoke-run 15/16 on the proven packs - CUT_THE_HUM failed a literal [Chorus] requirement; the gate's lyrics check was widened to hook-class tags ([Chorus]/[Hook]/[Drop]/[Pre-Chorus], The Hum's Drop form the precedent) and the rerun below went 16/16.)
+
+## 2. Form-gate calibration on the proven on-disk packs (must pass the packs that already shipped)
+
+Command: .venv/Scripts/python.exe tools/music_cut_gate.py watch/inbox/music/CUT_SEED_SAVER.md watch/inbox/music/CUT_THE_HUM.md
+
+```
+[PASS] CUT_SEED_SAVER.md#1:header - first line: # CUT: "THE SEED SAVER" - parable cut, playful alliteration, layered
+[PASS] CUT_SEED_SAVER.md#1:style-block - style block chars: 375, BPM named: True
+[PASS] CUT_SEED_SAVER.md#1:lyrics-block - lyrics chars: 1025, verse tag: True, hook-class tag: True
+[PASS] CUT_SEED_SAVER.md#1:layers - Surface/Layer 2/Layer 3 present: True
+[PASS] CUT_SEED_SAVER.md#1:alliteration - alliteration section chars: 397
+[PASS] CUT_SEED_SAVER.md#1:dna - triangulates/dna section chars: 262
+[PASS] CUT_SEED_SAVER.md#1:ascii - non-ascii chars: 0 []
+[PASS] CUT_SEED_SAVER.md#1:dashes - em/en dash count: 0
+[PASS] CUT_THE_HUM.md#1:header - first line: # CUT: "THE HUM" - Chemical Brothers big-beat parable
+[PASS] CUT_THE_HUM.md#1:style-block - style block chars: 420, BPM named: True
+[PASS] CUT_THE_HUM.md#1:lyrics-block - lyrics chars: 1370, verse tag: True, hook-class tag: True
+[PASS] CUT_THE_HUM.md#1:layers - Surface/Layer 2/Layer 3 present: True
+[PASS] CUT_THE_HUM.md#1:alliteration - alliteration section chars: 214
+[PASS] CUT_THE_HUM.md#1:dna - triangulates/dna section chars: 276
+[PASS] CUT_THE_HUM.md#1:ascii - non-ascii chars: 0 []
+[PASS] CUT_THE_HUM.md#1:dashes - em/en dash count: 0
+PACKS: 2
+FAILURES: 0
+MUSIC CUT FORM GATE: PASS
+EXIT_CODE=0
+GATE_EXIT=0
+```
+
+## 3. Test fire, step 1: the style engine, exactly as the workflow runs it
+
+Command: .venv/Scripts/python.exe tools/music_style_profile.py --folder "C:/Users/foste/Desktop/music-ai" --sample 12 --out watch/inbox/buildall/music-cuts/style-profile.json
+
+```
+  1/12  122.0 BPM conf  1.64  rms   -9.9  zcr 0.212  low 0.096  cen 1226  & Down_spotdown.org.mp3
+  2/12   63.0 BPM conf  6.32  rms  -12.8  zcr 0.138  low 0.746  cen 1069  Audacity of Huge_spotdown.org.mp3
+  3/12  126.0 BPM conf 10.11  rms  -10.7  zcr 0.238  low 0.376  cen 1477  D.A.N.C.E. - MSTRKRFT Remix_spotdown.org.mp3
+  4/12   65.0 BPM conf  6.37  rms  -12.8  zcr 0.209  low 0.167  cen 1264  Easy Love_spotdown.org.mp3
+  5/12  117.0 BPM conf  1.14  rms  -12.8  zcr 0.121  low 0.498  cen  865  Genesis_spotdown.org.mp3
+  6/12  129.0 BPM conf  1.61  rms  -10.3  zcr 0.152  low 0.241  cen 1114  Idealistic_spotdown.org.mp3
+  7/12  125.0 BPM conf  4.50  rms  -12.2  zcr 0.105  low 0.681  cen  802  LUNCH_spotdown.org.mp3
+  8/12   67.0 BPM conf  1.06  rms  -13.2  zcr 0.278  low 0.023  cen 1670  NY Excuse - Justice Remi_spotdown.org.mp3
+  9/12  117.0 BPM conf  1.39  rms  -12.1  zcr 0.170  low 0.451  cen 1180  Phantom Pt. II_spotdown.org.mp3
+ 10/12  170.0 BPM conf  1.08  rms  -21.9  zcr 0.141  low 0.015  cen  798  Rez_spotdown.org.mp3
+ 11/12   63.0 BPM conf  1.55  rms  -13.9  zcr 0.194  low 0.106  cen 1178  Star Guitar_spotdown.org.mp3
+ 12/12  132.0 BPM conf  1.32  rms  -11.6  zcr 0.104  low 0.702  cen  913  Tribulations_spotdown.org.mp3
+{"files_total": 110, "sampled": 12, "files_profiled": 12, "files_failed": 0, "bpm_folded_median": 126.0, "bpm_folded_p25": 124.25, "bpm_folded_p75": 130.5, "rms_median": -12.51, "low_share_median": 0.309, "centroid_median": 1146.0, "out": "watch\\inbox\\buildall\\music-cuts\\style-profile.json"}
+PROFILE_EXIT=0
+```
+
+## 4. Test fire, step 2: the CUT pack produced in the new format
+
+The pack at watch/inbox/buildall/music-cuts/filter-disco.md ("THE CARD CRATE", topic: the standing workflow itself, facet: filter-disco) was written by this lane seat executing the workflow's cutter ask (the multi-agent fan-out needs a CreateWorkflow fire by the main session; the deterministic steps run here are the exact commands the .dwf.ts runs, and the cutter ask is executed by this seat). Profile medians carried into the pack DNA: folded BPM 126.0 (band 124.25 to 130.5), RMS -12.51 dBFS, peak 0.0 dBFS, low-share 0.309, centroid 1146 Hz, duration median 269.1 s, zcr fraction 0.161.
+
+Aggregate re-read command and output:
+
+Command: .venv/Scripts/python.exe -c "import json; a=json.load(open('watch/inbox/buildall/music-cuts/style-profile.json'))['aggregate']; print(json.dumps({k:v['median'] for k,v in a.items()})); p=json.load(open('watch/inbox/buildall/music-cuts/style-profile.json')); print('sampled',p['sampled'],'total',p['files_total'],'failed',p['files_failed'])"
+
+```
+{"rms_dbfs": -12.51, "peak_dbfs": 0.0, "zcr": 0.161, "bpm_raw": 119.5, "bpm_folded": 126.0, "low_share": 0.309, "centroid_hz": 1146.0, "duration_s": 269.129}
+sampled 12 total 110 failed 0
+```
+
+## 5. Test fire, step 3: the form gate on the produced pack
+
+Command: .venv/Scripts/python.exe tools/music_cut_gate.py watch/inbox/buildall/music-cuts/filter-disco.md
+
+```
+[PASS] filter-disco.md#1:header - first line: # CUT: "THE CARD CRATE" - parable cut, playful alliteration, filter-di
+[PASS] filter-disco.md#1:style-block - style block chars: 570, BPM named: True
+[PASS] filter-disco.md#1:lyrics-block - lyrics chars: 1355, verse tag: True, hook-class tag: True
+[PASS] filter-disco.md#1:layers - Surface/Layer 2/Layer 3 present: True
+[PASS] filter-disco.md#1:alliteration - alliteration section chars: 421
+[PASS] filter-disco.md#1:dna - triangulates/dna section chars: 312
+[PASS] filter-disco.md#1:ascii - non-ascii chars: 0 []
+[PASS] filter-disco.md#1:dashes - em/en dash count: 0
+PACKS: 1
+FAILURES: 0
+MUSIC CUT FORM GATE: PASS
+EXIT_CODE=0
+GATE_EXIT=0
+```
+
+## 6. Ratchet over changed files (owed: tools/ was touched)
+
+Command: .venv/Scripts/python.exe tools/violation_ratchet.py check --changed
+
+```
+RATCHET check: scope=10 changed files; hits=8; registered=7; NEW=1; expired-exceptions=0
+  NEW 1f683c0f4827f024 except-pass: tools/cialdini_scanner.py:53 - silent except ...: pass
+  GROWTH claim 5f4392509fdf74f1: mag/percolator.py accepted at 580 lines, now 1022 (+442) - re-audit or re-accept by name
+RATCHET: FAIL - run 'baseline-update' ONLY after a human/agent accepts the debt by name.
+RATCHET_EXIT=1
+```
+
+Attribution (verified in-session via git status --porcelain): tools/cialdini_scanner.py is an untracked sibling file (?? in git status), not touched by this lane; mag/percolator.py is a modified sibling file, not touched by this lane. This lane's two files (tools/music_cut_gate.py, tools/music_style_profile.py, both untracked) carry zero ratchet hits: any hit in an untracked file surfaces as NEW, and the only NEW hit is cialdini_scanner.py:53. The exit 1 rides on sibling in-flight files in the shared working tree; baseline-update was NOT run because the debt is not this lane's to accept. Ratchet exit for THIS LANE'S FILES: clean (no NEW, no GROWTH claims on them).
+
+## Scope note: what this test fire is and is not
+
+Ran here (this session, exit codes above): the workflow gate on the .dwf.ts, the style engine on the real folder, the form gate (calibrated on proven packs, then run on the fresh pack), and one cutter-seat execution producing a pack in the new format. Not run here (needs a main-session CreateWorkflow fire, user-approved): the actual multi-agent fan-out (cutter seats per facet in parallel), the song-doctor steering pass, the assembler and artifact publication, and the receipt-filer step inside the run. The .dwf.ts code paths for those mirror the gates and asks executed here; they are proven as commands, not as a live run.

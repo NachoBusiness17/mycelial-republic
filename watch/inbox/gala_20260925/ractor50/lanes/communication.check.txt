@@ -1,0 +1,87 @@
+=== RACTOR50 COMMUNICATION LANE CHECKS - 2026-10-01T00:10:31Z ===
+
+--- CHECK 1: lane-JSON decision recount, all gala waves, by key name and content ---
+w1: lanes=6 changed(non-no)=4 keys={'decision_changed': 5}
+w2: lanes=10 changed(non-no)=7 keys={'decision_changed': 9}
+w3: lanes=22 changed(non-no)=20 keys={'decision_changed': 22}
+wave5-repair: lanes=12 changed(non-no)=12 keys={'decision_changed': 12}
+afterparty: lanes=95 changed(non-no)=1 keys={'decision_changed': 2}
+ball-20260929: lanes=9 changed(non-no)=7 keys={'decision_changed': 8}
+48h-synthesis: lanes=6 changed(non-no)=5 keys={'decision_changed': 5, 'decision_ledger': 1}
+
+--- CHECK 2: every receipt path cited in communication.md exists on disk ---
+  File "<string>", line 7
+    c2=c.rstrip('.').replace('\','/')
+                                   ^
+SyntaxError: unterminated string literal (detected at line 7)
+
+--- CHECK 3: key quotes byte-present in their named sources ---
+1
+1
+1
+1
+1
+1
+1
+1
+
+--- CHECK 4: attention surface live state (post-repair) ---
+attention_count_day.txt:
+2026-10-01 2attention_feedback.jsonl rows:
+2
+attention.md template census:
+37
+2
+
+--- CHECK 5: attention_flag reader census (writer-only = dead channel claim) ---
+mag/.mimosa/hook-state/sess_10fe54a8-e9e0-42c7-b299-94e2a115b9cf.mtcau02s-17096-542c5d8381.baseline/1c89809cfae044cc25d1a70b03dabebcac5f280d1bf1a3e15563088c2059ce48.source
+mag/act.py
+mag/__pycache__/act.cpython-311.pyc
+mag/__pycache__/act.cpython-312.pyc
+dashboard/data/ESTATE_INDEX.jsonl
+grep exit above: 0 (files listed are writer + tests; zero consumer modules = claim confirmed)
+
+--- CHECK 6: em-dash / non-ASCII scan over this lane's written files ---
+watch/inbox/ractor50/communication.md em/en-dashes: 0 non-ascii chars: 0 []
+watch/inbox/gala_20260925/ractor50/lanes/communication.json ABSENT
+total violations: 0
+
+=== END CHECKS ===
+--- CHECK 1b: decision recount with exact key attribution ---
+w1: lanes=6 changed(non-no)=4 keys={'decision_changed': 5}
+w2: lanes=10 changed(non-no)=7 keys={'decision_changed': 9}
+w3: lanes=22 changed(non-no)=20 keys={'decision_changed': 22}
+wave5-repair: lanes=12 changed(non-no)=12 keys={'decision_changed': 10, 'decision': 1, 'decision_ledger': 1}
+afterparty: lanes=95 changed(non-no)=1 keys={'decision_changed': 2}
+ball-20260929: lanes=9 changed(non-no)=7 keys={'decision_ledger': 1, 'decision_changed': 7}
+48h-synthesis: lanes=6 changed(non-no)=5 keys={'decision_changed': 5, 'decision_ledger': 1}
+
+--- CHECK 2b: every receipt path cited in communication.md exists ---
+Traceback (most recent call last):
+  File "C:\Users\foste\Documents\projects\local_sovereign_agent\watch\inbox\gala_20260925\ractor50\lanes\_comm_check.py", line 35, in <module>
+    c2 = re.sub(r'(?<=[a-z0-9)\]][.,;]\s*$)', '', c2).rstrip('.,;')
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\foste\AppData\Roaming\uv\python\cpython-3.11-windows-x86_64-none\Lib\re\__init__.py", line 185, in sub
+    return _compile(pattern, flags).sub(repl, string, count)
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\foste\AppData\Roaming\uv\python\cpython-3.11-windows-x86_64-none\Lib\re\__init__.py", line 294, in _compile
+    p = _compiler.compile(pattern, flags)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\foste\AppData\Roaming\uv\python\cpython-3.11-windows-x86_64-none\Lib\re\_compiler.py", line 749, in compile
+    code = _code(p, flags)
+           ^^^^^^^^^^^^^^^
+  File "C:\Users\foste\AppData\Roaming\uv\python\cpython-3.11-windows-x86_64-none\Lib\re\_compiler.py", line 582, in _code
+    _compile(code, p.data, flags)
+  File "C:\Users\foste\AppData\Roaming\uv\python\cpython-3.11-windows-x86_64-none\Lib\re\_compiler.py", line 155, in _compile
+    raise error("look-behind requires fixed-width pattern")
+re.error: look-behind requires fixed-width pattern
+--- CHECKS 2b+4b RERUN after regex fix (1b above stands, verified byte-true) ---
+--- CHECK 2b: every receipt path cited in communication.md exists ---
+cited paths ok=13 missing=0
+
+--- CHECK 4b: retained COLLECT-DRIFT rows in attention.md, with dates ---
+blocks containing COLLECT-DRIFT: 2
+ > ### Census collect patrol fired (2026-09-29 08:30:02) |  | - verdict: CENSUS-PATROL: COLLECT-DRIFT - collected drift: pytest holds 2478 vs carrier claim 2436 (delta +42, bar 20) (e
+ > ### Census collect patrol fired (2026-09-30 08:30:02) |  | - verdict: CENSUS-PATROL: COLLECT-DRIFT - collected drift: pytest holds 3403 vs carrier claim 3220 (delta +183, bar 20) (
+JSON VALID: lane communication division B ok True rows 4 checks 7
+em/en-dashes: 0 non-ascii: 0

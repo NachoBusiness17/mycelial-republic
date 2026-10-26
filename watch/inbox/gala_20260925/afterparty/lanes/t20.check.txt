@@ -1,0 +1,59 @@
+t20 CHECK EVIDENCE (2026-09-25, gopher t20)
+Item: silent disablement of scheduled tasks surfaces nowhere.
+Probe pre-existence: grep -rn "schtasks|MagImprove" mag/ tools/ found NO doctor probe.
+mag/doctor.py had no schtasks check; mag/amd_window_guard.py covers only StartCN/StartDVR.
+Result: probe ADDED (check_scheduled_tasks in mag/doctor.py, wired into examine()).
+
+=== 1. raw: grep (head) ===
+$ grep -rn "schtasks\|MagImprove" mag/ tools/ | head
+mag/amd_window_guard.py:43: ["schtasks", "/Query", "/TN", name, "/FO", "CSV", "/NH"],
+mag/amd_window_guard.py:63: "If re-enabled, re-run (elevated): schtasks /Change /TN StartCN /DISABLE; "
+mag/guard_registry.py:170: "fix": "elevated: schtasks /Change /TN StartCN /DISABLE; StartDVR /DISABLE"},
+mag/lifecycle.py:248: # MagImproveDaily scheduled task or running improve jobs
+mag/lifecycle.py:514: return "disable MagImproveDaily / stop improve jobs"
+mag/lifecycle.py:529: "improve": "schtasks MagImproveDaily / improve cycle API",
+(no doctor.py hits: no existing probe)
+
+=== 2. raw: pytest tests/test_doctor_scheduled_tasks.py -q ===
+..........                                                              [100%]
+11 passed in 2.47s
+PYTEST_EXIT=0
+
+=== 3. raw: tools/violation_ratchet.py check --changed ===
+RATCHET check: scope=7 changed files; hits=4; registered=4; NEW=0; expired-exceptions=0
+RATCHET: PASS — no unregistered debt.
+RATCHET_EXIT=0
+
+=== 4. raw: schtasks /Query /TN MagImproveDaily /FO LIST (live, MSYS_NO_PATHCONV=1) ===
+
+Folder: \
+HostName:      DESKTOP-7C70KSC
+TaskName:      \MagImproveDaily
+Next Run Time: 9/26/2026 8:00:00 AM
+Status:        Ready
+Logon Mode:    Interactive only
+SCHTASKS_EXIT=0
+
+NOTE: first attempt via Git Bash without MSYS_NO_PATHCONV=1 failed:
+ERROR: Invalid argument/option - 'C:/Program Files/Git/Query'.  (MSYS path
+mangling of /Query; the doctor probe is unaffected because it calls schtasks
+via python subprocess, not bash.)
+
+=== 5. raw: python -c "from mag.doctor import check_scheduled_tasks; print(json.dumps(check_scheduled_tasks()))" ===
+{
+  "check": "scheduled_tasks",
+  "ok": true,
+  "statuses": {
+    "MagImproveDaily": "Ready"
+  },
+  "issues": []
+}
+CHECK_EXIT=0
+
+=== 6. regression: pytest tests/test_bard.py -q ===
+16 passed in 1.10s
+
+Files changed:
+- mag/doctor.py (added SCHEDULED_TASKS, _parse_schtask_list, _scheduled_task_status,
+  check_scheduled_tasks; wired into examine(); docstring CHECKS list item 7)
+- tests/test_doctor_scheduled_tasks.py (new, 11 tests)

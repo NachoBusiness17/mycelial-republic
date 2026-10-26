@@ -1,0 +1,1 @@
+== synthesis.md == (MISSING: watch/inbox/spiking_wide/synthesis.md)

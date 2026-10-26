@@ -1,0 +1,740 @@
+### I ran Qwen 3.8 27B locally for 30 days, here are the results
+I ran Qwen 3.8 for 30 days, now it runs some production services. I used it as a coding agent for smaller tasks daily. Through the night, I would run it in my harness for 9h+ runs.
+ The model:
+ Unsloth Qwen3.8-27B-UD-Q4_K_XL
+ Summary (across all runs):
+ prompt processing: 1729.5 t/s peak, 845.1 t/s mean
+ token generation: 95.1 t/s peak, 73.8 t/s mean
+ mtp acceptance: 0.48108 (674 accepted / 1401 generated)
+ The goods:
+ This is the first model that I could recommend to a non-local LLM enthusiast, and it could cover most needs for basic tasks. It's amazing! I bought some subscriptions to Kimi, Qwen 3.8 Max, tested xoAlpha, and found that the gap between local models was extremely minimal, despite benchmark numbers. Maybe it's my use case. I use Qwen 3.8 Max as a faster Qwen, that's it. Never as a better one!
+ Reasoning actually works and provides some value, but it comes with some caveats I will talk about later.
+ When working with images, I found that it is better than OpenAI models. Especially when working with small images, like pixel art. I would instantly switch to Qwen 3.8 for UI design. It's just better.
+ The bads:
+ It's a reasoning model, which makes Qwen 3.8 extremely slow and token-hungry. But without it, the model is crippled. Multiple tasks could not be solved without reasoning, in the same session, switching to reasoning instantly fixed them. Up to 50% of the context size will be used by reasoning. I had situations where the model tried to output 60k reasoning tokens at once. Reasoning levels low, medium, and xhigh are more of a suggestion than an actually working solution. On basic tasks, it makes 3.8 up to 50% slower than 3.6. So there is no way you are doing any proper work locally without delegated subagents, which would save the main context from filling.
+ Poisoned tool calls (may be related to Q4). If the model produces a bad tool call, especially with +100k context windows, it is basically impossible to force the model not to use it, it will spam and loop. Even if you stop and warn it about it, it will continue spamming.
+ Cache may be finicky. I'm not an expert on model design, but it seems that other models have much better caching, which can resume from checkpoints much better. So if your settings are not top-notch or your harness does not respect best practices on caching, you will pay the price for full prompt processing. I found out the hard way when the model would work for 10 minutes, and I would type in a pi-agent, and the model would prompt process from the beginning of the context for a simple 3 word input. So watch your llama.cpp logs! Default settings did not work for me.
+ The fix:
+ Your harness of the week needs subagents, and they need to be enforced automatically.
+ Your harness needs subagents with configurable reasoning levels, so most basic tasks, "find me something", "run summary", "find out how this works", run without reasoning. You will save a lot of time.
+ Your harness needs loop detection. (And not naive ones, based on time, call count, or any other magic number.) Additionally, I added functionality where bad tool calls after a loop are deleted from context.
+ --spec-type draft-dflash,ngram-mod On my hardware (5070 ti + 4070 Super), Dflash2 + ngram runs 20% faster then MTP + ngram
+ Your harness...
+ I will not advertise any harness, as it is not the point of this post. Qwen 3.8 is amazing! We are extremely close to running fully locally! And the improvement jump from 3.6 to 3.8 is extremely large. All I want right now is more speed, like 300 t/s! Somebody, figure it out! :>
+ Edit: 
+ Here’s my llama.cpp config. Most of the flags won’t work on your hardware (5070 ti, 4070 Super, 5700X3D, 32GB RAM): https://pastebin.com/Y5VHvzvD
+ submitted by /u/Efficient-Part5344 
+ [link] [comments]
+
+### /u/RevolutionaryFeed211 on I ran Qwen 3.8 27B locally for 30 days, here are the results
+I do understand the value of this post so first of all thank you for sharing! Still part of the fixes is directly dependent on what harness are you using since those fixes are harness-bound. So: what harnesses do you use?
+ I’m using zcode that has subagents and hermes, but still I don’t know if I can do everything u said with them
+
+### /u/Efficient-Part5344 on I ran Qwen 3.8 27B locally for 30 days, here are the results
+That is the problem, everybody builds there own harness, for there own needs and models. I tested Hermes with with 3.6, i did not work at all. If you interested, pi-plugin https://github.com/mjasnikovs/pi-task i would not suggest using random harnesses from internet.
+
+### /u/kjames2001 on I ran Qwen 3.8 27B locally for 30 days, here are the results
+Try hermes with 3.8 again. It works extremely great, even with all the compaction.
+
+### /u/L10N420 on I ran Qwen 3.8 27B locally for 30 days, here are the results
+That’s true. I’m using Hermes with an abliterated Qwen-3.8 model, and it works really well.
+
+### /u/MistaPlanet on I ran Qwen 3.8 27B locally for 30 days, here are the results
+How does the abliterated model differ for the standard 3.8:27b model? Just asking to be informed
+
+### /u/psylligent on I ran Qwen 3.8 27B locally for 30 days, here are the results
+Which one ?
+
+### /u/L10N420 on I ran Qwen 3.8 27B locally for 30 days, here are the results
+https://huggingface.co/huihui-ai/Huihui-Qwen3.8-27B-abliterated-GGUF
+
+### /u/killthrash on I ran Qwen 3.8 27B locally for 30 days, here are the results
+I concur. Loving Hermes with 3.8 27B. So many skills.
+
+### /u/ahoooooooo on I ran Qwen 3.8 27B locally for 30 days, here are the results
+What are your context window sizes, hardware, and compaction settings?
+
+### /u/kjames2001 on I ran Qwen 3.8 27B locally for 30 days, here are the results
+My context is 256k, but I'm running in on ninfer 4090.
+
+### /u/Smooth-Television-48 on I ran Qwen 3.8 27B locally for 30 days, here are the results
+Ninfer?
+
+### /u/kjames2001 on I ran Qwen 3.8 27B locally for 30 days, here are the results
+Just google it. It replaced llamacpp for me.
+
+### /u/Smooth-Television-48 on I ran Qwen 3.8 27B locally for 30 days, here are the results
+Ahh ok. Its the engine
+
+### /u/satisfaction-or-else on I ran Qwen 3.8 27B locally for 30 days, here are the results
+Wow. Ninfer look awesome, so much faster. Thanks for pointing out it has a 4090 fork.
+
+### /u/Smooth-Television-48 on I ran Qwen 3.8 27B locally for 30 days, here are the results
+Follow up...it runs fine on a 4090? The report indicated its specific to the 5090 thats all
+
+### /u/kjames2001 on I ran Qwen 3.8 27B locally for 30 days, here are the results
+There's a 4090 fork of the project!
+
+### /u/MatthewCollins1990 on I ran Qwen 3.8 27B locally for 30 days, here are the results
+Those numbers matter a lot more than the 3.8 version itself. Hermes behavior shifts hard depending on context size and compaction thresholds.
+
+### /u/Smooth-Television-48 on I ran Qwen 3.8 27B locally for 30 days, here are the results
+Im still new to localLLM (and agents in general) can you explain the whole harness thing? Or recommend somewhere for more info...I'm finding it hard to know where to start or which sources are reliable...
+
+### /u/Efficient-Part5344 on I ran Qwen 3.8 27B locally for 30 days, here are the results
+Harnes is just a programmatic way of controlling model, thats it. It's a program that sits between user and model. Most basic harness is PI (https://pi.dev/), it provides basic tools to model, like a reading a file or editing it. Without a harness, model is just chat bot at best.
+
+### /u/Nx3xO on I ran Qwen 3.8 27B locally for 30 days, here are the results
+Hermes plus mempalace fine tune it with hard doctrines. Explicit catches and watches for summarization and or no response. Specific agents running models. I have 27b running well on a couple halos. 2 m1s for tooling and arm app code dev. It took a ton of time to get it to the point working a task for hours, self checking and restarting reinteration.
+
+### /u/Moarkush on I ran Qwen 3.8 27B locally for 30 days, here are the results
+DeepSeek Harness. Even still in alpha, it's the best harness I've tried. It is frontier forward, so you have to tell it to limit the sub-agents and to write long outputs to disk in segments, but it's the only closed loop harness I've ever tried. You need a plugin called pi-ai to run a local model but it's flawless. GPT 6 Astra makes an explicit plan, I drop it in the workspace, tell it the above things and it just cooks. It does full e2e testing, including screenshots and using bots in game dev. 
+ Also swap out Hermes for pi agent. You won't be disappointed. I just said goodbye to Hermes after a tumultuous few weeks.
+
+### /u/uniqueusername649 on I ran Qwen 3.8 27B locally for 30 days, here are the results
+I have generated several million tokens with Qwen 3.8 27b at fp8 and no issues with tool calls and it barely ever loops. I run it all the way up to almost 262k and let it auto compact. It needs maaany compaction runs before it starts looping. This is something that happens far sooner at Q4, but you can account for it with your harness, so it is still highly usable. If you can run at fp8/q8, there is a clear benefit in doing so.
+
+### /u/pragmojo on I ran Qwen 3.8 27B locally for 30 days, here are the results
+I'm running UD-Q4_K_XL and have had zero issues with tool calling, and no issues with looping that I have noticed (q8_0 kv cache) even across several compactions.
+ I was having some issues with looping at launch, but I believe it was a mis-configuration issue, as I was getting some unexpected cache evictions trying to push my context too close to my vram limit.
+ Slightly reducing context size, and setting a non-zero cache-ram configuration seems to have resolved the issue.
+
+### /u/uniqueusername649 on I ran Qwen 3.8 27B locally for 30 days, here are the results
+What context size are you running? Looping on Q4 was really not an issue for me below 130k or so. And it's not like it happens all the time, but once you go above that chances of it happening increase quite a bit. You would need to generate a lot of tokens to run into it regularly though.
+
+### /u/jikilan_ on I ran Qwen 3.8 27B locally for 30 days, here are the results
+I put unlimited, xhigh definitely loop my in setup so I use medium. I use llama.cpp + q8 x kl + vscode
+
+### /u/pragmojo on I ran Qwen 3.8 27B locally for 30 days, here are the results
+Currently I use a 102k or 204k context, depending on whether I am running np2 or np1. Due to the limited context size, I usually have several compactions per session.
+ I don't know about my total token generation numbers, but I'm typically running sessions 1-2 sessions in parallel for 4-8 hours per day (most weekdays), and would guess I'm in the realm of a million or so tokens generated total.
+ I'm in the process of setting up over-night automation, so I will probably be in the range of several million generated in the next weeks.
+
+### /u/uniqueusername649 on I ran Qwen 3.8 27B locally for 30 days, here are the results
+You will probably see it a bit more often then. Shouldn't really be a concern if you have a harness or a plugin that can detect loops and counter it.
+
+### /u/OutsideCycle8331 on I ran Qwen 3.8 27B locally for 30 days, here are the results
+ha i have setup my hermes with qwen3.8 too some days ago and did not want to guess around so i let it code my own dashboard that looks similar to openrouter. and now i know how much actually runs through them :P even added cached and uncached parameters to track
+ https://preview.redd.it/4ylfqaimz2qh1.png?width=2794&format=png&auto=webp&s=be428e8185c0998d6d5b117d1115dcd498d52c68
+
+### /u/pragmojo on I ran Qwen 3.8 27B locally for 30 days, here are the results
+What kind of prompt processing/decode speed are you getting with dual R9700's?
+
+### /u/OutsideCycle8331 on I ran Qwen 3.8 27B locally for 30 days, here are the results
+followed this guide and getting around 140 t/s decode too. https://www.reddit.com/r/LocalLLM/comments/1w3z66n/how_i_got_280_toks_on_qwen38_27b_on_2xr9700s_and/ . but clocked the gpus down to only 210 watts and still getting around 110. prefill is also similar to the guy in that reddit post.
+
+### /u/see_spot_ruminate on I ran Qwen 3.8 27B locally for 30 days, here are the results
+Same, no tool call issues with q8 or nvfp4 (from unsloth) for me.
+
+### /u/db172s on I ran Qwen 3.8 27B locally for 30 days, here are the results
+Nice, what harness are you currently utilizing?
+
+### /u/uniqueusername649 on I ran Qwen 3.8 27B locally for 30 days, here are the results
+oh-my-pi, but if you need to run something lighter, use pi with pi-lsp, pi-subagents and pi-loop-police. oh-my-pi has a lot of comfort features out of the box, injects instructions to steer the model towards best practices automatically etc. - but all the added features come at the cost of a much heavier system prompt. If you're context limited, pi might be a better alternative.
+
+### /u/fuseyuk on I ran Qwen 3.8 27B locally for 30 days, here are the results
+Have you tried Little Coder? I'm using it and finding it saves a lot of tokens but I'm interested if there is better out there.
+
+### /u/trowawayLOL1 on I ran Qwen 3.8 27B locally for 30 days, here are the results
+I use it, little coder and Pi. Its good enough. Looking for better stuff is always the name of the game with AI though. Things keep moving fast. Weird enough, opencode and oh my open code slim plugin gets me better results.
+
+### /u/DystopianRealist on I ran Qwen 3.8 27B locally for 30 days, here are the results
+Knock it off. Qwen can loop on the first pass. It's usually an issue with low temperature settings. This is a known issue since long before "3.8", so I don't believe that your model is magic.
+
+### /u/uniqueusername649 on I ran Qwen 3.8 27B locally for 30 days, here are the results
+If you pick completely nonsensical parameters, you get even the best models to become unusable. My model isn't magical, neither is my computer. I simply run Qwen with the recommended settings at fp8 - thats it. 
+ The wrong harness can also make this problem far worse. If you use the recommended parameters already and you need to stick to Q4, try something minimal like pi and see if the looping goes away.
+
+### /u/psylligent on I ran Qwen 3.8 27B locally for 30 days, here are the results
+Jus switched to ukisai/Swift-Qwen3.8-27B-GGUF , impressive with swift thinking, on a rtx5090
+
+### /u/StellarWaffle on I ran Qwen 3.8 27B locally for 30 days, here are the results
+I've got this one downloaded, just need to change it over in llama-swap. Are you using the base temp/repetition penalty values from A Qwen? Any downsides noted?
+
+### /u/psylligent on I ran Qwen 3.8 27B locally for 30 days, here are the results
+Default settings, no downsides yet
+
+### /u/brainchillzZ on I ran Qwen 3.8 27B locally for 30 days, here are the results
+And you just found out why Anthropic and OpenAI are making waves in the media saying that ai is going to kill us all if we don’t regulate it …. They want to regulate away “open” ai models that are quickly getting good enough that in the not so distant future may actually threaten their subscription model… I don’t think we are there today, but I don’t think it’s far off that a glm 5.3 flash sized model with proper tool calling and access to the internet for general knowledge will be enough for most use cases
+
+### /u/D137C0KE on I ran Qwen 3.8 27B locally for 30 days, here are the results
+Gai
+
+### /u/belliash on I ran Qwen 3.8 27B locally for 30 days, here are the results
+What if you cannot serve parallel connections? Subagents still make sense?
+
+### /u/Efficient-Part5344 on I ran Qwen 3.8 27B locally for 30 days, here are the results
+Yes, i can't run parallel to. It's job is to save tokens for main context window.
+
+### /u/mister2d on I ran Qwen 3.8 27B locally for 30 days, here are the results
+I know vLLM is a pain, but I think the initial tax is worth the long term gains for concurrency.
+
+### /u/Efficient-Part5344 on I ran Qwen 3.8 27B locally for 30 days, here are the results
+I don't know how vLLM does it, but in llama.cpp, you can allow multiple parallel executions, with one catch! all parallel executions share the same context pool.
+ To have truly full parallel execution that doesn't break when multiple calls overflow the context size, you need to provide each connection with its own context pool. That's a lot of VRAM, dooog. I don't have enough. :(
+
+### /u/mister2d on I ran Qwen 3.8 27B locally for 30 days, here are the results
+vLLM and llama.cpp handle concurrency quite different.
+ llama.cpp sets up parallel slots and splits the total context size across those slots.
+ vLLM doesn't used fixed slot division. It allocates dynamically and solves that problem without wasting memory. So N number of connections draw from a shared pool.
+ So, much much better than the llama.cpp way. 😜
+
+### /u/RadiantHueOfBeige on I ran Qwen 3.8 27B locally for 30 days, here are the results
+llama.cpp uses unified kv cache (instead of a static split by N) as well, it's been the default for some time now
+
+### /u/mister2d on I ran Qwen 3.8 27B locally for 30 days, here are the results
+Gotcha. I lost a beat because llama.cpp versioning is not trivial to follow. llama.cpp still doesn't compete on concurrency for some reason though.
+
+### /u/redtron3030 on I ran Qwen 3.8 27B locally for 30 days, here are the results
+I doubled my speeds on vllm with qwen3.8 27b. Specially on concurrency. It’s worth looking into.
+
+### /u/belliash on I ran Qwen 3.8 27B locally for 30 days, here are the results
+some more details?
+
+### /u/redtron3030 on I ran Qwen 3.8 27B locally for 30 days, here are the results
+Hardware
+ - NVIDIA CMP 170HX (GA100, sm80), unlocked to 64 GB HBM2e (Hynix bin) via apatched nvidia.ko from cmpunlocker. PCIe deliberately forced to Gen2 x16.
+ - Power cap currently 175 W (default 250 W, max 300 W).
+ - 64 GiB host RAM
+ Software
+ - vLLM 0.29.0 (tagged release) in an isolated venv at ~/vllm029, torch 2.13.0+cu130.
+ - Model: community Qwen3.8-27B GPTQ-Int8 + MTP build at ~/models-vllm.
+ - Based on the ahnguyen17/cmp-170hx-vllm recipe, with deviations noted below.
+ Launch flags
+ --quantization gptq --dtype bfloat16
+ --attention-backend FLASHINFER (env var VLLM_ATTENTION_BACKEND is ignored in 0.29)
+ --kv-cache-dtype fp8_e4m3 (this is what makes 262k context fit in 64 GB)
+ --max-model-len 262144
+ --gpu-memory-utilization 0.90
+ --enable-prefix-caching --prefix-match-unit 400
+ --async-scheduling --max-num-batched-tokens 8192 --max-num-scheduled-tokens 8192
+ --speculative-config mtp, num_speculative_tokens=3, probabilistic draft sampling
+ --compilation-config max_cudagraph_capture_size=128, custom_ops +rms_norm,+silu_and_mul
+ --reasoning-parser qwen3, --tool-call-parser qwen3_coder, auto tool choice
+ env: PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
+ VLLM_USE_FLASHINFER_SAMPLER=1
+ Results
+ - Single-stream decode ~71 tok/s (recipe claimed 65-74). Not KV-limited, not SSM-limited: the card is hitting the 175 W power cap (SM clock 1455 -> ~1050 MHz). Pre-fill speed about 1,500 tok/s on a 30K-token document.
+ - vLLM reports ~5.8 GiB of KV headroom unused at 0.90 utilization.
+
+### /u/grunade47 on I ran Qwen 3.8 27B locally for 30 days, here are the results
+So how do you use subagents? Can you elaborate a bit please
+
+### /u/Efficient-Part5344 on I ran Qwen 3.8 27B locally for 30 days, here are the results
+I have workers:
+ General work — finds how this repo handles image uploads, etc....
+ Docs — reads the documentation and returns an exact API description, so the model doesn’t have to guess.
+ Web fetch/search — opens webpages and finds specific information.
+ All of the workers return only the result, so the context isn’t filled with noise.
+
+### /u/grunade47 on I ran Qwen 3.8 27B locally for 30 days, here are the results
+But like you mentioned above, if you’re not running parallel then only 1 worker runs at a time and youre not sharing cache too?
+
+### /u/Efficient-Part5344 on I ran Qwen 3.8 27B locally for 30 days, here are the results
+Yes, 1 worker. Think of it like the model asking, “Get me an apple.” The worker goes and brings back the apple.
+ At the same time, the model doesn’t know that the worker grabbed a ladder, climbed a tree, fell off it, climbed back up, and finally delivered the apple. The model only gets the apple, so you save all the context from that work. It's jsut waits for a result.
+ It’s the same with an agent opening a webpage: it fills the context with unnecessary HTML and CSS. But with a worker, all of that stays there, and it returns only the header you asked for.
+
+### /u/belliash on I ran Qwen 3.8 27B locally for 30 days, here are the results
+How did you limit your harness to not try to go in parallel?
+
+### /u/Efficient-Part5344 on I ran Qwen 3.8 27B locally for 30 days, here are the results
+For simple calls, i just ignore it. Every parallel request can wait it's turn to be executed. For bigger job, i explicitly say, run one sub-agent at the time. Thats it.
+
+### /u/xRaech on I ran Qwen 3.8 27B locally for 30 days, here are the results
+but isnt llama sharing the context? i get that you get only the "work" you want back.. but doesn't that mean you lost that context budget anyway till it compacts? or am i misunderstanding this
+
+### /u/Sircuit83 on I ran Qwen 3.8 27B locally for 30 days, here are the results
+Think of it like chats. In Chat A you tell Qwen A to get-me-an-apple.skill. In that skill it tells Qwen A to start a subagent - Qwen B - and tell it to get an apple. Qwen A opens its own entirely separate Chat B in which it tells Qwen B to get an apple. Once Qwen b gives Qwen A an apple, Chat B and Qwen B are gone, and Qwen A returns to Chat A to give you your apple. 
+ Chat A however is not filled with the details of how Qwen B went through the process of getting the apple in Chat B.
+
+### /u/brovig_f on I ran Qwen 3.8 27B locally for 30 days, here are the results
+Unfortunately, vLLM does not support uneven memory allocation across heterogeneous GPUs, will bottleneck at the lower denominator (12gb)
+
+### /u/mister2d on I ran Qwen 3.8 27B locally for 30 days, here are the results
+Yes, I did miss that detail.
+
+### /u/debackerl on I ran Qwen 3.8 27B locally for 30 days, here are the results
+Once you know it, it's great. And much easier to install than before! I love SGLang too, very similar. When I struggle with one, I try the other
+
+### /u/nowherenoonenobody on I ran Qwen 3.8 27B locally for 30 days, here are the results
+Hardware?
+
+### /u/Efficient-Part5344 on I ran Qwen 3.8 27B locally for 30 days, here are the results
+It's in the post - my hardware (5070 ti + 4070 Super)
+
+### /u/nowherenoonenobody on I ran Qwen 3.8 27B locally for 30 days, here are the results
+There's other hardware too
+
+### /u/Efficient-Part5344 on I ran Qwen 3.8 27B locally for 30 days, here are the results
+Ryzen 7 5700X3D, 32GB RAM.
+
+### /u/invalidnifemi on I ran Qwen 3.8 27B locally for 30 days, here are the results
+the rest doesn't matter nearly as much
+
+### /u/mister2d on I ran Qwen 3.8 27B locally for 30 days, here are the results
+With llama.cpp it might since there are offloading scenarios to account for.
+
+### /u/invalidnifemi on I ran Qwen 3.8 27B locally for 30 days, here are the results
+we are talking about a dense model...
+
+### /u/Skare69 on I ran Qwen 3.8 27B locally for 30 days, here are the results
+Layer offloading?
+
+### /u/invalidnifemi on I ran Qwen 3.8 27B locally for 30 days, here are the results
+https://giphy.com/gifs/s5wFafpHxqKbIEERl9
+
+### /u/PizzaDevice on I ran Qwen 3.8 27B locally for 30 days, here are the results
+Offloading makes you broke. If you need to use is, better go for API tokens.
+
+### /u/Stunning-Library2931 on I ran Qwen 3.8 27B locally for 30 days, here are the results
+I use 3.8 27b on 2 3090, in q8 and kv cache in int8. I use “dirk” version of qwen 3.8. The full context at 262000 barely fits but it does. I use lmstudio to run the llm and under vscode I use lmstudio code extension. This thing manages to open pdfs, extract relevant data, create xls documents as well as control / compile/ flash code. It can manage to also control my logic analyser. Seems to be quite good. Can we do better than lmstudio code as an agent? Probably but I am a rookie…
+
+### /u/blasto_123 on I ran Qwen 3.8 27B locally for 30 days, here are the results
+with 3090s you may try ninfer-serve for speed
+
+### /u/mhphilip on I ran Qwen 3.8 27B locally for 30 days, here are the results
+Isnt ninfer blackwell?
+
+### /u/blasto_123 on I ran Qwen 3.8 27B locally for 30 days, here are the results
+check this one: https://www.reddit.com/r/LocalLLaMA/comments/1vojjh3/ninfer3090/
+ I assume there are many other ports as well. I'm using ninfer with an A5000 card on windows
+
+### /u/HugeEntertainment820 on I ran Qwen 3.8 27B locally for 30 days, here are the results
+what's your speed on it? I'm using the unsloth on vLLM with 150K context at 50-60 tg/s with just one 3090.
+
+### /u/AlwaysPlayF3 on I ran Qwen 3.8 27B locally for 30 days, here are the results
+“…first model that I could recommend to a non-local LLM enthusiast.”
+ “5070 ti + 4070 Super”
+ 😆
+
+### /u/NuclearBinoculars on I ran Qwen 3.8 27B locally for 30 days, here are the results
+I've got the 5070ti part! 😆
+
+### /u/jopereira on I ran Qwen 3.8 27B locally for 30 days, here are the results
+I mainly use LLM for coding personal projects and haven't used 3.8 that much yet. But my use case, benefits from fast non reasoning mode (mostly on 3.6).
+ Your 3.8 performance numbers are on pair with my own experience on 5070ti, models fully on VRAM (IQ3 XXS). It's very fast for my needs.
+ For sure, local LLM have already reached a point that satisfies many users (and use cases).
+
+### /u/chrisso123 on I ran Qwen 3.8 27B locally for 30 days, here are the results
+Ngram and dflash2 together?
+
+### /u/Efficient-Part5344 on I ran Qwen 3.8 27B locally for 30 days, here are the results
+Yes.
+
+### /u/brownowski on I ran Qwen 3.8 27B locally for 30 days, here are the results
+My thoughts on Ngram is that it contributes to those bad tool loops you were talking about. Or just reasoning loops in general. Have a much better experience without it.
+
+### /u/HenkPoley on I ran Qwen 3.8 27B locally for 30 days, here are the results
+This ngram is merely used to estimate what the model will say next. It shouldn't change the output. If you estimate right, the LLM engine can skip a whole bunch of searching for the right answer. Ngram lookups are very cheap, but they only use a few tokens (2 or 3, maybe 4) for their prediction.
+
+### /u/brownowski on I ran Qwen 3.8 27B locally for 30 days, here are the results
+From my experience, its not as good. Something in the verification algorithm. The n-gram tokens pass the probability threshold, but maybe it still wouldn't have been what the model would have chosen without it. I don't know, maybe the default verification threshold is too low, but using speculative ngram results in way more loops for me.
+ I can also tell it's the ngram because the tok/s goes way up when it gets stuck in the loop.
+
+### /u/-InformalBanana- on I ran Qwen 3.8 27B locally for 30 days, here are the results
+It would anyway go up, cause looping = repetition, repetition equals speed when using ngram or maybe even mtp/dflash. Otherwise I've had quality loss experiences with mtp on low quant. So I agree that it can be the ngram.
+
+### /u/HenkPoley on I ran Qwen 3.8 27B locally for 30 days, here are the results
+Your hunch is directionally correct. The MTP draft does contribute to incorrect token outputs: https://github.com/ggml-org/llama.cpp/issues/25618
+
+### /u/see_spot_ruminate on I ran Qwen 3.8 27B locally for 30 days, here are the results
+While dflash is better (faster) per your report, try going back to mtp maybe and test the tool calling issue you had at context over 100k. 
+ I bring this up as an earlier qwen had tool calling issues for me with a specific harness at any mtp over 2. 
+ Anyways, I do not see tool calling (aside from the missed edit here and there) from qwen either on vllm with nvfp4 or llamacpp with the q8 K L gguf. This is with an mtp of 5 on vllm and with mtp of 5 and ngram on llamacpp. 
+ tl;dr, worth a shot to see if switching from dflash to mtp helps with tool calls over 100k context.
+
+### /u/Optimal-Report-1000 on I ran Qwen 3.8 27B locally for 30 days, here are the results
+What does an AI do for 9hrs straight?
+
+### /u/Efficient-Part5344 on I ran Qwen 3.8 27B locally for 30 days, here are the results
+Runs a larger plan, splits it into smaller tasks, and then implements them. It has multiple gates, checkpoints, and guards. It’s an easy way to find gaps in the model and harness.
+
+### /u/Optimal-Report-1000 on I ran Qwen 3.8 27B locally for 30 days, here are the results
+Yes but on what? Like it just takes that long for these smaller models to execute a new feature in a program? I have a setup i built and I am getting fully functional games like Tetris, Pac-Man, frogger, ect.. in about 10 mins with a q4 gemma 4 26B model i have a 5060ti 16gb Vram, that is through my full build harness, my edit harness is running a bit slower and stacking up the tokens though, so i am working on updating that. But I am making a job bid app right now and that is a little more complex, still won't take an hour to fully build. At 9hrs are you developing a new OS or what?
+
+### /u/NickThePrick20 on I ran Qwen 3.8 27B locally for 30 days, here are the results
+Currently on hour 7 of a full unity project rewrite to C++
+
+### /u/Optimal-Report-1000 on I ran Qwen 3.8 27B locally for 30 days, here are the results
+Interesting !! My son has been wanting to make a Unity app.. this is very useful.. I didnt even think about doing something like that.. did you design all the graphics upfront and now your LLm is connecting the dots and adding the game play logic, type of thing? Sorry if my terminology is off.
+
+### /u/NickThePrick20 on I ran Qwen 3.8 27B locally for 30 days, here are the results
+I am a developer by trade (already have 2 games published on steam before AI was around) and thought it would be fun to see if all on its own it could port to c++. I built a full unity mcp that allows pi/omp to fully edit projects. DM me if you want it
+
+### /u/Efficient-Part5344 on I ran Qwen 3.8 27B locally for 30 days, here are the results
+Everybody has different standards for what “build it” means. You may not believe it, but sometimes a basic feature that Opus 5 can build in 5 minutes takes me 4 hours on Fable, plus another hour for code review.
+ Basic CRUD webpage with a full test suite, compliance with the spec, database migrations, and specific style requirements. At 30 t/s, that’s easily 9-12+ hours of work for Qwen.
+
+### /u/z604 on I ran Qwen 3.8 27B locally for 30 days, here are the results
+I give it full app design specs, design requirements, user flows it must support, visual and functional tests, reviewing that the implementation matches the Figma spec… the longer I can leave these running unattended, the better. Give it work before going to bed, pick it up in the morning.
+ I go for a long walk and make the requirements and plan with Sol 4.6, everything becomes a detailed plan and architecture .md. The plan breaks down things for subagents, with proper instructions, links to the relevant docs, etc. then qwen runs with it.
+ I still find it worth making the plan with a frontier model. But executing can happen locally now.
+ And in general, getting longer sessions is a good challenge for learning how to best define and delegate tasks.
+
+### /u/StellarWaffle on I ran Qwen 3.8 27B locally for 30 days, here are the results
+If youve written a design to spec with multiple checkpoints, tests, and documentation processes required during dev it seems to take the model quite bit more work. I find the product is more consistent with less drift, but breaking things up into steps with more detail seems to multiply the amount of effort required
+
+### /u/Optimal-Report-1000 on I ran Qwen 3.8 27B locally for 30 days, here are the results
+Well I take back my curiosity of what your coding for 9hrs. My son is running a simplified Mario brothers game right now and it has taken an hour so far. If i would have like wanted to build a hogher quality game and have it build out way more detail and more of the game it would probally take 9hrs with my setup. So im sorry for bugging on you :o)
+
+### /u/trowawayLOL1 on I ran Qwen 3.8 27B locally for 30 days, here are the results
+For your own benefit, I think might be better if you switch from Gemma 26b a4b to Qwen3.6 35b a3b Unsloth Dynamic quant. Gemma series is a great set of models, 12B to 26B A4B to 31B. 
+ But for coding Qwen is just better, even the 35b A3B version trumps Gemma 26b A4B in coding and retains the speed, but it's actually way faster for me on llama.cpp to boot, Qwen just has an architecture that plays much nicer with Llama than Gemma does.
+ Main Driver is Qwen 3.8 27b for me but just saying, if you're strapped for VRAM and coding = Qwen 3.6 35B A3B.
+
+### /u/Optimal-Report-1000 on I ran Qwen 3.8 27B locally for 30 days, here are the results
+Yeah I tried a 3.8 qwen but it was way to slow, I will probaly try out some other variants yet, but i have a 3.6 35B 3q installed and it is quite a bit faster but it doesn't seem to be coding as well, idk if it is my harness or what. My concept dor my setup is so someone who does not code can sit down and make an app in a non traditional setting, so maybe that is throwing it off. I am not using a normal IDE. I think I can plug local models into an actual IDE I will have to trust that out
+
+### /u/InSearchOfTh1ngs on I ran Qwen 3.8 27B locally for 30 days, here are the results
+This intrigues me. I'm new to using AI at work and struggle with writing some prompts like this. I was wondering if you could provide an example or point me in the direction of where I could write a prompt like this to do a large amount of work while defining the gates, checkpoints and guards?
+ Just curious on how I can use this to plan and maybe execute large refactors successful.
+
+### /u/Efficient-Part5344 on I ran Qwen 3.8 27B locally for 30 days, here are the results
+You don't. Even Opus 5 is ignoring your instructions.
+ Second, a model can't judge its own work. It will always rank it as the best work possible because of its limitations in knowledge. So gates have to be programmatic.
+ The problem with this approach is that it's extremely slow, and different kinds of models need different-strength gates.
+ Here is a simple example of a programmatic gate: the model writes a plan file, and we validate every file that is mentioned. Does it actually exist? We validate every API call in the plan. Does it actually exist, and is it correct?
+ Basically, there needs to be a hard stop for the model that it can't argue with. If it rates its own work, it doesn't know the facts and can brush them off.
+ I don't know if that makes sense, but the gate has to provide feedback that the model can't argue with and has to fix before continuing.
+ Prompts have never worked for any model, not even Fable or Astra. Prompts are prose that the model can argue with. A failed test or lint error, on the other hand, is something the model can't argue with.
+
+### /u/GasSmooth7439 on I ran Qwen 3.8 27B locally for 30 days, here are the results
+This is probably more useful than another benchmark chart. The fact that you ran it for 30 days and actually moved production services onto it says a lot.
+ The subagent + loop detection point is especially interesting. At this point, local models seem less limited by raw intelligence and more by whether the harness can keep them from wasting their context or getting stuck in tool loops.
+ 73.8 tok/s sustained on a 27B locally is pretty damn good too.
+
+### /u/sreevarshan-xenoz on I ran Qwen 3.8 27B locally for 30 days, here are the results
+The harness point is probably the biggest takeaway for me too. Once the model is good enough, getting it stuck in a tool loop and burning through a huge chunk of context feels like a bigger problem than the model being slightly less capable.
+ I've noticed the same thing with local coding agents. A smaller model that can actually go file → edit → test → fix without losing the plot can be way more useful than a bigger model that keeps thinking about its own tool calls.
+ The different reasoning levels for subagents is interesting too. Something simple like finding a file or summarizing something probably shouldn't get the same reasoning budget as debugging some cursed failure 😅
+
+### /u/pragmojo on I ran Qwen 3.8 27B locally for 30 days, here are the results
+Does dflash + ngram preserve quality? My understanding is that MTP preserves full quality
+
+### /u/Efficient-Part5344 on I ran Qwen 3.8 27B locally for 30 days, here are the results
+They all predict the next tokens in a batch, and the main model still verifies them. So they can’t make the model think differently, they can only slow the model down if the predicted tokens are constantly wrong. And ngram is basically a cache pool, the more often the same tokens are used, the faster it gets.
+ Cold start:
+ token generation: 93.7 t/s peak, 72.7 t/s mean
+ mtp acceptance: 0.48108 (674 accepted / 1401 generated)
+ Same benchmark, with cashed ngram tokens running second time:
+ token generation: 193.4 t/s peak, 88.3 t/s mean
+ mtp acceptance: 0.51536 (755 accepted / 1465 generated)
+
+### /u/GCoderDCoder on I ran Qwen 3.8 27B locally for 30 days, here are the results
+Just want to highlight the version/ quant of the model matters a ton. I intentionally try to spiral models with certain repetitive task benchmarks and I have not only done projects at 200k but also yarn over 500k tokens in context and this model at fp8, q8kxl, and nvfp4 has not done any looping for me. 
+ There is also a template tool call fix that may help too. I dont recall if the broken tool call template issue was fixed in 3.8 27b or 3.8 flash next but either way i ended up using fusion of the sharp/ frogerric template fixes with the fixed official template.
+ I just feel we should always differentiate the quant behavior from the model behavior because they're not the same and people who say "that model has looping and tool call issues" usually are actually having quant, template, and/or harness issues. 
+ For me the nvfp4 has performed identical to the 8bit but double the speed so Im a believe in the nvfp4 approach now for blackwell. I haven't tried with non blackwell but my understanding is for cuda it's still possible but there's upcasting or something. That might give you a higher fidelity version that fits your hardware but I'm unsure the speed hit. I would try if I were you. 
+ I also hear exl3 is another good way to similarly quatization with far less quantization degradation like q4k... would experience. I haven't tested any yet though. 
+ Edit when Im taking similar performance, q4kxl will normal fail things like deep swe at different rates than higher quants for example because they are big hard problems. Some uncensored nvfp4 did not work well for 3.8 27b for this model but qwen 3.8 flash next and glm 5.3 flash next for example the nvfp4 even on the uncensored versions performed near normal versions
+
+### /u/Mammoth-Funny-4212 on I ran Qwen 3.8 27B locally for 30 days, here are the results
+3.8 is to slow for my hardware 4070 12GB M1 Max 64GB I don’t know why they don’t come with proper MOE <51% MTP isn’t worth enabling
+
+### /u/liamwhReddit on I ran Qwen 3.8 27B locally for 30 days, here are the results
+Nice write up, thx for sharing. I can recommend the swift qwen model for less reasoning tokens. Achieves very similar results, with much less time & energy spent
+
+### /u/HugeEntertainment820 on I ran Qwen 3.8 27B locally for 30 days, here are the results
+What hardware are you running? I will post but playing around with it to get it running on 3090 with optmizations. So far it's 50 tg/s.
+
+### /u/liamwhReddit on I ran Qwen 3.8 27B locally for 30 days, here are the results
+I did a write up and I also open sourced the repo on how I achieved my end-result (~95tok/s with 114k context on a plain 3090 (NVIDIA FE)). The set up is awesome, it’s really productive!
+
+### /u/HugeEntertainment820 on I ran Qwen 3.8 27B locally for 30 days, here are the results
+LOVE IT! Will give this a shot!!
+
+### /u/huddrez99 on I ran Qwen 3.8 27B locally for 30 days, here are the results
+You say you will not advertise any harness. Could you still tell which one you used?
+ I am just getting into local LLM and agentic coding. I started with pi. Can I get pi to implement all your fixes?
+
+### /u/Efficient-Part5344 on I ran Qwen 3.8 27B locally for 30 days, here are the results
+Yes, i run my pi plugin. https://github.com/mjasnikovs/pi-task Do not use random harnesses from internet, i made it for my needs.
+
+### /u/egnegn1 on I ran Qwen 3.8 27B locally for 30 days, here are the results
+What is the full command you are using (beside complete hardware setup)?
+
+### /u/Efficient-Part5344 on I ran Qwen 3.8 27B locally for 30 days, here are the results
+I use docker setup with multiple GPU's, so it's basically irrelevant, if you don't have same setup and hardware. But some flags may be reused. https://pastebin.com/Y5VHvzvD
+
+### /u/egnegn1 on I ran Qwen 3.8 27B locally for 30 days, here are the results
+It is always interesting for me to see the parameters, because there are so many of them and sometimes there are different combinations that may achieve similar results.
+ Is there are a reason why you aren't using tensor split?
+ You also have small values for -b und -ub.
+
+### /u/Ranmark on I ran Qwen 3.8 27B locally for 30 days, here are the results
+Are you talking about sequential subagents or parallel? I'm curious because never worked with subagents in local environment. EDIT: nvm, I've read in another comment.
+
+### /u/StartupTim on I ran Qwen 3.8 27B locally for 30 days, here are the results
+When working with images, I found that it is better than OpenAI models. Especially when working with small images, like pixel art.
+ What do you mean working with images?
+
+### /u/Efficient-Part5344 on I ran Qwen 3.8 27B locally for 30 days, here are the results
+Like having a bunch of assets, like small pixel art, and require model to use it to craft a menu.
+
+### /u/StartupTim on I ran Qwen 3.8 27B locally for 30 days, here are the results
+The model doesn't generate images though, so what do you mean? 
+ I'm confused, trying to understand.
+ Thanks
+
+### /u/Efficient-Part5344 on I ran Qwen 3.8 27B locally for 30 days, here are the results
+Yes, but it dose not need to generate image. Here is example, Qwen made menu from existing assets in html for godot game engine.
+ https://preview.redd.it/5v6hvfubpxph1.png?width=221&format=png&auto=webp&s=c9ba56bf35aeb630819d2a148fdf97195206a902
+ I approved html version, Qwen implemented it, in godot game engine. Bigger models can't read pixel art at all, and usually produce complete slop, or pull python script and start pixel peeping.
+
+### /u/StartupTim on I ran Qwen 3.8 27B locally for 30 days, here are the results
+Oh that's really cool!
+ So did Qwen write the godot code that made the menu?
+
+### /u/Efficient-Part5344 on I ran Qwen 3.8 27B locally for 30 days, here are the results
+Yes
+
+### /u/OlgerdOutlander on I ran Qwen 3.8 27B locally for 30 days, here are the results
+I have thrown at it some personal scanned docs to sort out, and Qwen3.8 is surprisingly good in that regard. Vision-wise it is sometimes even better than older vision-dedicated models like qwen3-vl. Loop detection is a must for all Qwen models, 3.8 is actually less prone to it compared to 3.6. What I also have noticed that schema issues depend on reasoning level vs temperature - for medium level you need different temp compared to high
+
+### /u/just4ochat on I ran Qwen 3.8 27B locally for 30 days, here are the results
+Those 60k reasoning dumps are the real limiter on overnight harness runs, not the ~74 t/s mean decode. Cap thinking tokens or pin a low or medium reasoning level per tool step so one stuck plan cannot wipe the rest of the context before the job finishes.
+
+### /u/Efficient-Part5344 on I ran Qwen 3.8 27B locally for 30 days, here are the results
+That’s a naive way of fixing something. I already tested approaches like this, and they don’t work. The model asks too many questions, so cap it at 5 max questions. But what about tasks that actually need more questions? Basically, no magic numbers, that assumes something.
+ And having a hard cutoff for reasoning is the same approach, cut it off and say, “Good luck, model. I hope you know what to do with this mess.”
+ Basically, we need to figure out why the model started such a long reasoning dump in the first place and fix that. Missing information, perhaps?
+
+### /u/ideamaker321 on I ran Qwen 3.8 27B locally for 30 days, here are the results
+Pi works very well with this model
+
+### /u/ThaSipah on I ran Qwen 3.8 27B locally for 30 days, here are the results
+I'm brand new to all this, but I've got Qwen 3.8 working at home with Deepseek Harness. 
+ What do you do on long runs once you hit your context window? I've got mine set to 128k. Results are good in terms of quality, but I keep goign back in with continuation prompts. 
+ Sorry if the answer's obvious.
+
+### /u/VerticalPackage on I ran Qwen 3.8 27B locally for 30 days, here are the results
+What do you do on long runs
+ I have a harness that splits the request into multiple phases, each phase is its own agent with its own context.
+ User - Opens a ticket on the repo.
+ PM - Reads the ticket, checks the existing repo/code (if there is any), writes the acceptance criteria and the implementation plan.
+ PM Reviewer - Reads the PM's work and the ticket, makes sure it is consistent and no slips, if there is a problem, it passes back the feedback to the PM, this loops around until the PM Reviewer is happy.
+ Dev - Gets the ACs and the plan, executes it, commits the code, also it creates seams for the ACs to be tested.
+ Deterministic Test Author - Reads the ACs and the plan, reads the code to find ways to create tests to confirm the ACs are implemented correctly (falsifiable tests), these are execution codes to test the app. Some of the tests can be visual confirmations, so the author will write the code to get the screenshots necessary.
+ Test Reviewer - Same idea as PM Reviewer, but for the authored tests. If tests are impossible to run because no seam exists, it writes that in its test authoring, which gets picked up by the harness and sent back to the dev.
+ Visual Test Author -For the visual tests, this agent writes simple Yes or No questions.
+ Automatic deploy in staging of the new/updated app, if deploy fails, a debug deploy agent is summoned, which is allowed to patch code like the dev, but only works at solving why it isn't deploying.
+ Deterministic testing (not a LLM) - Executes the tests (lines of code), it collects the results and the screenshots. For failed test, an agent is summoned to determine if the error is because of a bad test, or a code bug.
+ Visual Evaluator - Receives the screenshots and the associated question, responds yes or no (if no, it responds with what is the difference from the expected outcome vs what it sees).
+ All failed test results are either passed for re-authoring, or for the dev to fix the code.
+ Round and round it goes until a 100% pass rate, after which then the pipeline moves on to the next request. Each round launches a fresh session for each agent, so nobody really goes over 120k context unless something is really complicated, and even then they survive compaction because they typically progress linearly, no need to go back to what they did many turns ago.
+ It can take a more than an hour before a ticket is closed, but at least the user doesn't need to constantly reprompt anyone to correct bugs or to "continue" because the harness forces each agent to reach completion (they need to update their work status as completed and if they randomly decide to stop talking before completion, they get auto-prompted to continue after 3 minutes idle).
+ Also note that I added the PM reviewer and Test reviewer because these are the most critical parts of a pipeline run, if tests are lazy or ACs are lazy, then the end result is "lazy".
+
+### /u/Efficient-Part5344 on I ran Qwen 3.8 27B locally for 30 days, here are the results
+On large context fill, your only option is to compact. If you constantly hit context limits, you’re giving too big a task or too vague a description. Subagents can help save some context. I’ve never used the DeepSeek harness, but I bet there are plenty of ways to enable subagents. That can do basic jobs and return only answer, without filling context window.
+
+### /u/ThaSipah on I ran Qwen 3.8 27B locally for 30 days, here are the results
+Thank you so much, that's a good start for me.
+
+### /u/ForeverSeeking69 on I ran Qwen 3.8 27B locally for 30 days, here are the results
+I use Q_8_L and run it in more then 24h agentic loop. 100+ agents orchestrator orchestrate other orchestrators etc.. . If I never compact context, I never have looping problems with it
+
+### /u/Jealous-Benefit711 on I ran Qwen 3.8 27B locally for 30 days, here are the results
+Is it a good model to run on 3090?
+
+### /u/Efficient-Part5344 on I ran Qwen 3.8 27B locally for 30 days, here are the results
+A tight fit, but it should be doable.
+
+### /u/VerticalPackage on I ran Qwen 3.8 27B locally for 30 days, here are the results
+A tight fit, but it should be doable.
+ I'm on a RTX3090, running vLLM Qwen3.8-27B-W4A16-AutoRound-fast.
+ 190000 context window vision on VRAM I get about 120 tks
+ So, not really a tight fit if done properly
+
+### /u/dtfinch on I ran Qwen 3.8 27B locally for 30 days, here are the results
+I get the tool call loops (in other models) sometimes when having them work on my MCP server. It sees a disabled tool in the MCP server source code and assumes it can call it. So then I get "Let me do A: (B happens) Wait I need to A: (B happens again)..." because llama.cpp forces it to output a valid call.
+ So now my MCP server detects duplicate calls and appends increasingly verbose warnings/explanations to the response from "You repeated a tool call. Are you stuck in a loop?" up to "You are stuck in a loop. Maybe you're trying to call one tool and a different one is getting called so you retry. Stop retrying and wrap up your task."
+
+### /u/Expanse-Memory on I ran Qwen 3.8 27B locally for 30 days, here are the results
+My model is able to poison himself into loop after making mistakes in an py script.
+
+### /u/brotlos_gluecklich on I ran Qwen 3.8 27B locally for 30 days, here are the results
+May I ask, why the model has access to the mcp server source code?
+
+### /u/dtfinch on I ran Qwen 3.8 27B locally for 30 days, here are the results
+It's an MCP file server for coding, mostly developed through itself (dogfooding). I wanted something more forgiving than Cline after watching a model struggle with replace_in_file due to misremembered whitespace, and I needed some MCP experience anyways.
+ Testing usually involved opening the llama-server web UI and saying "test all tools and parameters and look for any mishandled edge cases". And since a copy of the code was in the workspace, it could research any problems it found.
+
+### /u/trolololster on I ran Qwen 3.8 27B locally for 30 days, here are the results
+i am just amazed that it finished anything in 30 days :)
+
+### /u/GeramyL on I ran Qwen 3.8 27B locally for 30 days, here are the results
+You should run q6 the charts show that above q4 like q5/6 are peak stability and intelligence.
+
+### /u/More_Soft_6801 on I ran Qwen 3.8 27B locally for 30 days, here are the results
+I have to ask one spexific thing.
+ Would it possible to share the final precise command to launch the model… with unsloth..
+ I use vllm but dont know best arugments for efficient inference…
+
+### /u/Efficient-Part5344 on I ran Qwen 3.8 27B locally for 30 days, here are the results
+https://pastebin.com/Y5VHvzvD it has basically 0 value, if you don't have same hardware. Do not change random parameters without testing. Measure baseline, turn one knob, measure again.
+
+### /u/More_Soft_6801 on I ran Qwen 3.8 27B locally for 30 days, here are the results
+Thank you OP. This is incredibly helpful to try and adapt.. thank you
+
+### /u/iwishihadacorgi on I ran Qwen 3.8 27B locally for 30 days, here are the results
+What kv cache are you using? I've been using q8 but I see a lot of discussion for fp8 and it seems to me that q8 is just better.
+
+### /u/Mundane_Dog_2744 on I ran Qwen 3.8 27B locally for 30 days, here are the results
+How do you get it to continue a project if it hits the token limit? Is it possible?
+
+### /u/Efficient-Part5344 on I ran Qwen 3.8 27B locally for 30 days, here are the results
+Locally, you don’t have a token limit. But I’ll assume you’re talking about context size. If you’re constantly hitting context limits, you’re giving it tasks that are too large, or your prompt is too vague.
+ Additionally, handing prompts to an already half-broken project doesn’t work well either. Make sure all tests and linting pass before adding more on top.
+
+### /u/JSVD2 on I ran Qwen 3.8 27B locally for 30 days, here are the results
+great share, whats your system? Could I add some of it to the guide https://github.com/hogeheer499-commits/strix-halo-guide/discussions
+
+### /u/Efficient-Part5344 on I ran Qwen 3.8 27B locally for 30 days, here are the results
+5070 ti + 4070 Super, yes you can.
+
+### /u/JSVD2 on I ran Qwen 3.8 27B locally for 30 days, here are the results
+Thanks, that helps!!!! I maintain the Strix Halo guide I linked above. It’s turned into a pretty serious benchmark/repro project, and I’ve had fixes merged upstream in llama.cpp, AMD Lemonade and Qwen Code.
+ the guide is Strix Halo focused, but I also keep external Qwen 3.8 results/use reports as comparison points, clearly separate from the actual Strix Halo benchmarks. It helps figure out what’s model/harness behavior vs hardware-specific stuff.
+ Your 30day Qwen 3.8 experience would actually be really useful for that, especially the stuff about subagents, reasoning, tool-call failures, caching and DFlash.
+ If your up for it, just dump the useful bits here, doesnt need to be polished:
+ [https://github.com/hogeheer499-commits/strix-halo-guide/discussions]()
+ i can tie it into the other Qwen 3.8 data, keep the NVIDIA side clearly labeled, and credit you properly so people can reference/reproduce it later
+
+### /u/DrkWzrd on I ran Qwen 3.8 27B locally for 30 days, here are the results
+I have only a 5070 Ti (+32GB 9800x3d) with IQ3_S from ISTA-DASLab, I don't reach even 50tps in generation (in processing I reach 1700tps max, with 1000tps average), how do you have 90? I don't get how you can run Q4_K_XL + q8_0 KV in 16+12 GB VRAM at that speed. How much ctx? How do you split the model? can you put the full command (llama serve, or ollama serve...)
+
+### /u/wangleye on I ran Qwen 3.8 27B locally for 30 days, here are the results
+Hi , we’ve just released a llama.cpp variant that lets a 16GB GPU like 5070ti run Qwen 27B IQ3/IQ4 fully on the GPU while still supporting 200K+ context by offloading the KV history. Maybe you can try it: https://github.com/kvmem/kvmem-llama.cpp
+
+### /u/DrkWzrd on I ran Qwen 3.8 27B locally for 30 days, here are the results
+I'll give it a try. Specific CUDA version is a little bit annoying though (right now I compile llama with 13.4/latest). I'll try it in windows too.
+
+### /u/wangleye on I ran Qwen 3.8 27B locally for 30 days, here are the results
+Any CUDA version above 13.2 should work well. The prebuilt version is with CUDA 13.2 but you can use any CUDA you like :)
+
+### /u/wisepal_app on I ran Qwen 3.8 27B locally for 30 days, here are the results
+This is wonderful. i get 430 pp and 28 t/s with your settings. i have a a4500 rtx 16 gb vram + 96 gb ddr 5 4800 mhz ram and i7 12800h with win 10. this is a great solution. has a great potential i think. i had one problem after 16k answer was cut off suddenly with normal chat. then i used this -n 45056 --kvmem-budget 32768 --kvmem-gen-reserve 45056 settings and problem solved but pg dropped to 22 t/s. do you have any suggestions? 
+ these are my flags: --mmproj-offload --image-max-tokens 512 -c 262144 -n 45056 --kvmem-budget 32768 --kvmem-gen-reserve 45056 --kv-dtype q8_0 --spec-type draft-mtp --enable-thinking --reasoning-budget 8192
+ one more thing. do you have any plan to implement this to qwen 3.8 flash next? like Qwen3.8-Flash-Next-GSQ-RCO-GGUF model maybe. i can not go above 16 t/s with my system on qwen 3.8 flash next right now.
+
+### /u/Efficient-Part5344 on I ran Qwen 3.8 27B locally for 30 days, here are the results
+I added "edit" section, but you need a much more VRAM for this model.
+
+### /u/midnite_token on I ran Qwen 3.8 27B locally for 30 days, here are the results
+Nice writeup. been running qwen3.8-27b myself on a single 3090 (i7-6700k, 16gb system ram, so def not a beast of a rig) and getting pretty different numbers so now i'm curious what hardware you're on? 
+ My prefill is actually right there with you, 937 t/s with mtp on vs your 845 mean, but my gen is way behind, 62 t/s with speculative decoding on vs your 73.8 mean. Without spec decoding im down at 37 t/s gen so that toggle alone is like a 95% swing for me. 
+ Couple questions if you don't mind,what gpu(s) you running and how much VRAM is your gen number with mtp/spec decoding on or off, and what acceptance rate you seeing outside the 0.48 you posted? 
+ Trying to figure out if the gap is just hardware or if there's a config thing i'm missing on my end.
+
+### /u/Efficient-Part5344 on I ran Qwen 3.8 27B locally for 30 days, here are the results
+Gap could be in MTP. I don't use it! I use Dflash 2 + ngram. It's around 20% faster on my hardware. I added edit section, you can take a look at my llama.ccp flags.
+
+### /u/layer4down on I ran Qwen 3.8 27B locally for 30 days, here are the results
+Or just use Buzz.xyz which supports any harness you want and use them all simultaneously. Hermes, DSH, OpenCode, Codex, they can all collaborate to get things done.
+ Personally I’m a fan I building a loop detection and recovery plugin for DSH but of course that comes with its own challenges.
+
+### /u/Pure_Cartographer_98 on I ran Qwen 3.8 27B locally for 30 days, here are the results
+Someone got an good setup for an 5080? ive been trying, but keep failing to get a good qwen and harness going without issues
+
+### /u/Efficient-Part5344 on I ran Qwen 3.8 27B locally for 30 days, here are the results
+That’s not enough VRAM. The best you can do is Qwen3.6-35B-A3B. And even then, you need to make sure that all the slow layers are on the GPU and the rest are in RAM, not swap. But this model isn’t even in the same league as 3.8. One could try low quant models, i have never used them.
+
+### /u/Pure_Cartographer_98 on I ran Qwen 3.8 27B locally for 30 days, here are the results
+Yea best I got was 3.8 (some 24g version) 128k context and 60tk/s
+ Still very meh
+
+### /u/anitman on I ran Qwen 3.8 27B locally for 30 days, here are the results
+You could reach 150t/s+ using w4a16 with dflash2+sglang, much faster than llamacpp version.
+
+### /u/NilBanana on I ran Qwen 3.8 27B locally for 30 days, here are the results
+Thanks awesome!
+
+### /u/dota2nub on I ran Qwen 3.8 27B locally for 30 days, here are the results
+ninfer? Gets me to 230 t/s at least initially. It does drop a lot as context fills.
+
+### /u/Efficient-Part5344 on I ran Qwen 3.8 27B locally for 30 days, here are the results
+It's only supports GeForce RTX 5090
+
+### /u/dota2nub on I ran Qwen 3.8 27B locally for 30 days, here are the results
+Oh. It does support my laptop 5090. And the whole laptop cost less than a desktop 5090.
+
+### /u/baka_sempaii on I ran Qwen 3.8 27B locally for 30 days, here are the results
+Reasoning taking up context? As far as I know reasoning is not the part of context.
+
+### /u/Efficient-Part5344 on I ran Qwen 3.8 27B locally for 30 days, here are the results
+--reasoning-preserve keeps the model's previous reasoning in the chat history. Without this flag, new calls would not see the previous reasoning, and one would invalidate the cache. Default for llama.cpp is on.
+
+### /u/Beautiful_Record_693 on I ran Qwen 3.8 27B locally for 30 days, here are the results
+Have you run qwen 3.8 flash yet? Would be really interested to see your opinion given it’s capabilities.
+
+### /u/Efficient-Part5344 on I ran Qwen 3.8 27B locally for 30 days, here are the results
+I would love to, i don't have RAM for that.
+
+### /u/Comprehensive-Hold78 on I ran Qwen 3.8 27B locally for 30 days, here are the results
+Yes, 3.8 is a huge jump from 3.6 in terms of the quality of output when I use it with agentic coding. And yes, it’s extremely slow (~15tps) on my M5 Pro 48GB MBP using a max context window of 131K. The output and debugging capabilities sometimes even outperforms Gemini 3.8 Flash but you got to be very patient.
+ I’m hosting it on oMLX and use opencode as an ACP bridge for Xcode agent mode.
+
+### /u/Bitter-Peanut-7662 on I ran Qwen 3.8 27B locally for 30 days, here are the results
+Only 1.7k pp? I get ckose to 11k pp on vllm... Q4.. NO MTP so about 90t/s decode..
+
+### /u/xspeariance on I ran Qwen 3.8 27B locally for 30 days, here are the results
+Gold post. Thank you
+
+### /u/Ok-Addendum3545 on I ran Qwen 3.8 27B locally for 30 days, here are the results
+This method is unique; thanks for the sharing ! There are Orca Agents and Hermes Subagents that can be deployed. =>
+ Your harness needs subagents with configurable reasoning levels, so most basic tasks, "find me something", "run summary", "find out how this works", run without reasoning. You will save a lot of time.
+
+### /u/sargetun123 on I ran Qwen 3.8 27B locally for 30 days, here are the results
+Amazing work!!
+ Qwen 3.8 q6kxl has been a godsend for me, I will hopefully get some better hardware soon to test out fp
+
+### /u/lawrencebarnes on I ran Qwen 3.8 27B locally for 30 days, here are the results
+Deepseek v4
+
+### /u/ImRickJamesMother on I ran Qwen 3.8 27B locally for 30 days, here are the results
+As someone newer to running qwen3.827b, any good harness settings in sloth for a 4090 system for research?
+
+### /u/pressurebullies on I ran Qwen 3.8 27B locally for 30 days, here are the results
+I've seen better results with smaller 9b or 12b then running 27b on anything less than a 5090
+
+### /u/xerj-ai on I ran Qwen 3.8 27B locally for 30 days, here are the results
+But in general, is it comparable to Opus 46?
+
+### /u/playvltk03 on I ran Qwen 3.8 27B locally for 30 days, here are the results
+I’ll be very happy if the gpu and tps is no longer a bottleneck anymore. With the way gpu pricing going, I need to pinch a bit for the cloud service. Don’t see myself able to afford any 30tps in near future. Thank for the write up, I found basic harness work better than the sophisticated one.
+
+### /u/s3b4444 on I ran Qwen 3.8 27B locally for 30 days, here are the results
+Following
+
+### /u/rakshitsahay on I ran Qwen 3.8 27B locally for 30 days, here are the results
+This is probably the more interesting takeaway from the post: local models don't necessarily need to beat frontier models to be useful in production.
+ If a local 27B model can handle a large percentage of coding, summarization, reasoning, and multimodal tasks reliably enough, the economics and privacy advantages become much more interesting.
+ The biggest limitation seems less about raw intelligence and more about orchestration:
+ route simple tasks without reasoning
+ delegate complex tasks to subagents
+ aggressively manage context
+ detect tool-call loops
+ preserve KV/cache efficiently
+ have deterministic fallbacks
+ In other words, the next big improvement for local AI may not come entirely from a better model. A good harness can turn a “pretty good” model into a surprisingly capable system.
+ The 300 t/s dream is nice, but I'd happily take 100 t/s + excellent context/cache management + reliable tool use first. 😄
+
+### /u/m31317015 on I ran Qwen 3.8 27B locally for 30 days, here are the results
+I've been local only since day one of my AI deployment, albeit it started with Deepseek R1 running on ollama. Harness is everything. It confines the way-of-work, the context of tasks, and it gives directions by providing tools, securing it with safety check, everything is within the harness.
+ The Qwen 27Bs are the GOAT so far, when 3.6 27B Q4 came out I was still swapping between it and Gemma 4 31B Q4. 3.8 27B Q5 directly throw it out of the game even with the heavy CoT tokens. One thing I see would be MTP giving more ctx space compared to dflash.
+
+### /u/Otherwise_Wave9374 on I ran Qwen 3.8 27B locally for 30 days, here are the results
+A thirty-day production run is more useful than a one-off benchmark, especially for a local coding agent. I would separate results by task type and track acceptance rate, correction time, tokens, latency, memory pressure, and regressions after context grows. Also run a small fixed evaluation set weekly so perceived usefulness is not distorted by easier assignments. Agentix Labs connects to this methodology because its agent work benefits from operational telemetry and repeatable evaluations. The key tradeoff is not just local cost versus cloud cost, but predictable quality versus the engineering burden of maintaining inference.
+
+### /u/SmartCustard9944 on I ran Qwen 3.8 27B locally for 30 days, here are the results
+Thank you Claude 🙏
+
+### /u/False_Refrigerator42 on I ran Qwen 3.8 27B locally for 30 days, here are the results
+Thanks for the post. I want to know, how about using claude code as harness and switch models between Qwen 3.8- flash-next and GLM 5.3-flash ?
+ Does this work well for agentic coding tasks and anyone tried it already?
+
+### /u/sn2006gy on I ran Qwen 3.8 27B locally for 30 days, here are the results
+Congrats, you found a model that works for super simple things by building a harness that essentially is devoid of general reasoning, open ended problems, architecture-design, multi-domain synthesis and ambiguous tasks.
+ 27bs are perfect for this :)

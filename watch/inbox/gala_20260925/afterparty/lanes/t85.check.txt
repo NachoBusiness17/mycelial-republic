@@ -1,0 +1,58 @@
+t85 check evidence (2026-09-25, gopher t85, t84's next_steal)
+item: mag/queue_gate.py:211 preflight cadence-gate wrapper except-to-pass -> FAIL CLOSED
+
+=== 1) py_compile both touched files ===
+py_compile OK
+exit=0
+
+=== 2) pytest tests/test_loop_death_guards.py -v ===
+============================= test session starts =============================
+platform win32 -- Python 3.11.15, pytest-9.1.1, pluggy-1.6.0 -- C:\Users\foste\Documents\projects\local_sovereign_agent\.venv\Scripts\python.exe
+rootdir: C:\Users\foste\Documents\projects\local_sovereign_agent
+configfile: pytest.ini
+plugins: anyio-4.14.2, langsmith-0.10.14, timeout-2.4.0, typeguard-4.6.0
+collecting ... collected 25 items
+
+tests/test_loop_death_guards.py::test_loop_death_guard_fires_on_raise[ghost_cost] PASSED [  4%]
+tests/test_loop_death_guards.py::test_loop_death_guard_fires_on_raise[ghost_bard] PASSED [  8%]
+tests/test_loop_death_guards.py::test_loop_death_guard_fires_on_raise[work_anchor] PASSED [ 12%]
+tests/test_loop_death_guards.py::test_loop_death_guard_fires_on_raise[afk_squeeze] PASSED [ 16%]
+tests/test_loop_death_guards.py::test_loop_death_guard_fires_on_raise[work_fuel] PASSED [ 20%]
+tests/test_loop_death_guards.py::test_loop_death_guard_fires_on_raise[afk_routing] PASSED [ 24%]
+tests/test_loop_death_guards.py::test_operator_pause_gate_fails_closed PASSED [ 28%]
+tests/test_loop_death_guards.py::test_afk_gate_fails_closed PASSED       [ 32%]
+tests/test_loop_death_guards.py::test_right_size_gate_fails_closed PASSED [ 36%]
+tests/test_loop_death_guards.py::test_ceiling_gate_fails_closed PASSED   [ 40%]
+tests/test_loop_death_guards.py::test_afk_loop_operator_afk_fails_closed PASSED [ 44%]
+tests/test_loop_death_guards.py::test_afk_orchestrator_operator_offline_fails_closed PASSED [ 48%]
+tests/test_loop_death_guards.py::test_capability_steal_operator_offline_fails_closed PASSED [ 52%]
+tests/test_loop_death_guards.py::test_afk_orchestrator_pause_gate_fails_closed PASSED [ 56%]
+tests/test_loop_death_guards.py::test_afk_orchestrator_right_size_fails_closed PASSED [ 60%]
+tests/test_loop_death_guards.py::test_capability_steal_right_size_fails_closed PASSED [ 64%]
+tests/test_loop_death_guards.py::test_afk_orchestrator_fold_guard_prints PASSED [ 68%]
+tests/test_loop_death_guards.py::test_capability_steal_fold_guard_prints PASSED [ 72%]
+tests/test_loop_death_guards.py::test_afk_cadence_fold_guard_prints PASSED [ 76%]
+tests/test_loop_death_guards.py::test_lane_salon_defer_gate_fails_closed PASSED [ 80%]
+tests/test_loop_death_guards.py::test_afk_loop_fold_guard_prints PASSED  [ 84%]
+tests/test_loop_death_guards.py::test_capability_steal_promotion_guard_prints PASSED [ 88%]
+tests/test_loop_death_guards.py::test_lane_cadence_cooldown_fails_closed PASSED [ 92%]
+tests/test_loop_death_guards.py::test_lane_cadence_brake_fails_closed PASSED [ 96%]
+tests/test_loop_death_guards.py::test_queue_gate_cadence_wrapper_fails_closed PASSED [100%]
+
+============================= 25 passed in 0.23s ==============================
+pytest exit=0
+
+=== 3) adjacent consumers: pytest tests/test_swarm_quota_gate.py tests/test_swarm_local_drain.py -q ===
+......                                                                   [100%]
+6 passed in 3.02s
+adjacent exit=0
+
+=== 4) em-dash grep over git diff ADDED lines (both touched files) ===
+warning: in the working copy of 'tests/test_loop_death_guards.py', LF will be replaced by CRLF the next time Git touches it
+0
+grep -c exit=1 (count 0 => no em-dashes in added lines, first run clean; note: pre-existing em-dashes elsewhere in these files are untouched per t84 precedent)
+
+=== 5) tools/violation_ratchet.py check --changed ===
+RATCHET check: scope=21 changed files; hits=18; registered=18; NEW=0; expired-exceptions=0
+RATCHET: PASS — no unregistered debt.
+ratchet exit=0

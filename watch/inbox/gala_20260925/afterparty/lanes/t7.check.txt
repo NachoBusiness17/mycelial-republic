@@ -1,0 +1,48 @@
+=== t7 check log, 2026-09-26T00:31:13-04:00, cwd=/c/Users/foste/Documents/projects/local_sovereign_agent
+
+### 0. BEFORE state: pyc rows in old manifest + leak evidence
+$ grep -c '.pyc' seed/MANIFEST.sha256 ; wc -l seed/MANIFEST.sha256
+3
+59
+$ grep -ao 'C:.*cooker.py' seed/engines/__pycache__/cooker.cpython-312.pyc (head -1)
+C:\Users\foste\Documents\projects\local_sovereign_agent\seed\engines\cooker.py
+
+### 1. REBUILD via builder's own CLI: ./.venv/Scripts/python.exe tools/seed_v2.py
+SEED V2 BUILT: 14 engines, 56 files sealed
+SEED ZIP: C:\Users\foste\Documents\projects\local_sovereign_agent\watch\inbox\seed-3.3.0.zip (57 entries, top-level seed-3.3.0/)
+exit=0
+
+### 2. SEAL VERIFY: ./.venv/Scripts/python.exe seed/verify_seal.py
+56/56 verified, 0 drifted, 0 missing
+exit=0
+
+### 3. NEW zip: pyc count + entries + foste grep
+entries: 57
+pyc entries: 0 []
+entries containing 'foste': 0 []
+manifest rows in zip: 56
+exit=0
+
+### 4. NEW manifest rows + pyc count
+56
+0
+grep exit 1 (1 = zero pyc rows)
+
+### 5. seed tree pycache residue
+0
+
+### 6. SHIPPED TESTS (bytecode writing off to keep the sealed tree clean)
+......                                                                   [100%]
+6 passed in 0.20s
+exit=0
+
+### 7. post-test pycache residue (must stay 0)
+0
+
+### 8. RATCHET: ./.venv/Scripts/python.exe tools/violation_ratchet.py check --changed
+RATCHET check: scope=7 changed files; hits=4; registered=4; NEW=0; expired-exceptions=0
+RATCHET: PASS — no unregistered debt.
+exit=0
+
+### 9. log tail self-check: em-dash scan of this log and the banked json
+1

@@ -1,0 +1,42 @@
+t71 check evidence - graduate method-card battery to regression harness
+gopher t71, 2026-09-26, estate C:/Users/foste/Documents/projects/local_sovereign_agent
+Spec: watch/inbox/method_card_exp/RERUN_PREREG_20260926.md (Sections 0 to 5; STEP 1 gate ported, Section 5 harness clause). Files landed: tools/battery_rerun.py (294 lines), tests/test_battery_rerun.py (180 lines). Never edited the prereg or any heldout file; GROUND_TRUTH content never opened in this session (byte-blind hashes only).
+
+== check 1: pytest (repo venv) ==
+command: ./.venv/Scripts/python.exe -m pytest tests/test_battery_rerun.py -v
+raw output tail:
+tests/test_battery_rerun.py::test_seal_mismatch_refuses PASSED           [ 16%]
+tests/test_battery_rerun.py::test_heldout_drift_refuses PASSED           [ 33%]
+tests/test_battery_rerun.py::test_shape_drift_refuses PASSED             [ 50%]
+tests/test_battery_rerun.py::test_happy_path_default_never_opens_ground_truth PASSED [ 66%]
+tests/test_battery_rerun.py::test_score_mode_pairs_ground_truth PASSED   [ 83%]
+tests/test_battery_rerun.py::test_gate_refuses_missing_seal_file PASSED   [100%]
+============================== 6 passed in 0.29s ==============================
+py_compile on both files: OK.
+
+== check 2: violation ratchet ==
+command: ./.venv/Scripts/python.exe tools/violation_ratchet.py check --changed
+raw output:
+RATCHET check: scope=17 changed files; hits=13; registered=13; NEW=0; expired-exceptions=0
+RATCHET: PASS — no unregistered debt.
+RATCHET_EXIT=0
+(13 hits are pre-registered debt in other changed files; NEW=0 means this lane added none.)
+
+== check 3: live seal gate against the real sealed spine ==
+command: ./.venv/Scripts/python.exe tools/battery_rerun.py --answers watch/inbox/method_card_exp/RERUN_ANSWERS_20260926.md --score-out watch/inbox/gala_20260925/afterparty/lanes/t71.score_scaffold.md
+raw output:
+SEAL OK
+spine dashboard/data/ESTATE_INDEX.jsonl sha256 cceace710d48 (1221058 rows, 402114160 bytes)
+spine dashboard/static/index_data/last_run.json sha256 82940bc0a63f OK
+spine dashboard/static/index_data/rollup.json sha256 4f76d535cb0f OK
+heldout BATTERY_HELDOUT.md pin 98a364293ec2 OK (byte-blind)
+heldout GROUND_TRUTH_HELDOUT.md pin 81aa08447f3d OK (byte-blind)
+score outline written: watch\inbox\gala_20260925\afterparty\lanes\t71.score_scaffold.md
+default mode: ground truth was not opened; a fresh score-phase seat opens it together with the answers artifact (prereg STEP 3).
+LIVE_EXIT=0
+Hashes match FREEZE_SEAL.json (t5, sealed 2026-09-26T00:19:19-0400) and prereg Section 1 baselines exactly; abort condition 3 shape numbers (1221058 rows, 402114160 bytes) verified live.
+The smoke scaffold copy was deleted after the run: prereg Section 0 says answers reach a scorer only through the single answers artifact, so no answers copy is filed in lanes. Scaffold stdout above is the evidence.
+
+== check 4: laws ==
+- em/en dash law: all authored text in this file and in both landed files is dash-clean (grep -nP "[\x{2013}\x{2014}]" over tools/battery_rerun.py and tests/test_battery_rerun.py: NO EM/EN DASH). The one em-dash in this file sits inside the verbatim ratchet output line above, which is the tool's own bytes; raw output is preserved unedited (never fabricate).
+- refusal semantics proven by tests: any gate failure exits 2, writes no score-out, reads no answer or ground-truth content (default mode never opens GROUND_TRUTH; proven by SENTINEL absence in test_happy_path_default_never_opens_ground_truth).

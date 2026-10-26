@@ -1,0 +1,238 @@
+{
+  "lane": "mcp-memory-servers",
+  "division": "B",
+  "date_utc": "2026-10-11",
+  "class": "RECEIPT",
+  "ask": "Survey memory-serving MCP servers first-hand: mem0, Letta/MemGPT MCP servers, knowledge-memory servers, and the localfirst-memory landscape (our 10-01 drop-dig at watch/inbox/localfirst_*). Who serves memory across MULTIPLE agents; how they scope/persist/auth. Start from: fetch each product's MCP docs.",
+  "method": "curl raw bytes of each product's MCP docs (READMEs, Mintlify .md doc pages, llms.txt indexes) into fetched/ with a sha256 manifest (citation-resolution law: bytes or UNVERIFIED); all quotes byte-copied and grep-verified before writing; the localfirst surface read from the estate's own 10-01 dig receipts (watch/inbox/localfirst/adjacent.md, lbrain.md). No em-dash and no en-dash anywhere in this file (enforced by the check script).",
+  "fetched": [
+    {"file": "fetched/mem0-mcp.readme.md", "url": "https://raw.githubusercontent.com/mem0ai/mem0-mcp/main/README.md", "http": 200, "bytes": 6916, "sha256": "3937f4bc7278c4f1a199e70905430c3c76e760fedccee88da2eff213e31d85df"},
+    {"file": "fetched/mem0.mcp-platform.md", "url": "https://docs.mem0.ai/platform/mem0-mcp.md", "http": 200, "bytes": 9970, "sha256": "8159b9cd5f328b1f95945868826c31ae71e14a3feb5200d1dd32b2e0f9257dc3"},
+    {"file": "fetched/mem0.docs.llms.txt", "url": "https://docs.mem0.ai/llms.txt", "http": 200, "bytes": 44454, "sha256": "f1ff6c11b78ce0748e611a5ef39dd70a5561f4586c5360924ca94fe059980feb"},
+    {"file": "fetched/letta.hosted-mcp.md", "url": "https://docs.letta.com/platform/hosted-mcp/index.md", "http": 200, "bytes": 3521, "sha256": "5da8f4ed20bcd1d880ff646e640fd9bdce02af6df7fa5b587f2b926bf3d14d47"},
+    {"file": "fetched/letta.agent-sdk-mcp.md", "url": "https://docs.letta.com/agent-sdk/mcp/index.md", "http": 200, "bytes": 6119, "sha256": "1e44c5fea442ca1a94d4b9371e46f12971371534f8fd7c17516ac52d99b81a2c"},
+    {"file": "fetched/letta.docs.llms.txt", "url": "https://docs.letta.com/llms.txt", "http": 200, "bytes": 28243, "sha256": "86e3fa84192889ce3e60e120e8d7f879bfe4434141528167e5b6f493de3a74ae"},
+    {"file": "fetched/mcp-official-memory.readme.md", "url": "https://raw.githubusercontent.com/modelcontextprotocol/servers/main/src/memory/README.md", "http": 200, "bytes": 10850, "sha256": "57c75e83ba1d5095d56f91d7b37fa3538e5485ac31fea0b8b72d434642dcc08b"},
+    {"file": "fetched/cognee.mcp-overview.md", "url": "https://docs.cognee.ai/cognee-mcp/mcp-overview.md", "http": 200, "bytes": 5588, "sha256": "1f87601be38116d9e2a4c91ce39062d0bb9740dce4625dc724620cb104c7c501"},
+    {"file": "fetched/cognee.docs.llms.txt", "url": "https://docs.cognee.ai/llms.txt", "http": 200, "bytes": 1857, "sha256": "235292478cb6d8a390eecf2a0667e2938e87e5c861a260a17b31b086dfed971e"},
+    {"file": "fetched/openmemory-main.readme.md", "url": "https://raw.githubusercontent.com/mem0ai/openmemory/main/README.md", "http": 200, "bytes": 2737, "sha256": "2907e250b047f8f66f74729993e2aff2d58b42874761fc6e253ef7d33a574ee2"},
+    {"file": "fetched/basic-memory.readme.md", "url": "https://raw.githubusercontent.com/basicmachines-co/basic-memory/main/README.md", "http": 200, "bytes": 24397, "sha256": "032d037d6a3c2a2f0bfa8815a4aa95b2bd346307625a053d5416cd73879a9ddd"}
+  ],
+  "fetched_sha256_manifest": "fetched/SHA256SUMS.txt",
+  "negative_fetches": [
+    {"what": "mem0 OSS MCP server README at mem0ai/mem0 main:mcp/README.md", "result": "HTTP 404"},
+    {"what": "GitHub API contents of mem0ai/mem0 mcp/ directory on main", "result": "HTTP 404"},
+    {"what": "modelcontextprotocol/servers archives/memory-kg/README.md", "result": "HTTP 404; the live reference server sits at src/memory/"},
+    {"what": "openmemory README at mem0ai/mem0 main:openmemory/README.md", "result": "HTTP 404; the product now lives in its own repo mem0ai/openmemory"}
+  ],
+  "servers": [
+    {
+      "name": "Mem0 hosted Platform MCP (docs.mem0.ai/platform/mem0-mcp)",
+      "transport": "remote HTTP at https://mcp.mem0.ai/mcp; one-click mcp-add for claude code, cursor, windsurf, vscode, opencode; Claude Desktop via Settings connector",
+      "tools": "11: add_memory, search_memories, get_memories, get_memory, update_memory, delete_memory, delete_all_memories, delete_entities, list_entities, list_events, get_event_status (the last two are async-op status polling)",
+      "scoping": "entity taxonomy user/agent/app/run: delete_entities deletes a user/agent/app/run entity and its memories; list_entities enumerates users/agents/apps/runs stored in Mem0",
+      "persistence": "vendor cloud account: memories live in your Mem0 account, not on your computer",
+      "auth": "two paths: browser OAuth sign-in through the client (token stored and refreshed by the client), or API key as bearer token for headless/CI; neither means 401 Authentication required",
+      "multi_agent": "yes by construction: any MCP client on the same account shares the store, separated by the entity taxonomy; per-run isolation rides the run entity",
+      "quotes": ["Q_MEM0_NOTHING_LOCAL", "Q_MEM0_ACCOUNT", "Q_MEM0_401", "Q_ADJACENT_MEM0_SELFHOST"]
+    },
+    {
+      "name": "mem0-mcp-server (archived OSS wrapper, mem0ai/mem0-mcp)",
+      "transport": "three shapes: uvx stdio local package, Docker exposing an /mcp HTTP endpoint, Smithery remote hosted",
+      "tools": "9 memory tools (same set as hosted minus list_events and get_event_status)",
+      "scoping": "MEM0_DEFAULT_USER_ID env var injects a default user_id into filters and write requests, defaulting to mem0-mcp; entity taxonomy user/agent/app/run preserved in tool args",
+      "persistence": "none of its own: it wraps the Mem0 Platform API, so storage is still the vendor cloud",
+      "auth": "MEM0_API_KEY required (platform key); the repo itself is now a public archive",
+      "multi_agent": "one default user per client config, so cross-agent sharing means sharing the same env default or passing explicit entity ids",
+      "quotes": ["Q_MEM0_ARCHIVED", "Q_MEM0_SCOPE_DELETE_ALL"]
+    },
+    {
+      "name": "Letta hosted MCP server (docs.letta.com/platform/hosted-mcp)",
+      "transport": "remote HTTP at https://api.letta.com/mcp; applies_to backends: cloud only",
+      "tools": "6, and none of them are memory CRUD: list_agents, list_models, create_agent, send_agent_message, get_run, get_reply; memory is served by serving the agents themselves",
+      "scoping": "agent identity plus conversation: pass agent_id to start a conversation, a conv-... conversation_id to continue one, or agent_id with conversation_id default; agents found by name, tags, or query",
+      "persistence": "Letta cloud holds agent memory; the calling agent does not resend context",
+      "auth": "bearer API key only; OAuth-only clients are not supported yet",
+      "multi_agent": "the sharpest multi-agent shape in the survey: any MCP client can create and message stateful Letta agents, and memory travels inside the agent, not in the caller",
+      "risk_note": "Messages run on a Cloud computer in unrestricted permission mode: the agent executes tools without approval prompts. That is the anti-posture for the estate effect model (switchboard/effect broker authorizes effects).",
+      "quotes": ["Q_LETTA_MEMORY_IN_AGENT", "Q_LETTA_BEARER_ONLY", "Q_LETTA_UNRESTRICTED"]
+    },
+    {
+      "name": "Letta Agent SDK MCP consumption (docs.letta.com/agent-sdk/mcp)",
+      "transport": "inverse direction: Letta sessions consume MCP servers (stdio, Streamable HTTP, legacy SSE) from the SDK Node.js process; tools namespaced mcp__<server>__<tool>",
+      "tools": "not a memory server; this is a memory-hungry agent runtime attaching arbitrary MCP tool servers",
+      "scoping": "tools are scoped to the SDK session; different sessions on the same stateful agent may use different MCP servers and credentials",
+      "persistence": "MCP tools are not persisted on the Letta agent; implementations, processes, credentials, and filesystem access belong to the application hosting the session",
+      "auth": "bearer tokens via headers config; the SDK does not open an interactive OAuth browser flow",
+      "multi_agent": "n/a (this is the client side)",
+      "quotes": ["Q_LETTA_SDK_NOT_PERSISTED"]
+    },
+    {
+      "name": "Official MCP knowledge-graph memory server (@modelcontextprotocol/server-memory, modelcontextprotocol/servers src/memory)",
+      "transport": "local stdio via npx or docker; Windows needs cmd /c wrapper",
+      "tools": "9 graph tools: create_entities, create_relations, add_observations, delete_entities, delete_observations, delete_relations, read_graph, search_nodes, open_nodes; plus a knowledge-graph MCP resource at memory://knowledge-graph whose mutations emit notifications/resources/updated so subscribed clients see live changes",
+      "scoping": "none enforced: user identity is a system-prompt convention telling the model to assume it is talking to default_user",
+      "persistence": "one JSONL file: MEMORY_FILE_PATH env var, default memory.jsonl in the server directory",
+      "auth": "none; it is a local stdio process with no account, no tokens, no network",
+      "multi_agent": "none built in: one stdio instance per client; cross-agent sharing only by pointing two clients at the same file path, with no concurrency or locking story in the README",
+      "quotes": ["Q_OFFICIAL_KG", "Q_OFFICIAL_FILE", "Q_OFFICIAL_DEFAULT_USER", "Q_OFFICIAL_NOTIFY"]
+    },
+    {
+      "name": "Cognee MCP (docs.cognee.ai/cognee-mcp/mcp-overview)",
+      "transport": "local via uvx/docker for standalone, or API mode pointing at a centralized Cognee backend",
+      "tools": "v1.0 memory trio remember, recall, forget (legacy lower-level tools remain); tools/list exposes a subset with the rest discoverable through tool search to keep payload small",
+      "scoping": "two modes: Standalone keeps each MCP instance's data separate; API Mode shares one knowledge graph across multiple MCP instances under one Cognee user (the docs flag what that means when several tenants share one deployment)",
+      "persistence": "standalone out of the box: SQLite, LanceDB, and the embedded Ladybug (Kuzu) graph store, switchable to Neo4j or Postgres; API mode: the centralized backend",
+      "auth": "standalone: none named on the overview page; API mode: a single token per instance",
+      "multi_agent": "the only surveyed server with an explicit named mode for several assistants sharing one knowledge graph",
+      "quotes": ["Q_COGNEE_SHARE", "Q_COGNEE_TOKEN", "Q_COGNEE_DB"]
+    },
+    {
+      "name": "Basic Memory (basicmachines-co/basic-memory, AGPL-3.0)",
+      "transport": "local stdio via uvx basic-memory mcp; cloud web app over https; also ChatGPT search/fetch actions and host-native plugins (Claude Code, Codex, OpenClaw, and a namesake Hermes plugin that is not the estate's hermes-agent)",
+      "tools": "write_note, read_note, edit_note, move_note, delete_note, read_content, view_note; search_notes, recent_activity, list_directory; build_context navigating memory:// URLs; project tools list_memory_projects, create_memory_project, delete_project; schema_infer, schema_validate, schema_diff; every tool ships MCP behavior hints (readOnlyHint, destructiveHint, idempotentHint, openWorldHint)",
+      "scoping": "projects are the unit: per-project cloud routing via API key (bm project set-cloud) while other projects stay local; Teams is a single shared cloud workspace",
+      "persistence": "Markdown files plus a local SQLite index, default ~/basic-memory; cloud runs WorkOS AuthKit, Neon Postgres, and Tigris S3 with bidirectional rclone sync",
+      "auth": "local: none (plain files on disk); cloud: account via WorkOS; $15/mo cloud plan, BMFOSS discount",
+      "multi_agent": "Teams: anything a teammate writes is immediately available to everyone else and to their AI assistants; locally: humans and AIs write the same Markdown with sync conflict resolution",
+      "quotes": ["Q_BM_LOCAL_FIRST", "Q_BM_NO_SERVERS", "Q_BM_PROJECT_ROUTING", "Q_BM_TEAMS", "Q_BM_ANNOTATIONS"]
+    },
+    {
+      "name": "OpenMemory (mem0ai/openmemory) PIVOTED",
+      "transport": "CLI and TUI installer, not an MCP server",
+      "tools": "n/a: it ports conversation sessions between coding harnesses (Claude Code, Codex, OpenCode now; OpenClaw, Hermes on the roadmap)",
+      "scoping": "session ids per harness; omni-directional import/export with preview",
+      "persistence": "per-harness session stores on your machine",
+      "auth": "none named in the README",
+      "multi_agent": "no: this is one developer syncing their own session history across harness front-ends",
+      "pivot_note": "The May 2025 OpenMemory framing (local-first MCP memory layer) is gone from the repo front door; the current README pitches session sync. Any estate brief citing OpenMemory as a memory MCP server is stale and must be re-tri-stated.",
+      "quotes": ["Q_OM_PIVOT"]
+    },
+    {
+      "name": "LBrain (metavolve-labs/lbrain, from the estate 10-01 dig, estate file watch/inbox/localfirst/lbrain.md)",
+      "transport": "CLI plus FastMCP stdio server, 6 tools and 1 resource; ai.lbrain/lbrain on pypi/uvx",
+      "scoping": "persona is env-only and binds to transport, never to a tool argument, after red-team finding 12: a model that could pass persona='cfo' could read the CFO's private working memory by asking nicely; the fix is that provider and persona selection come from explicit init and nowhere else",
+      "persistence": "local lairs, FTS5 exact search verb separate from hybrid BM25 plus sqlite-vec fused search verb",
+      "auth": "no account by default: an unregistered brain is a first-class state; unconfigured installs fail toward on-device, never toward a hosted provider",
+      "multi_agent": "single-user local by posture; the persona-transport binding is the transferable law",
+      "quotes": ["Q_LBRAIN_IDENTITY"]
+    },
+    {
+      "name": "GroundMemory and people-context (tiny SQLite MCP memory servers, from estate 10-01 dig watch/inbox/localfirst/adjacent.md)",
+      "transport": "local stdio MCP over SQLite",
+      "scoping": "single local store, no accounts",
+      "persistence": "one SQLite file per product; GroundMemory adds FTS5 and a Markdown mirror of the graph",
+      "auth": "none",
+      "multi_agent": "no: single-machine, single-user tools",
+      "quotes": ["Q_PEOPLE_CONTEXT"]
+    }
+  ],
+  "matrix": {
+    "scoping_models": [
+      "entity taxonomy user/agent/app/run under a vendor account: mem0 hosted and its archived wrapper",
+      "agent identity plus conversation id: Letta hosted MCP server (memory lives in stateful agents, served as MCP tools)",
+      "project or workspace: Basic Memory (per-project local/cloud routing; Teams shared workspace); Cognee standalone per-instance",
+      "one token one user: Cognee API mode (the docs themselves flag the multi-tenant caveat)",
+      "none, identity by prompt convention: official knowledge-graph memory server, GroundMemory, people-context",
+      "identity via transport binding, not tool args: LBrain (estate 10-01 dig)"
+    ],
+    "persistence_spectrum": "vendor cloud (mem0, Letta cloud, Basic Memory cloud, Cognee API mode) at one end; local files with indexes at the other (JSONL knowledge graph; Markdown plus SQLite; SQLite plus LanceDB plus Kuzu; SQLite FTS5)",
+    "auth_spectrum": "OAuth-or-bearer (mem0 hosted), bearer-only (Letta hosted), single token (Cognee API mode), none local (official memory server, Basic Memory local, LBrain)",
+    "multi_agent_answer": "Four shapes actually serve memory across multiple agents: (1) mem0 hosted, shared account with entity taxonomy; (2) Letta hosted, memory inside stateful agents served as MCP tools; (3) Cognee API mode, multiple MCP instances on one shared knowledge graph; (4) Basic Memory Teams, shared cloud workspace. Everything local-first and single-file serves exactly one agent per instance and calls it memory, with no auth and no concurrency story."
+  },
+  "landscape_shifts_vs_10_01_bank": [
+    "mem0: the OSS MCP wrapper mem0-mcp-server is now a public archive per its README caution; the MCP surface mem0 offers is the hosted server at mcp.mem0.ai. The 10-01 adjacent.md row (mem0 memory-infrastructure API with self-host SUPPORTED, from the main README) is still true for the library, but the MCP layer specifically is hosted-only now.",
+    "OpenMemory: pivoted from local-first MCP memory layer to session-sync across coding harnesses; the mem0ai/openmemory main README is the session-sync product. Prior briefs citing the May 2025 framing are stale.",
+    "Letta: docs now show two MCP surfaces (hosted MCP server exposing agents as tools; Agent SDK consuming MCP servers); this rides on top of the 10-01 finding that letta main README is a stub handing off to letta-code with MemFS git-tracked context.",
+    "Basic Memory: now sells a Teams shared-cloud workspace tier and per-project cloud routing on top of the AGPL local core; the hybrid local-plus-cloud-per-project shape is new since the 10-01 bank."
+  ],
+  "steal_rows": [
+    {
+      "law": "tool behavior annotations steer clients",
+      "claim": "Basic Memory annotates every MCP tool with read-only, destructive, idempotent, open-world hints so agents pick the right tool without trial-and-error, and Codex-class clients key their approval flows off the destructive hint.",
+      "steal": "Add readOnlyHint/destructiveHint/idempotentHint/openWorldHint annotations to every estate MCP verb at spec time (R2 memory verbs in the bridge spec; estate_corpus_search read-only, any future write verb destructive); landing spot mag/estate_bridge.py BRIDGE_INPUT_SCHEMAS spec block.",
+      "falsifier": "Estate bridge clients demonstrably ignore annotations, so the hints change no behavior anywhere.",
+      "leverage": "high"
+    },
+    {
+      "law": "scope binds to transport identity, never to a model-passable argument",
+      "claim": "Every surveyed multi-agent memory surface binds scope to credentials or account entities (bearer key, one token one user, account entities), and none binds it to a schema string the model can pass; LBrain learned this the hard way (red-team finding 12).",
+      "steal": "In the R2 memory verbs spec, keep seat scope bound to the R3 bridge token; never accept a scope/user_id argument from the model; cite LBrain and the Cognee one-token-one-user caveat as precedent in the spec.",
+      "falsifier": "A major server shipping enforced per-call scope strings that actually isolate tenants.",
+      "leverage": "high"
+    },
+    {
+      "law": "live graph reads can be resources with change notifications",
+      "claim": "The official knowledge-graph memory server exposes the whole graph as a memory://knowledge-graph resource and emits notifications/resources/updated on every mutation so subscribed clients see live changes.",
+      "steal": "Candidate shape for estate bonds/corpus reads on the house bridge: expose the read surface as an MCP resource with resource-updated notifications when the percolator or seed-seal mutates; only if a bridge client can actually subscribe.",
+      "falsifier": "No estate MCP client can subscribe to resource notifications (stdio request-response bridge), then the shape is dead weight.",
+      "leverage": "medium"
+    },
+    {
+      "law": "hosted memory is off-machine by default and unauthenticated callers get 401",
+      "claim": "Mem0's official MCP server runs nothing locally, holds memories in the vendor account, and answers unauthenticated calls with 401 Authentication required.",
+      "steal": "Fix the estate posture in the bridge spec: memory stays local-first; hosted-memory MCP is a named fallback shape only, with bearer-key auth and explicit account-scoping if ever crossed.",
+      "falsifier": "A hosted memory provider shipping a first-class local persistence mode equal to its cloud mode.",
+      "leverage": "medium"
+    },
+    {
+      "law": "agent-cloud execution without approvals is the anti-posture",
+      "claim": "Letta's hosted MCP server runs messages on a cloud computer in unrestricted permission mode where the agent executes tools without approval prompts.",
+      "steal": "Use as the named counter-example in the bridge/effect-broker spec: the estate rule is that model text proposes and the switchboard/effect broker authorizes effects, never an unrestricted remote execution mode.",
+      "falsifier": "Letta shipping per-tool approval gates as the default for hosted MCP-driven agent execution.",
+      "leverage": "medium"
+    },
+    {
+      "law": "single-file no-auth memory is single-user by construction",
+      "claim": "The official MCP memory server persists one JSONL file, enforces no identity, and relies on a prompt convention telling the model to assume the user is default_user.",
+      "steal": "Reject single-file no-auth memory servers for any multi-seat estate surface; the estate's sha256-pinned FTS5 corpus search already exceeds them on determinism and citation-resolvability.",
+      "falsifier": "The reference server shipping enforced per-user namespaces or locking.",
+      "leverage": "medium"
+    },
+    {
+      "law": "async memory operations get status surfaces",
+      "claim": "Mem0's hosted MCP tool list includes list_events and get_event_status so an agent can poll the status of an async memory operation by event_id.",
+      "steal": "If estate bridge writes ever cross (percolator candidates, seed seal), pair each write verb with an event row and a get_status read verb instead of long-blocking calls.",
+      "falsifier": "Estate writes stay synchronous and bounded, then the status surface is unneeded; revisit only when a write crosses the bridge.",
+      "leverage": "low"
+    }
+  ],
+  "honest_gaps": [
+    "Read-only doc survey: no server was installed or run; no live MCP handshake against mcp.mem0.ai, api.letta.com/mcp, cognee-mcp, or basic-memory was performed this session, so all tool lists and auth behaviors are from fetched doc bytes, not from running the products.",
+    "The mem0 OSS library's own (non-MCP) local persistence was not re-verified this session; the 10-01 adjacent.md bank covers it from the main README bytes, and this lane only adds the MCP layer.",
+    "Basic Memory project-level auth details (what an API key can reach, per-project isolation guarantees) are named only as marketing-grade statements in the README; the deeper docs pages were not fetched.",
+    "Cognee's multi-tenant caveat in API mode is cited from the overview page's own warning; the mcp-local-setup page it references was not fetched, so the precise tenant semantics are UNVERIFIED beyond that sentence.",
+    "mem0 hosted MCP org/project-level scoping (if any exists above the user/agent/app/run taxonomy) is not named on the fetched page; absence in the page is noted, not absence in the product.",
+    "The Letta agent-sdk/mcp page covers the Agent SDK shape; the older letta-code harness MCP surface from the 10-01 dig was not re-fetched today.",
+    "chat transcripts and dashboard render: none; this lane wrote only the fetched bytes, the sha256 manifest, the check script output, and this JSON."
+  ],
+  "decision_ledger": "Closes the rung question who serves memory across multiple agents and how: four live shapes exist (mem0 account-plus-entity-taxonomy, Letta agents-as-MCP-tools, Cognee API-mode shared graph, Basic Memory Teams shared workspace) and every one binds scope to credentials or account entities, never to a model-passable argument. Decision changed: the R2 memory-verb bridge spec (estate_corpus_search plus estate_bonds_read, from the 10-01 lbrain lane) gains two requirements, tool behavior annotations on every verb and the resource-plus-notification shape as the live-read candidate, and two named anti-postures, hosted account-held memory as default and unrestricted agent-cloud execution. Decision invalidated: any banked brief row citing OpenMemory as a local-first memory MCP server must be re-tri-stated against the session-sync pivot. The no-code rule held: nothing under mag/ or tools/ was touched, so the ratchet was not run (conditional not triggered).",
+  "em_dash_audit": "check script enforces zero U+2014 and zero U+2013 characters in this file and in the check output",
+  "quotes": [
+    {"id": "Q_MEM0_NOTHING_LOCAL", "file": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/rung/lanes/fetched/mem0.mcp-platform.md", "line": 20, "text": "Nothing runs on your machine: the server is hosted by Mem0, and your client connects to it over HTTPS."},
+    {"id": "Q_MEM0_ACCOUNT", "file": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/rung/lanes/fetched/mem0.mcp-platform.md", "line": 22, "text": "Memories you store this way live in your Mem0 account, not on your computer."},
+    {"id": "Q_MEM0_401", "file": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/rung/lanes/fetched/mem0.mcp-platform.md", "line": 62, "text": "If neither is set up, the server replies `401 Authentication required` and your client reports the connection as failed."},
+    {"id": "Q_MEM0_ARCHIVED", "file": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/rung/lanes/fetched/mem0-mcp.readme.md", "line": 4, "text": "**mem0-mcp-server** is no longer actively maintained and this repository is now a public archive."},
+    {"id": "Q_MEM0_SCOPE_DELETE_ALL", "file": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/rung/lanes/fetched/mem0-mcp.readme.md", "line": 37, "text": "Bulk delete all memories in the confirmed scope (user/agent/app/run)."},
+    {"id": "Q_LETTA_MEMORY_IN_AGENT", "file": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/rung/lanes/fetched/letta.hosted-mcp.md", "line": 14, "text": "Letta agents keep their memory across every conversation, so the calling agent does not need to resend context."},
+    {"id": "Q_LETTA_BEARER_ONLY", "file": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/rung/lanes/fetched/letta.hosted-mcp.md", "line": 59, "text": "The client must support custom bearer headers; OAuth-only clients are not supported yet."},
+    {"id": "Q_LETTA_UNRESTRICTED", "file": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/rung/lanes/fetched/letta.hosted-mcp.md", "line": 82, "text": "Messages run on a Cloud computer in unrestricted permission mode: the agent executes tools without approval prompts."},
+    {"id": "Q_LETTA_SDK_NOT_PERSISTED", "file": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/rung/lanes/fetched/letta.agent-sdk-mcp.md", "line": 17, "text": "They are not persisted on the Letta agent: their implementations, processes, credentials, and filesystem access belong to the application hosting the session."},
+    {"id": "Q_OFFICIAL_KG", "file": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/rung/lanes/fetched/mcp-official-memory.readme.md", "line": 3, "text": "A basic implementation of persistent memory using a local knowledge graph. This lets Claude remember information about the user across chats."},
+    {"id": "Q_OFFICIAL_FILE", "file": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/rung/lanes/fetched/mcp-official-memory.readme.md", "line": 233, "text": "`MEMORY_FILE_PATH`: Path to the memory storage JSONL file (default: `memory.jsonl` in the server directory)"},
+    {"id": "Q_OFFICIAL_DEFAULT_USER", "file": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/rung/lanes/fetched/mcp-official-memory.readme.md", "line": 317, "text": "You should assume that you are interacting with default_user"},
+    {"id": "Q_OFFICIAL_NOTIFY", "file": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/rung/lanes/fetched/mcp-official-memory.readme.md", "line": 137, "text": "emit `notifications/resources/updated` for this URI, so subscribed clients see live changes"},
+    {"id": "Q_COGNEE_SHARE", "file": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/rung/lanes/fetched/cognee.mcp-overview.md", "line": 11, "text": "Run it standalone for one user, or in [API Mode](#architecture-modes) so several assistants share one knowledge graph."},
+    {"id": "Q_COGNEE_TOKEN", "file": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/rung/lanes/fetched/cognee.mcp-overview.md", "line": 48, "text": "Each instance authenticates with a single token, so everything it writes belongs to one Cognee user"},
+    {"id": "Q_COGNEE_DB", "file": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/rung/lanes/fetched/cognee.mcp-overview.md", "line": 46, "text": "Out of the box it uses SQLite, LanceDB, and the embedded Ladybug (Kuzu) graph store"},
+    {"id": "Q_OM_PIVOT", "file": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/rung/lanes/fetched/openmemory-main.readme.md", "line": 24, "text": "Developers feel locked in to their primary harness, unable to try new ones without losing all their context from previous sessions."},
+    {"id": "Q_BM_LOCAL_FIRST", "file": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/rung/lanes/fetched/basic-memory.readme.md", "line": 39, "text": "**Local-first.** Plain text on your disk. Forever."},
+    {"id": "Q_BM_NO_SERVERS", "file": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/rung/lanes/fetched/basic-memory.readme.md", "line": 458, "text": "Just files plus a local SQLite index. No servers required."},
+    {"id": "Q_BM_PROJECT_ROUTING", "file": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/rung/lanes/fetched/basic-memory.readme.md", "line": 397, "text": "**Per-project cloud routing.** Route individual projects through the cloud"},
+    {"id": "Q_BM_TEAMS", "file": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/rung/lanes/fetched/basic-memory.readme.md", "line": 25, "text": "Give your team a single, shared cloud workspace. Knowledge isn't confined to one person"},
+    {"id": "Q_BM_ANNOTATIONS", "file": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/rung/lanes/fetched/basic-memory.readme.md", "line": 550, "text": "MCP behavior hints (read-only, destructive, idempotent, open-world)"},
+    {"id": "Q_LBRAIN_IDENTITY", "file": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/localfirst/lbrain.md", "line": 48, "text": "an unregistered brain is a first-class state, not an error. Identity accretes onto an anonymous install; it never gates one."},
+    {"id": "Q_PEOPLE_CONTEXT", "file": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/localfirst/adjacent.md", "line": 27, "text": "One SQLite file on your machine. No account, no cloud, no network calls."},
+    {"id": "Q_ADJACENT_MEM0_SELFHOST", "file": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/localfirst/adjacent.md", "line": 16, "text": "Just testing? Use the library. Building for a team? Self-hosted. Want zero ops? Cloud."}
+  ]
+}

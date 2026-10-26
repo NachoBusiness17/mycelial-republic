@@ -1,0 +1,76 @@
+{
+  "lane": "B2-164",
+  "ts": "2026-09-26T18:37:52Z",
+  "hook_pre_edit_sha256": "163166d62ef2f1282080e7704bd743c9a95d2785bac708de9ae72eb31d26674a",
+  "hook_post_landing_sha256": "a71d13809591426d1f90e4094c38430db5ddc186db99166fc002b2c753c934d5",
+  "hook_lines": "209 -> 281",
+  "gate_script_sha256_pre_and_post_restore": "ad7c248e61e660c2aa099fe6a2325e5b4da7443b1ec13bcd240c6dba128daa37",
+  "mutation": "G4-salvage check lambda replaced with `lambda t: False,  # B2-164 falsifier mutation`, guarded single-string replace, restored after each direction",
+  "directions": {
+    "t3_skip_clean_gate": {
+      "exit": 0,
+      "arm": "skipped, gate script unchanged",
+      "suite_ran": false,
+      "transcript": "B2_164_t3_skip.txt"
+    },
+    "t4_range_positive": {
+      "exit": 0,
+      "range": "5c6b1b4a..77ff6138 (real history, last gate-touching commit 77ff6138bc1c108435e316b530c792a7b1088c27, parent 5c6b1b4a57198dd5f3fe1feb4cca6eac07a8acbf)",
+      "arm": "ok (gate changed, card suite green)",
+      "transcript": "B2_164_t4_range_pos.txt"
+    },
+    "t4_range_negative": {
+      "exit": 0,
+      "range": "empty (local equals remote)",
+      "arm": "skipped",
+      "transcript": "B2_164_t4_range_neg.txt"
+    },
+    "t2_green_dirty": {
+      "exit": 0,
+      "mutation": "comment marker appended to import line (behavior unchanged)",
+      "arm": "ok (gate changed, card suite green)",
+      "transcript": "B2_164_t2_green_dirty.txt"
+    },
+    "t1_red": {
+      "exit": 1,
+      "arm": "BLOCKS the push",
+      "suite": "7 of 7 cards red + control red (G4-salvage appears in every failed_checks)",
+      "transcript": "B2_164_t1_red.txt"
+    }
+  },
+  "e2e": {
+    "method": "git -c core.hooksPath=<copy> push --dry-run <local bare repo> HEAD:refs/heads/b2_164_e2e; hook copy differs from the landed hook by ONE disclosed stub: config_seal verify `|| exit 1` -> `|| true` (shared-tree config drift is not this falsifier's subject; B2-260/B2-328 precedent)",
+    "red": {
+      "exit": 1,
+      "verdict": "push rejected, error: failed to push some refs",
+      "blocker": "PUSH-GATE: workflow_gate_scenarios BLOCKS the push",
+      "transcript": "B2_164_e2e_red.txt"
+    },
+    "green": {
+      "exit": 0,
+      "verdict": "push accepted after byte-identical restore",
+      "block_state": "skipped, gate script unchanged",
+      "transcript": "B2_164_e2e_green.txt"
+    }
+  },
+  "ratchet": {
+    "standalone": "PASS, scope=42 changed files, hits=39, NEW=0",
+    "under_red_mutation": "PASS, scope=44 changed files, hits=40, NEW=0 (so the E2E blocker was this block, not an earlier gate)"
+  },
+  "suite_post_restore": "SCENARIOS: 7 cards validated read-only (no registry row written), exit 0",
+  "em_dash_added_lines": {
+    "githooks/pre-push + AGENTS.md diff": 0,
+    "QUEUE.md diff": 0
+  },
+  "artifacts": [
+    "B2_164_gate_block_probe.sh",
+    "B2_164_t3_skip.txt",
+    "B2_164_t4_range_pos.txt",
+    "B2_164_t4_range_neg.txt",
+    "B2_164_t2_green_dirty.txt",
+    "B2_164_t1_red.txt",
+    "B2_164_e2e_red.txt",
+    "B2_164_e2e_green.txt",
+    "B2_164_gate_block_results.json"
+  ]
+}

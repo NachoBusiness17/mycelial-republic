@@ -1,0 +1,59 @@
+{
+  "lane": "stealth-tools",
+  "division": "B",
+  "ok": true,
+  "note": "All four owed fixes landed and every finish line is probe-proven (colon-slug round-trip on the base file, selffeed real output m7 in 42s, second instance refused rc=2, mirrors.json on-change); open gaps stated plainly: the stale cua-driver daemon and the two live old-code instances need operator action, the ratchet FAIL exit 1 is sibling-lane debt plus an advisory +229 growth on stealth_driver.py, and my accidental baseline-update execution was fully undone and verified.",
+  "rows": [
+    {
+      "law": "NTFS colon-slug silent data diversion",
+      "claim": "Replacing only '/' in a filename slug lets model colons split the name into a 0-byte base file plus an alternate data stream that silently holds the answer.",
+      "quote": "tools/stealth_fanout.py:135 builds the output slug with model.replace(\"/\", \"_\") only, so model id \"inclusionai/ling-3.0-flash-sante:free\" produces filename \"...-sante:free.md\".",
+      "source": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/burn_reset_20260927/flash50/stealth-sw-15.md",
+      "steal": "Route every filename fragment through a slug() that strips the full NTFS-unsafe set at the write site, never just slash replacement; landed as tools/stealth_fanout.py:105,154 and tools/stealth_driver.py:126,145 with a parity test.",
+      "falsifier": "The old construction writing a nonzero-byte base file with no named ADS stream, or a colon surviving into any banked fan/driver output filename.",
+      "leverage": "high"
+    },
+    {
+      "law": "selffeed rc=1 was a misresolved seat python riding a wedged cua-driver pipe",
+      "claim": "The driver spawned its own interpreter as 'Hermes' (sys.executable), which no-ops silently or hits the documented stale-daemon pipe error; Hermes's own venv python answers one-shots with real stdout.",
+      "quote": "\"selffeed\": \"ERR selffeed: rc=1 The system cannot find the file specified.\\n\",",
+      "source": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/burn_reset_20260927/flash50/_arch03_out.txt",
+      "steal": "Resolve headless seat pythons by layout (HERMES_PYTHON env, <home>/hermes-agent/venv, <home>/tools/python-*) in tools/stealth_driver.py:290-338, name the known failure signatures, and gate the topic after 3 consecutive failures with a 36-cycle re-probe (:973-1027).",
+      "falsifier": "A selffeed cycle returning ERR rc=1 on consecutive cycles with the venv python resolved and the gate live, or the venv python -z probe returning empty stdout.",
+      "leverage": "high"
+    },
+    {
+      "law": "two same-second boot-lane instances interleave and drop half the heartbeat",
+      "claim": "The driver had no single-instance law: two instances started 2026-09-28 11:47:55 raced on the heartbeat, work queue and mirrors.json, and 80 of 156 cycles never landed a row.",
+      "quote": "second-instance rc: 2",
+      "source": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/wave5-repair/lanes/stealth-tools.check.txt",
+      "steal": "Named-mutex (win32) / flock (posix) single-instance lock acquired before any topic runs, auto-released on process death, loud exit 2 on refusal; tools/stealth_driver.py:622-700,1082.",
+      "falsifier": "Two live driver processes surviving past one lock acquisition window, or a heartbeat whose row count equals its max cycle number while two instances are running.",
+      "leverage": "medium"
+    }
+  ],
+  "checks": [
+    {
+      "command": ".venv/Scripts/python.exe -m pytest tests/test_stealth_tools_wave5_repair.py tests/test_stealth_driver_effort_dial.py tests/test_stealth_driver_prompt_lance.py -q",
+      "exit": 0,
+      "evidence": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/wave5-repair/lanes/stealth-tools.check.txt (PYTEST section: 12 passed)"
+    },
+    {
+      "command": ".venv/Scripts/python.exe watch/inbox/gala_20260925/wave5-repair/lanes/_probe_finish_line.py C D",
+      "exit": 0,
+      "evidence": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/wave5-repair/lanes/stealth-tools.check.txt (PROBE C: second-instance rc 2 + REFUSED line; PROBE D: identical catalog no write, changed catalog writes). Probes A and B ran in the first invocation of the same script (same evidence file, PROBE A and PROBE B sections); its first run exited 1 on a probe-side Popen bug at section C, fixed and rerun."
+    },
+    {
+      "command": ".venv/Scripts/python.exe tools/violation_ratchet.py check --changed",
+      "exit": 1,
+      "evidence": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/wave5-repair/lanes/_ratchet_out.txt (4 NEW hits in sibling files not touched by this lane; advisory GROWTH on stealth_driver.py +355 of which +229 is this lane's). Full output also appended to stealth-tools.check.txt with the correction section for an earlier bad exit-code capture and the disclosed baseline-update accident + verified undo."
+    },
+    {
+      "command": ".venv/Scripts/python.exe watch/inbox/gala_20260925/wave5-repair/lanes/_probe_selffeed_repro.py (pre-fix repro) and _probe_hermes_python.py (venv python: rc=0 'OK' 24.4s)",
+      "exit": 0,
+      "evidence": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/wave5-repair/lanes/ (both probe scripts; console output captured in session, root-cause chain restated in watch/inbox/wave5_repair/stealth-tools.md)"
+    }
+  ],
+  "decision_changed": "stealth driver operational contract: exactly one instance may run (second refuses exit 2), hermes dispatch failures name their cause and selffeed gates off loudly after 3 consecutive failures, mirrors.json is a change-log instead of a per-cycle snapshot; closes the wave5 stealth-tools owed waltz",
+  "artifact": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/wave5-repair/lanes/stealth-tools.json"
+}

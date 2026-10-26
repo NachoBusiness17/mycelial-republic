@@ -1,0 +1,104 @@
+[2026-09-22] u/ApeGrower :: Fork of FreeToken with DeepSeek-V4.1, vision and speculative decoding (2x3090 numbers inside)
+    I've been running FreeToken on my 2x3090 box for a while and ended up maintaining a fork of it. Posting it in case it's useful to anyone else here. Quick context if you haven't used it: FreeToken is an edge-native MoE serving engine. It offloads experts to host RAM/NVMe and co-executes on CPU+GPU so you can run big MoE models on consumer hardware. Upstream is here: https://github.com/FlashML-org/FreeToken What I added on top of upstream: - DeepSeek-V4.1-Flash (mHC, CSA2 sparse attention, lightning indexer, Engram n-gram memory, DSpark draft) - Vision for Qwen3.8-Flash-Next, incl. OpenAI image_url input end to end - Speculative decoding: MTP draft head (embedded or external artifact), rejection sampling, commit-the-accepted-prefix instead of re-extending, optional round chaining - FTW (the fast weight format) now carries side tables (PLE/Engram) and the MTP head, plus TP slicing - Tensor-parallel loading for a few families, optional fp8 all-reduce - Reworked the quant config layer so each module's scheme comes from one place - Various fixes (FTW TP band offsets, O_DIRECT reads, scheduler spec budget, Engram hashing) My box, for reference: - 2x RTX 3090 (24GB each, PCIe x16), tensor parallel = 2 - AMD EPYC 7203P, 8 cores / 16 threads, 8x DDR4-2400 - Model: nvidia/Qwen3.8-Flash-Next-NVFP4 converted as FTW (512 experts, offload) - Serve flags: --moe-strategy offload --tensor-parallel-size 2 --moe-cache-auto --ple-backend pinned --expert-load parallel --max-prefill-length 8192 --d
+
+[2026-09-22] u/eightone-81 :: /u/eightone-81 on Fork of FreeToken with DeepSeek-V4.1, vision and speculative decoding (2x3090 numbers inside
+    Have a look here https://huggingface.co/albucino/Qwen3.8-Flash-Next-W4A16-FP8PLE Much higher performance
+
+[2026-09-22] u/ApeGrower :: /u/ApeGrower on Fork of FreeToken with DeepSeek-V4.1, vision and speculative decoding (2x3090 numbers inside)
+    Thank's, I will look at it
+
+[2026-09-22] u/djnitesh :: /u/djnitesh on Fork of FreeToken with DeepSeek-V4.1, vision and speculative decoding (2x3090 numbers inside)
+    its with ddr4 or ddr5 ? its not mentioned there, in case you know.
+
+[2026-09-22] u/eightone-81 :: /u/eightone-81 on Fork of FreeToken with DeepSeek-V4.1, vision and speculative decoding (2x3090 numbers inside
+    The 135tps is best case scenario with ddr5 and 8 channel… I have ddr4 dual channel and get 74tps which goes down to not less than 60 on high context. With 86 hot experts and 220k context. Runs amazing.
+
+[2026-09-24] u/ApeGrower :: /u/ApeGrower on Fork of FreeToken with DeepSeek-V4.1, vision and speculative decoding (2x3090 numbers inside)
+    I updated my FreeToken Fork to support the modell u linked - it's indeed faster, thank you! FreeToken does not benefit from mtp for this model, becouse of the model streaming architecture, however, mtp is also working and can be tested (but slows me down on my machine).
+
+[2026-09-24] u/eightone-81 :: /u/eightone-81 on Fork of FreeToken with DeepSeek-V4.1, vision and speculative decoding (2x3090 numbers inside
+    Did you look into the vllm patches that the Autor build and also his GitHub. It’s tailor made for your hardware. Gives me 74tps decode and 220k context. I could run full context with 68tps as well
+
+[2026-09-24] u/ApeGrower :: /u/ApeGrower on Fork of FreeToken with DeepSeek-V4.1, vision and speculative decoding (2x3090 numbers inside)
+    Yes, I did look at it, my fork is doing the smae thing. I'm running it with 262k context at 55-85 tps, peaks are till 90 tps, but without mtp.
+
+[2026-09-24] u/eightone-81 :: /u/eightone-81 on Fork of FreeToken with DeepSeek-V4.1, vision and speculative decoding (2x3090 numbers inside
+    Oh. Interesting. So if you could add mtp then that would be 100+ TPs? With vision? And do you attribute that speed to your 8x ram?
+
+[2026-09-24] u/ApeGrower :: /u/ApeGrower on Fork of FreeToken with DeepSeek-V4.1, vision and speculative decoding (2x3090 numbers inside)
+    No, mtp will slow down freetoken, becouse of the freetoken architecture. Sadly. I was working long time on it, with the same hope for 100 tps :)
+
+[2026-09-24] u/eightone-81 :: /u/eightone-81 on Fork of FreeToken with DeepSeek-V4.1, vision and speculative decoding (2x3090 numbers inside
+    So would you say that your implementation with freetoken is overall better than the vllm implementation? Your implementation has vision?
+
+[2026-09-28] u/VerticalPackage :: /u/VerticalPackage on Fork of FreeToken with DeepSeek-V4.1, vision and speculative decoding (2x3090 numbers in
+    That model linked states it needs 128GB ram, is this flexible? I can only allocate up to 96GB (what's free on my server).
+
+[2026-09-28] u/ApeGrower :: /u/ApeGrower on Fork of FreeToken with DeepSeek-V4.1, vision and speculative decoding (2x3090 numbers inside)
+    The model has to fit into vram + ram, you can balance between the two, but in total it has to fit. Offloading to ssd is not a good idea when it comes to speed.
+
+[2026-09-28] u/VerticalPackage :: /u/VerticalPackage on Fork of FreeToken with DeepSeek-V4.1, vision and speculative decoding (2x3090 numbers in
+    I'm already using your originally recommended model with PLE on the nvme. one RTX3090 + 96GB DDR5 (only 64GB is being used) and I get about 1000 tps prompt processing and 40 tps decode. I was hoping that second model might do better under the same condition. I will give it a shot nonetheless.
+
+[2026-09-28] u/ApeGrower :: /u/ApeGrower on Fork of FreeToken with DeepSeek-V4.1, vision and speculative decoding (2x3090 numbers inside)
+    Will be happy to hear about your experience. I'm still working on improvements of FreeToken, updating the github repo frequently.
+
+[2026-09-28] u/VerticalPackage :: /u/VerticalPackage on Fork of FreeToken with DeepSeek-V4.1, vision and speculative decoding (2x3090 numbers in
+    Looking forward to your improvements. MTP is probably your next big challenge? Also, why did you pick FreeToken? For 27b, vLLM was the winner, especially this branch , the MTP + fast variant from that repo tripled my 27b speed. I have no idea though how anything is transferable to Flash Next considering it is a very different architecture.
+
+[2026-09-28] u/ApeGrower :: /u/ApeGrower on Fork of FreeToken with DeepSeek-V4.1, vision and speculative decoding (2x3090 numbers inside)
+    I took FreeToken becouse it's able to run larger models on local hardware. MTP is already working, not sure if the current github version already has this improvement, I'm developing with a local gitea and don't push every update directly to github. DSpark, which is needed for deepseek 4.1 flash, becouse there is no mtp header for ds4.1f, is also working. MTP with 27B is working nicely, especially when it comes to multi agent coding. I had >200 tok/s in total on dual rtx 3090 with 27B and mtp enabled, with acceptance rates from 50-70%.
+
+[2026-09-28] u/VerticalPackage :: /u/VerticalPackage on Fork of FreeToken with DeepSeek-V4.1, vision and speculative decoding (2x3090 numbers in
+    If MTP is now giving more speed instead of cutting it by half on Flash Next, then that is great news! I think I see the MTP update on your repo on 2026-09-26 around 4PM EDT. I installed your repo just a few hours before that :p I will update my local install and give MTP another try later today.
+
+[2026-09-28] u/ApeGrower :: /u/ApeGrower on Fork of FreeToken with DeepSeek-V4.1, vision and speculative decoding (2x3090 numbers inside)
+    Yes it does, but still not very much with flash next. Check the new dense_fp8 parameter. My flash next floor is currently at about 70 tps with peaks up to 96.
+
+[2026-09-28] u/ApeGrower :: /u/ApeGrower on Fork of FreeToken with DeepSeek-V4.1, vision and speculative decoding (2x3090 numbers inside)
+    I looked at the linked vllm repo - thank's so far. Maybe I'll work on vllm also after I'm done with my freetoken work. If so, I will also share it.
+
+[2026-09-22] u/VotZeFuk :: /u/VotZeFuk on Fork of FreeToken with DeepSeek-V4.1, vision and speculative decoding (2x3090 numbers inside)
+    Post title mentions DS 4.1, post contents about Qwen 3.8 Flash Next benchmarking... I thought I was having a stroke reading this.
+
+[2026-09-22] u/ApeGrower :: /u/ApeGrower on Fork of FreeToken with DeepSeek-V4.1, vision and speculative decoding (2x3090 numbers inside)
+    You are right. DS 4.1 runs also on this, if you have ~260gb RAM. I have 10-15 tok/s with DS 4.1.
+
+[2026-09-23] u/Zyj :: /u/Zyj on Fork of FreeToken with DeepSeek-V4.1, vision and speculative decoding (2x3090 numbers inside)
+    but how much RAM do you have? you only write 8x
+
+[2026-09-23] u/ApeGrower :: /u/ApeGrower on Fork of FreeToken with DeepSeek-V4.1, vision and speculative decoding (2x3090 numbers inside)
+    512gb
+
+[2026-09-22] u/86obsessed :: /u/86obsessed on Fork of FreeToken with DeepSeek-V4.1, vision and speculative decoding (2x3090 numbers inside)
+    Can you post a little more about the benchmarks you ran and your specs? I know you have 8x ddr4 but is it 8 channel or 4 channel? what pcie lane width are you running for the GPUs? what do the PP vs TG look like? It also looks like you were getting less TG with MTP? what did you set your mtp draft tokens to? 2, 3, 5? I have more questions but I'm thinking about agregating information at some point in the future
+
+[2026-09-22] u/VerticalPackage :: /u/VerticalPackage on Fork of FreeToken with DeepSeek-V4.1, vision and speculative decoding (2x3090 numbers in
+    I love this constant work on Flash Next, so many people attempting to speed it up. Hopefully soon something will come out to allow a single RTX3090 + 128GB DDR5 to run the model at a reasonable speed.
+
+[2026-09-23] u/Enragere :: /u/Enragere on Fork of FreeToken with DeepSeek-V4.1, vision and speculative decoding (2x3090 numbers inside)
+    I know it's not 3090 but 5090+96gb i get blazing 55-65 t/s with 3k prompt processing that's same on 10k or 140k context. nvfp4
+
+[2026-09-23] u/VerticalPackage :: /u/VerticalPackage on Fork of FreeToken with DeepSeek-V4.1, vision and speculative decoding (2x3090 numbers in
+    What's your context size? I guess you go to the max native context?
+
+[2026-09-23] u/Enragere :: /u/Enragere on Fork of FreeToken with DeepSeek-V4.1, vision and speculative decoding (2x3090 numbers inside)
+    max i could do was 192k on Linux with monitor running off of 9800x3d igpu
+
+[2026-09-23] u/VerticalPackage :: /u/VerticalPackage on Fork of FreeToken with DeepSeek-V4.1, vision and speculative decoding (2x3090 numbers in
+    Maxed because all your RAM was used? Or because you found the performance to be lacking if you offloaded more to the RAM? How much of that 96GB was used for the model?
+
+[2026-09-23] u/Enragere :: /u/Enragere on Fork of FreeToken with DeepSeek-V4.1, vision and speculative decoding (2x3090 numbers inside)
+    all good questions but I'll need to check exact numbers when I get home. Yeah I preferred speed over long context since I'm using magic context anyway. Edit: Freetoken doesn't support kv cache offloading to RAM, that's at least to my knowledge, , that's why, sorry was like 10 days ago! forgot 🙈
+
+[2026-09-23] u/VerticalPackage :: /u/VerticalPackage on Fork of FreeToken with DeepSeek-V4.1, vision and speculative decoding (2x3090 numbers in
+    I understand that, but I was talking about keeping a certain amount of expert layers to the CPU/RAM. --n-cpu-moe The more expert layers put on CPU/RAM, the more space you have on VRAM for context size, but you also lose speed on token generation and prompt processing. Anyhow, 192k context is plenty. In my case, I only have 24GB VRAM, so I will have more expert layers offloaded to CPU/RAM and thus have less speed.
+
+[2026-09-23] u/Enragere :: /u/Enragere on Fork of FreeToken with DeepSeek-V4.1, vision and speculative decoding (2x3090 numbers inside)
+    Yeah ultimately comes down to the same thing, Freetoken does experts offloading automatically to cpu once VRAM is fully used. What speeds are you getting with your 3090?
+
+[2026-09-23] u/VerticalPackage :: /u/VerticalPackage on Fork of FreeToken with DeepSeek-V4.1, vision and speculative decoding (2x3090 numbers in
+    I'm not yet running Flash Next. I run 27B on a VM on proxmox. For Flash Next, I need to pass to the VM the nvme drive for the ngram table. So I need some time to relocate disk images out of the primary nvme and onto other drives, space is already very tight. I just need a bit of time when I can have the VMs on proxmox go offline.
+
+[2026-09-23] u/Enragere :: /u/Enragere on Fork of FreeToken with DeepSeek-V4.1, vision and speculative decoding (2x3090 numbers inside)
+    tbh I'm not convinced that 27b is worse in quality than flash next no matter what I read online. both are nvfp4 so maybe one is more sensitive to quantization than the other but idk.

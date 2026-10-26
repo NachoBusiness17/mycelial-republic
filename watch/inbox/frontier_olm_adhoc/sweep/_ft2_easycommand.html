@@ -1,0 +1,458 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#202020">
+    <meta name="description"
+        content="EasyCommand: open models, training data, and lessons from teaching small models to write shell commands.">
+    <title>Teaching a 1.5B model to generate bash commands at gpt-4o level using 400k synthetic examples  — Dirac</title>
+    
+<meta property="og:title" content="Teaching a 1.5B model to generate bash commands at gpt-4o level using 400k synthetic examples  — Dirac">
+<meta property="og:description" content="EasyCommand: open models, training data, and lessons from teaching small models to write shell commands.">
+<meta property="og:type" content="article">
+<meta property="og:image" content="https://dirac.run/static/images/dirac.svg">
+<meta property="og:site_name" content="Dirac">
+<meta property="article:published_time" content="2026-10-05">
+<meta property="article:author" content="Max Trivedi">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Teaching a 1.5B model to generate bash commands at gpt-4o level using 400k synthetic examples  — Dirac">
+<meta name="twitter:description" content="EasyCommand: open models, training data, and lessons from teaching small models to write shell commands.">
+<meta name="twitter:image" content="https://dirac.run/static/images/dirac.svg">
+
+    <link rel="icon" href="/static/images/dirac.svg" type="image/svg+xml">
+    <link rel="stylesheet" href="/static/css/fonts.css?v=20261010-refine1">
+    <link rel="stylesheet" href="/static/css/site.css?v=20261010-refine1">
+    <link rel="stylesheet" href="/static/css/prose.css?v=20261010-refine1">
+    
+<link rel="stylesheet" href="/static/css/pages/posts.css?v=20261010-refine1">
+
+<link rel="stylesheet" href="/static/css/pages/easycommand.css">
+
+
+    <script src="/static/js/site.js" defer></script>
+</head>
+
+<body class="">
+    <a class="skip-link" href="#main-content">Skip to content</a>
+
+    <header class="site-header">
+    <a class="wordmark" href="/" aria-label="Dirac home">
+        <img class="wordmark-mark" src="/static/images/dirac.svg" alt=""
+            aria-hidden="true"><b>DIRAC</b>
+    </a>
+    <nav id="primary-navigation" class="site-nav" aria-label="Primary navigation" data-site-nav>
+        <a href="/#field-manual">Field manual</a>
+        <a href="/#benchmarks">Benchmarks</a>
+        <a href="/docs" >Docs</a>
+        <a href="/posts"  aria-current="page" >Posts</a>
+        <a href="/labs-market-share" >Labs Market Share</a>
+    </nav>
+    <div class="header-actions">
+        <a class="header-link" href="https://discord.gg/wcYTx9BGea" target="_blank" rel="noreferrer"
+            aria-label="Join Dirac on Discord (opens in a new tab)">
+            <svg class="header-link__icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                <path fill="currentColor"
+                    d="M20.317 4.37a19.79 19.79 0 0 0-4.885-1.515c.074.133.147.305.2.466a18.27 18.27 0 0 0-5.564 0c.064-.161.141-.333.205-.466A19.74 19.74 0 0 0 5.388 4.37C2.07 9.046 1.18 13.579 1.575 18.057a19.9 19.9 0 0 0 5.993 3.03 14.26 14.26 0 0 0 1.533-2.493 12.19 12.19 0 0 1-2.405-1.162c.2-.147.395-.304.584-.465a14.14 14.14 0 0 0 12.397 0c.19.161.385.318.584.465a12.31 12.31 0 0 1-2.41 1.17 14.37 14.37 0 0 0 1.533 2.493 19.88 19.88 0 0 0 6.002-3.03c.464-5.196-.79-9.69-5.07-13.696ZM8.02 15.331c-1.182 0-2.157-1.085-2.157-2.419 0-1.333.955-2.418 2.157-2.418 1.21 0 2.176 1.095 2.157 2.418 0 1.334-.955 2.419-2.157 2.419Zm7.975 0c-1.18 0-2.157-1.085-2.157-2.419 0-1.333.955-2.418 2.157-2.418 1.21 0 2.176 1.095 2.157 2.418 0 1.334-.946 2.419-2.157 2.419Z" />
+            </svg>
+            <span>Discord</span>
+        </a>
+        <a class="header-link" href="https://github.com/dirac-run/dirac" target="_blank" rel="noreferrer"
+            aria-label="View Dirac on GitHub (opens in a new tab)">
+            <svg class="header-link__icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                <path fill="currentColor"
+                    d="M12 .297a12 12 0 0 0-3.795 23.385c.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61-.546-1.387-1.333-1.756-1.333-1.756-1.09-.745.083-.729.083-.729 1.205.084 1.84 1.237 1.84 1.237 1.07 1.835 2.809 1.305 3.495.998.108-.776.418-1.305.762-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23A11.5 11.5 0 0 1 12 6.844c1.02.005 2.045.138 3.003.404 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.435.375.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57A12.005 12.005 0 0 0 24 12.297c0-6.627-5.373-12-12-12Z" />
+            </svg>
+            <span>View on GitHub</span>
+        </a>
+    </div>
+    <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="primary-navigation" data-nav-toggle>
+        <span class="sr-only">Toggle navigation</span><i aria-hidden="true"></i>
+    </button>
+</header>
+
+    <main id="main-content" class="site-main">
+        
+        
+        
+        
+<div class="post-shell">
+    <nav class="breadcrumb" aria-label="Breadcrumb">
+        <a href="/posts">Posts</a>
+        <span aria-hidden="true">/</span>
+        <span>EasyCommand</span>
+    </nav>
+
+    <div class="post-layout">
+        <header class="post-header">
+            <p class="page-kicker">Small-model training</p>
+            <h1>Teaching a 1.5B model to generate bash commands at gpt-4o level using 400k synthetic examples </h1>
+            <p class="post-meta">
+                <time datetime="2026-10-05">October 05, 2026</time>
+                <span>5 min read</span>
+                <span>By Max Trivedi</span>
+            </p>
+        </header>
+        
+<aside>
+    <div>
+        <h4>On this page</h4>
+        <nav aria-label="Article sections">
+            <a href="#intro">Summary</a>
+            <a href="#how-it-started">How it started</a>
+            <a href="#the-good-stuff">The good stuff</a>
+            <a href="#training-loop">The training loop</a>
+            <a href="#more-examples">More examples ≠ better</a>
+            <a href="#benchmark">Debugging the benchmark</a>
+            <a href="#try-it">Try it, or keep training</a>
+        </nav>
+    </div>
+</aside>
+
+
+        <div class="post-column">
+            <article class="prose">
+                
+<aside id="intro" class="article-summary" aria-label="Article summary">
+    <p>
+        <strong>Tl;Dr:</strong> Fine-tuned Qwen2.5-Coder-1.5B-Instruct and Qwen3-0.6B into CPU-friendly
+        English-to-Bash models. In local development tests, the released 1.5B 4-bit model passed
+        212/300 ALFA-updated tasks (70.7%), versus whatisit's 191/300 (63.7%): a 7-percentage-point gap.
+        Both used the same grading definition, but different prompts and generation settings.
+        The comparison table includes both original and updated ALFA scores, with the benchmark version marked.
+    </p>
+</aside>
+
+<h2 id="how-it-started">How it started</h2>
+<p>
+    Despite using LLMs for most of the coding, there was always one thing I kept Googling: Bash commands.
+    It's quite flow-breaking to pause work, open Google, type the full query, go to Stack Overflow or
+    similar, and look up the syntax I wanted.
+</p>
+<p>
+    Intuitively, this always felt like something a small model would perform well at because you have a
+    finite set of commands, well-defined syntax, and easy-to-generate training data. So one day I decided
+    to actually find out. Over the course of the experiment, I tried six different models: SmolLM 135M,
+    SmolLM 360M, Qwen3-0.6B, Qwen2.5-Coder-1.5B, Qwen3.5-0.8B, and Qwen3.5-2B. The 0.6B and 1.5B
+    models showed the best performance, so those checkpoints were preserved.
+</p>
+
+<h2 id="the-good-stuff">The good stuff you probably want</h2>
+<p>
+    I mentioned the experiment <a href="https://news.ycombinator.com/item?id=49869735">on Hacker News</a>,
+    and people asked for the models, training data, and a write-up.
+</p>
+<ul>
+    <li><a href="https://huggingface.co/datasets/dirac-run/ec-training-data">The fine-tuning dataset</a>:
+        401,975 unique English request/Bash command pairs.</li>
+    <li>The models: <a href="https://huggingface.co/dirac-run/ec-1.5b-gguf">1.5B GGUFs</a> and
+        <a href="https://huggingface.co/dirac-run/ec-0.6b-gguf">0.6B GGUFs</a>.
+    </li>
+    <li><a href="https://github.com/dirac-run/ec">The CLI</a>.</li>
+</ul>
+<p>
+    What started as a syntax reminder turned into an interesting exercise in teaching small models—and
+    figuring out whether they were actually improving.
+</p>
+
+<h2 id="training-loop">Astra ran the training loop</h2>
+<p>
+    When I say I trained these models, I really mean Astra was the training controller, with different
+    LLMs used to generate the synthetic dataset and another set of agents used to review and admit rows
+    into it. Astra handled the training-and-evaluation workflow; I supplied the goal, constraints, and
+    course corrections.
+</p>
+<p>
+    The starting point was coming up with a category of commands in a separate conversation and building
+    a harness to generate and validate those commands. Initially we had about 30k samples. Then the loop
+    was simple: train, evaluate (I got Astra to create some benchmarks), analyze, generate more data,
+    brainstorm different ways to train, and run the next training runs. The whole process took about
+    10 days, most of it spent with models working on their specific tasks: generate, review, evaluate.
+</p>
+<p>The prompt was some variation of (among other things):</p>
+<blockquote>
+    We only care about English-to-Bash commands, nothing else. As long as we make gains in that domain,
+    we are happy to sacrifice any abilities in any other domain. We want the best goddamn English-to-Bash
+    model ever created in the history of humanity, do what you need to do.
+</blockquote>
+<p>
+    The only real direction I provided was keeping a mental map of multiple trained checkpoints,
+    prompting the models to compare those in specific categories, asking them to investigate why a
+    checkpoint traded gains in one area for losses in another, and so on.
+</p>
+<p>
+    The released models use supervised fine-tuning with LoRA, starting from Qwen3-0.6B and
+    Qwen2.5-Coder-1.5B-Instruct. The 4-bit versions surprisingly keep most of the gains of the 16-bit
+    versions, and they are convenient to run on CPU systems.
+</p>
+
+<h2 id="more-examples">More examples weren't always the answer</h2>
+<p>
+    The published dataset contains <strong>401,975 distinct request/answer pairs</strong>, covering file
+    operations, text processing, Git, archives, networking, quoting, and composed commands. A row looks
+    like this:
+</p>
+<pre><code class="language-json">{"request":"list files in this directory","response":{"kind":"COMMAND","value":"ls"}}</code></pre>
+<p>
+    Examples were synthetically generated, reviewed, and checked through execution where available.
+    Not every row was individually executed. Different descriptions of the same command were
+    intentionally retained.
+</p>
+<p>
+    One experiment made the difference between learning examples and learning behavior very clear.
+    A 0.6B model improved from <strong>8/72 to 64/72</strong> on time-related training requests. On
+    separate time-transfer requests, it stayed at <strong>1/18</strong>. Meanwhile, routine-command
+    performance fell from <strong>70/102 to 60/102</strong>.
+</p>
+<p>
+    The model was learning the supplied answers. That wasn't the same as reliably applying them elsewhere.
+</p>
+<p>
+    Targeted repairs brought another problem: retention. A later 1.5B checkpoint passed five more
+    ALFA-updated cases than the model I released, but lost 63 passes on the internal suite. I kept the
+    more balanced checkpoint. Exporting also changed checkpoint rankings, so evaluating the actual
+    quantized file became part of selection rather than an afterthought.
+</p>
+<p>
+    The <a href="https://github.com/dirac-run/ec/blob/main/docs/RESULTS.md">detailed results</a> preserve
+    those comparisons, including the experiments that didn't help.
+</p>
+
+<h2 id="benchmark">I ended up debugging the benchmark too</h2>
+<p>
+    I used ALFA, a 300-task shell benchmark, alongside internal execution tests. Investigating
+    disagreements uncovered both model mistakes and evaluator problems: argument transport, fixture
+    resets, reference commands, and checks that could accept wrong outputs or reject correct alternatives.
+</p>
+<p>
+    That work became <a href="https://github.com/dirac-run/ALFA-updated">ALFA-updated</a>. It keeps the
+    task set but documents the repaired environment and grading rules. It's a separate benchmark
+    definition, not a silent replacement for upstream ALFA.
+</p>
+<h3 id="results">Benchmark comparison</h3>
+<p>
+    The table combines our <a href="https://github.com/dirac-run/ec/blob/main/docs/RESULTS.md">local results</a>
+    with scores reported by the <a href="https://github.com/ThorOdinson246/whatisit-nl2sh">whatisit project</a>
+    and the <a href="https://huggingface.co/barbarabhb/nl2sh-qwen25-coder-1.5b-GGUF">barbarabhb model card</a>.
+    <strong>ALFA-updated?</strong> identifies the benchmark used: Yes for our repaired version, No for original ALFA.
+    whatisit appears twice: its published original-ALFA score was <strong>62.0%</strong>, while our
+    ALFA-updated run measured <strong>63.7%</strong>—a 1.7-percentage-point increase in the reported score.
+</p>
+<div class="post-table post-table--comparison" role="region" aria-label="ALFA benchmark comparison" tabindex="0">
+    <table>
+        <caption>Shell-command benchmark results, with benchmark version and source</caption>
+        <thead>
+            <tr>
+                <th scope="col">Model / configuration</th>
+                <th scope="col">Size</th>
+                <th scope="col">Pass rate</th>
+                <th scope="col">ALFA-updated?</th>
+                <th scope="col">Reported by</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>GPT-4o (published)</td>
+                <td>Cloud API</td>
+                <td>73.0%</td>
+                <td>No</td>
+                <td>ALFA authors</td>
+            </tr>
+            <tr>
+                <td><strong>EasyCommand 1.5B, Q4_K_M</strong></td>
+                <td>940.4 MiB</td>
+                <td>212/300 — 70.7%</td>
+                <td>Yes</td>
+                <td>Our local run</td>
+            </tr>
+            <tr>
+                <td>nl2sh-3b</td>
+                <td>1.9 GB</td>
+                <td>65.7%</td>
+                <td>No</td>
+                <td>whatisit</td>
+            </tr>
+            <tr>
+                <td>barbarabhb / nl2sh-qwen25-coder-1.5b, Q4_K_M</td>
+                <td>941 MB</td>
+                <td>65.67%</td>
+                <td>No</td>
+                <td>barbarabhb</td>
+            </tr>
+            <tr>
+                <td>barbarabhb / nl2sh-qwen25-coder-1.5b, Q4_K_M + imatrix</td>
+                <td>941 MB</td>
+                <td>65.00%</td>
+                <td>No</td>
+                <td>barbarabhb</td>
+            </tr>
+            <tr>
+                <td>barbarabhb / nl2sh-qwen25-coder-1.5b, Q6_K</td>
+                <td>1.2 GB</td>
+                <td>64.33%</td>
+                <td>No</td>
+                <td>barbarabhb</td>
+            </tr>
+            <tr>
+                <td>barbarabhb / nl2sh-qwen25-coder-1.5b, Q8_0</td>
+                <td>1.6 GB</td>
+                <td>63.67%</td>
+                <td>No</td>
+                <td>barbarabhb</td>
+            </tr>
+            <tr>
+                <td><a href="https://huggingface.co/ThorOdinson246/nl2sh-1.5b-Q4_K_M">whatisit / nl2sh-1.5b</a>, Q4_K_M
+                </td>
+                <td>941 MB (reported)</td>
+                <td>191/300 — 63.7%</td>
+                <td>Yes</td>
+                <td>Our local run</td>
+            </tr>
+            <tr>
+                <td>whatisit / nl2sh-1.5b, Q4_K_M</td>
+                <td>941 MB</td>
+                <td>62.0%</td>
+                <td>No</td>
+                <td>whatisit</td>
+            </tr>
+            <tr>
+                <td>Qwen2.5-Coder-7B, untuned</td>
+                <td>4.4 GB</td>
+                <td>61.3%</td>
+                <td>No</td>
+                <td>whatisit</td>
+            </tr>
+            <tr>
+                <td>EasyCommand 0.6B, Q8_0</td>
+                <td>767.5 MiB</td>
+                <td>174/300 — 58.0%</td>
+                <td>Yes</td>
+                <td>Our local run</td>
+            </tr>
+            <tr>
+                <td>EasyCommand 0.6B, Q4_K_M</td>
+                <td>461.8 MiB</td>
+                <td>165/300 — 55.0%</td>
+                <td>Yes</td>
+                <td>Our local run</td>
+            </tr>
+            <tr>
+                <td>Qwen2.5-Coder-1.5B, untuned</td>
+                <td>941 MB</td>
+                <td>54.0%</td>
+                <td>No</td>
+                <td>whatisit</td>
+            </tr>
+        </tbody>
+    </table>
+</div>
+<p>
+    <strong>21 more passes than whatisit (+7 points)</strong> on ALFA-updated, using each tool's own
+    settings (256-token limit for EC, 64 for whatisit).
+</p>
+<p>
+    A specialist peaked at 217/300 (72.3%), but lost 63 internal-test passes. I shipped the more balanced checkpoint.
+</p>
+<p>
+    These tests informed development, not an independent holdout. GPT-4o's
+    <a href="https://aclanthology.org/2025.naacl-long.555.pdf">published 73–74%</a> used original ALFA;
+    similar scores don't establish parity. Full methodology and run details are in the
+    <a href="https://github.com/dirac-run/ec/blob/main/docs/RESULTS.md">evaluation notes</a>.
+</p>
+
+<h2 id="try-it">Try it, or keep training</h2>
+<p>
+    If you want to run it locally, <a href="https://github.com/dirac-run/ec">ec</a> embeds llama.cpp and
+    offers command preview and interactive execution. Start with <code>--preview</code>; a plausible
+    command can still be wrong. The target is GNU/Linux Bash, not every shell or platform.
+</p>
+<p>If you want to experiment, the reusable pieces are:</p>
+<ul>
+    <li><strong><a href="https://huggingface.co/datasets/dirac-run/ec-training-data">Training data</a>:</strong>
+        the full published deduplicated corpus, not just a sample.</li>
+    <li><strong>GGUFs:</strong> <a href="https://huggingface.co/dirac-run/ec-0.6b-gguf">0.6B</a> and
+        <a href="https://huggingface.co/dirac-run/ec-1.5b-gguf">1.5B</a>.
+    </li>
+    <li><strong>Trainable weights:</strong> <a href="https://huggingface.co/dirac-run/ec-0.6b">0.6B</a> and
+        <a href="https://huggingface.co/dirac-run/ec-1.5b">1.5B</a>, including merged BF16 checkpoints
+        and original LoRA adapters.
+    </li>
+    <li><strong><a href="https://github.com/dirac-run/ec/blob/main/docs/TRAINING.md">Training notes</a></strong>
+        and <strong><a href="https://github.com/dirac-run/ALFA-updated">benchmark code</a></strong>.</li>
+</ul>
+<p>
+    Models and data are Apache-2.0; application and benchmark code are MIT. The flat dataset doesn't
+    reproduce historical weighting, and it has no official test split. If you train with it, separate
+    holdouts by task family rather than randomly splitting paraphrases.
+</p>
+<p>
+    I'd like to see what others can improve: better coverage, more reliable transfer, or fresh tests that
+    expose something I missed. This started with wanting a command reminder. Sharing the materials seems
+    like a good way to keep learning.
+</p>
+
+            </article>
+
+            <nav class="post-footer-nav" aria-label="Post navigation">
+                
+                <a class="btn-secondary post-footer-nav__older"
+                    href="/posts/token-arbitrage-sol-vs-luna">
+                    <span aria-hidden="true">←</span> Older report
+                </a>
+                
+                <a class="btn-secondary post-footer-nav__all" href="/posts">All posts</a>
+                
+                <a class="btn-secondary post-footer-nav__newer"
+                    href="/posts/ai-inner-experience-dangerous-assumption">
+                    Newer report <span aria-hidden="true">→</span>
+                </a>
+                
+            </nav>
+        </div>
+    </div>
+</div>
+
+<script src="/static/js/pages/posts.js?v=20261010" defer></script>
+
+    </main>
+
+    <footer class="site-footer">
+    <div class="site-footer__inner site-width">
+        <section class="site-footer__brand" aria-label="About Dirac">
+            <a class="wordmark" href="/">
+                <img class="wordmark-mark" src="/static/images/dirac.svg" alt=""
+                    aria-hidden="true"><b>DIRAC</b>
+            </a>
+            <p>An efficiency-focused open-source coding agent built for complex, real-world codebases.</p>
+            <p class="site-footer__provenance">Apache 2.0 · Built by Dirac Delta Labs · Forked from Cline</p>
+        </section>
+        <nav class="site-footer__nav" aria-label="Footer navigation">
+            <section>
+                <h2>Product</h2>
+                <a href="/#field-manual">Field manual</a>
+                <a href="/docs">Documentation</a>
+                <a href="/docs/cli">CLI guide</a>
+                <a href="/docs/vscode">VS Code guide</a>
+            </section>
+            <section>
+                <h2>Research</h2>
+                <a href="/#benchmarks">Benchmarks</a>
+                <a href="/posts">Posts</a>
+                <a href="/labs-market-share">Token market share</a>
+            </section>
+            <section>
+                <h2>Connect</h2>
+                <a href="https://github.com/dirac-run/dirac" target="_blank" rel="noreferrer">GitHub <span
+                        aria-hidden="true">↗</span></a>
+                <a href="https://discord.gg/wcYTx9BGea" target="_blank" rel="noreferrer">Discord <span
+                        aria-hidden="true">↗</span></a>
+                <a href="/contact">Contact</a>
+            </section>
+        </nav>
+    </div>
+    <p class="site-footer__copyright site-width">© 2026 Dirac Delta Labs</p>
+</footer>
+</body>
+
+</html>

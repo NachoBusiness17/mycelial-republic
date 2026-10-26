@@ -1,0 +1,238 @@
+THREAD 1r5q7xd
+FEED TITLE: How are you handling persistent memory for AI coding agents? : reddit.com
+SUBTITLE: 
+ENTRIES: 46
+
+--- [2026-02-15T21:12] /u/Maximum_Fearless | How are you handling persistent memory for AI coding agents?
+Context compaction is killing me.
+I use Claude Code daily and the biggest pain isn't hallucination or context limits — it's that every time context compacts, all the important stuff vanishes. The decision about why we chose Postgres over Mongo? Gone. The fix for that auth bug that took 3 hours? Gone.
+I end up re-explaining things my agent already knew 20 minutes ago.
+CLAUDE.md helps for static stuff but it doesn't capture what happens during a session — the decisions made, bugs fixed, patterns discovered. By the time I think to write it down, compaction already ate it.
+I've been experimenting with hooking into the pre-compaction event to auto-extract important content before it's lost. Basically scoring content by type (architecture decisions score high, casual chat scores low) and persisting anything above a threshold. Then loading relevant context back at session start.
+The rabbit hole got deeper when I realised persistent memory creates a security problem — if the agent reads a dodgy web page with hidden instructions, those can get auto-extracted and persist across sessions. So now I'm also scanning everything before it hits the memory store.
+Curious what others are doing:
+- Just using CLAUDE.md / AGENTS.md and manually updating?
+- Any MCP memory servers you'd recommend?
+- Has anyone else thought about the security implications of agent memory?
+- For those running local models — how are you handling context between sessions?
+submitted by /u/Maximum_Fearless to r/LocalLLaMA
+[link] [comments]
+
+--- [] /u/RadiantHueOfBeige | /u/RadiantHueOfBeige on How are you handling persistent memory for AI coding agents?
+I use local models so throwing random MCP servers with thousands of tokens worth of tools is impractical. I have a few short instructions in AGENTS.md that tell the model to note down important architectural decisions, journal into a work log (both just .md files in project root), and to review these when starting. It probably won't scale to 100 pull request per day monstrosities people are building with these tools but it's what works for my human-scale projects.
+
+--- [] /u/bakawolf123 | /u/bakawolf123 on How are you handling persistent memory for AI coding agents?
+there's too much "memory" middleware, none of that is useful, not the one you've built, not the others
+as to why, there's a good blog from cline from a while ago https://cline.bot/blog/why-cline-doesnt-index-your-codebase-and-why-thats-a-good-thing
+
+--- [] /u/Blues520 | /u/Blues520 on How are you handling persistent memory for AI coding agents?
+That was an interesting article. So context quality matters more than size these days.
+
+--- [] /u/Maximum_Fearless | /u/Maximum_Fearless on How are you handling persistent memory for AI coding agents?
+Of course context quality is key - thats why salience, decay, long and short term matter. Contradictions can be a massive issue too - one memory says SQL the other ProSQL
+
+--- [] /u/Blues520 | /u/Blues520 on How are you handling persistent memory for AI coding agents?
+That's what the article alludes to - the code base evolves so quickly that the memory gets outdated easily. That's why they recommended recreating context from the single source of truth, i.e. the code. Fortunately, agents can parse the code base quickly so we just need to know how to make it easier for them and what prompts to start a task with to rebuild context.
+
+--- [] /u/Former-Ad-5757 | /u/Former-Ad-5757 on How are you handling persistent memory for AI coding agents?
+Personally I say in my Claude.md that it should read 6 files on init and it should keep up to date 3 files.
+The files are :
+- Important.human.md
+- Known.human.md
+- Fastfacts.human.md
+And then 3 the same files, but just for the agent. The agent keeps care of his files, I sometimes peek into his files and copy some things over to the human files.
+And then combined with having the agent document extensively what it does etc, for what goal, what tech stack etc. etc.
+It gives me a situation that I can just say in important.human.md that we are now working on a database heavy project, so it should pay special attention to the database docs.
+When next week we need to update the website we point it to the visual docs etc. etc.
+
+--- [] /u/Maximum_Fearless | /u/Maximum_Fearless on How are you handling persistent memory for AI coding agents?
+What about contradictions have you had any issues with that yet?
+
+--- [] /u/Former-Ad-5757 | /u/Former-Ad-5757 on How are you handling persistent memory for AI coding agents?
+Not really, just use a capable enough model and any contradictions you will get / see (that is why you have to regularly check the agent managed files) are real problems that you have to solve because for example your wording is not clear or something like that.
+
+--- [] /u/SeekratesIyer | /u/SeekratesIyer on How are you handling persistent memory for AI coding agents?
+This is the exact problem I've been grinding on for 60+ sessions across multiple AI platforms.
+Your instinct is right — CLAUDE.md is static knowledge, but sessions generate dynamic knowledge: decisions, rationale, bugs fixed, patterns discovered. Two completely different things that need two different solutions.
+What worked for me: at the end of every session, I get the AI to create a structured YAML document — achievements, decisions with rationale, blockers, and explicit "next session" instructions. The next session parses the last two of these before doing anything. I call them re-anchors, borrowed from factory shift handovers.
+The difference from CLAUDE.md is that each one is a snapshot of that session's state, not a static reference doc. Decisions include the why — so when compaction eats the conversation, the rationale survives in the handoff document, not in the chat history.
+Your pre-compaction scoring idea is clever but I'd push back slightly — you're adding complexity to fight a problem that a structured end-of-session dump solves more simply. Five sections, two minutes, and nothing important is lost because it was never relying on the context window to persist.
+And yes to your security point — anything that auto-persists across sessions needs a trust gate. I scan for eight specific patterns before anything gets accepted into the project state.
+I've written up the full methodology in something called The Re-Anchor Manager if you want to go deeper, but honestly the structured YAML handoff alone will fix 80% of what you're describing.
+
+--- [] /u/Maximum_Fearless | /u/Maximum_Fearless on How are you handling persistent memory for AI coding agents?
+The shift handover metaphor is brilliant — that's exactly what it is. And you're right that a structured end-of-session dump is simpler than pre-compaction scoring for a lot of cases.
+Where I found the gap is the stuff that happens between session end points. Long sessions where compaction fires 3-4 times before you're done — by the time you get to the handover, the decisions from hour one are already gone from context. The agent can't summarise what it can't see anymore.
+That said, your approach and mine aren't really competing — they're complementary. Structured handovers for the deliberate "here's where we are" state, and automated extraction as a safety net for the stuff that would otherwise slip through the cracks.
+Really interested in your eight trust patterns though. The security angle is the part nobody's talking about. What are you scanning for — injection patterns, or more like schema validation on the YAML structure itself?
+
+--- [] /u/mike34113 | /u/mike34113 on How are you handling persistent memory for AI coding agents?
+Memory is a security boundary, not just a storage issue
+
+--- [] /u/Maximum_Fearless | /u/Maximum_Fearless on How are you handling persistent memory for AI coding agents?
+Yep and it’s going to get complicated real fast - though the latest models are extremely clever and don’t fall for obvious tricks, memory poisoning sub agents can get into long term memory.
+
+--- [] /u/LocoMod | /u/LocoMod on How are you handling persistent memory for AI coding agents?
+Well said
+
+--- [] /u/prompttuner | /u/prompttuner on How are you handling persistent memory for AI coding agents?
+ive been bouncing between 2 hacks: (1) a short pinned profile summary that updates slowly, and (2) a vector db w hard filters + recency weighting. but the annoying part is false memories
+are you trying to remember facts (name/job/prefs) or just convo context? and are you doing write-on-every-turn or only when the model flags something as 'remember this'?
+
+--- [] /u/Maximum_Fearless | /u/Maximum_Fearless on How are you handling persistent memory for AI coding agents?
+I’m trying to get it to act like a real human memory, salience, decay, forget what’s not important and remember frequently accessed memories.
+
+--- []  | /u/[deleted] on How are you handling persistent memory for AI coding agents?
+[deleted]
+
+--- [] /u/Maximum_Fearless | /u/Maximum_Fearless on How are you handling persistent memory for AI coding agents?
+Fascinating
+
+--- [] /u/LoveMind_AI | /u/LoveMind_AI on How are you handling persistent memory for AI coding agents?
+I had been using Letta Code, which is mildly better at this than Claude Code, but I'm finding that it (like many other things from Letta) is full of janky stuff (like their web stuff not working on many different browsers), which is a shame, because they got to this space before anyone else, and they're really nice people. Other than the broken stuff, their approach is tricky because their memory blocks load in the system prompt, and it's changing constantly which obliterates caching.
+Right now, I'm building my own memory-first CLI because I just haven't found anything else that I'm happy with and I'm working less on coding and productivity agents and more on long-term creative agents (for writing) who can code. I haven't found a memory middleware solution that's satisfied me yet. There's a hypergraph RAG company I've been keeping an eye on whose beta I'm desperate to try, but right now, I'm seeing the space as simultaneously flooded as well as just... not great.
+
+--- [] /u/Maximum_Fearless | /u/Maximum_Fearless on How are you handling persistent memory for AI coding agents?
+I hear you on Letta — the system prompt memory blocks killing cache is a real problem. That's exactly why I went a different route with what I built. Memory gets injected at session start and extracted at compaction/session end, so the system prompt stays stable and caching works normally.
+The bit that surprised me was how quickly "persistent memory" becomes a security surface. Once your agent is auto-saving context, anything it reads can end up persisted — including instructions hidden in web pages or docs. Had to build a defence pipeline on top just to keep the memory store clean.
+For your creative writing agents — how are you handling the "what's worth remembering" problem? That's been the hardest part for me. Coding agents have obvious signals (decisions, bug fixes), but creative work is more nuanced.
+
+--- [] /u/zzzzzetta | /u/zzzzzetta on How are you handling persistent memory for AI coding agents?
+just to clarify Letta does not kill cache, it's incredibly cache safe. there's a ton of optimizations in the server code for it, and it should match even the most highly cache optimized harneses (including eg claude agent SDK)
+
+--- [] /u/zzzzzetta | /u/zzzzzetta on How are you handling persistent memory for AI coding agents?
+Letta dev here - just to clarify, Letta does not do any unnecessary cache busting, it's tuned to be very cache sensitive (to help control cost). All memory edits in a context window are "batched" and only baked into the system prompt on compaction (when the cache is getting busted/evicted regardless).
+This is also the case with our new memory system context repositories - very cache safe. w/ context repos (called MemFS in Letta Code), a git push to the remote memory store queues a batch system prompt update, which again only happens on compaction.
+
+--- [] /u/LoveMind_AI | /u/LoveMind_AI on How are you handling persistent memory for AI coding agents?
+Hmm, ok! That obviously makes so much sense, and I don’t want to act like I know your product as well as you, but I’ll elaborate so you have a chance to correct me in more detail! I’ll try to use the update at compaction lens to figure it out and you can tell me where I’m getting it wrong.
+When my agent in LC wrote to a memory block, they would mention system prompt refactoring - that could just be typical “plausible language” stuff unique to my agent.
+But they would also notice updates by the sleep time agent - strings they expected to be there weren’t there, or strings they didn’t expect (or whole new blocks) would be.
+I think you’re saying that those points of confusion are not actually from reading the system prompt, which hasn’t been updated, but rather, from reading from the block files? That would make sense, but it’s not intuitive.
+And also - changes to memory blocks, as they come first in context, can be hypothetically used to modify agent behavior. If you’re not loading changes until compaction, then changes to say, a “current topic” block wouldn’t actually modify context?
+Also, while I’ve got you - is there a way to set up compaction so that it doesn’t overwrite the previous compaction summary? The Letta premise of one long running session is awesome, but in practice, unless earlier moments are preserved through either adding a new summary (ala Mastra’s observer), or re-summarized as part of the new compaction, that’s historical data that doesn’t add to the linear session unless the model uses the conversational archive search.
+
+--- [] /u/zzzzzetta | /u/zzzzzetta on How are you handling persistent memory for AI coding agents?
+The tl;dr on how it works is that (by default, you can change this if you don't care about prompt caching) when block values (stored in the DB) are editing via the API, a memory tool (eg sleeptime agent), or a git push (if using the git-backed context repository), the underlying real value of the block is changed immediately.
+However, the agent's state, which includes a copy of the system prompt (which gets certain aspects of memory baked in, eg in MemFS this is everything inside the /system/ folder, and a filetree, but nothing else), is not immediately updated.
+So if the agent is updating its own memory, it seems a copy of it baked into the system prompt, and all the edits that have happened since last compaction (as in-context messages), but it doesn't see the "latest state" of the memory post-application of those tools. This is fine though (for good models), since the agent can infer the final state of the memory in context going from state-in-system + tools-in-context. We've actually found that LLMs like Claude work better this way, because they don't like the system prompt to "shift under their feet".
+The system prompt inside the agent state is recompiled when a compaction even happens, which effectively batches all the memory updates until a compaction. Hope that makes sense!
+is there a way to set up compaction so that it doesn’t overwrite the previous compaction summary
+Not directly via the underlying harness (messages[1] is always reserved for a summary and it will be "replaced" by the next one), but you can modify your compaction prompt to be less lossy and keep more things: https://docs.letta.com/guides/core-concepts/messages/compaction/
+All these messages are stored in the DB though so nothing is ever lost per se, and w/ Letta Code the built-in message search skills are really, really powerful if using the API which has everything embedded for free. So it's very easy/fast for an agent to find all previous compaction messages for example.
+
+--- [] /u/LoveMind_AI | /u/LoveMind_AI on How are you handling persistent memory for AI coding agents?
+Thanks so much for the detailed response! So, here’s what I found on “ https://www.letta.com/blog/memory-blocks”:“When Letta makes a request to the LLM, the context window is “compiled” from existing DB state, including current block values.” I only found two references to caching in the docs: "Change the summarization strategy (e.g. to maximize prefix caching)" and an allusion to caching on https://docs.letta.com/guides/docker/performance/
+Some other follow ups, because none of it seems obvious to me from what I can read or what I have experienced using Letta:
+1.Are sleep-time agent edits visible to the primary agent? The "agent can infer final state from state-in-system + tools-in-context" model works for the agent's own edits, because those tool calls are in its conversation history. But a sleep-time agent editing blocks operates in a separate conversation, right? Are those tool calls visible to the primary agent's context? If they are, I have to say that from my experience, my primary agent seemed so continually caught off guard by their updates that we disabled the sleep agent.
+If the main agent only discovers external changes at compaction when the system prompt recompiles and there are no visible deltas for external edits, that could be a little disorienting.
+Re: “This is fine for good models…” The Letta Leaderboard (which is awesome) shows significant variance across models. A big draw of Letta Code is model agnosticism for local use, but if the approach to memory requires "good models" to handle stale-state arithmetic gracefully, that's a meaningful constraint. The burden shifts from the infrastructure to the model, which is fine, but not obvious.
+On compaction summaries: I hear you that messages [1] is structurally a single replacement slot, and the answer is "write a better compaction prompt + use search." (I do use a custom compaction prompt which rocks). But early information that gets summarized away doesn't generate its own retrieval cues and so the agent doesn’t really know it’s missing something, or what to search for. Is there any way to make compaction grab from message [1]? A good model doing compaction would naturally weave that compaction into the next one.
+The Mastra approach (appending observations rather than overwriting) preserves the timeline. "Nothing is ever lost" in the DB is true, but "available to the agent" and "exists in a searchable database" are very different things.
+If the compaction script itself can’t be modified to read from message 1, could a custom tool be created that does this? It just feels like the vision for a truly linear window shouldn’t rely on archival search for recent history. I really agree with what you guys write here: https://www.letta.com/blog/rag-vs-agent-memory - but in practice, aren’t we saying that if we want a model to know about its recent history from before a previous compaction, its short/medium-term memory really is a kind of RAG?
+Really looking forward to hearing more of your thoughts, and seriously, thank you for taking the time to engage with me about this, as always :)
+
+--- [] /u/Pitiful-Impression70 | /u/Pitiful-Impression70 on How are you handling persistent memory for AI coding agents?
+i feel this so hard. what worked for me was keeping a decisions.md file that i update manually after each session with the stuff i know ill forget. like "chose postgres because we need jsonb for the event schema" or "auth bug was the refresh token not clearing on logout". its annoying to maintain but way less annoying than re-explaining the same thing 3 times a day
+the trick is keeping it short tho. if it gets too long it defeats the purpose because it eats context anyway. i try to keep mine under 200 lines and prune stuff thats no longer relevant every few days
+
+--- [] /u/Maximum_Fearless | /u/Maximum_Fearless on How are you handling persistent memory for AI coding agents?
+This is literally how I started too — decisions.md , manually updated. It works until it doesn't. The pruning is what killed me — spending 10 minutes every few days reading through stale decisions to figure out what's still relevant.
+The 200 line limit is smart though. I found the same thing — once it gets long, the agent starts weighing old irrelevant stuff equally with recent important stuff. No sense of "this decision from 3 weeks ago matters less than the one from yesterday."
+That's what pushed me to automate it. What if the agent could score what's worth keeping based on type (architecture decisions > casual chat) and let old stuff naturally decay in relevance over time? Basically how human memory works — important things stick, trivial things fade.
+Still doing the manual file too as a backup though. Belt and braces.
+
+--- [] /u/Lissanro | /u/Lissanro on How are you handling persistent memory for AI coding agents?
+I am using Roo Code with locally running Kimi K2.5 (Q4_X quant, 256K context length). I find context compaction, both smart and simple versions of it, quite useless - it makes the model completely lose track of what we were doing, it just does not work in practice.
+What does work for me:
+- Generally, I try to do tasks that are likely to be completed well before context compaction may be necessary.
+- Orchestration, most straightforward. If the project can divided on many smaller tasks, all I have to do is to ensure that I approve good summary for each task, and for things that need to be passed down to other subtasks, I make the model write .md files. This is useful when I want to describe multiple tasks and issues that likely would accumulate too long context if solved within a single task, but which are still related or depend on each other in some way.
+- If I find context getting way too long, I make the model summarize what we did so far, including stuff we learned and issues we solved, and how, and what still remains to do, into a separate .md file and start a new session. To keep things clean, I often delete the .md file right away and just paste its context into a new task.
+
+--- [] /u/Maximum_Fearless | /u/Maximum_Fearless on How are you handling persistent memory for AI coding agents?
+The "just keep tasks small enough to avoid compaction" approach is honestly underrated. It's the pragmatic solution that nobody writes blog posts about because it's not sexy enough.
+Your orchestration workflow is solid — break it up, approve summaries, pass state via .md files. That's basically manual memory management, and when you're running local models where you control the whole stack, it makes sense.
+Curious about the Kimi K2.5 experience though — with 256K context, how often are you actually hitting compaction? At that length I'd have thought most tasks complete well within budget. Is it more of a quality degradation thing where the model starts losing track even before the context is technically full?
+The delete-and-paste-into-new-session workflow is interesting. You're basically doing a manual checkpoint-and-restore. The risk I've found with that is you're trusting the model's own summary of what happened — and sometimes it subtly rewrites decisions or drops the reasoning behind a choice. Ever had a "wait, why did we do it that way?" moment in the new session?
+
+--- [] /u/abnormal_human | /u/abnormal_human on How are you handling persistent memory for AI coding agents?
+Pretty much all od my problems with this went away when I started treating my Claude's as a team of new hires. Want to make new hires successful? Be intentional about documentation. Give them confined tasks grounded in something. Create clear patterns that they can follow and point them straight at them. Create guardrails and policies that are automatically enforced. I'd you are working at the speed of a 10 person team you need about that much DevOps and documentation stuff or it will fall apart.
+Then don't let Claude compact. Ever. But really approaching it more like a manager helps a ton.
+
+--- [] /u/Maximum_Fearless | /u/Maximum_Fearless on How are you handling persistent memory for AI coding agents?
+The new hires analogy is spot on. Documentation, confined tasks, clear patterns — that's just good engineering management whether your team is human or AI.
+"Don't let Claude compact. Ever." — how are you managing that in practice? Short tasks that finish before hitting the limit? Or are you on a model with enough context that it rarely triggers?
+The thing I've found is that even with great documentation and guardrails, there's a category of knowledge that doesn't belong in docs — the stuff that emerges during a session. "We tried approach X, it failed because of Y, so we pivoted to Z." That's not something you'd write a policy for in advance. It's session-specific learning that your next "new hire" needs but has no way to access.
+Your 10-person team analogy actually proves the point — real teams have institutional knowledge that lives in people's heads, not in the wiki. When someone leaves, that knowledge walks out the door. Same thing happens every time a session ends.
+
+--- [] /u/abnormal_human | /u/abnormal_human on How are you handling persistent memory for AI coding agents?
+Break up tasks into small enough chunks. Claude has 200k and 1m context models and those go pretty far. Religiously clear context at breakpoints. If a model is running short ask it to write blurbs for "other agents" then kick off those agents with fresh context and the blurbs. Same if you discover something along the way and end up in a side quest--document it, do it in a fresh window, and move on with the original task or leave that session idle till you can continue.
+Otherwise I manage state like that in my own head just as I do in management roles. How many times do I sitin a meeting with one of my teams and hear an idea and have to say "nope we tried that four years ago and this is why it failed". If I can distribute that sort of insight and institutional knowledge to dozens of people why not 5-10 agents?
+
+--- [] /u/Simple_Split5074 | /u/Simple_Split5074 on How are you handling persistent memory for AI coding agents?
+Not proper memory but the forgets specs stuff is fairly well addressed by most of the context engineering frameworks. If they do they job, compaction should rarely ever happen. They are token heavy though.
+Personally, I like https://github.com/gsd-build/get-shit-done but there are dozens (hundreds?) of them.
+
+--- [] /u/Maximum_Fearless | /u/Maximum_Fearless on How are you handling persistent memory for AI coding agents?
+Context engineering frameworks are good for reducing compaction frequency, agreed. But "rarely" isn't "never" — and the longer and more complex the project, the more inevitable it becomes.
+The bigger question for me is what happens to the knowledge between projects. You finish a project, start a new one, and all those lessons learned — what worked, what didn't, which approaches to avoid — are just gone. The next project starts from zero institutional knowledge.
+Thanks for the link though, hadn't seen that one.
+
+--- []  | /u/[deleted] on How are you handling persistent memory for AI coding agents?
+[deleted]
+
+--- [] /u/Maximum_Fearless | /u/Maximum_Fearless on How are you handling persistent memory for AI coding agents?
+Phase-based workflow with forced documentation breakpoints is smart — basically making memory a deliberate step rather than hoping it happens automatically. Kilo Code's mode separation naturally creates those checkpoints which is nice.
+How are you finding local models for the architect mode? That's where I'd expect the biggest quality gap vs cloud models — the reasoning about tradeoffs and system design.
+
+--- [] /u/ShotokanOSS | /u/ShotokanOSS on How are you handling persistent memory for AI coding agents?
+Could you maybe just use RAG? you could make a combi of RAG for detailied information and an summary of the chat ever if you close the chat so the AI keep the basics what it have done
+
+--- [] /u/DetectiveMindless652 | /u/DetectiveMindless652 on How are you handling persistent memory for AI coding agents?
+Hey man! Might be a bit late to the party but non persistent memory on cursor was really pissing me off badly.
+Just built this, gives your cursor persistent long term memory (it actually does, not just saying that)
+https://github.com/RYJOX-Technologies/Synrix-Memory-Engine
+Feel free to check it out, feedback would be awesome too. Drop me a message if you need anything.
+
+--- [] /u/GrokSrc | /u/GrokSrc on How are you handling persistent memory for AI coding agents?
+I use Basic Memory — it turns markdown files into a semantic knowledge graph that any AI agent reads via MCP. For coding specifically, I keep architecture decisions, debugging notes, and project context in markdown. The agent picks up relevant context automatically.
+The key difference from most memory solutions: it's plain files on disk. No vector DB, no running server. Works with local models too since MCP is model-agnostic.
+For coding agents specifically, the knowledge graph structure helps because it captures relationships between components, not just flat facts.
+
+--- [] /u/runContinuousAI | /u/runContinuousAI on How are you handling persistent memory for AI coding agents?
+this is the exact problem... the way we're thinking about is "context decay"
+the limit is just the symptom. the real issue is that agents have no way to know what actually mattered in a session vs what was just noise. so when compaction hits, it's a coinflip on what survives
+it's a hard problem, but we're tryin to solve for this at continuous ai.
+i like your scoring idea . i agree that decisions, bugs fixed, patterns etc... that stuff should outlive the session automatically. the agent shouldn't need you to remember to save it
+
+--- [] /u/kernelobserver | /u/kernelobserver on How are you handling persistent memory for AI coding agents?
+I ran into the same wall.
+What started to click for me was separating “context” from “execution history”.
+Context is temporary and model-bound. Execution history can be system-level and model-agnostic.
+Instead of trying to auto-extract important chunks before compaction, I’ve been experimenting with treating each execution cycle as an atomic record:
+freeze the state snapshot the relevant artifacts hash it log decisions separately from raw chat So even if the model forgets, the system doesn’t.
+Memory becomes something you can audit and reload, not something you hope survives token pressure.
+Curious how you’re thinking about separating evidence from reasoning, especially given your security concerns.
+
+--- [] /u/genunix64 | /u/genunix64 on How are you handling persistent memory for AI coding agents?
+I’ve been running into the same problem: static CLAUDE.md/AGENTS.md helps, but it doesn’t capture the “what just happened” part of a session very well — decisions, fixes, recurring mistakes, project-specific preferences, etc.
+I ended up building a self-hosted memory backend around that split: durable facts/preferences/decisions vs short-lived session context, with deduplication, contradiction resolution, TTLs, and an artifact store for longer material. It’s called mnemory: https://github.com/fpytloun/mnemory
+The prompt-injection angle is real though. I don’t think memory should be treated as “just RAG”. Anything that persists across sessions becomes part of the agent’s future operating context, so it needs provenance, delete/update semantics, health checks, and ideally a separate safety layer around what the agent actually does with that context.
+That’s why I’ve also been pairing it with Intaris: https://github.com/fpytloun/intaris
+The important part there is not classic filesystem/network policy rules — those are useful, but not new. The interesting layer is checking whether the agent’s proposed actions still align with the user’s stated intent, then analyzing the whole session and cross-session behavior for drift, permission creep, or suspicious patterns.
+Not claiming this is the final answer, but the design lesson for me was: memory and behavioral safety should be separate layers. Memory decides what is useful to remember; the guardrail/audit layer decides whether the agent is still acting in line with the user’s intent.
+
+--- [] /u/Signal-Tadpole-4432 | /u/Signal-Tadpole-4432 on How are you handling persistent memory for AI coding agents?
+I think the security issue you called out is the real boundary here. Auto-extracting “important” context is helpful until the memory store becomes a way for untrusted text to survive across sessions.
+The pattern I’ve had better luck with is treating memory entries less like notes and more like claims with metadata. For coding work, I want to know: where did this come from, was it observed in the repo or inferred from a conversation, what task was it valid for, and what would make it stale?
+I’d be especially careful with anything sourced from web pages, issue comments, docs copied from outside the repo, or model-written summaries. Those can still be useful, but I wouldn’t let them become trusted project context without a review step or at least a downgrade label like “unverified external input.”
+For me, the useful memory is usually boring: architecture decisions, migrations already done, failed debugging attempts, conventions, and verification results. The dangerous memory is anything that sounds authoritative but has no provenance.
+
+--- [] /u/FPham | /u/FPham on How are you handling persistent memory for AI coding agents?
+Memory is yesterday’s breath still warm on today’s skin.
+
+--- [] /u/Maximum_Fearless | /u/Maximum_Fearless on How are you handling persistent memory for AI coding agents?
+Memory will ultimately define your agent as it does you.
+
+--- [] /u/Emergency-Row3957 | /u/Emergency-Row3957 on How are you handling persistent memory for AI coding agents?
+qwen 3.8 27b

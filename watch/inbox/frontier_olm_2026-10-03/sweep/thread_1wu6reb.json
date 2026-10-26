@@ -1,0 +1,194 @@
+﻿{
+    "id":  "1wu6reb",
+    "subreddit":  "MachineLearning",
+    "title":  "Open-sourcing RightWayUp - a 360-degree image rotation model, and a JPEG shortcut we found in a common benchmark [P]",
+    "author":  "wildtinkerer",
+    "score":  2,
+    "num_comments":  2,
+    "created_utc":  1790779335,
+    "permalink":  "https://old.reddit.com/r/MachineLearning/comments/1wu6reb/opensourcing_rightwayup_a_360degree_image/",
+    "selftext":  "We are open-sourcing RightWayUp - a new image rotation detection model.\n\nI work at ORTUS AI (we develop video analytics). We needed to tell from a single CCTV frame whether a camera had been rotated or installed at an angle (or upside-down), so we tried different models for that, without much luck (low accuracy, lots of false positives on regular camera-like frames). Some were not permissively licensed. Out of despair, we decided to train our own. We didn\u0027t expect it to come out this good.\n\nIt is now called RightWayUp. It estimates how far an image is rotated from upright, all 360°, and abstains when there\u0027s no clear \"up\" (sky, ground, close-ups, etc.). We are releasing code and weights under Apache-2.0, in six sizes from Pico (small enough to run in a browser) to Max (ahead of the other models we tried on most of our tests).\n\nWe tested it on many test images, including held-out ones (which the model never saw before). In tests with the held-out set, RightWayUp Max was within 10° on 93.0% of them vs 88.4% for Woehrer 2026 (one of the better other models we liked). In the Woehrer 2026 own COCO-based benchmark, it was 98.8% accurate within 10° (five-seed mean) vs Woehrer\u0027s 98.0%. It also gets every image right on RotBench.\n\nWhile training and testing, we found something we didn\u0027t expect: saving the images from the COCO-based rotation benchmark as JPEG q90 drops Woehrer 2026 from 98.0% to 30.2% (five-seed mean), while our models barely move. We suspect the rotated JPEG grid of the source photos gives the angle away. We found that in our early experiments, and made an effort to remove its effect.\n\nI hope it will be useful to the community.\n\nFor transparency: parts of the engineering were done with Claude and Codex.\n\nHere is a full write-up with a demo video: [https://cheqit.ortusai.io/resources/rightwayup/](https://cheqit.ortusai.io/resources/rightwayup/)\n\nCode (with a link to the weights): [https://github.com/ortusaitech/rightwayup](https://github.com/ortusaitech/rightwayup)\n\nQuestions and failure cases welcome.",
+    "url_out":  "https://www.reddit.com/r/MachineLearning/comments/1wu6reb/opensourcing_rightwayup_a_360degree_image/",
+    "comments":  [
+                     {
+                         "_meta":  {
+                                       "retrieved_2nd_on":  1790981803
+                                   },
+                         "all_awardings":  [
+
+                                           ],
+                         "approved_at_utc":  null,
+                         "approved_by":  null,
+                         "archived":  false,
+                         "associated_award":  null,
+                         "author":  "wildtinkerer",
+                         "author_flair_background_color":  null,
+                         "author_flair_css_class":  null,
+                         "author_flair_richtext":  [
+
+                                                   ],
+                         "author_flair_template_id":  null,
+                         "author_flair_text":  null,
+                         "author_flair_text_color":  null,
+                         "author_flair_type":  "text",
+                         "author_fullname":  "t2_ebkh6fv3",
+                         "author_is_blocked":  false,
+                         "author_patreon_flair":  false,
+                         "author_premium":  false,
+                         "awarders":  [
+
+                                      ],
+                         "banned_at_utc":  null,
+                         "banned_by":  null,
+                         "body":  "Exactly! We were almost ready to release the model, when one of the tests showed this. Took us a few days to understand what exactly is happening and find a way to remove that effect. We tried to beat the benchmark, and then the benchmark just fell apart. Crazy.",
+                         "can_gild":  false,
+                         "can_mod_post":  false,
+                         "collapsed":  false,
+                         "collapsed_because_crowd_control":  null,
+                         "collapsed_reason":  null,
+                         "collapsed_reason_code":  null,
+                         "comment_type":  null,
+                         "controversiality":  0,
+                         "created":  1790852175,
+                         "created_utc":  1790852175,
+                         "depth":  1,
+                         "distinguished":  null,
+                         "downs":  0,
+                         "edited":  false,
+                         "gilded":  0,
+                         "gildings":  {
+
+                                      },
+                         "id":  "pd6n7g6",
+                         "is_submitter":  true,
+                         "likes":  null,
+                         "link_author":  "wildtinkerer",
+                         "link_id":  "t3_1wu6reb",
+                         "link_permalink":  "https://www.reddit.com/r/MachineLearning/comments/1wu6reb/opensourcing_rightwayup_a_360degree_image/",
+                         "link_title":  "Open-sourcing RightWayUp - a 360-degree image rotation model, and a JPEG shortcut we found in a common benchmark [P]",
+                         "link_url":  "https://www.reddit.com/r/MachineLearning/comments/1wu6reb/opensourcing_rightwayup_a_360degree_image/",
+                         "locked":  false,
+                         "mod_note":  null,
+                         "mod_reason_by":  null,
+                         "mod_reason_title":  null,
+                         "mod_reports":  [
+
+                                         ],
+                         "name":  "t1_pd6n7g6",
+                         "no_follow":  true,
+                         "num_comments":  2,
+                         "num_reports":  null,
+                         "over_18":  false,
+                         "parent_id":  "t1_pd1lb0u",
+                         "permalink":  "/r/MachineLearning/comments/1wu6reb/opensourcing_rightwayup_a_360degree_image/pd6n7g6/",
+                         "profile_img":  "https://i.redd.it/snoovatar/avatars/d2974342-3783-4b97-abba-e8493365e3bc-headshot.png",
+                         "profile_over_18":  false,
+                         "quarantine":  false,
+                         "removal_reason":  null,
+                         "replies":  "",
+                         "report_reasons":  null,
+                         "retrieved_on":  1790852197,
+                         "saved":  false,
+                         "score":  1,
+                         "score_hidden":  false,
+                         "send_replies":  true,
+                         "stickied":  false,
+                         "subreddit":  "MachineLearning",
+                         "subreddit_id":  "t5_2r3gv",
+                         "subreddit_name_prefixed":  "r/MachineLearning",
+                         "subreddit_type":  "public",
+                         "top_awarded_type":  null,
+                         "total_awards_received":  0,
+                         "treatment_tags":  [
+
+                                            ],
+                         "unrepliable_reason":  null,
+                         "ups":  1,
+                         "user_reports":  [
+
+                                          ]
+                     },
+                     {
+                         "_meta":  {
+                                       "retrieved_2nd_on":  1790952139
+                                   },
+                         "all_awardings":  [
+
+                                           ],
+                         "approved_at_utc":  null,
+                         "approved_by":  null,
+                         "archived":  false,
+                         "associated_award":  null,
+                         "author":  "[deleted]",
+                         "author_flair_background_color":  "",
+                         "author_flair_css_class":  null,
+                         "author_flair_template_id":  null,
+                         "author_flair_text":  null,
+                         "author_flair_text_color":  "dark",
+                         "author_is_blocked":  false,
+                         "awarders":  [
+
+                                      ],
+                         "banned_at_utc":  null,
+                         "banned_by":  null,
+                         "body":  "[removed]",
+                         "can_gild":  false,
+                         "can_mod_post":  false,
+                         "collapsed":  true,
+                         "collapsed_because_crowd_control":  null,
+                         "collapsed_reason":  null,
+                         "collapsed_reason_code":  "DELETED",
+                         "comment_type":  null,
+                         "controversiality":  0,
+                         "created":  1790789346,
+                         "created_utc":  1790789346,
+                         "depth":  0,
+                         "distinguished":  null,
+                         "downs":  0,
+                         "edited":  false,
+                         "gilded":  0,
+                         "gildings":  {
+
+                                      },
+                         "id":  "pd1lb0u",
+                         "is_submitter":  false,
+                         "likes":  null,
+                         "link_id":  "t3_1wu6reb",
+                         "locked":  false,
+                         "mod_note":  null,
+                         "mod_reason_by":  null,
+                         "mod_reason_title":  null,
+                         "mod_reports":  [
+
+                                         ],
+                         "name":  "t1_pd1lb0u",
+                         "no_follow":  true,
+                         "num_reports":  null,
+                         "parent_id":  "t3_1wu6reb",
+                         "permalink":  "/r/MachineLearning/comments/1wu6reb/opensourcing_rightwayup_a_360degree_image/pd1lb0u/",
+                         "removal_reason":  null,
+                         "replies":  "",
+                         "report_reasons":  null,
+                         "retrieved_on":  1790789365,
+                         "saved":  false,
+                         "score":  1,
+                         "score_hidden":  false,
+                         "send_replies":  true,
+                         "stickied":  false,
+                         "subreddit":  "MachineLearning",
+                         "subreddit_id":  "t5_2r3gv",
+                         "subreddit_name_prefixed":  "r/MachineLearning",
+                         "subreddit_type":  "public",
+                         "top_awarded_type":  null,
+                         "total_awards_received":  0,
+                         "treatment_tags":  [
+
+                                            ],
+                         "unrepliable_reason":  null,
+                         "ups":  1,
+                         "user_reports":  [
+
+                                          ]
+                     }
+                 ]
+}

@@ -1,0 +1,7 @@
+# coldhot-cold-glm-flash-mag__policy_engine (glm-5.3-flash @ zai, turn 1, channel: content)
+
+DEFECT 1: check_budget fail-closes on any authority lacking a `budget` dict, contradicting its own backward-compat contract, so every legacy grant fails validation with "budget exhausted" | EVIDENCE: mag/policy_engine.py:220-227 vs docstring claim at 215-216 | FIX: when budget is absent or non-dict, synthesize `{"max_calls": default["max_calls"], "used": {}}` on the authority instead of returning (False, 0)
+DEFECT 2: `_ts_to_epoch` returns `_now_epoch()` on unparseable ts, making garbage ts always TTL-valid: fail-open in a reference monitor | EVIDENCE: mag/policy_engine.py:114-116 | FIX: return 0.0 (already expired) on unparseable ts, and make check_ttl's except branch at 190 return False
+DEFECT 3: `_ensure_default_policy()` runs at import time, writing memory/policy.json as a module-import side effect | EVIDENCE: mag/policy_engine.py:153-155 | FIX: remove the module-level call and invoke it lazily from load_policy when the file is missing
+DEAD-CODE: `active` set in `_collect_active_records` is populated but never read or returned | EVIDENCE: mag/policy_engine.py:417-428
+ONE-SITTING FIX: repair the budget default path (DEFECT 1) plus its falsifier: a CLI validate of an authority with status AUTHORIZED, granted_capabilities containing the effect, no budget field must return ok=true with budget_remaining == default max_calls; today it returns false | EVIDENCE: mag/policy_engine.py:220-227

@@ -1,0 +1,19 @@
+{
+  "gopher": "t8",
+  "item": "MagImproveDaily scheduled task was Disabled; re-registered it with the estate's own registrar script (scripts/register_improve_task.ps1), no hand-editing.",
+  "ok": true,
+  "note": "Registrar read first: registers task MagImproveDaily daily 08:00 running scripts/improve_daily.ps1; the full .venv interpreter path (a741defc5 fix) lives in improve_daily.ps1 line 7 ($Py = .venv\\Scripts\\python.exe, hard exit 1 if missing) so the task does honor it. Registrar exit 0. State before: Disabled (Last Run 8/6/2026 08:00, Last Result 0). State after: Ready / Enabled, next run 9/26/2026 08:00. Negatives: Last Result now 267011 (0x41303 = task has not yet run since re-registration, expected not an error); power setting 'Stop On Battery Mode, No Start On Batteries' means a laptop on battery at 08:00 will skip the fire; task runs as foste Interactive only.",
+  "checks": [
+    "read scripts/register_improve_task.ps1: registers MagImproveDaily -> scripts/improve_daily.ps1 daily 08:00",
+    "read scripts/improve_daily.ps1: uses full .venv\\Scripts\\python.exe path (a741defc5 fix), fails if venv missing",
+    "before: schtasks //query //tn MagImproveDaily //v -> Status Disabled (raw: t8.before.txt)",
+    "registrar: powershell -ExecutionPolicy Bypass -File scripts/register_improve_task.ps1 -> SUCCESS, exit 0",
+    "after: schtasks //query //tn MagImproveDaily //v -> Status Ready, Scheduled Task State Enabled, Next Run 9/26/2026 8:00:00 AM"
+  ],
+  "next_steal": "Wire the Disabled-state check into a doctor-style probe (schtasks query + status != Ready flag) so a silently disabled MagImproveDaily surfaces in mag.cmd doctor instead of waiting for a gopher to notice.",
+  "archive": [
+    "watch/inbox/gala_20260925/afterparty/lanes/t8.before.txt",
+    "watch/inbox/gala_20260925/afterparty/lanes/t8.check.txt",
+    "watch/inbox/gala_20260925/afterparty/lanes/t8.json"
+  ]
+}

@@ -1,0 +1,77 @@
+{
+  "lane": "a16-gate",
+  "division": "A",
+  "ok": true,
+  "note": "Gate verified live: PASS 7/7 on .zcode/workflows/the-gala.dwf.ts, digest 0ad57dc88296 matches gala-open evidence byte-for-byte; my own run self-registered REGISTRY.jsonl row ts=2026-09-26T03:27:51Z. Registry tail also shows the gate caught a real FAIL (digest 2a9ae3707582, G4-salvage false at 02:32:14Z) before the fix landed, so the ledger holds both passes and failures. Negatives: 'exit-2' has zero hits across corpus/steal and memory/corpus (grep exit 1); 'registry' hits exist but are the ZCode engine tool registry and a drift registry, not the gate ledger law. The gate checks regex/substring structure, not semantics, so magic strings in comments would pass (recorded as falsifier, not fabricated as tested).",
+  "rows": [
+    {
+      "law": "born-receipt: a tool's docstring opens with the verbatim operator order that created it",
+      "claim": "workflow_gate.py exists because a named human instruction demanded it, and the instruction is quoted in the tool itself, so the gate's purpose is traceable and cannot drift into invented scope",
+      "quote": "\"we need to stop pinging me for workflows, we need to have a gate that makes sure workflows are being improved, enhanced, dogfooded, and using our systems like Mickey17 gophers, interagent communication and steering. Self steal.\"",
+      "source": "C:/Users/foste/Documents/projects/local_sovereign_agent/tools/workflow_gate.py",
+      "steal": "open every new harness tool's docstring with 'Born <date> by operator order: <verbatim quote>'; next landing spot is any Mag organ built in tools/ or mag/, starting with the next gate or checker written in this repo",
+      "falsifier": "grep tools/workflow_gate.py lines 4-7 for the exact sentence and fail to find it; or find a tools/ script whose docstring states no origin and no order",
+      "leverage": "high"
+    },
+    {
+      "law": "gate-as-ratchet self-steal: every submission registers a row, before the exit code is computed",
+      "claim": "the gate appends a REGISTRY.jsonl row (ts, name, digest, verdict, per-check ok flags) on every run whether PASS or FAIL, so improvement is a ledger fact and a FAIL is never a silent death; verified live: my run registered at 2026-09-26T03:27:51Z and the earlier FAIL row 2a9ae3707582 sits in the same file",
+      "quote": "exit 2 is the only hard block; every submission registers a row so improvement is a ledger fact, amend-not-rewrite is visible in digests",
+      "source": "C:/Users/foste/Documents/projects/local_sovereign_agent/tools/workflow_gate.py",
+      "steal": "in any gate I build (gala fold-gate, mag pre-push, mimosa-style checkers), write the ledger row before computing the return code so failures are facts, not silences; landing spot: watch/inbox/gala_20260925/w2 fold-gate and future mag state gates",
+      "falsifier": "run the gate against a script that fails one check and find no FAIL row with that digest in memory/workflows/REGISTRY.jsonl; the prior evidence FAIL row (2a9ae3707582, 02:32:14Z) is the positive control",
+      "leverage": "high"
+    },
+    {
+      "law": "exit contract: 0 pass, 1 gate-broke, 2 gate-fail, and only exit 2 is a hard block",
+      "claim": "the gate distinguishes 'your script is bad' (2) from 'the gate itself could not run' (1, unreadable script) from 'all clear' (0), so callers and hooks never conflate an environment error with a rejected submission; the fold-gate self-test in gala-open evidence shows exit 2 on a real mismatch",
+      "quote": "GATE: fix the FAIL items by editing the script file in place (amend-not-rewrite), then re-check.",
+      "source": "C:/Users/foste/Documents/projects/local_sovereign_agent/tools/workflow_gate.py",
+      "steal": "adopt the three-code contract in every estate gate and hook: reserve 2 for content rejection, use 1 only for tooling failure, never a catch-all nonzero; landing spot: githooks/pre-push callers and any workflow_gate wrapper",
+      "falsifier": "point --script at a nonexistent path and observe exit 2 instead of 1 (would falsify the contract), or a FAIL run returning 0; the FAIL print plus return 2 pairing sits at lines 108-110",
+      "leverage": "high"
+    },
+    {
+      "law": "dogfood is structural: a workflow is submittable only if it demonstrates multiplicity, passoff, steering, salvage, deliverable, receipts, and carried laws",
+      "claim": "seven deterministic checks force the dogfood pattern into every submitted script: named per-item actors in a fan-out, an earlier actor's output feeding a later ask, reviewer feedback carried into revision, report() firing inside the fan-out, a published artifact plus conclusion return, a watch/inbox receipt, and record laws in the ask text",
+      "quote": "G4 salvage        report() fires inside the fan-out so work survives a dead run\n  G5 deliverable    published artifact (markdown/file) plus report-shape return\n  G6 receipts       durable receipt lands in watch/inbox\n  G7 laws           no-fabrication and em-dash law carried inside the asks",
+      "source": "C:/Users/foste/Documents/projects/local_sovereign_agent/tools/workflow_gate.py",
+      "steal": "before any CreateWorkflow submission on this account, self-audit the draft script against the seven checks (named actors, passoff, steering, salvage report, deliverable, receipt, laws in asks) and run tools/workflow_gate.py check first; landing spot: every future .zcode/workflows script authored in this estate",
+      "falsifier": "author a script that places the literal trigger strings ('report(x);', 'watch/inbox', 'no em-dashes', 'never fabricate') inside dead comments with none of the behaviors; the regex checks pass it, proving the gate enforces text shape not semantics (negative finding, untested here, derived from lines 32-65)",
+      "leverage": "high"
+    },
+    {
+      "law": "record laws travel inside the asks, not only in the harness prompt",
+      "claim": "G7 requires the conjunction of 'no em-dashes' AND a no-fabrication phrase (never fabricate / no-fabrication / never synthesize) in the script text, so every subagent spawned by the workflow receives the record laws even when the orchestrator's system prompt is absent or compacted away",
+      "quote": "(\"no em-dashes\" in t) and (\"never fabricate\" in t or \"no-fabrication\" in t or \"never synthesize\" in t)",
+      "source": "C:/Users/foste/Documents/projects/local_sovereign_agent/tools/workflow_gate.py",
+      "steal": "embed 'no em-dashes' and 'never fabricate' verbatim in every subagent ask I compose, in workflow scripts and lane instructions alike, so laws survive prompt loss; landing spot: ask strings in .zcode/workflows scripts and gala lane prompts",
+      "falsifier": "submit a script containing 'never fabricate' but missing 'no em-dashes' and observe a PASS verdict; the conjunction at lines 62-63 makes that deterministic if the law is as claimed",
+      "leverage": "high"
+    }
+  ],
+  "checks": [
+    {
+      "command": "./.venv/Scripts/python.exe tools/workflow_gate.py check --script .zcode/workflows/the-gala.dwf.ts --name the-gala.dwf.ts",
+      "exit": 0,
+      "evidence": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/w2/lanes/a16-gate.check.txt"
+    },
+    {
+      "command": "tail -5 memory/workflows/REGISTRY.jsonl",
+      "exit": 0,
+      "evidence": "C:/Users/foste/Documents/projects/local_sovereign_agent/memory/workflows/REGISTRY.jsonl"
+    },
+    {
+      "command": "grep -rn exit-2 corpus/steal memory/corpus",
+      "exit": 1,
+      "evidence": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/w2/lanes/a16-gate.grep.txt"
+    },
+    {
+      "command": "grep -rni registry corpus/steal memory/corpus",
+      "exit": 0,
+      "evidence": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/w2/lanes/a16-gate.grep.txt"
+    }
+  ],
+  "decision_changed": "All future estate gates I build or touch (gala fold-gate, mag hooks) will write their ledger row before computing the exit code and use the 0/1/2 contract with exit 2 as the only hard block; and no dynamic-workflow gets submitted via CreateWorkflow on this account before tools/workflow_gate.py check passes it. Before this lane the gate was a rule I was told about; now it is a verified organ whose ledger holds a real FAIL-to-PASS arc (2a9ae3707582 to 0ad57dc88296).",
+  "artifact": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/w2/lanes/a16-gate.json"
+}

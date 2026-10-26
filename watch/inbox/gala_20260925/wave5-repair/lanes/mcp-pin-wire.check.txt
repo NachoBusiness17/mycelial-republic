@@ -1,0 +1,65 @@
+=== mcp-pin-wire finish-line checks, 2026-09-29T10:28:05Z ===
+
+--- CHECK 1: tools/mcp_pin.py --self-test (must stay 9/9, finish line) ---
+      "ok": true,
+      "detail": "reordered JSON keys produce identical schema_hash"
+    }
+  ],
+  "passed": 9,
+  "failed": 0,
+  "note": "fixture-only; no live MCP server contacted; real ledger untouched"
+}
+self-test exit: 0
+
+--- CHECK 2: pytest new wiring tests + both pre-existing MCP test files ---
+................                                                         [100%]
+16 passed in 1.56s
+pytest exit: 0
+
+--- CHECK 3: callers census AFTER wiring (was: only tools/mcp_pin.py) ---
+dashboard/server.py:833:                    gated, _gate = _mcp.pin_gate_filter(
+dashboard/server.py:834:                        _mcp.tools_manifest(), _mcp.pin_ledger_path())
+mag/mcp_http.py:14:``mcp_server.pin_ledger_path()`` -- drifted tools are withheld and alarmed on
+mag/mcp_http.py:31:    resp = mcp_server.handle(msg, pin_ledger=mcp_server.pin_ledger_path())
+mag/mcp_server.py:259:def pin_ledger_path() -> Path | None:
+mag/mcp_server.py:276:def pin_gate_filter(
+mag/mcp_server.py:414:    pin_gate_filter() against the mcp_pin ledger (drifted tools withheld,
+mag/mcp_server.py:433:            manifest, _gate = pin_gate_filter(manifest, pin_ledger)
+mag/mcp_server.py:445:    ledger = pin_ledger_path()
+mag/mcp_server.py:450:        boot, gate = pin_gate_filter(tools_manifest(profile), ledger)
+
+--- CHECK 4: check_drift call sites outside tools/mcp_pin.py ---
+mag/mcp_server.py:22:check_drift() is wired at every connect surface -- serve() gates the profile
+mag/mcp_server.py:279:    """Connect-time rug-pull gate: run tools/mcp_pin.py check_drift, fail loud.
+mag/mcp_server.py:291:    from tools.mcp_pin import check_drift  # lazy: module import stays stdlib-only
+mag/mcp_server.py:293:    report = check_drift(manifest, ledger_path=Path(ledger_path))
+
+--- CHECK 5: live end-to-end stdio connect probe (temp ledger via MAG_MCP_PIN_LEDGER) ---
+connect 1 (fresh ledger): tools served = 34
+connect 1: ledger records = 68 distinct tools pinned = 34
+connect 1: stderr = (silent, no alarm)
+connect 2 (same surface): tools served = 34 ledger records = 136
+connect 2: stderr = (silent, no alarm)
+connect 3 (MAG_MCP_PIN_GATE=off): tools served = 34 ledger exists = False
+Traceback (most recent call last):
+  File "<stdin>", line 46, in <module>
+AssertionError: first connect must pin every served tool
+
+--- CHECK 5 RERUN (first run's assertion was wrong, mechanism was right: a connect
+--- gates TWICE by design, boot + tools/list, so first connect = 2 x served records) ---
+connect 1: ledger records = 68 (expect 2 x 34 = 68: boot gate + tools/list gate)
+connect 2: ledger records = 136 (expect 136)
+connect 3 (MAG_MCP_PIN_GATE=off): ledger exists = False
+E2E PROBE OK: real stdio connect fires check_drift on both gated paths; clean surface is silent; disarm hatch writes nothing
+
+--- CHECK 6: violation_ratchet check --changed (ask step 3; mag/ touched) ---
+RATCHET check: scope=35 changed files; hits=27; registered=27; NEW=0; expired-exceptions=0
+  GROWTH claim e066832a0b8edb5e: tools/stealth_driver.py accepted at 753 lines, now 907 (+154) — re-audit or re-accept by name
+RATCHET: PASS — no unregistered debt.
+ratchet exit: 0
+
+--- CHECK 7: em/en-dash + nonascii scan over ADDED lines of this lane's diff + new files ---
+added lines scanned: 105
+nonascii/em/en hits in added lines: 0
+tests/test_mcp_pin_wire.py: whole-file nonascii hits = 0
+scan exit: 0

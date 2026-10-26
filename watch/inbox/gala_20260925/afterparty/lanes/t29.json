@@ -1,0 +1,17 @@
+{
+  "gopher": "t29",
+  "item": "OssuaryZone.luau:386-387 King shower drops all 40 candies with identical drop target king.Position (no explicit spread), stacking one pile at his feet under t2's 6/day per-floor cap",
+  "ok": true,
+  "note": "Byte truth first: t23's 'no jitter' overstated. Line 387 did pass identical king.Position 40 times, but dropCandy:275 adds unseeded math.random(-6,6) per axis to every spawn, so parts landed in a ~8.5-stud disc, not one point. Defect still real: 40 intersecting unanchored parts in one stack, sweepable in one visit. Cap mechanics: per-player per-floor per-day, capped candy NOT consumed, and the cap block (231-241) explicitly names the shower overflow mute as t2's stated intent, so payout accounting was NOT touched; fix is positional only. No SeedRng instance reaches the Touched closure (build's rng is local to build), so per item spec used the derived-offset path: index-based Vogel spiral, golden angle, replay-safe, no new math.random (SkiZone:53 doctrine: score-bearing gets the seed-safe path).",
+  "checks": [
+    "pre-fix bytes via cat -A: 3-tab loop passing bare king.Position (t29.check.txt CHECK 1)",
+    "cap read: CANDY_PER_FLOOR_DAILY_CAP=6 at :241, candyAllowed 252-267 per-player/day, capped candy survives (negatives first-class: 'rest wasted' was overstated too)",
+    "post-fix numeric run: 40/40 distinct offsets, max radius 4.0, worst-case radial incl jitter 12.485 < 12.65 wall limit (CELL=14 plane minus 0.75 half-thickness minus 0.6 candy radius), center never inside rock",
+    "em/en-dash scan of edited region: NONE",
+    "luau-lsp/luau/luau-analyze absent on this box, no globalTypes.d.luau; verified by read + numeric sim",
+    "tools/mountain_check NOT run (shared)",
+    "git diff 72e20650f..dc1d3c72a confined to the shower loop (3 lines -> 22 lines incl receipt comment); other dropCandy sites untouched"
+  ],
+  "next_steal": "OssuaryZone.luau:442-443 build loop drops all 6 static candies per floor at base + (0,1.5,0): the maze center cell (grid 7,7) every floor, math.random(-6,6)-only jitter from dropCandy:275. Same single-point pattern one level up (6 stacked parts per floor), and unseeded math.random in a seeded worldgen context (SkiZone:53 says score-bearing lives in SeedRng; these candies are score-bearing under the cap). Consider cellCenter(rng, ...) placement like sentinels/braziers already use, which also removes the unseeded jitter from the build path without touching runtime dropCandy.",
+  "archive": "watch/inbox/gala_20260925/afterparty/lanes/t29.check.txt"
+}

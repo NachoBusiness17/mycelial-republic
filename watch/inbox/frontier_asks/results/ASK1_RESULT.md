@@ -1,0 +1,2 @@
+MC6 status=ok secs=93.2 cost=$0.1769 usage={"prompt_tokens": 1122, "completion_tokens": 8623, "total_tokens": 9745, "prompt_tokens_details": {"cached_tokens": 0, "cache_write_tokens": 0, "audio_tokens": 0, "video_tokens": 0}, "completion_tokens_details": {"reasoning_tokens": 3228, "image_tokens": 0, "audio_tokens": 0}, "cost": 0.176948, "cost_details": {"source": "openrouter_list", "floor_applied": false, "rate_source": "openrouter_catalog"}} prompt_sha=805c0bff max_tokens=64000 stream=True finish=stop chunks=1572 content_chars=14942
+

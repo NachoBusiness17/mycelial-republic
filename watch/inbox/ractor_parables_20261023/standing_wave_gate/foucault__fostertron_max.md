@@ -1,0 +1,32 @@
+<!-- meta: {"ractor": "FOUCAULT", "mouthpiece": "fostertron_max", "subject": "standing_wave_gate", "start_et": "2026-10-23T12:51:09.976065-04:00", "attempts": [{"attempt": 1, "exit": 0, "stdout_len": 5900, "at": "2026-10-23T12:54:26.243344-04:00"}], "carrier": "opencode run (provider zai-sd 'sd / Max', key env ZAI_API_KEY_2 via model_garden._api_key)", "requested_model": "zai-sd/glm-5.3", "resolved_model": "glm-5.3", "exit": 0, "stderr_tail": "\u001b[0m\n> build \u00b7 glm-5.3\n\u001b[0m\n\u001b[0m\u2192 \u001b[0mRead PROMPT.txt\n", "tokens": "not reported by opencode run", "end_et": "2026-10-23T12:54:26.243344-04:00", "status": "OK"} -->
+
+# The Ford That Never Moved
+
+The two rivers met below the town, and where they met, the water stood up. It rose at the same stone, curled like a crest of white wool, hissing, never still, and it never went anywhere. Upstream of the meeting, each river alone was only hurry — flat brown water going somewhere else, no shape to it at all. The shape began exactly where the two opposed each other, and it held.
+
+A keeper with a marked pole read the crest every morning. She planted the pole beside the same stone, took the water against the same notches, and wrote the figure in a long book. Forty years of mornings filled the book, and the figure had not changed. Anyone could look. The water hurried through the crest and away, all day and all night; the crest kept its wool, its height, its hiss.
+
+At the head of the crossing stood a wicket, one plank wide, and in the doorpost of it a small thing of brass hummed. No one remembered who had set it there. A child wound it each evening for a copper, and the copper did not ruin anyone. Before anything crossed, it was hung on the hook beneath the hum. The hum either deepened or it did not. When it deepened, the bearer stepped aside, unpacked, split the load, and came back lighter; when it did not, the plank was crossed. The mayor's trunk hung on the hook like anyone's crate. Behind the wicket the bank opened wide — footpaths, stalls, three small ferries, room for everyone. Before the wicket there was only the plank and the hook, and everything passed them one thing at a time.
+
+Three trades kept house on the bank. In the first, a scribe sold letters and had grown fat on them, though almost none were written. His patrons — merchants, lovers, widows — wanted, it turned out, the same beginnings: the same greeting, the same blessing, the same sorrow. So he carved the openings on blocks of pear-wood and pressed them by the hundred, and only endings were written by hand. Of every thousand pages he sold, perhaps five were begun with a pen; the rest began from the block, arrived faster than ink could dry, and no patron ever knew.
+
+In the second house a stockman sorted his beasts each spring. The pens emptied and filled; the lambs of one year were the mutton of the next; visitors praised how the flock changed. He would not have it. The tape was the same tape, the order of the pens the same order, the kind he kept back the kind his father had kept back. The animals went through without end. The choosing never went anywhere at all.
+
+The third trade kept no house, only boards on posts set in the shallows where the crest stood: the tolls, the right of way, whose turn at dawn, whose at dusk. The crowd went past the boards like water, strangers every day, bound in every direction, and the boards stood in the crowd as the crest stood in the river — shivering when a heavy wagon passed, never carried off. A hundred miles downstream, people who had never seen the crossing could recite them.
+
+In the dry year the merchants upstream dammed their feeder stream a little, to spare the foot traffic the spray, and expected a smaller crest. The crest did not grow smaller. It came apart, thread by thread, the wool unbraiding into plain hurrying water, and for a week the ford was any river at all: no shape, no standing place, no calm pocket behind the crest where the ferries used to load. The keeper's pole had nothing to record. When the dam was opened and the two waters opposed each other again, the crest re-knit at the same stone, against the same notch, and the book went on.
+
+Once, for a single day, the company took the brass hum down to spare the copper, and expected a slower plank. They got everything at once: loads light and heavy spreading everywhere, ferries fouled, the wide bank choked, the whole crossing standing still. Not a thinner order — none. The hum was back in its doorpost by dusk, and by morning the plank was a plank again.
+
+A surveyor came in the autumn and watched the keeper read the water. She asked who read the keeper. The keeper turned to the back of the book, where a second column held her own name, taken each quarter in the city against marks she recognized, because they were the notches of her pole. She said it the way she said the height of the crest. The surveyor stayed until evening. The water hurried through, all of it going somewhere, and the crest held at its stone, exactly as written.
+
+---KEY---
+1. The standing shape exists only where two flows oppose each other; a single flow alone is mere hurry. (each river upstream vs. the crest at the meeting stone)
+2. The material moves without pause while the shape it makes never changes. (forty years of notches in the keeper's long book)
+3. Great profit can rest on the unchanging opening of a text, where nearly every copy begins from the same block and almost none is written fresh. (the scribe's pear-wood blocks; five pens per thousand pages)
+4. Generations may churn without end while the act of choosing among them stays identical. (the stockman's spring sorting)
+5. The passing crowd is the moving water; the fixed rules are the crest — trembling in place, never carried off, recited far downstream. (the boards on posts in the shallows)
+6. Such a shape cannot be taken down a little; interfere with it and it unbraids into ordinary flow, returning only when the two flows oppose again. (the dammed feeder stream and the week of plain water)
+7. A small, nearly costless hum at the narrow entrance weighs every load before anything dear touches it. (the brass hum and its hook, wound for a copper)
+8. Spreading into many paths is permitted only past the narrow entrance; remove the entrance and the result is not slower order but no order at all. (the day the hum came down and the wide bank choked)
+9. The one who measures is herself measured, by the same marks, in another's book. (the second column at the back of the long book)

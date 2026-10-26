@@ -1,0 +1,22 @@
+{
+  "gopher": "t63",
+  "item": "roblox/src/server/MudBasecamp.luau:344-351 refreshes plot labels on a 10s GetPlayers poll; convert to event-driven following t56's leaderstats cure in init.server.luau",
+  "ok": true,
+  "note": "Poll REMOVED, no fallback kept. The polled value is the player's Plot<i> attribute (refresh reads pl:GetAttribute, :308); sole writer is this file's Triggered handler (:326 set, :332/:335 removal) and every path already refreshes at :340, so exact-name GetAttributeChangedSignal('Plot'..i) per plot (:385) covers future/external writers; first-add firing per the official attributes doc example fetched 2026-09-25 (same receipt t56 used). Time axis, negative first-class: countdown text and HERB_MIN/BLOOM_H flips fire no signal, so the plant write schedules two one-shot task.delay wakeups at exactly those deadlines (:367-376, wake at deadline not polling), stale fires dropped by a plantedAt guard (:371). PromptShown rejected: passes inputType not the player (ProximityPrompt docs table, fetched 2026-09-25); PromptButtonHoldBegan(player) bound for countdown freshness at engagement (:382-384). Seed at attach paints initial labels the poll used to cover (:380-390, t56's PlayerAdded + GetPlayers pattern). Accepted negative: minute count stale between write/engagement events; threshold flips are exact. Minimal diff +46/-7 in one region.",
+  "checks": [
+    "read-back of post-edit buildGarden :288-392: balanced, tabs consistent, handlers typed Player",
+    "writer census grep Plot%d over roblox/src: sole writer MudBasecamp.luau :326/:332/:335, so no catch-all needed",
+    "grep task.wait(10) in file: 0 matches; remaining task.spawn :215 is wisp motion, not a label poll",
+    "em-dash scan over edited region and both lane files: none",
+    "docs fetched 2026-09-25: attributes page SetAttribute example 'Fires Changed, AttributeChanged, and GetAttributeChangedSignal()'; ProximityPrompt event table (PromptShown inputType, PromptButtonHoldBegan player)",
+    "attribute removal firing (SetAttribute nil) not doc-stated; recorded as not load-bearing because :340 refreshes every in-file write path",
+    "luau-lsp not on PATH: semantic analyze skipped with receipt",
+    "mountain_check not run per lane order (shared)"
+  ],
+  "next_steal": "ShadowLedger.luau:41-50 record() does a per-entry GetAsync+SetAsync read-modify-write of the whole day's rows: concurrent records race (lost update) and every event rewrites the full row list with no UpdateAsync or debounce; next gopher switches to UpdateAsync and/or batches per player-day",
+  "archive": [
+    "watch/inbox/gala_20260925/afterparty/lanes/t63.check.txt",
+    "watch/inbox/gala_20260925/afterparty/lanes/t63.json",
+    "roblox/src/server/MudBasecamp.luau"
+  ]
+}

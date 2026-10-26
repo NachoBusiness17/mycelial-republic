@@ -1,0 +1,361 @@
+{
+ "task": "THE 50 W5 T23 Mr Pool reaction signatures",
+ "as_of": "2026-09-19",
+ "question": "do called-shot posts pull a different audience reaction than posts with no call on file (faded posts)?",
+ "inputs": {
+  "ledger_full.jsonl": {
+   "rows": 3663,
+   "span": [
+    "2023-05-02",
+    "2026-09-18"
+   ]
+  },
+  "called_shot_ledger_captions.jsonl": {
+   "rows": 107,
+   "uniq_msg_ids": 65
+  },
+  "called_shot_ledger.jsonl (v1)": {
+   "rows": 16,
+   "adds_msg_ids": [
+    3091
+   ]
+  }
+ },
+ "definitions": {
+  "called": "msg carries at least one dated call row (v2 captions ledger, plus v1 msg 3091); n=66 msgs",
+  "faded": "no filed call row for that msg; 'faded' = no call on file, not proof no call was made; n=3597 msgs",
+  "expired_open": "msg-level: OPEN if any of its call targets is >= as-of date, else EXPIRED; expiry is not a verdict, only v1 Med Bed rows carry filed verdicts (ALL BROKEN per CALLED_SHOT_VERDICT.json)",
+  "matched": "faded msgs within +/-45 days of some called msg (audience-size control)",
+  "rpv": "reactions per 1,000 views (organic_rpv excludes ReactionPaid tips)"
+ },
+ "buckets": {
+  "called": {
+   "bucket": "called",
+   "n_msgs": 66,
+   "n_with_views_field": 66,
+   "n_views_gt0": 66,
+   "n_no_views": 0,
+   "views_median": 9742.5,
+   "views_mean": 11836.2273,
+   "views_sum": 781191,
+   "forwards_median": 175.0,
+   "forwards_sum": 15070,
+   "reactions_total_median": 275.5,
+   "reactions_total_sum": 18826,
+   "reactions_organic_median": 272.5,
+   "reactions_organic_sum": 18687,
+   "reactions_paid_sum": 139,
+   "n_msgs_with_paid": 64,
+   "rpv_per_1k_median": 23.7978,
+   "rpv_per_1k_mean": 24.462,
+   "organic_rpv_per_1k_median": 23.5606,
+   "replies_median": 0.0,
+   "n_replies_gt0": 0,
+   "media_mix": {
+    "none": 32,
+    "MessageMediaPhoto": 19,
+    "MessageMediaDocument": 12,
+    "MessageMediaWebPage": 3
+   },
+   "emoji_share_of_organic": {
+    "❤": 0.4847,
+    "🙏": 0.2167,
+    "👍": 0.095,
+    "💯": 0.0543,
+    "🔥": 0.034,
+    "❤‍🔥": 0.026,
+    "👏": 0.0255,
+    "⚡": 0.025,
+    "✍": 0.0098,
+    "🥰": 0.0066
+   }
+  },
+  "called_expired_targets": {
+   "bucket": "called_expired_targets",
+   "n_msgs": 57,
+   "n_with_views_field": 57,
+   "n_views_gt0": 57,
+   "n_no_views": 0,
+   "views_median": 9644,
+   "views_mean": 11860.0526,
+   "views_sum": 676023,
+   "forwards_median": 142,
+   "forwards_sum": 12326,
+   "reactions_total_median": 247,
+   "reactions_total_sum": 15945,
+   "reactions_organic_median": 246,
+   "reactions_organic_sum": 15821,
+   "reactions_paid_sum": 124,
+   "n_msgs_with_paid": 55,
+   "rpv_per_1k_median": 23.2269,
+   "rpv_per_1k_mean": 23.9562,
+   "organic_rpv_per_1k_median": 22.8347,
+   "replies_median": 0,
+   "n_replies_gt0": 0,
+   "media_mix": {
+    "none": 23,
+    "MessageMediaPhoto": 19,
+    "MessageMediaDocument": 12,
+    "MessageMediaWebPage": 3
+   },
+   "emoji_share_of_organic": {
+    "❤": 0.4686,
+    "🙏": 0.231,
+    "👍": 0.0964,
+    "💯": 0.0559,
+    "🔥": 0.0339,
+    "❤‍🔥": 0.0288,
+    "⚡": 0.0245,
+    "👏": 0.0233,
+    "✍": 0.0097,
+    "🥰": 0.0057
+   }
+  },
+  "called_open_targets": {
+   "bucket": "called_open_targets",
+   "n_msgs": 9,
+   "n_with_views_field": 9,
+   "n_views_gt0": 9,
+   "n_no_views": 0,
+   "views_median": 12607,
+   "views_mean": 11685.3333,
+   "views_sum": 105168,
+   "forwards_median": 290,
+   "forwards_sum": 2744,
+   "reactions_total_median": 327,
+   "reactions_total_sum": 2881,
+   "reactions_organic_median": 326,
+   "reactions_organic_sum": 2866,
+   "reactions_paid_sum": 15,
+   "n_msgs_with_paid": 9,
+   "rpv_per_1k_median": 28.1133,
+   "rpv_per_1k_mean": 27.6653,
+   "organic_rpv_per_1k_median": 27.7073,
+   "replies_median": 0,
+   "n_replies_gt0": 0,
+   "media_mix": {
+    "none": 9
+   },
+   "emoji_share_of_organic": {
+    "❤": 0.574,
+    "🙏": 0.1375,
+    "👍": 0.0872,
+    "💯": 0.0454,
+    "👏": 0.0377,
+    "🔥": 0.0342,
+    "⚡": 0.0276,
+    "🥰": 0.0119,
+    "✍": 0.0105,
+    "❤‍🔥": 0.0105
+   }
+  },
+  "faded": {
+   "bucket": "faded",
+   "n_msgs": 3597,
+   "n_with_views_field": 3595,
+   "n_views_gt0": 3595,
+   "n_no_views": 2,
+   "views_median": 15679,
+   "views_mean": 20312.3989,
+   "views_sum": 73023074,
+   "forwards_median": 150,
+   "forwards_sum": 751848,
+   "reactions_total_median": 399,
+   "reactions_total_sum": 1870322,
+   "reactions_organic_median": 397,
+   "reactions_organic_sum": 1864030,
+   "reactions_paid_sum": 6292,
+   "n_msgs_with_paid": 1604,
+   "rpv_per_1k_median": 26.3365,
+   "rpv_per_1k_mean": 26.1211,
+   "organic_rpv_per_1k_median": 26.198,
+   "replies_median": 0,
+   "n_replies_gt0": 0,
+   "media_mix": {
+    "MessageMediaPhoto": 1961,
+    "none": 905,
+    "MessageMediaDocument": 383,
+    "MessageMediaWebPage": 346,
+    "MessageMediaPoll": 2
+   },
+   "emoji_share_of_organic": {
+    "🙏": 0.2899,
+    "❤": 0.2803,
+    "👍": 0.1465,
+    "🔥": 0.0822,
+    "💯": 0.0575,
+    "⚡": 0.0294,
+    "🍾": 0.0259,
+    "❤‍🔥": 0.0225,
+    "👏": 0.0157,
+    "🎉": 0.0116
+   }
+  },
+  "faded_time_matched": {
+   "bucket": "faded_time_matched",
+   "n_msgs": 1765,
+   "n_with_views_field": 1764,
+   "n_views_gt0": 1764,
+   "n_no_views": 1,
+   "views_median": 11407.0,
+   "views_mean": 15185.6344,
+   "views_sum": 26787459,
+   "forwards_median": 156,
+   "forwards_sum": 365776,
+   "reactions_total_median": 320,
+   "reactions_total_sum": 674559,
+   "reactions_organic_median": 316,
+   "reactions_organic_sum": 669436,
+   "reactions_paid_sum": 5123,
+   "n_msgs_with_paid": 1412,
+   "rpv_per_1k_median": 25.9979,
+   "rpv_per_1k_mean": 25.5878,
+   "organic_rpv_per_1k_median": 25.7863,
+   "replies_median": 0,
+   "n_replies_gt0": 0,
+   "media_mix": {
+    "none": 843,
+    "MessageMediaPhoto": 607,
+    "MessageMediaDocument": 213,
+    "MessageMediaWebPage": 101,
+    "MessageMediaPoll": 1
+   },
+   "emoji_share_of_organic": {
+    "❤": 0.3611,
+    "🙏": 0.2584,
+    "👍": 0.1196,
+    "🔥": 0.069,
+    "💯": 0.0688,
+    "❤‍🔥": 0.024,
+    "⚡": 0.0239,
+    "👏": 0.0183,
+    "🍾": 0.0133,
+    "🥰": 0.0082
+   }
+  }
+ },
+ "deltas": {
+  "raw_called_vs_faded": {
+   "rpv_median_called": 23.7978,
+   "rpv_median_faded": 26.3365,
+   "diff": -2.5387,
+   "perm_p_two_sided": 0.0249,
+   "perms": 20000,
+   "confound": "called posts cluster in 2024-2026 when the channel was bigger; raw delta is age-confounded"
+  },
+  "matched_called_vs_faded": {
+   "n_matched_faded": 1765,
+   "rpv_median_matched_faded": 25.9979,
+   "paired_msgs": 66,
+   "paired_median_delta_rpv": -1.3394,
+   "paired_below_zero_frac": 0.6061,
+   "signflip_perm_p_two_sided": 0.191
+  }
+ },
+ "emoji_signature": {
+  "note": "organic reactions per 1K views; ratio >1 means the emoji is more characteristic of called posts",
+  "rates_vs_time_matched_faded": [
+   {
+    "emoji": "👏",
+    "called_per_1k_views": 0.6093,
+    "faded_matched_per_1k_views": 0.4573,
+    "ratio_called_over_matched": 1.3324
+   },
+   {
+    "emoji": "❤",
+    "called_per_1k_views": 11.5951,
+    "faded_matched_per_1k_views": 9.0253,
+    "ratio_called_over_matched": 1.2847
+   },
+   {
+    "emoji": "✍",
+    "called_per_1k_views": 0.2343,
+    "faded_matched_per_1k_views": 0.1913,
+    "ratio_called_over_matched": 1.2248
+   },
+   {
+    "emoji": "❤‍🔥",
+    "called_per_1k_views": 0.6208,
+    "faded_matched_per_1k_views": 0.6003,
+    "ratio_called_over_matched": 1.0341
+   },
+   {
+    "emoji": "⚡",
+    "called_per_1k_views": 0.5978,
+    "faded_matched_per_1k_views": 0.597,
+    "ratio_called_over_matched": 1.0013
+   },
+   {
+    "emoji": "🙏",
+    "called_per_1k_views": 5.1831,
+    "faded_matched_per_1k_views": 6.4571,
+    "ratio_called_over_matched": 0.8027
+   },
+   {
+    "emoji": "🥰",
+    "called_per_1k_views": 0.1587,
+    "faded_matched_per_1k_views": 0.2049,
+    "ratio_called_over_matched": 0.7745
+   },
+   {
+    "emoji": "👍",
+    "called_per_1k_views": 2.2722,
+    "faded_matched_per_1k_views": 2.9894,
+    "ratio_called_over_matched": 0.7601
+   },
+   {
+    "emoji": "💯",
+    "called_per_1k_views": 1.298,
+    "faded_matched_per_1k_views": 1.7188,
+    "ratio_called_over_matched": 0.7552
+   },
+   {
+    "emoji": "🎉",
+    "called_per_1k_views": 0.0883,
+    "faded_matched_per_1k_views": 0.1504,
+    "ratio_called_over_matched": 0.5871
+   },
+   {
+    "emoji": "🔥",
+    "called_per_1k_views": 0.8129,
+    "faded_matched_per_1k_views": 1.7234,
+    "ratio_called_over_matched": 0.4717
+   },
+   {
+    "emoji": "🍾",
+    "called_per_1k_views": 0.0768,
+    "faded_matched_per_1k_views": 0.3325,
+    "ratio_called_over_matched": 0.231
+   }
+  ]
+ },
+ "honest_n": {
+  "called_msgs": 66,
+  "called_expired_target_msgs": 57,
+  "called_open_target_msgs": 9,
+  "faded_msgs": 3597,
+  "faded_time_matched_msgs": 1765,
+  "paired_msgs": 66,
+  "msgs_without_views_field": [
+   3475,
+   1
+  ],
+  "msgs_with_reactions": 3550,
+  "album_member_msgs_grouped_true": 172,
+  "msgs_with_any_reply": 0
+ },
+ "caveats": [
+  "'faded' is operationalized as no filed call row; the caption ledger was built by caption/date scans and may miss implicit calls",
+  "reaction and view counts are Telegram display values at scrape time (2026-09-18); recent posts have not finished accruing",
+  "expiry of a target date is not an adjudicated BROKEN verdict for v2 rows; only the v1 Med Bed campaign carries filed verdicts (ALL BROKEN)",
+  "album members (grouped=true) share one album; views/reactions are per-message as scraped, so albums weigh more than once",
+  "media mix differs by bucket (see media_mix); photo-vs-video reaction behavior is a known confound not adjusted here",
+  "permutation p-values are Monte Carlo (seed 50, 20000 draws); with n_called=66 the smallest two-sided p is coarse"
+ ],
+ "provenance": {
+  "script": "scripts/the50_t23_reaction_sigs.py",
+  "run": ".venv/Scripts/python.exe scripts/the50_t23_reaction_sigs.py",
+  "stdlib_only": true,
+  "seed": 50
+ }
+}

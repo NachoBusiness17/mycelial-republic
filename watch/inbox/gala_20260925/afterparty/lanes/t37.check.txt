@@ -1,0 +1,162 @@
+t37 check log: bind the freshness stamp to a source hash (tools/freshness_gate.py, t11b's next_steal)
+Date: 2026-09-25. Laws: never fabricate; no em-dashes in filed text; run the check, save raw output, cite the file; negatives first-class.
+
+FILES CHANGED:
+  tools/freshness_gate.py      (extended: optional sha256 binding on the stamp line, --source PATH flag, result dict gains hash + hash_ok; --days and all t11b date rules untouched)
+  tests/test_freshness_gate.py (31 cases: the 19 t11b cases intact + 12 new binding cases; self-test case count pinned 3 -> 6)
+
+BINDING CONTRACT (receipt format: source-fetched: YYYY-MM-DD sha256:<64 hex>):
+  - binding + --source + file exists -> gate recomputes sha256 over the file bytes; match exits 0, mismatch exits 2 naming both digests
+  - binding + --source + file missing -> exit 2 (fail-closed, same class as a missing receipt)
+  - --source given, receipt binds nothing -> exit 2 (nothing to verify is not a pass)
+  - binding stamped, no --source -> date rules only, reason says 'stamped but unverified (pass --source to enforce)', exit 0 if the date is fresh
+  - newest stamp drops a binding an older stamp carried -> exit 2 're-stamp smell' even without --source (a bare fresh stamp cannot launder a bound claim)
+  - stamp line says sha256 but the binding is malformed (63/65 chars, non-hex) -> the whole line is not a stamp, exit 2 'no freshness stamp' (never a truncated-hash guess)
+  - hex compared case-insensitively; most recent stamp is the evidence; on a date tie a bound stamp beats a bare one
+
+COMMANDS RUN (raw outputs below, nothing paraphrased):
+
+1) Full pytest run, exit 0:
+   $ .venv/Scripts/python.exe -m pytest tests/test_freshness_gate.py -v ; echo "PYTEST_EXIT=$?"
+   PYTEST_EXIT=0
+   <full raw output in section A below>
+
+============================= test session starts =============================
+platform win32 -- Python 3.11.15, pytest-9.1.1, pluggy-1.6.0 -- C:\Users\foste\Documents\projects\local_sovereign_agent\.venv\Scripts\python.exe
+rootdir: C:\Users\foste\Documents\projects\local_sovereign_agent
+configfile: pytest.ini
+plugins: anyio-4.14.2, langsmith-0.10.14, timeout-2.4.0, typeguard-4.6.0
+collecting ... collected 31 items
+
+tests/test_freshness_gate.py::test_fresh_receipt_passes PASSED           [  3%]
+tests/test_freshness_gate.py::test_stale_receipt_fails PASSED            [  6%]
+tests/test_freshness_gate.py::test_missing_stamp_fails PASSED            [  9%]
+tests/test_freshness_gate.py::test_boundary_age_exactly_at_bar_passes PASSED [ 12%]
+tests/test_freshness_gate.py::test_boundary_age_one_past_bar_fails PASSED [ 16%]
+tests/test_freshness_gate.py::test_days_argument_is_honored PASSED       [ 19%]
+tests/test_freshness_gate.py::test_most_recent_stamp_is_the_evidence PASSED [ 22%]
+tests/test_freshness_gate.py::test_future_dated_stamp_fails PASSED       [ 25%]
+tests/test_freshness_gate.py::test_malformed_calendar_date_is_not_a_stamp PASSED [ 29%]
+tests/test_freshness_gate.py::test_label_variants_are_accepted PASSED    [ 32%]
+tests/test_freshness_gate.py::test_unrelated_dates_do_not_count_as_stamps PASSED [ 35%]
+tests/test_freshness_gate.py::test_gate_file_missing_receipt_fails_closed PASSED [ 38%]
+tests/test_freshness_gate.py::test_gate_file_reads_utf8_receipt PASSED   [ 41%]
+tests/test_freshness_gate.py::test_cli_exit_codes[source-fetched: 2026-09-24\n-0] PASSED [ 45%]
+tests/test_freshness_gate.py::test_cli_exit_codes[source-fetched: 2026-09-01\n-2] PASSED [ 48%]
+tests/test_freshness_gate.py::test_cli_exit_codes[no stamp here\n-2] PASSED [ 51%]
+tests/test_freshness_gate.py::test_self_test_exits_zero PASSED           [ 54%]
+tests/test_freshness_gate.py::test_main_returns_int_directly PASSED      [ 58%]
+tests/test_freshness_gate.py::test_stamp_with_matching_hash_passes PASSED [ 61%]
+tests/test_freshness_gate.py::test_stamp_with_mismatched_hash_fails PASSED [ 64%]
+tests/test_freshness_gate.py::test_no_hash_behaves_as_before PASSED      [ 67%]
+tests/test_freshness_gate.py::test_bound_source_missing_fails PASSED     [ 70%]
+tests/test_freshness_gate.py::test_hash_without_source_is_stamped_but_unverified PASSED [ 74%]
+tests/test_freshness_gate.py::test_source_demanded_but_receipt_has_no_binding_fails PASSED [ 77%]
+tests/test_freshness_gate.py::test_restamp_dropping_binding_fails PASSED [ 80%]
+tests/test_freshness_gate.py::test_restamp_with_new_binding_passes PASSED [ 83%]
+tests/test_freshness_gate.py::test_hash_comparison_is_case_insensitive PASSED [ 87%]
+tests/test_freshness_gate.py::test_days_bar_still_applies_to_bound_stamp PASSED [ 90%]
+tests/test_freshness_gate.py::test_malformed_binding_is_not_a_stamp PASSED [ 93%]
+tests/test_freshness_gate.py::test_cli_hash_match_exit0_mismatch_exit2 PASSED [ 96%]
+tests/test_freshness_gate.py::test_module_has_no_em_dash_in_filed_text PASSED [100%]
+
+============================= 31 passed in 1.19s ==============================
+
+SECTION A END.
+
+2) Built-in self-test, now six cases (3 date + 3 binding), exit 0:
+   $ .venv/Scripts/python.exe tools/freshness_gate.py --self-test ; echo "SELFTEST_EXIT=$?"
+   FRESHNESS-GATE self-test PASS: fresh stamp passes -> ok=True (stamp 2026-09-20 is 5d old; bar is 14d)
+   FRESHNESS-GATE self-test PASS: stale stamp fails -> ok=False (stamp 2026-09-01 is 24d old; bar is 14d)
+   FRESHNESS-GATE self-test PASS: missing stamp fails -> ok=False (no freshness stamp found (want a line like 'source-fetched: YYYY-MM-DD'))
+   FRESHNESS-GATE self-test PASS: binding matches cited file passes -> ok=True (stamp 2026-09-20 is 5d old; bar is 14d; sha256 binding verified against C:\Users\foste\AppData\Local\Temp\tmp0rsk57am\source.txt)
+   FRESHNESS-GATE self-test PASS: binding vs changed source fails -> ok=False (source hash mismatch: receipt binds sha256:d41e11d4bb1743bd71b21a25267a3f1e92c7016fea337732b9e9c051c3b58c62, C:\Users\foste\AppData\Local\Temp\tmp0rsk57am\source.txt hashes to sha256:cd95ef78d9924c9a12e87afc00312dc8c843987e10b52a8a4f8e57022b375380)
+   FRESHNESS-GATE self-test PASS: re-stamp dropping binding fails -> ok=False (newest stamp drops a sha256 binding an older stamp carried; re-stamp smell)
+   SELFTEST_EXIT=0
+
+3) Ratchet gate, exit 0 (raw output; the ratchet's own success line contains a real
+   em-dash, rendered here as [em-dash] so this filed file stays clean; nothing else
+   in the output was altered):
+   $ .venv/Scripts/python.exe tools/violation_ratchet.py check --changed ; echo "RATCHET_EXIT=$?"
+   RATCHET check: scope=10 changed files; hits=6; registered=6; NEW=0; expired-exceptions=0
+   RATCHET: PASS [em-dash] no unregistered debt.
+   RATCHET_EXIT=0
+   (context: full-scope runs without --changed are NOT clean estate-wide; t11b recorded
+   9 pre-existing NEW hits in files it did not own; this gopher did not rerun full scope
+   and did not repair those. --changed scope only, per t11b precedent.)
+
+4) Live CLI contract demo, seven ways (temp dir tmp.DruHSypeCP; raw output):
+   --- 1) match:
+   FRESHNESS-GATE: ok C:/Users/foste/AppData/Local/Temp/tmp.DruHSypeCP/bound.md (stamp 2026-09-24 is 2d old; bar is 14d; sha256 binding verified against C:\Users\foste\AppData\Local\Temp\tmp.DruHSypeCP\src.txt)
+   match_exit=0
+   --- 2) mismatch (source changed under the binding):
+   FRESHNESS-GATE: FAIL C:/Users/foste/AppData/Local/Temp/tmp.DruHSypeCP/bound.md (source hash mismatch: receipt binds sha256:d41e11d4bb1743bd71b21a25267a3f1e92c7016fea337732b9e9c051c3b58c62, C:\Users\foste\AppData\Local\Temp\tmp.DruHSypeCP\src.txt hashes to sha256:cd95ef78d9924c9a12e87afc00312dc8c843987e10b52a8a4f8e57022b375380)
+   mismatch_exit=2
+   --- 3) bound source file missing:
+   FRESHNESS-GATE: FAIL C:/Users/foste/AppData/Local/Temp/tmp.DruHSypeCP/bound.md (bound source file not found: C:\Users\foste\AppData\Local\Temp\tmp.DruHSypeCP\gone.txt)
+   missing_exit=2
+   --- 4) --source given, receipt has no binding:
+   FRESHNESS-GATE: FAIL C:/Users/foste/AppData/Local/Temp/tmp.DruHSypeCP/bare.md (cited source C:\Users\foste\AppData\Local\Temp\tmp.DruHSypeCP\src.txt given but the receipt carries no sha256 binding to verify against it)
+   nobinding_exit=2
+   --- 5) re-stamp drops an older binding:
+   FRESHNESS-GATE: FAIL C:/Users/foste/AppData/Local/Temp/tmp.DruHSypeCP/drop.md (newest stamp drops a sha256 binding an older stamp carried; re-stamp smell)
+   drop_exit=2
+   --- 6) binding stamped but no --source (date rules only):
+   FRESHNESS-GATE: ok C:/Users/foste/AppData/Local/Temp/tmp.DruHSypeCP/bound.md (stamp 2026-09-24 is 2d old; bar is 14d; sha256 binding stamped but unverified (pass --source to enforce))
+   unverified_exit=0
+   --- 7) --days override untouched on a bound stamp:
+   FRESHNESS-GATE: FAIL C:/Users/foste/AppData/Local/Temp/tmp.DruHSypeCP/stalebound.md (stamp 2026-09-24 is 2d old; bar is 1d)
+   days1_exit=2
+   FRESHNESS-GATE: FAIL C:/Users/foste/AppData/Local/Temp/tmp.DruHSypeCP/stalebound.md (source hash mismatch: receipt binds sha256:d41e11d4bb1743bd71b21a25267a3f1e92c7016fea337732b9e9c051c3b58c62, C:\Users\foste\AppData\Local\Temp\tmp.DruHSypeCP\src.txt hashes to sha256:cd95ef78d9924c9a12e87afc00312dc8c843987e10b52a8a4f8e57022b375380)
+   days30_exit=2
+   (step 7 note: at --days 30 the date passes so the gate proceeds to the hash check,
+   which still fails because step 2 had changed the source under the binding; the demo
+   receipt bound the digest of 'claim v1' and the file held 'claim v2 changed'.)
+
+NEGATIVES (first-class, verified not assumed):
+
+  N1) My first rewrite of the tool dropped the '?' that made the new hash regex group
+      optional, so ONLY stamps carrying a 64-hex binding matched at all. Caught by
+      pytest: 14 failed / 17 passed (raw file was overwritten by the passing re-run;
+      these lines are verbatim from the captured first-run output in this session):
+        FAILED tests/test_freshness_gate.py::test_fresh_receipt_passes - assert False...
+        FAILED tests/test_freshness_gate.py::test_stale_receipt_fails - TypeError: '>...
+        FAILED tests/test_freshness_gate.py::test_no_hash_behaves_as_before - assert ...
+        E       TypeError: '>' not supported between instances of 'NoneType' and 'int'
+        ======================== 14 failed, 17 passed in 1.68s ========================
+      Fix: one character, an optional '?' on the sha256 group. Re-run: 31 passed,
+      exit 0 (section A). No fabrication: the intermediate failure was real, ugly, mine.
+
+  N2) First live CLI demo died before any gate call: mktemp -d hands Git Bash a /tmp path
+      that Windows python does not map (FileNotFoundError on '/tmp/tmp.s1vJA9JFiu/src.txt'
+      inside the hash one-liner), the && chain broke, and later steps reported
+      'receipt not found'. Redone with cygpath -m. The failed run is not hidden; its
+      verbatim key lines, captured in this session:
+        FileNotFoundError: [Errno 2] No such file or directory: '/tmp/tmp.s1vJA9JFiu/src.txt'
+        match_exit=1
+        FRESHNESS-GATE: FAIL ... (receipt not found: C:\Users\foste\AppData\Local\Temp\tmp.s1vJA9JFiu\bound.md)
+        mismatch_exit=2   (and every later step likewise 'receipt not found')
+
+  N3) Design note recorded honestly: a binding with no --source still exits 0 (stamped
+      but unverified). This is deliberate, not an oversight: the ITEM's trigger is
+      'cites a file that exists'; with no cited file there is nothing to recompute, and
+      the reason string says so. Enforcement requires passing --source; see the
+      next_steal in t37.json for wiring it into a consumer so it stops being opt-in.
+
+SECTION C: em-dash / en-dash scan (U+2014, U+2013), negative first-class:
+   $ .venv/Scripts/python.exe scan over the four filed files
+    tools/freshness_gate.py -> CLEAN (no U+2014, no U+2013)
+    tests/test_freshness_gate.py -> CLEAN (no U+2014, no U+2013)
+    watch/inbox/gala_20260925/afterparty/lanes/t37.check.txt -> CLEAN (no U+2014, no U+2013)
+    watch/inbox/gala_20260925/afterparty/lanes/t37.json -> CLEAN (no U+2014, no U+2013)
+
+5) Re-verification AFTER banking t37.json + t37.check.txt (raw output):
+   $ .venv/Scripts/python.exe tools/violation_ratchet.py check --changed ; echo RATCHET_EXIT=$?
+   RATCHET check: scope=10 changed files; hits=6; registered=6; NEW=0; expired-exceptions=0
+   RATCHET: PASS [em-dash] no unregistered debt.
+   RATCHET_EXIT=0
+   $ .venv/Scripts/python.exe -m pytest tests/test_freshness_gate.py -q (tail)
+   ...............................                                          [100%]
+   31 passed in 1.02s
+   PYTEST_EXIT=0
+   t37.json parses: JSON_OK gopher= t37 ok= True checks= 5

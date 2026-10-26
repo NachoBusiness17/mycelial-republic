@@ -1,0 +1,36 @@
+{
+  "lane": "fill-seed-seal",
+  "division": "B",
+  "ok": true,
+  "note": "SS-1 landed per watch/inbox/localfirst/pam.md: mag/seed_seal.py (Ed25519 over sha256 of canonical seed+chain+identity root, fail-closed verify_seed), key minted at state/keys/seed_seal_key (gitignored, key_id de5fc05e962c43ab), real .seal sidecar on arc_seed_sess_f4ad2dcb_20260907_0026.md, forge drill 14/14 (tamper+full-rehash refused at the signature); enforcing flip left operator-gated; ratchet final PASS NEW=0 after fixing my own except-pass in code (first run exit 1 also carried 3 NEW hits in staged tools/ files I never touched, accepted by name by a concurrent lane between my runs); full-repo pytest not run, the named drill file is the finish-line test.",
+  "rows": [],
+  "checks": [
+    {
+      "command": ".venv/Scripts/python.exe -m pytest tests/test_seed_seal.py -v",
+      "exit": 0,
+      "evidence": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/fillball-1001/lanes/fill-seed-seal.check.txt section [3]: 14 passed in 0.96s"
+    },
+    {
+      "command": ".venv/Scripts/python.exe -m mag.seed_seal sign watch/arc_seeds/arc_seed_sess_f4ad2dcb_20260907_0026.md",
+      "exit": 0,
+      "evidence": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/fillball-1001/lanes/fill-seed-seal.check.txt section [1]: ok=true, key_id de5fc05e962c43ab, deterministic seed_root"
+    },
+    {
+      "command": ".venv/Scripts/python.exe -m mag.seed_seal verify watch/arc_seeds/arc_seed_sess_f4ad2dcb_20260907_0026.md",
+      "exit": 0,
+      "evidence": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/fillball-1001/lanes/fill-seed-seal.check.txt section [2]: ok=true, session sess_f4ad2dcb, arc_root eacb5b32e9ad5b9a"
+    },
+    {
+      "command": ".venv/Scripts/python.exe tools/violation_ratchet.py check --changed",
+      "exit": 0,
+      "evidence": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/fillball-1001/lanes/fill-seed-seal.check.txt section [4]: final run PASS, NEW=0 (first run this session exited 1 with NEW=4; the one hit in mag/seed_seal.py was fixed in code, the 3 staged tools/ hits were baseline-accepted by a concurrent lane between runs)"
+    },
+    {
+      "command": "git check-ignore -v state/keys/seed_seal_key",
+      "exit": 0,
+      "evidence": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/fillball-1001/lanes/fill-seed-seal.check.txt section [5]: .gitignore:40:state/"
+    }
+  ],
+  "decision_changed": "SS-1 closed (GAP_REGISTER rank 5 / a07-r3): the seed-seal Ed25519 port is landed armed instead of spec-only, so the estate's seed trust anchor is no longer hashes-only PAM-class by construction; the enforcing flip (consume refuses unsealed seeds) and key ceremony stay explicitly with the operator.",
+  "artifact": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/fillball-1001/lanes/fill-seed-seal.json"
+}

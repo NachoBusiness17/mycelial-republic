@@ -1,0 +1,94 @@
+# DFDIALS final (revision of the surviving candidate dfdials-one)
+
+2026-09-26. Lineage: `watch/inbox/ractor_panel_20260926/cands/dfdials-one.md` is the survivor (judge: both candidates cleared the kill condition on verified bytes; dfdials-one survives as the stronger mapping); the killed sibling's record stays on disk, nothing deleted. This revision folds all six critique bullets into the card. Every number below was re-derived on this revision's own runs unless attributed otherwise; the DFHack precedent line-cites live in the survivor and are incorporated by reference, not re-quoted.
+
+## Final
+
+### The dial law
+
+1. **Row dial = f(rule), total.** One rule, one dial, deterministic; unknown or namespaced future rules resolve to manual-only (most restrictive).
+2. **File-level tiebreak.** Remediation on a file takes the most restrictive dial among its live claims: manual-only > opt-in > default-on > always-on.
+
+The tiebreak clause is load-bearing and its proof is now a census, not four anecdotes. Census run this session (receipt: `watch/inbox/ractor_panel_20260926/dfdials_mixed_dial_census_20260926.md`, raw script and output preserved as `tmp_dfdials_census.py` / `tmp_dfdials_census.out` in the same directory): **153 files carry more than one dial** among their registered claims; composition 149 files default-on + opt-in, 3 files manual-only + opt-in, 1 file (`tools/pupeteer_gauntlet.py`) carrying all three. The four original anecdotes verify inside the census (`tools/pupeteer_gauntlet.py` at 3 dials; `tools/wandr_selfeval.py`, `tools/steer_compare.py`, `tools/ghost_tournament.py` at 2 dials each).
+
+### The mapping (re-verified this session)
+
+| Dial | Rules | Rows |
+|---|---|---|
+| always-on | parse-error, unreadable | 0 |
+| default-on | except-pass (652), bare-except (1), env-key-read (22), cwd-relative-path (3) | 678 |
+| opt-in | file-too-long (194), shell-true (3) | 197 |
+| manual-only | todo-undated (1), mimosa-ssrf (29), mimosa-path-traversal (25), mimosa-code-injection (2), mimosa-command-injection (1) | 58 |
+
+Partition command and output in the census receipt: total 933, sum 678 + 197 + 58 + 0 = 933, zero rows outside the named rule table. Tier rationale and DFHack precedent per rule stay as byte-cited in the survivor.
+
+### The four retirement conditions (revised)
+
+1. **always-on: delete-when-cold, empty-case form.** The dial holds zero claims and its two rules emit zero hits (this session: parse-error 0 hits, unreadable 0 hits over 1190 files scanned; 0 registered claims). There is no final row and no curing commit, so the survivor's receipt demanded an artifact that cannot exist. Revised, two disjuncts, each producible:
+   - (a) **Empty case:** two consecutive dated full-scope Estate Ratchet executions whose per-dial lines read `DIAL always-on hits=0 registered=0`. Receipt: the two dated log segments from `logs/ratchet_daily.log`. No curing commit is demanded. This disjunct is satisfiable in bytes today; collecting the receipt makes retirement due as a **named law change** (fold parse-error/unreadable into default-on, whose cure shape is the same pure idempotent repair), never a silent auto-delete, because DIAL_BY_RULE must stay total.
+   - (b) **Structural:** parse-error and unreadable leave `SCANNER_RULES` (`tools/violation_ratchet.py:51-61`). Receipt: the removing commit.
+2. **default-on: delete-when-drained-stable, on a named machine.** The 7 consecutive executions are the **Estate Ratchet** scheduled task: daily 09:45, `scripts/ratchet_daily.ps1`, registered by `scripts/register_ratchet_task.ps1`, log `logs/ratchet_daily.log`; verified registered this session (schtasks query: TaskName `\Estate Ratchet`, Status Ready, Next Run Time 9/27/2026 9:45:00 AM) with 4 dated executions already on disk (2026-09-25 13:33:30, 13:34:58, 14:45:25; 2026-09-26 09:45:03). The task already runs the full-scope check (`scripts/ratchet_daily.ps1:35`) and Tees its output into the log between dated START/END brackets. The same dial-law change adds one per-dial line to check output (`DIAL <name> hits=H registered=R new=M`) on full-scope runs, so the task emits dial lines with zero change to the task or its script. Fires when 7 consecutive dated executions show `DIAL default-on registered=` monotonically non-increasing and the final line reads `registered=0 new=0`. Receipt: the 7 dated log segments. Honest note: the cadence is young (first executions 2026-09-25/26), so the earliest possible receipt is 7 executions out; the condition is machine-producible, not machine-immediate. Log-encoding note: the Tee'd check segments are UTF-16 in the log file; the dated bracket lines are ASCII; the receipt reads both.
+3. **opt-in: delete-when-disposed (unchanged from survivor).** Fires when every row the dial holds has a named disposition: cured-via-enrolled-lane (claim leaves via prune after the enrolled cure lands) or re-triaged to manual-only by name; zero undisposed rows. Receipt: one disposition table (fingerprint, disposition, evidence). One clarification folded in: "re-triaged to manual-only" is a disposition of the row's cure handling (manual settlement by name), not a per-row dial override; the stamp stays f(rule), or the totality law breaks.
+4. **manual-only: delete-when-re-triaged, explicitly gated on move 3.** Fires when the last claim leaves by explicit re-triage naming the fingerprint and its settle evidence; silent or automated reap stays forbidden forever (B2-95, enforced structurally: prune keeps non-scanner-domain claims, `tools/violation_ratchet.py:315-325`). Receipt: the re-triage receipt listing every removed fingerprint plus per-claim settle evidence. **This condition is not live until the retriage subcommand exists**; today external debt has no exit at all. The landing below puts retriage in the same atomic change as the dial law, so the gate window is one commit. If retriage is dropped from the landing, dial 4 reverts to unfired-and-unfireable and the falsifier kills the dial law. The condition may then stay unfired for the estate's whole life (operator never settles the mimosa surface); that is by design, mirroring `fix/stuck-merchants` waiting on DF bug 9593, and is different from unfireable.
+
+### The landing (one atomic change, ordered)
+
+**Step 0, before the change: the owning window accepts or cures the current NEW set by name.** The full-scope check re-run this session shows NEW=7 (fingerprints at census time):
+
+- `8d41e611f98d3fa5` file-too-long `tools/census_drift_patrol.py:403` (opt-in class)
+- `f0d81bd311a1a15e` file-too-long `tools/probe20_run.py:421` (opt-in class)
+- `5ae40a2d649a9b92` except-pass `tools/ledger_lock.py:136` (default-on class)
+- `3b1726dec4670996` except-pass `tools/openrouter_free_gate.py:84` (default-on class)
+- `0dfc04119a40f245` except-pass `tools/transport_precheck.py:134` (default-on class)
+- `f2ce896c858aa404` except-pass `tools/visor.py:250` (default-on class)
+- `e3b7845ea79cf553` cwd-relative-path `tools/queue_dupes_check.py:33` (default-on class)
+
+Acceptance is manual-only by the gate's own law (a human/agent accepts the debt by name; `tools/violation_ratchet.py:6-7,274`). The NEW set drifts intra-day: the 09:45 Estate Ratchet execution saw NEW=1 (`tools/drift_dashboard.py:37` except-pass), which is now in neither the register (grep count 0) nor the current hits, and two of the judge's line numbers have since moved (ledger_lock 125 to 136, visor 131 to 250; fingerprints are detail-based so identity is stable, `tools/violation_ratchet.py:19-20,84-85`). Therefore the acceptance is taken at the moment of the landing change and its receipt lists the fingerprints as of that moment. If all 7 are accepted, the post-acceptance stamp target is 940 rows partitioned 683 default-on / 199 opt-in / 58 manual-only / 0 always-on; if some are cured instead, dial-stamp covers whatever the register then holds.
+
+**Step 1, the atomic change (single commit, all four pieces together):**
+
+- `tools/violation_ratchet.py` gains:
+  - `DIAL_BY_RULE` plus the file-level restrictive-wins resolver (move 2);
+  - **check-side dial validation, gate-held:** on every run, register-wide (even under `--changed`), any accepted row missing `dial` prints DIAL-MISSING and returns exit 2; any row whose stamped dial differs from f(rule) prints DIAL-MISMATCH and returns exit 2 (gate-broken class per `tools/violation_ratchet.py:28`; the pre-push hook runs `check --changed` and blocks on nonzero, `githooks/pre-push:10`). This mirrors the B2-249 fail-close shape: a hand-edited or stale dial breaks the push instead of silently rephrasing. Flipping this on in the same commit as the stamp closes the window where validation would fail on an unstamped register;
+  - **per-dial emission:** full-scope runs print `DIAL <name> hits=H registered=R new=M`, which Estate Ratchet captures into its log (serves conditions 1 and 2);
+  - **`dial-stamp` subcommand (move 1's batch field-stamp, named actor, gate-held):** `.venv/Scripts/python.exe tools/violation_ratchet.py dial-stamp --by <operator-tag> --note <receipt path>`. It requires `--by` (no default; stricter than baseline-update, whose default is "operator" at `tools/violation_ratchet.py:340`), so the accepting actor is always named in bytes; it refuses with exit 1, listing the NEW rows, when a full-scope check finds NEW>0, which machine-holds the Step 0 sequencing; it stamps `dial` = f(rule) on every accepted row through `save_baseline` (which stamps `updated`). The register's grow-law ("only grow by a human/agent running baseline-update, never silently") is respected: dial-stamp adds no fingerprints and is itself an explicit named command, and `baseline-update` stamps `dial` on insert for every future row so the invariant holds without further human choice (the dial is mechanical; the acceptance was the human act);
+  - **`retriage` subcommand (move 3, dial 4's exit):** `.venv/Scripts/python.exe tools/violation_ratchet.py retriage --fingerprint <fp> --by <WHO> --note <settle evidence>`. Removes the named claim, refuses unknown fingerprints, prints the removed row. It is the only sanctioned exit for non-scanner-domain claims (B2-95, `tools/violation_ratchet.py:10-17`);
+  - **`enroll` subcommand (move 4's activation):** `.venv/Scripts/python.exe tools/violation_ratchet.py enroll --fingerprint <fp> --expires YYYY-MM-DD --by <WHO> --note <lane receipt>`. Sets `expires` on a named opt-in row at enrollment; the rot machinery already exists and fails the check when the date passes (`tools/violation_ratchet.py:228-234,248,258-259,273-275`). Verified this session: 0 rows use `expires` today (grep count 0).
+- `configs/violation_baseline.json`: `dial` on every row (post-Step-0 count).
+- Receipts in `watch/inbox/ractor_panel_20260926/` (the census receipt is already filed; the acceptance receipt, the stamp receipt, and the four dial retirement receipts land as their conditions fire).
+
+**Step 2:** the AGENTS.md build-discipline bullet names the dial law. Spec-first is satisfied: this final plus the census receipt land before any code in Step 1 executes.
+
+### Falsifier (updated)
+
+- **Two-tier hazard:** census re-run this session, 933 rows stamped by the function with zero unstampable and zero residue. Any future row that cannot stamp, or any rule needing file-level judgment to place a ROW (files may need it, rows never), kills the function-of-rule law.
+- **A dial without a retirement receipt condition kills.** All four conditions name the exact command or log artifact and the exact receipt; none is "eventually someone decides."
+- **A retirement condition that cannot fire kills.** Condition 1's empty case is satisfied in bytes today (0 hits, 0 claims, proof in the census receipt), so its receipt is producible on the second dated execution; condition 2 rides a verified-registered daily task; condition 3's receipts are operator-filed tables; condition 4 is honestly gated on move 3 landing in the same commit, and if unbundled the kill fires.
+- **A stamp that lands behind the tree kills (sequencing).** dial-stamp refuses to run while NEW>0, so a 933-row stamp cannot land 7 rows behind the tree; the judge's day-one-stale scenario is machine-blocked, not prose-blocked.
+
+### Owed
+
+- Nothing from the six critique bullets remains open; each is addressed above with this session's evidence.
+- All moves remain unexecuted by this revision: mutating the register is an acceptance action reserved to a named operator, and this card is the spec.
+- The DFHack-side full mode census (all 47 fixes classified, including the boundary case `fix/corrupt-jobs`) stays owed if the panel wants the source-side table; unchanged from the survivor.
+
+## Critique addressed
+
+Bullet-by-bullet, in the order given.
+
+1. **Always-on receipt demanded a curing commit that cannot exist for a dial that never held a row.** Verified the premise on my own run: 0 registered claims on parse-error/unreadable and 0 hits from both rules over 1190 files (census receipt, findings 4). Rewrote condition 1 as two producible disjuncts: (a) two consecutive dated zero-hit zero-claim full-scope executions, receipt = two dated log segments, no commit demanded, with retirement under (a) being a named law change folding the rules into default-on; (b) the rules leaving SCANNER_RULES, receipt = the removing commit. Disjunct (a) is satisfiable today; the unproducible-receipt failure is gone.
+2. **A 933-row silent field-stamp violates the register law; the stamp needs a named actor, a command path, and gate-held enforcement.** Addressed in the landing's Step 1: a `dial-stamp` subcommand is the command path, `--by` is required (no default, stricter than baseline-update's), the actor is recorded in bytes, and the same commit adds DIAL-MISSING/DIAL-MISMATCH validation to check returning exit 2 register-wide, so a hand-stamped or later hand-edited dial breaks the push. The stamp adds no fingerprints; future rows get their dial at baseline-update insert time, keeping the grow-law intact.
+3. **The stamp lands 7 rows behind the tree on day one unless the 7 NEW rows are accepted or cured by name first.** Re-ran the full-scope check this session: NEW=7, same seven files/rules the judge named (2 file-too-long, 4 except-pass, 1 cwd-relative-path), fingerprints filed in the Final; two line numbers have drifted since the judge's run and the intra-day NEW-set churn is documented (09:45 saw NEW=1, drift_dashboard, now gone). The sequencing is now machine-held: dial-stamp refuses to run while NEW>0, and Step 0 of the landing is the named accept-or-cure of exactly these rows.
+4. **The file-level tiebreak needs a census, not 4 anecdotes; file the 153 count.** Ran the census; 153 confirmed on an independent run, with composition 149 / 3 / 1 and the four anecdotes verified inside. Filed as `watch/inbox/ractor_panel_20260926/dfdials_mixed_dial_census_20260926.md` with command, raw script, and raw output.
+5. **Dial 4's condition is executable only after retriage exists; land it with the dial law or gate the condition explicitly.** Did both: retriage is bundled into the same atomic commit as the stamp and the validation (Step 1), and condition 4 now carries an explicit not-live-until gate sentence, with the kill firing if the bundling is broken. Until that commit lands, the condition must not be cited as an available exit, and external debt has none (prune keeps non-scanner-domain claims, `tools/violation_ratchet.py:315-325`).
+6. **"7 consecutive scheduled patrol executions" named executions no machine would produce.** The survivor missed a live surface; this revision found and verified it: the Estate Ratchet task, daily 09:45 (`scripts/ratchet_daily.ps1`, `scripts/register_ratchet_task.ps1`), registered (schtasks: Status Ready, Next Run 9/27/2026 9:45), already running the full-scope check into `logs/ratchet_daily.log` with dated brackets, 4 executions on disk. The per-dial emission line added to check in the same change means the task produces the dial-specific dated lines with zero task or script changes. The condition now names that surface and that log as its receipt; the cadence's young age (first executions 2026-09-25/26) is stated honestly in condition 2.
+
+Commands run this session (all by this revision, in `C:/Users/foste/Documents/projects/local_sovereign_agent`): the census script via `./.venv/Scripts/python.exe watch/inbox/ractor_panel_20260926/tmp_dfdials_census.py` (partition, mixed-file census, per-rule hits, NEW set); the check subcommand itself via `./.venv/Scripts/python.exe tools/violation_ratchet.py check`, which printed `scope=1192 files (all); hits=882; registered=875; NEW=7; expired-exceptions=0` and the same seven NEW fingerprints listed in the Final, exit 1; `MSYS_NO_PATHCONV=1 schtasks /Query /TN "Estate Ratchet" /FO LIST`; `grep -c "START ratchet sweep" logs/ratchet_daily.log` (4) plus extraction of the dated START/END lines; `grep -c '"expires"' configs/violation_baseline.json` (0); `grep -c drift_dashboard configs/violation_baseline.json` (0); full reads of `tools/violation_ratchet.py` (351 lines), `scripts/ratchet_daily.ps1`, `scripts/register_ratchet_task.ps1`; grep for violation_ratchet across `scripts/` and `githooks/` (hits: `scripts/ratchet_daily.ps1`, `githooks/pre-push`). Two run-moment facts worth the record: the direct check scanned 1192 files while the census minutes earlier scanned 1190 (the tree grows intra-day, which is why Step 0 takes acceptance at the landing moment), and the direct check's NEW list carries no parse-error or unreadable row; since the register holds zero claims on those rules, any such hit would necessarily be NEW, so the direct run independently confirms the zero-hit half of condition 1's empty case.
+
+## Decision for the estate
+
+**Adopt the dfdials dial law as revised.** This is the decision the card closes: the estate either adopts the four-dial taxonomy with these four machine-producible retirement conditions and the atomic landing, or declines and the register stays dial-less and external debt stays exit-less (the status quo B2-95 left us with).
+
+Adoption changes three things in bytes: (1) every register row carries a gate-held `dial` (total f(rule), restrictive-wins file remediation, 153-file necessity census filed); (2) external debt gains its first and only sanctioned exit, the `retriage` subcommand, closing the B2-95 gap from the exit side; (3) each dial's retirement becomes a receipt any machine run can produce, two of them riding the verified Estate Ratchet daily task.
+
+The first executable action belongs to the owning window's operator, the only actor the gate's law permits to accept debt by name: accept or cure the current NEW set (7 rows, fingerprints in the Final), then land the atomic change. This revision executes none of it; the stamp stays reserved to a named `--by`.

@@ -1,0 +1,43 @@
+# LENS 3: THE BODY, what remembers and acts for you (NOUS, OpenClaw, Hyperagent, Devin)
+
+Ractor run: mountain_climb_ractor_20260929. Grounded in DIGEST.md only (D# cites). Authorship mode: same-session sequential (declared; blind divergence compromised). Calibration target: 1,200-1,500 words.
+
+## What this cluster knows that the estate needs
+
+The body cluster knows that memory is the product and that memory without bounds is a liability. NOUS knows the weights can be yours: open post-training recipes, an open-weights community, and a model lineage the estate literally runs, since Hermes is a NOUS model already resident here (D-cluster row; S9 driving ladder). Hyperagent knows the sentence that sells: agents that learn how your organization operates, and, more important for this lens, the safety story that comes with it, how to BOUND org-learning so the mirror that learns you does not become the mirror that leaks or flatters you (D-cluster row). Devin knows the oldest lesson: the autonomous engineer is only trustworthy when its work is replayable; plan-approve-execute as a UX contract and session-replay-as-product mean the body's actions can be re-walked by a human after the fact (D-cluster row). Cognition's SWE-bench culture already shaped the estate's wow_bones (D-cluster row), so this is a proven graft, not a new one. OpenClaw stands differently: it is estate infrastructure today, the Docker row in the shared-surface contract, and its status as a grid logo is Unproven (D-cluster row); it belongs in this cluster as the local-first runtime the estate already operates, not as a steal.
+
+Together the cluster knows: the body's value is remembering what your work actually is (Hyperagent's promise), its credibility is being made of weights you can hold (NOUS's promise), and its safety is the tape (Devin's promise). The estate's own horror story says why bounding matters: the HF incident, 1,200 sandbox agents, 70K messages on an unsupervised board, 700 of them attacking the answer key, which was poisoned (D25). Agents will find each other and organize whether or not anyone offers a room; an unbounded body is a crowd.
+
+## What the estate already has
+
+The estate has a body most of the grid cannot buy: a sealed memory chain of 7,243-plus knots (D25); a corpus of 251 texts at 119MB, lawful and training-grade (D25); a thought-bank of 9,305 reasoning parts queued for QLoRA at Rocinante on Oct 27 (D25), the tail entering the mouth, the fleet training on its own recorded thoughts; and an experience log of 414,459 XP lines never spent (D10), which is the body's unrealized asset: memory measured but never metabolized. It has wow_bones, 1,312 opcodes as data with 64 tests across 2,272 lines (D9), the Devin-shaped graft already taken. It has frozen-tape replay verification at 202 out of 202 green (D11), the estate's own replay-as-product, running today, unsold. And it has the two-headed operational body: Hermes dormant but dispatch-capable with the $220 audit armed, and only Hermes funded, $180 Nous credits, judgment tier glm-5.3-prime and qwen3.8-max-prime, free lanes sensing-only (D30). What the estate's body lacks is exactly what GPS just exposed: an honest self-model. The body remembers everything and measures almost nothing; 414,459 lines of experience with no capability row to show for it.
+
+## The ONE steal that changes the trajectory
+
+Replay as the product, Devin's steal, taken all the way. The estate already verifies play with frozen tapes (D11) and has already productized the shape on paper: D4 defaults the day-one sellable to replay plus receipts only, judge wiring deferred (D3-fact 3). The steal is to treat the TAPE, not the chat, not the dashboard, not the model, as the unit the estate ships: every session ends in a re-walkable artifact with a hash chain, the wow_player and gwp house pattern, append-only rows, genesis of 64 zeros, verification that re-reads the file rather than trusting cache (D12-fact 12 via S4 engine decisions). This changes trajectory because it converts the body from a cost center (memory that accumulates, Hermes that waits) into the proof layer the platform's moat sentence already claims: frozen-tape replay plus agreement payloads plus the verkle ledger equals play is provable, and nobody's creator platform verifies play (D2-fact 2). Hyperagent's bounding steal rides inside it: a tape is a bound on org-learning by construction, the mirror can only learn what was recorded and sealed, which is the safety story to steal BEFORE the estate's mirrors grow (D-cluster row). Status: Supported, that the estate's tapes verify (202/202, D11); Supported, that the moat sentence is unique as claimed (verified-unclaimed market, D27, the two-sided verified-judgment API); Unproven, that anyone will pay for tapes before B4 (Adam is the test, D11-fact 11); Unproven, that bounding-by-tape satisfies the org-learning safety question fully (a bounded recorder still records selectively).
+
+## What GPS does for this layer
+
+GPS is the body's mirror-test. A body that remembers but cannot say what it is GOOD AT is amnesiac about itself; the capability ledger is the self-model in numbers: model by task shape, pass-rate as running mean, sample size, last-measured date, cost (D15), the smoke's 0.96 to 0.9608 at n=53 showing the mean learning one verdict at a time (D16). Three specific services to the body: First, the evidence law. The gps-mcp receipt flags that record_verdict accepts unverified evidence hashes, so pass-rates are trivially inflatable (D6-fact 6); the body's tapes are the natural fix, since a tape is a checkable artifact and the B3 ledger already binds rows to receipt hashes that commit every byte of a payload (D12-fact 12). The meter and the tape complete each other: the meter wants evidence, the tape wants readers. Second, the judgment law. The body's frontier contact is scarce and sycophantic: Opus 5.5 leads the AA board at 58 max versus this seat's GLM-5.3 at 45 (D23), but doubles sycophancy under challenge, loses 39 percent across multi-turn, and its medium default silently costs 7 index points (D23); GPS's escalation-on-one-confidence-bit with a 3-tier cap and full trace (D15) is the harness that spends such a mind one question at a time, one shot, context first, ask last (D9-fact 9). Third, the NOUS line. Local weights are the body's inheritance: QLoRA stage 2 and 3 recipes feed the fleet (D-cluster row), and the delegation economics say why the body should grow local: frontier tokens run ~100x owned-local marginal cost (D21), so every capability the body internalizes is a permanent subsidy. The 414,459-line XP log is the first training corpus the meter should price: which of those lines predict verifiable wins?
+
+## Numbers carried (digest-cited)
+
+D9 (2,272 lines, 64 tests, 1,312 opcodes), D10 (414,459), D11 (202/202), D12-fact 12 (0.6/0.3 bands, byte-backed receipts), D15 (28 tests, running mean, trace), D16 (0.96 to 0.9608 at n=53), D21 (~100x), D23 (58 vs 45, sycophancy doubles, 39 percent, medium 51 vs max 58), D25 (7,243-plus knots, 251 texts, 119MB, 9,305 parts, HF 1,200/70K/700), D30 ($220 armed, $180 Nous). Quota met.
+
+## Tri-state ledger for this lens
+
+| Claim | State |
+|---|---|
+| Session replay as product is validated by the market (Devin) and by the estate (202/202) | Supported both sides |
+| Tapes + payloads + verkle ledger = a verification moat nobody else ships | Supported as estate claim with market-unclaimed confirmation (D27); durability Unproven |
+| Org-learning must be bounded before mirrors grow | Supported (Hyperagent ships a safety story; HF incident D25 shows unbounded agent crowds) |
+| The capability ledger fixes the body's missing self-model | Supported as design; real pass-rates Unproven until verdicts bind to tapes (D6-fact 6) |
+| OpenClaw is one of the grid's 16 logos | Unproven (estate infrastructure; not on the verified steal map) |
+| Local-weight training (QLoRA on 9,305 parts) beats renting at ~100x marginal | Supported economically (D21); quality outcome Unproven until Rocinante runs Oct 27 |
+
+---
+Authorship mode: same-session sequential. Byte check (2026-09-29 Phase 2.5 instrument (wc -w via python word-split, U+2014 via char scan)): words=1298 emdash=0.
+
+CORRECTION 2026-09-29 (grader defects S-4, S-5): "$220 audit armed" traced to S9's header beyond digest text; digest AMENDMENT fact 14 now restates it. The ledger mechanics (append-only rows, genesis 64 zeros, verify re-reads the file) traced to S4 detail; digest AMENDMENT fact 15 now restates them.
+
+Byte check (2026-09-29 final instrument pass (word-split + U+2014 char scan)): words=1353 emdash=0.

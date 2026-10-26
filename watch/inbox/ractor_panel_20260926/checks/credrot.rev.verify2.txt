@@ -1,0 +1,83 @@
+=== credrot revision citation verification part 2, 2026-09-27 (raw) ===
+--- keys.json line 2 (KEY LAW header) ---
+ "_law": "KEY LAW 2026-09-23: one key, one canonical name, declared once. Readers use mag.key_law.get(name). Adding a key = add a manifest entry. No reader may guess env names.",
+--- keys.json 25-30 (zai_lite) ---
+ "zai_lite": {
+  "env": "ZAI_API_KEY_Lite",
+  "provider": "z-ai",
+  "role": "metered_lite_burst",
+  "ceiling": "lite_guard"
+ },
+--- keys.json 36-41 (zai_second_2 / ZAI_API_KEY_3) ---
+ "zai_second_2": {
+  "env": "ZAI_API_KEY_3",
+  "provider": "z-ai",
+  "role": "same_account_as_second_1",
+  "status": "alias-pool"
+ },
+--- keys.json 51-56 (grok_cash) ---
+ "grok_cash": {
+  "env": "XAI_API_KEY",
+  "provider": "xai",
+  "role": "PAYG_blocked_by_grok_route_law",
+  "status": "armed-only-by-operator"
+ },
+--- keys.json 79-83 (deepseek) ---
+ "deepseek": {
+  "env": "DEEPSEEK_API_KEY",
+  "provider": "deepseek",
+  "role": "workhorse_paid_cheap"
+ },
+--- keys.json 147-152 (anthropic_1) ---
+ "anthropic_1": {
+  "env": "ANTHROPIC_API_KEY",
+  "provider": "anthropic",
+  "role": "legacy live env key, declared by boot audit 2026-09-24",
+  "status": "active"
+ },
+--- keys.json 177-182 (vastai_1) ---
+ "vastai_1": {
+  "env": "VASTAI_API_KEY",
+  "provider": "vast.ai",
+  "role": "legacy live env key, declared by boot audit 2026-09-24",
+  "status": "active"
+ }
+--- providers.yaml 174-178 (OR chain) ---
+    api_key_env: OPENROUTER_API_KEY
+    # Both operator accounts as one failover chain (2026-08-24): account 1 = funded (nacho),
+    # account 2 = free tier (fostertron/ox). Each key is its own pool; the chain rotates/fails
+    # over so the 18 free lanes actually get used. Also accepts OR_API_KEY.
+    api_key_envs: [OPENROUTER_API_KEY, OPENROUTER_API_KEY_2, OR_API_KEY, OR_API_KEY_2]
+--- providers.yaml 264 (openai) ---
+    api_key_env: OPENAI_API_KEY
+--- providers.yaml 296 (anthropic note) ---
+      note: "Claude API (CLI: set ANTHROPIC_API_KEY). Or use openrouter anthropic/* models."
+--- providers.yaml 430 (vast lane) ---
+    api_key_env: VAST_OPENAI_API_KEY
+--- providers.yaml 503 (xai lane env names) ---
+    api_key_envs: [XAI_API_KEY, XAI_API_KEY_2, GROK_API_KEY, GROK_API_KEY_2]
+--- providers.yaml 541 area (zai main lane) ---
+    kind: openai_compat
+    base_url: https://api.z.ai/api/paas/v4
+    api_key_env: ZAI_API_KEY
+    opencode_only: true
+--- mag/key_law.py:50 ---
+    return (os.environ.get(env, "") or "").strip()
+--- mag/doctor.py:591 ---
+def check_provider_endpoints(
+--- instruments exist ---
+mag/doctor.py
+mag/improve.py
+mag/key_law.py
+tools/openrouter_free_gate.py
+--- register scripts (MagSecretScanWeekly?) ---
+scripts/register_census_patrol_task.ps1
+scripts/register_corpus_rescan_task.ps1
+scripts/register_endpoint_news_task.ps1
+scripts/register_fts_index_task.ps1
+scripts/register_improve_task.ps1
+scripts/register_ratchet_task.ps1
+scripts/register_vision_nightly.ps1
+--- improve.py 399-457 boundaries (first/last line) ---
+def provider_probe_due(
+    if not provider_probe_due(state, cadence, now=now):

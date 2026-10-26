@@ -1,0 +1,7 @@
+# coldhot-cold-glm-flash-mag__orchestrator (glm-5.3-flash @ zai, turn 1, channel: content)
+
+DEFECT 1: spawn_task unconditionally sets ok=True even when _spawn_cmd already finalized the task as failed on spawn error, so drain_once/drain_parallel mark the queue entry "running" against a failed task | EVIDENCE: mag/orchestrator.py:931-934 | FIX: set rec["ok"] = rec.get("status") not in TERMINAL instead of the unconditional True.
+DEFECT 2: same-goal dedupe is a TOCTOU race: two concurrent drainers can both pass the _running_tasks() check before either writes its task record, double-spending the provider on identical goals | EVIDENCE: mag/orchestrator.py:890-931 | FIX: take a lock (or atomic claim file) around the dedupe check through _spawn_cmd's first _save.
+DEFECT 3: drain_parallel breaks the entire batch loop when the head queued goal is ollama and one ollama task runs, stranding all later queued remote-provider work that pass | EVIDENCE: mag/orchestrator.py:1452-1456 | FIX: continue past that entry (re-pick next queued) instead of break, with a visited-set guard.
+DEAD-CODE: QUEUE_TERMINAL is defined and never read; all terminal checks use TERMINAL | EVIDENCE: mag/orchestrator.py:947
+ONE-SITTING FIX: gate rec["ok"] on the actual spawned status so a failed spawn settles its queue entry immediately instead of showing "running" until _reconcile_queue sweeps it | EVIDENCE: mag/orchestrator.py:931-934

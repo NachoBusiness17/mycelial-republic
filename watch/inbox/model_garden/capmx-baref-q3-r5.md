@@ -1,0 +1,3 @@
+# capmx-baref-q3-r5 (glm-5.3-flash @ zai, turn 1, channel: content)
+
+{"verb": "STAGE_ASK", "reason": "governor_autorun shows fill=0 drain= on both last beats (ts 01:34:57, 01:35:32) while git_changed=216 sits unlanded; route a cheap swarm read of whether the governor is idling against a large dirty tree.", "payload": {"target": "governor_autorun / tools/overmind_loop.py (uncommitted set, git_tail in senses)", "ask": "Governor logged fill=0 drain= at 2026-10-02T01:34:57Z and 01:35:32Z while git_changed=216. Verify: (1) is drain legitimately empty (no tickets ready) or is the fill query mis-wiring handoff_items=38 / todo_open=11; (2) name the file:line in the fill/drain path that decides. Cite bytes or mark UNVERIFIED. One page."}}

@@ -1,0 +1,11 @@
+# swarm1-deepseek-tools__ocean_v2_pilot (deepseek-chat @ deepseek, turn 1, channel: content)
+
+DEFECT 1: COST_CAP is checked only against the docstring claim, never against spend; the run can exceed the $0.25 cap without aborting. | EVIDENCE: tools/ocean_v2_pilot.py:33 (COST_CAP=0.25) and tools/ocean_v2_pilot.py:117-133 (spend accumulates, no comparison to COST_CAP) | FIX: after each `spend += cost(...)`, add `if spend > COST_CAP: raise SystemExit(f"abort: ${spend:.4f} > ${COST_CAP}")`.
+
+DEFECT 2: GATE B marks a trait grounded if justify is any non-empty string, including a parse fallback or a justification that does not actually cite the chair's principles, so "grounded" can pass with uncited scores. | EVIDENCE: tools/ocean_v2_pilot.py:145-148 (grounded = len(valid) >= 1, valid = rows with ok and justify truthy) and tools/ocean_v2_pilot.py:115 (justify captured with `(.+)` and no citation check) | FIX: require the justification to contain a verbatim substring match against BRIEF/INV/CORPUS bytes before counting it valid, e.g. `cited = any(span in build_corpus_text() for span in re.findall(r'"[^"]{20,}"', justify))`.
+
+DEFECT 3: rate harvest uses `x.get("rate")` truthiness, so a parsed RATE of 0 would be dropped, but more importantly a missing rate on one phrasing yields rates length 1 and forces stable=False silently rather than surfacing the parse failure. | EVIDENCE: tools/ocean_v2_pilot.py:141-143 (rates list built by truthy filter, stable = abs(rates[0]-rates[1]) if len==2) | FIX: store rate even when None, and set stable = (len(rates)==2 and None not in rates and abs(rates[0]-rates[1])<=1), reporting PARSE-FAIL counts separately.
+
+DEAD-CODE: `import ipaddress`, `import socket`, `_validated_api_url` are exercised only inside ds, but the loop `for info in socket.getaddrinfo(...)` result is discarded after the check and `_API_URL` returned unchanged, so the validation is a no-op wrapper around a constant. | EVIDENCE: tools/ocean_v2_pilot.py:64-73 and tools/ocean_v2_pilot.py:74 (returns _API_URL literally).
+
+ONE-SITTING FIX: enforce the budget cap mid-run, since the file's own pre-registered contract says "If projected cost exceeds cap, abort" and currently cannot. | EVIDENCE: tools/ocean_v2_pilot.py:33 and tools/ocean_v2_pilot.py:117-133.

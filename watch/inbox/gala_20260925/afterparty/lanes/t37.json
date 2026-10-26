@@ -1,0 +1,20 @@
+{
+  "gopher": "t37",
+  "item": "bind the freshness stamp to a source hash: extend tools/freshness_gate.py (t11b's tool, t11b's next_steal) to accept an optional source-hash binding (receipt format source-fetched: DATE sha256:HASH); when the gated receipt cites a file that exists, recompute its hash and fail if it differs, so re-stamping old claims fails the gate; keep fail-closed and the --days override untouched; tests for hash-match passes / hash-mismatch fails / no-hash behaves as before; run pytest + violation_ratchet check --changed and cite raw output",
+  "ok": true,
+  "note": "source-hash binding landed on tools/freshness_gate.py. Stamp lines may now carry sha256:<64 hex> after the date; --source PATH makes the binding load-bearing. Behavior: binding + cited file exists -> gate recomputes sha256 over file bytes, match exits 0 with 'verified' in the reason, mismatch exits 2 naming both hex digests; cited file missing exits 2; --source given but receipt binds nothing exits 2; binding stamped with no --source keeps date-only rules and reports 'stamped but unverified'; newest stamp dropping a binding an older stamp carried exits 2 (re-stamp smell) even without --source, so appending a bare fresh stamp cannot launder a bound claim; a stamp line that says sha256 with a malformed binding (63/65 chars, non-hex) voids the whole stamp (exit 2, same rule as an unparseable date), never a truncated-hash guess. Fail-closed throughout; --days and all t11b date rules untouched. Gate result dict adds keys hash and hash_ok (True/False/None) beside the t11b contract. Contract proven live seven ways (match 0, mismatch 2, missing 2, source-without-binding 2, re-stamp-drop 2, unverified 0, --days 1 -> 2 and --days 30 -> 2 via mismatch). Negatives recorded: (1) my first rewrite dropped the ? that made the hash regex group optional, 14/31 tests failed including every plain t11b stamp, caught by pytest, fixed before banking, raw failure output kept in t37.check.txt section D; (2) first live CLI demo died because mktemp -d hands Git Bash a /tmp path Windows python does not map, redone with cygpath -m, failed run preserved in section E; (3) full-scope ratchet not run, --changed scope only, per t11b precedent (full-scope NEW hits in unowned files were recorded there and not repaired here).",
+  "checks": [
+    ".venv/Scripts/python.exe -m pytest tests/test_freshness_gate.py -v -> 31 passed (19 t11b cases intact + 12 new binding cases), exit 0 (raw output in t37.check.txt section A)",
+    ".venv/Scripts/python.exe tools/freshness_gate.py --self-test -> 6 PASS (3 date cases + 3 binding cases), exit 0 (raw output in t37.check.txt section B)",
+    ".venv/Scripts/python.exe tools/violation_ratchet.py check --changed -> scope=10 changed files; hits=6; registered=6; NEW=0; PASS, exit 0 (raw line cited verbatim in t37.check.txt step 3, ratchet's own em-dash rendered as [em-dash] to keep this file clean)",
+    "live CLI binding demo, seven ways -> match_exit=0, mismatch_exit=2, missing_exit=2, nobinding_exit=2, drop_exit=2, unverified_exit=0, days1_exit=2, days30_exit=2 (raw output in t37.check.txt step 4)",
+    "em-dash/en-dash scan (U+2014, U+2013) over tools/freshness_gate.py, tests/test_freshness_gate.py, lanes/t37.check.txt, lanes/t37.json -> all CLEAN (output in t37.check.txt section C)"
+  ],
+  "next_steal": "the gate now verifies one cited file but nothing in the estate calls it: freshness_gate has zero consumers outside its own tests (verified by grep), so the next steal is wiring it into a real receipt path (githooks/pre-push alongside the violation ratchet, or the workflow gate's receipt check) so stamped receipts are actually enforced, and after that multi-source receipts (one stamp per cited artifact instead of one evidence line)",
+  "artifacts": [
+    "tools/freshness_gate.py",
+    "tests/test_freshness_gate.py",
+    "watch/inbox/gala_20260925/afterparty/lanes/t37.check.txt",
+    "watch/inbox/gala_20260925/afterparty/lanes/t37.json"
+  ]
+}

@@ -1,0 +1,128 @@
+=== t2.check.txt — candy per-floor daily cap, filed 2026-09-25 ===
+=== CHECK 1: grep -rn CandyBone roblox/src (post-change) ===
+roblox/src\server\OssuaryZone.luau:276:	c.Name = "CandyBone"
+=== CHECK 2: cap constant + helpers + gate in OssuaryZone.luau ===
+241:local CANDY_PER_FLOOR_DAILY_CAP = 6
+243:local function candyTallyAttr(floor: number): string
+244:	return "CandyFloorTally" .. floor
+252:local function candyAllowed(plr: Player, floor: number): boolean
+254:	if plr:GetAttribute("CandyCapDay") ~= today then
+256:			plr:SetAttribute(candyTallyAttr(f), 0)
+258:		plr:SetAttribute("CandyCapDay", today)
+260:	local key = candyTallyAttr(floor)
+262:	if tally >= CANDY_PER_FLOOR_DAILY_CAP then
+280:		if plr and candyAllowed(plr, floor) then
+=== CHECK 3: all dropCandy references (def + call sites, floor arg) ===
+234:-- (OssuaryZone.build, 6x dropCandy per floor), so 6 candy/floor/day is the
+269:local function dropCandy(at: Vector3, floor: number)
+382:				dropCandy(king.Position, FLOORS) -- the King stands on the top floor
+422:			dropCandy(base + Vector3.new(0, 1.5, 0), floor)
+=== CHECK 4: payment line still in dropCandy Touched, now gated ===
+282:			plr:SetAttribute("VirtueMarks", tonumber((plr:GetAttribute("VirtueMarks")) or 0) + 2 * mult)
+378:			plr:SetAttribute("VirtueMarks", tonumber((plr:GetAttribute("VirtueMarks")) or 0) + 500)
+=== CHECK 5: doc falsifier now records the landed cap ===
+132:  Steal-a wheel deflates: cap candy per floor per day if needed. LANDED
+133:  2026-09-25: cap = 6 candy per floor per day (`CANDY_PER_FLOOR_DAILY_CAP`,
+=== CHECK 6: full cap block, cited lines (231-280) ===
+       1	-- Per-floor daily candy cap. SEASONAL_LAUNCH.md FALSIFIERS ("cap candy per
+       2	-- floor per day if needed") named no number; the cap derives from this file's
+       3	-- own spawn math: each floor emits exactly 6 static Candy Bones at build
+       4	-- (OssuaryZone.build, 6x dropCandy per floor), so 6 candy/floor/day is the
+       5	-- least-surprising bound: a full daily sweep of every floor always pays, and
+       6	-- only overflow beyond a floor's daily spawn (the Skeleton King's 40-candy
+       7	-- shower, celebration on top of his 500 VM award) is muted. Baseline print
+       8	-- becomes max 12 VM/floor/day (36/day, 72 with the Candy Doubler) against
+       9	-- 50-3000 VM Exchange SKUs and the 5000 VM rebirth (LedgerExchange.luau), so
+      10	-- the loop is not starved.
+      11	local CANDY_PER_FLOOR_DAILY_CAP = 6
+      12	
+      13	local function candyTallyAttr(floor: number): string
+      14		return "CandyFloorTally" .. floor
+      15	end
+      16	
+      17	-- true = this pickup is under the cap and may pay; burns one slot of the
+      18	-- player's per-floor daily allowance (UTC day stamp, per-player attributes,
+      19	-- the same store as CandyDoublerUntil). Capped candy is NOT consumed: it
+      20	-- pays nothing that day and stays in the world for a later day, so there
+      21	-- are no pay-nothing pickups while the per-floor daily print stays bounded.
+      22	local function candyAllowed(plr: Player, floor: number): boolean
+      23		local today = math.floor(os.time() / 86400)
+      24		if plr:GetAttribute("CandyCapDay") ~= today then
+      25			for f = 1, FLOORS do
+      26				plr:SetAttribute(candyTallyAttr(f), 0)
+      27			end
+      28			plr:SetAttribute("CandyCapDay", today)
+      29		end
+      30		local key = candyTallyAttr(floor)
+      31		local tally = tonumber(plr:GetAttribute(key)) or 0
+      32		if tally >= CANDY_PER_FLOOR_DAILY_CAP then
+      33			return false
+      34		end
+      35		plr:SetAttribute(key, tally + 1)
+      36		return true
+      37	end
+      38	
+      39	local function dropCandy(at: Vector3, floor: number)
+      40		local c = Instance.new("Part")
+      41		c.Shape = Enum.PartType.Ball
+      42		c.Size = Vector3.new(1.2, 1.2, 1.2)
+      43		c.Color = Color3.fromRGB(255, 100, 160)
+      44		c.Material = Enum.Material.Neon
+      45		c.Position = at + Vector3.new(math.random(-6, 6), 1.5, math.random(-6, 6))
+      46		c.Name = "CandyBone"
+      47		c.Parent = workspace
+      48		c.Touched:Connect(function(hit)
+      49			local plr = hit.Parent and Players:GetPlayerFromCharacter(hit.Parent)
+      50			if plr and candyAllowed(plr, floor) then
+=== CHECK 7: em-dash scan of files touched by t2 (U+2014 must be 0 in ADDED text) ===
+roblox/docs/SEASONAL_LAUNCH.md:12
+roblox/src/server/OssuaryZone.luau:1
+=== CHECK 8: un-gated callers negative check: any dropCandy call without a second arg ===
+=== END t2.check.txt ===
+=== CHECK 9: exact em-dash (U+2014) locations in touched files ===
+roblox/docs/SEASONAL_LAUNCH.md:1:# SEASONAL LAUNCH — The Ossuary rides the Halloween window
+roblox/docs/SEASONAL_LAUNCH.md:18:  cross-traffic feeds it — the estate's audience funnel is the unfair advantage.
+roblox/docs/SEASONAL_LAUNCH.md:24:[filled from ROBLOX_SEASONAL_HALLOWEEN_20260924.md — the wave's first report]
+roblox/docs/SEASONAL_LAUNCH.md:31:cost 15–30% retention after they end (community rule of thumb) — the
+roblox/docs/SEASONAL_LAUNCH.md:46:(negative), play days D1/D2-7/D8-28, playtime — all per-user averages, so
+roblox/docs/SEASONAL_LAUNCH.md:53:DevForum), so a $100-300 test buys 500-2,000 visits — and ONLY after organic
+roblox/docs/SEASONAL_LAUNCH.md:61:  (needs 13+ ID verification to display — set up early).
+roblox/docs/SEASONAL_LAUNCH.md:65:## OSSUARY DESIGN FOLDS [from DUNGEON_PRECEDENTS_20260924.md — the goldmine]
+roblox/docs/SEASONAL_LAUNCH.md:71:- **Dozer law** (Grace): a zero-input crouch check on a sound cue — teaches
+roblox/docs/SEASONAL_LAUNCH.md:74:  torchlight is safety from eyes and a dinner bell for ears — light as both
+roblox/docs/SEASONAL_LAUNCH.md:80:- v1 physics verdict confirmed: full Exanima ragdoll combat is too heavy —
+roblox/docs/SEASONAL_LAUNCH.md:109:Point bought Grow a Garden) — expect acquisition interest if the Ossuary
+roblox/src/server/OssuaryZone.luau:2:-- OssuaryZone — THE OSSUARY: the spooky skeleton maze dungeon.
+=== CHECK 10: are any of those lines inside t2's ADDED ranges (OssuaryZone 231-280, 382, 422; SEASONAL_LAUNCH 131-142)? ===
+t2 added doc lines:
+- If Candy Bones inflow exceeds Exchange sink, the economy prints VM and the
+  Steal-a wheel deflates: cap candy per floor per day if needed. LANDED
+  2026-09-25: cap = 6 candy per floor per day (`CANDY_PER_FLOOR_DAILY_CAP`,
+  src/server/OssuaryZone.luau). The falsifier named no number, so the cap
+  derives from this game's own spawn math: each floor emits exactly 6 static
+  Candy Bones at build, so a full daily sweep of every floor always pays in
+  full and only overflow beyond a floor's daily spawn (the Skeleton King's
+  40-candy shower, celebration on top of his 500 VM award) is muted. Capped
+  candy pays nothing that day and stays in the world (no pay-nothing pickups).
+=== CHECK 11: negative check redone: dropCandy calls and their arg counts ===
+269:local function dropCandy(at: Vector3, floor: number)
+382:				dropCandy(king.Position, FLOORS) -- the King stands on the top floor
+422:			dropCandy(base + Vector3.new(0, 1.5, 0), floor)
+=== END CHECKS 9-11 ===
+=== CHECK 12: next_steal evidence, doubler attribute mismatch (not touched by t2) ===
+-- Config.luau:18:
+	VirtueDoubler = { id = 0, price = 149, name = "Virtue Mark Doubler (1h)" },
+-- Monetization.luau:45-46 (writer):
+				elseif key == "VirtueDoubler" then
+					player:SetAttribute("VirtueDoublerUntil", os.time() + 3600)
+-- OssuaryZone.luau:281 (reader):
+			local mult = (plr:GetAttribute("CandyDoublerUntil") and plr:GetAttribute("CandyDoublerUntil") > os.time()) and 2 or 1
+-- SEASONAL_LAUNCH.md:19-20 (doc registers Candy Doubler 149R 1h):
+- Monetization at launch: The Sixth Candle pass (99R, wider torch radius),
+  Candy Doubler dev product (149R, 1h), regular Exchange SKUs carry over.
+-- global grep: CandyDoublerUntil appears ONLY in OssuaryZone (read, never granted):
+roblox/src\server\Monetization.luau:46:					player:SetAttribute("VirtueDoublerUntil", os.time() + 3600)
+roblox/src\server\MudBasecamp.luau:173:		local dbl = player:GetAttribute("VirtueDoublerUntil")
+roblox/src\server\OssuaryZone.luau:249:-- the same store as CandyDoublerUntil). Capped candy is NOT consumed: it
+roblox/src\server\OssuaryZone.luau:281:			local mult = (plr:GetAttribute("CandyDoublerUntil") and plr:GetAttribute("CandyDoublerUntil") > os.time()) and 2 or 1
+=== END t2.check.txt (13 checks total) ===

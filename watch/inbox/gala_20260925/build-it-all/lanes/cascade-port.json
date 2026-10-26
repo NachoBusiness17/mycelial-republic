@@ -1,0 +1,41 @@
+{
+  "lane": "cascade-port",
+  "division": "B",
+  "ok": true,
+  "note": "Cascade port landed: depends_on on all 639 invariants.json rows (13 mined edges, additive-only, pre-edit backup), cascade() + declare_depends_on() + mine_depends_on() in mag/percolator.py emit proposals-only to cascade_queue.jsonl with a chained cascades.jsonl receipt, 12/12 new tests prove the cascade fires on a dependency change and never mutates the registry, 24/24 percolator regression green; ratchet --changed exits 1 solely on two NEW violations in sibling-lane files this lane never touched (baseline-update is global and was deliberately not run), this lane's file carries zero NEW violations and a re-audited B2-273 growth claim (+442, the port itself); CP-1 ticket file not found on disk, the ask's finish line served as the ticket contract; no live write=True cascade was fired (no real change event, none fabricated).",
+  "rows": [],
+  "checks": [
+    {
+      "command": ".venv/Scripts/python.exe -m pytest tests/test_percolator_cascade.py -q -p no:cacheprovider",
+      "exit": 0,
+      "evidence": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/build-it-all/lanes/cascade-port.check.txt (CHECK 1: 12 passed in 1.24s)"
+    },
+    {
+      "command": ".venv/Scripts/python.exe -m pytest tests/test_percolator_z15.py tests/test_percolator_candidates.py -q -p no:cacheprovider",
+      "exit": 0,
+      "evidence": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/build-it-all/lanes/cascade-port.check.txt (CHECK 2: 24 passed in 2.05s)"
+    },
+    {
+      "command": ".venv/Scripts/python.exe -m mag.percolator --mine-depends-on --apply",
+      "exit": 0,
+      "evidence": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/build-it-all/lanes/cascade-port.check.txt (CHECKs 3+4: 639 rows, 13 edges; post-apply 0 rows missing depends_on, text/count/ts identical to backup, total count 1187 unchanged)"
+    },
+    {
+      "command": ".venv/Scripts/python.exe -m mag.percolator --cascade 4cfd5d7d94dff7a4 --dry",
+      "exit": 0,
+      "evidence": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/build-it-all/lanes/cascade-port.check.txt (CHECK 5: impacted 6, depths [1,1,1,1,1,1], write=false, no queue/ledger files minted)"
+    },
+    {
+      "command": ".venv/Scripts/python.exe tools/violation_ratchet.py check --changed",
+      "exit": 1,
+      "evidence": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/build-it-all/lanes/cascade-port.check.txt (CHECK 6: NEW=2 in sibling files tools/cialdini_scanner.py + tools/lru_null_arm.py never touched by this lane; mag/percolator.py zero NEW, growth claim +442 re-audited in receipt, baseline-update left to operator because it cannot be scoped)"
+    },
+    {
+      "command": "grep -c U+2014 over tests/test_percolator_cascade.py, cascade-port.check.txt, and git-diff-added lines of mag/percolator.py",
+      "exit": 1,
+      "evidence": "grep counts 0/0/0 (exit 1 = zero matches): no em-dashes in lane-written text"
+    }
+  ],
+  "decision_changed": "closes the localfirst-steal atlas decision 'the estate port of downstream re-evaluation is specced as the cascade ledger' from spec to code: mag/percolator.py now carries the dependency graph (declared + mined depends_on edges on all 639 rows) and the proposal-emitting cascade, with one on-record divergence - REFRESH does not auto-apply, every route is a review-pass proposal (Atlas's unwired AUTO_APPLY anti-pattern avoided)",
+  "artifact": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/buildall/cascade-port.md"
+}

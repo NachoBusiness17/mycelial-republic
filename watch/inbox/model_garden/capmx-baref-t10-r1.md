@@ -1,0 +1,3 @@
+# capmx-baref-t10-r1 (glm-5.3-flash @ zai, turn 1, channel: content)
+
+{"verb": "PROMOTE_TICKET", "reason": "Queue is healthy (missing_inputs=[], wait_human_bytes=547 shows operator-side hold). Highest-leverage routed item is the re-seeded Stone 5 Grok asks merge; only the operator can promote it this tick.", "payload": {"target": "[mag] Stone 5 Grok asks, MERGED single line (re-seeded 2026-09-29 WO-12 per WO-8; kills lines-235+237 duplicate)", "justification": "38 handoff items and 11 open todos; this ask consolidates duplicate lines and unblocks prereg falsifier work at t010 of 40. One promotion per tick, operator-gated per wait_human_bytes."}}

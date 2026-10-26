@@ -1,0 +1,119 @@
+# a01-arena-cadence-r6 (GAP_REGISTER 2026-10-10 R6) finish-line checks - run 2026-10-10T13:28:11Z
+
+## CHECK 1: the fire-atomic bank blocks on disk at read time (the FILL's named landing spot)
+$ grep -n "FIRE-ATOMIC BANK" tools/tavern.py tools/dungeon.py
+tools/tavern.py:254:    # FIRE-ATOMIC BANK (GO item 6, a01#7, 2026-10-04): the automation's bank
+tools/dungeon.py:769:    # FIRE-ATOMIC BANK (GO item 6, a01#7, 2026-10-04): the automation's bank
+
+$ git log -1 --format="%H %ci" -S "FIRE-ATOMIC BANK" -- tools/tavern.py
+d349ce7d217dd734777faf42927b61f22b5068d7 2026-10-04 05:50:05 -0400
+$ sed -n "264,266p" tools/tavern.py   (bank runs only live, after play())
+    if not args.dry:
+        bank_line = ""
+        try:
+$ grep -n -A2 "arena_bank(d.dir" tools/dungeon.py   (NOTE: dungeon.py moved under this lane - the FIRE-ATOMIC BANK comment sat at :744 on this lane's 13:0xZ read, :769 on the 13:28Z grep; a sibling lane is landing GAP_REGISTER R8/R9 edits in tools/dungeon.py concurrently, +25 lines vs the ratchet's 771-line accepted debt)
+785:            bank_line = arena_bank(d.dir, ledger, {})
+786-            ok, bad = ledger.verify_chain()
+787-            bank_line += f" | CHAIN ok={ok} bad={bad}"
+
+
+
+## CHECK 2: the arena automation is DELETED (option a of the FILL is moot); 43 fires, 1 failed, last 2026-10-05T07:00Z
+$ python -c "sqlite3 census of ~/.zcode/v2/tasks-index.sqlite automations/automation_runs"
+automations rows for b1ce1342 (the arena cron): 0 (0 = deleted)
+automation_runs: fires=43 failed=1 span=2026-10-03T13:00:00Z..2026-10-05T07:00:00Z
+
+## CHECK 3: post-fix dogfood census - every dir minted after the fix commit vs its ledger banked_at (the hour-bucket check)
+$ python -c "post-fix dir census + arena-capability.jsonl hour buckets"
+dnd0_20261004T100306Z  1269.2min done=1 OVERNIGHT 1269min (fail-open, healed by backfill)
+dnd0_20261004T100601Z     1.0min done=1 same-fire
+dnd0_20261004T111238Z     1.6min done=1 same-fire
+dnd0_20261004T120147Z     1.8min done=1 same-fire
+dnd0_20261004T130550Z     1.5min done=1 same-fire
+dnd0_20261004T140345Z     1.4min done=1 same-fire
+dnd0_20261004T142140Z     8.8min done=1 same-fire
+dnd0_20261004T152140Z     1.4min done=1 same-fire
+dnd0_20261004T160144Z     1.9min done=1 same-fire
+dnd0_20261004T170422Z     1.1min done=1 same-fire
+dnd0_20261004T220223Z     1.6min done=1 same-fire
+dnd0_20261005T010120Z     1.7min done=1 same-fire
+dnd0_20261005T020236Z     1.7min done=1 same-fire
+dnd0_20261005T030134Z     1.5min done=1 same-fire
+dnd0_20261005T040150Z     1.4min done=1 same-fire
+dnd0_20261005T050146Z     2.0min done=1 same-fire
+dnd0_20261005T060250Z     2.0min done=1 same-fire
+tavern_20261004T100704Z     2.5min done=1 same-fire
+tavern_20261004T111412Z     8.3min done=1 same-fire
+tavern_20261004T120336Z     8.9min done=1 same-fire
+tavern_20261004T130723Z     2.5min done=1 same-fire
+tavern_20261004T140508Z     7.8min done=1 same-fire
+tavern_20261004T152308Z     5.3min done=1 same-fire
+tavern_20261004T160335Z     6.0min done=1 same-fire
+tavern_20261004T170532Z     5.7min done=1 same-fire
+tavern_20261004T220358Z     3.4min done=1 same-fire
+tavern_20261005T010304Z     3.2min done=1 same-fire
+tavern_20261005T020418Z     4.0min done=1 same-fire
+tavern_20261005T030306Z     4.0min done=1 same-fire
+tavern_20261005T040318Z     6.9min done=1 same-fire
+tavern_20261005T050347Z     1.9min done=0 NO-DONE partial banked by the automation prompt step
+tavern_20261005T060452Z     1.8min done=0 NO-DONE partial banked by the automation prompt step
+tavern_20261005T071101Z     1.7min done=1 same-fire
+
+POST-FIX TOTALS: same_fire=30 overnight_heals=1 no-done-banked=2 unbanked=0
+hour buckets 10-04/10-05 (rows banked per UTC hour):
+  2026-10-04T02 = 12
+  2026-10-04T03 = 88
+  2026-10-04T04 = 9
+  2026-10-04T05 = 9
+  2026-10-04T06 = 9
+  2026-10-04T07 = 9
+  2026-10-04T08 = 32
+  2026-10-04T09 = 42
+  2026-10-04T10 = 11
+  2026-10-04T11 = 12
+  2026-10-04T12 = 12
+  2026-10-04T13 = 12
+  2026-10-04T14 = 18
+  2026-10-04T15 = 12
+  2026-10-04T16 = 12
+  2026-10-04T17 = 12
+  2026-10-04T22 = 13
+  2026-10-05T01 = 13
+  2026-10-05T02 = 13
+  2026-10-05T03 = 13
+  2026-10-05T04 = 13
+  2026-10-05T05 = 12
+  2026-10-05T06 = 7
+  2026-10-05T07 = 21
+pre-fix empty-bucket class (hours 20-23 on 10-03) absent above by construction: 10-03 buckets were healed by the 03:26Z backfill; post-fix every fire hour has rows
+
+## CHECK 4: the R6 regression guard (new file, pins the mechanism the FILL landed)
+$ .venv/Scripts/python.exe -m pytest tests/test_arena_fire_atomic_bank.py -v
+configfile: pytest.ini
+plugins: anyio-4.14.2, langsmith-0.10.14, timeout-2.4.0, xdist-3.8.0, typeguard-4.6.0
+collecting ... collected 4 items
+
+tests/test_arena_fire_atomic_bank.py::test_tavern_live_banks_own_run_dir_at_exit PASSED [ 25%]
+tests/test_arena_fire_atomic_bank.py::test_tavern_dry_never_banks PASSED [ 50%]
+tests/test_arena_fire_atomic_bank.py::test_tavern_bank_failure_never_fails_the_play_run PASSED [ 75%]
+tests/test_arena_fire_atomic_bank.py::test_dungeon_live_banks_own_run_dir_at_exit PASSED [100%]
+
+============================== 4 passed in 2.05s ==============================
+pytest exit: 0
+
+## CHECK 5: violation ratchet (lane touched ONLY tests/ - nothing under mag/+tools/; run for the record)
+$ .venv/Scripts/python.exe tools/violation_ratchet.py check --changed
+RATCHET check: scope=11 changed files; hits=7; registered=6; NEW=1; expired-exceptions=0
+  NEW 0d0789ca53820b22 file-too-long: tools/arena_gwap.py:426 — >400 lines
+  GROWTH claim 77d0662010601b8a: mag/water_graph.py accepted at 465 lines, now 534 (+69) — re-audit or re-accept by name
+  GROWTH claim af1d7045681fee89: tools/dungeon.py accepted at 771 lines, now 796 (+25) — re-audit or re-accept by name
+  GROWTH claim f808aaa924702588: tools/mesh_delta.py accepted at 610 lines, now 615 (+5) — re-audit or re-accept by name
+RATCHET: FAIL — run 'baseline-update' ONLY after a human/agent accepts the debt by name.
+ratchet exit: 1
+attribution: NEW hit tools/arena_gwap.py:426 is the SIBLING R2 lane's uncommitted cadence_census() edit (426 working-tree lines vs 357 at HEAD 515e2baec); GROWTH hits (dungeon.py/water_graph.py/mesh_delta.py) are pre-existing other-seat working-tree debt; this lane's only edit is tests/test_arena_fire_atomic_bank.py (outside ratchet scope)
+
+## CHECK 4b: pytest exit code captured un-piped
+$ .venv/Scripts/python.exe -m pytest tests/test_arena_fire_atomic_bank.py -q ; echo $?
+....                                                                     [100%]
+4 passed in 1.36s
+pytest exit: 0

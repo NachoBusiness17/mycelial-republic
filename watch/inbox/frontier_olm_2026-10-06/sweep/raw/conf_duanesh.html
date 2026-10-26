@@ -1,0 +1,1068 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Fine-tuning Qwen3.5-4B for the Local Minutes pipeline</title>
+<meta name="description" content="Google is retiring Gemini 2.5 Flash-Lite, which writes context for every excerpt Local Minutes indexes. A Qwen3.5-4B model fine-tuned on contexts written by Claude Opus 5.5 replaced it.">
+<link rel="canonical" href="https://duane.sh/a/fine-tuning-qwen-local-minutes">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="duane.sh">
+<meta property="og:url" content="https://duane.sh/a/fine-tuning-qwen-local-minutes">
+<meta property="og:title" content="Fine-tuning Qwen3.5-4B for the Local Minutes pipeline">
+<meta property="og:description" content="A fine-tuned, RL-trained Qwen3.5-4B now writes the context for every Local Minutes excerpt: fewer mistakes than Gemini 2.5 Flash-Lite, at 71% less cost.">
+<meta property="og:image" content="https://duane.sh/og/fine-tuning-qwen-local-minutes-1200.jpg">
+<meta property="og:image:type" content="image/jpeg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="627">
+<meta property="og:image:alt" content="Usefulness vs. cost chart: the fine-tuned, RL-trained Qwen3.5-4B scores near Claude Opus 5.5 and well above Gemini 2.5 Flash-Lite, at a fraction of the cost.">
+<meta property="article:author" content="Duane Millar Barlow">
+<meta property="article:published_time" content="2026-09-28T12:00:00-04:00">
+<meta name="author" content="Duane Millar Barlow">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Fine-tuning Qwen3.5-4B for the Local Minutes pipeline">
+<meta name="twitter:description" content="A fine-tuned, RL-trained Qwen3.5-4B now writes the context for every Local Minutes excerpt: fewer mistakes than Gemini 2.5 Flash-Lite, at 71% less cost.">
+<meta name="twitter:image" content="https://duane.sh/og/fine-tuning-qwen-local-minutes-1200.jpg">
+<meta name="twitter:image:alt" content="Usefulness vs. cost chart: the fine-tuned, RL-trained Qwen3.5-4B scores near Claude Opus 5.5 and well above Gemini 2.5 Flash-Lite, at a fraction of the cost.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --paper: #f7f8f1;
+  --ink: #203d31;
+  --body: #4f6255;
+  --muted: #627166;
+  --line: #dce3d6;
+  --panel: #eef2e8;
+  --panel-line: #dce5d5;
+  --card: #fbfcf7;
+  --green: #267457;
+  --green-soft: #cfe0d3;
+  --orange: #ad5d35;
+  --orange-soft: #f3dfd2;
+  /* Model colors: rust = Gemini Flash-Lite, grey = base Qwen3.5-4B, blue = fine-tuned 4B. */
+  --rust: #ad5d35;
+  --grey: #8b918b;
+  --blue: #2f5d8c;
+  --blue-soft: #d6e2ee;
+  --mono: "Geist Mono", ui-monospace, SFMono-Regular, Consolas, monospace;
+  --sans: Geist, system-ui, sans-serif;
+  --serif: 'Gowun Batang', Georgia, serif;
+  /* Layout: one centered text column; figures break out of it, centered on it. */
+  --gutter: 20px;
+  --column: 700px;
+  --figure: 900px;
+}
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; scroll-padding-top: 72px; }
+body { margin: 0; background: var(--paper); color: var(--ink); font: 15px/1.65 var(--sans); -webkit-font-smoothing: antialiased; }
+a { color: var(--green); text-decoration-thickness: 1px; text-underline-offset: 3px; }
+.wrap { max-width: calc(var(--column) + 2 * var(--gutter)); margin: 0 auto; padding: 0 var(--gutter); }
+
+.topbar { display: flex; justify-content: space-between; align-items: center; padding: 22px clamp(var(--gutter), 3vw, 40px); border-bottom: 1px solid var(--line); font-size: 12px; }
+.topbar .crumbs a { color: var(--ink); text-decoration: none; font-weight: 600; }
+.topbar .crumbs span { color: var(--muted); margin-left: 6px; }
+.topbar .meta { font-family: var(--mono); font-size: 10.5px; color: var(--muted); letter-spacing: .02em; }
+
+.hero { padding: 64px 0 56px; }
+.hero h1 { grid-column: 1 / -1; max-width: 860px; margin-bottom: 20px; }
+h1 { font: 400 52px/1.06 var(--serif); letter-spacing: -0.04em; margin: 0 0 22px; }
+.lead { font-size: 21px; line-height: 1.5; color: var(--ink); margin: 0 0 18px; }
+.intro { color: var(--body); margin: 0 0 12px; }
+.examples-heading { margin: 44px 0 14px; }
+.tldr { margin: 0 0 26px; }
+.tldr-label { font: 500 11px/1.4 var(--mono); letter-spacing: .06em; color: var(--muted); margin: 0 0 8px; }
+.byline { margin: -8px 0 26px; font-family: var(--mono); font-size: 10.5px; color: var(--muted); }
+
+figure { margin: 0; }
+.panel { background: var(--panel); border: 1px solid var(--panel-line); border-radius: 4px; padding: 20px; }
+.fig-label { display: flex; justify-content: space-between; gap: 12px; font-family: var(--mono); font-size: 10px; color: var(--muted); letter-spacing: .03em; margin-bottom: 14px; text-transform: uppercase; }
+figcaption { font-size: 11.5px; line-height: 1.7; color: var(--muted); margin-top: 12px; max-width: 700px; }
+.wide, .column-figure { margin: 30px 0 26px; }
+
+.excerpt { font: 12.5px/1.6 var(--mono); color: var(--ink); background: var(--card); border: 1px solid var(--panel-line); border-radius: 3px; padding: 12px 14px; margin-bottom: 14px; }
+.excerpt b { font-weight: 500; background: var(--green-soft); border-radius: 2px; padding: 0 2px; }
+.note { background: var(--card); border: 1px solid var(--line); border-radius: 3px; padding: 10px 12px; margin: 0 0 12px; font-size: 12.5px; line-height: 1.55; }
+.note h4 { margin: 0 0 6px; font: 500 10px/1.4 var(--mono); letter-spacing: .03em; text-transform: uppercase; color: var(--body); }
+.note.good, .note.bad { border-color: #c9d3c4; }
+.note.flash { border-color: #d6a184; }
+.note.base { border-color: #b5b9b3; }
+.note.ft { border-color: #8aa9c8; }
+.note.ft .flag { color: #1f4468; border-top-color: #c3d3e3; }
+.note.base .flag { color: var(--ink); border-top-color: var(--line); }
+.note .blank { color: var(--muted); font-style: italic; }
+.note p { margin: 0 0 3px; color: var(--ink); }
+.note .wrong { color: #7a3414; background: var(--orange-soft); border-radius: 2px; padding: 0 2px; box-decoration-break: clone; -webkit-box-decoration-break: clone; }
+.note .flag { font-size: 12px; font-weight: 600; line-height: 1.5; color: #6a2a0e; margin: 10px 0 0; padding-top: 9px; border-top: 1px solid #e4c2ae; }
+.note.good .flag { color: #134a33; border-top-color: #c9d3c4; }
+.excerpt h4 { margin: 0 0 6px; font: 500 10px/1.4 var(--mono); letter-spacing: .03em; text-transform: uppercase; color: var(--body); }
+/* Example cards: the excerpt sits on the card without a border; each context note has a 2px border and a bold heading in its model's color. */
+.carousel .excerpt { border: 0; }
+.carousel .note { border-width: 2px; padding: 9px 11px; }
+.carousel .note h4 { font-weight: 600; }
+.carousel .note.flash h4 { color: var(--rust); }
+.carousel .note.base h4 { color: #6b706a; }
+.carousel .note.ft h4 { color: var(--blue); }
+.note .k { font: 500 9.5px var(--mono); letter-spacing: .03em; text-transform: uppercase; color: var(--body); margin-right: 6px; }
+.note .added { background: var(--green-soft); border-radius: 2px; padding: 0 2px; color: var(--ink); }
+
+
+/* Examples carousel */
+.carousel { min-width: 0; }
+/* One example at a time, with the next one peeking in from the right. A spacer after the last slide lets it align left too.
+   Wide screens: the card breaks out of the text column and the three notes sit side by side under the excerpt.
+   Narrower screens: the notes stack, and the fine-tuned note flips over to show the note from before fine-tuning. */
+.hero .carousel { margin-top: 40px; }
+.hero-chart .fig-label { align-items: baseline; }
+.hero-figure { margin: 30px 0 34px; }
+.hero-figure figcaption { font-size: 13.5px; line-height: 1.6; color: var(--ink); max-width: none; margin-top: 14px; }
+.hero-chart .fig-label span:first-child { font-size: 13px; font-weight: 700; color: var(--ink); }
+.hero-chart { background: var(--card); border-radius: 6px; padding: 18px 20px 16px; box-shadow: 0 1px 2px rgba(32, 61, 49, .05), 0 6px 24px rgba(32, 61, 49, .06); }
+@media (min-width: 821px) and (max-width: 999px) {
+  .hero .carousel .slide { flex-basis: 88%; }
+  .hero .carousel .track::after { content: ''; flex: 0 0 calc(12% - 16px); }
+}
+.hero .carousel { --w: min(1240px, calc(100vw - 2 * var(--gutter))); width: var(--w); margin-left: calc((100% - var(--w)) / 2); }
+@media (min-width: 1000px) {
+  .hero .carousel .slide { flex-basis: 92%; }
+  .hero .carousel .track::after { content: ''; flex: 0 0 calc(8% - 16px); }
+  .carousel .notes { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; align-items: stretch; margin-bottom: 6px; }
+  .carousel .notes .flip, .carousel .notes .flip-inner { display: contents; }
+  .carousel .notes .note { margin: 0; }
+  .carousel .notes .flip-inner > .note { transform: none; backface-visibility: visible; -webkit-backface-visibility: visible; grid-area: auto; }
+  .carousel .notes .note.flash { order: 1; }
+  .carousel .notes .note.back { order: 2; }
+  .carousel .notes .note.front { order: 3; }
+  .carousel .flip-btn, .carousel .flip-hint { display: none; }
+}
+/* The fine-tuned note flips over to show what the 4B wrote before fine-tuning. */
+.flip { perspective: 1600px; margin: 0 0 10px; }
+.flip-inner { display: grid; transform-style: preserve-3d; transition: transform .55s cubic-bezier(.3, .7, .2, 1); }
+.flip-inner > .note { grid-area: 1 / 1; margin: 0; backface-visibility: hidden; -webkit-backface-visibility: hidden; }
+.flip-inner > .back { transform: rotateY(180deg); }
+.flip.flipped .flip-inner { transform: rotateY(180deg); }
+@media (prefers-reduced-motion: reduce) { .flip-inner { transition: none; } }
+.note-head { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin: 0 0 6px; }
+.note-head h4 { margin: 0; }
+.flip-btn { flex: none; display: inline-flex; align-items: center; gap: 5px; font: 500 10px/1.4 var(--mono); letter-spacing: .03em; text-transform: uppercase; background: var(--card); border: 1px solid; border-radius: 999px; padding: 3px 9px; cursor: pointer; }
+.flip-btn svg { width: 11px; height: 11px; }
+.note.ft .flip-btn { color: var(--blue); border-color: #aec4da; }
+.note.base .flip-btn { color: #6b706a; border-color: #c9ccc6; }
+.flip-btn:hover { border-color: currentColor; }
+.carousel .label { font: 500 10px/1.4 var(--mono); letter-spacing: .03em; text-transform: uppercase; color: var(--body); margin: 0 0 6px; }
+.nowrap { white-space: nowrap; }
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.carousel .track { display: flex; gap: 16px; overflow-x: auto; scroll-snap-type: x mandatory; scroll-behavior: smooth; scrollbar-width: none; align-items: stretch; outline: none; }
+.carousel .track:focus-visible .slide { border-color: var(--green); }
+.carousel .track::-webkit-scrollbar { display: none; }
+.carousel .slide { flex: 0 0 100%; scroll-snap-align: start; scroll-snap-stop: always; min-width: 0; background: var(--panel); border: 1px solid var(--panel-line); border-radius: 4px; padding: 18px 20px; }
+.carousel .slide > .note:last-child { margin-bottom: 10px; }
+.carousel .where { font: 10px/1.5 var(--mono); letter-spacing: .03em; text-transform: uppercase; color: var(--ink); margin-bottom: 8px; }
+.carousel .aside-note { font-size: 11.5px; line-height: 1.55; color: var(--muted); margin: -4px 0 0; }
+.carousel .controls { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 14px; }
+.carousel .controls > button { display: grid; place-items: center; padding: 0; color: var(--ink); background: transparent; border: 1px solid #c9d3c4; border-radius: 50%; width: 34px; height: 34px; cursor: pointer; flex: none; }
+.carousel .controls > button svg { display: block; width: 14px; height: 14px; }
+.carousel .controls > button:hover:not(:disabled) { border-color: var(--green); color: var(--green); }
+.carousel .controls > button:disabled { opacity: .3; cursor: default; }
+.carousel .dots { display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; }
+.carousel .dots button { width: 8px; height: 8px; padding: 0; border-radius: 50%; background: #c9d3c4; border: 0; }
+.carousel .dots button[aria-selected="true"] { background: var(--green); }
+
+
+section { padding: 36px 0; }
+.eyebrow { font: 10.5px var(--mono); color: var(--muted); letter-spacing: .03em; margin: 0 0 12px; }
+h2 { font: 400 36px/1.2 var(--serif); letter-spacing: -0.03em; margin: 0 0 22px; max-width: 700px; }
+h3 { font: 600 15px/1.4 var(--sans); letter-spacing: -0.01em; margin: 32px 0 8px; color: var(--ink); }
+.prose p, .prose li { color: var(--body); }
+.prose p { margin: 0 0 16px; }
+.prose ul, .prose ol { padding-left: 18px; margin: 0 0 16px; }
+.prose li { margin-bottom: 8px; }
+.prose strong { color: var(--ink); font-weight: 600; }
+.prose em { color: var(--ink); }
+.callout { border: 1px solid #d6a184; border-radius: 4px; background: var(--card); padding: 14px 16px; margin: 24px 0; color: var(--ink); font-size: 16px; line-height: 1.55; }
+.num { font-family: var(--mono); font-size: 13px; }
+
+.sidequest { background: var(--panel); border: 1px solid var(--line); border-radius: 4px; padding: 16px 18px 2px; margin: 28px 0; }
+.sidequest h3 { margin: 0 0 8px; }
+.sidequest p { color: var(--body); margin: 0 0 14px; }
+.stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; background: var(--line); border: 1px solid var(--line); border-radius: 4px; overflow: hidden; margin: 28px 0; }
+.stat { background: var(--paper); padding: 16px 18px; }
+.stat .v { font: 500 28px/1.1 var(--serif); letter-spacing: -0.02em; color: var(--ink); }
+.stat .k { font-size: 12px; color: var(--muted); margin-top: 6px; line-height: 1.45; }
+
+.anatomy { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.anatomy .card { background: var(--card); border: 1px solid var(--panel-line); border-radius: 3px; padding: 14px 16px; font-size: 13px; }
+.anatomy .card h4 { margin: 0 0 8px; font: 500 10px/1.4 var(--mono); letter-spacing: .03em; text-transform: uppercase; color: var(--muted); }
+.field { display: grid; grid-template-columns: 118px 1fr; gap: 4px 10px; padding: 8px 0; border-top: 1px solid var(--line); }
+.field:first-of-type { border-top: 0; padding-top: 0; }
+.field .name { font: 11px/1.6 var(--mono); color: var(--green); }
+.field .val { color: var(--ink); line-height: 1.5; }
+.field .why { grid-column: 2; font-size: 11.5px; color: var(--muted); }
+
+.pair { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.pair .note { padding: 12px 14px; margin: 0; }
+
+table { border-collapse: collapse; width: 100%; font-size: 13.5px; }
+th { text-align: left; font: 500 10px/1.4 var(--mono); color: var(--muted); letter-spacing: .03em; text-transform: uppercase; padding: 8px 10px 8px 0; border-bottom: 1px solid var(--line); }
+td { padding: 9px 10px 9px 0; border-bottom: 1px solid var(--line); color: var(--ink); vertical-align: top; }
+td.r, th.r { text-align: right; }
+tr.total td { font-weight: 600; border-bottom: 0; }
+.table-scroll { overflow-x: auto; }
+
+
+svg { display: block; width: 100%; height: auto; overflow: visible; }
+svg text { font-family: var(--sans); fill: var(--ink); }
+svg .m { font-family: var(--mono); fill: var(--muted); }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 18px; font-size: 11px; color: var(--muted); margin-top: 10px; }
+.legend i { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 6px; vertical-align: -1px; }
+
+ol.bits { padding-left: 0; list-style: none; counter-reset: bit; }
+ol.bits li { counter-increment: bit; position: relative; padding-left: 34px; margin-bottom: 14px; color: var(--body); }
+ol.bits li::before { content: counter(bit, decimal-leading-zero); position: absolute; left: 0; top: 2px; font: 10.5px var(--mono); color: var(--muted); }
+code { font: 12.5px var(--mono); background: var(--panel); padding: 1px 5px; border-radius: 3px; color: var(--ink); }
+
+/* Figures, the hero chart and stat rows are wider than the text column and centered on it. */
+.wide, .hero-figure, .stats { --w: min(var(--figure), calc(100vw - 2 * var(--gutter))); width: var(--w); margin-left: calc((100% - var(--w)) / 2); margin-right: calc((100% - var(--w)) / 2); }
+
+footer { padding: 40px 0 70px; font-size: 12px; color: var(--muted); display: flex; justify-content: space-between; flex-wrap: wrap; gap: 12px; }
+
+@media (max-width: 820px) {
+  .hero { padding-top: 44px; }
+  .hero h1 { margin-bottom: 18px; }
+  .hero .carousel { margin-top: 32px; }
+  h1 { font-size: 38px; }
+  h2 { font-size: 30px; }
+  .lead { font-size: 19px; }
+  .stats, .anatomy, .pair { grid-template-columns: 1fr; }
+  section { padding: 28px 0; }
+  .fig-label { flex-direction: column; gap: 4px; }
+    }
+@media (max-width: 480px) {
+  :root { --gutter: 16px; }
+  h1 { font-size: 32px; }
+  .topbar .meta { display: none; }
+  .field { grid-template-columns: 1fr; }
+  .field .why { grid-column: 1; }
+}
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="crumbs"><a href="https://duane.sh">duane.sh</a><span>/ Local Minutes</span></div>
+  <div class="meta">September 2026</div>
+</header>
+
+<div class="wrap">
+  <div class="hero">
+    <h1>Fine-tuning <span class="nowrap">Qwen3.5-4B</span> for the Local Minutes pipeline</h1>
+    <div class="byline">Duane Millar Barlow · <a href="https://localminutes.org">localminutes.org</a></div>
+    <div>
+      <figure class="hero-figure">
+        <div class="hero-chart">
+          <div class="fig-label"><span>Usefulness vs. cost</span><span>Claude Opus 5.5 judge · 631 excerpts</span></div>
+          <div id="chart-hero"></div>
+        </div>
+        <figcaption>Upper-left is better. A comparison of the base Qwen3.5-4B, the fine-tuned Qwen3.5-4B model, vs Gemini 2.5 Flash-Lite and Opus 5.5 on context usefulness and price. The fine-tuned model is the new Local Minutes contextualizer. It's significantly less costly and approaches the quality of the Opus 5.5 teacher model.</figcaption>
+      </figure>
+      <div class="tldr">
+        <p class="tldr-label">TL;DR</p>
+        <p class="lead">Google is retiring Gemini 2.5 Flash-Lite, which writes the context for every excerpt Local Minutes indexes, and its successor costs nearly four times as much. I fine-tuned Qwen3.5-4B, a small open model, on contexts written by Claude Opus 5.5, then used reinforcement learning, with Opus grading every context, to teach it not to guess. It makes fewer mistakes than Gemini 2.5 Flash-Lite at 71% less cost.</p>
+      </div>
+      <p class="intro">Local Minutes splits every meeting document into logical, manageable sections called excerpts. Search and the AI assistant work by retrieving the excerpts that answer a question, because a 60-page packet is too long to match or reread as one piece. But minutes are written to be read in order. "Moved: Mark, Seconded: Carol" is clear to someone who can glance back at the attendance list on page one. Pulled out on its own, it isn't: a search for Mark Hadley won't match it, and neither a reader nor the assistant can tell who Mark is.</p>
+      <p class="intro">So before each excerpt is indexed, a model, the contextualizer, reads the pages before it and writes the minimum context the excerpt needs to stand on its own: which meeting it's from, what's being discussed, and who and what it refers to. This post is about how the replacement was trained, how I tested it, and how it runs in production.</p>
+      <h2 class="examples-heading">Excerpt Context Before and After</h2>
+      <p class="intro">Below are a few examples of the context generated by Gemini 2.5 Flash-Lite (the model being replaced), the base Qwen3.5-4B model, and the RL fine-tuned version of Qwen3.5-4B (the new Local Minutes contextualizer). Not only is the new contextualizer much less expensive, but you can see below that the quality of the generated contexts is much higher. People's names in the examples have been changed.</p>
+    </div>
+
+    <figure class="carousel" id="examples" aria-roledescription="carousel" aria-label="Ten excerpts, with context from Gemini and from Qwen3.5-4B before and after fine-tuning">
+      <div class="track" tabindex="0"></div>
+      <div class="controls">
+        <button class="prev" type="button" aria-label="Previous example"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path d="M13 8H3M7.5 3.5 3 8l4.5 4.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+        <div class="dots" role="tablist"></div>
+        <span class="count sr-only" aria-live="polite">1 / 10</span>
+        <button class="next" type="button" aria-label="Next example"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path d="M3 8h10M8.5 3.5 13 8l-4.5 4.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+      </div>
+    </figure>
+  </div>
+</div>
+
+
+<main class="wrap">
+
+<section id="costs">
+  <h2>Pipeline costs</h2>
+  <div class="prose">
+    <p>Local Minutes finds meeting documents, converts each document to text, splits the text into excerpts, adds context to each excerpt, and embeds the result for search. Adding context is the most expensive of those steps, because it runs once for every excerpt. Gemini 2.5 Flash-Lite is great because it's very inexpensive, even compared to newer versions of Flash-Lite. Being forced to migrate to later versions of Flash-Lite would significantly impact the cost of the Local Minutes pipeline.</p>
+  </div>
+  <figure class="column-figure">
+    <div class="fig-label"><span>Pipeline AI spend by step</span></div>
+    <div id="chart-cost"></div>
+  </figure>
+</section>
+
+<section id="teacher">
+  <h2>Training Qwen3.5-4B</h2>
+  <div class="prose">
+    <p>With Gemini 2.5 Flash-Lite being retired, and its successor, Gemini 3.5 Flash-Lite being nearly 4x the cost, Local Minutes, being an L3C with limited resources, couldn't absorb that large of a cost increase, so we needed a cheaper model. Ideally an open source one that we can deploy as needed and don't need to worry about it being changed or deprecated in the future.</p>
+    <p>Small open models are cheap to run, but out of the box they're bad at this job: an untrained 4B model made an unsupported claim in more than a third of its contexts (see below). The standard way to make a small model good at one narrow job is to train it on examples: a capable <em>teacher</em> model does the job thousands of times, and a small <em>student</em> model is trained to produce the same answers from the same inputs.</p>
+    <p>For the student I picked Qwen3.5-4B, a recent open model with 4 billion parameters: small enough to run on a single inexpensive GPU, and open, so no one can retire it.</p>
+  </div>
+  <figure class="wide">
+    <div id="diagram-training-data"></div>
+  </figure>
+
+  <h3>First try: Gemini as the teacher</h3>
+  <div class="prose">
+    <p>The easiest solution seemed to be to mimic the contexts generated by Gemini, which were already being saved with excerpts. Using the sample of 23,800 contexts generated by Gemini in production, I created a dataset for Qwen that reproduced Gemini's results, good and bad. When Claude Opus 5.5 was used as a blind evaluator, Gemini was given high marks for usefulness, but it had an issue making claims that weren't supported by the excerpt, happening in about 20% of contexts. A second check, with a classifier using TypeSafe's Jev model, found another habit: 41% of the lines in Gemini's contexts just restate the excerpt, which gives search nothing new, which was another bad pattern learned from Gemini 2.5 Flash-Lite. The same blind evaluator couldn't tell the student's contexts apart from Gemini's: a student copies its teacher's mistakes along with everything else.</p>
+  </div>
+
+  <h3>Second try: Opus 5.5 as the teacher</h3>
+  <div class="prose">
+    <p>The next test was to see if we could generate contexts using Opus 5.5 and train the 4B model on them. On a 100-excerpt pilot, Claude Opus 5.5 wrote far better contexts: usefulness 4.36 vs 2.69 out of 5, unsupported claims 2% vs 28%, restated lines 1% vs 44%. I sampled 25,206 excerpts from random documents across the past year, at random positions within each (the first sample leaned too heavily on the openings of documents), and had Opus write context for each, and this became the new training data.</p>
+  </div>
+</section>
+
+<section id="lora">
+  <h2>Fine-tuning (SFT)</h2>
+  <div class="prose">
+    <p>A model's knowledge lives in its weights: large matrices of numbers that each layer multiplies its input by. Qwen3.5-4B has about 4 billion of them. Training means nudging those numbers so the model's output gets closer to the example answers.</p>
+    <p>Nudging all 4 billion takes a lot of GPU memory. LoRA (low-rank adaptation) leaves the original weights frozen and learns a small correction for each matrix instead: two thin matrices whose product has the same shape as the original, added on top.</p>
+  </div>
+  <figure class="column-figure">
+    <div id="diagram-lora"></div>
+    <figcaption>Because the correction is the product of two thin matrices, it can only change the model in a limited number of directions (32 here). That's enough to teach a narrow skill, and small enough to train on one GPU.</figcaption>
+  </figure>
+  <div class="prose">
+    <p>Training went through the 24,000 examples once, on one rented H100 GPU, in 1.6 hours, for about $7.</p>
+    <p>During training the model reads each request and predicts the teacher's generated context one token at a time. At each step it assigns a probability to every possible next token. The loss is small when it gave the token the teacher actually wrote a high probability, and large when the teacher's choice surprised it. After each batch of examples, the LoRA matrices are nudged in the direction that lowers the loss, so the model's predictions move closer to what the teacher would write. Only the context is scored, not the request, so the model learns to write context rather than to reproduce the documents it was given.</p>
+  </div>
+</section>
+
+<section id="judge">
+  <h2>Grading each generated excerpt context</h2>
+  <div class="prose">
+    <p>Verifying a given context is correct requires reading its source pages and its excerpt to see if the context covers everything it should in the excerpt, is accurate, and doesn't restate what is already evident in the excerpt, and there are thousands of them. So I used Claude Opus as a judge, set up to remove as much bias as possible:</p>
+    <ul>
+      <li><strong>Blind.</strong> Contexts from every system for the same excerpt are shown together, labeled only A, B, C. The judge doesn't know which model wrote which.</li>
+      <li><strong>Rotated.</strong> Language-model judges tend to favor answers in certain positions, so every system appears in every position equally often.</li>
+      <li><strong>Specific.</strong> The judge lists each unsupported claim and each missed reference it finds, then scores usefulness from 1 to 5. Having to list errors makes it look for them.</li>
+    </ul>
+    <p>Here's how the students did on 400 excerpts none of them had trained on:</p>
+  </div>
+  <figure class="wide">
+    <div class="fig-label"><span>Usefulness by model</span><span>Blind judge · 400 held-out excerpts · 1–5</span></div>
+    <div id="chart-teacher"></div>
+    <figcaption>Judge: Claude Opus 5. Right column: share of contexts with at least one unsupported claim. A Claude judge might favor Claude's writing, so I double-checked: Jev's restatement check (38% of lines → 1%) and reading contexts by hand point the same way.</figcaption>
+  </figure>
+  <div class="prose">
+    <p>The student trained on Opus's contexts landed much closer to its teacher than to Gemini, with a third as many unsupported claims as production. The student trained on Gemini's contexts made fewer errors than the untrained model but was no more useful, and scored below Gemini: it learned Gemini's habits, including restating the excerpt, rather than better context.</p>
+    <p>The student was still well short of its teacher. Bigger students trained on the same contexts did only a little better (that side quest is at the end of <a href="#serving">Serving the model</a>), so I kept working on the 4B.</p>
+  </div>
+</section>
+
+<section id="retrieval">
+  <h2>Testing search</h2>
+  <div class="prose">
+    <p>A judge's score is a proxy for retrieval quality or whether people can find what they're looking for. So I tested search directly. Most searches work fine with or without good context, so I focused on the cases context exists for: queries that can only find the right excerpt through its context.</p>
+    <ol>
+      <li>Opus read 1,016 test excerpts and their production contexts, and flagged every context missing or misstating a fact a searcher would need. It found 235, about one in four.</li>
+      <li>For each, it wrote a search query that needs that fact, without seeing any context.</li>
+      <li>I indexed all 7,395 excerpts of those documents the way production does (Cohere embeddings for semantic search, Pinecone's sparse model for keyword search), once with each system's contexts.</li>
+      <li>For each query, I checked whether the right excerpt came back first.</li>
+    </ol>
+  </div>
+  <figure class="wide">
+    <div class="fig-label"><span>Retrieval performance</span><span>Top-1 hit rate · 234 queries</span></div>
+    <div id="chart-search"></div>
+    <div class="legend"><span><i style="background:#d9ddd4"></i>Excerpt alone</span><span><i style="background:var(--rust)"></i>Production context (Gemini)</span><span><i style="background:var(--grey)"></i>Qwen3.5-4B context, no fine-tuning</span><span><i style="background:var(--blue)"></i>Fine-tuned Qwen3.5-4B context</span></div>
+  </figure>
+  <div class="prose">
+    <p>With keyword search, the right excerpt came first 76% of the time with context from the RL-trained model that shipped, against 50% with production's.</p>
+    <p>That comparison flatters the new contexts. The queries were chosen where production's contexts failed, so almost any other context starts ahead: the 4B's contexts <em>before</em> fine-tuning already reached 62%. The fair measure of what fine-tuning bought is the base model against the fine-tuned one: 62% to 76% for keyword search, and 60% to 69% for semantic search.</p>
+  </div>
+</section>
+
+<section id="dpo">
+  <h2>Preference training (DPO)</h2>
+  <div class="prose">
+    <p>The above supervised fine-tuning amounts to imitation training and it taught the student to write correct context, but not to cover everything in the excerpt that needs explaining: it missed references nearly three times as often as its teacher. It was rewarded for correct context but not penalized for omitting context.</p>
+    <p>Preference training teaches a model from pairs of answers to the same input: a chosen one and a rejected one. Imitation only ever shows the model good answers; preference training also shows it bad ones, so it learns what to avoid as well as what to copy. The method I used is DPO (direct preference optimization).</p>
+    <p>The rejected contexts came from the student itself, so the training targets the mistakes it actually makes (i.e. on-policy). I had it write four contexts for each of 12,000 training excerpts at a temperature of 0.8. Temperature sets how much randomness goes into picking each next token. Production runs at 0: the model always takes its most likely token, so it writes the same context every time. At 0.8 it sometimes takes a less likely one, so the four versions differ and show the range of mistakes the student is capable of making, including ones it makes only occasionally that a single deterministic answer would hide. Much higher, and the samples would fill with mistakes it never makes in practice. I found the samples with mistakes and paired each with a corrected version. This is a real pair, with the names changed:</p>
+  </div>
+  <figure class="wide">
+    <div class="fig-label"><span>A preference pair</span><span>Coventry Select Board minutes</span></div>
+    <div class="pair">
+      <div class="note bad">
+        <h4>Rejected · the student's own context</h4>
+        <p>Ron refers to Ron Gauthier, Town Administrator.</p>
+        <p>Neil refers to Neil Carver, Town Treasurer.</p>
+        <p class="flag">Leaves out Luke and Joe, who made the motion.</p>
+      </div>
+      <div class="note good">
+        <h4>Chosen · corrected</h4>
+        <p>Ron is Ron Gauthier, Town Administrator.</p>
+        <p>Neil is Neil Carver, Town Treasurer.</p>
+        <p><span class="added">Luke is Select Board member Luke Hammond.</span></p>
+        <p><span class="added">Joe is Select Board member Joe Brennan.</span></p>
+      </div>
+    </div>
+  </figure>
+  <div class="prose">
+    <p>In practice, training measures how likely the student is to write each context in a pair. If it already clearly favors the chosen one, the pair changes almost nothing; if it doesn't, the weights are adjusted so the chosen context becomes more likely and the rejected one less likely.</p>
+    <p>What I learned, in order:</p>
+    <ul>
+      <li><strong>It over-corrects.</strong> The first round cut missed references from 21% to 10% but raised unsupported claims from 9.5% to 15%. The model learned to explain more of the excerpt but didn't prioritize accuracy.</li>
+      <li><strong>It learns patterns you didn't intend.</strong> In one round the rejected context was always the longer one, so the model learned that shorter is safer and became terse. The next round balanced the two.</li>
+      <li><strong>Pairs have to be the model's own mistakes.</strong> Reusing the 4B's pairs on a larger 9B model made the 9B worse (usefulness 3.96 → 3.68). Pairs built from the 9B's own contexts made it better (3.91 → 4.01). My guess as to why is that the 9B rarely made the 4B's mistakes, so pushing them down taught it little about its own. The main thing left to learn between each pair was the 4B's phrasing, so the 9B's writing drifted, while the mistakes it did make never appeared in the pairs.</li>
+      <li><strong>Would more imitation examples have done the same job?</strong> No. Training on 6,000, 12,000 and 24,000 of Opus's contexts kept lowering the loss, but judged quality barely moved (3.79 → 3.83 → 3.85). The student sounds more like Opus without getting much better.</li>
+    </ul>
+  </div>
+  <div class="prose">
+    <p><strong>It traded one mistake for another.</strong> Judged blind against the imitation model on 631 test excerpts, the best preference-trained version was exactly as useful, but made a different kind of error:</p>
+  </div>
+  <div class="stats">
+    <div class="stat"><div class="v">15.4% → 7.3%</div><div class="k">Contexts with a missed reference: half as many.</div></div>
+    <div class="stat"><div class="v">10.9% → 14.4%</div><div class="k">Contexts with an unsupported claim: a third more, and 16% on meeting minutes.</div></div>
+    <div class="stat"><div class="v">4.15 vs 4.20</div><div class="k">Usefulness, 1 to 5: a tie.</div></div>
+  </div>
+  <div class="prose">
+    <p>Every pair rewarded explaining more, and none rewarded stopping where the source stops. So the model learned to fill gaps it couldn't actually fill. For this task that's the worst kind of error, because it's a confident statement about a real person.</p>
+  </div>
+</section>
+
+<section id="rl">
+  <h2>Reinforcement learning (GRPO)</h2>
+  <div class="prose">
+    <p>Preference training learns from pairs collected once. The model never finds out how the contexts it writes <em>after</em> an update would be graded. Reinforcement learning (RL) is done online so the model writes contexts, a grader scores them, and training shifts the model toward whatever scored well. Then it writes new contexts and the loop repeats, so the feedback always matches its current behavior.</p>
+    <p>I used GRPO (group relative policy optimization), the method behind DeepSeek-R1. Starting from the imitation model, each step went like this:</p>
+    <ol>
+      <li>Take 32 training excerpts and have the model write 8 contexts for each, with some randomness (again using temperature).</li>
+      <li>Have Claude Opus 5.5 grade every context.</li>
+      <li>Compare each context's score with the average of its group of 8. The LoRA weights are then nudged so that every token in an above-average context becomes a little more likely, and every token in a below-average one a little less likely, in proportion to how far from the average it scored. It's the same kind of update as fine-tuning, but on the model's own writing, with the grade setting the direction and size.</li>
+      <li>Add a penalty for drifting far from the imitation model, so it can't wander into nonsense.</li>
+    </ol>
+    <p>This method keeps the training trajectory on policy, which will result in more internally coherent, incremental modifications to the weights. A hundred steps meant 25,600 graded contexts.</p>
+  </div>
+  <h3>The grader</h3>
+  <div class="prose">
+    <p>In RL, the grader's score is the only thing that tells the model what a good context is, so it has to reward everything we want and penalize everything we don't. Preference training fell short here: every pair rewarded explaining more, and none penalized guessing. So this grader checks each claim a context makes, in two stages:</p>
+    <ul>
+      <li><strong>An answer key, once per excerpt.</strong> Opus lists what a reader of the excerpt alone would need explained, and for each item whether the source settles it, leaves it ambiguous, or doesn't say.</li>
+      <li><strong>A grade, once per context.</strong> Opus sorts how the context handled each item on the key, and lists anything else it states that the source doesn't support.</li>
+    </ul>
+    <p>Opus only sorts; it never assigns points. The points live in code, so every context for the same excerpt is scored on the same terms:</p>
+  </div>
+  <div class="table-scroll">
+    <table>
+      <thead><tr><th>What the context did</th><th class="r">Points</th></tr></thead>
+      <tbody>
+        <tr><td>Resolved a reference the source settles</td><td class="r num">+1</td></tr>
+        <tr><td>Got one wrong, or committed to an answer the source doesn't give</td><td class="r num">−3</td></tr>
+        <tr><td>Said the source doesn't say, when it doesn't</td><td class="r num">+0.5</td></tr>
+        <tr><td>Said it's unclear, when the source settles it</td><td class="r num">−0.5</td></tr>
+        <tr><td>Any other unsupported claim</td><td class="r num">−3</td></tr>
+        <tr><td>Wrong meeting or subject</td><td class="r num">−1.5</td></tr>
+        <tr><td>An item that only restates the excerpt</td><td class="r num">−0.25</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="prose" style="margin-top:22px">
+    <p>The −3 means a resolution is only worth stating if the model is more than 75% sure of it; below that, the expected cost of being wrong outweighs the point for being right. Before training on this grader, I checked it against the blind judge: on whether a context contains an unsupported claim, they agreed 95% of the time.</p>
+  </div>
+  <figure class="column-figure">
+    <div class="fig-label"><span>RL training reward</span><span>32 excerpts × 8 contexts per step</span></div>
+    <div id="chart-rl"></div>
+    <figcaption>Dots: each step's average reward on the contexts it sampled. Line: the 10-step average. For the first 25 steps the model barely moved, so I tripled the learning rate; from there the reward climbs and levels off around step 70.</figcaption>
+  </figure>
+  <figure class="column-figure">
+    <div class="fig-label"><span>Errors by model</span><span>Claude Opus 5.5 judge · 631 excerpts</span></div>
+    <div id="chart-errors"></div>
+    <figcaption>Lower-left is better. The arrows follow the 4B from no fine-tuning, to imitation, to reinforcement learning (the checkpoint from step 80, which guessed less than the one from step 100). All five were judged side by side on the same excerpts: 402 drawn at random, plus every remaining meeting-minutes excerpt in the test set.</figcaption>
+  </figure>
+  <div class="prose">
+    <p>Reinforcement learning moved the model toward its teacher on both kinds of mistake at once, which preference training never managed. Against the imitation model, unsupported claims fell from 11.9% to 7.9% and missed references from 15.2% to 9.5%, and usefulness rose from 4.08 to 4.19.</p>
+  </div>
+</section>
+
+<section id="serving">
+  <h2>Serving the model</h2>
+  <div class="prose">
+    <p>Serving a model means loading its weights onto a GPU and sending it requests. You can rent a GPU by the hour and keep it running, or use a serverless service that starts a GPU when requests arrive, bills by the second while it works, and shuts it down when idle. Local Minutes' excerpts come in nightly bursts, so serverless fits. The catch is a cold start: the first request after a quiet stretch waits a few minutes while the model loads.</p>
+    <p>Two speeds matter. Latency is how long one excerpt takes: about 1.3 seconds for the 4B. Throughput is how many excerpts per second the GPU handles when it's busy, and that's what sets the price. Most of the GPU's work goes into reading the ~2,500-token request, not writing the ~100-token context, so a smaller model, which reads faster, costs less.</p>
+    <p>The test excerpts understate the real workload: production requests are about twice as long, because long documents contribute many excerpts. So to measure cost and speed for real, I replayed a full production day of requests through the 4B on Runpod Serverless:</p>
+  </div>
+  <div class="stats">
+    <div class="stat"><div class="v">1 GPU</div><div class="k">One worker, an RTX 4090 gaming GPU with 24 GB of memory, handled the whole day.</div></div>
+    <div class="stat"><div class="v">$76</div><div class="k">GPU cost per million excerpts, billed by the second.</div></div>
+    <div class="stat"><div class="v">71% less</div><div class="k">Than Gemini 2.5 Flash-Lite, and 92% less than its successor.</div></div>
+  </div>
+  <div class="prose">
+    <p>I measured this with the first version that shipped. The RL-trained model is the same size on the same GPU. Its contexts are about 10% longer, which barely moves the cost, because reading the request is most of the work.</p>
+  </div>
+  <aside class="sidequest">
+    <h3>Side quest: a bigger student</h3>
+    <p>I also trained Qwen3.5-9B the same way, first by imitation and then with preference pairs built from its own mistakes. After imitation it scored about 0.1 higher than the 4B. After preference training, judged head to head on all 1,204 test excerpts, the two tied on usefulness (3.92 each). The 9B made fewer unsupported claims (8.6% of contexts vs 12.9%); the 4B missed fewer references (8.1% vs 11.0%) and was harder to fool with look-alike names.</p>
+    <p>On the same production day, the 9B needed a 48 GB data-center GPU and took nearly twice as long, at $246 per million excerpts: more than three times the cost, for contexts that were no more useful. A third student, Gemma 4 26B-A4B, scored like the 9B but needs an 80 GB GPU just to hold its weights.</p>
+  </aside>
+</section>
+
+<section id="ship">
+  <h2>Done!</h2>
+  <div class="prose">
+    <p>The fine-tuned, RL-trained Qwen3.5-4B is now the Local Minutes contextualizer. It runs on Runpod Serverless, and each night the pipeline sends it the new excerpts together, so the GPU spins up, works through them, and shuts down. It gets the same request Gemini did and returns the same three fields, so nothing else in the pipeline had to change.</p>
+    <p>The model is on Hugging Face as <a href="https://huggingface.co/DuaneMB/local-minutes-contextualizer-4b">DuaneMB/local-minutes-contextualizer-4b</a>, with a model card covering how to call it, how it was trained, and its limitations.</p>
+  </div>
+  <div class="callout">Gemini 2.5 Flash-Lite is retired in October, the deadline this project started with. Its successor, Gemini 3.5 Flash-Lite, charges three times as much per input token and six times as much per output token: nearly four times as much for this workload.</div>
+  <figure class="wide">
+    <div class="fig-label"><span>Cost per million excerpts</span><span>GPU or API cost only</span></div>
+    <div id="chart-month"></div>
+    <figcaption>Gemini at its standard price, as production used it. Gemini 3.5 Flash-Lite is priced at $0.30 per million input tokens and $2.50 per million output tokens (vs $0.10 and $0.40), applied to the same tokens production used in the last 30 days; any thinking tokens would add to it. The Qwen cost comes from the one-day replay.</figcaption>
+  </figure>
+</section>
+
+<section id="ledger">
+  <h2>What it cost</h2>
+  <div class="table-scroll">
+    <table>
+      <thead><tr><th>Item</th><th class="r">Cost</th></tr></thead>
+      <tbody id="ledger-rows"></tbody>
+    </table>
+  </div>
+  <div class="prose" style="margin-top:22px">
+    <p>Against Gemini 3.5 Flash-Lite, the fine-tuned model saves about $920 per million excerpts, so the project pays for itself after about 1.2 million excerpts, and every million after that is 92% cheaper.</p>
+  </div>
+
+  <h3>A few other notes</h3>
+  <ol class="bits">
+    <li>Qwen3.5 knows 248,000 different tokens, and computing a score for every one of them at every position ran the GPU out of memory. Computing scores only where the context is fixed it, and made that part of training about 8× cheaper.</li>
+    <li>Small models sometimes repeat themselves forever. A mild penalty for repeating text (1.05) stopped it.</li>
+    <li>The first reinforcement-learning run barely moved: after 25 steps the model had drifted almost nowhere from where it started. Increasing the learning rate fixed it.</li>
+  </ol>
+</section>
+
+</main>
+
+<div class="wrap">
+  <footer>
+    <span><a href="https://duane.sh">duane.sh</a> · Duane Millar Barlow</span>
+    <span><a href="https://localminutes.org">Local Minutes</a> makes Vermont's municipal records searchable.</span>
+  </footer>
+</div>
+
+<script>
+const C = { rust: '#ad5d35', rustLight: '#d9a88c', grey: '#8b918b', none: '#d9ddd4', blue: '#2f5d8c', blueLight: '#9db7d1', blueSoft: '#d6e2ee', green: '#267457', orange: '#ad5d35', ink: '#203d31', muted: '#627166', line: '#dce3d6', gray: '#c9d3c4', mid: '#8fa596', panel: '#eef2e8', card: '#fbfcf7', greenSoft: '#cfe0d3', panelLine: '#dce5d5' };
+const NS = 'http://www.w3.org/2000/svg';
+function el(tag, attrs = {}, text) {
+  const e = document.createElementNS(NS, tag);
+  for (const [k, v] of Object.entries(attrs)) e.setAttribute(k, v);
+  if (text != null) e.textContent = text;
+  return e;
+}
+/* Drawings use their container's real width (1 unit = 1 CSS px), so text
+   stays readable on a phone; they redraw when the width changes. */
+function svg(id, h) {
+  const holder = document.getElementById(id);
+  holder.textContent = '';
+  const W = Math.max(300, holder.clientWidth);
+  const s = el('svg', { viewBox: `0 0 ${W} ${h}`, role: 'img' });
+  holder.appendChild(s);
+  return { s, W };
+}
+const width = (id) => Math.max(300, document.getElementById(id).clientWidth);
+function box(s, x, y, w, h, { fill = C.card, stroke = C.panelLine, rx = 3 } = {}) {
+  s.appendChild(el('rect', { x, y, width: w, height: h, rx, fill, stroke }));
+}
+function text(s, x, y, str, { fill, ...attrs } = {}) {
+  const t = el('text', { x, y, 'font-size': 13, ...attrs }, str);
+  // Inline style, so it wins over the stylesheet's default text color.
+  if (fill) t.style.fill = fill;
+  s.appendChild(t);
+}
+function arrow(s, x1, y1, x2, y2, color = C.muted) {
+  const id = 'ah-' + color.slice(1);
+  if (!s.querySelector('#' + id)) {
+    s.appendChild(el('defs')).appendChild(el('marker', { id, viewBox: '0 0 10 10', refX: 9, refY: 5, markerWidth: 6, markerHeight: 6, orient: 'auto-start-reverse' })).appendChild(el('path', { d: 'M0,0 L10,5 L0,10 z', fill: color }));
+  }
+  s.appendChild(el('line', { x1, y1, x2, y2, stroke: color, 'stroke-width': 1.2, 'marker-end': `url(#${id})` }));
+}
+/* A column of boxes joined by arrows (the narrow-screen form of a flow). */
+function flowColumn(id, nodes, highlight) {
+  const bh = 52, gap = 16;
+  const { s, W } = svg(id, nodes.length * (bh + gap) - gap);
+  nodes.forEach(([title, sub], i) => {
+    const y = i * (bh + gap);
+    box(s, 0, y, W, bh, i === highlight ? { fill: C.greenSoft, stroke: C.green } : {});
+    text(s, 14, y + 22, title, { 'font-size': 14, 'font-weight': 600 });
+    text(s, 14, y + 40, sub, { 'font-size': 12, fill: C.muted });
+    if (i < nodes.length - 1) arrow(s, 30, y + bh + 1, 30, y + bh + gap - 1);
+  });
+}
+
+/* Horizontal bars: labels beside the bars when there's room, above when not. */
+function hbars(id, rows, { max, labelW = 210, noteW = 0, barH = 22, gap = 12 }) {
+  const stacked = width(id) < 600;
+  const rowH = stacked ? barH + gap + 20 : barH + gap;
+  const { s, W } = svg(id, rows.length * rowH);
+  const x0 = stacked ? 0 : labelW, x1 = W - (stacked ? 0 : noteW) - 70;
+  rows.forEach((r, i) => {
+    const y = i * rowH + (stacked ? 20 : 0);
+    text(s, 0, stacked ? y - 7 : y + barH / 2 + 5, r.label, { 'font-size': 14, 'font-weight': r.bold ? 600 : 400 });
+    const w = Math.max(2, (r.value / max) * (x1 - x0));
+    s.appendChild(el('rect', { x: x0, y, width: w, height: barH, rx: 2, fill: r.color || C.mid }));
+    text(s, x0 + w + 8, y + barH / 2 + 5, r.text, { class: 'm' });
+    if (r.note) text(s, W, stacked ? y - 7 : y + barH / 2 + 5, r.note, { 'font-size': stacked ? 12 : 13, 'text-anchor': 'end', fill: r.noteColor || C.muted });
+  });
+}
+
+
+/* Examples carousel: real excerpts from the test set, with Gemini's
+   (production) note and the fine-tuned 4B's note. */
+const W_ = (t) => `<span class="wrong">${t}</span>`;
+const EXAMPLES = [
+  {
+    where: 'Bristol · Planning Commission minutes · Oct 21, 2025',
+    excerpt: 'Discussion: Q&A with Representative Hank Doyle – Housing Policy & Planning; Housing Targets; Act 181 and Act 47 (HOME)<br>Hank explained that he asked to speak with the <b>PC</b> in order to understand what they would like to see happen in the Legislature, particularly to address issues which may be impeding the ability of people to build a house. …',
+    gemini: [['Subject', W_('New Business: Zoning Districts: Presentation by Planning and Zoning Administrator …')], '…', 'Hank Doyle is a Representative.'],
+    flag: 'Wrong subject: the zoning presentation was the item before this one. And it never says what “the PC” is.',
+    base: [['Subject', 'Q&A with Representative Hank Doyle regarding Housing Policy, Planning, Housing Targets, Act 181, and Act 47 (HOME)'],
+      'Representative Hank Doyle is ' + W_('a member of the Rhode Island General Assembly') + ' who spoke with the Planning Commission to discuss legislative issues impeding housing construction.', '…'],
+    baseFlag: 'Right subject, but it puts him in Rhode Island’s legislature. Nothing says that, and Acts 181 and 250 are Vermont laws.',
+    ours: [['Subject', 'Q&A with Representative Hank Doyle – Housing Policy & Planning; Housing Targets; Act 181 and Act 47 (HOME)'],
+      'PC refers to the Town of Bristol Planning Commission.',
+      'Earlier in the meeting, KJ Moreau, Zoning and Planning Administrator, explained that ACRPC housing targets for Bristol are 192 additional units by 2030 and 715 total additional units by 2050, which will need to be included in the next version of the Town Plan.'],
+    good: 'The right subject, what the PC is, and the housing targets discussed just before.',
+  },
+  {
+    where: 'Marlboro · Select Board minutes · Jun 25, 2026',
+    excerpt: 'The <b>Town Administrator</b> provided an update on efforts to identify a replacement facility for dogs under the Town’s animal control contract. To date, no veterinary facility in the immediate area has agreed to accept a Vicious Dog Control Act dog. With the <b>VCA</b> in Brattleboro and a Route 9 veterinary practice having declined … ',
+    gemini: [['Subject', 'Windham County Human Society Contract — Vicious Dog Placement Update'], '…', W_('The Town Administrator is Anne Whitlock.'), 'Paul Sorensen is the Vice Chair.', 'Beth Kimball is a Member.', 'Greg Holloway is the Town Administrator.'],
+    flag: 'Names two different Town Administrators. It’s Greg Holloway; Anne Whitlock chairs the board.',
+    base: [['Subject', 'Windham County Human Society Contract — Vicious Dog Placement Update'], 'The Town Administrator is Greg Holloway.', '…',
+      W_('The ‘Vicious Dog Control Act’ (VCA) is the Vermont statute governing the placement of dogs classified as vicious.')],
+    baseFlag: 'Gets the Town Administrator right, then reads “the VCA in Brattleboro,” one of the places that declined, as the name of a law.',
+    ours: [['Subject', 'Windham County Human Society Contract — Vicious Dog Placement Update'], 'The Town Administrator is Greg Holloway.',
+      'Select Board members present were Anne Whitlock (Chair), Paul Sorensen (Vice Chair), and Beth Kimball (Member, via Zoom).'],
+    good: 'Names the Town Administrator and the board, and doesn’t guess at VCA.',
+  },
+  {
+    where: 'South Hero · Recreation Commission minutes · Mar 10, 2026',
+    excerpt: 'New Town Park Summary for posting to Town Website – <b>Sam will get back to Walt</b> with the design and overlay of the town park superimposed with proposed housing development. …',
+    gemini: [['Subject', 'New Town Park Summary'],
+      W_('Walt will get back to Sam with the design and overlay of the town park superimposed with proposed housing development.'), '…'],
+    flag: 'Backwards: the excerpt says Sam will get back to Walt. And it never says who Walt is.',
+    base: [['Subject', 'Town website updates and key activities/business calendar'],
+      W_('Sam is a member of the Recreation Commission.'), 'Walt is a member of the Recreation Commission.', W_('The White Meeting house is located at Whites Beach.')],
+    baseFlag: 'Makes things up: Sam isn’t on the roll call, and nothing puts the White Meeting House at Whites Beach. Still doesn’t say who Walt is.',
+    ours: [['Subject', 'New Town Park Summary for posting to Town Website; Rec Commission Key Activities and Business Calendar'],
+      'Walt refers to Walter H Pryor, who invited attendees to the Zoom meeting.'],
+    good: 'Doesn’t restate the excerpt, and says who Walt is.',
+  },
+  {
+    where: 'Bennington · Select Board minutes · Feb 23, 2026',
+    excerpt: '❖ <b>Questions asked were:</b><br>* Age - Higher number for 18 or younger and fewer for 19-29<br>* Relationship to Bennington - 83% (or 1 out of 19 residents), 12% work here, and 4% none of the above.<br>* Rent or Own Home - 19% rent but 44% of the overall population are renters. …',
+    gemini: [['Meeting', W_('Town Council Meeting')], ['Subject', 'Community Survey Results'], 'Evan Marsh is the Communications Coordinator.', '…'],
+    flag: 'Wrong body: these are Select Board minutes, not a Town Council’s.',
+    base: [['Meeting', 'Bennington Select Board Meeting'], ['Subject', 'Community Survey Results'],
+      'Evan Marsh, the Communications Coordinator, conducted the survey presentation.', 'The survey ' + W_('covered 961 residents') + ' using a Likert Scale and included 21 questions.', '…'],
+    baseFlag: '961 people took the survey, and the excerpt itself shows not all of them live in Bennington.',
+    ours: [['Meeting', 'Bennington Select Board Meeting Minutes, February 23, 2026'], ['Subject', 'Community Survey Results presentation by Evan Marsh, Communications Coordinator'],
+      '961 people took the survey; 21 questions were asked, with an average time of 9 minutes and 33 seconds.', '…'],
+    good: 'The right board, who presented, and what the survey was, with the numbers as the minutes give them.',
+  },
+  {
+    where: 'Waterford · Board of Civil Authority minutes · Jan 5, 2026',
+    excerpt: 'Designate two members to deliver ballots during the year 2026. Tara Quinn, <b>Rob Kessler</b> and Ben Ellis volunteered.',
+    gemini: [['Subject', W_('Appoint assistant presiding officer for 2026')],
+      'The excerpt is about designating two members to deliver ballots during 2026, following the appointment of Joan Tremblay as assistant presiding officer for 2026.', '…'],
+    flag: 'The subject is the item before this one. And it never says Rob is Robert Kessler, who ran the meeting.',
+    base: [['Subject', W_('Appointment of election workers for 2026 Town Meeting')],
+      W_('This meeting is regarding the appointment of election workers for the 2026 Town Meeting, …'),
+      'The excerpt refers to ‘Tara Quinn’, ‘Rob Kessler’ (Robert Kessler), and ‘Ben Ellis’, who were present attendees at the meeting.', '…'],
+    baseFlag: 'Also the wrong subject: election workers came two items earlier.',
+    ours: [['Subject', 'Designation of members to deliver ballots during 2026'],
+      'Tara Quinn is listed in attendance; ‘Rob Kessler’ likely refers to Robert Kessler, who called the meeting to order.', 'Ben Ellis is listed in attendance.'],
+    good: 'The right item, and who Rob is.',
+  },
+  {
+    where: 'Bristol · Selectboard agenda notes · Aug 10, 2026',
+    excerpt: '4e - Authorization to Submit FY2027 <b>ACRPC</b> TAC Transportation Planning Study Grant Application<br>The Board is asked to support and authorize submission of the Town’s FY2027 ACRPC Transportation Advisory Committee (TAC) Transportation Planning Study grant application … <br>POTENTIAL MOTION<br>“I move to approve <b>the Consent Agenda</b>, as presented.”',
+    gemini: [['Subject', 'Consent Agenda'], 'The grant application is for the FY2027 ACRPC Transportation Advisory Committee (TAC) Transportation Planning Study.', '…'],
+    flag: 'Never says what else the motion approves: four other items on the consent agenda.',
+    base: [['Subject', 'Authorization to Submit FY2027 ACRPC TAC Transportation Planning Study Grant Application'],
+      W_('ACRPC stands for the Area Council of Rural Planning Committees.'), '…'],
+    baseFlag: 'A guess, and a wrong one: ACRPC is the Addison County Regional Planning Commission. The agenda never spells it out.',
+    ours: [['Subject', 'Consent Agenda item 4e - Authorization to Submit FY2027 ACRPC TAC Transportation Planning Study Grant Application'],
+      'This is part of the Consent Agenda (item 4), presented by Carl Lindgren, Selectboard Chair, with action DECISION.',
+      'The potential motion follows the Consent Agenda items: 4a approval of July 27, 2026 minutes, 4b check warrant and liquor/tobacco licenses, 4c West Street Sidewalk Improvement Scoping Study final report, and 4d acceptance of resignation of Probationary Firefighter Tyler Gagne.'],
+    good: 'Doesn’t guess at ACRPC, and lists everything the motion approves.',
+  },
+  {
+    where: 'Underhill · Selectboard agenda · Feb 12, 2026',
+    excerpt: '<b>Speed sign software renewal</b><br><br>6:40 p.m.<br>Closing Public Comment Period<br><br>6:45 p.m.',
+    gemini: [['Meeting', 'Regular Selectboard Meeting'], ['Subject', 'Speed sign software renewal'], W_('The meeting was held on Thursday, February 12, 2026.'),
+      W_('The meeting was called to order at 6:00 p.m. at the Underhill Town Office.'), 'Don Pelletier is the Highway Supervisor.'],
+    flag: 'This is an agenda, so nothing had happened yet. And it never says when the speed-sign item is scheduled.',
+    base: [['Meeting', 'Town of Underhill Regular Selectboard Meeting'], ['Subject', 'Speed sign software renewal']],
+    baseFlag: 'No date, and no time for the item, so the times in the excerpt float free.',
+    ours: [['Meeting', 'Town of Underhill Regular Selectboard Meeting, Thursday, February 12, 2026'], ['Subject', 'Meeting agenda items: Speed sign software renewal and Closing Public Comment Period'],
+      'This excerpt is part of the meeting agenda; ‘Speed sign software renewal’ is scheduled for 6:35 p.m., following the item on Consider Conservation Commission reduction of members at 6:30 p.m.'],
+    good: 'Knows it’s an agenda, and gives the date and the item’s scheduled time.',
+  },
+  {
+    where: 'Marlboro · Select Board minutes · Jun 25, 2026',
+    excerpt: 'MOTION: Appoint Nora Fitch and Ruth Kendall as new members of the Conservation Commission. (<b>Whitlock/Sorensen</b> – Passed unanimously)',
+    gemini: [['Subject', 'Conservation Commission – New Members'],
+      'The Board considered the appointment of Nora Fitch and Ruth Kendall to the Conservation Commission.', '…'],
+    flag: 'Mostly restates the excerpt, and never says who moved and seconded.',
+    base: [['Subject', 'Conservation Commission – New Members'],
+      'Nora Fitch and Ruth Kendall are the two individuals appointed as new members to the Conservation Commission.',
+      W_('The appointment was made by Chair Anne Whitlock and Vice Chair Paul Sorensen during the meeting.')],
+    baseFlag: 'Finds the full names, but says the two of them made the appointment. They moved and seconded it; the board voted.',
+    ours: [['Subject', 'Conservation Commission – New Members'],
+      'Whitlock is Anne Whitlock, Chair of the Marlboro Select Board.', 'Sorensen is Paul Sorensen, Vice Chair of the Marlboro Select Board.'],
+    good: 'Names who moved and seconded: the board’s Chair and Vice Chair, from the attendance list.',
+  },
+  {
+    where: 'Warren · Planning Commission minutes · Feb 23, 2026',
+    excerpt: 'Other Business<br><b>MRVPD</b> – <b>Tom</b> reported that Leah Brandt, the new Community Planner, was on board, and that the Annual Data Report is ready for presentation to Boards and Commissions.',
+    gemini: [['Subject', 'Other Business'], '‘Tom’ in this excerpt refers to Tom Whitcomb, a member of the Planning Commission (PC).', W_('MRVPD stands for Merrimack Valley Regional Planning Commission.')],
+    flag: 'A guess, and a wrong one: MRVPD is the Mad River Valley Planning District. Merrimack Valley is in Massachusetts.',
+    base: [['Subject', 'Other Business'], 'Tom Whitcomb reported that Leah Brandt, identified as the new Community Planner, ' + W_('has been hired') + '.',
+      'The Annual Data Report is prepared and ' + W_('scheduled for presentation') + ' to various Boards and Commissions.'],
+    baseFlag: 'Stretches the excerpt: “on board” becomes “hired,” and “ready” becomes “scheduled.”',
+    ours: [['Subject', 'Other Business – MRVPD and Annual Data Report'], 'Tom refers to Tom Whitcomb, a member of the Planning Commission.'],
+    good: 'Says who Tom is, and doesn’t guess at MRVPD.',
+  },
+  {
+    where: 'Weybridge · Planning Commission minutes · Feb 18, 2026',
+    excerpt: '5. Moved: <b>Mark</b>, Seconded: <b>Carol</b>: “To adjourn the meeting.” Voted unanimously at 8:43 pm.',
+    gemini: [['Meeting', 'Weybridge Planning Commission Meeting'], ['Subject', W_('Town Meeting Planning')]],
+    flag: 'That was the previous agenda item. And nothing on who Mark and Carol are.',
+    base: [['Meeting', 'Weybridge Planning Commission Meeting'], ['Subject', 'Adjournment'],
+      'The meeting was called to order at 7:08 p.m. by Mark Hadley.', 'The meeting concluded at 8:43 p.m. with a unanimous vote to adjourn.'],
+    baseFlag: 'The right subject, and Mark’s full name, but not Carol’s.',
+    ours: [['Meeting', 'Weybridge Planning Commission Meeting, February 18, 2026'], ['Subject', 'Adjournment of the meeting'],
+      'Mark is Mark Hadley and Carol is Carol Ashby Pratt.', 'The meeting was called to order at 7:08 p.m.'],
+    good: 'The right subject, and full names from the attendance list at the top of the minutes.',
+  },
+];
+
+(function () {
+  const root = document.getElementById('examples');
+  const track = root.querySelector('.track');
+  const dots = root.querySelector('.dots');
+  const count = root.querySelector('.count');
+  const prev = root.querySelector('.prev');
+  const next = root.querySelector('.next');
+  const line = (l) => Array.isArray(l) ? `<p><span class="k">${l[0]}</span> ${l[1]}</p>` : `<p>${l}</p>`;
+  const shown = (l) => l !== '…';  // lines that only mark an omission take space without saying anything
+  const FLIP_ICON = '<svg viewBox="0 0 12 12" aria-hidden="true"><path d="M2 5a4 4 0 0 1 7-2.3M10 7a4 4 0 0 1-7 2.3M9 1v2H7M3 11V9h2" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+  EXAMPLES.forEach((ex, i) => {
+    track.insertAdjacentHTML('beforeend', `
+      <div class="slide" role="group" aria-roledescription="slide" aria-label="${i + 1} of ${EXAMPLES.length}">
+        <div class="where">${ex.where}</div>
+        <div class="excerpt"><h4>Excerpt</h4>${ex.excerpt}</div>
+        <div class="notes">
+        <div class="note flash"><h4>Excerpt context from Gemini 2.5 Flash-Lite</h4>${ex.gemini.filter(shown).map(line).join('')}<p class="flag">${ex.flag}</p></div>
+        <div class="flip">
+          <div class="flip-inner">
+            <div class="note ft front"><div class="note-head"><h4>Excerpt context from fine-tuned <span class="nowrap">Qwen3.5-4B</span></h4><button class="flip-btn" type="button">${FLIP_ICON}Before fine-tuning</button></div>${ex.ours.filter(shown).map(line).join('')}<p class="flag">${ex.good}</p></div>
+            <div class="note base back"><div class="note-head"><h4>Excerpt context from <span class="nowrap">Qwen3.5-4B</span>, before fine-tuning</h4><button class="flip-btn" type="button">${FLIP_ICON}After fine-tuning</button></div>${ex.base.filter(shown).map(line).join('')}<p class="flag">${ex.baseFlag}</p></div>
+          </div>
+        </div>
+        </div>
+      </div>`);
+    const dot = document.createElement('button');
+    dot.type = 'button';
+    dot.setAttribute('role', 'tab');
+    dot.setAttribute('aria-label', `Example ${i + 1}`);
+    dot.addEventListener('click', () => go(i));
+    dots.appendChild(dot);
+  });
+  const slides = [...track.children];
+  // On narrow screens only the visible face of a flip card is interactive; on wide screens both notes show.
+  const wide = matchMedia('(min-width: 1000px)');
+  const syncFlip = (flip) => {
+    const flipped = flip.classList.contains('flipped');
+    flip.querySelector('.front').inert = !wide.matches && flipped;
+    flip.querySelector('.back').inert = !wide.matches && !flipped;
+  };
+  const syncAll = () => track.querySelectorAll('.flip').forEach(syncFlip);
+  wide.addEventListener('change', syncAll);
+  syncAll();
+  track.addEventListener('click', (e) => {
+    const btn = e.target.closest('.flip-btn');
+    if (!btn) return;
+    const flip = btn.closest('.flip');
+    const flipped = flip.classList.toggle('flipped');
+    syncFlip(flip);
+    (flipped ? flip.querySelector('.back .flip-btn') : flip.querySelector('.front .flip-btn')).focus({ preventScroll: true });
+  });
+  let current = 0;
+  // How many examples fit side by side (two on desktop, one on phones).
+  const perView = () => Math.max(1, Math.round(track.clientWidth / slides[0].getBoundingClientRect().width));
+  const last = () => slides.length - perView();
+  function go(i) {
+    const target = Math.max(0, Math.min(last(), i));
+    track.scrollTo({ left: slides[target].offsetLeft - track.offsetLeft, behavior: 'smooth' });
+  }
+  function update() {
+    const x = track.scrollLeft;
+    let best = 0;
+    slides.forEach((sl, k) => {
+      if (Math.abs(sl.offsetLeft - track.offsetLeft - x) < Math.abs(slides[best].offsetLeft - track.offsetLeft - x)) best = k;
+    });
+    current = best;
+    const n = perView();
+    count.textContent = n > 1 ? `${current + 1}–${current + n} / ${slides.length}` : `${current + 1} / ${slides.length}`;
+    [...dots.children].forEach((d, k) => d.setAttribute('aria-selected', k >= current && k < current + n ? 'true' : 'false'));
+    prev.disabled = current === 0;
+    next.disabled = current >= last();
+  }
+  prev.addEventListener('click', () => go(current - perView()));
+  next.addEventListener('click', () => go(current + perView()));
+  track.addEventListener('keydown', (e) => {
+    if (e.key === 'ArrowRight') { e.preventDefault(); go(current + 1); }
+    if (e.key === 'ArrowLeft') { e.preventDefault(); go(current - 1); }
+  });
+  let raf;
+  track.addEventListener('scroll', () => { cancelAnimationFrame(raf); raf = requestAnimationFrame(update); });
+  addEventListener('resize', update);
+  update();
+})();
+
+const drawings = [];
+const draw = (fn) => { drawings.push(fn); fn(); };
+
+/* cost share */
+draw(() => {
+  const steps = [
+    ['Contextualize', 70.37, C.green], ['Split into excerpts', 18.16, C.mid], ['PDF to text', 15.16, C.mid],
+    ['Embeddings', 6.58, C.gray], ['Find documents', 1.07, C.gray],
+  ];
+  const total = steps.reduce((a, s) => a + s[1], 0);
+  hbars('chart-cost', steps.map(([label, v, color]) => ({
+    label, value: v, color, bold: label === 'Contextualize',
+    text: `${Math.round((v / total) * 100)}%`,
+  })), { max: 75, labelW: 170 });
+});
+
+/* teacher and student */
+draw(() => {
+  const nodes = [
+    ['25,206 excerpts', 'with their source pages'],
+    ['Teacher: Claude Opus 5.5', 'writes context for each'],
+    ['25,206 example contexts', 'the training set'],
+    ['Student: Qwen3.5-4B', 'learns to write them'],
+  ];
+  if (width('diagram-training-data') < 700) return flowColumn('diagram-training-data', nodes, 3);
+  const { s, W } = svg('diagram-training-data', 66);
+  const gap = 24, bw = (W - gap * 3) / 4;
+  nodes.forEach(([t, sub], i) => {
+    const x = i * (bw + gap);
+    box(s, x, 0, bw, 64, i === 3 ? { fill: C.greenSoft, stroke: C.green } : {});
+    text(s, x + 12, 27, t, { 'font-size': 13.5, 'font-weight': 600 });
+    text(s, x + 12, 46, sub, { 'font-size': 12, fill: C.muted });
+    if (i < 3) arrow(s, x + bw + 3, 32, x + bw + gap - 3, 32);
+  });
+});
+
+/* LoRA */
+draw(() => {
+  const narrow = width('diagram-lora') < 620;
+  const S = narrow ? 110 : 160, r = narrow ? 14 : 18, H = S + 56;
+  const { s, W } = svg('diagram-lora', H);
+  const grid = (x, y, w, h, fill, stroke) => {
+    s.appendChild(el('rect', { x, y, width: w, height: h, fill, stroke, rx: 2 }));
+    for (let gx = x + 10; gx < x + w; gx += 10) s.appendChild(el('line', { x1: gx, y1: y, x2: gx, y2: y + h, stroke, 'stroke-opacity': 0.3 }));
+    for (let gy = y + 10; gy < y + h; gy += 10) s.appendChild(el('line', { x1: x, y1: gy, x2: x + w, y2: gy, stroke, 'stroke-opacity': 0.3 }));
+  };
+  let x = 0;
+  grid(x, 0, S, S, '#e4e9df', C.mid);
+  text(s, x, S + 22, 'Original weights', { 'font-weight': 600 });
+  text(s, x, S + 40, 'frozen', { 'font-size': 12, fill: C.muted });
+  x += S + (narrow ? 12 : 24);
+  text(s, x, S / 2 + 9, '+', { 'font-size': 26, fill: C.muted });
+  x += narrow ? 22 : 34;
+  const ax = x;
+  grid(x, 0, r, S, C.greenSoft, C.green);
+  x += r + (narrow ? 6 : 12);
+  text(s, x, S / 2 + 6, '×', { 'font-size': 18, fill: C.muted });
+  x += narrow ? 14 : 20;
+  grid(x, (S - r) / 2, S, r, C.greenSoft, C.green);
+  text(s, ax, S + 22, 'Two thin matrices, trained', { 'font-weight': 600 });
+  text(s, ax, S + 40, 'their product is the correction', { 'font-size': 12, fill: C.muted });
+  if (x + S + 230 < W) {
+    text(s, x + S + 28, S / 2 - 8, '65 million trained numbers', { 'font-weight': 600 });
+    text(s, x + S + 28, S / 2 + 12, 'vs about 4 billion in the model', { 'font-size': 12, fill: C.muted });
+  }
+});
+
+/* results */
+draw(() => hbars('chart-teacher', [
+  { label: 'Claude Opus 5.5 (teacher)', value: 4.53, text: '4.53', color: C.mid, note: '2.0% unsupported' },
+  { label: 'Qwen3.5-4B trained on Opus', value: 4.13, text: '4.13', color: C.blue, bold: true, note: '8.5% unsupported' },
+  { label: 'Gemini (production)', value: 3.20, text: '3.20', color: C.rust, note: '27.2% unsupported' },
+  { label: 'Qwen3.5-4B trained on Gemini', value: 2.82, text: '2.82', color: C.blueLight, note: '23.2% unsupported' },
+  { label: 'Qwen3.5-4B, no training', value: 2.87, text: '2.87', color: C.grey, note: '36.8% unsupported' },
+], { max: 5, labelW: 230, noteW: 150 }));
+
+/* hero: usefulness vs cost per million excerpts */
+draw(() => {
+  const narrow = width('chart-hero') < 600;
+  const H = narrow ? 320 : 360;
+  const { s, W } = svg('chart-hero', H);
+  const L = narrow ? 52 : 56, R = W - (narrow ? 8 : 16), T = 14, B = H - 46;
+  const lx0 = Math.log10(30), lx1 = Math.log10(60000), y0 = 2.5, y1 = 4.75;
+  const X = (usd) => L + ((Math.log10(usd) - lx0) / (lx1 - lx0)) * (R - L), Y = (u) => B - ((u - y0) / (y1 - y0)) * (B - T);
+  [100, 1000, 10000].forEach((t) => {
+    s.appendChild(el('line', { x1: X(t), x2: X(t), y1: T, y2: B, stroke: C.line }));
+    text(s, X(t), B + 18, '$' + t.toLocaleString('en-US'), { 'font-size': 12, 'text-anchor': 'middle', class: 'm' });
+  });
+  [3, 3.5, 4, 4.5].forEach((t) => {
+    s.appendChild(el('line', { x1: L, x2: R, y1: Y(t), y2: Y(t), stroke: C.line }));
+    text(s, L - 8, Y(t) + 4, t.toFixed(1), { 'font-size': 12, 'text-anchor': 'end', class: 'm' });
+  });
+  text(s, (L + R) / 2, H - 6, narrow ? 'cost per million excerpts →' : 'cost per million excerpts (log scale) →', { 'font-size': 12, 'text-anchor': 'middle', class: 'm' });
+  text(s, 10, (T + B) / 2, 'usefulness →', { 'font-size': 12, 'text-anchor': 'middle', class: 'm', transform: `rotate(-90 10 ${(T + B) / 2})` });
+  // Gemini 3.5 Flash-Lite: known price, unmeasured quality
+  s.appendChild(el('line', { x1: X(1000), x2: X(1000), y1: T, y2: B, stroke: C.rustLight, 'stroke-dasharray': '4 4', 'stroke-width': 1.5 }));
+  text(s, X(1000) + 6, B - 8, narrow ? 'Gemini 3.5 price' : 'Gemini 3.5 Flash-Lite price', { 'font-size': 11.5, fill: C.rust });
+  const pts = [
+    { k: 'base', label: narrow ? 'Qwen base' : 'Qwen3.5-4B, no fine-tuning', usd: 76, u: 2.78, c: C.grey, off: [12, 4] },
+    { k: 'rl', label: narrow ? 'Qwen + SFT + RL' : 'Qwen3.5-4B + SFT + RL', usd: 76, u: 4.19, c: C.blue, big: true, off: [14, 5] },
+    { k: 'g', label: narrow ? 'Gemini 2.5' : 'Gemini 2.5 Flash-Lite', usd: 262, u: 2.93, c: C.rust, off: [12, 4] },
+    { k: 'opus', label: narrow ? 'Opus' : 'Claude Opus 5.5', usd: 18600, u: 4.51, c: C.mid, off: [-12, 4, 'end'] },
+  ];
+  const P = Object.fromEntries(pts.map((p) => [p.k, p]));
+  arrow(s, X(76), Y(P.base.u) - 9, X(76), Y(P.rl.u) + 11);
+  pts.forEach((p) => {
+    s.appendChild(el('circle', { cx: X(p.usd), cy: Y(p.u), r: p.big ? 8 : 6, fill: p.c }));
+    text(s, X(p.usd) + p.off[0], Y(p.u) + p.off[1], p.label, { 'text-anchor': p.off[2] || 'start', 'font-weight': p.big ? 600 : 400, stroke: C.card, 'stroke-width': 4, 'stroke-linejoin': 'round', 'paint-order': 'stroke' });
+  });
+});
+
+/* search results */
+draw(() => {
+  const groups = [['Keyword search', [0.37, 0.50, 0.62, 0.76]], ['Semantic search', [0.42, 0.49, 0.60, 0.69]]];
+  const colors = [C.none, C.rust, C.grey, C.blue];
+  const H = 250, top = 10, base = 200, left = 50;
+  const { s, W } = svg('chart-search', H);
+  const groupW = (W - left) / 2, bw = Math.min(60, (groupW - 24) / 4 - 6);
+  [0, 0.25, 0.5, 0.75].forEach((t) => {
+    const y = base - t * (base - top) / 0.8;
+    s.appendChild(el('line', { x1: left, x2: W, y1: y, y2: y, stroke: C.line }));
+    text(s, left - 8, y + 4, t.toFixed(2), { 'font-size': 12, 'text-anchor': 'end', class: 'm' });
+  });
+  groups.forEach(([name, vals], g) => {
+    const span = 4 * bw + 18, gx = left + g * groupW + (groupW - span) / 2;
+    vals.forEach((v, i) => {
+      const hgt = v * (base - top) / 0.8, x = gx + i * (bw + 6);
+      s.appendChild(el('rect', { x, y: base - hgt, width: bw, height: hgt, rx: 2, fill: colors[i] }));
+      text(s, x + bw / 2, base - hgt - 7, v.toFixed(2), { 'text-anchor': 'middle', 'font-weight': i === 3 ? 600 : 400, 'font-size': bw < 44 ? 12 : 14 });
+    });
+    text(s, gx + span / 2, base + 28, name, { 'font-size': 13.5, 'text-anchor': 'middle' });
+  });
+});
+
+/* RL reward per step */
+draw(() => {
+  const r = [-0.26, -0.21, -0.17, -0.38, -0.47, -0.02, -0.3, -0.26, 0.15, 0.17, -0.28, -0.1, -0.58, -0.46, -0.46, 0.16, -0.05, -0.6, -0.24, -0.77, -0.29, -0.23, -0.01, -1.06, -0.03, -0.19, 0.21, 0.56, 0.27, 0.02, -0.13, 0.06, -0.41, 0.04, 0.15, 0.4, 0.33, 0.04, 1.07, 0.99, 0.48, 0.02, 0.67, 0.58, 0.13, 0.66, 0.37, 0.17, 0.45, 0.69, 0.97, 0.61, 0.98, 0.55, 0.92, 0.83, 1.09, 1.11, 1.08, 0.74, 0.94, 1.3, 1.11, 0.8, 0.79, 1.54, 0.96, 0.94, 0.93, 1.02, 1.03, 1.14, 1.35, 0.58, 1.45, 1.0, 1.15, 1.72, 1.47, 1.38, 0.99, 0.7, 0.71, 1.0, 0.82, 1.43, 1.47, 0.99, 1.51, 1.16, 0.9, 0.72, 1.27, 1.09, 0.51, 0.91, 0.62, 0.76, 1.06, 0.82];
+  const H = 264, L = 44, T = 16, B = H - 42;
+  const { s, W } = svg('chart-rl', H);
+  const R = W - 10, lo = -1.2, hi = 1.8;
+  const X = (step) => L + ((step - 1) / (r.length - 1)) * (R - L), Y = (v) => B - ((v - lo) / (hi - lo)) * (B - T);
+  [-1, 0, 1].forEach((t) => {
+    s.appendChild(el('line', { x1: L, x2: R, y1: Y(t), y2: Y(t), stroke: C.line }));
+    text(s, L - 8, Y(t) + 4, (t > 0 ? '+' : '') + t, { 'font-size': 12, 'text-anchor': 'end', class: 'm' });
+  });
+  [1, 25, 50, 75, 100].forEach((st) => text(s, X(st), B + 20, String(st), { 'font-size': 12, 'text-anchor': st === 100 ? 'end' : st === 1 ? 'start' : 'middle', class: 'm' }));
+  text(s, (L + R) / 2, B + 36, 'training step', { 'font-size': 11, 'text-anchor': 'middle', class: 'm' });
+  s.appendChild(el('line', { x1: X(25.5), x2: X(25.5), y1: T, y2: B, stroke: C.muted, 'stroke-dasharray': '4 4' }));
+  text(s, X(25.5) + 6, T + 12, 'learning rate ×3', { 'font-size': 12, class: 'm' });
+  r.forEach((v, i) => s.appendChild(el('circle', { cx: X(i + 1), cy: Y(v), r: 2.5, fill: C.blueLight })));
+  const ma = r.map((_, i) => { const w = r.slice(Math.max(0, i - 9), i + 1); return w.reduce((a, b) => a + b, 0) / w.length; });
+  s.appendChild(el('path', { d: ma.map((v, i) => (i ? 'L' : 'M') + X(i + 1).toFixed(1) + ' ' + Y(v).toFixed(1)).join(' '), fill: 'none', stroke: C.blue, 'stroke-width': 2.5 }));
+});
+
+/* error scatter */
+draw(() => {
+  const narrow = width('chart-errors') < 600;
+  const pts = [
+    { k: 'opus', label: narrow ? 'Opus (teacher)' : 'Claude Opus 5.5 (teacher)', x: 1.1, y: 5.6, c: C.mid },
+    { k: 'base', label: narrow ? 'Qwen base' : 'Qwen3.5-4B, no fine-tuning', x: 35.8, y: 27.4, c: C.grey },
+    { k: 'imit', label: narrow ? 'Qwen + SFT' : 'Qwen3.5-4B + SFT (imitation)', x: 11.9, y: 15.2, c: C.blueLight },
+    { k: 'grpo', label: narrow ? 'Qwen + SFT + RL' : 'Qwen3.5-4B + SFT + RL', x: 7.9, y: 9.5, c: C.blue, big: true },
+    { k: 'g', label: narrow ? 'Gemini' : 'Gemini 2.5 Flash-Lite', x: 25.5, y: 23.6, c: C.rust },
+  ];
+  const H = narrow ? 340 : 400;
+  const { s, W } = svg('chart-errors', H);
+  const L = 56, R = W - 12, T = 20, B = H - 50, maxX = 40, maxY = 30;
+  const X = (v) => L + (v / maxX) * (R - L), Y = (v) => B - (v / maxY) * (B - T);
+  (narrow ? [0, 10, 20, 30, 40] : [0, 5, 10, 15, 20, 25, 30, 35, 40]).forEach((t) => {
+    s.appendChild(el('line', { x1: X(t), x2: X(t), y1: T, y2: B, stroke: C.line }));
+    text(s, X(t), B + 20, t + '%', { 'font-size': 12, 'text-anchor': 'middle', class: 'm' });
+  });
+  [0, 10, 20, 30].forEach((t) => {
+    s.appendChild(el('line', { x1: L, x2: R, y1: Y(t), y2: Y(t), stroke: C.line }));
+    text(s, L - 10, Y(t) + 4, t + '%', { 'font-size': 12, 'text-anchor': 'end', class: 'm' });
+  });
+  text(s, (L + R) / 2, H - 6, 'unsupported claim →', { 'font-size': 12, 'text-anchor': 'middle', class: 'm' });
+  text(s, 12, (T + B) / 2, 'missed reference →', { 'font-size': 12, 'text-anchor': 'middle', class: 'm', transform: `rotate(-90 12 ${(T + B) / 2})` });
+  const P = Object.fromEntries(pts.map((p) => [p.k, p]));
+  [['base', 'imit'], ['imit', 'grpo']].forEach(([a, b]) => {
+    const dx = X(P[b].x) - X(P[a].x), dy = Y(P[b].y) - Y(P[a].y), len = Math.hypot(dx, dy);
+    arrow(s, X(P[a].x) + (dx / len) * 9, Y(P[a].y) + (dy / len) * 9, X(P[b].x) - (dx / len) * 11, Y(P[b].y) - (dy / len) * 11);
+  });
+  const offsets = narrow
+    ? { opus: [-8, 26], base: [-10, -10, 'end'], imit: [10, 20], grpo: [12, 18], g: [-10, 4, 'end'] }
+    : { opus: [10, 22], base: [8, -14, 'end'], imit: [-12, 4, 'end'], grpo: [12, 20], g: [-12, 4, 'end'] };
+  pts.forEach((p) => {
+    s.appendChild(el('circle', { cx: X(p.x), cy: Y(p.y), r: p.big ? 8 : 6, fill: p.c }));
+    const [dx, dy, anchor] = offsets[p.k];
+    text(s, X(p.x) + dx, Y(p.y) + dy, p.label, { 'text-anchor': anchor || 'start', 'font-weight': p.big ? 600 : 400 });
+  });
+});
+
+/* cost per million excerpts */
+draw(() => hbars('chart-month', [
+  { label: 'Gemini 2.5 Flash-Lite', value: 262, text: '$262', color: C.rustLight, note: 'until October' },
+  { label: 'Gemini 3.5 Flash-Lite', value: 1000, text: '~$1,000', color: C.rust, note: 'from October' },
+  { label: 'Qwen3.5-4B on Runpod Serverless', value: 76, text: '$76', color: C.blue, bold: true, note: 'shipped' },
+], { max: 1080, labelW: 250, noteW: 110 }));
+
+/* ledger */
+(function () {
+  const items = [
+    ['Claude Opus 5.5 teacher contexts (25,206)', 336],
+    ['Claude judges and labels, all rounds', 243],
+    ['Checking and correcting preference pairs with Opus', 181],
+    ['Reinforcement learning: Opus grading 25,600 contexts, plus answer keys', 190],
+    ['Search test (Opus writing queries)', 12],
+    ['Jev (TypeSafe)', 4],
+    ['GPU time: training, preference rounds, RL, benchmarks', 99],
+    ['Runpod Serverless tests', 5],
+  ];
+  const tb = document.getElementById('ledger-rows');
+  let total = 0;
+  for (const [k, v] of items) {
+    total += v;
+    tb.insertAdjacentHTML('beforeend', `<tr><td>${k}</td><td class="r num">$${v}</td></tr>`);
+  }
+  tb.insertAdjacentHTML('beforeend', `<tr class="total"><td>Total</td><td class="r num">~$${(Math.round(total / 10) * 10).toLocaleString('en-US')}</td></tr>`);
+})();
+
+let lastWidth = document.documentElement.clientWidth;
+addEventListener('resize', () => {
+  const w = document.documentElement.clientWidth;
+  if (w === lastWidth) return;
+  lastWidth = w;
+  drawings.forEach((fn) => fn());
+});
+document.fonts && document.fonts.ready.then(() => drawings.forEach((fn) => fn()));
+
+</script>
+</body>
+</html>

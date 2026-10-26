@@ -1,0 +1,58 @@
+
+========== R13 arm identity vs problems.json (upgrade of a candidate-session check) ==========
+  armA rows match problems.json numbers/targets in identical order: True (30 rows)
+  armC budget-50 problem rows match problems.json numbers/targets in identical order: True (30 rows)
+-2-9b-it:free': 2}
+  their date span: 2026-08-23..2026-08-24
+  full-parse family count 717 matches judge.txt section F exactly at both moments; no log shrinkage; R10d cause-not-investigated note superseded by this correction
+6-09-19, same 0 rows on 2026-09-25/26
+  delta -14 family rows between the two moments; unparseable lines at revision moment: 0; no rotation file found; cause not investigated further (not load-bearing: both denominators agree on span and on zero run-date rows)
+:33    no rerolls, no post-hoc reinterpretation of the 200-state reading.
+========== R3 instrument lines (run_armC.py / run_armA.py) ==========
+  run_armC.py:26 OLLAMA = "http://127.0.0.1:11434/api/generate"
+  run_armC.py:27 _u = urlparse(OLLAMA)
+  run_armC.py:28 _resolved = {ai[4][0] for ai in socket.getaddrinfo(_u.hostname, _u.port or 80, proto=socket.IPPROTO_TCP)}
+  run_armC.py:29 assert _u.scheme == "http" and _resolved and all(ipaddress.ip_address(ip).is_loopback for ip in _resolved), (
+  run_armC.py:30     "ollama endpoint must be an http loopback address"
+  run_armC.py:31 )
+  run_armC.py:35 stats = {"calls": 0, "states_judged": 0, "parse_fails": 0}
+  run_armC.py:59                 text = json.loads(r.read()).get("response", "")
+  run_armC.py:81     for budget in (200,):
+  run_armC.py:7 Runs budgets (200,) only since the reboot: the 50-state leg completed 0/30 before
+  run_armC.py:8 the operator's 23:47 reboot killed the process; its rows are preserved verbatim in
+  run_armC.py:9 armC_budget50_complete.jsonl (prereg + amendment 1 still govern both readings).
+  run_armA.py:50             tokens = r.get("eval_count", 0)
+========== R4 armC_budget50_complete.jsonl census ==========
+  row count: 31
+  any row has a token field: False
+  summary row verbatim: {"budget": 50, "summary": "0/30", "calls": 72, "states_judged": 1714, "parse_fails": 0}
+========== R5 armA_gemma2b_cot.jsonl census ==========
+  row count: 30 total tokens: 2377 avg: 79.2
+========== R6 receipt greps (tok / parse) ==========
+  watch\inbox\BOOT_LANE_INTERFERENCE_BURN_CLOSE_20260926.md
+    tok hits (case-insensitive): [(11, '   (~80 tok/problem, no thinking mode; filed as-is). ARM C budget-50: 0/30,')]
+    parse hits (case-insensitive): NONE
+  watch\inbox\burn_wave_20260926\B2_140_armc_closeout_20260926.md
+    tok hits (case-insensitive): NONE
+    parse hits (case-insensitive): NONE
+========== R7 eval_count grep across run dir py files ==========
+  run_armA.py [(50, '            tokens = r.get("eval_count", 0)')]
+  (files with no hit omitted; full listing in judge.txt section C)
+========== R8 provider_usage.jsonl gemma:2b meter rows ==========
+  gemma:2b rows total: 219
+  first: 2026-07-20 last: 2026-09-19
+  rows dated 2026-09-25: 0  2026-09-26: 0
+  last row carries prompt_tokens=194 completion_tokens=596 ts=2026-09-19T15:15:14.126302+00:00
+========== R9 digest/sha256 pinning scan in the four governing docs ==========
+  watch\inbox\INTERFERENCE_REPLICATION_PREREG_20260925.md | sha256: 0 | digest: 0 | b50d6c: 0
+  watch\inbox\INTERFERENCE_REPLICATION_PREREG_AMENDMENT1_20260925.md | sha256: 0 | digest: 0 | b50d6c: 0
+  watch\inbox\BOOT_LANE_INTERFERENCE_BURN_CLOSE_20260926.md | sha256: 0 | digest: 0 | b50d6c: 0
+  watch\inbox\burn_wave_20260926\B2_140_armc_closeout_20260926.md | sha256: 0 | digest: 0 | b50d6c: 0
+========== R10 live ollama gemma:2b digest probe (read-only GET loopback) ==========
+  PROBE FAILED: KeyError: 'modified'
+  (fallback evidence: judge.txt section Q, digest b50d6c999e592ae4f79acae23b4feaefbdfceaa7cd366df2610e3072c052a160)
+========== R11 sha256 of current instrument bytes (pre-patch reference for amendment 2) ==========
+  run_armC.py 45abb79e7c96033eb86fda0f7eb2be49e6fc3ec13bdd60cc697226e3577d7b92 (5069 bytes)
+  run_armA.py 1c90e02a3957286b80e6008749a01f43b32e5599f263bde7cd8efd016e4641cf (2615 bytes)
+========== R12 queue/todo.md line 196 verbatim ==========
+  :196 - [x] [mag] Stone 1: vendored Badtheorylabs/interference-search (Apache-2.0), LINKS-344, prereg frozen + amendment 1 filed BEFORE arms ran. ARM B PASS 30/30 EXACT (matches published 30/30 + judge-alone 21/30, 13.7ms/problem); ARM A 0/30 (~80 tok/problem, no thinking mode, 13/30 engaged, 2 answer tags); ARM C budget-50 0/30 (frozen bar kept, = their own trained judge's 23% at 50), budget-200 leg running

@@ -1,0 +1,73 @@
+# Steal card - inference-efficiency via reddit (frontier_olm_20260928), round 3
+
+Banked 2026-09-29 by the steal gopher. Round 3: supersedes round 2 at this path. Changes are surgical per the round-2 review: the steal-2 section is rebuilt on verified hardware and staged-rental facts, and one false round-2 verification sentence is replaced with the instruments and outputs that are actually true (fix-comment law: cause and evidence named inline). Everything round 2 verified and that the review confirmed stands unchanged. Inputs: the three confirmed finds from watch/inbox/frontier_olm_20260928/sweep/inference-efficiency-reddit.md, read in full all rounds. Quote provenance: reddit quotes are mirror-served verbatim text, ASCII-normalized, thread dates are mirror epoch conversions, not reddit listing chrome (sweep lines 11 and 15); not independently verifiable from this seat.
+
+## Verified this session (commands actually run, round 3)
+
+- The round-2 sentence "grep for 3090/5090/VRAM in state/ and configs returned nothing" was WRONG and is retracted: the round-2 instrument scoped configs to one file and could not see untracked state/ at all. Round 3 truth, from instruments actually run: `grep -rin "5090" state/` (disk grep, untracked included) hits 19 files, none of them owned hardware - state/arxiv/2026-09-07/2609.04852v1.txt:6 is a paper abstract naming an RTX 5090 Laptop GPU, state/arxiv/2026-09-09/2609.08703v1.txt:6 likewise names an RTX 5090, state/fuel/box_burn_watch.jsonl:262 is the microsecond substring ".509048" in a timestamp, and state/fuel/full_scan_ledger.jsonl:374, :3299 (and :6177) are path-name mentions of the staged job below. `git grep -in "5090" -- configs` returns 0 rows (tracked configs name no 5090); the janitor hardware instead appears as RX 5600 XT: configs/lanes.yaml:28 reads "Home PC envelope 2026-08-06, RX 5600 XT ~6GB VRAM, 64GB RAM, AMD (no CUDA)" (source line carries punctuation normalized here), with gpu "AMD Radeon RX 5600 XT" at :60 and vram_gb_approx: 6 at :61.
+- watch/STAGED_JOB_5090_20260901.md read in full: "STAGED JOB, 5090 burst: qwen2.5:32b substrate battery (STAGED 18:2xZ, awaiting instance)"; AUDIT-TYPED 2026-09-08 line 2 marks status STAGED, claims UNPROVEN (rent/run/acceptance not receipted); line 4 states the rule "no rental without this section complete. Job staged BEFORE rent; rent = last step."; exposure cap <=20 min, about $0.01-0.20, vLLM serving on a 32GB rented 5090 (lines 7, 13, 25).
+- mag/vast_launcher.py cites re-confirmed from round 2 (byte-exact per round-2 review): :414 SAELIS_MODEL = "slashreboot/saelis-31b"; :426-428 48GB rental guidance, 24GB fits only Q4; :441 nvidia/cuda:12.4.1-cudnn-devel-ubuntu22.04 image; :443-444 llama-server with -ngl 999 -c 262144 and zero spec flags. `git grep -n "spec-type\|spec_type" -- mag tools` matches only binary tools/llamacpp/llama-common.dll.
+- Probe bytes re-confirmed: C:/Users/foste/.zcode/cli/agents/sess_fd5ec147-a47d-41ee-91f4-afd899b524ca/ contains 221 agent_* dirs; tools/envelope_harvest.py:35, :61-62, :102-103 read metadata.json and output.txt/task.output; no chars column anywhere in the file. Enforcement family: tools/ledger_append_gate.py:2, :12-24, :32-35 with tools/ledger_lock.py append as sanctioned single-writer.
+- Catalog greps stand (0 rows HyperQwen / Swift-1.5 / "chars per token" / "draft vocab"; freetoken = 4 rows, catalog/catalog.jsonl:60902, :78404, :462986, :466015, all copies of handoff/FREETOKEN_STEAL_20260822.md). HyperQwen HF repo: still absent - round 2 ran two WebSearch attempts, the round-2 review independently corroborated absence (its own search found no resolvable repo page); absence of evidence, kept OWED.
+
+## Steal 1a - output token budgeting at a fixed quality gate (THE steal)
+
+Find: Swift-1.5-Qwen3.8-27B-W4A16-HyperQwen-fast, r/LocalLLaMA 1wsqjku, 2026-09-28 (mirror-epoch date), https://www.reddit.com/r/LocalLLaMA/comments/1wsqjku/ - "roughly 37% lower average time per task", 100+ tps at 150k context on one RTX 3090, tool-call JSON 30/30. Genuinely new: 0 catalog/memory overlap.
+
+Mechanism (split per round-1 review item 3): the 37 percent came from emitting FEWER TOKENS at equal quality - 8,985 down to 5,245 tokens per task at nearly equal t/s (sweep line 62) - not from a faster decoder. The transferable half is prompt/pack-level: grade worker lanes on time-per-task at a fixed quality gate with an explicit output token budget, never on raw t/s. The finetune half is not portable without training; the budget contract is.
+
+Estate organ: the QUANTIZER (memory/corpus/quantized_thought/compile_report.json - law "quantize thought: frontier nuance -> flash imperatives -> local laws", packs frontier/flash/local = 24/12/12, input memory/percolator/invariants.json) feeding the GOPHER FLEET (mag/gopher_lite.py, mag/hermes_personas/gopher.md). Port move: extend the quantizer's compression discipline to outputs - a tokens-per-task budget on the flash/local pack lanes, graded as time-per-task at fixed quality.
+
+Probe: bench 30 identical tool-call JSON tasks on the gemma4 short-worker lane twice - current prompt contract vs an explicit output token budget - JSON validity gated 30/30 both runs, three runs per config with client-side p50 timing (methodology shape per sweep line 45). Cost: zero dollars, under an hour. Falsifiable prediction per the find: time-per-task drops at least 20 percent at equal validity. Validity drops or time does not move => prompt-level budgeting does not transfer the finetune's win and the steal is confined to 1b.
+
+## Steal 1b - MTP draft quantization + trimmed draft vocab (banked find, PENDING a serving organ)
+
+Mechanism (sweep line 36): quantize the MTP draft layers to INT8/INT4 against a trimmed 65,536-token draft vocabulary because the draft pass is memory-bound; the target still verifies against the full vocab, so outputs are unchanged. The flash50 tree parses MTP (watch/inbox/burn_reset_20260927/flash50/work/arg.cpp:297-298) - parsing is not serving.
+
+Estate organ: the vast serve arm, mag/vast_launcher.py:443-444 (llama-server, no spec flags today). Port move: add the spec flags ONLY after the OWED verifications below pass; do not ship flags on faith. Verification cost: one rented 48GB Linux box under an hour at $0.40-0.80/hr (mag/vast_launcher.py:426-437).
+
+OWED (unverified, not asserted):
+- Whether the rented llama.cpp build supports --spec-type mtp.
+- Whether slashreboot/saelis-31b GGUF ships MTP draft heads at all.
+- HyperQwen / Swift-1.5 artifact provenance: no HF repo or downloadable build found (two WebSearch attempts round 2; round-2 review's independent search corroborated absence; absence of evidence, not proof). The serving half is unreproducible until a pointer exists; the find stays quote-banked from the mirror thread only.
+
+## Steal 2 - the Windows tax is real for expert-cache MoE stacks; the estate's expert-class rung is Linux-side already
+
+Find: Qwen-3.8-Flash-Next on 1x RTX 5090 with FreeToken, r/LocalLLaMA 1wl06np, 2026-09-19 (mirror-epoch date), https://www.reddit.com/r/LocalLLaMA/comments/1wl06np/ - post-steal replication deltas only (overlap verified: 4 catalog rows, all copies of handoff/FREETOKEN_STEAL_20260822.md).
+
+Deltas (sweep lines 42-44): Windows "30tks and 500-700 PP" vs Linux "50-60 TS and 3K + PP" on the same 5090 config; a Windows GUI install reads "50 to 500 pp and 0 to 13 decode"; replications cluster 45-60 t/s; exllamav3 beats FreeToken at full VRAM (3256 t/s PP, 63 t/s decode); llama.cpp expert caching still unmerged (ggml-org/llama.cpp discussion 24528). FreeToken itself is Linux-CLI-only with no GGUF support (sweep line 42), so a native-Windows FreeToken run is impossible (round-1 breakage, accepted).
+
+Hardware truth (round-3 fix, replaces the retracted round-2 sentence): the janitor host is the Home PC envelope, configs/lanes.yaml:28 - RX 5600 XT, ~6GB VRAM, 64GB RAM, AMD, no CUDA (gpu field at :60, vram_gb_approx: 6 at :61). No owned NVIDIA card exists in estate records: the 19 disk-grep 5090 hits in state/ are paper text and bookkeeping substrings (lines cited in the verification section), and tracked configs name no 5090. The one 5090 the estate can touch is the staged rental watch/STAGED_JOB_5090_20260901.md: AUDIT-TYPED 2026-09-08, status STAGED, rent explicitly the LAST step (line 4), <=20 min / $0.01-0.20 exposure. So the 5090-class FreeToken A/B is DEFERRED, not unreachable - reachable only through the staged-rental pattern - correcting round 2's "out of reach" overstatement.
+
+Estate organ: the SOVEREIGN MIRROR (docs/DOCTRINE_MAP.md:78). Port move: for the expert-cache class the estate already rents Linux (vast image at mag/vast_launcher.py:441), structurally avoiding the Windows tax; the open surface is the janitor class on the Windows host, where Ollama (llama.cpp-based) serves gemma:2b scut and gemma4 (AGENTS.md harness rules) on the AMD card.
+
+Probe (redesigned per round-2 review item 3, two-stage, zero dollars, on the janitor host):
+- Stage 1, precondition, minutes: GPU-residency check per leg - `ollama ps` on the Windows leg reports the GPU share; inside WSL probe ROCm/Vulkan visibility for the RX 5600 XT. ROCm-under-WSL coverage for this RDNA1-class card is UNVERIFIED and plausibly absent; the check decides, not the guess. A leg that falls back to CPU silently would confound the ratio into CPU-vs-GPU.
+- Stage 2a (both legs GPU-resident): same janitor GGUF, Windows-native Ollama vs WSL server, three runs per side, client-side p50 latency and decode t/s. Falsifiable prediction: Windows/WSL t/s ratio at or below 0.8.
+- Stage 2b (expected branch if the WSL leg cannot hold the card): CPU-only A/B instead, both legs forced CPU with identical flags - the OS-overhead measurement with the GPU confound removed entirely. Falsifiable prediction: Windows/WSL CPU t/s ratio at or below 0.85; above 0.95 => no meaningful OS tax at janitor class and the Windows-first posture stands.
+- The thread's ~2x expert-cache GPU tax: deferred via staged rental, untested for this estate until a burst is receipted; folklore-for-this-estate until then.
+
+## Steal 3 - tok/s is not one unit; chars/s is the honest water meter, with a named recorder and checker
+
+Find: PSA on comparing t/s among models and servers, r/LocalLLaMA 1wsrt2c, 2026-09-28 (mirror-epoch date), https://www.reddit.com/r/LocalLLaMA/comments/1wsrt2c/ - chars/s is the honest denominator; the conversion factor is workload-dependent ("may be 0.68 on prose but 0.74 on JSON").
+
+Estate organ: the WATER GRAPH (mag/water_computer.py:1-9, "Bucket into OUT is a cheat, not a win"). The disease is live in-estate: memory/runs/gapwave/_run2_build_packs.py:21 `DEFAULT_RATIO = 3.6  # chars per token, refined after calibration` vs mag/grok_rightsize.py:142 "~4 chars per token for English text" - two conflicting fixed constants in two organs - and tools/envelope_harvest.py:12 enforces a token-denominated envelope (37,386,533 tokens, 109.4M tok/h) with no chars column in summarize() (tools/envelope_harvest.py:59-97).
+
+Named bytes: the probe runs on C:/Users/foste/.zcode/cli/agents/sess_fd5ec147-a47d-41ee-91f4-afd899b524ca/ - 221 agent_* dirs verified - reading per-lane totalTokens/durations from agent_*/metadata.json (envelope_harvest.py:35, :61-62) and per-lane character counts from agent_*/output.txt and task.output (the exact text files envelope_harvest.py:102-103 already reads). Honest denominator caveat: metadata totalTokens is session-total while output.txt chars are output-text only, so the computed ratio is per-lane output-chars per session-token - sufficient for a ranking-divergence test, not for an absolute chars/s figure.
+
+Single-provider caveat: the 109.4M tok/h envelope is one provider, 10 lanes, one dispatch shape (AGENTS.md fan-out width law; B2_25 receipt), so all lanes share one tokenizer family. Any rank flip can only come from per-lane content-type mix (code vs prose vs JSON), not tokenizer differences. A clean no-flip result does NOT falsify the PSA - it shows the mix does not bite this envelope; the cross-tokenizer claim is untestable on estate bytes today (OWED until multi-provider lanes exist).
+
+Enforcement point: recorder = tools/ledger_lock.py append, the sanctioned single-writer for memory/burns/LEDGER.jsonl (tools/ledger_append_gate.py:32-33); checker = tools/ledger_append_gate.py validate_line, refusing exit 2 (contract :12-24). Port move: extend the gate contract with chars and workload_class fields, add a chars column to envelope_harvest.py summarize() (:59-97), wire both through ledger_lock append as the visible adoption step (:32-35, "wiring is a visible adoption step, never smuggled"). Until that lands, the rejection law is prose; this card claims the port move, not a live gate.
+
+Probe: compute per-lane output-chars per session-token over the 221 agent dirs and rank lanes by tok/h (metadata) vs chars/h (chars over the same window). Falsifiable prediction: at least one lane flips rank by two or more places between the two denominators. Asymmetric interpretation per the caveat: a flip adopts the chars/s metering law; a clean result retires the concern for THIS envelope only.
+
+## Sources
+
+- watch/inbox/frontier_olm_20260928/sweep/inference-efficiency-reddit.md (read in full all rounds; cites at lines 11, 15, 36, 42-45, 62-64, 72-80)
+- https://www.reddit.com/r/LocalLLaMA/comments/1wsqjku/ (HyperQwen 37 percent)
+- https://www.reddit.com/r/LocalLLaMA/comments/1wl06np/ (FreeToken Windows-vs-Linux deltas)
+- https://www.reddit.com/r/LocalLLaMA/comments/1wsrt2c/ (chars/s PSA)
+- handoff/FREETOKEN_STEAL_20260822.md + catalog/catalog.jsonl:60902, :78404, :462986, :466015
+- configs/lanes.yaml:28, :60-61; watch/STAGED_JOB_5090_20260901.md:1-4, :7, :13, :25; state/arxiv/2026-09-07/2609.04852v1.txt:6; state/arxiv/2026-09-09/2609.08703v1.txt:6; state/fuel/box_burn_watch.jsonl:262; state/fuel/full_scan_ledger.jsonl:374, :3299
+- mag/vast_launcher.py:414, :426-428, :441, :443-444; mag/water_computer.py:1-9; mag/gopher_lite.py; mag/hermes_personas/gopher.md; memory/corpus/quantized_thought/compile_report.json; memory/runs/gapwave/_run2_build_packs.py:21; mag/grok_rightsize.py:142; tools/envelope_harvest.py:12, :35, :59-97, :102-103; tools/ledger_append_gate.py:2, :12-24, :32-35; tools/ledger_lock.py; watch/inbox/burn_reset_20260927/flash50/work/arg.cpp:297-298; watch/inbox/burn_wave_20260926/B2_25_envelope_remeasure_20260926.md:9, :27, :43; docs/DOCTRINE_MAP.md:78; docs/ref/HONEST_COST_LEDGER.md; AGENTS.md (fan-out width law 109.4M tok/h; Ollama janitors; WSL surface)
+- C:/Users/foste/.zcode/cli/agents/sess_fd5ec147-a47d-41ee-91f4-afd899b524ca/ (221 agent_* dirs, listed this session)

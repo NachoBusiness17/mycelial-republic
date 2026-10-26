@@ -1,0 +1,7 @@
+# swarm1-glm-flash-scripts__meld_claims (glm-5.3-flash @ zai, turn 1, channel: content)
+
+DEFECT 1: Cached claims load is unguarded, so one corrupt/partial JSON cache file aborts the whole sweep with an unhandled json.JSONDecodeError, killing all later questions | EVIDENCE: scripts/meld_claims.py:103-104 | FIX: wrap the cache read in try/except ValueError and fall through to re-extract on failure
+DEFECT 2: CLAIM_RE uses a lazy match with no escaped-quote handling, so any claim containing \" is silently truncated at the first inner quote, feeding mangled claims into the convergence score | EVIDENCE: scripts/meld_claims.py:33 | FIX: parse the JSON array first, keep the regex only as fallback, or use json.JSONDecoder.raw_decode against the sliced text
+DEFECT 3: The final verdict line hardcodes a stale trigram baseline (0.001 + 0.028 * 0 == 0.030) instead of measuring anything, so the printed comparison is a constant, not a measurement | EVIDENCE: scripts/meld_claims.py:139-140 | FIX: compute the trigram score in-line or drop the parenthetical from the output
+DEAD-CODE: urljoin imported and never referenced | EVIDENCE: scripts/meld_claims.py:22
+ONE-SITTING FIX: Harden the cache-read path (try/except around json.loads at line 104) and delete the constant baseline line; together they make the sweep crash-proof and its headline verdict honest | EVIDENCE: scripts/meld_claims.py:103-104

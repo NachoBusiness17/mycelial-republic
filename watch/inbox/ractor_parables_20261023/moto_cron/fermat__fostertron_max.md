@@ -1,0 +1,36 @@
+<!-- meta: {"ractor": "FERMAT", "mouthpiece": "fostertron_max", "subject": "moto_cron", "start_et": "2026-10-23T13:47:25.835635-04:00", "attempts": [{"attempt": 1, "exit": 0, "stdout_len": 6628, "at": "2026-10-23T13:50:36.353678-04:00"}], "carrier": "opencode run (provider zai-sd 'sd / Max', key env ZAI_API_KEY_2 via model_garden._api_key)", "requested_model": "zai-sd/glm-5.3", "resolved_model": "glm-5.3", "exit": 0, "stderr_tail": "\u001b[0m\n> build \u00b7 glm-5.3\n\u001b[0m\n\u001b[0m\u2192 \u001b[0mRead PROMPT.txt\n", "tokens": "not reported by opencode run", "end_et": "2026-10-23T13:50:36.353678-04:00", "status": "OK"} -->
+
+# The Far House
+
+In a river town in the south there lived a magistrate who kept, two days' ride from the courts, a small house at the edge of a barley district. A caretaker held it year-round. The caretaker's trade was small chores: he wound the clock, he wrote the day's weather into a tablet, he rang the yard bell at the fixed hours, and he did whatever was written on any slip that reached his hands. He worked by the chimes, watched or unwatched, and this was his whole value — that the chores kept their hours with no one standing over him.
+
+He had one infirmity. The window of his workroom was cracked from corner to corner, and he could read nothing through it. So he worked by touch and by ear, by the feel of the wax and the sound of the bell, and it was said in the district that his hands had never once mistaken an hour.
+
+There was no public road between the town and the far house. Years before, the magistrate had subscribed to a society of householders who maintained, between their properties, a covered footpath with a gate at either end. No stranger walked it. Every walker bore a token stitched into the lining of his coat, and the path, it was said, knew the stitching.
+
+On the twenty-third of the month, with the vintage coming in, the magistrate went down to his end of the path and called a single word into it — the caretaker's word, the society's custom. The word went out and came back. Not at once, but inside a slow blink: quicker than any letter, slower than an answer across a room. He wrote in the margin of his day-book only what he had: called on the twenty-third, answered, a slow blink.
+
+But a chore does not travel by a called word. A chore goes by hand, to the low door at the side of the far house, the door kept for bundles. When the magistrate's man went down the path with the first slip, the steward looked at him through the grille and said: "You are not known. There is a roll of coats this door opens for, and yours is not on it. Bring the coat my roll names, or do not come." And the grille closed. He did not say the house was dark. He did not say the path was broken. Both were otherwise, as the call had shown. He said only: not known.
+
+It was in the magistrate's power, as the society's papers explained, to send down new names and have them added to the steward's roll, for the roll lived inside the far house. But his own commission forbade it, in a clause he had drafted: the lock at the low door was the far house's own law, and no hand of his would stitch a coat onto another man's roll, however far off that man sat. There was a rightful way to be known, or there was nothing; and nothing would have to do until the way was found. He wrote that week to the society's clerk, asking by what rightful means a coat came to be entered on a roll.
+
+Meanwhile the work did not go away. In the vestibule of the magistrate's house the parcels stood in a row on a trestle: the slips for the clock, the slips for the tablet, the slips for the bell, each folded, waxed, sealed, and marked with its hour. They had been packed against the day the steward's roll would carry the right coat. None had been opened since. None had been sent. The magistrate dusted them himself on Fridays and pressed each seal with his thumb to see that it held.
+
+In his study, at his elbow, stood a shallow tray. Into it he dropped folded slips as the errands occurred to him, one slip to an errand, laid in the order they came and never rearranged. A boy came through the study on rounds he announced to no one and kept to the minute. When he found a slip in the tray he took the topmost, went down the covered path to the low door, was refused at the grille, came back, and set a chalk stroke on the slate that hung beside the tray, with the hour in a small hand beside it. The slate said no more than that: refused, at such an hour, again, again.
+
+A colleague at the courts, hearing the matter recited, said: "Then the far house is yours in everything but name." The magistrate would not have it. "I have a call answered and a door shut," he said. "The call I possess. The house I neighbor. I will write down the first, and of the second I will write nothing I cannot knock on."
+
+That night, at the bottom of the day-book, he wrote: I have discovered a truly admirable means of entering by that low door, which the bottom of this page is too narrow to contain. He read it over twice. Then, being a magistrate, and knowing what became of men who wrote more than they could knock on, he added beneath it, in a smaller hand: The call held. The rest is owed.
+
+The parcels stood. The tray filled, and the boy's rounds went on, and the strokes went down the slate one under another, each like the last. Every evening the magistrate called the word into the path, and every evening it came back inside a slow blink. As long as it did, he sold nothing, wrote nothing off, and let the wax keep.
+
+---KEY---
+1. The estate keeps a distant, unattended runner whose whole value is doing small chores at fixed hours with no one watching. (the caretaker winding the clock and ringing the bell by the chimes)
+2. That runner's reading glass is shattered, yet it still performs its work through touch and sound. (the workroom window cracked from corner to corner; the caretaker working by wax and bell)
+3. The two places are joined by a members-only private way that no stranger may walk. (the society's covered footpath and the token stitched into every coat)
+4. A round-trip reachability call down that way succeeds, with a small honest delay. (the word called on the twenty-third, answered inside a slow blink)
+5. The work-delivery entry is refused on identity grounds alone — connection proven good, recognition denied. (the steward at the low door: "the roll names no coat of yours," while the called word still returns)
+6. The register of recognized callers on the far side must not be edited by the operator, under his own standing instruction. (the magistrate's commission forbidding him to stitch coats onto the steward's roll)
+7. Finished work waits at hand, sealed and undelivered, until recognition is granted the rightful way. (the waxed parcels on the vestibule trestle, dusted on Fridays, never sent)
+8. The near side holds an order-kept task tray and an unannounced poller that retries delivery and chalks each outcome with its hour. (the boy's rounds and the slate of strokes beside the tray)
+9. Status is claimed only as far as verified: reachability asserted, the full errand expressly not. (the margin's boast corrected to "The call held. The rest is owed"; "the call I possess, the house I neighbor")

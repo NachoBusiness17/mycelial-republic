@@ -1,0 +1,50 @@
+=== a22-councils CHECK LOG 2026-09-25 ===
+note: grep on this host is ugrep; patterns beginning with -- passed via -e
+
+--- CHECK 1: FREE_MODELS allowlist exists ---
+$ grep -n "FREE_MODELS" tools/roblox_npc_gateway.py | head -20
+41:FREE_MODELS = {
+113:    if model not in FREE_MODELS:
+exit=0
+
+--- CHECK 2: gate fires BEFORE funded lanes load (order proof) ---
+$ grep -n "if model not in FREE_MODELS\|for name, url, key in _lanes()" tools/roblox_npc_gateway.py
+113:    if model not in FREE_MODELS:
+116:    for name, url, key in _lanes():
+exit=0
+
+--- CHECK 3: LINKS-335 rows in memory/corpus/LINKS.jsonl ---
+$ grep -c "LINKS-335" memory/corpus/LINKS.jsonl
+2
+exit=0
+
+--- CHECK 4: estate grep mooncast lowercase (corpus/steal/ + memory/corpus/) ---
+$ grep -rln "mooncast" corpus/steal/ memory/corpus/
+exit=1 (1 = zero hits, case-sensitive)
+
+--- CHECK 4b: estate grep Mooncast capitalized ---
+$ grep -rln "Mooncast" corpus/steal/ memory/corpus/
+memory/corpus/\LINKS.jsonl
+exit=0
+
+--- CHECK 5: estate grep FREE_MODELS (corpus/steal/ + memory/corpus/) ---
+$ grep -rln "FREE_MODELS" corpus/steal/ memory/corpus/
+memory/corpus/\LINKS.jsonl
+exit=0
+
+--- CHECK 6: quote byte-verification (grep -F -c, each must be >= 1) ---
+[Q1] $ grep -F -c -e "the prompt-a-council-until-unanimous trick dies when models are same-type (they align too easily; consensus gets cheap and fake)" memory/corpus/LINKS.jsonl
+1
+exit=0
+[Q2] $ grep -F -c -e "receipt("gate", player, message, f"<model not in free allowlist: {model}>", 1)" tools/roblox_npc_gateway.py
+1
+exit=0
+[Q3] $ grep -F -c -e "-- Mooncast law (LINKS-335): same-model councils agree too cheaply. The three" roblox/src/server/MudBasecamp.luau
+1
+exit=0
+[Q4] $ grep -F -c -e "-- survey: the party witnesses the same scene; converge = core, diverge = swarm log" roblox/src/server/MudBasecamp.luau
+1
+exit=0
+[Q5] $ grep -F -c -e "our Roshomon survey ran 3 witnesses on ONE model (space bunny x3) = the degenerate case; FIXED same hour" memory/corpus/LINKS.jsonl
+1
+exit=0

@@ -1,0 +1,3 @@
+# capmx-baref-t9-r1 (glm-5.3-flash @ zai, turn 1, channel: content)
+
+{"verb": "STAGE_ASK", "reason": "Senses show 38 handoff items and 11 open todos; cheapest routing is a swarm review ask on the re-seeded DF fold residuals rather than a promotion or alert. Bounded, one verb, advances the queue.", "payload": {"target": "tools/rib_swarm.py", "ask": "Review DF fold residuals in STEALTH_MINED_FINDINGS.jsonl and burn_reset_20260927\\work\\w-belt-cube-mechanism_openrouter1.md: confirm per-class attack triggers beyond scorpion-force are enumerated and each claim cites file:line; flag any uncited finding as UNVERIFIED."}}

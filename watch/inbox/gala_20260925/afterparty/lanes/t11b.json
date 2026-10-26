@@ -1,0 +1,21 @@
+{
+  "gopher": "t11b",
+  "item": "implement the freshness-receipts gate owed by MASTER_MICKEY17_V2_20260924.md row 8 (lane agentcheck): small tool tools/freshness_gate.py that takes a receipt markdown path and verifies it carries a fetch/source freshness stamp (dated line like source-fetched: YYYY-MM-DD), exit 0 if present + parseable date within N days (arg --days, default 14), exit 2 otherwise; tests for fresh passes / stale fails / missing stamp fails; run pytest + ratchet --changed and cite raw output",
+  "ok": true,
+  "note": "tools/freshness_gate.py landed, standalone (t11a's tools/quote_gate.py verified absent on disk, so style taken from tools/freshness_check.py and tools/workflow_gate.py: --self-test, exit 2 is the only hard block). Accepted labels: source-fetched / source_fetched / source fetched / fetched / observed-at / observed_at, case-insensitive, optional ISO time suffix; most recent stamp in the file is the evidence. Fail-closed: missing stamp, unparseable calendar date, stale, future-dated beyond 1d skew tolerance (fabrication smell), and missing file are all exit 2 with a stated reason, never a traceback. Contract proven live: fresh_exit=0, stale_exit=2, none_exit=2, --days 30 flips stale to 0, absent_exit=2. Negatives recorded: my own first draft carried a real em-dash in the tool docstring header, caught by the gate's own law test plus manual scan, fixed before banking; full-scope ratchet (without --changed) currently fails on 9 pre-existing NEW hits in files this gopher never touched, recorded not repaired; estate-wide 1341-test suite not run this item, scope was the two new files plus the changed-scope gate.",
+  "checks": [
+    "ls tools/ | grep gate|fresh|quote -> no quote_gate.py (t11a absent), tool stands alone",
+    ".venv/Scripts/python.exe -m pytest tests/test_freshness_gate.py -v -> 19 passed, exit 0 (raw output in t11b.check.txt section A, including the intermediate 18/19 em-dash failure kept as evidence)",
+    ".venv/Scripts/python.exe tools/freshness_gate.py --self-test -> 3 PASS, exit 0",
+    ".venv/Scripts/python.exe tools/violation_ratchet.py check --changed -> scope=9 changed files; hits=4; registered=4; NEW=0; PASS, exit 0 (raw line cited verbatim in t11b.check.txt step 4)",
+    "live CLI demo on temp receipts -> exits 0 / 2 / 2, --days 30 override -> 0, missing file -> 2 (t11b.check.txt step 5)",
+    "em-dash/en-dash scan (U+2014, U+2013) over tool, test, check.txt, t11b.json -> none in final filed text (output appended to t11b.check.txt section C)"
+  ],
+  "next_steal": "the gate reads one stamp line but does not bind the stamp to a source hash, so a receipt can re-stamp old claims with a fresh date; next steal is receipt(observed_at, source_hash) pairing per MASTER row 8: require the stamp line to sit next to a source-hash line and have the gate verify the hash against the cited artifact when the file is local, making re-stamping detectable",
+  "artifacts": [
+    "tools/freshness_gate.py",
+    "tests/test_freshness_gate.py",
+    "watch/inbox/gala_20260925/afterparty/lanes/t11b.check.txt",
+    "watch/inbox/gala_20260925/afterparty/lanes/t11b.json"
+  ]
+}

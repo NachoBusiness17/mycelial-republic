@@ -1,0 +1,81 @@
+t57 check - one-pass Part-vs-BasePart annotation tightening (t42 next_steal rows 1-7) - 2026-09-26 01:13
+
+RESULT: 7 findings cleared across 6 files, 8 annotation lines changed,
+7 receipt comment lines added, zero behavior edits, zero new analyzer
+findings. mountain_check NOT run (shared). GalleryZone(82,2) NOT touched
+(t42 row 12, off-limits: file restructured tonight by another lane).
+
+== method ==
+
+Scope came from t42's triage (lanes/t42.check.txt rows 1-7) and t42's
+buffer /tmp/t42_findings.txt (20 unique). Read each site before editing.
+Pre-edit freshness re-verified: all 6 files last touched pre-gala
+(d63a05cdf 09-25 04:50, FrontierSoulsZone c56c965c4 09-25 04:23); git
+status showed no lane touching them.
+
+Direction note (negative first, the item's shorthand was inverted): the
+annotations were BasePart and the stored values are Instance.new("Part")
+literals; Luau checks table-literal properties invariantly, so
+{part: BasePart} rejects the {part: Part} exact literal. The tightening is
+BasePart -> Part (type the field as exactly what is stored), matching
+t42's next_steal wording, not the item summary's "Part -> BasePart".
+
+== fixes (all annotation-only, receipt comment above each) ==
+
+1  SteerFieldZone.luau:36      walkers entry part: BasePart -> Part
+                               (stored line 148 Instance.new("Part"); finding 152,25)
+2  IncidentDungeonZone.luau:49 glow entry part: BasePart -> Part
+                               (stored line 86 pedestal orb; finding 90,21)
+3  LightmapRoomsZone.luau:43   engines entry orb: BasePart -> Part
+                               (stored line 87; finding 93,25)
+4  FrontierSoulsZone.luau:33   type Death part: BasePart -> Part
+                               (stored line 93; finding 102,17 arena.death literal)
+5  ErosionFieldZone.luau:21    marbles entry part: BasePart -> Part
+                               (stored line 168; finding 172,25)
+6  ErosionFieldZone.luau:125   stepMarble param part: BasePart -> Part
+                               (sibling of row 5: only caller feeds marbles
+                               entries at line 214; keeps the entry type exact
+                               end to end; not itself a flagged finding)
+7  MazeArenaZone.luau:58-59    cheese/dragon BasePart? -> Part?
+                               (assigned Instance.new("Part") lines 99/106
+                               before the Shape writes at 100/107; findings
+                               100,2 and 107,2 "Key 'Shape' not found")
+
+Untouched neighbors in the same files (not flagged, left alone):
+SteerFieldZone:37 tiles: {BasePart}, IncidentDungeonZone:48 barriers +
+:50 runDoor: BasePart?, ErosionFieldZone:20 tiles, MazeArenaZone:57
+wallParts/shardParts.
+
+Runtime-safety audit: every consumer of the narrowed fields is a read
+(.Position, .Parent, .Transparency, .CFrame, .Shape) and Part carries all
+BasePart members; FrontierSoulsZone distTo(root: BasePart, p: BasePart)
+still receives death.part as a covariant upcast of a non-literal, which
+passed before and passes now. No value, write, or control flow changed.
+
+== verification (luau-lsp, gate's own pipeline, mountain_check NOT run) ==
+
+cd roblox && ../tools/bin/luaulsp/luau-lsp.exe analyze
+  --definitions="../tools/bin/globalTypes.d.luau" --sourcemap="sourcemap.json"
+  src/shared src/server src/server/zones_extra src/client
+  -> /tmp/t57_analyze.txt, exit=1 (type errors present, expected),
+     grep -cE "SyntaxError|Incomplete" = 0 (gate's parse rule)
+Then the gate's exact filter+dedupe pipeline (tools/mountain_check
+lines 39-53) -> /tmp/t57_findings.txt = 13 unique (was 20).
+Key diff vs t42 buffer: cleared = exactly the 7 intended sites
+(SteerFieldZone 152,25; MazeArenaZone 100,2 and 107,2; IncidentDungeonZone
+90,21; LightmapRoomsZone 93,25; FrontierSoulsZone 102,17; ErosionFieldZone
+172,25); new = none. Remaining 13 = t42 rows 8-12 (4 noise-class +
+GalleryZone off-limits) + 8 LocalUnused, all outside this item's scope.
+sourcemap.json was read, never written, by t57 (no rojo regen needed:
+edits change no DataModel shape); it shows modified in the working tree
+from another lane's in-flight work, not mine.
+
+== hygiene ==
+
+git diff over the 6 files: 8 changed annotation lines + 7 comment lines,
+nothing else. Em-dash scan on added lines: 0 (one pre-existing em-dash
+sits in an untouched ErosionFieldZone context line, not mine). Edits left
+uncommitted alongside the other lanes' in-flight files (OssuaryZone,
+init.server, init.client, ZoneGate, WORLDGEN_MINE.md, sourcemap.json).
+Buffers for the next gopher: /tmp/t57_analyze.txt, /tmp/t57_findings.txt,
+/tmp/t42_keys.txt, /tmp/t57_keys.txt.

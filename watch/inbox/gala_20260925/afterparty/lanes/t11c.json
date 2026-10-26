@@ -1,0 +1,12 @@
+{
+  "gopher": "t11c",
+  "item": "tool-description pinning gate owed by MASTER_MICKEY17_V2_20260924.md: tools/description_pin.py verifies each tool description carries a version pin or a PINNED-UNVERSIONED marker; exit 0 iff all pinned-or-marked, exit 2 naming offenders; tests/test_description_pin.py covers pinned passes and unpinned-unmarked fails",
+  "ok": true,
+  "note": "REFIRE of a run that died on a rate limit at width 15. Prior attempt had landed the tool and tests but left a real failure: is_pinned('stable v2') returned False because VERSION_RE only accepted dotted versions while the tool's own bar says v1 style tokens pin. Fixed the regex (v-prefixed single numbers now pin, bare integers still do not) with a receipt comment naming cause and evidence. The failed pytest run is preserved verbatim at the top of t11c.check.txt; refire runs are appended below it.",
+  "checks": [
+    "pytest tests/test_description_pin.py via .venv/Scripts/python.exe: 8 passed, exit 0 (refire; prior run 1 failed / 7 passed, preserved in t11c.check.txt)",
+    "python tools/violation_ratchet.py check --changed: scope=8 changed files, hits=4, registered=4, NEW=0, PASS, exit 0",
+    "CLI smoke on temp manifests: pinned manifest exits 0, unpinned unmarked manifest names rogue_tool and exits 2"
+  ],
+  "next_steal": "wire description_pin.py into githooks/pre-push next to violation_ratchet.py so tool manifests are checked at push time, not only on demand"
+}

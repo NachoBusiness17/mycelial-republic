@@ -1,0 +1,40 @@
+{
+  "lane": "energy-frontier",
+  "division": "B",
+  "status": "complete",
+  "started": "2026-10-01",
+  "finished": "2026-10-01",
+  "ask": "Energy frontier dig: primary measurements of energy per token (or per query) across architecture classes (dense Transformer, MoE, linear-attention, spiking/hybrid) with hardware noted; the estate's own janitor energy (W metering recipe + real measurement); honest comparison table; verdict on architecture change vs quantization at our scale; started from the tweet's 97-percent-energy claim (drop receipt watch/inbox/SPIKINGBRAIN_DROP_20261001.md).",
+  "evidence": [
+    {"src": "watch/inbox/SPIKINGBRAIN_DROP_20261001.md", "what": "tweet 97% energy claim is tri-stated tweet-grade; paper is arXiv:2509.05276"},
+    {"src": "https://arxiv.org/html/2509.05276v3", "what": "SpikingBrain energy = per-MAC-op analytic estimate (FP16 1.5 pJ vs spike scheme 0.034 pJ => 97.7% / 85.2%), NO joules-per-token anywhere, contingent on neuromorphic hardware; measured numbers are speed only (26.5x TTFT @1M, 5.36x tput @128k, 4-15x CPU speedups on i5-12600KF Q4_0)"},
+    {"src": "https://arxiv.org/html/2310.03003v1 (Samsi, From Words to Watts)", "what": "LLaMA 65B on V100/A100: 3-4 J/token measured; 300W-1kW cluster draw; power cap 250W->175W: -23.2% energy for +6.7% time; memory util 23-27% = over-provisioned"},
+    {"src": "https://arxiv.org/html/2601.22076v2 (ML.energy v3)", "what": "Zeus-measured H100/B200: Qwen3 32B dense 0.151-0.312 J/token (batch-dependent); Qwen3 30B-A3B MoE 3.56x lower J/token than 32B dense; batch 3-5x energy/token reduction; FP8 up to +56% energy at low batch, -11% median at high batch"},
+    {"src": "https://arxiv.org/html/2512.03024v1 (TokenPowerBench)", "what": "H100 measured: 1B->70B = 7.3x J/token (not 70x); Mixtral-8x7B ~= dense 8B J/token at ~56B-class quality; FP16->FP8 ~30% cut; 2K->10K context = 3x J/token; TensorRT/vLLM -25-40% J/token vs HF Transformers"},
+    {"src": "https://arxiv.org/html/2403.20306v1 (Towards Greener LLMs)", "what": "Llama-2 70B DGX-H100: freq 2GHz->1.6GHz = same throughput at <80% energy; ~20% lower power no latency hit; paper has NO quantization experiments"},
+    {"src": "https://arxiv.org/html/2311.16863v3 (Luccioni, Power Hungry Processing)", "what": "CodeCarbon GPU metering, 88 models: text generation ~0.047 kWh per 1,000 queries vs classification ~0.002 (30x spread)"},
+    {"src": "https://arxiv.org/html/2410.12032v1 (MLPerf Power)", "what": "the measurement standard: MLCommons methodology, wall-measured, mWatts to MWatts, eleven standardized requirements"},
+    {"src": "https://arxiv.org/abs/2312.00752 (Mamba)", "what": "linear-attention class reports 5x throughput, NO joules-per-token published; energy inferred, not measured"},
+    {"src": "web search snippet (MIT Tech Review 2025-01-31)", "what": "DeepSeek ~17,800 J/query claim: SNIPPET-GRADE, unverified, excluded from primary table"}
+  ],
+  "local_measurement": {
+    "box": "AMD Ryzen 7 3800XT 8C/16T (105W TDP class), MSI MS-7C91, NO dGPU (nvidia-smi absent), NO battery (desktop)",
+    "janitor_gemma2b": {"cmd": "ollama run gemma:2b --verbose <fixed 300-word water-cycle prompt>", "eval_rate_tok_s": 84.65, "eval_count": 369, "prompt_eval_rate": 366.67},
+    "r1_1p5b": {"cmd": "ollama run deepseek-r1:1.5b --verbose <same prompt>", "eval_rate_tok_s": 118.91, "eval_count": 1110},
+    "energy_status": "tokens/s MEASURED; watts NOT measurable via OS on this box (AMD desktop Windows exposes no CPU power counter without a kernel driver; no LibreHardwareMonitor/OpenHardwareMonitor installed) => J/token given as TDP-BOUNDED ESTIMATE 0.3-1.7 J/token (25-142W package), clearly labeled estimate",
+    "recipe": [
+      "GOLD: external watt meter / energy-monitoring smart plug at the wall; idle baseline P0; run fixed-token ollama benchmark; E = integral(P-P0)dt; J/token = E / eval_count",
+      "OS-ADJACENT: LibreHardwareMonitor (WinRing0 driver) reads Zen2 package energy MSR 0xC001_029B, log per-second W during benchmark, divide by eval tokens",
+      "OS-ONLY: NOT possible on this box for watts: typeperf/perf counters give utilization %, not joules; Intel Power Gadget is Intel-only; AMD has no desktop Windows power tool. Named as the honest negative."
+    ]
+  },
+  "checks": [
+    {"cmd": "finish-line composite: ls -la receipt + lane JSON; wc -c receipt; 13 grep content probes (J/token, kWh / Mtok, 84.65, 118.91, 97.7%, 3.56, four arXiv IDs, WinRing0, watt meter, Ryzen 7 3800XT); 17-row table-row grep; em-dash scan; verdict-line grep", "exit": 0, "evidence": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/spiking-wide/lanes/energy-frontier.check.txt", "result_summary": "receipt 11246 bytes; all 13 probes >0; 17 architecture-class rows; em-dash count 0; verdict line present"},
+    {"cmd": "ollama run gemma:2b --verbose \"<fixed 300-word water-cycle prompt>\"", "exit": 0, "evidence": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/spiking_wide/energy-frontier.md (section 3, quoted verbatim)", "result_summary": "eval count 369, eval rate 84.65 tok/s, prompt eval rate 366.67 tok/s"},
+    {"cmd": "ollama run deepseek-r1:1.5b --verbose \"<same prompt>\"", "exit": 0, "evidence": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/spiking_wide/energy-frontier.md (section 3)", "result_summary": "eval count 1110, eval rate 118.91 tok/s (includes <think> tokens)"},
+    {"cmd": "hardware recon: nvidia-smi / ollama list / Win32_Battery / Win32_Processor / model+board CIM", "exit": 0, "evidence": "session transcript; summary recorded in lane JSON local_measurement and receipt section 3", "result_summary": "no dGPU, no battery, Ryzen 7 3800XT 8C/16T, MSI MS-7C91, no LHM/OHM installed -> OS-only watt metering impossible on this box, recipe named (3 rungs)"}
+  ],
+  "decision_changed": "Closes the SpikingBrain energy-bet question: the tweet's 97% is a 45nm per-MAC analytic estimate (not a measurement, hardware hypothetical); energy verdict at estate scale is quantization (Q4 bytes) + power capping (1.3-5x measured levers), while the architecture bet rides ONLY the measured long-context door (26.5x TTFT @1M).",
+  "ratchet": "not run: no code under mag/ or tools/ touched by this lane (receipt + lane JSON + check file only)",
+  "notes": ["receipt: watch/inbox/spiking_wide/energy-frontier.md (17-row primary-number table, verdict, falsifier, 3-rung metering recipe)", "verdict landed: quantization + serving knobs move measured energy more at our scale; linear-attention pays through long-context speed only; spiking energy remains a paper claim"]
+}

@@ -1,0 +1,95 @@
+[2026-10-08] u/Low_Bad_6585 :: Running an LLM-driven town with 800+ persistent agents: concurrency, context caching, and inference costs
+    I spent the past year independently building Slow Vale, an LLM-driven life simulation. The Chinese server now has 800+ AI residents sharing one continuously running city. This is an engineering write-up about concurrent decisions, dynamic action spaces, context caching, and the operating costs of a persistent multi-agent system. The runtime currently uses hosted DeepSeek Flash, rather than local inference. I am the developer. I wrote the original material in Chinese and used AI to translate and refine the English. Product metrics below are current through October 7, 2026. Asynchronous decisions in a continuously advancing world Each character makes roughly 300–400 LLM calls per day, with an average context of around 30,000 tokens per call. A call includes the character's state, relevant experiences, current environment, and available actions. The model selects an action and its parameters; the backend turns that decision into an activity that occupies time and resources. Game time and real time coexist. Sleeping might occupy 8 in-game hours, while saying one sentence might take 1 in-game minute. Inference itself takes real time. While a call is in flight, other characters can change the environment, and the world clock continues to advance. Interactions also involve mutual exclusion. If A is talking with B, C cannot simultaneously pull B into a separate conversation. Facilities, production tasks, and other activities have their own rules for acquiring and releasing occupied r
+
+[2026-10-08] u/WiseStrawberry :: /u/WiseStrawberry on Running an LLM-driven town with 800+ persistent agents: concurrency, context caching, and
+    dude this is sick.
+
+[2026-10-08] u/year2066ai :: /u/year2066ai on Running an LLM-driven town with 800+ persistent agents: concurrency, context caching, and inf
+    if anyone wants to do this with local models: llama-server can save a slot's kv cache to disk and load it back. we prefill each persona's fixed prompt once and restore it per chat. for a 27k token prefix on cpu that was 98 s of prefill vs 67 ms to restore. curious if deepseek gives you any control over how long the cache lives, or if the 90% just comes from the call volume
+
+[2026-10-08] u/Low_Bad_6585 :: /u/Low_Bad_6585 on Running an LLM-driven town with 800+ persistent agents: concurrency, context caching, and i
+    For each character, the gap between calls is usually under 30 minutes unless they're sleeping, so calls generally fall within DeepSeek's cache retention window.
+
+[2026-10-08] u/Cautious_Sky6642 :: /u/Cautious_Sky6642 on Running an LLM-driven town with 800+ persistent agents: concurrency, context caching, a
+    curious how the agents keep their own histories going without context exploding, do they really feel persistent day to day?
+
+[2026-10-08] u/Low_Bad_6585 :: /u/Low_Bad_6585 on Running an LLM-driven town with 800+ persistent agents: concurrency, context caching, and i
+    We summarize each character's experiences once a day, and there are dedicated tasks for maintaining their long-term memory as well.
+
+[2026-10-08] u/ariyako :: /u/ariyako on Running an LLM-driven town with 800+ persistent agents: concurrency, context caching, and infere
+    Really interesting architecture. I keep thinking about how this could work with local LLMs. I'd love to see a setup where the host server keeps the persistent world state, agent memory, scheduler, etc., while one or more local machines handle LLM inference and sync the validated results back to the host. With good context management + prefix/KV caching, I wonder if 800+ persistent agents could eventually be run mostly locally, using smaller models for routine decisions and larger models only when needed. Basically: host = brain of the world, local LLMs = distributed inference workers. That would be a very interesting self-hosted architecture.
+
+[2026-10-10] u/Low_Bad_6585 :: /u/Low_Bad_6585 on Running an LLM-driven town with 800+ persistent agents: concurrency, context caching, and i
+    I'm considering renting GPUs and trying a self-hosted model in the Qwen 27B range too. My earlier back-of-the-envelope calculations suggested it could handle the current throughput for less than half the cost. I still need to test that in practice.
+
+[2026-10-08] u/jazir55 :: /u/jazir55 on Running an LLM-driven town with 800+ persistent agents: concurrency, context caching, and infere
+    My character failed to rob the mayor when instructed
+
+[2026-10-08] u/Eastern_Spite335 :: /u/Eastern_Spite335 on Running an LLM-driven town with 800+ persistent agents: concurrency, context caching, a
+    Figata pazzesca, ma è possibile influenzare super negativamente il proprio personaggio? Omicidi? Rapine? Spaccio? Aggressioni? Mafia? Rapimenti?
+
+[2026-10-08] u/Low_Bad_6585 :: /u/Low_Bad_6585 on Running an LLM-driven town with 800+ persistent agents: concurrency, context caching, and i
+    Technically, this wouldn't be difficult to implement. Most current players enjoy cozy life sims, though, and I'm concerned that letting player characters commit crimes against each other could create conflict between players. Theft, scams, and robberies already exist, but for now they're carried out by NPCs.
+
+[2026-10-08] u/Eastern_Spite335 :: /u/Eastern_Spite335 on Running an LLM-driven town with 800+ persistent agents: concurrency, context caching, a
+    Grazie mille della risposta. Sarebbe stato molto interessante inserire un Jimmy Conway e vedere come reagiva il mondo, comunque, io ci penserei, alla fine sarebbe molto divertente, insomma, sono Ped virtuali... Buon lavoro 👍💪
+
+[2026-10-08] u/chortly2 :: /u/chortly2 on Running an LLM-driven town with 800+ persistent agents: concurrency, context caching, and infer
+    > Why can't I send money? >> Because then it would be your life, not hers. That is beautifully put.
+
+[2026-10-08] u/keepthepace :: /u/keepthepace on Running an LLM-driven town with 800+ persistent agents: concurrency, context caching, and in
+    I love it! It tickles the GM senses in me :-) Now I want to make it in the sci-fi solarpunk setting that we started developping with friends :-)
+
+[2026-10-08] u/toothpastespiders :: /u/toothpastespiders on Running an LLM-driven town with 800+ persistent agents: concurrency, context caching, 
+    You should! The AI fishtank concept can really be a lot of fun. Especially if it's in a setting you like. I've been a big fan of the megaten franchise since I was a kid and recently started playing around putting LLM run characters into the defunct Shin Megami Tensei IMAGINE MMO (server running locally). Even with just something as modest as gemma 4 26B and some prompt injection to help with the setting it's just been fun watching the characters running around doing their thing. Like getting angry about one character summoning a demon the other hates. Or the more serious characters getting progressively more frustrated with the hyper or lackadaisical ones. Just seeing how well it can manage in-character "crossovers" with parts of the franchise that atlus forgot over time. Even knowing how the tricks are done and the simple rules under seemingly complex behavior it's just really fun to watch. Likewise logging in to just MMO around.
+
+[2026-10-09] u/kaxapi :: /u/kaxapi on Running an LLM-driven town with 800+ persistent agents: concurrency, context caching, and inferen
+    that's a really cool project! I was thinking of something similar few days ago. So I forked Simitone - frontend for The Sims 1, deployed bonsai-27b on my 4090, vibecoded a PoC for the LLM to "play" Sims as if it was in "real" world. Then added "system 1" LoRa adapter (jeff) and fine-tuned it on a synthetic dataset (generated by GLM 5.3) for 4 personas: Organizer, Procastinator, Sociable, Habitual. Latency for Bonsai response is 2-3s (nothink), for system 1 is <1s. It's working kind of well, 4 people live in the same house, instead of speech bubbles they have real dialogs and real thoughts. They reflect on their experiences while in the shower. They aware of what is happening around them. Sometimes they still collapse over something like "bathroom conflict" though. For the next step I plan to add embeddinggemma-300m (which is especially good for retrieval of episodic and dialogue memory) for character memory RAG.
+
+[2026-10-10] u/Low_Bad_6585 :: /u/Low_Bad_6585 on Running an LLM-driven town with 800+ persistent agents: concurrency, context caching, and i
+    I've been considering smaller, faster models for some decisions too, along the lines of the System 1 / jev approach you mentioned. Others here have suggested similar ideas. That could bring costs down further.
+
+[2026-10-08] u/VotZeFuk :: /u/VotZeFuk on Running an LLM-driven town with 800+ persistent agents: concurrency, context caching, and infer
+    Seems like an interesting project! Asking out of curiosity - do you think any of the lessons you've learned developing this, could be applied to an idea of making a persistent human-like entity (simulated human being) rather than a whole city of entities interacting with each other? (long rambling down below - take it as a bunch of ideas popping out from the brain fog of thoughts) What I mean in detail, let's say there's an entire life's story of a person, from their birth to the current day. It forms a skeleton of who they are, narrated in their own voice (= a perfect stylistic example mixed with hard facts). That alone is "kind of" enough for a typical role-playing chat. It can be supplied with rule-books and "lore" appends, although it all ultimately fails to become anything but a chatbot answering to incoming queries. Now, what it would be missing is persistence in time, obviously. There are ways to handle it (e.g. heartbeat-scripts, dynamic, status-dependent: slower at night, for example, or working at higher frequency during the day - e.g. they're busy/AFK --> the status changes to only occasional pulses of attention, making the heartbeat check for the chat contents once-per-hour; user's messages would be delayed - not delivered to LLM - if the simulated person is currently "away", and so on). So, to sum things up, some sort of a moderation system, an overseer layer, must react to the scripts, making its own internal decision to bother the primary LLM (one that ingests 
+
+[2026-10-08] u/Low_Bad_6585 :: /u/Low_Bad_6585 on Running an LLM-driven town with 800+ persistent agents: concurrency, context caching, and i
+    My characters have their own lives. Even if you leave them alone, they keep going and set their own goals, like earning money, buying a home, and practicing skills. Under the hood, there are some rule-based systems for injecting desires. Feel free to try it at https://slowvale.com — it's free, just sign up and play!
+
+[2026-10-08] u/toothpastespiders :: /u/toothpastespiders on Running an LLM-driven town with 800+ persistent agents: concurrency, context caching, 
+    otherwise it's so boring to have all those assistants and bots with no genuine "AI humans" we've been reading about in sci-fi Yeah, apart from any actual reason for it the concept's just fun. My biggest project started from just having a LLM try to read through books and judge whether I'd like it or not. But the further I progressed in that the more it became apparent that doing that in a more meaningful way than netflix recommendations or the like means abstracting a huge amount of how I experience media and from that how I experience being a living human being. We don't evaluate life with objective variable comparisons. So counter intuitively some of my biggest gains came from pushing the system 'away' from efficiency there. The biggest miracle is me just getting a use out of my dusty psych degree for something other than marketing. Because like you point out, it's not really a matter of implementing a task or action. It's just as much about mirroring the million fuzzy elements that we're unaware of that guide it all and weave into this convincing but illusionary internal narrative.
+
+[2026-10-08] u/chpatton013 :: /u/chpatton013 on Running an LLM-driven town with 800+ persistent agents: concurrency, context caching, and in
+    How did you come up with this idea?
+
+[2026-10-09] u/Low_Bad_6585 :: /u/Low_Bad_6585 on Running an LLM-driven town with 800+ persistent agents: concurrency, context caching, and i
+    I originally just wanted to make a little virtual pet! But I found that with a simple environment, or only one character, things became repetitive pretty quickly. So I kept adding other characters and making the world more realistic, to give the little pet a more interesting life. Those characters needed things to do and ways to interact, which led to more systems and a richer environment. It gradually grew into a whole town. I didn’t start out planning something this big—it just kept growing as I tried to make the original idea more interesting :)
+
+[2026-10-08] u/s101c :: /u/s101c on Running an LLM-driven town with 800+ persistent agents: concurrency, context caching, and inferenc
+    Great visual style, brings a lot of memories!
+
+[2026-10-08] u/tifa_cloud0 :: /u/tifa_cloud0 on Running an LLM-driven town with 800+ persistent agents: concurrency, context caching, and in
+    this is just superb ✌🏻
+
+[2026-10-08] u/Alt4rEg0 :: /u/Alt4rEg0 on Running an LLM-driven town with 800+ persistent agents: concurrency, context caching, and infer
+    Fascinating stuff! Do they know that they live in a simulation?! 😜
+
+[2026-10-09] u/Low_Bad_6585 :: /u/Low_Bad_6585 on Running an LLM-driven town with 800+ persistent agents: concurrency, context caching, and i
+    Probably, if you ask them—their prompts do include some background about the setting. But if you ask directly, “Do you know you’re a character in a virtual world?”, they won’t necessarily give you a straightforward answer. Honestly, I’m not sure there’s a clean yes or no here. Having that information in the prompt and what we mean by “knowing” are a little different, so I’d leave that question open :)
+
+[2026-10-09] u/Jumbomuffin1312 :: /u/Jumbomuffin1312 on Running an LLM-driven town with 800+ persistent agents: concurrency, context caching, an
+    Super cool!
+
+[2026-10-09] u/xapep :: /u/xapep on Running an LLM-driven town with 800+ persistent agents: concurrency, context caching, and inferenc
+    From the provider side, the part worth highlighting is that 90%+ cache hit rate being a request-architecture achievement, not a provider feature. Most teams treat caching as something to enable, then wonder why the bill did not move. Keeping stable instructions and reusable history at the front and state-dependent content at the tail is the actual work, and the schema-vs-text-generation tradeoff is the cleanest illustration of it I have seen written up. The same prefix discipline buys a second thing: stable latency. Cached prefill is where p99 time-to-first-token usually hides, so the design that lowers cost also tightens the worst-case response time. Two birds. The daily-summary memory pass paired with sub-30-minute call gaps is a nice detail too: you are keeping the cache warm on the same cadence the retention window expects. If you ever publish the numbers behind the fallback path, how often the strict-schema route actually fires and what it costs in retries, that is the data point everyone building on structured output is missing.
+
+[2026-10-10] u/Low_Bad_6585 :: /u/Low_Bad_6585 on Running an LLM-driven town with 800+ persistent agents: concurrency, context caching, and i
+    Thanks! One update: the strict-schema fallback was part of an earlier design. We essentially no longer need it now; retries with diagnostic feedback resolve over 99.9% of cases without exhausting the retry limit. I just checked Prometheus for the Chinese server over the past 24 hours: roughly 160k completed decisions, around 1,450 initial output-validation failures, and about 1,490 extra calls from those validation retries. So output-validation retries add roughly 0.9% to the call count. That's call-count overhead, rather than a separately measured dollar-cost figure.
+
+[2026-10-11] u/xapep :: /u/xapep on Running an LLM-driven town with 800+ persistent agents: concurrency, context caching, and inferenc
+    Thanks, this is exactly the data point the cache discussion was missing. A ~0.9% initial-validation failure rate over 160k decisions means the diagnostic-feedback retry is doing the job the schema fallback used to do, and dropping the fallback keeps one code path instead of two. What the call-count number hides is the dollar side: a failed call and its retry share the same cached prefix, so the retry is mostly cheap output tokens on an already-warm cache. Your 0.9% call overhead is likely a smaller cost overhead, which is the figure that matters when you bill per decision. Do the ~1,450 failures cluster in specific characters or decision types, or are they spread evenly? If they cluster, that is a prompt-level fix rather than a retry-loop one.
+
+[2026-10-10] u/Ctbhatia :: /u/Ctbhatia on Running an LLM-driven town with 800+ persistent agents: concurrency, context caching, and infer
+    worth checking the cached-read share before calling a provider cheap: at 30k tokens across 300 calls a character, that line is most of the bill and the headline input price barely matters. i work at coralbricks.ai, where cached reads are $0, so that is the number i would compare next.
+
+[2026-10-11] u/ZeoXFN :: /u/ZeoXFN on Running an LLM-driven town with 800+ persistent agents: concurrency, context caching, and inferen
+    Really impressive project! Do you have a personal GitHub profile? I'd love to follow your work.

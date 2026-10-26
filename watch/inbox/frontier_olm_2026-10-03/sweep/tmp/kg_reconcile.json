@@ -1,0 +1,28 @@
+{
+ "file": "memory/knowledge_graph.json",
+ "schema_keys_on_edges": [
+  "from",
+  "rel",
+  "to",
+  "text"
+ ],
+ "bugged_read_source_target_keys": {
+  "nodes_with_degree_ge_1": 0,
+  "dangling_endpoints": "1650 of 1650",
+  "note": "reproduces the sweep seats' 2086/2086 zero-degree and 825/825-dangling read; caused by parsing nonexistent source/target keys"
+ },
+ "correct_read_from_to_keys": {
+  "nodes": 2086,
+  "edges": 825,
+  "nodes_with_degree_ge_1": 602,
+  "edge_orphans": 1484,
+  "dangling_endpoints": "823 of 1650",
+  "dangling_by_rel": {
+   "has_invariant": 794,
+   "already_inside": 29
+  },
+  "resolving_endpoints": 827,
+  "resolving_decomposition": "825 edge-source endpoints plus the 2 target endpoints of family:readable_first's two edges (the only edges resolving on both ends)"
+ },
+ "repair_planning_verdict": "use the lens read (lens/graph.md); the zero-degree read was a field-name bug, now reproduced and identified"
+}

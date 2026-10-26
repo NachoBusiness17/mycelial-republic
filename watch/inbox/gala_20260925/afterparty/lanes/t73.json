@@ -1,0 +1,18 @@
+{
+  "gopher": "t73",
+  "item": "Deliberate-off flow: CLI surface that writes/removes logs/magimprove_intentional.flag and disables/re-registers MagImproveDaily (executor for the t47 marker)",
+  "ok": true,
+  "note": "Spec first: mag/lifecycle.py module docstring now names the t73 flow (marker BEFORE disable, fail closed; marker cleared ONLY after successful re-register) and main.py argparse help carries the CLI spec. Implemented clear_improve_intentional/improve_off/improve_on in mag/lifecycle.py with an injectable _run command runner; wired main.py improve-off (--reason) / improve-on dispatch printing the cited marker write. The live schtask was never touched: tests mock _run, only --help ran live.",
+  "checks": [
+    {"check": "pytest tests/test_improve_off_on.py tests/test_doctor_scheduled_tasks.py -v", "result": "20 passed, exit 0 (5 new t73 tests incl. two negatives: marker-write failure aborts without disabling; task failure keeps marker)", "evidence": "watch/inbox/gala_20260925/afterparty/lanes/t73.check.txt"},
+    {"check": "main.py improve-off --help / improve-on --help", "result": "both render, exit 0", "evidence": "watch/inbox/gala_20260925/afterparty/lanes/t73.check.txt"},
+    {"check": "tools/violation_ratchet.py check --changed", "result": "scope=16 changed files; hits=13; registered=13; NEW=0; exit 0", "evidence": "watch/inbox/gala_20260925/afterparty/lanes/t73.check.txt"},
+    {"check": "em-dash scan of new test file", "result": "0 occurrences", "evidence": "inline grep during t73"}
+  ],
+  "files": [
+    "mag/lifecycle.py",
+    "main.py",
+    "tests/test_improve_off_on.py"
+  ],
+  "next_steal": "_waste_action('improve') in mag/lifecycle.py still prescribes prose ('disable MagImproveDaily / stop improve jobs'); it should now prescribe the landed executor: python main.py improve-off --reason ... (one-line spec alignment so the lifecycle UI names the real command)."
+}

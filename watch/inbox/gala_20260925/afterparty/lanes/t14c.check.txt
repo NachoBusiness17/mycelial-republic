@@ -1,0 +1,81 @@
+t14c check evidence (2026-09-25)
+
+ITEM: leaderstats page (M): VM, Rebirths, Invariants, Summit count
+FILE: roblox/src/server/init.server.luau
+
+EXISTS-OR-BUILT: existed. attachLeaderstats was already present (originally
+lines 166-193) binding Virtue Marks, Rebirths, Invariants. Only Summit count
+was missing from the queue/todo.md row, so the existing script was extended.
+
+STAT SOURCES (grep receipts, all real attributes, none invented):
+- VM: player:GetAttribute("VirtueMarks") - written by MudBasecamp.luau:175,
+  LedgerExchange.luau:193/275/283, OssuaryZone.luau:297/393, ZoneGate.luau:109,
+  LightMazeZone.luau:158, RiddleMazeZone.luau:190
+- Rebirths: player:GetAttribute("Rebirths") - written by LedgerExchange.luau:194
+- Invariants: player:GetAttribute("Invariants") - read by RuinsGoZone.luau:39
+- Summit count: NO dedicated count attribute exists anywhere in src. The only
+  summit state is per-round boolean attributes named Summit_<roundStart> set by
+  LightMazeZone.build()'s TowerSummit Touched handler (LightMazeZone.luau:156).
+  The scorecard counts attribute names with the "Summit_" prefix via
+  player:GetAttributes(), 1s poll loop, same cadence as the other three stats.
+
+BEFORE (roblox/src/server/init.server.luau lines 176-188):
+	local invariants = Instance.new("IntValue")
+	invariants.Name = "Invariants"
+	invariants.Parent = stats
+	stats.Parent = player
+
+	task.spawn(function()
+		while player.Parent do
+			marks.Value = player:GetAttribute("VirtueMarks") or 0
+			rebirths.Value = player:GetAttribute("Rebirths") or 0
+			invariants.Value = player:GetAttribute("Invariants") or 0
+			task.wait(1)
+		end
+	end)
+
+AFTER (same file, lines 176-205):
+	local invariants = Instance.new("IntValue")
+	invariants.Name = "Invariants"
+	invariants.Parent = stats
+	local summits = Instance.new("IntValue")
+	summits.Name = "Summits"
+	summits.Parent = stats
+	stats.Parent = player
+
+	task.spawn(function()
+		while player.Parent do
+			marks.Value = player:GetAttribute("VirtueMarks") or 0
+			rebirths.Value = player:GetAttribute("Rebirths") or 0
+			invariants.Value = player:GetAttribute("Invariants") or 0
+			-- t14c 2026-09-25: summit count has no dedicated attribute in src;
+			-- the only summit state is the per-round Summit_<roundStart> boolean
+			-- attributes LightMazeZone.build()'s TowerSummit Touched handler sets
+			-- (LightMazeZone.luau:156), so the scorecard counts those names
+			-- instead of inventing a stat source.
+			local summitCount = 0
+			for name in pairs(player:GetAttributes()) do
+				if string.sub(name, 1, 7) == "Summit_" then
+					summitCount += 1
+				end
+			end
+			summits.Value = summitCount
+			task.wait(1)
+		end
+	end)
+
+VERIFICATION:
+- Read-back of the final block: correct, brackets and loop balanced, no
+  em-dashes in added text.
+- luau-lsp: not on PATH (where luau-lsp and where luau-analyze both empty on
+  this host), so semantic analyze was not run. Code is deterministic server
+  Luau: Instance.new, GetAttributes (returns {[string]: any}), pairs over
+  names, string.sub prefix test, compound +=, all strict-mode safe.
+- Client-side consumers of leaderstats: none found (grep -rni leaderstats
+  roblox/src/client = no hits), server-only change is complete.
+- mountain_check NOT run per lane order (shared resource).
+
+NEXT_STEAL: the 1s polling loop recomputes GetAttributes every second per
+player; a GetAttributeChangedSignal("...") binding or a Summit count maintained
+at write time in LightMazeZone would remove the poll. Low priority; the loop
+matches the pre-existing pattern.

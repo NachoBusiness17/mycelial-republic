@@ -1,0 +1,14 @@
+{
+  "gopher": "t1d",
+  "item": "fix HeadMuseum Soul.Soul unknown-type TypeError (witnessed at HeadMuseum.luau(16,26) by two lanes)",
+  "ok": true,
+  "note": "Item hypothesis FALSE, negative first-class: the require (HeadMuseum.luau:11) and the Soul.Soul annotation (line 16) are already proper; Soul.luau:23 exports the type. Root cause is the gate's analyze cwd, not roblox/src: tools/mountain_check generates roblox/sourcemap.json with (cd roblox) so filePaths are relative to roblox/, then runs luau-lsp analyze from the REPO ROOT, so module files fail to load (Unknown require ...\\local_sovereign_agent\\src\\shared\\Soul.luau, missing roblox/) and Soul.Soul goes unknown at line 16, the only cross-module export-type consumer. Reproduced repo-root (TypeError at 16,26, the only line that survives the gate's noise filters, matching the witnessed report); clean exit 0 from roblox/ root on HeadMuseum alone; full gate set from roblox/ = 373 output lines, 0 HeadMuseum mentions. Did NOT mute the canary with typeof(Soul.new()); left line 16 typed. Landed only a comment truth-repair (old lines 26-28 named a false cause: 'sourcemap cannot resolve'); code byte-identical; re-verified exit 0 after edit. mountain_check NOT run (t1a holds it); all analyzer runs read-only.",
+  "checks": [
+    "baseline repo-root analyze of HeadMuseum.luau: 4 errors, incl. (16,26) TypeError: Unknown type 'Soul.Soul' (raw in t1d.check.txt)",
+    "same analyze from roblox/: exit 0, zero errors",
+    "full gate analyze set from roblox/: exit 1 (pre-existing zones_extra findings), 373 lines, 0 HeadMuseum mentions",
+    "post-edit analyze from roblox/: exit 0",
+    "careful read cited: HeadMuseum.luau(11,14) and (16,26); Soul.luau(23); roblox/default.project.json Maps Modules -> src/shared; sourcemap filePaths relative to roblox/"
+  ],
+  "next_steal": "t1a (holds mountain_check this wave): one-line gate fix, run the analyze step from roblox/ instead of repo root, e.g. (cd roblox && ../tools/bin/luaulsp/luau-lsp.exe analyze --definitions=../tools/bin/globalTypes.d.luau --sourcemap=sourcemap.json src/shared src/server src/server/zones_extra src/client). Warn: correct root unmasks real pre-existing findings outside accepted noise classes (e.g. SteerFieldZone(152,25) BasePart-vs-Part, ToyBoxZone(131,52) number?, RiddleMazeZone(20,7) LocalUnused); filtered gate output will grow, that is signal not breakage. After it lands, tighten HeadMuseum dirty table from any to Soul.Soul."
+}

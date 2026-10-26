@@ -1,0 +1,37 @@
+t6e evidence check log, gala afterparty 2026-09-26
+Item: file the grave-receipt retirement law to corpus/steal/GRAVE_RETIREMENT_LAW_20260926.md from a25 testimony + queue/handoff/README.md
+
+=== check 1: verbatim quote byte-verify (grep -F -c, expect 1)
+$ grep -F -c "Never delete. Deletions are operator-gated. A grave that removed, moved, or rewrote the file is not a grave, it is a loss." queue/handoff/README.md
+1
+exit=0
+
+=== check 2: burn-receipt word cap (expect < 400)
+$ wc -w corpus/steal/GRAVE_RETIREMENT_LAW_20260926.md
+343 corpus/steal/GRAVE_RETIREMENT_LAW_20260926.md
+
+=== check 3: em/en dash scan of filed receipt (expect no matches)
+$ grep -n -P "[\x{2013}\x{2014}]" corpus/steal/GRAVE_RETIREMENT_LAW_20260926.md
+(no output)
+exit=1 (no matches)
+
+=== check 4: fixed sections present, in order
+$ grep "^## " corpus/steal/GRAVE_RETIREMENT_LAW_20260926.md
+## LAW
+## CLAIM
+## VERBATIM QUOTE
+## STEAL
+## FALSIFIER
+## BIBLIOGRAPHY
+count=6
+
+=== check 5: every bibliography entry verified on disk before citing
+$ ls queue/handoff/README.md watch/inbox/gala_20260925/w3/lanes/a25-handoff-ledger.json watch/inbox/GALA_GRAVE_c1-master-handoff-fossil.md watch/inbox/GALA_GRAVE_c2-peer-json-graves.md watch/inbox/GALA_GRAVE_c3-goodnight-overnight.md
+queue/handoff/README.md
+watch/inbox/gala_20260925/w3/lanes/a25-handoff-ledger.json
+watch/inbox/GALA_GRAVE_c1-master-handoff-fossil.md
+watch/inbox/GALA_GRAVE_c2-peer-json-graves.md
+watch/inbox/GALA_GRAVE_c3-goodnight-overnight.md
+exit=0
+
+RESULT: all 5 checks pass. Receipt filed, zero bytes of ledger deleted.

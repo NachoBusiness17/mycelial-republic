@@ -1,0 +1,15 @@
+{
+  "gopher": "t46",
+  "item": "client portal-ring tint by alliance: allied green, opposed red, independent untouched, driven by server-stamped ZoneGate.allianceFor results via attributes (DashAt pattern)",
+  "ok": true,
+  "note": "ZoneGate lives in src/server not src/shared; no zones_extra client files exist and init.client had no portal visuals (pads are server-built Portal_<zone> Parts in init.server). Server stamps Gate_<zone> attributes once at join (space-sanitized keys, values are the same allianceFor verdicts portalGate enforces); client tint block lerps the pad color toward fixed alliance colors, independent tints nothing. Spec line first in init.client header; owning doc WORLDGEN_MINE.md law 4 updated before the code.",
+  "checks": [
+    "read-back verified all three touched files, before/after lines cited in t46.check.txt",
+    "attribute key parity: server gateAttr gsub(%W,_) == client key gsub(%W,_); pad suffix Portal_<zone> matches client pattern ^Portal_(.+)$",
+    "deterministic: fixed colors, one fixed-factor Lerp, no loops/timers/Random; attribute-set-once makes re-tint a non-event",
+    "luau-lsp not installed (exit 127), verification by read only",
+    "mountain_check NOT run per orders",
+    "no em-dashes in filed t46 text"
+  ],
+  "next_steal": "t47: the player's own sphere is invisible to the player; a tiny client chip echoing the replicated Sphere attribute (and the gate verdict that colored the last portal) would make the t46 tint legible, same attribute pattern, no new remotes"
+}

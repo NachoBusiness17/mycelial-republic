@@ -1,0 +1,117 @@
+FFFFFFFF.F                                                               [100%]
+================================== FAILURES ===================================
+_________________ test_census_counts_rows_by_kind_field_only __________________
+
+    def test_census_counts_rows_by_kind_field_only():
+>       from mag.improve import behavioral_events_census
+E       ImportError: cannot import name 'behavioral_events_census' from 'mag.improve' (C:\Users\foste\Documents\projects\local_sovereign_agent\mag\improve.py)
+
+tests\test_improve_behavioral_scout.py:71: ImportError
+__________ test_brief_falsifier_quoted_literal_never_counts_or_emits __________
+
+    def test_brief_falsifier_quoted_literal_never_counts_or_emits():
+>       from mag.improve import behavioral_events_census
+E       ImportError: cannot import name 'behavioral_events_census' from 'mag.improve' (C:\Users\foste\Documents\projects\local_sovereign_agent\mag\improve.py)
+
+tests\test_improve_behavioral_scout.py:89: ImportError
+______________________ test_window_is_last_80_raw_lines _______________________
+
+    def test_window_is_last_80_raw_lines():
+>       from mag.improve import behavioral_events_census
+E       ImportError: cannot import name 'behavioral_events_census' from 'mag.improve' (C:\Users\foste\Documents\projects\local_sovereign_agent\mag\improve.py)
+
+tests\test_improve_behavioral_scout.py:103: ImportError
+____________ test_blank_and_unparseable_lines_consume_window_slots ____________
+
+    def test_blank_and_unparseable_lines_consume_window_slots():
+>       from mag.improve import behavioral_events_census
+E       ImportError: cannot import name 'behavioral_events_census' from 'mag.improve' (C:\Users\foste\Documents\projects\local_sovereign_agent\mag\improve.py)
+
+tests\test_improve_behavioral_scout.py:123: ImportError
+___________________ test_nondict_json_row_skipped_not_fatal ___________________
+
+    def test_nondict_json_row_skipped_not_fatal():
+        """Delta on old math: one non-dict JSON row used to raise inside the
+        scout block and the outer except silently dropped the WHOLE row."""
+>       from mag.improve import behavioral_events_census
+E       ImportError: cannot import name 'behavioral_events_census' from 'mag.improve' (C:\Users\foste\Documents\projects\local_sovereign_agent\mag\improve.py)
+
+tests\test_improve_behavioral_scout.py:134: ImportError
+__________________________ test_samples_cap_at_five ___________________________
+
+    def test_samples_cap_at_five():
+>       from mag.improve import behavioral_events_census
+E       ImportError: cannot import name 'behavioral_events_census' from 'mag.improve' (C:\Users\foste\Documents\projects\local_sovereign_agent\mag\improve.py)
+
+tests\test_improve_behavioral_scout.py:143: ImportError
+_______________________ test_empty_and_windowless_text ________________________
+
+    def test_empty_and_windowless_text():
+>       from mag.improve import behavioral_events_census
+E       ImportError: cannot import name 'behavioral_events_census' from 'mag.improve' (C:\Users\foste\Documents\projects\local_sovereign_agent\mag\improve.py)
+
+tests\test_improve_behavioral_scout.py:156: ImportError
+_____________ test_scout_row_names_census_and_segregates_samples ______________
+
+tmp_path = WindowsPath('C:/Users/foste/Documents/projects/local_sovereign_agent/agents/pytest-tmp-21508/test_scout_row_names_census_an0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x000001D86989E750>
+
+    def test_scout_row_names_census_and_segregates_samples(tmp_path, monkeypatch):
+        import mag.improve as improve_mod
+    
+        log_dir = tmp_path / "logs"
+        log_dir.mkdir()
+        text = TOOL_FAIL_ROW + COLLAPSE_ROW + QUOTED_DIGEST_ROW + KINDLESS_ROW
+        (log_dir / "behavioral_events.jsonl").write_text(text, encoding="utf-8")
+        monkeypatch.setattr(improve_mod, "ROOT", tmp_path)
+    
+        rows = [
+            r
+            for r in improve_mod._behavioral_candidates("2026-09-26")
+            if r.get("claim", "").startswith("Behavioral events log:")
+        ]
+        assert len(rows) == 1
+        row = rows[0]
+>       assert "census events=4" in row["claim"], row["claim"]
+E       AssertionError: Behavioral events log: 4 recent seat errors
+E       assert 'census events=4' in 'Behavioral events log: 4 recent seat errors'
+
+tests\test_improve_behavioral_scout.py:182: AssertionError
+_____________________ test_scout_row_survives_nondict_row _____________________
+
+tmp_path = WindowsPath('C:/Users/foste/Documents/projects/local_sovereign_agent/agents/pytest-tmp-21508/test_scout_row_survives_nondic0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x000001D869896310>
+
+    def test_scout_row_survives_nondict_row(tmp_path, monkeypatch):
+        """Old math: the non-dict row aborted the block and the scout emitted
+        no behavioral row at all; the census skips the row and keeps 2."""
+        import mag.improve as improve_mod
+    
+        log_dir = tmp_path / "logs"
+        log_dir.mkdir()
+        (log_dir / "behavioral_events.jsonl").write_text(
+            TOOL_FAIL_ROW + NONDICT_ROW + COLLAPSE_ROW, encoding="utf-8"
+        )
+        monkeypatch.setattr(improve_mod, "ROOT", tmp_path)
+    
+        rows = [
+            r
+            for r in improve_mod._behavioral_candidates("2026-09-26")
+            if r.get("claim", "").startswith("Behavioral events log:")
+        ]
+>       assert len(rows) == 1
+E       assert 0 == 1
+E        +  where 0 = len([])
+
+tests\test_improve_behavioral_scout.py:235: AssertionError
+=========================== short test summary info ===========================
+FAILED tests/test_improve_behavioral_scout.py::test_census_counts_rows_by_kind_field_only
+FAILED tests/test_improve_behavioral_scout.py::test_brief_falsifier_quoted_literal_never_counts_or_emits
+FAILED tests/test_improve_behavioral_scout.py::test_window_is_last_80_raw_lines
+FAILED tests/test_improve_behavioral_scout.py::test_blank_and_unparseable_lines_consume_window_slots
+FAILED tests/test_improve_behavioral_scout.py::test_nondict_json_row_skipped_not_fatal
+FAILED tests/test_improve_behavioral_scout.py::test_samples_cap_at_five - Imp...
+FAILED tests/test_improve_behavioral_scout.py::test_empty_and_windowless_text
+FAILED tests/test_improve_behavioral_scout.py::test_scout_row_names_census_and_segregates_samples
+FAILED tests/test_improve_behavioral_scout.py::test_scout_row_survives_nondict_row
+9 failed, 1 passed in 0.61s

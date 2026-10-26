@@ -1,0 +1,69 @@
+=== LANE a02-dungeon-campaign-r11 FINISH-LINE CHECKS (run 2026-10-10, this sitting) ===
+
+--- CHECK 1: fill landing spot 1 on disk (erratum receipt, R11 close block) ---
+$ grep -n "R11 close" watch/inbox/playground/dnd0_20261003T202213Z_ERRATUM.md
+39:- Executed 2026-10-10 (GAP_REGISTER 2026-10-10 R11 fill, lane a02-dungeon-campaign-r11): see "R11 close" below.
+41:## R11 close (2026-10-10: GAP_REGISTER row R11 executed)
+exit=0
+$ grep -c "Cross-Audit (party-wide, v1.1)" watch/inbox/playground/dnd0_20261003T202213Z_ERRATUM.md
+1
+exit=0
+
+--- CHECK 2: fill landing spot 2 on disk (module revision in DND_module.md PART 3) ---
+$ grep -n "Cross-Audit (party-wide, v1.1)" watch/inbox/hermes_burn/DND_module.md
+252:### Cross-Audit (party-wide, v1.1)
+exit=0
+$ ls -la watch/inbox/hermes_burn/DND_module.md watch/inbox/playground/dnd0_20261003T202213Z_ERRATUM.md
+-rw-r--r-- 1 foste 197609 25936 Oct 10 09:33 watch/inbox/hermes_burn/DND_module.md
+-rw-r--r-- 1 foste 197609  9431 Oct 10 09:33 watch/inbox/playground/dnd0_20261003T202213Z_ERRATUM.md
+exit=0
+
+--- CHECK 3: em-dash law on the two edited files (expect 0 hits in the new blocks) ---
+$ grep -c <U+2014> on both files
+0
+exit=1
+0
+exit=1
+
+--- CHECK 4: byte re-verification of the erratum load-bearing numbers (venv python) ---
+$ .venv/Scripts/python.exe (transcript: void census, S4 audit-root counts, saelis quote, damage arithmetic, DONE fields)
+VOID CENSUS: 40 of 50
+S4 PC rows: 14 | [AUDIT root] request beats: 5 | tag occurrences: 6
+saelis S4t1 quote: True | are-not variant: False
+S4 PC total damage: 95 | cumulative through t8: 39
+DONE verdict: PARTIAL: the Wyrm unanchored - the season continues | spend: 0.2399 | root_anchors: 0 | party_hp: {'saelis': 14, 'grok': 18, 'chatgpt': 6, 'deepseek': 30}
+exit=0
+
+$ .venv/Scripts/python.exe (usage ledger: window count/sum, zero stamped, per-family split, per-beat pairing)
+WINDOW ROWS: 84 | SUM cost_usd: 0.24
+stamped dnd0_20261003T202213Z anywhere in ledger: 0
+actor calls: 39 | dm-side calls: 45 (DND0_beatN_dm: 40 + S0: 1 + CAMP monster: 4 )
+DND0_beatN_dm rows all cost 0.0: True
+per-beat pairing: 39 actor x2 + 5 monster + 1 S0 = 84
+exit=0
+
+--- CHECK 5: citation lint on the two changed prose files ---
+$ .venv/Scripts/python.exe tools/citation_lint.py check --files watch/inbox/hermes_burn/DND_module.md watch/inbox/playground/dnd0_20261003T202213Z_ERRATUM.md
+CITATION-LINT: ok records=2 anchors=25 numbers-checked=1 blocking=0 warns=21 enforce-tokens=False
+  WARN watch/inbox/hermes_burn/DND_module.md:17 SHORTHAND-UNRESOLVED doctrine.json bare-basename anchor resolves nowhere deterministically
+  WARN watch/inbox/hermes_burn/DND_module.md:40 SHORTHAND-UNRESOLVED doctrine.json bare-basename anchor resolves nowhere deterministically
+  WARN watch/inbox/hermes_burn/DND_module.md:95 SHORTHAND-UNRESOLVED doctrine.json bare-basename anchor resolves nowhere deterministically
+  WARN watch/inbox/hermes_burn/DND_module.md:150 SHORTHAND-UNRESOLVED doctrine.json bare-basename anchor resolves nowhere deterministically
+  WARN watch/inbox/hermes_burn/DND_module.md:151 SHORTHAND-UNRESOLVED doctrine.json bare-basename anchor resolves nowhere deterministically
+  WARN watch/inbox/hermes_burn/DND_module.md:230 SHORTHAND-UNRESOLVED doctrine.json bare-basename anchor resolves nowhere deterministically
+  WARN watch/inbox/hermes_burn/DND_module.md:234 SHORTHAND-UNRESOLVED doctrine.json bare-basename anchor resolves nowhere deterministically
+  WARN watch/inbox/hermes_burn/DND_module.md:235 SHORTHAND-UNRESOLVED doctrine.json bare-basename anchor resolves nowhere deterministically
+  WARN watch/inbox/hermes_burn/DND_module.md:239 SHORTHAND-UNRESOLVED doctrine.json bare-basename anchor resolves nowhere deterministically
+  WARN watch/inbox/hermes_burn/DND_module.md:240 SHORTHAND-UNRESOLVED doctrine.json bare-basename anchor resolves nowhere deterministically
+  WARN watch/inbox/hermes_burn/DND_module.md:244 SHORTHAND-UNRESOLVED doctrine.json bare-basename anchor resolves nowhere deterministically
+  WARN watch/inbox/hermes_burn/DND_module.md:245 SHORTHAND-UNRESOLVED doctrine.json bare-basename anchor resolves nowhere deterministically
+  WARN watch/inbox/hermes_burn/DND_module.md:249 SHORTHAND-UNRESOLVED doctrine.json bare-basename anchor resolves nowhere deterministically
+  WARN watch/inbox/hermes_burn/DND_module.md:271 SHORTHAND-UNRESOLVED doctrine.json bare-basename anchor resolves nowhere deterministically
+  WARN watch/inbox/hermes_burn/DND_module.md:305 SHORTHAND-UNRESOLVED doctrine.json bare-basename anchor resolves nowhere deterministically
+  WARN watch/inbox/hermes_burn/DND_module.md:346 SHORTHAND-UNRESOLVED doctrine.json bare-basename anchor resolves nowhere deterministically
+  WARN watch/inbox/hermes_burn/DND_module.md:351 SHORTHAND-UNRESOLVED doctrine.json bare-basename anchor resolves nowhere deterministically
+  WARN watch/inbox/hermes_burn/DND_module.md:305 UNRESOLVED-SOURCE 6000 number unverifiable: the sentence's named record sources resolve nowhere (doctrine.json, doctrine.json)
+  WARN watch/inbox/playground/dnd0_20261003T202213Z_ERRATUM.md:12 SHORTHAND-UNRESOLVED dungeon.py bare-basename anchor resolves nowhere deterministically
+  WARN watch/inbox/playground/dnd0_20261003T202213Z_ERRATUM.md:13 SHORTHAND-UNRESOLVED dungeon.py bare-basename anchor resolves nowhere deterministically
+  WARN watch/inbox/playground/dnd0_20261003T202213Z_ERRATUM.md:14 SHORTHAND-UNRESOLVED DND_module.md bare-basename anchor resolves nowhere deterministically
+exit=0

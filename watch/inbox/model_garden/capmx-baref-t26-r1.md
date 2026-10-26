@@ -1,0 +1,3 @@
+# capmx-baref-t26-r1 (glm-5.3-flash @ zai, turn 1, channel: content)
+
+{"verb": "STAGE_ASK", "reason": "Senses show git_changed=217 with tools/rib_swarm.py in tail; cheap adversarial review of that file is the highest-value routing this tick. No alert-worthy anomaly in reads; handoff backlog already queued.", "payload": {"target": "tools/rib_swarm.py", "ask": "Adversarial review of tools/rib_swarm.py as changed in the current working tree (217 files dirty). Falsifier: any reviewer-cited file:line defect in verb dispatch or payload handling that fails closed. Cite bytes or mark UNVERIFIED."}}

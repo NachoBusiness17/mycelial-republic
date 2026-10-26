@@ -1,0 +1,124 @@
+{
+ "receipt": "THE 50 W6 T26: weekly auto-stamp of the teleological drift pairs (T1-T6)",
+ "filed": "2026-09-27T01:07:04.485621Z",
+ "week_key": "2026-W39",
+ "generator": "tools/drift_pairs_stamp.py",
+ "ledger": "memory/runs/adv_arc_50/teleo_drift_stamps.jsonl",
+ "run": {
+  "stamps_appended": 0,
+  "stamps_skipped_already_stamped": 6
+ },
+ "week_stamps_in_ledger": [
+  {
+   "pair_id": "T1",
+   "pair": "lane_activity_vs_filed_knowledge",
+   "verdict": "DRIFTING",
+   "corr_dm_dr": -0.0271,
+   "deltas_used": 20,
+   "referent_age_days": null,
+   "window": {
+    "start": "2026-09-05",
+    "end": "2026-09-25",
+    "buckets": 21,
+    "metric_total": 4379,
+    "referent_total": 125
+   },
+   "stamped_at": "2026-09-25T19:42:19.817672Z"
+  },
+  {
+   "pair_id": "T2",
+   "pair": "mrpool_video_density_vs_message_density",
+   "verdict": "ALIGNED",
+   "corr_dm_dr": 0.8839,
+   "deltas_used": 12,
+   "referent_age_days": null,
+   "window": {
+    "start": "2026-09-06",
+    "end": "2026-09-18",
+    "buckets": 13,
+    "metric_total": 45,
+    "referent_total": 62
+   },
+   "stamped_at": "2026-09-25T19:42:19.817672Z"
+  },
+  {
+   "pair_id": "T3",
+   "pair": "anchored_proofs_vs_lane_activity",
+   "verdict": "DRIFTING",
+   "corr_dm_dr": -0.0759,
+   "deltas_used": 20,
+   "referent_age_days": null,
+   "window": {
+    "start": "2026-09-05",
+    "end": "2026-09-25",
+    "buckets": 21,
+    "metric_total": 70,
+    "referent_total": 4379
+   },
+   "stamped_at": "2026-09-25T19:42:19.817672Z"
+  },
+  {
+   "pair_id": "T4",
+   "pair": "lane_grind_vs_release_gates",
+   "verdict": "DRIFTING",
+   "corr_dm_dr": 0.0,
+   "deltas_used": 59,
+   "referent_age_days": null,
+   "window": {
+    "start": "2026-07-29",
+    "end": "2026-09-26",
+    "buckets": 60,
+    "metric_total": 4622,
+    "referent_total": 16
+   },
+   "stamped_at": "2026-09-26T11:37:14.132668Z"
+  },
+  {
+   "pair_id": "T5",
+   "pair": "training_motion_vs_release_milestones",
+   "verdict": "DRIFTING",
+   "corr_dm_dr": 0.0634,
+   "deltas_used": 59,
+   "referent_age_days": null,
+   "window": {
+    "start": "2026-07-29",
+    "end": "2026-09-26",
+    "buckets": 60,
+    "metric_total": 547784,
+    "referent_total": 18
+   },
+   "stamped_at": "2026-09-26T11:37:14.132668Z"
+  },
+  {
+   "pair_id": "T6",
+   "pair": "fold_steps_vs_burn_receipts",
+   "verdict": "ALIGNED",
+   "corr_dm_dr": 0.6387,
+   "deltas_used": 20,
+   "referent_age_days": null,
+   "window": {
+    "start": "2026-09-06",
+    "end": "2026-09-26",
+    "buckets": 21,
+    "metric_total": 21970,
+    "referent_total": 49
+   },
+   "stamped_at": "2026-09-26T11:37:14.132668Z"
+  }
+ ],
+ "wiring": "idempotent by ISO week: safe to schedule daily or weekly; it writes each pair at most once per week. Example weekly registration (operator-gated, not run here): schtasks /Create /SC WEEKLY /D MON /ST 08:15 /TN THE50_W6_T26_drift_pairs_stamp /TR \"C:\\Users\\foste\\Documents\\projects\\local_sovereign_agent\\.venv\\Scripts\\python.exe C:\\Users\\foste\\Documents\\projects\\local_sovereign_agent\\tools\\drift_pairs_stamp.py\"",
+ "first_stamps_provenance": "T1-T3 pair definitions and first stamps: memory/runs/adv_arc_50/teleo_drift_stamps.jsonl (bare drift_check rows on disk: no schema field, no timestamp field, so the 2026-09-18/19 stamp dates are receipt-attested only, not row-attested; corrected 2026-09-26, cause: wave-2 audit batch 5.1); T4-T6 landed with burn wave B2-05 2026-09-26 (filed-future referents: VERSION_REGISTRY behavioral trail, release_milestone training events, burn-ledger receipts); instrument: tools/drift.py",
+ "no_em_dash": true,
+ "staleness_tripwire": {
+  "tripwire": "regime_trail_staleness",
+  "threshold_days": 14.0,
+  "gate_class": "gate_id startswith regime_ | graduation",
+  "gate_rows_considered": 3,
+  "last_gate_date": "2026-09-26",
+  "last_training_date": "2026-09-27",
+  "days_since_last_gate": 1,
+  "training_grew_since_last_gate": true,
+  "alarm": false,
+  "reason": "fresh (1 days since last gate)"
+ }
+}

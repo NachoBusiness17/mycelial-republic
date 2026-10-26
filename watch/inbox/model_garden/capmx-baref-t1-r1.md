@@ -1,0 +1,3 @@
+# capmx-baref-t1-r1 (glm-5.3-flash @ zai, turn 1, channel: content)
+
+{"verb": "STAGE_ASK", "reason": "beat_rows 0 and landed_count 0 mean nothing is mid-flight; 211 changed files include tools/overmind_loop.py (git_tail[2]). Cheap review of that file is the obvious routing; ask is falsifiable: it fails if reviewer cannot cite file:line verdicts.", "payload": {"target": "tools/overmind_loop.py", "ask": "Review tick pacing: for each claim about tick routing, cite file:line bytes; any verdict lacking instrument, moment, and context assumptions is rejected. Return pass/fail plus one falsifier per finding."}}

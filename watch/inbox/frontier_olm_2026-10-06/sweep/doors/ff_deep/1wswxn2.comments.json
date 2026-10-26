@@ -1,0 +1,570 @@
+[
+ {
+  "author": "DocStrangeLoop",
+  "body": "try this one for the overthinking:  \n[https://huggingface.co/ukisai/Swift-Qwen3.8-27b](https://huggingface.co/ukisai/Swift-Qwen3.8-27b)",
+  "created_utc": 1790651234,
+  "id": "pcprqku",
+  "parent_id": "t3_1wswxn2",
+  "score": 13
+ },
+ {
+  "author": "GapNew4766",
+  "body": "a 3090's 24 GB is all VRAM, while on a Mac it's shared with macOS, so after the \\~17.5 GB model there's barely room for cache. ours sat at \\~18.2 GB with 64K across 2 slots thanks to a quantized KV cache (q8\\_0 K, 3-bit V), and Qwen 3.8 27B only has 4 KV heads.\n\non your Mac try IQ4\\_XS (\\~14 GB) with --cache-type-k q8\\_0 --cache-type-v q4\\_0 and flash attention, that should give you way more than 10K.",
+  "created_utc": 1790647994,
+  "id": "pcphlqo",
+  "parent_id": "t1_pcpg5xd",
+  "score": 10
+ },
+ {
+  "author": "louisremi",
+  "body": "So the finding of your experiment is that using Qwen3.8 27B in combination with Sonnet 5.5 always results in more expensive and slower coding. Not a good look for open-weights local models.\nI'll definitely test in my side and see if I can reproduce the result, and give Qwen3.8 Flash Next a try as well ",
+  "created_utc": 1790657625,
+  "id": "pcq8hjs",
+  "parent_id": "t3_1wswxn2",
+  "score": 7
+ },
+ {
+  "author": "GapNew4766",
+  "body": "thanks, will give it a go. we capped the thinking budget in this run for the same reason. have you tried it with tool calls? that's where tuned versions of 27B usually break for us",
+  "created_utc": 1790651432,
+  "id": "pcpsc1n",
+  "parent_id": "t1_pcprqku",
+  "score": 4
+ },
+ {
+  "author": "IntelVEVO",
+  "body": "what quant? Try ninfer 3090 to speed up inference ",
+  "created_utc": 1790679747,
+  "id": "pcrjju8",
+  "parent_id": "t3_1wswxn2",
+  "score": 3
+ },
+ {
+  "author": "isdjan",
+  "body": "Btw I installed the \"Club 3090\" single card setup for 3.8 27B. Know it's slightly OT, but may add to the options here. Game changer to me.",
+  "created_utc": 1790677089,
+  "id": "pcrd87q",
+  "parent_id": "t3_1wswxn2",
+  "score": 3
+ },
+ {
+  "author": "GapNew4766",
+  "body": "fair read of this run, it was one run on one 3090 and the local half was the bottleneck. we posted it anyway because that's where it breaks today. if you rerun it with Flash Next in Atomic Agent, post the numbers and we'll share them",
+  "created_utc": 1790675358,
+  "id": "pcr9hok",
+  "parent_id": "t1_pcq8hjs",
+  "score": 3
+ },
+ {
+  "author": "sosuke",
+  "body": "Did it help? And did u do any runs where you didn’t limit thinking? Cause most of the demos appeared to fail completely which was just to watch. Thanks the write up!",
+  "created_utc": 1790671065,
+  "id": "pcr0xtp",
+  "parent_id": "t1_pcpsc1n",
+  "score": 3
+ },
+ {
+  "author": "silent-curious-dev",
+  "body": "I'm surprised you can only fit 10k. You can most definitely fit at least 32k or 48k, maybe even a little more.\n\nIt's also fine to quantize the KV cache for both k and v to q8\\_0, given that you're running a usable model quant like Q4 (or even Q3). I've heard some do q8\\_0 k and q5\\_0 v and said that works fine but I haven't tried that myself so take that as is. When you're quantizing KV cache, you should try to keep k higher and v equal or a little lower but not too low. You need to find a balance so that you get the context window you're willing to work with on your hardware and the output quality when you do quantize KV.\n\nHave you also set the GPU wired limit higher than the default that macOS allocates to? The default limits will shrink your maximum GPU memory pool lower than what you're probably expecting. If you set your wired limit to around 22gb the OS might feel tight with 2gb free, but that's going to give you the maximum allocation of VRAM for running the model with whatever context window you can fit in it.",
+  "created_utc": 1790659604,
+  "id": "pcqd4nc",
+  "parent_id": "t1_pcpg5xd",
+  "score": 3
+ },
+ {
+  "author": "Distinct-Pie2389",
+  "body": "Yeah I run Qwen3.8-27B at 131k context with -ub 512 and I get about 80-100 tok/s. It has to reside in VRAM 100%, Linux llama.cpp won’t spill into rail it will just fail, though on windows llama.cpp fails and buffer spills into system RAM and you’ll get like 10-40 tok/s so I assume unified memory does the same on MacBook M series architecture ",
+  "created_utc": 1790648571,
+  "id": "pcpjhax",
+  "parent_id": "t1_pcphlqo",
+  "score": 3
+ },
+ {
+  "author": "Morawake",
+  "body": "You can use a quant and offload the vision part of the model to ram / CPU with unsloth studio. Not sure if NInfer would work with your setup.",
+  "created_utc": 1791172220,
+  "id": "pdy4rdc",
+  "parent_id": "t1_pcpg5xd",
+  "score": 2
+ },
+ {
+  "author": "geminiwave",
+  "body": "I wrote up a paper on this back before 3.8 was out and found similar things. I did find ways to have modest gains but I found that adding local into the mix with frontier meant burning way more tokens and having potentially modest cost savings. I do think there’s ways to improve but without lots of specialization, I just think it’s better using a set of 3 local models to work together to save money. Only thing is the hardware cost. ",
+  "created_utc": 1791074917,
+  "id": "pdpvbce",
+  "parent_id": "t3_1wswxn2",
+  "score": 2
+ },
+ {
+  "author": "FranciumGoesBoom",
+  "body": "After giving up on the mac I got 9070xt to replace my 7900xtx and put that into an old desktop.  I now have hermes running pointed to the 7900xtx machine and put a vision and audio model on the mini for now.  Eventually I think i'll come back to it and set up headless but for now this works.",
+  "created_utc": 1790882969,
+  "id": "pd9p0cr",
+  "parent_id": "t1_pd9b08z",
+  "score": 2
+ },
+ {
+  "author": "GapNew4766",
+  "body": "\"qwensters\" is going in my vocabulary. min\\_p 0.02 for the idea rounds is a nice tip, cheap divergent thinking with a strict reviewer at the end is a good combo. noting it for atomic agent's worker side",
+  "created_utc": 1790882847,
+  "id": "pd9oj4h",
+  "parent_id": "t1_pd9fae2",
+  "score": 2
+ },
+ {
+  "author": "puts_on_rddt",
+  "body": "They really come up with a lot of clever things. I call them the \"Qwensters\" and I prefer using them with min_p at 0.02. Gives very good 'outside the box' thinking that the final reviewer gets to decide to throw it out, adopt it, or partially adopt it.",
+  "created_utc": 1790880505,
+  "id": "pd9fae2",
+  "parent_id": "t1_pd9ahp0",
+  "score": 2
+ },
+ {
+  "author": "GapNew4766",
+  "body": "we ran atomic agent's defaults, no hand tuning, which is probably part of the story. \"task deliverable first\" is a good rule. your four-step pipeline is interesting, especially qwen doing multiple review rounds since it's free, that's a cheap way to buy quality",
+  "created_utc": 1790879295,
+  "id": "pd9ahp0",
+  "parent_id": "t1_pcupyqz",
+  "score": 2
+ },
+ {
+  "author": "OccasionallyClever78",
+  "body": "The Atomic Agent is a very interesting project that closely mirrors my own conclusions in best practice for llm usage optimization.",
+  "created_utc": 1790835090,
+  "id": "pd5oq1t",
+  "parent_id": "t3_1wswxn2",
+  "score": 2
+ },
+ {
+  "author": "rocket1420",
+  "body": "A single 3090 isn't enough to run that model at that quant well. Even a 5090 isn't there without ninfer",
+  "created_utc": 1790789476,
+  "id": "pd1lu7e",
+  "parent_id": "t3_1wswxn2",
+  "score": 2
+ },
+ {
+  "author": "GapNew4766",
+  "body": "agreed, Flash is next. it should be a lot faster on the same card, so the interesting part is whether the quality holds up as a worker. we'll post it when it's done",
+  "created_utc": 1790687214,
+  "id": "pcs5ul9",
+  "parent_id": "t1_pcrolvi",
+  "score": 2
+ },
+ {
+  "author": "GapNew4766",
+  "body": "UD-Q4\\_K\\_XL from Unsloth. ninfer has come up a few times in this thread, it's on the list for the next run",
+  "created_utc": 1790687178,
+  "id": "pcs5q61",
+  "parent_id": "t1_pcrjju8",
+  "score": 2
+ },
+ {
+  "author": "DigitalguyCH",
+  "body": "it would be interesting to try qwen flash next and see how it compares ",
+  "created_utc": 1790681665,
+  "id": "pcrolvi",
+  "parent_id": "t3_1wswxn2",
+  "score": 2
+ },
+ {
+  "author": "GalavantJames",
+  "body": "There is Swift 1.5 now https://huggingface.co/ukisai/Swift-1.5-Qwen3.8-27b\n\nI found it to be better after using both",
+  "created_utc": 1790680056,
+  "id": "pcrkcg8",
+  "parent_id": "t1_pcprqku",
+  "score": 2
+ },
+ {
+  "author": "isdjan",
+  "body": "Sure! I don't know if this is smart, but I could tell Hermes and Qwen to make their own A/B-testing routine...I try to figure it out!",
+  "created_utc": 1790678359,
+  "id": "pcrg5eq",
+  "parent_id": "t1_pcrf8c4",
+  "score": 2
+ },
+ {
+  "author": "isdjan",
+  "body": "I just mentioned my config in another reply here. I run on Club 3090 stack. Tbh I don't think the reasoning is limited in my chosen config, that's why your contribution appeals to me :)",
+  "created_utc": 1790677223,
+  "id": "pcrdj8t",
+  "parent_id": "t1_pcrcx7g",
+  "score": 2
+ },
+ {
+  "author": "isdjan",
+  "body": "Interesting! What is your take on reasoning limit amount?",
+  "created_utc": 1790676740,
+  "id": "pcrcgbx",
+  "parent_id": "t1_pcpsc1n",
+  "score": 2
+ },
+ {
+  "author": "GapNew4766",
+  "body": "we did try without the cap first: the model thought at max effort and used up the whole step before writing any code, so the cap was the only way to get output at all. agreed the failures were painful to watch, the next run will have more context and a proper behavior check. thanks for reading!",
+  "created_utc": 1790676105,
+  "id": "pcrb2ee",
+  "parent_id": "t1_pcr0xtp",
+  "score": 2
+ },
+ {
+  "author": "NickThePrick20",
+  "body": "I'm getting about 115tks gen and 1750 prefill on 175k context. It's quick. MTP-4 ",
+  "created_utc": 1790658303,
+  "id": "pcqa412",
+  "parent_id": "t1_pcppste",
+  "score": 2
+ },
+ {
+  "author": "Mihaylov93",
+  "body": "I would be about fine with 3.8 but can't run it.",
+  "created_utc": 1790654171,
+  "id": "pcpzuhx",
+  "parent_id": "t3_1wswxn2",
+  "score": 2
+ },
+ {
+  "author": "Distinct-Pie2389",
+  "body": "I do all my own benches, testing, and tuning locally. You can check out my recipes, models, and full setup\n\nI really like MoE models right now with MTP configured, I get 270 tok/s on most requests, but I can only squeeze about 131k context on the GPU and I’m at 23.7GB. I took HauHau’s uncensored model temp and weights for my qwen2.7 stock and tried it as well (impressive results). With qwen3.8 you need to be careful or the reasoning budget will produce horrible results. Basically full context will go to reasoning alone. Qwen’s a talker \n\nNemotron 3.5 lightning (not great but FAST) is running 300+ tok/s.  \n\nhttps://ai.ttindall.com ",
+  "created_utc": 1790649842,
+  "id": "pcpnh28",
+  "parent_id": "t1_pcplgf0",
+  "score": 2
+ },
+ {
+  "author": "NickThePrick20",
+  "body": "The standard .ninfer quant, 190k context, 2k prefill 145 tk gen ",
+  "created_utc": 1790649644,
+  "id": "pcpmv2v",
+  "parent_id": "t1_pcpmode",
+  "score": 2
+ },
+ {
+  "author": "NickThePrick20",
+  "body": "Re run with nInfer. 190k context on a 3090",
+  "created_utc": 1790649198,
+  "id": "pcplgf0",
+  "parent_id": "t1_pcphlqo",
+  "score": 2
+ },
+ {
+  "author": "Mission_Wrongdoer786",
+  "body": "He lobotomized Qwen for a sloppy test. Qwen kicks Sonnet's ass all day.\n\nhttps://reddit.com/link/pe80o58/video/sxlo35n6suth1/player\n\n",
+  "created_utc": 1791295178,
+  "id": "pe80o58",
+  "parent_id": "t1_pcupyqz",
+  "score": 1
+ },
+ {
+  "author": "Mission_Wrongdoer786",
+  "body": "There is no useful findings in this \"test\". He lobotomized Qwen 3.8 27B and compared it to frontier models. That's what Qwen 3.8 27B does with his prompts when you don't lobotomize it.\n\nhttps://reddit.com/link/pe7zpfk/video/l31k3sf5ruth1/player\n\n",
+  "created_utc": 1791294914,
+  "id": "pe7zpfk",
+  "parent_id": "t1_pcsvmew",
+  "score": 1
+ },
+ {
+  "author": "LocationOk5195",
+  "body": "is this the censored version?",
+  "created_utc": 1791277972,
+  "id": "pe6p1e0",
+  "parent_id": "t1_pcrkcg8",
+  "score": 1
+ },
+ {
+  "author": "bad_detectiv3",
+  "body": "From where did you learn this bro. I was not aware of this at all",
+  "created_utc": 1791243966,
+  "id": "pe4b799",
+  "parent_id": "t1_pdy4rdc",
+  "score": 1
+ },
+ {
+  "author": "geminiwave",
+  "body": "Yeah it’s just on my medium. I meant to write more but things move so fast. Every time I sit down to write, the thing I wrote is out of date. \n\nEven this article is woefully out of date. Qwen 3.8 27b upended the premise entirely 🫠\n\nhttps://benburkhalter.medium.com/an-analysis-of-offloading-token-heavy-work-to-local-llms-599c5a4876e1",
+  "created_utc": 1791208054,
+  "id": "pe0igwf",
+  "parent_id": "t1_pdzkbf8",
+  "score": 1
+ },
+ {
+  "author": "GapNew4766",
+  "body": "interesting, would love to read the paper if it's public. the token burn is real, review rounds add up. the three-local-models setup is something atomic agent can do too, both sides local if you pin them, so it'd be a fair comparison to run",
+  "created_utc": 1791196484,
+  "id": "pdzkbf8",
+  "parent_id": "t1_pdpvbce",
+  "score": 1
+ },
+ {
+  "author": "GapNew4766",
+  "body": "lol happens to all of us. agreed on the point though, more context and more room to reason is on the list for the next atomic agent run",
+  "created_utc": 1791196299,
+  "id": "pdzjwdn",
+  "parent_id": "t1_pdhdmuz",
+  "score": 1
+ },
+ {
+  "author": "DStrikeBlade",
+  "body": "Well, apparently I need to work on my reading comprehension. 😅 Looking back the only reference to 1500 had nothing to do with a reasoning cap... Well, I guess ignore that, but it's probably worth a try again with a larger context window. My understanding is that Qwen 3.8 27B can use A LOT of tokens just on reasoning, especially at xhigh.",
+  "created_utc": 1790972308,
+  "id": "pdhdmuz",
+  "parent_id": "t1_pd9a4bn",
+  "score": 1
+ },
+ {
+  "author": "GapNew4766",
+  "body": "nice, a dedicated box for the model is the right call. if you ever want to compare, atomic agent can point at that same 7900xtx machine as an external server and import your hermes setup, so trying it side by side is pretty painless",
+  "created_utc": 1790883054,
+  "id": "pd9pc7h",
+  "parent_id": "t1_pd9p0cr",
+  "score": 1
+ },
+ {
+  "author": "GapNew4766",
+  "body": "fair, $0.00 was the api column, not the power bill. someone below ran it on an m1 max at 1.5-2 cents an hour, so not zero, just small. should've labeled it \"api spend\" in the video",
+  "created_utc": 1790879523,
+  "id": "pd9beiu",
+  "parent_id": "t1_pcuxful",
+  "score": 1
+ },
+ {
+  "author": "GapNew4766",
+  "body": "appreciate the actual numbers. 1.5-2 cents an hour on an m1 max is about what we saw too, it's real but tiny next to the api side. nice to see the mac case, atomic agent runs the same way there",
+  "created_utc": 1790879497,
+  "id": "pd9bau8",
+  "parent_id": "t1_pcwmkif",
+  "score": 1
+ },
+ {
+  "author": "GapNew4766",
+  "body": "the headless mini idea is a good one, and atomic agent supports exactly that: you can point it at an external llama.cpp server instead of the managed one, so the mini serves the model and your main machine runs the agent. it's set in config.json under localModels (mode \"external\" + the url). a smaller model on the mini as the worker side might be the sweet spot",
+  "created_utc": 1790879423,
+  "id": "pd9b08z",
+  "parent_id": "t1_pct8dgo",
+  "score": 1
+ },
+ {
+  "author": "GapNew4766",
+  "body": "thanks, that means a lot. which conclusions did you land on? always curious where people's setups ended up. the atomic agent discord is where we talk shop if you want to compare notes: [https://discord.gg/kXWDFSJpMW](https://discord.gg/kXWDFSJpMW)",
+  "created_utc": 1790879346,
+  "id": "pd9ap5e",
+  "parent_id": "t1_pd5oq1t",
+  "score": 1
+ },
+ {
+  "author": "GapNew4766",
+  "body": "fair, it was slow, the card was the bottleneck the whole run. ninfer has come up a lot, it's next on the list for atomic agent's worker side",
+  "created_utc": 1790879324,
+  "id": "pd9alwo",
+  "parent_id": "t1_pd1lu7e",
+  "score": 1
+ },
+ {
+  "author": "GapNew4766",
+  "body": "lol yeah, the time column is the price you pay for the cheap one",
+  "created_utc": 1790879313,
+  "id": "pd9ak91",
+  "parent_id": "t1_pcv0ttj",
+  "score": 1
+ },
+ {
+  "author": "GapNew4766",
+  "body": "good tips, thanks. atomic agent does have loop detection built in, it flags when the model starts repeating itself. haven't tried froggeric's templates, adding them to the list along with effort on medium",
+  "created_utc": 1790879285,
+  "id": "pd9agb5",
+  "parent_id": "t1_pct0yw2",
+  "score": 1
+ },
+ {
+  "author": "GapNew4766",
+  "body": "agreed, that's the real finding. atomic agent's check today runs the page headless and catches crashes and console errors, which is exactly why \"0 errors\" sat on top of broken physics. having the planner write behavioural asserts with the task is a great idea, cheap to generate and it gives workers something to iterate against. curious about the same question you raised, whether the local planner still wins once that loop exists",
+  "created_utc": 1790879276,
+  "id": "pd9af0d",
+  "parent_id": "t1_pcsvmew",
+  "score": 1
+ },
+ {
+  "author": "GapNew4766",
+  "body": "thanks, 128k comfortably on a 3090 is a good sign. where did you see 1500 tokens? if that's the reasoning budget, atomic agent's fusion has a separate reasoning setting for the worker side, so giving qwen more room to think is a straightforward knob to test next to ninfer",
+  "created_utc": 1790879201,
+  "id": "pd9a4bn",
+  "parent_id": "t1_pctgi6k",
+  "score": 1
+ },
+ {
+  "author": "smirnov_captain354",
+  "body": "As for \"Qwen is a much better planner than coder.\"   \nDid you check what was fed into Sonnet? Maybe it’s so smart that it managed to generate decent code even from a poor plan?",
+  "created_utc": 1790779118,
+  "id": "pd0g1hb",
+  "parent_id": "t3_1wswxn2",
+  "score": 1
+ },
+ {
+  "author": "-jeffb-r",
+  "body": "Macbook M1 Max 64GB draws 20-25 watts idle, 125W while running Qwen. That works out to around 1.5-2 *cents* per hour for electricity at our rates.\n\nHow much do your parents pay? Do they take it out of your allowance?",
+  "created_utc": 1790728839,
+  "id": "pcwmkif",
+  "parent_id": "t1_pcuxful",
+  "score": 1
+ },
+ {
+  "author": "Skystunt",
+  "body": "time it took to complete the tasks 💀",
+  "created_utc": 1790712711,
+  "id": "pcv0ttj",
+  "parent_id": "t3_1wswxn2",
+  "score": 1
+ },
+ {
+  "author": "DocStrangeLoop",
+  "body": "Yes it's a functional agent. Not much detectable quality loss.",
+  "created_utc": 1790710147,
+  "id": "pcuq84s",
+  "parent_id": "t1_pcpsc1n",
+  "score": 1
+ },
+ {
+  "author": "puts_on_rddt",
+  "body": "What settings did you use? If Sonnet wrote a detailed implementation file, try Qwen at medium, 0.7 temperature. \n\nMake sure the \"Task Deliverable\" is the very first thing it reads.\n\nSince Qwen is essentially free, I also suggest benchmarking this process:\n\n>1) Sonnet 5 creates specifications \n\n>2) Qwen makes multiple rounds of suggestions based from a particular role\n\n>3) Sonnet 5 merges them into a final draft \n\n>4) Medium Qwen implements without deviation.",
+  "created_utc": 1790710083,
+  "id": "pcupyqz",
+  "parent_id": "t3_1wswxn2",
+  "score": 1
+ },
+ {
+  "author": "DStrikeBlade",
+  "body": "I was also going to recommend it. They have two sample start scripts, one that give you 64k context length, and another that I think can take it up to 192k. I've run it comfortable at 128k. I wonder if having a longer context window and allowing it to reason more would give you better results. 1500 tokens seems pretty small for how much it wants to talk to itself to do things.",
+  "created_utc": 1790699238,
+  "id": "pctgi6k",
+  "parent_id": "t1_pcs5q61",
+  "score": 1
+ },
+ {
+  "author": "FranciumGoesBoom",
+  "body": "I finally gave up trying to run 27b on my 24g mini.  \nI was even increasing the available ram to the gpu to 21gb with the sysctl iogpu.wired_limit_mb command.  \nLimiting the system ram to only 3gb makes the rest of the machine useless but it's the only way to get a reasonable context.",
+  "created_utc": 1790697288,
+  "id": "pct8dgo",
+  "parent_id": "t1_pcpg5xd",
+  "score": 1
+ },
+ {
+  "author": "OlgerdOutlander",
+  "body": "Capping reasoning can lead to issues, and yes, Qwen tends to overthink in general. Try froggeric fixed templates and set effort to medium - this is my daily driver recently. Also a harness with thinking loop detection saves the day ",
+  "created_utc": 1790695488,
+  "id": "pct0yw2",
+  "parent_id": "t3_1wswxn2",
+  "score": 1
+ },
+ {
+  "author": "MysteriousAvocado580",
+  "body": "The 'verified, 0 errors' on scenes that were visibly wrong is the most useful finding here IMO. A clean console only proves nothing crashed.\n\nFor physics scenes you could have the planner write behavioural checks alongside the task: run the sim headless for N steps and assert that the tower's top block ends below its start height, the balls stay inside the box bounds, the seesaw angle changes sign after the weight lands. Cheap to generate, and it turns 4/5 vs 1/5 from eyeballing into something the worker can iterate against.\n\nCurious whether Qwen-as-planner still wins once the coder gets that feedback loop.",
+  "created_utc": 1790694162,
+  "id": "pcsvmew",
+  "parent_id": "t3_1wswxn2",
+  "score": 1
+ },
+ {
+  "author": "GapNew4766",
+  "body": "sounds like a fun experiment! if you want a ready setup for it, Atomic Agent has the thinking cap as a setting, so you can flip it between runs and compare. and if you get results, drop them in our Discord, people there compare configs like this all the time: [https://discord.gg/kXWDFSJpMW](https://discord.gg/kXWDFSJpMW)",
+  "created_utc": 1790687161,
+  "id": "pcs5o4s",
+  "parent_id": "t1_pcrg5eq",
+  "score": 1
+ },
+ {
+  "author": "isdjan",
+  "body": "Sure! I don't know if this is smart, but I could tell Hermes and Qwen to make their own A/B-testing routine...I try to figure it out!",
+  "created_utc": 1790678313,
+  "id": "pcrg1ie",
+  "parent_id": "t1_pcrd87q",
+  "score": 1
+ },
+ {
+  "author": "GapNew4766",
+  "body": "you've got the perfect setup to test it. try capping reasoning at around 1,500 tokens per step for agent work and compare. in our runs uncapped Qwen 3.8 spent most of each step thinking before writing any code. would love to hear if it's the same on your stack!!1",
+  "created_utc": 1790677966,
+  "id": "pcrf8c4",
+  "parent_id": "t1_pcrdj8t",
+  "score": 1
+ },
+ {
+  "author": "GapNew4766",
+  "body": "we ran 1,500 thinking tokens per step for the local model. in an agent loop each step is small (read a file, write a function, fix an error), so it doesn't need long reasoning, and without a cap Qwen 3.8 thought at max effort and burned the whole step before writing anything. I'd go higher only for the planning step, where one good decision saves a lot of retries. what do you run yours at?",
+  "created_utc": 1790676951,
+  "id": "pcrcx7g",
+  "parent_id": "t1_pcrcgbx",
+  "score": 1
+ },
+ {
+  "author": "GapNew4766",
+  "body": "\\+1 to all of this, the wired limit is usually the whole story on a 24 GB Mac. one more thing that helps: -kvu with a single slot, so the whole context goes to one request instead of being split. and if you run it through Atomic Agent, it sizes the context from your free memory when it starts llama-server, so you don't have to guess the number",
+  "created_utc": 1790676526,
+  "id": "pcrbzfx",
+  "parent_id": "t1_pcqd4nc",
+  "score": 1
+ },
+ {
+  "author": "GapNew4766",
+  "body": "you don't have to run it locally. in Atomic Agent you can use Qwen 3.8 as a cloud worker in Fusion and keep the planner wherever you like. what are you on right now?",
+  "created_utc": 1790675190,
+  "id": "pcr958m",
+  "parent_id": "t1_pcpzuhx",
+  "score": 1
+ },
+ {
+  "author": "GapNew4766",
+  "body": "145 on a 3090 is wild, plain decoding on a 27B usually tops out around 60. is that with speculative decoding or MTP, and is it at an empty context or with the 190K filled? Atomic Agent already does speculative decoding on some local models and we're adding more, so if nInfer holds up at full length we'll try it as a backend",
+  "created_utc": 1790650591,
+  "id": "pcppste",
+  "parent_id": "t1_pcpmv2v",
+  "score": 1
+ },
+ {
+  "author": "GapNew4766",
+  "body": "haven't tried nInfer yet. what quant and KV cache are you running for 190K, and how's the speed at that length? if it holds up we'll look at running it as a backend",
+  "created_utc": 1790649584,
+  "id": "pcpmode",
+  "parent_id": "t1_pcplgf0",
+  "score": 1
+ },
+ {
+  "author": "GapNew4766",
+  "body": "nice, 80-100 tok/s is a lot more than we got, the 3090 did 31-34 for us. what card is that on?\n\non the Mac it works a bit differently. memory is one shared pool so there's no spill like on windows, but macOS only lets the GPU use about 2/3 of it by default. on 24 GB that's \\~16 GB, which is why a 17.5 GB model leaves almost no room for context. you can raise the cap with sudo sysctl iogpu.wired\\_limit\\_mb=20480 (it resets on reboot), just leave a few GB for the system\n\nfwiw if you let Atomic Agent manage llama-server it sets flash attention and the quantized KV cache for you, so you only have to pick the model",
+  "created_utc": 1790649385,
+  "id": "pcpm16a",
+  "parent_id": "t1_pcpjhax",
+  "score": 1
+ },
+ {
+  "author": "bad_detectiv3",
+  "body": "How did you get 64k context on Qwen 3.8 27B with 24gb vRAM? My M4 Pro Max 24gb only allows 10k context which is useless.",
+  "created_utc": 1790647543,
+  "id": "pcpg5xd",
+  "parent_id": "t3_1wswxn2",
+  "score": 1
+ },
+ {
+  "author": "[deleted]",
+  "body": "[removed]",
+  "created_utc": 1790646862,
+  "id": "pcpe0l0",
+  "parent_id": "t3_1wswxn2",
+  "score": 1
+ },
+ {
+  "author": "GapNew4766",
+  "body": "much faster than what we got!! Atomic Agent already does speculative decoding on some local models, so a rerun on your setup could look very different",
+  "created_utc": 1790675385,
+  "id": "pcr9jro",
+  "parent_id": "t1_pcqa412",
+  "score": 0
+ },
+ {
+  "author": "paq85",
+  "body": "You guys still live with your parents? \nLucky you... Electricity bills can be quite hight when you play with home AI",
+  "created_utc": 1790711892,
+  "id": "pcuxful",
+  "parent_id": "t3_1wswxn2",
+  "score": -1
+ }
+]

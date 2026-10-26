@@ -1,0 +1,931 @@
+
+
+<!DOCTYPE html>
+<html lang="en" class="fixed_navbar">
+	<head>
+		
+	
+		<title>
+	
+		Lessons from building a knowledge graph memory system with 10M+ nodes: Why getting memory right is impossibly hard at scale - r/singularity
+	
+</title>
+		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+		<meta name="description" content="View on Redlib, an alternative private front-end to Reddit.">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0">
+		
+		<meta name="robots" content="noindex, nofollow">
+		
+		<!-- General PWA -->
+		<meta name="theme-color" content="#1F1F1F">
+		<!-- iOS Application -->
+		<meta name="apple-mobile-web-app-title" content="Redlib">
+		<meta name="apple-mobile-web-app-capable" content="yes">
+		<meta name="apple-mobile-web-app-status-bar-style" content="default">
+		<!-- Android -->
+		<meta name="mobile-web-app-capable" content="yes">
+		<!-- iOS Logo -->
+		<link href="/touch-icon-iphone.png" rel="apple-touch-icon">
+		<!-- OpenSearch description file -->
+		<link rel="search" type="application/opensearchdescription+xml" title="Search Redlib" href="/opensearch.xml">
+		<!-- PWA Manifest -->
+		<link rel="manifest" type="application/json" href="/manifest.json">
+		<link rel="shortcut icon" type="image/x-icon" href="/favicon.ico"> 
+		<link rel="stylesheet" type="text/css" href="/style.css?v=0.36.0-yunyun">
+		<!-- Video quality -->
+		<div id="video_quality" data-value=""></div>
+		
+	<!-- Meta Tags -->
+	<meta name="author" content="u/mate_0107">
+	<meta name="title" content="Lessons from building a knowledge graph memory system with 10M+ nodes: Why getting memory right is impossibly hard at scale - r/singularity">
+	<meta property="og:title" content="Lessons from building a knowledge graph memory system with 10M+ nodes: Why getting memory right is impossibly hard at scale - r/singularity">
+	<meta property="og:description" content="View on Redlib, an alternative private front-end to Reddit.">
+	<meta property="og:url" content="/r/singularity/comments/1pn803k/lessons_from_building_a_knowledge_graph_memory/">
+	<meta property="twitter:url" content="/r/singularity/comments/1pn803k/lessons_from_building_a_knowledge_graph_memory/">
+	<meta property="twitter:title" content="Lessons from building a knowledge graph memory system with 10M+ nodes: Why getting memory right is impossibly hard at scale - r/singularity">
+	<meta property="twitter:description" content="View on Redlib, an alternative private front-end to Reddit.">
+	
+	<meta property="og:type" content="website">
+	
+	
+
+		</head>
+	<body class="
+		card
+		
+		
+		 fixed_navbar">
+		<!-- NAVIGATION BAR -->
+		<nav class="
+			 fixed_navbar">
+			<div id="logo">
+				<a id="redlib" href="/"><span id="red">red</span><span id="lib">lib.</span></a>
+				
+	<details id="feeds">
+		<summary>Feeds</summary>
+		<div id="feed_list">
+			<p>MAIN FEEDS</p>
+			<a href="/">Home</a>
+			
+				<a href="/r/popular">Popular</a>
+				<a href="/r/all">All</a>
+			
+			
+		</div>
+	</details>
+
+			</div>
+			
+	<form action="/r/singularity/search" id="searchbox">
+	<input id="search" type="text" name="q" placeholder="Search" title="Search redlib" value="">
+	
+	<div id="inside">
+		<input type="checkbox" name="restrict_sr" id="restrict_sr" checked>
+		<label for="restrict_sr" class="search_label" title="Restrict search to this subreddit">in /r/singularity</label>
+	</div>
+	
+	<button class="submit">
+		<svg width="15" viewBox="0 0 110 100" fill="none" stroke-width="10" stroke-linecap="round">
+			<path d="M20 50 H100" />
+			<path d="M75 15 L100 50 L75 85" />
+			&rarr;
+		</svg>
+	</button>
+</form>
+
+			<div id="links">
+				<a id="reddit_link" href="#popup">
+					<span>reddit</span>
+					<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+						<path d="M22 2L12 22"/>
+						<path d="M2 6.70587C3.33333 8.07884 3.33333 11.5971 3.33333 11.5971M3.33333 19.647V11.5971M3.33333 11.5971C3.33333 11.5971 5.125 7.47817 8 7.47817C10.875 7.47817 12 8.85114 12 8.85114"/>
+					</svg>
+				</a>
+				
+					<div class="popup" id="popup">
+	<div class="popup-inner">
+		<h1>You are about to leave Redlib</h1>
+		<p>Do you want to continue?</p>
+		<p id="reddit_url">https://www.reddit.com/r/singularity/comments/1pn803k/lessons_from_building_a_knowledge_graph_memory/</p>
+		<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 639.24 563">
+			<defs>
+				<style>.cls-1{fill:#000000;}.cls-2{fill:#f8aa00;}</style>
+			</defs>
+			<path class="cls-2" d="M322.03,0c1.95,2.5,4.88,.9,7.33,1.65,10.5,3.21,17.65,10.39,22.83,19.35,93.64,162.06,186.98,324.29,280.25,486.56,15.73,20.19,2.49,51.27-22.92,54.37-1.21,.19-2.72-.54-3.49,1.08H239.03c-70.33-2.43-141.6,.79-212.08-1.74-17.49-4.92-23.16-15.88-26.91-32.26l-.04-1.97C88.74,354.76,194.49,188.2,289.92,18.43c6.2-10.66,15.03-16.94,27.61-17.36,.95-.03,2.05,.18,2.51-1.07h2Zm-2.43,545c94.95-.02,189.9,.04,284.85-.02,11.84-.73,20.75-13.19,16.68-23.55C523.83,355.97,430.74,187.62,332.05,23.07c-7.93-9.02-22.2-6.58-27.23,3.22C230.28,156.11,155.21,285.64,80.41,415.31c-19.88,34.41-39.31,69.07-59.78,103.14-2.43,4.05-4.24,8.8-1.68,14.18,3.92,8.24,9.59,12.37,18.82,12.37,93.95,0,187.9,0,281.85,0Z"/>
+			<path class="cls-1" d="M319.61,545c-93.95,0-187.9,0-281.85,0-9.22,0-14.89-4.13-18.82-12.37-2.56-5.38-.75-10.13,1.68-14.18,20.47-34.07,39.9-68.73,59.78-103.14C155.21,285.64,230.28,156.11,304.82,26.29c5.03-9.8,19.3-12.24,27.23-3.22,98.7,164.55,191.79,332.9,289.1,498.35,4.06,10.36-4.85,22.82-16.68,23.55-94.94,.06-189.9,0-284.85,.02Zm.44-462.31C238.88,223.22,158.17,362.95,77.28,503h485.54c-80.94-140.13-161.61-279.79-242.77-420.31Z"/>
+			<path class="cls-2" d="M320.05,82.69c81.16,140.52,161.83,280.18,242.77,420.31H77.28C158.17,362.95,238.88,223.22,320.05,82.69Zm36.05,118.99c-.14-46.75-68.32-52.32-74.66-4.76,.73,51.49,9.2,102.97,12.63,154.49,1.18,13.14,10.53,21.81,23.32,22.76,13.12,.97,23.89-9.13,24.96-21.58,4.44-49.99,9.4-101.22,13.76-150.91Zm-36.56,271.4c48.8,.76,49.24-74.7-.31-75.47-53.45,3-46.02,78.12,.31,75.47Z"/>
+			<path class="cls-1" d="M356.1,201.67c-4.36,49.69-9.31,100.91-13.76,150.91-1.07,12.45-11.84,22.56-24.96,21.58-12.79-.95-22.14-9.63-23.31-22.76-3.43-51.52-11.9-103-12.63-154.49,6.33-47.53,74.51-42.03,74.66,4.76Z"/>
+			<path class="cls-1" d="M319.54,473.08c-46.34,2.64-53.75-72.47-.31-75.47,49.56,.78,49.1,76.24,.31,75.47Z"/>
+		</svg>
+		<a id="goback" href="#">No, go back!</a>
+		<a id="toreddit" href="https://www.reddit.com/r/singularity/comments/1pn803k/lessons_from_building_a_knowledge_graph_memory/" rel="nofollow">Yes, take me to Reddit</a>
+	</div>
+</div>
+				
+				<a id="settings_link" href="/settings">
+					<span>settings</span>
+					<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+						<title>settings</title>
+						<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+					</svg>
+				</a>
+			</div>
+		</nav>
+		
+		<!-- MAIN CONTENT -->
+		
+		<main>
+			
+	<div id="column_one">
+		<!-- POST CONTENT -->
+<div class="post highlighted">
+	<p class="post_header">
+		<a class="post_subreddit" href="/r/singularity">r/singularity</a>
+		<span class="dot">&bull;</span>
+		<a class="post_author " href="/user/mate_0107">u/mate_0107</a>
+		
+		<span class="dot">&bull;</span>
+		<span class="created" title="Dec 15 2025, 13:58:23 UTC">Dec 15 &#39;25</span>
+		
+	</p>
+	<h1 class="post_title">
+		
+			<a href="/r/singularity/search?q=flair_name%3A%22Discussion%22&restrict_sr=on"
+				class="post_flair"
+				style="color:white; background:#646d73;"><span>Discussion</span></a>
+		
+		Lessons from building a knowledge graph memory system with 10M+ nodes: Why getting memory right is impossibly hard at scale
+		
+		
+	</h1>
+
+	<!-- POST MEDIA -->
+	<!-- post_type: self -->
+	
+
+	<!-- POST BODY -->
+	<div class="post_body">
+		<!-- SC_OFF --><div class="md"><p>Hey everyone, we&#39;re building a persistent memory system for AI assistants, something that remembers everything users tell it, deduplicates facts intelligently using LLMs, and retrieves exactly what&#39;s relevant when asked. Sounds straightforward on paper. At scale (10M nodes, 100M edges), it&#39;s anything but.</p>
+
+<p>Wanted to document the architecture and lessons while they&#39;re fresh.</p>
+
+<p>Three problems only revealed themselves at scale:</p>
+
+<ul>
+<li>Query variability: same question twice, different results</li>
+<li>Static weighting: optimal search weights depend on query type but ours are hardcoded</li>
+<li>Latency: 500ms queries became 3-9 seconds at 10M nodes.</li>
+</ul>
+
+<p><strong>How We Ingest Data into Memory</strong></p>
+
+<p>Our pipeline has five stages. Here&#39;s how each one works:</p>
+
+<p><strong>Stage 1: Save First, Process Later</strong> - We save episodes to the database immediately before any processing. Why? Parallel chunks. When you&#39;re ingesting a large document, chunk 2 needs to see what chunk 1 created. Saving first makes that context available.</p>
+
+<p><strong>Stage 2: Content Normalization</strong> - We don&#39;t just ingest raw text, we normalize using two types of context: session context (last 5 episodes from the same conversation) and semantic context (5 similar episodes plus 10 similar facts from the past). The LLM sees both, then outputs clean structured content.</p>
+
+<p>Real example:</p>
+
+<pre><code>Input: &quot;hey john! did u hear about the new company? it&#39;s called TechCorp. based in SF. john moved to seattle last month btw&quot;
+
+
+Output: &quot;John, a professional in tech, moved from California to Seattle last month. He is aware of TechCorp, a new technology company based in San Francisco.&quot;
+</code></pre>
+
+<p><strong>Stage 3: Entity Extraction</strong> - The LLM extracts entities (John, TechCorp, Seattle) and generates embeddings for each entity name in parallel. We use a type-free entity model, types are optional hints, not constraints. This massively reduces false categorizations.</p>
+
+<p><strong>Stage 4: Statement Extraction</strong> - The LLM extracts statements as triples: (John, works_at, TechCorp). Here&#39;s the key - we make statements first-class entities in the graph. Each statement gets its own node with properties: when it became true, when invalidated, which episodes cite it, and a semantic embedding.</p>
+
+<p>Why reification? Temporal tracking (know when facts became true or false), provenance (track which conversations mentioned this), semantic search on facts, and contradiction detection.</p>
+
+<p><strong>Stage 5: Async Graph Resolution</strong> - This runs in the background 30-120 seconds after ingestion. Three phases of deduplication:</p>
+
+<p>Entity deduplication happens at three levels. First, exact name matching. Second, semantic similarity using embeddings (0.7 threshold). Third, LLM evaluation only if semantic matches exist.</p>
+
+<p>Statement deduplication finds structural matches (same subject and predicate, different objects) and semantic similarity. For contradictions, we don&#39;t delete—we invalidate. Set a timestamp and track which episode contradicted it. You can query &quot;What was true about John on Nov 15?&quot;</p>
+
+<p>Critical optimization: sparse LLM output. At scale, most entities are unique. We only return flagged items instead of &quot;not a duplicate&quot; for 95% of entities. Massive token savings.</p>
+
+<p><strong>How We Search for Info from Memory</strong></p>
+
+<p>We run five different search methods in parallel because each has different failure modes.</p>
+
+<ol>
+<li><strong>BM25 Fulltext</strong> does classic keyword matching. Good for exact matches, bad for paraphrases.</li>
+<li><strong>Vector Similarity</strong> searches statement embeddings semantically. Good for paraphrases, bad for multi-hop reasoning.</li>
+<li><strong>Episode Vector Search</strong> does semantic search on full episode content. Good for vague queries, bad for specific facts.</li>
+<li><strong>BFS Traversal</strong> is the interesting one. First, extract entities from the query by chunking into unigrams, bigrams, and full query. Embed each chunk, find matching entities. Then BFS hop-by-hop: find statements connected to those entities, filter by relevance, extract next-level entities, repeat up to 3 hops. Explore with low threshold (0.3) but only keep high-quality results (0.65).</li>
+<li><strong>Episode Graph Search</strong> does direct entity-to-episode provenance tracking. Good for &quot;Tell me about John&quot; queries.</li>
+</ol>
+
+<p>All five methods return different score types. We merge with hierarchical scoring: Episode Graph at 5.0x weight (highest), BFS at 3.0x, vector at 1.5x, BM25 at 0.2x. Then bonuses: concentration bonus for episodes with more facts, entity match multiplier (each matching entity adds 50% boost).</p>
+
+<p><strong>Where It All Fell Apart</strong></p>
+
+<p><strong>Problem 1: Query Variability</strong></p>
+
+<p>When a user asks &quot;Tell me about me,&quot; the agent might generate different queries depending on the system prompt and LLM used, something like &quot;User profile, preferences and background&quot; OR &quot;about user.&quot; The first gives you detailed recall, the second gives you a brief summary. You can&#39;t guarantee consistent output every single time.</p>
+
+<p><strong>Problem 2: Static Weights</strong></p>
+
+<p>Optimal weights depend on query type. &quot;What is John&#39;s email?&quot; needs Episode Graph at 8.0x (currently 5.0x). &quot;How do distributed systems work?&quot; needs Vector at 4.0x (currently 1.5x). &quot;TechCorp acquisition date&quot; needs BM25 at 3.0x (currently 0.2x).</p>
+
+<p>Query classification is expensive (extra LLM call). Wrong classification leads to wrong weights leads to bad results.</p>
+
+<p><strong>Problem 3: Latency Explosion</strong></p>
+
+<p>At 10M nodes, 100M edges: → Entity extraction: 500-800ms → BM25: 100-300ms → Vector: 500-1500ms → BFS traversal: 1000-3000ms (the killer) → Total: 3-9 seconds</p>
+
+<p>Root causes: No userId index initially (table scan of 10M nodes). Neo4j computes cosine similarity for EVERY statement, no HNSW or IVF index. BFS depth explosion (5 entities → 200 statements → 800 entities → 3000 statements). Memory pressure (100GB just for embeddings on 128GB RAM instance).</p>
+
+<p><strong>What We&#39;re Rebuilding</strong></p>
+
+<p>Now we are migrating to abstracted vector and graph stores. Current architecture has everything in Neo4j including embeddings. Problem: Neo4j isn&#39;t optimized for vectors, can&#39;t scale independently.</p>
+
+<p>New architecture: separate VectorStore and GraphStore interfaces. Testing Pinecone for production (managed HNSW), Weaviate for self-hosted, LanceDB for local dev.</p>
+
+<p>Early benchmarks: vector search should drop from 1500ms to 50-100ms. Memory from 100GB to 25GB. Targeting 1-2 second p95 instead of current 6-9 seconds.</p>
+
+<p><strong>Key Takeaways</strong></p>
+
+<p>What has worked for us:</p>
+
+<ul>
+<li>Reified triples (first-class statements enable temporal tracking). - Sparse LLM output (95% token savings).</li>
+<li>Async resolution (7-second ingestion, 60-second background quality checks).</li>
+<li>Hybrid search (multiple methods cover different failures).</li>
+<li>Type-free entities (fewer false categorizations).</li>
+</ul>
+
+<p>What&#39;s still hard: Query variability. Static weights. Latency at scale.</p>
+
+<p>Building memory that &quot;just works&quot; is deceptively difficult. The promise is simple—remember everything, deduplicate intelligently, retrieve what&#39;s relevant. The reality at scale is subtle problems in every layer.</p>
+
+<p>This is all open source if you want to dig into the implementation details: <a href="https://github.com/RedPlanetHQ/core">https://github.com/RedPlanetHQ/core</a></p>
+</div><!-- SC_ON -->
+		
+	
+	</div>
+	<div class="post_score" title="43">
+    
+    43
+    
+    <span class="label"> Upvotes</span></div>
+	<div class="post_footer">
+		<ul id="post_links">
+			<li>
+				<a href="/r/singularity/comments/1pn803k/lessons_from_building_a_knowledge_graph_memory/">
+					<span class="desktop_item">perma</span>link
+				</a>
+			</li>
+			
+			
+			
+<li>
+	<a
+		
+		href="#popup"
+		
+	>reddit</a>
+
+	
+		<div class="popup" id="popup">
+	<div class="popup-inner">
+		<h1>You are about to leave Redlib</h1>
+		<p>Do you want to continue?</p>
+		<p id="reddit_url">https://www.reddit.com/r/singularity/comments/1pn803k/lessons_from_building_a_knowledge_graph_memory/</p>
+		<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 639.24 563">
+			<defs>
+				<style>.cls-1{fill:#000000;}.cls-2{fill:#f8aa00;}</style>
+			</defs>
+			<path class="cls-2" d="M322.03,0c1.95,2.5,4.88,.9,7.33,1.65,10.5,3.21,17.65,10.39,22.83,19.35,93.64,162.06,186.98,324.29,280.25,486.56,15.73,20.19,2.49,51.27-22.92,54.37-1.21,.19-2.72-.54-3.49,1.08H239.03c-70.33-2.43-141.6,.79-212.08-1.74-17.49-4.92-23.16-15.88-26.91-32.26l-.04-1.97C88.74,354.76,194.49,188.2,289.92,18.43c6.2-10.66,15.03-16.94,27.61-17.36,.95-.03,2.05,.18,2.51-1.07h2Zm-2.43,545c94.95-.02,189.9,.04,284.85-.02,11.84-.73,20.75-13.19,16.68-23.55C523.83,355.97,430.74,187.62,332.05,23.07c-7.93-9.02-22.2-6.58-27.23,3.22C230.28,156.11,155.21,285.64,80.41,415.31c-19.88,34.41-39.31,69.07-59.78,103.14-2.43,4.05-4.24,8.8-1.68,14.18,3.92,8.24,9.59,12.37,18.82,12.37,93.95,0,187.9,0,281.85,0Z"/>
+			<path class="cls-1" d="M319.61,545c-93.95,0-187.9,0-281.85,0-9.22,0-14.89-4.13-18.82-12.37-2.56-5.38-.75-10.13,1.68-14.18,20.47-34.07,39.9-68.73,59.78-103.14C155.21,285.64,230.28,156.11,304.82,26.29c5.03-9.8,19.3-12.24,27.23-3.22,98.7,164.55,191.79,332.9,289.1,498.35,4.06,10.36-4.85,22.82-16.68,23.55-94.94,.06-189.9,0-284.85,.02Zm.44-462.31C238.88,223.22,158.17,362.95,77.28,503h485.54c-80.94-140.13-161.61-279.79-242.77-420.31Z"/>
+			<path class="cls-2" d="M320.05,82.69c81.16,140.52,161.83,280.18,242.77,420.31H77.28C158.17,362.95,238.88,223.22,320.05,82.69Zm36.05,118.99c-.14-46.75-68.32-52.32-74.66-4.76,.73,51.49,9.2,102.97,12.63,154.49,1.18,13.14,10.53,21.81,23.32,22.76,13.12,.97,23.89-9.13,24.96-21.58,4.44-49.99,9.4-101.22,13.76-150.91Zm-36.56,271.4c48.8,.76,49.24-74.7-.31-75.47-53.45,3-46.02,78.12,.31,75.47Z"/>
+			<path class="cls-1" d="M356.1,201.67c-4.36,49.69-9.31,100.91-13.76,150.91-1.07,12.45-11.84,22.56-24.96,21.58-12.79-.95-22.14-9.63-23.31-22.76-3.43-51.52-11.9-103-12.63-154.49,6.33-47.53,74.51-42.03,74.66,4.76Z"/>
+			<path class="cls-1" d="M319.54,473.08c-46.34,2.64-53.75-72.47-.31-75.47,49.56,.78,49.1,76.24,.31,75.47Z"/>
+		</svg>
+		<a id="goback" href="#">No, go back!</a>
+		<a id="toreddit" href="https://www.reddit.com/r/singularity/comments/1pn803k/lessons_from_building_a_knowledge_graph_memory/" rel="nofollow">Yes, take me to Reddit</a>
+	</div>
+</div>
+	
+</li>
+
+
+			
+		</ul>
+		<p>93%<span id="upvoted"> Upvoted</span></p>
+	</div>
+</div>
+
+		<!-- SORT FORM -->
+       <div id="commentQueryForms">
+		<form class="comment_control_form">
+			<p id="comment_count">17 comments <span id="sorted_by">sorted by </span></p>
+			<select name="sort" title="Sort comments by" id="commentSortSelect"> 
+				
+		<option value="confidence" selected>
+			Confidence
+		</option>
+	
+		<option value="top" >
+			Top
+		</option>
+	
+		<option value="new" >
+			New
+		</option>
+	
+		<option value="controversial" >
+			Controversial
+		</option>
+	
+		<option value="old" >
+			Old
+		</option>
+	
+      </select>
+        <button id="sort_submit" class="submit">
+          <svg width="15" viewBox="0 0 110 100" fill="none" stroke-width="10" stroke-linecap="round">
+              <path d="M20 50 H100" />
+              <path d="M75 15 L100 50 L75 85" />
+              &rarr;
+          </svg>
+      </button>
+      </form>
+      <!-- SEARCH FORM -->
+      <form class="comment_control_form">
+        <input id="search" class="commentQuery" type="search" name="q" value="" placeholder="Search comments">
+        <input type="hidden" name="type" value="comment">
+      </form>
+      </div>
+  
+      <div>
+      
+      </div>
+
+		<!-- COMMENTS -->
+		<div id="comments">
+			<div class="thread">
+				
+
+				
+
+
+<div id="nu5tvrf" class="comment">
+	<div class="comment_left">
+    <p class="comment_score" title="3">
+         
+         3
+         
+    </p>
+        <div class="line"></div>
+	</div>
+	<details class="comment_right" open>
+		<summary class="comment_data">
+			
+				<a class="comment_author  " href="/user/pikachewww">u/pikachewww</a>
+			
+			
+			<a href="/r/singularity/comments/1pn803k/lessons_from_building_a_knowledge_graph_memory/nu5tvrf/?context=3#nu5tvrf" class="created" title="Dec 15 2025, 14:39:00 UTC">Dec 15 &#39;25</a>
+			
+			
+		</summary>
+		
+		<div class="comment_body "><div class="md"><p>Contextual memory has a very low fidelity, no matter how big your context window is. The only way to reliably fix the memory problem is to retrain the model whenever it is given new information (including when given a prompt), but this is not economically feasible nor is it a good use of time.  </p>
+</div></div>
+		
+		<div class="replies">
+
+
+<div id="nu63jxp" class="comment">
+	<div class="comment_left">
+    <p class="comment_score" title="3">
+         
+         3
+         
+    </p>
+        <div class="line"></div>
+	</div>
+	<details class="comment_right" open>
+		<summary class="comment_data">
+			
+				<a class="comment_author  op" href="/user/mate_0107">u/mate_0107</a>
+			
+			
+			<a href="/r/singularity/comments/1pn803k/lessons_from_building_a_knowledge_graph_memory/nu63jxp/?context=3#nu63jxp" class="created" title="Dec 15 2025, 15:29:25 UTC">Dec 15 &#39;25</a>
+			
+			
+		</summary>
+		
+		<div class="comment_body "><div class="md"><p>I agree fine-tuning is the ideal solution but economically impractical.</p>
+
+<p>The low fidelity problem you&#39;re describing is exactly why we didn&#39;t build another RAG system. RAG based  memory is a static document retrieval - it can&#39;t track when facts changed, why they changed, or how information relates over time.</p>
+
+<p>We believe temporal knowledge graph can act as a acceptable solution where facts are first-class objects with provenance, it invalidates the old fact (with timestamp), creates the new one, and maintains the relationship between them. This means the system understands evolution, not just snapshots. Provenance and temporal is helpful to increase recall accuracy.  </p>
+
+<p>We evaluated the performance on Locomo benchmark and got 88.24% recall accuracy, more details here: <a href="https://github.com/RedPlanetHQ/core?tab=readme-ov-file#-research-highlights">https://github.com/RedPlanetHQ/core?tab=readme-ov-file#-research-highlights</a></p>
+</div></div>
+		
+		<div class="replies">
+		</div>
+	</details>
+</div>
+
+		</div>
+	</details>
+</div>
+
+			</div><div class="thread">
+				
+
+				
+
+
+<div id="nu6raxb" class="comment">
+	<div class="comment_left">
+    <p class="comment_score" title="3">
+         
+         3
+         
+    </p>
+        <div class="line"></div>
+	</div>
+	<details class="comment_right" open>
+		<summary class="comment_data">
+			
+				<a class="comment_author  " href="/user/DeepWisdomGuy">u/DeepWisdomGuy</a>
+			
+			
+			<a href="/r/singularity/comments/1pn803k/lessons_from_building_a_knowledge_graph_memory/nu6raxb/?context=3#nu6raxb" class="created" title="Dec 15 2025, 17:25:05 UTC">Dec 15 &#39;25</a>
+			
+			
+		</summary>
+		
+		<div class="comment_body "><div class="md"><p>Input: &quot;hey john! did u hear about the new company? it&#39;s called TechCorp. based in SF. john moved to seattle last month btw&quot;</p>
+
+<p>Typical human inference as implicit cognition:<br/>
+There exists a speaker (likely communicating by chat—informal spelling/grammar). There exists a person named John. The speaker knows John, perhaps on a first name basis. There exists a company named TechCorp. TechCorp is a new company. There exists a location named SF (likely San Francisco). TechCorp is based in SF. The speaker is wanting to direct John&#39;s attention to TechCorp for some reason (which may be that John would find the fact interesting). There exists another person whom the speaker is also communicating with who is not John (indicated by the conversational reference to John in third person). There exists a location named Seattle. John moved to Seattle last month. The unnamed participant in the conversation might be interested in John&#39;s move to Seattle.</p>
+
+<p>So the conclusion: &quot;(John, works_at, TechCorp)&quot; is an utter fail. The speaker assumes that John may not have heard of TechCorp, so he probably doesn&#39;t work there. Failing to capture all that is inferred would be a big enough fail, but hallucinating facts not only not present in the conversation, but opposed by the actual facts present is a complete fail.</p>
+</div></div>
+		
+		<div class="replies">
+
+
+<div id="nu6titd" class="comment">
+	<div class="comment_left">
+    <p class="comment_score" title="2">
+         
+         2
+         
+    </p>
+        <div class="line"></div>
+	</div>
+	<details class="comment_right" open>
+		<summary class="comment_data">
+			
+				<a class="comment_author  op" href="/user/mate_0107">u/mate_0107</a>
+			
+			
+			<a href="/r/singularity/comments/1pn803k/lessons_from_building_a_knowledge_graph_memory/nu6titd/?context=3#nu6titd" class="created" title="Dec 15 2025, 17:36:04 UTC">Dec 15 &#39;25</a>
+			
+			
+		</summary>
+		
+		<div class="comment_body "><div class="md"><p>Hey you are absolutely right, my mistake is I should have made it explicit in explaining with the exact input and output. </p>
+
+<p>I put the effort on explaining the basic generation of how we generate facts and how that helps in search but didn’t verify the connection between them.</p>
+
+<p>Now taking a jab at it here, the LLM ideally don’t infer from the above as John works at tech corp. it does exactly as what you explained that SF is a place, Tech corp is a company and John heard about tech corp etc </p>
+
+<p>Thank you for pointing that out.</p>
+</div></div>
+		
+		<div class="replies">
+
+
+<div id="nu7il5b" class="comment">
+	<div class="comment_left">
+    <p class="comment_score" title="2">
+         
+         2
+         
+    </p>
+        <div class="line"></div>
+	</div>
+	<details class="comment_right" open>
+		<summary class="comment_data">
+			
+				<a class="comment_author  op" href="/user/mate_0107">u/mate_0107</a>
+			
+			
+			<a href="/r/singularity/comments/1pn803k/lessons_from_building_a_knowledge_graph_memory/nu7il5b/?context=3#nu7il5b" class="created" title="Dec 15 2025, 19:36:26 UTC">Dec 15 &#39;25</a>
+			
+			
+		</summary>
+		
+		<div class="comment_body "><div class="md"><p>Hey, I ran this example in the system and here&#39;s what we got</p>
+
+<p>Input Text</p>
+
+<p><code>hey john! did u hear about the new company? it&#39;s called TechCorp. based in SF. john moved to seattle last month btw</code></p>
+
+<p>Normalised Text</p>
+
+<p><code>As of December 15, 2025, a new company named “TechCorp” exists and is based in San Francisco (SF). As of December 15, 2025, an individual named John relocated to Seattle in November 2025 (last month relative to the document timestamp)</code></p>
+
+<p>Facts Created</p>
+
+<pre><code>* “TechCorp is a company.”
+* “TechCorp is located in San Francisco.”
+* “San Francisco is abbreviated as SF.”
+* “John moved to Seattle.”
+</code></pre>
+</div></div>
+		
+		<div class="replies">
+		</div>
+	</details>
+</div>
+
+		</div>
+	</details>
+</div>
+
+		</div>
+	</details>
+</div>
+
+			</div><div class="thread">
+				
+
+				
+
+
+<div id="nuaeq2u" class="comment">
+	<div class="comment_left">
+    <p class="comment_score" title="2">
+         
+         2
+         
+    </p>
+        <div class="line"></div>
+	</div>
+	<details class="comment_right" open>
+		<summary class="comment_data">
+			
+				<span class="comment_author ">u/[deleted]</span>
+			
+			
+			<a href="/r/singularity/comments/1pn803k/lessons_from_building_a_knowledge_graph_memory/nuaeq2u/?context=3#nuaeq2u" class="created" title="Dec 16 2025, 05:43:41 UTC">Dec 16 &#39;25</a>
+			
+			
+		</summary>
+		
+		<div class="comment_body "><div class="md"><p>[removed] — <a href="https://undelete.pullpush.io/r/singularity/comments/1pn803k/lessons_from_building_a_knowledge_graph_memory/nuaeq2u">view removed comment</a></p></div></div>
+		
+		<div class="replies">
+
+
+<div id="nuahg1c" class="comment">
+	<div class="comment_left">
+    <p class="comment_score" title="1">
+         
+         1
+         
+    </p>
+        <div class="line"></div>
+	</div>
+	<details class="comment_right" open>
+		<summary class="comment_data">
+			
+				<a class="comment_author  op" href="/user/mate_0107">u/mate_0107</a>
+			
+			
+			<a href="/r/singularity/comments/1pn803k/lessons_from_building_a_knowledge_graph_memory/nuahg1c/?context=3#nuahg1c" class="created" title="Dec 16 2025, 06:06:36 UTC">Dec 16 &#39;25</a>
+			
+			
+		</summary>
+		
+		<div class="comment_body "><div class="md"><p>Thanks for the read and your thoughts over it. Yeah more than a few here are something we thought that they will show up in the scale but it just became more clearer on how those are not just affecting us in handling scale but also impacting the experience of memory retrieval and just a overall experience. Your suggestion of <code>learning to retrieve</code> is interesting let me take a step back to define what weights here look like for us. Generally the weights we also thought are more say</p>
+
+<ol>
+<li>Which nodes are more recalled</li>
+<li>Which episodes are common in the BFS search from multiple entities</li>
+<li>Score per depth</li>
+</ol>
+
+<p>We do have these but the fun part is these are not directly impacting the experience or say don’t make a lot of diff in the final retrieval. The ideal weights we are looking here are more dynamic and nuanced at scale and having a lot of data</p>
+
+<ol>
+<li>The query</li>
+<li>The entity finding</li>
+<li>The statement formation</li>
+<li>Scoring of relevancy</li>
+<li>Deduplication</li>
+</ol>
+
+<p>what currently happening is we human are sitting and doing the learning when we find something not working we kinda take it and tune the flow so that it becomes better, I think over a period of last 6 months the system definitely evolved by covering more edge cases. But our goal is to see this moving in 2 phases</p>
+
+<ol>
+<li>Convert this into a feedback loop where something not working the system starts fixing for itself. We need to stablise the structure but something doable</li>
+<li>Building a memory router which is efficient and learns on how to retrieve the information</li>
+</ol>
+</div></div>
+		
+		<div class="replies">
+		</div>
+	</details>
+</div>
+
+		</div>
+	</details>
+</div>
+
+			</div><div class="thread">
+				
+
+				
+
+
+<div id="nu6hu9t" class="comment">
+	<div class="comment_left">
+    <p class="comment_score" title="1">
+         
+         1
+         
+    </p>
+        <div class="line"></div>
+	</div>
+	<details class="comment_right" open>
+		<summary class="comment_data">
+			
+				<a class="comment_author  " href="/user/RipleyVanDalen">u/RipleyVanDalen</a>
+			
+			
+				<small class="author_flair"><span>We must not allow AGI without UBI</span></small>
+			
+			<a href="/r/singularity/comments/1pn803k/lessons_from_building_a_knowledge_graph_memory/nu6hu9t/?context=3#nu6hu9t" class="created" title="Dec 15 2025, 16:38:56 UTC">Dec 15 &#39;25</a>
+			
+			
+		</summary>
+		
+		<div class="comment_body "><div class="md"><p>One problem I see is that the models still aren&#39;t smart enough to know what&#39;s actually important and notable. As humans who have thousands of hours of experience living in reality, we have an intuitive grasp of what&#39;s surprising and important in reality. LLMs don&#39;t. They have no value function, sense of physics, etc.</p>
+
+<p>And I think the only solution to this is embodied training -- putting the models inside a robot that consumes terabytes of sensory data</p>
+</div></div>
+		
+		<div class="replies">
+
+
+<div id="nu6mcky" class="comment">
+	<div class="comment_left">
+    <p class="comment_score" title="1">
+         
+         1
+         
+    </p>
+        <div class="line"></div>
+	</div>
+	<details class="comment_right" open>
+		<summary class="comment_data">
+			
+				<a class="comment_author  " href="/user/eepromnk">u/eepromnk</a>
+			
+			
+			<a href="/r/singularity/comments/1pn803k/lessons_from_building_a_knowledge_graph_memory/nu6mcky/?context=3#nu6mcky" class="created" title="Dec 15 2025, 17:00:41 UTC">Dec 15 &#39;25</a>
+			
+			
+		</summary>
+		
+		<div class="comment_body "><div class="md"><p>Agreed. The path forward is sensory motor.</p>
+</div></div>
+		
+		<div class="replies">
+		</div>
+	</details>
+</div>
+
+		</div>
+	</details>
+</div>
+
+			</div><div class="thread">
+				
+
+				
+
+
+<div id="nu893sk" class="comment">
+	<div class="comment_left">
+    <p class="comment_score" title="1">
+         
+         1
+         
+    </p>
+        <div class="line"></div>
+	</div>
+	<details class="comment_right" open>
+		<summary class="comment_data">
+			
+				<a class="comment_author  " href="/user/Whispering-Depths">u/Whispering-Depths</a>
+			
+			
+			<a href="/r/singularity/comments/1pn803k/lessons_from_building_a_knowledge_graph_memory/nu893sk/?context=3#nu893sk" class="created" title="Dec 15 2025, 21:48:18 UTC">Dec 15 &#39;25</a>
+			
+			
+		</summary>
+		
+		<div class="comment_body "><div class="md"><ol>
+<li>neural nets do this by using redundancies and pattern-references.</li>
+<li>it&#39;s not just knowledge, it&#39;s intricacies and how facts and pieces of information interact that you also need knowledge of. You can know the periodic table of elements, but that doesn&#39;t <em>really</em> help you with the rest of the known universe.</li>
+</ol>
+</div></div>
+		
+		<div class="replies">
+		</div>
+	</details>
+</div>
+
+			</div><div class="thread">
+				
+
+				
+
+
+<div id="nu9rkm4" class="comment">
+	<div class="comment_left">
+    <p class="comment_score" title="1">
+         
+         1
+         
+    </p>
+        <div class="line"></div>
+	</div>
+	<details class="comment_right" open>
+		<summary class="comment_data">
+			
+				<a class="comment_author  " href="/user/thats_taken_also">u/thats_taken_also</a>
+			
+			
+			<a href="/r/singularity/comments/1pn803k/lessons_from_building_a_knowledge_graph_memory/nu9rkm4/?context=3#nu9rkm4" class="created" title="Dec 16 2025, 03:01:52 UTC">Dec 16 &#39;25</a>
+			
+			
+		</summary>
+		
+		<div class="comment_body "><div class="md"><p>Very helpful post.  Thanks you.  Can you explain more about  how an abstracted vector and graph store works please?</p>
+</div></div>
+		
+		<div class="replies">
+
+
+<div id="nu9y3qc" class="comment">
+	<div class="comment_left">
+    <p class="comment_score" title="1">
+         
+         1
+         
+    </p>
+        <div class="line"></div>
+	</div>
+	<details class="comment_right" open>
+		<summary class="comment_data">
+			
+				<a class="comment_author  op" href="/user/mate_0107">u/mate_0107</a>
+			
+			
+			<a href="/r/singularity/comments/1pn803k/lessons_from_building_a_knowledge_graph_memory/nu9y3qc/?context=3#nu9y3qc" class="created" title="Dec 16 2025, 03:42:52 UTC">Dec 16 &#39;25</a>
+			
+			
+		</summary>
+		
+		<div class="comment_body "><div class="md"><p>Hey, in short we are now breaking the storage of vectors and graph in separate databases.</p>
+</div></div>
+		
+		<div class="replies">
+
+
+<div id="o89bo2f" class="comment">
+	<div class="comment_left">
+    <p class="comment_score" title="1">
+         
+         1
+         
+    </p>
+        <div class="line"></div>
+	</div>
+	<details class="comment_right" open>
+		<summary class="comment_data">
+			
+				<a class="comment_author  " href="/user/Alternative-Edge-149">u/Alternative-Edge-149</a>
+			
+			
+			<a href="/r/singularity/comments/1pn803k/lessons_from_building_a_knowledge_graph_memory/o89bo2f/?context=3#o89bo2f" class="created" title="Mar 02 2026, 17:08:07 UTC">Mar 02 &#39;26</a>
+			
+			
+		</summary>
+		
+		<div class="comment_body "><div class="md"><p>How do you think about using Lora for LLMs. This github repo seems interesting to build long term memory systems using lora instead of model finetuning or traditional knowledge graphs /vector database.</p>
+
+<p><a href="https://github.com/SakanaAI/text-to-lora">https://github.com/SakanaAI/text-to-lora</a></p>
+
+<p>Any thoughts on this?</p>
+</div></div>
+		
+		<div class="replies">
+
+
+<div id="o900uq8" class="comment">
+	<div class="comment_left">
+    <p class="comment_score" title="1">
+         
+         1
+         
+    </p>
+        <div class="line"></div>
+	</div>
+	<details class="comment_right" open>
+		<summary class="comment_data">
+			
+				<a class="comment_author  op" href="/user/mate_0107">u/mate_0107</a>
+			
+			
+			<a href="/r/singularity/comments/1pn803k/lessons_from_building_a_knowledge_graph_memory/o900uq8/?context=3#o900uq8" class="created" title="Mar 06 2026, 17:33:29 UTC">Mar 06 &#39;26</a>
+			
+			
+		</summary>
+		
+		<div class="comment_body "><div class="md"><p>Hey thanks for sharing this, i&#39;ll have a look at this.</p>
+</div></div>
+		
+		<div class="replies">
+		</div>
+	</details>
+</div>
+
+		</div>
+	</details>
+</div>
+
+		</div>
+	</details>
+</div>
+
+		</div>
+	</details>
+</div>
+
+			</div><div class="thread">
+				
+
+				
+
+
+<div id="nudgo6j" class="comment">
+	<div class="comment_left">
+    <p class="comment_score" title="1">
+         
+         1
+         
+    </p>
+        <div class="line"></div>
+	</div>
+	<details class="comment_right" open>
+		<summary class="comment_data">
+			
+				<span class="comment_author ">u/[deleted]</span>
+			
+			
+			<a href="/r/singularity/comments/1pn803k/lessons_from_building_a_knowledge_graph_memory/nudgo6j/?context=3#nudgo6j" class="created" title="Dec 16 2025, 18:18:54 UTC">Dec 16 &#39;25</a>
+			
+			
+		</summary>
+		
+		<div class="comment_body "><div class="md"><p>[deleted]</p>
+</div></div>
+		
+		<div class="replies">
+		</div>
+	</details>
+</div>
+
+			</div>
+		</div>
+
+	</div>
+
+		</main>
+		
+
+		<!-- FOOTER -->
+		
+			<footer>
+				<div class="footer-buttons">
+					<p><span id="version">v0.36.0-yunyun&emsp;</span><a href="/info" title="View instance information">ⓘ View instance info</a>&emsp;<a href="https://github.com/redlib-org/redlib" title="View code on GitHub">&lt;&gt; Code</a></p>
+				</div>
+			</footer>
+		
+	</body>
+</html>

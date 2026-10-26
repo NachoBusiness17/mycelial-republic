@@ -1,0 +1,31 @@
+{
+  "lane": "m3-lru-null-arm",
+  "division": "B",
+  "ok": true,
+  "note": "Built tools/lru_null_arm.py + tools/prefix_cache_sim.py (split after the ratchet flagged my merged draft file-too-long; fixed, not baselined), replayed the 5,000 most recent dashboard/static/trails rows through the radix-leaf LRU prefix-cache simulator at the real 4,800-char janitor budget (mag/context_pack.py:67): the M3 falsifiable claim HOLDS at 0.93876 hit at the 8k-block anchor (threshold 0.80, external ref 83.48%), curve + assembly arms (frozen_append 0.93876 / frozen_window 0.376234 / volatile 0.001283) banked to memory/runs/lru_null_arm/lru_null_arm_results.json; 2 remaining ratchet findings are sibling-scope files this lane did not touch.",
+  "rows": [],
+  "checks": [
+    {
+      "command": ".venv/Scripts/python.exe tools/lru_null_arm.py --self-test",
+      "exit": 0,
+      "evidence": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/build-it-all/lanes/m3-lru-null-arm.check.txt"
+    },
+    {
+      "command": ".venv/Scripts/python.exe -m pytest tests/test_lru_null_arm.py -q -p no:cacheprovider",
+      "exit": 0,
+      "evidence": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/build-it-all/lanes/m3-lru-null-arm.check.txt"
+    },
+    {
+      "command": ".venv/Scripts/python.exe tools/lru_null_arm.py",
+      "exit": 0,
+      "evidence": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/build-it-all/lanes/m3-lru-null-arm.check.txt"
+    },
+    {
+      "command": ".venv/Scripts/python.exe tools/violation_ratchet.py check --changed",
+      "exit": 1,
+      "evidence": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/build-it-all/lanes/m3-lru-null-arm.check.txt"
+    }
+  ],
+  "decision_changed": "G1 gap law (memory/research_polished/kv_cache_compaction.md:13) null armed: radix-leaf LRU over 5,000 estate trail rows at the real 4,800-char pack budget measures 93.88% hit at the 8k-block anchor (and 50.45% at a one-pack cache, knee at ~64 blocks), so future eviction/compaction claims must beat this banked curve (memory/runs/lru_null_arm/lru_null_arm_results.json) or be rejected as decoration; the assembly arms additionally evidence that pack assembly (frozen prefix + append-only tail) swings hit rate 0.001 -> 0.376 -> 0.939 on identical traffic.",
+  "artifact": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/build-it-all/lanes/m3-lru-null-arm.json"
+}

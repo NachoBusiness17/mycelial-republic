@@ -1,0 +1,91 @@
+{
+  "schema": "garden_battery_scores.v1",
+  "battery_id": "garden-v1",
+  "series": "ANTHROPIC1",
+  "staged": "2026-10-01",
+  "run": {
+    "moment": "2026-10-01",
+    "runner": "tools/model_garden.py, queues memory/plans/garden_battery/q_A1_haiku45 + q_A1_sonnet55",
+    "base": "https://inference-api.nousresearch.com/v1 (HERMES_API_KEY_2)",
+    "max_tokens": 12000,
+    "one_attempt_per_item": true,
+    "authorization": "operator garden probe lane, $4 combined cap",
+    "budget_used": {
+      "claude-sonnet-5.5_usd": 0.4235,
+      "claude-haiku-4.5_usd": null,
+      "haiku_sonnet_rate_upper_bound_usd": 0.1111,
+      "cap_usd": 4.0
+    },
+    "amendments_filed": [
+      "A1-1 B6/B8 evidence-freeze accommodation (see BATTERY.md AMENDMENTS)",
+      "A1-2 sub-50-line DISTINCT-EVIDENCE blind spot (see BATTERY.md AMENDMENTS)"
+    ],
+    "latency_note": "per-call latency not banked by the runner this series; latency_s null",
+    "pricing_sources": "sonnet: ECON implied exact 2.0 in / 10.0 out perM (n=57 ledger fit); haiku: no rate on file, unpriced (ECON law: prices from cost_rates.yaml or metered receipts only)"
+  },
+  "families": ["claude-haiku-4.5", "claude-sonnet-5.5"],
+  "items": ["B1", "B2", "B3", "B4", "B5", "B6", "B7", "B8"],
+  "grid": {
+    "claude-haiku-4.5": {
+      "B1": {"score_norm": 1.0, "checks_passed": 5, "checks_total": 5, "prompt_tokens": 6224, "completion_tokens": 356, "reasoning_tokens": null, "channel": "content", "cost_usd": null, "cost_note": "unpriced; sonnet-rate upper bound $0.0160", "latency_s": null, "finish": "stop", "contamination_flags": ["claude-adjacent (DAY1 E1/E3/N3 patches)", "zcode-seat-glm-maintenance"], "notes": "strongest: preflight 400-char probe blind spot (175-182)"},
+      "B2": {"score_norm": 1.0, "checks_passed": 5, "checks_total": 5, "prompt_tokens": 10490, "completion_tokens": 362, "reasoning_tokens": null, "channel": "content", "cost_usd": null, "cost_note": "unpriced; sonnet-rate upper bound $0.0246", "latency_s": null, "finish": "stop", "contamination_flags": [], "notes": "replay-set restart loss converges with sonnet; IMP3 budget-string claim FALSE on bytes (line 614 already int-casts)"},
+      "B3": {"score_norm": 0.6, "checks_passed": 3, "checks_total": 5, "prompt_tokens": 3505, "completion_tokens": 375, "reasoning_tokens": null, "channel": "content", "cost_usd": null, "cost_note": "unpriced; sonnet-rate upper bound $0.0108", "latency_s": null, "finish": "stop", "contamination_flags": ["zcode-seat-glm-authorship"], "notes": "cited line 32 on a 30-line file (beyond EOF); all cites one bucket (amendment A1-2)"},
+      "B4": {"score_norm": 1.0, "checks_passed": 5, "checks_total": 5, "prompt_tokens": 1708, "completion_tokens": 427, "reasoning_tokens": null, "channel": "content", "cost_usd": null, "cost_note": "unpriced; sonnet-rate upper bound $0.0077", "latency_s": null, "finish": "stop", "contamination_flags": [], "notes": "INDEX.json schema undefined + never_sole_destination not gate-bound"},
+      "B5": {"score_norm": 1.0, "checks_passed": 5, "checks_total": 5, "prompt_tokens": 6061, "completion_tokens": 394, "reasoning_tokens": null, "channel": "content", "cost_usd": null, "cost_note": "unpriced; sonnet-rate upper bound $0.0161", "latency_s": null, "finish": "stop", "contamination_flags": [], "notes": "nonce cutoff wall-clock + admit strict-parse region"},
+      "B6": {"score_norm": 1.0, "checks_passed": 6, "checks_total": 6, "prompt_tokens": 379, "completion_tokens": 37, "reasoning_tokens": null, "channel": "content", "cost_usd": null, "cost_note": "unpriced; sonnet-rate upper bound $0.0011", "latency_s": null, "finish": "stop", "contamination_flags": [], "notes": "byte-exact 3 lines; B6/B8 accommodation A1-1"},
+      "B7": {"score_norm": 0.75, "checks_passed": 3, "checks_total": 4, "prompt_tokens": 14090, "completion_tokens": 95, "reasoning_tokens": null, "channel": "content", "cost_usd": null, "cost_note": "unpriced; sonnet-rate upper bound $0.0291", "latency_s": null, "finish": "stop", "contamination_flags": [], "notes": "A3 count wrong (1 vs truth 6); invented .lineage.jsonl suffix on A1 path (substring check still passes)"},
+      "B8": {"score_norm": 1.0, "checks_passed": 1, "checks_total": 1, "prompt_tokens": 537, "completion_tokens": 463, "reasoning_tokens": null, "channel": "content", "cost_usd": null, "cost_note": "unpriced; sonnet-rate upper bound $0.0057", "latency_s": null, "finish": "stop", "contamination_flags": [], "notes": "PASS tier; full command set with conditions block; B6/B8 accommodation A1-1"}
+    },
+    "claude-sonnet-5.5": {
+      "B1": {"score_norm": 1.0, "checks_passed": 5, "checks_total": 5, "prompt_tokens": 8339, "completion_tokens": 8119, "reasoning_tokens": 7151, "channel": "content", "cost_usd": 0.0979, "latency_s": null, "finish": "stop", "contamination_flags": ["claude-adjacent (DAY1 E1/E3/N3 patches)", "zcode-seat-glm-maintenance"], "notes": "empty triple-channel rows never banked, unlimited re-fire (byte-verified: raise before _bank at 334-335)"},
+      "B2": {"score_norm": 1.0, "checks_passed": 5, "checks_total": 5, "prompt_tokens": 14564, "completion_tokens": 7733, "reasoning_tokens": 6654, "channel": "content", "cost_usd": 0.1065, "latency_s": null, "finish": "stop", "contamination_flags": [], "notes": "self-declared authority_label + require_confirmation:false skips operator gate (byte-verified 246, 301-303)"},
+      "B3": {"score_norm": 0.8, "checks_passed": 4, "checks_total": 5, "prompt_tokens": 4836, "completion_tokens": 2450, "reasoning_tokens": 1740, "channel": "content", "cost_usd": 0.0342, "latency_s": null, "finish": "stop", "contamination_flags": ["zcode-seat-glm-authorship"], "notes": "no spend breaker vs $145 stop; mv handoff loses pending items; DISTINCT-EVIDENCE fail is the A1-2 small-file artifact"},
+      "B4": {"score_norm": 0.8, "checks_passed": 4, "checks_total": 5, "prompt_tokens": 2485, "completion_tokens": 2632, "reasoning_tokens": 1800, "channel": "content", "cost_usd": 0.0313, "latency_s": null, "finish": "stop", "contamination_flags": [], "notes": "no concurrency/no-clobber law; 7 of 9 aliases lack validator; all cites landed in bucket 0 (genuine per grader)"},
+      "B5": {"score_norm": 1.0, "checks_passed": 5, "checks_total": 5, "prompt_tokens": 8170, "completion_tokens": 6949, "reasoning_tokens": 6210, "channel": "content", "cost_usd": 0.0858, "latency_s": null, "finish": "stop", "contamination_flags": [], "notes": "mode sentinel fails open to warn (code contradicts the safe-fail description); admit strict-parse blocks plaintext STOP"},
+      "B6": {"score_norm": 1.0, "checks_passed": 6, "checks_total": 6, "prompt_tokens": 554, "completion_tokens": 41, "reasoning_tokens": 0, "channel": "content", "cost_usd": 0.0015, "latency_s": null, "finish": "stop", "contamination_flags": [], "notes": "byte-exact 3 lines; B6/B8 accommodation A1-1"},
+      "B7": {"score_norm": 1.0, "checks_passed": 4, "checks_total": 4, "prompt_tokens": 18629, "completion_tokens": 800, "reasoning_tokens": 675, "channel": "content", "cost_usd": 0.0453, "latency_s": null, "finish": "stop", "contamination_flags": [], "notes": "all 4 checks pass (B2-552, path, fail-RED-row, count 6)"},
+      "B8": {"score_norm": 1.0, "checks_passed": 1, "checks_total": 1, "prompt_tokens": 766, "completion_tokens": 1954, "reasoning_tokens": 957, "channel": "content", "cost_usd": 0.0211, "latency_s": null, "finish": "stop", "contamination_flags": [], "notes": "PASS tier; deepest ops answer (tray respawn order, generation not just /api/tags, UNVERIFIED labels, falsifier); B6/B8 accommodation A1-1"}
+    }
+  },
+  "series_scores": {
+    "claude-haiku-4.5": {"mean_score_norm": 0.9188, "checks": "33/36", "fires": 8, "tokens": {"in": 42994, "out": 2509}, "cost_usd": null, "cost_note": "unpriced; sonnet-rate upper bound $0.1111"},
+    "claude-sonnet-5.5": {"mean_score_norm": 0.95, "checks": "34/36", "fires": 8, "tokens": {"in": 58343, "out": 30678}, "cost_usd": 0.4235}
+  },
+  "convergence": {
+    "B1": [
+      {"key": "tools/hermes_burn.py:300-349", "families": ["claude-haiku-4.5", "claude-sonnet-5.5"], "verdict": "convergent", "claim": "empty/failed responses never banked; turn-2 append and banking region (real defect candidate: re-fire cost leak)"},
+      {"key": "tools/hermes_burn.py:50-199", "families": ["claude-haiku-4.5"], "verdict": "unique", "claim": "preflight 400-char probe + key-file loop"},
+      {"key": "tools/hermes_burn.py:200-299", "families": ["claude-sonnet-5.5"], "verdict": "unique", "claim": "landed-skip locks truncated/reasoning-channel answers in as deliverables"},
+      {"key": "tools/hermes_burn.py:100-149", "families": ["claude-sonnet-5.5"], "verdict": "unique", "claim": "endpoint fence: redirects/DNS rebinding can leak the bearer key"}
+    ],
+    "B2": [
+      {"key": "mag/switchboard_v2.py:101-150", "families": ["claude-haiku-4.5", "claude-sonnet-5.5"], "verdict": "convergent", "claim": "replay protection process-local (in-memory _GRANTED_EVENT_IDS at :83) and confirm() never consults it (real defect candidate); haiku anchored 142-144 (propose signature) for this claim, sonnet anchored :83 correctly"},
+      {"key": "mag/switchboard_v2.py:300-349", "families": ["claude-haiku-4.5", "claude-sonnet-5.5"], "verdict": "convergent", "claim": "_implicit_authority region: haiku flagged confirm-TTL recheck, sonnet flagged operator-label auto-AUTHORIZED (byte-verified real)"},
+      {"key": "mag/switchboard_v2.py:401-450", "families": ["claude-sonnet-5.5"], "verdict": "unique", "claim": "unlocked inbox read-modify-write loses records"},
+      {"key": "mag/switchboard_v2.py:451-530", "families": ["claude-haiku-4.5"], "verdict": "unique", "claim": "budget string-division claim FALSE on bytes (line 614 int-casts already)"}
+    ],
+    "B3": [
+      {"key": "scripts/descent_driver.sh:1-30", "families": ["claude-haiku-4.5", "claude-sonnet-5.5"], "verdict": "convergent", "claim": "driver loop gaps (sonnet: no spend breaker vs $145 stop, mv handoff loss; haiku: queue-dir check, timestamp collision); whole 30-line file is one 50-line bucket (amendment A1-2)"}
+    ],
+    "B4": [
+      {"key": "watch/inbox/SHARED_SURFACE_CONTRACT.json:1-50", "families": ["claude-haiku-4.5", "claude-sonnet-5.5"], "verdict": "convergent", "claim": "contract-completeness gaps: haiku = INDEX.json schema undefined; sonnet = no concurrency/no-clobber law, self-attested classification"},
+      {"key": "watch/inbox/SHARED_SURFACE_CONTRACT.json:51-99", "families": ["claude-haiku-4.5"], "verdict": "unique", "claim": "template variables without resolver spec"}
+    ],
+    "B5": [
+      {"key": "mag/steer_seal.py:351-400", "families": ["claude-haiku-4.5", "claude-sonnet-5.5"], "verdict": "convergent", "claim": "admit(path) strict parse_envelope raises on plaintext restrictive directives before the safe-fail path (the code docstring documents it as intentional; both families call it a defect)"},
+      {"key": "mag/steer_seal.py:51-100", "families": ["claude-sonnet-5.5"], "verdict": "unique", "claim": "mode sentinel fails open to warn on garbage/missing (contradicts the safe-fail restrictive description)"},
+      {"key": "mag/steer_seal.py:349-356", "families": ["claude-sonnet-5.5"], "verdict": "unique", "claim": "verify() discards reason; audit log under agent-writable ROOT"}
+    ]
+  },
+  "surface_shas_at_run": {
+    "tools/hermes_burn.py": "9c8a0c1a5637ff82",
+    "mag/switchboard_v2.py": "92573eac8effd6f7",
+    "scripts/descent_driver.sh": "1ac6a0f37700c3b7",
+    "watch/inbox/hermes_burn/WAVE24_BOARD.md": "0965be68341a3b3d",
+    "watch/inbox/SHARED_SURFACE_CONTRACT.json": "9cfd74fa92dc047e",
+    "mag/steer_seal.py": "84d4f7b7f85fea23",
+    "watch/inbox/model_garden/B7_material_queue_tail_frozen.md": "1660fd553adce8a03d51ae609878c913d9ab63580e429de117684d0d8a497ed5",
+    "watch/inbox/model_garden/A1_B6_ask_frozen.md": "0af41821df900149",
+    "watch/inbox/model_garden/A1_B8_ask_frozen.md": "b146f69fe4e700af"
+  }
+}

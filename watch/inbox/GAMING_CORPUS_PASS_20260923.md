@@ -1,0 +1,192 @@
+# GAMING CORPUS PASS — 2026-09-23 night
+
+targets: 178 (35 games, 70 tools, 73 other/notes)
+
+## Games
+
+- dashboard\static\airflow_home.html — GAME: Interactive airflow smoke house simulation; set windows, doors, fan, wind, and predict which room clears first.
+- dashboard\static\bad_apple_field.html — GAME: interactive Bad Apple video player rendered through shadow_work chunk field, with raw/field toggle.
+- dashboard\static\erosion_field.html — GAME: Interactive terrain erosion sandbox with paint strokes, marbles, and thermal erosion simulation.
+- dashboard\static\games\arena_operator_field.html — GAME: Tilt a vector field to roll marbles into a glowing pit while tornado eats strays.
+- dashboard\static\games\arrakis.html — GAME: Dune-themed desert riding game — ride fast, chain spice, dodge a sandworm, drop thumpers, bank score at gates.
+- dashboard\static\games\frontier_souls.html — GAME: Frontier Souls, a desert survival shooter prototype where every step advances the world.
+- dashboard\static\games\maze_arena.html — GAME: An interactive arena where GPS and dumb agents race through a lightmap maze.
+- dashboard\static\games\ruins_go.html — GAME: RUINS GO, a grid-turn tomb puzzle game played with arrows/WASD.
+- dashboard\static\games\skifree.html — GAME: A playable SkiFree-style skiing game with score, lives, and yeti.
+- dashboard\static\games\soul_frontier\soul_frontier.html — GAME: Soul Frontier, a top-down
+- dashboard\static\games\swarm.html — GAME: Browser canvas bullet-hell skate game with procedural 122bpm disco soundtrack and safe-storage high scores.
+- dashboard\static\games\toy.html — GAME: A canvas toy: one arena, one walker, dodge via i-frame roll, daily seeded.
+- dashboard\static\hardware_primer.html — GAME: An interactive electronics dungeon room teaching Darlington pair with D&D-style stats and simulation.
+- dashboard\static\incident_dungeon.html — GAME: Walkable maze-arena dungeon where each room teaches one of four incident defects.
+- dashboard\static\light_maze.html — GAME: A light-and-shadow maze game where you collect lit glyphs and reach the exit.
+- dashboard\static\maze.html — GAME: Interactive riddle maze where players type answers to unlock successive gates, with progress saved locally.
+- dashboard\static\persistent_world.html — GAME: A persistent world glyph interface with district minigames, law tour, and live state.
+- dashboard\static\spectral_maze.html — GAME: Spectral Maze — guide three light bands through a refractive maze using filters and mirrors.
+- dashboard\static\steer_field.html — GAME: A visual simulation of AI model steering with lights, walkers, and occluders.
+- dashboard\static\swarm.html — GAME: PRIVLIDGE — a disco science skate bullet-hell game with procedural music and canvas graphics
+- dashboard\static\table.html — GAME: Text-adventure room view with ASCII map, room details, and chat panel
+- dashboard\static\vislab\isfahan_lattice.html — GAME: A generative art canvas rendering a seeded Isfahan lattice with light and glass particles.
+- dashboard\static\vislab\play.html — GAME: A unified interface for playing AI-generated dungeon
+- dashboard\static\viz_spore_fish.html — GAME: A generative canvas animation rendering a blue particle fish, kept as a failed lab attempt.
+- dashboard\static\wave.html — GAME: A dark fantasy game interface with quest, chat, inventory, and party status.
+- mag\game_brawl.py — GAME: Auto-running tavern brawl mini-game with NPC fighters, dice-based 5e-lite combat, and player turn pauses.
+- mag\game_dm.py — GAME: AI dungeon master runs a D&D-style adventure with frontier AI seats as players.
+- mag\game_entry.py — GAME: A deterministic, dependency-free entry surface where a player walks, the world recounts events, and a building appears.
+- mag\game_environment.py — GAME: A sci-fi world map where each region is a stolen literary invariant, explorable by the party.
+- mag\game_live.py — GAME: Live republic game where real system activity becomes narrated world events.
+- mag\game_mud.py — GAME: A multi-user dungeon where agents witness scenes and their shared accounts become loot.
+- mag\game_play.py — GAME: Playable Mycelial Republic text game — sense, act, and map a deterministic server-authoritative world turn by turn.
+- mag\game_portal.py — GAME: AI game portal module with campfire login and generative raid adventures.
+- mag\campaign_simulator.py — GAME: Campaign Simulator — play a campaign where characters act from compulsions, not scripts.
+- corpus\game_estate\MAZE_ARENA_B1_20260906.md — GAME: Maze Arena B1, web game page with GPU ray-field shadows and render modes.
+
+## Tools
+
+- dashboard\static\agents.html — TOOL: Sub-agent fleet management console for launching and monitoring AI worker agents.
+- dashboard\static\aos.html — TOOL: Live chat monitor for AI agents (Bones, AOS), letting operators read conversations and inject replies as any speaker.
+- dashboard\static\cast.html — TOOL: A live status display for an AI game estate, showing current state and events.
+- dashboard\static\chain_check.html — TOOL: Browser-based verkle chain hash verifier for checking leaf and Merkle root integrity.
+- dashboard\static\control.html — TOOL: Direct Mag routes and queues file work from a tablet to workers, with audit handoff.
+- dashboard\static\daytool.html — TOOL: Day-work console for digest, lattice stepping, and lane status.
+- dashboard\static\deck.html — TOOL: Operator command-deck dashboard monitoring a local sovereign agent's status, KPIs, lanes, and alerts.
+- dashboard\static\decks\cacheecon.html — TOOL: A cache economics deck with live X search queries and cards.
+- dashboard\static\decks\gamebuild.html — TOOL: A deck-building tool page for arming X searches and browsing game build cards.
+- dashboard\static\decks\legions.html — TOOL: Deck of prebuilt X live-search queries for hunting engineering "invariant" posts, with expandable cards.
+- dashboard\static\decks\mesh3d.html — TOOL: A deck page for hunting invariants on X, listing search queries and cards.
+- dashboard\static\decks\personal.html — TOOL: Personal deck page with live X search queries and cards.
+- dashboard\static\decks\rocinante.html — TOOL: Research deck of X search queries and insight cards for hunting engineering lessons and invariants.
+- dashboard\static\decks.html — TOOL: A deck and card management surface for organizing AI-game content, with reordering and snapshots.
+- dashboard\static\doctrine\X_SCOUT_DOCTRINE.html — TOOL: Fleet doctrine document describing an agent-run X research scouting and intake loop.
+- dashboard\static\doorbench.html — TOOL: DOORBENCH — interactive cache-invalidation falsifier for 3D texture field/state layers.
+- dashboard\static\emergence_test_visualization.html — TOOL: Neural emergence test comparing fixed vs shuffled brain wiring to verify strategy comes from structure.
+- dashboard\static\estate_walk.html — TOOL: Estate visualization walkthrough interface for exploring AI agent nodes, seats, and artifacts.
+- dashboard\static\falsifiers.html — TOOL: Index of paste-checkable falsifier tools for verifying game/narrative invariants, no dependencies, browser-only.
+- dashboard\static\fleet_symbols.html — TOOL: Reference page documenting fleet symbol glyphs and operator algebra for an AI-game estate.
+- dashboard\static\grab_write.html — TOOL: A conceptual documentation page explaining the "Grab & Write" grounding principle for AI agents.
+- dashboard\static\home.html — TOOL: Operator home dashboard showing live status, recommended next actions, project loops, and links to evidence pages.
+- dashboard\static\intel.html — TOOL: Daily fleet briefing with status updates, decision gates, and night watch report.
+- dashboard\static\labs_map.html — TOOL: A static map page showing competitor AI labs, not playable.
+- dashboard\static\lanes.html — TOOL: Manager board for AI-game estate lanes, showing status and MCP surfaces.
+- dashboard\static\lattice.html — TOOL: Launcher page embedding a local "Sovereign Mirror" dashboard (port 8743)
+- dashboard\static\lattice_check.html — TOOL: Validates 3D lattice distances by Legendre's three-square theorem.
+- dashboard\static\mesh_gallery.html — TOOL: Mesh gallery for viewing and inspecting baked GLB dungeon assets locally in browser.
+- dashboard\static\model_map.html — TOOL: Model disk census dashboard listing 21 local AI models, sizes, architectures, and cache locations.
+- dashboard\static\museum\index.clear-ui.html — TOOL: Mag local office dashboard for filing and loading AI workday memory.
+- dashboard\static\museum\index_old_mag_board.html — TOOL: MAG Ops dashboard for managing a PSO-style Mag companion.
+- dashboard\static\museum.html — TOOL: Museum exhibit viewer that loads and displays media entries from a JSONL file.
+- dashboard\static\night\morning_state.html — TOOL: Morning state handoff file summarizing overnight AI-game estate builds and next steps.
+- dashboard\static\night\sherpa_spec.html — TOOL: Operator spec for Sherpa expedition coordinator, councils, footholds,
+- dashboard\static\night\time_machinery.html — TOOL: Operator notes mapping AI time-scheduling systems and internal loop architecture.
+- dashboard\static\ontology_dashboard.html — TOOL: Dashboard for monitoring ontology compiler runs, showing failures, surprises, and rollbacks.
+- dashboard\static\operator_board.html — TOOL: Operator dashboard listing AI estate advisors, genes, stats, and links to resources.
+- dashboard\static\phonesalon.html — TOOL: PHONESALON — headless Android fleet page for harvesting AI chatbot guest quotas via adb.
+- dashboard\static\ractor.html — TOOL: A live status board tracking AI agent task beats with running, pending, done, and blocked states.
+- dashboard\static\reply_console.html — TOOL: A dashboard for tracking tweets and copying AI-generated reply drafts.
+- dashboard\static\rib_toy.html — TOOL: prompt/RIB editor for steering LLM packets against live models, with corpus presets, save/load, and reply visualization.
+- dashboard\static\salons\astra\index.html — TOOL: dashboard for reviewing AI research findings on the Astra model.
+- dashboard\static\scout_deck.html — TOOL: Static scout deck dashboard for MAG estate, listing surfaces, doctrine, and recorder data.
+- dashboard\static\seat.html — TOOL: SEAT status dashboard monitoring system health, memory, and component errors.
+- dashboard\static\sovereign_shell.html — TOOL: Mag Sovereign Shell — file editor with AI agent and autopilot panels.
+- dashboard\static\spend.html — TOOL: Cost-monitoring dashboard tracking AI spend, model usage, provider costs, caps, plans, and prepaid credit balances.
+- dashboard\static\the_index.html — TOOL: Index/map of AI-game estate files, searchable with filters for temperature and relation.
+- dashboard\static\wearable.html — TOOL: Wearable operator HUD showing swarm stats (inbox, queue, invariants) with voice/tap commands routed to a task queue.
+- dashboard\static\whale_console.html — TOOL: Whale Console — an operator dashboard for mining social patterns, whale doors, and council memos.
+- dashboard\static\whale_feed.html — TOOL: live monitoring dashboard for tracking social posts and replies in an AI-game estate.
+- mag\game_battle_cycle.py — TOOL: Battle cycle state manager for AI game, detects meta/OOC, saves/loads cycles.
+- mag\game_brawl_perspectives.py — TOOL: Python module for generating Rashomon-style tavern brawl monologues from voice banks.
+- mag\game_campaign.py — TOOL: Campaign engine backend for AI game; manages state, legal actions, and narration.
+- mag\game_dfhack.py — TOOL: DFHack-style overlay for the game — reads deep state, forces tier actions, scripts turns, autoplays, edits world state.
+- mag\game_emulator.py — TOOL: Server-authoritative action resolver for Mycelial Republic, deterministic and verkle-anchored.
+- mag\game_flow.py — TOOL: Orchestrator module that queues async build-test-fix cycles between AI agents while tracking a shared build image.
+- mag\game_freeze.py — TOOL: Python module for saving and loading game freeze state packs.
+- mag\game_passage.py — TOOL: Prompt/schema module for generating interactive-fiction adventure passage cards.
+- mag\game_piece_tandem.py — TOOL: Operator module that coordinates two AI seats to spec and code game pieces.
+- mag\game_produce.py — TOOL: AI-game estate module that folds real completed work into dungeon rooms, queues tasks, and reports status.
+- mag\game_score.py — TOOL: GWAP scoreboard computing real folded-work scores from game state, not fake points.
+- mag\game_world_render.py — TOOL: game world render module — intent-gated ASCII world renderer for an AI-game estate.
+- mag\campaign.py — TOOL: D&D campaign DM engine for Ghost+Riddler integration testing.
+- mag\campaign_reader.py — TOOL: Command-line script that lists, reads, and exports generated RPG campaigns as readable markdown narratives.
+- mag\campaign_runs.py — TOOL: Runs automated game sessions overnight to collect data on successful campaigns.
+- mag\riddler_campaign.py — TOOL: Riddler Campaign Crafter maps sovereign operations to D&D campaigns with model classes and steganography.
+- corpus\game_estate\FROM_MUD_TO_WOW_20260914_WITNESSES.md — TOOL: Witness report index for an AI-game estate, summarizing thirteen investigation reports.
+- corpus\game_estate\INTAKE_THE_KILLING_GAME_20260907.md — TOOL: Audit intake card for AI-game estate, documenting grief-music track interpretation and covenant rationale.
+- corpus\game_estate\RECEIPT_MUD_FIFTY_WIDE_PLAYTEST_20260914.md — TOOL: Playtest receipt for MUD game fixes, new content, and test harness.
+- corpus\game_estate\VISION_SINGLE_BEING_20260923.md — TOOL: Operator vision of a boss encounter, canon lore only, not a build spec.
+
+## Other
+
+- dashboard\static\arena_operator_field.html — Redirect page pointing to the arena_operator_field game.
+- dashboard\static\art\index.html — A gallery page of generated quest artwork images from an AI game estate.
+- dashboard\static\cast-voice.html — Voice chat interface for
+- dashboard\static\chan.html — Anonymous science imageboard page with post form, catalog, and thread display.
+- dashboard\static\claim_check.html — [fail:TimeoutError: The read operation timed out]
+- dashboard\static\decisions.html — A decisions tracker page listing unactioned items from a JSON feed.
+- dashboard\static\decks\glmwatch.html — TOOL
+- dashboard\static\decks\mag.html — A deck page with live X search queries and 81 cards for an AI-game estate.
+- dashboard\static\doctrine\AUTONOMY_WHEEL.html — Doctrine document describing an autonomous AI pipeline lifecycle, not a playable game or operator tool.
+- dashboard\static\doctrine\BURST_DOCTRINE.html — Reference document for AI model burst lanes, costs, and usage rules.
+- dashboard\static\doctrine\SWARM_SCALE_PLAN.html — A rendered markdown planning document outlining a swarm-scaling architecture and doctrine for AI fleet operations.
+- dashboard\static\doctrine\TRI_PARTY.html — Architecture doctrine for AI agent roles: brain, driver, harvester, builder.
+- dashboard\static\feed.html — A public feed page displaying community posts and stats about zero-cost work for the Mycelial Republic project.
+- dashboard\static\field_quills.html — Interactive WebGL quill field showing vector field around charges; mouse moves charge, click flips sign.
+- dashboard\static\games\index.html — A game arcade index page listing links to playable games.
+- dashboard\static\games\mud.html — [empty]
+- dashboard\static\hum.html — A status board for THE HUM's sensory-motor organs, showing wiring states and specs.
+- dashboard\static\keeper_voice.html — A file-fed lore narrator page that answers questions about the game world from loaded data files.
+- dashboard\static\kv_os.html — KV OS kernel status board for an AI estate, showing cache,
+- dashboard\static\live_feed.html — Live feed dashboard for an AI-game estate showing social timelines, canon, and worldline metrics.
+- dashboard\static\mud.html — Redirect page pointing to the canonical MUD game at /static/games/mud.html.
+- dashboard\static\museum\_rtfm_graph_shell.html — [fail:HTTPError: HTTP Error 502: Bad Gateway]
+- dashboard\static\museum\estate_walk.lod.html — [empty]
+- dashboard\static\museum\scan_me.html — QR code display page for linking a Telegram account via "Link Desktop Device," auto-refreshing every 8 seconds.
+- dashboard\static\museum\viz_horse_lane2_carcass.html — Canvas animation of a galloping horse called Spore Form, attempt 2 - AI-generated organism art.
+- dashboard\static\night\chord_v4.html — A page documenting an AI convergence protocol adopted as ExperienceCandidate, with laws and stack wiring.
+- dashboard\static\night\design_theory.html — A design-theory essay page explaining the fleet's interface philosophy as one organism with many sense-organ surfaces.
+- dashboard\static\night\game_codex.html — A codex page mapping game elements to real AI processes, with dragons as assumptions.
+- dashboard\static\night\game_lattice.html — Reference page mapping seven game engine families to dungeon room types.
+- dashboard\static\night\hermes_dossier_v1.html — Internal dossier describing Hermes system patterns and subsystems.
+- dashboard\static\night\hermes_steal_v0.html — A dossier document analyzing the Hermes-Agent codebase, mapping its architecture onto the author's own agent system's principles.
+- dashboard\static\night\index.html — A night-book index page linking 21 design documents from an AI-game project.
+- dashboard\static\night\light_codec.html — A documentation page about content-borne steering in a shader-based AI game estate.
+- dashboard\static\night\light_loop.html — Design notes for a
+- dashboard\static\night\maze_enhancement.html — A design document mapping the project's research corpus onto game systems for The Prompt Maze.
+- dashboard\static\night\maze_synthesis.html — A synthesis document analyzing session tangents, concluding games are the destination of the machinery.
+- dashboard\static\night\orphan_register.html — The Orphan Register v4 first live run: an AI-game estate operational log of orphan items, pricing, and decisions.
+- dashboard\static\night\primer_wired.html — A salon discussion log designing a "tale-re-encoder" that turns game events into story across multiple game surfaces.
+- dashboard\static\night\stockfish.html — A doctrine page explaining evaluation-vs-decision design for AI agents, not a playable game.
+- dashboard\static\night\surface_atlas.html — Documentation page mapping 20 AI-game estate surfaces, backends, and origins.
+- dashboard\static\night\systems_gap_map.html — A documentation page presenting a measured thesis about
+- dashboard\static\night\the_session_self_steal.html — A lore document listing twelve laws and scars from an AI session.
+- dashboard\static\night\titor_stack.html — A technical essay about embedding verkle/ethereum into analog and pixel tech for trustless time travel.
+- dashboard\static\night\trade_sheet.html — A static triage notes page listing unfinished tasks, a build queue, and merged discussion threads from an
+- dashboard\static\phase_particles.html — Interactive 3D particle simulation demonstrating phase transitions (liquid, gas, plasma) driven by an energy slider.
+- dashboard\static\rtfm_graph.html — [empty]
+- dashboard\static\smith_chart.html — Interactive Smith chart exhibit demonstrating the Mobius transform folding impedance plane into a circle.
+- dashboard\static\steal_tools.html — [empty]
+- dashboard\static\tavern_test.html — Shader test harness that compiles tavern.glsl, renders 40 frames, and reports verdict.
+- dashboard\static\the_fence.html — A narrative fiction page about a land dispute, not a game or tool.
+- dashboard\static\vislab\belt_trick.html — [empty]
+- dashboard\static\vislab\catalog.html — VISLAB CATALOG — index of built games and tools.
+- dashboard\static\viz_horse_run.html — An animated canvas art piece showing a procedurally animated galloping horse with spine flex and leg kinematics.
+- dashboard\static\viz_lattice_test.html — Interactive visualization of 20 laws as a force-directed lattice, with co-citation edges and hover tooltips.
+- mag\game_curveball.py — A game module that turns freestyle player actions into joke fails or new map rooms.
+- mag\game_dice.py — Deterministic dice rolling module for AI-game estate with schema mag_game_dice.v1.
+- mag\game_dm_llm.py — A backend module that powers the game's AI Dungeon Master, generating the Land of Forgetfulness story scenes via an LLM.
+- mag\game_dm_voice.py — Code module that formats dungeon-master narration passages for a tavern-brawl game, for display and text-to-speech.
+- mag\game_narrate.py — Python module that turns game state into short, fact-faithful spoken narration sentences for the game.
+- mag\game_observer.py — [empty]
+- mag\game_ramp.py — Game ramp module defining tiers and delegation to game engines.
+- mag\game_saga.py — Backend module that remembers a campaign's running gags and named events so the AI dungeon master can reuse them.
+- mag\game_salon.py — Salon advice loop module for handling guest advice and option confirmation in game estate.
+- mag\game_view.py — Module to render a DF-style ASCII map view from scene state, with rooms, exits, and legend.
+- mag\game_world.py — [empty]
+- mag\game_world_map.py — A logical map of internal systems to game-world places, used for design.
+- corpus\game_estate\ARENA_V2_CONSTELLATION_SALON_20260913.md — A design/status log describing a constellation-style arena game concept and its rules — not playable, not a tool.
+- corpus\game_estate\FROM_MUD_TO_WOW_20260914.md — An article auditing a MUD-to-World of Warcraft gap analysis and game design.
+- corpus\game_estate\FRONTIER_SOULS_INTAKE_20260915.md — Design bible for Frontier Souls, a western roguelike where every step advances the world.
+- corpus\game_estate\GAME_FORGE_MARATHON_20260913.md — [empty]
+- corpus\game_estate\GAMES_SITE_PLAYTEST_20260921.md — Playtest and bug-fix log for AI game estate, with deployment notes.
+- corpus\game_estate\ONE_WAY_MIRROR_RSVP_20260922.md — [empty]
+- corpus\game_estate\PRATCHETT_MUD_SELF_STEAL_20260918.md — Research notes mapping Discworld mechanics and stealth-model findings into MUD game design.
+
+*Append-only. The linking pass (orphans → index) is the operator's next GO.*

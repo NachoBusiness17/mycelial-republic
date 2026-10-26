@@ -1,0 +1,40 @@
+== pytest tests/test_description_pin.py ==
+.......F                                                                 [100%]
+================================== FAILURES ===================================
+__________________________ test_is_pinned_boundaries __________________________
+
+    def test_is_pinned_boundaries():
+>       assert is_pinned("stable v2")
+E       AssertionError: assert False
+E        +  where False = is_pinned('stable v2')
+
+tests\test_description_pin.py:108: AssertionError
+=========================== short test summary info ===========================
+FAILED tests/test_description_pin.py::test_is_pinned_boundaries - AssertionEr...
+1 failed, 7 passed in 0.40s
+pytest exit: 1
+
+== python tools/violation_ratchet.py check --changed ==
+RATCHET check: scope=8 changed files; hits=4; registered=4; NEW=0; expired-exceptions=0
+RATCHET: PASS — no unregistered debt.
+ratchet exit: 0
+
+== REFIRE 2026-09-25 (cap 12) ==
+Fix landed: VERSION_RE now accepts v-prefixed single-number tokens (v1, v2)
+per the tool's own stated bar; bare integers still do not pin. Receipt
+comment inside tools/description_pin.py names the cause and cites the
+failed run above (1 failed / 7 passed), preserved verbatim.
+
+== pytest tests/test_description_pin.py (refire) ==
+........                                                                 [100%]
+8 passed in 0.22s
+pytest exit: 0
+
+== python tools/violation_ratchet.py check --changed (refire) ==
+RATCHET check: scope=8 changed files; hits=4; registered=4; NEW=0; expired-exceptions=0
+RATCHET: PASS — no unregistered debt.
+ratchet exit: 0
+
+== CLI smoke (temp manifests, not in estate) ==
+good.json (description "...v1.0"): "all tool descriptions pinned or marked", exit 0
+bad.json ("rogue_tool", no pin or marker): named finding, exit 2

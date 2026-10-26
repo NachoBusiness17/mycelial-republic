@@ -1,0 +1,64 @@
+{
+  "lane": "quantizer-fallout",
+  "division": "B",
+  "ok": true,
+  "note": "Owed work closed by byte-verification, not repair: all nine named tests were already healed by the quantizer-hygiene lane's own commit 93f85e0dd (test_thought_quantizer.py expectations updated compiled-v0.3 -> compiled-v0.4 in-commit, L1/L3/L4 pins added; no assertion weakened), the other five named files never encoded pack shapes (coupling audit), and no 42:05 suite receipt exists to name that snapshot's failure modes - zero edits made by this lane; nine + contract tests 62 passed exit 0; full suite 2F/2566P with both failures sibling-lane fallout (game-world grove optics; stealth_driver instance-lock test contending the LIVE production mutex, driver-meter lane's active claim), named for routing.",
+  "rows": [
+    {
+      "law": "fallout-premise-needs-a-receipt",
+      "claim": "A dispatch claiming N downstream tests encode stale expectations must cite the suite receipt that named them; without it the fix lane can only re-verify, and here the 9 alleged stale-shape failures did not exist at HEAD (healed in-commit by 93f85e0dd) while the suite's 2 REAL failures belonged to sibling lanes.",
+      "quote": "v0.4 semantics (ball-20260929 quantizer-hygiene, the three verified losses w4-27 section 3 measured live):",
+      "source": "C:/Users/foste/Documents/projects/local_sovereign_agent/tools/thought_quantizer.py",
+      "steal": "Before dispatching a fallout-fix lane, the orchestrator greps the suite receipt for the failing node IDs and pins them into the ask; one seat, one sitting: read the receipt lines first, only then edit expectations.",
+      "falsifier": "A fallout lane that finds all nine green AND a cited 42:05 receipt showing those node IDs red would kill this law (meaning the tree regressed between snapshot and lane).",
+      "leverage": "medium"
+    },
+    {
+      "law": "hygiene-lane-owns-its-skew",
+      "claim": "The quantizer-hygiene lane did not 'only run its own targeted tests': its commit 93f85e0dd updated the downstream expectation (compiled-v0.3 -> compiled-v0.4) and added L1/L3/L4 regression pins in the same commit as the behavior change, so behavior-change and expectation-change landed atomically.",
+      "quote": "+    assert rows and rows[0][\"status\"] == \"compiled-v0.4\"",
+      "source": "C:/Users/foste/Documents/projects/local_sovereign_agent/tests/test_thought_quantizer.py",
+      "steal": "Keep the landed pattern: any tools/ behavior bump renames the status marker AND its test assertion in one commit (grep the old marker under tests/ before push to prove zero stale encodings).",
+      "falsifier": "A future commit that bumps a status/version marker in tools/ while any tests/ file still asserts the old string (grep hits > 0 at HEAD) falsifies the pattern holding.",
+      "leverage": "medium"
+    },
+    {
+      "law": "live-process-mutex-poisons-lock-tests",
+      "claim": "A single-instance-lock test that acquires the PRODUCTION mutex fails whenever the production driver is actually running; the namespace-scoped lock escape exists (added by the ball3 driver-meter lane) but tests/test_stealth_tools_wave5_repair.py:128 still acquires namespace-less, so the suite is not hermetic against a live driver.",
+      "quote": "namespace (tests only): suffixes the lock name into a private lock object so a test never contends with the live driver's production lock (ball3 driver-meter 2026-09-29: the live driver holds the production mutex, so the wave5 lock test was refused on its FIRST acquire, not its second).",
+      "source": "C:/Users/foste/Documents/projects/local_sovereign_agent/tools/stealth_driver.py",
+      "steal": "Driver-meter lane (file owner, mid-flight in tree) flips the :128 acquire to a namespace arg; any lane adding a lock test must take the namespace, never the production mutex.",
+      "falsifier": "A full suite run with the stealth driver live AND test_instance_lock_refuses_second_acquire passing would kill this (meaning the test no longer touches the production mutex).",
+      "leverage": "high"
+    }
+  ],
+  "checks": [
+    {
+      "command": ".venv/Scripts/python.exe -m pytest tests/test_thought_quantizer.py tests/test_context_pack_quantized_laws.py tests/test_mcp_quantized.py tests/test_seat_corpus.py::test_compile_has_deepseek_thinking_off tests/test_openclaw_catalog.py tests/test_roadmap_runner.py tests/test_token_chain.py tests/test_mcp_bridge_r1.py -v",
+      "exit": 0,
+      "evidence": "watch/inbox/gala_20260925/ball3-suite-green/lanes/quantizer-fallout.check.txt: 62 passed in 16.31s, FINISHLINE_EXIT=0; all nine named node IDs verified PASSED by name (test_compile_end_to_end, test_linker_flash_takes_top_rank, test_linker_kept_equals_packed_with_remainder, test_compile_has_deepseek_thinking_off, test_compile_lists_memlance_and_scan, test_compile_files_frozen_build_and_config, test_parse_and_execute_fixture, test_dry_run_chain, test_thought_compile_writes_only_inside_pinned_out_dir)"
+    },
+    {
+      "command": ".venv/Scripts/python.exe -m pytest -q  (full suite, serial - the dispatch's authoritative instrument)",
+      "exit": 1,
+      "evidence": "watch/inbox/gala_20260925/ball3-suite-green/lanes/quantizer-fallout.fullsuite.txt: 2 failed, 2566 passed, 12 skipped in 2821.20s (0:47:01); FAILED tests/test_game_world_render_optics.py::test_internal_node_grows_after_enough_leaves + FAILED tests/test_stealth_tools_wave5_repair.py::test_instance_lock_refuses_second_acquire - neither is one of the nine; the six lane files green inside the full run"
+    },
+    {
+      "command": "grep -rn \"compiled-v0.3\" tests/ mag/ tools/",
+      "exit": 1,
+      "evidence": "session grep: zero hits - no stale pack-shape encoding survives anywhere in the tree"
+    },
+    {
+      "command": "git status --short on lane scope (6 named test files + test_context_pack_quantized_laws.py + test_mcp_quantized.py + tools/thought_quantizer.py + mag/constants.py + mag/context_pack.py + tools/freshness_check.py)",
+      "exit": 0,
+      "evidence": "empty status, SCOPE_CLEAN_RC=0 - this lane edited nothing; the dispatch's conditional ratchet step (only if mag/ or tools/ touched) does not fire and was not run as a lane check"
+    },
+    {
+      "command": "git show 93f85e0dd -- tests/test_thought_quantizer.py (forensics on the premise)",
+      "exit": 0,
+      "evidence": "the quantizer-hygiene commit itself updated test_compile_end_to_end to compiled-v0.4 and added 5 L1 pins + L3 constant-identity pin + 3 L4 linker pins; prior-ball receipt watch/inbox/gala_20260925/ball-20260929/lanes/quantizer-hygiene.json CHECK 5 already recorded test_mcp_bridge_r1.py = 22 passed"
+    }
+  ],
+  "decision_changed": "closes the quantizer-fallout owed work from the 42:05 post-ball suite as already-banked (healed atomically in hygiene commit 93f85e0dd), and re-routes the ball's suite-green gap to its real owners: 2 remaining failures are game-world optics + the driver-meter lane's namespace-less lock test, not quantizer fallout",
+  "artifact": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/ball3-suite-green/lanes/quantizer-fallout.json"
+}

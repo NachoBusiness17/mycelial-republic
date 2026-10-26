@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>The Distributed Republic - The Rail (live)</title>
+<style>
+  html,body{margin:0;padding:0;background:#0a0a0f;color:#e8e8e8;font-family:Helvetica,Arial,sans-serif;overflow:hidden}
+  #stage{position:relative;width:100vw;height:100vh}
+  canvas{display:block}
+  #hud{position:absolute;bottom:8vh;left:0;right:0;text-align:center;font-size:22px;color:#cfcfcf;letter-spacing:.04em}
+  #title{position:absolute;top:6vh;left:0;right:0;text-align:center;font-size:28px;color:#fff;letter-spacing:.06em}
+  #readout{position:absolute;top:14vh;right:4vw;text-align:right;font-size:14px;color:#888;line-height:1.7}
+  .amt{color:#ffd54a}
+  #controls{position:absolute;bottom:2vh;left:4vw;font-size:12px;color:#666}
+  input[type=range]{width:40vw}
+</style>
+</head>
+<body>
+<div id="stage">
+  <canvas id="c"></canvas>
+  <div id="title">The rail does not care who you are.</div>
+  <div id="readout"></div>
+  <div id="hud"></div>
+  <div id="controls"><input type="range" id="scrub" min="0" max="1000" value="0"> scrub &nbsp;|&nbsp; space = pause</div>
+</div>
+<script>
+// THE RAIL - live diagram, magatama pulses on sine-wave paths.
+// Real settle numbers: SettlementMaster v2 testnet, 0.899132488 TON per worker.
+const c = document.getElementById('c'), ctx = c.getContext('2d');
+function fit(){c.width=innerWidth;c.height=innerHeight}
+fit(); addEventListener('resize',fit);
+
+// ---- magatama: a comma/teardrop with the curl, drawn as two arcs ----------
+function magatama(ctx,x,y,r,angle,color){
+  ctx.save(); ctx.translate(x,y); ctx.rotate(angle); ctx.scale(r,r);
+  ctx.fillStyle=color;
+  // body: a circle with a tail curling into the head (the magatama comma shape)
+  ctx.beginPath();
+  ctx.arc(0,0,1,Math.PI*0.5,Math.PI*1.9,false);        // main body arc
+  ctx.arc(0.55,-0.55,0.62,Math.PI*1.5,Math.PI*0.45,false); // the curl inward
+  ctx.closePath(); ctx.fill();
+  // the core dot (the "eye" of the magatama)
+  ctx.beginPath(); ctx.arc(0.15,-0.12,0.28,0,Math.PI*2);
+  ctx.fillStyle='#0a0a0f'; ctx.fill();
+  ctx.restore();
+}
+
+// ---- rail geometry: the sine-wave path -------------------------------------
+const RAIL_Y = () => c.height*0.52;
+const RAIL_X0 = () => c.width*0.08, RAIL_X1 = () => c.width*0.92;
+const WAVE_A = () => c.height*0.09, WAVE_F = () => 2.2; // amplitude, full waves
+function railY(x,t){
+  const u=(x-RAIL_X0())/(RAIL_X1()-RAIL_X0());
+  return RAIL_Y() + Math.sin(u*Math.PI*2*WAVE_F() + t*0.8)*WAVE_A();
+}
+
+const MODELS=[
+  {name:'gemma:2b',            color:'#4fc3f7'},
+  {name:'deepseek-r1:1.5b',    color:'#26a69a'},
+  {name:'qwen2.5:3b',          color:'#66bb6a'},
+  {name:'gemma2:2b',           color:'#ffa726'},
+  {name:'qwen-desk',           color:'#ab47bc'},
+];
+const SETTLE={ton:'0.899132488', splits:[['worker 85%',0.85],['treasury 10%',0.10],['protocol 5%',0.05]]};
+let t=0, playing=true, scrubU=0, useScrub=false;
+
+addEventListener('keydown',e=>{if(e.code==='Space'){playing=!playing;e.preventDefault()}});
+const scrub=document.getElementById('scrub');
+scrub.addEventListener('input',()=>{useScrub=true;scrubU=scrub.value/1000});
+
+function drawRail(){
+  ctx.strokeStyle='#555'; ctx.lineWidth=3; ctx.beginPath();
+  for(let x=RAIL_X0();x<=RAIL_X1();x+=4){const y=railY(x,t); x===RAIL_X0()?ctx.moveTo(x,y):ctx.lineTo(x,y)}
+  ctx.stroke();
+}
+
+function drawMagatamas(){
+  MODELS.forEach((m,i)=>{
+    const phase=i*0.55;
+    const u=( (t*0.13 + phase) % 1 );
+    const x=RAIL_X0()+u*(RAIL_X1()-RAIL_X0());
+    const y=railY(x,t)-14;
+    magatama(ctx,x,y,13+Math.sin(t*2+i)*1.5, Math.atan2(Math.cos(u*6.28+i),1)*0.6, m.color);
+    ctx.fillStyle=m.color; ctx.font='12px Helvetica'; ctx.textAlign='center';
+    ctx.fillText(m.name.split(':')[0], x, y-24);
+  });
+}
+
+function drawStation(u){
+  if(u<0.92) return;
+  const x=RAIL_X0()+0.92*(RAIL_X1()-RAIL_X0()), y=railY(x,t);
+  ctx.strokeStyle='#fff'; ctx.lineWidth=2;
+  const bw=170,bh=52,bx=x-bw/2,by=y-bh/2+30;
+  ctx.strokeRect(bx,by,bw,bh);
+  ctx.fillStyle='#fff'; ctx.font='16px Helvetica'; ctx.textAlign='center';
+  ctx.fillText('SettlementMaster',x,by+32);
+  // the split: three magatama children flying out on their own arcs
+  const fade=Math.min(1,(u-0.92)/0.08);
+  SETTLE.splits.forEach(([label,frac],i)=>{
+    const dir=i===0?1:(i===1?0:-1);
+    const dx=x+dir*(60+frac*260)*fade, dy=y+80+ (i===1?50:0);
+    magatama(ctx,dx,dy,9*fade+4,dir*1.2,['#ffd54a','#26a69a','#ffa726'][i]);
+    ctx.fillStyle=['#ffd54a','#26a69a','#ffa726'][i]; ctx.font='13px Helvetica';
+    const amt=(parseFloat(SETTLE.ton)*frac).toFixed(9);
+    ctx.fillText(`${label}  ${amt} TON`,dx,dy+26);
+  });
+  ctx.fillStyle='#ffd54a'; ctx.font='15px Helvetica';
+  ctx.fillText(SETTLE.ton+' TON', x, y+70);
+}
+
+function drawNoise(u){
+  if(u<0.55||u>0.75) return;
+  ctx.fillStyle='#888'; ctx.font='16px Helvetica'; ctx.textAlign='center';
+  ctx.fillText('control track: all five agree on a nonsense question -> NOISE, discarded',
+    c.width/2, RAIL_Y()+WAVE_A()+70);
+}
+
+let last=performance.now();
+function frame(now){
+  const dt=(now-last)/1000; last=now;
+  if(playing&&!useScrub) t+=dt;
+  else if(useScrub) t=scrubU*20;
+  ctx.fillStyle='#0a0a0f'; ctx.fillRect(0,0,c.width,c.height);
+  drawRail();
+  drawNoise(t/20%1);
+  drawMagatamas();
+  drawStation((t*0.13+0.55)%1);
+  document.getElementById('hud').textContent=
+    `pedometer: ${(t*0.13).toFixed(1)}s simulated | fleet: 5 models 1 rail | settlement: trust-bytes verified`;
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>

@@ -1,0 +1,65 @@
+ID: 1wpv1gz
+SUB: r/ClaudeCode
+DATE: 2026-09-25 12:28 UTC (created_utc=1790339323)
+TITLE: I measured the Claude 5-hour meter around the clock. It drains 1.4x faster from 12:00 to 18:00 UTC on weekdays.
+SCORE: 348  COMMENTS: 51  UPVOTE_RATIO: 0.99
+PERMALINK: https://www.reddit.com/r/ClaudeCode/comments/1wpv1gz/i_measured_the_claude_5hour_meter_around_the/
+SELFTEXT:
+I've been tracking how fast the 5-hour meter moves on my Claude subscription by sending the same Claude Code requests at different times of day and reading the utilization headers that come back.
+
+On weekdays between 12:00 and 18:00 UTC (5 to 11 AM Pacific), the same request eats about 1.4x more of the 5-hour window than it does outside those hours. Outside the band the rate is flat. Inside it, input, output and thinking tokens all move faster, on Opus and on Fable, on a Pro and a Max account.
+
+Has anyone else seen their window drain faster in that band? And has Anthropic said anything about time-of-day weighting on the meters? Anthropic wrote in May that it had removed the peak-hours limit reduction for Claude Code on Pro and Max, and I can't find anything since then that describes this.
+COMMENTS FETCHED: 52
+--- [AutoModerator | 2026-09-25 | score 1] Hey! Thanks for posting to r/ClaudeCode   While participating in this thread, please follow our [community rules](https://www.reddit.com/r/ClaudeCode/about/rules). Keep discussions constructive. Attack the idea, not the person.  ## For help, project discussions, tips, and general chat, join the [ClaudeCode Discord](https://discord.gg/4QbtMRErUc).   *I am a bot, and this action was performed automatically. Please [contact the moderators of this subreddit](/message/compose/?to=/r/ClaudeCode) if you have any questions or concerns.*
+--- [Spare_Spirit6762 | 2026-09-25 | score 114] yes anthropic stated that the usage is drained faster in that window.   some month ago
+--- [jfricker | 2026-09-25 | score 1] Did you save your observation? Is it reproducible?
+--- [flobernd | 2026-09-25 | score 8] Yes and yes (reproduced it over 3 days; just needs a weekend probe to check whether the bands are different here).  You can easily verify it yourself by sending a fixed prompt (on the larger side) with requesting 0 output tokens on an account that is not used by anything else.  The usage headers from the response will report different deltas in the 12-18 UTC band.
+--- [flobernd | 2026-09-25 | score 30] Do you have a link? The only thing I was able to find is a tweet from April where they said that the peak usage adjustment is \*\*no\*\* longer active.
+--- [Sofullofsplendor_ | 2026-09-25 | score 7] ya I thought it was temporary too
+--- [inZania | 2026-09-25 | score 1] Why not use OTel to get more meaningful data here?
+--- [flobernd | 2026-09-25 | score 1] Whatever works, I guess. But that also can’t answer me if anything was officially announced or not.
+--- [Maleficent-One-8237 | 2026-09-25 | score 16] 🙏🏻 I thought it was just me. Like others, how did you observe and measure this?
+--- [inZania | 2026-09-25 | score 1] This thread was about your measurement technique, so I just thought it salient that you could determine if it came from, say, lower cache hits.
+--- [flobernd | 2026-09-25 | score 25] I was trying to figure out the "cost"/ratios for input, cached-input-read, cache-write-5m/1h on subscriptions (it's different than for the API) and stumbled across this.  You can replicate it like this:  Run Claude Code with \`ANTHROPIC\_BASE\_URL\` pointed at a small local proxy that forwards to [api.anthropic.com](http://api.anthropic.com) and logs the response headers. Every response carries \`anthropic-ratelimit-unified-5h-utilization\` and its 7-day sibling, your meter as a fraction in 1% steps.   Set \`DISABLE\_PROMPT\_CACHING=1\` so the input bills as plain tokens, then send a fixed prompt of about 150k tokens of filler text with \`claude -p 'reply with exactly: OK' --model claude-opus-5 --output-format json\`, which also gives you the exact token count.   A response never counts its own request, so send a tiny follow-up request about 30 seconds later and read the header from that one. The meter movement divided by the tokens you sent is the cost of one token in units of your 5-hour window.  Repeat the identical probe at different times of day, and compare the same probe on a weekday inside and outside 12:00 to 18:00 UTC. Keep each probe large enough to move the meter several steps.
+--- [Special-Economist-64 | 2026-09-25 | score 70] this post deserves thumbs up
+--- [flobernd | 2026-09-25 | score 1] Oh yes, absolutely fair question. I posted the exact measurement technique in a comment below. Caching was explicitly disabled.
+--- [drozd_d80 | 2026-09-25 | score 6] I don't remmeber the the source, but i remember it as permanent higher usage during peak hours
+--- [Acehan_ | 2026-09-25 | score 5] Scamthropic at it again
+--- [Maleficent-One-8237 | 2026-09-25 | score 1] Appreciate the insight! I too have wondered because when weekly overages hit, the burn rate seems even faster. Again 🙏🏻 thanks for posting this here!
+--- [FogelAI | 2026-09-25 | score 1] This is the only link I found   [https://x.com/trq212/status/2037254607001559305](https://x.com/trq212/status/2037254607001559305)
+--- [vAPIdTygr | 2026-09-25 | score 7] Insomniacs rejoice! No, but seriously, I've always felt I got way more out of my subscription when I Claude Code from 1am-8am.
+--- [DarkXFast | 2026-09-25 | score 5] To be honest I rarely reach 5-hour limit. Weekly limit is more problematic for me.
+--- [Prior-Meeting1645 | 2026-09-25 | score 2] What tier
+--- [Hekidayo | 2026-09-25 | score 1] Thank you for confirming something I have been convinced of but never bothered to test! It really feels like peak hours are back...
+--- [DarkXFast | 2026-09-25 | score 1] Max 5x
+--- [Kost97A | 2026-09-25 | score 5] No longer active for ClaudeCode I think. Regular chat is still affected but not as much as it used to.  I remember in March (?) or April it was, it would drain the 5H usage of a pro account with 2 to 3 simple prompts to Opus 4.6 or 4.7.
+--- [Prior-Meeting1645 | 2026-09-25 | score 7] I was hoping you’re gonna say $20 sub   ![gif](giphy|epUvyU6cTFUxi3ZoGX)
+--- [funlovingmissionary | 2026-09-25 | score 4] What about weekly? Does it just consume thw 5 hour faster, or weekly faster too?
+--- [trolololster | 2026-09-25 | score 20] they removed it when they secured compute on colossus
+--- [rotates-potatoes | 2026-09-25 | score -6] You are using actual token counts right, not just vibes?
+--- [flobernd | 2026-09-25 | score 2] You can find the exact measurement strategy in one of the comments.
+--- [helloitsj0nny | 2026-09-25 | score 3] this.  does it affect weekly? or just 5hrs
+--- [Numerous_Space_6695 | 2026-09-25 | score 7] Top 1% commenters are always so useless. He literally post the numbers.
+--- [norwegian | 2026-09-25 | score 1] Is it allowed to have hidden costs in a product?
+--- [flobernd | 2026-09-25 | score 8] 5h only. Weekly is unaffected. I measured this also.
+--- [flobernd | 2026-09-25 | score 0] 5h only. Weekly is unaffected. I measured this also.
+--- [adamfilip | 2026-09-25 | score 1] Surge Pricing
+--- [[deleted] | 2026-09-25 | score 1] [removed]
+--- [memesearches | 2026-09-25 | score 4] Thwy also said recently that this has been stopped. This was few months back I guess when they got compute from spaceX
+--- [rotates-potatoes | 2026-09-25 | score -1] lol, he posted the numbers after I asked. but thanks for the random insult, really showed the value of bottom 0.01% commenters.
+--- [rotates-potatoes | 2026-09-25 | score 1] FYI you don't need a proxy, the session transcript will carry the token counts as well.  But your measurement is only covering input tokens, which are about 0.3% of tokens (reasoning is part of output).
+--- [__Hello_my_name_is__ | 2026-09-25 | score 8] Oh man wouldn't it be great if there'd be official documentation about this, instead of some random anthropic employee saying this on his private twitter account some months ago in a reply to someone?
+--- [flobernd | 2026-09-25 | score 2] The proxy is for capturing the usage headers. It’s a convenient way to check the remaining 5h window (or rather the delta) to correlate it to the amount of token.  I also did output and thinking token tests. They weight about 4.8x of a regular input token, but the 5h usage scales linearly (the peek hour factor applies the same way to output tokens).
+--- [flobernd | 2026-09-25 | score 1] My guess is that they silently reenabled it after the 50% extra usage on the 14th of Sep ran out.
+--- [krugerlive | 2026-09-25 | score 1] My nocturnal vampire work hours are paying off.
+--- [Obvious-Vast-1248 | 2026-09-26 | score 0] This is interesting because 1.4x is way too large to just ignore as normal variation. I'd love to see someone repeat the same test with a much larger number of requests. If the result stays the same, Anthropic really needs to explain how the usage meter is calculated.  Users shouldn't have to reverse engineer this stuff just to understand their limits.
+--- [sascharobi | 2026-09-26 | score 1] Is this globally, or does it shift by region?
+--- [flobernd | 2026-09-26 | score 1] True. Same for the per model input, cache read/write and output factors. This is important info to optimize usage patterns.
+--- [flobernd | 2026-09-26 | score 2] I can only measure my region which is EU/Germany. The peak hours are still applied as per Pacific time.
+--- [[deleted] | 2026-09-26 | score 1] [removed]
+--- [Numerous_Space_6695 | 2026-09-26 | score 3] [You mean the one he posted 3 HOURS BEFORE your useless comment?](https://www.reddit.com/r/ClaudeCode/comments/1wpv1gz/comment/pbyqeks/?utm_source=share&utm_medium=web3x&utm_name=web3xcss&utm_term=1&utm_content=share_button)  
+--- [jonas77 | 2026-09-26 | score 5] Have you seen the clanker sites?  https://usage.report/  The principles are the same - run a known job every 5 hours and see the drain.   The stats always seem to be skewed when Anthropic fucks with the usage multiples and such ;-) and new models… 
+--- [flobernd | 2026-09-26 | score 1] Oh didn’t know this one! Interesting.
+--- [AnOnlineHandle | 2026-09-26 | score 1] Those are insomniac hours where I live...
+--- [vAPIdTygr | 2026-09-26 | score 1] I mean, yeah, it is, but I schedule the work.

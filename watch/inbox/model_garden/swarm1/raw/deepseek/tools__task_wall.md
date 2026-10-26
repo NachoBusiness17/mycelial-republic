@@ -1,0 +1,9 @@
+# swarm1-deepseek-tools__task_wall (deepseek-chat @ deepseek, turn 1, channel: content)
+
+DEFECT 1: Retry fallback re-dispatches a chore to a lane selected by Python's salted `hash()`, which differs per process, so lane assignment is not reproducible and can silently pick the lane that just failed. | EVIDENCE: tools/task_wall.py:243 | FIX: replace `hash(chore["name"] + str(chore["retries"])) % len(others)` with a deterministic hash (e.g. `zlib.crc32(...encode())`) or round-robin index.
+DEFECT 2: `touch_ok` ramps concurrency but nothing ever runs more than one call per lane at a time, so `self.conc` is recorded as a ceiling that was never actually exercised. | EVIDENCE: tools/task_wall.py:118-124 | FIX: gate `call()` through a per-lane `threading.Semaphore(self.conc)` so concurrency is real, or drop the ramp entirely.
+DEFECT 3: `chore["lane"]` is set to the `Lane` object inside `worker`, but `dispatch` and the retry path treat it as an object while ledger rows read `lane.name`; a failed retry reassigns `chore["lane"]` to a different `Lane` without resetting `conc`, so the reported per-chore lane attribution is stale. | EVIDENCE: tools/task_wall.py:217-221 | FIX: do not mutate `chore["lane"]`; pass the lane through `dispatch(chore, lane)` as an argument.
+DEAD-CODE: `lanes_report` is built and returned in the `main` dict but never consumed by the `__main__` print, which prints only the JSON of `main`. | EVIDENCE: tools/task_wall.py:232-233 and 252-256
+ONE-SITTING FIX: Make the retry lane selection deterministic by replacing the salted `hash()` with `zlib.crc32` (add `import zlib`) at the retry site; it is the one change that makes the wall report and lane attribution reproducible run to run. | EVIDENCE: tools/task_wall.py:243
+
+FALSIFIER for my deliverable: if any cited line does not contain the quoted behavior when read at that exact line number, the defect claim is void.

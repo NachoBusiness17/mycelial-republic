@@ -1,0 +1,1266 @@
+
+
+<!DOCTYPE html>
+<html lang="en" class="fixed_navbar">
+	<head>
+		
+	
+		<title>
+	
+		3 days benchmarking most llama.cpp flags on my weird 40gb vram laptop + tb4 egpu setup. Got +70% generation, +40% prefill, 60k more context, and filed a bug in llama around MTP. What I learned. - r/LocalLLaMA
+	
+</title>
+		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+		<meta name="description" content="View on Redlib, an alternative private front-end to Reddit.">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0">
+		
+		<meta name="robots" content="noindex, nofollow">
+		
+		<!-- General PWA -->
+		<meta name="theme-color" content="#1F1F1F">
+		<!-- iOS Application -->
+		<meta name="apple-mobile-web-app-title" content="Redlib">
+		<meta name="apple-mobile-web-app-capable" content="yes">
+		<meta name="apple-mobile-web-app-status-bar-style" content="default">
+		<!-- Android -->
+		<meta name="mobile-web-app-capable" content="yes">
+		<!-- iOS Logo -->
+		<link href="/touch-icon-iphone.png" rel="apple-touch-icon">
+		<!-- OpenSearch description file -->
+		<link rel="search" type="application/opensearchdescription+xml" title="Search Redlib" href="/opensearch.xml">
+		<!-- PWA Manifest -->
+		<link rel="manifest" type="application/json" href="/manifest.json">
+		<link rel="shortcut icon" type="image/x-icon" href="/favicon.ico"> 
+		<link rel="stylesheet" type="text/css" href="/style.css?v=0.36.0-yunyun">
+		<!-- Video quality -->
+		<div id="video_quality" data-value=""></div>
+		
+	<!-- Meta Tags -->
+	<meta name="author" content="u/fintip">
+	<meta name="title" content="3 days benchmarking most llama.cpp flags on my weird 40gb vram laptop + tb4 egpu setup. Got +70% generation, +40% prefill, 60k more context, and filed a bug in llama around MTP. What I learned. - r/LocalLLaMA">
+	<meta property="og:title" content="3 days benchmarking most llama.cpp flags on my weird 40gb vram laptop + tb4 egpu setup. Got +70% generation, +40% prefill, 60k more context, and filed a bug in llama around MTP. What I learned. - r/LocalLLaMA">
+	<meta property="og:description" content="View on Redlib, an alternative private front-end to Reddit.">
+	<meta property="og:url" content="/r/LocalLLaMA/comments/1vtc0z7/3_days_benchmarking_most_llamacpp_flags_on_my/">
+	<meta property="twitter:url" content="/r/LocalLLaMA/comments/1vtc0z7/3_days_benchmarking_most_llamacpp_flags_on_my/">
+	<meta property="twitter:title" content="3 days benchmarking most llama.cpp flags on my weird 40gb vram laptop + tb4 egpu setup. Got +70% generation, +40% prefill, 60k more context, and filed a bug in llama around MTP. What I learned. - r/LocalLLaMA">
+	<meta property="twitter:description" content="View on Redlib, an alternative private front-end to Reddit.">
+	
+	<meta property="og:type" content="website">
+	
+	
+
+		</head>
+	<body class="
+		card
+		
+		
+		 fixed_navbar">
+		<!-- NAVIGATION BAR -->
+		<nav class="
+			 fixed_navbar">
+			<div id="logo">
+				<a id="redlib" href="/"><span id="red">red</span><span id="lib">lib.</span></a>
+				
+	<details id="feeds">
+		<summary>Feeds</summary>
+		<div id="feed_list">
+			<p>MAIN FEEDS</p>
+			<a href="/">Home</a>
+			
+				<a href="/r/popular">Popular</a>
+				<a href="/r/all">All</a>
+			
+			
+		</div>
+	</details>
+
+			</div>
+			
+	<form action="/r/LocalLLaMA/search" id="searchbox">
+	<input id="search" type="text" name="q" placeholder="Search" title="Search redlib" value="">
+	
+	<div id="inside">
+		<input type="checkbox" name="restrict_sr" id="restrict_sr" checked>
+		<label for="restrict_sr" class="search_label" title="Restrict search to this subreddit">in /r/LocalLLaMA</label>
+	</div>
+	
+	<button class="submit">
+		<svg width="15" viewBox="0 0 110 100" fill="none" stroke-width="10" stroke-linecap="round">
+			<path d="M20 50 H100" />
+			<path d="M75 15 L100 50 L75 85" />
+			&rarr;
+		</svg>
+	</button>
+</form>
+
+			<div id="links">
+				<a id="reddit_link" href="#popup">
+					<span>reddit</span>
+					<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+						<path d="M22 2L12 22"/>
+						<path d="M2 6.70587C3.33333 8.07884 3.33333 11.5971 3.33333 11.5971M3.33333 19.647V11.5971M3.33333 11.5971C3.33333 11.5971 5.125 7.47817 8 7.47817C10.875 7.47817 12 8.85114 12 8.85114"/>
+					</svg>
+				</a>
+				
+					<div class="popup" id="popup">
+	<div class="popup-inner">
+		<h1>You are about to leave Redlib</h1>
+		<p>Do you want to continue?</p>
+		<p id="reddit_url">https://www.reddit.com/r/LocalLLaMA/comments/1vtc0z7/</p>
+		<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 639.24 563">
+			<defs>
+				<style>.cls-1{fill:#000000;}.cls-2{fill:#f8aa00;}</style>
+			</defs>
+			<path class="cls-2" d="M322.03,0c1.95,2.5,4.88,.9,7.33,1.65,10.5,3.21,17.65,10.39,22.83,19.35,93.64,162.06,186.98,324.29,280.25,486.56,15.73,20.19,2.49,51.27-22.92,54.37-1.21,.19-2.72-.54-3.49,1.08H239.03c-70.33-2.43-141.6,.79-212.08-1.74-17.49-4.92-23.16-15.88-26.91-32.26l-.04-1.97C88.74,354.76,194.49,188.2,289.92,18.43c6.2-10.66,15.03-16.94,27.61-17.36,.95-.03,2.05,.18,2.51-1.07h2Zm-2.43,545c94.95-.02,189.9,.04,284.85-.02,11.84-.73,20.75-13.19,16.68-23.55C523.83,355.97,430.74,187.62,332.05,23.07c-7.93-9.02-22.2-6.58-27.23,3.22C230.28,156.11,155.21,285.64,80.41,415.31c-19.88,34.41-39.31,69.07-59.78,103.14-2.43,4.05-4.24,8.8-1.68,14.18,3.92,8.24,9.59,12.37,18.82,12.37,93.95,0,187.9,0,281.85,0Z"/>
+			<path class="cls-1" d="M319.61,545c-93.95,0-187.9,0-281.85,0-9.22,0-14.89-4.13-18.82-12.37-2.56-5.38-.75-10.13,1.68-14.18,20.47-34.07,39.9-68.73,59.78-103.14C155.21,285.64,230.28,156.11,304.82,26.29c5.03-9.8,19.3-12.24,27.23-3.22,98.7,164.55,191.79,332.9,289.1,498.35,4.06,10.36-4.85,22.82-16.68,23.55-94.94,.06-189.9,0-284.85,.02Zm.44-462.31C238.88,223.22,158.17,362.95,77.28,503h485.54c-80.94-140.13-161.61-279.79-242.77-420.31Z"/>
+			<path class="cls-2" d="M320.05,82.69c81.16,140.52,161.83,280.18,242.77,420.31H77.28C158.17,362.95,238.88,223.22,320.05,82.69Zm36.05,118.99c-.14-46.75-68.32-52.32-74.66-4.76,.73,51.49,9.2,102.97,12.63,154.49,1.18,13.14,10.53,21.81,23.32,22.76,13.12,.97,23.89-9.13,24.96-21.58,4.44-49.99,9.4-101.22,13.76-150.91Zm-36.56,271.4c48.8,.76,49.24-74.7-.31-75.47-53.45,3-46.02,78.12,.31,75.47Z"/>
+			<path class="cls-1" d="M356.1,201.67c-4.36,49.69-9.31,100.91-13.76,150.91-1.07,12.45-11.84,22.56-24.96,21.58-12.79-.95-22.14-9.63-23.31-22.76-3.43-51.52-11.9-103-12.63-154.49,6.33-47.53,74.51-42.03,74.66,4.76Z"/>
+			<path class="cls-1" d="M319.54,473.08c-46.34,2.64-53.75-72.47-.31-75.47,49.56,.78,49.1,76.24,.31,75.47Z"/>
+		</svg>
+		<a id="goback" href="#">No, go back!</a>
+		<a id="toreddit" href="https://www.reddit.com/r/LocalLLaMA/comments/1vtc0z7/" rel="nofollow">Yes, take me to Reddit</a>
+	</div>
+</div>
+				
+				<a id="settings_link" href="/settings">
+					<span>settings</span>
+					<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+						<title>settings</title>
+						<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+					</svg>
+				</a>
+			</div>
+		</nav>
+		
+		<!-- MAIN CONTENT -->
+		
+		<main>
+			
+	<div id="column_one">
+		<!-- POST CONTENT -->
+<div class="post highlighted">
+	<p class="post_header">
+		<a class="post_subreddit" href="/r/LocalLLaMA">r/LocalLLaMA</a>
+		<span class="dot">&bull;</span>
+		<a class="post_author " href="/user/fintip">u/fintip</a>
+		
+		<span class="dot">&bull;</span>
+		<span class="created" title="Aug 20 2026, 06:56:49 UTC">Aug 20 &#39;26</span>
+		
+	</p>
+	<h1 class="post_title">
+		
+			<a href="/r/LocalLLaMA/search?q=flair_name%3A%22Discussion%22&restrict_sr=on"
+				class="post_flair"
+				style="color:white; background:#646d73;"><span>Discussion</span></a>
+		
+		3 days benchmarking most llama.cpp flags on my weird 40gb vram laptop + tb4 egpu setup. Got +70% generation, +40% prefill, 60k more context, and filed a bug in llama around MTP. What I learned.
+		
+		
+	</h1>
+
+	<!-- POST MEDIA -->
+	<!-- post_type: gallery -->
+	
+	<div class="gallery">
+	<figure>
+			<a href="/preview/pre/nucq9zl77hkh1.png?width=2542&#38;format=png&#38;auto=webp&#38;s=35e314d7858b262c1abd47a942892fe448ee0d3f" ><img loading="lazy" alt="Gallery image" src="/preview/pre/nucq9zl77hkh1.png?width=2542&#38;format=png&#38;auto=webp&#38;s=35e314d7858b262c1abd47a942892fe448ee0d3f"/></a>
+			<figcaption>
+				<p></p>
+				
+			</figcaption>
+		</figure><figure>
+			<a href="/preview/pre/9kcipzl77hkh1.png?width=2542&#38;format=png&#38;auto=webp&#38;s=f4bc122fca425db10656b2542714908e5ff36c5b" ><img loading="lazy" alt="Gallery image" src="/preview/pre/9kcipzl77hkh1.png?width=2542&#38;format=png&#38;auto=webp&#38;s=f4bc122fca425db10656b2542714908e5ff36c5b"/></a>
+			<figcaption>
+				<p></p>
+				
+			</figcaption>
+		</figure>
+	</div>
+	
+
+	<!-- POST BODY -->
+	<div class="post_body">
+		<h1>tldr:</h1>
+<ul>
+<li>went from 16~ t/s to 27~ t/s generation.</li>
+<li>got my usable context up from 220k to the full 262k without sacrificing anything.</li>
+<li>prefill also increased from 376 to 573</li>
+</ul>
+<h3>command I ended up with, fwiw:</h3>
+<pre><code>llama-server -m Qwen3.8-27B-UD-Q6_K_XL.gguf -c 262144 -ngl 999 -fa on \
+  -ctk q8_0 -ctv q8_0 --spec-type draft-mtp,ngram-map-k4v --spec-draft-n-max 3 \
+  --spec-draft-device CUDA0 --split-mode layer -dev CUDA0,Vulkan2 -ts 40,60 \
+  --jinja -fitt 256
+</code></pre>
+<h2>Note that my setup is a bit atypical.</h2>
+<p>P1 Gen 6 (an RTX 4090 laptop, effectively a 4080 chip running with a 95~ w cap and 16gb vram at 536ish gb/s vram speeds, something like that.)
++
+XTX 7900, over TB4, on an AG02 egpu dock.</p>
+<p>I had the laptop lying around, so this was the cheapest way to get 40gb vram and run qwen with q6 k xl and full context. Overall very happy and impressed with the setup.</p>
+<h2>Some side Qs:</h2>
+<h4>How big is the performance gap between these two cards? It's more interesting than you'd think.</h4>
+<p>I originally thought I'd likely see a big benefit if I just reduced context and gave the XTX a bigger part of the split. Turns out they balance each other super well, actually.</p>
+<ul>
+<li>Prefill: the 4090 wins by 34% on a 22k cold prompt.</li>
+<li>Prefill, but 7B @ depth 0: the 4090 by 82%? damn.</li>
+<li>Generation with no speculative decode: XTX wins by 27%.</li>
+<li>Generation, 7B @ depth 0: XTX by 23%.</li>
+<li>Generation adding MTP (speculative decode) back in: XTX by 72%.</li>
+<li>Generation at depth, 7B @ 98k depth: <strong>XTX by 2.5x</strong>.</li>
+</ul>
+<p>So, the XTX is the more powerful decode machine, even over TB4. But it mostly isn't the crazy difference you'd make, and the 4090 wins a lot on prefill to earn back quite a lot.</p>
+<p>Also, that huge MTP gap on generation? pretty sure that's a bug, ended up filing it. Found that MTP is still a net 25% gain for me in spite of this, but my prefill drops from the 900s to the 500s with MTP. It seems to be a multi-gpu thing only, tested and found that the penalty wasn't there on either card by itself, including the 4090 on vulkan or on nvidia. Issue filed, hopefully I didn't embarrass myself: https://github.com/ggml-org/llama.cpp/issues/27428</p>
+<p>Anyways, like I said: turns out I have like 3% or less performance gain by reducing context and trying to use the xtx more than the 40/60 split that they organically have. The context is worth more than 3%.</p>
+<h4>How big of a hit is TB4?</h4>
+<p>Not nearly as bad as you'd think at first blush. If it's what you have, use it. When doing layer split, it's theoretically possible for me to get almost 1000 pp t/s on this setup (when not using MTP because of the bug I found) on qwen 27b q6 k xl. The bandwidth is 40gbs and the latency is .025ms (that's 1/4th of a millisecond) when I was testing the lag between two computers of tb4, and that was with the latency running 'ping' adds I guess. You aren't going to do tensor parallelism I imagine (I haven't been able to test that yet, need an nvidia card), but this setup is a lot easier than selling my laptop and buying a server, etc. (which I may eventually do).</p>
+<h4>btw: Ever try RPC? llama has this now, it's cool.</h4>
+<p>I actually at first had two laptops like this, one with a 3080 with 16gb vram and the 4090 I have now. Sold the 3080 to buy the AG02 and the XTX. But while I had them both, I actually experimented with running (at the time 3.6) 27B q5 with 262k context, by making the 3080 machine an RPC node and connecting the two laptops over the TB4 connection (TB4 networking is pretty great, but hard to find two machines with TB4 compatible motherboards; that said, gb and 10gb ethernet works, and I had surprisingly usable results even over LAN wifi). I got t/s that were very usable, which blew me away.</p>
+<p>Didn't have the same detailed benching setup, so I don't have a lot of numbers to give from that, but I just wanted to throw that out there.</p>
+<p>Back to my current setup.</p>
+<h2>A table</h2>
+<h4>that I had AI draft after 3 days of extensive benchmarking</h4>
+<p><em>(that, fwiw, I took a very active role in; some of this Claude would not have found on its own without my actual understanding what was going on and suggesting my own thoughts)</em></p>
+<p>| "knob" as claude like to call it | gain | notes |
+|---|---|---|
+| <code>--spec-type draft-mtp,ngram-map-k4v</code> (all defaults) | <strong>+50–70% generation</strong> (17→26-28; copy-heavy requests spike to 85 t/s at 100% acceptance) | but... cuts my prefill in half on my setup, big surprise. Worth it because my workload is 77% generation time |
+| NVIDIA card on <strong>CUDA</strong> backend, AMD on Vulkan (<code>-dev CUDA0,Vulkan2</code>) | <strong>+28% prefill</strong> no-spec, <strong>+41% prefill</strong> with the spec stack (376→532) | Originally was running both on vulkan, seemed close, deeper testing showed benefits for nvidia for the 4090. Had to have AI help me through getting this running, but it was worth it. (side note: CUDA's q8_0-KV decode collapses −50% at depth on dense models, fine on hybrid-SSM) |
+| <code>--spec-draft-device CUDA0</code> | <strong>+8% prefill</strong> (532→573) | my very last test trying to guess at source of the MTP prefill penalty yielded this little finding. Nice. | llama's fit estimator refuses launches that actually fit; this shrinks its margin |
+| rebuild llama.cpp to a 2 weeks newer build... | <strong>+13% generation</strong> free (25.0→28.3, identical config) | at first I did all kinds of little tuning stuff... then on rebuild, those all washed out to worthless and the benefits were now built in for free. lol. |
+| UD-Q6_K_XL over Q8_0 | +9% gen, +3GB context, equal prefill | ONLY on CUDA — on Vulkan, Q8 prefills 12% faster (K-quant dequant is expensive in RADV, free in CUDA). Huh. But anyways, I get 262k context on q6, would be sacrificing that on q8, but was worth testing anyways. |
+| q8_0 KV cache | 262k context vs ~190k | Note that this runs slower. I didn't know about this before. Apparently it costs −23% prefill/−9% gen at depth in llama-bench, but only −7.5% prefill in the real server; took the context |
+| <code>-ts 40,60</code> (VRAM-proportional) | baseline | ±5 points moves ~2%; not worth losing context, which I'd have to do if I play with these numbers. 262 context means a just about 100% full 4090 and nearly 100% full xtx. |</p>
+<h2>What I tried that didn't help.</h2>
+<p>| attempt | result |
+|---|---|
+| <code>-ub 1024</code> / <code>2048</code> (the classic "raise ubatch for prefill") | <strong>−13% / −31% prefill.</strong> This can help apparently if you have a single card, but I found that it inverts on my multi-GPU layer split. smaller chunks pipeline better across cards. So I tried tuning smaller, but once I updated to latest, that benefit disapeared. |
+| <code>-b 4096</code> | +9% in llama-bench, <strong>exactly 0% in the real server.</strong> Bench your production path before adopting anything... Thought I found something there. |
+| ngram tuning (min-hits, draft length M, p-min) | won +17% on the old build; after rebuilding, ALL deltas collapsed into noise. upstream refactors absorbed what the knobs were buying. I felt fancy, but we all benefit when this stuff is just better out of the box, so yay. |
+| <code>ngram-mod</code> (adaptive ngram) | −17% generation |
+| a trained DSpark draft head for my exact model | 1–5% acceptance (GGUF mislabeled dflash), 33% forced as dspark — still 3× slower than MTP+ngram. Trained drafters aren't plug-and-play yet I guess. wamp wamp. |
+| <code>-sm row</code> | not possible for me on this setup. will test for the hell of it when/if I get a 3090 to play with. |
+| mixed KV types (<code>-ctk q8_0 -ctv f16</code> or mirror) | <strong>4–13× prefill collapse</strong> — silent kernel fallback; KV types must match. total fail. was an attempt to maybe win back some of the loss from q8 k/v. |
+| <code>-fa 0</code> | can't even launch: quantized KV requires flash attention. AI had told me this was nvidia only for the longest time, this is actually also vulkan supported apparently. neat. til. |
+| raising the 80W power cap | on windows, btw, I can see this card hold a sustained 135w~ at best during gaming. In linux it seems capped at 95w. But tbh I watched many telemetric graphs for a long time. This card isn't watt bound in this setup--compute power isn't the bottleneck. |
+| all-Vulkan pairing (revisited after the MTP findings) | 376 vs 532 prefill with the spec stack; gen equal. CUDA still has an edge on this card. |
+| --fitt 256 | I would get 'not enough vram' when trying to do 262k context until I used this, but would still see 1-2+gb free vram on both cards. Added this, voila. |</p>
+<h2>Some pitfalls along the way if you try benching, just throwing out there to make it easier for your AI or yourself to google stuff in the future mostly.</h2>
+<ul>
+<li>llama-bench <code>-dev A,B</code> benchmarks each device SEPARATELY; <code>A/B</code> is the split. My
+first "pair" results were solos wearing pair labels.</li>
+<li>Repeated flags in llama-bench build a test MATRIX (two <code>-fa</code>s = both configs run).</li>
+<li><code>-fa 0</code> + quantized KV fails at context creation with an unhelpful error.</li>
+<li>The fit estimator adds the spec/MTP context to its safety margin — spec-enabled
+launches get refused earliest.</li>
+<li>A GGUF finetune conversion can silently drop the MTP head (mine did — block_count
+40 vs the base's 41).</li>
+<li>HF cache revisions coexist: <code>hf download</code> of an updated repo does NOT update your
+pinned paths; I "benchmarked the new model" twice before noticing my profile still
+pointed at the old snapshot.</li>
+</ul>
+<h2>The MTP detective story</h2>
+<p>Noticed prefill halved with <code>draft-mtp</code> on. Chased it through four theories, each
+killed by the next measurement: my eGPU (no — measured), the prompt being processed
+twice (real but too small), CUDA graph re-capture (artifact of a mislabeled run), and
+finally the truth: <strong>the per-ubatch draft catch-up decode breaks multi-GPU ubatch
+pipelining</strong> — single GPU pays 1.03–1.22×, ANY layer split pays 1.8–2.0×, either
+backend. Filed upstream. Along the way my acceptance numbers
+independently corroborated #26750 (MTP acceptance collapses on CUDA: 41% vs 64% on
+Vulkan, same file) — so there are two pending upstream fixes that could give my setup
+another ~2× prefill and +20% gen without touching a flag. Crossing my fingers.</p>
+<h2>Methedology</h2>
+<ul>
+<li>llama-bench for hardware questions, real llama-server A/Bs (fixed 22k-token prompt,
+fixed gen length, 2 reps) for anything involving speculation — llama-bench can't
+measure spec at all.</li>
+<li>Bench wins were CONFIRMED against the server before adoption after <code>-b 4096</code>
+taught me they don't transfer (0 of 1 transferred fully; f16-KV transferred at
+~1/3 strength).</li>
+</ul>
+<h3>How do you bench?</h3>
+<p>I used a lot of AI, some googling, and built a tool out as I went along to do all this.</p>
+<p>Pics of the tool I built for the benching below (if it worked?). Not na ad for this repo or anything, probably better tools are out there, I just originally started building my own little launcher as my first local LLM project a month or two ago, and have slowly built it out adding features as I went along. I was a dev for many years before AI, but this project is pretty much full vibecoded, fwiw. Still, I like it. I can chat with the AI for basic tests, monitor the performance while e.g. opencode uses it after I launch it, get a dropdown for all the models I've downloaded, save settings, get a gui for settings params and such, and a pretty extensive benchmarking tool that tracks history. I originally used it to manage the whole RPC thing between two computers as well, though I haven't touched those features in some time as that's no longer relevant to my setup.</p>
+<p>If it's a useful starting point for you, enjoy, but no promises, as I've really just built it for me and my machine. You'll probably need to vibecode some adaptions to get it working for you. I updated the readme and published it for this post just so that if you didn't know how to approach this, I could share how I did it. That's about all the work I'm willing to put in right now, I have too many other projects.</p>
+<p>https://github.com/kylebakerio/LLM-Tuner</p>
+
+		
+	
+	</div>
+	<div class="post_score" title="50">
+    
+    50
+    
+    <span class="label"> Upvotes</span></div>
+	<div class="post_footer">
+		<ul id="post_links">
+			<li>
+				<a href="/r/LocalLLaMA/comments/1vtc0z7/3_days_benchmarking_most_llamacpp_flags_on_my/">
+					<span class="desktop_item">perma</span>link
+				</a>
+			</li>
+			
+			
+			
+<li>
+	<a
+		
+		href="#popup"
+		
+	>reddit</a>
+
+	
+		<div class="popup" id="popup">
+	<div class="popup-inner">
+		<h1>You are about to leave Redlib</h1>
+		<p>Do you want to continue?</p>
+		<p id="reddit_url">https://www.reddit.com/r/LocalLLaMA/comments/1vtc0z7/3_days_benchmarking_most_llamacpp_flags_on_my/</p>
+		<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 639.24 563">
+			<defs>
+				<style>.cls-1{fill:#000000;}.cls-2{fill:#f8aa00;}</style>
+			</defs>
+			<path class="cls-2" d="M322.03,0c1.95,2.5,4.88,.9,7.33,1.65,10.5,3.21,17.65,10.39,22.83,19.35,93.64,162.06,186.98,324.29,280.25,486.56,15.73,20.19,2.49,51.27-22.92,54.37-1.21,.19-2.72-.54-3.49,1.08H239.03c-70.33-2.43-141.6,.79-212.08-1.74-17.49-4.92-23.16-15.88-26.91-32.26l-.04-1.97C88.74,354.76,194.49,188.2,289.92,18.43c6.2-10.66,15.03-16.94,27.61-17.36,.95-.03,2.05,.18,2.51-1.07h2Zm-2.43,545c94.95-.02,189.9,.04,284.85-.02,11.84-.73,20.75-13.19,16.68-23.55C523.83,355.97,430.74,187.62,332.05,23.07c-7.93-9.02-22.2-6.58-27.23,3.22C230.28,156.11,155.21,285.64,80.41,415.31c-19.88,34.41-39.31,69.07-59.78,103.14-2.43,4.05-4.24,8.8-1.68,14.18,3.92,8.24,9.59,12.37,18.82,12.37,93.95,0,187.9,0,281.85,0Z"/>
+			<path class="cls-1" d="M319.61,545c-93.95,0-187.9,0-281.85,0-9.22,0-14.89-4.13-18.82-12.37-2.56-5.38-.75-10.13,1.68-14.18,20.47-34.07,39.9-68.73,59.78-103.14C155.21,285.64,230.28,156.11,304.82,26.29c5.03-9.8,19.3-12.24,27.23-3.22,98.7,164.55,191.79,332.9,289.1,498.35,4.06,10.36-4.85,22.82-16.68,23.55-94.94,.06-189.9,0-284.85,.02Zm.44-462.31C238.88,223.22,158.17,362.95,77.28,503h485.54c-80.94-140.13-161.61-279.79-242.77-420.31Z"/>
+			<path class="cls-2" d="M320.05,82.69c81.16,140.52,161.83,280.18,242.77,420.31H77.28C158.17,362.95,238.88,223.22,320.05,82.69Zm36.05,118.99c-.14-46.75-68.32-52.32-74.66-4.76,.73,51.49,9.2,102.97,12.63,154.49,1.18,13.14,10.53,21.81,23.32,22.76,13.12,.97,23.89-9.13,24.96-21.58,4.44-49.99,9.4-101.22,13.76-150.91Zm-36.56,271.4c48.8,.76,49.24-74.7-.31-75.47-53.45,3-46.02,78.12,.31,75.47Z"/>
+			<path class="cls-1" d="M356.1,201.67c-4.36,49.69-9.31,100.91-13.76,150.91-1.07,12.45-11.84,22.56-24.96,21.58-12.79-.95-22.14-9.63-23.31-22.76-3.43-51.52-11.9-103-12.63-154.49,6.33-47.53,74.51-42.03,74.66,4.76Z"/>
+			<path class="cls-1" d="M319.54,473.08c-46.34,2.64-53.75-72.47-.31-75.47,49.56,.78,49.1,76.24,.31,75.47Z"/>
+		</svg>
+		<a id="goback" href="#">No, go back!</a>
+		<a id="toreddit" href="https://www.reddit.com/r/LocalLLaMA/comments/1vtc0z7/3_days_benchmarking_most_llamacpp_flags_on_my/" rel="nofollow">Yes, take me to Reddit</a>
+	</div>
+</div>
+	
+</li>
+
+
+			
+		</ul>
+		<p>98%<span id="upvoted"> Upvoted</span></p>
+	</div>
+</div>
+
+		<!-- SORT FORM -->
+       <div id="commentQueryForms">
+		<form class="comment_control_form">
+			<p id="comment_count">28 comments <span id="sorted_by">sorted by </span></p>
+			<select name="sort" title="Sort comments by" id="commentSortSelect"> 
+				
+		<option value="confidence" selected>
+			Confidence
+		</option>
+	
+		<option value="top" >
+			Top
+		</option>
+	
+		<option value="new" >
+			New
+		</option>
+	
+		<option value="controversial" >
+			Controversial
+		</option>
+	
+		<option value="old" >
+			Old
+		</option>
+	
+      </select>
+        <button id="sort_submit" class="submit">
+          <svg width="15" viewBox="0 0 110 100" fill="none" stroke-width="10" stroke-linecap="round">
+              <path d="M20 50 H100" />
+              <path d="M75 15 L100 50 L75 85" />
+              &rarr;
+          </svg>
+      </button>
+      </form>
+      <!-- SEARCH FORM -->
+      <form class="comment_control_form">
+        <input id="search" class="commentQuery" type="search" name="q" value="" placeholder="Search comments">
+        <input type="hidden" name="type" value="comment">
+      </form>
+      </div>
+  
+      <div>
+      
+      </div>
+
+		<!-- COMMENTS -->
+		<div id="comments">
+			<div class="thread">
+				
+
+				
+
+
+<div id="p4s9mtr" class="comment">
+	<div class="comment_left">
+    <p class="comment_score" title="5">
+         
+         5
+         
+    </p>
+        <div class="line"></div>
+	</div>
+	<details class="comment_right" open>
+		<summary class="comment_data">
+			
+				<a class="comment_author  " href="/user/hainesk">u/hainesk</a>
+			
+			
+			<a href="/r/LocalLLaMA/comments/1vtc0z7/3_days_benchmarking_most_llamacpp_flags_on_my/p4s9mtr/?context=3#p4s9mtr" class="created" title="Aug 20 2026, 08:30:34 UTC">Aug 20 &#39;26</a>
+			
+			
+		</summary>
+		
+		<div class="comment_body "><div class="md"><p>That’s really interesting running CUDA and Vulkan at the same time in llamacpp, I didn’t realize you could do that..</p>
+</div></div>
+		
+		<div class="replies">
+
+
+<div id="p4sb45z" class="comment">
+	<div class="comment_left">
+    <p class="comment_score" title="4">
+         
+         4
+         
+    </p>
+        <div class="line"></div>
+	</div>
+	<details class="comment_right" open>
+		<summary class="comment_data">
+			
+				<a class="comment_author  op" href="/user/fintip">u/fintip</a>
+			
+			
+			<a href="/r/LocalLLaMA/comments/1vtc0z7/3_days_benchmarking_most_llamacpp_flags_on_my/p4sb45z/?context=3#p4sb45z" class="created" title="Aug 20 2026, 08:43:29 UTC">Aug 20 &#39;26</a>
+			
+			
+		</summary>
+		
+		<div class="comment_body "><div class="md"><p>Yeah. Lots of people didn&#39;t get the memo that this is a thing now. It is and works quite well, though, best setup I was able to get working. Vulkan is also pretty good, notably. It really has caught upon quite a lot, that was surprising. There are even specific spots where Vulkan outperforms cuda. Overall, though, building Vulkan+cuda is worth it for a heterogenous topology like mine.</p>
+</div></div>
+		
+		<div class="replies">
+
+
+<div id="p4u76ib" class="comment">
+	<div class="comment_left">
+    <p class="comment_score" title="1">
+         
+         1
+         
+    </p>
+        <div class="line"></div>
+	</div>
+	<details class="comment_right" open>
+		<summary class="comment_data">
+			
+				<a class="comment_author  " href="/user/Yaroslav308">u/Yaroslav308</a>
+			
+			
+			<a href="/r/LocalLLaMA/comments/1vtc0z7/3_days_benchmarking_most_llamacpp_flags_on_my/p4u76ib/?context=3#p4u76ib" class="created" title="Aug 20 2026, 15:14:29 UTC">Aug 20 &#39;26</a>
+			<span class="edited" title="Aug 20 2026, 15:25:26 UTC">edited Aug 20 &#39;26</span>
+			
+		</summary>
+		
+		<div class="comment_body "><div class="md"><p>Could you please explain in more detail how to do this?
+Should I only use -DGGML_CUDA=ON -DGGML_VULKAN=ON, or are there other flags I need?</p>
+</div></div>
+		
+		<div class="replies">
+
+
+<div id="p4uma1o" class="comment">
+	<div class="comment_left">
+    <p class="comment_score" title="2">
+         
+         2
+         
+    </p>
+        <div class="line"></div>
+	</div>
+	<details class="comment_right" open>
+		<summary class="comment_data">
+			
+				<a class="comment_author  op" href="/user/fintip">u/fintip</a>
+			
+			
+			<a href="/r/LocalLLaMA/comments/1vtc0z7/3_days_benchmarking_most_llamacpp_flags_on_my/p4uma1o/?context=3#p4uma1o" class="created" title="Aug 20 2026, 16:18:27 UTC">Aug 20 &#39;26</a>
+			
+			
+		</summary>
+		
+		<div class="comment_body "><div class="md"><p>That&#39;s what I recall off the top of my head. I&#39;d have to check some logs from a while back. I had to spend most of a day chasing down various blockers on the build failing, too, but ymmv.</p>
+</div></div>
+		
+		<div class="replies">
+		</div>
+	</details>
+</div>
+
+		</div>
+	</details>
+</div>
+
+		</div>
+	</details>
+</div>
+
+
+
+<div id="p4soqw0" class="comment">
+	<div class="comment_left">
+    <p class="comment_score" title="2">
+         
+         2
+         
+    </p>
+        <div class="line"></div>
+	</div>
+	<details class="comment_right" open>
+		<summary class="comment_data">
+			
+				<a class="comment_author  " href="/user/My_Unbiased_Opinion">u/My_Unbiased_Opinion</a>
+			
+			
+				<small class="author_flair"><span class="emoji" style="background-image:url('/emoji/08m5x9chttjf1_t5_81eyvm/Discord');"></span></small>
+			
+			<a href="/r/LocalLLaMA/comments/1vtc0z7/3_days_benchmarking_most_llamacpp_flags_on_my/p4soqw0/?context=3#p4soqw0" class="created" title="Aug 20 2026, 10:32:28 UTC">Aug 20 &#39;26</a>
+			
+			
+		</summary>
+		
+		<div class="comment_body "><div class="md"><p>llama.cpp is fucking voodoo. The stuff you can do with it is wild. you can even do tensor parallel with odd GPUs and even gpus from different vendors. The folks working in it are literal wizards.</p>
+</div></div>
+		
+		<div class="replies">
+
+
+<div id="p4uf6if" class="comment">
+	<div class="comment_left">
+    <p class="comment_score" title="1">
+         
+         1
+         
+    </p>
+        <div class="line"></div>
+	</div>
+	<details class="comment_right" open>
+		<summary class="comment_data">
+			
+				<a class="comment_author  op" href="/user/fintip">u/fintip</a>
+			
+			
+			<a href="/r/LocalLLaMA/comments/1vtc0z7/3_days_benchmarking_most_llamacpp_flags_on_my/p4uf6if/?context=3#p4uf6if" class="created" title="Aug 20 2026, 15:48:21 UTC">Aug 20 &#39;26</a>
+			
+			
+		</summary>
+		
+		<div class="comment_body "><div class="md"><p>Hm, -sm row wouldn&#39;t get off the ground for me, whether doing Vulkan+cuda or even Vulkan+Vulkan, and I concluded it was because I had different vendor cards.</p>
+
+<p>I doubted it would be great anyways, but I still wanted to bench the results for science.</p>
+
+<p>You sure multi vendor tensor parallel is a thing?</p>
+
+<p>It&#39;s a fucking great project though.</p>
+</div></div>
+		
+		<div class="replies">
+		</div>
+	</details>
+</div>
+
+		</div>
+	</details>
+</div>
+
+		</div>
+	</details>
+</div>
+
+			</div><div class="thread">
+				
+
+				
+
+
+<div id="p4tmv62" class="comment">
+	<div class="comment_left">
+    <p class="comment_score" title="3">
+         
+         3
+         
+    </p>
+        <div class="line"></div>
+	</div>
+	<details class="comment_right" open>
+		<summary class="comment_data">
+			
+				<a class="comment_author  " href="/user/RelevantShape3963">u/RelevantShape3963</a>
+			
+			
+			<a href="/r/LocalLLaMA/comments/1vtc0z7/3_days_benchmarking_most_llamacpp_flags_on_my/p4tmv62/?context=3#p4tmv62" class="created" title="Aug 20 2026, 13:44:06 UTC">Aug 20 &#39;26</a>
+			
+			
+		</summary>
+		
+		<div class="comment_body "><div class="md"><p>thank you for sharing; I appreciated the methodology a lot</p>
+</div></div>
+		
+		<div class="replies">
+		</div>
+	</details>
+</div>
+
+			</div><div class="thread">
+				
+
+				
+
+
+<div id="p4t0wxt" class="comment">
+	<div class="comment_left">
+    <p class="comment_score" title="2">
+         
+         2
+         
+    </p>
+        <div class="line"></div>
+	</div>
+	<details class="comment_right" open>
+		<summary class="comment_data">
+			
+				<a class="comment_author  " href="/user/KeepyUpper">u/KeepyUpper</a>
+			
+			
+			<a href="/r/LocalLLaMA/comments/1vtc0z7/3_days_benchmarking_most_llamacpp_flags_on_my/p4t0wxt/?context=3#p4t0wxt" class="created" title="Aug 20 2026, 11:50:47 UTC">Aug 20 &#39;26</a>
+			<span class="edited" title="Aug 20 2026, 11:54:40 UTC">edited Aug 20 &#39;26</span>
+			
+		</summary>
+		
+		<div class="comment_body "><div class="md"><p>Nice work. I&#39;ve just been playing with some of the toggles and found that using</p>
+
+<pre><code>--spec-draft-n-max 2
+</code></pre>
+
+<p>Rather than</p>
+
+<pre><code>--spec-draft-n-max 3
+</code></pre>
+
+<p>Gives me a 14.5% boost to prompt processing from a max of</p>
+
+<blockquote>
+<p>0.28.302.660 I slot print_timing: id  3 | task 0 | prompt processing, n_tokens =  10067, progress = 0.11, t =   8.19 s / 1229.22 tokens per second</p>
+</blockquote>
+
+<p>To a max of</p>
+
+<blockquote>
+<p>0.22.894.732 I slot print_timing: id  3 | task 0 | prompt processing, n_tokens =  10067, progress = 0.11, t =   7.15 s / 1407.38 tokens per second</p>
+</blockquote>
+
+<p>Whilst not noticeably changing token generation speeds.</p>
+
+<p>Some of your other levers made no difference on my system.</p>
+
+<pre><code>--spec-draft-device CUDA0
+</code></pre>
+
+<p>This did nothing for me and I suspect it&#39;s because I have 2 nvidia cards on PCIe rather than your mixed setup over thunderbolt.</p>
+</div></div>
+		
+		<div class="replies">
+
+
+<div id="p4um0ol" class="comment">
+	<div class="comment_left">
+    <p class="comment_score" title="1">
+         
+         1
+         
+    </p>
+        <div class="line"></div>
+	</div>
+	<details class="comment_right" open>
+		<summary class="comment_data">
+			
+				<a class="comment_author  op" href="/user/fintip">u/fintip</a>
+			
+			
+			<a href="/r/LocalLLaMA/comments/1vtc0z7/3_days_benchmarking_most_llamacpp_flags_on_my/p4um0ol/?context=3#p4um0ol" class="created" title="Aug 20 2026, 16:17:22 UTC">Aug 20 &#39;26</a>
+			
+			
+		</summary>
+		
+		<div class="comment_body "><div class="md"><p>Which model? </p>
+
+<p>Difficult thing with these draft levers is they&#39;re very workload dependent I think.</p>
+
+<p>But while I did touch that one (and most of the drafting options) at first and found 3 optimal for me on this one, this comment makes me want to go back and check that one one more time. </p>
+
+<p>Always important to monitor real world results as the workload you actually have crunches afterwards, too.</p>
+
+<p>Prefill and tg at depth are different things. My prefill taps 670~ when fresh. As it goes deep, it eventually goes slowly down until it&#39;s at the 180-280 while having a lot of context loaded. Likewise I once hit 87 t/s tg, but draft acceptance was 100% that time (wild to see, repeating some stuff verbatim?). I often see high 30s, even. But I also sometimes still see a few runs at deep context in the teens.</p>
+
+<p>Some of those numbers also get skewed by low token inputs or outputs throwing off the math so it has to be weighted.</p>
+
+<p>You have to make sure not to fool yourself.</p>
+</div></div>
+		
+		<div class="replies">
+
+
+<div id="p4uuuey" class="comment">
+	<div class="comment_left">
+    <p class="comment_score" title="1">
+         
+         1
+         
+    </p>
+        <div class="line"></div>
+	</div>
+	<details class="comment_right" open>
+		<summary class="comment_data">
+			
+				<a class="comment_author  " href="/user/KeepyUpper">u/KeepyUpper</a>
+			
+			
+			<a href="/r/LocalLLaMA/comments/1vtc0z7/3_days_benchmarking_most_llamacpp_flags_on_my/p4uuuey/?context=3#p4uuuey" class="created" title="Aug 20 2026, 16:54:37 UTC">Aug 20 &#39;26</a>
+			<span class="edited" title="Aug 20 2026, 17:03:11 UTC">edited Aug 20 &#39;26</span>
+			
+		</summary>
+		
+		<div class="comment_body "><div class="md"><blockquote>
+<p>Which model?</p>
+</blockquote>
+
+<p>Qwen 3.8. Unsloths Q8_0.gguf</p>
+</div></div>
+		
+		<div class="replies">
+		</div>
+	</details>
+</div>
+
+		</div>
+	</details>
+</div>
+
+		</div>
+	</details>
+</div>
+
+			</div><div class="thread">
+				
+
+				
+
+
+<div id="p4uj95a" class="comment">
+	<div class="comment_left">
+    <p class="comment_score" title="2">
+         
+         2
+         
+    </p>
+        <div class="line"></div>
+	</div>
+	<details class="comment_right" open>
+		<summary class="comment_data">
+			
+				<a class="comment_author  " href="/user/BigPoppaK78">u/BigPoppaK78</a>
+			
+			
+			<a href="/r/LocalLLaMA/comments/1vtc0z7/3_days_benchmarking_most_llamacpp_flags_on_my/p4uj95a/?context=3#p4uj95a" class="created" title="Aug 20 2026, 16:05:35 UTC">Aug 20 &#39;26</a>
+			
+			
+		</summary>
+		
+		<div class="comment_body "><div class="md"><p>Good post, I appreciate the work that went into it. A year ago, this would&#39;ve gotten a lot more attention here, now it seems that memes and hype/rage posts are all that get noticed.</p>
+
+<p>In my testing, I found a lot of the same things you did. I&#39;m glad you were able to find enough info on MTP to submit a bug. I found all kinds of odd behaviour/speeds as well, but didn&#39;t have enough time or talent to track it down well enough to report on.</p>
+</div></div>
+		
+		<div class="replies">
+		</div>
+	</details>
+</div>
+
+			</div><div class="thread">
+				
+
+				
+
+
+<div id="p4v00or" class="comment">
+	<div class="comment_left">
+    <p class="comment_score" title="2">
+         
+         2
+         
+    </p>
+        <div class="line"></div>
+	</div>
+	<details class="comment_right" open>
+		<summary class="comment_data">
+			
+				<a class="comment_author  " href="/user/arbv">u/arbv</a>
+			
+			
+			<a href="/r/LocalLLaMA/comments/1vtc0z7/3_days_benchmarking_most_llamacpp_flags_on_my/p4v00or/?context=3#p4v00or" class="created" title="Aug 20 2026, 17:16:26 UTC">Aug 20 &#39;26</a>
+			
+			
+		</summary>
+		
+		<div class="comment_body "><div class="md"><p>This is the kind of content I subbed for. Thank you!</p>
+</div></div>
+		
+		<div class="replies">
+		</div>
+	</details>
+</div>
+
+			</div><div class="thread">
+				
+
+				
+
+
+<div id="p4xntbf" class="comment">
+	<div class="comment_left">
+    <p class="comment_score" title="2">
+         
+         2
+         
+    </p>
+        <div class="line"></div>
+	</div>
+	<details class="comment_right" open>
+		<summary class="comment_data">
+			
+				<a class="comment_author  " href="/user/epictunasandwich">u/epictunasandwich</a>
+			
+			
+			<a href="/r/LocalLLaMA/comments/1vtc0z7/3_days_benchmarking_most_llamacpp_flags_on_my/p4xntbf/?context=3#p4xntbf" class="created" title="Aug 21 2026, 00:44:25 UTC">Aug 21 &#39;26</a>
+			
+			
+		</summary>
+		
+		<div class="comment_body "><div class="md"><p>Oh this dashboard is so much nicer than what i threw together for my VERY similar setup of a 9070xt + 4070. I am going to fork this and convert it to bun/vite. awesome findings on the mtp stuff, I have been testing different stuff myself and i have a pretty strange thing that if the quant of the kv cache isnt q4 the speed crawls to 200t/s prefill, but if I use q4 its 1100-1000 starting out and getting down to ~600 at higher context. so far havent noticed it struggling with the quant level, i think the new architecture is better for quantized kv cache  </p>
+</div></div>
+		
+		<div class="replies">
+
+
+<div id="p4y9a32" class="comment">
+	<div class="comment_left">
+    <p class="comment_score" title="2">
+         
+         2
+         
+    </p>
+        <div class="line"></div>
+	</div>
+	<details class="comment_right" open>
+		<summary class="comment_data">
+			
+				<a class="comment_author  op" href="/user/fintip">u/fintip</a>
+			
+			
+			<a href="/r/LocalLLaMA/comments/1vtc0z7/3_days_benchmarking_most_llamacpp_flags_on_my/p4y9a32/?context=3#p4y9a32" class="created" title="Aug 21 2026, 02:45:37 UTC">Aug 21 &#39;26</a>
+			
+			
+		</summary>
+		
+		<div class="comment_body "><div class="md"><p>nice, very glad it could help. forgive the mess, it&#39;s been a hodgepodge personal tool and experiment target. it is starting to have real utility for me though. I have avoided q4 for kv and not even tried it, but those are nice numbers. is your xt also a tb4 egpu? or both in a motherboard?</p>
+</div></div>
+		
+		<div class="replies">
+
+
+<div id="p4ybo8d" class="comment">
+	<div class="comment_left">
+    <p class="comment_score" title="1">
+         
+         1
+         
+    </p>
+        <div class="line"></div>
+	</div>
+	<details class="comment_right" open>
+		<summary class="comment_data">
+			
+				<a class="comment_author  " href="/user/epictunasandwich">u/epictunasandwich</a>
+			
+			
+			<a href="/r/LocalLLaMA/comments/1vtc0z7/3_days_benchmarking_most_llamacpp_flags_on_my/p4ybo8d/?context=3#p4ybo8d" class="created" title="Aug 21 2026, 03:00:11 UTC">Aug 21 &#39;26</a>
+			
+			
+		</summary>
+		
+		<div class="comment_body "><div class="md"><p>They are both on the motherboard. All good about the mess, I&#39;m used to it from my own projects lol 😅</p>
+</div></div>
+		
+		<div class="replies">
+		</div>
+	</details>
+</div>
+
+		</div>
+	</details>
+</div>
+
+		</div>
+	</details>
+</div>
+
+			</div><div class="thread">
+				
+
+				
+
+
+<div id="p4t8w5i" class="comment">
+	<div class="comment_left">
+    <p class="comment_score" title="1">
+         
+         1
+         
+    </p>
+        <div class="line"></div>
+	</div>
+	<details class="comment_right" open>
+		<summary class="comment_data">
+			
+				<a class="comment_author  " href="/user/cosmicr">u/cosmicr</a>
+			
+			
+			<a href="/r/LocalLLaMA/comments/1vtc0z7/3_days_benchmarking_most_llamacpp_flags_on_my/p4t8w5i/?context=3#p4t8w5i" class="created" title="Aug 20 2026, 12:35:11 UTC">Aug 20 &#39;26</a>
+			
+			
+		</summary>
+		
+		<div class="comment_body "><div class="md"><p>I also have 40gb vram. I like the idea of going faster, but not at the expense of quality. I find the sweet spot to be Q8_0. I&#39;m getting 30t/s (3090 + 5060).</p>
+</div></div>
+		
+		<div class="replies">
+
+
+<div id="p4ubu7m" class="comment">
+	<div class="comment_left">
+    <p class="comment_score" title="1">
+         
+         1
+         
+    </p>
+        <div class="line"></div>
+	</div>
+	<details class="comment_right" open>
+		<summary class="comment_data">
+			
+				<a class="comment_author  op" href="/user/fintip">u/fintip</a>
+			
+			
+			<a href="/r/LocalLLaMA/comments/1vtc0z7/3_days_benchmarking_most_llamacpp_flags_on_my/p4ubu7m/?context=3#p4ubu7m" class="created" title="Aug 20 2026, 15:34:18 UTC">Aug 20 &#39;26</a>
+			
+			
+		</summary>
+		
+		<div class="comment_body "><div class="md"><p>Honestly q6 k xl vs q8 is more about fitting full context to me. Q6 kxl is so close in quality that I would bet very could money you&#39;d never consistently guess which is which on a double blind test.</p>
+
+<p>The quality is stellar, so much so that I&#39;m considering trying we/Q4 and seeing if the quality feels equivalent to me / if I notice bugs, and for fun attempting a small q3 on the niveia alone just out of curiousity.</p>
+</div></div>
+		
+		<div class="replies">
+		</div>
+	</details>
+</div>
+
+		</div>
+	</details>
+</div>
+
+			</div><div class="thread">
+				
+
+				
+
+
+<div id="p4yiqq7" class="comment">
+	<div class="comment_left">
+    <p class="comment_score" title="1">
+         
+         1
+         
+    </p>
+        <div class="line"></div>
+	</div>
+	<details class="comment_right" open>
+		<summary class="comment_data">
+			
+				<a class="comment_author  " href="/user/cortexist">u/cortexist</a>
+			
+			
+			<a href="/r/LocalLLaMA/comments/1vtc0z7/3_days_benchmarking_most_llamacpp_flags_on_my/p4yiqq7/?context=3#p4yiqq7" class="created" title="Aug 21 2026, 03:45:36 UTC">Aug 21 &#39;26</a>
+			
+			
+		</summary>
+		
+		<div class="comment_body "><div class="md"><p>&quot;adding MTP (speculative decode) back in: XTX by 72%&quot; - did you verify MTP was loaded into VRAM?</p>
+</div></div>
+		
+		<div class="replies">
+
+
+<div id="p4yjhs7" class="comment">
+	<div class="comment_left">
+    <p class="comment_score" title="1">
+         
+         1
+         
+    </p>
+        <div class="line"></div>
+	</div>
+	<details class="comment_right" open>
+		<summary class="comment_data">
+			
+				<a class="comment_author  op" href="/user/fintip">u/fintip</a>
+			
+			
+			<a href="/r/LocalLLaMA/comments/1vtc0z7/3_days_benchmarking_most_llamacpp_flags_on_my/p4yjhs7/?context=3#p4yjhs7" class="created" title="Aug 21 2026, 03:50:38 UTC">Aug 21 &#39;26</a>
+			
+			
+		</summary>
+		
+		<div class="comment_body "><div class="md"><p>Yes, I&#39;m loading entire model into vram, which includes the built in mtp. </p>
+
+<p>If it doesn&#39;t fully fit in vram it crashes, and I also ran smaller models that purely fit in each single card with mtp to compare. I also set the device for the mtp head directly with a flag.</p>
+
+<p>Turning that flag on or off doesn&#39;t change whether it fits into vram or not. I have played with overflow off the cards in prior expirements, but that requires enabling with specific flags. I have GPU layers set to 999.</p>
+</div></div>
+		
+		<div class="replies">
+
+
+<div id="p4yuo59" class="comment">
+	<div class="comment_left">
+    <p class="comment_score" title="1">
+         
+         1
+         
+    </p>
+        <div class="line"></div>
+	</div>
+	<details class="comment_right" open>
+		<summary class="comment_data">
+			
+				<a class="comment_author  " href="/user/cortexist">u/cortexist</a>
+			
+			
+			<a href="/r/LocalLLaMA/comments/1vtc0z7/3_days_benchmarking_most_llamacpp_flags_on_my/p4yuo59/?context=3#p4yuo59" class="created" title="Aug 21 2026, 05:10:16 UTC">Aug 21 &#39;26</a>
+			
+			
+		</summary>
+		
+		<div class="comment_body "><div class="md"><p>That&#39;s right. You are using the embedded MTP. I&#39;ve been using HauhauCS&#39; reduced vocab sidecar so I forgot that. I actually measured it, the embedded MTP will use extra 2.8 GB when n=3, and 5.8 GB when n=8. Think about your 4090 mobile has only 16 GB VRAM.</p>
+</div></div>
+		
+		<div class="replies">
+
+
+<div id="p4z3fax" class="comment">
+	<div class="comment_left">
+    <p class="comment_score" title="1">
+         
+         1
+         
+    </p>
+        <div class="line"></div>
+	</div>
+	<details class="comment_right" open>
+		<summary class="comment_data">
+			
+				<a class="comment_author  op" href="/user/fintip">u/fintip</a>
+			
+			
+			<a href="/r/LocalLLaMA/comments/1vtc0z7/3_days_benchmarking_most_llamacpp_flags_on_my/p4z3fax/?context=3#p4z3fax" class="created" title="Aug 21 2026, 06:18:59 UTC">Aug 21 &#39;26</a>
+			
+			
+		</summary>
+		
+		<div class="comment_body "><div class="md"><p>I have 40gb of ram because I have 2 cards. Not sure if you missed all the context of this discussion.</p>
+
+<p>But I hadn&#39;t heard about the idea of the reduced vocab sidecar, that&#39;s interesting. thanks for the comment.</p>
+</div></div>
+		
+		<div class="replies">
+
+
+<div id="p50hf5n" class="comment">
+	<div class="comment_left">
+    <p class="comment_score" title="1">
+         
+         1
+         
+    </p>
+        <div class="line"></div>
+	</div>
+	<details class="comment_right" open>
+		<summary class="comment_data">
+			
+				<a class="comment_author  " href="/user/cortexist">u/cortexist</a>
+			
+			
+			<a href="/r/LocalLLaMA/comments/1vtc0z7/3_days_benchmarking_most_llamacpp_flags_on_my/p50hf5n/?context=3#p50hf5n" class="created" title="Aug 21 2026, 12:30:51 UTC">Aug 21 &#39;26</a>
+			
+			
+		</summary>
+		
+		<div class="comment_body "><div class="md"><p>I thought you were benchmarking your mobile 4090 and the 7900 eGPU. Reduced vocab isn&#39;t new, dflash3.cpp and eagle3.cpp have been using the trick, but Hauhau is the first to use it in gwen3.5.cpp as far as I&#39;m aware of, my decoding rate went from ~69 tok/s to ~74 tok/s on the same silicon and prompt.</p>
+</div></div>
+		
+		<div class="replies">
+		</div>
+	</details>
+</div>
+
+		</div>
+	</details>
+</div>
+
+		</div>
+	</details>
+</div>
+
+		</div>
+	</details>
+</div>
+
+		</div>
+	</details>
+</div>
+
+			</div><div class="thread">
+				
+
+				
+
+
+<div id="p4tl0tv" class="comment">
+	<div class="comment_left">
+    <p class="comment_score" title="0">
+         
+         0
+         
+    </p>
+        <div class="line"></div>
+	</div>
+	<details class="comment_right" open>
+		<summary class="comment_data">
+			
+				<a class="comment_author  " href="/user/Ornery_Distance_4654">u/Ornery_Distance_4654</a>
+			
+			
+			<a href="/r/LocalLLaMA/comments/1vtc0z7/3_days_benchmarking_most_llamacpp_flags_on_my/p4tl0tv/?context=3#p4tl0tv" class="created" title="Aug 20 2026, 13:35:25 UTC">Aug 20 &#39;26</a>
+			
+			
+		</summary>
+		
+		<div class="comment_body "><div class="md"><p>Holy the egpu probably  costed similiar/more than a 4090/5090</p>
+</div></div>
+		
+		<div class="replies">
+
+
+<div id="p4uch6i" class="comment">
+	<div class="comment_left">
+    <p class="comment_score" title="1">
+         
+         1
+         
+    </p>
+        <div class="line"></div>
+	</div>
+	<details class="comment_right" open>
+		<summary class="comment_data">
+			
+				<a class="comment_author  op" href="/user/fintip">u/fintip</a>
+			
+			
+			<a href="/r/LocalLLaMA/comments/1vtc0z7/3_days_benchmarking_most_llamacpp_flags_on_my/p4uch6i/?context=3#p4uch6i" class="created" title="Aug 20 2026, 15:37:00 UTC">Aug 20 &#39;26</a>
+			<span class="edited" title="Aug 20 2026, 17:27:08 UTC">edited Aug 20 &#39;26</span>
+			
+		</summary>
+		
+		<div class="comment_body "><div class="md"><p>Huh? No, an AG02 is $220, and the xtx7900 was 700 on marketplace. There was one for 650 the next town over.</p>
+
+<p>3090s go for 1k.</p>
+
+<p>4090 is 1500 is you&#39;re very lucky, 2k in general.</p>
+
+<p>5090? Lol.</p>
+
+<p>No, this 24gb egpu was the dirt cheap way in. An xtx 7900 is definitely the sweet spot of cost/vram/speed. Considered a b70 but the performance and driver quality... Just decided to go with this for now and see.</p>
+
+<p>But if I get a cheap 3090 I&#39;d love to compare. I do think the prefill speed up would be very nice.</p>
+</div></div>
+		
+		<div class="replies">
+
+
+<div id="p4v0b4p" class="comment">
+	<div class="comment_left">
+    <p class="comment_score" title="1">
+         
+         1
+         
+    </p>
+        <div class="line"></div>
+	</div>
+	<details class="comment_right" open>
+		<summary class="comment_data">
+			
+				<a class="comment_author  " href="/user/arbv">u/arbv</a>
+			
+			
+			<a href="/r/LocalLLaMA/comments/1vtc0z7/3_days_benchmarking_most_llamacpp_flags_on_my/p4v0b4p/?context=3#p4v0b4p" class="created" title="Aug 20 2026, 17:17:40 UTC">Aug 20 &#39;26</a>
+			
+			
+		</summary>
+		
+		<div class="comment_body "><div class="md"><p>7900 xtx is a beast, both a pixel pushing and token crunching </p>
+</div></div>
+		
+		<div class="replies">
+		</div>
+	</details>
+</div>
+
+		</div>
+	</details>
+</div>
+
+		</div>
+	</details>
+</div>
+
+			</div>
+		</div>
+
+	</div>
+
+		</main>
+		
+
+		<!-- FOOTER -->
+		
+			<footer>
+				<div class="footer-buttons">
+					<p><span id="version">v0.36.0-yunyun&emsp;</span><a href="/info" title="View instance information">ⓘ View instance info</a>&emsp;<a href="https://github.com/redlib-org/redlib" title="View code on GitHub">&lt;&gt; Code</a></p>
+				</div>
+			</footer>
+		
+	</body>
+</html>

@@ -1,0 +1,648 @@
+   1| # Multi-platform providers for Mag routing.
+   2| # Secrets: set env vars listed under each provider (never commit keys).
+   3| #
+   4| # Quotas: most free tiers do NOT expose "remaining until reset" via API.
+   5| # You set period + limits here; Mag tracks usage and refuses when empty.
+   6| # Adjust limits to match your plan; reset_day = day of month (1-28) or "daily".
+   7| 
+   8| defaults:
+   9|   never_remote_tiers: [T0, T1]
+  10|   # FREE-FIRST (2026-08-24): the swarm should be cheap as f*ck — local + free lanes win,
+  11|   # paid deepseek is the FALLBACK (reliable workhorse), deferred off-peak by mag.offpeak.
+  12|   prefer_order:
+  13|     - ollama            # local, free, instant
+  14|     - z_ai              # FREE cache-mined GLM (glm-4.7-flash/4.5-flash, 200K ctx) — the default
+  15|                         # for heavy agentic windows; frozen cached self = near-free daily use
+  16|                         # (2026-08-25: moved up so DeepSeek stays the brake, not the default)
+  17|     - openrouter        # free lanes â€” 18 lanes x 1000/day (the big free capacity)
+  18|     - groq              # free tier
+  19|     - nvidia            # free build credits (102 models, deepseek-v4-flash-0731 verified)
+  20|     - together          # free trial
+  21|     - github_models
+  22|     - mistral
+  23|     - moonshot
+  24|     - fireworks
+  25|     - cerebras
+  26|     - cohere
+  27|     - hf_router
+  28|     - dashscope
+  29|     - deepseek          # PAID fallback — only when free lanes have no budget/key
+  30|     - deepseek_overmind
+  31|     - anthropic
+  32|     - openai
+  33|     - gemini
+  34|     - xai
+  35| 
+  36| providers:
+  37|   saelis:
+  38|     name: Saelis (Athena-class, Vast-hosted)
+  39|     kind: openai_compat
+  40|     # base_url_env points SAELIS_BASE_URL at the real hosted Saelis endpoint (a Vast.ai
+  41|     # rented GPU running llama-server, tunneled via SSH). When unset, saelis_seat falls back
+  42|     # to the DeepSeek RIB proxy (her identity distilled, not her weights). See vast_launcher serve.
+  43|     base_url_env: SAELIS_BASE_URL
+  44|     base_url: http://127.0.0.1:8080/v1
+  45|     api_key_env: [REDACTED len=4]
+  46|     api_key_default: [REDACTED len=6]
+  47|     models:
+  48|       - saelis
+  49|     default_model: saelis
+  50|     timeout_seconds: 120
+  51|     quota:
+  52|       period: none
+  53|       max_calls: null
+  54|       max_tokens: null
+  55| 
+  56|   ollama:
+  57|     name: Ollama (local)
+  58|     kind: openai_compat
+  59|     # base_url_env lets OLLAMA_HOST point at the right Ollama wherever the code runs.
+  60|     # Docker services use http://ollama:11434/v1; host maintenance may use the
+  61|     # localhost fallback or an explicit tunnel. Native /api callers use config.ollama_base,
+  62|     # which strips /v1 before probing.
+  63|     base_url_env: OLLAMA_HOST
+  64|     base_url: http://127.0.0.1:11434/v1
+  65|     api_key_env: [REDACTED len=49]
+  66|     api_key_default: [REDACTED len=6]
+  67|     # Home PC envelope (RX 5600 XT ~6GB + 64GB RAM): default FAST path.
+  68|     # Role map in configs/lanes.yaml pins worker/critic to gemma4 when needed.
+  69|     models:
+  70|       - gemma:2b
+  71|       - qwen-desk:latest
+  72|       - qwen2.5:3b-instruct
+  73|       - qwen2.5-coder:7b
+  74|       - gemma4:latest
+  75|       - gemma4-desk:latest
+  76|     default_model: qwen2.5-coder:7b
+  77|     tier_max: T1               # may see local private
+  78|     free_local: true
+  79|     timeout_seconds: 90        # was 300 — don't hang voice/UI behind cold 8B loads
+  80|     quota:
+  81|       period: none             # unlimited local
+  82|       max_calls: null
+  83|       max_tokens: null
+  84| 
+  85|   mlx-cluster:
+  86|     name: "Mac Studio quad (MLX/exo cluster) — the physical substrate (stub 2026-08-25)"
+  87|     kind: openai_compat
+  88|     # THE ENDGAME (operator + collaborator, 2026-08-25): 4x Mac Studio M5 Ultra 256GB
+  89|     # pooled unified memory ~1TB as one logical accelerator. Three nodes run the tripartite
+  90|     # (three brains, Roshomon consensus, mag/tripartite.py), the fourth is the orchestrator
+  91|     # + verkle anchor + always-on game host. STUB: endpoint doesn't exist until the machines
+  92|     # land (preorder 09-22, birthday 10-27) — wired now so the fleet routes there on day one.
+  93|     # MLX + exo serve an OpenAI-compatible gateway; change base_url to the real one at boot.
+  94|     base_url: http://127.0.0.1:7777/v1
+  95|     api_key_env: [REDACTED len=30]
+  96|     models:
+  97|       - mlx-flagship            # placeholder: a 355B-class MoE at 4-bit per node
+  98|     default_model: mlx-flagship
+  99|     tier_max: T1                # local private — the sovereignty tier
+ 100|     free_local: true
+ 101|     timeout_seconds: 300
+ 102|     quota:
+ 103|       period: none
+ 104|       max_calls: null
+ 105|       max_tokens: null
+ 106| 
+ 107|   nous:
+ 108|     name: Nous Research inference API (Hermes keys; the LAW-11 credits-over-failure rescue lane)
+ 109|     kind: openai_compat
+ 110|     base_url: https://inference-api.nousresearch.com/v1
+ 111|     api_key_env: [REDACTED len=16]
+ 112|     # Both static keys as one failover chain (the Portal OAuth path stays blocked on
+ 113|     # operator login). 200-verified on z-ai/glm-5.3-prime 2026-09-25 (GO-list receipt).
+ 114|     # Reasoning models burn thinking out of max_tokens: size calls up or content dies.
+ 115|     api_key_envs: [REDACTED len=36]
+ 116|     models:
+ 117|       - z-ai/glm-5.3-prime
+ 118|       - qwen/qwen3.8-max-prime
+ 119|       - fireworks/ember-1
+ 120|     tier_max: T2
+ 121|     timeout_seconds: 540
+ 122|     quota:
+ 123|       period: none
+ 124|       max_calls: null
+ 125|       max_tokens: null
+ 126| 
+ 127|   openrouter:
+ 128|     name: OpenRouter (many models)
+ 129|     kind: openai_compat
+ 130|     base_url: https://openrouter.ai/api/v1
+ 131|     api_key_env: [REDACTED len=18]
+ 132|     # Both operator accounts as one failover chain (2026-08-24): account 1 = funded (nacho),
+ 133|     # account 2 = free tier (fostertron/ox). Each key is its own pool; the chain rotates/fails
+ 134|     # over so the 18 free lanes actually get used. Also accepts OR_API_KEY.
+ 135|     api_key_envs: [REDACTED len=68]
+ 136|     models:
+ 137|       - openrouter/auto
+ 138|       - stealth/space-bunny-alpha   # 2026-09-24 stealth drop: FREE, 1M ctx, text+image+video->text, mandatory reasoning (default max, low..max), tools OK; probe LIVE both keys; expires when stealth ends
+ 139|       - meta-llama/llama-3.3-70b-instruct:free
+ 140|       - google/gemma-2-9b-it:free
+ 141|       - deepseek/deepseek-r1:free
+ 142|     default_model: openrouter/auto
+ 143|     tier_max: T2
+ 144|     free_local: false
+ 145|     # 2026-08-24 (verified by raw probe): openrouter/auto routes to reasoning models
+ 146|     # (deepseek-v4-flash-0731) and IGNORES thinking:{type:disabled} — it thinks anyway and
+ 147|     # eats small budgets (600 -> empty, 2000 -> content). The real fix is a bigger budget
+ 148|     # per lane (fuel_feed LANE_MAX_TOKENS). Flag kept: harmless, helps non-/auto models.
+ 149|     disable_thinking: true
+ 150|     extra_headers:
+ 151|       HTTP-Referer: http://127.0.0.1:8765
+ 152|       X-Title: Mag Resource Harness
+ 153|     quota:
+ 154|       period: monthly
+ 155|       reset_day: 1
+ 156|       max_calls: 200
+ 157|       max_tokens: 500000
+ 158|       note: "Set to your free/paid plan; OpenRouter dashboard is source of truth"
+ 159| 
+ 160|   nous_api:
+ 161|     name: Nous Portal (OpenRouter-compatible mirror, sk-nous keys)
+ 162|     kind: openai_compat
+ 163|     base_url: https://inference-api.nousresearch.com/v1
+ 164|     api_key_env: [REDACTED len=16]
+ 165|     api_key_envs: [REDACTED len=36]
+ 166|     # 2026-09-24 (verified by mag.probe_route probe --json): Nous serves a 417-model
+ 167|     # OpenRouter-compatible catalog incl. stealth/space-bunny-alpha at $0/$0 — 1M ctx,
+ 168|     # text+image+video->text, mandatory reasoning. Third copy of the stealth catalog
+ 169|     # beside the two OpenRouter keys (lane count x3 on the same drop). mag.probe_route
+ 170|     # allowlist now covers openrouter.ai + this host.
+ 171|     models:
+ 172|       - stealth/space-bunny-alpha
+ 173|       - inclusionai/ling-3.0-flash-sante:free
+ 174|       - inclusionai/ling-3.0-flash-fin:free
+ 175|       - meituan/longcat-2.0:free
+ 176|       - poolside/laguna-s-2.1:free
+ 177|     default_model: stealth/space-bunny-alpha
+ 178|     tier_max: T2
+ 179|     free_local: false
+ 180|     quota:
+ 181|       period: none
+ 182|       max_calls: null
+ 183|       max_tokens: null
+ 184|       note: "Free during stealth window; Nous account keys are the Hermes sdd/nacho accounts"
+ 185| 
+ 186|   openai:
+ 187|     name: OpenAI ChatGPT API
+ 188|     kind: openai_compat
+ 189|     base_url: https://api.openai.com/v1
+ 190|     api_key_env: [REDACTED len=14]
+ 191|     models:
+ 192|       - gpt-4o-mini
+ 193|       - gpt-4o
+ 194|     default_model: gpt-4o-mini
+ 195|     tier_max: T2
+ 196|     free_local: false
+ 197|     paid: true          # peak/off-peak: deferred during peak (2x) — free lanes carry it
+ 198|     quota:
+ 199|       period: monthly
+ 200|       reset_day: 1
+ 201|       max_calls: 100
+ 202|       max_tokens: 200000
+ 203|       note: "Paid API — set limits to budget"
+ 204| 
+ 205|   anthropic:
+ 206|     name: Anthropic Claude
+ 207|     kind: anthropic_messages
+ 208|     base_url: https://api.anthropic.com/v1
+ 209|     api_key_env: [REDACTED len=17]
+ 210|     models:
+ 211|       - claude-sonnet-4-20250514
+ 212|       - claude-3-5-haiku-20241022
+ 213|     default_model: claude-sonnet-4-20250514
+ 214|     tier_max: T2
+ 215|     free_local: false
+ 216|     paid: true          # deferred during peak (free lanes / openrouter anthropic/* carry it)
+ 217|     quota:
+ 218|       period: monthly
+ 219|       reset_day: 1
+ 220|       max_calls: 80
+ 221|       max_tokens: 300000
+ 222|       note: "Claude API (CLI: set ANTHROPIC_API_KEY). Or use openrouter anthropic/* models."
+ 223| 
+ 224|   groq:
+ 225|     name: Groq (fast Llama etc.)
+ 226|     kind: openai_compat
+ 227|     base_url: https://api.groq.com/openai/v1
+ 228|     # 2026-08-26: second key added by operator — parallel rotation, both keys read
+ 229|     # at call time (same pattern as xai's chain), so groq never idles on one quota.
+ 230|     api_key_envs: [REDACTED len=30]
+ 231|     models:
+ 232|       - openai/gpt-oss-120b
+ 233|       - qwen/qwen3.6-27b
+ 234|       - groq/compound-mini
+ 235|     default_model: openai/gpt-oss-120b
+ 236|     tier_max: T2
+ 237|     free_local: false
+ 238|     quota:
+ 239|       period: daily
+ 240|       max_calls: 100
+ 241|       max_tokens: 100000
+ 242|       note: "Roster read from the key 2026-08-24: llama-* gone; chat = gpt-oss-120b/20b, qwen3.6-27b, groq/compound(-mini)"
+ 243| 
+ 244|   deepseek:
+ 245|     name: DeepSeek
+ 246|     kind: openai_compat
+ 247|     base_url: https://api.deepseek.com/v1
+ 248|     api_key_env: [REDACTED len=16]
+ 249|     # 2026-08-14: .env carries DEEPSEEK_API_KEY (the Swarm key env was wiped 08-10).
+ 250|     # Accept both so deepseek actually routes (was silently falling back to ollama).
+ 251|     api_key_envs: [REDACTED len=42]
+ 252|     # DeepSeek v4 defaults thinking ON; reasoning tokens eat max_tokens and
+ 253|     # small budgets return EMPTY content (the 'agent hallucinating / empty
+ 254|     # reply' bug). Top-level thinking:{type:disabled} is ~10-15x cheaper and
+ 255|     # returns real text. Verified live 2026-08-03 (12 tok vs 120 tok).
+ 256|     disable_thinking: true
+ 257|     # Canonical v4 model names (verified 2026-08-02). Legacy aliases
+ 258|     # deepseek-chat / deepseek-reasoner still resolve but are deprecated.
+ 259|     models:
+ 260|       - deepseek-v4-flash
+ 261|       - deepseek-v4-pro
+ 262|     default_model: deepseek-v4-flash
+ 263|     tier_max: T2
+ 264|     free_local: false
+ 265|     paid: true          # the paid workhorse — deferred during peak (2x), off-peak only unless MAG_ALLOW_PEAK
+ 266|     quota:
+ 267|       period: daily
+ 268|       reset_day: 1
+ 269|       # SWARM BUDGET (2026-08-26, operator: "run this in swarms for cheap — phenomenally
+ 270|       # cheap lane especially with our cache mining"): supersedes the $1/day autorun budget
+ 271|       # of 08-12 (kept below as lineage). Guardrail is billable tokens (miss+completion only;
+ 272|       # cache hits are ~free), so 30M/day ≈ $7-13/day worst-case at v4-flash prices while a
+ 273|       # warm 96%-hit swarm loop costs pennies per hour. max_calls raised so bursty loops
+ 274|       # don't freeze the lane before the dollar ceiling ever matters (850 tripped twice:
+ 275|       # 08-14 moonshot + again mid-day 08-26).
+ 276|       # LINEAGE: autorun ~$1/day (850 calls / 1M tokens), operator 'spend a dollar' 2026-08-12.
+ 277|       max_calls: 10000
+ 278|       max_tokens: 30000000
+ 279|       note: "Swarm-scale deepseek: 10K calls / 30M billable tok daily — operator supersession 2026-08-26 (was $1/day autorun 2026-08-12)"
+ 280| 
+ 281|   deepseek_overmind:
+ 282|     name: DeepSeek Overmind (second key chain)
+ 283|     kind: openai_compat
+ 284|     base_url: https://api.deepseek.com/v1
+ 285|     api_key_env: [REDACTED len=25]
+ 286|     disable_thinking: true
+ 287|     models:
+ 288|       - deepseek-v4-flash
+ 289|       - deepseek-v4-pro
+ 290|     default_model: deepseek-v4-flash
+ 291|     tier_max: T2
+ 292|     free_local: false
+ 293|     paid: true          # second paid deepseek chain — deferred during peak too
+ 294|     quota:
+ 295|       period: monthly
+ 296|       reset_day: 1
+ 297|       max_calls: null
+ 298|       max_tokens: null
+ 299|       note: "Separate Overmind key; used by deepseek chain failover + explicit --provider deepseek_overmind"
+ 300| 
+ 301|   vast:
+ 302|     name: Vast.ai (OpenAI-compatible endpoint)
+ 303|     kind: openai_compat
+ 304|     # base_url_env lets .env point at any rented GPU endpoint
+ 305|     # (VAST_OPENAI_BASE_URL, e.g. https://<instance>.vast.ai/v1).
+ 306|     base_url_env: VAST_OPENAI_BASE_URL
+ 307|     base_url: https://api.vast.ai/v1
+ 308|     api_key_env: [REDACTED len=19]
+ 309|     # Override model via VAST_OPENAI_MODEL env or --model (defaults to a
+ 310|     # widely-served OpenAI-compatible id; adjust to what your instance runs).
+ 311|     model_env: VAST_OPENAI_MODEL
+ 312|     default_model: deepseek-v4-flash
+ 313|     tier_max: T2
+ 314|     free_local: false
+ 315|     # Chat context window — DeepSeek real window is 1,000,000 tokens (1M).
+ 316|     # Was 64000 (6.4% of real) → repack fired at ~36.5K tokens = 3.7% of window,
+ 317|     # destroying context-cache hits (50x flash / 30x pro cheaper on HIT; pro corrected
+ 318|     # 2026-09-25 from the stale 120x = pre-Sept-10 pricing table).
+ 319|     # See memory/improve/deepseek_api/repack_vs_cache_analysis.md
+ 320|     context_tokens: 1000000
+ 321|     timeout_seconds: 600
+ 322|     quota:
+ 323|       period: monthly
+ 324|       reset_day: 1
+ 325|       # No Mag soft cap — vendor balance is the only gate (usage still tracked).
+ 326|       max_calls: null
+ 327|       max_tokens: null
+ 328| 
+ 329|   gemini:
+ 330|     name: Google Gemini
+ 331|     kind: openai_compat
+ 332|     # OpenAI-compatible endpoint (Google)
+ 333|     base_url: https://generativelanguage.googleapis.com/v1beta/openai
+ 334|     api_key_env: [REDACTED len=14]
+ 335|     # Also GOOGLE_API_KEY
+ 336|     models:
+ 337|       - gemini-2.0-flash
+ 338|       - gemini-1.5-flash
+ 339|     default_model: gemini-2.0-flash
+ 340|     tier_max: T2
+ 341|     free_local: false
+ 342|     paid: true          # trial/paid — deferred during peak
+ 343|     quota:
+ 344|       period: daily
+ 345|       max_calls: 50
+ 346|       max_tokens: 200000
+ 347|       note: "Free tier RPM/RPD change often — set conservatively"
+ 348| 
+ 349|   xai:
+ 350|     name: xAI Grok API
+ 351|     kind: openai_compat
+ 352|     base_url: https://api.x.ai/v1
+ 353|     api_key_env: [REDACTED len=11]
+ 354|     # Two operator X accounts (e.g. NachoQuixotic + sd20645547), each with a key; only
+ 355|     # some are funded. grok_rightsize.call_grok fails over across this chain on 401/403.
+ 356|     api_key_envs: [REDACTED len=58]
+ 357|     models:
+ 358|       - grok-3-mini
+ 359|       - grok-3
+ 360|       - grok-4.5
+ 361|     default_model: grok-3-mini
+ 362|     tier_max: T2
+ 363|     free_local: false
+ 364|     paid: true          # Grok API — deferred during peak (free lanes carry it)
+ 365|     # Grok 4.5 deprecated max_tokens in favor of max_completion_tokens.
+ 366|     use_max_completion_tokens: true
+ 367|     quota:
+ 368|       period: monthly
+ 369|       reset_day: 1
+ 370|       max_calls: 100
+ 371|       max_tokens: 300000
+ 372|       note: "Separate from Grok TUI/CLI harness (L2)"
+ 373| 
+ 374|   together:
+ 375|     name: Together (Llama etc.)
+ 376|     kind: openai_compat
+ 377|     base_url: https://api.together.xyz/v1
+ 378|     api_key_env: [REDACTED len=16]
+ 379|     models:
+ 380|       - deepseek-ai/DeepSeek-V4-Flash-0731   # serverless, 1M ctx, same model as the nvidia lane (2026-08-25)
+ 381|     default_model: deepseek-ai/DeepSeek-V4-Flash-0731
+ 382|     tier_max: T2
+ 383|     free_local: false
+ 384|     quota:
+ 385|       period: monthly
+ 386|       reset_day: 1
+ 387|       max_calls: 100
+ 388|       max_tokens: 200000
+ 389| 
+ 390|   z_ai:
+ 391|     name: Z.ai coding-plan key #1 (main) — opencode harness ONLY; raw-API use is rate-limited (1305/1302) + fence risk
+ 392|     kind: openai_compat
+ 393|     base_url: https://api.z.ai/api/paas/v4
+ 394|     api_key_env: [REDACTED len=11]
+ 395|     opencode_only: true
+ 396|     timeout_seconds: 8
+ 397|     models:
+ 398|       - glm-4.7-flash
+ 399|   z_ai2:
+ 400|     name: Z.ai FUNDED API key (Pro) — FLEET cache-mining lane, proven 2026-08-26 (97-99.9% cache hit, $0)
+ 401|     kind: openai_compat
+ 402|     # endpoint law (receipt 2026-09-17, watch/inbox/FLEET_IMPRINT_20260917.md): coding-plan
+ 403|     # keys fake-1113 on raw /paas/v4; real path /api/coding/paas/v4. Pro key = coding plan
+ 404|     # (docs/ref/SURFACES.md lane table); same fix z_ai3 took 2026-09-17. Applied gopher t60 2026-09-25.
+ 405|     base_url: https://api.z.ai/api/coding/paas/v4
+ 406|     api_key_env: [REDACTED len=15]
+ 407|     free: true
+ 408|     timeout_seconds: 15
+ 409|     models:
+ 410|       - glm-4.7-flash
+ 411|       - glm-5.3-flash
+ 412|   z_ai3:
+ 413|     name: Z.ai FUNDED API key (Lite) — FLEET cache-mining lane, proven 2026-08-26
+ 414|     kind: openai_compat
+ 415|     # endpoint law (receipt 2026-09-17): coding-plan keys fake-1113 on raw /paas/v4;
+ 416|     # the real path is /api/coding/paas/v4 (monitor endpoint = truth)
+ 417|     base_url: https://api.z.ai/api/coding/paas/v4
+ 418|     api_key_env: [REDACTED len=16]
+ 419|     free: true
+ 420|     timeout_seconds: 15
+ 421|     models:
+ 422|       - glm-4.7-flash
+ 423|       - glm-5.3-flash
+ 424|   z_ai4:
+ 425|     name: Z.ai coding-plan key #2 (sd Max) — opencode harness ONLY; raw-API use is rate-limited + fence risk
+ 426|     kind: openai_compat
+ 427|     base_url: https://api.z.ai/api/paas/v4
+ 428|     api_key_env: [REDACTED len=13]
+ 429|     opencode_only: true
+ 430|     timeout_seconds: 8
+ 431|     free: true
+ 432|     models:
+ 433|       - glm-4.7-flash
+ 434|       - glm-4.5-flash      # FREE at all tiers too (2026-08-24 research) — second free cache-mining lane
+ 435|     default_model: glm-4.7-flash
+ 436|     tier_max: T2
+ 437|     free_local: false
+ 438|     quota:
+ 439|       period: monthly
+ 440|       reset_day: 1
+ 441|       # 2026-08-24 sacred-cow audit: this was the copied 100/200k default (pattern-matched, not
+ 442|       # measured). GLM-4.7-flash is FREE at all tiers; the guard is a SAFETY NET, not a budget.
+ 443|       # Raised to a generous net; calibrate against Z.ai's real dashboard rate limit
+ 444|       # (z.ai/manage-apikey/rate-limits) once known. Not a sacred cow.
+ 445|       # 2026-08-24 deep research: glm-4.5-flash is also FREE (input/cached/storage/output).
+ 446|       # glm-4.7-flashx ($0.07/$0.01 cached) + glm-4.7 ($0.6) are PAID — NOT wired into free lanes;
+ 447|       # paid deep-coding routes go through the GLM Coding plan (dedicated quota) instead.
+ 448|       max_calls: 5000
+ 449|       max_tokens: 5000000
+ 450|       note: "GLM-4.7-flash + GLM-4.5-flash FREE (all tiers); cache-mining lanes — thinking off; calibrate guard to dashboard limit"
+ 451| 
+ 452|   github_models:
+ 453|     name: GitHub Models (free tier)
+ 454|     kind: openai_compat
+ 455|     base_url: https://models.inference.ai.azure.com
+ 456|     api_key_env: [REDACTED len=19]
+ 457|     models:
+ 458|       - gpt-4o-mini
+ 459|       - claude-3-5-sonnet-20241022
+ 460|       - Meta-Llama-3.3-70B-Instruct
+ 461|     default_model: gpt-4o-mini
+ 462|     tier_max: T2
+ 463|     free_local: false
+ 464|     quota:
+ 465|       period: daily
+ 466|       max_calls: 50
+ 467|       max_tokens: 100000
+ 468|       note: "Free tier — token from github.com/settings/tokens (fine-grained, models:read); verify current model ids"
+ 469| 
+ 470|   mistral:
+ 471|     name: Mistral (free tier + Le Chat)
+ 472|     kind: openai_compat
+ 473|     base_url: https://api.mistral.ai/v1
+ 474|     api_key_env: [REDACTED len=15]
+ 475|     models:
+ 476|       - mistral-large-latest
+ 477|     default_model: mistral-large-latest
+ 478|     tier_max: T2
+ 479|     free_local: false
+ 480|     quota:
+ 481|       period: monthly
+ 482|       reset_day: 1
+ 483|       max_calls: 100
+ 484|       max_tokens: 200000
+ 485|       note: "Sign in with Google supported — verify current model id"
+ 486| 
+ 487|   moonshot:
+ 488|     name: Kimi / Moonshot (trial)
+ 489|     kind: openai_compat
+ 490|     base_url: https://api.moonshot.ai/v1
+ 491|     api_key_env: [REDACTED len=16]
+ 492|     models:
+ 493|       - kimi-k2
+ 494|     default_model: kimi-k2
+ 495|     tier_max: T2
+ 496|     free_local: false
+ 497|     quota:
+ 498|       period: monthly
+ 499|       reset_day: 1
+ 500|       max_calls: 100
+ 501|       max_tokens: 200000
+ 502|       note: "Trial credits; verify current model id"
+ 503| 
+ 504|   fireworks:
+ 505|     name: Fireworks AI (free tier)
+ 506|     kind: openai_compat
+ 507|     base_url: https://api.fireworks.ai/inference/v1
+ 508|     api_key_env: [REDACTED len=17]
+ 509|     models:
+ 510|       - accounts/fireworks/models/llama-v3p1-70b-instruct
+ 511|     default_model: accounts/fireworks/models/llama-v3p1-70b-instruct
+ 512|     tier_max: T2
+ 513|     free_local: false
+ 514|     quota:
+ 515|       period: monthly
+ 516|       reset_day: 1
+ 517|       max_calls: 100
+ 518|       max_tokens: 200000
+ 519|       note: "Verify current model id"
+ 520| 
+ 521|   cerebras:
+ 522|     name: Cerebras (free tier, fast)
+ 523|     kind: openai_compat
+ 524|     base_url: https://api.cerebras.ai/v1
+ 525|     api_key_env: [REDACTED len=16]
+ 526|     # 2026-08-24: operator's key landed in .env as CEREBAS_API_KEY (typo, one R) — read both so
+ 527|     # the lane resolves without making them re-paste. Prefer the correct name when both exist.
+ 528|     api_key_envs: [REDACTED len=35]
+ 529|     # REAL public models (docs 2026-08-24): gpt-oss-120b (~3000 tok/s) + gemma-4-31b (~1850).
+ 530|     # The old llama ids don't exist on Cerebras public endpoints — direct urllib probes also
+ 531|     # got Cloudflare 1010'd without a browser UA; chat_provider (browser UA) passes. VERIFIED
+ 532|     # 2026-08-24: gpt-oss-120b answers through chat_provider.
+ 533|     models:
+ 534|       - gpt-oss-120b
+ 535|       - gemma-4-31b
+ 536|     default_model: gpt-oss-120b
+ 537|     tier_max: T2
+ 538|     free_local: false
+ 539|     quota:
+ 540|       period: monthly
+ 541|       reset_day: 1
+ 542|       max_calls: 100
+ 543|       max_tokens: 200000
+ 544|       note: "Free tier — verify current model id"
+ 545| 
+ 546|   nvidia:
+ 547|     name: NVIDIA build (free credits)
+ 548|     kind: openai_compat
+ 549|     base_url: https://integrate.api.nvidia.com/v1
+ 550|     api_key_env: [REDACTED len=11]
+ 551|     # 2026-08-24: the live key sits in .env under its build name NVIDIABuild-Autogen-46
+ 552|     # (not NVIDIA_API_KEY) — read both so nvidia actually resolves.
+ 553|     api_key_envs: [REDACTED len=40]
+ 554|     # 102 models live behind the single key (integrate.api.nvidia.com). Only the
+ 555|     # general chat/instruct set is listed here; embeddings/vision/safety/translate
+ 556|     # are out of routing scope. deepseek-v4-flash-0731 = verified fast (3.4s);
+ 557|     # matches AOS_AGENT_MODEL deepseek/deepseek-v4-flash.
+ 558|     models:
+ 559|       - deepseek-ai/deepseek-v4-flash-0731
+ 560|       - deepseek-ai/deepseek-coder-6.7b-instruct
+ 561|       - meta/llama-3.3-70b-instruct
+ 562|       - meta/llama-3.1-70b-instruct
+ 563|       - meta/llama-3.1-8b-instruct
+ 564|       - nvidia/llama-3.3-nemotron-super-49b-v1
+ 565|       - nvidia/nemotron-3-super-120b-a12b
+ 566|       - mistralai/mistral-large
+ 567|       - mistralai/mistral-large-2-instruct
+ 568|       - mistralai/mixtral-8x22b-v0.1
+ 569|       - google/gemma-3-12b-it
+ 570|       - google/gemma-3-4b-it
+ 571|       - minimaxai/minimax-m3
+ 572|       - moonshotai/kimi-k2.6
+ 573|       - moonshotai/kimi-k3
+ 574|       - openai/gpt-oss-120b
+ 575|       - openai/gpt-oss-20b
+ 576|       - stepfun-ai/step-3.7-flash
+ 577|     default_model: deepseek-ai/deepseek-v4-flash-0731
+ 578|     tier_max: T2
+ 579|     free_local: false
+ 580|     quota:
+ 581|       period: monthly
+ 582|       reset_day: 1
+ 583|       max_calls: 100
+ 584|       max_tokens: 200000
+ 585|       note: "NVIDIA_API_KEY set 2026-08-24; deepseek-v4-flash-0731 verified fast. 102 models on the endpoint."
+ 586| 
+ 587|   cohere:
+ 588|     name: Cohere (trial)
+ 589|     kind: openai_compat
+ 590|     base_url: https://api.cohere.com
+ 591|     api_key_env: [REDACTED len=14]
+ 592|     models:
+ 593|       - command-r-plus
+ 594|     default_model: command-r-plus
+ 595|     tier_max: T2
+ 596|     free_local: false
+ 597|     quota:
+ 598|       period: monthly
+ 599|       reset_day: 1
+ 600|       max_calls: 100
+ 601|       max_tokens: 200000
+ 602|       note: "Trial credits; sign in with Google supported"
+ 603| 
+ 604|   hf_router:
+ 605|     name: Hugging Face Inference Router (free)
+ 606|     kind: openai_compat
+ 607|     base_url: https://router.huggingface.co/v1
+ 608|     api_key_env: [REDACTED len=8]
+ 609|     models:
+ 610|       - meta-llama/Llama-3.3-70B-Instruct
+ 611|     default_model: meta-llama/Llama-3.3-70B-Instruct
+ 612|     tier_max: T2
+ 613|     free_local: false
+ 614|     quota:
+ 615|       period: monthly
+ 616|       reset_day: 1
+ 617|       max_calls: 100
+ 618|       max_tokens: 200000
+ 619|       note: "Free tier, rate-limited; sign in with Google/GitHub supported"
+ 620| 
+ 621|   dashscope:
+ 622|     name: Alibaba DashScope / Qwen (trial)
+ 623|     kind: openai_compat
+ 624|     base_url: https://dashscope.aliyuncs.com/compatible-mode/v1
+ 625|     api_key_env: [REDACTED len=17]
+ 626|     models:
+ 627|       - qwen-max
+ 628|     default_model: qwen-max
+ 629|     tier_max: T2
+ 630|     free_local: false
+ 631|     quota:
+ 632|       period: monthly
+ 633|       reset_day: 1
+ 634|       max_calls: 100
+ 635|       max_tokens: 200000
+ 636|       note: "Trial tokens; Alibaba acct (phone verify — NOT Google) — verify current model id"
+ 637| 
+ 638| # Routing preferences by job class (first with budget + key wins after ollama).
+ 639| # FREE-FIRST (2026-08-24): free lanes win; deepseek is the paid fallback (reliable),
+ 640| # deferred off-peak by mag.offpeak. Cheap as f*ck + immortal.
+ 641| routing:
+ 642|   scut: [ollama, openrouter, groq, nvidia, together, deepseek, deepseek_overmind, vast]
+ 643|   recall: [ollama]
+ 644|   public_summarize: [ollama, openrouter, nvidia, groq, z_ai, github_models, mistral, moonshot, fireworks, cerebras, cohere, hf_router, dashscope, deepseek, deepseek_overmind, vast, gemini, openai]
+ 645|   hard_code: [ollama, openrouter, nvidia, groq, together, deepseek, deepseek_overmind, anthropic, openai, xai, vast]
+ 646|   hard_reason: [ollama, openrouter, nvidia, groq, together, deepseek, deepseek_overmind, anthropic, xai, openai, vast]
+ 647|   # Interactive Grok TUI is still L2 "specialist seat" — API providers for headless
+ 648|   default: [ollama, openrouter, nvidia, groq, z_ai, github_models, mistral, moonshot, fireworks, cerebras, cohere, hf_router, dashscope, deepseek, deepseek_overmind, anthropic, gemini, openai, xai]

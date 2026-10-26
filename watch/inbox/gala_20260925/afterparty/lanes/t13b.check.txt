@@ -1,0 +1,184 @@
+=== t13b.check.txt - raw check output, gopher t13b, 2026-09-26 ===
+LAWS: run the check, save raw output, cite the file. All paths relative to repo root.
+
+--- SECTION 1: stack.json BEFORE edit (cat) ---
+{
+  "items": [
+    {
+      "goal": "research B",
+      "complexity": 3.0,
+      "at": "2026-08-09T13:01:09.568295+00:00"
+    },
+    {
+      "goal": "research C",
+      "complexity": 2.0,
+      "at": "2026-08-09T13:01:09.580523+00:00"
+    },
+    {
+      "goal": "deep analysis of verkle coherence vs vector embedding",
+      "complexity": 2.0,
+      "at": "2026-08-09T13:02:42.646153+00:00"
+    },
+    {
+      "goal": "design the quantized lattice fold for the ghost",
+      "complexity": 3.0,
+      "at": "2026-08-09T13:02:42.656342+00:00"
+    }
+  ],
+  "complexity": 10.0
+}
+--- SECTION 1b: grep -n 'research A' in stack.json (expect exit 1: t13a prune confirmed) ---
+grep exit: 1
+
+--- SECTION 2: gpipes/p8bc0180ab9.json (cat, provenance for research B) ---
+{
+  "pipe_id": "p8bc0180ab9",
+  "created_at": "2026-08-09T05:13:14.602691+00:00",
+  "goals": [
+    "research A",
+    "research B"
+  ],
+  "task_ids": [
+    "t-test",
+    "t-test"
+  ],
+  "tags": [
+    "",
+    ""
+  ],
+  "provider": "deepseek",
+  "timeout_s": 900,
+  "agent_state": "research-agent",
+  "status": "running",
+  "spawn_failures": [],
+  "tasks": [
+    {
+      "ok": true,
+      "task_id": "t-test",
+      "status": "queued"
+    },
+    {
+      "ok": true,
+      "task_id": "t-test",
+      "status": "queued"
+    }
+  ],
+  "live": [
+    {
+      "task_id": "t-test",
+      "status": "unknown",
+      "exit_code": null,
+      "duration_s": null,
+      "tag": ""
+    },
+    {
+      "task_id": "t-test",
+      "status": "unknown",
+      "exit_code": null,
+      "duration_s": null,
+      "tag": ""
+    }
+  ]
+}
+--- SECTION 3: grep -rn 'research B' across estate (excluding .venv, .git) ---
+memory\frontier\HELP_WANTED.md:12:- Inputs (verified): `memory/runs/gap_map/stack.json` (row verbatim); `memory/runs/gpipes/p8bc0180ab9.json` (pipe created 2026-08-09T05:13Z with goals ["research A","research B"], task_ids ["t-test","t-test"], status running  -  smoke artifact, so "research A" is a placeholder label, not a research question); `mag/frontier_help.py` (generator); candidate rebind targets, unconfirmed: `memory/runs/gap_swarm_experiment/design.json` + `probes.json`.
+memory\frontier\HELP_WANTED.md:18:### 2. [stack] research B  -  bind or prune the placeholder row
+memory\frontier\HELP_WANTED.md:19:- Goal: Same as brief 1 for the "research B" row (complexity 3.0, stacked 2026-08-09), same smoke origin via the same pipe record.
+memory\frontier\HELP_WANTED.md:20:- Inputs (verified): `memory/runs/gap_map/stack.json`; `memory/runs/gpipes/p8bc0180ab9.json` (goals array contains "research B"); `mag/frontier_help.py`; candidate rebind targets: `memory/runs/gap_swarm_experiment/` (unconfirmed).
+memory\frontier\HELP_WANTED.md:21:- Finish line: artifact `memory/frontier/help_wanted/resolved/research_B.md`; byte check: stack.json no longer contains `"research B"`, artifact cites p8bc0180ab9.
+memory\frontier\help_wanted\resolved\research_A.md:8:- Pipe record `memory/runs/gpipes/p8bc0180ab9.json`: created 2026-08-09T05:13:14Z, goals `["research A","research B"]`, task_ids `["t-test","t-test"]` (literally a test id, duplicated), tags empty, provider deepseek, status "running". Both live entries show status "unknown" with exit_code null. 48 days stale with zero output: this is the smoke artifact that minted the label, not functionality.
+memory\frontier\help_wanted\resolved\research_A.md:20:- `memory/runs/gpipes/p8bc0180ab9.json` is kept untouched as provenance; it also carries the research B smoke origin (separate brief 2, not pruned here).
+tools\topic_research.py:7:This is the "steal-first, no new infra before data" loop: research BEFORE direction.
+queue\queue_index.jsonl:45:{"id": "Q-045", "ts": "2026-09-25T19:15:38+00:00", "source": "help_wanted", "title": "research B (degenerate placeholder ask, drop candidate)", "pointer": "memory/frontier/HELP_WANTED.md#asks-for-frontier-agents-grok", "seat_hint": "scout", "status": "open", "effort": "trivial"}
+watch\inbox\gala_20260925\AFTERPARTY_QUEUE.md:23:- t13a-t13c HELP_WANTED L0 briefs (3 gophers, from b8's shaping): (13a) research A bind-or-prune smoke placeholder, (13b) research B complexity row, (13c) route gap diagnose 0.204 vs 0.6 bar (fix-cheap | elevate-frontier | ledger-artifact verdict). Finish: artifact path + verdict, byte evidence.
+watch\inbox\gala_20260925\afterparty\lanes\t13a.json:11:  "next_steal": "Briefs 2 and 3 are the same shape and now cheaper: research B shares the already-verified smoke pipe p8bc0180ab9 (prune its row, complexity -3.0) and research C has no pipe record at all (thinnest case, prune with explicit negative). Doing both drops stack complexity to 5.0, below threshold 6.0, un-sticking the batch-elevate signal on the board."
+watch\inbox\fleet_research_lens\fleet-research-lens\research-brief.md:364:**Map:** sources S02, S03, S05, S25, S26; research BUBBLE; tests X15; prior records none.
+watch\inbox\gala_20260925\afterparty\lanes\t13b.check.txt:8:      "goal": "research B",
+watch\inbox\gala_20260925\afterparty\lanes\t13b.check.txt:33:--- SECTION 2: gpipes/p8bc0180ab9.json (cat, provenance for research B) ---
+watch\inbox\gala_20260925\afterparty\lanes\t13b.check.txt:39:    "research B"
+watch\inbox\gala_20260925\afterparty\lanes\t13b.check.txt:83:--- SECTION 3: grep -rn 'research B' across estate (excluding .venv, .git) ---
+watch\inbox\gala_20260925\afterparty\lanes\t13b.check.txt:84:memory\frontier\HELP_WANTED.md:12:- Inputs (verified): `memory/runs/gap_map/stack.json` (row verbatim); `memory/runs/gpipes/p8bc0180ab9.json` (pipe created 2026-08-09T05:13Z with goals ["research A","research B"], task_ids ["t-test","t-test"], status running  -  smoke artifact, so "research A" is a placeholder label, not a research question); `mag/frontier_help.py` (generator); candidate rebind targets, unconfirmed: `memory/runs/gap_swarm_experiment/design.json` + `probes.json`.
+watch\inbox\gala_20260925\afterparty\lanes\t13b.check.txt:85:memory\frontier\HELP_WANTED.md:18:### 2. [stack] research B  -  bind or prune the placeholder row
+watch\inbox\gala_20260925\afterparty\lanes\t13b.check.txt:86:memory\frontier\HELP_WANTED.md:19:- Goal: Same as brief 1 for the "research B" row (complexity 3.0, stacked 2026-08-09), same smoke origin via the same pipe record.
+watch\inbox\gala_20260925\afterparty\lanes\t13b.check.txt:87:memory\frontier\HELP_WANTED.md:20:- Inputs (verified): `memory/runs/gap_map/stack.json`; `memory/runs/gpipes/p8bc0180ab9.json` (goals array contains "research B"); `mag/frontier_help.py`; candidate rebind targets: `memory/runs/gap_swarm_experiment/` (unconfirmed).
+watch\inbox\gala_20260925\afterparty\lanes\t13b.check.txt:88:memory\frontier\HELP_WANTED.md:21:- Finish line: artifact `memory/frontier/help_wanted/resolved/research_B.md`; byte check: stack.json no longer contains `"research B"`, artifact cites p8bc0180ab9.
+watch\inbox\gala_20260925\afterparty\lanes\t13b.check.txt:89:memory\frontier\help_wanted\resolved\research_A.md:8:- Pipe record `memory/runs/gpipes/p8bc0180ab9.json`: created 2026-08-09T05:13:14Z, goals `["research A","research B"]`, task_ids `["t-test","t-test"]` (literally a test id, duplicated), tags empty, provider deepseek, status "running". Both live entries show status "unknown" with exit_code null. 48 days stale with zero output: this is the smoke artifact that minted the label, not functionality.
+watch\inbox\gala_20260925\afterparty\lanes\t13b.check.txt:90:memory\frontier\help_wanted\resolved\research_A.md:20:- `memory/runs/gpipes/p8bc0180ab9.json` is kept untouched as provenance; it also carries the research B smoke origin (separate brief 2, not pruned here).
+watch\inbox\gala_20260925\afterparty\lanes\t13b.check.txt:91:tools\topic_research.py:7:This is the "steal-first, no new infra before data" loop: research BEFORE direction.
+watch\inbox\gala_20260925\afterparty\lanes\t13b.check.txt:92:queue\queue_index.jsonl:45:{"id": "Q-045", "ts": "2026-09-25T19:15:38+00:00", "source": "help_wanted", "title": "research B (degenerate placeholder ask, drop candidate)", "pointer": "memory/frontier/HELP_WANTED.md#asks-for-frontier-agents-grok", "seat_hint": "scout", "status": "open", "effort": "trivial"}
+watch\inbox\gala_20260925\afterparty\lanes\t13b.check.txt:93:watch\inbox\gala_20260925\AFTERPARTY_QUEUE.md:23:- t13a-t13c HELP_WANTED L0 briefs (3 gophers, from b8's shaping): (13a) research A bind-or-prune smoke placeholder, (13b) research B complexity row, (13c) route gap diagnose 0.204 vs 0.6 bar (fix-cheap | elevate-frontier | ledger-artifact verdict). Finish: artifact path + verdict, byte evidence.
+watch\inbox\gala_20260925\afterparty\lanes\t13b.check.txt:94:watch\inbox\gala_20260925\afterparty\lanes\t13a.json:11:  "next_steal": "Briefs 2 and 3 are the same shape and now cheaper: research B shares the already-verified smoke pipe p8bc0180ab9 (prune its row, complexity -3.0) and research C has no pipe record at all (thinnest case, prune with explicit negative). Doing both drops stack complexity to 5.0, below threshold 6.0, un-sticking the batch-elevate signal on the board."
+watch\inbox\gala_20260925\afterparty\lanes\t13b.check.txt:95:watch\inbox\fleet_research_lens\fleet-research-lens\research-brief.md:364:**Map:** sources S02, S03, S05, S25, S26; research BUBBLE; tests X15; prior records none.
+watch\inbox\BURN_queue-field_20260925_b.md:10:- `memory/frontier/HELP_WANTED.md` (generated 2026-09-22, "Stack: 5"): asks 1-3 are literally "research A", "research B", "research C"; asks 6-7 are shape slots marked "cheap success below bar". Only 2 of 7 asks carry real text.
+watch\inbox\gala_20260925\afterparty\lanes\t13a.check.txt:44:      "goal": "research B",
+watch\inbox\HELPWANTED_A_VERDICT_20260926.md:10:2. Smoke origin confirmed: `memory/runs/gpipes/p8bc0180ab9.json` (created 2026-08-09T05:13:14Z) lists goals `["research A","research B"]`, task_ids `["t-test","t-test"]`, empty tags, status "running" with both live entries "unknown" and exit_code null. A duplicated test-task placeholder, 48 days stale, zero output. Check section 2.
+watch\inbox\HELPWANTED_A_VERDICT_20260926.md:16:- Kept `memory/runs/gpipes/p8bc0180ab9.json` untouched as provenance (it also backs brief 2, research B).
+watch\inbox\gala_20260925\w3\lanes\b8-help-wanted.json:8:    "brief2 research B: bind-or-prune smoke placeholder row (L0, start-now, no duplicate)",
+watch\inbox\gala_20260925\w3\lanes\b8-help-wanted.check.txt:11:7 asks: [stack] research A / research B / research C / deep analysis of verkle coherence
+watch\inbox\gala_20260925\w3\lanes\b8-help-wanted.check.txt:23:research B                          complexity 3.0  at 2026-08-09T13:01:09.568295+00:00
+watch\inbox\gala_20260925\w3\lanes\b8-help-wanted.check.txt:34:pipe created 2026-08-09T05:13:14Z, goals ["research A","research B"],
+watch\inbox\qdrop_export\qdrops.jsonl:4708:{"drop_no": 4708, "id": "7359370", "source": "8kun_qresearch", "thread_id": "7354957", "link": "https://8kun.net/qresearch/res/7354957.html#7359370", "ts_unix": 1574390398, "ts": "2019-11-22T02:39:58+00:00", "name": "Ron", "trip": null, "subject": null, "text": ">>7359354\nImages that are served via TOR broke yesterday, we are checking why and should have it fixed up soon.\nCaching is still a bit buggy, and likewise we should have that fixed up soon. \nI will do my best to have these things fixed up before the end of the weekend.\n\nAn easy way to verify yourself after the upcoming salt rotation is:\n1. Migrate /patriotsfight/ before the rotation\n2. Post with current tripcode on /patriotsfight/\n3. After salt rotation, post with new tripcode on /patriotsfight/\n4. Qresearch BO adds your updated tripcode to the /qresearch/ whitelist\n\nLet me know if you want to migrate /patriotsfight/. The login credentials will be the same as back in August, and you can login via tor at this url:\nhttp:<em>//</em>sys.jthnx5wyvjvzsxtu.onion/mod.php?/\nor via clearnet at this url:\nhttps:<em>//</em>sys.jthnx5wyvjvzsxtu.onion/mod.php?/\n\nThe salt rotation is an important maintenance task, and will help improve overall site stability. \n\nOur current tasks to get back to full stability:\n0. Salt rotation\n1. Fix quality-of-life bugs (caching, images, etc)\n2. Launch project odin (checkmate against deplatforming)\n3. Finish board migration\n4. Migrate to a new ISP currently being setup (will improve site access speeds and stability)\n5. Bring back board creation (with a simple vetting process)\n6. Install the new captcha system that we are building\n7. Extinguish fires that pop up\n", "media": [], "ref_ids": ["7359354"]}
+grep exit: 0
+
+--- SECTION 4: bind-candidate check: grep 'research B' in memory/runs/gap_swarm_experiment/ ---
+design.json
+probes.json
+grep exit: 1
+
+--- SECTION 5: grep -n 'research A' memory/runs/gap_swarm_experiment/ (t13a cross-check, expect exit 1) ---
+grep exit: 1
+
+--- SECTION 6: stack.json ownership: grep stack path + complexity write in mag/gap_map.py and mag/frontier_help.py ---
+50:    """The accumulated frontier-worthy asks (from gap_map's stack accumulator)."""
+52:        from mag.gap_map import _load_stack
+60:        from mag.gap_map import analyze as gap_analyze
+3:Answers: "does it make sense to stack frontier asks until a complexity threshold, and can we
+9:Also provides a STACK accumulator: frontier-worthy asks accumulate a complexity score; when
+15:      python -m mag.gap_map --stack <complexity>   (accumulate a frontier-worthy ask)
+31:STACK_FILE = ROOT / "memory" / "runs" / "gap_map" / "stack.json"
+36:# Accumulated complexity at which to batch-elevate the frontier stack to grok.
+123:            return {"items": [], "complexity": 0.0}
+124:    return {"items": [], "complexity": 0.0}
+127:def stack_ask(goal: str, complexity: float = 1.0, *, threshold: float | None = None) -> dict[str, Any]:
+128:    """Accumulate a frontier-worthy ask; when complexity crosses the threshold, signal batch-elevate."""
+131:    s.setdefault("items", []).append({"goal": (goal or "")[:200], "complexity": float(complexity),
+133:    s["complexity"] = round(float(s.get("complexity") or 0) + float(complexity), 3)
+134:    ready = s["complexity"] >= thr
+137:    return {"ok": True, "stack_complexity": s["complexity"], "threshold": thr,
+143:    return {"ok": True, "complexity": s.get("complexity", 0), "threshold": STACK_THRESHOLD,
+145:            "ready_to_batch_elevate": float(s.get("complexity", 0)) >= STACK_THRESHOLD}
+151:    ap.add_argument("--stack", type=float, metavar="COMPLEXITY", help="accumulate a frontier-worthy ask of this complexity")
+
+--- SECTION 7: queue row Q-045 verbatim (pointer, NOT edited by this gopher) ---
+{"id": "Q-045", "ts": "2026-09-25T19:15:38+00:00", "source": "help_wanted", "title": "research B (degenerate placeholder ask, drop candidate)", "pointer": "memory/frontier/HELP_WANTED.md#asks-for-frontier-agents-grok", "seat_hint": "scout", "status": "open", "effort": "trivial"}
+
+--- SECTION 8: concurrent-change note (facts by bytes) ---
+Section 1 captured 4 items / complexity 10.0 at capture time. At edit time the loaded file had 3 items / 8.0:
+the 'research C' row (2.0) had been pruned by a concurrent gopher executing brief 3 (their post-prune validation:
+watch/inbox/gala_20260925/afterparty/lanes/t13c.check.txt section 9: 'valid json; 3 items; complexity 8.0' with goals still including 'research B').
+This gopher's edit removed ONLY the research B row from that 3-item / 8.0 state. Delta attributable here: -3.0.
+
+--- SECTION 9: stack.json AFTER t13b edit (cat) ---
+{
+  "items": [
+    {
+      "goal": "deep analysis of verkle coherence vs vector embedding",
+      "complexity": 2.0,
+      "at": "2026-08-09T13:02:42.646153+00:00"
+    },
+    {
+      "goal": "design the quantized lattice fold for the ghost",
+      "complexity": 3.0,
+      "at": "2026-08-09T13:02:42.656342+00:00"
+    }
+  ],
+  "complexity": 5.0
+}
+
+--- SECTION 10: byte check: grep -n '"research B"' memory/runs/gap_map/stack.json (expect exit 1) ---
+grep exit: 1
+
+--- SECTION 11: JSON validation (repo venv python) ---
+valid json; 2 items; complexity 5.0
+goals: ['deep analysis of verkle coherence vs vector embedding', 'design the quantized lattice fold for the ghost']
+exit: 0

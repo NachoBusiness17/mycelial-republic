@@ -1,0 +1,85 @@
+# LIBRARIAN-EXPEDITION RUN RECEIPT (gala_20260925)
+
+Receipt written by herald from the script-written sections handed with the ask. Those sections are authoritative: every number below is the script's number, nothing invented. Prose is reflowed only to strip em/en-dash characters (estate law); numbers are kept byte-faithful. Post-write scan of this file: em 0, en 0 (see "Checks run for this receipt" at the end).
+
+- Slug: librarian-expedition
+- Wave: gala_20260925
+- Gate: GATE PASS
+- Close moment: 2026-10-02T00:26:36Z (filing verdict timestamp)
+
+## 1. Header
+
+| Field | Script value |
+|---|---|
+| lanes_json_count | 7 (expected 7) |
+| lanes_parsed_ok | 3/7 |
+| by_division | {"B": 6, "A": 1} |
+| byte_checks_cited | 34 |
+| mined_rows | 15 |
+| decisions_changed | 7 |
+| ballroom (danced/refired/buried) | 7/0/0 |
+
+lanes_parsed_ok 3/7 is the gate parser's shape test, not failures: exactly foundational-gaps, integration, seats-inventory carry a top-level ok:true; the other four carry status:complete and the driver scored all 7 danced/ok (ballroom 7/0/0, GATE PASS stands).
+
+Danced lanes (fold metadata: lane, division, rows): holdings-doctrine A/5, foundational-gaps B/0, instrument-audit B/6, integration B/0, cited-missing B/0, expedition B/0, seats-inventory B/3.
+
+## 2. Scoreboard
+
+DIVISION A: 1/1 danced. holdings-doctrine carried the whole division: 5 mined rows, two live checks (holdings audit CLEAN both directions, 201/201 claims / 752,370,614 B re-hashed, 0 orphans, 0 dups; git status proving 4 temp-class files staged in the index), doctrine landed as 3 retention classes (permanent_corpus / dated_archive / scratch_with_rent_due) plus the one-line law "no verdict=LANDED without the primary in holdings"; its decision (unstage the 4 temp files + .gitignore guard) is deliberately left unexecuted by the lane.
+
+DIVISION B: 6/6 danced. Standouts:
+
+- instrument-audit: split the verdict with bytes: holdings trustworthy but the catalog instrument NOT fit as matching organ (28/257 receipts visible, 229 blind, 38 recovered by semantic title, and the 7-paper newest tranche 0/7 across librarian v1, librarian_catalog, and corpus FTS; D1 live and BROADER: underscore-glue defeats the arXiv word-boundary match even on id-bearing holdings; D2 absent-but-reproducible; D3 partial: hash-valid null-byte file passes; new N1/N3/N4/N5 with repros).
+- expedition: landed 61 primaries / 90,594,721 B with 61/61 full-chain PASS (exists + sha256 + catalog row + receipt) and 6 failures named-not-faked (GDPR ROBOT-blocked, Merkle paywalled, 2x gone-at-URL); holdings audit re-ran CLEAN at 262 claims / 842,965,168 B.
+- integration: paid the B2-465 debt end-to-end: FTS check exit 2 -> healed through the sanctioned writers, 9/10 gathered holdings unfindable -> 10/10 searchable by real FTS5 queries, one-line chain green twice; both daily freshness logs dark (zero 2026-10-01 stamps).
+- seats-inventory: cleared the 48h seat fetch trail: 891/975 bytes-verified, all 80 unregistered are clone plumbing/hook-state/pyc, no mass re-registration owed; 6 stale INDEX shas, 18 double-registrations, 5 mangled root copies named.
+- cited-missing: measured the gap honestly at one snapshot moment: 90 unique citations / 205 locations, 49 held durable, 40 not held (15 P1), while holdings grew in flight.
+- foundational-gaps: byte-checked every named founder (Federalist/Bernays/Jung HELD as bytes; Arditi/Verlinde/quant-cliff/Cialdini cited-from-memory and ranked) and proved the debt is recency-shaped, not foundation-shaped; Mudde is a proved negative (zero genuine citations, only base64 noise).
+
+(carried) lanes_parsed_ok 3/7 is the gate parser's shape test: exactly foundational-gaps, integration, seats-inventory carry a top-level ok:true; the other four carry status:complete and the driver scored all 7 danced/ok; ballroom 7/0/0, GATE PASS stands.
+
+## 3. Decision ledger: NO PARADE (parade: false; decisions_changed: 7)
+
+The SECTIONS block's per-file "changed" lines are completed here from the fold's decision_ledger (same script source, fuller text).
+
+1. holdings-doctrine [A]: unstage the 4 staged temp-class files (%TMPDIR%/pp_localllama.json, UsersfosteAppDataLocalTempbudget.html, UsersfosteAppDataLocalTempdeepswe.html, UsersfosteAppDataLocalTempjevals_readme.md) from the git index and add a temp-class guard to .gitignore. This lane does NOT execute it: concurrent lanes own the index mid-wave and unstaging under them is the destructive move (lanes/holdings-doctrine.json decision_changed).
+2. foundational-gaps [B]: Arditi et al. 2024 upgrades from UNVERIFIED-in-estate to a pinnable arXiv 2406.11717 row today at zero spend; librarian fetch order fixed as 2406.11717 -> 2609.31678 -> 2609.18526 -> 1001.0785 -> SSRN 5357179 -> prefix-reuse pair; the DESCENT sovereignty lens reframed as recency (last-48h claims outrunning a shelf that already holds the record-class primaries and named founders), not a foundation failure.
+3. instrument-audit [B]: catalog-fitness decision closed: holdings are trustworthy (both-direction audit CLEAN, 201/201 claims re-hashed today) but the catalog instrument is NOT fit as the matching organ: the expedition's matching law is ledger-title semantic matching plus the both-direction audit, never librarian v1 counts or librarian_catalog shelf coverage as visibility claims; flags owed elsewhere: canon drift x4 (x_canon files, unexplained since the 09-22 manifest), fixes in mag/librarian_catalog.py (N1, D3, CURATED scope) and mag/holdings_audit.py (D3 PDF floor, N4), and a corpus/tools shelf decision.
+4. integration [B]: closes "bytes landed = expedition done": the closing step is now the one-line integration chain (catalog_rescan incremental && corpus_fts_rebuild && --check --deep) proven green twice; gather-side integration debt (map+FTS ~25h stale, 9/10 holdings unfindable) paid; the dark daily freshness surfaces named for the operator per B2-465.
+5. cited-missing [B]: closes the operator's cited-but-not-held gap analysis; changes the holding instrument: the receipt proposes extending the ractor50/accuracy.md:35 citation-resolver spec from resolution to HOLDINGS (every LANDED row citing an external primary must leave primary bytes in state/arxiv/<date>/<id>v1.txt or a corpus dir and cite that path, with this lane's three scripts re-runnable nightly to diff fresh receipts against holdings).
+6. expedition [B]: closes the cited-primaries-evaporate debt the holdings-doctrine lane named: every primary cited 2+ times in the last-48h receipts now has durable byte-held holdings (the one-line law "no verdict=LANDED without the primary in holdings" is now satisfiable from corpus for that set); the scratch-leak is converted from named disease to landed-and-accounted fact (17 sources landed, 13 error bodies named).
+7. seats-inventory [B]: librarian registration health of the 48h seat fetch trail: the catalog swept the seats' fetched sources cleanly (891/975 bytes-verified, all 80 unregistered are clone plumbing/hook-state/pyc), so no mass re-registration is owed; follow-ups named: 4 stale catalog rows (w-belt-cube-mechanism hermes+openrouter1-3), 6 stale INDEX sha entries, 18 mixed-convention double-registrations to unify at the next rebuild, and 5 mangled-path root copies to delete or relocate.
+
+## 4. Top laws banked (fold top_laws)
+
+1. CONFIDENT-ZERO-IS-A-DISEASE (holdings-doctrine.json rows; proven live by instrument-audit.json). Why: the wave's central verdict hangs on it: holdings audit CLEAN 201/201 while the newest 7-paper tranche reads 0/7 across librarian v1, librarian_catalog, and corpus FTS (28/257 receipts visible, 229 blind); an instrument's confident zero over a corpus its match key cannot see is answering a question about someone else's corpus, and every zero report must name its match key and scope before anyone trusts the count.
+2. LIVENESS-IS-NOT-TRUTH (holdings-doctrine.json rows). Why: a fetched source is a live promise, not a holding (69/73 title pairs wrong, 46 Gutenberg transcripts unrelated books); this wave made the law executable instead of aspirational: 61 landings verified by full chain (exists + sha256 + catalog row + receipt) with 6 failures named rather than faked, which is the engine under the one-line law "no verdict=LANDED without the primary in holdings" that five lanes' decisions converge on.
+3. HOLD-BOTH-DIRECTIONS (holdings-doctrine.json rows). Why: a ledger-only audit cannot see an orphan, and an orphan is exactly the artifact that looks like a holding and cannot be explained; the two-direction shape ran CLEAN twice today at growing scale (201 claims / 752,370,614 B, then 262 claims / 842,965,168 B after absorbing the 61-landing), which is what makes the "holdings trustworthy, catalog not fit" split verdict defensible instead of vibes.
+
+## 5. Refired and buried
+
+- Refired: none (0)
+- Buried: none (0); graves filed = 0 (graves grep over gala_20260925/librarian-expedition/ and watch/inbox/librarian_exp/ returned no matches at 2026-10-02T00:20:57Z; the holdings-doctrine unstaging decision is deliberately not executed and stands as named debt, not a grave)
+- Evidence-banked lanes (script ballroom section): cited-missing.json (ok absent/false, evidence-banked: 1 checks, 0 rows), expedition.json (ok absent/false, evidence-banked: 5 checks, 0 rows), holdings-doctrine.json (ok absent/false, evidence-banked: 2 checks, 5 rows), instrument-audit.json (ok absent/false, evidence-banked: 6 checks, 0 rows)
+
+## 6. Review verdict: ACCEPT
+
+- QUOTES: 5 spot-checked, 5/5 byte-match (count=1 each) via .venv/Scripts/python.exe watch/inbox/gala_20260925/librarian-expedition/lanes/.mimosa/midnight_quote_check.py: holdings-doctrine.json:31 quote vs watch/inbox/HOLDINGS_AUDIT_20260930_full.md (including the em-dash character and exact wrapped whitespace), :50 quote vs mag/corpus_cite_promote.py, seats-inventory.json:20 quote vs watch/inbox/INDEX.json, foundational-gaps.json:67 quote vs watch/inbox/mountain_climb/BIBLIOGRAPHY.md, :13 quote vs docs/ref/BIBLIOGRAPHY_MAP.md.
+- CHECK BACKING: all 7 lanes have real .check.txt on disk and headline numbers reproduce in-file: expedition.check.txt:11 "61 ledger rows | 61 full-chain PASS | 0 FAIL" matches GATHERING_LANDING 23 + PAPERS_LANDING 38; holdings-doctrine.check.txt CLEAN 201/222 matches holdings_audit_today.json byte-for-byte (201 ok / 222 files / 752,370,614 B); integration.check.txt:166-167 carries the real repeat-verdict JSON (821,676 rows, deep match); instrument-audit.check.txt has sections 1-5 with 257/28/229/38; seats-inventory.check.txt (1,181 lines) shows 975 artifacts + SUMMARY v2. Defects: (a) expedition.json:50 records "exit": 0 for the ratchet while its own evidence text says RATCHET: FAIL; the reviewer ran .venv/Scripts/python.exe tools/violation_ratchet.py check --changed live: exit 1, same 2 NEW rows (tools/hermes_burn.py:393, tools/model_garden.py:446); that output is in no check file, though the underlying FAIL is honestly disclosed in both expedition.json and instrument-audit.json:88. (b) cited-missing.json:49,50 points at lanes/citations_raw.json + lanes/unique_citations.json; neither exists at that path (files sit at librarian-expedition/ top level). (c) expedition.json checks 3-5 say "same check file" but the FTS/scan narrative lives in gathering-log.md:98-99 and the rebuild sha bcb60eda in catalog/catalog_fts.sqlite; evidence real, pointer wrong.
+- DECISION LEDGERS: honest: every decision_changed/decision_ledger names things the reviewer verified real: holdings-doctrine.json:102 names the 4 staged temp files (confirmed in the lane's own check.txt CHECK 2 and the git status snapshot) and explicitly declines to unstage mid-wave; instrument-audit's code anchors check out at the cited lines (mag/holdings_audit.py:63 OUT_MD hardcode, mag/librarian.py:107-111 arXiv-token-only matching, mag/librarian_catalog.py:141/145); cited-missing's proposed instrument anchors on watch/inbox/ractor50/accuracy.md:35 which exists with the citation-resolver text; integration's decision is backed by its own section [11] run. No decision_changed names nothing real.
+- B-DIVISION FINISH LINES: met on disk: all 6 receipts exist with real content (watch/inbox/librarian_exp/: cited-missing.md 28,860 B with the finish-line table "citation | kind | cited-where | held | fetchable | priority" at line 112; foundational-gaps.md 11,663 B with CORRECTION BLOCK at foundational-gaps.check.txt:87 as claimed; instrument-audit.md 10,458 B; integration.md 6,088 B; inventory.md 197,077 B; gathering-log.md 16,361 B) and all are autoseal-registered in watch/inbox/index_events.jsonl (94 librarian hits, e.g. foundational-gaps.md sha c149552c... at line 8227). catalog.jsonl currently at 821,776 lines matching the pinned final moment.
+- NO CROSS-LANE THEFT: expedition.json:8 credits cited-missing's unique_citations.json as its feed; cited-missing.json:31 credits the sibling gathering lane's in-flight landings and pins its snapshot moment; instrument-audit attributes the 2 ratchet rows to other lanes' files (verified true by the live run); seats-inventory states the out-of-band FTS rebuild "stated not attributed". Both the integration lane (821,676 @23:39Z) and the expedition lane (821,776, later) ran FTS heals: redundant but each moment-pinned, neither claimed the other's. One fold-metadata gap: no fold_gate.sh sections output exists for this 7-lane set anywhere (FOLD_SECTIONS.txt covers w1/w2/w3 only, no "expedition" mention); the reviewer verified the archive by hand, not through the estate's own gate.
+
+## 7. Filing verdict: DONE
+
+7 GALA LINKS rows + 1 STATE entry filed for librarian-expedition.
+
+- WHAT WAS RUN/READ: (1) all 7 lane JSONs read in full at watch/inbox/gala_20260925/librarian-expedition/lanes/ (holdings-doctrine.json:102, foundational-gaps.json:6, instrument-audit.json decision_ledger:91, integration.json:64, cited-missing.json decision_ledger:32, expedition.json decision_ledger:53, seats-inventory.json:68); (2) dedupe: case-insensitive grep "librarian-expedition" over memory/corpus/LINKS.jsonl returned 0 prior rows under any field before the append; (3) the ask-adjacent fold gate re-run exactly as prior closes do: bash watch/inbox/gala_20260925/fold_gate.sh watch/inbox/gala_20260925/librarian-expedition/lanes 7 -> exit 0 GATE PASS, lanes_json_count 7/7, by_division {B:6, A:1}, byte_checks_cited 34, mined_rows 15, decisions_changed 7, ballroom 7/0/0 (3 lanes ok:true, 4 evidence-banked under status complete); (4) 7 rows appended (kind gala, slug librarian-expedition, src watch/inbox/gala_20260925/librarian-expedition/lanes/<id>.json, title = top law where the ask gave one [HOLD-BOTH-DIRECTIONS, D1 arXiv-id-token matching is blind even to id-bearing holdings, exact-path-or-it-is-not-registered] else the changed decision, ids GALA-librarian-expedition-<lane>) via single-writer append after the spiking-wide row; whole-ledger re-parse OK 250/250 (was 243), 7 ids unique, 7 srcs unique, em/en-dash scan on the appended block 0; (5) graves check: grep -ril GALA_GRAVE over gala_20260925/librarian-expedition/ and watch/inbox/librarian_exp/ -> no matches at 2026-10-02T00:20:57Z, ballroom buried 0/0, so graves filed = 0; (6) ONE STATE entry appended at memories/session/next-window-handoff.md line 487 (file 486 -> 487 lines): GALA LIBRARIAN-EXPEDITION CLOSE 2026-10-02T00:26:36Z with danced count 7, 7 decisions changed by lane content, B-division finish 6/6 per lane JSON finish flags (all 6 B lanes finished; division A holdings-doctrine complete), graves 0, LINKS ledger 243 -> 250; appended line verified free of em/en-dashes (0 hits; the 57 dash hits in the whole file are all in pre-2026-10-02 entries).
+- Receipts confirmed on disk before citing: watch/inbox/librarian_exp/ holds foundational-gaps.md, instrument-audit.md, integration.md, cited-missing.md, gathering-log.md, inventory.md; holdings-doctrine files no separate receipt (its lane JSON + lanes/holdings-doctrine.check.txt are the record).
+- Not run: no test suite or mag-module check was named by the ask beyond the lane reads and dedupe, so none was substituted; the fold gate, dedupe grep, ledger re-parse, and dash scans are the checks executed by that filing ask.
+
+## 8. Checks run for this receipt (this ask)
+
+1. Directory listing of watch/inbox/gala_20260925/librarian-expedition/ and .../lanes/: the 7 lane JSONs are present on disk (cited-missing.json, expedition.json, foundational-gaps.json, holdings-doctrine.json, instrument-audit.json, integration.json, seats-inventory.json), and citations_raw.json + unique_citations.json sit at the librarian-expedition/ top level (consistent with review defect (b), which says the lanes/ pointers in cited-missing.json:49,50 are wrong).
+2. Post-write dash scan of this file with the repo interpreter: em 0, en 0.
+3. Not run here: fold gate, pytest, quote byte-checks, ratchet rerun, ledger re-parse, graves grep. Those are the review and filing asks' runs, reported above and credited to them; this ask only re-authored the receipt from their script sections.

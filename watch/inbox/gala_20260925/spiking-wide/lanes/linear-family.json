@@ -1,0 +1,21 @@
+{
+  "lane": "linear-family",
+  "division": "B",
+  "ok": true,
+  "note": "Delta dig verified 10 linear-family architectures absent from stealth-sw-09 (6 at primary-fetch level, including Mamba-3 halving SSM state size and five open, locally-runnable options at 7B-14B); verdict: the KV constraint class at estate scale is dissolved in the memory dimension, the recall wall stands; no release confirmed inside the strict 60-day window, stated plainly in the receipt.",
+  "rows": [],
+  "checks": [
+    {
+      "command": "R=.../watch/inbox/spiking_wide/linear-family.md; S=.../flash50/stealth-sw-09.md; C=.../spiking-wide/lanes/linear-family.check.txt; EMD=$(printf '\\xe2\\x80\\x94'); { date-echo; ls -la \"$R\"; grep -cE '^\\| [0-9]+ \\|' \"$R\"; grep -cE '^\\| (Linear attention|Gated Linear|DeltaNet|Mamba-2|Mamba \\| RWKV-5|RWKV-7|Zoology|Repeat|BASED|Griffin|Jamba|Titans)' \"$R\"; N=$(grep -cE '^\\| [0-9]+ \\|' \"$R\"); [ \"$N\" -ge 3 ] && echo REGISTER_MIN3: PASS; ls -la \"$S\"; grep -c \"$EMD\" \"$R\"; grep -c FETCH \"$R\"; } > \"$C\" 2>&1",
+      "exit": 0,
+      "evidence": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/spiking-wide/lanes/linear-family.check.txt sections [1]-[7]: receipt 13343 bytes; delta register rows = 10; REGISTER_MIN3: PASS; carryover grep matched 11 of 13 rows (regex alternation typo on the 'Mamba' and 'RWKV-5/6' branches; the table itself carries 13 rows, read in receipt section 3, informational only); sw-09 baseline present 14727 bytes; em-dash count in receipt = 0"
+    },
+    {
+      "command": "\"C:/Users/foste/Documents/projects/local_sovereign_agent/.venv/Scripts/python.exe\" -c \"import json,sys; d=json.load(open(sys.argv[1],encoding='utf-8')); print('lane json: VALID'); print('lane=%s division=%s ok=%s rows=%d checks=%d' % (d['lane'], d['division'], d['ok'], len(d['rows']), len(d['checks'])))\" linear-family.json; grep -c EMDASHBYTES linear-family.json",
+      "exit": 0,
+      "evidence": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/spiking-wide/lanes/linear-family.check.txt sections [8]-[9]: lane json VALID, lane=linear-family division=B ok=True; em-dash count in lane JSON = 0; PY_EXIT=0"
+    }
+  ],
+  "decision_changed": "Changes the candidate set for the local-backbone (janitor/worker tier) architecture decision: Granite 4.0 H-Tiny/H-Micro, NVIDIA Nemotron-Nano-9B-v2, Qwen3.5-4B, RWKV-7 G1 7.2B and Falcon-H1 7B are now verified open, locally-servable linear-family options with claimed 70-75%+ KV/RAM cuts; no migration decision itself was made in this lane.",
+  "artifact": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/spiking-wide/lanes/linear-family.json"
+}

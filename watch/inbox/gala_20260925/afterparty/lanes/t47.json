@@ -1,0 +1,66 @@
+{
+  "gopher": "t47",
+  "item": "the :8765 lab board cannot show the scheduled-task probe. (1) find the lab UI's status source, identify the ONE fetch the board already makes and its file, add a fetch of gateway GET /status (t39's route) and render warning != null as a visible WARNING row (plain DOM, match the board's existing row style). (2) intentional-vs-silent disablement: make the probe respect a marker file (logs/magimprove_intentional.flag) so intentional disablement does not alarm; check the lifecycle code first for where the disable happens.",
+  "ok": true,
+  "note": "Half 1: the board is dashboard/static/health.html (LOOP HEALTH, linked from home.html System card). It makes exactly ONE fetch: /api/v1/loop/health (line 65). Added loadGatewayStatus(): fetches gateway GET http://127.0.0.1:8001/status?key=mag-local-dev-key (gateway is FastAPI on 8001 with CORS allow-*; api_gateway's key gate accepts ?key= for the operator's board page, default key per MAG_API_KEY contract; page JS cannot read server env so the documented loopback default is used and an override degrades to the honest muted row, never a fake alarm). Render rule: warning != null = visible WARNING kv row with pill warn (the renderCadence row style); warning == null = ok row naming statuses plus intentional markers; gateway down/401 = muted pill faint row. Refreshes on the same 30s cadence. Plain DOM, no framework. Half 2 negative finding first: NO code disables MagImproveDaily anywhere in the repo; lifecycle.py:514 is remediation prose in _waste_action (the operator runs the disable), and reconcile() explicitly skips improve (no auto-kill). So the marker contract was built at the truthful seam: mag/lifecycle.py gains mark_improve_intentional()/improve_intentional()/improve_intentional_flag_path() writing logs/magimprove_intentional.flag (JSON ts+reason+by), with a t47 spec block in the module docstring and a pointer comment at the :514 remediation naming the marker obligation; mag/doctor.check_scheduled_tasks (t20 probe) now takes the marker into account: Disabled + marker = ok (state, not alarm, payload surfaced under result 'intentional'), MISSING still alarms even with the marker (disable is not delete), and the gateway /status payload carries the new intentional key for the board. Spec lines landed first in each touched file (module docstring + function docstring). Live machine truth: real probe Ready; Disabled+marker suppression and Disabled-without-marker alarm both verified live then the marker file was cleaned up. Added lines are em-dash free (grep over git diff added lines: 0).",
+  "checks": [
+    {
+      "name": "pytest tests/test_doctor_scheduled_tasks.py -q (t20 file + 4 new t47 marker tests)",
+      "result": "15 passed in 2.34s",
+      "exit": 0
+    },
+    {
+      "name": "pytest tests/test_api_gateway_status_route.py -q (t39 route, neighbor regression)",
+      "result": "3 passed in 0.21s",
+      "exit": 0
+    },
+    {
+      "name": "pytest tests/test_improve_status_scheduled_task.py -q (t33, neighbor regression)",
+      "result": "4 passed in 0.38s",
+      "exit": 0
+    },
+    {
+      "name": "live: dispatch GET /status with ?key=mag-local-dev-key (the exact board fetch path, no server)",
+      "result": "HTTP 200 ok=true, warning=None, statuses={MagImproveDaily: Ready}, intentional={}",
+      "exit": 0
+    },
+    {
+      "name": "live: marker suppression round-trip via real doctor + lifecycle",
+      "result": "Disabled+marker -> ok=True issues=[] intentional keys=[MagImproveDaily]; Disabled without marker -> ok=False flagged; marker file cleaned afterwards",
+      "exit": 0
+    },
+    {
+      "name": "live: real schtasks probe (machine state)",
+      "result": "ok=True statuses={MagImproveDaily: Ready} issues=[]",
+      "exit": 0
+    },
+    {
+      "name": "node --check on health.html extracted inline JS",
+      "result": "JS SYNTAX OK (1 inline script extracted, parsed clean)",
+      "exit": 0
+    },
+    {
+      "name": "em-dash scan of ADDED lines (git diff + lines) across the 4 touched files",
+      "result": "0 em-dashes in added lines",
+      "exit": 0
+    },
+    {
+      "name": "board-script test absence: grep -rl health.html tests/",
+      "result": "0 files; no test file exists for dashboard/static board scripts (test_desk_baseline_probe.py only smokes index.html app.js from a tmp dir). Per the item, no board test added; the 4 new tests extended the probe's existing test file instead.",
+      "exit": 0
+    },
+    {
+      "name": "python tools/violation_ratchet.py check --changed",
+      "result": "scope=13 changed files; hits=11; registered=11; NEW=0; expired-exceptions=0; PASS, no unregistered debt",
+      "exit": 0
+    }
+  ],
+  "evidence": "watch/inbox/gala_20260925/afterparty/lanes/t47.check.txt",
+  "files_changed": [
+    "mag/lifecycle.py",
+    "mag/doctor.py",
+    "dashboard/static/health.html",
+    "tests/test_doctor_scheduled_tasks.py"
+  ],
+  "next_steal": "lifecycle still has no code path that disables MagImproveDaily, so the marker has no in-repo writer call site yet (mark_improve_intentional is importable and tested, the :514 remediation prose now points at it). Next gopher: give reconcile()'s improve branch a real deliberate-off flow (mark_improve_intentional + elevated schtasks /Change /TN MagImproveDaily /DISABLE, spec-first on the reconcile 'safe offs' docstring) or add POST /api/v1/lifecycle/improve-off so the lifecycle glance action executes the disable and the marker in one step. Second steal: the board hardcodes the default key; if MAG_API_KEY is ever set on the host, health.html silently shows gateway unreachable, so a tiny rest.py proxy route (lab :8765 side reads env, forwards to :8001 /status) would remove the key from the page entirely."
+}

@@ -1,0 +1,9 @@
+# swarm1-deepseek-tools__openrouter_free_gate (deepseek-chat @ deepseek, turn 1, channel: content)
+
+DEFECT 1: `gate_one` overwrites a keepalive 200-with-empty result by calling `r.update(r2, ...)`, so when the retry at 2000 tokens returns http 429/404/0 the row's `http` is replaced and the passing 16-token response is erased, failing a lane that answered | EVIDENCE: tools/openrouter_free_gate.py:117-121 | FIX: keep the first http/status, only adopt retry text when `r2["http"] == 200`, and record the retry under a separate `detail2` key
+DEFECT 2: `main` returns 0 unconditionally, so a run where every id FAILs (all 429, bad key, network dead) is indistinguishable from a clean pass to any caller or CI hook that checks exit status | EVIDENCE: tools/openrouter_free_gate.py:145-146 | FIX: `return 1 if ids and not passed else 0`, and print the fail count to stderr
+DEFECT 3: missing `--out` (or an unwritable path) silently drops the only byte evidence the providers.yaml edit is supposed to cite, and `Path(args.out).write_text` raises uncaught instead of reporting the loss | EVIDENCE: tools/openrouter_free_gate.py:143-144 | FIX: wrap the write in try/except, print the failing path and exception to stderr, and exit 1 when rows existed and the write failed
+DEAD-CODE: `row.setdefault("detail", "")` is a no-op because row was built with only id and ts keys, and the sibling line already reads `row.get("detail", "")` | EVIDENCE: tools/openrouter_free_gate.py:120
+ONE-SITTING FIX: preserve the 16-token PASS across a failed 2000-token retry in `gate_one` | EVIDENCE: tools/openrouter_free_gate.py:117-121
+
+Falsifier for the ONE-SITTING FIX: a row where `_chat(model,16)` returns http 200 with non-empty text and `_chat(model,2000)` returns http non-200 must have `row["http"] == 200` and `row["status"] == "PASS"`. UNVERIFIED: no test file for this tool appears in the SOURCE.

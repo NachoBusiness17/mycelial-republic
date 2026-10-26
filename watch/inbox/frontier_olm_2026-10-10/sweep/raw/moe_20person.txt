@@ -1,0 +1,421 @@
+### Self-hosting a 35B MoE for a 20-person team on one desktop box: what it took and what it does (all open source)
+We've been running our own LLM for the team for about a week, and I wanted to share how it turned out, since "can one machine actually serve a whole team?" comes up here a lot.
+ Short answer: yes, if you pick the right model.
+ Hardware and model
+ One NVIDIA DGX Spark (128GB unified memory)
+ Ornith-1.5-35B-A3B, an MoE with 35B total and 3B active parameters. The 3B active is the whole trick: you get decent quality while the box only does about 3B worth of compute per token.
+ Official 4-bit NVFP4 checkpoint, about 22 GiB, so no quantizing it yourself
+ vLLM 0.24 with multi-token prediction (speculative decoding with no separate draft model)
+ What it does
+ One person gets 79 tok/s, which feels instant in a chat UI
+ 20 people at once get about 25 tok/s each, 490 tok/s total
+ Every request can use the full 262K context
+ Vision and tool calling both work
+ Reasoning scores: MATH-500 97%, GSM8K 98%, MMLU-Pro 81%. That's not frontier level, but for daily coding help, docs, and Q&A, nobody on the team has complained.
+ How people use it
+ OpenCode in the terminal for coding
+ Open WebUI for chat and PDFs. PDF parsing and embeddings run locally too.
+ Nothing goes to an outside API. For us that was the whole point, since a lot of our code and documents can't leave the building.
+ The part nobody talks about: multi-user
+ Running a model for yourself is easy. Running it for a team means you need to answer "who's using it, how much, and is someone hammering it?" So vLLM isn't exposed at all. Everything goes through a small gateway that:
+ Gives each person and device their own API key
+ Counts input and output tokens per user live
+ Pushes the counts to Grafana dashboards
+ Alerts if anything tries to talk to vLLM directly
+ It's a small Python service, and honestly it's the piece that made this feel like real infrastructure instead of a side project.
+ Gotchas if you try something similar
+ On unified memory, don't get greedy with GPU memory utilization. I had to cap it at 0.70, or concurrency fell apart under load.
+ More concurrent slots isn't always better. Past 20 users, throughput dropped because requests started queuing.
+ Open WebUI stores the default model in its own database and ignores the env var after first setup. I lost an hour to that.
+ Everything's on GitHub: the setup scripts, gateway, Grafana dashboards, and benchmark scripts with raw results.
+ https://github.com/Hitheshkaranth/Ornith-1.5_A3B_Model_DGX_Spark_Setup
+ If you're thinking about self-hosting for a small team, happy to answer questions. I'm also curious what others use for per-user tracking. I looked at LiteLLM but wanted something tiny that I fully understood.
+ https://preview.redd.it/co3i4tigirth1.png?width=2160&format=png&auto=webp&s=d61da076bcd37e5f91dff7f298de0d09e1dd6638
+ submitted by /u/Commercial_Designer5 
+ [link] [comments]
+
+### /u/eepromnk on Self-hosting a 35B MoE for a 20-person team on one desktop box: what it took and what it does (all open source)
+This is the part nobody talks about.
+
+### /u/Soulxlight on Self-hosting a 35B MoE for a 20-person team on one desktop box: what it took and what it does (all open source)
+Look like they are using it to post as well up there doesn't it
+
+### /u/numsu on Self-hosting a 35B MoE for a 20-person team on one desktop box: what it took and what it does (all open source)
+I tried the Ornith 35A3B on real programming tasks with a Q6 quant and Q8/Q8 KV and it failed miserably. There just isn't enough intelligence. Qwen 3.8 27B mops the floor with it.
+
+### /u/_OVERHATE_ on Self-hosting a 35B MoE for a 20-person team on one desktop box: what it took and what it does (all open source)
+This, we also tried Ornith and not only it scored like absolute shit behind Qwen in DeepSwe but also we gave it normal day to day coding tasks to test and all of them produced unsatisfactory results.
+
+### /u/Numerous-Ad6217 on Self-hosting a 35B MoE for a 20-person team on one desktop box: what it took and what it does (all open source)
+I am currently running Tiel Coder, same base model. Best one so far on my laptop.
+ Doesn’t compare to flash next at all of course, but still way better than all the 3.6 MoE I tried.
+
+### /u/Commercial_Designer5 on Self-hosting a 35B MoE for a 20-person team on one desktop box: what it took and what it does (all open source)
+I would definitely love to try this one out. Thank you 🙏🏻
+
+### /u/Cold_Tree190 on Self-hosting a 35B MoE for a 20-person team on one desktop box: what it took and what it does (all open source)
+Yeah I tried it with Int8 and had a crazy half-hour where I was pasting it a code and it kept responding with “Didn’t work, 14 chars but needs 16. Regenerate it and paste again.” After an agonizing half hour, I finally realized the entire time Ornith 1.5 had been completely cutting out index 2-3 of the 16-char lmao… removed Ornith from my downloads entirely after that. I’ll stick with Qwen 35b when I want to use a fast MoE model, but I mostly just use 27b anyways since I can run it at 90 t/s
+
+### /u/cd9v on Self-hosting a 35B MoE for a 20-person team on one desktop box: what it took and what it does (all open source)
+Wonder which version of Ornith you tried. Moved from 3.8 27B Q6 to Ornith 1.5 35A3B Q6 and never looked back.
+
+### /u/eulataguhw on Self-hosting a 35B MoE for a 20-person team on one desktop box: what it took and what it does (all open source)
+I used Ornith 1.5 35B FP8 and i have to say, don’t expect it to be as good as 3.8 27B but it is good enough as a junior dev that has a lot of knowledge to itself but do big mistakes at times (how many junior dev doesn’t commit big mistakes? It just commits more since it is faster and can’t learn anymore as compared to a human). 
+ Currently using Qwen FN and life is a lot easier. Though it’s not as fast as Ornith. I just let QFN as the Orchestrator and/or complex work and let it spin up Ornith for simpler tasks.
+
+### /u/Commercial_Designer5 on Self-hosting a 35B MoE for a 20-person team on one desktop box: what it took and what it does (all open source)
+I did try setting up the Qwen 3.8 with https://huggingface.co/RadixArk/Qwen3.8-27B-DSpark in theory, and on the benchmark I received a solid 400tk/sec+ , but the prefill time comes to the point it became non-usable at more than 3 users. Orinth 1.5 has its issues, but for small tasks it simply works.
+
+### /u/TheHighFiveWhore on Self-hosting a 35B MoE for a 20-person team on one desktop box: what it took and what it does (all open source)
+Qwen keeps killing. This ornith guy keeps posting this stuff. I figure he works for ornith.
+
+### /u/Commercial_Designer5 on Self-hosting a 35B MoE for a 20-person team on one desktop box: what it took and what it does (all open source)
+Thank you for taking time for commenting. 😅 I don’t work for Ornith nor do I work for qwen models. I just tired this out in office and was genuinely felt sharing here. I don’t get any money promoting this so relax. I did try qwen 3.8 and honestly it’s better model. The only downside I faced it was in pre-fill time was too much for cached concurrent input as well. I just posted here to see if it could be improved. Thank you 🙏🏻
+
+### /u/TheHighFiveWhore on Self-hosting a 35B MoE for a 20-person team on one desktop box: what it took and what it does (all open source)
+"Thank you for taking time for commenting" is exactly the kind of thing someone working for Ornith would say.
+
+### /u/nachtzeit on Self-hosting a 35B MoE for a 20-person team on one desktop box: what it took and what it does (all open source)
+Or Canadian
+
+### /u/Commercial_Designer5 on Self-hosting a 35B MoE for a 20-person team on one desktop box: what it took and what it does (all open source)
+😂😂😂
+
+### /u/kels0 on Self-hosting a 35B MoE for a 20-person team on one desktop box: what it took and what it does (all open source)
+When I was benchmarking different models to find what works best for my setup, I had automated almost everything and ornith failed 6/6 where qwen would fail 1/6 sometimes 2/6 depending on temp, quant. I dont recall which exact one I tried but it was around 30gb ornith 1.5 and think it was a variation of 35-a3b, so that fits with my own testing as well.
+
+### /u/Prudent-Ad4509 on Self-hosting a 35B MoE for a 20-person team on one desktop box: what it took and what it does (all open source)
+You have A3B, Q6, and quantized cache all working together against you. The first and the last factors would be enough for a model this size. This model should be good for code investigations, like many other fast quantized options, but not for writing it.
+
+### /u/towo on Self-hosting a 35B MoE for a 20-person team on one desktop box: what it took and what it does (all open source)
+They were using the FP4 variant, not a Q6 quant. Maybe your quantifier isn't good at programming quants?
+
+### /u/Galahad56 on Self-hosting a 35B MoE for a 20-person team on one desktop box: what it took and what it does (all open source)
+what do you use instead?
+
+### /u/SoonFarawaySeduction on Self-hosting a 35B MoE for a 20-person team on one desktop box: what it took and what it does (all open source)
+The per-user gateway is the part that actually makes this practical long term. I set up something similar once without it and within 3 days nobody knew who was eating all the throughput. That grafana dashboard probably saved you from a lot of passive-aggressive slack messages.
+ Also the OpenWebUI default model thing is so annoying, I spent way more than one hour on that exact problem.
+
+### /u/allenasm on Self-hosting a 35B MoE for a 20-person team on one desktop box: what it took and what it does (all open source)
+If you used a dense model with parallel inference, you wouldn't have to ration and you'd get even better tps overall.
+
+### /u/Commercial_Designer5 on Self-hosting a 35B MoE for a 20-person team on one desktop box: what it took and what it does (all open source)
+I would definitely try this out. Thank you for taking time to comment.
+
+### /u/transanethole on Self-hosting a 35B MoE for a 20-person team on one desktop box: what it took and what it does (all open source)
+The problem is that the dense model has about 10 times more active parameters, so it's going to be about ten times slower on the spark.
+ These shared memory things were definitely made for MOE models. 
+ I've been trying to theorize how to get a lot of concurrent streams and the best idea I've had so far was to use pipeline parallelism / layer split or maybe TP=2 w/ multiple cheaper GPUs like 4x R9700. 
+ I was able to get 8 streams of qwen3.8 27b on a single 5090 using the Todd baller ninfer fork, but it was severely vram constrained, 3.9bpw quant , 4bit kV cache, and only 100k context. 200t/s out for one stream, 50t/s when there are 7 other output streams.
+ In theory with more memory from more GPUs it should work a lot better, but the r9700 is slower and TP=2 doesn't really improve things much. So yeah basically it will be even slower than the 5090 which is not very appealing to me.
+ Ultimately I think either smaller models or larger GPUs are required. Or something like nvlink to make tensor parallel work
+
+### /u/7yphoid on Self-hosting a 35B MoE for a 20-person team on one desktop box: what it took and what it does (all open source)
+Yeah, with MoE you technically need less compute per token, but because the experts use different sets of weights, you get less efficient batching. So in practice, once you scale up to multiple users, dense models will parallelize better during batch operations since every inference will use the same set of weights.
+
+### /u/MudBroad6785 on Self-hosting a 35B MoE for a 20-person team on one desktop box: what it took and what it does (all open source)
+I did a fun test on a MacBook Pro 48gb to see at what point would more parallel inferences slow down the tps of qwen 3.8 27b and I got to 300 all doing the same tps before I just gave up. It's a bit of a fantasy example because this was 300 with 0 context so both the context and how much fits into the machine will impact how many parallel instances you can get comfortably.
+
+### /u/ithkuil on Self-hosting a 35B MoE for a 20-person team on one desktop box: what it took and what it does (all open source)
+How is 3b active actually usable for programming? That gives the programmer a massive disadvantage compared to better options.
+
+### /u/413205 on Self-hosting a 35B MoE for a 20-person team on one desktop box: what it took and what it does (all open source)
+Qwen 3.8 fn is definitely the better option for single spark right now
+
+### /u/ID-10T_Error on Self-hosting a 35B MoE for a 20-person team on one desktop box: what it took and what it does (all open source)
+It still needs a proper harness and tooling
+
+### /u/Commercial_Designer5 on Self-hosting a 35B MoE for a 20-person team on one desktop box: what it took and what it does (all open source)
+I need to try this out. Its MoE similar to this model, with probably A6B. I'll be setting this up probably next week or so to run some benchmarks. Thank you for taking time to comment.
+
+### /u/[deleted] on Self-hosting a 35B MoE for a 20-person team on one desktop box: what it took and what it does (all open source)
+[deleted]
+
+### /u/RnRau on Self-hosting a 35B MoE for a 20-person team on one desktop box: what it took and what it does (all open source)
+"Qwen 3.8 fn" is the Flash-Next model, which is an moe.
+
+### /u/Tommonen on Self-hosting a 35B MoE for a 20-person team on one desktop box: what it took and what it does (all open source)
+Well it can be good aide to manual coding, like prompt it to give some smaller code snippets that you put in manually, and also define exactly what you need etc and the review manually everything it says.
+ Does not work for vibe coding at all tho. Unless idea is to vibe code snake games all day every day.
+ Unless workers are talented manual coders who understand not to vibe with it, its potentially very bad idea to even offer this sort of model for coding in real work environment. And knowing how people try to cut corners, im sure that some will get bit too vibey with it even if you tell them not to
+
+### /u/former_farmer on Self-hosting a 35B MoE for a 20-person team on one desktop box: what it took and what it does (all open source)
+This post is bs.
+
+### /u/Commercial_Designer5 on Self-hosting a 35B MoE for a 20-person team on one desktop box: what it took and what it does (all open source)
+Its not the best, but to be honest, it did most of the mundane tasks lying around. Also, we had restrictions on some of the source code not to be shared on the closed models; for that, it became a good use case in air gapped installation. It does documentation really well and, to some extent, debugging as well. We use it with Opencode and DeepSeek Harness for some tasks; it does its job.
+
+### /u/FoxSideOfTheMoon on Self-hosting a 35B MoE for a 20-person team on one desktop box: what it took and what it does (all open source)
+That is absolutely not true. People here were running Qwen 3.6 35B which is MoE and amazing before the 3.8 release.
+
+### /u/Matricola70 on Self-hosting a 35B MoE for a 20-person team on one desktop box: what it took and what it does (all open source)
+This is a great example to demonstrate how Local LLM can be deployed in small teams. Thanks for demonstrating that is not needed an 50k+ setup.
+
+### /u/Commercial_Designer5 on Self-hosting a 35B MoE for a 20-person team on one desktop box: what it took and what it does (all open source)
+Thank you I appreciate it.
+
+### /u/mb194dc on Self-hosting a 35B MoE for a 20-person team on one desktop box: what it took and what it does (all open source)
+Good to see this direction generally
+
+### /u/Commercial_Designer5 on Self-hosting a 35B MoE for a 20-person team on one desktop box: what it took and what it does (all open source)
+Thank you I appreciate it.
+
+### /u/Unusual_Principle536 on Self-hosting a 35B MoE for a 20-person team on one desktop box: what it took and what it does (all open source)
+"The 3B active is the whole trick:"
+ Generated by Ornith 1.5.
+
+### /u/AdHead6280 on Self-hosting a 35B MoE for a 20-person team on one desktop box: what it took and what it does (all open source)
+i love a stupid and slow model for 20 people ...
+
+### /u/whyevenmakeoc on Self-hosting a 35B MoE for a 20-person team on one desktop box: what it took and what it does (all open source)
+Well boy oh boy does Microsoft have a product for you then..
+
+### /u/AdHead6280 on Self-hosting a 35B MoE for a 20-person team on one desktop box: what it took and what it does (all open source)
+the new trash app, teams or copilot, i love them microslop i mean
+
+### /u/dupontping on Self-hosting a 35B MoE for a 20-person team on one desktop box: what it took and what it does (all open source)
+AI written posts are so obvious. Sounds like LinkedIn slop. 
+ Just take the time to write a post. It’s not hard.
+
+### /u/gebuswon on Self-hosting a 35B MoE for a 20-person team on one desktop box: what it took and what it does (all open source)
+Definitely interested to implement something like this for my homelab users! Will have to look into it
+
+### /u/Commercial_Designer5 on Self-hosting a 35B MoE for a 20-person team on one desktop box: what it took and what it does (all open source)
+Thank you. I appreciate it.
+
+### /u/dosman33 on Self-hosting a 35B MoE for a 20-person team on one desktop box: what it took and what it does (all open source)
+Your infrastructure for management of the service is obviously key here. But I'm curious how useful Ornith 3B is. I've not ran it myself but I know people who have tried it and ended up going back to Qwen 3.8. After watching a handful of smaller models struggle to do what I thought were simple tasks, I keep coming back to qwen as the smallest model I'd even attempt to do useful work with, but thats a single-user environment. You're getting useful work out of Ornith though?
+
+### /u/leonbollerup on Self-hosting a 35B MoE for a 20-person team on one desktop box: what it took and what it does (all open source)
+35b*
+
+### /u/Commercial_Designer5 on Self-hosting a 35B MoE for a 20-person team on one desktop box: what it took and what it does (all open source)
+We mostly use it for internal RAG, some documentation, and a very small codebase for firmware. We have developed small harness for very specific tasks internally mostly for automation purposes where this becomes really handy. One of the use cases is that we use it in UI development for https://github.com/Hitheshkaranth/EmbeddedDisplayStudio. Apart from that, it does some work when connected with opencode/goose and Deepseek Harness in general.
+
+### /u/dosman33 on Self-hosting a 35B MoE for a 20-person team on one desktop box: what it took and what it does (all open source)
+Thanks for the further details!
+
+### /u/sjoerdmaessen on Self-hosting a 35B MoE for a 20-person team on one desktop box: what it took and what it does (all open source)
+Look into LiteLLM as a proxy to gather the stats. It comes with a lot of nice features. For example our local AI model has fictive token costs applied so we can track what the costs would be when using an API for the LLM instead of our own local LLM
+
+### /u/Commercial_Designer5 on Self-hosting a 35B MoE for a 20-person team on one desktop box: what it took and what it does (all open source)
+I would definitely try this out. Thanks for taking the time to comment.
+
+### /u/Dear_Fact_591 on Self-hosting a 35B MoE for a 20-person team on one desktop box: what it took and what it does (all open source)
+Bifrost is even better
+
+### /u/Commercial_Designer5 on Self-hosting a 35B MoE for a 20-person team on one desktop box: what it took and what it does (all open source)
+Wow, this is really cool. How does this compare with LiteLLM?
+
+### /u/Dear_Fact_591 on Self-hosting a 35B MoE for a 20-person team on one desktop box: what it took and what it does (all open source)
+Better performance, more stable, support for custom plugins...
+
+### /u/sjoerdmaessen on Self-hosting a 35B MoE for a 20-person team on one desktop box: what it took and what it does (all open source)
+I like bifrost aswell but with the setup you have you wont notice any speed difference. You aren’t handling 5000 tps (yet hehe)
+
+### /u/ALOHAAPIGATEWAY on Self-hosting a 35B MoE for a 20-person team on one desktop box: what it took and what it does (all open source)
+Solid breakdown on the unified memory concurrency caps. Setting up local per-user token tracking is usually where most DIY team setups hit a wall.
+ One trick that helped us cut queued latency on multi-user MoE loads is aggressive prefix caching alignment at the gateway layer. When multiple team members are hitting the same codebase or systemic system prompt via OpenCode/Open WebUI, ensuring prompt formatting is strictly normalized before touching vLLM keeps the cache hit rate ridiculously high and frees up KV cache slots for actual generation.
+
+### /u/former_farmer on Self-hosting a 35B MoE for a 20-person team on one desktop box: what it took and what it does (all open source)
+Total bullshit post.
+
+### /u/BlindPilot9 on Self-hosting a 35B MoE for a 20-person team on one desktop box: what it took and what it does (all open source)
+This is a ridiculous set up for a team. It is far too slow and you are paying for it by slow productivity. You need dual RTX Pro 6000 for your team.
+
+### /u/RnRau on Self-hosting a 35B MoE for a 20-person team on one desktop box: what it took and what it does (all open source)
+Check your privilege mate. You don't know what budget constraints they have. 
+ They seem to get a benefit from a single low powered all-in-one device using a local LLM. Why piss on their efforts?
+
+### /u/BlindPilot9 on Self-hosting a 35B MoE for a 20-person team on one desktop box: what it took and what it does (all open source)
+A company that can't afford two rtx pro 6000 has no business hiring 20 people. I provided them with a constructive feedback. What you inferred is more reflective of your state of mind.
+
+### /u/vasco_ on Self-hosting a 35B MoE for a 20-person team on one desktop box: what it took and what it does (all open source)
+It depends what the standard is you compare with, e.g. 20 man dev team in Belgium will cost easily €2m / year; whereas in India that will be maybe ~€300k/year? 50k capex for a local LLM server has a vastly different impact based on location. And not even comparing the seniority / complexity of different teams.
+
+### /u/Arkasha74 on Self-hosting a 35B MoE for a 20-person team on one desktop box: what it took and what it does (all open source)
+You're showing your ignorance. 30k for two cards, plus the server to put them in is a big ask in this economy if you haven't already proved the concept works. I know plenty of companies that have more devs than 20 and wouldn't sign off this size of capital expense without doing a PoC first.
+
+### /u/ww_crimson on Self-hosting a 35B MoE for a 20-person team on one desktop box: what it took and what it does (all open source)
+In the US - 20 engineers even in a LCOL city or for very junior roles are going to have an all-in cost of $100k bare ass minimum. That's $2M/yr. 
+ $30k is 1.5% of their annual salary. On the lowest end of potential salaries.
+ I guess in India the salary is about 1/3 of this, but that still makes the total investment for the whole team the equivalent of hiring a single FTE. 
+ Just seems like a really rough setup.
+
+### /u/100k45h on Self-hosting a 35B MoE for a 20-person team on one desktop box: what it took and what it does (all open source)
+They have other cheaper options then. They can use cloud models for much cheaper. Or they can rent HW.
+
+### /u/Arkasha74 on Self-hosting a 35B MoE for a 20-person team on one desktop box: what it took and what it does (all open source)
+You didn't read what OP wrote did you? Nothing goes outside the team is the whole point. There are lots of businesses for who sending anything out of the corporate network is a big no. Banks, pharma, medical, anything with PII, etc.
+
+### /u/100k45h on Self-hosting a 35B MoE for a 20-person team on one desktop box: what it took and what it does (all open source)
+Rent the HW and nothing goes outside. There are actual plans where you rent the HW that either sits at your place or a secure data center.
+
+### /u/Arkasha74 on Self-hosting a 35B MoE for a 20-person team on one desktop box: what it took and what it does (all open source)
+On-prem leasing seems to be about £1.8k pcm for Blackwell servers with 24 month contract. That's £43k. That's a lot of money for something that could potentially be sitting idle for 70% of the time unless you have some super-efficient AI workflow that runs 24x7 ready to go the moment the server is installed.
+ Again, PoC would be required first, prove that the workflow works, then scale up to spending 10's of 1000's on fancy hardware
+
+### /u/TheBeansDream on Self-hosting a 35B MoE for a 20-person team on one desktop box: what it took and what it does (all open source)
+“- paying $100 instead of 2x$20 is not worth the improvement in developer experience;”
+ Your last post, bro wants a company to spend 30k+ but won’t get a 100$ plan instead paying 2 x 20$ plans.
+
+### /u/Ccarmichael92 on Self-hosting a 35B MoE for a 20-person team on one desktop box: what it took and what it does (all open source)
+Or hear me out… azure foundry with entra id logins… can run gpt 6 Luna for next to nothing. Can have private routes where data never leaves your network.
+
+### /u/Commercial_Designer5 on Self-hosting a 35B MoE for a 20-person team on one desktop box: what it took and what it does (all open source)
+The test was to see if we can have air gapped installation so we cannot opt for azure, vertex or bedrock. Also thank you for commenting.
+
+### /u/Designer-Present1182 on Self-hosting a 35B MoE for a 20-person team on one desktop box: what it took and what it does (all open source)
+Two angles that got me.
+ - am I the only one to feel in 2026, if my employer is subjecting me to 25 t/s, that's tantamount to employee abuse?
+ - Is it worth the money to pay a 20-pax team to wait for their work to be done at a rate of 25 t/s?
+
+### /u/Just_a_neutral_bloke on Self-hosting a 35B MoE for a 20-person team on one desktop box: what it took and what it does (all open source)
+I agree, anything sub 50/60 tps is a real challenge to user experience. But when you move most of your workloads to be outside of the human loop 25 w/ concurrency wins hands down.
+ Depends on the real loads the users are putting through it.
+
+### /u/Dat1Jack on Self-hosting a 35B MoE for a 20-person team on one desktop box: what it took and what it does (all open source)
+Hi new here , 
+ why did you choose ornith? I thought that deepseek and Qwen were better.
+
+### /u/Commercial_Designer5 on Self-hosting a 35B MoE for a 20-person team on one desktop box: what it took and what it does (all open source)
+Hello, I did try qwen 3.6 and then 3.8.Qwen 3.6 did really run well on tokens generated I have the setup in GitHub as well if you like to check it out. Qwen 3.8 on reasoning is honestly a good model if you want me to recommend a model that would be it. But most of the task I run is sub agent driven so it’s way too slow to run on DGX spark. Especially on prefil.
+
+### /u/severemand on Self-hosting a 35B MoE for a 20-person team on one desktop box: what it took and what it does (all open source)
+From the inference standpoint, you may be happier with 27B dense model. With 20 users there will be a lot of batched computation and close to no benefit from MoE architecture as majority of experts will be activated anyway.
+
+### /u/Commercial_Designer5 on Self-hosting a 35B MoE for a 20-person team on one desktop box: what it took and what it does (all open source)
+I tried this out but prefil time became too much even at very low input token rate. I would love to experiment with this if you could provide some details on how to do it better. Thank you 🙏🏻
+
+### /u/ScreamingAmish on Self-hosting a 35B MoE for a 20-person team on one desktop box: what it took and what it does (all open source)
+I'm actually building an open source project that handles the back end like this. It's called Eugene Plexus and it's early in development still. But it is designed to give you a management control plane to hook n number of users up to y number of inference instances.
+
+### /u/Scary_One_2452 on Self-hosting a 35B MoE for a 20-person team on one desktop box: what it took and what it does (all open source)
+When it comes to large team usefulness from a local model, GLM 5.3 flash at 320B-A18B is fantastic. Lower models like even Deepseek v4 flash had insufficient performance. Not in tokens/second but in capability.
+
+### /u/lost_profit on Self-hosting a 35B MoE for a 20-person team on one desktop box: what it took and what it does (all open source)
+What is the gateway at 8080? Something you wrote yourself?
+
+### /u/Commercial_Designer5 on Self-hosting a 35B MoE for a 20-person team on one desktop box: what it took and what it does (all open source)
+gateway where all models' API requests are routed through.
+
+### /u/lost_profit on Self-hosting a 35B MoE for a 20-person team on one desktop box: what it took and what it does (all open source)
+What? I'm not sure that is responsive to my question.
+
+### /u/Commercial_Designer5 on Self-hosting a 35B MoE for a 20-person team on one desktop box: what it took and what it does (all open source)
+Yes it’s something I wrote myself
+
+### /u/EconomistFun8657 on Self-hosting a 35B MoE for a 20-person team on one desktop box: what it took and what it does (all open source)
+Very cool! I've thinking of doing something for my team too
+
+### /u/Agreeable_System_785 on Self-hosting a 35B MoE for a 20-person team on one desktop box: what it took and what it does (all open source)
+Did you use eugr vllm spark builds?
+
+### /u/Commercial_Designer5 on Self-hosting a 35B MoE for a 20-person team on one desktop box: what it took and what it does (all open source)
+I think you are talking about this one https://github.com/eugr/spark-vllm-docker if so yes. This really gave good output tokens on paper due to MTP. But the pre-fill became way too slow to actually use.
+
+### /u/Agreeable_System_785 on Self-hosting a 35B MoE for a 20-person team on one desktop box: what it took and what it does (all open source)
+How does it handle nvfp4. I tried it on my spark but it was broken, so I ended up for fp8 or bf16 for multiple reasons. Is nvfp4 really supported now?
+ Or do you still need Marlin? (See for example https://forums.developer.nvidia.com/t/marlin-fix-nvfp4-actually-works-on-sm121-dgx-spark/365119/15 ). With dense models, I tend to use 4 bit quantization but with moe models I often end up going bf16 or fp8 at most.
+ I do want to use a lot of official builds, but this is hit and miss. But good to see your work. I personally have containerized environments for vllm and a reverse proxy, where the reverse proxy can approach the vllm instance. I expect this to be similar to your approach with a a load balancer etc.
+ Do you have your own optimized kernels? Since that GitHub repo does provide builds for its own.
+
+### /u/Zentrosis on Self-hosting a 35B MoE for a 20-person team on one desktop box: what it took and what it does (all open source)
+I don't believe it's a good experience. I suppose it's better than zero ai
+
+### /u/Commercial_Designer5 on Self-hosting a 35B MoE for a 20-person team on one desktop box: what it took and what it does (all open source)
+We just started out experimenting. Most work we do is to use it as RAG pipeline and team it with lager LLM for multi agent feature building and so on. I agree with you that it’s not the best. But we wanted to try out how the air gapped installation experience would be and the limitations. So far this is okay. I would love to have some guidelines to improve this even if it comes to the point of changing the models too. Thank you 🙏🏻
+
+### /u/Zentrosis on Self-hosting a 35B MoE for a 20-person team on one desktop box: what it took and what it does (all open source)
+Yeah, I don't know, local AI is in a tough spot. 
+ Hardware is insanely expensive if you want to be able to run truly excellent models 
+ Qwen 3.8 flash next is probably the best option. Eventually we'll get hardware with enough terabytes of RAM to make big models runnable locally. 
+ But I think part of the strategy of the big AI guys is to make sure that hardware stays so expensive. It's basically impossible for people to really use AI without paying the rental fee. 
+ If you're using it mostly for rag then the model might not matter quite as much. I've seen people get good results with rag recall on 9 billion parameter models.
+ If you're building complex code projects... It matters a lot
+
+### /u/toluwalase on Self-hosting a 35B MoE for a 20-person team on one desktop box: what it took and what it does (all open source)
+It’s basically autocomplete tbh, if they are actually shipping with the output welp sorry to future employees
+
+### /u/burritoresearch on Self-hosting a 35B MoE for a 20-person team on one desktop box: what it took and what it does (all open source)
+Look this is an okay model (it's based on Qwen 3.6 35B A3B) but it just doesn't contain enough knowledge to use for anything other than coding very small projects or doing non-coding related tasks. You'd be far better off running an unsloth Q4 of Qwen 3.8-Flash-Next on a system with 128GB RAM. Or even as other people point out here, 3.8-27B.
+
+### /u/Commercial_Designer5 on Self-hosting a 35B MoE for a 20-person team on one desktop box: what it took and what it does (all open source)
+Thank you for taking time to comment. I will be trying out the Qwen 3.8 flash next as you rightly suggested probably in next week. Thank you 🙏🏻
+
+### /u/i-dm on Self-hosting a 35B MoE for a 20-person team on one desktop box: what it took and what it does (all open source)
+Rewrite it as a human pls and we'll read it.
+
+### /u/Biarmrobot on Self-hosting a 35B MoE for a 20-person team on one desktop box: what it took and what it does (all open source)
+Any tips for mac studio with Qwen flash next?
+
+### /u/llllJokerllll on Self-hosting a 35B MoE for a 20-person team on one desktop box: what it took and what it does (all open source)
+Deberías de actualizar la versión de vllm va por la 0.31 y trae muchísimas mejoras ... Además hay un fork de vllm optimizado para la Nvidia spark
+
+### /u/Commercial_Designer5 on Self-hosting a 35B MoE for a 20-person team on one desktop box: what it took and what it does (all open source)
+That’s amazing I ll try this out. Thank you for taking time to comment I appreciate it🙏🏻
+
+### /u/UltraSPARC on Self-hosting a 35B MoE for a 20-person team on one desktop box: what it took and what it does (all open source)
+The issue I’ve had with the multi token prediction is that it does not scale well with concurrent requests.
+
+### /u/sicmek on Self-hosting a 35B MoE for a 20-person team on one desktop box: what it took and what it does (all open source)
+Nice setup, but why would you do that? Do you have concerns or limitations regarding Claude etc?
+ I also used similar 35B models before, but they are by far not comparable to frontier options (at least for agentic coding).
+
+### /u/Dull_Carpenter5039 on Self-hosting a 35B MoE for a 20-person team on one desktop box: what it took and what it does (all open source)
+Why would you do that!?! Do you really use AI? If so - what are your real costs? I do programming and on a good day I burn 1-1.5million token. (Per day). So I run my AI local on this new qwen3.8 35b A3B model. I should just pay for electricity but 70% total consumption in the house are covered by solar
+
+### /u/sicmek on Self-hosting a 35B MoE for a 20-person team on one desktop box: what it took and what it does (all open source)
+I guess you mean Qwen3.6 35B A3B? I also used it before, but there is a big gap to frontier models like Opus 5.5 (at least for now). Using qwen3.6 for private projects is fine, but using it as a companies claude replacement puts them actively in a disadvantage.
+ Qwen 3.8 Flash Next could be a reasonable option for them, but it needs way more resources.
+
+### /u/Dull_Carpenter5039 on Self-hosting a 35B MoE for a 20-person team on one desktop box: what it took and what it does (all open source)
+No - there is actually a qwen3.8 model available with A3B - search hugging face. Just checked again - it's empero-ai/Qwen3.8-35B-A3B-Distill gguf
+
+### /u/sicmek on Self-hosting a 35B MoE for a 20-person team on one desktop box: what it took and what it does (all open source)
+Thanks that looks interesting, I will give it a try
+
+### /u/macaronianddeeez on Self-hosting a 35B MoE for a 20-person team on one desktop box: what it took and what it does (all open source)
+3.8 flash next on strata runs on desktop hardware at this point.
+ A sub $10k box gets me 110 tok/s at 256k context and while it’s no opus 5.5 it is no slouch at coding either.
+
+### /u/No_Run8812 on Self-hosting a 35B MoE for a 20-person team on one desktop box: what it took and what it does (all open source)
+If this really works, share few real world examples your team have worked using 3b active model.
+
+### /u/avlisAdOnurb on Self-hosting a 35B MoE for a 20-person team on one desktop box: what it took and what it does (all open source)
+try pi or some other harness. I started with opencode as well, love it, but switching from plan to build mode seems to edit the first message after the system prompt. result: cache invalidation. 1 minute waiting for prefill of a 100k context to recompute all... too hard on these "little machines" (bosgame m5 128 GB)
+
+### /u/Commercial_Designer5 on Self-hosting a 35B MoE for a 20-person team on one desktop box: what it took and what it does (all open source)
+I would love to try this out. Thank you 🙏🏻
+
+### /u/Strange-Broccoli-232 on Self-hosting a 35B MoE for a 20-person team on one desktop box: what it took and what it does (all open source)
+my 35b q4_k_m on a 128gb dgx spark runs 5 users fine, but token tracking broke when we hit 8. switched to vllm's built-in logging and it's stable now.
+
+### /u/ParticularBeyond9 on Self-hosting a 35B MoE for a 20-person team on one desktop box: what it took and what it does (all open source)
+I want to run it for 4-6 devs with a RTX 3090 and 128gb of ram will that be fine? What speed would I get? How good is Ornith?
+
+### /u/leonbollerup on Self-hosting a 35B MoE for a 20-person team on one desktop box: what it took and what it does (all open source)
+För development, go with ninfer and qwen/switfh 27B .. 35B is a nice chat model.. 27B is better at coding
+
+### /u/Whoa_There_Hoss on Self-hosting a 35B MoE for a 20-person team on one desktop box: what it took and what it does (all open source)
+Strata is perfect for this
+ https://github.com/Niko1221/Strata
+
+### /u/Efficient-Mixture831 on Self-hosting a 35B MoE for a 20-person team on one desktop box: what it took and what it does (all open source)
+As soon as I saw this, I knew it was some Jugaad.
+ Great job acquiring DGX Spark, and for posting your code etc.
+ However, at larger context, TTFT will be so high your team will not be able to use it.
+
+### /u/Commercial_Designer5 on Self-hosting a 35B MoE for a 20-person team on one desktop box: what it took and what it does (all open source)
+Thank you for taking time to comment. TTFT for the most cases we used was less than 2-3 seconds for large token input example 50000 or more which is fine for me right now.
+
+### /u/Dull_Carpenter5039 on Self-hosting a 35B MoE for a 20-person team on one desktop box: what it took and what it does (all open source)
+With this machine I would go for a Qwen 70b model. Nothing under q_6!!!. And I would run llama.cpp-server configuring some 6 parallel slots and would reduce the content window to 128k.
+
+### /u/Vivid_Discussion_592 on Self-hosting a 35B MoE for a 20-person team on one desktop box: what it took and what it does (all open source)
+1 - that model is trash
+ 2 - if I worked for your company and that was the AI solution offered, I'd start looking elsewhere
+
+### /u/XGhozt on Self-hosting a 35B MoE for a 20-person team on one desktop box: what it took and what it does (all open source)
+THIS... wtf?

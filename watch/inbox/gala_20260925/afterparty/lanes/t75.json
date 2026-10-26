@@ -1,0 +1,23 @@
+{
+  "gopher": "t75",
+  "item": "t65's next_steal: the remaining fail-open cluster, in order: (1) pause swallow in mag/afk_orchestrator.py run_afk ('except Exception: pass' around pause_reason, the t43 species); (2) _right_size fail-open in mag/afk_orchestrator.py ('full' on error, the t52 species); (3) the _right_size twin fail-open in mag/capability_steal.py ({'level':'full','budget':4} on error). Read every call site first, convert to fail-closed per the t52/t61/t65 convention with named error fields, one test per conversion, pytest + ratchet cited.",
+  "ok": true,
+  "note": "All three call-site reads confirmed conversion (no negatives): (1) run_afk's pause gate is the first statement and is honored even under --force, single caller is its own CLI main(), and afk_cadence.run_once had the identical species fixed as t43, so an errored pause now honors the pause: skip with reason 'operator pause gate errored; failing CLOSED (pause honored)' plus pause_gate_error. (2) afk_orchestrator._right_size call sites are run_afk's budget ladder (light 1 / medium 2 / full 4, none skips) and the status report; nothing depends on 'full' on error, so error now returns the SMALLEST budget (level 'none', run_afk skips the pass), cause named in module-level RIGHT_SIZE_ERROR, surfaced as right_size_error by run_afk's skip and status. (3) capability_steal._right_size has the single call site expand() line 144 (afk_cadence and skill_pipeline call expand() itself, and inherit the deny safely); error now returns {'level':'none','budget':0,'right_size_error':...} and expand()'s skip surfaces right_size_error. Clean reads clear RIGHT_SIZE_ERROR, mirroring the AFK_GATE_ERROR pattern. Spec first: t75 SPEC block in the test docstring plus dated SPEC comments at each fix site, written before the behavior edits.",
+  "checks": [
+    {"check": ".venv/Scripts/python.exe -m pytest tests/test_loop_death_guards.py -v", "exit": 0, "result": "16 passed in 0.32s (13 prior incl. 6 death-guard params + t43/t52/t61/t65 gate tests, plus 3 new: test_afk_orchestrator_pause_gate_fails_closed, test_afk_orchestrator_right_size_fails_closed, test_capability_steal_right_size_fails_closed, each covering deny/skip, named cause, surfaced error, and clean-read clears)", "evidence": "watch/inbox/gala_20260925/afterparty/lanes/t75.check.txt"},
+    {"check": ".venv/Scripts/python.exe tools/violation_ratchet.py check --changed", "exit": 0, "result": "scope=17 changed files; hits=13; registered=13; NEW=0; expired-exceptions=0; PASS, no unregistered debt", "evidence": "watch/inbox/gala_20260925/afterparty/lanes/t75.check.txt"},
+    {"check": "git diff added-lines em-dash grep over the 3 touched files", "exit": 1, "result": "0 em-dashes in authored added lines (grep exit 1 = no match); filed tool output kept byte-verbatim including the ratchet's own em-dash in its PASS line", "evidence": "watch/inbox/gala_20260925/afterparty/lanes/t75.check.txt"}
+  ],
+  "files_touched": [
+    "mag/afk_orchestrator.py",
+    "mag/capability_steal.py",
+    "tests/test_loop_death_guards.py"
+  ],
+  "negatives": [
+    "Not converted, judged intentional: run_afk's --force still bypasses the operator gate entirely (explicit human override, per t65's filing); it does NOT bypass the pause gate or the rightsizer deny, and the new right_size test pins that force=True still skips on a denied sizing.",
+    "The _fold telemetry swallows ('except Exception: pass' around training_events.emit) remain in both twins and afk_cadence; these are observability-side, not deny-gates (their error direction cannot grant GO), so they are the t19 death-guard-print species, not this cluster.",
+    "_safe() in run_afk still truncates step errors to 120 chars and _brief drops non-whitelisted keys; that is display shaping of already-visible errors, not a fail-open gate."
+  ],
+  "next_steal": "The t65-flagged cluster is closed; remaining same-family work: the _fold training_events swallows in mag/afk_orchestrator.py and mag/capability_steal.py (and mag/afk_cadence.py) should get the t19-style traced guard print (LOOP DEATH GUARD naming the emit failure) instead of bare pass, one test per twin in test_loop_death_guards.py; after that, sweep mag/ for any remaining deny-gate whose error direction grants GO (grep 'except Exception' near gate/ceiling/pause/right_size names).",
+  "ts": "2026-09-26"
+}

@@ -1,0 +1,117 @@
+=== 1wslgkw r/LocalLLaMA | 2026-09-28 17:46 | score 22 | 44 comments | author u/jjusko20
+TITLE: Watch me post-train AliceAI-Foundation-80B-A3B from base to instruct at home, live, on my V100s!
+PERMALINK: /r/LocalLLaMA/comments/1wslgkw/watch_me_posttrain_aliceaifoundation80ba3b_from/
+SELFTEXT:
+No click bait baby I promise.
+
+Original thread: [https://www.reddit.com/r/LocalLLaMA/comments/1wpg4a8/im\_trying\_to\_posttrain/](https://www.reddit.com/r/LocalLLaMA/comments/1wpg4a8/im_trying_to_posttrain/)
+
+If you didn't see my original post a few days ago, I'm attempting a slightly more ambitious than usual project in trying to create at least a rough AliceAI-Foundation-80B-A3B-Instruct
+
+I spent the weekend distilling my initial instruct training dataset out of Qwen 3.8 27b, medium thinking - intentionally done because I can run it locally, and I wanted a full dataset in some reasonable amount of time. Still took my v100s running 4x instances at 25tps, like 96 hours of non stop generation to complete the dataset.
+
+I opted not to go for a pre-existing public dataset because I wanted to practice building my own distillation engine (which was configured to work off of an OpenAI compatible endpoint, so it'll distill anything you can hook it up to). The final dataset (this time) consists of 3340 samples: 1760 of general instruct transcripts, and 1580 agentic specific work rows about SWE, harnesses, terminals, etc - I gave the distilling engine a python sandbox and got to simulate turn driven development with a user, and I trained for a bunch of different harness syntax for tool calls, which hopefully will be enough to generalize - gonna run 2 epochs at first.
+
+My GPUs are sobbing right now - turned them on on Friday and left for a weekend vacation, got back today, waited an hour for the data to finish generating, and then immediately fired up the train.
+
+The stuff above is the short version. I'm guessing the initial SFT train will take about 3-6 days, and I plan on working on a RL implementation after I'm satisfied that the SFT has at least worked properly. I am training a rank 16 QLoRa adapter on only q/k/v/o proj, no direct knowledge weight fine tuning.
+
+I thought what MiMo did with their recent training was really cool to watch online, and I like sharing my work with like minded people, and frankly, there's a part of me that's hoping someone will see this and want to hire me (looking for NYC work if you know anyone looking for some passionate ML engineers!) - so I've set up my own little training stream on a cloud flare tunnel.
+
+The stream has the live in progress status of the train, including a live view of the actual data being processed by the model. It also includes way more detail about how I actually designed and generated my training data. Happy to throw the full set on HF as well. I don't expect this model to beat any existing standards but I'll be curious to see if I can get it to operate properly in a harness so I can formally bench it.
+
+I hope you find this interesting! To watch the training live, visit [https://keep-closes-commons-nurse.trycloudflare.com/](https://keep-closes-commons-nurse.trycloudflare.com/) \-- I'll be keeping it up until the initial SFT is done, at least.
+
+COMMENTS:
+  [FullOf_Bad_Ideas | 2026-09-29 17:13 | score 2] https://figure-bios-expect-cio.trycloudflare.com/ is returning 502 Bad Gateway, can I track the training progress somewhere?
+    [jjusko20 | 2026-09-29 17:43 | score 2] found my issue - my layers aren't distributed evenly across cards - 14,14, and 19. The 19 layer card OOMs individually above 16k. gonna work on redistributing and then get started again
+    [jjusko20 | 2026-09-29 17:18 | score 2] Hey! Unfortunately went OOM and crashed about an hour ago - unfortunately lost the adapter. I'm dealing with some repairs, and also I think I'm going to add training to the shared, always on expert, as I was plateauing pretty hard between 6 and 7 loss after 200 steps. As soon as I have the run restarted I'm going to update the link - I'll drop a new reply to you so u get the notif.
+
+Hard to explain the issue as I don't totally understand it myself yet. It's something to do with my custom kernel and the way I'm handling attention on the v100s I believe
+      [FullOf_Bad_Ideas | 2026-09-29 18:20 | score 2] Sucks to have lost the learning progress, it happened to me last week when my PSU went bust, I lost almost a day of training but thankfully that was just a chunk of it, not the whole run. Now it's running again with a new PSU.
+        [jjusko20 | 2026-09-29 18:26 | score 1] Somehow I've never had a PSU fail on me, despite not being particularly good about buying high quality ones. My v100s are being powered by a thermaltake 700w white, and an evga 430w white I got for my first pc in 2015. The thermaltake has the power pin shorted to ground with a paperclip so it'll stay on under operation - lmfao - as it doesn't use the ATX connector.
+
+Sucks a bit, but it was looking like training only attention wasn't enough, so I didn't really lose any valuable progress, I was going to need to retrain or at least heavily modify anyways
+
+It's nice talking with you, I only meet so many people interested in these types of conversations naturally
+          [FullOf_Bad_Ideas | 2026-09-29 19:01 | score 2] It was a first failure for me too, so I wasn't even sure it was the PSU that failed, it just started shutting down under load but worked fine when idle, up to around 400W load. I bought it used (EVGA G2 1600W Gold) about 10 months ago and I was pushing it pretty hard, it was running 3 3090tis, CPU and motherboard (mobo has extra PCI-E plug to drive the GPUs in all of the PCI-E slots too). ~500 hours of full load done since then and many more of mixed load when I was just running single-user inference.
+
+>It's nice talking with you, I only meet so many people interested in these types of conversations naturally
+
+I can PM you my Discord nickname if you want. But if you want to find a bigger and more lively community, I recommend finding small open organizations that train LLMs on HF, often with focus on small language models, and joining their communities. There surely are a lot of people that train LLMs or discuss blog posts / papers on a daily basis there. I'm rather active in Polish organization (Slayer also known as Fabryka.ai) where most of the discussion is in Polish about Polish-language models, there's an English channel but it's been pretty empty for now. I'm sure you'd be welcome there too, right now guys are climbing Glint Research Tiny-ML leaderboard (English-language models) and doing training runs to test various approaches to tokenization.
+            [jjusko20 | 2026-09-29 19:16 | score 2] I'll definitely be taking your advice on that, and discord certainly couldn't hurt - I'm building in public as much as possible to try to get some eyes on my work from NY. Thank you! and I've probably been lucky with my PSUs, I know regardless of rating the caps degrade over time.
+
+Training should be back within the hour, I'm just probing what ctx length I can still fit with my modifications. Gonna have to move down to near 12k with truncation to make this happen
+              [FullOf_Bad_Ideas | 2026-09-29 19:44 | score 2] I dislike Discord honestly. I'd prefer it it would rather be something like an open email list that doesn't require account to browse. I actually got my current job through this subreddit, someone found me, contracted me and then hired me. It would never happen if I would be active on Discord instead as they wouldn't know where to look. I just don't know of any place more public than reddit where those sorts of discussion take place, but as soon as there's more depth to some technical discussion it tends to drift towards Discord which is lower latency.
+  [toothpastespiders | 2026-09-29 01:25 | score 2] Seriously cool project! Wish I had more to add but it's really just refreshing seeing posts like this. Novel model, throwing stuff at a wall to see what sticks, reminds me a bit of the llama 1 days on here. 
+
+>My GPUs are sobbing right now - turned them on on Friday and left for a weekend vacation, got back today, waited an hour for the data to finish generating, and then immediately fired up the train.
+
+I feel your pain. Someone on here got me off my ass to actually investigate gemma 4 12b's unified multimodal capability so I think I'm at day 8 of just hitting a key and leaving my gpu to go into space heater mode while it runs comparison benchmarks after a tiny shift of methodology.
+    [jjusko20 | 2026-09-29 04:00 | score 1] It'll be much more helpful in 2/3 months when you need the heat!
+  [FullOf_Bad_Ideas | 2026-09-28 21:44 | score 2] Cool project.
+
+3.3k samples, each roughly 800 tokens, right? What's the batch size? It seems like it's 8, with no packing. What seq len did you set it to?
+
+>Training is a small LoRA on the attention projections of the base model.
+
+IIRC if you have to be choosy about what you train for instruct finetune, it should be FFNs and not attention.
+
+I think a smaller model would be a better fit for your hardware.
+    [jjusko20 | 2026-09-28 21:57 | score 1] 8 is correct, max len is 32k, any more I'm out of memory. I wanted to try this for the uniqueness factor of a bigger model with no instruct that just came out. I
+
+I don't have to be choosy about what I train necessarily, that's just what I opted to start with as a minimum subset. I'll evaluate and then likely do an iteration tuning the shared always on expert as well
+      [FullOf_Bad_Ideas | 2026-09-28 22:03 | score 2] If you have packing disabled, seqence length of 32k and average sample of 800 tokens, doesn't this mean that for an average of 31200 tokens per sample you're spending compute on padding? And that you could train it 40x faster if you set sequence length to 1024?
+
+I kinda messed up my own SFT training a few days ago because I had the 2.5B real tokens trained without packing and I burned compute on 7.5B padding tokens :D
+        [jjusko20 | 2026-09-28 22:04 | score 2] That's a great question - I do have more samples further down my list that are longer context lengths, but nothing over 16k I think. I probably am doing this and need to look into it. Thank you!
+          [FullOf_Bad_Ideas | 2026-09-28 22:11 | score 2] Happy to be helpful. What I do now is just truncate at 16k, since I have samples up to 90k tokens per length and my rig/model won't accomodate more than ~20k seq len with my model. In your case I'd personally set learning rate to constant and separate training runs to be able to change sequence length between them. Or just enable packing.
+            [jjusko20 | 2026-09-28 22:22 | score 2] Do you keep the first or last 16k? I read somewhere it's better to keep through response but idk where I read it. Probably gonna peek at a bached approach (im reading your response while typing and I can see that separate training runs are probably the best bet)
+              [FullOf_Bad_Ideas | 2026-09-29 00:11 | score 2] I keep the first 16k and discard the rest, but I don't know if that's the best approach, I have not tested keeping the end. The length is due to long reasoning chains, and the model supports up to ~16k right now. It's a different case then yours tho as the data quantity is orders of magnitude different.
+                [jjusko20 | 2026-09-29 04:19 | score 2] I did in fact move to sorting by length and then batching progressively increasing ctx caps
+                  [FullOf_Bad_Ideas | 2026-09-29 07:57 | score 2] It looks faster now, just tracking the dashboard the numbers seem to update a few times faster. How has your ETA changed due to this? Were you able to implement dynamic context length in the same training run without losing optimizer states between stages?
+
+My project is an open source 4B MoE pretrained from scratch on around 80B tokens of Polish data. A big chunk of training, about 35B tokens, was done locally on my 8x 3090 Ti rig. I translated about 6B tokens of instruct datasets to Polish with small translation models locally and now I'm doing SFT on that data. One PSU gave out so I paused for a few days but I just got the new PSU in the mail so I should be able to resume training today. Then I plan to do on-policy distillation from a bigger model that my model shares a tokenizer with, I reuse APT4 tokenizer from Bielik models so I should be able to distill those. 
+
+Latest tested checkpoints - https://huggingface.co/cpral/poziomka_sft_2026_09_14_hf
+Training code - https://huggingface.co/cpral/poziomka_sft_2026_09_14_hf
+
+All datasets including SFT are open source, model understands English somewhat well but responds in Polish, I'll probably mix in some English into SFT at some point to add basic English capacity to make it more accessible to non-Polish speakers.
+                    [jjusko20 | 2026-09-29 22:52 | score 2] added a nice little loss progression graph as well
+                      [FullOf_Bad_Ideas | 2026-09-29 23:09 | score 2] Looks good!
+
+In the meantime while the training is running smoothly, can you share how you created the synthetic dataset? What is writing the user message? I'll have to deal with this myself soon and I've been thinking about using Magpie but I had issues with getting it to work in the past. There's also UserLM but I tried it only briefly and using multiple models for it would not be compute efficient as you'd need to prefill two models. I will want to generate 50-100k samples with multi-turn hybrid-reasoning user<>assistant messages about Polish history, books, culture, food, environment. The things the model will lack after being trained on English instruct dataset translated to Polish.
+
+I'm thinking about using Muse Glimmer 30B for it, but I'm not set on that.
+                        [jjusko20 | 2026-09-29 23:11 | score 1] Also I plan on open sourcing the distillation engine anyways
+                        [jjusko20 | 2026-09-29 23:11 | score 1] Yes - I have resources for this, I'll message you on discord, it'd be better for me to attach a few files.
+                    [jjusko20 | 2026-09-29 22:50 | score 2] Back online. Turned to batching, and added shared-expert gate\_proj / up\_proj / down\_proj to the training. Spent a looong time dealing with OOM errors and some NaN issues related to v100s and the alice model - eventually ended up dropping shared\_expert\_gate
+                [jjusko20 | 2026-09-29 04:06 | score 1] Interested to know what you're training and what you're training on if you can/will share!
+  [[deleted] | 2026-10-01 17:48 | score 1] [removed]
+  [[deleted] | 2026-09-29 07:24 | score 1] [removed]
+  [Choice_Celery9481 | 2026-09-28 23:11 | score 1] there is a sub for v100, i think people there love to see this
+  [DimeRhyme | 2026-09-28 18:46 | score 1] Respect for doing this on V100s. Two Volta specific gotchas worth knowing before the SFT run starts since nobody has mentioned them. The repo's own finetune recipe is written for Ampere or newer, it loads base weights in bf16 and installs flash-attn 2.8.1. Volta is compute capability 7.0 and bf16 needs Ampere or higher, so on V100 you want fp16 with loss scaling instead. The tensor cores still help there, they do fp16 multiply with fp32 accumulate, just don't let the stack silently try to emulate bf16.
+
+  
+Same story for attention. FlashAttention 2 does not support Volta at all so PyTorch will fall back to the memory efficient or math backend. That works but expect attention to eat more memory and run slower at the longer context lengths, so keep the sequence length in the SFT tight to what your samples actually need.
+
+  
+Your rank 16 q/k/v/o only adapter on 3340 samples is a sane footprint for this. The stage that will really test the VRAM budget is the RL with the grader model, since you need the policy and the grader in memory at once. Worth deciding early whether the grader lives on its own box or runs at a lower precision.
+    [jjusko20 | 2026-09-28 18:50 | score 1] Yessir, thanks boss. I have a custom chunked kernal implementation for attention that plays nice with the v100s, since no FLA. It's not as good obviously but it's orders of magnitude faster than the safe fallback. I am also doing the f16 and f32 rather than
+      [DimeRhyme | 2026-09-28 19:25 | score 1] A custom chunked attention kernel is exactly the right move here, and f16 compute with f32 accumulation is how Volta wants to be driven anyway. Sounds like you already dodged both traps. Rooting for the run.
+        [winky9827 | 2026-09-29 01:28 | score -1] We're going to have a whole fucking generation of people who can't scrub together coherent thoughts without AI, aren't we? God fucking damn it.
+          [jjusko20 | 2026-09-29 04:01 | score 1] I noted his reply was AI generated, and I took the time to peek at his comment history - I think bro just uses the LLMs for phrasing
+  [[deleted] | 2026-09-28 18:22 | score 1] [removed]
+  [[deleted] | 2026-09-28 18:10 | score 1] [removed]
+  [shing3232 | 2026-09-28 17:49 | score 1] ha  offload training？  I think lora could be doable
+    [jjusko20 | 2026-09-28 17:50 | score 1] offload to what? i dont have the vram for a full lora
+      [shing3232 | 2026-09-28 18:07 | score 1] I basically offload a lot to system ram and only train as it load into vram.
+      [NandaVegg | 2026-09-28 18:02 | score 2] Have you consider ReLoRA-style training under absolutely memory constrained situation (basically do lora training, merge to the weights and do another lora on top of it loop) ?
+        [jjusko20 | 2026-09-28 18:06 | score 1] AliceAI 80B in fp16 is roughly 160gb of weights, I only have 96 gigs of vram, though i may be misunderstanding you somehow
+          [NandaVegg | 2026-09-28 18:24 | score 1] Hmnm, I didn't catch that limitations. The only thing I've ever done to overcome such limitations is layer-wise offload to RAM (pretty sure you can vibecode it to any training framework post Opus 4.6), but it is quite slow.
+            [jjusko20 | 2026-09-28 18:25 | score 1] Several degrees of magnitude slower I think
+          [shing3232 | 2026-09-28 18:08 | score 1] [woct0rdho/transformers-qwen3-moe-fused: Fused Qwen3 MoE layer for faster training, compatible with Transformers, LoRA, bnb 4-bit quant, Unsloth. Also possible to train LoRA over GGUF](https://github.com/woct0rdho/transformers-qwen3-moe-fused) like this
+            [jjusko20 | 2026-09-28 18:13 | score 1] I'm pretty sure that this is QLoRA, after a pass over the readme
+              [shing3232 | 2026-09-28 18:15 | score 1] qlora over super compact GGUF file which you can even go below 4bit if you are desperate enough for finetune deepseek flash
+
+(fetched 45 comments total; rendered top 10 roots by score)

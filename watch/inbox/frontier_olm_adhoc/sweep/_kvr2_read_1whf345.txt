@@ -1,0 +1,22 @@
+THREAD 1whf345 (5 entries incl OP)
+
+--- [/u/djseto] MLX support for 8 bit KV Cache
+Does Ollama on Mac support configuring KV Cache to 8 bit quant? 
+ In long running agentic tasks with Hermes, my Qwen 3.8 27B MLX Model eventually pushes hard on memory pressure (64GB Mac Studio M4 Max, 64k or 128k context window) and I think it’s because of KV Cache growing too large. I asked Claude for some help and it suggested setting cache type to Q8 and flash attention to true vs the supposed default of F16 for KV Cache. It the corrected itself and said those settings only work for GGUF models. I don’t know which is true so hoping the brain trust here knows.
+ submitted by /u/djseto to r/ollama 
+ [link] [comments]
+
+--- [/u/spyingwind] /u/spyingwind on MLX support for 8 bit KV Cache
+I think if you set these then it might help. Worst case is it doesn't.
+ export OLLAMA_FLASH_ATTENTION=1 export OLLAMA_KV_CACHE_TYPE=q8_0
+
+--- [/u/djseto] /u/djseto on MLX support for 8 bit KV Cache
+That is what Claude was telling me to set. However, it then referred to a PR saying that that feature isn't enabled for MLX.
+
+--- [/u/spyingwind] /u/spyingwind on MLX support for 8 bit KV Cache
+I don't see how it wouldn't work. Looking through the code I don't see anywhere that mentions it not working for MLX.
+ FAW doesn't mention MLX: https://github.com/ollama/ollama/blob/a43fad18b088095de20fbd7a8f0de50824cf5d27/docs/faq.mdx#how-can-i-set-the-quantization-type-for-the-kv-cache 
+ People seem to be using it fine a month ago: https://github.com/ollama/ollama/issues/17875
+
+--- [/u/Sea_Impact2422] /u/Sea_Impact2422 on MLX support for 8 bit KV Cache
+that env var is a good place to start, plus you can check what cache type is actually loaded with OLLAMA_DEBUG=1 in the server logs

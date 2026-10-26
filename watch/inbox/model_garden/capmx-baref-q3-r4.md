@@ -1,0 +1,3 @@
+# capmx-baref-q3-r4 (glm-5.3-flash @ zai, turn 1, channel: content)
+
+{"verb": "STAGE_ASK", "reason": "Queue tail shows a concrete re-seeded ask (DF fold residuals) with defined scope and falsifier needs; routing one cheap swarm review is the obvious next step. git_changed=216 supports active review capacity.", "payload": {"target": "mag/DF-fold-residuals-WO-12", "ask": "Adversarial review of DF fold residuals: supernatural villain plots, per-class attack triggers beyond scorpion-force, Age scope. Name falsifier per class; flag enablement-dial tier per registered debt. Bounded: one line per class."}}

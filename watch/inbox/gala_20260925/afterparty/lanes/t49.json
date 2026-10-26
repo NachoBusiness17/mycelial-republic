@@ -1,0 +1,18 @@
+{
+  "gopher": "t49",
+  "item": "populate configs/tools/ with real tool manifests for the description-pin gate; format taken from tools/description_pin.py source (t11c format), descriptions copied verbatim from tool docstrings",
+  "ok": true,
+  "note": "5 manifests written, one per tool, shape {\"tools\":[{name, source, version, description}]}. Descriptions verbatim from each tool's docstring; pin sentence appended per the gate's own contract. All five tools carry no version header in source, so the honest pin is PINNED-UNVERSIONED (operator allowed v1 or PINNED-UNVERSIONED); a v1 label would have invented a version. description_pin.py's docstring headline contains an em-dash, so its manifest quotes a different verbatim docstring sentence (no-em-dash law); that is stated inside the manifest. Gate run with repo venv python over configs/tools/: 'all tool descriptions pinned or marked', exit 0. Raw output saved to t49.check.txt including the exit line. Em/en-dash scan over manifests and check file: clean.",
+  "checks": [
+    "watch/inbox/gala_20260925/afterparty/lanes/t49.check.txt ($ .venv/Scripts/python.exe tools/description_pin.py configs/tools/ -> all tool descriptions pinned or marked, exit=0)",
+    "grep -P em/en-dash scan over configs/tools/*.json and t49.check.txt -> no matches"
+  ],
+  "manifests": [
+    "configs/tools/quote_gate.json",
+    "configs/tools/freshness_gate.json",
+    "configs/tools/description_pin.json",
+    "configs/tools/grave_classify.json",
+    "configs/tools/quote_hitrate.json"
+  ],
+  "next_steal": "tools/ has 131 python files but configs/tools/ carries 5 manifests; t50 should extend coverage to the other gate-tier tools (violation_ratchet.py, workflow_gate.py, freshness_check.py, mcp_pin.py) and wire tools/description_pin.py configs/tools/ into githooks/pre-push so the pin gate runs at push time instead of only when a gopher remembers."
+}

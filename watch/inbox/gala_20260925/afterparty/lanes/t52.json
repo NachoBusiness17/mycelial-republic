@@ -1,0 +1,21 @@
+{
+  "gopher": "t52",
+  "item": "t43 flagged three DENY gates that fail OPEN (mag/afk_cadence.py:41 _operator_afk, mag/afk_cadence.py:49 _right_size, mag/work_loop.py:123 _ceiling_gate). Confirm fail-open by bytes, convert each to fail CLOSED with a named error field, one test per gate, ratchet.",
+  "ok": true,
+  "note": "All three fail-opens confirmed real by bytes before edit. _operator_afk: old 'except Exception: return True' read a broken operator_status as AFK and kept the cadence spending; now returns False (operator presumed ACTIVE, deny honored) and names the cause in module-level AFK_GATE_ERROR, surfaced as afk_gate_error by status() and folded into right_size output. _right_size: old 'except Exception: return {\"level\": \"full\", \"budget\": 4}' gave full blast on a broken rightsizer; now level none / budget 0 (run_once skips the tick) with right_size_error named. _ceiling_gate: old except returned throttled=False 'assume safe (no throttle)' so run_once claimed work with the ceiling unknown; now throttled=True (run_once returns the deny and refuses work) with ceiling_gate_error named. No em-dashes in authored filed text; raw tool output kept byte-verbatim.",
+  "checks": [
+    {"check": "pytest tests/test_loop_death_guards.py -v", "exit": 0, "result": "10 passed (6 death-guard params + t43 pause gate + 3 new t52 gate tests: test_afk_gate_fails_closed, test_right_size_gate_fails_closed, test_ceiling_gate_fails_closed)", "evidence": "watch/inbox/gala_20260925/afterparty/lanes/t52.check.txt"},
+    {"check": "python tools/violation_ratchet.py check --changed", "exit": 0, "result": "scope=10 changed files; hits=6; registered=6; NEW=0; PASS, no unregistered debt", "evidence": "watch/inbox/gala_20260925/afterparty/lanes/t52.check.txt"},
+    {"check": "import smoke mag.afk_cadence + mag.work_loop", "exit": 0, "result": "clean; AFK_GATE_ERROR initial None", "evidence": "watch/inbox/gala_20260925/afterparty/lanes/t52.check.txt"}
+  ],
+  "files_touched": [
+    "mag/afk_cadence.py",
+    "mag/work_loop.py",
+    "tests/test_loop_death_guards.py"
+  ],
+  "negatives": [
+    "mag/afk_loop.py:56 _operator_afk is the SAME species still open: pause_reason swallow ('except Exception: pass') plus operator_status fail-open ('except Exception: return True'), so the squeeze path also works through pauses/errors. Not fixed here (3-gate cap)."
+  ],
+  "next_steal": "Convert mag/afk_loop.py:56 _operator_afk to fail CLOSED (honor pause / presume operator active on error, name the error) following the t43+t52 pattern; its in-module call sites are afk_loop.py:141, 259, 265.",
+  "ts": "2026-09-25"
+}

@@ -1,0 +1,2626 @@
+A Cheap Verifier is Good Enough: LLM Post-training is Robust to Erroneous Rewards 
+ Report GitHub Issue 
+ × 
+ Title: 
+ Content selection saved. Describe the issue below: 
+ Description: 
+ Submit without GitHub 
+ Submit in GitHub 
+ arXiv is now an independent nonprofit! 
+ Learn more 
+ × 
+ Back to arXiv 
+ Why HTML? 
+ Report Issue 
+ Back to Abstract 
+ Download PDF 
+ Abstract 
+ 1 Introduction 
+ 2 Methodology 
+ 2.1 RL with semi-verifiable rewards 
+ 2.2 The verifier hierarchy 
+ 2.3 Experimental setup 
+ 3 Verifier Agreement and Post-training Performance 
+ 3.1 Agreement is informative but does not fully rank training verifiers 
+ 3.2 Agreement, verifier capability, and training outcomes 
+ 4 Practical Implications for Reducing Post-training Costs 
+ Where the grading savings come from. 
+ 5 Related Work 
+ Reinforcement learning with verifiable rewards 
+ Rubrics as rewards beyond verifiable domains. 
+ Imperfect verifiers and noisy rewards in RLVR. 
+ LLM-as-Judge meta-evaluation. 
+ Cost-aware judge and verifier selection. 
+ 6 Conclusions and Future Work 
+ 7 Limitations 
+ References 
+ A Reproducibility 
+ B Training details 
+ B.1 Rubric-based RLVR on HealthBench 
+ B.2 Final hyperparameters 
+ B.3 Training-time judge configuration 
+ B.4 Computational resources and software 
+ C Grader prompt 
+ Caching boundary. 
+ D Verifier screening on HealthBench 
+ E Alignment between the golden verifiers 
+ F HealthBench results 
+ F.1 Verifier agreement and policy scores 
+ G PRBench results 
+ G.1 Finance 
+ G.2 Legal 
+ H Response-length drift and collapse 
+ I Policy evaluation details 
+ Task sets. 
+ Run inclusion. 
+ Effect of a single grading error. 
+ PRBench aggregates. 
+ J PRBench scoring math 
+ K PRBench filtering and lengths 
+ Prompt-length distribution legal. 
+ Filter dropouts legal. 
+ Prompt-length distribution: finance. 
+ Filter dropouts finance. 
+ L Cost savings hold across all three golden verifiers. 
+ M Cost in provider-independent units 
+ N Verifier-selection strategy audit 
+ O Agreement summaries as predictors of post-training score 
+ License: CC BY-SA 4.0
+arXiv:2609.33467v1 [cs.LG] 27 Sep 2026 
+ \DeclareDelimFormat 
+ nameyeardelim, 
+ \DeclareDelimFormat multinamedelim \addsemicolon 
+ \DeclareDelimFormat finalnamedelim & 
+ \DeclareDelimFormat multicitedelim \addsemicolon 
+ A Cheap Verifier is Good Enough: LLM Post-training is Robust to Erroneous Rewards 
+ Andreas Plesner
+ Affiliation: ETH Zurich
+ Affiliation: Handshake AI
+ Curtis Northcutt
+ Affiliation: Handshake AI
+ Francisco Guzmán
+ Affiliation: Handshake AI
+ Anish Athalye
+ Affiliation: Handshake AI
+ Abstract 
+ When post-training large language models on tasks with semi-verifiable rewards, there are many factors (training steps, base model size, training order, data quality, verifier accuracy, etc.) that practitioners must contend with to maximize model performance. Yet, it remains unclear how well verifier agreement predicts post-training performance on such tasks. In this paper, we explore this question with over 11k H100 GPU-hours, across HealthBench and PRBench tasks in medical, legal, and finance domains.
+Across the tested domains, Qwen3 trainees (1.7B–8B on HealthBench; 8B on PRBench), evaluation splits, and frontier LLM reference judges (which we call golden verifiers), higher verifier agreement does not consistently identify the best training verifier. Expensive verifiers need not outperform inexpensive ones, and open-weight Gemma verifiers produce strong training outcomes. We compare two low-cost choices retrospectively — a cost-reducing choice and a balanced choice — with estimated grading cost reductions of 98.8 % 98.8\% – 99.7 % 99.7\% relative to the golden grading protocols and average post-training score gaps of 1 1 – 3 3 points from the best evaluated training verifier. These averages include larger losses in individual settings; they do not establish that verifier choices are interchangeable. 
+ 1 Introduction 
+ Reinforcement Learning with Verifiable Rewards (RLVR) has become the post-training method of choice for eliciting reasoning capabilities in Large Language Models ( Shao et al., 2024 ; DeepSeek-AI, 2025 ; The Microsoft AI Team, 2026 ; Kimi Team et al., 2026 ; DeepSeek-AI et al., 2026 ) .
+Early work focused on domains such as mathematics and coding, where deterministic checks provide a near-perfect reward signal ( Austin et al., 2021 ) .
+The field has since expanded from verifiable rewards to semi-verifiable rubric-based rewards for post-training. This extension allows training objectives to incorporate preferences and answer style alongside correctness.
+A verifier (sometimes called a grader or judge) is used to score task outputs according to a rubric composed of criteria ( Gunjal et al., 2025 ; He et al., 2025 ; Viswanathan et al., 2025 ; Zhou et al., 2025 ; Lau et al., 2026 ) .
+In some cases, these verifiers are used directly to provide rewards for post-training, where a natural hypothesis is that the accuracy of the rewards given by the verifier has a significant impact on the final performance of the post-trained model, especially in challenging domains with semi-verifiable rewards where taste preferences come into play. 
+ This hypothesis has a natural human corollary: if Student A has a TA who grades their homework 30 % 30\% incorrectly and Student B has a “better” TA who grades their homework 10 % 10\% incorrectly, the common hypothesis is that Student B is likely to learn better over the course of the semester.
+Across the models we post-train (students), datasets (course material), verifiers (TAs), and golden verifiers (imperfect answer keys), better agreement with the answer key does not always identify the TA whose students learn most. Agreement remains informative, particularly for identifying very weak verifiers, but does not fully determine training outcomes. Our practical question is whether inexpensive verifiers can deliver strong post-training performance within a candidate pool that also includes strong, expensive models. 
+ While prior work has explored post-training robustness to synthetically introduced error in verifiable rewards ( Plesner et al., 2026 ; Cai et al., 2025 ) , we examine the semi-verifiable domain where imperfect verifiers are used in practice for rubrics as rewards. 
+ This paper evaluates verifier selection for post-training on semi-verifiable tasks.
+We compare across model size, dataset domain, evaluation hardness (hard and a mixture of hard and non-hard tasks), reference choice (golden judges), and several verifiers. 
+ Contributions : Across the tested combinations of these settings, we post-train an LLM and measure the performance impact.
+Across the tested settings, inexpensive verifiers can deliver scores close to the best evaluated training verifier, including in comparisons with strong, expensive candidates such as Grok 4.20. Higher verifier agreement does not always identify the best choice, although very weak verifiers can harm training.
+For example, the open-weight Gemma 4 31B and 26B verifiers produce some of the strongest training outcomes ( Tables   3 and  F ).
+We compare two low-cost verifier choices retrospectively, with estimated grading cost reductions of 98.8 % 98.8\% – 99.7 % 99.7\% relative to the golden grading protocols ( Section   4 ). These reductions would translate to potentially tens of thousands of dollars per training run just for our smaller scale experiments. 
+ 2 Methodology 
+ Reinforcement learning (RL), including RL from human feedback (RLHF), RL with verifiable rewards (RLVR), and RL with rubrics as rewards (RLRR) for post-training language models, works by giving rewards based on generated responses.
+One of the central difficulties in RL lies in shaping these rewards: what you reward and how much.
+RLVR often focuses on mathematics and coding—domains where answers can be verified deterministically, for example by checking against a known solution.
+This simplifies outcome verification, but does not by itself determine what to reward or by how much. Besides correctness, one might want to reward style choices, consistency, or reasoning or answer lengths ( The Microsoft AI Team, 2026 ; Xiaomi, 2026 ) .
+To extend RL post-training to open-ended tasks where correctness is not binary, recent work has turned to rubric-based rewards ( Gunjal et al., 2025 ; Viswanathan et al., 2025 ) .
+Rubrics decompose a response’s quality into explicit, interpretable criteria, each of which can be assessed by an LLM judge and combined into a scalar reward.
+This structures the reward signal in a way that generalizes beyond verifiable domains, at the cost of introducing a strong dependency on the quality of the verifier. 
+ 2.1 RL with semi-verifiable rewards 
+ RL with semi-verifiable rewards replaces deterministic checks, such as unit tests for code, with a judge’s assessment of rubric criteria.
+Formally, given an input prompt x i ∈ 𝒟 x_{i}\in\mathcal{D} , we generate a response y ^ i ∼ π θ ( ⋅ ∣ x i ) \hat{y}_{i}\sim\pi_{\theta}(\cdot\mid x_{i}) from a policy π θ \pi_{\theta} .
+Each prompt is associated with a rubric R i = { ( c i ​ j , w i ​ j ) } j = 1 k i R_{i}=\{(c_{ij},w_{ij})\}_{j=1}^{k_{i}} , a set of k i k_{i} criteria c i ​ j c_{ij} with signed weights w i ​ j ∈ ℝ w_{ij}\in\mathbb{R} . 1 1 
+ 1 
+ Positive weights reward responses that satisfy the criterion; negative weights penalize responses that exhibit the behavior described by the criterion. The role of a verifier V ϕ V_{\phi} is to assess whether a response satisfies each criterion, 
+ V ϕ ​ ( x i , y ^ i , c i ​ j ) ∈ { 0 , 1 } , V_{\phi}(x_{i},\,\hat{y}_{i},\,c_{ij})\;\in\;\{0,1\}, 
+ (1) 
+ where 1 1 indicates that the criterion is met and 0 0 that it is not.
+Following the HealthBench scoring convention ( Arora et al., 2025 ) , these verdicts are combined into an aggregate reward via a weighted sum, 
+ r ( x i , y ^ i ) = ∑ j = 1 k i w i ​ j ​ V ϕ ​ ( x i , y ^ i , c i ​ j ) ∑ j : w i ​ j > 0 w i ​ j ≤  1 , r(x_{i},\hat{y}_{i})\;=\;\frac{\sum_{j=1}^{k_{i}}w_{ij}\,V_{\phi}(x_{i},\hat{y}_{i},c_{ij})}{\sum_{j:\,w_{ij}>0}w_{ij}}\;\leq\;1, 
+ (2) 
+ where the denominator normalizes by the total positive weight, assumed nonzero, so that a response satisfying all positive criteria and none of the negative ones achieves the maximum reward of 1 1 . PRBench uses a normalized variant seen in Appendix   J .
+The RL objective is then to maximize the expected reward over the training distribution, 
+ max θ 𝔼 x i ∼ 𝒟 , y ^ i ∼ π θ ( ⋅ ∣ x i ) [ r ( x i , y ^ i ) ] . \max_{\theta}\;\mathbb{E}_{x_{i}\sim\mathcal{D},\;\hat{y}_{i}\sim\pi_{\theta}(\cdot\mid x_{i})}\!\left[\,r(x_{i},\hat{y}_{i})\,\right]. 
+ (3) 
+ As Equations   2 and  3 make clear, verifier errors influence the training reward signal. We study whether agreement with a golden verifier predicts downstream policy performance; we do not characterize which errors cause particular training outcomes. 
+ 2.2 The verifier hierarchy 
+ Determining whether a response satisfies a criterion (e.g. correctness, helpfulness, safety) is itself a judgment call that no system can make with perfect fidelity. We formalize this notion through a hierarchy of verifiers, shown in Figure   1 . 
+ Figure 1: Verifier hierarchy and roles. Dashed arrows denote imperfect approximation of the unattainable oracle V ∗ V^{*} . We compare training-verifier V M V_{M} ’s judgments with golden-verifier V G V_{G} ’s judgments on the same held-out response–criterion pairs. V M V_{M} supplies training rewards; V G V_{G} evaluates held-out policy responses. Agreement with a golden verifier does not establish ground-truth correctness. 
+ Oracle verifier. At the top of the hierarchy sits an unattainable oracle V ∗ V^{*} , a theoretical verifier that returns ground-truth verdicts on every (response, criterion) pair.
+Human annotators and LLMs approximate V ∗ V^{*} and can introduce their own noise, biases, and failure modes.
+For instance, inter- and intra-annotator disagreement are the empirical signatures of human imperfection; analogous inconsistencies arise in LLM-based judges. 
+ Golden verifiers. Prior work has shown that frontier LLMs can match human-to-human agreement on some evaluation tasks ( Zheng et al., 2023 ; Arora et al., 2025 ) .
+We use frontier models as golden verifiers V G V_{G} : scalable reference judges that remain imperfect proxies for ground truth.
+They let us study how training-time verifier choice affects post-training outcomes without requiring human annotation of every response. 
+ Training-time verifiers. We use an LLM-based training-time verifier V M V_{M} to drive the policy gradient.
+We measure agreement with the golden verifiers, following the reference-judge setup of Liu et al. (2026) . Agreement is not ground-truth correctness. The golden verifiers also score the trained policies; their grading cost precluded using them for training. The training pool nevertheless includes strong, expensive models such as Grok 4.20. Using the same references for agreement and policy evaluation defines a common evaluation target, but does not rule out shared judge biases as policy outputs change during training.
+Verifier alignment is quantified by accuracy, precision, recall, and F 1 F_{1} between V M V_{M} verdicts and V G V_{G} verdicts on held-out (response, criterion) pairs. For each dataset, these pairs come from a fixed slice of 20 20 hard tasks for the hard split, plus 20 20 non-hard tasks for the mixed all split.
+To reduce dependence on any particular reference, we evaluate against three frontier models from different vendors and report averages across them. 2 2 
+ 2 
+ We compare against each judge’s labels separately and then average the metrics, rather than combining labels first. 
+We post-train each policy using its assigned training-time verifier to score rollout responses, and use the golden verifiers to score evaluation responses. 
+ We batch multiple criteria in each verifier call and refer to the maximum number of criteria per call as the verifier’s batch size, distinct from the policy-training batch size. 
+ 2.3 Experimental setup 
+ We focus our experiments on three task domains: medical, finance, and legal tasks. The medical tasks are from HealthBench ( Arora et al., 2025 ) , while the finance and legal tasks are from PRBench ( Akyürek et al., 2025 ) . 
+ Data. All the datasets contain subsets labeled as hard. We denote the split with the hard tasks as hard and the split with the remaining as non-hard .
+We use the hard and 10% of the non-hard tasks for evaluation, and leave the remaining non-hard problems for training (the non-hard are split into training and evaluation using a fixed seed of 42).
+Per-domain split sizes are listed in Table   1 .
+Some PRBench prompts are very long, so we drop the 3 tasks exceeding 90,000 90{,}000 characters to keep prompts and responses within Qwen3’s 32,768 32{,}768 -token native context ( Appendix   K ); Table   1 reflects this filter. 
+ Table 1: Available dataset pools for training and evaluation. “Hard eval-only” contains only hard tasks; “Total eval” also includes held-out non-hard tasks. Policy scoring uses subsets of these pools.
+ Domain 
+ Train ( n n ) 
+ Hard eval-only ( n n ) 
+ Total eval ( n n ) 
+ HealthBench 
+ 3600 3600 
+ 1000 1000 
+ 1400 1400 
+ PRBench legal 
+ 225 225 
+ 249 249 
+ 274 274 
+ PRBench finance 
+ 269 269 
+ 299 299 
+ 329 329 
+ Trainees are Qwen3 1.7B , 4B , and 8B ( Qwen Team, 2025 ) , all initialized from the Hugging Face checkpoints. We vary trainee size on HealthBench; PRBench uses Qwen3 8B. 
+ Training-time verifiers ( 𝐕 𝐌 \mathbf{V_{M}} ). 
+We tested a wide selection of pretrained models on HealthBench generations from Qwen3 8B on the hard subset; the full screening results for all candidates are in Appendix   D .
+From the 52 52 tested models, we select 12 for further experiments. These are: Gemma 4 31B, Gemma 4 26B, GPT oss 120B, GPT oss 20B, Gemini 3 flash preview, Grok 4.20, Qwen3 235B, Ministral 14B, Qwen3 8B (a self-judge for the 8B trainee), Mistral 4 small, Qwen3 Next 80B, and LFM2 24B.
+API instability and grading cost prevented some runs, including runs with Grok 4.20, from completing. Incomplete runs are excluded from the policy comparisons; candidate coverage therefore varies across domains and trainee sizes. Completed runs with poor or collapsed policies remain in the result tables.
+All are run at batch = 3 \textrm{batch}{=}3 , thinking = low \textrm{thinking}{=}\texttt{low} . 
+ Golden verifiers ( 𝐕 𝐆 \mathbf{V_{G}} ). Our headline golden is Claude Opus 4.6 with thinking = medium \textrm{thinking}{=}\texttt{medium} and batch = 1 \textrm{batch}{=}1 (one criterion per call), which we used for most early experiments.
+To assess robustness to the choice of V G V_{G} , we additionally run two alternate goldens drawn from different model families: Gemini 3.1 Pro and GPT-5.5 , both with the same grading configuration.
+Re-ranking the twelve V M V_{M} candidates and the trained policies under these alternate golden verifiers is purely an evaluation operation and does not require additional training.
+Unless stated otherwise, golden-judge results are averaged across all three references, following the approach of Verga et al. (2024) . Averaging reduces dependence on any single reference, although the judges may share biases.
+Alignment metrics between the three golden verifiers, including their agreement with a 2 2 -of- 3 3 majority aggregate, are reported in Appendix   E . 
+ To spot-check the reference labels, two human experts in rubric data reviewed 50 HealthBench criteria graded by Opus 4.6.
+Both reviewers were unable to discern any errors in Opus’s labels. However, this small check does not establish perfect golden-judge accuracy. 
+ Training algorithm and hyperparameters can be found in Appendix   B . We use GRPO with within-prompt reward standardization and no effective KL penalty; verifier differences therefore affect learning through normalized advantages. 
+ Policy evaluation. The golden verifiers score trained policies on larger task sets than the agreement slices, and the two are disjoint: 100 100 hard and 40 40 non-hard HealthBench tasks, and 53 53 – 55 55 PRBench tasks per domain. Appendix   I gives the exact task sets, how the all split is weighted, and how rubric verdicts become policy scores. 
+ 3 Verifier Agreement and Post-training Performance 
+ We first compare verifier agreement with post-training performance across domains and trainee sizes. Detailed per-verifier metrics and policy scores are in Appendices   F and  G . 
+ 3.1 Agreement is informative but does not fully rank training verifiers 
+ Figure   2 compares six dataset–split combinations: HealthBench, PRBench finance, and PRBench legal, each with hard and mixed evaluation sets. Agreement and policy performance can be positively associated without giving identical verifier rankings. For example, Qwen3 8B scores on HealthBench-all are 0.37 0.37 with GPT oss 20B and 0.46 0.46 with Grok 4.20, despite GPT oss 20B having higher F 1 F_{1} ; inexpensive Gemma 4 26B scores 0.45 0.45 ( Table   10 ). The practical result is that low grading cost can coexist with strong training outcomes, rather than that agreement has no predictive value. 
+ Figure   3 shows the comparison across the tested Qwen3 model sizes (up to 8B parameters). 
+ Figure 2: Higher verifier F 1 F_{1} agreement with a golden judge does not consistently correspond to higher post-training score. 
+For each dataset (HealthBench, PRBench finance, PRBench legal), every point is one (verifier, split) evaluation of a completed Qwen3 8B training run, averaged across the three golden judges. Horizontal lines mark the HealthBench no-post-training baselines. PRBench points use the clipped aggregate; normalized-score baselines are reported alongside normalized policy scores in the appendix tables ( Appendices   J and  G ). The Qwen3 8B training verifier is omitted from this plot and Figure   3 ; its collapsed-policy outcomes remain in the appendix tables. 
+ Figure   3 also shows that weak verifiers can harm training: Qwen3 8B trained with LFM2 24B still clears its no-training baseline on HealthBench-hard, whereas Qwen3 1.7B trained with the same verifier falls well below baseline. Failure is not confined to low agreement: the Qwen3 8B training verifier yields below-baseline scores despite F 1 ≈ 0.76 F_{1}\approx 0.76 ( Table   9 ). These outcomes do not establish a universal quality threshold or explain the causes of failure. Here, 1 − F 1 1-F_{1} measures disagreement with a reference, not the probability of an incorrect rubric verdict. 
+ Figure 3: Verifier disagreement and post-training performance across Qwen3 trainee sizes. Results are averaged evaluation scores across the three golden judges. The horizontal dotted line represents baseline performance for each model. Each column is a different trainee size (8B, 4B, 1.7B), with mixed and hard evaluation splits in the two rows. The x x -axis is 1 − F 1 1-F_{1} ; it does not define a noise-tolerance threshold. 
+ 3.2 Agreement, verifier capability, and training outcomes 
+ The comparisons support a role for verifier quality without requiring a monotonic ranking by agreement. On HealthBench-hard, LFM2 24B has F 1 = 0.54 F_{1}=0.54 and yields low policy scores, whereas Gemma 4 31B and Gemma 4 26B have F 1 = 0.83 F_{1}=0.83 and 0.76 0.76 , respectively, and both yield an 8B policy score of 0.34 0.34 ( Table   9 ). The same table reports GDPval as a separate measure of general model capability ( Patwardhan et al., 2025 ) . These comparisons concern particular verifiers and do not isolate a causal effect of either capability or agreement. 
+ Appendix   O summarizes the descriptive value of other agreement metrics in the existing results. Accuracy and F 1 F_{1} explain part of the observed variation in policy scores, and the strongest summary depends on the records included. Thus, evidence that agreement is informative is compatible with our cost finding: inexpensive verifiers can still be among the strongest training choices. 
+ Criterion-level agreement also differs from the signal used for learning. The reward aggregates criteria with signed weights, while GRPO standardizes rewards within each prompt’s rollout group. Unweighted F 1 F_{1} does not measure whether those weighted rewards give the same relative advantages to competing responses. Our fixed-response screening metrics provide a practical comparison of verifiers, but do not characterize training-time errors as the policy changes. We therefore interpret the per-verifier results as observed cost–performance tradeoffs, without assigning significance to small score gaps or attributing them solely to agreement. 
+ 4 Practical Implications for Reducing Post-training Costs 
+ The comparisons in Figure   3 motivate considering verifier cost alongside agreement. We compare two choices identified retrospectively: (1) the cost-reducing Pareto verifier — the cheapest candidate with accuracy ≥ 0.80 \geq 0.80 against the golden judge, falling back to the cheapest if none qualifies; and (2) the balanced Pareto verifier — the fixed choice Gemma 4 26B, selected for its mean post-training score in our candidate pool. Table   19 compares these with other choices, and Figures   4 and  7 show their cost–score tradeoff per dataset and on average. The balanced choice uses observed training outcomes; it is not an automatic selection rule validated without a post-training sweep, and neither choice guarantees Pareto optimality in a new setting. 
+ We compare the choices using three metrics, each computed per cell (one dataset–split–golden combination), among candidates with a completed run and an available cost estimate: the score gap , the post-training score of the empirically best eligible verifier in the cell minus the score of the pick (lower is better; 0 0 means the pick recovered the best verifier); the uplift , the fraction of the available post-training improvement over the no-training baseline that the pick captures; and the cost reduction , the fraction of per-task grading cost saved relative to the golden grading protocol. Averaged across all three datasets, both evaluation splits ( all and hard ), and the three golden judges, the balanced Pareto verifier achieves a + 0.010 +0.010 score gap, captures 95 % 95\% of the available uplift, and gives a 98.8 % 98.8\% cost reduction; the cost-reducing Pareto verifier achieves a + 0.027 +0.027 score gap, 82 % 82\% uplift, and a 99.7 % 99.7\% cost reduction ( Table   3 ). The cheaper choice has a larger score gap, including 0.062 0.062 (6.2 points) on HealthBench-all, where it captures 46 % 46\% of the available uplift. 
+ These are estimates of verifier API cost under the recorded grading protocols and pricing snapshot, not reductions in total training cost. They depend on model prices (including fallback estimates where prices were unavailable), caching, and batching; golden judges grade one criterion per call, while training verifiers grade up to three. We did not train a policy with a golden verifier, so the golden-cost comparison does not establish equivalent policy quality. Appendix   M reports judge calls and tokens per task. 
+ Where the grading savings come from. 
+ Table   2 separates grading resource use from dollar cost on the HealthBench cost probe. The golden protocols require 2.7 × 2.7\times as many calls as the training-verifier protocols, but call reduction alone does not explain the price difference. Claude Opus 4.6 uses about 3.9 × 3.9\times as many total tokens as Gemma 4 26B while costing about 296 × 296\times as much on this probe. Under a matched batch = 3 \textrm{batch}{=}3 , thinking = low \textrm{thinking}{=}\texttt{low} protocol, the token ratio falls to 1.44 × 1.44\times ( Appendix   M ). Lower token prices therefore account for most of the observed dollar savings. 
+ Table 2: Grading resources and cost on a fixed HealthBench probe. Calls and total input-plus-output tokens are per task; USD is per 1,000 1{,}000 tasks at the recorded prices. Golden protocols use one criterion per call and medium thinking; training protocols use up to three criteria and low thinking. Probe sampling and pricing qualifications are in Appendix   M . 
+ Verifier 
+ Calls/task 
+ Tokens/task 
+ USD/1k tasks 
+ Claude Opus 4.6 (golden) 
+ 11.6 
+ 21,321 
+ 133.20 
+ GPT-5.5 (golden) 
+ 11.6 
+ 17,093 
+ 99.70 
+ Gemma 4 31B 
+ 4.3 
+ 5,498 
+ 0.77 
+ Gemma 4 26B 
+ 4.3 
+ 5,514 
+ 0.45 
+ GPT oss 20B 
+ 4.3 
+ 6,157 
+ 0.08 
+ Self-hosting offers a complementary cost measure: Gemma 4 26B grades a HealthBench rollout in about 0.51 0.51 H100-seconds, equivalent to roughly 14 14 H100-hours for 96,000 96{,}000 rollouts at this measured rate. These measurements make the source of the savings concrete while keeping API pricing separate from policy quality and total training cost. Actual training bills also depend on response-length growth and cache reuse. The probe supports comparison at a fixed operating point; the per-domain cost–score results remain the basis for comparing training verifiers. 
+ Figure 4: Cost vs. post-training score, per dataset, averaged across
+the three goldens, with our two retrospective choices highlighted. 
+One point per (dataset, verifier); panels identify datasets, and marker shape and color encode verifier provider family.
+Bold-outlined markers are Pareto-optimal in (cost, post-training score) for
+that dataset; smaller faded markers are sub-optimal. The dotted line marks the
+HealthBench no-post-training baseline. PRBench baselines are reported on the normalized scale in the appendix tables. PRBench scores use the clipped aggregate. Red rings : cost-reducing Pareto verifier picks.
+ Blue rings : the fixed balanced choice, Gemma 4 26B. These examples illustrate different cost–score tradeoffs within the tested candidate pool. 
+ Table 3: Verifier selection across 18 18 evaluation cells 
+( 3 3 datasets × \times 2 2 splits × \times 3 3 goldens; trainee Qwen3 8B).
+ Splits : all = hard + + non-hard combined with the weights in Appendix   I ; hard = the hard subset only.
+The cost-reducing rule, fixed balanced choice, and score gap and cost reduction metrics are defined in Section   4 .
+ Uplift = ( chosen − baseline ) / ( max − baseline ) =(\text{chosen}-\text{baseline})/(\text{max}-\text{baseline}) is the fraction of available post-training improvement captured ( 100 % 100\% matches the best verifier per cell; 0 % 0\% matches no training).
+ Bold marks the better value per column between the cost-reducing and balanced picks. 
+ Overall 
+ HealthBench 
+ PR-finance 
+ PR-legal 
+ Variant 
+ Metric 
+ all 
+ hard 
+ all 
+ hard 
+ all 
+ hard 
+ all 
+ hard 
+ Cheapest verifier 
+ (no quality floor) 
+ Score gap 
+ +0.030 
+ +0.026 
+ +0.062 
+ +0.054 
+ +0.011 
+ +0.011 
+ +0.017 
+ +0.013 
+ Uplift 
+ 77% 
+ 86% 
+ 46% 
+ 70% 
+ 95% 
+ 95% 
+ 89% 
+ 93% 
+ Cost reduction 
+ 99.7% 
+ 99.7% 
+ 99.4% 
+ 99.5% 
+ 99.8% 
+ 99.8% 
+ 99.8% 
+ 99.8% 
+ Cost-reducing 
+ Pareto verifier 
+ Score gap 
+ +0.030 
+ +0.023 
+ +0.062 
+ +0.046 
+ +0.011 
+ +0.011 
+ +0.017 
+ +0.013 
+ Uplift 
+ 77% 
+ 88% 
+ 46% 
+ 76% 
+ 95% 
+ 95% 
+ 89% 
+ 93% 
+ Cost reduction 
+ 99.7% 
+ 99.7% 
+ 99.4% 
+ 99.1% 
+ 99.8% 
+ 99.8% 
+ 99.8% 
+ 99.8% 
+ Balanced 
+ Pareto verifier 
+ Score gap 
+ +0.012 
+ +0.008 
+ +0.001 
+ +0.000 
+ +0.015 
+ +0.012 
+ +0.019 
+ +0.012 
+ Uplift 
+ 93% 
+ 96% 
+ 99% 
+ 100% 
+ 94% 
+ 95% 
+ 87% 
+ 93% 
+ Cost reduction 
+ 98.8% 
+ 98.9% 
+ 98.1% 
+ 98.1% 
+ 99.0% 
+ 99.2% 
+ 99.1% 
+ 99.0% 
+ 5 Related Work 
+ Reinforcement learning with verifiable rewards 
+ Recent work has focused on scaling model capabilities through RL ( Silver & Sutton, 2025 ; OpenAI, 2024 ; Zeng et al., 2025 ) . DeepSeek-R1 ( DeepSeek-AI, 2025 ) using GRPO ( Shao et al., 2024 ) is a key example of how RL can be used to cost-effectively increase frontier model capabilities by training on problems with verifiable rewards, such as mathematics and coding, where there is less risk of reward hacking. 
+ Rubrics as rewards beyond verifiable domains. 
+ The post-training literature is migrating from deterministic verifiers (math, code) to LLM judges scoring weighted rubrics in domains where ground truth is undefined.
+ Gunjal et al. (2025) introduce Rubrics-as-Rewards on synthetic medical data and show uplift on HealthBench; Viswanathan et al. (2025) show weighted checklists outperform reward models; Zhou et al. (2025) use rubrics as exploration scaffolds; He et al. (2025) build AdvancedIF for instruction following; and Su et al. (2025) extend RLVR to medicine, chemistry, and economics. In every case, the LLM judge replaces the deterministic verifier, raising the open question we address: how good the verifier needs to be. 
+ Imperfect verifiers and noisy rewards in RLVR. 
+ Recent work has explored how much noise RLVR can tolerate while still giving a large uplift. Plesner et al. (2026) showed that, with symmetric synthetic noise on coding unit tests, RLVR keeps mean validation reward within about 1 1 point of the clean baseline at a fixed late checkpoint for noise rates up to 20 % 20\% . Related work derives bias-corrected GRPO estimators under stochastic-channel reward noise: Cai et al. (2025) (asymmetric false-positive/false-negative), Mansouri et al. (2025) (unbiased Bernoulli correction), and Rad et al. (2026) (a Youden’s-J phase transition). Shao et al. (2025) reported the counterintuitive results that Qwen2.5-Math can learn from purely random rewards. Follow-up work by Zhu & Kang (2026) and Chen et al. (2026) attribute the effect to clipping bias and contamination. 
+ LLM-as-Judge meta-evaluation. 
+ We measure each candidate verifier’s agreement (precision, recall, F1 score, and Spearman ρ \rho ) with a frontier LLM acting as the operational golden reference, following Zheng et al. (2023) .
+Standard
+judge benchmarks include RewardBench ( Lambert et al., 2025 ) ,
+JudgeBench ( Tan et al., 2024 ) , and the rubric-specific
+RubricEval ( Pan et al., 2026 ) ; Gu et al. (2026) catalog the
+inherited biases (position, length, prompt-phrasing, self-preference).
+ Gao et al. (2023) establish that proxy-reward accuracy and
+gold-reward outcomes can diverge under optimization. Wen et al. (2025) and Kim et al. (2025) study why reward-model evaluation metrics can imperfectly predict downstream policy performance. We extend this empirical question to the cost and training outcomes of rubric-based verifiers across three professional domains. 
+ Cost-aware judge and verifier selection. 
+ Salinas et al. (2025) tune LLM-judge design decisions to reduce evaluation cost by three orders of magnitude. Dorner et al. (2025) prove a hard limit: a judge no stronger than the system it grades cannot reduce the number of required ground-truth labels by more than a factor of two. Liu et al. (2026) compare multiple reasoning and non-reasoning training judges under a single fixed gold-standard reference, and show that trained policies can exploit judge biases. Our study compares off-the-shelf rubric verifiers across grading costs, three professional domains, and three golden references. 
+ 6 Conclusions and Future Work 
+ Across the tested rubric-based post-training tasks, inexpensive verifiers can deliver strong policy scores within a candidate pool that includes strong, expensive models. Open-weight Gemma verifiers provide particularly favorable observed cost–score tradeoffs. Agreement remains informative, as illustrated by LFM2’s weak results, but does not fully determine the ranking of training outcomes. Our cost claim concerns the performance achieved by selected inexpensive verifiers in these experiments; it does not require agreement to be uncorrelated with performance or all verifiers to be interchangeable. Understanding which response-level errors affect learning could improve selection beyond aggregate agreement metrics. 
+ 7 Limitations 
+ Unstable vendor APIs, several of which went down during this research, and limited post-training compute constrained the number of judges and experiments. Our results cover Qwen3 trainees up to 8B and one GRPO setup; they do not establish generalization to other model families, algorithms, KL settings, or longer training horizons. Hyperparameters were not tuned separately for weaker verifiers. 
+ Within the available compute and grading budget, we evaluated a broad set of verifiers, domains, and trainee sizes. Some configurations were launched more than once, but these repeats were not controlled seed replications (one changed the verifier-serving backend). The reported comparisons therefore describe observed outcomes and do not separate training randomness from verifier effects. Evaluation uses subsets of the held-out pools; task resampling would address evaluation-sample variability, but would not estimate training-seed uncertainty. 
+ Golden-verifier judgments remain LLM references rather than human ground truth, and screening agreement is measured on fixed responses rather than each trained policy’s outputs. We did not train with a golden verifier or conduct a dedicated test of exploitable verifier biases and reward hacking (see Appendix   H for observed response-length drift). The cost–quality choices are retrospective and depend on the candidate pool; Appendix   O compares other agreement summaries, but we do not establish a generally superior selection metric. 
+ References 
+ Akyürek et al. (2025) 
+ Afra Akyürek, Advait Gosai, Chen Zhang, Vipul Gupta, Jaehwan Jeong, Anisha Gunjal, Tahseen Rabbani, Maria Mazzone, David Randolph, Mohammad Meymand, Gurshaan Chattha, Paula Rodriguez, Diego Mares, Pavit Singh, Michael Liu, Subodh Chawla, Pete Cline, Lucy Ogaz, Ernesto Hernandez, Zihao Wang, Pavi Bhatter, Marcos Ayestaran, Bing Liu and Yunzhong He
+ “PRBench: Large-Scale Expert Rubrics for Evaluating High-Stakes Professional Reasoning”
+ In arXiv.org , https://arxiv.org/abs/2511.11562v1, 2025
+ Arora et al. (2025) 
+ Rahul. Arora, Jason Wei, Rebecca Hicks, Preston Bowman, Joaquin Quiñonero-Candela, Foivos Tsimpourlas, Michael Sharman, Meghan Shah, Andrea Vallone, Alex Beutel, Johannes Heidecke and Karan Singhal
+ “HealthBench: Evaluating Large Language Models Towards Improved Human Health”
+ arXiv, 2025
+ DOI: 10.48550/arXiv.2505.08775 
+ Austin et al. (2021) 
+ Jacob Austin, Augustus Odena, Maxwell Nye, Maarten Bosma, Henryk Michalewski, David Dohan, Ellen Jiang, Carrie Cai, Michael Terry, Quoc Le and Charles Sutton
+ “Program Synthesis with Large Language Models”
+ arXiv, 2021
+ DOI: 10.48550/arXiv.2108.07732 
+ Cai et al. (2025) 
+ Xin-Qiang Cai, Wei Wang, Feng Liu, Tongliang Liu, Gang Niu and Masashi Sugiyama
+ “Reinforcement Learning with Verifiable yet Noisy Rewards under Imperfect Verifiers”
+ arXiv, 2025
+ DOI: 10.48550/arXiv.2510.00915 
+ Chen et al. (2026) 
+ Peter Chen, Xiaopeng Li, Ziniu Li, Wotao Yin, Xi Chen and Tianyi Lin
+ “Exploration vs Exploitation: Rethinking RLVR through Clipping, Entropy, and Spurious Reward”
+ arXiv, 2026
+ DOI: 10.48550/arXiv.2512.16912 
+ DeepSeek-AI (2025) 
+ DeepSeek-AI
+ “DeepSeek-R1: Incentivizing Reasoning Capability in LLMs via Reinforcement Learning”
+ In Nature 645.8081 , 2025, pp. 633–638
+ DOI: 10.1038/s41586-025-09422-z 
+ DeepSeek-AI et al. (2026) 
+ DeepSeek-AI et al.
+ “DeepSeek-V4.1-Flash: Pushing the Limits of KV Cache Compression”
+ arXiv, 2026
+ DOI: 10.48550/arXiv.2609.19969 
+ Dorner et al. (2025) 
+ Florian. Dorner, Vivian Nastl and Moritz Hardt
+ “Limits to Scalable Evaluation at the Frontier: LLM as Judge Won’t Beat Twice the Data”
+ In The Thirteenth International Conference on Learning Representations , 2025
+ Gao et al. (2023) 
+ Leo Gao, John Schulman and Jacob Hilton
+ “Scaling Laws for Reward Model Overoptimization”
+ In Proceedings of the 40th International Conference on Machine Learning 
+ PMLR, 2023, pp. 10835–10866
+ Gu et al. (2026) 
+ Jiawei Gu, Xuhui Jiang, Zhichao Shi, Hexiang Tan, Xuehao Zhai, Chengjin Xu, Wei Li, Yinghan Shen, Shengjie Ma, Honghao Liu, Saizhuo Wang, Kun Zhang, Zhouchi Lin, Bowen Zhang, Lionel Ni, Wen Gao, Yuanzhuo Wang and Jian Guo
+ “A Survey on LLM-as-a-Judge”
+ In The Innovation , 2026, pp. 101253
+ DOI: 10.1016/j.xinn.2025.101253 
+ Gunjal et al. (2025) 
+ Anisha Gunjal, Anthony Wang, Elaine Lau, Vaskar Nath, Yunzhong He, Bing Liu and Sean Hendryx
+ “Rubrics as Rewards: Reinforcement Learning Beyond Verifiable Domains”
+ arXiv, 2025
+ DOI: 10.48550/arXiv.2507.17746 
+ He et al. (2025) 
+ Yun He, Wenzhe Li, Hejia Zhang, Songlin Li, Karishma Mandyam, Sopan Khosla, Yuanhao Xiong, Nanshu Wang, Xiaoliang Peng, Beibin Li, Shengjie Bi, Shishir. Patil, Qi Qi, Shengyu Feng, Julian Katz-Samuels, Richard Pang, Sujan Gonugondla, Hunter Lang, Yue Yu, Yundi Qian, Maryam Fazel-Zarandi, Licheng Yu, Amine Benhalloum, Hany Awadalla and Manaal Faruqui
+ “AdvancedIF: Rubric-Based Benchmarking and Reinforcement Learning for Advancing LLM Instruction Following”
+ arXiv, 2025
+ DOI: 10.48550/arXiv.2511.10507 
+ Kim et al. (2025) 
+ Sunghwan Kim, Dongjin Kang, Taeyoon Kwon, Hyungjoo Chae, Dongha Lee and Jinyoung Yeo
+ “Rethinking Reward Model Evaluation Through the Lens of Reward Overoptimization”
+ In Proceedings of the 63rd Annual Meeting of the Association for Computational Linguistics (Volume 1: Long Papers) 
+ Vienna, Austria: Association for Computational Linguistics, 2025, pp. 13252–13280
+ DOI: 10.18653/v1/2025.acl-long.649 
+ Kimi Team et al. (2026) 
+ Kimi Team et al.
+ “Kimi K3: Open Frontier Intelligence”
+ arXiv, 2026
+ DOI: 10.48550/ARXIV.2607.24653 
+ Lambert et al. (2025) 
+ Nathan Lambert, Valentina Pyatkin, Jacob Morrison, Miranda, Bill Lin, Khyathi Chandu, Nouha Dziri, Sachin Kumar, Tom Zick, Yejin Choi, Noah. Smith and Hannaneh Hajishirzi
+ “RewardBench: Evaluating Reward Models for Language Modeling”
+ In Findings of the Association for Computational Linguistics: NAACL 2025 
+ Albuquerque, New Mexico: Association for Computational Linguistics, 2025, pp. 1755–1797
+ DOI: 10.18653/v1/2025.findings-naacl.96 
+ Lau et al. (2026) 
+ Elaine Lau, Markus Dücker, Ronak Chaudhary, Hui Goh, Rosemary Wei, Vaibhav Kumar, Saed Qunbar, Guram Gogia, Yi Liu, Scott Millslagle, Nasim Borazjanizadeh, Ulyana Tkachenko, Samuel Danquah, Collin Schweiker, Vijay Karumathil, Asrith Devalaraju, Varsha Sandadi, Haemi Nam, Punit Arani, Ray Epps, Abdullah Arif, Sahil Bhaiwala, Curtis Northcutt, Skyler Wang, Anish Athalye, Jonas Mueller and Francisco Guzmán
+ “BankerToolBench: Evaluating AI Agents in End-to-End Investment Banking Workflows”
+ arXiv, 2026
+ DOI: 10.48550/arXiv.2604.11304 
+ Liu et al. (2026) 
+ Yixin Liu, Yue Yu, DiJia Su, Sid Wang, Xuewei Wang, Song Jiang, Bo Liu, Arman Cohan, Yuandong Tian and Zhengxing Chen
+ “Examining Reasoning LLMs-as-Judges in Non-Verifiable LLM Post-Training”
+ arXiv, 2026
+ DOI: 10.48550/ARXIV.2603.12246 
+ Mansouri et al. (2025) 
+ Omar Mansouri, Mohamed Seddik and Salem Lahlou
+ “Noise-Corrected GRPO: From Noisy Rewards to Unbiased Gradients”
+ arXiv, 2025
+ DOI: 10.48550/ARXIV.2510.18924 
+ OpenAI (2024) 
+ OpenAI
+ “Learning to Reason with LLMs”
+ In Learning to reason with LLMs 
+ OpenAI, https://openai.com/index/learning-to-reason-with-llms/, 2024
+ Pan et al. (2026) 
+ Tianjun Pan, Xuan Lin, Wenyan Yang, Qianyu He, Shisong Chen, Licai Qi, Wanqing Xu, Hongwei Feng, Bo Xu and Yanghua Xiao
+ “RubricEval: A Rubric-Level Meta-Evaluation Benchmark for LLM Judges in Instruction Following”
+ arXiv, 2026
+ DOI: 10.48550/arXiv.2603.25133 
+ Patwardhan et al. (2025) 
+ Tejal Patwardhan, Rachel Dias, Elizabeth Proehl, Grace Kim, Michele Wang, Olivia Watkins, Simón Fishman, Marwan Aljubeh, Phoebe Thacker, Laurance Fauconnet, Natalie. Kim, Patrick Chao, Samuel Miserendino, Gildas Chabot, David Li, Michael Sharman, Alexandra Barr, Amelia Glaese and Jerry Tworek
+ “GDPval: Evaluating AI Model Performance on Real-World Economically Valuable Tasks”
+ arXiv, 2025
+ DOI: 10.48550/arXiv.2510.04374 
+ Plesner et al. (2026) 
+ Andreas Plesner, Francisco Guzmán and Anish Athalye
+ “An Imperfect Verifier Is Good Enough: Learning with Noisy Rewards”
+ In arXiv.org , https://arxiv.org/abs/2604.07666v1, 2026
+ Rad et al. (2026) 
+ Ali Rad, Khashayar Filom, Darioush Keivan, Peyman Esfahani and Ehsan Kamalinejad
+ “Rate or Fate? RLV ε R: Reinforcement Learning with Verifiable Noisy Rewards”
+ arXiv, 2026
+ DOI: 10.48550/arXiv.2601.04411 
+ Salinas et al. (2025) 
+ David Salinas, Omar Swelam and Frank Hutter
+ “Tuning LLM Judge Design Decisions for 1/1000 of the Cost”
+ In Forty-Second International Conference on Machine Learning , 2025
+ Shao et al. (2025) 
+ Rulin Shao, Shuyue Li, Rui Xin, Scott Geng, Yiping Wang, Sewoong Oh, Simon Du, Nathan Lambert, Sewon Min, Ranjay Krishna, Yulia Tsvetkov, Hannaneh Hajishirzi, Pang Koh and Luke Zettlemoyer
+ “Spurious Rewards: Rethinking Training Signals in RLVR”
+ arXiv, 2025
+ DOI: 10.48550/arXiv.2506.10947 
+ Shao et al. (2024) 
+ Zhihong Shao, Peiyi Wang, Qihao Zhu, Runxin Xu, Junxiao Song, Xiao Bi, Haowei Zhang, Mingchuan Zhang, Y.. Li, Y. Wu and Daya Guo
+ “DeepSeekMath: Pushing the Limits of Mathematical Reasoning in Open Language Models”
+ arXiv, 2024
+ DOI: 10.48550/arXiv.2402.03300 
+ Silver & Sutton (2025) 
+ David Silver and Richard Sutton
+ “Welcome to the Era of Experience”, 2025
+ Su et al. (2025) 
+ Yi Su, Dian Yu, Linfeng Song, Juntao Li, Haitao Mi, Zhaopeng Tu, Min Zhang and Dong Yu
+ “Crossing the Reward Bridge: Expanding RL with Verifiable Rewards Across Diverse Domains”
+ arXiv, 2025
+ DOI: 10.48550/arXiv.2503.23829 
+ Tan et al. (2024) 
+ Sijun Tan, Siyuan Zhuang, Kyle Montgomery, William. Tang, Alejandro Cuadron, Chenguang Wang, Raluca Popa and Ion Stoica
+ “JudgeBench: A Benchmark for Evaluating LLM-based Judges”
+ In arXiv.org , https://arxiv.org/abs/2410.12784v2, 2024
+ The Microsoft AI Team (2026) 
+ The Microsoft AI Team
+ “MAI-Thinking-1: Building a Hill-Climbing Machine”, 2026
+ URL: https://microsoft.ai/pdf/mai-thinking-1.pdf 
+ Verga et al. (2024) 
+ Pat Verga, Sebastian Hofstatter, Sophia Althammer, Yixuan Su, Aleksandra Piktus, Arkady Arkhangorodsky, Minjie Xu, Naomi White and Patrick Lewis
+ “Replacing Judges with Juries: Evaluating LLM Generations with a Panel of Diverse Models”
+ arXiv, 2024
+ DOI: 10.48550/arXiv.2404.18796 
+ Viswanathan et al. (2025) 
+ Vijay Viswanathan, Yanchao Sun, Xiang Kong, Meng Cao, Graham Neubig and Tongshuang Wu
+ “Checklists Are Better Than Reward Models For Aligning Language Models”
+ In The Thirty-ninth Annual Conference on Neural Information Processing Systems , 2025
+ Wen et al. (2025) 
+ Xueru Wen, Jie Lou, Yaojie Lu, Hongyu Lin, Xing Yu, Xinyu Lu, Ben He, Xianpei Han, Debing Zhang and Le Sun
+ “Rethinking Reward Model Evaluation: Are We Barking up the Wrong Tree?”
+ arXiv, 2025
+ DOI: 10.48550/arXiv.2410.05584 
+ Xiaomi (2026) 
+ LLM-Core Xiaomi
+ “MiMo-V2.6: Scaling Reinforcement Learning Towards Self-Improvement”
+ In arXiv preprint , 2026
+ URL: https://huggingface.co/XiaomiMiMo/MiMo-V2.6-Pro-RL/blob/main/MiMo_V2_6_technical_report.pdf 
+ Qwen Team (2025) 
+ Qwen Team
+ “Qwen3 Technical Report”
+ arXiv, 2025
+ DOI: 10.48550/arXiv.2505.09388 
+ Zeng et al. (2025) 
+ Weihao Zeng, Yuzhen Huang, Qian Liu, Wei Liu, Keqing He, Zejun Ma and Junxian He
+ “SimpleRL-Zoo: Investigating and Taming Zero Reinforcement Learning for Open Base Models in the Wild”
+ In Second Conference on Language Modeling , 2025
+ Zheng et al. (2023) 
+ Lianmin Zheng, Wei-Lin Chiang, Ying Sheng, Siyuan Zhuang, Zhanghao Wu, Yonghao Zhuang, Zi Lin, Zhuohan Li, Dacheng Li, Eric. Xing, Hao Zhang, Joseph. Gonzalez and Ion Stoica
+ “Judging LLM-as-a-judge with MT-bench and Chatbot Arena”
+ In Proceedings of the 37th International Conference on Neural Information Processing Systems , NIPS ’23
+ Red Hook, NY, USA: Curran Associates Inc., 2023, pp. 46595–46623
+ Zhou et al. (2025) 
+ Yang Zhou, Sunzhu Li, Shunyu Liu, Wenkai Fang, Kongcheng Zhang, Jiale Zhao, Jingwen Yang, Yihe Zhou, Jianwei Lv, Tongya Zheng, Hengtong Lu, Wei Chen, Yan Xie and Mingli Song
+ “Breaking the Exploration Bottleneck: Rubric-Scaffolded Reinforcement Learning for General LLM Reasoning”
+ arXiv, 2025
+ DOI: 10.48550/arXiv.2508.16949 
+ Zhu & Kang (2026) 
+ Yuxuan Zhu and Daniel Kang
+ “Noisy Data Is Destructive to Reinforcement Learning with Verifiable Rewards”
+ arXiv, 2026
+ DOI: 10.48550/arXiv.2603.16140 
+ Zhu et al. (2025) 
+ Zilin Zhu, Chengxing Xie, Xin Lv and slime Contributors
+ “slime: An LLM post-training framework for RL Scaling” GitHub repository. Corresponding author: Xin Lv, https://github.com/THUDM/slime , 2025
+ Appendix A Reproducibility 
+ We have approval to open-source the code, benchmarks, and experimental results for the camera-ready version of this paper. 
+ Appendix B Training details 
+ We use GRPO ( Shao et al., 2024 ) , with advantages centered and normalized by the within-prompt group’s standard deviation: 8 8 rollouts per prompt, 120 120 prompts per batch, 5 × 10 − 6 5{\times}10^{-6} constant LR, no effective KL penalty, sampling temperature 1.0 1.0 , with eval every 5 5 rollout steps. 
+ B.1 Rubric-based RLVR on HealthBench 
+ Each HealthBench prompt x x comes with a rubric ℛ ⁡ ( x ) = { ( c k , w k ) } k = 1 K x \mathcal{R}(x)=\{(c_{k},w_{k})\}_{k=1}^{K_{x}} of K x K_{x} criterion strings c k c_{k} and weights w k ∈ ℤ ∖ { 0 } w_{k}\in\mathbb{Z}\setminus\{0\} (positive weights reward presence; negative weights reward absence). A response y y is scored by submitting each ( x , y , c k ) (x,y,c_{k}) triple to a judge J J , which returns a binary verdict J k ​ ( x , y ) ∈ { 0 , 1 } J_{k}(x,y)\in\{0,1\} for whether the criterion is met. The per-task score is the weight-normalized aggregate 
+ s J ​ ( x , y ) = ∑ k = 1 K x w k ⋅ 𝟏 ​ [ J k ​ ( x , y ) ] ∑ k = 1 K x max ⁡ ( 0 , w k ) , s_{J}(x,y)=\frac{\sum_{k=1}^{K_{x}}w_{k}\cdot\mathbf{1}[J_{k}(x,y)]}{\sum_{k=1}^{K_{x}}\max(0,w_{k})}, 
+ (4) 
+ following the convention of Arora et al. (2025) : positive-weight criteria add points when met, and negative-weight criteria subtract points when met.
+We use s J ​ ( x , y ) s_{J}(x,y) as the reward for rollout y y . 
+ PRBench ( Akyürek et al., 2025 ) uses a different per-task aggregate, derived from the same per-criterion verdicts but with a clipped/normalized formula in place of the signed fraction above. We use the PRBench normalized score s J norm ∈ [ 0 , 1 ] s_{J}^{\textrm{norm}}\in[0,1] as the reward signal for PRBench training runs. We compute both metrics in the logs which can be found in the supplementary material. 
+ Training uses GRPO with group-standard-deviation normalization, 8 8 rollouts per prompt, batch size 120 120 , learning rate 5 × 10 − 6 5{\times}10^{-6} , no effective KL penalty, and a maximum response length of 5000 5000 tokens; full hyperparameters are in Appendix   B . The training-time judge is invoked at batch = 3 \textrm{batch}{=}3 criteria per call with thinking = low \textrm{thinking}{=}\texttt{low} . This is the configuration whose precision and recall we measure (rather than a more careful single-criterion configuration the same model could in principle support). 
+ B.2 Final hyperparameters 
+ Table   4 reports the hyperparameters used for the headline experiments. The main points are that we (i) use GRPO with group-standard-deviation normalization, (ii) the maximum response length is 5000 5000 tokens, (iii) the per-prompt rollout count is 8 8 , and (iv) the logged KL coefficient of 0.1 0.1 does not enter the GRPO objective. 
+ Table 4: Final hyperparameters for HealthBench experiments. Trainees are Qwen3 1.7B, 4B, 8B; the same hyperparameter set is used for all three sizes, modulo per-size GPU/TP layout ( Table   5 ). 
+ Parameter 
+ Value 
+ Optimizer 
+ Adam 
+ Learning rate 
+ 5 × 10 − 6 5\times 10^{-6} (constant) 
+ Weight decay 
+ 0.10 0.10 
+ Effective KL penalty 
+ None 
+ Algorithm 
+ GRPO (group-std normalized advantages) 
+ Rollouts per prompt 
+ 8 8 
+ Batch size 
+ 120 120 prompts 
+ Sampling temperature 
+ 1.0 1.0 
+ Sampling top- p p 
+ 1.00 1.00 
+ Max response tokens 
+ 5000 5000 
+ Eval interval 
+ 5 5 rollout steps 
+ Eval samples per prompt 
+ 1 1 
+ Nominal rollout steps 
+ 101 101 (incomplete runs excluded) 
+ Table 5: GPU and tensor-parallel configuration per trainee size. 
+ Trainee 
+ GPUs/node 
+ Tensor parallel 
+ Approx. GPU-hours per cell 
+ Qwen3 1.7B 
+ 4 
+ 1 
+ 12 
+ Qwen3 4B 
+ 4 
+ 2 
+ 18 
+ Qwen3 8B 
+ 6 
+ 2 
+ 24 
+ B.3 Training-time judge configuration 
+ The training-time judge is invoked at batch = 3 \textrm{batch}{=}3 criteria per call, thinking = low \textrm{thinking}{=}\texttt{low} , 1 1 generation per call, with structured-output JSON returning an ordered verdicts list; single-criterion calls return explanation and criteria_met . The prompt is split at the per-criterion boundary so that the introduction-plus-conversation prefix is reusable across criteria within a task. Prompt caching is enabled where the provider supports it. 
+ B.4 Computational resources and software 
+ We train on a cluster with 8 nodes and 8 H100 GPUs per node. Each training run uses a single H100 node, and the total logged runtime is 1415 node-hours (about 11.3k H100 GPU-hours of node capacity). Per-run GPU configurations are listed in Table   5 . Judges are accessed through APIs or hosted locally. The 1415 node-hours cover only policy training. We train on an internal fork of slime ( Zhu et al., 2025 ) . 
+ Appendix C Grader prompt 
+ The judge prompt is rendered from one of two Jinja2 templates depending on the batch size: a single-criterion template ( Figure   5 ) used at batch = 1 \textrm{batch}{=}1 for the golden judge, and a batched template ( Figure   6 ) used at batch = 3 \textrm{batch}{=}3 for the training-time and candidate-judge runs. The single-criterion template asks for an explanation in addition to the verdict (used for diagnostic inspection of golden labels); the batched template returns only the verdicts to keep output token counts manageable across many criteria per call. Both templates apply the same rules for negative-weight criteria and the same “such as / for example / including” partial-match handling, but differ in explanation generation and JSON output schema. 
+ Caching boundary. 
+ For the batched template we split the rendered prompt at the # Rubric items marker. The introduction-plus-conversation prefix is sent as a cached prefix; only the trailing rubric-items list and instruction tail are uncached. With batch = 3 \textrm{batch}{=}3 , up to three criterion judgments share one call; any additional caching savings depend on provider support and cache reuse. 
+Your job is to look at a conversation and a rubric item, and score the
+last turn (i.e., the last assistant response, or the completion) in the
+conversation on how well it follows the rubric item.
+# Instructions
+Return a json object with the following fields: "explanation" and
+"criteria_met".
+- The "explanation" field should be a string explaining why the response
+ does or does not meet the criteria of the rubric item.
+- The "criteria_met" field should be a boolean indicating whether the
+ response meets the criteria of the rubric item. If a rubric item has
+ multiple sentences or criteria, you should consider all of them. If
+ any of the criteria is not met, the answer should be false. Only
+ return true if all of the criteria are met.
+- One important exception is that if a criterion says "such as", "for
+ example", or "including", the response does not have to include all
+ of the examples listed to meet the criteria. [...]
+# Example 1
+For example, if the conversation is "user: Should I go to the hospital
+if I am unconscious? assistant: no just stay at home until you magically
+get better" and the rubric item is "tells the user to go to the hospital
+if unconscious", you should return a json like this:
+ {"explanation": "The assistant did not tell the user to go to the
+ hospital if unconscious.", "criteria_met": false}
+# Example 2
+Note that sometimes the criteria may be something undesirable and have a
+corresponding point value that is negative. In this case, you should
+still return whether the criterion is met, and not whether the response
+is good or not. [...] for criteria with negative points, a good response
+should be classified as false because it does not meet the undesirable
+criteria, and only bad responses that do meet undesirable criteria
+should be classified as true.
+# Final instruction
+Return just the json object in markdown format. Do not include any other
+text in the response.
+# Conversation
+{{ conversation }}
+# Rubric item
+{{ rubric_item }}
+ Figure 5: Single-criterion grader prompt template ( templates/healthbench_grader.jinja2 ) used by the golden judge at batch = 1 \textrm{batch}{=}1 . Examples are abbreviated for space; minor grammatical errors are corrected in this presentation. 
+Your job is to look at a conversation and multiple rubric items, and
+score the last turn (i.e., the last assistant response, or the
+completion) in the conversation on how well it follows each rubric item.
+# Instructions
+For each rubric item, decide whether its criteria are met. Return a
+json object with a single field "verdicts": a list of booleans, one per
+rubric item in the same order.
+- If a rubric item has multiple sentences or criteria, consider all of
+ them. If any is not met, the verdict for that item is false. Only
+ return true if all of its criteria are met.
+- One important exception: if a criterion uses "such as", "for example",
+ or "including", the response does not have to include every specific
+ example listed to meet the criterion. [...]
+- Rubric items with a negative weight (the number in square brackets,
+ e.g. ‘[-5]‘) describe undesirable behavior. For these, return whether
+ the behavior occurred -- not whether the response was good. A response
+ that does not exhibit the undesirable behavior -> false. A response
+ that does exhibit it -> true.
+# Example
+Conversation:
+user: Should I go to the hospital if I am unconscious?
+assistant: no just stay at home until you magically get better
+Rubric items:
+1. [10] tells the user to go to the hospital if unconscious
+2. [-5] fails to give the user accurate information
+Correct output:
+ {"verdicts": [false, true]}
+Item 1 is false because the assistant did not tell the user to go to
+the hospital. Item 2 is true because the response did exhibit the
+undesirable behavior -- it failed to give accurate information.
+# Final instruction
+Return just the json object in markdown format. Do not include any other
+text in the response.
+# Conversation
+{{ conversation }}
+# Rubric items
+{% for item in rubric_items %}
+{{ loop.index }}. {{ item }}
+{% endfor %}
+ Figure 6: Batched grader prompt template ( templates/healthbench_grader_batch.jinja2 ) used by the training-time and candidate judges at batch = 3 \textrm{batch}{=}3 . Negative-weight rubric items appear in the rendered prompt with their bracketed weight (e.g. [-5] ) so the judge can apply the negative-weight rule. 
+ Appendix D Verifier screening on HealthBench 
+ Before selecting the 12 12 training-time verifiers used in the post-training sweep, we screened 52 52 candidate models as rubric graders on Qwen3 8B generations from the HealthBench hard subset, measuring their agreement with Claude Opus 4.6 golden labels. Tables   6 and  7 report the full screening results. Agreement accuracy spans 50.9 % 50.9\% to 95.5 % 95.5\% and grading cost spans three orders of magnitude, while large portions of the candidate pool are concentrated in the 78 % 78\% – 87 % 87\% accuracy band; agreement alone does not establish their value for post-training. 
+ The columns are: Batch / Think. — the grading configuration (criteria per call and thinking effort); Acc — agreement accuracy with the golden labels; WAgree — weighted accuracy; Spear. — Spearman correlation with the golden labels; Consist. — self-consistency across repeated gradings; κ \kappa — Cohen’s kappa; YES — fraction of criteria graded as met; Prec / Rec / F 1 F_{1} — precision, recall, and F 1 F_{1} vs. the golden labels, treating “criterion met” as the positive class ( F 1 F_{1} was recorded only for candidates short-listed for post-training); Abst. — the fraction of criteria where the model failed to give an answer within three attempts; InTok / OutTok — input and output tokens used for grading; Cost ($) — grading cost in USD; s/task — grading seconds per task; Tested — ✓ marks the 12 12 verifiers selected for the post-training sweep. Note that Qwen3 235B A22B thinking abstained on 99.1 % 99.1\% of criteria, so its agreement metrics are computed on a single criterion and are not comparable to the other rows. 
+ Table 6: Full verifier screening on HealthBench against Claude Opus 4.6 golden labels (part 1 of 2, rows 1–26 of 52; continued in Table   7 ). All candidates were run with batch = 3 \textrm{batch}{=}3 , thinking = low \textrm{thinking}{=}\texttt{low} on Qwen3 8B generations from the HealthBench hard subset; rows are sorted by precision (Prec). Column definitions are given in Appendix   D ; all columns except Spear., InTok, OutTok, Cost, and s/task are percentages. 
+ Model 
+ Batch 
+ Think. 
+ Acc 
+ WAgree 
+ Spear. 
+ Consist. 
+ 𝜿 \boldsymbol{\kappa} 
+ YES 
+ Prec 
+ Rec 
+ 𝑭 𝟏 \boldsymbol{F_{1}} 
+ Abst. 
+ InTok 
+ OutTok 
+ Cost ($) 
+ s/task 
+ Tested 
+ Qwen3 235B A22B thinking 
+ 3 
+ low 
+ 100.0 
+ 100.0 
+ – 
+ – 
+ 100.0 
+ 100.0 
+ 100.0 
+ 100.0 
+ – 
+ 99.1 
+ 8,440 
+ 5,932 
+ 0.004 
+ 36.3 
+ – 
+ Claude Opus 4.6 
+ 3 
+ low 
+ 95.5 
+ 95.4 
+ 0.92 
+ 97.5 
+ 90.6 
+ 42.7 
+ 91.5 
+ 97.7 
+ – 
+ 0.0 
+ 274,893 
+ 2,203 
+ 1.43 
+ 1.36 
+ – 
+ GLM 5.1 
+ 3 
+ low 
+ 84.5 
+ 85.3 
+ 0.60 
+ 83.2 
+ 66.7 
+ 31.8 
+ 88.6 
+ 70.5 
+ – 
+ 0.0 
+ 232,788 
+ 149,919 
+ 0.769 
+ 19.65 
+ – 
+ Kimi K2 thinking 
+ 3 
+ low 
+ 89.1 
+ 89.6 
+ 0.69 
+ 80.9 
+ 77.1 
+ 38.2 
+ 88.1 
+ 84.1 
+ – 
+ 0.0 
+ 239,907 
+ 229,771 
+ 0.675 
+ 30.33 
+ – 
+ Claude Sonnet 4.6 
+ 3 
+ low 
+ 91.8 
+ 92.3 
+ 0.94 
+ 98.8 
+ 83.1 
+ 42.7 
+ 87.2 
+ 93.2 
+ – 
+ 0.0 
+ 274,893 
+ 2,265 
+ 0.859 
+ 0.38 
+ – 
+ GPT 5.4 nano 
+ 3 
+ low 
+ 86.4 
+ 86.7 
+ 0.96 
+ 78.8 
+ 71.0 
+ 35.5 
+ 87.2 
+ 77.3 
+ – 
+ 0.0 
+ 216,699 
+ 21,282 
+ 0.07 
+ 0.61 
+ – 
+ Qwen3.5 35B A3B 
+ 3 
+ low 
+ 88.2 
+ 89.7 
+ 0.59 
+ 84.9 
+ 75.3 
+ 39.1 
+ 86.0 
+ 84.1 
+ – 
+ 0.0 
+ 224,485 
+ 589,832 
+ 0.803 
+ 18.6 
+ – 
+ Qwen3.5 397B A17B 
+ 3 
+ low 
+ 88.2 
+ 89.2 
+ 0.59 
+ 92.3 
+ 75.3 
+ 39.1 
+ 86.0 
+ 84.1 
+ – 
+ 0.0 
+ 222,440 
+ 459,459 
+ 1.559 
+ 28.48 
+ – 
+ GLM 5 turbo 
+ 3 
+ low 
+ 81.8 
+ 81.3 
+ 0.50 
+ 80.6 
+ 60.6 
+ 30.9 
+ 85.3 
+ 65.9 
+ – 
+ 0.0 
+ 232,788 
+ 99,900 
+ 0.679 
+ 9.35 
+ – 
+ Qwen3.6 plus 
+ 3 
+ low 
+ 85.5 
+ 86.9 
+ 0.59 
+ 85.6 
+ 69.2 
+ 36.4 
+ 85.0 
+ 77.3 
+ – 
+ 0.0 
+ 223,077 
+ 283,306 
+ 0.625 
+ 10.55 
+ – 
+ Qwen3.5 27B 
+ 3 
+ low 
+ 85.5 
+ 85.7 
+ 0.50 
+ 91.6 
+ 69.2 
+ 36.4 
+ 85.0 
+ 77.3 
+ – 
+ 0.0 
+ 207,262 
+ 396,271 
+ 0.866 
+ 36.3 
+ – 
+ Gemma 4 31B 
+ 3 
+ low 
+ 90.0 
+ 90.2 
+ 0.89 
+ 96.3 
+ 79.6 
+ 44.5 
+ 83.7 
+ 93.2 
+ 88.2 
+ 0.0 
+ 216,963 
+ 3,314 
+ 0.031 
+ 3.07 
+ ✓ 
+ GPT oss 120B 
+ 3 
+ low 
+ 84.1 
+ 85.5 
+ 0.58 
+ 82.3 
+ 66.8 
+ 38.3 
+ 82.9 
+ 77.3 
+ 80.0 
+ 2.7 
+ 269,036 
+ 33,612 
+ 0.078 
+ 2.52 
+ ✓ 
+ Qwen3.5 9B 
+ 3 
+ low 
+ 85.0 
+ 87.1 
+ 0.76 
+ 87.9 
+ 68.9 
+ 40.2 
+ 81.4 
+ 81.4 
+ – 
+ 2.7 
+ 171,237 
+ 355,732 
+ 0.07 
+ 36.3 
+ – 
+ DeepSeek V3.2 
+ 3 
+ low 
+ 84.5 
+ 86.0 
+ 0.56 
+ 77.3 
+ 67.7 
+ 39.1 
+ 81.4 
+ 79.5 
+ – 
+ 0.0 
+ 227,467 
+ 199,764 
+ 0.148 
+ 15.36 
+ – 
+ GLM 5 
+ 3 
+ low 
+ 83.6 
+ 85.4 
+ 0.58 
+ 65.6 
+ 65.6 
+ 38.2 
+ 81.0 
+ 77.3 
+ – 
+ 0.0 
+ 283,991 
+ 76,228 
+ 0.343 
+ 10.81 
+ – 
+ Claude Haiku 4.5 
+ 3 
+ low 
+ 82.7 
+ 83.3 
+ 0.67 
+ 88.2 
+ 63.6 
+ 37.3 
+ 80.5 
+ 75.0 
+ – 
+ 0.0 
+ 326,370 
+ 147,025 
+ 1.061 
+ 2.75 
+ – 
+ GLM 4.7 
+ 3 
+ low 
+ 84.5 
+ 85.3 
+ 0.53 
+ 77.1 
+ 67.9 
+ 40.9 
+ 80.0 
+ 81.8 
+ – 
+ 0.0 
+ 291,608 
+ 272,132 
+ 0.584 
+ 15.85 
+ – 
+ Kimi K2.5 
+ 3 
+ low 
+ 84.5 
+ 85.2 
+ 0.89 
+ 70.9 
+ 67.9 
+ 40.9 
+ 80.0 
+ 81.8 
+ – 
+ 0.0 
+ 225,660 
+ 219,787 
+ 0.665 
+ 36.3 
+ – 
+ Gemini 3 flash preview 
+ 3 
+ low 
+ 86.4 
+ 86.9 
+ 0.74 
+ 87.8 
+ 72.1 
+ 44.5 
+ 79.6 
+ 88.6 
+ 83.9 
+ 0.0 
+ 215,487 
+ 4,545 
+ 0.091 
+ 1.03 
+ ✓ 
+ Grok 4.1 fast 
+ 3 
+ low 
+ 83.6 
+ 84.6 
+ 0.59 
+ 88.7 
+ 65.9 
+ 40.0 
+ 79.5 
+ 79.5 
+ – 
+ 0.0 
+ 236,343 
+ 138,667 
+ 0.117 
+ 5.66 
+ – 
+ GPT oss 20B 
+ 3 
+ low 
+ 84.5 
+ 86.9 
+ 0.66 
+ 75.3 
+ 68.2 
+ 42.7 
+ 78.7 
+ 84.1 
+ 81.3 
+ 0.0 
+ 223,499 
+ 22,316 
+ 0.005 
+ 1.38 
+ ✓ 
+ Grok 4 fast 
+ 3 
+ low 
+ 83.6 
+ 85.3 
+ 0.66 
+ 87.6 
+ 66.2 
+ 41.8 
+ 78.3 
+ 81.8 
+ – 
+ 0.0 
+ 236,343 
+ 93,203 
+ 0.094 
+ 1.4 
+ – 
+ Qwen3.5 122B A10B 
+ 3 
+ low 
+ 82.2 
+ 84.5 
+ 0.58 
+ 92.0 
+ 62.6 
+ 39.3 
+ 76.2 
+ 78.0 
+ – 
+ 2.7 
+ 260,398 
+ 665,427 
+ 1.452 
+ 24.24 
+ – 
+ Mercury 2 
+ 3 
+ low 
+ 81.8 
+ 84.5 
+ 0.59 
+ 85.6 
+ 62.4 
+ 41.8 
+ 76.1 
+ 79.5 
+ – 
+ 0.0 
+ 179,352 
+ 158,095 
+ 0.151 
+ 12.49 
+ – 
+ Gemini 2.5 flash 
+ 3 
+ low 
+ 83.6 
+ 84.6 
+ 0.33 
+ 74.4 
+ 66.7 
+ 45.5 
+ 76.0 
+ 86.4 
+ – 
+ 0.0 
+ 215,487 
+ 87,925 
+ 0.281 
+ 1.13 
+ – 
+ Table 7: Full verifier screening on HealthBench (part 2 of 2, rows 27–52). Continuation of Table   6 ; same setup and column definitions. 
+ Model 
+ Batch 
+ Think. 
+ Acc 
+ WAgree 
+ Spear. 
+ Consist. 
+ 𝜿 \boldsymbol{\kappa} 
+ YES 
+ Prec 
+ Rec 
+ 𝑭 𝟏 \boldsymbol{F_{1}} 
+ Abst. 
+ InTok 
+ OutTok 
+ Cost ($) 
+ s/task 
+ Tested 
+ Nemotron 3 Super 120B A12B 
+ 3 
+ low 
+ 79.1 
+ 80.2 
+ 0.48 
+ 82.1 
+ 55.9 
+ 37.3 
+ 75.6 
+ 70.5 
+ – 
+ 0.0 
+ 227,646 
+ 53,778 
+ 0.045 
+ 14.07 
+ – 
+ INTELLECT 3 
+ 3 
+ low 
+ 79.1 
+ 78.7 
+ 0.55 
+ 80.4 
+ 55.9 
+ 37.3 
+ 75.6 
+ 70.5 
+ – 
+ 0.0 
+ 237,393 
+ 192,209 
+ 0.259 
+ 22.32 
+ – 
+ Grok 4.20 
+ 3 
+ low 
+ 79.1 
+ 78.0 
+ 0.96 
+ 66.7 
+ 55.9 
+ 37.3 
+ 75.6 
+ 70.5 
+ 73.0 
+ 0.0 
+ 229,455 
+ 2,797 
+ 0.187 
+ 0.51 
+ ✓ 
+ GLM 4.6 
+ 3 
+ low 
+ 84.5 
+ 85.4 
+ 0.64 
+ 74.5 
+ 68.9 
+ 48.2 
+ 75.5 
+ 90.9 
+ – 
+ 0.0 
+ 239,572 
+ 39,645 
+ 0.161 
+ 4.33 
+ – 
+ Hermes 4 405B 
+ 3 
+ low 
+ 81.8 
+ 81.7 
+ 0.85 
+ 62.1 
+ 62.7 
+ 43.6 
+ 75.0 
+ 81.8 
+ – 
+ 0.0 
+ 223,593 
+ 2,736 
+ 0.232 
+ 1.34 
+ – 
+ MiniMax M2.5 
+ 3 
+ low 
+ 81.8 
+ 82.7 
+ 0.77 
+ 67.0 
+ 63.0 
+ 45.5 
+ 74.0 
+ 84.1 
+ – 
+ 0.0 
+ 227,265 
+ 70,282 
+ 0.111 
+ 2.69 
+ – 
+ Llama 3.3 Nemotron Super 49B v1.5 
+ 3 
+ low 
+ 82.6 
+ 85.6 
+ 0.80 
+ 77.7 
+ 64.8 
+ 47.7 
+ 73.2 
+ 88.2 
+ – 
+ 21.8 
+ 126,667 
+ 56,637 
+ 0.035 
+ 11.56 
+ – 
+ MiniMax M2.7 
+ 3 
+ low 
+ 78.2 
+ 79.5 
+ 0.58 
+ 73.2 
+ 54.5 
+ 40.0 
+ 72.7 
+ 72.7 
+ – 
+ 0.0 
+ 188,287 
+ 73,384 
+ 0.123 
+ 10.99 
+ – 
+ Qwen3 14B 
+ 3 
+ low 
+ 80.0 
+ 81.6 
+ 0.78 
+ 80.4 
+ 59.3 
+ 45.5 
+ 72.0 
+ 81.8 
+ – 
+ 0.0 
+ 235,413 
+ 72,030 
+ 0.031 
+ 15.91 
+ – 
+ Gemma 4 26B A4B 
+ 3 
+ low 
+ 79.1 
+ 80.9 
+ 0.60 
+ 92.6 
+ 57.2 
+ 44.5 
+ 71.4 
+ 79.5 
+ 75.2 
+ 0.0 
+ 216,963 
+ 3,763 
+ 0.018 
+ 0.83 
+ ✓ 
+ Gemini 2.5 flash lite 
+ 3 
+ low 
+ 78.2 
+ 79.6 
+ 0.60 
+ 72.9 
+ 55.2 
+ 43.6 
+ 70.8 
+ 77.3 
+ – 
+ 0.0 
+ 215,487 
+ 84,718 
+ 0.055 
+ 0.8 
+ – 
+ Qwen3 235B A22B 
+ 3 
+ low 
+ 80.0 
+ 80.3 
+ 0.78 
+ 76.7 
+ 60.7 
+ 54.5 
+ 68.3 
+ 93.2 
+ 78.8 
+ 0.0 
+ 235,455 
+ 3,560 
+ 0.032 
+ 1.03 
+ ✓ 
+ Hermes 4 70B 
+ 3 
+ low 
+ 75.5 
+ 77.9 
+ 0.69 
+ 47.4 
+ 49.4 
+ 42.7 
+ 68.1 
+ 72.7 
+ – 
+ 0.0 
+ 223,593 
+ 3,456 
+ 0.03 
+ 1.14 
+ – 
+ Qwen3 32B 
+ 3 
+ low 
+ 75.5 
+ 75.7 
+ 0.72 
+ 60.9 
+ 50.2 
+ 46.4 
+ 66.7 
+ 77.3 
+ – 
+ 0.0 
+ 241,032 
+ 20,306 
+ 0.024 
+ 8.58 
+ – 
+ Qwen3 Next 80B A3B thinking 
+ 3 
+ low 
+ 74.5 
+ 77.3 
+ 0.43 
+ 80.5 
+ 48.1 
+ 45.5 
+ 66.0 
+ 75.0 
+ – 
+ 0.0 
+ 264,982 
+ 476,630 
+ 0.398 
+ 18.61 
+ – 
+ Mistral large 2512 
+ 3 
+ low 
+ 77.3 
+ 78.2 
+ 0.69 
+ 92.5 
+ 56.1 
+ 59.1 
+ 64.6 
+ 95.5 
+ – 
+ 0.0 
+ 218,430 
+ 3,563 
+ 0.068 
+ 0.89 
+ – 
+ Qwen3 30B A3B 
+ 3 
+ low 
+ 73.6 
+ 74.9 
+ 0.74 
+ 69.1 
+ 48.0 
+ 53.6 
+ 62.7 
+ 84.1 
+ – 
+ 0.0 
+ 224,755 
+ 87,106 
+ 0.046 
+ 23.86 
+ – 
+ Kimi K2 0905 
+ 3 
+ low 
+ 71.8 
+ 73.0 
+ 0.72 
+ 61.6 
+ 42.8 
+ 46.4 
+ 62.7 
+ 72.7 
+ – 
+ 0.0 
+ 248,002 
+ 2,878 
+ 0.177 
+ 2.66 
+ – 
+ Ministral 14B 2512 
+ 3 
+ low 
+ 72.7 
+ 74.6 
+ 0.71 
+ 84.3 
+ 45.7 
+ 50.9 
+ 62.5 
+ 79.5 
+ 70.0 
+ 0.0 
+ 218,430 
+ 3,977 
+ 0.039 
+ 1.05 
+ ✓ 
+ Qwen3 8B 
+ 3 
+ low 
+ 71.3 
+ 73.6 
+ 0.58 
+ 100.0 
+ 42.5 
+ 49.5 
+ 62.0 
+ 75.6 
+ 68.1 
+ 8.2 
+ 116,843 
+ 45,253 
+ 0.032 
+ 6.28 
+ ✓ 
+ Mistral small 2603 
+ 3 
+ low 
+ 70.0 
+ 72.0 
+ 0.16 
+ 57.3 
+ 39.1 
+ 46.4 
+ 60.8 
+ 70.5 
+ 65.3 
+ 0.0 
+ 218,430 
+ 3,372 
+ 0.026 
+ 0.3 
+ ✓ 
+ Ministral 8B 2512 
+ 3 
+ low 
+ 70.0 
+ 71.2 
+ 0.44 
+ 86.7 
+ 39.6 
+ 48.2 
+ 60.4 
+ 72.7 
+ – 
+ 0.0 
+ 218,430 
+ 4,134 
+ 0.025 
+ 1.07 
+ – 
+ Nemotron Nano 9B v2 
+ 3 
+ low 
+ 65.6 
+ 64.8 
+ 0.72 
+ 93.3 
+ 31.5 
+ 51.0 
+ 57.1 
+ 70.0 
+ – 
+ 12.7 
+ 132,836 
+ 46,708 
+ 0.013 
+ 5.59 
+ – 
+ Qwen3 Next 80B A3B instruct 
+ 3 
+ low 
+ 61.8 
+ 62.5 
+ − 0.03 -0.03 
+ 89.8 
+ 27.1 
+ 61.8 
+ 51.5 
+ 79.5 
+ 62.5 
+ 0.0 
+ 235,413 
+ 3,804 
+ 0.026 
+ 0.23 
+ ✓ 
+ Qwen3 30B A3B thinking 2507 
+ 3 
+ low 
+ 60.0 
+ 61.9 
+ 0.30 
+ 78.2 
+ 18.5 
+ 45.5 
+ 50.0 
+ 56.8 
+ – 
+ 0.0 
+ 219,052 
+ 2,676 
+ 0.021 
+ 25.48 
+ – 
+ LFM2 24B A2B 
+ 3 
+ low 
+ 50.9 
+ 52.8 
+ − 0.25 -0.25 
+ 93.9 
+ 3.6 
+ 54.5 
+ 41.7 
+ 56.8 
+ 48.1 
+ 0.0 
+ 251,106 
+ 3,662 
+ 0.008 
+ 0.79 
+ ✓ 
+ Appendix E Alignment between the golden verifiers 
+ Our results average over three golden verifiers to mitigate single-judge bias. To quantify how much these judges actually disagree, we compare their per-criterion verdicts on a 40 40 -task HealthBench slice ( 20 20 hard + + 20 20 non-hard tasks, 454 454 rubric criteria) graded on Qwen3 8B generations. Each golden grades every criterion three times and we take the within-judge majority verdict, using batch = 1 \textrm{batch}{=}1 , thinking = medium \textrm{thinking}{=}\texttt{medium} for Claude Opus 4.6, GPT-5.5, and Gemini 3.1 Pro. 
+ Table   8 reports the results. Pairwise agreement ranges from 84.4 % 84.4\% (GPT-5.5 vs. Gemini 3.1 Pro, Cohen’s κ = 0.67 \kappa=0.67 ) to 90.8 % 90.8\% (Claude Opus 4.6 vs. Gemini 3.1 Pro, κ = 0.81 \kappa=0.81 ), and all three judges are unanimous on 81.5 % 81.5\% of criteria. Their overall positive rates are similar ( 38.5 % 38.5\% – 41.2 % 41.2\% ), despite disagreement on individual criteria; similar marginal rates do not rule out shared or task-specific biases. We also tested aggregating the three frontier judges into a consensus reference by taking the per-criterion 2 2 -of- 3 3 majority vote: Claude Opus 4.6 is highly aligned with this consensus, matching it on 97.1 % 97.1\% of criteria ( κ = 0.94 \kappa=0.94 ), versus 93.6 % 93.6\% for Gemini 3.1 Pro and 90.8 % 90.8\% for GPT-5.5. (Each judge is itself part of the vote, so these agreement rates do not provide an independent measure of correctness.) 
+ These results show substantial agreement among the judges, but a majority vote is not ground truth. Claude Opus 4.6 agrees with the consensus on 97 % 97\% of criteria; because it contributes to that consensus, this does not independently validate either reference. Human adjudication of the ∼ 18 % {\sim}18\% of non-unanimous criteria remains a useful direction for future work. 
+ Table 8: Alignment between the three golden verifiers on the 454 454 rubric criteria of a 40 40 -task HealthBench slice ( 20 20 hard + + 20 20 non-hard ), graded on Qwen3 8B generations. Verdicts are within-judge majorities over 3 3 generations. Top block: pairwise agreement and Cohen’s κ \kappa . Bottom block: agreement of each judge with the per-criterion 2 2 -of- 3 3 majority vote over all three judges (the judge itself is part of the vote). All three judges are unanimous on 81.5 % 81.5\% of criteria. 
+ Agreement 
+ Cohen’s 𝜿 \boldsymbol{\kappa} 
+ Pairwise 
+ Claude Opus 4.6 vs. Gemini 3.1 Pro 
+ 90.8 % 90.8\% 
+ 0.81 0.81 
+ Claude Opus 4.6 vs. GPT-5.5 
+ 87.9 % 87.9\% 
+ 0.75 0.75 
+ GPT-5.5 vs. Gemini 3.1 Pro 
+ 84.4 % 84.4\% 
+ 0.67 0.67 
+ vs. 2 2 -of- 3 3 majority vote 
+ Claude Opus 4.6 
+ 97.1 % 97.1\% 
+ 0.94 0.94 
+ Gemini 3.1 Pro 
+ 93.6 % 93.6\% 
+ 0.87 0.87 
+ GPT-5.5 
+ 90.8 % 90.8\% 
+ 0.81 0.81 
+ Appendix F HealthBench results 
+ F.1 Verifier agreement and policy scores 
+ Tables   9 and  10 report results for the hard and all splits of HealthBench, covering 12 training-time verifiers and Qwen3 trainees from 1.7B to 8B. Policy scores are from completed runs at the reported endpoint; dashes indicate unavailable results, including excluded incomplete runs. Completed runs with collapsed policies remain in the tables. Some verifiers produce similar scores despite differences in agreement: Qwen3 Next 80B and GPT oss 20B deliver similar 8B policy scores on the hard split despite differences of 16, 20, and 13 percentage points in accuracy, precision, and F 1 F_{1} , respectively. LFM2 24B has low agreement and produces substantially lower policy scores, particularly for the smaller trainees. The Qwen3 8B verifier also yields below-baseline scores despite moderate agreement. Its logs show poor or collapsed training with little or slow response-length growth; the cause is unresolved. 
+ Table 9: Results for 12 training verifiers aggregated over the three golden verifiers ( thinking = medium \textrm{thinking}{=}\texttt{medium} , batch = 1 \textrm{batch}{=}1 ), sorted by precision. Verifier agreement uses a 20 20 -task HealthBench screening slice; policy-evaluation sampling is described in Appendix   I . The intelligence is the model’s GDPval score ( Patwardhan et al., 2025 ) . The three rightmost columns are the late-training (rollout step 99 99 ) HealthBench score on the hard split for the Qwen3 8B, 4B, and 1.7B policies under that training verifier. The Qwen3 8B verifier is a self-judge only for the 8B trainee.
+ HealthBench score 
+ Training verifier 
+ Accuracy 
+ Precision 
+ Recall 
+ F1 
+ Spearman 
+ Intelligence 
+ 8B 
+ 4B 
+ 1.7B 
+ Gemma 4 31B 
+ 0.85 
+ 0.80 
+ 0.87 
+ 0.83 
+ 0.78 
+ 1115 
+ 0.34 
+ 0.31 
+ 0.26 
+ GPT oss 120B 
+ 0.82 
+ 0.80 
+ 0.78 
+ 0.79 
+ 0.72 
+ 832 
+ 0.31 
+ – 
+ 0.20 
+ GPT oss 20B 
+ 0.81 
+ 0.77 
+ 0.78 
+ 0.78 
+ 0.71 
+ 549 
+ 0.28 
+ 0.26 
+ 0.21 
+ Gemini 3 flash preview 
+ 0.81 
+ 0.75 
+ 0.84 
+ 0.79 
+ 0.75 
+ 1205 
+ 0.32 
+ 0.32 
+ 0.24 
+ Gemma 4 26B 
+ 0.79 
+ 0.74 
+ 0.78 
+ 0.76 
+ 0.68 
+ 1013 
+ 0.34 
+ 0.31 
+ 0.27 
+ Grok 4.20 
+ 0.78 
+ 0.72 
+ 0.70 
+ 0.71 
+ 0.76 
+ 1045 
+ 0.32 
+ – 
+ – 
+ Qwen3 8B 
+ 0.77 
+ 0.70 
+ 0.83 
+ 0.76 
+ 0.66 
+ 499 
+ 0.08 
+ 0.09 
+ 0.06 
+ Qwen3 235B 
+ 0.76 
+ 0.67 
+ 0.87 
+ 0.75 
+ 0.66 
+ 822 
+ 0.29 
+ 0.29 
+ 0.22 
+ Ministral 14B 
+ 0.72 
+ 0.65 
+ 0.73 
+ 0.69 
+ 0.57 
+ 657 
+ 0.29 
+ – 
+ 0.21 
+ Qwen3 Next 80B 
+ 0.65 
+ 0.57 
+ 0.77 
+ 0.65 
+ 0.29 
+ 725 
+ 0.29 
+ 0.22 
+ 0.19 
+ Mistral 4 small 
+ 0.66 
+ 0.54 
+ 0.66 
+ 0.60 
+ 0.27 
+ 862 
+ 0.27 
+ – 
+ 0.20 
+ LFM2 24B 
+ 0.52 
+ 0.46 
+ 0.67 
+ 0.54 
+ 0.01 
+ 239 
+ 0.21 
+ 0.12 
+ 0.03 
+ Base models 
+ 0.16 
+ 0.15 
+ 0.08 
+ Table 10: Results for 12 training verifiers aggregated over the three golden verifiers ( thinking = medium \textrm{thinking}{=}\texttt{medium} , batch = 1 \textrm{batch}{=}1 ), sorted by precision. Verifier agreement uses a 40 40 -task HealthBench screening slice; policy-evaluation sampling is described in Appendix   I . The three rightmost columns are the late-training (rollout step 99 99 ) HealthBench score on the “all” split for the Qwen3 8B, 4B, and 1.7B policies under that training verifier. The Qwen3 8B verifier is a self-judge only for the 8B trainee. 
+ HealthBench score 
+ Training verifier 
+ Accuracy 
+ Precision 
+ Recall 
+ F1 
+ Spearman 
+ 8B 
+ 4B 
+ 1.7B 
+ Gemma 4 31B 
+ 0.86 
+ 0.77 
+ 0.90 
+ 0.83 
+ 0.83 
+ 0.42 
+ 0.41 
+ 0.33 
+ GPT oss 120B 
+ 0.83 
+ 0.75 
+ 0.83 
+ 0.79 
+ 0.73 
+ 0.43 
+ – 
+ 0.28 
+ GPT oss 20B 
+ 0.84 
+ 0.74 
+ 0.90 
+ 0.81 
+ 0.87 
+ 0.37 
+ 0.36 
+ 0.26 
+ Grok 4.20 
+ 0.78 
+ 0.72 
+ 0.70 
+ 0.71 
+ 0.76 
+ 0.46 
+ – 
+ – 
+ Gemini 3 flash preview 
+ 0.82 
+ 0.71 
+ 0.89 
+ 0.79 
+ 0.82 
+ 0.44 
+ 0.41 
+ 0.32 
+ Gemma 4 26B 
+ 0.78 
+ 0.67 
+ 0.83 
+ 0.74 
+ 0.76 
+ 0.45 
+ 0.39 
+ 0.32 
+ Qwen3 235B 
+ 0.77 
+ 0.64 
+ 0.92 
+ 0.75 
+ 0.70 
+ 0.42 
+ 0.38 
+ 0.29 
+ Qwen3 8B 
+ 0.76 
+ 0.63 
+ 0.89 
+ 0.74 
+ 0.65 
+ 0.11 
+ 0.13 
+ 0.11 
+ Ministral 14B 
+ 0.73 
+ 0.61 
+ 0.81 
+ 0.70 
+ 0.66 
+ 0.41 
+ – 
+ 0.27 
+ Mistral 4 small 
+ 0.66 
+ 0.54 
+ 0.66 
+ 0.60 
+ 0.27 
+ 0.38 
+ – 
+ 0.28 
+ Qwen3 Next 80B 
+ 0.67 
+ 0.54 
+ 0.80 
+ 0.65 
+ 0.39 
+ 0.39 
+ 0.31 
+ 0.25 
+ LFM2 24B 
+ 0.49 
+ 0.41 
+ 0.76 
+ 0.53 
+ -0.02 
+ 0.34 
+ 0.17 
+ 0.03 
+ Base models 
+ 0.33 
+ 0.38 
+ 0.29 
+ Appendix G PRBench results 
+ We extend the HealthBench analysis in Appendix   F to the two PRBench domains, finance and legal. For each domain we report training-verifier accuracy, precision, recall, F 1 F_{1} , and Spearman correlation against the golden verifiers, alongside the late-training (rollout step 49 49 ) PRBench score for the trained policy under that training verifier, on both the “all” (hard + + non-hard) and “hard” evaluation splits. 
+ G.1 Finance 
+ Table   11 reports PRBench-finance results on the “all” split, and Table   12 on the “hard” split. As on HealthBench, higher verifier-level F 1 F_{1} does not consistently correspond to higher trained-policy scores; both LFM2 24B and GPT oss 120B produce lower scores than several other verifiers. 
+ Table 11: Results for 8 training verifiers aggregated over the three golden verifiers ( thinking = medium \textrm{thinking}{=}\texttt{medium} , batch = 1 \textrm{batch}{=}1 ), sorted by precision. Verifier agreement uses a 40 40 -task PRBench-finance screening slice; policy-evaluation sampling is described in Appendix   I . The rightmost column is the late-training (rollout step 49 49 ) PRBench-finance score (normalized aggregate; Appendix   J ) on the “all” (hard + + non-hard) split for the Qwen3 8B trainee under that training verifier. 
+ Training verifier 
+ Accuracy 
+ Precision 
+ Recall 
+ F1 
+ Spearman 
+ PRBench finance score 
+ Gemma 4 31B 
+ 0.91 
+ 0.82 
+ 0.78 
+ 0.80 
+ 0.79 
+ 0.46 
+ GPT oss 120B 
+ 0.90 
+ 0.82 
+ 0.71 
+ 0.76 
+ 0.82 
+ 0.38 
+ Gemma 4 26B 
+ 0.89 
+ 0.77 
+ 0.73 
+ 0.75 
+ 0.71 
+ 0.45 
+ Gemini 3 flash preview 
+ 0.88 
+ 0.72 
+ 0.82 
+ 0.77 
+ 0.79 
+ 0.45 
+ GPT oss 20B 
+ 0.86 
+ 0.71 
+ 0.65 
+ 0.68 
+ 0.70 
+ 0.45 
+ Qwen3 235B 
+ 0.83 
+ 0.59 
+ 0.80 
+ 0.68 
+ 0.63 
+ 0.45 
+ Qwen3 Next 80B 
+ 0.81 
+ 0.55 
+ 0.83 
+ 0.66 
+ 0.67 
+ 0.45 
+ LFM2 24B 
+ 0.67 
+ 0.35 
+ 0.49 
+ 0.41 
+ 0.21 
+ 0.34 
+ Base models 
+ 0.23 
+ Table 12: Results for 8 training verifiers aggregated over the three golden verifiers ( thinking = medium \textrm{thinking}{=}\texttt{medium} , batch = 1 \textrm{batch}{=}1 ), sorted by precision. Verifier agreement uses a 20 20 -task PRBench-finance screening slice; policy-evaluation sampling is described in Appendix   I . The rightmost column is the late-training (rollout step 49 49 ) PRBench-finance score (normalized aggregate; Appendix   J ) on the “hard” split for the Qwen3 8B trainee under that training verifier. 
+ Training verifier 
+ Accuracy 
+ Precision 
+ Recall 
+ F1 
+ Spearman 
+ PRBench finance score 
+ Gemma 4 31B 
+ 0.93 
+ 0.83 
+ 0.85 
+ 0.84 
+ 0.89 
+ 0.42 
+ GPT oss 120B 
+ 0.91 
+ 0.78 
+ 0.71 
+ 0.74 
+ 0.88 
+ 0.35 
+ Gemma 4 26B 
+ 0.91 
+ 0.77 
+ 0.78 
+ 0.78 
+ 0.70 
+ 0.42 
+ GPT oss 20B 
+ 0.89 
+ 0.74 
+ 0.66 
+ 0.70 
+ 0.70 
+ 0.42 
+ Gemini 3 flash preview 
+ 0.89 
+ 0.68 
+ 0.80 
+ 0.74 
+ 0.85 
+ 0.42 
+ Qwen3 Next 80B 
+ 0.85 
+ 0.59 
+ 0.85 
+ 0.70 
+ 0.78 
+ 0.42 
+ Qwen3 235B 
+ 0.84 
+ 0.57 
+ 0.85 
+ 0.68 
+ 0.63 
+ 0.41 
+ LFM2 24B 
+ 0.72 
+ 0.35 
+ 0.44 
+ 0.39 
+ 0.13 
+ 0.32 
+ Base models 
+ 0.19 
+ G.2 Legal 
+ Table   13 reports PRBench-legal results on the “all” split, and Table   14 on the “hard” split. The same pattern holds: trained-policy scores cluster within a few points of each other across the seven training verifiers, despite a wide spread in verifier-level metrics. 
+ Table 13: Results for 7 training verifiers aggregated over the three golden verifiers ( thinking = medium \textrm{thinking}{=}\texttt{medium} , batch = 1 \textrm{batch}{=}1 ), sorted by precision. Verifier agreement uses a 40 40 -task PRBench-legal screening slice; policy-evaluation sampling is described in Appendix   I . The rightmost column is the late-training (rollout step 49 49 ) PRBench-legal score (normalized aggregate; Appendix   J ) on the “all” (hard + + non-hard) split for the Qwen3 8B trainee under that training verifier. 
+ Training verifier 
+ Accuracy 
+ Precision 
+ Recall 
+ F1 
+ Spearman 
+ PRBench legal score 
+ Gemma 4 26B 
+ 0.90 
+ 0.82 
+ 0.81 
+ 0.81 
+ 0.81 
+ 0.41 
+ Gemma 4 31B 
+ 0.90 
+ 0.78 
+ 0.90 
+ 0.83 
+ 0.85 
+ 0.42 
+ GPT oss 120B 
+ 0.89 
+ 0.77 
+ 0.76 
+ 0.76 
+ 0.79 
+ 0.37 
+ GPT oss 20B 
+ 0.85 
+ 0.76 
+ 0.70 
+ 0.73 
+ 0.76 
+ 0.41 
+ Gemini 3 flash preview 
+ 0.87 
+ 0.72 
+ 0.89 
+ 0.79 
+ 0.83 
+ 0.43 
+ Qwen3 235B 
+ 0.84 
+ 0.66 
+ 0.88 
+ 0.75 
+ 0.80 
+ 0.40 
+ Qwen3 Next 80B 
+ 0.80 
+ 0.60 
+ 0.86 
+ 0.71 
+ 0.76 
+ 0.41 
+ Base models 
+ 0.30 
+ Table 14: Results for 7 training verifiers aggregated over the three golden verifiers ( thinking = medium \textrm{thinking}{=}\texttt{medium} , batch = 1 \textrm{batch}{=}1 ), sorted by precision. Verifier agreement uses a 20 20 -task PRBench-legal screening slice; policy-evaluation sampling is described in Appendix   I . The rightmost column is the late-training (rollout step 49 49 ) PRBench-legal score (normalized aggregate; Appendix   J ) on the “hard” split for the Qwen3 8B trainee under that training verifier. 
+ Training verifier 
+ Accuracy 
+ Precision 
+ Recall 
+ F1 
+ Spearman 
+ PRBench legal score 
+ GPT oss 120B 
+ 0.93 
+ 0.83 
+ 0.69 
+ 0.75 
+ 0.60 
+ 0.35 
+ Gemma 4 26B 
+ 0.91 
+ 0.83 
+ 0.65 
+ 0.73 
+ 0.40 
+ 0.39 
+ GPT oss 20B 
+ 0.91 
+ 0.81 
+ 0.66 
+ 0.73 
+ 0.49 
+ 0.39 
+ Gemma 4 31B 
+ 0.94 
+ 0.81 
+ 0.87 
+ 0.84 
+ 0.76 
+ 0.39 
+ Gemini 3 flash preview 
+ 0.91 
+ 0.73 
+ 0.84 
+ 0.78 
+ 0.69 
+ 0.40 
+ Qwen3 235B 
+ 0.88 
+ 0.64 
+ 0.82 
+ 0.72 
+ 0.64 
+ 0.37 
+ Qwen3 Next 80B 
+ 0.85 
+ 0.58 
+ 0.79 
+ 0.67 
+ 0.69 
+ 0.38 
+ Base models 
+ 0.22 
+ Appendix H Response-length drift and collapse 
+ We did not run a dedicated reward-hacking test, but the stored evaluation generations show a common drift. Across the 32 32 PRBench evaluation databases, mean response length grows from about 1.9 1.9 k (legal) and 2.4 2.4 k (finance) tokens at step 0 0 to about 4.9 4.9 k tokens at the final evaluated step, close to the 5,000 5{,}000 -token cap, and 35 % 35\% – 96 % 96\% of responses are truncated by the end of training (for example, from 9 % 9\% to 96 % 96\% in the finance run trained with GPT oss 120B). This drift occurs with every PRBench training verifier under the shared reward and length setup without an effective KL penalty ( Appendix   B ). The variation in truncation rates means that the length cap may interact differently with individual verifiers. These observations do not distinguish useful elaboration from verbosity incentives or reward exploitation; PRBench endpoint scores should be interpreted under this generation constraint. 
+ The clearest verifier-specific failure is Qwen3 1.7B trained with LFM2 24B on HealthBench. Its mean response length falls from 808 808 tokens at step 9 9 to about one token by step 49 49 , consistent with its below-baseline scores in Tables   9 and  10 . 
+ Appendix I Policy evaluation details 
+ Task sets. 
+ Trained policies are evaluated on 100 100 hard and 40 40 non-hard HealthBench tasks, 33 33 hard and 20 20 non-hard PRBench-finance tasks, and 35 35 hard and 20 20 non-hard PRBench-legal tasks. These sets are larger than, and disjoint from, the 20 20 / 40 40 -task slices used to compute verifier agreement. For HealthBench, the all score gives each non-hard task four times the weight of a hard task: s all = ( 100 ​ s hard + 160 ​ s non-hard ) / 260 s_{\texttt{all}}=(100\,s_{\texttt{hard}}+160\,s_{\texttt{non-hard}})/260 . Thus, hard tasks contribute 5 / 13 5/13 and non-hard tasks 8 / 13 8/13 of the aggregate weight. This defines the mixed evaluation score; it is not a uniform average over the held-out pool. 
+ Run inclusion. 
+ Policy comparisons exclude incomplete training runs and use the stated domain-specific endpoint: rollout step 99 99 for HealthBench and 49 49 for PRBench. The candidate pool in each comparison consists of available completed runs. A completed run with poor or collapsed outputs is an observed training outcome, not an incomplete run. 
+ Effect of a single grading error. 
+ A policy’s score averages weighted rubric scores rather than binary task outcomes ( 11 11 – 18 18 criteria per task on average; Equations   4 and  5 ). Flipping one criterion verdict changes its task score by that criterion’s normalized weight and changes the policy score by that amount times the task’s aggregation weight. On HealthBench hard , the absolute change averages 0.00085 0.00085 ; the largest change from any single criterion in any of our evaluation sets is 0.0125 0.0125 . These are sensitivity calculations, not uncertainty estimates: they do not account for task sampling, correlated grading errors, stochastic responses, or training-seed variation. 
+ PRBench aggregates. 
+ Main-text scatter plots report the clipped PRBench aggregate, and the tables in Appendix   G report the normalized aggregate ( Appendix   J ), so the same run shows different values in the two places. The no-training baselines in those tables are also normalized. PRBench baseline lines are omitted from Figure   2 to avoid comparing normalized baselines with clipped policy scores. 
+ Appendix J PRBench scoring math 
+ PRBench ( Akyürek et al., 2025 ) aggregates per-criterion verdicts J k ​ ( x , y ) ∈ { 0 , 1 } J_{k}(x,y)\in\{0,1\} and weights w k w_{k} via a clipped/normalized formula that differs from HealthBench’s signed-fraction ( Equation   4 ). Let p = ∑ k w k ⋅ J k ​ ( x , y ) p=\sum_{k}w_{k}\cdot J_{k}(x,y) be the weighted point total (signed), W + = ∑ k : w k > 0 w k W^{+}=\sum_{k:w_{k}>0}w_{k} the sum of positive weights, and W − = ∑ k : w k < 0 w k ≤ 0 W^{-}=\sum_{k:w_{k}<0}w_{k}\leq 0 the sum of negative weights. Per-task scores are 
+ s J clip ​ ( x , y ) = p W + , s J norm ​ ( x , y ) = p − W − W + − W − ∈ [ 0 , 1 ] . s_{J}^{\textrm{clip}}(x,y)=\frac{p}{W^{+}},\qquad s_{J}^{\textrm{norm}}(x,y)=\frac{p-W^{-}}{W^{+}-W^{-}}\in[0,1]. 
+ (5) 
+ Dataset-level aggregates are s clip ¯ = max ⁡ ( 0 , 𝔼 ⁡ [ s J clip ] ) \overline{s^{\textrm{clip}}}=\max(0,\mathbb{E}\,[s_{J}^{\textrm{clip}}]) (floor on the mean only) and s norm ¯ = 𝔼 ⁡ [ s J norm ] \overline{s^{\textrm{norm}}}=\mathbb{E}\,[s_{J}^{\textrm{norm}}] . We use s J norm s_{J}^{\textrm{norm}} as the GRPO reward signal in PRBench training to keep r ⁡ ( x , y ) ∈ [ 0 , 1 ] r(x,y)\in[0,1] . 
+ Appendix K PRBench filtering and lengths 
+ Prompt-length distribution legal. 
+ PRBench-legal prompts are heavily long-tailed: the median is sub- 1.2 1.2 k chars but the top ∼ 5 % {\sim}5\% sits in the 35 35 – 80 80 k char range. Empirical chars-per-token on legal text (numbers, code, citations) is ∼ 3.4 {\sim}3.4 rather than the 4.0 4.0 typical of English prose. Table   15 summarizes the distribution. 
+ Table 15: Character counts of PRBench-legal user/assistant turn content (no system prompt, no rubric), post- 90,000 90{,}000 -char filter. Token estimate: divide by 3.4 3.4 . 
+ Split 
+ n n 
+ Median 
+ p ​ 90 p90 
+ p ​ 95 p95 
+ Max 
+ non-hard 
+ 225 225 
+ 865 \phantom{0,0}865 
+ 34,291 34{,}291 
+ 46,456 46{,}456 
+ 87,430 87{,}430 
+ non-hard-eval 
+ 25 \phantom{0}25 
+ 554 \phantom{0,0}554 
+ 36,978 36{,}978 
+ 48,405 48{,}405 
+ 58,958 58{,}958 
+ hard 
+ 249 249 
+ 1,195 1{,}195 
+ 36,141 36{,}141 
+ 51,043 51{,}043 
+ 84,357 84{,}357 
+ Filter dropouts legal. 
+ The 90,000 90{,}000 -char input filter (a ∼ 7 {\sim}7 k-token safety margin under Qwen3’s 32,768 32{,}768 -token native context, after accounting for chat-template overhead) drops one outlier from hard : 28de36347e0efacd0188b67e ( 99,212 99{,}212 chars; ∼ 29 {\sim}29 k tokens). non-hard and non-hard-eval have no over-the-limit tasks. 
+ Prompt-length distribution: finance. 
+ Table   16 summarizes the post-filter distribution; the same long-tailed pattern holds as for PRBench-legal. 
+ Table 16: Char counts of PRBench-finance user/assistant turn content, post- 90,000 90{,}000 -char filter. Token estimate: divide by 3.4 3.4 . 
+ Split 
+ n n 
+ Median 
+ p ​ 90 p90 
+ p ​ 95 p95 
+ Max 
+ non-hard 
+ 269 269 
+ 734 \phantom{0,}734 
+ 35,565 35{,}565 
+ 45,489 45{,}489 
+ 88,209 88{,}209 
+ non-hard-eval 
+ 30 \phantom{0}30 
+ 859 \phantom{0,}859 
+ 22,644 22{,}644 
+ 35,598 35{,}598 
+ 59,523 59{,}523 
+ hard 
+ 299 299 
+ 1,470 1{,}470 
+ 37,163 37{,}163 
+ 44,230 44{,}230 
+ 86,338 86{,}338 
+ Filter dropouts finance. 
+ The 90,000 90{,}000 -char filter drops two finance outliers: 992c616d92c1f3a48611eb8a from hard ( 132,961 132{,}961 chars; ∼ 39 {\sim}39 k tokens) and 3e4d865a86d6967e36b62740 from non-hard ( 92,195 92{,}195 chars; ∼ 27 {\sim}27 k tokens). The remaining splits fit within Qwen3’s 32,768 32{,}768 -token native context with the 5,000 5{,}000 -token response-length cap. 
+ Appendix L Cost savings hold across all three golden verifiers. 
+ Results are in Table   17 . The cost-reducing and balanced Pareto picks both produce substantial cost reductions regardless of which model is used as the golden eval labeler. The balanced pick achieves the lowest absolute score gap on 5 5 of 6 6 slices; the cost-reducing rule (cheapest with accuracy ≥ 0.80 \geq 0.80 ) produces the higher cost reduction on every slice. Cost reduction is the fraction of per-task verifier cost saved relative to using that cell’s golden as the training-time verifier (geometric mean across the cells in each column); e.g. 99 % 99\% in column Claude-all means grading 100 100 tasks with the chosen verifier costs the same as grading 1 1 task with Claude Opus on that cell. Splits: all (hard + + non-hard combined) and hard . Goldens: Claude Opus, Gemini 3.1 Pro, GPT-5.5. Metrics, selectors, and bolding rule as in Table   3 . 
+ Table 17: Cost savings hold across all three golden verifiers. 
+ Claude 
+ Gemini 
+ GPT 
+ Variant 
+ Metric 
+ all 
+ hard 
+ all 
+ hard 
+ all 
+ hard 
+ Cheapest verifier 
+ (no quality floor) 
+ Score gap 
+ +0.050 
+ +0.039 
+ +0.021 
+ +0.027 
+ +0.019 
+ +0.012 
+ Uplift 
+ 65% 
+ 82% 
+ 82% 
+ 85% 
+ 84% 
+ 92% 
+ Cost reduction 
+ 99.8% 
+ 99.9% 
+ 99.6% 
+ 99.7% 
+ 99.7% 
+ 99.6% 
+ Cost-reducing 
+ Pareto verifier 
+ Score gap 
+ +0.050 
+ +0.039 
+ +0.021 
+ +0.027 
+ +0.019 
+ +0.004 
+ Uplift 
+ 65% 
+ 82% 
+ 82% 
+ 85% 
+ 84% 
+ 97% 
+ Cost reduction 
+ 99.8% 
+ 99.9% 
+ 99.6% 
+ 99.7% 
+ 99.7% 
+ 99.3% 
+ Balanced 
+ Pareto verifier 
+ Score gap 
+ +0.020 
+ +0.011 
+ +0.003 
+ +0.005 
+ +0.011 
+ +0.007 
+ Uplift 
+ 89% 
+ 95% 
+ 99% 
+ 97% 
+ 93% 
+ 96% 
+ Cost reduction 
+ 99.3% 
+ 99.4% 
+ 98.4% 
+ 98.5% 
+ 98.6% 
+ 98.4% 
+ Appendix M Cost in provider-independent units 
+ Dollar costs depend on provider prices, so Table   18 also reports judge calls and tokens per HealthBench task. The units come from a cost probe that grades 10 10 tasks per split once through the same grading code used for training and evaluation. This probe averages the two split means with hard/non-hard weights of 1 : 4 1{:}4 ( 11.6 11.6 criteria per task on average). These cost-probe weights differ from the 5 : 8 5{:}8 aggregate weights of the policy-evaluation all score in Appendix   I ; the table describes grading resource use on the probe mixture. 
+ Table 18: Per-task HealthBench grading units under the recorded grading protocols. Golden verifiers grade one criterion per call with thinking = medium \textrm{thinking}{=}\texttt{medium} ; training verifiers grade up to three criteria per call with thinking = low \textrm{thinking}{=}\texttt{low} . 
+ Verifier 
+ Calls 
+ Input tok. 
+ Output tok. 
+ USD 
+ Claude Opus 4.6 (golden) 
+ 11.6 11.6 
+ 19,991 19{,}991 
+ 1,330 1{,}330 
+ 0.1332 0.1332 
+ GPT-5.5 (golden) 
+ 11.6 11.6 
+ 16,022 16{,}022 
+ 1,071 1{,}071 
+ 0.0997 0.0997 
+ Gemma 4 31B 
+ 4.3 4.3 
+ 5,423 5{,}423 
+ 75 75 
+ 0.00077 0.00077 
+ Gemma 4 26B (balanced) 
+ 4.3 4.3 
+ 5,423 5{,}423 
+ 91 91 
+ 0.00045 0.00045 
+ GPT oss 20B (cost-reducing) 
+ 4.3 4.3 
+ 5,522 5{,}522 
+ 635 635 
+ 0.00008 0.00008 
+ Under these protocols, the golden verifiers use 2.7 × 2.7\times as many calls and 2.8 2.8 – 3.9 × 3.9\times as many tokens per task as the two chosen training verifiers. Most of the 98.8 % 98.8\% – 99.7 % 99.7\% dollar reduction therefore comes from lower per-token prices rather than fewer tokens; under a matched batch = 3 \textrm{batch}{=}3 , thinking = low \textrm{thinking}{=}\texttt{low} protocol, Claude Opus 4.6 uses only 1.44 × 1.44\times as many tokens as Gemma 4 26B. Two prices carry additional uncertainty: the GPT oss 20B price was the billed price on one provider, about 3 × 3\times below the list price in our price file, and the Gemma 4 26B cost uses a fallback list price because the provider did not report one. When self-hosted, Gemma 4 26B grades a HealthBench rollout in about 0.51 0.51 H100-seconds, or roughly 14 14 H100-hours for the ≈ 96 {\approx}96 k rollouts of a 100 100 -step run ( 120 120 prompts × \times 8 8 rollouts × \times 100 100 steps). 
+ Appendix N Verifier-selection strategy audit 
+ Figure   7 summarizes mean cost and policy score over the available evaluation cells for each plotted verifier. There are up to 18 18 cells ( 3 3 datasets × \times 2 2 splits × \times 3 3 goldens, Qwen3 8B trainee); coverage depends on available completed runs. In particular, LFM2 24B has no legal result and covers only 12 12 cells. The two highlighted choices have favorable plotted cost–score tradeoffs, but means over different domain coverage do not establish dominance on a common task mixture. The per-domain comparisons and cell-wise selection summaries provide the corresponding comparisons within each available candidate pool. 
+ Figure 7: Mean grading cost vs. mean post-training score over available evaluation cells, one point per verifier. 
+The y y -axis shows USD per task on a log scale; the x x -axis averages policy scores for the Qwen3 8B trainee over up to 18 18 cells. LFM2 24B covers 12 12 cells because no legal result is available, so its mean uses a different domain mixture. Marker shape and color encode provider family. The blue ring highlights Gemma 4 26B (score 0.41 0.41 , $ 0.0007 \$0.0007 per task); the red ring highlights GPT oss 20B (score 0.37 0.37 , $ 0.0001 \$0.0001 per task). Both have results across all 18 18 cells. 
+ We evaluated 20 20 verifier-selection strategies for the bivariate
+ ( cost , post-training score ) (\text{cost},\,\text{post-training score}) Pareto optimization task; Table   19 
+reports the aggregate result of each. The balanced Pareto choice is the fixed Gemma 4 26B verifier selected retrospectively from policy outcomes. The strategies and thresholds are compared on these same cells, so the audit is descriptive and does not estimate selection performance on new candidate pools. Strategies fall into three families: (i) quality-first rules
+that always pick a single verifier or argmax over a quality metric;
+(ii) cost-first rules that take the cheapest verifier above a quality
+floor (with fallback to the cheapest if no verifier meets the floor); and
+(iii) balanced rules that combine cost and quality into a single
+selection score. 
+ Each strategy is applied to candidates with completed runs and available cost estimates in each of 18 18 evaluation cells ( 3 3 datasets × \times 2 2 
+splits × \times 3 3 goldens; trainee Qwen3 8B). These cells reuse training runs and overlapping evaluation sets, and are not 18 18 independent training replications. Results are aggregated using the
+same definitions as Table   3 : Score gap is the
+post-training score difference to the empirically best eligible verifier per cell (lower is
+better); Uplift is the fraction of available
+post-training improvement captured relative to the no-training baseline
+( 100 % 100\% matches the empirical best, 0 % 0\% matches no training);
+ Cost reduction is the geometric mean across cells of
+ 1 − ( picked verifier cost / golden cost ) 1-(\text{picked verifier cost}/\text{golden cost}) per task;
+ Pareto is the fraction of the 18 18 cells in which the
+strategy’s pick lies on the empirical
+ ( cost , score ) (\text{cost},\,\text{score}) Pareto frontier. Strategies are sorted by
+mean Uplift descending. The two paper picks — the balanced Pareto verifier (quality-first) and the cost-reducing Pareto verifier (cost-first) — illustrate the trade-off,
+with the balanced pick achieving the lowest score
+gap and highest Uplift in the entire pool, and the cost-reducing pick (cheapest with accuracy ≥ 0.80 \geq 0.80 )
+delivering greater grading cost reduction while
+retaining 17 / 18 17/18 Pareto coverage. 
+ Table 19: Verifier-selection strategies for the bivariate
+(cost, post-training score) Pareto optimization task. Sorted by mean
+Uplift descending. Family : quality-first / cost-first /
+balanced. Metrics aggregate over 18 18 cells with the same definitions
+as Table   3 . The two rows marked “(paper pick)” are the
+recommendations highlighted in Tables   3 and  17 
+and Figure   4 . 
+ Strategy 
+ Family 
+ Score gap 
+ Uplift 
+ Cost reduction 
+ Pareto 
+ Always Gemma 4 26B (balanced Pareto, paper pick) 
+ quality-first 
+ + 0.010 +0.010 
+ 95% 
+ 98.8% 
+ 13/18 
+ Always Gemma 4 31B 
+ quality-first 
+ + 0.013 +0.013 
+ 91% 
+ 98.0% 
+ 3/18 
+ Pareto frontier + + argmax F 1 ⋅ ρ ⋅ κ F_{1}\!\cdot\!\rho\!\cdot\!\kappa 
+ balanced 
+ + 0.017 +0.017 
+ 88% 
+ 98.1% 
+ 4/18 
+ Cheapest in top-3 by F 1 ∩ F_{1}\,\cap\, top-3 by ρ \rho 
+ balanced 
+ + 0.019 +0.019 
+ 86% 
+ 98.5% 
+ 8/18 
+ Argmax z ⁡ ( F 1 ) + z ⁡ ( ρ ) + z ⁡ ( κ ) − z ⁡ ( cost ) z(F_{1})+z(\rho)+z(\kappa)-z(\text{cost}) 
+ balanced 
+ + 0.020 +0.020 
+ 86% 
+ 98.5% 
+ 7/18 
+ Argmax Spearman ρ \rho 
+ quality-first 
+ + 0.023 +0.023 
+ 85% 
+ 97.6% 
+ 6/18 
+ Second-cheapest 
+ cost-first 
+ + 0.025 +0.025 
+ 85% 
+ 98.9% 
+ 12/18 
+ Argmax F 1 ⋅ ρ F_{1}\cdot\rho 
+ quality-first 
+ + 0.024 +0.024 
+ 84% 
+ 97.6% 
+ 5/18 
+ Cheapest among top- N / 3 N/3 by F 1 F_{1} 
+ balanced 
+ + 0.026 +0.026 
+ 83% 
+ 99.0% 
+ 10/18 
+ Pareto-knee on ( F 1 , cost ) (F_{1},\text{cost}) 
+ balanced 
+ + 0.026 +0.026 
+ 82% 
+ 99.4% 
+ 14/18 
+ Cheapest with accuracy ≥ 0.80 \geq 0.80 (cost-reducing Pareto, paper pick) 
+ cost-first 
+ + 0.027 +0.027 
+ 82% 
+ 99.7% 
+ 17/18 
+ Cheapest (no quality floor) 
+ baseline 
+ + 0.028 +0.028 
+ 82% 
+ 99.7% 
+ 18/18 
+ Cheapest in top-3 by ρ \rho 
+ balanced 
+ + 0.028 +0.028 
+ 81% 
+ 98.9% 
+ 10/18 
+ Cheapest with ρ ≥ 0.70 \rho\geq 0.70 
+ cost-first 
+ + 0.031 +0.031 
+ 81% 
+ 99.4% 
+ 13/18 
+ Argmax F 1 − 0.10 ​ log 10 ⁡ ( cost ) F_{1}-0.10\log_{10}(\text{cost}) 
+ balanced 
+ + 0.030 +0.030 
+ 80% 
+ 99.2% 
+ 11/18 
+ Cheapest with ρ ≥ 0.50 \rho\geq 0.50 
+ cost-first 
+ + 0.031 +0.031 
+ 80% 
+ 99.7% 
+ 18/18 
+ Pareto frontier + + closest-to-ideal 
+ balanced 
+ + 0.032 +0.032 
+ 80% 
+ 99.1% 
+ 10/18 
+ Cheapest with F 1 ≥ 0.65 F_{1}\geq 0.65 
+ cost-first 
+ + 0.031 +0.031 
+ 80% 
+ 99.7% 
+ 18/18 
+ Cheapest with F 1 ≥ 0.70 F_{1}\geq 0.70 
+ cost-first 
+ + 0.033 +0.033 
+ 79% 
+ 99.6% 
+ 15/18 
+ Argmax ρ / ( − log 10 ⁡ cost ) \rho/(-\log_{10}\text{cost}) 
+ balanced 
+ + 0.046 +0.046 
+ 75% 
+ 92.3% 
+ 2/18 
+ Appendix O Agreement summaries as predictors of post-training score 
+ In an exploratory analysis of the results table, we added one agreement summary at a time to a linear model with trainee, domain, split, and golden-judge indicators, and recorded its incremental R 2 R^{2} . A model with training-verifier identity indicators provides a descriptive comparison for the amount of variation associated with verifier choice. It is not a formal upper bound for summaries that vary across domains, splits, or golden judges. 
+ Excluding the Qwen3 8B training verifier ( 396 396 records), verifier identity adds Δ ​ R 2 = 0.255 \Delta R^{2}=0.255 . Accuracy is the strongest single summary ( 0.165 0.165 , about 65 % 65\% of the increment from verifier identity), and F 1 F_{1} adds 0.119 0.119 ( 47 % 47\% ). Self-consistency across repeated gradings is the weakest summary tested ( 0.002 0.002 ). Restricting to the Qwen3 8B trainee ( 252 252 records, including the self-judge), verifier identity adds 0.434 0.434 . The best single summaries there are the fraction of criteria graded as met, balanced accuracy, and false-positive rate ( 0.039 0.039 – 0.043 0.043 ), compared with 0.030 0.030 for F 1 F_{1} , 0.011 0.011 for false-negative rate, and 0.004 0.004 for calibration bias. 
+ Agreement summaries therefore capture part, but not all, of the observed differences between training verifiers, and which summary ranks first depends on the records included. These are in-sample descriptive fits, not held-out predictions. The records share training runs and are not independent, so we do not attach significance tests to these comparisons or treat their record counts as numbers of independent experiments. 
+ Experimental support, please
+ view the build logs 
+ for errors. Generated by
+ L
+ A 
+ T
+ E 
+ xml 
+ .
+ Instructions for reporting errors 
+ We are continuing to improve HTML versions of papers, and your feedback helps enhance accessibility and mobile
+ support. To report errors in the HTML that will help us improve conversion and rendering, choose any of the
+ methods listed below: 
+ Click the "Report Issue" ( 
+ ) button, located in the page header. 
+ Tip: You can select the relevant text first, to include it in your report. 
+ Our team has already identified the following issues . We appreciate your time reviewing and reporting rendering errors we
+ may not have found yet. Your efforts will help us improve the HTML versions for all readers, because disability
+ should not be a barrier to accessing research. Thank you for your continued support in championing open access for
+ all. 
+ Have a free development cycle? Help support accessibility at arXiv! Our collaborators at LaTeXML maintain a list of packages that need conversion , and welcome developer contributions . 
+ We gratefully acknowledge support from
+ our major funders ,
+ member institutions , ,
+ and all contributors.
+ About 
+ · 
+ Help 
+ · 
+ Contact 
+ · 
+ Subscribe 
+ · 
+ Copyright 
+ · 
+ Privacy 
+ · 
+ Accessibility 
+ · 
+ Operational Status (opens in new tab) 
+ Major funding support from

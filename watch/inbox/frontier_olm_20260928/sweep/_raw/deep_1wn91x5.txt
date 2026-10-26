@@ -1,0 +1,31 @@
+ID: 1wn91x5
+SUB: r/LocalLLaMA
+DATE: 2026-09-22 13:08 UTC (created_utc=1790082531)
+TITLE: Preventing double-execution and tool replay in local LLM workflows (Rust tool gate)
+SCORE: 1  COMMENTS: 7  UPVOTE_RATIO: 0.67
+PERMALINK: https://www.reddit.com/r/LocalLLaMA/comments/1wn91x5/preventing_doubleexecution_and_tool_replay_in/
+SELFTEXT:
+I run local models via Ollama and LM Studio tied to custom system scripts. One annoyance I kept hitting wasn't the initial tool call, but duplicate retries or mid-sequence parameter mutations when a model gets stuck in a loop.
+
+I built a lightweight v0.1 Rust CLI / library gate where the local model acts purely as an untrusted proposer:
+
+1. A trusted issuer creates a single-use claim bound to action + resource + payload SHA-256.
+2. The agent submits its tool request.
+3. The first matching request executes and atomically burns the claim on disk (`O_EXCL` / `create_new`).
+4. Any replay or mutated payload immediately gets a `DENY`.
+
+Disclosure: This is my own open-source project.
+
+Repo: [https://github.com/trencinodin-stack/arcstone-mcp-sidecar](https://github.com/trencinodin-stack/arcstone-mcp-sidecar?utm_source=gemini)
+
+Note: Right now this is a local CLI tool and library function (`execute_request()`), not a full stdio MCP proxy server. You call it directly inside your tool handlers before firing file modifications or shell scripts.
+
+Curious what patterns other people running local agents use to catch duplicate execution loops or unauthorized retries!
+COMMENTS FETCHED: 7
+--- [[deleted] | 2026-09-22 | score 1] [removed]
+--- [[deleted] | 2026-09-22 | score 1] [removed]
+--- [[deleted] | 2026-09-22 | score 1] [removed]
+--- [ShowerAnnual9741 | 2026-09-22 | score 1] nice approach. one thing i'd suggest is making the DENY a distinct error the model can actually see, not just a blocked call. when a retry comes back as a generic failure the model usually retries harder. when it comes back as denied, claim already burned, it re-plans. the semantics of the refusal matter as much as the gate itself.
+--- [[deleted] | 2026-09-22 | score 1] [removed]
+--- [AdmissibilityScience | 2026-09-22 | score 1] That's actually built into the sidecar's design! Instead of returning generic failures, the gate returns explicit structured error semantics like `DENY [CONSUMED_AUTHORIZATION]` or `DENY [BINDING_MISMATCH]`. Giving the LLM explicit feedback that the claim is burned or mutated is what prevents it from retrying blindly and forces it to re-plan.
+--- [ShowerAnnual9741 | 2026-09-22 | score 1] the burned-vs-mutated split is the part that matters most, i think. burned means don't retry, mutated means re-propose with the fixed params — and the model can only tell those apart if the denial carries the reason. that's what turns the gate from a wall into a correction signal.

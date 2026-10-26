@@ -1,0 +1,28 @@
+t21 check evidence — GalleryZone.luau prompt(frame) parent bug
+file: roblox/src/server/zones_extra/GalleryZone.luau
+verified: byte-level grep (cat -A) after fix, read of full file before fix
+
+CAUSE (confirmed by bytes, pre-fix read):
+- line 51:  local frameAcc, frame, playing = 0, -1, true          (frame is a number, init -1)
+- line 102: local function prompt(parent: Instance, action: string, title: string, fn: (Player) -> ())
+- line 187: local screen = mk(model, Vector3.new(22.4, 16.4, 0.6), ...)  (the Bad Apple display part, the intended parent)
+- line 204 (BEFORE): <TAB>prompt(frame, "Pause / resume", "Bad Apple Field", function(player: Player)
+  passes a number as parent: Instance. Under --!strict this is a TypeError (number is not an Instance);
+  at runtime the ProximityPrompt would parent to nothing valid / error. All sibling prompt() calls pass
+  Instances: line 158 prompt(wall, ...), line 180 prompt(basin, ...). Line 202 already uses banner(screen),
+  confirming screen is the intended parent.
+
+FIX (minimal, one token):
+- line 204 (AFTER):  <TAB>prompt(screen, "Pause / resume", "Bad Apple Field", function(player: Player)
+
+POST-FIX VERIFICATION (byte-level):
+- cat -A line 204: ^Iprompt(screen, "Pause / resume", "Bad Apple Field", function(player: Player)^M$
+  (single tab indent, CRLF intact, matches file convention)
+- grep -n "prompt(frame" -> zero matches (exit 1)
+- grep -n "prompt(" -> lines 102 (def), 158 (wall), 180 (basin), 204 (screen): all call sites Instance-typed
+- lines 51, 102, 187 byte-identical to pre-fix read; no other lines touched
+- mountain_check NOT run (shared resource, per task law); verification is by read/grep only
+
+LAWS: no fabrication (all line numbers from actual reads/greps above); no em-dashes in filed text;
+negatives first-class (the negative check "prompt(frame no longer matches" is the load-bearing proof);
+fix comment carries the receipt (this file is the receipt).

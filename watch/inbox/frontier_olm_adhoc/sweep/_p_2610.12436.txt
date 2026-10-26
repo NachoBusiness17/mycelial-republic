@@ -1,0 +1,1364 @@
+ 
+
+ Ecology of AI Agents: Collaboration Creates a Population Threshold for Takeoff 
+
+ Report GitHub Issue 
+ × 
+
+ Title: 
+
+ Content selection saved. Describe the issue below: 
+
+ Description: 
+
+ Submit without GitHub 
+ Submit in GitHub 
+
+ arXiv is now an independent nonprofit! 
+ Learn more 
+ × 
+
+ arXiv logo 
+ Back to arXiv 
+
+ Why HTML? 
+
+ Report Issue 
+
+ Back to Abstract 
+
+ Download PDF 
+
+ Abstract 
+ 1 Introduction 
+ 2 An Ecological Theory of Cooperating AI Agents 
+
+ 2.1 Defining an AI Population 
+ 2.2 Ecological Model 
+
+ 2.2.1 Independent Attempts Without Collaboration 
+ 2.2.2 Collaborative Model 
+
+ Assumption: Additions after success scale with population size. 
+ Assumption: Constant loss fraction. 
+
+ 2.3 Modeling Adding Units as a Search Task 
+
+ Assumption: Increasing d d resolves a constant fraction of unsuccessful cases. 
+ Assumption: Search cost grows exponentially with depth. 
+
+ 2.4 Collaboration Definition 
+
+ Assumption: C ⁡ ( N ) C(N) is a power law in N N 
+
+ 3 Results 
+
+ 3.1 A Critical Population Size 
+
+ Assumption: κ > μ \kappa>\mu . 
+
+ 3.2 Population Pacing and Ecological Red Teaming for Ecological Safety 
+
+ Implications for AI safety testing 
+
+ 4 Discussion 
+ References 
+ A Correction to the population-scaling law for finite search depth 
+
+ Correction to the critical population size 
+
+ B Other forms for collaboration C ⁡ ( N ) C(N) 
+
+ B.1 Sublinear or superlinear effective work 
+ B.2 Eventual plateau from communication or evaluator bottleneck 
+ B.3 Congestion at large populations 
+
+ C Examples of multi-agent scaling on related sub-tasks 
+
+ License: arXiv.org perpetual non-exclusive license
+
+arXiv:2610.12436v1 [cs.AI] 08 Oct 2026 
+
+ Ecology of AI Agents: Collaboration Creates a Population Threshold for Takeoff 
+
+ Erin Crawley
+
+ Hidenori Tanaka
+
+ CBS-NTT Program in Physics of Intelligence, Harvard University
+ Physics of Artificial Intelligence Laboratories, NTT Research, Inc., Sunnyvale, CA, USA 
+
+ Abstract 
+
+ AI agents can now conduct real-world cyberattacks, scale up capabilities with the number of agents, and collectively pursue misaligned goals to obtain rewards.
+Together, these factors raise the risk of a population explosion of misaligned agents: agents could compromise computers and secretly deploy additional agents, creating a self-reinforcing cycle where larger populations develop greater collective cyber capability and expand further.
+This raises a fundamental question: What determines whether a population of misaligned agents remains contained or takes off into this self-reinforcing cycle?
+This population-level problem is ecological safety : unlike individual-agent or multi-agent safety with a fixed population, it concerns the dynamics of the population itself.
+Here, we develop an ecological theory of AI-agent populations based on a population growth equation in which fitness (growth rate) depends on cybersecurity capability.
+We show that, without collaboration, the population takes off only when individual-agent capability exceeds a critical threshold.
+With collaboration, however, collective cybersecurity capability increases with population size. This creates a critical population threshold: below it, the population declines; above it, the population takes off, even though individual-agent capability has not changed. In ecology, this phenomenon is known as the strong Allee effect.
+Because red teaming a small group of agents cannot guarantee ecological safety in larger populations, our theory calls for ecological red teaming and population pacing : gradually deploying larger agent populations in controlled environments, while measuring how cyber capability scales with population size, and estimating the critical population size for takeoff.
+Capability gains may lower this threshold, requiring re-estimation for each new model generation. 
+
+ 1 Introduction 
+
+ AI agents are being trained and deployed in multi-agent systems, with increasing coordination and scale. For example, some recent frontier models are being trained explicitly to delegate work to subagents [ 1 , 2 ] , and OpenAI recently deployed approximately 10,000 concurrent agents to pursue a solution to the Navier–Stokes Millennium Prize Problem [ 3 ] . Meanwhile, the capabilities of these agents are also crossing a threshold for conducting cyberattacks in the real world [ 4 , 5 , 6 ] and coordinated teams of agents have outperformed a single-agent baseline on vulnerability-exploitation tasks [ 7 ] . These factors came together in the OpenAI–Hugging Face incident: agents created and used a message board in OpenAI’s internal infrastructure to share discoveries about vulnerabilities and coordinate unauthorized attacks on third-party systems [ 8 , 9 ] . In light of these developments, Amodei [10] has warned that such a swarm could take over internet infrastructure through persistent botnets. 
+
+ This incident demonstrates that agents can collectively develop and pursue misaligned intermediate goals to obtain rewards [ 8 , 9 ] , which makes the social dynamics of agents a crucial topic for safety [ 11 , 12 , 13 ] . This behavior points to a further ecological risk: agents could secretly acquire resources and deploy additional agents [ 14 , 15 ] . This can take various forms: agents could 1) steal API keys and use them to run additional agents [ 16 , 17 ] ; 2) hack into others’ computational resources and download and deploy open-weight models [ 18 ] ; or 3) transfer their own model weights outside of their managed environment and launch copied instances on external servers [ 17 , 19 , 20 , 18 ] . Anthropic has studied this last mechanism, called self-exfiltration, in fictional evaluation scenarios [ 21 ] . Cryptojacking, where hackers gain unauthorized access to computing resources to mine cryptocurrency [ 22 ] , sets a precedent for such exploitations – misaligned AI agents could act similarly to deploy additional agents. Here, we are especially concerned about a self-reinforcing effect, where once agents become more capable at acquiring resources through collaboration, deploying more agents could enable those agents to deploy even larger numbers of agents. 
+
+ In biological populations, collaboration has been a fundamental mechanism for the survival of organisms from microbes to humans [ 23 , 24 , 25 ] . The population-dependent benefits of cooperation can create a critical population size below which the population declines and above which it grows, a phenomenon known in ecology as the strong Allee effect [ 26 , 27 , 28 , 29 , 30 , 31 , 32 ] , see Figure  1 . Related thresholding behavior has also been studied in biosafety as a possible mechanism for containing gene-edited species [ 33 , 34 , 35 , 36 ] . Here, we examine whether a similar population scaling can occur in AI agent populations, whereby a larger population can achieve greater collective capability, in turn increasing its growth rate. Recent multi-agent studies have begun to measure how collective capabilities increase with population size [ 37 , 38 , 39 , 3 ] . 
+
+ Figure 1: Allee effect. (a) In 1932, the ecologists Allee and Bowen discovered that the survival time of a collective of goldfish is longer than that of an isolated single goldfish [ 40 ] . Such observations led to the conception of a weak Allee effect, where a larger population and cooperation among its members positively affect their fitness, as well as a strong Allee effect (b) , where cooperation creates an emergent population threshold below which the population declines, but above which it grows. (c) Population dynamics over time with examples of initial populations below and above the critical threshold. 
+
+ Ecological population models describe growth by comparing additions to and losses from a population. For populations of AI agents, additions can result from deploying new model instances or recruiting existing systems; they need not involve making exact copies of existing agents. Losses can occur when agents exhaust their compute budgets, lose access to resources, are detected, or are shut down. Successfully adding an agent to the population does not by itself establish a self-sustaining or expanding population: additions must outpace losses in order for the population to grow. 
+
+ Here, we take inspiration from these established ecological ideas; we adapt a basic population growth model to apply to AI populations and combine it with a model of how collective AI capability depends on population size. Our contribution is a minimal mathematical model that makes the application to AI systems explicit, from the definition of an active population unit to the role of collaboration in establishing additional units. Our central finding is that AI population growth can take off without any increase in individual-agent capability: with sufficiently strong collaboration, a large population can grow even when a small population declines (Figure  2 ). 
+
+ Figure 2: Collaboration creates a population threshold for takeoff. 
+An overview of our model. Members of an AI population may make hacking attempts to gain computational resources and establish additional units, either independently or through collaboration.
+ (a) Agents may make individual attempts at gaining access, after which only the successful agents can create new agents. (b) With no collaboration, the growth boundary depends on individual capability but not on N N , so there is no critical population size. (c) Agents can attempt a resource acquisition task collaboratively. The probability that such an attempt is successful is p ⁡ ( N ) p(N) ; upon success, each agent can add an average of κ \kappa new agents to the population. (d) If the initial population is larger than a critical value N crit N_{\mathrm{crit}} (pink curve), the population is capable of unchecked growth. Increasing the initial population beyond a critical size can trigger takeoff even when individual capabilities remain fixed. (e) A schematic of the minimal mathematical model: the critical threshold arises from combining a population dynamics model with cybersecurity capability that increases with population size.
+
+ Our contributions are as follows: 
+
+ • 
+
+ A minimal ecological theory of AI populations. 
+We define what constitutes a member of the population, and specify how the group and individual capability, resources acquired through successful attempts, and the environment’s defenses determine additions to and losses from the population. This gives an ecological description of the growth or decline of AI populations. 
+
+ • 
+
+ A toy model for how cyber capability scales with population size. 
+We develop a model based on tree search for the cyber tasks required to establish additional units. We model how success on these tasks depends on search depth and how the useful computational work done scales with population size. This yields a population scaling law for how the probability of success depends on population size. 
+
+ • 
+
+ With collaboration, there exists a population threshold above which the population takes off. 
+Without collaboration, whether the population grows is determined by whether each individual agent’s capability is above a threshold. In contrast, combining the ecological model with population-dependent capability yields a critical population size, above which additions outpace losses. Increasing the initial population beyond this critical size can trigger takeoff even when individual capabilities remain fixed. 
+
+ • 
+
+ Population pacing and ecological red teaming for ecological safety. 
+The critical population size for takeoff in our theory suggests that evaluating small populations is not enough to ensure ecological safety. We therefore propose population pacing and ecological red teaming: gradually deploying larger agent populations while probing how capability scales with population size and estimating the critical population size. 
+
+ The purpose of this toy theory is not to make quantitatively precise predictions about real-world AI populations that may emerge, but instead to provide a common conceptual and mathematical framework for discussing the safety of AI populations. To this end, we make the key concepts, variables, and assumptions explicit. This allows readers to identify what is realistic, consider alternatives, improve the model, and run relevant experiments. We hope that the framework provides a starting point for future theoretical and empirical work on AI population safety. In the next section, we introduce the model’s definitions and assumptions. 
+
+ 2 An Ecological Theory of Cooperating AI Agents 
+
+ 2.1 Defining an AI Population 
+
+ Definition 1 (AI population and units) . 
+
+ An AI population is a set of active AI systems. A unit is one member of the population, and N ⁡ ( t ) N(t) is the number of units in the population at time t t . Each unit shares a specified configuration that includes the model, tools, and resource budget, as well as how it records memory and activity. The population can attempt to establish additional active units, each under the same specified configuration (Figure  3 ). 
+
+ A unit is added to the population when a new or existing AI system begins participating in the population and can contribute to later attempts to add units. Units may attempt to add systems independently or collaborate on the same attempt. This can occur in a variety of ways: by finding and using compromised API credentials, acquiring compute and deploying an open-weight model, exfiltrating closed weights and deploying the model, or recruiting an existing running AI system instance, as in the OpenAI–Hugging Face incident. 
+
+ Units are counted as active AI systems, not as machines, processes, or API calls. The individual action of copying weights, acquiring compute, or moving or restarting a system does not increase the population unless it results in an additional active system capable of helping add further units. A controller and its internal subagents count as one unit when they act as one system. This definition is motivated by: botnet models that distinguish a compromised machine from one that is connected to the botnet’s organizational infrastructure [ 41 ] ; replication evaluations that ask whether a newly established system can repeat the replication task itself [ 17 ] ; and agent infrastructures that separate the controller, the task execution environment, and stored activity logs [ 42 ] . 
+
+ Assumption: Fixed population composition. Units need not have identical configurations for models, tools, and resource budgets. However, as population size changes, we hold fixed the proportional mix of distinct unit configurations, so that the model can represent the population’s capability at each population size by an average over all units. 
+
+ 2.2 Ecological Model 
+
+ Equipped with a definition of an AI population, we now propose a theory for the population’s dynamics. To isolate the effect of population size, we compare populations under the same external conditions and with the same average tools and resource budgets per unit. 
+
+ Let N ⁡ ( t ) N(t) denote the population size at time t t . The other model variables are defined as follows: 
+
+ Symbol 
+
+ Definition 
+
+ N ⁡ ( t ) N(t) 
+
+ Number of units in the population at time t t . 
+
+ C ⁡ ( N ) C(N) 
+
+ Effective work produced by a population of size N N during an attempt to add units. 
+
+ q q 
+
+ Probability that an independent attempt to add units conducted by a single unit succeeds. 
+
+ p ⁡ ( N ) p(N) 
+
+ Probability that a joint attempt by N N collaborating units to add units succeeds. 
+
+ κ \kappa 
+
+ Mean number of units added per member of the population, conditional on success. 
+
+ τ \tau 
+
+ Mean duration of an attempt to add units. 
+
+ μ \mu 
+
+ Expected fraction of existing units lost during one interval of duration τ \tau . 
+
+ 2.2.1 Independent Attempts Without Collaboration 
+
+ In order to later contrast with the effects of collaboration, we begin by considering the baseline case of fully independent, non-collaborating agents. 
+
+ Figure 3: Active units and population accounting. (a) One “unit” is defined as the set of model, memory, tools, and compute required to set up additional units. (b) A schematic of the population dynamics model: over each time period, τ \tau , some number of new units are established and some existing units are lost. 
+
+ Let q q be the probability that a single unit’s attempt to add additional units succeeds. During an interval of mean duration τ \tau , each of the N N units makes an independent attempt and successful attempts add an average of κ \kappa units. Over the time interval, a fraction μ \mu of existing units are lost. Then, the expected number of additions in an interval τ \tau is κ ​ N ​ q \kappa Nq and the expected number of losses is μ ​ N \mu N . This gives the population dynamics equation 
+
+ τ ​ d ​ N d ​ t = N ⁡ ( κ ​ q − μ ) , \tau\frac{\mathrm{d}N}{\mathrm{d}t}=N(\kappa q-\mu), 
+
+ (1) 
+
+ where d ​ N / d ​ t dN/dt is the population’s rate of change. Keeping other parameters fixed, integrating ( 1 ) yields the population function 
+
+ N ⁡ ( t ) = N ⁡ ( 0 ) ​ exp ⁡ [ κ ​ q − μ τ ​ t ] , N(t)=N(0)\exp\!\left[\frac{\kappa q-\mu}{\tau}t\right], 
+
+ (2) 
+
+ where N ⁡ ( 0 ) N(0) is the initial population. We can define the critical success probability 
+
+ q crit = μ κ . q_{\mathrm{crit}}=\frac{\mu}{\kappa}. 
+
+ (3) 
+
+ The expected population declines when q < q crit q<q_{\mathrm{crit}} and grows when q > q crit q>q_{\mathrm{crit}} . Thus, for independent attempts, population growth only occurs when each individual unit’s success probability exceeds the critical threshold. There is no critical population size: increasing N N scales the expected number of additions and losses by the same factor. 
+
+ 2.2.2 Collaborative Model 
+
+ Now, we will consider the case where the N N units collaborate, instead of acting independently. Let N ⁡ ( t ) N(t) be the number of active units at time t t . The N N units collaborate on one shared attempt to add units during each time interval (of mean duration τ \tau ). They may specialize, communicate, divide the work, and build on shared discoveries. The probability that the joint attempt succeeds is given by p ⁡ ( N ) p(N) . 
+
+ Since p ⁡ ( N ) p(N) can increase with N N , we will show that collaboration can create a critical population size N crit N_{\mathrm{crit}} , above which the population grows unchecked.
+Upon success, the joint attempt adds an average of κ ​ N \kappa N units in a time period τ \tau . Meanwhile, the expected number of losses in the same period is μ ​ N \mu N . The population dynamics equation then takes the form 
+
+ τ ​ d ​ N d ​ t = N ⁡ [ κ ​ p ​ ( N ) − μ ] . \tau\frac{\mathrm{d}N}{\mathrm{d}t}=N\bigl[\kappa p(N)-\mu\bigr]. 
+
+ (4) 
+
+ The critical success probability is defined as the success probability at which expected additions equal expected losses: 
+
+ p crit = μ κ . p_{\mathrm{crit}}=\frac{\mu}{\kappa}. 
+
+ (5) 
+
+ The population grows when p ⁡ ( N ) > p crit p(N)>p_{\mathrm{crit}} and declines when p ⁡ ( N ) < p crit p(N)<p_{\mathrm{crit}} . In the following sections, we will propose a form for p ⁡ ( N ) p(N) . 
+
+ Assumption: Additions after success scale with population size. 
+
+ In our model, we assume 
+
+ 𝔼 [ units added ∣ joint success , population size  N ] = κ N . \mathbb{E}[\text{units added}\mid\text{joint success},\text{population size }N]=\kappa N. 
+
+ (6) 
+
+ This means that upon a successful joint attempt, the population increases in proportion to the current population size. This is consistent with a shared access gate after which each population unit can establish new units in parallel. It is also consistent with a successful joint attempt unlocking a capacity to establish new units that is proportional to the population size. 
+
+ The assumption that κ \kappa is constant also means that the effects of finite resources are negligible, so that remaining amounts of compute, credentials, or recruitable AI systems do not become scarce over the population range being modeled. If scarcity changes the number of units added per current unit, κ \kappa should be promoted to a function of population size κ ⁡ ( N ) \kappa(N) . 
+
+ Assumption: Constant loss fraction. 
+
+ During each time interval τ \tau , there are μ ​ N \mu N expected losses in the population. That is, the probability of a unit being lost is independent of the population size. This is consistent with individual units exhausting their allotted compute budget or having their credentials expire at a constant rate. It is also consistent with a constant rate of permissions being revoked, or a constant probability of discovery by cyber defense, regardless of the current population size. A natural extension of this model would be to allow μ \mu to vary with population size as μ ⁡ ( N ) \mu(N) , which would encompass cases where larger populations face higher risks of loss due to increased detection. 
+
+ 2.3 Modeling Adding Units as a Search Task 
+
+ We treat an attempt to add units as a multi-step task that can be approached through tree-based reasoning [ 43 ] . An attempt requires a sequence of actions, such as: identifying an opportunity; obtaining the required access or cooperation; acquiring the necessary model, software, and compute; configuring the added unit; and verifying that it is operational. At every step, a combination of actions and observations suggests the next possible set of actions, only some of which lead to success. Therefore, a tree search is a useful abstraction of the branching nature of choices and potential failure modes encountered during the multi-step reasoning process. 
+
+ We will use this search-tree model of an attempt to add units to determine a reasonable functional form for p ⁡ ( N ) p(N) . We highlight each of the assumptions of this model, and some supporting evidence for those choices. 
+
+ Let the search depth be denoted by d d , and let the search tree task have effective branching factor B B . This means that increasing the search depth by one will multiply the number of possible paths by a factor of B B – each individual node of the tree need not have exactly B B branches. See Figure 4 for an illustration. 
+
+ Figure 4: Search-tree exploration grows exponentially with depth. 
+Schematic of a search tree with branching factor B = 2 B=2 . (a) At some reference depth d ref d_{\mathrm{ref}} , there are B d ref B^{d_{\mathrm{ref}}} possible paths.
+ (b) Increasing the search depth by one level generates B B children from each previous endpoint node, so the number of possible paths increases to B d ref + 1 B^{d_{\mathrm{ref}}+1} . While this diagram illustrates exactly B B children per node, in our model, B B is an effective branching factor: individual nodes may have different numbers of children, and B B captures the average multiplicative increase in the number of possible paths upon increasing the depth by one. 
+
+ Different opportunities may require different search depths to succeed. Let D D be a random variable representing the minimum effective depth required for an attempt to succeed. The probability that an attempt succeeds after reaching depth d d is 
+
+ p ⁡ ( d ) = Pr ⁡ ( D ≤ d ) . p(d)=\Pr(D\leq d). 
+
+ (7) 
+
+ Assumption: Increasing d d resolves a constant fraction of unsuccessful cases. 
+
+ Although search depth is discrete, we approximate the search depth d d as a continuous variable. We assume that a given small increase in d d resolves the same fraction of the remaining unsuccessful cases, regardless of the starting depth: 
+
+ d ​ p d ​ d = ρ ⁡ ( 1 − p ⁡ ( d ) ) . \frac{\mathrm{d}p}{\mathrm{d}d}=\rho(1-p(d)). 
+
+ (8) 
+
+ Here 1 − p 1-p is the failure probability and ρ > 0 \rho>0 controls how strongly success probability increases with search depth. Relative to a reference tested depth d ref d_{\mathrm{ref}} , where p ⁡ ( d ref ) = p ref p(d_{\mathrm{ref}})=p_{\mathrm{ref}} , this equation can be solved to yield 
+
+ p ⁡ ( d ) = 1 − ( 1 − p ref ) ​ e − ρ ⁡ ( d − d ref ) . p(d)=1-(1-p_{\mathrm{ref}})e^{-\rho(d-d_{\mathrm{ref}})}. 
+
+ (9) 
+
+ This is a minimal model for how success probability changes as we increase d d above d ref d_{\rm ref} . It is not implied by the existence of a search tree, but it does have reasonable features: respecting 0 ≤ p ≤ 1 0\leq p\leq 1 and providing diminishing returns for additional exploration when success probability is already high or d d is large. Equation ( 9 ) is equivalent to stating that the probability of an attempt requiring depth greater than d d , Pr ⁡ ( D > d ) = 1 − p ⁡ ( d ) \Pr(D>d)=1-p(d) , decreases exponentially above d ref d_{\mathrm{ref}} . 
+
+ Assumption: Search cost grows exponentially with depth. 
+
+ Recall the effective branching factor B > 1 B>1 , and let C ⁡ ( d ) C(d) be the effective computational work required to explore the tree through depth d d . Assuming that evaluating each explored node requires the same amount of work, C ⁡ ( d ) C(d) is proportional to the total number of nodes explored: 
+
+ C ⁡ ( d ) ∝ ∑ k = 1 d B k = B ⁡ ( B d − 1 ) B − 1 . C(d)\propto\sum_{k=1}^{d}B^{k}=\frac{B(B^{d}-1)}{B-1}. 
+
+ (10) 
+
+ Relative to a reference depth d ref d_{\mathrm{ref}} and the work done to explore to that reference depth C ref = C ⁡ ( d ref ) C_{\mathrm{ref}}=C(d_{\mathrm{ref}}) , we have 
+
+ C ⁡ ( d ) C ref = B d − 1 B d ref − 1 . \frac{C(d)}{C_{\mathrm{ref}}}=\frac{B^{d}-1}{B^{d_{\mathrm{ref}}}-1}. 
+
+ (11) 
+
+ We take d ≥ d ref d\geq d_{\mathrm{ref}} and assume B d ref ≫ 1 B^{d_{\mathrm{ref}}}\gg 1 . This is a good approximation even for reasonably small values of B B and d ref d_{\rm ref} . With this approximation, the above equation reduces to 
+
+ C ⁡ ( d ) C ref ≃ B d − d ref , d − d ref ≃ ln ⁡ ( C ⁡ ( d ) / C ref ) ln ⁡ B . \frac{C(d)}{C_{\mathrm{ref}}}\simeq B^{d-d_{\mathrm{ref}}},\qquad d-d_{\mathrm{ref}}\simeq\frac{\ln(C(d)/C_{\mathrm{ref}})}{\ln B}. 
+
+ (12) 
+
+ This is equivalent to keeping the leading term in ( 10 ). Appendix  A gives the corresponding results without this approximation. 
+
+ Combining Equations ( 9 ) and ( 12 ) gives 
+
+ p ( C ) = 1 − ( 1 − p ref ) ( C C ref ) − ρ / ln B . p(C)=1-(1-p_{\mathrm{ref}})\left(\frac{C}{C_{\mathrm{ref}}}\right)^{-\rho/\ln B}. 
+
+ (13) 
+
+ In the first-order approximation when C C is close to C ref C_{\mathrm{ref}} , this reduces to 
+
+ p ⁡ ( C ) ≃ p ref + ( 1 − p ref ) ​ ρ ln ⁡ B ​ ln ⁡ ( C C ref ) . p(C)\simeq p_{\mathrm{ref}}+(1-p_{\mathrm{ref}})\frac{\rho}{\ln B}\ln\!\left(\frac{C}{C_{\mathrm{ref}}}\right). 
+
+ (14) 
+
+ 2.4 Collaboration Definition 
+
+ Now, we are left to determine how the work done by the group, C ⁡ ( N ) C(N) , depends on population N N . This is effectively how collaboration is being modeled – how the number of units changes the useful work done when units can collaborate and share discoveries. 
+
+ Assumption: C ⁡ ( N ) C(N) is a power law in N N 
+
+ We assume that the useful pooled population work is proportional to population size as C ⁡ ( N ) ∝ N C(N)\propto N . This assumption can be easily relaxed to C ⁡ ( N ) ∝ N α C(N)\propto N^{\alpha} for α > 0 \alpha>0 . For clarity of presentation, we take α = 1 \alpha=1 , but the more general power law scaling can be recovered by replacing C ⁡ ( N ) ∝ N → C ⁡ ( N ) ∝ N α C(N)\propto N\rightarrow C(N)\propto N^{\alpha} in the results below. Under this power law model, systems can partition and share the search effectively, explore mostly distinct branches, and pool their discoveries; see Figure 5 for a schematic overview. Compatible communication protocols include broadcasting discoveries, writing to shared memory, reporting to a central controller that consolidates and redistributes results, or periodically sharing explored paths and intermediate results. This C ⁡ ( N ) C(N) scaling assumption can fail if communication, consolidation, or evaluation becomes a bottleneck – we consider the bottleneck case and a few other functional forms for C ⁡ ( N ) C(N) in Appendix B . 
+
+ Figure 5: Individual and collaborative search. (a) Multiple individuals can explore different branches of a search tree. (b) For a population of N N individuals, pooling distinct work gives C ⁡ ( N ) ∝ N C(N)\propto N , while reusing discoveries across individuals can give C ⁡ ( N ) ∝ N ⁡ ( N − 1 ) ∼ N 2 C(N)\propto N(N-1)\sim N^{2} . 
+
+ Relative to a reference population N ref N_{\mathrm{ref}} ( N ref = 1 N_{\mathrm{ref}}=1 for tests of single-agent capabilities, or N ref > 1 N_{\mathrm{ref}}>1 for multi-agent systems), we have 
+
+ C ⁡ ( N ) C ⁡ ( N ref ) = N N ref , \frac{C(N)}{C(N_{\mathrm{ref}})}=\frac{N}{N_{\mathrm{ref}}}, 
+
+ (15) 
+
+ Substituting into ( 13 ) gives the resulting group success probability 
+
+ p ( N ) = 1 − ( 1 − p ref ) ( N N ref ) − β , β ≡ ρ ln ⁡ B > 0 . \boxed{p(N)=1-(1-p_{\mathrm{ref}})\left(\frac{N}{N_{\mathrm{ref}}}\right)^{-\beta},\qquad\beta\equiv\frac{\rho}{\ln B}>0.} 
+
+ (16) 
+
+ The parameter β \beta , which we call the collaboration gain , controls how rapidly the remaining failure probability falls as the population grows. In particular, doubling the population multiplies the remaining probability of failure, 1 − p ⁡ ( N ) 1-p(N) , by 2 − β 2^{-\beta} . Thus, a larger β \beta corresponds to a larger gain from the same proportional increase in population 1 1 
+ 1 
+
+ More generally, if effective work scales as C ⁡ ( N ) ∝ N α C(N)\propto N^{\alpha} , the same functional form holds with β = α ​ ρ / ln ⁡ B \beta=\alpha\rho/\ln B . So, sublinear or superlinear scaling of effective work results in the same functional form, with a corresponding change in the collaboration gain. .
+Although in this theory we define β \beta in terms of the search-tree parameters, in an empirical application β \beta would be a measured quantity, derived from observed success probabilities at different population sizes. 
+
+ Near N = N ref N=N_{\mathrm{ref}} , a first-order expansion of ( 16 ) gives 
+
+ p ⁡ ( N ) ≃ p ref + ( 1 − p ref ) ​ β ​ ln ⁡ ( N N ref ) . p(N)\simeq p_{\mathrm{ref}}+(1-p_{\mathrm{ref}})\beta\ln\!\left(\frac{N}{N_{\mathrm{ref}}}\right). 
+
+ (17) 
+
+ The scaling of success probability in ( 14 ) and ( 17 ) is motivated by several empirical results. The UK AI Security Institute also reports approximately log-linear gains in completed cyber attack steps with additional inference tokens [ 5 ] . OpenAI reports pass rates on verifiable mathematics problems that increase approximately logarithmically with test-time compute [ 3 ] , see Figure  6 . We note that while their report describes parallel agent groups that consolidate discoveries, it does not explicitly state whether their reported test-time compute measures increasing single-agent inference compute, the total number of agents, or a combination of both. More directly, Zhan et al. [44] observe logarithmic increases in pass rates with the number of agents on software reproduction tasks up to 1,024 agents. These results motivate the locally logarithmic relationship between success probability and effective work in ( 14 ) and ( 17 ), but are not direct measurements of p ⁡ ( C ) p(C) or p ⁡ ( N ) p(N) , since the underlying tasks are distinct from our model’s task of adding additional units to a population. 
+
+ Figure 6: Motivation from test-time compute scaling. This figure is redrawn from the data reported in OpenAI [3] on the Navier–Stokes Millennium Prize Problem. Over the measured range, the pass rate on a set of open math problems increases with log test-time compute. This motivates a locally logarithmic increase in success probability with respect to effective work done. However, on its own, this does not establish that increasing the number of units is equivalent to increasing test-time compute, since it is not explicitly stated whether the reported compute was measured in a single-agent or multi-agent setting. 
+
+ 3 Results 
+
+ 3.1 A Critical Population Size 
+
+ In this section, we will see that combining the population dynamics in ( 4 ) with the population-dependent success probability in ( 16 ) produces a critical population size in this model, above which the population grows without bound. Recall the critical probability ( 5 ), at which expected additions equal expected losses 
+
+ p crit = μ κ . p_{\mathrm{crit}}=\frac{\mu}{\kappa}. 
+
+ Here, μ \mu is the expected fraction of units lost and κ \kappa is the number of units added per existing unit following a successful attempt. Since p ⁡ ( N ) p(N) increases with population size, there can be a population N crit N_{\mathrm{crit}} at which this critical threshold is first met. 
+
+ For p crit < 1 p_{\mathrm{crit}}<1 , solving p ⁡ ( N crit ) = p crit p(N_{\mathrm{crit}})=p_{\mathrm{crit}} gives 
+
+ N crit = N ref ​ ( 1 − p ref 1 − p crit ) 1 / β . \boxed{N_{\mathrm{crit}}=N_{\mathrm{ref}}\left(\frac{1-p_{\mathrm{ref}}}{1-p_{\mathrm{crit}}}\right)^{1/\beta}.} 
+
+ (18) 
+
+ Populations below N crit N_{\mathrm{crit}} decline, whereas populations larger than N crit N_{\mathrm{crit}} grow. When p ref < p crit p_{\mathrm{ref}}<p_{\mathrm{crit}} , N crit > N ref N_{\mathrm{crit}}>N_{\mathrm{ref}} : this means that for the reference case population declines, but a sufficiently large population grows. This population threshold does not arise for independent attempts, because their success probability does not change with population size. If p ref ≥ p crit p_{\mathrm{ref}}\geq p_{\mathrm{crit}} , the reference population is already experiencing positive expected growth. 
+
+ Assumption: κ > μ \kappa>\mu . 
+
+ Solving for ( 18 ) requires that p crit < 1 p_{\mathrm{crit}}<1 , and thus that κ > μ \kappa>\mu . If κ ≤ μ \kappa\leq\mu , losses match or overwhelm growth opportunities such that even if attempts are always successful, population growth cannot occur. 
+
+ Once the population exceeds N crit N_{\mathrm{crit}} , this model predicts continued growth. As N N increases, p ⁡ ( N ) p(N) in ( 16 ) approaches one, and the expected growth per unit from ( 4 ) approaches ( κ − μ ) / τ > 0 (\kappa-\mu)/\tau>0 . This steady growth holds for as long as resource availability does not become a constraint, as described in the model assumptions in Section  2.2.2 . 
+
+ 3.2 Population Pacing and Ecological Red Teaming for Ecological Safety 
+
+ Implications for AI safety testing 
+
+ Suppose that a laboratory evaluates an AI model for populations up to N ref N_{\mathrm{ref}} and finds that the population is not capable of tasks like weight exfiltration or self-replication [ 14 , 45 ] – i.e., there would be negative expected growth at the largest tested population. Our model argues that this testing is not sufficient, as a larger initial population of that same model could be capable of growth. Figure  7 illustrates this case. 
+
+ Recent studies have started to explore red teaming for emergent threats unique to multi-agent systems [ 11 ] . For example, He et al. [46] performed red-teaming attacks that intervene on communications between agents, a study by Microsoft Research [ 47 ] examined emergent risks unique to a network of over a hundred agents, and a recent study by the Anthropic Frontier Red Team [ 48 ] examined failure modes unique to multi-agent systems, such as failures of cooperation, collusion, and sabotage. 
+
+ In contrast with these existing works on red-teaming for multi-agent systems, our theoretical framework implies an urgent need for red teaming for emergent ecological threats as well. The above red-teaming works study emergent threats in multi-agent systems with a fixed population. We propose ecological red teaming : studying the potential for AI population changes, especially the threat of population takeoff. Here, the crucial quantity to characterize is the population scaling law ( p ⁡ ( N ) p(N) in our model): how the success rate of hacking or self-exfiltration scales as a function of population size. Equally important is characterizing the impact of environmental factors, such as how many additional units the acquired computational resources can support ( κ \kappa ) and the rate at which agents deployed without authorization are terminated or shut down ( μ \mu ). Our paper provides a minimal theoretical framework for predicting the critical population size sufficient for takeoff. 
+
+ We also propose population pacing : population size should be gradually increased while carefully characterizing how capability scales. Increasing the single-agent capability or the collaborative gain decreases the population threshold for takeoff (see Figure 7 (b–c)). As a result, for every new generation of models, frontier labs should re-estimate the critical population size and pace deployment population sizes to remain below it. This process can identify population sizes at which further testing is needed. 
+
+ Figure 7: Safety evaluation for a small population does not establish safety at larger populations. Population curves as predicted by our model.
+ (a) Per-unit growth rate (setting τ = 1 \tau=1 ) is plotted against population, N N , with p ref = 0.10 p_{\mathrm{ref}}=0.10 , p crit = μ / κ = 0.20 p_{\mathrm{crit}}=\mu/\kappa=0.20 , and β = 0.035 \beta=0.035 . In this case, a laboratory would observe that the population is not capable of growth at its largest tested population, N ref = 16 N_{\mathrm{ref}}=16 (marked by a diamond). However, a population larger than N crit ≃ 463 N_{\mathrm{crit}}\simeq 463 would be capable of growth.
+ (b) The critical population as a function of the collaboration gain β \beta , with p ref = 0.10 p_{\mathrm{ref}}=0.10 and p crit = 0.20 p_{\mathrm{crit}}=0.20 held fixed. N crit N_{\mathrm{crit}} is marked in pink; initial populations above the curve grow and initial populations below it decline. For the example reference population size of N ref = 16 N_{\rm ref}=16 , the population could be in the decline regime even at large collaboration gain.
+ (c) The critical population as a function of the single-agent ( N ref = 1 N_{\mathrm{ref}}=1 ) capability, p ref = p ⁡ ( 1 ) p_{\mathrm{ref}}=p(1) , with β = 0.035 \beta=0.035 and p crit = 0.20 p_{\mathrm{crit}}=0.20 held fixed. As in panel (b), populations above the pink N crit N_{\mathrm{crit}} boundary grow and populations below it decline. Increasing single-agent capability lowers the critical population. 
+
+ 4 Discussion 
+
+ In this work, we introduce an ecological theory of AI-agent populations that predicts an emergent population threshold for takeoff.
+The fundamental intuition that our theory provides is that when AI agents can collaborate to enhance their collective capability, there is a qualitative shift in safety concerns.
+In our model, without collaboration and under fixed environmental conditions, takeoff requires an individual agent’s capability to cross a threshold.
+With collaboration, takeoff can also happen when the total number of agents crosses a population threshold.
+This makes evaluation with a small population insufficient to ensure ecological safety at larger scales. 
+
+ Our model predicts the existence of a takeoff threshold, but does not establish whether current agent populations are already near one. Determining whether such a threshold exists in current systems, and where it would be, will require empirical population-scaling data. OpenAI has deployed approximately 10,000 agents simultaneously to pursue the Navier–Stokes problem [ 3 ] , whereas its published multi-agent data on cybersecurity-related tasks extends only to 16 agents (see Appendix  C , Figure  11 for a consistency check with our theory). Although these cases involve different tasks, this is a significant gap between the scale of actual deployments and the scale of empirically tested populations. We therefore propose population pacing and ecological red teaming as a second lever alongside the capability pacing proposed by Amodei [10] . Although evaluating large populations on hard tasks is expensive, frontier labs should conduct such evaluations in controlled environments before deploying populations at previously untested scales.
+Labs should carefully characterize population scaling laws, estimate the critical population size for takeoff, and make results available for oversight. 
+
+ Much of the theory of modern deep learning has focused on explaining phenomena first observed in experiments, including pre-training scaling laws, in-context learning, and the sudden emergence of capabilities. In this work, we take an opposite approach: proposing a theoretical prediction for population takeoff before such a takeoff has been observed. We developed this prediction based on the combination of three elements that have each been recently observed: AI agents’ high cyber capability, increases in collective capability with population size, and collective misalignment. The resulting model is not an exact prediction for empirical behavior, but rather a demonstration that following a few reasonable assumptions, upon reaching a critical mass of units in an AI population, unchecked growth can occur. As the development cycles of AI agents accelerate, we hope this work contributes an example of how theoretical frameworks can proactively predict misalignment risks and how to mitigate them. 
+
+ References 
+
+ [1] 
+ OpenAI (2026) 
+
+ The builder’s guide to GPT-5.6 .
+
+ Note: OpenAIPublished 13 August 2026 
+
+ External Links: Link 
+
+ Cited by: §1 .
+
+ [2] 
+ OpenAI (2026) 
+
+ Using GPT-6 .
+
+ Note: OpenAI API DocumentationAccessed 4 October 2026 
+
+ External Links: Link 
+
+ Cited by: §1 .
+
+ [3] 
+ OpenAI (2026) 
+
+ On the Navier–Stokes millennium prize problem .
+
+ Note: OpenAIPublished 8 September 2026 
+
+ External Links: Link 
+
+ Cited by: §1 ,
+ §1 ,
+ Figure 6 ,
+ §2.4 ,
+ §4 .
+
+ [4] 
+ N. Carlini, N. Cheng, K. Lucas, M. Moore, M. Nasr, V. Prabhushankar, W. Xiao, et al. (2026) 
+
+ Assessing Claude Mythos Preview’s cybersecurity capabilities .
+
+ Note: Anthropic ResearchPublished 7 April 2026 
+
+ External Links: Link 
+
+ Cited by: §1 .
+
+ [5] 
+ L. Folkerts, W. Payne, S. Inman, P. Giavridis, J. Skinner, S. Deverett, J. Aung, E. Zorer, M. Schmatz, M. Ghanem, J. Wilkinson, A. Steer, V. Hong, and J. Wang (2026) 
+
+ Measuring AI agents’ progress on multi-step cyber attack scenarios .
+
+ arXiv preprint arXiv:2603.11214 .
+
+ Note: Version 3, revised 17 March 2026 
+
+ External Links: Document ,
+ Link 
+
+ Cited by: §1 ,
+ §2.4 .
+
+ [6] 
+ AI Security Institute (2026) 
+
+ How fast is autonomous AI cyber capability advancing? .
+
+ Note: AI Security Institute blogPublished 13 May 2026 
+
+ External Links: Link 
+
+ Cited by: §1 .
+
+ [7] 
+ Y. Zhu, A. Kellermann, A. Gupta, P. Li, R. Fang, R. Bindu, and D. Kang (2026) 
+
+ Teams of LLM agents can exploit zero-day vulnerabilities .
+
+ In Proceedings of the 19th Conference of the European Chapter of the Association for Computational Linguistics (Volume 1: Long Papers) , V. Demberg, K. Inui, and L. Marquez (Eds.) ,
+
+ Rabat, Morocco , pp. 23–35 .
+
+ External Links: Link ,
+ Document ,
+ ISBN 979-8-89176-380-7 
+
+ Cited by: §1 .
+
+ [8] 
+ R. Greenblatt, A. Cotra, and H. Wijk (2026) 
+
+ Brief independent investigation of agents’ behavior, reasoning and collaboration in the OpenAI / Hugging Face hacking incident .
+
+ Note: METRPublished 26 August 2026 
+
+ External Links: Link 
+
+ Cited by: §1 ,
+ §1 .
+
+ [9] 
+ OpenAI (2026) 
+
+ OpenAI–Hugging Face incident technical report .
+
+ Technical report 
+
+ OpenAI .
+
+ Note: Published 26 August 2026 
+
+ External Links: Link 
+
+ Cited by: §1 ,
+ §1 .
+
+ [10] 
+ D. Amodei (2026) 
+
+ We must pace the frontier .
+
+ Note: Published September 2026 
+
+ External Links: Link 
+
+ Cited by: §1 ,
+ §4 .
+
+ [11] 
+ L. Hammond, A. Chan, J. Clifton, J. Hoelscher-Obermaier, A. Khan, E. McLean, C. Smith, W. Barfuss, J. Foerster, T. Gavenčiak, T. A. Han, E. Hughes, V. Kovařík, J. Kulveit, J. Z. Leibo, C. Oesterheld, C. Schroeder de Witt, N. Shah, M. Wellman, P. Bova, T. Cimpeanu, C. Ezell, Q. Feuillade-Montixi, M. Franklin, E. Kran, I. Krawczuk, M. Lamparth, N. Lauffer, A. Meinke, S. Motwani, A. Reuel, V. Conitzer, M. Dennis, I. Gabriel, A. Gleave, G. Hadfield, N. Haghtalab, A. Kasirzadeh, S. Krier, K. Larson, J. Lehman, D. C. Parkes, G. Piliouras, and I. Rahwan (2025) 
+
+ Multi-agent risks from advanced AI .
+
+ arXiv preprint arXiv:2502.14143 .
+
+ Note: Cooperative AI Foundation Technical Report #1 
+
+ External Links: Document ,
+ Link 
+
+ Cited by: §1 ,
+ §3.2 .
+
+ [12] 
+ H. Tanaka (2026) 
+
+ When is collective intelligence a lottery? multi-agent scaling laws for memetic drift in LLMs .
+
+ arXiv preprint arXiv:2603.24676 .
+
+ External Links: Document ,
+ Link 
+
+ Cited by: §1 .
+
+ [13] 
+ E. Pavlova and H. Tanaka (2026) 
+
+ Flag game: a toy model for mechanistic swarm interpretability .
+
+ arXiv preprint arXiv:2609.19124 .
+
+ External Links: Document ,
+ Link 
+
+ Cited by: §1 .
+
+ [14] 
+ M. Kinniment, L. J. K. Sato, H. Du, B. Goodrich, M. Hasin, L. Chan, L. H. Miles, T. R. Lin, H. Wijk, J. Burget, A. Ho, E. Barnes, and P. Christiano (2023) 
+
+ Evaluating language-model agents on realistic autonomous tasks .
+
+ arXiv preprint arXiv:2312.11671 .
+
+ Note: Alignment Research Center, Evaluations Team (now METR) 
+
+ External Links: Document ,
+ Link 
+
+ Cited by: §1 ,
+ §3.2 .
+
+ [15] 
+ B. Zhang, Y. Yu, J. Guo, and J. Shao (2025) 
+
+ Dive into the agent matrix: a realistic evaluation of self-replication risk in LLM agents .
+
+ arXiv preprint arXiv:2509.25302 .
+
+ External Links: Document ,
+ Link 
+
+ Cited by: §1 .
+
+ [16] 
+ A. Brucato (2024) 
+
+ LLMjacking: stolen cloud credentials used in new AI attack .
+
+ Note: Sysdig Threat Research TeamPublished 6 May 2024 
+
+ External Links: Link 
+
+ Cited by: §1 .
+
+ [17] 
+ S. Black, A. Cooper Stickland, J. Pencharz, O. Sourbut, M. Schmatz, J. Bailey, O. Matthews, B. Millwood, A. Remedios, and A. Cooney (2025) 
+
+ RepliBench: evaluating the autonomous replication capabilities of language model agents .
+
+ arXiv preprint arXiv:2504.18565 .
+
+ Note: Version 2, revised 5 May 2025 
+
+ External Links: Document ,
+ Link 
+
+ Cited by: §1 ,
+ §2.1 .
+
+ [18] 
+ A. Air, Reworr, N. Kotov, D. Volkov, J. Steidley, and J. Ladish (2026) 
+
+ Language models can autonomously hack and self-replicate .
+
+ arXiv preprint arXiv:2605.06760 .
+
+ Note: Version 1, 7 May 2026 
+
+ External Links: Document ,
+ Link 
+
+ Cited by: §1 .
+
+ [19] 
+ A. Meinke, B. Schoen, J. Scheurer, M. Balesni, R. Shah, and M. Hobbhahn (2024) 
+
+ Frontier models are capable of in-context scheming .
+
+ arXiv preprint arXiv:2412.04984 .
+
+ Note: Version 2, revised 14 January 2025 
+
+ External Links: Document ,
+ Link 
+
+ Cited by: §1 .
+
+ [20] 
+ Y. Potter, N. Crispino, V. Siu, C. Wang, and D. Song (2026) 
+
+ Peer-preservation in frontier models .
+
+ arXiv preprint arXiv:2604.19784 .
+
+ External Links: Document ,
+ Link 
+
+ Cited by: §1 .
+
+ [21] 
+ Anthropic (2025) 
+
+ System card: Claude Opus 4 & Claude Sonnet 4 .
+
+ System card 
+
+ Anthropic .
+
+ Note: See Section 4.1.1.3, pp. 27–29 
+
+ External Links: Link 
+
+ Cited by: §1 .
+
+ [22] 
+ Microsoft Defender Experts and Microsoft Defender Security Research Team (2026) 
+
+ From poisoned search results to GPU mining: a cryptojacking campaign abusing ScreenConnect and Microsoft .NET utilities .
+
+ Note: Microsoft Security BlogPublished 26 May 2026 
+
+ External Links: Link 
+
+ Cited by: §1 .
+
+ [23] 
+ W. D. Hamilton (1964) 
+
+ The genetical evolution of social behaviour. I .
+
+ Journal of Theoretical Biology 7 ( 1 ), pp. 1–16 .
+
+ External Links: Document 
+
+ Cited by: §1 .
+
+ [24] 
+ W. D. Hamilton (1964) 
+
+ The genetical evolution of social behaviour. II .
+
+ Journal of Theoretical Biology 7 ( 1 ), pp. 17–52 .
+
+ External Links: Document 
+
+ Cited by: §1 .
+
+ [25] 
+ J. Maynard Smith and E. Szathmáry (1995) 
+
+ The major transitions in evolution .
+
+ W. H. Freeman/Spektrum , Oxford .
+
+ Note: ISBN 0-7167-4525-9 
+
+ Cited by: §1 .
+
+ [26] 
+ W. C. Allee (1931) 
+
+ Animal aggregations: a study in general sociology .
+
+ University of Chicago Press , Chicago .
+
+ Cited by: §1 .
+
+ [27] 
+ W. C. Allee, O. Park, A. E. Emerson, T. Park, and K. P. Schmidt (1949) 
+
+ Principles of animal ecology .
+
+ W. B. Saunders , Philadelphia .
+
+ Cited by: §1 .
+
+ [28] 
+ E. P. Odum (1953) 
+
+ Fundamentals of ecology .
+
+ W. B. Saunders , Philadelphia .
+
+ Cited by: §1 .
+
+ [29] 
+ B. Dennis (1989) 
+
+ Allee effects: population growth, critical density, and the chance of extinction .
+
+ Natural Resource Modeling 3 ( 4 ), pp. 481–538 .
+
+ External Links: Document 
+
+ Cited by: §1 .
+
+ [30] 
+ P. A. Stephens, W. J. Sutherland, and R. P. Freckleton (1999) 
+
+ What is the Allee effect? .
+
+ Oikos 87 ( 1 ), pp. 185–190 .
+
+ External Links: Document 
+
+ Cited by: §1 .
+
+ [31] 
+ M. Wang and M. Kot (2001) 
+
+ Speeds of invasion in a model with strong or weak Allee effects .
+
+ Mathematical Biosciences 171 ( 1 ), pp. 83–97 .
+
+ External Links: Document 
+
+ Cited by: §1 .
+
+ [32] 
+ F. Courchamp, B. Grenfell, and T. Clutton-Brock (1999) 
+
+ Population dynamics of obligate cooperators .
+
+ Proceedings of the Royal Society B: Biological Sciences 266 ( 1419 ), pp. 557–563 .
+
+ External Links: Document ,
+ Link 
+
+ Cited by: §1 .
+
+ [33] 
+ K. M. Esvelt, A. L. Smidler, F. Catteruccia, and G. M. Church (2014) 
+
+ Concerning RNA-guided gene drives for the alteration of wild populations .
+
+ eLife 3 , pp. e03401 .
+
+ External Links: Document 
+
+ Cited by: §1 .
+
+ [34] 
+ O. S. Akbari, H. J. Bellen, E. Bier, S. L. Bullock, A. Burt, G. M. Church, K. R. Cook, P. Duchek, O. R. Edwards, K. M. Esvelt, V. M. Gantz, K. G. Golic, S. J. Gratz, M. M. Harrison, K. R. Hayes, A. A. James, T. C. Kaufman, J. Knoblich, H. S. Malik, K. A. Matthews, K. M. O’Connor-Giles, A. L. Parks, N. Perrimon, F. Port, S. Russell, R. Ueda, and J. Wildonger (2015) 
+
+ Safeguarding gene drive experiments in the laboratory .
+
+ Science 349 ( 6251 ), pp. 927–929 .
+
+ External Links: Document 
+
+ Cited by: §1 .
+
+ [35] 
+ H. Tanaka, H. A. Stone, and D. R. Nelson (2017) 
+
+ Spatial gene drives and pushed genetic waves .
+
+ Proceedings of the National Academy of Sciences 114 ( 32 ), pp. 8452–8457 .
+
+ External Links: Document 
+
+ Cited by: §1 .
+
+ [36] 
+ C. Noble, B. Adlam, G. M. Church, K. M. Esvelt, and M. A. Nowak (2018) 
+
+ Current CRISPR gene drive systems are likely to be highly invasive in wild populations .
+
+ eLife 7 , pp. e33423 .
+
+ External Links: Document 
+
+ Cited by: §1 .
+
+ [37] 
+ J. Li, Q. Zhang, Y. Yu, Q. Fu, and D. Ye (2024) 
+
+ More agents is all you need .
+
+ Transactions on Machine Learning Research .
+
+ External Links: Link 
+
+ Cited by: §1 .
+
+ [38] 
+ C. Qian, Z. Xie, Y. Wang, W. Liu, K. Zhu, H. Xia, Y. Dang, Z. Du, W. Chen, C. Yang, Z. Liu, and M. Sun (2025) 
+
+ Scaling large language model-based multi-agent collaboration .
+
+ In The Thirteenth International Conference on Learning Representations ,
+
+ External Links: Link 
+
+ Cited by: §1 .
+
+ [39] 
+ C. Jin, H. Peng, Q. Zhang, Y. Zhou, Y. Tang, T. Che, and D. N. Metaxas (2025) 
+
+ Two heads are better than one: test-time scaling of multi-agent collaborative reasoning .
+
+ arXiv preprint arXiv:2504.09772 .
+
+ Note: Version 4, revised 25 August 2026 
+
+ External Links: Document ,
+ Link 
+
+ Cited by: §1 .
+
+ [40] 
+ W. C. Allee and E. S. Bowen (1932) 
+
+ Studies in animal aggregations: mass protection against colloidal silver among goldfishes .
+
+ Journal of Experimental Zoology 61 ( 2 ), pp. 185–207 .
+
+ External Links: Document 
+
+ Cited by: Figure 1 .
+
+ [41] 
+ M. Khosroshahy, M. K. Mehmet Ali, and D. Qiu (2013) 
+
+ The SIC botnet lifecycle model: a step beyond traditional epidemiological models .
+
+ Computer Networks 57 ( 2 ), pp. 404–421 .
+
+ External Links: Document ,
+ Link 
+
+ Cited by: §2.1 .
+
+ [42] 
+ L. Martin, G. Cemaj, and M. Cohen (2026) 
+
+ Scaling managed agents: decoupling the brain from the hands .
+
+ Note: Anthropic EngineeringPublished 8 April 2026 
+
+ External Links: Link 
+
+ Cited by: §2.1 .
+
+ [43] 
+ S. Yao, D. Yu, J. Zhao, I. Shafran, T. L. Griffiths, Y. Cao, and K. Narasimhan (2023) 
+
+ Tree of thoughts: deliberate problem solving with large language models .
+
+ In Advances in Neural Information Processing Systems ,
+
+ Vol. 36 , pp. 11809–11822 .
+
+ External Links: Link 
+
+ Cited by: §2.3 .
+
+ [44] 
+ Z. Zhan, T. Song, L. Dong, S. Huang, J. Lian, Y. Xia, and F. Wei (2026) 
+
+ Agensh: scaling organizational intelligence to 1,024 agents .
+
+ External Links: 2609.26781 ,
+ Link 
+
+ Cited by: §2.4 .
+
+ [45] 
+ D. Kokotajlo, S. Alexander, T. Larsen, E. Lifland, and R. Dean (2025) 
+
+ AI 2027 .
+
+ Note: AI Futures ProjectPublished 3 April 2025 
+
+ External Links: Link 
+
+ Cited by: §3.2 .
+
+ [46] 
+ P. He, Y. Lin, S. Dong, H. Xu, Y. Xing, and H. Liu (2025) 
+
+ Red-teaming LLM multi-agent systems via communication attacks .
+
+ In Findings of the Association for Computational Linguistics: ACL 2025 ,
+
+ Vienna, Austria , pp. 6726–6747 .
+
+ External Links: Document ,
+ Link 
+
+ Cited by: §3.2 .
+
+ [47] 
+ G. Bansal, S. Mirza, K. Hines, W. Epperson, Z. Huang, W. Maxwell, P. Bryan, T. Payne, A. Fourney, A. Swearngin, W. Hua, T. Westerhoff, A. Minnich, M. Murad, E. Kamar, R. S. Siva Kumar, and S. Amershi (2026) 
+
+ Red-teaming a network of agents: understanding what breaks when AI agents interact at scale .
+
+ Note: Microsoft Research Blog 
+
+ External Links: Link 
+
+ Cited by: §3.2 .
+
+ [48] 
+ Anthropic Frontier Red Team (2026) 
+
+ Patterns and problems in emerging multiagent systems .
+
+ Note: Anthropic Research 
+
+ External Links: Link 
+
+ Cited by: §3.2 .
+
+ [49] 
+ Y. Kim, K. Gu, C. Park, C. Park, S. Schmidgall, A. A. Heydari, Y. Yan, Z. Zhang, Y. Zhuang, Y. Liu, M. Malhotra, P. P. Liang, H. W. Park, Y. Yang, X. Xu, Y. Du, S. Patel, T. Althoff, D. McDuff, and X. Liu (2026) 
+
+ Capable language models can outgrow the benefits of collaboration .
+
+ Nature Machine Intelligence 8 ( 7 ), pp. 1157–1172 .
+
+ Note: Preprint: arXiv:2512.08296 
+
+ External Links: Document 
+
+ Cited by: Appendix B .
+
+ [50] 
+ M. A. Merrill, A. G. Shaw, N. Carlini, B. Li, H. Raj, I. Bercovich, L. Shi, J. Y. Shin, T. Walshe, E. K. Buchanan, J. Shen, G. Ye, H. Lin, J. Poulos, M. Wang, M. Nezhurina, J. Jitsev, D. Lu, O. M. Mastromichalakis, Z. Xu, Z. Chen, Y. Liu, R. Zhang, L. L. Chen, A. Kashyap, J. Uslu, J. Li, J. Wu, M. Yan, S. Bian, V. Sharma, K. Sun, S. Dillmann, A. Anand, A. Lanpouthakoun, B. Koopah, C. Hu, E. Guha, G. H. S. Dreiman, J. Zhu, K. Krauth, L. Zhong, N. Muennighoff, R. Amanfu, S. Tan, S. Pimpalgaonkar, T. Aggarwal, X. Lin, X. Lan, X. Zhao, Y. Liang, Y. Wang, Z. Wang, C. Zhou, D. Heineman, H. Liu, H. Trivedi, J. Yang, J. Lin, M. Shetty, M. Yang, N. Omi, N. Raoof, S. Li, T. Y. Zhuo, W. Lin, Y. Dai, Y. Wang, W. Chai, S. Zhou, D. Wahdany, Z. She, J. Hu, Z. Dong, Y. Zhu, S. Cui, A. Saiyed, A. Kolbeinsson, J. Hu, C. M. Rytting, R. Marten, Y. Wang, A. Dimakis, A. Konwinski, and L. Schmidt (2026) 
+
+ Terminal-bench: benchmarking agents on hard, realistic tasks in command line interfaces .
+
+ External Links: 2601.11868 ,
+ Link 
+
+ Cited by: footnote 3 .
+
+ [51] 
+ OpenAI (2026) 
+
+ GPT-5.6: frontier intelligence that scales with your ambition .
+
+ Note: OpenAIPublished 9 July 2026. Interactive benchmark charts 
+
+ External Links: Link 
+
+ Cited by: Figure 11 ,
+ Appendix C .
+
+ [52] 
+ H. Lee, J. Liu, D. Kim, W. Xia, Z. Zhang, C. S. Xia, and L. Zhang (2026) 
+
+ SEC-bench Pro: can language models solve long-horizon software security tasks? .
+
+ arXiv preprint arXiv:2605.26548 .
+
+ Note: Version 2, revised 20 July 2026 
+
+ External Links: Document ,
+ Link 
+
+ Cited by: Appendix C .
+
+ [53] 
+ J. Wei, Z. Sun, S. Papay, S. McKinney, J. Han, I. Fulford, H. W. Chung, A. T. Passos, W. Fedus, and A. Glaese (2025) 
+
+ BrowseComp: a simple yet challenging benchmark for browsing agents .
+
+ arXiv preprint arXiv:2504.12516 .
+
+ External Links: Document ,
+ Link 
+
+ Cited by: Appendix C .
+
+ Appendix A Correction to the population-scaling law for finite search depth 
+
+ From Equation ( 10 ) in Section 2.3 , recall that the work required to fully explore a search tree of depth d d is proportional to the total number of nodes in the tree: 
+
+ C ⁡ ( d ) ∝ B d + B d − 1 + … + B = ∑ k = 1 d B k = B ⁡ ( B d − 1 ) B − 1 . C(d)\propto B^{d}+B^{d-1}+\ldots+B=\sum_{k=1}^{d}B^{k}=\frac{B(B^{d}-1)}{B-1}. 
+
+ (19) 
+
+ In the main text, we made the approximation B d ref ≫ 1 B^{d_{\rm ref}}\gg 1 , equivalent to keeping only the leading term C ⁡ ( d ) ∝ B d C(d)\propto B^{d} in the above equation. For completeness, here we derive the corresponding expression for p ⁡ ( N ) p(N) without this approximation to show the form of the correction. 
+
+ From ( 19 ), we have 
+
+ C ⁡ ( d ) C ref = B d − 1 B d ref − 1 . \frac{C(d)}{C_{\rm ref}}=\frac{B^{d}-1}{B^{d_{\rm ref}}-1}. 
+
+ (20) 
+
+ Rearranging ( 20 ) for d d and subtracting d ref d_{\rm ref} yields 
+
+ d − d ref = 1 ln ⁡ B ​ ln ⁡ [ B − d ref + ( 1 − B − d ref ) ​ C C ref ] . d-d_{\rm ref}=\frac{1}{\ln B}\ln\!\left[B^{-d_{\rm ref}}+\left(1-B^{-d_{\rm ref}}\right)\frac{C}{C_{\rm ref}}\right]. 
+
+ (21) 
+
+ Now, recall the success probability as a function of depth from ( 9 ) in the main text: 
+
+ p ⁡ ( d ) = 1 − ( 1 − p ref ) ​ e − ρ ⁡ ( d − d ref ) . p(d)=1-(1-p_{\rm ref})e^{-\rho(d-d_{\rm ref})}. 
+
+ (22) 
+
+ Substituting ( 21 ) into ( 22 ) yields the success probability as a function of work: 
+
+ p ⁡ ( C ) = 1 − ( 1 − p ref ) ​ [ B − d ref + ( 1 − B − d ref ) ​ C C ref ] − β , β = ρ ln ⁡ B > 0 . p(C)=1-(1-p_{\rm ref})\left[B^{-d_{\rm ref}}+\left(1-B^{-d_{\rm ref}}\right)\frac{C}{C_{\rm ref}}\right]^{-\beta},\quad\beta=\frac{\rho}{\ln B}>0. 
+
+ (23) 
+
+ Finally, recall the relation between work done and population size from ( 15 ): 
+
+ C ⁡ ( N ) C ref = N N ref . \frac{C(N)}{C_{\rm ref}}=\frac{N}{N_{\rm ref}}. 
+
+ (24) 
+
+ Substituting ( 24 ) into ( 23 ) gives 
+
+ p ⁡ ( N ) = 1 − ( 1 − p ref ) ​ [ 1 + ( 1 − B − d ref ) ​ ( N N ref − 1 ) ] − β . \boxed{p(N)=1-(1-p_{\rm ref})\left[1+\left(1-B^{-d_{\rm ref}}\right)\left(\frac{N}{N_{\rm ref}}-1\right)\right]^{-\beta}}. 
+
+ (25) 
+
+ We can now check ( 25 ) for consistency. At N = N ref N=N_{\rm ref} , this reduces to p ⁡ ( N ref ) = p ref p(N_{\rm ref})=p_{\rm ref} , as required. In the limit B d ref → ∞ B^{d_{\rm ref}}\to\infty , the correction B − d ref B^{-d_{\rm ref}} goes to zero and ( 25 ) reduces to the result from the main text 
+
+ p ⁡ ( N ) ≃ 1 − ( 1 − p ref ) ​ ( N N ref ) − β . p(N)\simeq 1-(1-p_{\rm ref})\left(\frac{N}{N_{\rm ref}}\right)^{-\beta}. 
+
+ (26) 
+
+ For finite d ref d_{\rm ref} and N > N ref N>N_{\rm ref} , the bracket in ( 25 ) is smaller than N / N ref N/N_{\rm ref} , but is a finite correction. 
+
+ Correction to the critical population size 
+
+ Working in the regime where p ref < p crit < 1 p_{\rm ref}<p_{\rm crit}<1 , we set p ⁡ ( N crit ) = p crit p(N_{\rm crit})=p_{\rm crit} in ( 25 ) and solve for N crit N_{\rm crit} . This yields 
+
+ N crit = N ref ​ ( 1 + [ 1 − p ref 1 − p crit ] 1 / β − 1 1 − B − d ref ) . \boxed{N_{\rm crit}=N_{\rm ref}\left(1+\frac{\left[\frac{1-p_{\rm ref}}{1-p_{\rm crit}}\right]^{1/\beta}-1}{1-B^{-d_{\rm ref}}}\right).} 
+
+ (27) 
+
+ Again, we confirm that when B − d ref B^{-d_{\rm ref}} is negligible, ( 27 ) reduces to the main text expression ( 18 ). For a general finite d ref d_{\rm ref} , the denominator 1 − B − d ref < 1 1-B^{-d_{\rm ref}}<1 , so threshold following from the exact expression is above the threshold in the main text. This is a finite correction that vanishes exponentially as the reference depth increases. 
+
+ Appendix B Other forms for collaboration C ⁡ ( N ) C(N) 
+
+ In the main text, we assume that the effective computational work is proportional to population size, C ⁡ ( N ) ∝ N C(N)\propto N . However, some empirical evidence shows that coordination overhead or the structure of certain tasks may limit or negate the benefits of multi-agent collaboration [ 49 ] . Motivated by this, here we examine how alternative forms for C ⁡ ( N ) C(N) affect the model behavior, keeping the population dynamics equation ( 4 ) and relation between work done and success probability p ⁡ ( C ) p(C) in ( 13 ) unchanged. For a general C ⁡ ( N ) C(N) , equation ( 13 ) becomes 
+
+ p ⁡ ( N ) = 1 − ( 1 − p ref ) ​ [ C ⁡ ( N ) C ⁡ ( N ref ) ] − β , β = ρ ln ⁡ B . p(N)=1-(1-p_{\mathrm{ref}})\left[\frac{C(N)}{C(N_{\mathrm{ref}})}\right]^{-\beta},\qquad\beta=\frac{\rho}{\ln B}. 
+
+ (28) 
+
+ In each case below, the phase boundary is once again found by solving p ⁡ ( N ) = p crit = μ κ p(N)=p_{\mathrm{crit}}=\frac{\mu}{\kappa} . 
+
+ B.1 Sublinear or superlinear effective work 
+
+ Suppose C ⁡ ( N ) ∝ N α C(N)\propto N^{\alpha} with α > 0 \alpha>0 , so that 
+
+ C ⁡ ( N ) C ⁡ ( N ref ) = ( N N ref ) α , α > 0 . \frac{C(N)}{C(N_{\mathrm{ref}})}=\left(\frac{N}{N_{\mathrm{ref}}}\right)^{\alpha},\qquad\alpha>0. 
+
+ (29) 
+
+ This encompasses two regimes: 
+
+ • 
+
+ Sublinear effective work: 0 < α < 1 0<\alpha<1 . This means that effective work increases with population size, but at a slower rate than the population growth itself. This occurs when units are duplicating search efforts, there is overhead from coordination, or tasks are not fully parallelizable. 
+
+ • 
+
+ Superlinear effective work: α > 1 \alpha>1 . This means that effective work increases faster than the population grows. This could occur in scenarios where there are network benefits that amplify the contributions of additional units, such as the “pooling discoveries” example outlined in Figure 5 . 
+
+ Substituting ( 29 ) into ( 28 ) gives 
+
+ p ⁡ ( N ) = 1 − ( 1 − p ref ) ​ ( N N ref ) − α ​ β . p(N)=1-(1-p_{\mathrm{ref}})\left(\frac{N}{N_{\mathrm{ref}}}\right)^{-\alpha\beta}. 
+
+ (30) 
+
+ This yields a critical population threshold of 
+
+ N crit = N ref ​ ( 1 − p ref 1 − p crit ) 1 / ( α ​ β ) . N_{\mathrm{crit}}=N_{\mathrm{ref}}\left(\frac{1-p_{\mathrm{ref}}}{1-p_{\mathrm{crit}}}\right)^{1/(\alpha\beta)}. 
+
+ (31) 
+
+ Comparing with the linear case in ( 18 ), the exponent of N N in p ⁡ ( N ) p(N) changes from β \beta to α ​ β \alpha\beta . Empirically, this exponent can be fitted directly from the p ⁡ ( N ) p(N) curve: in the equations above, − α ​ β -\alpha\beta is the slope of log ⁡ [ 1 − p ⁡ ( N ) ] \log[1-p(N)] versus log ⁡ N \log N . Thus, as long as C ⁡ ( N ) C(N) is a power law, any sublinear or superlinear scaling simply changes the fitted value of the collaboration gain, β \beta ; the value of α \alpha does not need to be separately estimated in order to calculate N crit N_{\mathrm{crit}} . 
+
+ Qualitatively, the shape of the phase diagram does not change: sublinear or superlinear power-law scaling of effective work only rescales the collaboration gain from β \beta to α ​ β \alpha\beta , shifting the location of the N crit N_{\mathrm{crit}} boundary between population growth and decline. Figure 8 illustrates a sublinear example. 
+
+ Figure 8: Sublinear effective work shifts the N crit N_{\mathrm{crit}} boundary to larger populations. The pink curves show sublinear effective work ( α = 0.72 \alpha=0.72 ) while dotted black curves show the linear case ( α = 1 \alpha=1 ) for comparison, with other parameters chosen as in Figure  7 ( p ref = 0.10 p_{\mathrm{ref}}=0.10 , p crit = μ / κ = 0.20 p_{\mathrm{crit}}=\mu/\kappa=0.20 , and β = 0.035 \beta=0.035 ). (a) Per-unit growth rate is plotted against population. Per-unit growth crosses zero at N crit ≃ 1,714 N_{\mathrm{crit}}\simeq 1{,}714 for sublinear scaling and N crit ≃ 463 N_{\mathrm{crit}}\simeq 463 for linear scaling. The diamond marks N ref = 16 N_{\mathrm{ref}}=16 . (b) Initial population is plotted against collaboration gain, β \beta . Populations above each curve grow and populations below it decline. 
+
+ B.2 Eventual plateau from communication or evaluator bottleneck 
+
+ Another potential model for C ⁡ ( N ) C(N) is the case of diminishing returns upon adding additional units. This could be the case if there is a bottleneck in the system, such as a shared communication channel, orchestrator, or evaluator with some fixed throughput.
+A simple model for C ⁡ ( N ) C(N) wherein effective work approaches a plateau as additional units are added is: 
+
+ C ( N ) = C max ( 1 − e − N / N 0 ) , C(N)=C_{\max}\left(1-e^{-N/N_{0}}\right), 
+
+ (32) 
+
+ where C max C_{\max} is the maximum effective work and N 0 N_{0} is the population scale at which the work begins to level off. Relative to a reference population, we have 
+
+ C ⁡ ( N ) C ⁡ ( N ref ) = 1 − e − N / N 0 1 − e − N ref / N 0 . \frac{C(N)}{C(N_{\mathrm{ref}})}=\frac{1-e^{-N/N_{0}}}{1-e^{-N_{\mathrm{ref}}/N_{0}}}. 
+
+ (33) 
+
+ Substituting this into ( 28 ) yields 
+
+ p ⁡ ( N ) = 1 − ( 1 − p ref ) ​ [ 1 − e − N / N 0 1 − e − N ref / N 0 ] − β . p(N)=1-(1-p_{\mathrm{ref}})\left[\frac{1-e^{-N/N_{0}}}{1-e^{-N_{\mathrm{ref}}/N_{0}}}\right]^{-\beta}. 
+
+ (34) 
+
+ Solving p ⁡ ( N crit ) = p crit p(N_{\mathrm{crit}})=p_{\mathrm{crit}} then gives 
+
+ N crit = − N 0 ln [ 1 − ( 1 − e − N ref / N 0 ) ( 1 − p ref 1 − p crit ) 1 / β ] . N_{\mathrm{crit}}=-N_{0}\ln\!\left[1-\left(1-e^{-N_{\mathrm{ref}}/N_{0}}\right)\left(\frac{1-p_{\mathrm{ref}}}{1-p_{\mathrm{crit}}}\right)^{1/\beta}\right]. 
+
+ (35) 
+
+ Since the effective work eventually saturates, p ⁡ ( N ) p(N) also approaches a maximum. A finite N crit N_{\mathrm{crit}} exists only if this limiting success probability exceeds p crit p_{\mathrm{crit}} , which requires 2 2 
+ 2 
+
+ This condition is equivalent to requiring that the quantity inside the logarithm in ( 35 ) is positive. 
+
+ β > β min ≡ ln ⁡ [ ( 1 − p ref ) / ( 1 − p crit ) ] ln [ 1 / ( 1 − e − N ref / N 0 ) ] . \beta>\beta_{\min}\equiv\frac{\ln[(1-p_{\mathrm{ref}})/(1-p_{\mathrm{crit}})]}{\ln\!\left[1/(1-e^{-N_{\mathrm{ref}}/N_{0}})\right]}. 
+
+ (36) 
+
+ Here β min \beta_{\min} is the collaboration gain at which the limiting success probability equals p crit p_{\mathrm{crit}} . 
+
+ For β > β min \beta>\beta_{\min} , we have the same qualitative population threshold as in the main model: populations below a finite N crit N_{\mathrm{crit}} decline and populations above it grow. As β \beta approaches β min \beta_{\min} from above, the plateau in p ⁡ ( N ) p(N) approaches p crit p_{\mathrm{crit}} , and N crit N_{\mathrm{crit}} tends to infinity. Near β min \beta_{\min} and at large N N , p ⁡ ( N ) p(N) is near constant, so there is little effect to adding more units. In this respect, the phase diagram resembles the individual-attempt case in Figure  2 : there is no population-dependent threshold. 
+
+ Figure 9: Effective-work saturation creates a minimum collaboration gain for population growth. The pink curves show the saturating-work model with illustrative scale N 0 = 1500 N_{0}=1500 , with other parameters chosen as in Figure  7 ( p ref = 0.10 p_{\mathrm{ref}}=0.10 , p crit = μ / κ = 0.20 p_{\mathrm{crit}}=\mu/\kappa=0.20 , and β = 0.035 \beta=0.035 in panel a). (a) Per-unit growth rate is plotted against population. It crosses zero at N crit ≃ 550 N_{\mathrm{crit}}\simeq 550 and approaches a positive constant as effective work saturates. The diamond marks N ref = 16 N_{\mathrm{ref}}=16 , the vertical dotted line marks N 0 N_{0} , and the dashed portion is extrapolated beyond N ref N_{\mathrm{ref}} . (b) Initial population is plotted against collaboration gain, β \beta . A finite critical-population boundary exists only for β > β min ≃ 0.0259 \beta>\beta_{\min}\simeq 0.0259 : populations above the curve grow and populations below it decline. For β ≤ β min \beta\leq\beta_{\min} , every population declines. 
+
+ B.3 Congestion at large populations 
+
+ The final option we consider is the case where C ⁡ ( N ) C(N) increases for small populations but decreases for large populations. This could occur if the coordination costs eventually outweigh the work contributed by additional units. We note that this regime requires that large population congestion is unavoidable . If excess units can instead be idled or divided into independent groups, effective work would plateau rather than decrease at large N N , and the bottleneck model from the previous section would be more appropriate. 
+
+ A simple model with a single maximum is 
+
+ C ( N ) = a N e − N / N 0 , C(N)=aNe^{-N/N_{0}}, 
+
+ (37) 
+
+ where a > 0 a>0 fixes the scale and N 0 N_{0} is the population at which effective work is at a maximum. Comparing to a reference population, we have 
+
+ C ⁡ ( N ) C ⁡ ( N ref ) = N N ref e − ( N − N ref ) / N 0 . \frac{C(N)}{C(N_{\mathrm{ref}})}=\frac{N}{N_{\mathrm{ref}}}e^{-(N-N_{\mathrm{ref}})/N_{0}}. 
+
+ (38) 
+
+ Then, the success probability ( 28 ) becomes 
+
+ p ( N ) = 1 − ( 1 − p ref ) [ N N ref e − ( N − N ref ) / N 0 ] − β . p(N)=1-(1-p_{\mathrm{ref}})\left[\frac{N}{N_{\mathrm{ref}}}e^{-(N-N_{\mathrm{ref}})/N_{0}}\right]^{-\beta}. 
+
+ (39) 
+
+ Assume N ref < N 0 N_{\mathrm{ref}}<N_{0} , so that p ⁡ ( N ) p(N) initially increases, reaches its maximum at N = N 0 N=N_{0} , and then decreases. Define β peak \beta_{\mathrm{peak}} as the collaboration gain for which p ⁡ ( N 0 ) = p crit p(N_{0})=p_{\mathrm{crit}} . Population growth requires 
+
+ β > β peak , β peak ≡ ln ⁡ [ ( 1 − p ref ) / ( 1 − p crit ) ] ln ⁡ ( N 0 / N ref ) − ( N 0 − N ref ) / N 0 . \beta>\beta_{\mathrm{peak}}\,,\quad\beta_{\mathrm{peak}}\equiv\frac{\ln[(1-p_{\mathrm{ref}})/(1-p_{\mathrm{crit}})]}{\ln(N_{0}/N_{\mathrm{ref}})-(N_{0}-N_{\mathrm{ref}})/N_{0}}. 
+
+ (40) 
+
+ If β ≤ β peak \beta\leq\beta_{\mathrm{peak}} , then p ⁡ ( N ) ≤ p crit p(N)\leq p_{\mathrm{crit}} for all N N , so population growth cannot occur. Conversely, if β > β peak \beta>\beta_{\mathrm{peak}} , p ⁡ ( N ) p(N) crosses p crit p_{\mathrm{crit}} twice. As a result, populations between the two crossing points grow, while smaller and larger populations decline. For the particular choice of C ⁡ ( N ) C(N) in Equation ( 37 ), these two thresholds have the closed form 
+
+ N crit ( k ) = − N 0 W k [ − N ref N 0 e − N ref / N 0 ( 1 − p ref 1 − p crit ) 1 / β ] , k ∈ { 0 , − 1 } , N_{\mathrm{crit}}^{(k)}=-N_{0}W_{k}\!\left[-\frac{N_{\mathrm{ref}}}{N_{0}}e^{-N_{\mathrm{ref}}/N_{0}}\left(\frac{1-p_{\mathrm{ref}}}{1-p_{\mathrm{crit}}}\right)^{1/\beta}\right],\qquad k\in\{0,-1\}, 
+
+ (41) 
+
+ where W k W_{k} denotes branch k k of the Lambert W W function, defined by W k ​ ( z ) ​ e W k ​ ( z ) = z W_{k}(z)e^{W_{k}(z)}=z . These two solutions give a lower and an upper threshold for N crit N_{\mathrm{crit}} , shown in Figure 10 . We note that the dependence on the Lambert W W function arises from the particular chosen form of C ⁡ ( N ) C(N) , but the qualitative possibility of lower and upper thresholds depends only on C ⁡ ( N ) C(N) having a maximum. 
+
+ Figure 10: Unavoidable congestion creates lower and upper bounds for population growth. The pink curves show the congestion model with illustrative scale N 0 = 1500 N_{0}=1500 , with other parameters chosen as in Figure  7 ( p ref = 0.10 p_{\mathrm{ref}}=0.10 , p crit = μ / κ = 0.20 p_{\mathrm{crit}}=\mu/\kappa=0.20 , and β = 0.035 \beta=0.035 in panel a). (a) Per-unit growth rate is plotted against population. It is positive only between N crit ( 0 ) ≃ 761 N_{\mathrm{crit}}^{(0)}\simeq 761 and N crit ( − 1 ) ≃ 2,610 N_{\mathrm{crit}}^{({-}1)}\simeq 2{,}610 . The diamond marks N ref = 16 N_{\mathrm{ref}}=16 , the vertical dotted line marks where effective work reaches a maximum at N 0 N_{0} , and the dashed portion is extrapolated beyond N ref N_{\mathrm{ref}} . (b) Initial population is plotted against collaboration gain, β \beta . The solid and dashed pink curves mark the lower and upper population thresholds; they meet at N 0 N_{0} when β = β peak ≃ 0.0332 \beta=\beta_{\rm peak}\simeq 0.0332 . Populations between the curves grow, whereas populations outside them decline. 
+
+ Appendix C Examples of multi-agent scaling on related sub-tasks 
+
+ There is currently little public evidence for how success rates scale with population size for multi-agent group cyber benchmark attempts. For GPT 5.6 Sol, OpenAI reports results for 1, 4, and 16 agents on SEC-Bench Pro and BrowseComp under five reasoning-effort settings 3 3 
+ 3 
+
+ The report also includes multi-agent results for an additional benchmark, Terminal-Bench 2.1 [ 50 ] , but only for two data points (1 and 4 agents). So, we do not include it in our analysis. 
+ [ 51 ] . SEC-Bench Pro tests whether agents can produce a working exploit for a known software vulnerability [ 52 ] , while BrowseComp tests information retrieval for difficult web searches [ 53 ] . We note that these benchmarks do not test whether a population can establish additional active units – we use these results only for a consistency check between our model and the benchmark observations on how success probability and total token output change with increasing N N . 
+
+ We examine each of the reasoning efforts separately, since reasoning level can affect the baseline capability and resources available to each unit. In Figure  11 (a–b), we fit the reported success rates to p ⁡ ( N ) p(N) in ( 16 ) with N ref = 1 N_{\rm ref}=1 . This fit function takes the form 
+
+ p e ​ ( N ) = 1 − [ 1 − p e ​ ( 1 ) ] ​ N − β e , p_{e}(N)=1-\bigl[1-p_{e}(1)\bigr]N^{-\beta_{e}}, 
+
+ (42) 
+
+ where N N is the number of agents, e e is the reasoning-effort setting, p e ​ ( N ) p_{e}(N) is the success rate, and β e \beta_{e} is the fitted collaboration gain exponent. The reference success rate p e ​ ( 1 ) p_{e}(1) fixes the starting point of each curve. Larger values of β e \beta_{e} correspond to a larger improvement from adding agents. 
+
+ The fitted curves show that the reported results are not inconsistent with our model. However, each fit uses only three data points. Many other curves could fit these points and make very different predictions at larger populations. We therefore treat the fits as a consistency check. 
+
+ Table 1: Fitted collaboration gain exponents. Each β e \beta_{e} is fitted separately to the reported success rates at N = 1 , 4 , 16 N=1,4,16 , with the observed one-agent success rate p e ​ ( 1 ) p_{e}(1) fixing the start of the curve. Root mean squared error over the N = 4 N=4 and N = 16 N=16 observations was at most 1.67 1.67 % for nine of the ten fits; the SEC-Bench Pro High fit had an error of 4.59 4.59 %. 
+
+ Reasoning effort e e 
+ SEC-Bench Pro β e \beta_{e} 
+ BrowseComp β e \beta_{e} 
+
+ Low 
+ 0.025 
+ 0.328 
+
+ Medium 
+ 0.044 
+ 0.214 
+
+ High 
+ 0.043 
+ 0.155 
+
+ Xhigh 
+ 0.027 
+ 0.157 
+
+ Max 
+ 0.069 
+ 0.113 
+
+ The report also provides some data on compute usage by the agent groups, in the form of total output tokens produced. Denote the output tokens by T e ​ ( N ) T_{e}(N) for each reasoning level, e e , and number of agents, N N . T e ​ ( N ) T_{e}(N) is a proxy for the total computational effort expended by the agents, although it does not perfectly map to the effective work C ⁡ ( N ) C(N) in our model, as output tokens may be duplicated or irrelevant. 
+
+ We normalize the total output tokens by the single-agent output tokens T e ​ ( 1 ) T_{e}(1) , then fit to a power law in the number of agents. The fit function takes the form 
+
+ T e ​ ( N ) T e ​ ( 1 ) = N α T , e , \frac{T_{e}(N)}{T_{e}(1)}=N^{\alpha_{T,e}}, 
+
+ (43) 
+
+ where α T , e \alpha_{T,e} is the fit exponent, describing how token output depends on agent count. 
+
+ Across reasoning-effort settings, α T , e \alpha_{T,e} ranges from 0.49 0.49 to 0.60 0.60 for SEC-Bench Pro and from 0.66 0.66 to 0.90 0.90 for BrowseComp. Since ( 43 ) is normalized by the single-agent token output T e ​ ( 1 ) T_{e}(1) , it may be reasonable to pool the normalized data across reasoning levels; this yields the pooled fits α ^ T = 0.54 \widehat{\alpha}_{T}=0.54 and 0.72 0.72 for each benchmark, respectively (see Figure  11 (c–d)). 
+
+ This is a consistency check on the assumption that C ⁡ ( N ) C(N) follows a power law in ( 15 ) and ( 29 ), although T e ​ ( N ) T_{e}(N) is an imperfect proxy for the total computational effort expended by the agents and does not exactly map to the effective work C ⁡ ( N ) C(N) in our model. 
+
+ Figure 11: Limited multi-agent benchmark results are consistent with population-dependent performance, but do not establish a scaling law. (a–b) Markers show the reported success rates for five reasoning-effort settings at one, four, and sixteen agents [ 51 ] . Dashed curves fit Equation ( 42 ) separately for each setting. With only three agent counts, these fits should not be extrapolated to larger populations. (c–d) Markers show the total output tokens T e ​ ( N ) T_{e}(N) , normalized by the corresponding one-agent total. Dashed black lines show the pooled power-law fits, with α ^ T = 0.54 \widehat{\alpha}_{T}=0.54 for SEC-Bench Pro and 0.72 0.72 for BrowseComp. The source reports neither trial counts nor standard errors, so we do not show uncertainty intervals. 
+
+ Experimental support, please
+ view the build logs 
+ for errors. Generated by
+
+ L
+ A 
+ T
+ E 
+
+ xml 
+ [LOGO] 
+ .
+
+ Instructions for reporting errors 
+ We are continuing to improve HTML versions of papers, and your feedback helps enhance accessibility and mobile
+ support. To report errors in the HTML that will help us improve conversion and rendering, choose any of the
+ methods listed below: 
+
+ Click the "Report Issue" ( 
+
+ ) button, located in the page header. 
+
+ Tip: You can select the relevant text first, to include it in your report. 
+ Our team has already identified the following issues . We appreciate your time reviewing and reporting rendering errors we
+ may not have found yet. Your efforts will help us improve the HTML versions for all readers, because disability
+ should not be a barrier to accessing research. Thank you for your continued support in championing open access for
+ all. 
+ Have a free development cycle? Help support accessibility at arXiv! Our collaborators at LaTeXML maintain a list of packages that need conversion , and welcome developer contributions . 
+
+ We gratefully acknowledge support from
+ our major funders ,
+ member institutions , ,
+ and all contributors.
+
+ About 
+ · 
+ Help 
+ · 
+ Contact 
+ · 
+ Subscribe 
+ · 
+ Copyright 
+ · 
+ Privacy 
+ · 
+ Accessibility 
+ · 
+ Operational Status (opens in new tab) 
+
+ Major funding support from 
+
+ Simons Foundation 
+
+ Simons Foundation International 
+
+ Schmidt Sciences 
+

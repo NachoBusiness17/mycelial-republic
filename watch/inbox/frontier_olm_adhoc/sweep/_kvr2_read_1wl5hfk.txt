@@ -1,0 +1,203 @@
+THREAD 1wl5hfk (26 entries incl OP)
+
+--- [/u/nicholas_the_furious] To the dozens of 3x 3090 Local LLM people - I found our current best fit
+I have been anti-low quant. I can feel the difference, I swear. I am also anti-quantized KV cache. I have been burned there - I think the tradeoffs compound, especially at longer contexts.
+ Due to this, I have been running Qwen 3.8 27B (UD-Q8_K_L) on 2x of the 3090s in TP. I swear by it. It is such an amazing little model and I can get nearly max context at full FP16 KV cache and it feels great and is an amazing coding agent. I've built whole projects with this thing. Unlike the 3.6 version I can run 3.8 into the 250k+ context with zero sense of degradation. Using 3.6 I only felt comfortable up to like 150k before I thought about compacting or starting a new session.
+ However - I have this hanger-on 3rd 3090. What I have been doing is using it for experimenting with LoRAs, other GPU-usable models like Datadog's Toto. Sometimes I use it to load a bigger model but the tradeoff in speed and quantization has rarely been worth it.
+ Until now. 
+ I loaded up the UD-Q4_K_XL of Qwen 3.8 Flash Next and I'll be honest - it ran way slower that I would have liked. Not all of the model layers fit on VRAM - some were offloaded to RAM. I am sure there was something undertuned in my system, but I got about 50t/s max output, average of like 38, and PP was abysmal - in the low hundreds. After living life at 75-100 t/s+ and 1,000 t/s PP this was not something I could deal with.
+ Except I saw the output. Holy mother of god. 
+ I have the stupidest benchmark I run 1st thing on every single model I try. I make it make me flappy bird. I use a basic prompt - nothing special. Just in a chat session, so no tools. I know it sounds ridiculous, but because I have ran this prompt hundreds of times I can read a LOT of things about a model by what it produces. All of the little details, play feel, if it includes sound, graphical 'juice', scrolling backgrounds, etc. And because it is always the same I get a feel for how fast the model runs.
+ I have never seen any flappy bird like this one. It has an entire UI built around the game window - every single FB i have ever made only had the game in the middle. It has the coolest animations. It has MULTIPLE mechanics:
+ - a 'bonus point' score if you get close to a pipe without hitting it (seen it before on good models)
+ - THE PIPES START GOING UP AND DOWN You might say to yourself, "Well that is just in the training data." And I say back to you - I KNOW! And it rocks. If it is in the training data of every model then you'd expect all of them to be about the same. Many of them are but this one is special. It obviously has way more going on in terms of world knowledge than the 3.8 27B model.
+ Anyway - that is great and all but I cannot use a model like that at But I have been playing around with the EXL3 quants, too (not worth it for 27B on 2x 3090s, btw, lccp just as good or better), so I noticed that I could get the 3.05bpw Qwen 3.8 Next Flash model running entirely in VRAM at full context and FP16 KV Cache with only the engram table offloaded to RAM. So I gave it a shot.
+ I am telling you right now - if you gave me this model and asked me what quant it is I would say 100% it is a Q8 quant. This is the most coherent, capable, knowledgeable, tool-callingest 3-bit model I have ever used. Zero difference between it and the Q4_K_XL model except way faster on VRAM. Maybe the Unsloth Q3 quants are just as good - check them out and let me know.
+ It slices. It dices. It runs at 110+ t/s with PP over 1,500 t/s. 
+ If you think those numbers are bad on 3x 3090s, they might be. I am running all of them at 250-265W and one is on a TB4 eGPU. Not ideal and I still get these numbers. Insanity for the quality.
+ TL;DR: I ranted for like 8 paragraphs. Use Qwen 3.8 Next Flash on Exllama3 (exl3) at 3.05 bpw if you have 3x 3090s.
+ submitted by /u/nicholas_the_furious to r/LocalLLaMA 
+ [link] [comments]
+
+--- [/u/Strange_Bus5917] /u/Strange_Bus5917 on To the dozens of 3x 3090 Local LLM people - I found our current best fit
+I have 0 3090 but I enjoyed the post. Sounds impressive that a quantized model can run this good.
+
+--- [/u/PassengerPigeon343] /u/PassengerPigeon343 on To the dozens of 3x 3090 Local LLM people - I found our current best fit
+I’m convinced enough to try this. You would say that 3.8 Flash Next at Q3 beats 3.8 27B at Q8? I tried the Q4_K_XL and found the same thing, can’t daily drive it with the PP/TG speeds. But if I could get even close to that speed I’d be thrilled.
+
+--- [/u/wgaca2] /u/wgaca2 on To the dozens of 3x 3090 Local LLM people - I found our current best fit
+I tried it first days of release and I had weird issues with the q3 on 3x 3090. I might try what OP suggests
+
+--- [/u/esw123] /u/esw123 on To the dozens of 3x 3090 Local LLM people - I found our current best fit
+Don't know about flash next Q3, but Q4 beats qwen3.8 27B at Q5 this is sure.
+
+--- [/u/nicholas_the_furious] /u/nicholas_the_furious on To the dozens of 3x 3090 Local LLM people - I found our current best fit
+Please let me know what you think! I want more that my potentially delusional opinon.
+
+--- [/u/esw123] /u/esw123 on To the dozens of 3x 3090 Local LLM people - I found our current best fit
+Qwen3.8 Flash Next Q4 is the first model that I can trust and have to recheck only like 1 time in 10 tasks just to be sure that everything is still right. Try to use it together with qwen3.8 27B Q5 for fast fixes and on average it will deliver almost every time.
+
+--- [/u/Tagedieb] /u/Tagedieb on To the dozens of 3x 3090 Local LLM people - I found our current best fit
+This is what I don't get about the anti low quant people. It has been shown time and time again that more params at lower quant gives you more. Of course this doesn't scale to the very low end. In the end it is always about finding the right tradeoff between the quality and quantity and speed of tokens.
+
+--- [/u/nicholas_the_furious] /u/nicholas_the_furious on To the dozens of 3x 3090 Local LLM people - I found our current best fit
+For me, before this moment, going down to 3bpw (or even 4bpw) or lower has never felt like it outperformed a smaller model at Q8 in both quality and speed.
+ Maybe it is the exl3 magic. Maybe it is the model. Maybe both.
+
+--- [/u/brickout] /u/brickout on To the dozens of 3x 3090 Local LLM people - I found our current best fit
+Hell yes. There are literally dozens of us
+
+--- [/u/DeepFeeling1] /u/DeepFeeling1 on To the dozens of 3x 3090 Local LLM people - I found our current best fit
+Are there benchmarks for this model at this fp ?
+
+--- [/u/nicholas_the_furious] /u/nicholas_the_furious on To the dozens of 3x 3090 Local LLM people - I found our current best fit
+Just KLD and Perplexity from what I have found, though My Flappy Bird benchmark is feeling very good. I am currently using it in Hermes and it hasn't dropped a beat. No weirdness or decoherence. It is analyzing codebases, researching stuff on the internet for me, and helping me prep to set up a little ZimoBoard computer I am buying tomorrow.
+
+--- [/u/Blues520] /u/Blues520 on To the dozens of 3x 3090 Local LLM people - I found our current best fit
+I'd like to give it a shot. Could you share your tabby config please?
+
+--- [/u/nicholas_the_furious] /u/nicholas_the_furious on To the dozens of 3x 3090 Local LLM people - I found our current best fit
+### The Command & Setup: Qwen 3.8 Flash Next on 3x RTX 3090 (256k Context + Vision + MTP)
+ #### 1. The Direct CLI Command (ExLlamaV3 Engine)
+ If running directly or via a fast API script:
+ # Optimal environment flags
+ export EXL3_TP_SPIN_RECV=4
+ export CUDA_DEVICE_MAX_CONNECTIONS=1
+ export NCCL_P2P_LEVEL=SYS
+ export EXLLAMA_NO_P2P_COPY=1
+ python server.py \
+ -m ./models/Qwen3.8-Flash-Next-exl3-3.05bpw \
+ -mode qwen35 \
+ -cs 262144 \
+ -gs 22.5,22.5,22.5 \
+ -ngr \
+ -mtp -ndt 3 -dds \
+ --host 0.0.0.0 --port 5000
+ ──────
+ #### 2. The Production TabbyAPI Config (config.yml)
+ If hosting as an OpenAI-compatible API server with Vision and RAM KV spillover:
+ network:
+ host: 0.0.0.0 
+ port: 5000
+ disable_auth: true
+ model:
+ model_name: Qwen3.8-Flash-Next-exl3-3.05bpw
+ backend: exllamav3
+ max_seq_len: 262144 # 256k Context Window
+ cache_size: 262144
+ cache_mode: FP16
+ tensor_parallel: false # Layer-split across 3x GPUs avoids P2P/eGPU latency
+ gpu_split: [22.5, 22.5, 22.5]
+ ngram_ram: true # Offloads 32.6GB N-gram table to System RAM
+ chunk_size: 2048 # Chunked prefill (prevents stream stuttering)
+ max_batch_size: 4
+ tool_format: qwen3_5
+ reasoning: true
+ vision: true # Vision encoder active in VRAM
+ vision_offload: false
+ draft_model:
+ draft_mode: mtp # Native Multi-Token Prediction
+ draft_num_tokens: 3
+ dynamic_draft: true
+ memory:
+ sysmem_kv_cache: 24576 # 24GB secondary KV page cache in host RAM
+
+--- [/u/Blues520] /u/Blues520 on To the dozens of 3x 3090 Local LLM people - I found our current best fit
+Appreciate it
+
+--- [/u/marcosscriven] /u/marcosscriven on To the dozens of 3x 3090 Local LLM people - I found our current best fit
+What is "tabby config"? The OP did not mention this.
+
+--- [/u/Blues520] /u/Blues520 on To the dozens of 3x 3090 Local LLM people - I found our current best fit
+Tabby is the software used to run exl models
+
+--- [/u/egnegn1] /u/egnegn1 on To the dozens of 3x 3090 Local LLM people - I found our current best fit
+Provide your full command, please.
+
+--- [/u/nicholas_the_furious] /u/nicholas_the_furious on To the dozens of 3x 3090 Local LLM people - I found our current best fit
+### The Command & Setup: Qwen 3.8 Flash Next on 3x RTX 3090 (256k Context + Vision + MTP)
+ #### 1. The Direct CLI Command (ExLlamaV3 Engine)
+ If running directly or via a fast API script:
+ # Optimal environment flags
+ export EXL3_TP_SPIN_RECV=4
+ export CUDA_DEVICE_MAX_CONNECTIONS=1
+ export NCCL_P2P_LEVEL=SYS
+ export EXLLAMA_NO_P2P_COPY=1
+ python server.py \
+ -m ./models/Qwen3.8-Flash-Next-exl3-3.05bpw \
+ -mode qwen35 \
+ -cs 262144 \
+ -gs 22.5,22.5,22.5 \
+ -ngr \
+ -mtp -ndt 3 -dds \
+ --host 0.0.0.0 --port 5000
+ ──────
+ #### 2. The Production TabbyAPI Config (config.yml)
+ If hosting as an OpenAI-compatible API server with Vision and RAM KV spillover:
+ network:
+ host: 0.0.0.0 
+ port: 5000
+ disable_auth: true
+ model:
+ model_name: Qwen3.8-Flash-Next-exl3-3.05bpw
+ backend: exllamav3
+ max_seq_len: 262144 # 256k Context Window
+ cache_size: 262144
+ cache_mode: FP16
+ tensor_parallel: false # Layer-split across 3x GPUs avoids P2P/eGPU latency
+ gpu_split: [22.5, 22.5, 22.5]
+ ngram_ram: true # Offloads 32.6GB N-gram table to System RAM
+ chunk_size: 2048 # Chunked prefill (prevents stream stuttering)
+ max_batch_size: 4
+ tool_format: qwen3_5
+ reasoning: true
+ vision: true # Vision encoder active in VRAM
+ vision_offload: false
+ draft_model:
+ draft_mode: mtp # Native Multi-Token Prediction
+ draft_num_tokens: 3
+ dynamic_draft: true
+ memory:
+ sysmem_kv_cache: 24576 # 24GB secondary KV page cache in host RAM
+
+--- [/u/a_beautiful_rhind] /u/a_beautiful_rhind on To the dozens of 3x 3090 Local LLM people - I found our current best fit
+I opened this post and I knew it was going to be someone recommending qwen yet again.
+
+--- [/u/dowjames] /u/dowjames on To the dozens of 3x 3090 Local LLM people - I found our current best fit
+what's your prompt?
+
+--- [/u/nicholas_the_furious] /u/nicholas_the_furious on To the dozens of 3x 3090 Local LLM people - I found our current best fit
+"Build me a flappy bird game in an self-contained HTML file. It should look and feel great to play."
+
+--- [/u/dowjames] /u/dowjames on To the dozens of 3x 3090 Local LLM people - I found our current best fit
+lol wow, impressive!
+
+--- [/u/jikilan_] /u/jikilan_ on To the dozens of 3x 3090 Local LLM people - I found our current best fit
+Can you share your qwen3.8 27b llama.cop params please? Curious about your TP 2 and near full context numbers
+
+--- [/u/nicholas_the_furious] /u/nicholas_the_furious on To the dozens of 3x 3090 Local LLM people - I found our current best fit
+In the reasoning effort i default to low but in my coding agent I am often manually setting that to xhigh, fyi. 
+ CUDA_DEVICE_ORDER=PCI_BUS_ID CUDA_VISIBLE_DEVICES=0,1 llama-server \
+ -m /mnt/Models/GGUFs/unsloth/Qwen3.8-27B-GGUF/Qwen3.8-27B-UD-Q8_K_L.gguf \
+ --mmproj /mnt/Models/GGUFs/unsloth/Qwen3.8-27B-GGUF/mmproj-BF16.gguf \
+ --no-mmproj-offload \ (this is what gets us to nearly max context btw - instead of turning it off I just make the CPU to the image work)
+ -c 257792 \
+ --gpu-layers 66 \
+ --fit off \
+ --split-mode tensor \
+ --flash-attn on \
+ --no-context-shift \
+ --ubatch-size 512 \
+ --parallel 1 \
+ --cache-ram 49152 \ (this is because I have 96GB CPU RAM)
+ --ctx-checkpoints 31 \
+ --spec-type draft-mtp \
+ --spec-draft-n-max 4 \
+ --reasoning on \
+ --n-predict 32768 \
+ --chat-template-kwargs '{"enable_thinking": true, "preserve_thinking": true,
+ "reasoning_effort": "low"}' \
+ --jinja
+
+--- [/u/jikilan_] /u/jikilan_ on To the dozens of 3x 3090 Local LLM people - I found our current best fit
+Ooo you are using L and not XL, now I understand. That would really push more from 131k context. Thanks.

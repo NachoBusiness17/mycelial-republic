@@ -1,0 +1,56 @@
+{
+  "lane": "lint-wiring",
+  "division": "B",
+  "ok": true,
+  "note": "The ask's premise was stale: citation_lint has been wired and enforcing in githooks/pre-push since commit 3c83da5b0 (2026-10-02, line 25, same || exit 1 contract as the ratchet line 10) - this dance verified the finish line end-to-end in a throwaway worktree (phantom-number record blocks at the citation gate, hook exit 1; clean record passes the full hook, exit 0; selftest battery green incl the 191.8M founding fixture), banked the receipt, and surfaced one operator-facing incident: config_seal verify fails in every tree (mirrors.json modified + providers.yaml missing vs the committed seal), so main-tree pushes currently block at the seal gate until its owner re-seals by name.",
+  "rows": [],
+  "checks": [
+    {
+      "command": "git config core.hooksPath",
+      "exit": 0,
+      "evidence": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/build-it-all/lanes/lint-wiring.check.txt section [A] - returns 'githooks', hook is live"
+    },
+    {
+      "command": "grep -n citation_lint githooks/pre-push",
+      "exit": 0,
+      "evidence": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/build-it-all/lanes/lint-wiring.check.txt section [B] - lines 24-25: '.venv/Scripts/python.exe tools/citation_lint.py check --changed || exit 1', same enforcing shape as ratchet line 10; committed (git ls-files clean vs HEAD)"
+    },
+    {
+      "command": ".venv/Scripts/python.exe tools/citation_lint.py check --changed",
+      "exit": 0,
+      "evidence": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/build-it-all/lanes/lint-wiring.check.txt section [D] - live dirty tree: ok records=18 blocking=0 warns=1 (temp_violation.txt RECORD-UNREADABLE, warn-only)"
+    },
+    {
+      "command": ".venv/Scripts/python.exe tools/citation_lint.py --selftest",
+      "exit": 0,
+      "evidence": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/build-it-all/lanes/lint-wiring.check.txt section [I] - 7 passed, 1 skipped (inner-battery env guard), incl the 191.8M founding fixture battery"
+    },
+    {
+      "command": "sh githooks/pre-push < /dev/null   # worktree /tmp/lint_wt_cite at HEAD, docs/DNA.md carrying 'The beta factory burn spent 877.3M tokens this arc (AGENTS.md).'",
+      "exit": 1,
+      "evidence": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/build-it-all/lanes/lint-wiring.check.txt section [H1] - ratchet PASS then CITATION-LINT: FAIL records=1 blocking=1 'docs/DNA.md:151 PHANTOM-NUMBER 877.3M number appears in none of the sentence's named sources (AGENTS.md)', hook blocked at the citation gate (config_seal line never reached)"
+    },
+    {
+      "command": "sh githooks/pre-push < /dev/null   # same worktree, docs/DNA.md reset + clean line with real anchor tools/citation_lint.py:47, scratch seal inside the worktree only",
+      "exit": 0,
+      "evidence": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/build-it-all/lanes/lint-wiring.check.txt section [H2] - CITATION-LINT: ok records=1 blocking=0 warns=0, all gates green, HOOK-EXIT=0"
+    },
+    {
+      "command": ".venv/Scripts/python.exe tools/config_seal.py verify   # main tree",
+      "exit": 1,
+      "evidence": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/build-it-all/lanes/lint-wiring.check.txt sections [F] and [H0b] - MODIFIED mirrors.json (main) and MODIFIED mirrors.json + MISSING providers.yaml (pristine HEAD worktree): pre-existing seal drift, named-act re-seal owned by the drifter, reported as operator incident in watch/inbox/buildall/lint-wiring.md"
+    },
+    {
+      "command": ".venv/Scripts/python.exe tools/violation_ratchet.py check --changed   # main tree",
+      "exit": 0,
+      "evidence": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/build-it-all/lanes/lint-wiring.check.txt section [G] - PASS scope=1 registered NEW=0; lane touched no mag/ or tools/ code (verification only, files byte-identical to HEAD per [H3] integrity check)"
+    },
+    {
+      "command": "git status --porcelain -- docs/DNA.md configs/.config_seal.json githooks/ tools/citation_lint.py; venv liveness after teardown",
+      "exit": 0,
+      "evidence": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/build-it-all/lanes/lint-wiring.check.txt sections [H3]/[H3b]/[H3c] - main tree untouched (empty porcelain), worktree+junction removed, .venv alive (python 3.11.15 runs)"
+    }
+  ],
+  "decision_changed": "no - premise retired as stale: the wire-the-lint decision (a05-r2) already landed in commit 3c83da5b0 on 2026-10-02 and stands verified end-to-end; the only handoff is the pre-existing config_seal drift (mirrors.json/providers.yaml) that blocks main-tree pushes until its owner re-seals by name.",
+  "artifact": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/build-it-all/lanes/lint-wiring.json"
+}

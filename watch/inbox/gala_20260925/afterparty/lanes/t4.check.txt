@@ -1,0 +1,90 @@
+=== t4 check: 41 vs 130 dwarven lexicon reconciliation, 2026-09-25 ===
+
+--- [1] df_words.json count ---
+41
+
+--- [2] DWARVEN pool count in ArtifactLore.luau (regex on entries) ---
+130
+
+--- [3] DWARVEN pool: nouns vs adjectives ---
+total entries parsed: 130
+pos counts: {'noun': 80, 'adjective': 50}
+
+--- [4] df_words at birth commit 65c4af34a ---
+entries at birth: 41
+
+--- [5] consumers of df_words.json in code (expect none) ---
+ZERO code consumers
+
+--- [6] Grounding: all 130 ArtifactLore (gloss,dw,pos) vs df_lexicon_full dwarf ---
+grounded in mine (word match): 126 / 130
+POS disagreements vs language_words join (entry kept, mine tags it differently): 0
+not found in mine at all: 4
+  MISSING: ('ring object', 'athel', 'noun')
+  MISSING: ('rootverb', 'lulâr', 'noun')
+  MISSING: ('spring noun', 'kigok', 'noun')
+  MISSING: ('spring season', 'bekom', 'noun')
+
+--- [7] Relationship: the 41 df_words vs the 130 pool vs full lexicon ---
+  in 130-pool: anvil=zuntîr (gloss ['anvil'])
+  in 130-pool: ash=ibruk (gloss ['ash', 'ash'])
+  in 130-pool: blood=nazush (gloss ['blood'])
+  in 130-pool: bone=osod (gloss ['bone'])
+  in 130-pool: book=thîkut (gloss ['book'])
+  in 130-pool: candle=tílgil (gloss ['candle'])
+  in 130-pool: crown=torish (gloss ['crown'])
+  in 130-pool: dark=umom (gloss ['dark', 'dark'])
+  in 130-pool: deep=thol (gloss ['deep', 'deep'])
+  in 130-pool: door=tun (gloss ['door'])
+  in 130-pool: echo=sárek (gloss ['echo'])
+  in 130-pool: eye=ker (gloss ['eye'])
+  in 130-pool: gate=inod (gloss ['gate'])
+  in 130-pool: ghost=ngotol (gloss ['ghost'])
+  in 130-pool: gold=limul (gloss ['gold', 'gold'])
+  in 130-pool: hall=îton (gloss ['hall'])
+  in 130-pool: hammer=nil (gloss ['hammer'])
+  in 130-pool: iron=datan (gloss ['iron'])
+  in 130-pool: key=edëm (gloss ['key'])
+  in 130-pool: king=etar (gloss ['king'])
+  in 130-pool: knot=oth (gloss ['knot'])
+  in 130-pool: light=istam (gloss ['light', 'light'])
+  in 130-pool: mine=avuz (gloss ['mine'])
+  in 130-pool: mirror=ònul (gloss ['mirror'])
+  in 130-pool: mountain=onol (gloss ['mountain', 'mountain'])
+  in 130-pool: name=kab (gloss ['name', 'name'])
+  in 130-pool: room=mosus (gloss ['room'])
+  in 130-pool: root=odur (gloss ['root'])
+  in 130-pool: salt=nabid (gloss ['salt', 'salt'])
+  in 130-pool: secret=nekut (gloss ['secret', 'secret'])
+  in 130-pool: seed=lenod (gloss ['seed'])
+  in 130-pool: shadow=shedim (gloss ['shadow'])
+  in 130-pool: steel=deler (gloss ['steel'])
+  in 130-pool: stone=lam (gloss ['stone'])
+  in 130-pool: supper=nis (gloss ['supper'])
+  in 130-pool: tunnel=ód (gloss ['tunnel', 'tunnel'])
+  in 130-pool: word=il (gloss ['word'])
+df_words entries whose dwarven word appears verbatim in the 130 pool: 37
+df_words entries whose english key exists in full mine but word differs: 4 [('copper', 'gusil', ['gusil']), ('river', 'igër', ['igër']), ('water', 'arel', ['arel']), ('whisper', 'iklist', ['iklist'])]
+df_words entries absent from full mine both senses: 0 []
+ring -> []
+root -> [('root', 'odur', 'noun')]
+spring -> []
+athel -> [('ring object', 'athel', 'noun'), ('ring object', 'athel', 'verb')]
+lulâr -> [('rootverb', 'lulâr', 'noun'), ('rootverb', 'lulâr', 'verb')]
+kigok -> [('spring noun', 'kigok', 'noun')]
+bekom -> [('spring season', 'bekom', 'noun')]
+
+--- [9] Post-edit sanity (comment-only change) ---
+130
+7:-- Provenance (reconciled 2026-09-25, gala t4): the 130-entry DWARVEN pool is
+em-dash check on edited lines:
+-- Source: dwarffortresswiki.org + the local install's vanilla_languages raws.
+-- Provenance (reconciled 2026-09-25, gala t4): the 130-entry DWARVEN pool is
+-- folded from corpus/df_mine/df_lexicon_full.json (dwarf key), POS via the
+-- language_words.txt join; 130/130 entries verified word+POS grounded.
+-- tools/df_words.json (41 entries) is the superseded wiki-era bank
+-- (commit 65c4af34a), kept as an era receipt only; no code reads it.
+clean: no em-dash in new lines
+
+--- [10] check file complete, sections 1-10 ---
+9

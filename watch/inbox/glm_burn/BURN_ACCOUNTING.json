@@ -1,0 +1,23 @@
+{
+ "burn": "GLM pre-reset burn, honest accounting (2026-09-19)",
+ "v1": {
+  "tasks": 138,
+  "ok": 138,
+  "tokens_in": 766948,
+  "tokens_out": 303600,
+  "flaw": "max_tokens=2200 caps starved the reasoning channel: Q deep-read chunks median 0 chars, battery drafts truncated to headers",
+  "operator_law_violated": "never ladder caps on reasoning models (his own correction, re-committed by the fleet)"
+ },
+ "v2": {
+  "tasks": 138,
+  "ok": 0,
+  "errors": "132x 429 Too Many Requests + 6 timeouts",
+  "reading": "v1 consumed the remaining quota; v2 confirms exhaustion. Reset lands on the 20th."
+ },
+ "yield": {
+  "kept": "the 105-file and 27-file chunk skeletons + 5 battery prompts (seeds reusable)",
+  "lost": "the deep-read outputs themselves (empty/truncated in v1, unrun in v2)"
+ },
+ "rerun_plan": "after reset: same driver, max_tokens=None, both files exist, same chunking",
+ "lesson_filed": "the cap-starvation failure mode applies to EVERY reasoning call the fleet makes: burn drivers, salon drivers, vision passes. Uncapped outputs or the thinking channel eats the budget silently. Third occurrence of the same lesson this month."
+}

@@ -1,0 +1,49 @@
+============================= test session starts =============================
+platform win32 -- Python 3.11.15, pytest-9.1.1, pluggy-1.6.0 -- C:\Users\foste\Documents\projects\local_sovereign_agent\.venv\Scripts\python.exe
+rootdir: C:\Users\foste\Documents\projects\local_sovereign_agent
+configfile: pytest.ini
+plugins: anyio-4.14.2, langsmith-0.10.14, timeout-2.4.0, typeguard-4.6.0
+collecting ... collected 20 items
+
+tests/test_improve_off_on.py::test_improve_off_writes_marker_then_disables PASSED [  5%]
+tests/test_improve_off_on.py::test_improve_on_clears_marker_after_success PASSED [ 10%]
+tests/test_improve_off_on.py::test_marker_write_failure_aborts_without_disabling PASSED [ 15%]
+tests/test_improve_off_on.py::test_task_failure_keeps_marker PASSED      [ 20%]
+tests/test_improve_off_on.py::test_clear_is_idempotent PASSED            [ 25%]
+tests/test_doctor_scheduled_tasks.py::test_parse_list_extracts_status PASSED [ 30%]
+tests/test_doctor_scheduled_tasks.py::test_parse_list_missing_status_returns_unknown PASSED [ 35%]
+tests/test_doctor_scheduled_tasks.py::test_ready_task_passes PASSED      [ 40%]
+tests/test_doctor_scheduled_tasks.py::test_running_task_passes PASSED    [ 45%]
+tests/test_doctor_scheduled_tasks.py::test_disabled_task_is_flagged PASSED [ 50%]
+tests/test_doctor_scheduled_tasks.py::test_missing_task_is_flagged PASSED [ 55%]
+tests/test_doctor_scheduled_tasks.py::test_unqueryable_task_is_flagged PASSED [ 60%]
+tests/test_doctor_scheduled_tasks.py::test_odd_status_is_flagged_not_ready PASSED [ 65%]
+tests/test_doctor_scheduled_tasks.py::test_non_windows_platform_skips PASSED [ 70%]
+tests/test_doctor_scheduled_tasks.py::test_wired_into_examine PASSED     [ 75%]
+tests/test_doctor_scheduled_tasks.py::test_live_probe_on_windows PASSED  [ 80%]
+tests/test_doctor_scheduled_tasks.py::test_disabled_with_intentional_marker_passes PASSED [ 85%]
+tests/test_doctor_scheduled_tasks.py::test_disabled_without_marker_still_flags PASSED [ 90%]
+tests/test_doctor_scheduled_tasks.py::test_missing_with_marker_still_flags PASSED [ 95%]
+tests/test_doctor_scheduled_tasks.py::test_default_intentional_reader_is_lifecycle PASSED [100%]
+
+============================= 20 passed in 2.59s ==============================
+PYTEST_EXIT=0
+
+=== main.py CLI wiring (help only, no task touched) ===
+usage: main.py improve-off [-h] [--reason REASON]
+
+options:
+  -h, --help       show this help message and exit
+  --reason REASON  Why improve is off; stored in the marker JSON (default:
+                   operator disable)
+IMPROVE_OFF_HELP_EXIT=0
+usage: main.py improve-on [-h]
+
+options:
+  -h, --help  show this help message and exit
+IMPROVE_ON_HELP_EXIT=0
+
+=== tools/violation_ratchet.py check --changed ===
+RATCHET check: scope=16 changed files; hits=13; registered=13; NEW=0; expired-exceptions=0
+RATCHET: PASS — no unregistered debt.
+RATCHET_EXIT=0

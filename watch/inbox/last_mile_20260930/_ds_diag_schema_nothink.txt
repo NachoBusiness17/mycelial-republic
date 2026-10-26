@@ -1,0 +1,183 @@
+## 1) JSON Schema (draft 2020-12) for one `router_families.json` entry
+
+```json
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://estate.local/schemas/router_family_entry.schema.json",
+  "title": "RouterFamilyEntry",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "family_id",
+    "model_id",
+    "prices",
+    "duels",
+    "totals",
+    "quality_gate",
+    "provenance"
+  ],
+  "properties": {
+    "family_id": { "type": "string", "minLength": 1 },
+    "model_id": { "type": "string", "minLength": 1 },
+    "prices": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["input_per_M", "output_per_M", "as_of", "source"],
+      "properties": {
+        "input_per_M": { "type": ["number", "null"], "minimum": 0 },
+        "output_per_M": { "type": ["number", "null"], "minimum": 0 },
+        "as_of": { "type": ["string", "null"], "format": "date" },
+        "source": { "type": "string", "minLength": 1 }
+      }
+    },
+    "duels": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "adversarial-review",
+        "schema-design",
+        "planning",
+        "code-analysis",
+        "grading",
+        "other"
+      ],
+      "properties": {
+        "adversarial-review": { "$ref": "#/$defs/shape" },
+        "schema-design":      { "$ref": "#/$defs/shape" },
+        "planning":           { "$ref": "#/$defs/shape" },
+        "code-analysis":      { "$ref": "#/$defs/shape" },
+        "grading":            { "$ref": "#/$defs/shape" },
+        "other":              { "$ref": "#/$defs/shape" }
+      }
+    },
+    "totals": { "$ref": "#/$defs/shape" },
+    "quality_gate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["metric", "value", "decided", "decided_min", "gate_passed"],
+      "properties": {
+        "metric": { "type": "string", "minLength": 1 },
+        "value": { "type": ["number", "null"] },
+        "decided": { "type": "integer", "minimum": 0 },
+        "decided_min": { "type": "integer", "minimum": 0 },
+        "gate_passed": { "type": "boolean" }
+      }
+    },
+    "provenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["ledger_path", "ledger_sha256", "row_count", "receipts"],
+      "properties": {
+        "ledger_path": { "type": "string", "const": "logs/duel/duels.jsonl" },
+        "ledger_sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+        "row_count": { "type": "integer", "minimum": 0 },
+        "receipts": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["path", "as_of"],
+            "properties": {
+              "path": { "type": "string", "minLength": 1 },
+              "as_of": { "type": ["string", "null"], "format": "date" }
+            }
+          }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "shape": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["wins", "losses", "ties", "unparsed", "rows_judged"],
+      "properties": {
+        "wins":        { "type": "integer", "minimum": 0 },
+        "losses":      { "type": "integer", "minimum": 0 },
+        "ties":        { "type": "integer", "minimum": 0 },
+        "unparsed":    { "type": "integer", "minimum": 0 },
+        "rows_judged": { "type": "integer", "minimum": 0 }
+      }
+    }
+  }
+}
+```
+
+Notes tied to the ledger at `logs/duel/duels.jsonl`: `winner` is constrained to `A`, `B`, `TIE`, `UNPARSED`; `mode` supplies the task shape key; `a_model` and `b_model` supply `model_id`; `judge_cost` and `a_cost`/`b_cost` are the cost fields; `ts` is the timestamp; `swap` is boolean; `criteria` is the list of `{criterion, a, b, note}`. The schema above does not embed `criteria` because router family rows aggregate, not per duel. UNPROVEN whether the estate wants per-criterion rollups in the family row.
+
+## 2) Edge cases and how the schema decides them
+
+1. Family with zero duels. All five shape blocks plus `other` are required and each is a `shape` object with `wins`, `losses`, `ties`, `unparsed`, `rows_judged` all `0`. `totals` is also all `0`. `quality_gate.decided` is `0`, `quality_gate.value` is `null`, `quality_gate.gate_passed` is `false` unless `decided_min` is `0`, in which case `gate_passed` is `true`. UNPROVEN which default the estate prefers; the schema permits both.
+2. UNPARSED winner rows. Counted in `unparsed`, not in `wins`, `losses`, or `ties`. `rows_judged` counts every row where the family appears as `a_model` or `b_model`, including UNPARSED rows. This is a decision, not a derivation from `logs/duel/duels.jsonl`; the ledger only stores `winner`.
+3. TIE rows. Counted in `ties`. Not counted as wins or losses. `rows_judged` still increments.
+4. Missing price. `prices.input_per_M` and `prices.output_per_M` are `["number","null"]` with `minimum: 0`. `as_of` may be `null`. `source` is required and must be a non-empty string, so a missing price must still name its source (for example `"receipts/prices.json#missing"`). UNPROVEN whether the estate wants a sentinel string instead of `null`.
+5. Cost of exactly zero. `minimum: 0` permits `0`. Zero is treated as a real price, not as missing. A missing price is `null`, a free model is `0`. This distinction is enforced by the type union.
+6. Task shape outside the known list. `duels` has `additionalProperties: false` and only the five named shapes plus `other`. Any `mode` value in `logs/duel/duels.jsonl` that is not one of the five known shapes is aggregated into `other`. The schema does not permit inventing new keys at write time. UNPROVEN whether the estate wants a `mode_unknown` list in provenance.
+
+## 3) Idempotent migration from `logs/duel/duels.jsonl` to `router_families.json`
+
+The migration is a pure function of the ledger plus the price receipts. Re-running produces byte-identical output for the same inputs.
+
+Steps:
+
+1. Read `logs/duel/duels.jsonl` line by line. Compute `sha256` over the raw bytes. Record `row_count` as the number of non-empty lines.
+2. For each row, read `a_model`, `b_model`, `winner`, `mode`, `ts`, `swap`, `a_cost`, `b_cost`, `judge_cost`, `judge`, `ask_id`.
+3. Build the set of `model_id` values from `a_model` and `b_model`. This is the family universe.
+4. For each `model_id`, for each row where it appears, determine its side: `A` if `a_model == model_id`, `B` if `b_model == model_id`. If both equal (self duel), skip the row for that model and record it in provenance as UNPROVEN handling.
+5. Map `winner` to the model's outcome: `A` and side `A` gives a win; `A` and side `B` gives a loss; `B` and side `B` gives a win; `B` and side `A` gives a loss; `TIE` gives a tie; `UNPARSED` gives unparsed.
+6. Bucket by `mode`. Known modes go to their shape key. Unknown modes go to `other`.
+7. Increment `wins`, `losses`, `ties`, `unparsed`, `rows_judged` per shape and per totals.
+8. `quality_gate.decided` equals `totals.wins + totals.losses + totals.ties`. `quality_gate.value` equals `totals.wins / decided` when `decided > 0`, else `null`. `gate_passed` equals `decided >= decided_min` and `value >= threshold`. UNPROVEN what threshold the estate uses; the schema stores only `value`, `decided`, `decided_min`, `gate_passed`.
+9. `prices` come from the receipt file listed in `provenance.receipts`. Match by `model_id`. If no match, `input_per_M` and `output_per_M` are `null` and `source` names the receipt path plus `#missing`.
+10. Sort `provenance.receipts` by `path` ascending. Sort keys in the output object deterministically. Write with a stable JSON serializer.
+
+Idempotence: the output depends only on the ledger bytes, the receipt bytes, and the fixed threshold constants. No timestamps are written except `prices.as_of`, which comes from the receipt. Re-running over the same inputs yields the same `ledger_sha256`, the same counts, and the same JSON. No counters are incremented in place.
+
+## 4) Three validation predicates
+
+Predicate A. `totals.rows_judged == totals.wins + totals.losses + totals.ties + totals.unparsed`. Fails if any row is double counted or dropped.
+
+Predicate B. `sum over shapes of shape.rows_judged == totals.rows_judged` and `sum over shapes of shape.wins == totals.wins`, and likewise for `losses`, `ties`, `unparsed`. Fails if a shape bucket is missing or duplicated.
+
+Predicate C. `quality_gate.decided == totals.wins + totals.losses + totals.ties` and `quality_gate.gate_passed == (quality_gate.decided >= quality_gate.decided_min and quality_gate.value >= threshold)`. Fails if the gate is computed from a different denominator than the totals, or if `gate_passed` disagrees with `decided` and `decided_min`.
+
+## 5) Worked example instance
+
+```json
+{
+  "family_id": "fam-openrouter-2026-02",
+  "model_id": "anthropic/claude-sonnet-4.5",
+  "prices": {
+    "input_per_M": 3.0,
+    "output_per_M": 15.0,
+    "as_of": "2026-02-14",
+    "source": "receipts/prices-2026-02-14.json"
+  },
+  "duels": {
+    "adversarial-review": { "wins": 12, "losses": 5, "ties": 2, "unparsed": 1, "rows_judged": 20 },
+    "schema-design":      { "wins": 9,  "losses": 3, "ties": 1, "unparsed": 0, "rows_judged": 13 },
+    "planning":           { "wins": 7,  "losses": 6, "ties": 0, "unparsed": 2, "rows_judged": 15 },
+    "code-analysis":      { "wins": 14, "losses": 4, "ties": 3, "unparsed": 0, "rows_judged": 21 },
+    "grading":            { "wins": 5,  "losses": 5, "ties": 4, "unparsed": 1, "rows_judged": 15 },
+    "other":              { "wins": 1,  "losses": 0, "ties": 0, "unparsed": 0, "rows_judged": 1 }
+  },
+  "totals": { "wins": 48, "losses": 23, "ties": 10, "unparsed": 4, "rows_judged": 85 },
+  "quality_gate": {
+    "metric": "win_rate_decided",
+    "value": 0.5926,
+    "decided": 81,
+    "decided_min": 50,
+    "gate_passed": true
+  },
+  "provenance": {
+    "ledger_path": "logs/duel/duels.jsonl",
+    "ledger_sha256": "9f2c1a7b4e8d0f3a5c6b7d8e9f0a1b2c3d4e5f60718293a4b5c6d7e8f9012345",
+    "row_count": 85,
+    "receipts": [
+      { "path": "receipts/prices-2026-02-14.json", "as_of": "2026-02-14" }
+    ]
+  }
+}
+```
+
+Check against the predicates: `48 + 23 + 10 + 4 = 85` matches `totals.rows_judged`. Shape sums: `12+9+7+14+5+1 = 48` wins, `5+3+6+4+5+0 = 23` losses, `2+1+0+3+4+0 = 10` ties, `1+0+2+0+1+0 = 4` unparsed, `20+13+15+21+15+1 = 85` rows. `quality_gate.decided = 48+23+10 = 81`, `value = 48/81 = 0.5926`, `decided_min = 50`, `gate_passed = true`. Ledger field names relied on: `a_model`, `b_model`, `winner`, `mode`, `ts`, `swap`, `a_cost`, `b_cost`, `judge_cost`, `judge`, `ask_id`, `criteria`, `rubric`, `rationale`, `a_chars`, `b_chars`, `a_headers`, `b_headers`, `judge_cost`.

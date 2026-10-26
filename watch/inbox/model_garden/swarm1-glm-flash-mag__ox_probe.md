@@ -1,0 +1,7 @@
+# swarm1-glm-flash-mag__ox_probe (glm-5.3-flash @ zai, turn 1, channel: content)
+
+DEFECT 1: probe output filename truncates the ISO timestamp to minute precision, so two probes in the same minute silently overwrite each other and lose run data | EVIDENCE: mag/ox_probe.py:199-201 | FIX: use a full-resolution or collision-checked filename (e.g. append a counter or keep full ts).
+DEFECT 2: the "prefix-cache IS the standing agent" finding computes the ratio over call B's total prompt_tokens, which includes the appended tool-result/user delta, inflating the denominator and skewing the >0.5 threshold verdict | EVIDENCE: mag/ox_probe.py:172-177 | FIX: compute ratio against prefix token count (call A's prompt_tokens) or subtract the known delta before thresholding.
+DEFECT 3: _load_key strips quotes from the key value but _load_model does not, so a quoted OPENROUTER_MODEL in .env is sent with literal quotes and the API call fails with an unknown-model error | EVIDENCE: mag/ox_probe.py:48-54 | FIX: apply the same .strip('"').strip("'") in _load_model as in _load_key.
+DEAD-CODE: sys.path.insert(0, str(ROOT)) is a no-op when the module is imported as mag.ox_probe (package root already on sys.path), and in __main__ runs it duplicates an existing entry | EVIDENCE: mag/ox_probe.py:33
+ONE-SITTING FIX: make the probe output filename collision-proof and unique per run (full timestamp plus sequence suffix with existence check), preserving every probe result | EVIDENCE: mag/ox_probe.py:199-201

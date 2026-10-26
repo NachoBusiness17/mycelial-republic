@@ -1,0 +1,72 @@
+{
+  "lane": "a11-mickey17",
+  "division": "A",
+  "ok": true,
+  "note": "HEAD TESTIMONY on the MICKEY-17 v2.1 fold pipeline. Deterministic rerun of tools/mickey17_v2_fold.py on the archived run agent-engineering-frontier-sweep-40 reproduced every archived count exactly: fired 40, landed 40, rows 218, estate_status new 131 / confirms-ours 59 / owed 18 / we-have-better 10, fidelity 218/218 (100.0%), verifier table checks 19 / entries 5 / rows 5 / supports 171, width economics median 5 max 10 min 5, top-10 share 31.2%, duplicate quotes 0, PRISMA 218 = 218 + 0 invariant HOLDS. Exit 0, under 3 min. Estate grep: mickey17 hits both dirs (corpus/steal 2 files 10 lines; memory/corpus/LINKS.jsonl 1 file 2 lines); two-tier ZERO hits in both dirs even under fuzzy pattern two.tier, filed as a finding (the spec changelog names the two-tier clause A3+A4 but no corpus registration carries the term).",
+  "rows": [
+    {
+      "law": "FOLD-BY-SCRIPT EXTENDED (A5): the counting script writes the numbers, seats write prose around them",
+      "claim": "Any fold number a seat brings from a summary instead of a script recount must be tagged carried; script-written counts are the only untagged numbers in the fold.",
+      "quote": "The seat writes prose around script-written numbers only; any number taken from a summary instead of recomputed is tagged `carried` (A5).",
+      "source": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/MICKEY17_V2_ENGINE_SPEC_v2.1_20260925.md",
+      "steal": "In GALA lanes, file every count from a saved raw tool output file and cite it; any count not recountable from a saved file gets tagged carried instead of asserted.",
+      "falsifier": "A fold or lane summary asserting a number with no script recount behind it, or a rerun of the counting script disagreeing with the archived counts (rerun today agreed on all sections).",
+      "leverage": "high"
+    },
+    {
+      "law": "TWO-TIER VERIFICATION (A3+A4): mechanical selection, independent verifier, crashed confirmers in their own bucket",
+      "claim": "Deep verification goes to fold-load-bearing rows selected mechanically by the script plus every tier-1 supports-no row, on a different model family; a crashed confirmation is never merged with a substantive unconfirmation.",
+      "quote": "crashed confirmers count in their own bucket, never merged with substantive unconfirmations (A3+A4).",
+      "source": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/MICKEY17_V2_ENGINE_SPEC_v2.1_20260925.md",
+      "steal": "In GALA checks, record a crashed verifier as its own verdict bucket with its own count, never folded into the unconfirmed negative count.",
+      "falsifier": "A fold whose verifier table merges crashed confirmers into the unconfirmed bucket; the archived and rerun verifier tables keep buckets separate (checks/entries/rows/supports, no crashed bucket present in this run).",
+      "leverage": "high"
+    },
+    {
+      "law": "REFIRE-ONCE-THEN-TOMBSTONE (A2): a dead lane is a result; a twice-dead lane is a filed tombstone",
+      "claim": "A crashed or killed lane is re-fired exactly once with the kill reason named in the prompt; after a second death the lane is tombstoned with status tombstoned, empty receipts, error verbatim, and subtracted from owed.",
+      "quote": "A dead lane is a valid lane file of exactly one negative-result row; a twice-dead lane is a tombstone",
+      "source": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/MICKEY17_V2_ENGINE_SPEC_v2.1_20260925.md",
+      "steal": "Give any dead GALA sub-lane one bounded idempotent refill naming the kill reason, then file a tombstone receipt instead of silently dropping the target.",
+      "falsifier": "A lane archive showing the same target id re-fired more than once, or a tombstone carrying non-empty receipts or a missing verbatim error.",
+      "leverage": "high"
+    },
+    {
+      "law": "ABSOLUTE-PATHS / PER-RUN ARCHIVES (A1 repair): the recount runs against the estate copy, never a workspace mirror",
+      "claim": "v2 broke Law 4 for its own lane archive; A1 fixed it so the archive of record is the estate absolute path and the fold script takes only a bare run slug with pathlib-fixed constants, no free-form path input at all.",
+      "quote": "the fold's scripted recount runs against the estate copy, never a workspace mirror.",
+      "source": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/MICKEY17_V2_ENGINE_SPEC_v2.1_20260925.md",
+      "steal": "Point GALA checks at estate-path artifacts as the source of record and reject tool CLIs that accept arbitrary workspace paths where an estate slug suffices.",
+      "falsifier": "A fold tool that reads a workspace mirror or accepts arbitrary path input; tools/mickey17_v2_fold.py instead validates --run against [A-Za-z0-9-]+ and rejects traversal, and its module docstring states pathlib-only fixed constants, no os.path.join chains, no open().",
+      "leverage": "high"
+    },
+    {
+      "law": "SCOREBOARD BY ESTATE_STATUS: confirms-ours is the moat, owed is the build queue, new is the gate gap, we-have-better is the discount ledger",
+      "claim": "The v2 master fold (50 lanes, 246 rows) put confirms-ours first at 96 rows, owed 61, we-have-better 48, new 41; the v2.1 rerun recount of the 40-lane archive matches its archived scoreboard exactly (218 rows: new 131, confirms-ours 59, owed 18, we-have-better 10), so owed items carry vendor-measured defaults and the build queue has never been cheaper to execute.",
+      "quote": "246 rows across 50 lanes (49 ok, 1 dead), all rows carrying a valid estate_status.",
+      "source": "C:/Users/foste/Documents/projects/local_sovereign_agent/corpus/steal/MASTER_MICKEY17_V2_20260924.md",
+      "steal": "Bucket every GALA row by estate_status so confirms-ours banks validation for free, owed converts one-to-one into build specs, and we-have-better files as discount annotations never canon numbers.",
+      "falsifier": "A hand-written scoreboard disagreeing with a script recount of the same lane archive, or a fold missing any of the four estate_status buckets; both the archived and rerun recounts satisfy the four-bucket partition.",
+      "leverage": "high"
+    }
+  ],
+  "checks": [
+    {
+      "command": "./.venv/Scripts/python.exe tools/mickey17_v2_fold.py --help",
+      "exit": 0,
+      "evidence": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/w3/lanes/a11-mickey17.check.txt"
+    },
+    {
+      "command": "./.venv/Scripts/python.exe tools/mickey17_v2_fold.py --check-urls --run agent-engineering-frontier-sweep-40",
+      "exit": 0,
+      "evidence": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/w3/lanes/a11-mickey17.check.txt"
+    },
+    {
+      "command": "grep -F -c '<each of 5 quotes>' against spec and master (counts 1,1,1,1,1) + estate greps mickey17 and two-tier over corpus/steal and memory/corpus",
+      "exit": 0,
+      "evidence": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/w3/lanes/a11-mickey17.grep.txt"
+    }
+  ],
+  "decision_changed": "yes: the archived FOLD_SECTIONS.md carries an A11 URL LIVENESS section, so a bare rerun would have written a fold missing that section and would not have been a faithful reproduction. I ran with --check-urls. Recorded side effect: the rerun rewrote the run archive's FOLD_SECTIONS.md in place; every recounted section matched the archived numbers exactly and only the URL liveness stamps moved (190 unique URLs, 178 live, 12 dead, all HTTP 403).",
+  "artifact": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/w3/lanes/a11-mickey17.json"
+}

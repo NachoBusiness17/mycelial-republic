@@ -1,0 +1,24 @@
+{
+  "gopher": "t66",
+  "item": "type-pin the 'Expected this to be exactly' analyzer cluster from t58's run (SteerFieldZone 152,25 / IncidentDungeonZone 90,21 / LightmapRoomsZone 93,25 / ErosionFieldZone 172,25 / MazeArenaZone Shape 100,2 + 107,2 / LedgerExchange unknown reads 217,13 + 228,86 + 229,73)",
+  "ok": true,
+  "note": "Negative finding first: the 5 zones_extra sites were already pinned on disk by a post-t58 writer (all 5 files mtime 2026-09-26 01:11:18, 43s after t58's final 01:10:35 gate; writer not named in t59-t64 receipts; SteerFieldZone:37 carries the exact walkers table type, MazeArenaZone:58 carries a t42-cited receipt). t66 edited none of them. t66's live work was LedgerExchange (mtime 2026-09-25 23:30:47): Slot%d read wrapped in tonumber (stashArtifact writes income: number) and Slot%dName read wrapped in tostring (writes name: string), both identity coercions on stored values, runtime unchanged, inline receipt comments cite t58.check.txt. Full-tree analyze before: 4 LedgerExchange named findings present, zone named sites absent; after: 0 of 9 named positions. mountain_check NOT run per lane law; t58 exit 0 stands.",
+  "checks": [
+    {
+      "command": "luau-lsp analyze (tree, before) src/shared src/server src/server/zones_extra src/client from roblox/",
+      "exit": 1,
+      "evidence": "named sites present: LedgerExchange 217,13 / 217,62 / 228,86 / 229,73 (t66.check.txt 'before' section)"
+    },
+    {
+      "command": "luau-lsp analyze (tree, after) same args",
+      "exit": 1,
+      "evidence": "grep of 9 named positions = 0 hits; residual findings are filtered classes only (t66.check.txt 'verify' section)"
+    },
+    {
+      "command": "luau-lsp analyze per file, 6 files, before and after",
+      "exit": 1,
+      "evidence": "exit 1 before AND after on all 6 (pre-existing filtered-class findings keep per-file exits non-zero); delta is the named-site count, logged per file in t66.check.txt"
+    }
+  ],
+  "next_steal": "t58.check.txt lines 2-7 advisory block-balance deltas are the heaviest unclaimed item: FrontierSoulsZone delta 3, HardwarePrimerZone delta 1, IncidentDungeonZone delta 1. Verify by bytes whether ends are actually missing (the 01:11:18 rewrite touched IncidentDungeonZone) or the python lint miscounts long comments, then fix or file the lint defect. Second: the post-t58 01:11:18 writer left no receipt in lanes; finding who wrote the zones_extra pins would close the provenance gap t58 hit with init.server at 01:05:12."
+}

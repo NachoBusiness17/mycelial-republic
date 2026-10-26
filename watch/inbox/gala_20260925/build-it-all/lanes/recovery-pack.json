@@ -1,0 +1,36 @@
+{
+  "lane": "recovery-pack",
+  "division": "A",
+  "ok": false,
+  "note": "IN FLIGHT (incremental write): law + laptop evidence read; tag recovery-pack-green-20261003 created at e0344fe39; bundle 7,994,046,702 B sha256 67cd4e003ccd2973dde652a59de4eac5b458372ea2d87d27244d26ceede9b8fe verified complete-history; venv-spec 268 pins; untracked overlay 4 files hash-verified (clean checkout collects 4,197 with zero errors after overlay); small files ON BOB, bundle scp in flight; baseline + restore suites pending. Ask IP correction: 100.96.161.76 is THIS machine (DESKTOP-7C70KSC); the laptop is bob 100.125.103.60 (SSH live).",
+  "rows": [],
+  "checks": [
+    {
+      "command": "ssh -i C:/Users/foste/.ssh/estate_to_bob -o BatchMode=yes -o ConnectTimeout=12 -o StrictHostKeyChecking=accept-new etfag@100.125.103.60 \"echo BOB_SSH_OK && hostname\"",
+      "exit": 0,
+      "evidence": "stdout: BOB_SSH_OK / Bob / etfag (recorded in watch/inbox/gala_20260925/build-it-all/lanes/recovery-pack.check.txt)"
+    },
+    {
+      "command": "git tag -a recovery-pack-green-20261003 -m \"Recovery pack: certified-green freeze per prime judgment move 2 (green-is-perishable...)\" && git tag -n1 recovery-pack-green-20261003",
+      "exit": 0,
+      "evidence": "tag listing returned the annotated message; repo had 0 tags before (git tag | wc -l = 0)"
+    },
+    {
+      "command": "git bundle create C:/Users/foste/AppData/Local/Temp/recovery_pack/mag_recovery_pack_e0344fe39.bundle recovery-pack-green-20261003 && git bundle verify <abs path>",
+      "exit": 0,
+      "evidence": "verify output: 'The bundle contains this ref: e8206fa18295dce2469747385742a4d1e0c97048 refs/tags/recovery-pack-green-20261003 / The bundle records a complete history.'; sha256 67cd4e003ccd2973dde652a59de4eac5b458372ea2d87d27244d26ceede9b8fe; bytes 7,994,046,702"
+    },
+    {
+      "command": "pytest --collect-only -q -p no:cacheprovider --continue-on-collection-errors (clean worktree at e0344fe39 + overlay)",
+      "exit": 0,
+      "evidence": "4,197 tests collected in 15.54s, zero collection errors (WITHOUT overlay the same command failed: ModuleNotFoundError: No module named 'blade_buyer', PYTEST_EXIT=2)"
+    },
+    {
+      "command": "scp -r venv-spec overlay MANIFEST.json etfag@100.125.103.60:C:/Users/etfag/recovery_pack/",
+      "exit": 0,
+      "evidence": "bob listing shows overlay/, venv-spec/, MANIFEST.json 4365 B under C:\\Users\\etfag\\recovery_pack"
+    }
+  ],
+  "decision_changed": "pending",
+  "artifact": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/build-it-all/lanes/recovery-pack.json"
+}

@@ -1,0 +1,41 @@
+{
+  "lane": "a01-arena-cadence-r5",
+  "division": "B",
+  "ok": true,
+  "note": "GAP_REGISTER R5 fill found ALREADY LANDED before the register was minted (the R3 pattern again): PARABLE_ERRATUM_20261004.md section 2 (filed 2026-10-04T08:48:53Z, watch/inbox/PARABLE_ERRATUM_20261004.md:29-51) had already corrected the phantom 'arena-sessions-v3 ledger (266 rows, chain ok)' citation to arena-capability.jsonl and named arena-sessions.jsonl as its own artifact (60 rows frozen, the day-one bar fight, lines 42-43), including the 121+145 post-hour-14 explanation of the 266 (lines 47-50). This sitting re-verified every count at byte level and sharpened one: arena-capability.jsonl holds EXACTLY 314 rows at the parable's 20:36Z filing (row 314 ts 2026-10-03T19:08:14Z, row 315 ts 2026-10-04T02:28:04Z, so the counter sat at 314 from 19:08Z through end of day; 730 rows today), arena-sessions.jsonl 60 rows seq 1-60 ts 12:51:31Z-12:52:58Z frozen. COURSE CORRECTION this sitting: the fill was first executed as an ERRATUM line appended inside parable_day_one_20261003.md, then REVERTED (git diff --exit-code 0, bytes restored to HEAD) because the estate's standing rule is that the parable stays byte-untouched (PARABLE_ERRATUM_20261004.md:5-6 'This is a NEW file by lane ownership: the parable itself ... is left byte-untouched', reaffirmed by GAP_REGISTER R57 'leave the sealed parable bytes untouched' and R72 'byte-untouched BY DESIGN'); an in-file amendment would also preempt R72's pending pointer-line fill. The fill leg that never existed, the one-line R5 receipt naming the row, landed as watch/inbox/PARABLE_LEDGER_ERRATUM_R5_20261010.md (1 line, citation-lint clean). Census correction to the claim's framing: the phantom name has 0 hits in code (git grep over the tracked repo: no tools/ or mag/ carrier) but 6 tracked carriers today (parable + PARABLE_ERRATUM_20261004.md + MICKEY17_V2_RUN_SPEC_ADDENDUM.md + gap_analysis_20261010/GAP_REGISTER.md + go_wave_20261004/arena_cadence.md + corpus/steal/MASTER_MICKEY17_V2.md), so the ask's '0 in watch/inbox beyond it' was true at parable-filing (per the 10-04 erratum's own 'two later documents' count) but is stale now; every extra carrier quotes the struck text. violation_ratchet NOT run: no code under mag/ or tools/ touched by this lane.",
+  "rows": [],
+  "checks": [
+    {
+      "command": ".venv/Scripts/python.exe -c (row + timestamp census over memory/runs/gwap/arena-sessions.jsonl and memory/runs/gwap/arena-capability.jsonl)",
+      "exit": 0,
+      "evidence": "watch/inbox/gala_20260925/rung/lanes/a01-arena-cadence-r5.check.txt section [3]: arena-sessions.jsonl rows: 60 seq: 1 - 60 ts: 2026-10-03T12:51:31Z -> 2026-10-03T12:52:58Z; arena-capability.jsonl total rows today: 730; rows with ts <= 2026-10-03T20:36:59Z (filing moment): 314; row 314 ts: 2026-10-03T19:08:14Z | row 315 ts: 2026-10-04T02:28:04Z"
+    },
+    {
+      "command": "git grep -l arena-sessions-v3 -- . ; grep -rl arena-sessions-v3 watch memory/runs/gwap",
+      "exit": 0,
+      "evidence": "check file section [4-final]: git grep lists 6 tracked carriers (corpus/steal/MASTER_MICKEY17_V2.md, watch/inbox/MICKEY17_V2_RUN_SPEC_ADDENDUM.md, watch/inbox/PARABLE_ERRATUM_20261004.md, watch/inbox/gap_analysis_20261010/GAP_REGISTER.md, watch/inbox/go_wave_20261004/arena_cadence.md, watch/inbox/parable_day_one_20261003.md), NONE under tools/ or mag/; bounded untracked-space grep adds only the lane's own check.txt (self-reference). A full-tree grep attempt ([4-retry]) was killed as too slow on this FS, superseded by [4-final]"
+    },
+    {
+      "command": "git diff --exit-code -- watch/inbox/parable_day_one_20261003.md (revert verification)",
+      "exit": 0,
+      "evidence": "check file section [7]: PARABLE_DIFF_EXIT=0 and empty porcelain status: the in-parable erratum first landed at 13:20:33Z (sections [1]-[2], historical) was reverted; parable bytes identical to HEAD per the sealed-bytes rule"
+    },
+    {
+      "command": "wc -l watch/inbox/PARABLE_LEDGER_ERRATUM_R5_20261010.md + grep content markers",
+      "exit": 0,
+      "evidence": "check file section [8]: 1 line; 'ALREADY LANDED 2026-10-04' count=1; 'arena-capability.jsonl: exactly 314 rows' present; 'arena-sessions.jsonl: 60 rows, seq 1-60' present"
+    },
+    {
+      "command": ".venv/Scripts/python.exe tools/citation_lint.py check --files watch/inbox/PARABLE_LEDGER_ERRATUM_R5_20261010.md",
+      "exit": 0,
+      "evidence": "check file section [9]: CITATION-LINT: ok records=1 blocking=0 warns=0, LINT_EXIT=0"
+    },
+    {
+      "command": ".venv/Scripts/python.exe tools/citation_lint.py check --files watch/inbox/parable_day_one_20261003.md (mid-flight, while the reverted erratum line was in)",
+      "exit": 0,
+      "evidence": "check file section [5]: ok blocking=0 warns=1, the single WARN is the pre-existing line-13 $25.11/usage.jsonl row, not this lane's text; file now back at HEAD bytes anyway"
+    }
+  ],
+  "decision_changed": "closes GAP_REGISTER R5 as STALE AT MINT: the phantom-citation correction was pre-landed 2026-10-04 by PARABLE_ERRATUM_20261004.md section 2, so R5's fill reduces to verification (done, plus the new boundary-exact fact that the capability counter sat at exactly 314 from 19:08:14Z through the 20:36Z filing, row 315 not until 10-04T02:28:04Z) and the missing one-line row-naming receipt (landed: watch/inbox/PARABLE_LEDGER_ERRATUM_R5_20261010.md). Also flips this lane's own first decision: an in-parable erratum amendment was landed then reverted because the parable is sealed byte-untouched by the 10-04 erratum's own rule (reaffirmed by R57/R72); any future fold citing R5 must cite the receipt file, not an edit inside parable_day_one_20261003.md, and R72's pointer-line fill remains the open way to kill the poison at source",
+  "artifact": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/rung/lanes/a01-arena-cadence-r5.json"
+}

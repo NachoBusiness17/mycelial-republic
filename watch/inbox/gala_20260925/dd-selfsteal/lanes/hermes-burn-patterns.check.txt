@@ -1,0 +1,98 @@
+=== probe moment: 2026-10-03T19:20:53.794730+00:00 (B2-216: name instrument + moment before comparing counts) ===
+=== 1. LEDGER PROFILE ===
+rows: 1150  span: 2026-10-01T13:11:41.335449Z .. 2026-10-03T19:08:04.327543Z
+total cost: $63.58   total tokens: 10,327,419   ok rows: 910/1150 (79.1%)
+
+=== 2. MODEL ECONOMICS + RECEIPT YIELD ===
+model                               n    ok%  ref         tok   cost$  $/Mtok  ids landed   KB/$
+anthropic/claude-opus-5.5         447  75.2%    1   6,532,214   45.65    6.99   69     38    9.9
+anthropic/claude-fable-5.1        172  57.0%   42     592,294    8.22   13.88   15      2    3.5
+anthropic/claude-sonnet-5.5       308  82.8%   46   2,059,945    7.59    3.69   63     39   33.9
+z-ai/glm-5.3-prime                  5  60.0%    0     331,945    1.17    3.54    3      0    0.0
+anthropic/claude-haiku-4.5        218 100.0%    0     811,021    0.95    1.17   22      0    0.0
+clean receipts on disk: 79; receipts self-confessing 'EVIDENCE block is empty': 2 -> DUEL2_train_01.md, DUEL2_train_06.md
+poisoned-quarantined files (.poisoned-evidenceless): 4 -> T1W2_S5_stores, T1W2_S6_docker, T1W2_S7_mates, T1W2_S8_stealth; asks with BOTH a poisoned twin and a clean refire: 4
+
+=== 3. TEMPORAL PATTERNS ===
+-- per day (UTC) --
+  2026-10-01: n= 236 ok= 147 (62.3%)  $37.76
+  2026-10-02: n=   5 ok=   3 (60.0%)  $1.17
+  2026-10-03: n= 909 ok= 760 (83.6%)  $24.65
+-- hour-of-day rollup, all days --
+  11:00Z  n= 129 ok= 126 (97.7%)  $3.70
+  12:00Z  n= 295 ok= 252 (85.4%)  $7.48
+  13:00Z  n= 131 ok= 123 (93.9%)  $11.01
+  14:00Z  n=  98 ok=  66 (67.3%)  $4.29
+  15:00Z  n=  87 ok=  73 (83.9%)  $2.75
+  16:00Z  n=  50 ok=  37 (74.0%)  $1.10
+  17:00Z  n=  45 ok=  32 (71.1%)  $1.12
+  18:00Z  n=  94 ok=  68 (72.3%)  $5.93
+  19:00Z  n= 143 ok=  75 (52.4%)  $15.10
+  20:00Z  n=  31 ok=  11 (35.5%)  $4.69
+  21:00Z  n=  47 ok=  47 (100.0%)  $6.42
+-- trough diagnosis: fails by hour x class --
+  hour         refusal  silent-empty        length
+  11:00              0             3             0
+  12:00              0            43             0
+  13:00              0             8             0
+  14:00              0            30             2
+  15:00              0            14             0
+  16:00              0            13             0
+  17:00              0            13             0
+  18:00             14            12             0
+  19:00             55            13             0
+  20:00             20             0             0
+
+=== 4. PLAN / ASK-STATE CLASSIFICATION ===
+plan family                          asks LAND HEAL REFU FIRE-NR NEVER
+hermes_burn_DG1                         1    1    0    0       0     0
+hermes_burn_LENS1                       1    1    0    0       0     0
+hermes_burn_N1R                         1    1    0    0       0     0
+hermes_burn_T1W1                        4    4    0    0       0     0
+hermes_burn_T1W2                        4    0    4    0       0     0
+hermes_burn_T1W3                        3    3    0    0       0     0
+hermes_burn_T2                          3    3    0    0       0     0
+hermes_burn_T3                          2    2    0    0       0     0
+hermes_burn_batch1                      3    3    0    0       0     0
+hermes_burn_batch2                      3    3    0    0       0     0
+hermes_burn_batch3                      2    2    0    0       0     0
+hermes_burn_batch4                      2    1    0    1       0     0
+hermes_burn_duel1                      12   11    0    1       0     0
+hermes_burn_duel2                      28   28    0    0       0     0
+hermes_burn_playground_20261003        15   14    0    0       0     1
+hermes_burn_refire                      3    3    0    0       0     0
+TOTAL ask dirs classified: 87 = LANDED 80 + HEALED 4 + REFUSED 2 + FIRED_NORECEIPT 0 + NEVER_FIRED 1
+  REFUSED: hermes_burn_batch4/N1_parables_songmap, hermes_burn_duel1/hidden_5
+  NEVER_FIRED: hermes_burn_playground_20261003/PODCAST_STRUCTURE_spec
+
+=== 5. WASTE PATTERNS (three named classes) ===
+W1 plan-ask re-burn rows (ok turn-1, id already landed): 74 rows / $24.74 = 38.9% of total spend
+  A1_steer_antiforgery: +48 rows / $20.60 after first ok 2026-10-01T13:11:41.335449Z
+  B2_drift_rows_attribution: +5 rows / $1.23 after first ok 2026-10-01T13:18:12.408522Z
+  C1_censorship_mechanisms_crossfamily: +2 rows / $0.76 after first ok 2026-10-01T13:19:03.952565Z
+  T1W2_S8_stealth: +1 rows / $0.52 after first ok 2026-10-01T19:18:33.716722Z
+  T1W2_S7_mates: +2 rows / $0.21 after first ok 2026-10-01T19:18:24.776703Z
+  T1W2_S5_stores: +2 rows / $0.17 after first ok 2026-10-01T19:17:38.216498Z
+W2 beat-vehicle same-id repeat rows (TAVERN/DND0, id collision class): 665 rows / $14.90 (NOT priced as waste: replay-vs-turn ambiguous from the ledger alone; instrument defect = no run stamp in id)
+  doubled_key alarm rows (saturated by the collision): 809 of 1150 (70.3%)
+  A1 reconciliation: 52 rows total; before 16:10Z 4 rows $1.65; after 48 rows $20.20 (carrier docstring: landed 16:10Z, claimed 45x $20.53 at its writing moment)
+W3a refusal loops (unbilled, wall-clock disease): 89 rows / $0.00 billed; by id: DUEL1_hidden_5 x46, N1_parables_songmap x42, T1W2_S8_stealth x1
+W3b silent-empty fail rows: 151 / $0.47; by family: DND0 x143, TAVERN x6, GALA x2
+W3c evidence-less paid fires (DUEL2_train + T1W2 ok turn-1 rows): $3.58 into receipts that self-confess or were quarantined
+
+=== 6. TICKET_LEDGER CROSS-REF ===
+  TICKET_LEDGER.md:117: Row one: issued 50 / run 37 / parked 13 / dropped 0-known. Reconciles: 37 + 13 = 50.
+  TICKET_LEDGER.md:118: Redemption rate 74.0 percent (was 65.3). Remaining parked in this ledger's scope: 5 T1W1
+  TICKET_LEDGER.md:151: Row one: issued 50 / run 37 / parked 13 / dropped 0-known.
+  ask's claim '50 issued/37 run = 74 pct' VERIFIED in bytes at row one.
+  mapping to burn-plan classes: the parked tail (row one) names 5 CLIMB tickets, memlance witness, quant tag, V12 .bak, V15 sid, Godot precompile, 6 duel refires (paid, another lane). The duel refires ARE the hermes_burn_duel1/hidden_*_r2 plans (all 6 now LANDED); the T1W2 refire debt is the poisoned-evidenceless quartet (all 4 now HEALED with clean refires on disk).
+
+=== 7. DESCENT DRIVER ===
+driver.beat: 2739 beats, first: BEAT 2026-10-01T21:31:24Z cycle=1, last: BEAT 2026-10-03T18:58:56Z cycle=1675
+driver.log HERMES-BURN summary lines: 46320 (last 5):
+  ('PASS', '3', '3', '62.85')
+  ('PASS', '2', '2', '62.85')
+  ('PASS', '2', '2', '62.85')
+  ('PASS', '12', '12', '62.85')
+  ('PASS', '28', '28', '62.85')
+note: driver.log 'skipped' rows are the landed-beats-force skips (no ledger row); the ledger holds fires only.

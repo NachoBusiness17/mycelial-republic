@@ -1,0 +1,55 @@
+{
+  "lane": "driver-v2",
+  "division": "B",
+  "started": "2026-09-29T14:40:00Z",
+  "finished": "2026-09-29T15:55:00Z",
+  "status": "done",
+  "ask": "Land the stealth driver v2 remainder in tools/stealth_driver.py: verify topic (funded DONE gate writes done_ts), impfeed (mined STEALABLE feeds selfimp queue), remove t_stealth_driver dup topic + dead groq roster host, apply the 7 selffeed rails",
+  "result": "ALL FOUR ITEMS LANDED AND BYTE-VERIFIED LIVE. (1) verify topic: funded Hermes DONE gate, hourly spacing, v2.1 contract (ask substance verified by the answer or a named repo receipt) + rail-5 24h TTL sweep; live flip: lib-belady-1966 done_ts 2026-09-29T15:18:30.887738+00:00 verdict DONE verifier_lane hermes, per-part provenance from bitsavers/IEEE-CS/ACM named in the verify receipt (pass-1 OWED under the v2.0 contract preserved as _verify1.md). (2) impfeed: weekly funded ranker feeding the selfimp queue; live first fire landed imp001. (3) t_stealth_driver dup removed, groq roster host removed (allowlist now 3 URLs); live heartbeat cycle 1 shows the 13-topic v2 list with no dup and roster llm7=64 openrouter=460. (4) 7 selffeed rails: trigger gate + hourly spacing + open cap 20 + depth cap 2 + dedupe + m%03d ids + TTL + wave5 breaker kept + append contract kept; composition bug (hourly stamp on attempts would have made the breaker unarmable) caught by the wave5 test and fixed; live rail line 'skip: selffeed rail 1 (spacing): fired 1791s ago'. Tests: 30 passed across 4 driver test files (new tests/test_stealth_driver_v2.py 17 cases; wave5 selffeed test updated to arm the v2 gates). Ratchet exit 1: this lane's only artifact is a NON-BLOCKING GROWTH line on the registered stealth_driver claim; the blocking NEW claim + 2 growth lines are sibling lanes' files; an accidental bare baseline-update run was reverted to HEAD before any other writer touched the baseline. GHOST REGISTERED for the boot-lane owner: an out-of-repo actor kills driver instances every ~10 min, deletes state/fuel/stealth_driver.jsonl, and spawns same-second uv+venv pairs (matches arch-03 D5's unexplained heartbeat loss); cross-process mutex verified working (probe REFUSED exit 2), exactly one ACTIVE driver, and it banked the v2 proof heartbeat.",
+  "rows": [],
+  "checks": [
+    {
+      "command": ".venv/Scripts/python.exe -m pytest tests/test_stealth_driver_v2.py tests/test_stealth_tools_wave5_repair.py tests/test_stealth_driver_effort_dial.py tests/test_stealth_driver_prompt_lance.py tests/test_selffeed_integration.py -q",
+      "exit": 0,
+      "evidence": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/ball-20260929/lanes/driver-v2.check.txt"
+    },
+    {
+      "command": ".venv/Scripts/python.exe tools/stealth_driver.py once",
+      "exit": 0,
+      "evidence": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/ball-20260929/lanes/driver-v2.once.log"
+    },
+    {
+      "command": ".venv/Scripts/python.exe -c <importlib load tools/stealth_driver.py; print(m.t_verify())>  (live funded verify pass 2)",
+      "exit": 0,
+      "evidence": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/ball-20260929/lanes/driver-v2.verify2.log"
+    },
+    {
+      "command": ".venv/Scripts/python.exe -c <read state/fuel/stealth_work_queue.jsonl row 1 + grep VERDICT: DONE in verify receipt>",
+      "exit": 0,
+      "evidence": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/ball-20260929/lanes/driver-v2.check.txt"
+    },
+    {
+      "command": ".venv/Scripts/python.exe tools/violation_ratchet.py check --changed",
+      "exit": 1,
+      "evidence": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/ball-20260929/lanes/driver-v2.check.txt"
+    },
+    {
+      "command": ".venv/Scripts/python.exe tools/stealth_driver.py once  (mutex probe while loop runs)",
+      "exit": 2,
+      "evidence": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/ball-20260929/lanes/driver-v2.check.txt"
+    },
+    {
+      "command": "git checkout -- configs/violation_baseline.json && git diff --stat configs/violation_baseline.json (revert of accidental baseline-update)",
+      "exit": 0,
+      "evidence": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/ball2/driver-v2.md"
+    }
+  ],
+  "decision_changed": "sensed-never-done is closed: the work queue now drains through funded verification (lib-belady-1966 flipped done_ts 2026-09-29T15:18:30Z after a real OWED-then-DONE verify pair), and the selffeed never-drains-it-grows doctrine is replaced by the bounded loop (trigger gate, hourly spacing, cap 20, depth 2, dedupe, m%03d ids, 24h ttl, breaker)",
+  "artifact": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/ball-20260929/lanes/driver-v2.json",
+  "receipt": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/ball2/driver-v2.md",
+  "ghosts_registered": [
+    "out-of-repo actor kills driver instances ~every 10 min, deletes state/fuel/stealth_driver.jsonl, spawns same-second uv+venv pairs (owner: boot-lane/process owner; arch-03 D5 loss mechanism identified as this actor)",
+    "second pair member lingers stuck before acquire_instance_lock (single thread, ~0 CPU, no refusal line) - pre-import hang under pythonw, cause unverified",
+    "t_selfimp has no breaker/spacing gate: with impfeed feeding it, a 600s-timeout build item retries every tick and stretches cycles (candidate for the same rail treatment)"
+  ]
+}

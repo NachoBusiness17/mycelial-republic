@@ -1,0 +1,139 @@
+...............................sss.s.................................... [  2%]
+..ss.................................................................... [  5%]
+........................................................................ [  8%]
+........................................................................ [ 11%]
+........................................................................ [ 13%]
+........................................................................ [ 16%]
+........................................................................ [ 19%]
+.........................................s.............................. [ 22%]
+........................................................................ [ 25%]
+........................................................................ [ 27%]
+........................................................................ [ 30%]
+.....................................................................F.. [ 33%]
+........................................................................ [ 36%]
+........................................................................ [ 39%]
+........................................................................ [ 41%]
+........................................................................ [ 44%]
+........................................................................ [ 47%]
+........................................................................ [ 50%]
+........................................................................ [ 53%]
+........................................................................ [ 55%]
+........................................................................ [ 58%]
+........................................................................ [ 61%]
+........................................................................ [ 64%]
+........................................................................ [ 66%]
+..............................................sssss..................... [ 69%]
+........................................................................ [ 72%]
+........................................................................ [ 75%]
+........................................................................ [ 78%]
+........................................................................ [ 80%]
+.................................................F...................... [ 83%]
+........................................................................ [ 86%]
+........................................................................ [ 89%]
+........................................................................ [ 92%]
+........................................................................ [ 94%]
+........................................................................ [ 97%]
+............................................................             [100%]
+================================== FAILURES ===================================
+________________ test_internal_node_grows_after_enough_leaves _________________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x000001E1002AD890>
+
+    def test_internal_node_grows_after_enough_leaves(monkeypatch):
+        import os
+        import time
+        monkeypatch.setattr(gwr, "_field", _void)
+        # the world is persistent (verkle knots survive runs) — every run needs a virgin grove
+        region = f"grove-test-{os.getpid()}-{time.time_ns()}"
+        dirs = ["north", "south", "east", "west", "up", "down", "left", "right"]
+        saw_grok = None
+        for i, d in enumerate(dirs):
+            r = gwr.reveal(player=f"grokker-{i}", direction=d, region=region)
+            if r.get("grok"):
+                saw_grok = r["grok"]
+        # by the 8th leaf the tree grew its internal node
+>       assert saw_grok is not None
+E       assert None is not None
+
+tests\test_game_world_render_optics.py:60: AssertionError
+__________________ test_instance_lock_refuses_second_acquire __________________
+
+    
+    def test_instance_lock_refuses_second_acquire():
+>       drv = _load("stealth_driver", DRIVER_PATH)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_stealth_tools_wave5_repair.py:128: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+namespace = ''
+
+    def acquire_instance_lock(namespace: str = "") -> None:
+        """Take the single-instance lock or raise InstanceLocked (loud refusal).
+    
+        namespace (tests only): suffixes the lock name into a private lock
+        object so a test never contends with the live driver's production lock
+        (ball3 driver-meter 2026-09-29: the live driver holds the production
+        mutex, so the wave5 lock test was refused on its FIRST acquire, not its
+        second). Production callers pass no namespace and keep the strict
+        shared INSTANCE_MUTEX / LOCKFILE: two live drivers still cannot
+        coexist.
+        """
+        if sys.platform == "win32":
+            mutex = f"{INSTANCE_MUTEX}.{namespace}" if namespace else INSTANCE_MUTEX
+            handle = _k32.CreateMutexW(None, False, mutex)
+            if not handle:
+                raise OSError(
+                    f"CreateMutexW failed: {ctypes.get_last_error()}")
+            if ctypes.get_last_error() == 183:  # ERROR_ALREADY_EXISTS
+                # CreateMutexW returned a NEW open handle to the existing mutex;
+                # close it or the object outlives release_instance_lock (caught
+                # by the wave5 lock test 2026-09-29).
+                _k32.CloseHandle(handle)
+>               raise InstanceLocked(
+                    "another stealth_driver instance already holds the "
+                    f"single-instance lock ({mutex}); refusing to "
+                    "start (stop the running driver first: create "
+                    f"{OFF_FLAG.relative_to(ROOT)})")
+E               stealth_driver.InstanceLocked: another stealth_driver instance already holds the single-instance lock (Local\MagStealthDriverInstance); refusing to start (stop the running driver first: create state\stealth_driver.off)
+
+tools\stealth_driver.py:748: InstanceLocked
+============================== warnings summary ===============================
+.venv\Lib\site-packages\discord\player.py:30
+  C:\Users\foste\Documents\projects\local_sovereign_agent\.venv\Lib\site-packages\discord\player.py:30: DeprecationWarning: 'audioop' is deprecated and slated for removal in Python 3.13
+    import audioop
+
+.venv\Lib\site-packages\fastapi\testclient.py:1
+  C:\Users\foste\Documents\projects\local_sovereign_agent\.venv\Lib\site-packages\fastapi\testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+tests/test_headless_law.py::test_headless_ratchet_never_grows
+tests/test_headless_law.py::test_no_os_system_in_tools_or_tests
+  <unknown>:1: DeprecationWarning: invalid escape sequence '\['
+
+tests/test_skill_seat.py::test_ponytail_gate
+  <unknown>:246: DeprecationWarning: invalid escape sequence '\/'
+
+tests/test_skill_seat.py::test_ponytail_gate
+  <unknown>:1: DeprecationWarning: invalid escape sequence '\M'
+
+tests/test_skill_seat.py::test_ponytail_gate
+  <unknown>:110: DeprecationWarning: invalid escape sequence '\M'
+
+tests/test_skill_seat.py::test_ponytail_gate
+  <unknown>:325: DeprecationWarning: invalid escape sequence '\.'
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ===========================
+SKIPPED [1] tests\test_agent_arena.py:18: python-chess not installed
+SKIPPED [1] tests\test_agent_arena.py:33: python-chess not installed
+SKIPPED [1] tests\test_agent_arena.py:43: python-chess not installed
+SKIPPED [1] tests\test_agent_arena.py:60: python-chess not installed
+SKIPPED [1] tests\test_arena_learning.py:70: python-chess not installed
+SKIPPED [1] tests\test_arena_learning.py:82: python-chess not installed
+SKIPPED [1] tests\test_desk_dialogue.py:492: python-chess not installed
+SKIPPED [5] tests\test_ractor_falsifier_stubs.py:100: mag.ractor.engine not built yet (spec section 6 step 2); falsifier stays pre-registered, RACTOR_ENGINE_SPEC_v0_1.md section 5
+FAILED tests/test_game_world_render_optics.py::test_internal_node_grows_after_enough_leaves
+FAILED tests/test_stealth_tools_wave5_repair.py::test_instance_lock_refuses_second_acquire
+2 failed, 2566 passed, 12 skipped, 8 warnings in 2821.20s (0:47:01)
+FULLSUITE_EXIT=1

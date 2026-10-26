@@ -1,0 +1,80 @@
+CHECK BATTERY a01-arena-cadence-r1 | run moment 2026-10-10T13:12:36Z
+instrument: C:/Users/foste/Documents/projects/local_sovereign_agent/.venv/Scripts/python.exe
+
+== CHECK 1: automations row deleted (R1 amendment target absent) ==
+automations total rows: 18
+automations rows matching b1ce1342: 0
+PASS | automations has zero b1ce1342 rows | match=0
+
+== CHECK 2: automation_runs census for b1ce1342 (deletion evidence) ==
+runs rows: 43 | outcome histogram: {'failed': 1, 'succeeded': 42}
+first scheduled: 2026-10-03T13:00:00Z failed | last scheduled: 2026-10-05T07:00:00Z succeeded
+PASS | 43 runs: 1 failed + 42 succeeded, 13:00Z 10-03 -> 07:00Z 10-05 | 
+
+== CHECK 3: usage.jsonl day-03 recompute (R1 claim numbers) ==
+day-03 rows: 1034 | day total: 25.6218
+crossing row: 2026-10-03T19:33:24.686865Z GALA_DD_SELFSTEAL_PRIME_JUDGMENT_20261003_STAGE_B | cumulative: 25.1134
+last pre-20:00Z row: 2026-10-03T19:33:24.686865Z | cumulative through it: 25.1134
+TAVERN 16.2003 | DND0 0.7903 | CAMP 0.2213 | ARENA_FAMILY 17.2119
+PASS | crossing cumulative == 25.1134 | 25.1134
+PASS | pre-20:00Z cumulative == 25.1134 (the 20:00Z meter reading) | 25.1134
+PASS | crossing row IS the last pre-20:00Z row | 
+PASS | crossing id is the GALA_DD judgment row | 
+PASS | arena-family day sum 17.2119 vs whole-day 25.6218 | 
+
+== CHECK 4: erratum addendum (section 7) on disk, byte-scanned ==
+## 7. GAP_REGISTER R1 addendum: "$25.11" IS the 20:00Z reading; the automation row is deleted (2026-10-10)
+
+Filed by lane a01-arena-cadence-r1 of the owed waltz (watch/inbox/
+gap_analysis_20261010/GAP_REGISTER.md row R1), one sitting, filing moment
+2026-10-10T13:11Z. Every number below was produced by `.venv\Scripts\python.exe`
+runs in this sitting (raw output banked beside the lane file as
+a01-arena-cadence-r1.check.txt).
+
+1. The 20:00Z identity, completing section 1 in R1's own words. Section 1 grounded
+   $25.1134 at the 19:33:24.686865Z crossing row; R1 words the figure "the 20:00Z
+   meter reading". Both are the same number: recomputed over the 2026-10-03 rows of
+   memory/runs/hermes_burn/usage.jsonl in ts order (1034 rows, day total $25.6218),
+   the crossing row (GALA_DD_SELFSTEAL_PRIME_JUDGMENT_20261003_STAGE_B,
+   2026-10-03T19:33:24.686865Z, cumulative $25.1134) is also the LAST row before
+   20:00Z, and the cumulative through the last pre-20:00Z row is $25.1134: zero
+   rows fall between the crossing and the 20:00Z fire. So the parable's "$25.11
+   cap" (parable line 13) names the 20:00Z meter reading; the cap is $25.
+
+2. R1's prompt amendment is impossible as written: the automations row is DELETED.
+   Read this sitting via sqlite3 over C:/Users/foste/.zcode/v2/tasks-index.sqlite:
+   the automations table holds 18 rows, ZERO matching automation_id LIKE
+   '%b1ce1342%'. Only the runs survive: automation_runs holds 43 rows for
+   automation-b1ce1342-e449-4b33-b041-f8fbf4f69b0c, first scheduled
+   2026-10-03T13:00:00Z outcome failed (section 3's first fire), 42 succeeded, last
+   scheduled 2026-10-05T07:00:00Z; the unreceipted ~2026-10-05 deletion is already
+   on record (corpus/steal/MASTER_MICKEY17_V2.md:228). There is no live prompt to
+   amend, so the gate the amended step 1 was to carry is banked HERE, for any
+   re-created arena cron to load: gate on the arena-family ids only (TAVERN / DND0
+   / CAMP), summing cost_usd over the day's rows whose id carries that family
+   prefix against the $25 cap, NOT the whole-account whole-day sum. Why it matters,
+   this sitting's day-03 recompute by id family: the whole-day sum crossed $25 at
+   19:33:24Z on a GALA_DD id (not an arena-family id) while the arena family closed
+   the day at $17.2119 (TAVERN $16.2003 + DND0 $0.7903 + CAMP $0.2213) of the
+   $25.6218 whole-account total: the old gate stopped arena play for the whole
+   account's spend.
+
+[end of section 7]
+PASS | section 7 present on disk | bytes=2445
+PASS | section 7 em-dash count is 0 | count=0
+PASS | section 7 names '$25.1134' | 
+PASS | section 7 names '$17.2119' | 
+PASS | section 7 names 'TAVERN / DND0' | 
+PASS | section 7 names '$25.6218' | 
+PASS | section 7 names '$25.11' | 
+PASS | section 7 names 'GALA_DD_SELFSTEAL_PRIME_JUDGMENT_20261003_STAGE_B' | 
+PASS | section 7 names '2026-10-05T07:00:00Z' | 
+PASS | section 7 names 'the cap is $25' | 
+
+== CHECK 5: parable byte-untouched, only the erratum modified ==
+git status --porcelain output:
+M watch/inbox/PARABLE_ERRATUM_20261004.md
+PASS | parable has no modified-status git line | []
+PASS | erratum shows as modified | 
+
+BATTERY_RESULT: PASS

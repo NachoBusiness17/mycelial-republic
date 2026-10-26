@@ -1,0 +1,74 @@
+=== render-pipe finish-line checks (2026-09-29, lane render-pipe division B) ===
+
+### CHECK 1: live build in every mode (probe: watch/inbox/gala_20260925/wave5-repair/lanes/render-pipe.probe.py)
+$ .venv/Scripts/python.exe watch/inbox/gala_20260925/wave5-repair/lanes/render-pipe.probe.py
+janitor  len=  4251 budget=  4800 fits=True clipped=False directives_section=True laws_section=True law_body=True doctrine_section=True objective_section=True task_brief=True
+route    len=  5505 budget=  5800 fits=True clipped=False directives_section=True laws_section=True law_body=True doctrine_section=True objective_section=True task_brief=True
+build    len=  7150 budget=  7400 fits=True clipped=False directives_section=True laws_section=True law_body=True doctrine_section=True objective_section=True task_brief=True
+audit    len=  7029 budget=  7500 fits=True clipped=False directives_section=True laws_section=True law_body=True doctrine_section=True objective_section=True task_brief=True
+plan     len= 10283 budget= 11000 fits=True clipped=False directives_section=True laws_section=True law_body=True doctrine_section=True objective_section=True task_brief=True
+full     len=  6883 budget=  7200 fits=True clipped=False directives_section=True laws_section=True law_body=True doctrine_section=True objective_section=True task_brief=True
+janitor_smaller_than_full: True
+ALL MODES PASS: True
+exit=0
+
+### CHECK 2: targeted pytest on the context pack tests (every test file importing context_pack, plus new delivery pins)
+$ .venv/Scripts/python.exe -m pytest tests/test_context_pack_delivery.py tests/test_context_pack_quantized_laws.py tests/test_pack_modes_steward.py tests/test_dirac_loop.py tests/test_context_freeze.py tests/test_mirror_voice_pack.py tests/test_census_liveness.py tests/test_coordination.py tests/test_dashboard_plugin.py tests/test_v3_modules.py tests/test_write_strip.py -q
+........................................................................ [ 80%]
+..................                                                       [100%]
+============================== warnings summary ===============================
+tests/test_write_strip.py::test_flag_wired_through_cli_parsers
+  C:\Users\foste\Documents\projects\local_sovereign_agent\main.py:2450: DeprecationWarning: invalid escape sequence '\$'
+    print(f"🤖 Ghost ({provider}/{model}, \${cost}): {q[:100]}{'...' if len(q) > 100 else ''}")
+
+tests/test_write_strip.py::test_flag_wired_through_cli_parsers
+  C:\Users\foste\Documents\projects\local_sovereign_agent\main.py:2510: DeprecationWarning: invalid escape sequence '\$'
+    print(f"🪲 SWARM PREVIEW: {result['tasks']} agents, \${result['total_cost']}")
+
+tests/test_write_strip.py::test_flag_wired_through_cli_parsers
+  C:\Users\foste\Documents\projects\local_sovereign_agent\main.py:2514: DeprecationWarning: invalid escape sequence '\$'
+    print(f"🪲 SWARM FIRED: {result['fired']} tasks, \${result['total_cost']}")
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+90 passed, 3 warnings in 123.68s (0:02:03)
+exit=0
+
+### CHECK 3: violation ratchet on changed files
+$ .venv/Scripts/python.exe tools/violation_ratchet.py check --changed
+RATCHET check: scope=37 changed files; hits=28; registered=24; NEW=4; expired-exceptions=0
+  NEW 84291bf5f2af246b file-too-long: mag/corpus_gap_research.py:663 — >400 lines
+  NEW 42b721c740d1abda file-too-long: mag/corpus_selfsteal.py:476 — >400 lines
+  NEW 8dce490bf896c42a file-too-long: mag/link_library.py:413 — >400 lines
+  NEW 2c7e16bf178da9d0 shell-true: tools/fossil_check.py:73 — subprocess shell=True
+  GROWTH claim 198edd83211b76e1: mag/shared_surface.py accepted at 426 lines, now 447 (+21) — re-audit or re-accept by name
+  GROWTH claim e066832a0b8edb5e: tools/stealth_driver.py accepted at 753 lines, now 1094 (+341) — re-audit or re-accept by name
+RATCHET: FAIL — run 'baseline-update' ONLY after a human/agent accepts the debt by name.
+exit=1
+
+### CHECK 3 addendum: scoped attribution of the --changed FAIL (lane ownership proof)
+The --changed scope is the whole shared working tree (37 files, many lanes' uncommitted work).
+All 4 NEW hits and both GROWTH claims name files this lane did not touch:
+  NEW: mag/corpus_gap_research.py, mag/corpus_selfsteal.py, mag/link_library.py, tools/fossil_check.py
+  GROWTH: mag/shared_surface.py, tools/stealth_driver.py
+Scoped scanner run over THIS lane's two files (violation_ratchet.violations_in, absolute paths):
+$ .venv/Scripts/python.exe -c "... violations_in(mag/context_pack.py); violations_in(tests/test_context_pack_delivery.py) ..."
+VIOL file-too-long mag/context_pack.py:1456 >400 lines -> REGISTERED
+VIOL except-pass mag/context_pack.py:579 silent except ...: pass -> REGISTERED
+VIOL except-pass mag/context_pack.py:599 silent except ...: pass -> REGISTERED
+VIOL except-pass mag/context_pack.py:829 silent except ...: pass -> REGISTERED
+VIOL except-pass mag/context_pack.py:849 silent except ...: pass -> REGISTERED
+VIOL except-pass mag/context_pack.py:892 silent except ...: pass -> REGISTERED
+VIOL except-pass mag/context_pack.py:695 silent except ...: pass -> REGISTERED
+VIOL except-pass mag/context_pack.py:866 silent except ...: pass -> REGISTERED
+VIOL except-pass mag/context_pack.py:874 silent except ...: pass -> REGISTERED
+total violations in my two files: 9
+lane NEW violations: 0 (all registered baseline debt predating this lane)
+exit=0
+
+### CHECK 4: dash + nonascii scan on this lane's record files
+$ .venv/Scripts/python.exe -c "count chr(0x2014)/chr(0x2013)/nonascii over receipt + lane json"
+watch/inbox/wave5_repair/render-pipe.md em: 0 en: 0 nonascii: 0
+watch/inbox/gala_20260925/wave5-repair/lanes/render-pipe.json em: 0 en: 0 nonascii: 0
+exit=0
+
+Code files (disclosed, not record documents): mag/context_pack.py em=59 (HEAD pre-edit baseline em=54; the file's house style puts em dashes in rendered section-header strings, which the test pins must quote verbatim); tests/test_context_pack_delivery.py em=7 (pinned header strings); render-pipe.probe.py em=0.

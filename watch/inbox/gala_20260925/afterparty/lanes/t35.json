@@ -1,0 +1,15 @@
+{
+  "gopher": "t35",
+  "item": "map WAVE zones to generator_region_spheres keys; zoneAlliance gates zone access or buffs",
+  "ok": true,
+  "note": "Spec first in WORLDGEN_MINE.md law 4 (t35 FOLDED line). New generated shared/RegionSpheres.luau (11 generator_region_spheres rows verbatim via gen_df_luau_data.py); new server/ZoneGate.luau: authored join of all 11 WAVE zones to 10 region keys (NONE never joined, empty row would silence the gate), player sphere drawn once per soul from the 130 via SeedRng(UserId), portal Touched asks portalGate before the pivot. Gating shape: allied = open + 1 VirtueMark per zone per 300s; independent = open, no effect; opposed = locked door, decided in allianceFor but NOT branched as code because derived data gives zero opposed outcomes (dead branch = fallback creep). Bonus catch: t41's gen_worldgen_spheres.py splice dropped the newline after its END marker, commenting out Worldgen.SPHERES = SPHERES (nil export); fixed the tool with receipt, reran, assignment restored.",
+  "checks": [
+    "gen_df_luau_data.py rerun: DfGoods/RcpData/SphereKinship byte-identical, RegionSpheres.luau new (11 rows)",
+    "gen_worldgen_spheres.py newline bug found+fixed; Worldgen.SPHERES assignment back on its own line, markers intact",
+    "luau_lint: ZoneGate/init.server/RegionSpheres/Worldgen clean; 3 pre-existing zones_extra findings untouched (other lanes)",
+    "dash scan U+2010..2015: touched filed text clean; pre-existing dashes remain only in old headers not authored by t35",
+    "derived simulation over 130 spheres x 11 zones: 178 allied / 1252 independent / 0 opposed; per-zone allied souls 15..24",
+    "luau-lsp not installed; verify = module read + luau_lint + simulation; mountain_check not run (shared), per orders"
+  ],
+  "next_steal": "opposed-region lock: ZoneGate.allianceFor already returns opposed and init.server honors false, so the steal is a sourced aligned generator_region_spheres row (mine has none today) plus a refusal test; second pick: client portal-ring tint by alliance once a UI-law check passes"
+}

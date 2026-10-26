@@ -1,0 +1,9 @@
+# garden-v1-A1-sonnet55-B3 (anthropic/claude-sonnet-5.5 @ nous, turn 1, channel: content)
+
+IMPROVEMENT 1: The loop has no spend breaker. It exits only when the STOP file appears, so nothing enforces the $145 stop and the driver keeps paying for asks until a human notices | EVIDENCE: scripts/descent_driver.sh:13 (and :19, the paid call made with no ledger check) | FIX: Before each hermes_burn.py call, sum cost_usd in memory/runs/hermes_burn/usage.jsonl and, if it is at or above 145, `touch "$STOP"` and break.
+
+IMPROVEMENT 2: The pending-items handoff loses work. The `mv` runs unconditionally after ds_workhorse, so a failed run is archived as "last" and the next batch overwrites it. Items a seat appends between the run and the `mv` are renamed away unprocessed | EVIDENCE: scripts/descent_driver.sh:21-25 | FIX: Atomically `mv` pending_items.jsonl to a unique claimed name before the run, then move it to done only if ds_workhorse exits 0, otherwise to a .failed name.
+
+IMPROVEMENT 3: The loop ignores exit codes, has no timeout and has no per-queue failure memory. A failing or refusing ask with no output is retried every 45s forever, which is the re-burn pattern the board admits to. A hung python call stalls the loop, and the BEAT is written at the top of the cycle (before any work), so it still looks alive | EVIDENCE: scripts/descent_driver.sh:16,19,27 | FIX: Wrap each call in `timeout`, capture `$?`, and after N consecutive failures for a queue dir write a .quarantine marker that the loop skips. Also write the BEAT after the work completes.
+
+DIFFERENT-BUILD: I would replace the blind sleep loop with a ledger-aware scheduler. It would take a lock, claim work atomically, and enforce per-item retry budgets and a hard dollar cap before every paid call. Failures would go to an explicit dead-letter queue instead of being re-attempted by directory scan. Safety would then come from the code, not from operator flags.

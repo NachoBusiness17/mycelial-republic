@@ -1,0 +1,234 @@
+=== [1] pytest tests/test_percolator_candidates.py tests/test_percolator_z15.py (new path + Z15 regression) ===
+$ .venv/Scripts/python.exe -m pytest tests/test_percolator_candidates.py tests/test_percolator_z15.py -q
+NOTE: first run failed test_empty_claim_counts_as_no_signal (test asserted n_rows==0; n_rows counts rows seen=2). Test assertion fixed, rerun below.
+......................                                                   [100%]
+22 passed in 1.11s
+exit=0
+
+=== [2] violation ratchet (code touched under mag/) ===
+$ .venv/Scripts/python.exe tools/violation_ratchet.py check --changed
+RATCHET check: scope=16 changed files; hits=5; registered=2; NEW=3; expired-exceptions=0
+  NEW 9157b34d37bf1183 file-too-long: tools/field_experiment.py:637 — >400 lines
+  NEW 013cbb63c8c4912e except-pass: tools/hermes_burn.py:393 — silent except ...: pass
+  NEW ca9a6d062eece79f file-too-long: tools/model_garden.py:446 — >400 lines
+  GROWTH claim 5f4392509fdf74f1: mag/percolator.py accepted at 580 lines, now 738 (+158) — re-audit or re-accept by name
+RATCHET: FAIL — run 'baseline-update' ONLY after a human/agent accepts the debt by name.
+exit=1
+
+=== [2] violation ratchet (code touched under mag/) ===
+$ .venv/Scripts/python.exe tools/violation_ratchet.py check --changed  (run 1)
+RATCHET check: scope=16 changed files; hits=5; registered=2; NEW=3; expired-exceptions=0
+  NEW 9157b34d37bf1183 file-too-long: tools/field_experiment.py:637 — >400 lines
+  NEW 013cbb63c8c4912e except-pass: tools/hermes_burn.py:393 — silent except ...: pass
+  NEW ca9a6d062eece79f file-too-long: tools/model_garden.py:446 — >400 lines
+  GROWTH claim 5f4392509fdf74f1: mag/percolator.py accepted at 580 lines, now 738 (+158) — re-audit or re-accept by name
+RATCHET: FAIL — run 'baseline-update' ONLY after a human/agent accepts the debt by name.
+exit=1
+
+INCIDENT (record law, honesty about state changes): an exploratory
+'baseline-update --help' to read the CLI EXECUTED the bulk update (known filed wart:
+a48c38543 'baseline-update ignores unknown flags; --help EXECUTES'). It accepted 3 FOREIGN
+debts by=operator (field_experiment.py 637L, hermes_burn.py:393 except-pass, model_garden.py 446L
+- all staged tools/ work of OTHER concurrent lanes) and did NOT touch the percolator GROWTH row.
+This lane owns none of those rows; bulk acceptance under a false 'operator' attribution was
+reverted byte-exact: git checkout -- configs/violation_baseline.json (pre-check: diff vs HEAD was
+exactly 3 added claims + updated stamp, 27 insertions).
+
+$ git diff --stat -- configs/violation_baseline.json  (post-revert, expect empty)
+exit=0 (empty diff above = revert byte-exact)
+
+$ .venv/Scripts/python.exe tools/violation_ratchet.py check --changed  (run 2, post-revert, THE cited exit)
+RATCHET check: scope=16 changed files; hits=5; registered=2; NEW=3; expired-exceptions=0
+  NEW 9157b34d37bf1183 file-too-long: tools/field_experiment.py:637 — >400 lines
+  NEW 013cbb63c8c4912e except-pass: tools/hermes_burn.py:393 — silent except ...: pass
+  NEW ca9a6d062eece79f file-too-long: tools/model_garden.py:446 — >400 lines
+  GROWTH claim 5f4392509fdf74f1: mag/percolator.py accepted at 580 lines, now 738 (+158) — re-audit or re-accept by name
+RATCHET: FAIL — run 'baseline-update' ONLY after a human/agent accepts the debt by name.
+exit=1
+
+READ OF THE EXIT (tools/violation_ratchet.py:277-279): exit 1 fires only on NEW/expired rows.
+All 3 NEW rows are tools/ files this lane never touched (foreign staged work). The mag/percolator.py
+GROWTH line (:274-276) is a ledger fact, not a blocker. This lane's growth (+158) is left for
+named re-audit or re-acceptance at push time; bulk baseline-update is per-file-unfilterable so a
+targeted named acceptance of only mag/percolator.py is impossible today without accepting foreign debt.
+
+=== [3] LIVE ingest run (GAP_REGISTER rank 6: 'run once over' both mine files) ===
+$ sha256sum memory/percolator/invariants.json memory/percolator/explore.jsonl  (BEFORE)
+37bca85b6ec54ed3a201c19dee63ce1cdf222ed98c287e923074f2bcfb6ef8e8 *memory/percolator/invariants.json
+2ad2b84b46a7c07da3c1b2b9389e5d4fcd9beb43c46f58c06791654b0f5961b9 *memory/percolator/explore.jsonl
+
+$ .venv/Scripts/python.exe -m mag.percolator --candidates "watch/inbox/frontier_olm_*/percolator_candidates.jsonl"  (run 1)
+{
+  "ok": true,
+  "schema": "percolator.v1",
+  "domain": "frontier_mine",
+  "n_files": 3,
+  "files": [
+    {
+      "file": "watch\\inbox\\frontier_olm_2026-09-30\\percolator_candidates.jsonl",
+      "rows": 6,
+      "new": 6,
+      "dupe": 0
+    },
+    {
+      "file": "watch\\inbox\\frontier_olm_2026-10-01\\percolator_candidates.jsonl",
+      "rows": 5,
+      "new": 5,
+      "dupe": 0
+    },
+    {
+      "file": "watch\\inbox\\frontier_olm_20260928\\percolator_candidates.jsonl",
+      "rows": 5,
+      "new": 5,
+      "dupe": 0
+    }
+  ],
+  "unmatched": [],
+  "n_rows": 16,
+  "n_candidate": 16,
+  "n_no_signal": 0,
+  "n_dupe": 0,
+  "n_stripped_sentences": 22,
+  "n_promoted": 0,
+  "promote_gate": "alpha-budget: ingestion never compiles invariants; promotion happens only via percolate() on reviewed signal",
+  "review_pass": "memory/percolator/candidates.jsonl"
+}
+exit=0
+
+$ same command  (run 2, idempotence probe)
+  "n_files": 3,
+  "n_rows": 16,
+  "n_candidate": 0,
+  "n_dupe": 16,
+
+$ sha256sum memory/percolator/invariants.json  (AFTER - must equal BEFORE: promote gate closed)
+37bca85b6ec54ed3a201c19dee63ce1cdf222ed98c287e923074f2bcfb6ef8e8 *memory/percolator/invariants.json
+PROMOTE-GATE BYTE-CHECK: PASS (invariants.json byte-identical across ingest)
+
+$ review pass contents + real-claim byte probe
+16 memory/percolator/candidates.jsonl
+1
+(count above must be >=1: the 10-01 mine's row-0 claim reached the review pass)
+
+$ noise file landed by the live run
+44 memory/ghost/noise/frontier_mine.jsonl
+
+=== [4] defect caught by the live run: relative-glob 'file' field leaked native backslashes ===
+(candidates.jsonl rows carried watch\inbox\... => rerun dedupe keys would miss => duplicates.
+ Fix: _expand_candidate_paths stores RESOLVED paths so ingest relativizes against ROOT.)
+ Reset of this lane's own live-run artifacts (candidates.jsonl + noise/frontier_mine.jsonl did not
+ exist before run 1; deleting only lane-created bytes, registry untouched), then clean re-ingest:
+$ .venv/Scripts/python.exe -m pytest tests/test_percolator_candidates.py tests/test_percolator_z15.py -q
+.......................                                                  [100%]
+23 passed in 1.45s
+exit=0
+
+$ sha256sum memory/percolator/invariants.json  (BEFORE clean ingest)
+37bca85b6ec54ed3a201c19dee63ce1cdf222ed98c287e923074f2bcfb6ef8e8 *memory/percolator/invariants.json
+
+$ .venv/Scripts/python.exe -m mag.percolator --candidates "watch/inbox/frontier_olm_*/percolator_candidates.jsonl"  (CLEAN run)
+{
+  "ok": true,
+  "schema": "percolator.v1",
+  "domain": "frontier_mine",
+  "n_files": 3,
+  "files": [
+    {
+      "file": "watch/inbox/frontier_olm_2026-09-30/percolator_candidates.jsonl",
+      "rows": 6,
+      "new": 6,
+      "dupe": 0
+    },
+    {
+      "file": "watch/inbox/frontier_olm_2026-10-01/percolator_candidates.jsonl",
+      "rows": 5,
+      "new": 5,
+      "dupe": 0
+    },
+    {
+      "file": "watch/inbox/frontier_olm_20260928/percolator_candidates.jsonl",
+      "rows": 5,
+      "new": 5,
+      "dupe": 0
+    }
+  ],
+  "unmatched": [],
+  "n_rows": 16,
+  "n_candidate": 16,
+  "n_no_signal": 0,
+  "n_dupe": 0,
+  "n_stripped_sentences": 22,
+  "n_promoted": 0,
+  "promote_gate": "alpha-budget: ingestion never compiles invariants; promotion happens only via percolate() on reviewed signal",
+  "review_pass": "memory/percolator/candidates.jsonl"
+}
+exit=0
+
+$ idempotence rerun
+  "n_files": 3,
+  "n_rows": 16,
+  "n_candidate": 0,
+  "n_dupe": 16,
+
+$ sha256sum memory/percolator/invariants.json  (AFTER clean ingest - must equal above)
+37bca85b6ec54ed3a201c19dee63ce1cdf222ed98c287e923074f2bcfb6ef8e8 *memory/percolator/invariants.json
+
+$ file-field shape + real-claim probe + noise landing
+      6 "file": "watch/inbox/frontier_olm_2026-09-30/percolator_candidates.jsonl"
+      5 "file": "watch/inbox/frontier_olm_2026-10-01/percolator_candidates.jsonl"
+      5 "file": "watch/inbox/frontier_olm_20260928/percolator_candidates.jsonl"
+1
+   44 memory/ghost/noise/frontier_mine.jsonl
+   16 memory/percolator/candidates.jsonl
+   60 total
+
+=== [5] second live-run defect: rerun re-stripped noise BEFORE the dedupe skip ===
+(idempotence probe showed frontier_mine.jsonl at 44 rows = 22 + 22. Fix: dedupe gates every
+ disk write; partition is pure and runs before the skip, append_noise after it. New regression
+ test test_rerun_does_not_double_strip_noise.) Lane-created artifacts reset again, final state:
+
+$ .venv/Scripts/python.exe -m pytest tests/test_percolator_candidates.py tests/test_percolator_z15.py -q  (FINAL)
+........................                                                 [100%]
+24 passed in 1.08s
+exit=0
+
+$ sha256sum memory/percolator/invariants.json  (BEFORE final ingest)
+37bca85b6ec54ed3a201c19dee63ce1cdf222ed98c287e923074f2bcfb6ef8e8 *memory/percolator/invariants.json
+
+$ .venv/Scripts/python.exe -m mag.percolator --candidates "watch/inbox/frontier_olm_*/percolator_candidates.jsonl"  (FINAL ingest)
+  "ok": true,
+  "n_files": 3,
+  "n_rows": 16,
+  "n_candidate": 16,
+  "n_no_signal": 0,
+  "n_dupe": 0,
+  "n_stripped_sentences": 22,
+  "n_promoted": 0,
+  "promote_gate": "alpha-budget: ingestion never compiles invariants; promotion happens only via percolate() on reviewed signal",
+  "review_pass": "memory/percolator/candidates.jsonl"
+
+$ idempotence rerun (final)
+  "n_candidate": 0,
+  "n_dupe": 16,
+  "n_stripped_sentences": 0,
+
+$ sha256sum memory/percolator/invariants.json  (AFTER final ingest)
+37bca85b6ec54ed3a201c19dee63ce1cdf222ed98c287e923074f2bcfb6ef8e8 *memory/percolator/invariants.json
+
+$ final surfaces
+   16 memory/percolator/candidates.jsonl
+   22 memory/ghost/noise/frontier_mine.jsonl
+   38 total
+1
+      6 "file": "watch/inbox/frontier_olm_2026-09-30/percolator_candidates.jsonl"
+      5 "file": "watch/inbox/frontier_olm_2026-10-01/percolator_candidates.jsonl"
+      5 "file": "watch/inbox/frontier_olm_20260928/percolator_candidates.jsonl"
+
+$ .venv/Scripts/python.exe tools/violation_ratchet.py check --changed  (FINAL, post all fixes)
+RATCHET check: scope=16 changed files; hits=5; registered=2; NEW=3; expired-exceptions=0
+  NEW 9157b34d37bf1183 file-too-long: tools/field_experiment.py:637 — >400 lines
+  NEW 013cbb63c8c4912e except-pass: tools/hermes_burn.py:393 — silent except ...: pass
+  NEW ca9a6d062eece79f file-too-long: tools/model_garden.py:446 — >400 lines
+  GROWTH claim 5f4392509fdf74f1: mag/percolator.py accepted at 580 lines, now 745 (+165) — re-audit or re-accept by name
+RATCHET: FAIL — run 'baseline-update' ONLY after a human/agent accepts the debt by name.
+exit=1

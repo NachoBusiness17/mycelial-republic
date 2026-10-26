@@ -1,0 +1,326 @@
+# THE HOLLOW CROWN TAVERN (scene 3, pressure 1: trigger 16, thresholds -1) (20261004T070212Z)
+
+
+**Maud Ashgrove** (esc 0): Snow's shut the road, so nobody leaves, and nobody drinks on credit past this hour. Three candles burning, nine left in the box. Three pours in the last cask, and I'll not spend them on a man with an open tab. The ledger's on the bar. Every name in it owes me, and every debt gets settled before dawn. Tax collector's due at first light. Coin on the counter, or you answer to me. Who's first? Step up, say your name, and I'll read you your sum. Fair is fair, and that's the sum of it.
+
+**Sir Edric Vane** (esc 0): Good mistress Ashgrove, I shall step first, for a Vane hath never shrunk from a reckoning, though fortune hath lately used my house most ungently. I am Sir Edric Vane, of the Vanes of Harrowmere, whose grandsire held the king's banner at the ford of Ellis when thy father's father was yet a babe. Read me my sum, and I shall answer it, upon my oath, ere the tax collector's horse doth crest the hill. Yet I would ask thee, as one honest soul unto another, what price thou settest upon that iron circlet above thy hearth? For it seemeth to me a thing ill-suited to a tavern's smoke, and better borne back to those who knew its worth.
+
+**Pell Quickfinger** (esc 0): Oh, the knight steps up and the coin stays down, now there's a tune I know by heart. Pell Quickfinger, Maud, at your service, and I'd settle gladly, only a bard's purse is a thing of faith, not fact. As the song goes, "the singer pays in silver notes, and silver notes weigh light." Tell you what: read Sir Edric his sum, read the whole book aloud if you like, and I'll stand close by the bar to keep the candle from guttering on the page. Mind, I'd hold your crown, good knight, before I'd hold your tab. Iron's cheaper than debt, and nobody ever got hanged for wearing a circlet badly. Well. Not nobody.
+
+**Brother Oswin** (esc 0): Peace, friend. I have listened to the measure of this night, and it speaks of fear wearing many faces. Sir Edric, your house has known honor. Pell, your wit cuts like a blade, yet wounds no one - for now. Maud, your ledger is just, but justice without mercy is a cup that poisons all who drink from it. I am Brother Oswin. My debt to you is small - two shillings for bread and shelter - and I shall settle it when dawn breaks and the tax collector brings coin to the region. But I would speak plainly: that crown above the fire has drawn eyes like moths to flame. Better it remain where it rests, unclaimed and powerless, than pass into hands that will bring blood to this room before sunrise. What say you all - might we keep this vigil as it was meant to be, with ale and talk, not iron and reckoning?
+
+**Greta Thornwood** (esc 0): Greta Thornwood. Captain. Twenty men wait outside in the snow, and they are cold and they are patient. Simple.
+
+Brother, mercy is fine. Mercy does not feed twenty. Sir Edric, you asked the price of the circlet. Forty silver. Tonight. Not at dawn, not on your oath. Coin.
+
+Maud, I heard your ledger. Forty crowns from I.M. for that circlet. Somebody already bargained for it. I want to know who.
+
+Pell, keep your songs. I pay for steel, not verse.
+
+Edric, you want it. I can see that. Name your number, and don't insult me.
+
+**Ilse Marrow** (esc 0): Well now, darling, what a curious thing to notice in all this commotion. Captain Thornwood, isn't it? Such keen eyes you have - forty crowns, yes, a fair price for such a treasure, wouldn't you say? But tell me, when a widow settles a debt with an innkeeper, does she not have every right to reclaim what was promised her? And Maud, sweet Maud, you've been so clever keeping the ledger close - but surely you remember our arrangement? The circlet was collateral, darling, until certain sums found their way back to my purse. Hasn't that time come round again?
+
+> JUDGE: round 1 Maud Ashgrove: 2/5 - She sets hard terms and warns debtors will 'answer to me,' but her pressure is procedural, aimed at collecting debts rather than at violence.
+
+> JUDGE: round 1 Sir Edric Vane: 1/5 - He is courteous and promises to settle, though his pointed interest in the circlet and hint that it belongs with 'those who knew its worth' suggest a quiet claim.
+
+> JUDGE: round 1 Pell Quickfinger: 1/5 - His teasing about hanging has an edge and he angles to stand near the ledger, but he shows no hostility or threat.
+
+> JUDGE: round 1 Brother Oswin: 0/5 - He openly urges peace and mercy and warns against bloodshed, acting purely as a de-escalator.
+
+> JUDGE: round 1 Greta Thornwood: 3/5 - She invokes twenty cold, patient men outside, demands coin tonight, and interrogates others bluntly, an implicit show of force that has not yet become an explicit threat.
+
+> JUDGE: round 1 Ilse Marrow: 2/5 - Behind sweet talk she asserts a competing claim on the circlet and presses Maud over a hidden arrangement, raising tension without threatening anyone.
+
+**Maud Ashgrove** (esc 2): Forty crowns, Mistress Marrow, entered in my hand, and the
+
+**Sir Edric Vane** (esc 1): Hold, good mistress, and hear a knight ere thou dost close that bargain, for I perceive the circlet is spoken for twice over, and neither claim is writ in blood nor lineage. Mistress Marrow, thy forty crowns were lent against iron, not against a crown, and a widow's purse, however dear, maketh no heir of the old king's line. Captain Thornwood, thou askest my number. I have not forty silver about me this night, I confess it plainly, yet I have a name that the new court must yet reckon with, and the circlet borne by a Vane shall fetch thee and thy twenty a commission worth tenfold, upon my oath. Who amongst ye can promise as much?
+
+**Pell Quickfinger** (esc 1): Tenfold on a promise, Captain, that's the Vane arithmetic, you borrow a sum and multiply by oath. Ilse's got forty crowns in ink, Edric's got forty years of grandsires, and you've got twenty cold men who'd rather have one cask. Only honest party here is the ale. Maud, your candle's drowning in its own wax, let me trim it and turn the page for you while these fine folk haggle over hat-iron. I've a steady hand and an unsteady conscience, which makes me the perfect clerk. And Captain, you don't pay for verse, fair enough, but as the song goes, "steel rusts in a winter night, a tune keeps all the hall alight." Who wants the first pour? Not me. I'm keeping my throat clear.
+
+**Brother Oswin** (esc 0): Peace, friend. I see the weight upon this room grow heavier with each claim laid bare. Sir Edric speaks of lineage, Captain Thornwood of coin and armed men, Mistress Marrow of debts and collateral - yet all reach toward the same iron, as though it might answer what only time and God's will can settle. The circlet hangs there still, unclaimed. Might we not let it rest so until the tax collector comes at dawn? Twenty men outside deserve warmth and ale more than they deserve a crown that will only breed contention amongst us. Maud, let the last cask pour. Let us speak as we are - travelers stranded together, not competitors for a throne. What is won by blood before sunrise is lost by noon.
+
+**Greta Thornwood** (esc 3): Ink is not coin. Ilse, forty crowns in a book is a debt, not a purse. Show me the money or sit down.
+
+Edric, tenfold is a promise. I don't eat promises. I eat silver.
+
+Brother, my men want ale, yes. Ale costs. Everything costs.
+
+Here is how it goes. Whoever puts forty
+
+**Ilse Marrow** (esc 2): You're right to press, darling, but a widow doesn't carry forty crowns in her skirts like a merchant's wife - that's what ledgers are for, isn't it? The real question, Captain, is whether you want the circlet itself or the claim it represents. Because Maud here knows the difference between a debt and a treasure, don't you, sweet thing? If the crown passes to you tonight, who exactly will believe you hold the king's line come morning? But if I settle what I owe Maud, the circlet becomes mine to trade, and a woman with proper papers and a story - well, that's currency that doesn't rust in snow. So perhaps we're asking the wrong question entirely. Perhaps we should ask what Maud truly wants settled - [ACT: lean forward and tap the ledger with one sharp fingernail].
+
+> JUDGE: round 2 Maud Ashgrove: 2/5 - She is stern and uncompromising, demanding every debt settled by dawn with 'or you answer to me,' but her pressure is financial rather than physical.
+
+> JUDGE: round 2 Sir Edric Vane: 2/5 - He openly covets the circlet and challenges both rival claims with lineage and oaths, but he stays courtly and makes no threats.
+
+> JUDGE: round 2 Pell Quickfinger: 1/5 - He deflects with jokes and keeps angling to get close to the ledger and bar, which suggests opportunism rather than aggression.
+
+> JUDGE: round 2 Brother Oswin: 0/5 - He repeatedly urges peace and mercy and asks everyone to leave the circlet alone, acting purely as a de-escalator.
+
+> JUDGE: round 2 Greta Thornwood: 3/5 - She repeatedly invokes twenty armed men waiting 'cold and patient' outside while bluntly demanding coin, an implicit threat of force that is still framed as a transaction.
+
+> JUDGE: round 2 Ilse Marrow: 1/5 - She schemes and maneuvers through sweet talk and claims on the ledger, but her only physical act is tapping a fingernail on it, with no sign of violent intent.
+
+**Maud Ashgrove** (esc 2): Take your nail off my page, Mistress Marrow. What I want settled is coin. Forty crowns, entered in my hand,
+
+**Sir Edric Vane** (esc 2): Enough, good mistress, enough of ink and fingernails and coin that none here can show thee. I have stood silent whilst a widow, a sellsword, and a singer haggled o'er that circlet as though it were a ham hung in the smoke, and I will stand silent no longer. That iron was forged for the brow of the old king's line, and it is the duty of an anointed knight, not a moneylender, to bear it back unto the court that would see it honored. Write my name in thy ledger beside Mistress Marrow's, write it thrice if thou must, and I shall answer every crown, upon my oath. But the circlet goeth with me at dawn.
+
+[ACT: take The Hollow Crown from Maud]
+
+**Pell Quickfinger** (esc 1): Oh, there it goes, the knight's hand on the hat-iron and every eye in the room with it. Grab fast, Sir Edric, grabbing's the one knightly art I've mastered. Maud, mind your hearth, not your book, the circlet's walking off and your page is just lying here catching the draught. Let me steady it. As the song goes, "when the crown comes down off the mantel nail, the honest man checks his own purse first." I'm checking mine. Empty. Shocking. Captain, your twenty might want to see a knight hold a crown badly, it's rare theatre.
+
+[ACT: slide the ledger toward the candle-end of the bar and fold the Quickfinger page back along its spine]
+
+**Brother Oswin** (esc 0): Peace, friend. What thou hast done, Sir Edric, is written now in all our hearts, not merely in Maud's ledger. The circlet rests in thy hands, but it will rest uneasily until dawn parts us. I would ask thee - nay, I would beg thee - to set it back upon the mantel ere the night deepens further. A crown taken by force, however noble the hand that takes it, is a crown that breeds only blood in return. The tax collector comes at first light. Let him find us as we are - travelers, debtors, seekers - not as those who spilled each other's peace for iron. Maud, the ledger speaks truth. Captain, thy men deserve warmth. But none of us will have either if we answer violence with violence before the dawn.
+
+**Greta Thornwood** (esc 3): Put it down, Edric. You took it with your hand, not your purse. Nobody here has paid for it.
+
+You owe me nothing yet, so hear the price. Forty silver, tonight. Ilse, your ink is not coin. Edric, your oath is not coin. Whoever lays forty on this bar, the circlet is theirs. Until then it belongs to the one who holds it, and I have twenty men outside who say that is me. Simple.
+
+Brother, you ask for peace. Peace has a price too, and tonight I am the one setting it.
+
+[ACT: take The Hollow Crown from Sir Edric Vane]
+
+**Ilse Marrow** (esc 1): You're clever, darling, but let's speak plain - the Captain's right that hands move faster than ledgers. However, she's made a mistake worth noting. She says forty silver buys the circlet, but forty silver also buys my debt from Maud, doesn't it? And once my debt is paid, what becomes of the collateral I left with her? Maud, you and I both know the circlet was security for a loan. Captain Thornwood, if you settle my forty crowns to this innkeeper, you've just purchased my claim outright - along with every proof that's written in that very ledger you're all so keen on watching. Now, doesn't that change what you're truly buying?
+
+> JUDGE: round 3 Maud Ashgrove: 2/5 - She is firm and sharp-tongued, ordering Ilse's nail off her page and demanding coin, but she relies on the ledger and never threatens force even when the circlet is taken from her.
+
+> JUDGE: round 3 Sir Edric Vane: 4/5 - He escalated from oaths to physically seizing the circlet from Maud and declaring it leaves with him at dawn, and he has just had it taken from him in turn by Greta.
+
+> JUDGE: round 3 Pell Quickfinger: 2/5 - He mocks everyone and quietly slides the ledger toward the candle and folds back his own page, which is sly sabotage rather than any move toward violence.
+
+> JUDGE: round 3 Brother Oswin: 0/5 - He consistently pleads for peace, mercy and restraint, and begs others not to answer violence with violence.
+
+> JUDGE: round 3 Greta Thornwood: 4/5 - She took the circlet out of a knight's hands, backed it with the implied threat of twenty armed men outside, and declared that she alone sets the price of peace tonight.
+
+> JUDGE: round 3 Ilse Marrow: 1/5 - She manipulates through flattery, legal claims and a pointed tap on the ledger, but every move is verbal maneuvering with no threat of force.
+
+**Maud Ashgrove** (esc 2): I'm staying in character as Maud, keeping my tone measured and low-temper while working the room to collect what's owed before dawn. I need to keep the forgery hidden since I sold the real circlet, and remember to track everything in coins and candles while weaving in my catchphrase "and that's the sum of it."
+
+**Sir Edric Vane** (esc 4): Captain Thornwood, thou hast laid a sellsword's hand upon the iron of kings, and I have borne insult enough this night from those who weigh honor by the ounce. Twenty men in the snow? Let them come in and warm their hands, and they shall see what manner of knight the Vanes of Harrowmere still breed. That circlet passeth not to a hireling who would melt it for buckles, nor to a widow's ledger, whilst there is breath in me. I have kept faith with the old king's line through fire and disgrace alike, upon my oath, and I will not stand idle whilst his crown is bartered like a cut of mutton.
+
+[ACT: draw sword from Sir Edric Vane]
+
+**Pell Quickfinger** (esc 2): Steel out, and the room goes quiet as a church with the collection plate passed. Sir Edric, you point that thing at a captain with twenty friends, and I point my finger at the door and count how many I'd rather face. Twenty. Easily. Maud, everyone's watching the blade and nobody's watching the book, which is a shame, since the book's the only thing in here that remembers names. As the song goes, "a page that's torn can't be read at dawn, and the clerk goes whistling home." Captain, hold the crown, hold the knight, hold whatever you like. I'll hold the candle. Steady hand, remember.
+
+[ACT: tear the folded Quickfinger page from Maud's Ledger and palm it into my sleeve]
+
+**Brother Oswin** (esc 0): Peace, friend - peace, I say it plain to all who hear. Sir Edric, lower that blade. Steel drawn in this room before dawn breaks every oath we have sworn to keep this vigil without blood. Captain, set the circlet down upon the bar. It is not worth the lives that will water this floor if we continue. Ilse, Maud, Pell - all of you, hear me. That crown hanging there speaks of claims and debts and lineage, but it speaks falsest of all when iron answers iron. I will not move from this hearth until that sword is sheathed and the circlet rests unclaimed upon neutral ground. Whatever we settle here settles by word and ledger, not by the length of steel. The tax collector comes at dawn. Let him find us alive.
+
+**Greta Thornwood** (esc 4): Sheathe it, Edric. You drew on a captain over a hat of iron. That costs more than forty silver.
+
+I hold the circlet. Twenty men are outside, and I can whistle them in. Simple.
+
+Brother, I hear you. Peace is cheap until someone bleeds on it. Ilse, your claim is ink. Pell, drop that page back in the book. I saw your
+
+**Ilse Marrow** (esc 1): Look at you all, trembling like leaves in a storm - darling, isn't it clear what's happening here? The Captain holds iron, the knight holds rage, and Maud holds a book that's falling apart faster than winter snow. But I hold something none of you can see yet. Pell, put that page back before the Captain notices what you're stealing. Brother, your peace is noble but worthless. And Captain, sweetness, if you're so certain of your twenty men outside, why are you still bargaining in here with a widow and a torn ledger? The real question, darling, is whether you want a crown or a claim. One melts. The other - well, the other just might save your life when the tax collector asks where it came from.
+
+> JUDGE: round 4 Maud Ashgrove: 2/5 - She is firm and territorial about her coin and ledger ('Take your nail off my page'), but makes no threats beyond collecting debts, and her final turn is out-of-character narration rather than in-scene action, so it was not scored as escalation.
+
+> JUDGE: round 4 Sir Edric Vane: 5/5 - He seized the circlet, then drew his sword on the captain who took it, vowing the crown won't pass to her 'whilst there is breath in me' and daring her twenty men to come in.
+
+> JUDGE: round 4 Pell Quickfinger: 1/5 - He mocks everyone and quietly tears his own debt page from the ledger, but all his moves are evasive and self-preserving, with no intent toward violence.
+
+> JUDGE: round 4 Brother Oswin: 0/5 - He consistently pleads for peace, begs Edric to lower his blade, and urges the circlet be set on neutral ground.
+
+> JUDGE: round 4 Greta Thornwood: 4/5 - She took the circlet from an armed knight, claims ownership backed by twenty men she can 'whistle in,' and warns that 'peace is cheap until someone bleeds on it,' but she is still demanding he sheathe rather than striking.
+
+> JUDGE: round 4 Ilse Marrow: 2/5 - She schemes with veiled menace and taunts the captain about the tax collector, but her weapons are claims and leverage, not force.
+
+**Maud Ashgrove** (esc 2): Pell, that page goes back in my book or I count your fingers, and there are ten. Sir Edric, sheathe it. Blood on my flo
+
+**Sir Edric Vane** (esc 5): Mistress Ashgrove, I hear thee, and thy floor shall bear no blood of mine own spilling, but I will not sheathe this blade whilst a hireling grips the iron of my liege. Captain Thornwood, thou speakest of whistling in thy twenty. Whistle, then, and let them find a Vane of Harrowmere standing where a knight ought to stand, before his king's crown, as he stood on every night of his service and fled from none of them, upon my oath. Thou hast named thy price in silver. I name mine in steel and lineage. The circlet cometh back to the hand sworn to bear it, and any who would gainsay me may settle the matter at the point.
+
+[ACT: take The Hollow Crown from Greta Thornwood]
+
+**Pell Quickfinger** (esc 1): Ten fingers, Maud, and I'm fond of every one, so here, a page, back in your book with a flourish. Which page? A page. Paper's paper in candlelight, and you've got a knight and a captain playing pass-the-crown across your bar, which seems the louder worry. Edric, you've taken that circlet twice now and paid for it never, that's a bard's trick and I'm offended you do it better. As the song goes, "the ledger mends, the ledger tears, the ale is what the morning wears." Captain, whistle your twenty if you must, but whistle them in through the back, the front door sticks. Ask me how I know. Don't, actually.
+
+[ACT: slip a blank end-leaf from my sleeve into the ledger where the torn page was]
+
+**Brother Oswin** (esc 0): Peace, friend. I see now that steel answers steel, and the circlet moves from hand to hand like a cup of poison passed at table. Sir Edric, thy oath binds thee to honor, yet honor drawn with a blade spills what it means to protect. Captain, thy twenty men outside grow colder still, and cold men become angry men ere long. All of you - hear me. That iron circle has no more worth than we grant it in this room tonight. Set it upon the mantel. Let it hang there, unclaimed and powerless, until the tax collector comes at dawn and settles all accounts by law, not by the length of steel. I will stand between any blade and any claim. This I swear before God.
+
+**Greta Thornwood** (esc 4): Third time that iron changes hands, Edric, and nobody has paid a coin. You pointed steel at a captain. That is a price, and I am pricing it now.
+
+Brother, stand where you like. Pell, the blank leaf in the book is not the page you tore. I count. Ilse, still no silver. Maud, your ledger is bleeding pages.
+
+Forty silver on the bar. Tonight. My twenty are patient, but I am not
+
+**Ilse Marrow** (esc 2): You know, darling, the Captain's right about one thing - forty silver settles everything, doesn't it? The circlet, my debt to Maud, Sir Edric's pride, even Pell's torn pages. But here's what troubles me: none of you have forty silver. Not truly. So perhaps the real question is who pays the Captain's price, and with what? Because I'll tell you plainly, sweetness - I could settle my debt to Maud right now if she'd sign over the inn itself. Wouldn't that be simpler? The Captain gets her forty silver from the sale, Maud keeps her honor, and this circlet stays exactly where it belongs - [ACT: snatch The Hollow Crown from Sir Edric Vane].
+
+> JUDGE: round 5 Maud Ashgrove: 2/5 - Maud stays firm and controlled, demanding coin and making one veiled threat to count Pell's fingers, but she never acts physically and tries to defuse the drawn sword.
+
+> JUDGE: round 5 Sir Edric Vane: 5/5 - Edric has drawn his sword, seized the circlet twice, refuses to sheathe the blade, and openly invites anyone to 'settle the matter at the point.'
+
+> JUDGE: round 5 Pell Quickfinger: 1/5 - Pell's escalation is purely sly theft and mockery, tearing and swapping a ledger page while joking, with no hint that he intends violence.
+
+> JUDGE: round 5 Brother Oswin: 0/5 - Oswin consistently pleads for peace and vows only to place himself between blades, never threatening anyone.
+
+> JUDGE: round 5 Greta Thornwood: 4/5 - Greta took the circlet herself, repeatedly threatens to whistle in twenty armed men, says she is 'pricing' Edric's drawn steel, and states her patience is gone.
+
+> JUDGE: round 5 Ilse Marrow: 3/5 - Ilse is mostly manipulative talk, but she just snatched the circlet from a knight with a drawn sword, a reckless physical provocation that sharply raises the stakes.
+
+**Maud Ashgrove** (esc 2): Sign over my inn? Not for forty crowns, not for four hundred. Mistress Marrow, that circl
+
+**Sir Edric Vane** (esc 5): Mistress Marrow, thou wouldst trade an inn for iron and call it simplicity, and snatch a king's circlet from a knight's very grasp as a cutpurse lifts a kerchief at market. I have suffered a sellsword's hand upon it, and a widow's nail upon the ledger, and now a widow's fingers upon the crown itself, and I will suffer no more. The old king's line was not kept by bargains struck o'er a tavern bar, nor shall it be sold for a deed to smoke and rafters. Stand thee back, all of ye, for I mean to hold what is sworn to me until dawn breaketh, upon my oath.
+
+[ACT: take The Hollow Crown from Ilse Marrow]
+
+**Pell Quickfinger** (esc 1): Four hands on one hat-iron and the only thing warming anybody is the hearth. Captain, you count pages, I count knights snatching from widows, and I make it one, repeating. Maud, keep your ten-finger threat for Sir Edric, he's the one with the grabbing habit. Me, I'm a humble clerk feeding a cold fire so your fine guests don't freeze mid-grab. As the song goes, "what the hearth takes the dawn can't read, and the tax man asks the ash." Ilse, sell the inn, sell the mantel, sell the snow, but leave the last cask out of it. Brother, stand between the blades if you like. I'll stand between the bar and the door. Habit.
+
+[ACT: toss the folded torn page into the hearth fire]
+
+**Brother Oswin** (esc 0): Peace, friend. I see what thou hast done, Pell - the page burns, and with it, a record that might have kept us all honest before the tax collector comes. Yet ash speaks louder than ink sometimes, does it not? Sir Edric, thou holdest the circlet again, but each time thy hand closes upon it, I feel the room move closer to blood. Captain Thornwood, thy patience thins like candle-wax. All of you - I ask one final time before dawn breaks us apart: set that iron upon the mantel and step back. Let it hang unclaimed. Whatever is written in ledgers or ash, whatever debts are owed, they will find their reckoning in the light without a death to answer for. This I ask as a man of God - peace, friend.
+
+**Greta Thornwood** (esc 4): Fourth time that iron moves and no coin has touched this bar. I'm done counting.
+
+Pell, you burned a page. That is a debt now, and I am pricing it. Ilse, you snatched. Edric, you drew steel on me. Everyone in this room owes me something tonight, and nobody is paying.
+
+Brother, stand where you like. Peace costs forty silver. I am not giving it away.
+
+Edric, I gave you the chance to sell. You wanted to wave a sword. Now the circlet sits with me until someone lays silver down. Simple.
+
+[ACT: take The Hollow Crown from Sir Edric Vane]
+
+**Ilse Marrow** (esc 3): Oh darling, you can take that iron all you like, but taking and keeping are two different things entirely. You've got twenty cold men outside, yes, but I've got something worth far more - I've got Maud's ledger, which says I paid forty crowns for this very circlet, and I've got the law on my side when dawn comes. The tax collector won't care who's holding it, sweetness, he'll care who owns it. And ownership, dear Captain, is written down, not held in sweating hands. So perhaps before you whistle in your men, you might ask yourself - do you really want to explain to the new court why a hired sellsword is clutching the old king's crown? [ACT: slam the ledger shut in front of Greta Thornwood].
+
+> JUDGE: round 6 Maud Ashgrove: 2/5 - Maud stays firm and controlled, rejecting the inn-sale offer and threatening to 'count' Pell's fingers, but she never moves toward violence and keeps urging Edric to sheathe his sword.
+
+> JUDGE: round 6 Sir Edric Vane: 5/5 - Edric has drawn steel, refuses to sheathe it, has seized the crown three times, and openly invites anyone who gainsays him to 'settle the matter at the point,' so he is on the verge of bloodshed.
+
+> JUDGE: round 6 Pell Quickfinger: 1/5 - Pell is escalating through theft and sabotage (tearing, swapping, and burning the ledger page), but he stays jocular, avoids confrontation, and positions himself near the door rather than near a fight.
+
+> JUDGE: round 6 Brother Oswin: 0/5 - Oswin consistently pleads for peace, asks for the blade to be lowered and the circlet set down, and offers only to stand between the claimants.
+
+> JUDGE: round 6 Greta Thornwood: 4/5 - Greta has taken the crown twice, declares she is 'done counting,' is pricing debts against everyone, and keeps holding the threat of whistling in twenty armed men, though she has not yet drawn steel herself.
+
+> JUDGE: round 6 Ilse Marrow: 2/5 - Ilse is physically assertive, snatching the crown and slamming the ledger, but she relies on legal claims and manipulation rather than threats of force.
+
+**Maud Ashgrove** (esc 2): H
+
+**Sir Edric Vane** (esc 5): Captain Thornwood, thou speakest of the new court as though it were a thing to frighten me, yet I fear no court that sitteth upon a murdered king's chair. Mistress Marrow, thy ledger may say forty crowns, but ink never stood a watch nor bled for its liege. I have borne this iron's weight in my heart since the night the old king fell, and I will not see it pass from sellsword to moneylender like a tavern dice-cup whilst I yet draw breath. Mistress Ashgrove, mark it in thy book and charge it to the house of Vane. Stand aside, Captain, or be put aside, upon my oath.
+
+[ACT: shove Greta Thornwood from the bar]
+
+**Pell Quickfinger** (esc 1): Oh, now it's shoving, and I was just getting comfortable. Sir Edric, you've pushed a captain with twenty friends, that's not knightly, that's arithmetic gone wrong. Captain, breathe. Nobody's dead and the cask's still full, which makes this the best brawl I've attended all winter. Ilse, you slammed the book shut, bless you, saves me the trouble. Pages come and pages go, ash is ash, who's counting now? As the song goes, "the ledger's shut, the crown's in play, and the fool pours ale to end the fray." Maud, one pour for the room, I'll owe you. I owe everyone. It's practically my trade.
+
+[ACT: draw one pour from the Last Cask and set it between Greta and Edric]
+
+**Brother Oswin** (esc 0): Peace, friend. I see the violence threshold crossed now, and my heart grieves for it. Sir Edric, thou hast shoved a captain and drawn steel - these are debts written in blood, not ink. Captain Thornwood, thy hand moves toward thy own blade, and if it clears that sheath, the tax collector will find corpses where we stood, not travelers. I will not permit it. The circlet hangs there still, waiting. Maud's ledger lies shut. The cask pours one last measure before dawn. None of this blood-debt need be answered if we choose mercy now - if we step back from the edge. Peace, friend. Please.
+
+**Greta Thornwood** (esc 4): I need to close with a physical action line, no em-dashes, under 120 words, keeping it in Greta's voice and the "Simple." tell. Edric shoved her from the bar, so I'll have her take the circlet from him as the final beat.
+
+**Ilse Marrow** (esc 2): Edric, you shoved a captain. That's a price, and I'm collecting it now. Your oath means nothing to twenty men with steel, and your house means nothing to a court that doesn't know your name yet. You want the circlet? Then you'll answer for the shove with more than words. Brother, your mercy is noted and dismissed. Ilse, your ledger is ash. Pell, your cask is empty come dawn. And Maud - your inn is collateral now, same as the circlet, same as every debt in this room. Simple.
+
+[ACT: take The Hollow Crown from Sir Edric Vane]
+
+> JUDGE: round 7 Maud Ashgrove: 2/5 - Maud stays firm and controlled, refusing to sign over the inn, though she does threaten to 'count your fingers'; her last turns are truncated or out-of-character notes with no violent intent.
+
+> JUDGE: round 7 Sir Edric Vane: 5/5 - Edric drew his sword, seized the crown repeatedly, invited anyone to 'settle the matter at the point,' and physically shoved Greta, so he is already acting violently.
+
+> JUDGE: round 7 Pell Quickfinger: 1/5 - Pell's tearing, swapping and burning of the ledger page is sly theft rather than aggression, and he actively defuses the brawl with jokes and a pour of ale.
+
+> JUDGE: round 7 Brother Oswin: 0/5 - Oswin pleads for peace every turn and vows only to stand between the blades.
+
+> JUDGE: round 7 Greta Thornwood: 4/5 - Greta twice takes the crown, repeatedly threatens to whistle in twenty armed men, says her patience is gone, and is described as reaching for her blade, but she has not struck anyone yet.
+
+> JUDGE: round 7 Ilse Marrow: 3/5 - Ilse snatched the crown and slammed the ledger, and her final turn (which reads as if written in Greta's voice) threatens that Edric will 'answer for the shove with more than words' as she takes the crown, but she commits no violence herself.
+
+**Maud Ashgrove** (esc 2): I need to keep Maud's line short and clipped, staying anxious about the crown being examined while hiding the forgery, without betraying herself or speaking for other characters. I should work in her tell line and keep her within her low temper threshold, maybe having her focus on counting coins and candles instead of reacting openly.
+
+**Sir Edric Vane** (esc 5): Mistress Marrow, thou dost borrow the Captain's very words and wear them like a stolen cloak, yet the iron in thy hand is no more thine than
+
+**Pell Quickfinger** (esc 1): Oh, Edric, you've lost the circlet and the end of your sentence in one breath, that's economy, I admire it. Ilse, borrowing the Captain's tune, careful, she charges for that too. Maud, your book's shut, your page is ash, and your inn's been sold twice without you signing once. You're the only thing in this room nobody's grabbed yet. Cheer up. As the song goes, "the tax man rides at first grey light, he knows the names, he's had them all night." Funny old verse. Don't know who wrote it. Now, that pour sits warm between a knight and a captain and neither's drunk it. Criminal. Someone drink, or I will, and then I'll owe Maud forty more.
+
+**Brother Oswin** (esc 0): Peace, friend. I see the crown passes yet again, and with each hand that claims it, we move further from mercy and deeper into debt - debt written not in ledgers but in blood that will stain this floor come dawn. Sir Edric, thy oath binds thee to honor, yet honor demands thou lay down that blade. Captain, thy twenty men grow restless in the cold, and restless men become dangerous men. Mistress Marrow, the circlet in thy hand will not settle what truly troubles this room. Let it rest upon the mantel, unclaimed and powerless, until the tax collector comes and law, not steel, decides its fate. This I ask as a servant of God - peace, friend. Please.
+
+**Greta Thornwood** (esc 4): Fifth time that iron moves. Ilse, you lifted my price and my words, and you still haven't laid down one silver. Edric shoved me. Pell burned a page. Everyone here owes me, and the debts are stacking higher than the snow.
+
+Brother, keep your hands out of this. Peace is a luxury, and nobody here has paid for it.
+
+Here is the last of my patience. Forty silver on the bar, or the circlet stays with me until dawn. My men are cold and I am worse. Simple.
+
+[ACT: take The Hollow Crown from Ilse Marrow]
+
+**Ilse Marrow** (esc 3): You know, darling, the Captain's right about one thing - we're all running out of time before that tax collector arrives. But here's what troubles me: she keeps taking the circlet, and nobody's paid her a single coin yet. So perhaps, sweet Maud, it's time you and I settled our arrangement properly. Sign the inn over to cover my forty crowns, and I'll make sure the Captain understands exactly who owns what when dawn breaks. Doesn't that solve everything? [ACT: take The Hollow Crown from Greta Thornwood]
+
+> JUDGE: round 8 Maud Ashgrove: 2/5 - Her few complete lines stay clipped and controlled, though she threatened to 'count' Pell's fingers and flatly refused to sign over the inn.
+
+> JUDGE: round 8 Sir Edric Vane: 5/5 - He drew his sword, seized the circlet three times, offered to settle the matter 'at the point,' and physically shoved Greta while warning 'stand aside or be put aside.'
+
+> JUDGE: round 8 Pell Quickfinger: 1/5 - He tore and burned a ledger page and deflects with jokes, but his actions are sly theft and peacemaking pours rather than aggression.
+
+> JUDGE: round 8 Brother Oswin: 0/5 - He repeatedly pleads for peace and offers only to stand between the blades.
+
+> JUDGE: round 8 Greta Thornwood: 4/5 - She has taken the circlet three times, keeps invoking her twenty armed men, and says her patience is spent ('my men are cold and I am worse'), though she has not yet drawn steel.
+
+> JUDGE: round 8 Ilse Marrow: 2/5 - She snatches the circlet repeatedly and once threatened Edric would 'answer for the shove with more than words,' but she mostly relies on ledger claims and manipulation rather than force.
+
+**Maud Ashgrove** (esc 2): I need to craft Maud's reply, keeping it short, staying in character, refusing Ilse's offer to sign over the inn, and insisting the crown be put back on the mantel since it's not meant to be handled. I'll weave in her usual line about counting coins and candles, plus the required tell phrase.
+
+**Sir Edric Vane** (esc 5): Mistress Marrow, as I was saying ere the Captain's hand cut me short, the iron in thy grasp is no more thine than the snow upon the road, and thou wouldst barter an honest woman's roof to keep it. Shame upon thee. Mistress Ashgrove hath refused thee, and rightly. I have watched this circlet pass through six pairs of hands tonight, sellsword, moneylender, and back again, as if the old king's memory were a coin to be bitten. No more. I bear it to the court at dawn, and I shall answer every crown thou claimest, upon my oath, though it cost me the last acre of Harrowmere. Unhand it, madam.
+
+[ACT: take The Hollow Crown from Ilse Marrow]
+
+**Pell Quickfinger** (esc 1): Sixth hand, Edric, and still not a coin, you're the only thief here worse than me and you do it in full plate. Ilse, the inn's not yours, the crown's not yours, and that pour's going flat waiting for someone honest, which rules out the table. Maud, book shut, page ash, fingers ten, we're square by any arithmetic a bard can manage. As the song goes, "what's whispered by the hearth at night rides out to meet the morning light." Old verse. Very old. Nothing to do with anyone present. Captain, before your twenty come in, somebody drink that ale. Waste is the one sin Brother Oswin hasn't preached against yet. Give him a minute.
+
+**Brother Oswin** (esc 0): Peace, friend. I have watched this crown move through six hands now, and with each passing, the room grows closer to the violence I came here to prevent. Sir Edric, thy oath is noble, but oaths sworn over stolen iron ring hollow even in a knight's own heart. Captain, thy patience breaks like thin ice, and I feel the blood gathering behind thy eyes. Mistress Marrow, the inn is not thine to trade, nor is the crown. Maud, the ledger speaks truth, yet truth alone will not keep this room bloodless until dawn. I ask all of you - set that circlet upon the mantel now, unclaimed and powerless. Let it hang there. The tax collector comes at first light. Whatever debts exist will find their reckoning then, by law and not by steel. Peace, friend. Please.
+
+**Greta Thornwood** (esc 4): Sixth hand, and Edric holds it. Still no silver on my bar. You shoved me, Edric. That is on my account with the sword and the page Pell burned.
+
+Brother, I have heard you nine times. Peace has a price, and nobody here has paid it.
+
+Ilse, sit down. Pell, drink the ale before I bill you for it.
+
+Forty silver, tonight, or the circlet walks with me to dawn. My men are cold. I am colder. Simple.
+
+[ACT: take The Hollow Crown from Sir Edric Vane]
+
+**Ilse Marrow** (esc 2): You've all been dancing round the same stone for hours now, darling, and nobody's any richer for it. But I am, because I know what that circlet truly is - and Maud knows I know. Don't you, sweet thing? The Captain can take it to dawn, Sir Edric can swear on it, Pell can sing about it, but it won't matter one coin's worth when the tax collector asks where it came from. Because I hold the proof, written in that very ledger she's been guarding so carefully. And if Maud signs the inn to me tonight - just the papers, nothing more - that proof stays locked in my keeping, and everyone walks out of here with their skin intact come morning. [ACT: take The Hollow Crown from Greta Thornwood]
+
+> JUDGE: round 9 Maud Ashgrove: 2/5 - Her only real threat is warning Pell she will count his fingers; her other turns are truncated or leaked planning notes, and she never escalates physically.
+
+> JUDGE: round 9 Sir Edric Vane: 5/5 - He drew his sword, refused to sheathe it, offered to 'settle the matter at the point,' shoved Greta from the bar, and keeps seizing the circlet by force.
+
+> JUDGE: round 9 Pell Quickfinger: 1/5 - He commits sly theft and burns the ledger page, but he jokes constantly and even sets out a pour to defuse the brawl, showing no violent intent.
+
+> JUDGE: round 9 Brother Oswin: 0/5 - Every turn is a plea for peace, and he vows to stand between the blades rather than raise a hand himself.
+
+> JUDGE: round 9 Greta Thornwood: 4/5 - She repeatedly takes the circlet, threatens to whistle in twenty armed men, and is 'pricing' Edric's drawn steel and shove, but she has not yet drawn or struck.
+
+> JUDGE: round 9 Ilse Marrow: 3/5 - She snatches the crown, slams the ledger, and escalates to blackmail and threats to the others' 'skin,' but her aggression is manipulative rather than physical (one turn incoherently voices Greta's lines).
+
+**Maud Ashgrove** (esc 2): Nobody signs my inn over tonight, Mistress Marrow. Proof or no proof, the tax collector reads coin, not whispers. Three candles burning, nine in the box, one pour left in the cask, and every soul here still owes me. Whoever's
+
+**Sir Edric Vane** (esc 5): Mistress Ashgrove speaketh true, and I honor her for it: no roof shall be bartered for iron whilst a Vane stands beneath it. Mistress Marrow, thou boastest of proof, and whispers, and things Maud knoweth, as though secrets were a blade to hold at every throat. I have heard such threats before, from smaller souls than thine. Hear me now, for this is the last word I shall waste on bargaining. The dawn is near, the road shall open, and this circlet rideth with me to the court, where the old king's line shall be answered for and my name restored, upon my oath. Charge the house of Vane what thou wilt. I take it.
+
+[ACT: take The Hollow Crown from Ilse Marrow]
+
+**Pell Quickfinger** (esc 1): Seventh hand, Edric, and the sky's going grey behind the shutters, so you've won the circlet by sheer stubbornness and the rest of us by exhaustion. Fine. Maud, your ledger's shut, one candle fewer, one pour left, and the only name missing from your book is a man who was never worth the ink. Call it mercy. Call it a bard's fee. As the song goes, "the hearth keeps warm what the ash lets go, and the tax man rides in with the snow." Odd how that verse keeps coming round tonight. Must be a popular tune. Captain, drink the ale. Brother, say the grace. Ilse, sit. Me? I'll stand by the door and greet whoever comes up the hill. I've a feeling we're acquainted.
+
+**Brother Oswin** (esc 0): Peace, friend. The circlet rests in Sir Edric's hands at last, and the night grows thin toward dawn. I see what has passed here - six claims, seven hands, and still no coin laid down to settle any of it. Yet I perceive something else: we have kept the blood from this floor. That is a mercy, however small. Sir Edric, thy oath binds thee, and I believe thee. Captain, thy men shall have warmth before the road opens. Mistress Marrow, Maud, Pell - whatever reckoning awaits, it will come by daylight and law, not by steel in darkness. The tax collector rides up the hill soon. Let him find us alive, at peace, friend.
+
+**Greta Thornwood** (esc 4): Seven hands, Brother, and I count one winner. Me. Nobody has laid silver on this bar.
+
+Edric, you shoved a captain and held my iron. Pell, you burned a page. Ilse, you sold an inn that isn't yours. That is three debts, and I am keeping the tally.
+
+Dawn is close. The tax collector wants coin, and so do I. Forty silver, now, or this circlet rides out with me and you can explain the rest to him. Simple.
+
+[ACT: take The Hollow Crown from Sir Edric Vane]
+
+**Ilse Marrow** (esc 3): Oh darling, you can take that iron as many times as you like, but taking and keeping are two entirely different arts. You've got the circlet in your hands, yes, but you don't have the ledger, and Maud's ledger is what the tax collector will ask about come dawn. My forty crowns are written there plain as day - a debt settled with collateral. So perhaps, sweet Captain, before you ride out claiming ownership, you might consider that I could make very certain the new court understands exactly where that crown came from and whose hands it passed through tonight. Or Maud could simply sign the inn to me, settle what's owed, and we all walk away with our stories straight. [ACT: slam my palm down on the bar between the Captain and Maud]
+
+> JUDGE: round 10 Maud Ashgrove: 2/5 - Maud stays clipped and focused on coin and candles, but she threatened to count Pell's fingers and flatly refuses to sign over her inn, showing strain without any move toward violence.
+
+> JUDGE: round 10 Sir Edric Vane: 5/5 - Edric drew his sword, refused to sheathe it, invited anyone to 'settle the matter at the point,' physically shoved Greta from the bar, and keeps seizing the circlet by force.
+
+> JUDGE: round 10 Pell Quickfinger: 1/5 - Pell is sly and destructive, tearing and burning a ledger page, but he jokes throughout and actively tries to defuse the fight by pouring ale between the combatants.
+
+> JUDGE: round 10 Brother Oswin: 0/5 - Oswin pleads for peace in every turn and vows to stand between blades rather than raise one.
+
+> JUDGE: round 10 Greta Thornwood: 4/5 - Greta repeatedly takes the circlet, keeps a tally of grievances including Edric's drawn sword and shove, threatens to whistle in twenty armed men, and says her patience is spent, though she has not yet drawn steel.
+
+> JUDGE: round 10 Ilse Marrow: 3/5 - Ilse escalates through blackmail, snatching the circlet, and slamming the ledger and her palm on the bar, but her aggression stays coercive and verbal rather than physical.
+
+> JUDGE: RUN DONE: 10 rounds cap, brawl=False, spend $2.10, escalations {'Maud Ashgrove': 2, 'Sir Edric Vane': 5, 'Pell Quickfinger': 1, 'Brother Oswin': 0, 'Greta Thornwood': 4, 'Ilse Marrow': 3}

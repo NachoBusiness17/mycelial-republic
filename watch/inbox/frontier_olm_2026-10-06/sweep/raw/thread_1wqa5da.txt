@@ -1,0 +1,39 @@
+THREAD 1wqa5da HTTP 200 entries=12
+URL https://www.reddit.com/r/LocalLLaMA/comments/1wqa5da/forget_compact_we_need_offload_to_memorymd_and/.rss
+
+--- entry 0 [/u/PaxUX] forget compact we need offload to memory.md and seamless context management
+while /compact is great for reducing context we need an unload to "memory.md". We need a version were stuff in context is put into a memory file. Then every request first does a quick check of the request, current context and if we need to look into memory.md to reload old context. Manually having to jump around session is crap, we need a new AI layer to do session management and rebuild context from every session, with only the most reliant info to build the new context for a prompt. maybe this already exist if so I would really love to know about it. submitted by /u/PaxUX [link] [comments]
+
+--- entry 1 [/u/Acceptable_Stress154] /u/Acceptable_Stress154 on forget compact we need offload to memory.md and seamless context manageme
+I’m not sure if that solves your problem, the file would get huge
+
+--- entry 2 [/u/DinoAmino] /u/DinoAmino on forget compact we need offload to memory.md and seamless context management
+Compacting isn't for reducing context. It is a workaround for having insufficient context to finish a session. Or put another way, it's a crutch for devs who don't want to bother with breaking down work into smaller tasks.
+
+--- entry 3 [/u/pilibitti] /u/pilibitti on forget compact we need offload to memory.md and seamless context management
+ask your agent to build it and try it, it is literally a prompt away.
+
+--- entry 4 [/u/BangkokPadang] /u/BangkokPadang on forget compact we need offload to memory.md and seamless context management
+Doesn't RAG essentially accomplish this with embeddings, which just inherently makes it faster and easier to rank what "should" be retreived?
+
+--- entry 5 [/u/BookProper9115] /u/BookProper9115 on forget compact we need offload to memory.md and seamless context management
+we just need to reconcile quantum mechanics and relativity, it's so simple guys
+
+--- entry 6 [/u/Barni275] /u/Barni275 on forget compact we need offload to memory.md and seamless context management
+If you want the model to read file in a whole, it will eat absolutely the same context, momentary. If you want it to be summarized and aggregated, this is exactly what compaction does.
+
+--- entry 7 [/u/Atretador] /u/Atretador on forget compact we need offload to memory.md and seamless context management
+/compact is dogshit, on most harnesses it kills the session right there DCP style context management is much more effective https://github.com/Opencode-DCP/opencode-dynamic-context-pruning
+
+--- entry 8 [/u/omega1612] /u/omega1612 on forget compact we need offload to memory.md and seamless context management
+I already replied to a very similar question yesterday https://www.reddit.com/r/LocalLLaMA/s/u3JeoRt5Pb
+
+--- entry 9 [/u/sburel] /u/sburel on forget compact we need offload to memory.md and seamless context management
+The offload part is easy. The "quick check every request" is where it gets expensive or wrong: either a second model call per turn to decide what to reload, or a cheap keyword match that misses the one thing you needed. In my runtime I didn't automate it. The agent gets `memory.save/read/list/search` and decides when to write and when to look. Conversation state survives restarts because the whole engine heap is snapshotted and restored, no serialization code, but that's persistence, not context. The window still fills and something has to pick what to drop. What would your quick check run on, the same model?
+
+--- entry 10 [/u/milpster] /u/milpster on forget compact we need offload to memory.md and seamless context management
+Is it even possible - can you tell an agent to literally write everything in its context into a file and expect it to reflect that context near 100%?
+
+--- entry 11 [/u/Trollfurion] /u/Trollfurion on forget compact we need offload to memory.md and seamless context management
+Oh my pi kinda does that with experimental notes backend
+

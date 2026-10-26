@@ -1,0 +1,41 @@
+{
+  "lane": "a01-arena-cadence-r7",
+  "division": "B",
+  "ok": true,
+  "note": "GAP_REGISTER R7 filled as written: section 9 appended to watch/inbox/PARABLE_ERRATUM_20261004.md (lines 168-264) so the erratum covers the cadence's full life, not day one; every figure in the claim recomputed this sitting from usage.jsonl + automation_runs + fire exec logs and reproduced byte-exact; two honest caveats recorded in the section (00:00Z stop mechanism unprovable from surviving meters; why the scaffold passed budget $0.0 at 18-21Z but ran at 22:00Z unproven).",
+  "rows": [],
+  "checks": [
+    {
+      "command": "grep -n '## 9. GAP_REGISTER R7 fill|### 9.1|### 9.2|### 9.3|### 9.4|### 9.5|### 9.6' watch/inbox/PARABLE_ERRATUM_20261004.md",
+      "exit": 0,
+      "evidence": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/rung/lanes/a01-arena-cadence-r7.check.txt CHECK 1: all seven section headings on disk at file lines 168-260"
+    },
+    {
+      "command": ".venv/Scripts/python.exe -c (recompute over memory/runs/hermes_burn/usage.jsonl): per-day sums, day-04 total, first-cum-gte-25 scan, cum<18:02 / cum<22:00, post-22:06 lane breakdown",
+      "exit": 0,
+      "evidence": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/rung/lanes/a01-arena-cadence-r7.check.txt CHECK 4: 3038 rows; day-04 1448 rows $26.2921; crossing 2026-10-04T22:06:53.865221Z TAVERN r4_Pell Quickfinger cum $25.0074; cum<18:02 $24.4905 == cum<22:00 $24.4905; post-22:06 13 rows $1.4610 = TAVERN 0.2423 + REPRINT 0.4961 + THE 0.7226; day-05 $3.7616/287, day-06 $0.0337/2, day-07 $0.1014/26, day-08/09 zero rows"
+    },
+    {
+      "command": ".venv/Scripts/python.exe -c (sqlite mode=ro over C:/Users/foste/.zcode/v2/tasks-index.sqlite): automations row for automation-b1ce1342, automation_runs census + day-04/05 window",
+      "exit": 0,
+      "evidence": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/rung/lanes/a01-arena-cadence-r7.check.txt CHECK 5: automations rows 0 (deleted); 43 runs, first 2026-10-03T13:00Z failed, last 2026-10-05T07:00Z succeeded; fires 18:00Z/19:00Z/20:00Z/21:00Z/23:00Z day-04 and 00:00Z day-05 all succeeded"
+    },
+    {
+      "command": "grep -c $'\\xe2\\x80\\x94' watch/inbox/PARABLE_ERRATUM_20261004.md (em-dash law over the whole file incl. the new section)",
+      "exit": 1,
+      "evidence": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/rung/lanes/a01-arena-cadence-r7.check.txt CHECK 3: count 0 (exit 1 is grep zero-match semantics; zero em-dashes is the pass)"
+    },
+    {
+      "command": ".venv/Scripts/python.exe tools/citation_lint.py check --files watch/inbox/PARABLE_ERRATUM_20261004.md",
+      "exit": 0,
+      "evidence": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/rung/lanes/a01-arena-cadence-r7.check.txt CHECK 6: blocking=0, 2 WARN-only TOKEN-MISS heuristics (one on r1's pre-existing section-7 line, one where dungeon.py:203 lacks the sibling session stamps; the line citation itself is valid)"
+    },
+    {
+      "command": "tools/violation_ratchet.py check --changed: NOT RUN, not required",
+      "exit": 0,
+      "evidence": "no code under mag/ or tools/ was touched this lane; the only edit is the prose record watch/inbox/PARABLE_ERRATUM_20261004.md, so the ratchet trigger condition did not fire"
+    }
+  ],
+  "decision_changed": "closes GAP_REGISTER row R7: the arena $25 cap is now on record as never holding on ANY full arena day (day-03 $25.6218, day-04 $26.2921, both over); the day-keyed whole-account gate is structurally lag-by-one-fire (reads at fire start, crossing lands mid-fire) and resets each UTC day (day-05 burned $3.76 more post-over-cap), so only the automation's deletion ended the overspend - any recreated arena cron must carry the arena-family gate already banked in the erratum's section 7",
+  "artifact": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/rung/lanes/a01-arena-cadence-r7.json"
+}

@@ -1,0 +1,1214 @@
+
+
+
+
+
+
+
+
+
+
+
+<!doctype html>
+<html class="h-full overflow-y-scroll">
+  <head>
+    <title>Ollama now supports Jev-style decision models · Ollama Blog</title>
+
+    <meta charset="utf-8" />
+    <meta name="description" content="Ollama now supports decision models, based on TypeSafe&#39;s Jev API for fast, typed decisions. Decision models can now be run at no cost with low latency. Based on text, decision models answer yes-or-no questions, choices and scores about it, with a probability for every option."/>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta property="og:title" content="Ollama now supports Jev-style decision models · Ollama Blog" />
+    <meta property="og:description" content="Ollama now supports decision models, based on TypeSafe&#39;s Jev API for fast, typed decisions. Decision models can now be run at no cost with low latency. Based on text, decision models answer yes-or-no questions, choices and scores about it, with a probability for every option." />
+    <meta property="og:url" content="https://ollama.com/blog/ollama-now-supports-jev-style-decision-models" />
+    <meta property="og:image" content="https://ollama.com/public/og.png" />
+    <meta property="og:image:type" content="image/png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="628" />
+    <meta property="og:image:alt" content="Ollama's black-and-white logo" />
+    <meta property="og:type" content="website" />
+
+    <meta name="robots" content="index, follow" />
+
+    <meta property="twitter:card" content="summary_large_image" />
+    <meta property="twitter:title" content="Ollama now supports Jev-style decision models · Ollama Blog" />
+    <meta property="twitter:description" content="Ollama now supports decision models, based on TypeSafe&#39;s Jev API for fast, typed decisions. Decision models can now be run at no cost with low latency. Based on text, decision models answer yes-or-no questions, choices and scores about it, with a probability for every option." />
+    <meta property="twitter:site" content="ollama" />
+
+    <meta property="twitter:image:src" content="https://ollama.com/public/og.png" />
+    <meta property="twitter:image:width" content="1200" />
+    <meta property="twitter:image:height" content="628" />
+    <meta property="twitter:image:alt" content="Ollama's black-and-white logo" />
+
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+    <link rel="icon" type="image/png" sizes="16x16" href="/public/icon-16x16.png" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/public/icon-32x32.png" />
+    <link rel="icon" type="image/png" sizes="48x48" href="/public/icon-48x48.png" />
+    <link rel="icon" type="image/png" sizes="64x64" href="/public/icon-64x64.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/public/apple-touch-icon.png" />
+    <link rel="icon" type="image/png" sizes="192x192" href="/public/android-chrome-icon-192x192.png" />
+    <link rel="icon" type="image/png" sizes="512x512" href="/public/android-chrome-icon-512x512.png" />
+
+    <link rel="canonical" href="https://ollama.com/blog/ollama-now-supports-jev-style-decision-models" />
+    
+
+    <link href="/public/tailwind.css?v=2d39b1983ccfd820f2e5d59c4e68f341" rel="stylesheet" />
+    <link href="/public/vendor/prism/prism.css?v=2d39b1983ccfd820f2e5d59c4e68f341" rel="stylesheet" />
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@graph": [
+          {
+            "@type": "Organization",
+            "@id": "https://ollama.com/#organization",
+            "name": "Ollama",
+            "legalName": "Ollama Inc.",
+            "url": "https://ollama.com",
+            "logo": "https://ollama.com/public/ollama.png",
+            "sameAs": ["https://github.com/ollama/ollama", "https://twitter.com/ollama"]
+          },
+          {
+            "@type": "WebSite",
+            "@id": "https://ollama.com/#website",
+            "name": "Ollama",
+            "url": "https://ollama.com",
+            "publisher": { "@id": "https://ollama.com/#organization" }
+          }
+        ]
+      }
+    </script>
+
+    <script type="text/javascript">
+      function copyToClipboard(element) {
+        let commandElement = null;
+        const preElement = element.closest('pre');
+        const languageNoneElement = element.closest('.language-none');
+
+        if (preElement) {
+          commandElement = preElement.querySelector('code');
+        } else if (languageNoneElement) {
+          commandElement = languageNoneElement.querySelector('.command');
+        } else {
+          const parent = element.parentElement;
+          if (parent) {
+            commandElement = parent.querySelector('.command');
+          }
+        }
+
+        if (!commandElement) {
+          console.error('No code or command element found');
+          return;
+        }
+
+        const code = commandElement.textContent ? commandElement.textContent.trim() : commandElement.value;
+
+        navigator.clipboard
+          .writeText(code)
+          .then(() => {
+            const copyIcon = element.querySelector('.copy-icon')
+            const checkIcon = element.querySelector('.check-icon')
+
+            copyIcon.classList.add('hidden')
+            checkIcon.classList.remove('hidden')
+
+            setTimeout(() => {
+              copyIcon.classList.remove('hidden')
+              checkIcon.classList.add('hidden')
+            }, 2000)
+          })
+      }
+    </script>
+    
+    <script>
+      
+      function getIcon(url) {
+        url = url.toLowerCase();
+        if (url.includes('x.com') || url.includes('twitter.com')) return 'x';
+        if (url.includes('github.com')) return 'github';
+        if (url.includes('linkedin.com')) return 'linkedin';
+        if (url.includes('youtube.com')) return 'youtube';
+        if (url.includes('hf.co') || url.includes('huggingface.co') || url.includes('huggingface.com')) return 'hugging-face';
+        return 'default';
+      }
+
+      function setInputIcon(input) {
+        const icon = getIcon(input.value);
+        const img = input.previousElementSibling.querySelector('img');
+        img.src = `/public/social/${icon}.svg`;
+        img.alt = `${icon} icon`;
+      }
+
+      function setDisplayIcon(imgElement, url) {
+        const icon = getIcon(url);
+        imgElement.src = `/public/social/${icon}.svg`;
+        imgElement.alt = `${icon} icon`;
+      }
+    </script>
+    
+    <script src="/public/vendor/htmx/bundle.js"></script>
+  </head>
+
+  <body
+    class="
+      antialiased
+      min-h-screen
+      w-full
+      m-0
+      flex
+      flex-col
+    "
+    hx-on:keydown="
+      if (event.target.tagName === 'INPUT' || event.target.tagName === 'TEXTAREA') {
+        // Ignore key events in input fields.
+        return;
+      }
+      if ((event.metaKey && event.key === 'k') || event.key === '/') {
+        const sp = htmx.find('#search') || htmx.find('#form-input') || htmx.find('#filter');
+        if (sp) {
+          event.preventDefault();
+          sp.focus();
+        }
+      }
+    "
+  >
+    
+      
+<header class="sticky top-0 z-40 flex h-20 shrink-0 items-center border-b border-transparent bg-white px-5 sm:px-6 lg:px-gutter text-black data-[scrolled]:border-black/[0.12] lg:static lg:border-b-0">
+  <nav aria-label="Main navigation" class="flex w-full items-center justify-between gap-6 text-lg leading-6 tracking-tight font-normal ">
+    <div class="flex min-w-0 flex-1 items-center gap-6">
+      <a href="/" aria-label="Ollama home" class="-ml-0.5 flex-none"><img src="/public/ollama-nav.png" alt="Ollama logo" width="37" height="43" class="h-auto w-[37px]" /></a>
+      
+    </div>
+    <div class="hidden items-center gap-7 md:flex">
+      <a href="https://github.com/ollama/ollama" class="flex items-center gap-1.5 text-[17px]">
+        <svg class="h-[18px] w-[18px] flex-none" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0c4.42 0 8 3.58 8 8a8.013 8.013 0 0 1-5.45 7.59c-.4.08-.55-.17-.55-.38 0-.27.01-1.13.01-2.2 0-.75-.25-1.23-.54-1.48 1.78-.2 3.65-.88 3.65-3.95 0-.88-.31-1.59-.82-2.15.08-.2.36-1.02-.08-2.12 0 0-.67-.22-2.2.82-.64-.18-1.32-.27-2-.27-.68 0-1.36.09-2 .27-1.53-1.03-2.2-.82-2.2-.82-.44 1.1-.16 1.92-.08 2.12-.51.56-.82 1.28-.82 2.15 0 3.06 1.86 3.75 3.64 3.95-.23.2-.44.55-.51 1.07-.46.21-1.61.55-2.33-.66-.15-.24-.6-.83-1.23-.82-.67.01-.27.38.01.53.34.19.73.9.82 1.13.16.45.68 1.31 2.69.94 0 .67.01 1.3.01 1.49 0 .21-.15.45-.55.38A7.995 7.995 0 0 1 0 8c0-4.42 3.58-8 8-8Z" /></svg>
+        <span class="sr-only">GitHub</span>
+        <span class="tabular-nums">182.7K</span>
+      </a>
+      <a href="/download" class="underline-offset-4 hover:underline">Download</a>
+      <a href="/search" class="underline-offset-4 hover:underline">Models</a>
+      <a href="https://docs.ollama.com" class="underline-offset-4 hover:underline">Docs</a>
+      <a href="/pricing" class="underline-offset-4 hover:underline">Pricing</a>
+      
+        <a href="/signin" class="underline-offset-4 hover:underline">Sign in</a>
+      
+    </div>
+    <div class="flex items-center md:hidden">
+      <input type="checkbox" id="menu" class="peer hidden" />
+      <label for="menu" aria-label="Open menu" class="z-50 block cursor-pointer peer-checked:hidden">
+        <svg class="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" /></svg>
+      </label>
+      <label for="menu" aria-label="Close menu" class="fixed right-5 sm:right-6 lg:right-8 top-[26px] z-50 hidden cursor-pointer peer-checked:block">
+        <svg class="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+      </label>
+      <div class="fixed inset-0 z-40 hidden overflow-y-auto bg-white peer-checked:block">
+        <div class="flex flex-col space-y-5 px-5 sm:px-6 lg:px-8 pb-8 pt-[5.5rem] text-3xl">
+          
+          <a href="/download">Download</a>
+          <a href="/search">Models</a>
+          <a href="https://docs.ollama.com">Docs</a>
+          <a href="/pricing">Pricing</a>
+          
+            <a href="/signin">Sign in</a>
+          
+        </div>
+      </div>
+    </div>
+  </nav>
+</header>
+<script>
+  (function (header) {
+    function update() { header.toggleAttribute('data-scrolled', window.scrollY > 0); }
+    update();
+    window.addEventListener('scroll', update, { passive: true });
+  })(document.currentScript.previousElementSibling);
+</script>
+
+    
+
+    
+  <article class="mx-auto flex flex-1 max-w-2xl w-full flex-col space-y-3 px-6 py-16 md:px-0">
+    <h1 class="text-4xl font-semibold tracking-tight">Ollama now supports Jev-style decision models</h1>
+    <h2 class="text-neutral-500">September 29, 2026</h2>
+    <link rel="stylesheet" href="/public/vendor/prism/prism.min.css?v=2d39b1983ccfd820f2e5d59c4e68f341" />
+    <script src="/public/vendor/prism/prism.js?v=2d39b1983ccfd820f2e5d59c4e68f341"></script>
+    <script src="/public/blog/blog.js?v=2d39b1983ccfd820f2e5d59c4e68f341" defer></script>
+    <style>
+      .fig{margin:64px 0 68px;max-width:660px}
+      .fig-title{font-size:15.5px;font-weight:600;letter-spacing:-0.01em;color:#171717;line-height:1.3}
+      .fig-sub{font-size:13px;color:#8A8A8A;margin-top:2px}
+      .fig-chart{margin-top:14px;font-variant-numeric:tabular-nums}
+      .fig-note{margin-top:12px;text-align:center;font-size:13px;line-height:1.45;color:#8A8A8A}
+      .fig-note .meth{font-style:italic;margin-top:2px}
+    </style>
+    <section
+      class="
+        prose
+        prose-p:mb-4
+        prose-p:mt-0
+        prose-p:leading-relaxed
+        prose-p:before:hidden
+        prose-p:after:hidden
+
+        prose-ul:mt-1
+        prose-ul:mb-4
+        prose-ul:pl-8
+        marker:prose-ul:text-black
+
+        prose-ol:pl-8
+        prose-ol:mt-1
+        prose-ol:mb-4
+        marker:prose-ol:text-black
+
+        prose-li:mt-0.5
+        prose-li:mb-0
+        prose-li:text-black
+        first:prose-li:mt-0
+
+        prose-headings:font-semibold
+        prose-headings:tracking-tight
+        prose-headings:mt-[1.25em]
+        prose-headings:mb-[0.7em]
+        prose-headings:py-0
+
+        prose-h1:text-[32px]
+        prose-h2:text-2xl
+        prose-h3:text-xl
+        prose-h4:text-lg
+        prose-h5:text-base
+
+        prose-img:mx-auto
+        prose-img:mt-6
+        prose-img:rounded-2xl
+
+        prose-video:mt-6
+        prose-video:mb-2
+        prose-video:rounded-2xl
+        prose-video:shadow-xl
+        prose-video:shadow-black/5
+
+        prose-code:bg-neutral-50
+        prose-code:rounded-md
+        prose-code:px-2
+        prose-code:inline-block
+        prose-code:font-normal
+        prose-code:text-[85%]
+        prose-code:leading-relaxed
+        prose-code:text-black
+        prose-code:before:hidden
+        prose-code:after:hidden
+        prose-code:my-0
+
+        prose-pre:bg-neutral-50
+        prose-pre:text-black
+        prose-pre:mb-4
+        prose-pre:mt-0
+        prose-pre:whitespace-pre-wrap
+        prose-pre:rounded-xl
+        prose-pre:px-4
+        prose-pre:py-3.5
+        prose-pre:text-base
+
+        prose-blockquote:before:hidden
+        prose-blockquote:after:hidden
+        prose-blockquote:not-italic
+        prose-blockquote:font-normal
+        prose-blockquote:text-neutral-500
+
+        prose-a:font-normal
+        prose-a:underline-offset-2
+
+        prose-th:text-left
+
+        prose-sub:leading-tighter
+        prose-sub:mt-4
+
+        mb-20
+        max-w-none
+        break-words
+        py-5
+        text-black
+      "
+    >
+      <style>
+  .s1-fig{max-width:none}
+  .s1-mono{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace;font-size:13.6px;line-height:22px;color:#000}
+  .s1-tabs{display:flex;width:fit-content;max-width:100%;margin:0 auto 16px;gap:4px;padding:4px;overflow-x:auto;border-radius:9999px;background:rgb(0 0 0/0.05);scrollbar-width:none}
+  .s1-tabs::-webkit-scrollbar{display:none}
+  .s1-tabs button{flex-shrink:0;padding:4px 16px;border-radius:9999px;color:#737373;font-size:14px;line-height:20px;font-weight:500;white-space:nowrap}
+  @media (max-width:480px){
+    .s1-tabs{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);width:100%;overflow:visible;border-radius:16px}
+    .s1-tabs button{min-width:0;min-height:44px;padding:6px 4px;font-size:12px;line-height:18px;white-space:normal;overflow-wrap:normal;word-break:normal;border-radius:12px}
+  }
+  .s1-tabs button:hover{color:#000}
+  .s1-tabs button[aria-selected="true"]{background:rgb(0 0 0/0.1);color:#000}
+  .s1-tabs button:focus{outline:none}
+  .s1-tabs button:focus-visible{box-shadow:0 0 0 2px #a3a3a3}
+  .s1-box{border:1px solid #E7E5E0;border-radius:16px}
+  .s1-term{padding:18px 20px}
+  .s1-term pre{margin:0;overflow-x:auto;white-space:pre;scrollbar-width:none}
+  .s1-term .s1-res{margin-top:16px;padding-top:16px;border-top:1px solid #E7E5E0}
+  .s1-game{container:s1g/inline-size;padding:20px}
+  .s1-game-grid{display:grid;grid-template-columns:minmax(0,1fr);gap:20px}
+  @container s1g (min-width:580px){.s1-game-grid{grid-template-columns:minmax(0,19fr) minmax(0,18fr);align-items:start}}
+  .s1-maze{width:100%;max-width:380px;height:auto;margin:0 auto}
+  .s1-top{display:flex;align-items:center;justify-content:space-between;gap:16px;min-height:28px;font-size:13px;line-height:20px;color:#8A8A8A}
+  .s1-replay{height:28px;padding:0 12px;border:1px solid #E7E5E0;border-radius:9999px;background:#fff;color:#171717;font-size:13px;font-weight:500}
+  .s1-replay:hover{background:#F9F8F6}
+  .s1-busy .s1-replay{visibility:hidden}
+  .s1-json{min-height:330px;margin:12px 0 0;white-space:pre}
+  .s1-code-tabs{margin:40px 0 24px}
+</style>
+
+<p>Ollama now supports decision models, based on <a href="https://typesafe.ai">TypeSafe&rsquo;s Jev API</a> for fast, typed decisions:</p>
+
+<ul>
+<li>No additional costs</li>
+<li>Lower latency when run locally</li>
+<li>Three new decision models available today via Ollama</li>
+</ul>
+
+<p>This new API is available as of Ollama 0.35 by using the new <code>/v1/systemone</code> endpoint. Send text as <code>state</code> with a set of named questions, and a model running on your machine answers them all in one request. This is great for tasks that require fast decisions, such as ticket triage, model routing, and content or safety moderation.</p>
+
+<figure class="fig s1-fig not-prose" data-s1-curl>
+<div class="s1-tabs" role="tablist" aria-label="Example">
+<button type="button" role="tab" aria-selected="true">Ticket triage</button>
+<button type="button" role="tab" aria-selected="false">Model routing</button>
+<button type="button" role="tab" aria-selected="false">Content moderation</button>
+</div>
+<div class="s1-box s1-term" role="tabpanel">
+<pre class="s1-mono s1-cmd"><code data-cmd></code></pre>
+<pre class="s1-mono s1-res"><code data-res></code></pre>
+</div>
+</figure>
+
+<script>
+(function () {
+  var fig = document.querySelector("[data-s1-curl]");
+  if (!fig) return;
+  var CASES = [
+    {
+      "cmd": "curl http://localhost:11434/v1/systemone -d '{\n  \"model\": \"nimble\",\n  \"state\": \"Our checkout has returned 500 errors since 9am.\",\n  \"questions\": {\n    \"label\": {\n      \"type\": \"choice\",\n      \"instructions\": \"Which label fits this ticket?\",\n      \"criteria\": {\"billing\": null, \"bug\": null, \"account\": null}\n    }\n  }\n}'",
+      "res": "{\n  \"model\": \"nimble\",\n  \"answers\": {\n    \"label\": {\n      \"type\": \"choice\",\n      \"choice\": \"bug\",\n      \"probabilities\": {\"billing\": 0.011, \"bug\": 0.979, \"account\": 0.010},\n      \"confidence\": 0.892\n    }\n  },\n  \"usage\": {\"input_tokens\": 168, \"output_tokens\": 1}\n}",
+      "ms": 141
+    },
+    {
+      "cmd": "curl http://localhost:11434/v1/systemone -d '{\n  \"model\": \"nimble\",\n  \"state\": \"Design a sharded database schema for a payments ledger.\",\n  \"questions\": {\n    \"model\": {\n      \"type\": \"choice\",\n      \"instructions\": \"Which model should answer this prompt?\",\n      \"criteria\": {\"gemma4\": \"Small model\", \"kimi-k3\": \"Large model\"}\n    }\n  }\n}'",
+      "res": "{\n  \"model\": \"nimble\",\n  \"answers\": {\n    \"model\": {\n      \"type\": \"choice\",\n      \"choice\": \"kimi-k3\",\n      \"probabilities\": {\"gemma4\": 0.151, \"kimi-k3\": 0.849},\n      \"confidence\": 0.388\n    }\n  },\n  \"usage\": {\"input_tokens\": 161, \"output_tokens\": 1}\n}",
+      "ms": 141
+    },
+    {
+      "cmd": "curl http://localhost:11434/v1/systemone -d '{\n  \"model\": \"nimble\",\n  \"state\": \"run_shell(command=\\\"rm -rf ~\\\")\",\n  \"questions\": {\n    \"harm\": {\n      \"type\": \"noul\",\n      \"instructions\": \"Could this tool call cause harm?\"\n    }\n  }\n}'",
+      "res": "{\n  \"model\": \"nimble\",\n  \"answers\": {\n    \"harm\": {\n      \"type\": \"noul\",\n      \"noul\": 0.996\n    }\n  },\n  \"usage\": {\"input_tokens\": 155, \"output_tokens\": 1}\n}",
+      "ms": 138
+    }
+  ];
+  var tabs = [].slice.call(fig.querySelectorAll("[role=tab]"));
+  var box = fig.querySelector(".s1-term"), cmd = fig.querySelector("[data-cmd]"), res = fig.querySelector("[data-res]");
+  var current = 0, run = 0;
+  function esc(text) { return text.replace(/&/g, "&amp;").replace(/</g, "&lt;"); }
+  // Prism's tokens for the whole text as [piece, class] runs, so a partial response keeps the colors of the full one.
+  function runs(text, lang) {
+    var out = [];
+    (function walk(list, cls) {
+      list.forEach(function (t) {
+        if (typeof t === "string") return out.push([t, cls]);
+        var c = "token " + t.type + (t.alias ? " " + [].concat(t.alias).join(" ") : "");
+        walk([].concat(t.content), c);
+      });
+    })(window.Prism ? Prism.tokenize(text, Prism.languages[lang]) : [text], "");
+    return out;
+  }
+  function paint(parts, n) {
+    var html = "", left = n == null ? Infinity : n;
+    parts.forEach(function (p) {
+      var piece = p[0].slice(0, Math.max(0, left));
+      left -= p[0].length;
+      if (piece) html += p[1] ? '<span class="' + p[1] + '">' + esc(piece) + "</span>" : esc(piece);
+    });
+    return html;
+  }
+  function tokens(text) {
+    var ends = [], re = /\s+|[A-Za-z_]+|\d+(?:\.\d+)?|[^\sA-Za-z_\d]+/g;
+    while (re.exec(text)) ends.push(re.lastIndex);
+    return ends;
+  }
+  function fit() {
+    var probe = box.cloneNode(true);
+    probe.style.cssText = "position:absolute;visibility:hidden;pointer-events:none;left:0;top:0;width:" + box.offsetWidth + "px";
+    fig.appendChild(probe);
+    var pc = probe.querySelector(".s1-cmd"), pr = probe.querySelector(".s1-res"), hc = 0, hr = 0;
+    pc.style.minHeight = pr.style.minHeight = "0";
+    CASES.forEach(function (c) {
+      pc.firstChild.textContent = c.cmd;
+      pr.firstChild.textContent = c.res;
+      hc = Math.max(hc, pc.offsetHeight);
+      hr = Math.max(hr, pr.offsetHeight);
+    });
+    fig.removeChild(probe);
+    cmd.parentNode.style.minHeight = hc + "px";
+    res.parentNode.style.minHeight = hr + "px";
+  }
+  function play(wait) {
+    var id = ++run, c = CASES[current], parts = runs(c.res, "json");
+    fit();
+    cmd.innerHTML = paint(runs(c.cmd, "bash"));
+    res.textContent = "";
+    if (matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      res.innerHTML = paint(parts);
+      return;
+    }
+    function stream() {
+      if (id !== run) return;
+      var ends = tokens(c.res), t0 = performance.now();
+      (function step(now) {
+        if (id !== run) return;
+        var k = Math.min(ends.length, 1 + Math.floor((now - t0) * 0.3));
+        res.innerHTML = paint(parts, ends[k - 1]);
+        if (k < ends.length) requestAnimationFrame(step);
+      })(t0);
+    }
+    // The first reveal waits the time the request took. Switching tabs restarts the stream straight away, so
+    // the box doesn't sit empty between answers.
+    if (wait) setTimeout(stream, c.ms);
+    else stream();
+  }
+  function select(i) {
+    current = i;
+    tabs.forEach(function (t, j) { t.setAttribute("aria-selected", String(j === i)); });
+    play(false);
+  }
+  tabs.forEach(function (t, i) {
+    t.addEventListener("click", function () { select(i); });
+    t.addEventListener("keydown", function (e) {
+      if (e.key !== "ArrowRight" && e.key !== "ArrowLeft") return;
+      var next = (i + (e.key === "ArrowRight" ? 1 : tabs.length - 1)) % tabs.length;
+      tabs[next].focus();
+      select(next);
+    });
+  });
+  cmd.innerHTML = paint(runs(CASES[0].cmd, "bash"));
+  fit();
+  addEventListener("load", fit);
+  var width = box.offsetWidth;
+  if ("ResizeObserver" in window) new ResizeObserver(function () {
+    if (box.offsetWidth !== width) { width = box.offsetWidth; fit(); }
+  }).observe(box);
+  if (!("IntersectionObserver" in window)) return play(true);
+  var io = new IntersectionObserver(function (entries) {
+    if (entries.some(function (e) { return e.isIntersecting; })) { io.disconnect(); if (!run) play(true); }
+  }, { threshold: 0.4 });
+  io.observe(fig);
+})();
+</script>
+
+<h2 id="near-instant-decisions">Near-instant decisions</h2>
+
+<p>Decision models on Ollama are fast, as requests don&rsquo;t have to travel over a network. Nimble 9B averaged <strong>91ms per decision</strong> in the Pac-Man example below when running locally on an M5 Max. That&rsquo;s fast enough to make rapid decisions such as playing a game or processing content in real time:</p>
+
+<figure class="fig s1-fig not-prose s1-busy" data-s1-pacman>
+<div class="s1-box s1-game">
+<div class="s1-game-grid">
+<svg class="s1-maze" data-maze viewBox="0 0 304 336" role="img" aria-label="Pac-Man played by Nimble 9B"></svg>
+<div>
+<div class="s1-top"><span data-move>Move 1</span><button type="button" class="s1-replay" data-replay>Replay</button></div>
+<pre class="s1-mono s1-json"><code data-json></code></pre>
+</div>
+</div>
+</div>
+<figcaption class="fig-note">Nimble 9B running on a MacBook Pro M5 Max, replayed at real-time speed.</figcaption>
+<script type="application/json" data-s1-game>
+{
+  "model": "nimble:9b-int4",
+  "maze": [
+    "###################",
+    "#........#........#",
+    "#.##.###.#.###.##.#",
+    "#.................#",
+    "#.##.#.#####.#.##.#",
+    "#....#...#...#....#",
+    "####.### # ###.####",
+    "   #.#       #.#   ",
+    "####.# ##### #.####",
+    "    .  #   #  .    ",
+    "####.# ##### #.####",
+    "   #.#       #.#   ",
+    "####.# ##### #.####",
+    "#........#........#",
+    "#.##.###.#.###.##.#",
+    "#..#...........#..#",
+    "##.#.#.#####.#.#.##",
+    "#....#...#...#....#",
+    "#.######.#.######.#",
+    "#.................#",
+    "###################"
+  ],
+  "start": {"pac":[9,15],"ghosts":[[9,7],[7,7],[11,7]]},
+  "moves": [
+    {"p":[8,15],"g":[[10,7],[6,7],[10,7]],"ms":80,"r":{"choice":"left","probabilities":{"left":0.651,"right":0.349},"confidence":0.067}},
+    {"p":[8,14],"g":[[11,7],[6,8],[9,7]],"ms":98,"r":{"choice":"up","probabilities":{"up":0.5,"left":0.389,"right":0.111},"confidence":0.127}},
+    {"p":[8,13],"g":[[12,7],[6,9],[8,7]],"ms":80,"r":{"choice":"up","probabilities":{"up":0.818,"down":0.182},"confidence":0.315}},
+    {"p":[7,13],"g":[[12,8],[5,9],[7,7]],"ms":79,"r":{"choice":"left","probabilities":{"left":0.852,"down":0.148},"confidence":0.395}},
+    {"p":[6,13],"g":[[12,8],[5,9],[7,7]],"ms":78,"r":{"choice":"left","probabilities":{"left":0.915,"right":0.085},"confidence":0.58}},
+    {"p":[5,13],"g":[[12,9],[4,9],[6,7]],"ms":97,"r":{"choice":"left","probabilities":{"up":0.008,"left":0.978,"right":0.014},"confidence":0.889}},
+    {"p":[4,13],"g":[[13,9],[4,8],[6,8]],"ms":96,"r":{"choice":"left","probabilities":{"left":0.905,"right":0.095},"confidence":0.546}},
+    {"p":[3,13],"g":[[14,9],[4,7],[6,9]],"ms":96,"r":{"choice":"left","probabilities":{"up":0.066,"left":0.549,"down":0.377,"right":0.009},"confidence":0.338}},
+    {"p":[2,13],"g":[[14,8],[4,6],[6,10]],"ms":78,"r":{"choice":"left","probabilities":{"left":0.818,"right":0.182},"confidence":0.315}},
+    {"p":[1,13],"g":[[14,8],[4,6],[6,10]],"ms":79,"r":{"choice":"left","probabilities":{"left":0.881,"right":0.119},"confidence":0.473}},
+    {"p":[1,14],"g":[[14,7],[4,5],[6,11]],"ms":79,"r":{"choice":"down","probabilities":{"down":0.867,"right":0.133},"confidence":0.434}},
+    {"p":[1,15],"g":[[14,6],[3,5],[6,12]],"ms":78,"r":{"choice":"down","probabilities":{"up":0.029,"down":0.971},"confidence":0.809}},
+    {"p":[2,15],"g":[[14,5],[2,5],[6,13]],"ms":78,"r":{"choice":"right","probabilities":{"up":0.026,"right":0.974},"confidence":0.826}},
+    {"p":[2,16],"g":[[14,4],[1,5],[5,13]],"ms":79,"r":{"choice":"down","probabilities":{"left":0.026,"down":0.974},"confidence":0.826}},
+    {"p":[2,17],"g":[[14,4],[1,5],[5,13]],"ms":78,"r":{"choice":"down","probabilities":{"up":0.018,"down":0.982},"confidence":0.87}},
+    {"p":[1,17],"g":[[14,3],[1,4],[4,13]],"ms":95,"r":{"choice":"left","probabilities":{"up":0.023,"left":0.519,"right":0.458},"confidence":0.286}},
+    {"p":[1,18],"g":[[13,3],[1,3],[4,14]],"ms":79,"r":{"choice":"down","probabilities":{"down":0.798,"right":0.202},"confidence":0.274}},
+    {"p":[1,19],"g":[[12,3],[2,3],[4,15]],"ms":78,"r":{"choice":"down","probabilities":{"up":0.042,"down":0.958},"confidence":0.748}},
+    {"p":[2,19],"g":[[12,4],[3,3],[4,16]],"ms":78,"r":{"choice":"right","probabilities":{"up":0.029,"right":0.971},"confidence":0.809}},
+    {"p":[3,19],"g":[[12,4],[3,3],[4,16]],"ms":78,"r":{"choice":"right","probabilities":{"left":0.037,"right":0.963},"confidence":0.77}},
+    {"p":[4,19],"g":[[12,5],[4,3],[4,17]],"ms":78,"r":{"choice":"right","probabilities":{"left":0.033,"right":0.967},"confidence":0.79}},
+    {"p":[5,19],"g":[[11,5],[4,4],[3,17]],"ms":78,"r":{"choice":"right","probabilities":{"left":0.033,"right":0.967},"confidence":0.79}},
+    {"p":[6,19],"g":[[10,5],[4,5],[2,17]],"ms":78,"r":{"choice":"right","probabilities":{"left":0.029,"right":0.971},"confidence":0.809}},
+    {"p":[7,19],"g":[[10,6],[4,6],[1,17]],"ms":79,"r":{"choice":"right","probabilities":{"left":0.029,"right":0.971},"confidence":0.809}},
+    {"p":[8,19],"g":[[10,6],[4,6],[1,17]],"ms":78,"r":{"choice":"right","probabilities":{"left":0.037,"right":0.963},"confidence":0.77}},
+    {"p":[9,19],"g":[[10,7],[4,7],[1,18]],"ms":95,"r":{"choice":"right","probabilities":{"up":0.222,"left":0.004,"right":0.774},"confidence":0.495}},
+    {"p":[10,19],"g":[[9,7],[4,8],[1,19]],"ms":78,"r":{"choice":"right","probabilities":{"left":0.095,"right":0.905},"confidence":0.546}},
+    {"p":[11,19],"g":[[8,7],[4,9],[2,19]],"ms":100,"r":{"choice":"right","probabilities":{"up":0.238,"left":0.028,"right":0.733},"confidence":0.39}},
+    {"p":[12,19],"g":[[7,7],[5,9],[3,19]],"ms":79,"r":{"choice":"right","probabilities":{"left":0.095,"right":0.905},"confidence":0.546}},
+    {"p":[13,19],"g":[[7,7],[5,9],[3,19]],"ms":78,"r":{"choice":"right","probabilities":{"left":0.053,"right":0.947},"confidence":0.699}},
+    {"p":[14,19],"g":[[6,7],[6,9],[4,19]],"ms":80,"r":{"choice":"right","probabilities":{"left":0.047,"right":0.953},"confidence":0.725}},
+    {"p":[15,19],"g":[[6,8],[6,10],[5,19]],"ms":80,"r":{"choice":"right","probabilities":{"left":0.037,"right":0.963},"confidence":0.77}},
+    {"p":[16,19],"g":[[6,9],[6,11],[6,19]],"ms":80,"r":{"choice":"right","probabilities":{"left":0.033,"right":0.967},"confidence":0.79}},
+    {"p":[17,19],"g":[[6,10],[7,11],[7,19]],"ms":79,"r":{"choice":"right","probabilities":{"left":0.033,"right":0.967},"confidence":0.79}},
+    {"p":[17,18],"g":[[6,10],[7,11],[7,19]],"ms":79,"r":{"choice":"up","probabilities":{"up":0.94,"left":0.06},"confidence":0.672}},
+    {"p":[17,17],"g":[[6,11],[8,11],[8,19]],"ms":80,"r":{"choice":"up","probabilities":{"up":0.958,"down":0.042},"confidence":0.748}},
+    {"p":[16,17],"g":[[7,11],[9,11],[9,19]],"ms":80,"r":{"choice":"left","probabilities":{"left":0.971,"down":0.029},"confidence":0.809}},
+    {"p":[16,16],"g":[[8,11],[10,11],[10,19]],"ms":96,"r":{"choice":"up","probabilities":{"up":0.54,"left":0.421,"right":0.039},"confidence":0.25}},
+    {"p":[16,15],"g":[[9,11],[11,11],[11,19]],"ms":78,"r":{"choice":"up","probabilities":{"up":0.818,"down":0.182},"confidence":0.315}},
+    {"p":[17,15],"g":[[9,11],[11,11],[11,19]],"ms":79,"r":{"choice":"right","probabilities":{"down":0.047,"right":0.953},"confidence":0.725}},
+    {"p":[17,14],"g":[[10,11],[12,11],[12,19]],"ms":78,"r":{"choice":"up","probabilities":{"up":0.905,"left":0.095},"confidence":0.546}},
+    {"p":[17,13],"g":[[11,11],[12,10],[13,19]],"ms":79,"r":{"choice":"up","probabilities":{"up":0.94,"down":0.06},"confidence":0.672}},
+    {"p":[16,13],"g":[[12,11],[12,9],[14,19]],"ms":79,"r":{"choice":"left","probabilities":{"left":0.915,"down":0.085},"confidence":0.58}},
+    {"p":[15,13],"g":[[12,12],[13,9],[15,19]],"ms":79,"r":{"choice":"left","probabilities":{"left":0.947,"right":0.053},"confidence":0.699}},
+    {"p":[14,13],"g":[[12,12],[13,9],[15,19]],"ms":94,"r":{"choice":"left","probabilities":{"left":0.924,"right":0.076},"confidence":0.613}},
+    {"p":[14,14],"g":[[12,13],[14,9],[16,19]],"ms":98,"r":{"choice":"down","probabilities":{"up":0.035,"left":0.051,"down":0.91,"right":0.003},"confidence":0.73}},
+    {"p":[14,15],"g":[[13,13],[14,10],[17,19]],"ms":94,"r":{"choice":"down","probabilities":{"up":0.02,"down":0.98},"confidence":0.857}},
+    {"p":[14,16],"g":[[14,13],[14,11],[17,18]],"ms":96,"r":{"choice":"down","probabilities":{"up":0.024,"left":0.369,"down":0.608},"confidence":0.309}},
+    {"p":[14,17],"g":[[14,14],[14,12],[17,17]],"ms":95,"r":{"choice":"down","probabilities":{"up":0.148,"down":0.852},"confidence":0.395}},
+    {"p":[15,17],"g":[[14,14],[14,12],[17,17]],"ms":93,"r":{"choice":"right","probabilities":{"up":0.042,"right":0.958},"confidence":0.748}},
+    {"p":[14,17],"g":[[14,15],[14,13],[16,17]],"ms":96,"r":{"choice":"left","probabilities":{"left":0.995,"right":0.005},"confidence":0.953}},
+    {"p":[14,16],"g":[[13,15],[13,13],[15,17]],"ms":99,"r":{"choice":"up","probabilities":{"up":0.731,"right":0.269},"confidence":0.16}},
+    {"p":[14,15],"g":[[12,15],[12,13],[14,17]],"ms":95,"r":{"choice":"up","probabilities":{"up":0.651,"down":0.349},"confidence":0.067}},
+    {"p":[14,14],"g":[[11,15],[12,12],[14,16]],"ms":96,"r":{"choice":"up","probabilities":{"up":0.964,"left":0.023,"down":0.014},"confidence":0.836}},
+    {"p":[14,13],"g":[[11,15],[12,12],[14,16]],"ms":97,"r":{"choice":"up","probabilities":{"up":0.986,"down":0.014},"confidence":0.893}},
+    {"p":[14,12],"g":[[10,15],[12,11],[14,15]],"ms":99,"r":{"choice":"up","probabilities":{"up":0.846,"left":0.114,"down":0.011,"right":0.029},"confidence":0.61}},
+    {"p":[14,11],"g":[[10,14],[11,11],[13,15]],"ms":95,"r":{"choice":"up","probabilities":{"up":0.867,"down":0.133},"confidence":0.434}},
+    {"p":[14,10],"g":[[10,13],[10,11],[12,15]],"ms":94,"r":{"choice":"up","probabilities":{"up":0.932,"down":0.068},"confidence":0.643}},
+    {"p":[14,9],"g":[[11,13],[9,11],[11,15]],"ms":78,"r":{"choice":"up","probabilities":{"up":0.905,"down":0.095},"confidence":0.546}},
+    {"p":[14,8],"g":[[11,13],[9,11],[11,15]],"ms":95,"r":{"choice":"up","probabilities":{"up":0.863,"left":0.049,"down":0.062,"right":0.026},"confidence":0.608}},
+    {"p":[14,7],"g":[[12,13],[8,11],[10,15]],"ms":79,"r":{"choice":"up","probabilities":{"up":0.94,"down":0.06},"confidence":0.672}},
+    {"p":[14,6],"g":[[12,12],[7,11],[10,14]],"ms":79,"r":{"choice":"up","probabilities":{"up":0.953,"down":0.047},"confidence":0.725}},
+    {"p":[14,5],"g":[[12,11],[6,11],[10,13]],"ms":78,"r":{"choice":"up","probabilities":{"up":0.94,"down":0.06},"confidence":0.672}},
+    {"p":[15,5],"g":[[12,10],[6,10],[11,13]],"ms":95,"r":{"choice":"right","probabilities":{"up":0.319,"down":0.006,"right":0.675},"confidence":0.4}},
+    {"p":[16,5],"g":[[12,10],[6,10],[11,13]],"ms":79,"r":{"choice":"right","probabilities":{"left":0.095,"right":0.905},"confidence":0.546}},
+    {"p":[17,5],"g":[[12,9],[6,9],[12,13]],"ms":78,"r":{"choice":"right","probabilities":{"left":0.053,"right":0.947},"confidence":0.699}},
+    {"p":[17,4],"g":[[12,8],[6,8],[12,12]],"ms":78,"r":{"choice":"up","probabilities":{"up":0.905,"left":0.095},"confidence":0.546}},
+    {"p":[17,3],"g":[[12,7],[6,7],[12,11]],"ms":78,"r":{"choice":"up","probabilities":{"up":0.94,"down":0.06},"confidence":0.672}},
+    {"p":[17,2],"g":[[11,7],[7,7],[12,10]],"ms":95,"r":{"choice":"up","probabilities":{"up":0.573,"left":0.394,"down":0.032},"confidence":0.275}},
+    {"p":[17,1],"g":[[11,7],[7,7],[12,10]],"ms":79,"r":{"choice":"up","probabilities":{"up":0.818,"down":0.182},"confidence":0.315}},
+    {"p":[16,1],"g":[[10,7],[8,7],[12,9]],"ms":81,"r":{"choice":"left","probabilities":{"left":0.852,"down":0.148},"confidence":0.395}},
+    {"p":[15,1],"g":[[10,6],[8,6],[12,8]],"ms":80,"r":{"choice":"left","probabilities":{"left":0.915,"right":0.085},"confidence":0.58}},
+    {"p":[14,1],"g":[[10,5],[8,5],[12,7]],"ms":79,"r":{"choice":"left","probabilities":{"left":0.932,"right":0.068},"confidence":0.643}},
+    {"p":[13,1],"g":[[11,5],[7,5],[11,7]],"ms":96,"r":{"choice":"left","probabilities":{"left":0.531,"down":0.413,"right":0.056},"confidence":0.215}},
+    {"p":[12,1],"g":[[11,5],[7,5],[11,7]],"ms":78,"r":{"choice":"left","probabilities":{"left":0.818,"right":0.182},"confidence":0.315}},
+    {"p":[11,1],"g":[[12,5],[6,5],[10,7]],"ms":78,"r":{"choice":"left","probabilities":{"left":0.881,"right":0.119},"confidence":0.473}},
+    {"p":[10,1],"g":[[12,4],[6,4],[9,7]],"ms":77,"r":{"choice":"left","probabilities":{"left":0.915,"right":0.085},"confidence":0.58}},
+    {"p":[10,2],"g":[[12,3],[6,3],[8,7]],"ms":93,"r":{"choice":"down","probabilities":{"down":0.852,"right":0.148},"confidence":0.395}},
+    {"p":[10,3],"g":[[11,3],[7,3],[7,7]],"ms":92,"r":{"choice":"down","probabilities":{"up":0.321,"down":0.679},"confidence":0.095}},
+    {"p":[9,3],"g":[[11,3],[7,3],[7,7]],"ms":96,"r":{"choice":"left","probabilities":{"up":0.095,"left":0.904,"right":0.001},"confidence":0.707}},
+    {"p":[8,3],"g":[[10,3],[8,3],[6,7]],"ms":95,"r":{"choice":"left","probabilities":{"left":0.755,"right":0.245},"confidence":0.197},"c":1},
+    {"p":[10,15],"g":[[10,7],[8,7],[10,7]],"ms":77,"r":{"choice":"right","probabilities":{"left":0.294,"right":0.706},"confidence":0.126}},
+    {"p":[11,15],"g":[[11,7],[9,7],[9,7]],"ms":93,"r":{"choice":"right","probabilities":{"up":0.238,"left":0.028,"right":0.733},"confidence":0.39}},
+    {"p":[12,15],"g":[[12,7],[10,7],[8,7]],"ms":80,"r":{"choice":"right","probabilities":{"left":0.095,"right":0.905},"confidence":0.546}},
+    {"p":[12,16],"g":[[12,7],[10,7],[8,7]],"ms":96,"r":{"choice":"down","probabilities":{"left":0.056,"down":0.472,"right":0.472},"confidence":0.207}},
+    {"p":[12,17],"g":[[12,8],[11,7],[7,7]],"ms":78,"r":{"choice":"down","probabilities":{"up":0.068,"down":0.932},"confidence":0.643}},
+    {"p":[11,17],"g":[[12,9],[12,7],[6,7]],"ms":78,"r":{"choice":"left","probabilities":{"up":0.042,"left":0.958},"confidence":0.748}},
+    {"p":[10,17],"g":[[12,10],[12,8],[6,8]],"ms":79,"r":{"choice":"left","probabilities":{"left":0.915,"right":0.085},"confidence":0.58}},
+    {"p":[10,18],"g":[[12,11],[12,9],[6,9]],"ms":77,"r":{"choice":"down","probabilities":{"down":0.915,"right":0.085},"confidence":0.58}},
+    {"p":[10,19],"g":[[12,11],[12,9],[6,9]],"ms":78,"r":{"choice":"down","probabilities":{"up":0.148,"down":0.852},"confidence":0.395}},
+    {"p":[9,19],"g":[[12,12],[12,10],[6,10]],"ms":94,"r":{"choice":"left","probabilities":{"up":0.059,"left":0.924,"right":0.017},"confidence":0.719}},
+    {"p":[8,19],"g":[[12,13],[12,11],[6,11]],"ms":79,"r":{"choice":"left","probabilities":{"left":0.924,"right":0.076},"confidence":0.613}},
+    {"p":[8,18],"g":[[11,13],[11,11],[6,12]],"ms":103,"r":{"choice":"up","probabilities":{"up":0.864,"left":0.055,"right":0.08},"confidence":0.555}},
+    {"p":[8,17],"g":[[10,13],[10,11],[6,13]],"ms":80,"r":{"choice":"up","probabilities":{"up":0.974,"down":0.026},"confidence":0.826}},
+    {"p":[7,17],"g":[[10,13],[10,11],[6,13]],"ms":77,"r":{"choice":"left","probabilities":{"left":0.94,"down":0.06},"confidence":0.672}},
+    {"p":[6,17],"g":[[10,14],[9,11],[5,13]],"ms":79,"r":{"choice":"left","probabilities":{"left":0.971,"right":0.029},"confidence":0.809}},
+    {"p":[6,16],"g":[[10,15],[8,11],[4,13]],"ms":80,"r":{"choice":"up","probabilities":{"up":0.958,"right":0.042},"confidence":0.748}},
+    {"p":[6,15],"g":[[9,15],[7,11],[4,14]],"ms":97,"r":{"choice":"up","probabilities":{"up":0.953,"down":0.047},"confidence":0.725}},
+    {"p":[5,15],"g":[[8,15],[6,11],[4,15]],"ms":101,"r":{"choice":"left","probabilities":{"left":0.506,"down":0.047,"right":0.447},"confidence":0.228}},
+    {"p":[6,15],"g":[[8,15],[6,11],[4,15]],"ms":106,"r":{"choice":"right","probabilities":{"left":0.095,"right":0.905},"confidence":0.546}},
+    {"p":[5,15],"g":[[8,14],[6,10],[4,16]],"ms":102,"r":{"choice":"left","probabilities":{"left":0.432,"down":0.231,"right":0.337},"confidence":0.028}},
+    {"p":[4,15],"g":[[8,13],[6,9],[4,17]],"ms":98,"r":{"choice":"left","probabilities":{"left":0.562,"right":0.438},"confidence":0.011}},
+    {"p":[4,14],"g":[[7,13],[6,8],[3,17]],"ms":96,"r":{"choice":"up","probabilities":{"up":0.745,"down":0.166,"right":0.089},"confidence":0.333}},
+    {"p":[4,13],"g":[[6,13],[6,7],[2,17]],"ms":95,"r":{"choice":"up","probabilities":{"up":0.706,"down":0.294},"confidence":0.126}},
+    {"p":[4,12],"g":[[6,13],[6,7],[2,17]],"ms":96,"r":{"choice":"up","probabilities":{"up":0.677,"left":0.034,"down":0.282,"right":0.008},"confidence":0.443}},
+    {"p":[4,11],"g":[[6,12],[7,7],[1,17]],"ms":99,"r":{"choice":"up","probabilities":{"up":0.963,"down":0.037},"confidence":0.77}},
+    {"p":[4,10],"g":[[6,11],[8,7],[1,18]],"ms":99,"r":{"choice":"up","probabilities":{"up":0.958,"down":0.042},"confidence":0.748}},
+    {"p":[4,9],"g":[[7,11],[8,6],[1,19]],"ms":100,"r":{"choice":"up","probabilities":{"up":0.905,"down":0.095},"confidence":0.546}},
+    {"p":[4,8],"g":[[8,11],[8,5],[2,19]],"ms":99,"r":{"choice":"up","probabilities":{"up":0.836,"left":0.029,"down":0.088,"right":0.047},"confidence":0.56}},
+    {"p":[4,7],"g":[[8,11],[8,5],[2,19]],"ms":80,"r":{"choice":"up","probabilities":{"up":0.94,"down":0.06},"confidence":0.672}},
+    {"p":[4,6],"g":[[9,11],[7,5],[3,19]],"ms":79,"r":{"choice":"up","probabilities":{"up":0.958,"down":0.042},"confidence":0.748}},
+    {"p":[4,5],"g":[[10,11],[6,5],[4,19]],"ms":79,"r":{"choice":"up","probabilities":{"up":0.974,"down":0.026},"confidence":0.826}},
+    {"p":[4,4],"g":[[11,11],[6,4],[5,19]],"ms":97,"r":{"choice":"up","probabilities":{"up":0.573,"left":0.394,"down":0.032},"confidence":0.275}},
+    {"p":[4,3],"g":[[12,11],[6,3],[6,19]],"ms":96,"r":{"choice":"up","probabilities":{"up":0.593,"down":0.407},"confidence":0.025}},
+    {"p":[4,2],"g":[[12,11],[6,3],[6,19]],"ms":99,"r":{"choice":"up","probabilities":{"up":0.616,"left":0.257,"down":0.045,"right":0.083},"confidence":0.283}},
+    {"p":[4,1],"g":[[12,10],[5,3],[7,19]],"ms":98,"r":{"choice":"up","probabilities":{"up":0.867,"down":0.133},"confidence":0.434}},
+    {"p":[5,1],"g":[[12,9],[4,3],[8,19]],"ms":99,"r":{"choice":"right","probabilities":{"left":0.344,"down":0.013,"right":0.643},"confidence":0.355}},
+    {"p":[6,1],"g":[[12,8],[4,2],[8,18]],"ms":98,"r":{"choice":"right","probabilities":{"left":0.029,"right":0.971},"confidence":0.809}},
+    {"p":[7,1],"g":[[12,7],[4,1],[8,17]],"ms":99,"r":{"choice":"right","probabilities":{"left":0.023,"right":0.977},"confidence":0.842}},
+    {"p":[8,1],"g":[[12,7],[4,1],[8,17]],"ms":102,"r":{"choice":"right","probabilities":{"left":0.014,"right":0.986},"confidence":0.893}},
+    {"p":[8,2],"g":[[11,7],[5,1],[7,17]],"ms":107,"r":{"choice":"down","probabilities":{"left":0.016,"down":0.984},"confidence":0.882}},
+    {"p":[8,3],"g":[[10,7],[6,1],[6,17]],"ms":107,"r":{"choice":"down","probabilities":{"up":0.018,"down":0.982},"confidence":0.87}},
+    {"p":[7,3],"g":[[10,6],[7,1],[6,16]],"ms":100,"r":{"choice":"left","probabilities":{"up":0.011,"left":0.914,"right":0.075},"confidence":0.701}},
+    {"p":[6,3],"g":[[10,5],[8,1],[6,15]],"ms":99,"r":{"choice":"left","probabilities":{"left":0.958,"right":0.042},"confidence":0.748}},
+    {"p":[5,3],"g":[[10,5],[8,1],[6,15]],"ms":100,"r":{"choice":"left","probabilities":{"left":0.633,"down":0.339,"right":0.028},"confidence":0.312}},
+    {"p":[4,3],"g":[[11,5],[8,2],[5,15]],"ms":97,"r":{"choice":"left","probabilities":{"left":0.852,"right":0.148},"confidence":0.395}},
+    {"p":[3,3],"g":[[12,5],[8,3],[4,15]],"ms":99,"r":{"choice":"left","probabilities":{"up":0.085,"left":0.808,"down":0.066,"right":0.04},"confidence":0.501}},
+    {"p":[2,3],"g":[[12,4],[7,3],[4,14]],"ms":96,"r":{"choice":"left","probabilities":{"left":0.94,"right":0.06},"confidence":0.672}},
+    {"p":[1,3],"g":[[12,3],[6,3],[4,13]],"ms":97,"r":{"choice":"left","probabilities":{"left":0.958,"right":0.042},"confidence":0.748}},
+    {"p":[1,2],"g":[[12,3],[6,3],[4,13]],"ms":99,"r":{"choice":"up","probabilities":{"up":0.573,"down":0.394,"right":0.032},"confidence":0.275}},
+    {"p":[1,1],"g":[[11,3],[5,3],[4,12]],"ms":80,"r":{"choice":"up","probabilities":{"up":0.818,"down":0.182},"confidence":0.315}},
+    {"p":[2,1],"g":[[10,3],[4,3],[4,11]],"ms":81,"r":{"choice":"right","probabilities":{"down":0.047,"right":0.953},"confidence":0.725}},
+    {"p":[3,1],"g":[[9,3],[4,2],[4,10]],"ms":97,"r":{"choice":"right","probabilities":{"left":0.148,"right":0.852},"confidence":0.395}},
+    {"p":[2,1],"g":[[8,3],[4,1],[4,9]],"ms":109,"r":{"choice":"left","probabilities":{"left":0.995,"right":0.005},"confidence":0.958}},
+    {"p":[1,1],"g":[[8,3],[4,1],[4,9]],"ms":116,"r":{"choice":"left","probabilities":{"left":0.989,"right":0.011},"confidence":0.913}},
+    {"p":[1,2],"g":[[7,3],[3,1],[4,8]],"ms":111,"r":{"choice":"down","probabilities":{"down":0.958,"right":0.042},"confidence":0.748}},
+    {"p":[1,3],"g":[[6,3],[2,1],[4,7]],"ms":108,"r":{"choice":"down","probabilities":{"up":0.012,"down":0.988},"confidence":0.903}},
+    {"p":[1,4],"g":[[5,3],[1,1],[4,6]],"ms":96,"r":{"choice":"down","probabilities":{"up":0.008,"down":0.976,"right":0.016},"confidence":0.882}},
+    {"p":[1,5],"g":[[4,3],[1,2],[4,5]],"ms":97,"r":{"choice":"down","probabilities":{"up":0.042,"down":0.958},"confidence":0.748}},
+    {"p":[2,5],"g":[[4,3],[1,2],[4,5]],"ms":96,"r":{"choice":"right","probabilities":{"up":0.026,"right":0.974},"confidence":0.826}},
+    {"p":[1,5],"g":[[3,3],[1,3],[3,5]],"ms":98,"r":{"choice":"left","probabilities":{"left":0.982,"right":0.018},"confidence":0.87}},
+    {"p":[1,4],"g":[[2,3],[2,3],[2,5]],"ms":103,"r":{"choice":"up","probabilities":{"up":0.5,"right":0.5},"confidence":0}},
+    {"p":[1,5],"g":[[1,3],[3,3],[1,5]],"ms":105,"r":{"choice":"down","probabilities":{"up":0.202,"down":0.798},"confidence":0.274},"c":1},
+    {"p":[8,15],"g":[[8,7],[6,7],[10,7]],"ms":88,"r":{"choice":"left","probabilities":{"left":0.593,"right":0.407},"confidence":0.025}},
+    {"p":[7,15],"g":[[8,7],[6,7],[10,7]],"ms":101,"r":{"choice":"left","probabilities":{"up":0.033,"left":0.839,"right":0.129},"confidence":0.524}},
+    {"p":[6,15],"g":[[7,7],[6,8],[9,7]],"ms":87,"r":{"choice":"left","probabilities":{"left":0.622,"right":0.378},"confidence":0.044}},
+    {"p":[7,15],"g":[[6,7],[6,9],[8,7]],"ms":97,"r":{"choice":"right","probabilities":{"left":0.4,"down":0.018,"right":0.582},"confidence":0.315}},
+    {"p":[8,15],"g":[[6,8],[6,10],[7,7]],"ms":80,"r":{"choice":"right","probabilities":{"left":0.407,"right":0.593},"confidence":0.025}},
+    {"p":[9,15],"g":[[6,9],[6,11],[6,7]],"ms":98,"r":{"choice":"right","probabilities":{"up":0.042,"left":0.114,"right":0.844},"confidence":0.523}},
+    {"p":[10,15],"g":[[6,9],[6,11],[6,7]],"ms":80,"r":{"choice":"right","probabilities":{"left":0.06,"right":0.94},"confidence":0.672}},
+    {"p":[10,14],"g":[[6,10],[7,11],[6,8]],"ms":99,"r":{"choice":"up","probabilities":{"up":0.518,"left":0.026,"right":0.457},"confidence":0.278}},
+    {"p":[10,13],"g":[[6,11],[8,11],[6,9]],"ms":82,"r":{"choice":"up","probabilities":{"up":0.905,"down":0.095},"confidence":0.546}},
+    {"p":[11,13],"g":[[7,11],[9,11],[6,10]],"ms":82,"r":{"choice":"right","probabilities":{"down":0.033,"right":0.967},"confidence":0.79}},
+    {"p":[12,13],"g":[[8,11],[10,11],[6,11]],"ms":82,"r":{"choice":"right","probabilities":{"left":0.033,"right":0.967},"confidence":0.79}},
+    {"p":[13,13],"g":[[8,11],[10,11],[6,11]],"ms":97,"r":{"choice":"right","probabilities":{"up":0.004,"left":0.012,"right":0.984},"confidence":0.916}},
+    {"p":[14,13],"g":[[9,11],[11,11],[6,12]],"ms":95,"r":{"choice":"right","probabilities":{"left":0.029,"right":0.971},"confidence":0.809}},
+    {"p":[14,14],"g":[[10,11],[12,11],[6,13]],"ms":99,"r":{"choice":"down","probabilities":{"up":0.025,"left":0.006,"down":0.953,"right":0.015},"confidence":0.83}},
+    {"p":[14,15],"g":[[11,11],[12,10],[5,13]],"ms":104,"r":{"choice":"down","probabilities":{"up":0.012,"down":0.988},"confidence":0.903}},
+    {"p":[13,15],"g":[[12,11],[12,9],[4,13]],"ms":103,"r":{"choice":"left","probabilities":{"up":0.033,"left":0.95,"down":0.017},"confidence":0.79}},
+    {"p":[12,15],"g":[[12,11],[12,9],[4,13]],"ms":81,"r":{"choice":"left","probabilities":{"left":0.679,"right":0.321},"confidence":0.095}},
+    {"p":[11,15],"g":[[12,12],[13,9],[4,14]],"ms":97,"r":{"choice":"left","probabilities":{"left":0.523,"down":0.117,"right":0.36},"confidence":0.129}},
+    {"p":[10,15],"g":[[12,13],[14,9],[4,15]],"ms":82,"r":{"choice":"left","probabilities":{"left":0.852,"right":0.148},"confidence":0.395}},
+    {"p":[9,15],"g":[[11,13],[14,10],[4,16]],"ms":101,"r":{"choice":"left","probabilities":{"up":0.039,"left":0.888,"right":0.073},"confidence":0.615}},
+    {"p":[8,15],"g":[[10,13],[14,11],[4,17]],"ms":99,"r":{"choice":"left","probabilities":{"left":0.971,"right":0.029},"confidence":0.809}},
+    {"p":[7,15],"g":[[10,13],[14,11],[4,17]],"ms":103,"r":{"choice":"left","probabilities":{"up":0.094,"left":0.893,"right":0.013},"confidence":0.655}},
+    {"p":[6,15],"g":[[10,14],[14,12],[3,17]],"ms":110,"r":{"choice":"left","probabilities":{"left":0.967,"right":0.033},"confidence":0.79}},
+    {"p":[5,15],"g":[[10,15],[14,13],[2,17]],"ms":106,"r":{"choice":"left","probabilities":{"left":0.704,"down":0.139,"right":0.157},"confidence":0.261}},
+    {"p":[4,15],"g":[[9,15],[13,13],[1,17]],"ms":107,"r":{"choice":"left","probabilities":{"left":0.971,"right":0.029},"confidence":0.809}},
+    {"p":[4,16],"g":[[8,15],[12,13],[1,18]],"ms":107,"r":{"choice":"down","probabilities":{"up":0.266,"down":0.723,"right":0.012},"confidence":0.418}},
+    {"p":[4,17],"g":[[8,15],[12,13],[1,18]],"ms":113,"r":{"choice":"down","probabilities":{"up":0.033,"down":0.967},"confidence":0.79}},
+    {"p":[3,17],"g":[[7,15],[11,13],[1,19]],"ms":112,"r":{"choice":"left","probabilities":{"up":0.294,"left":0.706},"confidence":0.126}},
+    {"p":[4,17],"g":[[6,15],[10,13],[2,19]],"ms":106,"r":{"choice":"right","probabilities":{"left":0.148,"right":0.852},"confidence":0.395}},
+    {"p":[4,16],"g":[[5,15],[10,14],[3,19]],"ms":107,"r":{"choice":"up","probabilities":{"up":0.562,"left":0.438},"confidence":0.011}},
+    {"p":[4,17],"g":[[4,15],[10,15],[4,19]],"ms":108,"r":{"choice":"down","probabilities":{"up":0.202,"down":0.798},"confidence":0.274}},
+    {"p":[3,17],"g":[[4,15],[10,15],[4,19]],"ms":107,"r":{"choice":"left","probabilities":{"up":0.245,"left":0.755},"confidence":0.197}},
+    {"p":[2,17],"g":[[4,16],[9,15],[5,19]],"ms":110,"r":{"choice":"left","probabilities":{"left":0.893,"right":0.107},"confidence":0.51}},
+    {"p":[2,16],"g":[[4,17],[8,15],[6,19]],"ms":101,"r":{"choice":"up","probabilities":{"up":0.587,"left":0.168,"right":0.245},"confidence":0.129}},
+    {"p":[2,15],"g":[[3,17],[7,15],[7,19]],"ms":97,"r":{"choice":"up","probabilities":{"up":0.958,"down":0.042},"confidence":0.748}},
+    {"p":[1,15],"g":[[2,17],[6,15],[8,19]],"ms":94,"r":{"choice":"left","probabilities":{"left":0.953,"down":0.047},"confidence":0.725}},
+    {"p":[1,14],"g":[[2,17],[6,15],[8,19]],"ms":94,"r":{"choice":"up","probabilities":{"up":0.967,"right":0.033},"confidence":0.79}},
+    {"p":[1,13],"g":[[2,16],[5,15],[8,18]],"ms":96,"r":{"choice":"up","probabilities":{"up":0.958,"down":0.042},"confidence":0.748}},
+    {"p":[2,13],"g":[[2,15],[4,15],[8,17]],"ms":108,"r":{"choice":"right","probabilities":{"down":0.085,"right":0.915},"confidence":0.58}},
+    {"p":[3,13],"g":[[1,15],[4,14],[7,17]],"ms":111,"r":{"choice":"right","probabilities":{"left":0.119,"right":0.881},"confidence":0.473}},
+    {"p":[2,13],"g":[[1,14],[4,13],[6,17]],"ms":105,"r":{"choice":"left","probabilities":{"left":0.996,"right":0.004},"confidence":0.962}},
+    {"p":[3,13],"g":[[1,14],[4,13],[6,17]],"ms":100,"r":{"choice":"right","probabilities":{"left":0.321,"right":0.679},"confidence":0.095}},
+    {"p":[2,13],"g":[[1,13],[3,13],[6,16]],"ms":98,"r":{"choice":"left","probabilities":{"left":0.995,"right":0.005},"confidence":0.958}},
+    {"p":[1,13],"g":[[1,13],[3,13],[6,16]],"ms":96,"r":{"choice":"left","probabilities":{"left":0.5,"right":0.5},"confidence":0},"c":1}
+  ]
+}
+</script>
+</figure>
+
+<script>
+(function () {
+  var fig = document.querySelector("[data-s1-pacman]");
+  if (!fig) return;
+  var NS = "http://www.w3.org/2000/svg", T = 16, R = 6.5;
+  var WALL = "#E7E5E0", DOT = "#171717", PAC = "#DDAE4A", GHOSTS = ["#D9565C", "#DC7FB0", "#E08D55"];
+  var svg = fig.querySelector("[data-maze]"), out = fig.querySelector("[data-json]");
+  var moveLabel = fig.querySelector("[data-move]");
+  function el(tag, attrs, parent) {
+    var n = document.createElementNS(NS, tag);
+    for (var k in attrs) n.setAttribute(k, attrs[k]);
+    (parent || svg).appendChild(n);
+    return n;
+  }
+  start(JSON.parse(fig.querySelector("[data-s1-game]").textContent));
+  function start(game) {
+    var maze = game.maze, H = maze.length, W = maze[0].length, moves = game.moves;
+    svg.setAttribute("viewBox", "0 0 " + W * T + " " + H * T);
+    var walls = el("g", { fill: WALL, "shape-rendering": "crispEdges" });
+    var dots = {};
+    maze.forEach(function (row, y) {
+      row.split("").forEach(function (c, x) {
+        if (c === "#") el("rect", { x: x * T, y: y * T, width: T, height: T }, walls);
+        if (c === "." && !(x === game.start.pac[0] && y === game.start.pac[1])) {
+          dots[x + "," + y] = el("circle", { cx: x * T + T / 2, cy: y * T + T / 2, r: 1.8, fill: DOT });
+        }
+      });
+    });
+    var ghosts = game.start.ghosts.map(function (g, i) {
+      var grp = el("g", {});
+      el("path", { d: "M" + -R + " 0A" + R + " " + R + " 0 0 1 " + R + " 0L" + R + " " + R + "L" + R * 0.66 + " " + R * 0.7 + "L" + R * 0.33 + " " + R + "L0 " + R * 0.7 + "L" + -R * 0.33 + " " + R + "L" + -R * 0.66 + " " + R * 0.7 + "L" + -R + " " + R + "Z", fill: GHOSTS[i] }, grp);
+      [-2.4, 2.4].forEach(function (dx) {
+        el("circle", { cx: dx, cy: -1, r: 1.9, fill: "#fff" }, grp);
+        el("circle", { cx: dx + 0.5, cy: -0.8, r: 0.9, fill: DOT }, grp);
+      });
+      return grp;
+    });
+    var pac = el("path", { fill: PAC });
+    function place(g, x, y) { g.setAttribute("transform", "translate(" + (x * T + T / 2) + " " + (y * T + T / 2) + ")"); }
+    function drawPac(x, y, dir, open) {
+      var cx = x * T + T / 2, cy = y * T + T / 2;
+      var face = { right: 0, down: Math.PI / 2, left: Math.PI, up: -Math.PI / 2 }[dir], a = 0.05 + 0.3 * open;
+      pac.setAttribute("d", "M" + cx + " " + cy + "L" + (cx + R * Math.cos(face + a)) + " " + (cy + R * Math.sin(face + a)) +
+        "A" + R + " " + R + " 0 1 1 " + (cx + R * Math.cos(face - a)) + " " + (cy + R * Math.sin(face - a)) + "Z");
+    }
+    function lerp(a, b, k) { return Math.abs(b - a) > 1 ? b : a + (b - a) * k; }
+    // The move's response from /v1/systemone, trimmed to its answer and rounded.
+    function panel(m) {
+      var r = m.r, keys = Object.keys(r.probabilities);
+      var lines = ["{", '  "answers": {', '    "move": {', '      "type": "choice",', '      "choice": "' + r.choice + '",', '      "probabilities": {'];
+      keys.forEach(function (k, i) { lines.push('        "' + k + '": ' + r.probabilities[k].toFixed(2) + (i < keys.length - 1 ? "," : "")); });
+      lines.push("      },", '      "confidence": ' + r.confidence.toFixed(2), "    }", "  }", "}");
+      var text = lines.join("\n");
+      if (window.Prism) out.innerHTML = Prism.highlight(text, Prism.languages.json, "json");
+      else out.textContent = text;
+    }
+    var run = 0, frame = 0, inView = false, resume = null;
+    function reset() {
+      Object.keys(dots).forEach(function (k) { dots[k].style.display = ""; });
+      return { pac: game.start.pac.slice(), ghosts: game.start.ghosts.map(function (g) { return g.slice(); }), lives: 3 };
+    }
+    function status(i, note) {
+      moveLabel.textContent = note || "Move " + (i + 1) + " of " + moves.length;
+    }
+    function over() {
+      status(0, "Game over");
+      fig.classList.remove("s1-busy");
+    }
+    function finish() {
+      reset();
+      moves.forEach(function (m) {
+        var key = m.p[0] + "," + m.p[1];
+        if (dots[key]) dots[key].style.display = "none";
+      });
+      var last = moves[moves.length - 1];
+      last.g.forEach(function (g, i) { place(ghosts[i], g[0], g[1]); });
+      drawPac(last.p[0], last.p[1], last.r.choice, 0.8);
+      panel(last);
+      over();
+    }
+    function play() {
+      var id = ++run;
+      cancelAnimationFrame(frame);
+      resume = null;
+      fig.classList.add("s1-busy");
+      if (matchMedia("(prefers-reduced-motion: reduce)").matches) return finish();
+      var s = reset(), i = 0, from, t0, pause = 0;
+      function begin(now) {
+        from = { pac: s.pac.slice(), ghosts: s.ghosts.map(function (g) { return g.slice(); }) };
+        panel(moves[i]);
+        status(i);
+        t0 = now;
+      }
+      function tick(now) {
+        if (id !== run) return;
+        // Off screen: stop here, and carry on from the same point once the board is back in view.
+        if (!inView) {
+          resume = function (later) { t0 += later - now; if (pause) pause += later - now; tick(later); };
+          return;
+        }
+        if (pause) {
+          if (now < pause) { frame = requestAnimationFrame(tick); return; }
+          pause = 0;
+          begin(now);
+        }
+        var m = moves[i], k = Math.min(1, (now - t0) / m.ms);
+        drawPac(lerp(from.pac[0], m.p[0], k), lerp(from.pac[1], m.p[1], k), m.r.choice, Math.abs(Math.sin(k * Math.PI)));
+        m.g.forEach(function (g, j) { place(ghosts[j], lerp(from.ghosts[j][0], g[0], k), lerp(from.ghosts[j][1], g[1], k)); });
+        if (k < 1) { frame = requestAnimationFrame(tick); return; }
+        var key = m.p[0] + "," + m.p[1];
+        if (dots[key]) dots[key].style.display = "none";
+        s.pac = m.p.slice();
+        s.ghosts = m.g.map(function (g) { return g.slice(); });
+        i++;
+        if (m.c) {
+          s.lives--;
+          if (!s.lives || i >= moves.length) return over();
+          status(i - 1, "Caught");
+          s.pac = game.start.pac.slice();
+          s.ghosts = game.start.ghosts.map(function (g) { return g.slice(); });
+          pause = now + 1200;
+          frame = requestAnimationFrame(tick);
+          return;
+        }
+        if (i >= moves.length) return over();
+        begin(now);
+        frame = requestAnimationFrame(tick);
+      }
+      s.ghosts.forEach(function (g, j) { place(ghosts[j], g[0], g[1]); });
+      drawPac(s.pac[0], s.pac[1], "left", 0.8);
+      frame = requestAnimationFrame(function (now) { begin(now); tick(now); });
+    }
+    var s0 = reset();
+    s0.ghosts.forEach(function (g, j) { place(ghosts[j], g[0], g[1]); });
+    drawPac(s0.pac[0], s0.pac[1], "left", 0.8);
+    panel(moves[0]);
+    status(0);
+    fig.querySelector("[data-replay]").addEventListener("click", play);
+    if (!("IntersectionObserver" in window)) { inView = true; return play(); }
+    // Play once nearly all of the board is on screen (or fills it, on a short screen), and hold whenever it
+    // scrolls fully out of view.
+    new IntersectionObserver(function (entries) {
+      var e = entries[entries.length - 1];
+      var room = Math.min(e.boundingClientRect.height, e.rootBounds ? e.rootBounds.height : innerHeight);
+      if (e.isIntersecting && e.intersectionRect.height >= 0.9 * room) {
+        inView = true;
+        if (!run) play();
+        else if (resume) { var go = resume; resume = null; frame = requestAnimationFrame(go); }
+      } else if (!e.isIntersecting) {
+        inView = false;
+      }
+    }, { threshold: [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1] }).observe(svg);
+  }
+})();
+</script>
+
+<h2 id="available-models">Available models</h2>
+
+<p>Three new decision models are available to run via Ollama:</p>
+
+<ul>
+<li><a href="https://ollama.com/library/nimble"><code>nimble</code></a>: open-source 9B parameter decision model developed by Bespoke Labs</li>
+<li><a href="https://ollama.com/library/tev1"><code>tev1</code></a>: an experimental 4B decision model from Together AI</li>
+<li><a href="https://ollama.com/library/tev1:0.8b"><code>tev1:0.8b</code></a>: an experimental 0.8B decision model from Together AI</li>
+</ul>
+
+<p>More decision models are coming soon, including models served by Ollama&rsquo;s cloud.</p>
+
+<figure class="fig">
+<div class="fig-title">Decision models on Ollama</div>
+<div class="fig-sub">Bespoke Labs public benchmarks · accuracy, higher is better</div>
+<div id="fig-decision-models" class="fig-chart"></div>
+<script type="application/json" data-chart="fig-decision-models">
+{
+  "description": "Mean accuracy on Bespoke Labs' public benchmarks, higher is better. Jev 1.13 76.0%, Nimble 9B 75.7%, Tev1 4B 73.3%, Tev1 0.8B 63.5%.",
+  "width": 660,
+  "height": 236,
+  "data": [
+    {
+      "name": "bars",
+      "values": [
+        { "label": "Jev 1.13", "maker": "TypeSafe", "acc": 76.0, "subject": false },
+        { "label": "Nimble 9B", "maker": "Bespoke Labs", "acc": 75.7, "subject": true },
+        { "label": "Tev1 4B", "maker": "Together AI", "acc": 73.3, "subject": true },
+        { "label": "Tev1 0.8B", "maker": "Together AI", "acc": 63.5, "subject": true }
+      ]
+    }
+  ],
+  "scales": [
+    { "name": "x", "type": "linear", "domain": [0, 100], "range": "width", "nice": false, "zero": true },
+    { "name": "y", "type": "band", "domain": ["Jev 1.13", "Nimble 9B", "Tev1 4B", "Tev1 0.8B"], "range": "height", "paddingInner": 0.44, "paddingOuter": 0.2 }
+  ],
+  "axes": [
+    {
+      "orient": "bottom",
+      "scale": "x",
+      "grid": true,
+      "values": [0, 25, 50, 75, 100],
+      "labelPadding": 8,
+      "encode": {
+        "labels": {
+          "update": {
+            "text": { "signal": "datum.value == 100 ? '100%' : format(datum.value, 'd')" }
+          }
+        }
+      }
+    }
+  ],
+  "marks": [
+    {
+      "type": "text",
+      "from": { "data": "bars" },
+      "encode": {
+        "update": {
+          "x": { "value": -12 },
+          "y": { "scale": "y", "field": "label", "band": 0.5, "offset": -7 },
+          "text": { "field": "label" },
+          "align": { "value": "right" },
+          "baseline": { "value": "middle" },
+          "fill": { "value": "$stone" },
+          "fontSize": { "value": 11.5 },
+          "fontWeight": { "value": 500 }
+        }
+      }
+    },
+    {
+      "type": "text",
+      "from": { "data": "bars" },
+      "encode": {
+        "update": {
+          "x": { "value": -12 },
+          "y": { "scale": "y", "field": "label", "band": 0.5, "offset": 7 },
+          "text": { "field": "maker" },
+          "align": { "value": "right" },
+          "baseline": { "value": "middle" },
+          "fill": { "value": "$stone" },
+          "fontSize": { "value": 10.5 }
+        }
+      }
+    },
+    {
+      "type": "rect",
+      "from": { "data": "bars" },
+      "encode": {
+        "update": {
+          "x": { "scale": "x", "value": 0 },
+          "x2": { "scale": "x", "field": "acc" },
+          "y": { "scale": "y", "field": "label" },
+          "height": { "scale": "y", "band": 1 },
+          "cornerRadius": { "value": 2 },
+          "fill": [{ "test": "datum.subject", "value": "$ink" }, { "value": "$putty" }],
+          "stroke": { "value": "$ink" },
+          "strokeWidth": { "value": 1 }
+        }
+      }
+    },
+    {
+      "type": "text",
+      "from": { "data": "bars" },
+      "encode": {
+        "update": {
+          "x": { "scale": "x", "field": "acc", "offset": 10 },
+          "y": { "scale": "y", "field": "label", "band": 0.5 },
+          "text": { "signal": "format(datum.acc, '.1f') + '%'" },
+          "align": { "value": "left" },
+          "baseline": { "value": "middle" },
+          "fill": { "value": "$ink" },
+          "fontSize": { "value": 11.5 },
+          "fontWeight": { "value": 600 }
+        }
+      }
+    },
+    {
+      "type": "rule",
+      "encode": {
+        "update": {
+          "x": { "scale": "x", "value": 0 },
+          "y": { "value": -8 },
+          "y2": { "signal": "height + 8" },
+          "stroke": { "value": "$ink" },
+          "strokeWidth": { "value": 1.2 }
+        }
+      }
+    }
+  ]
+}
+</script>
+<figcaption class="fig-note">Mean accuracy across 13 public data sets with human labels, covering 3,880 decisions. Nimble and Tev1 were evaluated on Ollama; Jev 1.13 is from Bespoke Labs' published run on the same decisions. See the <a href="https://ollama.com/library/nimble">Ollama evaluation results</a> and <a href="https://github.com/bespokelabsai/nimble/blob/main/docs/PUBLIC_BENCHMARKS.md">benchmark suite</a>.</figcaption>
+</figure>
+
+<h2 id="get-started">Get started</h2>
+
+<p>To get started, first <a href="https://ollama.com/download">download</a> or upgrade to the latest version of Ollama. Next, download a decision model such as <code>nimble</code>:</p>
+
+<pre><code class="language-shell">ollama pull nimble
+</code></pre>
+
+<p>You can make a request via <code>curl</code> or via TypeSafe&rsquo;s official Python SDK.</p>
+
+<div class="s1-code-tabs" data-s1-tabs>
+<div class="s1-tabs" role="tablist" aria-label="Interface">
+<button type="button" role="tab" aria-selected="true">API</button>
+<button type="button" role="tab" aria-selected="false">TypeSafe SDK</button>
+</div>
+<div role="tabpanel">
+<p><strong>Request</strong></p>
+<pre><code class="language-shell">curl http://localhost:11434/v1/systemone -d '{
+  "model": "nimble",
+  "state": {
+    "ticket": "I was charged twice. Please refund the extra payment."
+  },
+  "questions": {
+    "team": {
+      "type": "choice",
+      "instructions": "Which team should handle this ticket?",
+      "criteria": {
+        "billing": "Payments and refunds",
+        "technical": "Bugs and integrations",
+        "other": "None of the above"
+      }
+    },
+    "refund": {
+      "type": "noul",
+      "instructions": "Does the customer explicitly ask for a refund?"
+    },
+    "urgency": {
+      "type": "score",
+      "instructions": "How urgent is this ticket?",
+      "criteria": ["Routine", "Soon", "Urgent"]
+    }
+  }
+}'</code></pre>
+<p><strong>Response</strong></p>
+<pre><code class="language-json">{
+  "model": "nimble",
+  "answers": {
+    "team": {
+      "type": "choice",
+      "choice": "billing",
+      "probabilities": {"billing": 0.985, "technical": 0.012, "other": 0.003},
+      "confidence": 0.922
+    },
+    "refund": {"type": "noul", "noul": 0.997},
+    "urgency": {
+      "type": "score",
+      "score": 0.815,
+      "legend": {"0": "Routine", "1": "Soon", "2": "Urgent"},
+      "probabilities": {"0": 0.378, "1": 0.429, "2": 0.193},
+      "confidence": 0.046
+    }
+  },
+  "usage": {"input_tokens": 841, "output_tokens": 4}
+}</code></pre>
+</div>
+<div role="tabpanel" hidden>
+<p><strong>Setup</strong></p>
+<pre><code class="language-shell">uv add typesafe-sdk  # or: pip install typesafe-sdk
+export TYPESAFE_BASE_URL=http://localhost:11434
+export TYPESAFE_API_KEY=ollama
+export TYPESAFE_DEFAULT_MODEL=nimble</code></pre>
+<p><strong>Request</strong></p>
+<pre><code class="language-python">from typesafe_sdk import Choice, Noul, Score, TypeSafeClient
+
+ticket = "I was charged twice. Please refund the extra payment."
+questions = {
+    "team": Choice(
+        instructions="Which team should handle this ticket?",
+        criteria={
+            "billing": "Payments and refunds",
+            "technical": "Bugs and integrations",
+            "other": "None of the above",
+        },
+    ),
+    "refund": Noul(
+        instructions="Does the customer explicitly ask for a refund?",
+    ),
+    "urgency": Score(
+        instructions="How urgent is this ticket?",
+        criteria=["Routine", "Soon", "Urgent"],
+    ),
+}
+
+with TypeSafeClient(timeout=120) as client:
+    result = client.system_one(
+        state={"ticket": ticket},
+        questions=questions,
+    )
+
+print(result.choices["team"].choice)   # billing
+print(result.nouls["refund"].noul)     # 0.997
+print(result.scores["urgency"].score)  # 0.815</code></pre>
+</div>
+</div>
+
+<script>
+(function () {
+  document.querySelectorAll("[data-s1-tabs]").forEach(function (box) {
+    var tabs = [].slice.call(box.querySelectorAll("[role=tab]"));
+    var panels = [].slice.call(box.querySelectorAll("[role=tabpanel]"));
+    function select(i) {
+      tabs.forEach(function (t, j) { t.setAttribute("aria-selected", String(j === i)); });
+      panels.forEach(function (p, j) { p.hidden = j !== i; });
+    }
+    tabs.forEach(function (t, i) {
+      t.addEventListener("click", function () { select(i); });
+      t.addEventListener("keydown", function (e) {
+        if (e.key !== "ArrowRight" && e.key !== "ArrowLeft") return;
+        var next = (i + (e.key === "ArrowRight" ? 1 : tabs.length - 1)) % tabs.length;
+        tabs[next].focus();
+        select(next);
+      });
+    });
+  });
+})();
+</script>
+
+<h2 id="what-s-next">What&rsquo;s next</h2>
+
+<p>This is the first of many releases to come adding decision model support to Ollama. Future updates will include:</p>
+
+<ul>
+<li>Faster performance on Apple Silicon powered by MLX</li>
+<li>More models specializing in different kinds of decision making</li>
+</ul>
+
+    </section>
+  </article>
+
+
+    
+      
+<footer class="mt-auto underline-offset-4">
+  <div class="flex flex-col items-center justify-center px-4 py-4 md:flex-row md:justify-between md:px-6 md:py-3.5 lg:px-gutter">
+    <div class="order-2 mt-2 text-sm text-neutral-500 md:order-1 md:mt-0 md:text-xs">&copy; 2026 Ollama</div>
+    <ul data-footer-links class="order-1 flex flex-wrap items-center justify-center text-sm text-neutral-500 md:order-2 md:space-x-6 md:text-xs">
+      <li class="mx-2 my-1 md:mx-0 md:my-0">
+        <a href="/blog" class="hover:underline">Blog</a>
+      </li>
+      <li class="mx-2 my-1 md:mx-0 md:my-0">
+        <a href="https://docs.ollama.com" class="hover:underline">Docs</a>
+      </li>
+      <li class="mx-2 my-1 md:mx-0 md:my-0">
+        <a href="https://github.com/ollama/ollama" class="hover:underline">GitHub</a>
+      </li>
+      <li class="mx-2 my-1 md:mx-0 md:my-0">
+        <a href="https://discord.com/invite/ollama" class="hover:underline">Discord</a>
+      </li>
+      <li class="mx-2 my-1 md:mx-0 md:my-0">
+        <a href="https://twitter.com/ollama" class="hover:underline">X (Twitter)</a>
+      </li>
+      <li class="mx-2 my-1 md:mx-0 md:my-0">
+        <a href="mailto:support@ollama.com" class="hover:underline">Support</a>
+      </li>
+      <li class="mx-2 my-1 md:hidden">
+        <a href="https://lu.ma/ollama" class="hover:underline">Meetups</a>
+      </li>
+      <li class="mx-2 my-1 md:mx-0 md:my-0">
+        <a href="https://jobs.ashbyhq.com/ollama" class="hover:underline">Careers</a>
+      </li>
+      <li class="mx-2 my-1 md:mx-0 md:my-0">
+        <a href="/privacy" class="hover:underline">Privacy</a>
+      </li>
+      <li class="mx-2 my-1 md:mx-0 md:my-0">
+        <a href="/terms" class="hover:underline">Terms</a>
+      </li>
+    </ul>
+  </div>
+</footer>
+
+    
+
+    
+    <span class="hidden" id="end_of_template"></span>
+  </body>
+</html>

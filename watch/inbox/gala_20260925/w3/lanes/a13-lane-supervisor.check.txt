@@ -1,0 +1,70 @@
+LANE SUPERVISOR STATUS
+
+[chat_cheap]
+  deepseek           UP         consecutive-fails=0
+  groq_1             UP         consecutive-fails=0
+  groq_2             UP         consecutive-fails=0
+  together           UP         consecutive-fails=0
+[chat_free_wall]
+  openrouter_1       UP         consecutive-fails=0
+  openrouter_2       UP         consecutive-fails=0
+[local_dialogue]
+  opencode_4096      UP         consecutive-fails=0
+[quota_meter]
+  zai_lite_meter     UP         consecutive-fails=0
+exit=0
+===SCHTASK QUERY===
+
+Folder: \
+HostName:                             DESKTOP-7C70KSC
+TaskName:                             \MagImproveDaily
+Next Run Time:                        N/A
+Status:                               Disabled
+Logon Mode:                           Interactive only
+Last Run Time:                        8/6/2026 8:00:01 AM
+Last Result:                          0
+Author:                               DESKTOP-7C70KSC\foste
+Task To Run:                          powershell.exe -NoProfile -ExecutionPolicy Bypass -File C:\Users\foste\Documents\projects\local_sovereign_agent\scripts\improve_daily.ps1
+Start In:                             N/A
+Comment:                              N/A
+Scheduled Task State:                 Disabled
+Idle Time:                            Disabled
+Power Management:                     Stop On Battery Mode, No Start On Batteries
+Run As User:                          foste
+Delete Task If Not Rescheduled:       Disabled
+Stop Task If Runs X Hours and X Mins: 72:00:00
+Schedule:                             Scheduling data is not available in this format.
+Schedule Type:                        Daily 
+Start Time:                           8:00:00 AM
+Start Date:                           7/24/2026
+End Date:                             N/A
+Days:                                 Every 1 day(s)
+Months:                               N/A
+Repeat: Every:                        Disabled
+Repeat: Until: Time:                  Disabled
+Repeat: Until: Duration:              Disabled
+Repeat: Stop If Still Running:        Disabled
+===COMMIT a741defc5===
+commit a741defc564f3d1379d2495104bb01a9ff5a5d29
+Author: Codex <codex@openai.com>
+Date:   Fri Sep 25 21:16:24 2026 -0400
+
+    close: schtask bare-python trap caught + fixed (full interpreter path, supervisor verified 0 under scheduler)
+
+diff --git a/watch/inbox/SEED_WINDOW_CLOSE_20260925.md b/watch/inbox/SEED_WINDOW_CLOSE_20260925.md
+index fa88153c8..862eea484 100644
+--- a/watch/inbox/SEED_WINDOW_CLOSE_20260925.md
++++ b/watch/inbox/SEED_WINDOW_CLOSE_20260925.md
+@@ -63,5 +63,12 @@ events before the operator could be sold them. The method works; cards of facts
+ - providers' churn receipts: groq llamas → gpt-oss (5 files, `a0f7a593a`), together
+   V3 zombie-503 → V4-Flash (`d972d0308`); model-catalog audit proposed, not yet built (GO pending)
+ 
++**Late close catch (the close itself earning its keep):** the three NEW tasks
++(Cooker/StealthSweep/LaneSupervisor) were registered with bare `python` — invisible to
++Task Scheduler's clean PATH → 0x80070002 FILE_NOT_FOUND on every scheduled run while
++hand-fires worked. Re-registered with the full interpreter path; supervisor probe
++verified Result 0 under the scheduler. Trap added to the family: "Git Bash eats
++schtasks; bare python starves schtasks — always full path."
++
+ *Close-out law: RECORD CLEAN. This window ends with nothing hidden, nothing pending that
+ isn't named above, and every fire that should be burning, burning on a schedule.*

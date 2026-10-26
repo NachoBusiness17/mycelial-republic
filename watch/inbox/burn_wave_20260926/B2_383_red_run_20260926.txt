@@ -1,0 +1,96 @@
+............FFFFF                                                        [100%]
+================================== FAILURES ===================================
+________ test_brief_falsifier_quoted_chain_marker_reports_chains_zero _________
+
+    def test_brief_falsifier_quoted_chain_marker_reports_chains_zero():
+        """B2-383 falsifier: a single-entry log whose exception message quotes a
+        chain-marker sentence mid-message must not report a chain."""
+        from mag.improve import crash_log_census
+    
+>       assert crash_log_census(CHAIN_QUOTED_MID_MESSAGE) == {
+            "blocks": 1,
+            "entries": 1,
+            "test": 0,
+            "real": 1,
+            "chains": 0,
+        }
+E       AssertionError: assert {'blocks': 1,...real': 1, ...} == {'blocks': 1,...real': 1, ...}
+E         
+E         Omitting 4 identical items, use -vv to show
+E         Differing items:
+E         {'chains': 1} != {'chains': 0}
+E         Use -v to get more diff
+
+tests\test_improve_crash_scout.py:380: AssertionError
+____________ test_quoted_chain_marker_in_source_echo_never_counts _____________
+
+    def test_quoted_chain_marker_in_source_echo_never_counts():
+        from mag.improve import crash_log_census
+    
+        census = crash_log_census(CHAIN_QUOTED_SOURCE_ECHO)
+>       assert census["chains"] == 0, census
+E       AssertionError: {'blocks': 1, 'entries': 1, 'test': 0, 'real': 1, ...}
+E       assert 1 == 0
+
+tests\test_improve_crash_scout.py:393: AssertionError
+___________ test_quoted_chain_marker_after_type_prefix_never_counts ___________
+
+    def test_quoted_chain_marker_after_type_prefix_never_counts():
+        from mag.improve import crash_log_census
+    
+        census = crash_log_census(CHAIN_QUOTED_TYPE_PREFIX)
+>       assert census["chains"] == 0, census
+E       AssertionError: {'blocks': 1, 'entries': 1, 'test': 0, 'real': 1, ...}
+E       assert 1 == 0
+
+tests\test_improve_crash_scout.py:401: AssertionError
+____ test_quoted_marker_on_its_own_line_without_second_header_never_counts ____
+
+    def test_quoted_marker_on_its_own_line_without_second_header_never_counts():
+        """A column-0 quote riding a multi-line exception message is still not a
+        chain: a chain link needs two Traceback headers in the stanza."""
+        from mag.improve import crash_log_census
+    
+>       assert crash_log_census(CHAIN_QUOTED_MULTILINE_MESSAGE) == {
+            "blocks": 1,
+            "entries": 1,
+            "test": 0,
+            "real": 1,
+            "chains": 0,
+        }
+E       AssertionError: assert {'blocks': 1,...real': 1, ...} == {'blocks': 1,...real': 1, ...}
+E         
+E         Omitting 4 identical items, use -vv to show
+E         Differing items:
+E         {'chains': 1} != {'chains': 0}
+E         Use -v to get more diff
+
+tests\test_improve_crash_scout.py:410: AssertionError
+___________ test_quoted_marker_stanza_does_not_inflate_chained_log ____________
+
+    def test_quoted_marker_stanza_does_not_inflate_chained_log():
+        from mag.improve import crash_log_census
+    
+        mixed = CHAINED_REAL_UNQUOTED + CHAIN_QUOTED_MID_MESSAGE
+>       assert crash_log_census(mixed) == {
+            "blocks": 3,
+            "entries": 2,
+            "test": 0,
+            "real": 2,
+            "chains": 1,
+        }
+E       AssertionError: assert {'blocks': 3,...real': 2, ...} == {'blocks': 3,...real': 2, ...}
+E         
+E         Omitting 4 identical items, use -vv to show
+E         Differing items:
+E         {'chains': 2} != {'chains': 1}
+E         Use -v to get more diff
+
+tests\test_improve_crash_scout.py:423: AssertionError
+=========================== short test summary info ===========================
+FAILED tests/test_improve_crash_scout.py::test_brief_falsifier_quoted_chain_marker_reports_chains_zero
+FAILED tests/test_improve_crash_scout.py::test_quoted_chain_marker_in_source_echo_never_counts
+FAILED tests/test_improve_crash_scout.py::test_quoted_chain_marker_after_type_prefix_never_counts
+FAILED tests/test_improve_crash_scout.py::test_quoted_marker_on_its_own_line_without_second_header_never_counts
+FAILED tests/test_improve_crash_scout.py::test_quoted_marker_stanza_does_not_inflate_chained_log
+5 failed, 12 passed in 0.48s

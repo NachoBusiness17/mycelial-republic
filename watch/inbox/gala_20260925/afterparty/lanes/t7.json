@@ -1,0 +1,19 @@
+{
+  "gopher": "t7",
+  "item": "kill the pyc leak in the stranger-facing seed pack (a08 catch: 3 of 59 sealed rows were .pyc baking C:\\Users\\foste paths); spec first, then exclusion in tools/seed_v2.py, rebuild via builder CLI, verify_seal, ratchet",
+  "ok": true,
+  "note": "Spec landed in watch/inbox/SEED_V2_BUILD_BOOK_20260925.md (section 'SPEC: PYC EXCLUSION AT SEAL'): bytecode excluded from the seal walk because compiled .pyc bakes compile-time author absolute paths; builder also purges stray seed/**/__pycache__ before sealing (3.2.0 hand-surgery fixed the artifact not the builder, so the leak returned in 3.3.0) and now emits the zip itself from the sealed rows plus the manifest, so zip contents equal seal contents by construction. Implementation in tools/seed_v2.py carries the fix-comment receipt. Rebuild refreshed watch/inbox/seed-3.3.0.zip in place (name kept per the 3.2.0 repack precedent; a08 references pin this filename). Leaked build gone: 59 rows / 3 pyc became 56 rows / 0 pyc; zip 60 to 57 entries, zero pyc entries, zero members containing 'foste' (full byte scan). Honest caveat: the raw check log necessarily contains the ratchet tool's own stdout line 'RATCHET: PASS --- no unregistered debt.' which uses an em-dash; raw tool output is preserved verbatim, no authored line uses one.",
+  "checks": [
+    {"command": "./.venv/Scripts/python.exe tools/seed_v2.py", "exit": 0, "evidence": "watch/inbox/gala_20260925/afterparty/lanes/t7.check.txt section 1", "result": "SEED V2 BUILT: 14 engines, 56 files sealed; SEED ZIP watch/inbox/seed-3.3.0.zip, 57 entries, top-level seed-3.3.0/"},
+    {"command": "./.venv/Scripts/python.exe seed/verify_seal.py", "exit": 0, "evidence": "watch/inbox/gala_20260925/afterparty/lanes/t7.check.txt section 2", "result": "56/56 verified, 0 drifted, 0 missing"},
+    {"command": "zip scan (pyc entries + full-member 'foste' byte scan)", "exit": 0, "evidence": "watch/inbox/gala_20260925/afterparty/lanes/t7.check.txt section 3", "result": "57 entries, 0 pyc, 0 members containing foste, 56 manifest rows inside zip"},
+    {"command": "grep -c .pyc seed/MANIFEST.sha256 + wc -l", "exit": 0, "evidence": "watch/inbox/gala_20260925/afterparty/lanes/t7.check.txt sections 0 and 4", "result": "before: 59 rows, 3 pyc (cooker, phone_relay, test_seed_laws cpython-312); after: 56 rows, 0 pyc"},
+    {"command": "find seed -name __pycache__ -o -name '*.pyc'", "exit": 0, "evidence": "watch/inbox/gala_20260925/afterparty/lanes/t7.check.txt sections 5 and 7", "result": "0 residue before and after the test run"},
+    {"command": "PYTHONDONTWRITEBYTECODE=1 ./.venv/Scripts/python.exe -m pytest seed/tests/test_seed_laws.py -q -p no:cacheprovider", "exit": 0, "evidence": "watch/inbox/gala_20260925/afterparty/lanes/t7.check.txt section 6", "result": "6 passed"},
+    {"command": "./.venv/Scripts/python.exe tools/violation_ratchet.py check --changed", "exit": 0, "evidence": "watch/inbox/gala_20260925/afterparty/lanes/t7.check.txt section 8", "result": "scope=7 changed files; hits=4; registered=4; NEW=0; RATCHET PASS"}
+  ],
+  "next_steal": "Refresh the operator's Desktop/seed-3.3.0.zip copy from the rebuilt watch/inbox zip (per a08 it still holds the 3-pyc build), then wire tools/cold_boot_test.py into seed_v2 as the pre-zip gate per a08's falsifier-first row.",
+  "artifact": "watch/inbox/seed-3.3.0.zip (rebuilt, 57 entries, seal 56/56)",
+  "raw_log": "watch/inbox/gala_20260925/afterparty/lanes/t7.check.txt",
+  "spec": "watch/inbox/SEED_V2_BUILD_BOOK_20260925.md (SPEC: PYC EXCLUSION AT SEAL)"
+}

@@ -1,0 +1,63 @@
+{
+  "lane": "taxonomy",
+  "division": "B",
+  "ok": true,
+  "note": "Mined all 110 MP3s in C:/Users/foste/Desktop/music-ai with mutagen 1.48.1 (0 unreadable): 51 artists, 17-edge remix graph from 13 remixers covering all 8 the ask named, ratio 87 ORIGINAL / 16 cross-artist remix-class (14.5%), ID3 coverage TIT2/TPE1/TALB/APIC 110/110 with date/genre/TPE4 at 0/110, two mtime batches (2026-08-05 n=54 remix-first, 2026-10-01 n=56 originals-backfill) with the curation direction read filed; gaps stated in the receipt: no release years or genres exist in the tags so no era axis is derived from them, three classifier defects were caught and fixed in-lane, and no mag/ or tools/ code was touched so the ratchet was not run.",
+  "rows": [
+    {
+      "law": "remixer-lives-in-comma-and-title-never-TPE4",
+      "claim": "The spotdown.org tagger encodes remix credits only in the title suffix and the TPE1 comma pair; the ID3 remixer frame TPE4 is empty in all 110 files, so any remix-graph miner must parse both informal slots and use the TPE1-part-not-in-suffix rule to recover the original artist.",
+      "quote": "remixer frame (TPE4)        0/110  (0.0%)",
+      "source": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/music-ractor/lanes/taxonomy.check.txt",
+      "steal": "One seat, one sitting: before trusting any downloaded-corpus metadata pipeline, dump its frame inventory and write the parser against the frames that actually exist (here TIT2 suffix + TPE1 comma pair), not the frames the spec says should exist.",
+      "falsifier": "A spotdown-family corpus where TPE4 is populated, or a track whose TPE1 comma pair and title suffix disagree about who remixed whom, kills the two-slot law.",
+      "leverage": "high"
+    },
+    {
+      "law": "edges-first-nodes-second",
+      "claim": "The folder's curation ran in two phases 57 days apart: the 2026-08-05 batch bought the remix network (18.5% remix-class share, every named 12-inch credit) and the 2026-10-01 batch backfilled original catalog depth around a fixed 13-artist core (remix share down to 10.7%).",
+      "quote": "BATCH 2026-08-05: 54 files, 33 unique artists, remix-class share (REMIX+VS+EDIT) 10/54 (18.5%)",
+      "source": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/music-ractor/lanes/taxonomy.check.txt",
+      "steal": "One seat, one sitting: cluster any playlist-download folder by file mtime before computing folder-level stats, and file the per-batch delta, because the two batches answer different curation questions.",
+      "falsifier": "A multi-batch folder whose mtime clusters show no remix-share or artist-core delta between batches (differences within a few percent) kills the phase law.",
+      "leverage": "medium"
+    },
+    {
+      "law": "80-20-hub-graph",
+      "claim": "The canon's measured shape is roughly 80% originals / 20% remix-adjacent with one hub artist on both sides of the edge (Justice: 12 tracks as artist plus 2 credits as remixer) and one busiest hand (Soulwax: 3 remixes plus 6 tracks); the style is the graph, not the track list.",
+      "quote": "ORIGINAL       87  (79.1%)",
+      "source": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/music-ractor/lanes/taxonomy.check.txt",
+      "steal": "One seat, one sitting: when a corpus claims a genre identity, compute the artist-side and remixer-side degree tables; a genre whose hub positions are empty (nobody appears on both sides) is a flat playlist, not a scene.",
+      "falsifier": "A french-touch corpus where remix share exceeds original share, or where neither Justice nor Soulwax holds a hub position on both sides of the graph, kills the shape law.",
+      "leverage": "high"
+    },
+    {
+      "law": "truncated-kind-word-edge-loss",
+      "claim": "The tagger truncates kind words inside the tag itself (TIT2 reads 'NY Excuse - Justice Remi'), so a remix parser without a trailing-'Remi' normalization silently drops the Justice to Soulwax edge instead of flagging anything.",
+      "quote": "title='NY Excuse - Justice Remi' album='NY Excuse' date=''",
+      "source": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/music-ractor/lanes/taxonomy.check.txt",
+      "steal": "One seat, one sitting: add the truncated-suffix normalization (trailing 'Remi' means 'Remix') to any title-suffix parser this estate points at downloaded metadata, and count how many edges it recovers.",
+      "falsifier": "A parser run with and without the normalization that recovers zero additional edges on this corpus, or a corpus with no truncated kind words, removes the defect.",
+      "leverage": "medium"
+    }
+  ],
+  "checks": [
+    {
+      "command": "cd watch/inbox/gala_20260925/music-ractor/lanes && C:/Users/foste/Documents/projects/local_sovereign_agent/.venv/Scripts/python.exe taxonomy_scan.py",
+      "exit": 0,
+      "evidence": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/music-ractor/lanes/taxonomy.check.txt"
+    },
+    {
+      "command": "md5sum watch/inbox/gala_20260925/music-ractor/lanes/taxonomy.check.txt",
+      "exit": 0,
+      "evidence": "edc85e0d2d82715bd5948d3d721c7111 (cited in watch/inbox/music/taxonomy.md header)"
+    },
+    {
+      "command": "grep -c 'Unknown Album' watch/inbox/gala_20260925/music-ractor/lanes/taxonomy.check.txt",
+      "exit": 0,
+      "evidence": "5 (line-cited in watch/inbox/music/taxonomy.md section 4)"
+    }
+  ],
+  "decision_changed": "Closes the curation-direction question for the music-ai folder: batch 2026-08-05 bought the remix network and batch 2026-10-01 backfilled original catalog depth around a fixed 13-artist core, so any later style model for this corpus should train on remix edges and hub degrees, not flat per-artist track lists.",
+  "artifact": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/music-ractor/lanes/taxonomy.json"
+}

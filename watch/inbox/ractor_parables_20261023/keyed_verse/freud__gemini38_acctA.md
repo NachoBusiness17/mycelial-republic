@@ -1,0 +1,33 @@
+<!-- meta: {"ractor": "FREUD", "mouthpiece": "gemini38_acctA", "subject": "keyed_verse", "phase": "fill", "carrier": "agy.exe --mode plan -p (PC)", "requested_model": "gemini-3.8-flash-high", "resolved_label_in_log": ["Gemini 3.8 Flash (High)"], "account": "acctA", "start_et": "2026-10-23T20:38:39-04:00", "end_et": "2026-10-23T20:41:26-04:00", "exit": 0} -->
+
+# The Sixfold Recitation
+
+The clinician did not place himself where he could be seen. He took his high-backed chair in the shadow behind the screen, where the scent of cold cedar and tobacco rested undisturbed. Before him stood six narrow walnut stands arranged across the floor, separated by heavy velvet curtains so that none of the six youths could catch the eye of his neighbor.
+
+An attendant carried a sheaf of newly printed paper into the hall, laying an identical copy of the morning verse upon each stand. The text was brief: four rhymed stanzas describing an orchard wall and an evening bell. To a casual eye it was merely an exercise in meter, a schoolroom rhyme meant to occupy the morning.
+
+Inside the clinician’s wool coat, tucked flat against his ribs, rested a second document: a single leaf of calfskin, inscribed in a cramped hand and sealed with green wax. This leaf had never been shown to the attendant, nor laid upon any stand. It was the catalog of correspondences. In its margins, every rhyme and pause of the poem was translated into the architecture of an examination—the number of voices, the required unities, the point of arrest, and the dispersal of forces. The boys were never to look upon this cipher. The clinician knew that if the conscious mind learns the rule, it hastens to perform obedience, fabricating a tidy display while the unruly impulse hides beneath. Only when the performer believes he is merely singing does the body reveal its genuine habit.
+
+The clinician tapped his ivory baton once against the baseboard.
+
+Behind their velvet partitions, the six choristers drew breath together. In the opening two lines, six distinct throats sounded six identical pitches in succession, moving step by step across the stave without embellishment. Though each boy stood isolated, the six voices met upon each tone as if struck from a single wire. The drive to surge ahead or fall into trembling was checked, each youth matching the collective pulse. At the end of the second line, all six voices resolved together upon a clean, centered middle tone. The notes fused into one unyielding sound, uniform and solid, in which no individual throat could be distinguished. Until that single common pitch was struck with absolute clarity by every voice, the trial could not proceed.
+
+Across the sheet, where the third stanza should have begun, the printer had left an empty bar of total rest. The singing ceased. A dense hush dropped over the hall. In that suspended quiet, the clinician listened not for melody, but for the symptom. The nervous impulse, denied its forward outlet, turned inward. A weak throat would swallow; an anxious chest would drag air; an impatient mind would anticipate the next syllable. The clinician held his baton motionless in the dark. The acoustic wave lingered in the stone vaults, rocking between the windows until the resonance thinned into nothingness. The silence had to become completely level, standing like undisturbed water.
+
+One youth in the fourth stall gave a small, involuntary gasp—a slight catch of breath that betrayed his hurry. The clinician did not scold him. Repetition is not an error; it is an admission. He tapped the wood twice. Without argument, the six boys lowered their sheets, returned to the opening verse, and began the sequence again from the first syllable. The slip proved that tension remained unevenly distributed. Only on the third attempt did the silence hold unbroken, six chests resting in absolute balance until the room was empty of vibration.
+
+Only when that quiet barrier was fully cleared did the verse permit release.
+
+With the first measure of the fourth stanza, the music broke into an explosive, wide arpeggio. The six voices no longer moved in parallel steps. One soared upward into a crystalline falsetto, two plunged into the chest register, and the remaining three scattered across the wide intervals of the chord, weaving cross-rhythms that filled the gallery with color. The rigid control of the opening dissolved into a broad dispersal of energy, each voice pursuing its allotted trajectory across the hall.
+
+When the final chord faded, the attendant collected the six printed sheets and burned them in the hearth. The youths were dismissed into the garden, untroubled and confident that they had done nothing more than practice an old song. The clinician remained in his chair, drawing out the sealed parchment from his coat to record the markings of the trial.
+
+---KEY---
+1. The identical task input is dispatched simultaneously to all six parallel processing channels (an attendant lays an identical copy of the morning verse upon each of the six stands).
+2. The master interpretation key is strictly quarantined and never transmitted to any execution path (the clinician keeps the sealed calfskin cipher hidden in his coat, never showing it to the attendant or placing it upon any stand).
+3. The specification is embedded entirely within an oblique narrative verse so the operational rules are executed without conscious manipulation (the four-stanza song guides the examination while the youths believe they are merely practicing a schoolroom rhyme).
+4. All six workers must process the same initial inputs in lockstep before any branch may advance (the six isolated voices sound six identical pitches in succession across the first two lines).
+5. The system enforces an invariant state where all parallel workers must converge on an identical value (all six voices resolve into a single, uniform middle tone at the end of the second line).
+6. A standing synchronization barrier halts all execution until complete system equilibrium is attained across every worker (the empty bar of total rest requires all sound and movement to cease until acoustic resonance dissipates completely).
+7. Any asynchronous error or premature discharge at the barrier forces an immediate rollback and restart of the entire routine (an involuntary gasp in the silence prompts two taps of the baton, returning all six boys to the beginning of the first stanza).
+8. After successfully passing the synchronization barrier, execution branches diverge into broad parallel fan-out (the fourth stanza unleashes a wide arpeggio where the six voices disperse into independent intervals and contrasting registers).

@@ -1,0 +1,3507 @@
+{
+ "run": "coldhot-cold",
+ "asks": 30,
+ "landed": 30,
+ "cost_usd": 0.0471,
+ "graded": [
+  {
+   "file": "mag/orchestrator.py",
+   "family": "kimi",
+   "ask_id": "coldhot-cold-kimi-mag__orchestrator",
+   "sha_at_ask": "737aa9666ca82d0d",
+   "ok": true,
+   "channel": "content",
+   "defects": [
+    {
+     "raw": "DEFECT 1: _save writes to shared JSON surface without fsync before os.replace, risking durability loss on crash | EVIDENCE: mag/orchestrator.py:267-279 | FIX: Add os.fsync(temp.fileno()) before os.replace, or open with 'x' mode and use replace-with-fsync pattern",
+     "start": 267,
+     "nums": [
+      267,
+      279
+     ],
+     "path_ok": true,
+     "lines_ok": true,
+     "claim": "_save writes to shared JSON surface without fsync before os.replace, risking durability loss on crash"
+    },
+    {
+     "raw": "DEFECT 2: _trail appends to shared JSONL without atomic tmp+replace, corrupting on concurrent writers or crash | EVIDENCE: mag/orchestrator.py:296-301 | FIX: Use atomic tmp+replace pattern with fsync for trail appends, or switch to line-delimited append with O_APPEND and proper locking",
+     "start": 296,
+     "nums": [
+      296,
+      301
+     ],
+     "path_ok": true,
+     "lines_ok": true,
+     "claim": "_trail appends to shared JSONL without atomic tmp+replace, corrupting on concurrent writers or crash"
+    },
+    {
+     "raw": "DEFECT 3: _queue_save writes queue entries without atomic tmp+replace, risking partial writes visible to readers | EVIDENCE: mag/orchestrator.py:635-637 | FIX: Use atomic tmp+replace with fsync, matching _save pattern",
+     "start": 635,
+     "nums": [
+      635,
+      637
+     ],
+     "path_ok": true,
+     "lines_ok": true,
+     "claim": "_queue_save writes queue entries without atomic tmp+replace, risking partial writes visible to readers"
+    }
+   ],
+   "dead_code": {
+    "raw": "DEAD-CODE: dim() function ANSI fallback for non-tty is unused (no callers shown, headless mode implied) | EVIDENCE: mag/orchestrator.py:49-54",
+    "start": 49,
+    "nums": [
+     49,
+     54
+    ],
+    "path_ok": true,
+    "lines_ok": true
+   },
+   "one_sitting": {
+    "raw": "ONE-SITTING FIX: Add fsync before os.replace in _save to ensure durability | EVIDENCE: mag/orchestrator.py:267-279",
+    "start": 267,
+    "nums": [
+     267,
+     279
+    ],
+    "path_ok": true,
+    "lines_ok": true
+   },
+   "checks": {
+    "shape": true,
+    "cites_resolve": true,
+    "lines_in_range": true,
+    "no_em_dash": true,
+    "max_lines": true
+   },
+   "sha_drift_since_ask": false
+  },
+  {
+   "file": "mag/orchestrator.py",
+   "family": "glm-flash",
+   "ask_id": "coldhot-cold-glm-flash-mag__orchestrator",
+   "sha_at_ask": "737aa9666ca82d0d",
+   "ok": true,
+   "channel": "content",
+   "defects": [
+    {
+     "raw": "DEFECT 1: spawn_task unconditionally sets ok=True even when _spawn_cmd already finalized the task as failed on spawn error, so drain_once/drain_parallel mark the queue entry \"running\" against a failed task | EVIDENCE: mag/orchestrator.py:931-934 | FIX: set rec[\"ok\"] = rec.get(\"status\") not in TERMINAL instead of the unconditional True.",
+     "start": 931,
+     "nums": [
+      931,
+      934
+     ],
+     "path_ok": true,
+     "lines_ok": true,
+     "claim": "spawn_task unconditionally sets ok=True even when _spawn_cmd already finalized the task as failed on spawn error, so drain_once/drain_parallel mark the queue entry \"running\" against a failed task"
+    },
+    {
+     "raw": "DEFECT 2: same-goal dedupe is a TOCTOU race: two concurrent drainers can both pass the _running_tasks() check before either writes its task record, double-spending the provider on identical goals | EVIDENCE: mag/orchestrator.py:890-931 | FIX: take a lock (or atomic claim file) around the dedupe check through _spawn_cmd's first _save.",
+     "start": 890,
+     "nums": [
+      890,
+      931
+     ],
+     "path_ok": true,
+     "lines_ok": true,
+     "claim": "same-goal dedupe is a TOCTOU race: two concurrent drainers can both pass the _running_tasks() check before either writes its task record, double-spending the provider on identical goals"
+    },
+    {
+     "raw": "DEFECT 3: drain_parallel breaks the entire batch loop when the head queued goal is ollama and one ollama task runs, stranding all later queued remote-provider work that pass | EVIDENCE: mag/orchestrator.py:1452-1456 | FIX: continue past that entry (re-pick next queued) instead of break, with a visited-set guard.",
+     "start": 1452,
+     "nums": [
+      1452,
+      1456
+     ],
+     "path_ok": true,
+     "lines_ok": true,
+     "claim": "drain_parallel breaks the entire batch loop when the head queued goal is ollama and one ollama task runs, stranding all later queued remote-provider work that pass"
+    }
+   ],
+   "dead_code": {
+    "raw": "DEAD-CODE: QUEUE_TERMINAL is defined and never read; all terminal checks use TERMINAL | EVIDENCE: mag/orchestrator.py:947",
+    "start": 947,
+    "nums": [
+     947
+    ],
+    "path_ok": true,
+    "lines_ok": true
+   },
+   "one_sitting": {
+    "raw": "ONE-SITTING FIX: gate rec[\"ok\"] on the actual spawned status so a failed spawn settles its queue entry immediately instead of showing \"running\" until _reconcile_queue sweeps it | EVIDENCE: mag/orchestrator.py:931-934",
+    "start": 931,
+    "nums": [
+     931,
+     934
+    ],
+    "path_ok": true,
+    "lines_ok": true
+   },
+   "checks": {
+    "shape": true,
+    "cites_resolve": true,
+    "lines_in_range": true,
+    "no_em_dash": true,
+    "max_lines": true
+   },
+   "sha_drift_since_ask": false
+  },
+  {
+   "file": "mag/orchestrator.py",
+   "family": "deepseek",
+   "ask_id": "coldhot-cold-deepseek-mag__orchestrator",
+   "sha_at_ask": "737aa9666ca82d0d",
+   "ok": true,
+   "channel": "content",
+   "defects": [
+    {
+     "raw": "DEFECT 1: `_spawn_cmd` holds `log_fh` open and relies solely on daemon `_monitor` threads to close it; if the orchestrator process exits or the monitor thread is lost (the same \"launcher exits right after fan_out\" failure documented in `reap_completed`), the log fd leaks per spawn and the child's terminal state is never written, stranding the queue. | EVIDENCE: mag/orchestrator.py:436 (log_fh.open), mag/orchestrator.py:471-509 (_monitor is the only closer), mag/orchestrator.py:1272-1280 (reap_completed exists precisely because monitor threads die) | FIX: close log_fh in `_spawn_cmd`'s caller scope via a `finally`, or open the log fd in the monitor thread only, or register a `weakref.finalize`/`atexit` closer so the descriptor does not depend on the daemon thread surviving.",
+     "start": 436,
+     "nums": [
+      436
+     ],
+     "path_ok": true,
+     "lines_ok": true,
+     "claim": "`_spawn_cmd` holds `log_fh` open and relies solely on daemon `_monitor` threads to close it; if the orchestrator process exits or the monitor thread is lost (the same \"launcher exits right after fan_out\" failure documented in `reap_completed`), the log fd leaks per spawn and the child's terminal state is never written, stranding the queue."
+    },
+    {
+     "raw": "DEFECT 2: `drain_parallel` can over-spawn: `budget = n_agents - running` is computed once, but `_running_task_count()` also counts queue rows whose `task_id` is not yet in the task registry, and nothing re-checks the live count inside the `while budget > 0` loop after each `spawn_task`, so a fast child exit plus a new queue row can push concurrent spawns past `spawn_cap`. | EVIDENCE: mag/orchestrator.py:1516 (running = _running_task_count()), mag/orchestrator.py:1517 (budget = n_agents - running), mag/orchestrator.py:1519-1560 (loop never re-reads the running count) | FIX: recompute `running` at the top of each `while` iteration and `break` when `running >= spawn_cap or running >= n_agents`.",
+     "start": 1516,
+     "nums": [
+      1516
+     ],
+     "path_ok": true,
+     "lines_ok": true,
+     "claim": "`drain_parallel` can over-spawn: `budget = n_agents - running` is computed once, but `_running_task_count()` also counts queue rows whose `task_id` is not yet in the task registry, and nothing re-checks the live count inside the `while budget > 0` loop after each `spawn_task`, so a fast child exit plus a new queue row can push concurrent spawns past `spawn_cap`."
+    },
+    {
+     "raw": "DEFECT 3: `_next_queued` and `_any_running_task` parse every `QUEUE_DIR/*.json` on every drain tick without the task-list cache, so `drain_loop(interval_s=5.0)` reads O(queue) JSON files per 5s indefinitely; a large queue or a locked file (Windows) blocks the drainer. | EVIDENCE: mag/orchestrator.py:1247 (glob over QUEUE_DIR in `_next_queued`), mag/orchestrator.py:1294 (second full glob in `_any_running_task` on the same tick), mag/orchestrator.py:1595 (`drain_loop` default 5.0s) | FIX: cache parsed queue rows with a TTL keyed like `_TASK_LIST_CACHE` (path + monotonic time) and share it between `_next_queued`, `_any_running_task`, `_reconcile_queue`, and `_settle_unreachable_queued`.",
+     "start": 1247,
+     "nums": [
+      1247
+     ],
+     "path_ok": true,
+     "lines_ok": true,
+     "claim": "`_next_queued` and `_any_running_task` parse every `QUEUE_DIR/*.json` on every drain tick without the task-list cache, so `drain_loop(interval_s=5.0)` reads O(queue) JSON files per 5s indefinitely; a large queue or a locked file (Windows) blocks the drainer."
+    }
+   ],
+   "dead_code": {
+    "raw": "DEAD-CODE: `_provider_from_cmd` is called in `_spawn_cmd` and `_emit_task_lifecycle`, but `spawn_task` always builds `cmd` with `--provider <provider>`, so the fallback `\"deepseek\"` return plus the index-scan are reached only by tasks written by `register_external`/test fixtures; verify no live caller relies on the fallback. | EVIDENCE: mag/orchestrator.py:378-383 (`_provider_from_cmd`), mag/orchestrator.py:1092-1094 (provider always set from spawn_task arg), mag/orchestrator.py:186 (register_external builds no `cmd`)",
+    "start": 378,
+    "nums": [
+     378,
+     383
+    ],
+    "path_ok": true,
+    "lines_ok": true
+   },
+   "one_sitting": {
+    "raw": "ONE-SITTING FIX: close the log fd and finalize deterministically in `_spawn_cmd` so a lost daemon monitor thread cannot strand a running task; this is the same root cause as the `reap_completed` workaround and is the one change that makes the queue advance without depending on daemon-thread survival. | EVIDENCE: mag/orchestrator.py:436, mag/orchestrator.py:471-509, mag/orchestrator.py:1272-1280",
+    "start": 436,
+    "nums": [
+     436
+    ],
+    "path_ok": true,
+    "lines_ok": true
+   },
+   "checks": {
+    "shape": false,
+    "cites_resolve": true,
+    "lines_in_range": true,
+    "no_em_dash": true,
+    "max_lines": true
+   },
+   "sha_drift_since_ask": false
+  },
+  {
+   "file": "mag/training_events.py",
+   "family": "kimi",
+   "ask_id": "coldhot-cold-kimi-mag__training_events",
+   "sha_at_ask": "029b137074f41943",
+   "ok": true,
+   "channel": "content",
+   "defects": [
+    {
+     "raw": "DEFECT 1: Non-atomic write to shared JSONL surface violates crash-safety | EVIDENCE: mag/training_events.py:73-74 | FIX: Write to tmp file then atomic rename with Path.replace()",
+     "start": 73,
+     "nums": [
+      73,
+      74
+     ],
+     "path_ok": true,
+     "lines_ok": true,
+     "claim": "Non-atomic write to shared JSONL surface violates crash-safety"
+    },
+    {
+     "raw": "DEFECT 2: Silent OSError suppression hides disk-full and permission failures | EVIDENCE: mag/training_events.py:75-76 | FIX: Log exception details before returning row, or propagate to caller",
+     "start": 75,
+     "nums": [
+      75,
+      76
+     ],
+     "path_ok": true,
+     "lines_ok": true,
+     "claim": "Silent OSError suppression hides disk-full and permission failures"
+    },
+    {
+     "raw": "DEFECT 3: _redact_t2 returns empty dict for non-exportable rows which pollutes export list with falsy entries filtered later | EVIDENCE: mag/training_events.py:91-92,98 | FIX: Return None and filter with [r for r in exported if r is not None] to avoid double-traversal",
+     "start": 91,
+     "nums": [
+      91,
+      92,
+      98
+     ],
+     "path_ok": true,
+     "lines_ok": true,
+     "claim": "_redact_t2 returns empty dict for non-exportable rows which pollutes export list with falsy entries filtered later"
+    }
+   ],
+   "dead_code": {
+    "raw": "DEAD-CODE: tier_max parameter in export_jsonl is unused after signature | EVIDENCE: mag/training_events.py:104 | FIX: Remove parameter or pass to _redact_t2 for tier filtering",
+    "start": 104,
+    "nums": [
+     104
+    ],
+    "path_ok": true,
+    "lines_ok": true
+   },
+   "one_sitting": {
+    "raw": "ONE-SITTING FIX: Replace direct append with atomic tmp+replace in emit() | EVIDENCE: mag/training_events.py:73-74",
+    "start": 73,
+    "nums": [
+     73,
+     74
+    ],
+    "path_ok": true,
+    "lines_ok": true
+   },
+   "checks": {
+    "shape": true,
+    "cites_resolve": true,
+    "lines_in_range": true,
+    "no_em_dash": true,
+    "max_lines": true
+   },
+   "sha_drift_since_ask": false
+  },
+  {
+   "file": "mag/training_events.py",
+   "family": "glm-flash",
+   "ask_id": "coldhot-cold-glm-flash-mag__training_events",
+   "sha_at_ask": "029b137074f41943",
+   "ok": true,
+   "channel": "content",
+   "defects": [
+    {
+     "raw": "DEFECT 1: read_events slurps the entire events.jsonl into memory before slicing, unbounded on an append-only file | EVIDENCE: mag/training_events.py:106-120 | FIX: tail-read the file (seek from end) or stream-parse lines and keep only the last `limit` rows.",
+     "start": 106,
+     "nums": [
+      106,
+      120
+     ],
+     "path_ok": true,
+     "lines_ok": true,
+     "claim": "read_events slurps the entire events.jsonl into memory before slicing, unbounded on an append-only file"
+    },
+    {
+     "raw": "DEFECT 2: export_jsonl's tier_max argument is never enforced; only each row's own tier_max is checked, so callers can claim a gate that does not exist | EVIDENCE: mag/training_events.py:130-133,150-152 | FIX: filter `eligible` to rows whose tier_max is at or below the `tier_max` argument, or drop the parameter and manifest field.",
+     "start": 130,
+     "nums": [
+      130,
+      133,
+      150,
+      152
+     ],
+     "path_ok": true,
+     "lines_ok": true,
+     "claim": "export_jsonl's tier_max argument is never enforced; only each row's own tier_max is checked, so callers can claim a gate that does not exist"
+    },
+    {
+     "raw": "DEFECT 3: emit silently rewrites unknown patterns to \"route_decision\" (line 77), corrupting labels for every typo'd caller | EVIDENCE: mag/training_events.py:75-77 | FIX: log a fkb_failure-style side event or raise ValueError instead of coercing.",
+     "start": 75,
+     "nums": [
+      75,
+      77
+     ],
+     "path_ok": true,
+     "lines_ok": true,
+     "claim": "emit silently rewrites unknown patterns to \"route_decision\" (line 77), corrupting labels for every typo'd caller"
+    }
+   ],
+   "dead_code": {
+    "raw": "DEAD-CODE: the `tier_max` parameter of export_jsonl is accepted but never read | EVIDENCE: mag/training_events.py:130-133,143",
+    "start": 130,
+    "nums": [
+     130,
+     133,
+     143
+    ],
+    "path_ok": true,
+    "lines_ok": true
+   },
+   "one_sitting": {
+    "raw": "ONE-SITTING FIX: replace read_text-split with a bounded tail read in read_events so emit/stats/export cannot balloon memory as events.jsonl grows | EVIDENCE: mag/training_events.py:106-108",
+    "start": 106,
+    "nums": [
+     106,
+     108
+    ],
+    "path_ok": true,
+    "lines_ok": true
+   },
+   "checks": {
+    "shape": true,
+    "cites_resolve": true,
+    "lines_in_range": true,
+    "no_em_dash": true,
+    "max_lines": true
+   },
+   "sha_drift_since_ask": false
+  },
+  {
+   "file": "mag/training_events.py",
+   "family": "deepseek",
+   "ask_id": "coldhot-cold-deepseek-mag__training_events",
+   "sha_at_ask": "029b137074f41943",
+   "ok": true,
+   "channel": "content",
+   "defects": [
+    {
+     "raw": "DEFECT 1: `tier_max` parameter is accepted but never filters rows, so T0/T1-requested exports still emit any T2-or-lower event and the manifest's `tier_max` field lies about actual content | EVIDENCE: mag/training_events.py:155-160 (signature `tier_max: str = \"T2\"` used only at line 178 in manifest dict, never in filtering) | FIX: filter `eligible` by a tier ordering compare against `tier_max` before redaction, or drop the parameter and the manifest field.",
+     "start": 155,
+     "nums": [
+      155,
+      160
+     ],
+     "path_ok": true,
+     "lines_ok": true,
+     "claim": "`tier_max` parameter is accepted but never filters rows, so T0/T1-requested exports still emit any T2-or-lower event and the manifest's `tier_max` field lies about actual content"
+    },
+    {
+     "raw": "DEFECT 2: `excluded` count is wrong: it subtracts `len(exported)` from `len(rows)`, ignoring that redaction drops rows too, so T0/T1 and non-green rows are double-miscounted against `n_green_joined` | EVIDENCE: mag/training_events.py:180 (`\"excluded\": len(rows) - len(exported)`) versus 176-179 where `n_green_joined` and `n_exported` are separate counts | FIX: set `excluded` to `len(rows) - len(exported)` only if `n_exported == n_green_joined`; otherwise report `excluded_redacted = len(eligible) - len(exported)` separately.",
+     "start": 180,
+     "nums": [
+      180
+     ],
+     "path_ok": true,
+     "lines_ok": true,
+     "claim": "`excluded` count is wrong: it subtracts `len(exported)` from `len(rows)`, ignoring that redaction drops rows too, so T0/T1 and non-green rows are double-miscounted against `n_green_joined`"
+    },
+    {
+     "raw": "DEFECT 3: `_redact_t2` truncates to 400 chars with a non-ASCII ellipsis character and no `join`/`outcome` scrub, so operator identifiers in non-goal fields (run_id, session_id, task_id) export verbatim | EVIDENCE: mag/training_events.py:126-134 (only `input.goal` inspected; `join` keys at 156-157 flow straight through to 159) | FIX: hash or drop the join identifier keys in `_redact_t2` before export, and replace the literal `\"…\"` with `\"...\"`.",
+     "start": 126,
+     "nums": [
+      126,
+      134
+     ],
+     "path_ok": true,
+     "lines_ok": true,
+     "claim": "`_redact_t2` truncates to 400 chars with a non-ASCII ellipsis character and no `join`/`outcome` scrub, so operator identifiers in non-goal fields (run_id, session_id, task_id) export verbatim"
+    }
+   ],
+   "dead_code": {
+    "raw": "DEAD-CODE: `input_data` parameter coerces `None` to `{}` and is fully interchangeable with passing an empty dict, no other guard or sentinel uses the distinction | EVIDENCE: mag/training_events.py:63, 76 (`\"input\": input_data or {}`).",
+    "start": 63,
+    "nums": [
+     63
+    ],
+    "path_ok": true,
+    "lines_ok": true
+   },
+   "one_sitting": {
+    "raw": "ONE-SITTING FIX: make `tier_max` real by filtering `eligible` against a T0<T1<T2<T3 ordering before redaction, so the manifest field and the caller's contract agree | EVIDENCE: mag/training_events.py:155, 178. Falsifier: if any caller passes `tier_max` other than the default, the current code silently over-exports; grep callers and confirm no caller relies on the no-op behavior before applying.",
+    "start": 155,
+    "nums": [
+     155
+    ],
+    "path_ok": true,
+    "lines_ok": true
+   },
+   "checks": {
+    "shape": true,
+    "cites_resolve": true,
+    "lines_in_range": true,
+    "no_em_dash": true,
+    "max_lines": true
+   },
+   "sha_drift_since_ask": false
+  },
+  {
+   "file": "mag/verkle_knot.py",
+   "family": "kimi",
+   "ask_id": "coldhot-cold-kimi-mag__verkle_knot",
+   "sha_at_ask": "0382907b772f5cd7",
+   "ok": true,
+   "channel": "content",
+   "defects": [
+    {
+     "raw": "DEFECT 1: Non-atomic write to topic_evolution.json (torn write window) | EVIDENCE: mag/verkle_knot.py:1096 | FIX: Use tmp+os.replace pattern like _write_tip_atomic",
+     "start": 1096,
+     "nums": [
+      1096
+     ],
+     "path_ok": true,
+     "lines_ok": true,
+     "claim": "Non-atomic write to topic_evolution.json (torn write window)"
+    },
+    {
+     "raw": "DEFECT 2: Missing newline=\"\" in EVOLUTION.write_text risks CRLF corruption on Windows | EVIDENCE: mag/verkle_knot.py:1096 | FIX: Add newline=\"\" parameter to write_text call",
+     "start": 1096,
+     "nums": [
+      1096
+     ],
+     "path_ok": true,
+     "lines_ok": true,
+     "claim": "Missing newline=\"\" in EVOLUTION.write_text risks CRLF corruption on Windows"
+    },
+    {
+     "raw": "DEFECT 3: _safe_sid truncation to 12 chars may collide for long session IDs | EVIDENCE: mag/verkle_knot.py:896 | FIX: Use full session_pointer_v2 hash-based path exclusively, drop legacy by-session file",
+     "start": 896,
+     "nums": [
+      896
+     ],
+     "path_ok": true,
+     "lines_ok": true,
+     "claim": "_safe_sid truncation to 12 chars may collide for long session IDs"
+    }
+   ],
+   "dead_code": {
+    "raw": "DEAD-CODE: _merkle_prefix_roots is only called by _rewrite_chain which is v1-only and declining | EVIDENCE: mag/verkle_knot.py:247-298",
+    "start": 247,
+    "nums": [
+     247,
+     298
+    ],
+    "path_ok": true,
+    "lines_ok": true
+   },
+   "one_sitting": {
+    "raw": "ONE-SITTING FIX: Replace EVOLUTION.write_text with atomic tmp+replace | EVIDENCE: mag/verkle_knot.py:1096",
+    "start": 1096,
+    "nums": [
+     1096
+    ],
+    "path_ok": true,
+    "lines_ok": true
+   },
+   "checks": {
+    "shape": true,
+    "cites_resolve": true,
+    "lines_in_range": true,
+    "no_em_dash": true,
+    "max_lines": true
+   },
+   "sha_drift_since_ask": false
+  },
+  {
+   "file": "mag/verkle_knot.py",
+   "family": "glm-flash",
+   "ask_id": "coldhot-cold-glm-flash-mag__verkle_knot",
+   "sha_at_ask": "0382907b772f5cd7",
+   "ok": true,
+   "channel": "content",
+   "defects": [
+    {
+     "raw": "DEFECT 1: Stale-lock liveness probe calls os.kill(owner, 0), which on Windows is not a signal probe; CPython resolves it to TerminateProcess, so a healthy concurrent writer holding the lock gets killed by the waiter that breaks the \"stale\" lock. | EVIDENCE: mag/verkle_knot.py:158-172 | FIX: Probe the PID with a non-terminating liveness check (ctypes OpenProcess + GetExitCodeProcess, or psutil.pid_exists) on Windows; keep os.kill(pid, 0) POSIX-only.",
+     "start": 158,
+     "nums": [
+      158,
+      172
+     ],
+     "path_ok": true,
+     "lines_ok": true,
+     "claim": "Stale-lock liveness probe calls os.kill(owner, 0), which on Windows is not a signal probe; CPython resolves it to TerminateProcess, so a healthy concurrent writer holding the lock gets killed by the waiter that breaks the \"stale\" lock."
+    },
+    {
+     "raw": "DEFECT 2: v1 amend still retires the old knot to the attic BEFORE _rewrite_chain lands, so a crash between the two leaves the committed chain row pointing at a filename no longer in KNOTS; the ticket-8 fix narrowed the blast radius (bytes recoverable) but did not close the ordering window. | EVIDENCE: mag/verkle_knot.py:810-828 | FIX: Reorder: run _rewrite_chain first, then _retire_knot the superseded knot (chain never references a moved file).",
+     "start": 810,
+     "nums": [
+      810,
+      828
+     ],
+     "path_ok": true,
+     "lines_ok": true,
+     "claim": "v1 amend still retires the old knot to the attic BEFORE _rewrite_chain lands, so a crash between the two leaves the committed chain row pointing at a filename no longer in KNOTS; the ticket-8 fix narrowed the blast radius (bytes recoverable) but did not close the ordering window."
+    },
+    {
+     "raw": "DEFECT 3: _update_topic_evolution catches only json.JSONDecodeError and resets data = {}, so one corrupt or torn topic_evolution.json read silently wipes the entire series on the next save; a valid-JSON non-dict (list) also escapes the except clause as an uncaught TypeError from data[\"schema\"]. | EVIDENCE: mag/verkle_knot.py:1030-1040 | FIX: Fail closed: on parse failure or non-dict payload, quarantine the file and skip the update (or repair from CHAIN rows) instead of starting from {}.",
+     "start": 1030,
+     "nums": [
+      1030,
+      1040
+     ],
+     "path_ok": true,
+     "lines_ok": true,
+     "claim": "_update_topic_evolution catches only json.JSONDecodeError and resets data = {}, so one corrupt or torn topic_evolution.json read silently wipes the entire series on the next save; a valid-JSON non-dict (list) also escapes the except clause as an uncaught TypeError from data[\"schema\"]."
+    }
+   ],
+   "dead_code": {
+    "raw": "DEAD-CODE: Legacy per-session pointer write (by-session_{12-char-sid}.json) has no reader in this file; session_pointer_v2/latest_leaf_pointer read only the v2 hash-named pointer. | EVIDENCE: mag/verkle_knot.py:833-840",
+    "start": 833,
+    "nums": [
+     833,
+     840
+    ],
+    "path_ok": true,
+    "lines_ok": true
+   },
+   "one_sitting": {
+    "raw": "ONE-SITTING FIX: Replace the os.kill(owner, 0) stale-lock probe in verkle_lock with a Windows-safe PID liveness check (OpenProcess/GetExitCodeProcess via ctypes, psutil fallback), preserving the existing ProcessLookupError/PermissionError branches for POSIX. | EVIDENCE: mag/verkle_knot.py:158-172",
+    "start": 158,
+    "nums": [
+     158,
+     172
+    ],
+    "path_ok": true,
+    "lines_ok": true
+   },
+   "checks": {
+    "shape": true,
+    "cites_resolve": true,
+    "lines_in_range": true,
+    "no_em_dash": true,
+    "max_lines": true
+   },
+   "sha_drift_since_ask": false
+  },
+  {
+   "file": "mag/verkle_knot.py",
+   "family": "deepseek",
+   "ask_id": "coldhot-cold-deepseek-mag__verkle_knot",
+   "sha_at_ask": "0382907b772f5cd7",
+   "ok": true,
+   "channel": "content",
+   "defects": [
+    {
+     "raw": "DEFECT 1: `_append_verkle_knot_unlocked` writes knot file and session pointers with plain `write_text`, so a crash between knot write and chain append leaves orphan knot files that are never referenced (and pointers that lie about committed leaves) | EVIDENCE: mag/verkle_knot.py:434-445 (knot + pointer writes), :447-448 (chain append) | FIX: write knot and pointer through a tmp+os.replace helper (`_write_atomic(path, text)`) before appending the chain row",
+     "start": 434,
+     "nums": [
+      434,
+      445
+     ],
+     "path_ok": true,
+     "lines_ok": true,
+     "claim": "`_append_verkle_knot_unlocked` writes knot file and session pointers with plain `write_text`, so a crash between knot write and chain append leaves orphan knot files that are never referenced (and pointers that lie about committed leaves)"
+    },
+    {
+     "raw": "DEFECT 2: `_update_topic_evolution` updates `EVOLUTION` with plain `write_text` outside the tip/knot atomic contract, and it reads-modifies-writes without the lock protecting against a second process reusing the same file after `append_verkle_knot` returns (evolution is called at the end of the unlocked body, after the tip is committed) | EVIDENCE: mag/verkle_knot.py:973-976 | FIX: route `_update_topic_evolution` through the same tmp+os.replace helper and call it inside the lock before returning",
+     "start": 973,
+     "nums": [
+      973,
+      976
+     ],
+     "path_ok": true,
+     "lines_ok": true,
+     "claim": "`_update_topic_evolution` updates `EVOLUTION` with plain `write_text` outside the tip/knot atomic contract, and it reads-modifies-writes without the lock protecting against a second process reusing the same file after `append_verkle_knot` returns (evolution is called at the end of the unlocked body, after the tip is committed)"
+    },
+    {
+     "raw": "DEFECT 3: `_sync_latest_knot` writes `LATEST` with plain `write_text` in both branches, a fourth non-atomic shared json write alongside the tip and chain paths | EVIDENCE: mag/verkle_knot.py:400-407 | FIX: replace both `LATEST.write_text(...)` calls with the atomic tmp+replace helper",
+     "start": 400,
+     "nums": [
+      400,
+      407
+     ],
+     "path_ok": true,
+     "lines_ok": true,
+     "claim": "`_sync_latest_knot` writes `LATEST` with plain `write_text` in both branches, a fourth non-atomic shared json write alongside the tip and chain paths"
+    }
+   ],
+   "dead_code": {
+    "raw": "DEAD-CODE: `prove_latest()` is defined but no caller appears in this file; the only in-file reference to verifying before extending is `_verify_chain_consistent`, and `prove_latest` is otherwise unreferenced here | EVIDENCE: mag/verkle_knot.py:641-645",
+    "start": 641,
+    "nums": [
+     641,
+     645
+    ],
+    "path_ok": true,
+    "lines_ok": true
+   },
+   "one_sitting": {
+    "raw": "ONE-SITTING FIX: add a single `_write_atomic(path, text, *, indent=None)` helper (tmp + os.replace, LF-preserving bytes) and route the four plain `write_text` sites (knot file, by-session pointer, v2 pointer, LATEST, EVOLUTION) through it, closing the crash-window class that the chain rewrite and tip already closed; falsifier: kill -9 between knot write and chain append and confirm no orphan `*.knot.json` under `memory/biography/knots/` without a matching chain row | EVIDENCE: mag/verkle_knot.py:434-445, :401-405, :973-976",
+    "start": 434,
+    "nums": [
+     434,
+     445
+    ],
+    "path_ok": true,
+    "lines_ok": true
+   },
+   "checks": {
+    "shape": true,
+    "cites_resolve": true,
+    "lines_in_range": true,
+    "no_em_dash": true,
+    "max_lines": true
+   },
+   "sha_drift_since_ask": false
+  },
+  {
+   "file": "mag/operator_inbox.py",
+   "family": "kimi",
+   "ask_id": "coldhot-cold-kimi-mag__operator_inbox",
+   "sha_at_ask": "2c4dabbb2701347c",
+   "ok": true,
+   "channel": "content",
+   "defects": [
+    {
+     "raw": "DEFECT 1: Fatal checkpoint drain crash if `mag.compass` is missing due to unprotected import. | EVIDENCE: mag/operator_inbox.py:279 | FIX: Wrap import in try/except block and assign stub to prevent NameError.",
+     "start": 279,
+     "nums": [
+      279
+     ],
+     "path_ok": true,
+     "lines_ok": true,
+     "claim": "Fatal checkpoint drain crash if `mag.compass` is missing due to unprotected import."
+    },
+    {
+     "raw": "DEFECT 2: Frustration signal suppressed for default `commit_guidance` source \"dashboard\". | EVIDENCE: mag/operator_inbox.py:163,172 | FIX: Remove \"dashboard\" from exclusion set at mag/operator_inbox.py:172.",
+     "start": 163,
+     "nums": [
+      163,
+      172
+     ],
+     "path_ok": true,
+     "lines_ok": true,
+     "claim": "Frustration signal suppressed for default `commit_guidance` source \"dashboard\"."
+    },
+    {
+     "raw": "DEFECT 3: Redundant code block duplicates `mag.failure_kb.log_failure` call for failure kinds. | EVIDENCE: mag/operator_inbox.py:373-388 | FIX: Remove lines 381-388.",
+     "start": 373,
+     "nums": [
+      373,
+      388
+     ],
+     "path_ok": true,
+     "lines_ok": true,
+     "claim": "Redundant code block duplicates `mag.failure_kb.log_failure` call for failure kinds."
+    }
+   ],
+   "dead_code": null,
+   "one_sitting": {
+    "raw": "ONE-SITTING FIX: Add `mag.compass` safety wrapper to prevent fatal drain failure. | EVIDENCE: mag/operator_inbox.py:279 | FIX: Wrap import at line 279 in try/except with stub and guard calls at 306/314.",
+    "start": 279,
+    "nums": [
+     279
+    ],
+    "path_ok": true,
+    "lines_ok": true
+   },
+   "checks": {
+    "shape": false,
+    "cites_resolve": true,
+    "lines_in_range": true,
+    "no_em_dash": true,
+    "max_lines": true
+   },
+   "sha_drift_since_ask": false
+  },
+  {
+   "file": "mag/operator_inbox.py",
+   "family": "glm-flash",
+   "ask_id": "coldhot-cold-glm-flash-mag__operator_inbox",
+   "sha_at_ask": "2c4dabbb2701347c",
+   "ok": true,
+   "channel": "content",
+   "defects": [
+    {
+     "raw": "DEFECT 1: Operator veto/pause inputs (\"stop\", \"pause the run\") are classified as clear, then drained as ordinary \"apply\" guidance, so the seat is told to \"execute autonomously\" instead of pausing, the exact authority inversion the _VETO_PAUSE block claims to prevent | EVIDENCE: mag/operator_inbox.py:265-267,307-320 | FIX: in drain_pending_at_checkpoint, branch _is_veto_or_pause(text) before ambiguity and emit a {\"action\": \"veto_pause\"} action that halts the tool loop instead of the autonomous \"apply\" injection.",
+     "start": 265,
+     "nums": [
+      265,
+      267,
+      307,
+      320
+     ],
+     "path_ok": true,
+     "lines_ok": true,
+     "claim": "Operator veto/pause inputs (\"stop\", \"pause the run\") are classified as clear, then drained as ordinary \"apply\" guidance, so the seat is told to \"execute autonomously\" instead of pausing, the exact authority inversion the _VETO_PAUSE block claims to prevent"
+    },
+    {
+     "raw": "DEFECT 2: The FKB failure_kb.log_failure block is duplicated verbatim, so every tool_fail/collapse/degenerate/seat_crash event is logged twice, corrupting the KB's recurrence dedupe and double-drafting remedies | EVIDENCE: mag/operator_inbox.py:425-455 | FIX: delete the second duplicated block (lines 434-455).",
+     "start": 425,
+     "nums": [
+      425,
+      455
+     ],
+     "path_ok": true,
+     "lines_ok": true,
+     "claim": "The FKB failure_kb.log_failure block is duplicated verbatim, so every tool_fail/collapse/degenerate/seat_crash event is logged twice, corrupting the KB's recurrence dedupe and double-drafting remedies"
+    },
+    {
+     "raw": "DEFECT 3: Inbox item ids are timestamped to the second only (strftime %H%M%S), so two different notes committed in the same second share an id, breaking item identity for drain/processed tracking | EVIDENCE: mag/operator_inbox.py:142,146 | FIX: add a uuid4 suffix to the id string.",
+     "start": 142,
+     "nums": [
+      142,
+      146
+     ],
+     "path_ok": true,
+     "lines_ok": true,
+     "claim": "Inbox item ids are timestamped to the second only (strftime %H%M%S), so two different notes committed in the same second share an id, breaking item identity for drain/processed tracking"
+    }
+   ],
+   "dead_code": {
+    "raw": "DEAD-CODE: pending_hints() has no caller in this file; its consumers live only in the docstring's promise | EVIDENCE: mag/operator_inbox.py:106-112",
+    "start": 106,
+    "nums": [
+     106,
+     112
+    ],
+    "path_ok": true,
+    "lines_ok": true
+   },
+   "one_sitting": {
+    "raw": "ONE-SITTING FIX: Add the veto_pause branch in drain_pending_at_checkpoint plus its action handling in apply_actions_to_messages, closing the stop-signal bypass | EVIDENCE: mag/operator_inbox.py:307-320",
+    "start": 307,
+    "nums": [
+     307,
+     320
+    ],
+    "path_ok": true,
+    "lines_ok": true
+   },
+   "checks": {
+    "shape": true,
+    "cites_resolve": true,
+    "lines_in_range": true,
+    "no_em_dash": true,
+    "max_lines": true
+   },
+   "sha_drift_since_ask": false
+  },
+  {
+   "file": "mag/operator_inbox.py",
+   "family": "deepseek",
+   "ask_id": "coldhot-cold-deepseek-mag__operator_inbox",
+   "sha_at_ask": "2c4dabbb2701347c",
+   "ok": true,
+   "channel": "content",
+   "defects": [
+    {
+     "raw": "DEFECT 1: `_is_veto_or_pause` negation guard is bypassed because `_is_ambiguous` lowercases with `.rstrip(\".!?\")` then passes `low` to `_is_veto_or_pause`, which strips again; but the real hazard is `\"don't stop\"` reaching the final regex: after the guard returns False, control falls through to `return bool(re.search(r\"\\b(stop|...)` which matches \"stop\" inside \"don't stop\", so negation-guarded input is still classified as veto. | EVIDENCE: mag/operator_inbox.py:56-60 | FIX: after the negation-guard `if` block, `return False`, not fall through to the regex.",
+     "start": 56,
+     "nums": [
+      56,
+      60
+     ],
+     "path_ok": true,
+     "lines_ok": true,
+     "claim": "`_is_veto_or_pause` negation guard is bypassed because `_is_ambiguous` lowercases with `.rstrip(\".!?\")` then passes `low` to `_is_veto_or_pause`, which strips again; but the real hazard is `\"don't stop\"` reaching the final regex: after the guard returns False, control falls through to `return bool(re.search(r\"\\b(stop"
+    },
+    {
+     "raw": "DEFECT 2: `commit_guidance` writes `committed[-50:]` to disk but computes `pending_n` from the full pre-slice `committed` list, so a note fresh-committed past the 50-cap is saved nowhere yet reported as pending. | EVIDENCE: mag/operator_inbox.py:145-153 (append, slice, `_save(data)`, then `sum(... for x in committed ...)`) | FIX: truncate `committed` before counting, e.g. `committed = committed[-50:]` then `data[\"committed\"] = committed` and count from `committed`.",
+     "start": 145,
+     "nums": [
+      145,
+      153
+     ],
+     "path_ok": true,
+     "lines_ok": true,
+     "claim": "`commit_guidance` writes `committed[-50:]` to disk but computes `pending_n` from the full pre-slice `committed` list, so a note fresh-committed past the 50-cap is saved nowhere yet reported as pending."
+    },
+    {
+     "raw": "DEFECT 3: `log_behavioral_event` calls `mag.failure_kb.log_failure` twice with identical arguments, so every tool_fail/collapse/degenerate/seat_crash event is logged twice to the failure KB (dedupe downstream may mask, but the double call is unconditional). | EVIDENCE: mag/operator_inbox.py:348-366 (two consecutive identical `if kind in (...) : from mag.failure_kb import log_failure ... log_failure(...)` blocks) | FIX: delete the second duplicate `if kind in (...)` block.",
+     "start": 348,
+     "nums": [
+      348,
+      366
+     ],
+     "path_ok": true,
+     "lines_ok": true,
+     "claim": "`log_behavioral_event` calls `mag.failure_kb.log_failure` twice with identical arguments, so every tool_fail/collapse/degenerate/seat_crash event is logged twice to the failure KB (dedupe downstream may mask, but the double call is unconditional)."
+    }
+   ],
+   "dead_code": {
+    "raw": "DEAD-CODE: The `questions = _socratic_questions(text, task)` result is stored into the action dict and also appended to `processed` via `{**item, \"action\": \"socratic\"}`, but `_socratic_questions` returns fixed strings except for interpolated `g`/`t`; the function adds no branch coverage beyond the two call sites already in `drain_pending_at_checkpoint`. Candidate is the second `import` of `log_failure` duplication itself. | EVIDENCE: mag/operator_inbox.py:349-365",
+    "start": 349,
+    "nums": [
+     349,
+     365
+    ],
+    "path_ok": true,
+    "lines_ok": true
+   },
+   "one_sitting": {
+    "raw": "ONE-SITTING FIX: Correct `_is_veto_or_pause` to return False (not fall through) when the negation guard matches, so \"don't stop / never pause / keep going\" routes to apply rather than Socratic clarify or veto. | EVIDENCE: mag/operator_inbox.py:57-60",
+    "start": 57,
+    "nums": [
+     57,
+     60
+    ],
+    "path_ok": true,
+    "lines_ok": true
+   },
+   "checks": {
+    "shape": false,
+    "cites_resolve": true,
+    "lines_in_range": true,
+    "no_em_dash": true,
+    "max_lines": true
+   },
+   "sha_drift_since_ask": false
+  },
+  {
+   "file": "mag/skill_ledger.py",
+   "family": "kimi",
+   "ask_id": "coldhot-cold-kimi-mag__skill_ledger",
+   "sha_at_ask": "38d72fac367ed086",
+   "ok": true,
+   "channel": "content",
+   "defects": [
+    {
+     "raw": "DEFECT 1: Race condition in _append: non-atomic write to shared jsonl surface | EVIDENCE: mag/skill_ledger.py:63-66 | FIX: Use tempfile.NamedTemporaryFile(dir=path.parent, delete=False) + os.replace for atomic append",
+     "start": 63,
+     "nums": [
+      63,
+      66
+     ],
+     "path_ok": true,
+     "lines_ok": true,
+     "claim": "Race condition in _append: non-atomic write to shared jsonl surface"
+    },
+    {
+     "raw": "DEFECT 2: _count uses errors='replace' corrupting line count accuracy on encoding errors | EVIDENCE: mag/skill_ledger.py:71-77 | FIX: Use errors='strict' and handle UnicodeDecodeError explicitly, or use byte-counting with newline detection",
+     "start": 71,
+     "nums": [
+      71,
+      77
+     ],
+     "path_ok": true,
+     "lines_ok": true,
+     "claim": "_count uses errors='replace' corrupting line count accuracy on encoding errors"
+    },
+    {
+     "raw": "DEFECT 3: proven_moves loads entire decisions file into memory at once | EVIDENCE: mag/skill_ledger.py:82-94 | FIX: Stream-read with mmap or line-by-line iteration instead of read_text().splitlines()",
+     "start": 82,
+     "nums": [
+      82,
+      94
+     ],
+     "path_ok": true,
+     "lines_ok": true,
+     "claim": "proven_moves loads entire decisions file into memory at once"
+    }
+   ],
+   "dead_code": {
+    "raw": "DEAD-CODE: OUTCOME_REGISTRY dict is defined but never read programmatically | EVIDENCE: mag/skill_ledger.py:36-49",
+    "start": 36,
+    "nums": [
+     36,
+     49
+    ],
+    "path_ok": true,
+    "lines_ok": true
+   },
+   "one_sitting": {
+    "raw": "ONE-SITTING FIX: Replace _append with atomic tmp+replace pattern | EVIDENCE: mag/skill_ledger.py:63-66",
+    "start": 63,
+    "nums": [
+     63,
+     66
+    ],
+    "path_ok": true,
+    "lines_ok": true
+   },
+   "checks": {
+    "shape": true,
+    "cites_resolve": true,
+    "lines_in_range": true,
+    "no_em_dash": true,
+    "max_lines": true
+   },
+   "sha_drift_since_ask": false
+  },
+  {
+   "file": "mag/skill_ledger.py",
+   "family": "glm-flash",
+   "ask_id": "coldhot-cold-glm-flash-mag__skill_ledger",
+   "sha_at_ask": "38d72fac367ed086",
+   "ok": true,
+   "channel": "content",
+   "defects": [
+    {
+     "raw": "DEFECT 1: seed_from_bench has no dedupe; every re-run re-appends all bench rows, inflating counts and ok_rate buckets that proven_moves trusts | EVIDENCE: mag/skill_ledger.py:249-268 | FIX: fingerprint each bench row (task+model+run mtime or content hash) and skip rows already present, mirroring the seed_from_training seen-set at mag/skill_ledger.py:310-318.",
+     "start": 249,
+     "nums": [
+      249,
+      268
+     ],
+     "path_ok": true,
+     "lines_ok": true,
+     "claim": "seed_from_bench has no dedupe; every re-run re-appends all bench rows, inflating counts and ok_rate buckets that proven_moves trusts"
+    },
+    {
+     "raw": "DEFECT 2: seed_from_training writes outcome=\"ok\" for operator-taught rows, so unverified training text lands as verified wins in proven_moves case law | EVIDENCE: mag/skill_ledger.py:327-333 | FIX: use outcome=\"skipped\" (registered non-win) or a new \"taught\" registry value so is_win (mag/skill_ledger.py:93-94) never counts them.",
+     "start": 327,
+     "nums": [
+      327,
+      333
+     ],
+     "path_ok": true,
+     "lines_ok": true,
+     "claim": "seed_from_training writes outcome=\"ok\" for operator-taught rows, so unverified training text lands as verified wins in proven_moves case law"
+    },
+    {
+     "raw": "DEFECT 3: seed_from_training dedupe skips only rows whose hash is already seen; rows with empty content_hash bypass the check (h and h in seen) and duplicate on every re-run | EVIDENCE: mag/skill_ledger.py:323-324 | FIX: compute a fallback hash (sha256 of instruction+output) when row.get(\"content_hash\") is empty before the seen check.",
+     "start": 323,
+     "nums": [
+      323,
+      324
+     ],
+     "path_ok": true,
+     "lines_ok": true,
+     "claim": "seed_from_training dedupe skips only rows whose hash is already seen; rows with empty content_hash bypass the check (h and h in seen) and duplicate on every re-run"
+    }
+   ],
+   "dead_code": {
+    "raw": "DEAD-CODE: OUTCOME_REGISTRY is write-only documentation; no code reads its keys or values (normalize_outcome hardcodes only \"failed\") | EVIDENCE: mag/skill_ledger.py:63-70",
+    "start": 63,
+    "nums": [
+     63,
+     70
+    ],
+    "path_ok": true,
+    "lines_ok": true
+   },
+   "one_sitting": {
+    "raw": "ONE-SITTING FIX: add a hash-based seen-set dedupe shared by seed_from_bench and seed_from_training, keyed on (source, task_shape, model, content) | EVIDENCE: mag/skill_ledger.py:249-268",
+    "start": 249,
+    "nums": [
+     249,
+     268
+    ],
+    "path_ok": true,
+    "lines_ok": true
+   },
+   "checks": {
+    "shape": true,
+    "cites_resolve": true,
+    "lines_in_range": true,
+    "no_em_dash": true,
+    "max_lines": true
+   },
+   "sha_drift_since_ask": false
+  },
+  {
+   "file": "mag/skill_ledger.py",
+   "family": "deepseek",
+   "ask_id": "coldhot-cold-deepseek-mag__skill_ledger",
+   "sha_at_ask": "38d72fac367ed086",
+   "ok": true,
+   "channel": "content",
+   "defects": [
+    {
+     "raw": "DEFECT 1: is_win counts normalized \"ok\" but record_decision stores raw outcome unnormalized, so alias \"failed\" rows are stored as \"failed\" and is_win(\"failed\") returns True via normalize, yet proven_moves also buckets outcome=None decision-only rows and any garbage value passing through normalize unchanged, silently treating unregistered strings as non-wins without surfacing them to the registry feedback loop the docstring claims | EVIDENCE: mag/skill_ledger.py:86-89 (normalize passes unknown through) and mag/skill_ledger.py:201-216 (record_decision writes `outcome` raw, no normalize call) | FIX: call normalize_outcome(outcome) inside record_decision before assigning row[\"outcome\"], or reject unregistered non-None values there.",
+     "start": 86,
+     "nums": [
+      86,
+      89
+     ],
+     "path_ok": true,
+     "lines_ok": true,
+     "claim": "is_win counts normalized \"ok\" but record_decision stores raw outcome unnormalized, so alias \"failed\" rows are stored as \"failed\" and is_win(\"failed\") returns True via normalize, yet proven_moves also buckets outcome=None decision-only rows and any garbage value passing through normalize unchanged, silently treating unregistered strings as non-wins without surfacing them to the registry feedback loop the docstring claims"
+    },
+    {
+     "raw": "DEFECT 2: proven_moves reads the entire decisions file into a single string and splits every call, O(file) memory and parse per invocation, on a file the module itself targets at 1000+ rows and that seed_from_training appends 600 further rows to, serving a \"Deterministic, $0\" L1c context layer that runs on every agent turn | EVIDENCE: mag/skill_ledger.py:124-127 | FIX: stream line-by-line via file iteration like _count at mag/skill_ledger.py:98-103 instead of read_text().splitlines().",
+     "start": 124,
+     "nums": [
+      124,
+      127
+     ],
+     "path_ok": true,
+     "lines_ok": true,
+     "claim": "proven_moves reads the entire decisions file into a single string and splits every call, O(file) memory and parse per invocation, on a file the module itself targets at 1000+ rows and that seed_from_training appends 600 further rows to, serving a \"Deterministic, $0\" L1c context layer that runs on every agent turn"
+    },
+    {
+     "raw": "DEFECT 3: seed_from_bench and seed_from_training both assert `outcome=\"ok\"` / commit rows without checking for prior seeding beyond the content_hash path, so seed_from_bench is fully non-idempotent (re-running duplicates every bench row, and it is invoked from CLI `seed-bench`) while only the training seed carries a dedupe key | EVIDENCE: mag/skill_ledger.py:243-263 (no hash, no dedupe in bench seed) vs mag/skill_ledger.py:275-289 (training seed does dedupe) | FIX: give bench rows a stable content_hash (run path + task + model) and reuse the seen-set guard, or gate seed_from_bench behind an explicit `--force`.",
+     "start": 243,
+     "nums": [
+      243,
+      263
+     ],
+     "path_ok": true,
+     "lines_ok": true,
+     "claim": "seed_from_bench and seed_from_training both assert `outcome=\"ok\"` / commit rows without checking for prior seeding beyond the content_hash path, so seed_from_bench is fully non-idempotent (re-running duplicates every bench row, and it is invoked from CLI `seed-bench`) while only the training seed carries a dedupe key"
+    }
+   ],
+   "dead_code": {
+    "raw": "DEAD-CODE: none grounded beyond the known organ set; `source=\"router\"` default and `source=\"classify_runner\"` default are both exercised by callers elsewhere, and `limit` in proven_moves is used at line 148, so no candidate is asserted. | EVIDENCE: mag/skill_ledger.py:148",
+    "start": 148,
+    "nums": [
+     148
+    ],
+    "path_ok": true,
+    "lines_ok": true
+   },
+   "one_sitting": {
+    "raw": "ONE-SITTING FIX: normalize the outcome at the write boundary so the registry the module documents is actually enforced on every row that enters the ledger. | EVIDENCE: mag/skill_ledger.py:201-216",
+    "start": 201,
+    "nums": [
+     201,
+     216
+    ],
+    "path_ok": true,
+    "lines_ok": true
+   },
+   "checks": {
+    "shape": true,
+    "cites_resolve": true,
+    "lines_in_range": true,
+    "no_em_dash": true,
+    "max_lines": true
+   },
+   "sha_drift_since_ask": false
+  },
+  {
+   "file": "mag/preferences.py",
+   "family": "kimi",
+   "ask_id": "coldhot-cold-kimi-mag__preferences",
+   "sha_at_ask": "5cfdb5b445043d15",
+   "ok": true,
+   "channel": "content",
+   "defects": [
+    {
+     "raw": "DEFECT 1: save_prefs writes to shared json surface without atomic tmp+replace, risking corruption on crash | EVIDENCE: mag/preferences.py:24-26 | FIX: Use atomic write: write to tmp file in same dir, then os.replace()",
+     "start": 24,
+     "nums": [
+      24,
+      26
+     ],
+     "path_ok": true,
+     "lines_ok": true,
+     "claim": "save_prefs writes to shared json surface without atomic tmp+replace, risking corruption on crash"
+    },
+    {
+     "raw": "DEFECT 2: load_prefs silently returns empty dict on any OSError, masking permission/disk failures that need visibility | EVIDENCE: mag/preferences.py:17-20 | FIX: Log OSError details before returning fallback, or raise to caller with context",
+     "start": 17,
+     "nums": [
+      17,
+      20
+     ],
+     "path_ok": true,
+     "lines_ok": true,
+     "claim": "load_prefs silently returns empty dict on any OSError, masking permission/disk failures that need visibility"
+    },
+    {
+     "raw": "DEFECT 3: set_drainer returns stale prefs dict when env lock blocks write, caller may falsely believe state changed | EVIDENCE: mag/preferences.py:74-75 | FIX: Return updated load_prefs() result or raise/return sentinel indicating no-op",
+     "start": 74,
+     "nums": [
+      74,
+      75
+     ],
+     "path_ok": true,
+     "lines_ok": true,
+     "claim": "set_drainer returns stale prefs dict when env lock blocks write, caller may falsely believe state changed"
+    }
+   ],
+   "dead_code": {
+    "raw": "DEAD-CODE: compass_autonomous_continue hardcoded True in autonomy_status return value | EVIDENCE: mag/preferences.py:137",
+    "start": 137,
+    "nums": [
+     137
+    ],
+    "path_ok": true,
+    "lines_ok": true
+   },
+   "one_sitting": {
+    "raw": "ONE-SITTING FIX: Atomic tmp+replace in save_prefs | EVIDENCE: mag/preferences.py:24-26",
+    "start": 24,
+    "nums": [
+     24,
+     26
+    ],
+    "path_ok": true,
+    "lines_ok": true
+   },
+   "checks": {
+    "shape": true,
+    "cites_resolve": true,
+    "lines_in_range": true,
+    "no_em_dash": true,
+    "max_lines": true
+   },
+   "sha_drift_since_ask": false
+  },
+  {
+   "file": "mag/preferences.py",
+   "family": "glm-flash",
+   "ask_id": "coldhot-cold-glm-flash-mag__preferences",
+   "sha_at_ask": "5cfdb5b445043d15",
+   "ok": true,
+   "channel": "content",
+   "defects": [
+    {
+     "raw": "DEFECT 1: Concurrent set_* writers do unlocked read-modify-write, so one save_prefs silently drops the other's keys (lost update on shared pref file) | EVIDENCE: mag/preferences.py:46-49 with 98-100 | FIX: take an exclusive lock (msvcrt.locking on PREF_PATH) around the load-mutate-save in each set_* helper.",
+     "start": 46,
+     "nums": [
+      46,
+      49
+     ],
+     "path_ok": true,
+     "lines_ok": true,
+     "claim": "Concurrent set_* writers do unlocked read-modify-write, so one save_prefs silently drops the other's keys (lost update on shared pref file)"
+    },
+    {
+     "raw": "DEFECT 2: Corrupt or unreadable PREF_PATH makes load_prefs return {}, and the next set_* then persists a prefs dict holding only its own key, wiping all other stored prefs with no error surfaced | EVIDENCE: mag/preferences.py:19-21, 46-49 | FIX: on parse failure, rename the corrupt file to PREF_PATH.with_suffix(\".json.bak-<ts>\") and log before returning {}.",
+     "start": 19,
+     "nums": [
+      19,
+      21
+     ],
+     "path_ok": true,
+     "lines_ok": true,
+     "claim": "Corrupt or unreadable PREF_PATH makes load_prefs return {}, and the next set_* then persists a prefs dict holding only its own key, wiping all other stored prefs with no error surfaced"
+    },
+    {
+     "raw": "DEFECT 3: set_drainer only guards off-writes when env is locked ON; when MAG_DRAINER is locked OFF (env \"0\"), on-writes are accepted into the file yet drainer_enabled() ignores them, so the dashboard reports success while the state never takes effect | EVIDENCE: mag/preferences.py:97-104 vs 31-37 | FIX: in set_drainer, also return early (or raise/flag) when enabled is True and env is in (\"0\",\"false\",\"no\").",
+     "start": 97,
+     "nums": [
+      97,
+      104
+     ],
+     "path_ok": true,
+     "lines_ok": true,
+     "claim": "set_drainer only guards off-writes when env is locked ON; when MAG_DRAINER is locked OFF (env \"0\"), on-writes are accepted into the file yet drainer_enabled() ignores them, so the dashboard reports success while the state never takes effect"
+    }
+   ],
+   "dead_code": {
+    "raw": "DEAD-CODE: no in-file dead code is verifiable; nearest candidate is set_inject_behavioral_pack, whose callers are outside this file | EVIDENCE: mag/preferences.py:118-123",
+    "start": 118,
+    "nums": [
+     118,
+     123
+    ],
+    "path_ok": true,
+    "lines_ok": true
+   },
+   "one_sitting": {
+    "raw": "ONE-SITTING FIX: wrap each set_* read-modify-write in a lockfile-guarded retry loop (load, mutate, write under os.open with O_CREAT|O_EXCL sentinel) to eliminate the lost-update race in one pass | EVIDENCE: mag/preferences.py:45-49",
+    "start": 45,
+    "nums": [
+     45,
+     49
+    ],
+    "path_ok": true,
+    "lines_ok": true
+   },
+   "checks": {
+    "shape": true,
+    "cites_resolve": true,
+    "lines_in_range": true,
+    "no_em_dash": true,
+    "max_lines": true
+   },
+   "sha_drift_since_ask": false
+  },
+  {
+   "file": "mag/preferences.py",
+   "family": "deepseek",
+   "ask_id": "coldhot-cold-deepseek-mag__preferences",
+   "sha_at_ask": "5cfdb5b445043d15",
+   "ok": true,
+   "channel": "content",
+   "defects": [
+    {
+     "raw": "DEFECT 1: env lock asymmetry: set_operator_active writes pref even when MAG_OPERATOR_ACTIVE env is set, so subsequent UI \"active\" writes are silently ignored by operator_active() but operator_status reports stale pref. | EVIDENCE: mag/preferences.py:54-58 and 78-89 | FIX: in set_operator_active, mirror set_drainer's env-lock guard: if env is explicitly set, return prefs unchanged.",
+     "start": 54,
+     "nums": [
+      54,
+      58
+     ],
+     "path_ok": true,
+     "lines_ok": true,
+     "claim": "env lock asymmetry: set_operator_active writes pref even when MAG_OPERATOR_ACTIVE env is set, so subsequent UI \"active\" writes are silently ignored by operator_active() but operator_status reports stale pref."
+    },
+    {
+     "raw": "DEFECT 2: set_operator_active lacks the env-lock docstring/return contract that set_drainer has, producing inconsistent API semantics (drainer rejects locked writes, operator does not). | EVIDENCE: mag/preferences.py:66-71 vs 92-102 | FIX: extract a shared _env_locked(name) helper and apply the same early-return in set_operator_active and set_inject_behavioral_pack.",
+     "start": 66,
+     "nums": [
+      66,
+      71
+     ],
+     "path_ok": true,
+     "lines_ok": true,
+     "claim": "set_operator_active lacks the env-lock docstring/return contract that set_drainer has, producing inconsistent API semantics (drainer rejects locked writes, operator does not)."
+    },
+    {
+     "raw": "DEFECT 3: save_prefs has no read-modify-write guard; concurrent set_* calls can lose updated_at/pref keys (last writer wins on whole-file replace), and load_prefs swallows OSError returning {} which silently drops all prefs on transient lock. | EVIDENCE: mag/preferences.py:24-26 and 37-39 and 66-71 | FIX: read-modify-write under a lockfile or reuse estate atomic write; on OSError in load_prefs, re-raise when writing path needs it.",
+     "start": 24,
+     "nums": [
+      24,
+      26
+     ],
+     "path_ok": true,
+     "lines_ok": true,
+     "claim": "save_prefs has no read-modify-write guard; concurrent set_* calls can lose updated_at/pref keys (last writer wins on whole-file replace), and load_prefs swallows OSError returning {} which silently drops all prefs on transient lock."
+    }
+   ],
+   "dead_code": {
+    "raw": "DEAD-CODE: operator_status()[\"pref\"] is computed but operator_active() re-reads prefs, so the surfaced \"pref\" can disagree with the boolean; callers cannot distinguish. | EVIDENCE: mag/preferences.py:78-80",
+    "start": 78,
+    "nums": [
+     78,
+     80
+    ],
+    "path_ok": true,
+    "lines_ok": true
+   },
+   "one_sitting": {
+    "raw": "ONE-SITTING FIX: give set_operator_active the same env-lock early-return as set_drainer so MAG_OPERATOR_ACTIVE=1 cannot be silently contradicted by a pref write. | EVIDENCE: mag/preferences.py:66-71",
+    "start": 66,
+    "nums": [
+     66,
+     71
+    ],
+    "path_ok": true,
+    "lines_ok": true
+   },
+   "checks": {
+    "shape": true,
+    "cites_resolve": true,
+    "lines_in_range": true,
+    "no_em_dash": true,
+    "max_lines": true
+   },
+   "sha_drift_since_ask": false
+  },
+  {
+   "file": "mag/chain_query.py",
+   "family": "kimi",
+   "ask_id": "coldhot-cold-kimi-mag__chain_query",
+   "sha_at_ask": "fdde1f08f5d24422",
+   "ok": true,
+   "channel": "content",
+   "defects": [
+    {
+     "raw": "DEFECT 1: Unbounded regex search in exists() allows ReDoS via crafted pattern | EVIDENCE: mag/chain_query.py:180-186 | FIX: Pre-compile pattern with timeout or reject regex metacharacters before search",
+     "start": 180,
+     "nums": [
+      180,
+      186
+     ],
+     "path_ok": true,
+     "lines_ok": true,
+     "claim": "Unbounded regex search in exists() allows ReDoS via crafted pattern"
+    },
+    {
+     "raw": "DEFECT 2: breadcrumb() and exists() scan full JSON text including values, not just IDs, causing false positives | EVIDENCE: mag/chain_query.py:165-166,180-181 | FIX: Search only specific hash/id fields instead of full JSON dump",
+     "start": 165,
+     "nums": [
+      165,
+      166,
+      180,
+      181
+     ],
+     "path_ok": true,
+     "lines_ok": true,
+     "claim": "breadcrumb() and exists() scan full JSON text including values, not just IDs, causing false positives"
+    },
+    {
+     "raw": "DEFECT 3: cost_window() parses ISO timestamps with string comparison instead of datetime, fails across timezone formats | EVIDENCE: mag/chain_query.py:228-229 | FIX: Parse both cutoff and knot[\"ts\"] to datetime objects before comparison",
+     "start": 228,
+     "nums": [
+      228,
+      229
+     ],
+     "path_ok": true,
+     "lines_ok": true,
+     "claim": "cost_window() parses ISO timestamps with string comparison instead of datetime, fails across timezone formats"
+    }
+   ],
+   "dead_code": {
+    "raw": "DEAD-CODE: _log_query and _log_fallback increment counters but never persist or expose them beyond stats() | EVIDENCE: mag/chain_query.py:95-100",
+    "start": 95,
+    "nums": [
+     95,
+     100
+    ],
+    "path_ok": true,
+    "lines_ok": true
+   },
+   "one_sitting": {
+    "raw": "ONE-SITTING FIX: Add re.escape() or literal-only mode to exists() to prevent ReDoS | EVIDENCE: mag/chain_query.py:180-186",
+    "start": 180,
+    "nums": [
+     180,
+     186
+    ],
+    "path_ok": true,
+    "lines_ok": true
+   },
+   "checks": {
+    "shape": true,
+    "cites_resolve": true,
+    "lines_in_range": true,
+    "no_em_dash": true,
+    "max_lines": true
+   },
+   "sha_drift_since_ask": false
+  },
+  {
+   "file": "mag/chain_query.py",
+   "family": "glm-flash",
+   "ask_id": "coldhot-cold-glm-flash-mag__chain_query",
+   "sha_at_ask": "fdde1f08f5d24422",
+   "ok": true,
+   "channel": "content",
+   "defects": [
+    {
+     "raw": "DEFECT 1: by_theme crashes with AttributeError when any knot has null dominant_theme or theme_vector, since .get returns None and None.lower()/.get(\"dominant\") is then called on None | EVIDENCE: mag/chain_query.py:126-132 | FIX: use `k.get(\"dominant_theme\") or \"\"` and `(k.get(\"theme_vector\") or {})` / `(k.get(\"scalar_knot\") or {})` style guards on lines 127-128 and the same pattern in theme_summary.",
+     "start": 126,
+     "nums": [
+      126,
+      132
+     ],
+     "path_ok": true,
+     "lines_ok": true,
+     "claim": "by_theme crashes with AttributeError when any knot has null dominant_theme or theme_vector, since .get returns None and None.lower()/.get(\"dominant\") is then called on None"
+    },
+    {
+     "raw": "DEFECT 2: fallback \"logging\" only increments in-memory counters; no log write, no method/reason emitted, so the module LAW \"fall back, but LOG the fallback\" is never satisfied and fallback data is lost on process exit | EVIDENCE: mag/chain_query.py:86-90 (vs LAW at mag/chain_query.py:23) | FIX: make _log_fallback append {method, reason, ts} to a dedicated query_log.jsonl (atomic tmp+replace) instead of only bumping _fallback_count.",
+     "start": 86,
+     "nums": [
+      86,
+      90
+     ],
+     "path_ok": true,
+     "lines_ok": true,
+     "claim": "fallback \"logging\" only increments in-memory counters; no log write, no method/reason emitted, so the module LAW \"fall back, but LOG the fallback\" is never satisfied and fallback data is lost on process exit"
+    },
+    {
+     "raw": "DEFECT 3: since() compares ISO timestamps as raw strings, so any format divergence between knot ts values and the caller ts (\"Z\" suffix vs \"+00:00\", differing fractional-second digits, naive vs aware) silently mis-filters; only correct if every writer emits byte-identical UTC ISO format | EVIDENCE: mag/chain_query.py:142 | FIX: parse both sides with datetime.fromisoformat (normalizing \"Z\") and compare datetimes, skipping unparseable ts explicitly.",
+     "start": 142,
+     "nums": [
+      142
+     ],
+     "path_ok": true,
+     "lines_ok": true,
+     "claim": "since() compares ISO timestamps as raw strings, so any format divergence between knot ts values and the caller ts (\"Z\" suffix vs \"+00:00\", differing fractional-second digits, naive vs aware) silently mis-filters; only correct if every writer emits byte-identical UTC ISO format"
+    }
+   ],
+   "dead_code": {
+    "raw": "DEAD-CODE: count_by is defined but never referenced in this file; the endpoint dispatch (lines 263-295) exposes tail, root, by_type, by_theme, breadcrumb, exists, theme_summary, stats but no count_by branch | EVIDENCE: mag/chain_query.py:205-207",
+    "start": 205,
+    "nums": [
+     205,
+     207
+    ],
+    "path_ok": true,
+    "lines_ok": true
+   },
+   "one_sitting": {
+    "raw": "ONE-SITTING FIX: null-safe the theme field extraction in both by_theme and theme_summary by routing through a shared helper `_dominant_theme(k) -> str` that coerces None to \"\" and non-dict values to {}, eliminating the crash class in one pass | EVIDENCE: mag/chain_query.py:125-132",
+    "start": 125,
+    "nums": [
+     125,
+     132
+    ],
+    "path_ok": true,
+    "lines_ok": true
+   },
+   "checks": {
+    "shape": true,
+    "cites_resolve": true,
+    "lines_in_range": true,
+    "no_em_dash": true,
+    "max_lines": true
+   },
+   "sha_drift_since_ask": false
+  },
+  {
+   "file": "mag/chain_query.py",
+   "family": "deepseek",
+   "ask_id": "coldhot-cold-deepseek-mag__chain_query",
+   "sha_at_ask": "fdde1f08f5d24422",
+   "ok": true,
+   "channel": "content",
+   "defects": [
+    {
+     "raw": "DEFECT 1: `exists()` allows regex injection and false positives because `knot_text` is a raw `json.dumps` of the knot, so a pattern like `.*` matches any knot and any pattern is also substring-tested first | EVIDENCE: mag/chain_query.py:157-168 | FIX: restrict `exists` to explicit substring-only or pre-compile and escape, drop the unanchored regex fallback",
+     "start": 157,
+     "nums": [
+      157,
+      168
+     ],
+     "path_ok": true,
+     "lines_ok": true,
+     "claim": "`exists()` allows regex injection and false positives because `knot_text` is a raw `json.dumps` of the knot, so a pattern like `.*` matches any knot and any pattern is also substring-tested first"
+    },
+    {
+     "raw": "DEFECT 2: `since()` does lexicographic string compare on `ts`, so mixed ISO formats or missing `ts` silently misorder, and missing ts defaults to `\"\"` which is always less than any cutoff, returning empty | EVIDENCE: mag/chain_query.py:154-156 | FIX: parse `ts` with `datetime.fromisoformat` and compare datetimes, skipping or flagging unparseable knots",
+     "start": 154,
+     "nums": [
+      154,
+      156
+     ],
+     "path_ok": true,
+     "lines_ok": true,
+     "claim": "`since()` does lexicographic string compare on `ts`, so mixed ISO formats or missing `ts` silently misorder, and missing ts defaults to `\"\"` which is always less than any cutoff, returning empty"
+    },
+    {
+     "raw": "DEFECT 3: `_read()` loads and `json.loads` the entire chain file on every call with no cache, so `tail=1` reads the whole file, and `by_theme`/`exists`/`breadcrumb` re-serialize every knot with `json.dumps` inside the loop | EVIDENCE: mag/chain_query.py:106-121, 145-168 | FIX: read only the last N lines via seek-from-end or maintain a cached parsed list keyed on file mtime and size",
+     "start": 106,
+     "nums": [
+      106,
+      121
+     ],
+     "path_ok": true,
+     "lines_ok": true,
+     "claim": "`_read()` loads and `json.loads` the entire chain file on every call with no cache, so `tail=1` reads the whole file, and `by_theme`/`exists`/`breadcrumb` re-serialize every knot with `json.dumps` inside the loop"
+    }
+   ],
+   "dead_code": {
+    "raw": "DEAD-CODE: `_log_query` and `_log_fallback` accept `method` and `result_count`/`reason` args that are never used or persisted, so fallback reasons and query names vanish | EVIDENCE: mag/chain_query.py:122-127",
+    "start": 122,
+    "nums": [
+     122,
+     127
+    ],
+    "path_ok": true,
+    "lines_ok": true
+   },
+   "one_sitting": {
+    "raw": "ONE-SITTING FIX: make `_read` cache parsed knots on `(mtime, size)` and make `_read(tail=n)` slice after parse to avoid full-file reads per query | EVIDENCE: mag/chain_query.py:106-121",
+    "start": 106,
+    "nums": [
+     106,
+     121
+    ],
+    "path_ok": true,
+    "lines_ok": true
+   },
+   "checks": {
+    "shape": true,
+    "cites_resolve": true,
+    "lines_in_range": true,
+    "no_em_dash": true,
+    "max_lines": true
+   },
+   "sha_drift_since_ask": false
+  },
+  {
+   "file": "mag/registry.py",
+   "family": "kimi",
+   "ask_id": "coldhot-cold-kimi-mag__registry",
+   "sha_at_ask": "37780fd3f7d32736",
+   "ok": true,
+   "channel": "content",
+   "defects": [
+    {
+     "raw": "DEFECT 1: write_residual writes to path without atomic tmp+replace, risking corruption on crash | EVIDENCE: mag/registry.py:235-239 | FIX: use tempfile.NamedTemporaryFile + os.replace pattern as in upsert_registry",
+     "start": 235,
+     "nums": [
+      235,
+      239
+     ],
+     "path_ok": true,
+     "lines_ok": true,
+     "claim": "write_residual writes to path without atomic tmp+replace, risking corruption on crash"
+    },
+    {
+     "raw": "DEFECT 2: set_latest_session writes LATEST_SESSION and latest.dossier.json without atomic tmp+replace | EVIDENCE: mag/registry.py:138-150 | FIX: use tempfile.NamedTemporaryFile + os.replace for both files",
+     "start": 138,
+     "nums": [
+      138,
+      150
+     ],
+     "path_ok": true,
+     "lines_ok": true,
+     "claim": "set_latest_session writes LATEST_SESSION and latest.dossier.json without atomic tmp+replace"
+    },
+    {
+     "raw": "DEFECT 3: write_derived_md writes directly to BIO/latest.md without atomic tmp+replace | EVIDENCE: mag/registry.py:256-260 | FIX: use tempfile.NamedTemporaryFile + os.replace for latest.md",
+     "start": 256,
+     "nums": [
+      256,
+      260
+     ],
+     "path_ok": true,
+     "lines_ok": true,
+     "claim": "write_derived_md writes directly to BIO/latest.md without atomic tmp+replace"
+    }
+   ],
+   "dead_code": {
+    "raw": "DEAD-CODE: legacy_dossier_path function only used in migration path and find_residual fallback | EVIDENCE: mag/registry.py:35-36",
+    "start": 35,
+    "nums": [
+     35,
+     36
+    ],
+    "path_ok": true,
+    "lines_ok": true
+   },
+   "one_sitting": {
+    "raw": "ONE-SITTING FIX: Add atomic tmp+replace wrapper and apply to all direct write_text/write_bytes calls | EVIDENCE: mag/registry.py:138-150,235-239,256-260,268-275,284-291",
+    "start": 138,
+    "nums": [
+     138,
+     150,
+     235,
+     239,
+     256,
+     260,
+     268,
+     275,
+     284,
+     291
+    ],
+    "path_ok": true,
+    "lines_ok": true
+   },
+   "checks": {
+    "shape": true,
+    "cites_resolve": true,
+    "lines_in_range": true,
+    "no_em_dash": true,
+    "max_lines": true
+   },
+   "sha_drift_since_ask": false
+  },
+  {
+   "file": "mag/registry.py",
+   "family": "glm-flash",
+   "ask_id": "coldhot-cold-glm-flash-mag__registry",
+   "sha_at_ask": "37780fd3f7d32736",
+   "ok": true,
+   "channel": "content",
+   "defects": [
+    {
+     "raw": "DEFECT 1: session_id is interpolated unvalidated into filesystem paths, so a sid containing separators or \"..\" escapes memory/biography/ | EVIDENCE: mag/registry.py:43-44 | FIX: validate sid against ^[A-Za-z0-9._-]+$ (rejecting \"..\" and os.sep) in residual_path, legacy_dossier_path, and derived_path before joining.",
+     "start": 43,
+     "nums": [
+      43,
+      44
+     ],
+     "path_ok": true,
+     "lines_ok": true,
+     "claim": "session_id is interpolated unvalidated into filesystem paths, so a sid containing separators or \"..\" escapes memory/biography/"
+    },
+    {
+     "raw": "DEFECT 2: read-modify-write registry upsert has no lock; two concurrent publish_residual calls each load the map, write tmp, and os.replace, silently dropping one session's row | EVIDENCE: mag/registry.py:364-390 | FIX: take an exclusive file lock (msvcrt.locking on a REGISTRY.lock sidecar) around _load_registry_map through os.replace.",
+     "start": 364,
+     "nums": [
+      364,
+      390
+     ],
+     "path_ok": true,
+     "lines_ok": true,
+     "claim": "read-modify-write registry upsert has no lock; two concurrent publish_residual calls each load the map, write tmp, and os.replace, silently dropping one session's row"
+    },
+    {
+     "raw": "DEFECT 3: residual corruption path returns None and write_residual then treats it as absent, so prev invariants/core and previous card are silently lost on one bad read, permanently rewriting the cold vertex | EVIDENCE: mag/registry.py:79-90,185-188 | FIX: on JSONDecodeError in load_residual, fall back to reading the legacy dossier and log before proceeding with previous=None.",
+     "start": 79,
+     "nums": [
+      79,
+      90,
+      185,
+      188
+     ],
+     "path_ok": true,
+     "lines_ok": true,
+     "claim": "residual corruption path returns None and write_residual then treats it as absent, so prev invariants/core and previous card are silently lost on one bad read, permanently rewriting the cold vertex"
+    }
+   ],
+   "dead_code": {
+    "raw": "DEAD-CODE: derived_path docstring advertises kind \"dossier_legacy\" but the function raises ValueError for it and no caller passes it | EVIDENCE: mag/registry.py:54-62",
+    "start": 54,
+    "nums": [
+     54,
+     62
+    ],
+    "path_ok": true,
+    "lines_ok": true
+   },
+   "one_sitting": {
+    "raw": "ONE-SITTING FIX: add a single _safe_sid(sid) validator and call it at the top of residual_path/legacy_dossier_path/derived_path, closing the traversal hole for every writer and reader at once | EVIDENCE: mag/registry.py:43-62",
+    "start": 43,
+    "nums": [
+     43,
+     62
+    ],
+    "path_ok": true,
+    "lines_ok": true
+   },
+   "checks": {
+    "shape": false,
+    "cites_resolve": true,
+    "lines_in_range": true,
+    "no_em_dash": true,
+    "max_lines": true
+   },
+   "sha_drift_since_ask": false
+  },
+  {
+   "file": "mag/registry.py",
+   "family": "deepseek",
+   "ask_id": "coldhot-cold-deepseek-mag__registry",
+   "sha_at_ask": "37780fd3f7d32736",
+   "ok": true,
+   "channel": "content",
+   "defects": [
+    {
+     "raw": "DEFECT 1: Non-atomic writes to shared surfaces elsewhere in file (latest_session.json, latest.dossier.json, residual/*.json) despite atomic upsert_registry pattern | EVIDENCE: mag/registry.py:186, mag/registry.py:200, mag/registry.py:196, mag/registry.py:245 | FIX: route set_latest_session/write_residual/legacy mirrors through the same NamedTemporaryFile+os.replace helper used in upsert_registry",
+     "start": 186,
+     "nums": [
+      186
+     ],
+     "path_ok": true,
+     "lines_ok": true,
+     "claim": "Non-atomic writes to shared surfaces elsewhere in file (latest_session.json, latest.dossier.json, residual/*.json) despite atomic upsert_registry pattern"
+    },
+    {
+     "raw": "DEFECT 2: residual_content_hash includes content_commit, but write_residual stores residual.content_hash before re-reading, so registry_row_from_dossier fallback hashes a payload that already contains residual metadata | EVIDENCE: mag/registry.py:105, mag/registry.py:243, mag/registry.py:321 | FIX: strip the residual block before rehashing in registry_row_from_dossier, or pass the original pre-stamp dossier through",
+     "start": 105,
+     "nums": [
+      105
+     ],
+     "path_ok": true,
+     "lines_ok": true,
+     "claim": "residual_content_hash includes content_commit, but write_residual stores residual.content_hash before re-reading, so registry_row_from_dossier fallback hashes a payload that already contains residual metadata"
+    },
+    {
+     "raw": "DEFECT 3: CORE_INVARIANTS docstring promises \"amend may add, never remove\", but attach_cold_core unions CORE + prev_core only, silently dropping any invariant added by other writers to a same-session dossier if prev is None | EVIDENCE: mag/registry.py:30, mag/registry.py:130, mag/registry.py:137 | FIX: also union d.get(\"core\",{}).get(\"invariants\") into inv before dedupe",
+     "start": 30,
+     "nums": [
+      30
+     ],
+     "path_ok": true,
+     "lines_ok": true,
+     "claim": "CORE_INVARIANTS docstring promises \"amend may add, never remove\", but attach_cold_core unions CORE + prev_core only, silently dropping any invariant added by other writers to a same-session dossier if prev is None"
+    }
+   ],
+   "dead_code": {
+    "raw": "DEAD-CODE: derived_path dossier_legacy branch is unreachable; kind is never passed \"dossier_legacy\" | EVIDENCE: mag/registry.py:57, mag/registry.py:60",
+    "start": 57,
+    "nums": [
+     57
+    ],
+    "path_ok": true,
+    "lines_ok": true
+   },
+   "one_sitting": {
+    "raw": "ONE-SITTING FIX: hoist a single _atomic_write_text/_atomic_write_bytes helper and route set_latest_session, write_residual, write_derived_* through it | EVIDENCE: mag/registry.py:182, mag/registry.py:243, mag/registry.py:263",
+    "start": 182,
+    "nums": [
+     182
+    ],
+    "path_ok": true,
+    "lines_ok": true
+   },
+   "checks": {
+    "shape": true,
+    "cites_resolve": true,
+    "lines_in_range": true,
+    "no_em_dash": true,
+    "max_lines": true
+   },
+   "sha_drift_since_ask": false
+  },
+  {
+   "file": "mag/policy_engine.py",
+   "family": "kimi",
+   "ask_id": "coldhot-cold-kimi-mag__policy_engine",
+   "sha_at_ask": "b32a279d8fd7ea0b",
+   "ok": true,
+   "channel": "content",
+   "defects": [
+    {
+     "raw": "DEFECT 1: _collect_active_records yields from generator inside nested function but generator never returns list, causing expire() to iterate over None | EVIDENCE: mag/policy_engine.py:372-401 | FIX: Change `yield from _add(...)` to `active.append(rec)` and return `list(active)` at function end, or refactor to properly return list[dict]",
+     "start": 372,
+     "nums": [
+      372,
+      401
+     ],
+     "path_ok": true,
+     "lines_ok": true,
+     "claim": "_collect_active_records yields from generator inside nested function but generator never returns list, causing expire() to iterate over None"
+    },
+    {
+     "raw": "DEFECT 2: revoke() appends to jsonl without atomic tmp+replace, violating the known wiring pattern and risking corruption on crash | EVIDENCE: mag/policy_engine.py:236-244 | FIX: Write to REVOCATIONS_FILE.with_suffix('.tmp') then atomic rename",
+     "start": 236,
+     "nums": [
+      236,
+      244
+     ],
+     "path_ok": true,
+     "lines_ok": true,
+     "claim": "revoke() appends to jsonl without atomic tmp+replace, violating the known wiring pattern and risking corruption on crash"
+    },
+    {
+     "raw": "DEFECT 3: cmd_set allows arbitrary key injection including underscore-prefixed keys like _load_error that save_policy then strips, creating confusing UX | EVIDENCE: mag/policy_engine.py:424-432 | FIX: Reject keys starting with underscore or match against known policy schema keys",
+     "start": 424,
+     "nums": [
+      424,
+      432
+     ],
+     "path_ok": true,
+     "lines_ok": true,
+     "claim": "cmd_set allows arbitrary key injection including underscore-prefixed keys like _load_error that save_policy then strips, creating confusing UX"
+    }
+   ],
+   "dead_code": {
+    "raw": "DEAD-CODE: check_ttl_valid function is a thin wrapper around check_ttl with identical signature, unused anywhere in the file | EVIDENCE: mag/policy_engine.py:352-353",
+    "start": 352,
+    "nums": [
+     352,
+     353
+    ],
+    "path_ok": true,
+    "lines_ok": true
+   },
+   "one_sitting": {
+    "raw": "ONE-SITTING FIX: Fix _collect_active_records to actually return list[dict] instead of broken generator | EVIDENCE: mag/policy_engine.py:372-401",
+    "start": 372,
+    "nums": [
+     372,
+     401
+    ],
+    "path_ok": true,
+    "lines_ok": true
+   },
+   "checks": {
+    "shape": true,
+    "cites_resolve": true,
+    "lines_in_range": true,
+    "no_em_dash": true,
+    "max_lines": true
+   },
+   "sha_drift_since_ask": false
+  },
+  {
+   "file": "mag/policy_engine.py",
+   "family": "glm-flash",
+   "ask_id": "coldhot-cold-glm-flash-mag__policy_engine",
+   "sha_at_ask": "b32a279d8fd7ea0b",
+   "ok": true,
+   "channel": "content",
+   "defects": [
+    {
+     "raw": "DEFECT 1: check_budget fail-closes on any authority lacking a `budget` dict, contradicting its own backward-compat contract, so every legacy grant fails validation with \"budget exhausted\" | EVIDENCE: mag/policy_engine.py:220-227 vs docstring claim at 215-216 | FIX: when budget is absent or non-dict, synthesize `{\"max_calls\": default[\"max_calls\"], \"used\": {}}` on the authority instead of returning (False, 0)",
+     "start": 220,
+     "nums": [
+      220,
+      227
+     ],
+     "path_ok": true,
+     "lines_ok": true,
+     "claim": "check_budget fail-closes on any authority lacking a `budget` dict, contradicting its own backward-compat contract, so every legacy grant fails validation with \"budget exhausted\""
+    },
+    {
+     "raw": "DEFECT 2: `_ts_to_epoch` returns `_now_epoch()` on unparseable ts, making garbage ts always TTL-valid: fail-open in a reference monitor | EVIDENCE: mag/policy_engine.py:114-116 | FIX: return 0.0 (already expired) on unparseable ts, and make check_ttl's except branch at 190 return False",
+     "start": 114,
+     "nums": [
+      114,
+      116
+     ],
+     "path_ok": true,
+     "lines_ok": true,
+     "claim": "`_ts_to_epoch` returns `_now_epoch()` on unparseable ts, making garbage ts always TTL-valid: fail-open in a reference monitor"
+    },
+    {
+     "raw": "DEFECT 3: `_ensure_default_policy()` runs at import time, writing memory/policy.json as a module-import side effect | EVIDENCE: mag/policy_engine.py:153-155 | FIX: remove the module-level call and invoke it lazily from load_policy when the file is missing",
+     "start": 153,
+     "nums": [
+      153,
+      155
+     ],
+     "path_ok": true,
+     "lines_ok": true,
+     "claim": "`_ensure_default_policy()` runs at import time, writing memory/policy.json as a module-import side effect"
+    }
+   ],
+   "dead_code": {
+    "raw": "DEAD-CODE: `active` set in `_collect_active_records` is populated but never read or returned | EVIDENCE: mag/policy_engine.py:417-428",
+    "start": 417,
+    "nums": [
+     417,
+     428
+    ],
+    "path_ok": true,
+    "lines_ok": true
+   },
+   "one_sitting": {
+    "raw": "ONE-SITTING FIX: repair the budget default path (DEFECT 1) plus its falsifier: a CLI validate of an authority with status AUTHORIZED, granted_capabilities containing the effect, no budget field must return ok=true with budget_remaining == default max_calls; today it returns false | EVIDENCE: mag/policy_engine.py:220-227",
+    "start": 220,
+    "nums": [
+     220,
+     227
+    ],
+    "path_ok": true,
+    "lines_ok": true
+   },
+   "checks": {
+    "shape": true,
+    "cites_resolve": true,
+    "lines_in_range": true,
+    "no_em_dash": true,
+    "max_lines": true
+   },
+   "sha_drift_since_ask": false
+  },
+  {
+   "file": "mag/policy_engine.py",
+   "family": "deepseek",
+   "ask_id": "coldhot-cold-deepseek-mag__policy_engine",
+   "sha_at_ask": "b32a279d8fd7ea0b",
+   "ok": true,
+   "channel": "content",
+   "defects": [
+    {
+     "raw": "DEFECT 1: `_add` is declared with `yield rec` yet callers do `yield from _add(...)`, making the nested generator unreachable and silently dropping all active records from the TTL sweep | EVIDENCE: mag/policy_engine.py:393-400 | FIX: change `_add` to a plain function that returns rec (or appends to active) instead of yielding, and call it directly.",
+     "start": 393,
+     "nums": [
+      393,
+      400
+     ],
+     "path_ok": true,
+     "lines_ok": true,
+     "claim": "`_add` is declared with `yield rec` yet callers do `yield from _add(...)`, making the nested generator unreachable and silently dropping all active records from the TTL sweep"
+    },
+    {
+     "raw": "DEFECT 2: `_collect_active_records` builds `active = set()` and `_add` yields only when status is active, but the trail/inbox loops `yield from _add(...)` before the record is ever yielded back, so `expire()` gets an empty candidate list and never revokes anything | EVIDENCE: mag/policy_engine.py:402-420 | FIX: yield `rec` inside `_add` and remove the redundant `active.add`/outer yield discrepancy by returning the record once.",
+     "start": 402,
+     "nums": [
+      402,
+      420
+     ],
+     "path_ok": true,
+     "lines_ok": true,
+     "claim": "`_collect_active_records` builds `active = set()` and `_add` yields only when status is active, but the trail/inbox loops `yield from _add(...)` before the record is ever yielded back, so `expire()` gets an empty candidate list and never revokes anything"
+    },
+    {
+     "raw": "DEFECT 3: `_verdict` recomputes `budget_remaining` from `max_calls` ignoring `budget[\"used\"]`, so a partially spent budget reports the full ceiling as remaining in the receipt trail | EVIDENCE: mag/policy_engine.py:322-326 | FIX: subtract `budget.get(\"used\", {}).get(effect, 0)` from max_calls when computing `budget_remaining`.",
+     "start": 322,
+     "nums": [
+      322,
+      326
+     ],
+     "path_ok": true,
+     "lines_ok": true,
+     "claim": "`_verdict` recomputes `budget_remaining` from `max_calls` ignoring `budget[\"used\"]`, so a partially spent budget reports the full ceiling as remaining in the receipt trail"
+    }
+   ],
+   "dead_code": {
+    "raw": "DEAD-CODE: `check_ttl_valid` is a one-line passthrough to `check_ttl` with no callers in this file | EVIDENCE: mag/policy_engine.py:346-347",
+    "start": 346,
+    "nums": [
+     346,
+     347
+    ],
+    "path_ok": true,
+    "lines_ok": true
+   },
+   "one_sitting": {
+    "raw": "ONE-SITTING FIX: repair `_add` so its generator actually yields active records to `_collect_active_records`, restoring the TTL sweep | EVIDENCE: mag/policy_engine.py:393-420",
+    "start": 393,
+    "nums": [
+     393,
+     420
+    ],
+    "path_ok": true,
+    "lines_ok": true
+   },
+   "checks": {
+    "shape": true,
+    "cites_resolve": true,
+    "lines_in_range": true,
+    "no_em_dash": true,
+    "max_lines": true
+   },
+   "sha_drift_since_ask": false
+  },
+  {
+   "file": "mag/switchboard.py",
+   "family": "kimi",
+   "ask_id": "coldhot-cold-kimi-mag__switchboard",
+   "sha_at_ask": "87ab22009ea63d2f",
+   "ok": true,
+   "channel": "content",
+   "defects": [
+    {
+     "raw": "DEFECT 1: CLI drop command ignores steer_drop error return code | EVIDENCE: mag/switchboard.py:735-738 | FIX: Capture steer_drop result, print JSON, return 0 if ok else 1",
+     "start": 735,
+     "nums": [
+      735,
+      738
+     ],
+     "path_ok": true,
+     "lines_ok": true,
+     "claim": "CLI drop command ignores steer_drop error return code"
+    },
+    {
+     "raw": "DEFECT 2: route_intent recalculates importance after arena seat swap without rechecking api_ready flag | EVIDENCE: mag/switchboard.py:605-610 | FIX: Add importance -= 15 check after updating prof from arena recommend",
+     "start": 605,
+     "nums": [
+      605,
+      610
+     ],
+     "path_ok": true,
+     "lines_ok": true,
+     "claim": "route_intent recalculates importance after arena seat swap without rechecking api_ready flag"
+    },
+    {
+     "raw": "DEFECT 3: status function calls find_orphans redundantly after mesh already invoked it | EVIDENCE: mag/switchboard.py:635-638 | FIX: Call find_orphans once in status and propagate count to mesh summary or reuse result",
+     "start": 635,
+     "nums": [
+      635,
+      638
+     ],
+     "path_ok": true,
+     "lines_ok": true,
+     "claim": "status function calls find_orphans redundantly after mesh already invoked it"
+    }
+   ],
+   "dead_code": {
+    "raw": "DEAD-CODE: tier_rank function is defined but never called | EVIDENCE: mag/switchboard.py:75-76",
+    "start": 75,
+    "nums": [
+     75,
+     76
+    ],
+    "path_ok": true,
+    "lines_ok": true
+   },
+   "one_sitting": {
+    "raw": "ONE-SITTING FIX: Fix drop command to exit with code 1 on steer_drop failure | EVIDENCE: mag/switchboard.py:735-738",
+    "start": 735,
+    "nums": [
+     735,
+     738
+    ],
+    "path_ok": true,
+    "lines_ok": true
+   },
+   "checks": {
+    "shape": true,
+    "cites_resolve": true,
+    "lines_in_range": true,
+    "no_em_dash": true,
+    "max_lines": true
+   },
+   "sha_drift_since_ask": false
+  },
+  {
+   "file": "mag/switchboard.py",
+   "family": "glm-flash",
+   "ask_id": "coldhot-cold-glm-flash-mag__switchboard",
+   "sha_at_ask": "87ab22009ea63d2f",
+   "ok": true,
+   "channel": "content",
+   "defects": [
+    {
+     "raw": "DEFECT 1: Any caller can attribute a steer drop to \"operator\" and mark it spooky=true via CLI defaults, with no authentication on from_ref or spooky, poisoning the training-label channel | EVIDENCE: mag/switchboard.py:757-760 and mag/switchboard.py:516-519 | FIX: hardcode from_ref for CLI drops to \"cli\" and require an env/flag gate (e.g. MAG_OPERATOR_ACTIVE set) before spooky=True is honored.",
+     "start": 757,
+     "nums": [
+      757,
+      760
+     ],
+     "path_ok": true,
+     "lines_ok": true,
+     "claim": "Any caller can attribute a steer drop to \"operator\" and mark it spooky=true via CLI defaults, with no authentication on from_ref or spooky, poisoning the training-label channel"
+    },
+    {
+     "raw": "DEFECT 2: Unresolved steer targets silently fall back to holder tier T2 and post anyway to an arbitrary task_id string, so a typo'd or dead target still writes steer text into pigeonhole | EVIDENCE: mag/switchboard.py:527-537 and mag/switchboard.py:583-585 | FIX: return {\"ok\": false, \"error\": \"target_unresolved\"} when _resolve_peer returns None instead of defaulting task_id and tier.",
+     "start": 527,
+     "nums": [
+      527,
+      537
+     ],
+     "path_ok": true,
+     "lines_ok": true,
+     "claim": "Unresolved steer targets silently fall back to holder tier T2 and post anyway to an arbitrary task_id string, so a typo'd or dead target still writes steer text into pigeonhole"
+    },
+    {
+     "raw": "DEFECT 3: drop record reports context_len of the full context but persists only context[:2000], corrupting downstream consumers that trust context_len | EVIDENCE: mag/switchboard.py:546-560 and mag/switchboard.py:590-593 | FIX: set \"context_len\": len(context[:2000]) or persist the untruncated context.",
+     "start": 546,
+     "nums": [
+      546,
+      560
+     ],
+     "path_ok": true,
+     "lines_ok": true,
+     "claim": "drop record reports context_len of the full context but persists only context[:2000], corrupting downstream consumers that trust context_len"
+    }
+   ],
+   "dead_code": {
+    "raw": "DEAD-CODE: tier_rank() is defined but never called anywhere in the file | EVIDENCE: mag/switchboard.py:60-61",
+    "start": 60,
+    "nums": [
+     60,
+     61
+    ],
+    "path_ok": true,
+    "lines_ok": true
+   },
+   "one_sitting": {
+    "raw": "ONE-SITTING FIX: Bind steer_drop target resolution and CLI spooky/from_ref gating into steer_drop itself (fail closed on unresolved target, refuse spooky without MAG_OPERATOR_ACTIVE), since both defects share one function | EVIDENCE: mag/switchboard.py:503-560. Falsifier: after the patch, `python main.py switchboard drop nonexistent-task \"x\"` returns ok=false, and `drop ... --spooky` without MAG_OPERATOR_ACTIVE strips spooky.",
+    "start": 503,
+    "nums": [
+     503,
+     560
+    ],
+    "path_ok": true,
+    "lines_ok": true
+   },
+   "checks": {
+    "shape": true,
+    "cites_resolve": true,
+    "lines_in_range": true,
+    "no_em_dash": true,
+    "max_lines": true
+   },
+   "sha_drift_since_ask": false
+  },
+  {
+   "file": "mag/switchboard.py",
+   "family": "deepseek",
+   "ask_id": "coldhot-cold-deepseek-mag__switchboard",
+   "sha_at_ask": "87ab22009ea63d2f",
+   "ok": true,
+   "channel": "content",
+   "defects": [
+    {
+     "raw": "DEFECT 1: `steer_drop` resolves peer via `_resolve_peer(to_ref)` when `to_ref` does not start with \"t\", so a raw task_id lacking the `task:` prefix is never accepted, and a nonexistent peer falls through to `task_id = to_ref` silently, delivering a steer to an arbitrary task_id with no membership check. | EVIDENCE: mag/switchboard.py:557-560 | FIX: normalize both `to_ref` and `task:{to_ref}` at entry, and refuse delivery (return error) when `_resolve_peer` returns None instead of falling back to the raw string.",
+     "start": 557,
+     "nums": [
+      557,
+      560
+     ],
+     "path_ok": true,
+     "lines_ok": true,
+     "claim": "`steer_drop` resolves peer via `_resolve_peer(to_ref)` when `to_ref` does not start with \"t\", so a raw task_id lacking the `task:` prefix is never accepted, and a nonexistent peer falls through to `task_id = to_ref` silently, delivering a steer to an arbitrary task_id with no membership check."
+    },
+    {
+     "raw": "DEFECT 2: `_trail` writes the shared jsonl surface without atomic tmp+replace and without file locking, so concurrent switchboard invocations interleave partial lines into `switchboard_trail.jsonl`. | EVIDENCE: mag/switchboard.py:64-68 | FIX: write to `TRAIL.with_suffix('.tmp')` then `os.replace`, guarded by an exclusive lock on a sibling `.lock` file.",
+     "start": 64,
+     "nums": [
+      64,
+      68
+     ],
+     "path_ok": true,
+     "lines_ok": true,
+     "claim": "`_trail` writes the shared jsonl surface without atomic tmp+replace and without file locking, so concurrent switchboard invocations interleave partial lines into `switchboard_trail.jsonl`."
+    },
+    {
+     "raw": "DEFECT 3: `_resolve_peer` calls `_live_peers()` up to three times per invocation (which itself probes orchestrator, router, seat_registry, and env), so `steer_drop` and `mesh` pay N full mesh rebuilds per call instead of one. | EVIDENCE: mag/switchboard.py:534-548 | FIX: build `_live_peers()` once at the top of `_resolve_peer` and iterate the same list for all three passes.",
+     "start": 534,
+     "nums": [
+      534,
+      548
+     ],
+     "path_ok": true,
+     "lines_ok": true,
+     "claim": "`_resolve_peer` calls `_live_peers()` up to three times per invocation (which itself probes orchestrator, router, seat_registry, and env), so `steer_drop` and `mesh` pay N full mesh rebuilds per call instead of one."
+    }
+   ],
+   "dead_code": {
+    "raw": "DEAD-CODE: `tier_rank` is defined but never called anywhere in the file, nor referenced by any exported symbol. | EVIDENCE: mag/switchboard.py:72-73",
+    "start": 72,
+    "nums": [
+     72,
+     73
+    ],
+    "path_ok": true,
+    "lines_ok": true
+   },
+   "one_sitting": {
+    "raw": "ONE-SITTING FIX: Make `steer_drop`'s peer resolution fail closed and single-pass: cache `_live_peers()` once in `_resolve_peer`, try prefixes `task:{ref}` and `ref`, and return an explicit error when the target peer cannot be resolved instead of steering to the unvalidated string. | EVIDENCE: mag/switchboard.py:534-560",
+    "start": 534,
+    "nums": [
+     534,
+     560
+    ],
+    "path_ok": true,
+    "lines_ok": true
+   },
+   "checks": {
+    "shape": true,
+    "cites_resolve": true,
+    "lines_in_range": true,
+    "no_em_dash": true,
+    "max_lines": true
+   },
+   "sha_drift_since_ask": false
+  }
+ ],
+ "clusters": [
+  {
+   "file": "mag/chain_query.py",
+   "lines": [
+    142,
+    154,
+    157,
+    165
+   ],
+   "families": [
+    "deepseek",
+    "glm-flash",
+    "kimi"
+   ],
+   "n_families": 3,
+   "status": "REAL",
+   "claims": [
+    {
+     "family": "kimi",
+     "line": 165,
+     "claim": "breadcrumb() and exists() scan full JSON text including values, not just IDs, causing false positives"
+    },
+    {
+     "family": "glm-flash",
+     "line": 142,
+     "claim": "since() compares ISO timestamps as raw strings, so any format divergence between knot ts values and the caller ts (\"Z\" suffix vs \"+00:00\", differing fractional-second digits, naive vs aware) silently mis-filters; only correct if every writer emits byte-identical UTC ISO format"
+    },
+    {
+     "family": "deepseek",
+     "line": 157,
+     "claim": "`exists()` allows regex injection and false positives because `knot_text` is a raw `json.dumps` of the knot, so a pattern like `.*` matches any knot and any pattern is also substring-tested first"
+    },
+    {
+     "family": "deepseek",
+     "line": 154,
+     "claim": "`since()` does lexicographic string compare on `ts`, so mixed ISO formats or missing `ts` silently misorder, and missing ts defaults to `\"\"` which is always less than any cutoff, returning empty"
+    }
+   ]
+  },
+  {
+   "file": "mag/preferences.py",
+   "lines": [
+    17,
+    19,
+    24
+   ],
+   "families": [
+    "deepseek",
+    "glm-flash",
+    "kimi"
+   ],
+   "n_families": 3,
+   "status": "REAL",
+   "claims": [
+    {
+     "family": "kimi",
+     "line": 24,
+     "claim": "save_prefs writes to shared json surface without atomic tmp+replace, risking corruption on crash"
+    },
+    {
+     "family": "kimi",
+     "line": 17,
+     "claim": "load_prefs silently returns empty dict on any OSError, masking permission/disk failures that need visibility"
+    },
+    {
+     "family": "glm-flash",
+     "line": 19,
+     "claim": "Corrupt or unreadable PREF_PATH makes load_prefs return {}, and the next set_* then persists a prefs dict holding only its own key, wiping all other stored prefs with no error surfaced"
+    },
+    {
+     "family": "deepseek",
+     "line": 24,
+     "claim": "save_prefs has no read-modify-write guard; concurrent set_* calls can lose updated_at/pref keys (last writer wins on whole-file replace), and load_prefs swallows OSError returning {} which silently drops all prefs on transient lock."
+    }
+   ]
+  },
+  {
+   "file": "mag/operator_inbox.py",
+   "lines": [
+    265,
+    279
+   ],
+   "families": [
+    "glm-flash",
+    "kimi"
+   ],
+   "n_families": 2,
+   "status": "CO-LOCATION",
+   "claims": [
+    {
+     "family": "kimi",
+     "line": 279,
+     "claim": "Fatal checkpoint drain crash if `mag.compass` is missing due to unprotected import."
+    },
+    {
+     "family": "glm-flash",
+     "line": 265,
+     "claim": "Operator veto/pause inputs (\"stop\", \"pause the run\") are classified as clear, then drained as ordinary \"apply\" guidance, so the seat is told to \"execute autonomously\" instead of pausing, the exact authority inversion the _VETO_PAUSE block claims to prevent"
+    }
+   ]
+  },
+  {
+   "file": "mag/operator_inbox.py",
+   "lines": [
+    142,
+    145
+   ],
+   "families": [
+    "deepseek",
+    "glm-flash"
+   ],
+   "n_families": 2,
+   "status": "CO-LOCATION",
+   "claims": [
+    {
+     "family": "glm-flash",
+     "line": 142,
+     "claim": "Inbox item ids are timestamped to the second only (strftime %H%M%S), so two different notes committed in the same second share an id, breaking item identity for drain/processed tracking"
+    },
+    {
+     "family": "deepseek",
+     "line": 145,
+     "claim": "`commit_guidance` writes `committed[-50:]` to disk but computes `pending_n` from the full pre-slice `committed` list, so a note fresh-committed past the 50-cap is saved nowhere yet reported as pending."
+    }
+   ]
+  },
+  {
+   "file": "mag/preferences.py",
+   "lines": [
+    66,
+    74
+   ],
+   "families": [
+    "deepseek",
+    "kimi"
+   ],
+   "n_families": 2,
+   "status": "REAL",
+   "claims": [
+    {
+     "family": "kimi",
+     "line": 74,
+     "claim": "set_drainer returns stale prefs dict when env lock blocks write, caller may falsely believe state changed"
+    },
+    {
+     "family": "deepseek",
+     "line": 66,
+     "claim": "set_operator_active lacks the env-lock docstring/return contract that set_drainer has, producing inconsistent API semantics (drainer rejects locked writes, operator does not)."
+    }
+   ]
+  },
+  {
+   "file": "mag/preferences.py",
+   "lines": [
+    46,
+    54
+   ],
+   "families": [
+    "deepseek",
+    "glm-flash"
+   ],
+   "n_families": 2,
+   "status": "REAL",
+   "claims": [
+    {
+     "family": "glm-flash",
+     "line": 46,
+     "claim": "Concurrent set_* writers do unlocked read-modify-write, so one save_prefs silently drops the other's keys (lost update on shared pref file)"
+    },
+    {
+     "family": "deepseek",
+     "line": 54,
+     "claim": "env lock asymmetry: set_operator_active writes pref even when MAG_OPERATOR_ACTIVE env is set, so subsequent UI \"active\" writes are silently ignored by operator_active() but operator_status reports stale pref."
+    }
+   ]
+  },
+  {
+   "file": "mag/registry.py",
+   "lines": [
+    30,
+    43
+   ],
+   "families": [
+    "deepseek",
+    "glm-flash"
+   ],
+   "n_families": 2,
+   "status": "CO-LOCATION",
+   "claims": [
+    {
+     "family": "glm-flash",
+     "line": 43,
+     "claim": "session_id is interpolated unvalidated into filesystem paths, so a sid containing separators or \"..\" escapes memory/biography/"
+    },
+    {
+     "family": "deepseek",
+     "line": 30,
+     "claim": "CORE_INVARIANTS docstring promises \"amend may add, never remove\", but attach_cold_core unions CORE + prev_core only, silently dropping any invariant added by other writers to a same-session dossier if prev is None"
+    }
+   ]
+  },
+  {
+   "file": "mag/skill_ledger.py",
+   "lines": [
+    71,
+    82,
+    86
+   ],
+   "families": [
+    "deepseek",
+    "kimi"
+   ],
+   "n_families": 2,
+   "status": "CO-LOCATION",
+   "claims": [
+    {
+     "family": "kimi",
+     "line": 71,
+     "claim": "_count uses errors='replace' corrupting line count accuracy on encoding errors"
+    },
+    {
+     "family": "kimi",
+     "line": 82,
+     "claim": "proven_moves loads entire decisions file into memory at once"
+    },
+    {
+     "family": "deepseek",
+     "line": 86,
+     "claim": "is_win counts normalized \"ok\" but record_decision stores raw outcome unnormalized, so alias \"failed\" rows are stored as \"failed\" and is_win(\"failed\") returns True via normalize, yet proven_moves also buckets outcome=None decision-only rows and any garbage value passing through normalize unchanged, silently treating unregistered strings as non-wins without surfacing them to the registry feedback loop the docstring claims"
+    }
+   ]
+  },
+  {
+   "file": "mag/skill_ledger.py",
+   "lines": [
+    243,
+    249
+   ],
+   "families": [
+    "deepseek",
+    "glm-flash"
+   ],
+   "n_families": 2,
+   "status": "REAL",
+   "claims": [
+    {
+     "family": "glm-flash",
+     "line": 249,
+     "claim": "seed_from_bench has no dedupe; every re-run re-appends all bench rows, inflating counts and ok_rate buckets that proven_moves trusts"
+    },
+    {
+     "family": "deepseek",
+     "line": 243,
+     "claim": "seed_from_bench and seed_from_training both assert `outcome=\"ok\"` / commit rows without checking for prior seeding beyond the content_hash path, so seed_from_bench is fully non-idempotent (re-running duplicates every bench row, and it is invoked from CLI `seed-bench`) while only the training seed carries a dedupe key"
+    }
+   ]
+  },
+  {
+   "file": "mag/switchboard.py",
+   "lines": [
+    527,
+    534,
+    546,
+    557
+   ],
+   "families": [
+    "deepseek",
+    "glm-flash"
+   ],
+   "n_families": 2,
+   "status": "REAL",
+   "claims": [
+    {
+     "family": "glm-flash",
+     "line": 527,
+     "claim": "Unresolved steer targets silently fall back to holder tier T2 and post anyway to an arbitrary task_id string, so a typo'd or dead target still writes steer text into pigeonhole"
+    },
+    {
+     "family": "glm-flash",
+     "line": 546,
+     "claim": "drop record reports context_len of the full context but persists only context[:2000], corrupting downstream consumers that trust context_len"
+    },
+    {
+     "family": "deepseek",
+     "line": 557,
+     "claim": "`steer_drop` resolves peer via `_resolve_peer(to_ref)` when `to_ref` does not start with \"t\", so a raw task_id lacking the `task:` prefix is never accepted, and a nonexistent peer falls through to `task_id = to_ref` silently, delivering a steer to an arbitrary task_id with no membership check."
+    },
+    {
+     "family": "deepseek",
+     "line": 534,
+     "claim": "`_resolve_peer` calls `_live_peers()` up to three times per invocation (which itself probes orchestrator, router, seat_registry, and env), so `steer_drop` and `mesh` pay N full mesh rebuilds per call instead of one."
+    }
+   ]
+  },
+  {
+   "file": "mag/training_events.py",
+   "lines": [
+    73,
+    75
+   ],
+   "families": [
+    "glm-flash",
+    "kimi"
+   ],
+   "n_families": 2,
+   "status": "CO-LOCATION",
+   "claims": [
+    {
+     "family": "kimi",
+     "line": 73,
+     "claim": "Non-atomic write to shared JSONL surface violates crash-safety"
+    },
+    {
+     "family": "kimi",
+     "line": 75,
+     "claim": "Silent OSError suppression hides disk-full and permission failures"
+    },
+    {
+     "family": "glm-flash",
+     "line": 75,
+     "claim": "emit silently rewrites unknown patterns to \"route_decision\" (line 77), corrupting labels for every typo'd caller"
+    }
+   ]
+  },
+  {
+   "file": "mag/training_events.py",
+   "lines": [
+    91,
+    106
+   ],
+   "families": [
+    "glm-flash",
+    "kimi"
+   ],
+   "n_families": 2,
+   "status": "CO-LOCATION",
+   "claims": [
+    {
+     "family": "kimi",
+     "line": 91,
+     "claim": "_redact_t2 returns empty dict for non-exportable rows which pollutes export list with falsy entries filtered later"
+    },
+    {
+     "family": "glm-flash",
+     "line": 106,
+     "claim": "read_events slurps the entire events.jsonl into memory before slicing, unbounded on an append-only file"
+    }
+   ]
+  },
+  {
+   "file": "mag/training_events.py",
+   "lines": [
+    126,
+    130
+   ],
+   "families": [
+    "deepseek",
+    "glm-flash"
+   ],
+   "n_families": 2,
+   "status": "CO-LOCATION",
+   "claims": [
+    {
+     "family": "glm-flash",
+     "line": 130,
+     "claim": "export_jsonl's tier_max argument is never enforced; only each row's own tier_max is checked, so callers can claim a gate that does not exist"
+    },
+    {
+     "family": "deepseek",
+     "line": 126,
+     "claim": "`_redact_t2` truncates to 400 chars with a non-ASCII ellipsis character and no `join`/`outcome` scrub, so operator identifiers in non-goal fields (run_id, session_id, task_id) export verbatim"
+    }
+   ]
+  },
+  {
+   "file": "mag/chain_query.py",
+   "lines": [
+    180
+   ],
+   "families": [
+    "kimi"
+   ],
+   "n_families": 1,
+   "status": "UNIQUE",
+   "claims": [
+    {
+     "family": "kimi",
+     "line": 180,
+     "claim": "Unbounded regex search in exists() allows ReDoS via crafted pattern"
+    }
+   ]
+  },
+  {
+   "file": "mag/chain_query.py",
+   "lines": [
+    228
+   ],
+   "families": [
+    "kimi"
+   ],
+   "n_families": 1,
+   "status": "UNIQUE",
+   "claims": [
+    {
+     "family": "kimi",
+     "line": 228,
+     "claim": "cost_window() parses ISO timestamps with string comparison instead of datetime, fails across timezone formats"
+    }
+   ]
+  },
+  {
+   "file": "mag/chain_query.py",
+   "lines": [
+    126
+   ],
+   "families": [
+    "glm-flash"
+   ],
+   "n_families": 1,
+   "status": "UNIQUE",
+   "claims": [
+    {
+     "family": "glm-flash",
+     "line": 126,
+     "claim": "by_theme crashes with AttributeError when any knot has null dominant_theme or theme_vector, since .get returns None and None.lower()/.get(\"dominant\") is then called on None"
+    }
+   ]
+  },
+  {
+   "file": "mag/chain_query.py",
+   "lines": [
+    86
+   ],
+   "families": [
+    "glm-flash"
+   ],
+   "n_families": 1,
+   "status": "UNIQUE",
+   "claims": [
+    {
+     "family": "glm-flash",
+     "line": 86,
+     "claim": "fallback \"logging\" only increments in-memory counters; no log write, no method/reason emitted, so the module LAW \"fall back, but LOG the fallback\" is never satisfied and fallback data is lost on process exit"
+    }
+   ]
+  },
+  {
+   "file": "mag/chain_query.py",
+   "lines": [
+    106
+   ],
+   "families": [
+    "deepseek"
+   ],
+   "n_families": 1,
+   "status": "UNIQUE",
+   "claims": [
+    {
+     "family": "deepseek",
+     "line": 106,
+     "claim": "`_read()` loads and `json.loads` the entire chain file on every call with no cache, so `tail=1` reads the whole file, and `by_theme`/`exists`/`breadcrumb` re-serialize every knot with `json.dumps` inside the loop"
+    }
+   ]
+  },
+  {
+   "file": "mag/operator_inbox.py",
+   "lines": [
+    163
+   ],
+   "families": [
+    "kimi"
+   ],
+   "n_families": 1,
+   "status": "UNIQUE",
+   "claims": [
+    {
+     "family": "kimi",
+     "line": 163,
+     "claim": "Frustration signal suppressed for default `commit_guidance` source \"dashboard\"."
+    }
+   ]
+  },
+  {
+   "file": "mag/operator_inbox.py",
+   "lines": [
+    373
+   ],
+   "families": [
+    "kimi"
+   ],
+   "n_families": 1,
+   "status": "UNIQUE",
+   "claims": [
+    {
+     "family": "kimi",
+     "line": 373,
+     "claim": "Redundant code block duplicates `mag.failure_kb.log_failure` call for failure kinds."
+    }
+   ]
+  },
+  {
+   "file": "mag/operator_inbox.py",
+   "lines": [
+    425
+   ],
+   "families": [
+    "glm-flash"
+   ],
+   "n_families": 1,
+   "status": "UNIQUE",
+   "claims": [
+    {
+     "family": "glm-flash",
+     "line": 425,
+     "claim": "The FKB failure_kb.log_failure block is duplicated verbatim, so every tool_fail/collapse/degenerate/seat_crash event is logged twice, corrupting the KB's recurrence dedupe and double-drafting remedies"
+    }
+   ]
+  },
+  {
+   "file": "mag/operator_inbox.py",
+   "lines": [
+    56
+   ],
+   "families": [
+    "deepseek"
+   ],
+   "n_families": 1,
+   "status": "UNIQUE",
+   "claims": [
+    {
+     "family": "deepseek",
+     "line": 56,
+     "claim": "`_is_veto_or_pause` negation guard is bypassed because `_is_ambiguous` lowercases with `.rstrip(\".!?\")` then passes `low` to `_is_veto_or_pause`, which strips again; but the real hazard is `\"don't stop\"` reaching the final regex: after the guard returns False, control falls through to `return bool(re.search(r\"\\b(stop"
+    }
+   ]
+  },
+  {
+   "file": "mag/operator_inbox.py",
+   "lines": [
+    348
+   ],
+   "families": [
+    "deepseek"
+   ],
+   "n_families": 1,
+   "status": "UNIQUE",
+   "claims": [
+    {
+     "family": "deepseek",
+     "line": 348,
+     "claim": "`log_behavioral_event` calls `mag.failure_kb.log_failure` twice with identical arguments, so every tool_fail/collapse/degenerate/seat_crash event is logged twice to the failure KB (dedupe downstream may mask, but the double call is unconditional)."
+    }
+   ]
+  },
+  {
+   "file": "mag/orchestrator.py",
+   "lines": [
+    267
+   ],
+   "families": [
+    "kimi"
+   ],
+   "n_families": 1,
+   "status": "UNIQUE",
+   "claims": [
+    {
+     "family": "kimi",
+     "line": 267,
+     "claim": "_save writes to shared JSON surface without fsync before os.replace, risking durability loss on crash"
+    }
+   ]
+  },
+  {
+   "file": "mag/orchestrator.py",
+   "lines": [
+    296
+   ],
+   "families": [
+    "kimi"
+   ],
+   "n_families": 1,
+   "status": "UNIQUE",
+   "claims": [
+    {
+     "family": "kimi",
+     "line": 296,
+     "claim": "_trail appends to shared JSONL without atomic tmp+replace, corrupting on concurrent writers or crash"
+    }
+   ]
+  },
+  {
+   "file": "mag/orchestrator.py",
+   "lines": [
+    635
+   ],
+   "families": [
+    "kimi"
+   ],
+   "n_families": 1,
+   "status": "UNIQUE",
+   "claims": [
+    {
+     "family": "kimi",
+     "line": 635,
+     "claim": "_queue_save writes queue entries without atomic tmp+replace, risking partial writes visible to readers"
+    }
+   ]
+  },
+  {
+   "file": "mag/orchestrator.py",
+   "lines": [
+    931
+   ],
+   "families": [
+    "glm-flash"
+   ],
+   "n_families": 1,
+   "status": "UNIQUE",
+   "claims": [
+    {
+     "family": "glm-flash",
+     "line": 931,
+     "claim": "spawn_task unconditionally sets ok=True even when _spawn_cmd already finalized the task as failed on spawn error, so drain_once/drain_parallel mark the queue entry \"running\" against a failed task"
+    }
+   ]
+  },
+  {
+   "file": "mag/orchestrator.py",
+   "lines": [
+    890
+   ],
+   "families": [
+    "glm-flash"
+   ],
+   "n_families": 1,
+   "status": "UNIQUE",
+   "claims": [
+    {
+     "family": "glm-flash",
+     "line": 890,
+     "claim": "same-goal dedupe is a TOCTOU race: two concurrent drainers can both pass the _running_tasks() check before either writes its task record, double-spending the provider on identical goals"
+    }
+   ]
+  },
+  {
+   "file": "mag/orchestrator.py",
+   "lines": [
+    1452
+   ],
+   "families": [
+    "glm-flash"
+   ],
+   "n_families": 1,
+   "status": "UNIQUE",
+   "claims": [
+    {
+     "family": "glm-flash",
+     "line": 1452,
+     "claim": "drain_parallel breaks the entire batch loop when the head queued goal is ollama and one ollama task runs, stranding all later queued remote-provider work that pass"
+    }
+   ]
+  },
+  {
+   "file": "mag/orchestrator.py",
+   "lines": [
+    436
+   ],
+   "families": [
+    "deepseek"
+   ],
+   "n_families": 1,
+   "status": "UNIQUE",
+   "claims": [
+    {
+     "family": "deepseek",
+     "line": 436,
+     "claim": "`_spawn_cmd` holds `log_fh` open and relies solely on daemon `_monitor` threads to close it; if the orchestrator process exits or the monitor thread is lost (the same \"launcher exits right after fan_out\" failure documented in `reap_completed`), the log fd leaks per spawn and the child's terminal state is never written, stranding the queue."
+    }
+   ]
+  },
+  {
+   "file": "mag/orchestrator.py",
+   "lines": [
+    1516
+   ],
+   "families": [
+    "deepseek"
+   ],
+   "n_families": 1,
+   "status": "UNIQUE",
+   "claims": [
+    {
+     "family": "deepseek",
+     "line": 1516,
+     "claim": "`drain_parallel` can over-spawn: `budget = n_agents - running` is computed once, but `_running_task_count()` also counts queue rows whose `task_id` is not yet in the task registry, and nothing re-checks the live count inside the `while budget > 0` loop after each `spawn_task`, so a fast child exit plus a new queue row can push concurrent spawns past `spawn_cap`."
+    }
+   ]
+  },
+  {
+   "file": "mag/orchestrator.py",
+   "lines": [
+    1247
+   ],
+   "families": [
+    "deepseek"
+   ],
+   "n_families": 1,
+   "status": "UNIQUE",
+   "claims": [
+    {
+     "family": "deepseek",
+     "line": 1247,
+     "claim": "`_next_queued` and `_any_running_task` parse every `QUEUE_DIR/*.json` on every drain tick without the task-list cache, so `drain_loop(interval_s=5.0)` reads O(queue) JSON files per 5s indefinitely; a large queue or a locked file (Windows) blocks the drainer."
+    }
+   ]
+  },
+  {
+   "file": "mag/policy_engine.py",
+   "lines": [
+    372
+   ],
+   "families": [
+    "kimi"
+   ],
+   "n_families": 1,
+   "status": "UNIQUE",
+   "claims": [
+    {
+     "family": "kimi",
+     "line": 372,
+     "claim": "_collect_active_records yields from generator inside nested function but generator never returns list, causing expire() to iterate over None"
+    }
+   ]
+  },
+  {
+   "file": "mag/policy_engine.py",
+   "lines": [
+    236
+   ],
+   "families": [
+    "kimi"
+   ],
+   "n_families": 1,
+   "status": "UNIQUE",
+   "claims": [
+    {
+     "family": "kimi",
+     "line": 236,
+     "claim": "revoke() appends to jsonl without atomic tmp+replace, violating the known wiring pattern and risking corruption on crash"
+    }
+   ]
+  },
+  {
+   "file": "mag/policy_engine.py",
+   "lines": [
+    424
+   ],
+   "families": [
+    "kimi"
+   ],
+   "n_families": 1,
+   "status": "UNIQUE",
+   "claims": [
+    {
+     "family": "kimi",
+     "line": 424,
+     "claim": "cmd_set allows arbitrary key injection including underscore-prefixed keys like _load_error that save_policy then strips, creating confusing UX"
+    }
+   ]
+  },
+  {
+   "file": "mag/policy_engine.py",
+   "lines": [
+    220
+   ],
+   "families": [
+    "glm-flash"
+   ],
+   "n_families": 1,
+   "status": "UNIQUE",
+   "claims": [
+    {
+     "family": "glm-flash",
+     "line": 220,
+     "claim": "check_budget fail-closes on any authority lacking a `budget` dict, contradicting its own backward-compat contract, so every legacy grant fails validation with \"budget exhausted\""
+    }
+   ]
+  },
+  {
+   "file": "mag/policy_engine.py",
+   "lines": [
+    114
+   ],
+   "families": [
+    "glm-flash"
+   ],
+   "n_families": 1,
+   "status": "UNIQUE",
+   "claims": [
+    {
+     "family": "glm-flash",
+     "line": 114,
+     "claim": "`_ts_to_epoch` returns `_now_epoch()` on unparseable ts, making garbage ts always TTL-valid: fail-open in a reference monitor"
+    }
+   ]
+  },
+  {
+   "file": "mag/policy_engine.py",
+   "lines": [
+    153
+   ],
+   "families": [
+    "glm-flash"
+   ],
+   "n_families": 1,
+   "status": "UNIQUE",
+   "claims": [
+    {
+     "family": "glm-flash",
+     "line": 153,
+     "claim": "`_ensure_default_policy()` runs at import time, writing memory/policy.json as a module-import side effect"
+    }
+   ]
+  },
+  {
+   "file": "mag/policy_engine.py",
+   "lines": [
+    393
+   ],
+   "families": [
+    "deepseek"
+   ],
+   "n_families": 1,
+   "status": "UNIQUE",
+   "claims": [
+    {
+     "family": "deepseek",
+     "line": 393,
+     "claim": "`_add` is declared with `yield rec` yet callers do `yield from _add(...)`, making the nested generator unreachable and silently dropping all active records from the TTL sweep"
+    }
+   ]
+  },
+  {
+   "file": "mag/policy_engine.py",
+   "lines": [
+    402
+   ],
+   "families": [
+    "deepseek"
+   ],
+   "n_families": 1,
+   "status": "UNIQUE",
+   "claims": [
+    {
+     "family": "deepseek",
+     "line": 402,
+     "claim": "`_collect_active_records` builds `active = set()` and `_add` yields only when status is active, but the trail/inbox loops `yield from _add(...)` before the record is ever yielded back, so `expire()` gets an empty candidate list and never revokes anything"
+    }
+   ]
+  },
+  {
+   "file": "mag/policy_engine.py",
+   "lines": [
+    322
+   ],
+   "families": [
+    "deepseek"
+   ],
+   "n_families": 1,
+   "status": "UNIQUE",
+   "claims": [
+    {
+     "family": "deepseek",
+     "line": 322,
+     "claim": "`_verdict` recomputes `budget_remaining` from `max_calls` ignoring `budget[\"used\"]`, so a partially spent budget reports the full ceiling as remaining in the receipt trail"
+    }
+   ]
+  },
+  {
+   "file": "mag/preferences.py",
+   "lines": [
+    97
+   ],
+   "families": [
+    "glm-flash"
+   ],
+   "n_families": 1,
+   "status": "UNIQUE",
+   "claims": [
+    {
+     "family": "glm-flash",
+     "line": 97,
+     "claim": "set_drainer only guards off-writes when env is locked ON; when MAG_DRAINER is locked OFF (env \"0\"), on-writes are accepted into the file yet drainer_enabled() ignores them, so the dashboard reports success while the state never takes effect"
+    }
+   ]
+  },
+  {
+   "file": "mag/registry.py",
+   "lines": [
+    235
+   ],
+   "families": [
+    "kimi"
+   ],
+   "n_families": 1,
+   "status": "UNIQUE",
+   "claims": [
+    {
+     "family": "kimi",
+     "line": 235,
+     "claim": "write_residual writes to path without atomic tmp+replace, risking corruption on crash"
+    }
+   ]
+  },
+  {
+   "file": "mag/registry.py",
+   "lines": [
+    138
+   ],
+   "families": [
+    "kimi"
+   ],
+   "n_families": 1,
+   "status": "UNIQUE",
+   "claims": [
+    {
+     "family": "kimi",
+     "line": 138,
+     "claim": "set_latest_session writes LATEST_SESSION and latest.dossier.json without atomic tmp+replace"
+    }
+   ]
+  },
+  {
+   "file": "mag/registry.py",
+   "lines": [
+    256
+   ],
+   "families": [
+    "kimi"
+   ],
+   "n_families": 1,
+   "status": "UNIQUE",
+   "claims": [
+    {
+     "family": "kimi",
+     "line": 256,
+     "claim": "write_derived_md writes directly to BIO/latest.md without atomic tmp+replace"
+    }
+   ]
+  },
+  {
+   "file": "mag/registry.py",
+   "lines": [
+    364
+   ],
+   "families": [
+    "glm-flash"
+   ],
+   "n_families": 1,
+   "status": "UNIQUE",
+   "claims": [
+    {
+     "family": "glm-flash",
+     "line": 364,
+     "claim": "read-modify-write registry upsert has no lock; two concurrent publish_residual calls each load the map, write tmp, and os.replace, silently dropping one session's row"
+    }
+   ]
+  },
+  {
+   "file": "mag/registry.py",
+   "lines": [
+    79
+   ],
+   "families": [
+    "glm-flash"
+   ],
+   "n_families": 1,
+   "status": "UNIQUE",
+   "claims": [
+    {
+     "family": "glm-flash",
+     "line": 79,
+     "claim": "residual corruption path returns None and write_residual then treats it as absent, so prev invariants/core and previous card are silently lost on one bad read, permanently rewriting the cold vertex"
+    }
+   ]
+  },
+  {
+   "file": "mag/registry.py",
+   "lines": [
+    186
+   ],
+   "families": [
+    "deepseek"
+   ],
+   "n_families": 1,
+   "status": "UNIQUE",
+   "claims": [
+    {
+     "family": "deepseek",
+     "line": 186,
+     "claim": "Non-atomic writes to shared surfaces elsewhere in file (latest_session.json, latest.dossier.json, residual/*.json) despite atomic upsert_registry pattern"
+    }
+   ]
+  },
+  {
+   "file": "mag/registry.py",
+   "lines": [
+    105
+   ],
+   "families": [
+    "deepseek"
+   ],
+   "n_families": 1,
+   "status": "UNIQUE",
+   "claims": [
+    {
+     "family": "deepseek",
+     "line": 105,
+     "claim": "residual_content_hash includes content_commit, but write_residual stores residual.content_hash before re-reading, so registry_row_from_dossier fallback hashes a payload that already contains residual metadata"
+    }
+   ]
+  },
+  {
+   "file": "mag/skill_ledger.py",
+   "lines": [
+    63
+   ],
+   "families": [
+    "kimi"
+   ],
+   "n_families": 1,
+   "status": "UNIQUE",
+   "claims": [
+    {
+     "family": "kimi",
+     "line": 63,
+     "claim": "Race condition in _append: non-atomic write to shared jsonl surface"
+    }
+   ]
+  },
+  {
+   "file": "mag/skill_ledger.py",
+   "lines": [
+    327
+   ],
+   "families": [
+    "glm-flash"
+   ],
+   "n_families": 1,
+   "status": "UNIQUE",
+   "claims": [
+    {
+     "family": "glm-flash",
+     "line": 327,
+     "claim": "seed_from_training writes outcome=\"ok\" for operator-taught rows, so unverified training text lands as verified wins in proven_moves case law"
+    }
+   ]
+  },
+  {
+   "file": "mag/skill_ledger.py",
+   "lines": [
+    323
+   ],
+   "families": [
+    "glm-flash"
+   ],
+   "n_families": 1,
+   "status": "UNIQUE",
+   "claims": [
+    {
+     "family": "glm-flash",
+     "line": 323,
+     "claim": "seed_from_training dedupe skips only rows whose hash is already seen; rows with empty content_hash bypass the check (h and h in seen) and duplicate on every re-run"
+    }
+   ]
+  },
+  {
+   "file": "mag/skill_ledger.py",
+   "lines": [
+    124
+   ],
+   "families": [
+    "deepseek"
+   ],
+   "n_families": 1,
+   "status": "UNIQUE",
+   "claims": [
+    {
+     "family": "deepseek",
+     "line": 124,
+     "claim": "proven_moves reads the entire decisions file into a single string and splits every call, O(file) memory and parse per invocation, on a file the module itself targets at 1000+ rows and that seed_from_training appends 600 further rows to, serving a \"Deterministic, $0\" L1c context layer that runs on every agent turn"
+    }
+   ]
+  },
+  {
+   "file": "mag/switchboard.py",
+   "lines": [
+    735
+   ],
+   "families": [
+    "kimi"
+   ],
+   "n_families": 1,
+   "status": "UNIQUE",
+   "claims": [
+    {
+     "family": "kimi",
+     "line": 735,
+     "claim": "CLI drop command ignores steer_drop error return code"
+    }
+   ]
+  },
+  {
+   "file": "mag/switchboard.py",
+   "lines": [
+    605
+   ],
+   "families": [
+    "kimi"
+   ],
+   "n_families": 1,
+   "status": "UNIQUE",
+   "claims": [
+    {
+     "family": "kimi",
+     "line": 605,
+     "claim": "route_intent recalculates importance after arena seat swap without rechecking api_ready flag"
+    }
+   ]
+  },
+  {
+   "file": "mag/switchboard.py",
+   "lines": [
+    635
+   ],
+   "families": [
+    "kimi"
+   ],
+   "n_families": 1,
+   "status": "UNIQUE",
+   "claims": [
+    {
+     "family": "kimi",
+     "line": 635,
+     "claim": "status function calls find_orphans redundantly after mesh already invoked it"
+    }
+   ]
+  },
+  {
+   "file": "mag/switchboard.py",
+   "lines": [
+    757
+   ],
+   "families": [
+    "glm-flash"
+   ],
+   "n_families": 1,
+   "status": "UNIQUE",
+   "claims": [
+    {
+     "family": "glm-flash",
+     "line": 757,
+     "claim": "Any caller can attribute a steer drop to \"operator\" and mark it spooky=true via CLI defaults, with no authentication on from_ref or spooky, poisoning the training-label channel"
+    }
+   ]
+  },
+  {
+   "file": "mag/switchboard.py",
+   "lines": [
+    64
+   ],
+   "families": [
+    "deepseek"
+   ],
+   "n_families": 1,
+   "status": "UNIQUE",
+   "claims": [
+    {
+     "family": "deepseek",
+     "line": 64,
+     "claim": "`_trail` writes the shared jsonl surface without atomic tmp+replace and without file locking, so concurrent switchboard invocations interleave partial lines into `switchboard_trail.jsonl`."
+    }
+   ]
+  },
+  {
+   "file": "mag/training_events.py",
+   "lines": [
+    155
+   ],
+   "families": [
+    "deepseek"
+   ],
+   "n_families": 1,
+   "status": "UNIQUE",
+   "claims": [
+    {
+     "family": "deepseek",
+     "line": 155,
+     "claim": "`tier_max` parameter is accepted but never filters rows, so T0/T1-requested exports still emit any T2-or-lower event and the manifest's `tier_max` field lies about actual content"
+    }
+   ]
+  },
+  {
+   "file": "mag/training_events.py",
+   "lines": [
+    180
+   ],
+   "families": [
+    "deepseek"
+   ],
+   "n_families": 1,
+   "status": "UNIQUE",
+   "claims": [
+    {
+     "family": "deepseek",
+     "line": 180,
+     "claim": "`excluded` count is wrong: it subtracts `len(exported)` from `len(rows)`, ignoring that redaction drops rows too, so T0/T1 and non-green rows are double-miscounted against `n_green_joined`"
+    }
+   ]
+  },
+  {
+   "file": "mag/verkle_knot.py",
+   "lines": [
+    1096
+   ],
+   "families": [
+    "kimi"
+   ],
+   "n_families": 1,
+   "status": "UNIQUE",
+   "claims": [
+    {
+     "family": "kimi",
+     "line": 1096,
+     "claim": "Non-atomic write to topic_evolution.json (torn write window)"
+    }
+   ]
+  },
+  {
+   "file": "mag/verkle_knot.py",
+   "lines": [
+    1096
+   ],
+   "families": [
+    "kimi"
+   ],
+   "n_families": 1,
+   "status": "UNIQUE",
+   "claims": [
+    {
+     "family": "kimi",
+     "line": 1096,
+     "claim": "Missing newline=\"\" in EVOLUTION.write_text risks CRLF corruption on Windows"
+    }
+   ]
+  },
+  {
+   "file": "mag/verkle_knot.py",
+   "lines": [
+    896
+   ],
+   "families": [
+    "kimi"
+   ],
+   "n_families": 1,
+   "status": "UNIQUE",
+   "claims": [
+    {
+     "family": "kimi",
+     "line": 896,
+     "claim": "_safe_sid truncation to 12 chars may collide for long session IDs"
+    }
+   ]
+  },
+  {
+   "file": "mag/verkle_knot.py",
+   "lines": [
+    158
+   ],
+   "families": [
+    "glm-flash"
+   ],
+   "n_families": 1,
+   "status": "UNIQUE",
+   "claims": [
+    {
+     "family": "glm-flash",
+     "line": 158,
+     "claim": "Stale-lock liveness probe calls os.kill(owner, 0), which on Windows is not a signal probe; CPython resolves it to TerminateProcess, so a healthy concurrent writer holding the lock gets killed by the waiter that breaks the \"stale\" lock."
+    }
+   ]
+  },
+  {
+   "file": "mag/verkle_knot.py",
+   "lines": [
+    810
+   ],
+   "families": [
+    "glm-flash"
+   ],
+   "n_families": 1,
+   "status": "UNIQUE",
+   "claims": [
+    {
+     "family": "glm-flash",
+     "line": 810,
+     "claim": "v1 amend still retires the old knot to the attic BEFORE _rewrite_chain lands, so a crash between the two leaves the committed chain row pointing at a filename no longer in KNOTS; the ticket-8 fix narrowed the blast radius (bytes recoverable) but did not close the ordering window."
+    }
+   ]
+  },
+  {
+   "file": "mag/verkle_knot.py",
+   "lines": [
+    1030
+   ],
+   "families": [
+    "glm-flash"
+   ],
+   "n_families": 1,
+   "status": "UNIQUE",
+   "claims": [
+    {
+     "family": "glm-flash",
+     "line": 1030,
+     "claim": "_update_topic_evolution catches only json.JSONDecodeError and resets data = {}, so one corrupt or torn topic_evolution.json read silently wipes the entire series on the next save; a valid-JSON non-dict (list) also escapes the except clause as an uncaught TypeError from data[\"schema\"]."
+    }
+   ]
+  },
+  {
+   "file": "mag/verkle_knot.py",
+   "lines": [
+    434
+   ],
+   "families": [
+    "deepseek"
+   ],
+   "n_families": 1,
+   "status": "UNIQUE",
+   "claims": [
+    {
+     "family": "deepseek",
+     "line": 434,
+     "claim": "`_append_verkle_knot_unlocked` writes knot file and session pointers with plain `write_text`, so a crash between knot write and chain append leaves orphan knot files that are never referenced (and pointers that lie about committed leaves)"
+    }
+   ]
+  },
+  {
+   "file": "mag/verkle_knot.py",
+   "lines": [
+    973
+   ],
+   "families": [
+    "deepseek"
+   ],
+   "n_families": 1,
+   "status": "UNIQUE",
+   "claims": [
+    {
+     "family": "deepseek",
+     "line": 973,
+     "claim": "`_update_topic_evolution` updates `EVOLUTION` with plain `write_text` outside the tip/knot atomic contract, and it reads-modifies-writes without the lock protecting against a second process reusing the same file after `append_verkle_knot` returns (evolution is called at the end of the unlocked body, after the tip is committed)"
+    }
+   ]
+  },
+  {
+   "file": "mag/verkle_knot.py",
+   "lines": [
+    400
+   ],
+   "families": [
+    "deepseek"
+   ],
+   "n_families": 1,
+   "status": "UNIQUE",
+   "claims": [
+    {
+     "family": "deepseek",
+     "line": 400,
+     "claim": "`_sync_latest_knot` writes `LATEST` with plain `write_text` in both branches, a fourth non-atomic shared json write alongside the tip and chain paths"
+    }
+   ]
+  }
+ ]
+}

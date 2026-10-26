@@ -1,0 +1,57 @@
+{
+  "lane": "cited-missing",
+  "division": "B",
+  "started": "2026-10-01",
+  "finished": "2026-10-01",
+  "status": "complete",
+  "ask": "CITED-BUT-MISSING sweep: extract primary-source citations from last-48h receipts, check estate holdings (catalog/corpus/loose-bytes) for each, flag cited-but-not-held. Finish line: cited-missing table (cited-where path:line, held yes/no, fetchable, priority by claim-weight), count named, receipt watch/inbox/librarian_exp/cited-missing.md.",
+  "sources_inventory": {
+    "48h_synth": "watch/inbox/48h_synth/ (6 chapters)",
+    "olm_2026_09_30": "watch/inbox/frontier_olm_2026-09-30/steal/ (6 cards)",
+    "olm_2026_10_01": "watch/inbox/frontier_olm_2026-10-01/steal/ (5 cards) + DIGEST.md + RECEIPT.md",
+    "spiking_wide": "watch/inbox/spiking_wide/ (7 cards)",
+    "localfirst": "watch/inbox/localfirst/ (7 cards) + LOCALFIRST_MEMORY_LANDSCAPE_20261001.md",
+    "drops": "SPIKINGBRAIN_DROP STRATA_DROP DOUBLE_DROP x_intel_drop model_mating_paper_dig ABLITERATUS_DROP_20260929",
+    "ractor50": "watch/inbox/ractor50/ (8 chapters; no external primaries cited except the UF-124/125/126 placeholder-id incident)"
+  },
+  "method": [
+    "extract_citations.py: regex over every receipt line for arxiv.org URLs, bare arXiv ids (YYMM.NNNNN month-validated), github.com owner/repo pairs; wrote lanes/citations_raw.json (205 cite locations)",
+    "holdings_check.py: holdings test = id substring in catalog/catalog.jsonl path or title (691,789 rows) OR in any filename under corpus/, watch/, memory/, docs/, mag/, tools/, state/ (state/arxiv/ holds 4,010 dated fetched-text files); temp-path-only holdings classed WEAK; wrote lanes/unique_citations.json",
+    "render_receipt.py: dedupe (trailing-dot repo artifacts merged), priority by claim-weight, receipt markdown to stdout; rendered to watch/inbox/librarian_exp/cited-missing.md",
+    "fetchability: curl -I -L HTTP HEAD probes on 3 arXiv ids + 13 github repos + the placeholder id; all HTTP 200"
+  ],
+  "counts_final_snapshot_2026-10-01T19:40Z": {
+    "unique_citations": 90,
+    "cite_locations": 205,
+    "held_durable": 49,
+    "held_weak_temp_only": 1,
+    "not_held": 40,
+    "priority_split_of_missing": { "P1_HIGH": 15, "P2_MED": 1, "P3_LOW": 24 }
+  },
+  "moving_estate_finding": "Holdings grew mid-sweep as a sibling gathering_expedition lane landed fetched primaries into memory/runs/gathering_expedition/ (27 arXiv PDFs by 19:36Z, 48 files by final render, also copying into corpus/papers_reference_nonredistributable/), and the spiking-wide gala lane banked ev_arxiv_2509_05276_abstract.md at 18:33Z. The gap the sweep measured at start (~79 of 90 missing) is being actively healed in flight; the receipt table is honest for the named snapshot moment.",
+  "decision_ledger": "Closes the operator's cited-but-not-held gap analysis. Instrument decision proposed in the receipt: extend the ractor50/accuracy.md:35 citation-resolver spec from resolution to HOLDINGS - every LANDED row citing an external primary must leave the primary bytes in state/arxiv/<date>/<id>v1.txt (existing 4,010-file archive) or a corpus dir and cite that path; nightly re-run of this lane's three scripts diffs fresh receipts against holdings and flags new leaks.",
+  "not_run_limits": [
+    "content-level verification (does the held text contain the quoted claim) NOT run; held means bytes exist, not quote re-verified",
+    "book-class and non-id primaries out of scope beyond the extracted id/repo set",
+    "unprobed arXiv ids inherit fetchability from the 3-probe registry verification (same host, same id shape)",
+    "no code touched under mag/ or tools/, so the violation ratchet was not run (not applicable)"
+  ],
+  "checks": [
+    {
+      "command": ".venv/Scripts/python.exe watch/inbox/gala_20260925/librarian-expedition/extract_citations.py && .venv/Scripts/python.exe watch/inbox/gala_20260925/librarian-expedition/holdings_check.py && .venv/Scripts/python.exe watch/inbox/gala_20260925/librarian-expedition/render_receipt.py > watch/inbox/librarian_exp/cited-missing.md && curl -I -L probes (16 URLs) && receipt byte-verification && defensive find",
+      "exit": 0,
+      "evidence": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/librarian-expedition/lanes/cited-missing.check.txt"
+    }
+  ],
+  "artifacts": {
+    "receipt": "watch/inbox/librarian_exp/cited-missing.md",
+    "check_file": "watch/inbox/gala_20260925/librarian-expedition/lanes/cited-missing.check.txt",
+    "raw_citations": "watch/inbox/gala_20260925/librarian-expedition/lanes/citations_raw.json",
+    "unique_citations": "watch/inbox/gala_20260925/librarian-expedition/lanes/unique_citations.json",
+    "scripts": [
+      "watch/inbox/gala_20260925/librarian-expedition/extract_citations.py",
+      "watch/inbox/gala_20260925/librarian-expedition/holdings_check.py",
+      "watch/inbox/gala_20260925/librarian-expedition/render_receipt.py"
+    ]
+  }
+}

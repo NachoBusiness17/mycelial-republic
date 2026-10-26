@@ -1,0 +1,28 @@
+<!-- meta: {"ractor": "JUNG", "mouthpiece": "fostertron_max", "subject": "six_lane_run", "start_et": "2026-10-23T13:19:30.942583-04:00", "attempts": [{"attempt": 1, "exit": 0, "stdout_len": 4950, "at": "2026-10-23T13:21:29.660691-04:00"}], "carrier": "opencode run (provider zai-sd 'sd / Max', key env ZAI_API_KEY_2 via model_garden._api_key)", "requested_model": "zai-sd/glm-5.3", "resolved_model": "glm-5.3", "exit": 0, "stderr_tail": "\u001b[0m\n> build \u00b7 glm-5.3\n\u001b[0m\n\u001b[0m\u2192 \u001b[0mRead PROMPT.txt\n", "tokens": "not reported by opencode run", "end_et": "2026-10-23T13:21:29.660691-04:00", "status": "OK"} -->
+
+# The Six Answers
+
+In the year the river froze early, the elders of Marrowfen had one question and would not give it to a single mouth. When the town was young it had kept an oracle in the tower, and the oracle had said the bridge would hold, and the bridge had taken the wedding party. Nothing was believed the same way after that. So the elders wrote their question on six sheets, word for word identical down to the last comma, and sealed each with black wax. It was the founding question, the old one: whether the bridge would bear weight.
+
+The six answerers came by different roads. The first carried a lantern bought with a winter of silver, and its light reached farthest into the fog. The second owned no lantern but held a key borrowed from a great house, and the key opened gates her own hands could not have built. Two were brothers who could not answer anything without touching it; they meant to walk the bridge plank by plank, hands on the rails. The fifth was thin and carried nothing and asked no fee — what he gave was what anyone could have for the asking. The sixth never came to the town at all; he answered from his own hearth, and his lamp was small, but it was his.
+
+Each was led to a room with a bare table, and the rooms shared no window and no crack. Whatever one wrote could not travel to another's ink. Each broke the wax, read, and wrote.
+
+When the six came out, the elders did not read the papers aloud and did not stack them into one voice. They gave them to the weaver, who set the six answers in a frame six by six, answer against answer, and in every square she stitched the grade of their agreement: dark thread where two answers matched and could be trusted to match, pale thread where they only leaned toward each other. Some elders wanted her to pour a single dye over the whole frame so it would look of a piece. She would not. The pale squares were doing work; a frame all one color tells you nothing about the cloth.
+
+Then a judge was fetched from over the mountain, a man who knew none of the six. He was given the whole frame at once and allowed to speak one time, and whatever he said would stand. He looked until the light went low, gave his verdict, and went home. A scribe copied the verdict into the iron book, where no line once written may be scraped out.
+
+Before the frame was hung in the hall, the weaver found a mark on it. The two brothers, being men who touch things, had paused at the wall where the papers wait, and had read the titles the scribe had given the other four — not the words inside, only the names on the folds. A young elder asked her to wash the mark out; it was small, and clean cloth looks better. The weaver instead cut thread the same weight as the verdict's and sewed the mark into the margin of the cloth itself. Let whoever reads this frame in fifty years read the smudge too, she said. A cloth that hides its own stain gets worn by it.
+
+The elders had hoped, though none of them said it aloud even to themselves, that the fog would part six times onto the same bank. They got three shapes of answer and two pale seams between them, and the seams were where the next question lived. That night the hall stayed unlocked. The frame hung with its dark squares, its pale squares, its verdict in iron letters, and its one sewn mark. Whoever came to read it had to read all four, and could not mistake the cloth for the bridge, or the bridge for the cloth.
+
+---KEY---
+1. Put the identical question, unchanged in a single word, to every answerer (the six sealed sheets, alike down to the last comma).
+2. Each attempt starts from an empty table in a sealed room, unable to see or carry over any other's work (the rooms that shared no window and no crack).
+3. Deliberately use answerers of unlike nature and price — the dearly bought, the key-borrower, the hand-workers, the feeless, the hearth-bound (the six who came by different roads).
+4. Grade agreement in pairs, letting each pairing carry its own degree of trust rather than one blended verdict (the weaver's six-by-six frame, dark thread and pale thread in every square).
+5. Refuse to dye the whole frame one color: disagreement among the answers is evidence, not error (the weaver declining the elders' single dye).
+6. The verdict is delivered once, by one outside reader who sees all answers together and may speak only a single time (the judge from over the mountain).
+7. Fix the verdict in a record that cannot afterward be scraped or rewritten (the scribe and the iron book).
+8. The question under test is whether a standing rule still holds — asked again, never assumed from the last failure or the last promise (the founding question of the bridge, put a second time after the oracle).
+9. If isolation is breached even slightly — one answerer seeing only the titles of the others' papers — the breach is stitched into the record at the same weight as the verdict, never washed away (the mark sewn into the margin).

@@ -1,0 +1,135 @@
+{
+  "lane": "mcp-gap-synthesis",
+  "division": "B",
+  "ok": true,
+  "note": "Gap register synthesized and byte-checked: the ecosystem-side capabilities we lack are registry presence and an OAuth resource-server posture (both one-sitting), then remote hosting, per-call sandboxing, and an MCP eval harness (one-wave); the estate-side differentiators they lack (parity-law receipt serving, sha256-sealed pointers, capability pricing, on-chain token settlement, seed-RIB coldest-vertex portability) are defended, not traded; sibling lanes in 2026-10-11_mcp-landscape/lanes/ never landed during 25 minutes of polling so the they-side is grounded on the ask's own category list plus estate skill bytes and live web checks, stated honestly.",
+  "rows": [
+    {
+      "law": "GAP-THEYSIDE-1 registry-presence (rank: one-sitting)",
+      "claim": "The ecosystem has an official MCP registry (registry.modelcontextprotocol.io, preview announced 2025-09-08) that clients use for discovery; the estate has zero registry integration and all five live surfaces are private and undiscoverable.",
+      "quote": "| docker mag-mcp | TCP bridge 127.0.0.1:8766, always-on | archivist profile 17/17 | OK; container image MATCHES current mag-sovereign:local (0225f08a7c2f) |",
+      "source": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/mcp_layer_status_20261010.md",
+      "steal": "One-sitting: author a registry-schema entry JSON for the bridge and seed surfaces and file it in watch/inbox for operator GO; publication stays operator-gated because no keys cross.",
+      "falsifier": "An external client installs and initializes the estate server purely from its registry entry; if the entry cannot round-trip the registry's validation, the gap stands. Probe run: grep zero hits, check.txt CHECK4 exit 1.",
+      "leverage": "medium"
+    },
+    {
+      "law": "GAP-THEYSIDE-2 oauth-resource-server (rank: one-sitting)",
+      "claim": "The MCP spec mandates OAuth 2.1 with PKCE for authorization and hosted platforms ship it as a feature; our gateway is one static shared X-API-Key with no token issuance, no discovery endpoints, and no per-client identity.",
+      "quote": "| house HTTP | POST /mcp gateway 127.0.0.1:8001, X-API-Key | full profile 42/42 | OK |",
+      "source": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/mcp_layer_status_20261010.md",
+      "steal": "One-sitting: stand a minimal OAuth resource-server shim in front of the 8001 gateway; token scopes map onto the existing profile projections (transport-not-authority law intact, mag/mcp_server.py:18,113).",
+      "falsifier": "A third-party MCP client completes connect using discovery metadata plus token issuance alone; any step still needing a hand-copied key means not closed. Probe run: all four curl paths 401, check.txt CHECK5.",
+      "leverage": "medium"
+    },
+    {
+      "law": "GAP-THEYSIDE-3 remote-hosting (rank: one-wave)",
+      "claim": "The ecosystem serves MCP from managed platforms with streamable HTTP and built-in OAuth (Cloudflare McpAgent per the estate's own agents-sdk skill); every estate surface is loopback or LAN docker and the away path is an unauthenticated trycloudflare tunnel.",
+      "quote": "the trycloudflare tunnel is the away path",
+      "source": "C:/Users/foste/Documents/projects/local_sovereign_agent/tools/gps_mcp/config.gstd.json",
+      "steal": "One-wave: one public named surface serving bridge plus seed behind the OAuth shim so the B2-181 cold-join falsifier runs machine-crossed (closes the B2-539 fresh-clone join); R5 tunnel GO ordering honored (never precedes R3 per-seat tokens).",
+      "falsifier": "A cold agent on a different machine joins with zero local estate files and passes all 10 B2-181 cold-join checks; any estate-path read means not portable.",
+      "leverage": "high"
+    },
+    {
+      "law": "GAP-THEYSIDE-4 per-call-sandbox (rank: one-wave)",
+      "claim": "The ecosystem sells ephemeral execution sandboxes as a product (E2B class; Cloudflare Sandbox SDK 1.0 preview); estate isolation is application-level pins only: profile allowlists, OUT_DIR pin, schema-hash pin gate, with docker isolating just the archivist surface.",
+      "quote": "PIN GATE (2026-09-29, wave5-repair mcp-pin-wire): tools/mcp_pin.py",
+      "source": "C:/Users/foste/Documents/projects/local_sovereign_agent/mag/mcp_server.py",
+      "steal": "One-wave: sidecar the mutating bridge verbs (estate_receipt_append, estate_thought_compile) into the existing docker runtime with the pin carried as a mount, not trust.",
+      "falsifier": "A hostile tool call inside the per-call sandbox writes only under the pinned dir; an outside-write attempt fails loud and lands a broker receipt.",
+      "leverage": "medium"
+    },
+    {
+      "law": "GAP-THEYSIDE-5 mcp-eval-harness (rank: one-wave)",
+      "claim": "Academic MCP eval benchmarks score tool-use quality against live servers (MCP-Bench: 28 live servers and 250 tools; MCP-AgentBench at AAAI 2026; MCPMark), while our parity proves presence not quality and the GPS capability ledger measures models, not MCP servers.",
+      "quote": "routes on pass-rate from a SQLite capability ledger, not marketing labels; test-double default, LIVE gstd config since 2026-10-09",
+      "source": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/mcp_layer_status_20261010.md",
+      "steal": "One-wave: adapt the GPS ledger harness into a per-MCP-tool bench; pass-rates land in the same SQLite capability ledger so the router prices tools, not just models.",
+      "falsifier": "The capability ledger gains rows keyed per MCP tool with bench pass-rate; two independent bench runs that fail to reproduce the same routing choice mean the pricing law is noise. Probe run: eval grep only matches the parity evaluate import, check.txt CHECK7.",
+      "leverage": "medium"
+    },
+    {
+      "law": "WEHAVE-1 receipt-backed-serving (rank: defend; they lack)",
+      "claim": "Every estate surface carries the MCP-2 parity law (fail-loud divergence) plus estate_receipt_append, so a bridge client files workflow-gate-grade receipts; hosted platforms offer port healthchecks, not truth-checks (the 2026-10-01 stale-docker scalp is what their green heartbeats miss).",
+      "quote": "A bridge client can now file workflow-gate-grade receipts.",
+      "source": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/mcp_layer_status_20261010.md",
+      "steal": "One-sitting: carry MCP-2 into any future hosted surface as a deploy gate, never optional; parity rerun this sitting is PASS ok=3 diverge=0 (check.txt CHECK1).",
+      "falsifier": "A stale manifest behind a green healthcheck is caught only if parity fails loud; parity passing while digests diverge would kill the law.",
+      "leverage": "high"
+    },
+    {
+      "law": "WEHAVE-2 sealed-pointers (rank: defend; they lack)",
+      "claim": "fetch_bounded_pointer serves live estate bytes only after a sha256 seal match, capped at max-fetch, and the server never invents pointer bytes; registry and hosting ecosystems serve unverified blobs.",
+      "quote": "10/10 checks COLD JOIN PASS, 12/12 inline files hash-matched on rebuild, 1/1 pointer fetched seal-checked",
+      "source": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/burn_wave_20260926/B2_181_seed_mcp_20260926.md",
+      "steal": "One-sitting: wire seed_fetch into TOOL_MAP from the existing tools/seed_mcp.py logic (the B2-291 owed row) so external agents get seal-checked fetch without spawning the seed server.",
+      "falsifier": "Mutate one seed byte and the server must refuse with zero bytes served (tamper arm, 2026-09-26); any served mismatched byte kills the law.",
+      "leverage": "high"
+    },
+    {
+      "law": "WEHAVE-3 capability-pricing (rank: defend; they lack)",
+      "claim": "GPS routes model calls on measured pass-rate from a SQLite capability ledger (live gstd config, 14 real models since 2026-10-09) and the metering rule prices unknown cost as denial; the ecosystem labels servers by category, not measured capability.",
+      "quote": "Unknown cost is a denial, not a free pass.",
+      "source": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/ractor50/mcp.md",
+      "steal": "Standing: capability pricing extends to tools via GAP-THEYSIDE-5, never to marketing labels; router tests rerun green 6/6 (check.txt CHECK6).",
+      "falsifier": "A routing choice that cannot be reproduced from ledger rows alone, or one influenced by vendor labels, kills the law.",
+      "leverage": "high"
+    },
+    {
+      "law": "WEHAVE-4 token-settlement (rank: defend, operator-tier residue; they lack)",
+      "claim": "Three real settlements ran through SettlementMaster on TON testnet with worker share exactly per contract split and chain-read balances, and no hosted MCP platform settles capability per call on-chain; residues named honestly: GSTD bonus leg OPEN (hardcoded 0.12 TON gas margin), deployer key and toncenter indexer still trusted parties.",
+      "quote": "GSTD allocation leg: PROVEN (100M per device wallet on chain).",
+      "source": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gstd_perimeter_build_20261010/LOOP_CLOSED.md",
+      "steal": "Operator: name the remaining middlemen per flow (multi-sig on the deployer key, independent indexers) per the tokenization CARD falsifier, and fix the GSTD bonus transfer gas margin as its own sitting.",
+      "falsifier": "An independent party re-reads balances from the chain and finds a mismatch, or the dead-salmon control matches the live rate, and the claim dies.",
+      "leverage": "high"
+    },
+    {
+      "law": "WEHAVE-5 coldest-vertex-portability (rank: defend, one-sitting probe; they lack)",
+      "claim": "The seed-RIB boots a cold agent from 42,727 bytes with hash-sealed pointers (10/10 cold join), but the proof is cold-of-knowledge not cold-of-machine and a second different-client boot is the named upgrade from proved-once to proved-portable.",
+      "quote": "means cold-of-knowledge, not cold-of-machine; a fresh git-clone join with no venv is filed as self-feed B2-539",
+      "source": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/burn_wave_20260926/B2_181_seed_mcp_20260926.md",
+      "steal": "One-sitting: run the second-consumer proof (ground truth section 6 item 4), a different-client cold boot such as the garage-guild bench against the live seed server, and file the receipt.",
+      "falsifier": "A machine-crossed fresh git-clone join (B2-539) failing any of the 10 checks kills portability; passing upgrades the claim.",
+      "leverage": "high"
+    }
+  ],
+  "checks": [
+    {"command": "bash watch/inbox/gala_20260925/rung/lanes/mcp-gap-synthesis.check.sh (11-check battery, raw output in the cited file)", "exit": 0, "evidence": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/rung/lanes/mcp-gap-synthesis.check.txt"},
+    {"command": "grep -rin oauth mag/mcp_server.py tools/seed_mcp.py tools/gps_mcp/ mag/estate_bridge.py", "exit": 1, "evidence": "zero hits IS the pass evidence for the no-OAuth claim (grep exit 1 = no matches); raw output CHECK3 in mcp-gap-synthesis.check.txt"},
+    {"command": "grep -rin 'mcp-registry|registry.modelcontextprotocol' mag/ tools/ --include=*.py", "exit": 1, "evidence": "zero hits IS the pass evidence for the no-registry claim; raw output CHECK4 in mcp-gap-synthesis.check.txt"},
+    {"command": "grep -c $'\\xe2\\x80\\x94' watch/inbox/gala_20260925/rung/lanes/mcp-gap-synthesis.json", "exit": 1, "evidence": "0 em-dash hits, grep exit 1 = pass; raw output CHECK11 in mcp-gap-synthesis.check.txt"}
+  ],
+  "decision_changed": "Re-ranks the open MCP work: the next MCP sitting is the OAuth resource-server shim plus a registry entry (both one-sitting) and the one-wave that matters is one public hosted surface fusing OAuth + seed server so the B2-181 cold-join falsifier runs machine-crossed; this supersedes the ground truth doc's demand-triggered stance on R2-R4 internal organs because the tokenized settlement law (mcp_tokenization_law_20261010/CARD.md) requires a remotely reachable, identity-bearing capability surface, and the estate's five differentiators (parity-law serving, sealed pointers, capability pricing, on-chain settlement, coldest-vertex seed) are recorded as defended, never traded away.",
+  "artifact": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/rung/lanes/mcp-gap-synthesis.json",
+  "sibling_lanes_disclosure": "The sibling lanes directory watch/inbox/gala_20260925/2026-10-11_mcp-landscape/lanes/ never existed at any point during this lane's run; polled 6 times across roughly 25 minutes (first poll at lane start, final poll immediately before close; receipt CHECK9 in mcp-gap-synthesis.check.txt, exit 2). The they-side of the register is therefore grounded on: (a) the ask's own category list (oauth, hosting, registries, sandboxing, evals), (b) estate-local primary sources (C:/Users/foste/.zcode/skills/agents-sdk/SKILL.md lines 32-35, 61, 212: McpAgent, transports, securing MCP servers with OAuth; C:/Users/foste/.zcode/skills/sandbox-next/SKILL.md line 3: Sandbox SDK 1.0 preview with terminals, files, lifecycles), and (c) web checks run this session (modelcontextprotocol.io OAuth 2.1 + PKCE mandate; blog.modelcontextprotocol.io registry preview announcement 2025-09-08; registry.modelcontextprotocol.io; MCP-Bench via OpenReview, 28 live servers and 250 tools; MCP-AgentBench AAAI 2026; MCPMark). If sibling lanes land later, the register's they-side rows are graft-ready: each row's falsifier names the probe a sibling receipt would satisfy.",
+  "own_owed_tools_carried": [
+    "estate_pin_status (ractor50 mcp.md section 8 item 2: pin drift visible only as stderr today)",
+    "seed_fetch (B2-291 owed row; logic exists in tools/seed_mcp.py fetch_bounded_pointer)",
+    "estate_corpus_search on the bridge profile (composition gap: external agent gets estate compute but not estate memory)",
+    "estate_budget_read (metering rule made queryable for funded lanes)",
+    "estate_gps_ask / estate_gps_cascade (facade MCP-shaped but not MCP-wired; wiring mechanical per V0 receipt)",
+    "estate_queue_read (cold seats need FIND. FILE. LOAD without shell)"
+  ],
+  "web_sources": [
+    "https://modelcontextprotocol.io (authorization: OAuth 2.1 with PKCE mandatory)",
+    "https://blog.modelcontextprotocol.io (Introducing the MCP Registry, 2025-09-08, preview)",
+    "https://registry.modelcontextprotocol.io (official registry service)",
+    "https://openreview.net (MCP-Bench: Benchmarking Tool-Using LLM Agents, 28 live MCP servers, 250 tools)",
+    "https://www.emergentmind.com (MCP-AgentBench, AAAI 2026)"
+  ],
+  "ratchet": "not applicable: no code under mag/ or tools/ was touched by this lane (only watch/inbox lane files written); tools/violation_ratchet.py check --changed therefore not run",
+  "in_flight_log": [
+    {"t": "start", "read": "watch/inbox/mcp_layer_status_20261010.md (117 lines, full)"},
+    {"t": "start", "read": "watch/inbox/mcp_tokenization_law_20261010/CARD.md (42 lines, full)"},
+    {"t": "verify", "ran": "tools/mcp_parity.py twice -> PASS ok=3 diverge=0 both times"},
+    {"t": "verify", "ran": "stdio JSON-RPC probe of tools/seed_mcp.py: 4 tools + 3 resources live"},
+    {"t": "verify", "read": "watch/inbox/ractor50/mcp.md sections 6-9 (metering rule, R2-R4, missing-tools list, receipt_append build spec)"},
+    {"t": "verify", "read": "watch/inbox/burn_wave_20260926/B2_181_seed_mcp_20260926.md (10/10 COLD JOIN PASS; residue B2-539)"},
+    {"t": "verify", "read": "watch/inbox/gstd_perimeter_build_20261010/LOOP_CLOSED.md (3 settlements chain-read; bonus leg OPEN; phone-run falsifier)"},
+    {"t": "verify", "ran": "bridge roster source-read mag/mcp_server.py:119-123 (7 tools incl estate_receipt_append); pin gate mag/mcp_server.py:21-29,328-331"},
+    {"t": "poll", "ran": "sibling lanes dir polled 6 times over ~25 minutes", "result": "never existed; CHECK9 exit 2 in check.txt"},
+    {"t": "close", "ran": "11-check battery teed raw to mcp-gap-synthesis.check.txt, battery exit 0"}
+  ]
+}

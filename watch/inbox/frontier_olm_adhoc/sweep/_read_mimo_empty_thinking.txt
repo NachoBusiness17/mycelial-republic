@@ -1,0 +1,35 @@
+[2026-09-22] u/mamolengo :: MiMo-V2.6-Flash on vLLM: fixes for "empty responses" with thinking + tools, and a hidden 2,048-token output ca
+    Some people here say MiMo-V2.6 is bad with tools and are going back to GLM-5.3-Flash. I spent today running MiMo-V2.6-Flash-RL as the backend for an agent harness, on 2× DGX Spark with vLLM, using the tonyd2wild recipe. Most of the "tool problems" I hit turned out to be serving bugs rather than the model. There are three separate issues, all fixable without touching vLLM's core logic. Details below, in case it saves someone a day. 1. With thinking on, replies after the first turn come back "empty" Symptom My agent (Hermes) kept reporting "No response from provider" and retried the same call 4–5 times. The server log was all 200 OK . Only happened in streaming mode with thinking on , and only once the conversation had any earlier assistant message . Single-turn requests were fine. What actually came back delta.reasoning stayed empty. The reasoning arrived as normal content starting with a literal <think> , and the closing </think> never showed up. Any client that strips <think>…</think> sees an unclosed block and throws the whole reply away. Why it happens MiMo's chat template renders every earlier assistant message as <think>{reasoning}</think>{content} , so any multi-turn prompt contains </think> . With thinking on, the stock template ends the prompt at <|im_start|>assistant\n and leaves it to the model to emit <think> . vLLM's streaming path runs is_reasoning_end(prompt_token_ids) over the prompt, finds the </think> from history, and decides reasoning is already over before
+
+[2026-09-22] u/takoulseum :: /u/takoulseum on MiMo-V2.6-Flash on vLLM: fixes for "empty responses" with thinking + tools, and a hidden 2,04
+    Thanks, but once corrected, is it better than glm5.3 in your experience?
+
+[2026-09-22] u/mamolengo :: /u/mamolengo on MiMo-V2.6-Flash on vLLM: fixes for "empty responses" with thinking + tools, and a hidden 2,048
+    yes, better than GLM5.3, but with thinking effort = max it thinks to infinity. (took >30 mins thinking to execute and respond to a simple / medium difficult task that DSV4-Vision would have done in < 5 min). With effort = medium it is fine. But I dont have benchmarks to tell me if effort=medium is good enough quality. GLM5.3 had a few issues with me, including severe mistakes, which spooked me away from. I am considering going back to DSV4-Vision (not 4.1) just because it is so much faster (both decoding but most importantly prefill). DeepSeek's attention mechanism is so optimized, there is no other model as fast as them.
+
+[2026-09-23] u/Grouchy-Economist-95 :: /u/Grouchy-Economist-95 on MiMo-V2.6-Flash on vLLM: fixes for "empty responses" with thinking + tools, and a h
+    Both new Mimo models use a binary reasoning on/off switch - there are no selectable reasoning levels like most other models.
+
+[2026-09-23] u/mamolengo :: /u/mamolengo on MiMo-V2.6-Flash on vLLM: fixes for "empty responses" with thinking + tools, and a hidden 2,048
+    Ah I didn't realize that. You are right. But it turns out it does think less if you add that to the preamble. Which is what I saw. It turns out that models that are not really trained to think less will think less if you tell them to. But that's OOD and will definitely severely degrade performance.
+
+[2026-09-22] u/LegacyRemaster :: /u/LegacyRemaster on MiMo-V2.6-Flash on vLLM: fixes for "empty responses" with thinking + tools, and a hidden 
+    Happy to share the full patched template. ---> yes please. I delete mimo 10 mins ago 'cause no way to have output with opencode/pi/minimaxcode
+
+[2026-09-22] u/mamolengo :: /u/mamolengo on MiMo-V2.6-Flash on vLLM: fixes for "empty responses" with thinking + tools, and a hidden 2,048
+    Here you go, please beware this vibe-slop was created by Claude, and you should check it before applying to your local setup: Bundle, all files: https://files.catbox.moe/gsgz2s.gz README: https://files.catbox.moe/sm62kx.md Patched template: https://files.catbox.moe/1xt3ld.jinja Template diff: https://files.catbox.moe/lfozeh.patch vLLM one-liner: https://files.catbox.moe/423b5j.patch Reddit reply text: https://files.catbox.moe/is57yc.md The MiMo deployment on the sparks followed tonyd2wild/MiMo-V2.6-Flash-DGX-Spark-Recipe, created on Sept 22, and runs their image ghcr.io/tonyd2wild/vllm-glm53-flash:sm121-v11-dflash2 , which is the vLLM build from their GLM-5.3-Flash recipe reused for MiMo. The cluster session's notes also cited the name MiMo-V2.6-Flash-2x-DGX-Spark , but that URL redirects, so the -Recipe repo is the real one. The pre-open <think> idea isn't tonyd2wild's own: it came from issue #1 on that repo, opened the same day by a user named Mcray4, who hit the identical symptom on a tool-result turn with Hermes-style clients and proposed the one-line template change. The cluster session extended that into the full package: the reasoning / reasoning_content acceptance, the vLLM one-liner, and the generation-config override.
+
+[2026-09-23] u/vera_dev :: /u/vera_dev on MiMo-V2.6-Flash on vLLM: fixes for "empty responses" with thinking + tools, and a hidden 2,048-
+    Nice catch on the 2048 default. That's exactly the kind of serving issue that gets blamed on the model.
+
+[2026-09-29] u/ormandj :: /u/ormandj on MiMo-V2.6-Flash on vLLM: fixes for "empty responses" with thinking + tools, and a hidden 2,048-t
+    The companies need to start working on getting correct implementations on sglang and vllm on launch day. It’s wild that isn’t just as high a priority to them as the model itself.
+
+[2026-09-22] u/bruns20 :: /u/bruns20 on MiMo-V2.6-Flash on vLLM: fixes for "empty responses" with thinking + tools, and a hidden 2,048-t
+    How do models from every company consistently release with broken templates?
+
+[2026-09-22] u/Nepherpitu :: /u/Nepherpitu on MiMo-V2.6-Flash on vLLM: fixes for "empty responses" with thinking + tools, and a hidden 2,04
+    Its vLLM parser broken, not template. Proposed fix is a workaround
+
+[2026-09-22] u/bruns20 :: /u/bruns20 on MiMo-V2.6-Flash on vLLM: fixes for "empty responses" with thinking + tools, and a hidden 2,048-t
+    Ah k, fair enough

@@ -1,0 +1,48 @@
+{
+  "lane": "style-synthesis",
+  "division": "B",
+  "ractor": "music-ractor",
+  "status": "done",
+  "started": "2026-10-01",
+  "finished": "2026-10-01",
+  "ask": "Distill the canon folder into STYLE_SPEC.md in three languages: plain language, numeric (shared recipe: ffprobe + ffmpeg 90s decode 8000Hz mono -> numpy RMS/onset-BPM/ZCR/low-end), Suno style strings (3 triangulated facets <900 chars, no artist names). Receipt: watch/inbox/music/STYLE_SPEC.md",
+  "deliverable": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/music/STYLE_SPEC.md",
+  "steps": [
+    {"n": 1, "what": "locate folder + prior art", "status": "done",
+     "found": ["canon folder = C:/Users/foste/Desktop/music-ai (110 mp3)",
+               "tools/track_bpm.py = prior 2205Hz BPM variant over state/fuel/bpm_pcm (52 wavs)",
+               "state/fuel/music_bpm.json = prior full-length BPM run, 52 rows, median 106.75 raw",
+               "watch/inbox/music/audio-dna.md + audio_dna.json = sibling lane, same shared recipe, 30-track stratified sample, folded BPM median 125.0, RMS median -12.2 dBFS",
+               "dashboard/static/suno/ = existing Suno cuts named after canon tracks = the cutters this spec serves"]},
+    {"n": 2, "what": "shared-recipe profile over the full folder", "status": "done",
+     "result": "110/110 profiled, 0 failures. RMS median -12.35 dBFS (p25 -13.95 / p75 -11.13); peak 0 dBFS on 97/110; ZCR median 1272/s (p25 961 / p75 1528); sub-160Hz share median 0.47; centroid median 1070 Hz; duration median 264.6 s; raw BPM median 110.5 octave-torn (30 half-time rows), folded median 124.0, strong-confidence (n=45) folded median 125.0, folded p25/p75 115.5/129.75",
+     "evidence": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/music-ractor/lanes/style-synthesis.profile.json"},
+    {"n": 3, "what": "triangulation", "status": "done",
+     "result": "Three independent measured sources agree: this census folded median 124.0 (strong 125.0), sibling 30-track sample folded median 125.0, prior 52-track full-length run agrees within +/-2 BPM or an octave relation on 46 of 52 exact-name matches (6 residuals sit in the swing/shuffle ambiguity band of energy-flux autocorrelation). Genre priors (french touch 120-125, blog-house/electro 125-132) bracket the seam; the folder lands french-touch-side at 124-125 with the electro punch visible in loudness (0 dBFS ceiling) and low-end (0.47 sub-160 share) rather than tempo."},
+    {"n": 4, "what": "STYLE_SPEC.md written (plain + numeric + 3 Suno facets)", "status": "done",
+     "result": "Facet lengths 675 / 635 / 601 chars, all < 900; zero artist names anywhere in the file; zero em-dashes; all numeric claims re-derived from the profile JSON and matched by the check"},
+    {"n": 5, "what": "finish-line check", "status": "done",
+     "result": "25/25 PASS, GREEN, exit 0", "evidence": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/music-ractor/lanes/style-synthesis.check.txt"},
+    {"n": 6, "what": "scope check (ratchet applicability)", "status": "done",
+     "result": "No files under mag/ or tools/ were touched by this lane (profiler + checker live in the lane dir by design); violation_ratchet check --changed not required by the ask's step 3, not run, and expected-clean for this lane's paths",
+     "evidence": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/music-ractor/lanes/style-synthesis.gitstatus.txt"}
+  ],
+  "checks": [
+    {"command": ".venv/Scripts/python.exe watch/inbox/gala_20260925/music-ractor/lanes/style-synthesis.profile.py",
+     "exit": 0,
+     "evidence": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/music-ractor/lanes/style-synthesis.profile.json"},
+    {"command": ".venv/Scripts/python.exe watch/inbox/gala_20260925/music-ractor/lanes/style-synthesis.check.py > watch/inbox/gala_20260925/music-ractor/lanes/style-synthesis.check.txt 2>&1",
+     "exit": 0,
+     "evidence": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/music-ractor/lanes/style-synthesis.check.txt"},
+    {"command": "git status --porcelain > watch/inbox/gala_20260925/music-ractor/lanes/style-synthesis.gitstatus.txt",
+     "exit": 0,
+     "evidence": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/music-ractor/lanes/style-synthesis.gitstatus.txt"}
+  ],
+  "decision_changed": "cutters' style target: dashboard/static/suno cutters now have a standing spec (watch/inbox/music/STYLE_SPEC.md); cuts should be generated one-facet-at-a-time at the facet BPM (A 124, B 127, C 122) inside the 115-130 band, mastered warm/dark (centroid 900-1200 Hz, sub-160 share 0.4-0.5, RMS near -12 dBFS), and a cut that passes tempo but reads bright/thin is off-canon",
+  "honest_gaps": [
+    "raw BPM autocorrelation is octave-ambiguous on 30 of 110 rows (half-time detections); the spec states the fold law (fold into [90,180)) instead of hiding it",
+    "6 of 52 prior-run overlap rows disagree outside +/-2 BPM and outside a pure octave relation (swing/shuffle ambiguity); both estimators kept as independent witnesses rather than reconciled",
+    "genre priors (french touch 120-125, blog-house/electro 125-132) are cited as priors, not measured in this lane",
+    "no Suno generation was run in this lane: the spec is verified numerically and textually, not yet by a cutter consuming it end-to-end"
+  ]
+}

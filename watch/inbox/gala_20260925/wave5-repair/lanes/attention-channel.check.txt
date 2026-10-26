@@ -1,0 +1,115 @@
+=== [1/5] FINISH-LINE TESTS: contract + eviction-order + ranker regression (final code) ===
+$ .venv/Scripts/python.exe -m pytest tests/test_attention_feedback_contract.py tests/test_attention_eviction_order.py tests/test_attention_ranker.py -v
+============================= test session starts =============================
+platform win32 -- Python 3.11.15, pytest-9.1.1, pluggy-1.6.0 -- C:\Users\foste\Documents\projects\local_sovereign_agent\.venv\Scripts\python.exe
+rootdir: C:\Users\foste\Documents\projects\local_sovereign_agent
+configfile: pytest.ini
+plugins: anyio-4.14.2, langsmith-0.10.14, timeout-2.4.0, xdist-3.8.0, typeguard-4.6.0
+collecting ... collected 20 items
+
+tests/test_attention_feedback_contract.py::test_good_cast_through_flagship_pipe_is_accepted_by_ranker_vocabulary PASSED [  5%]
+tests/test_attention_feedback_contract.py::test_bad_cast_lands_as_wallpaper_and_reprices_the_feed PASSED [ 10%]
+tests/test_attention_feedback_contract.py::test_thumbs_aliases_map_into_the_one_vocabulary PASSED [ 15%]
+tests/test_attention_feedback_contract.py::test_native_ranker_signals_pass_through_untouched PASSED [ 20%]
+tests/test_attention_feedback_contract.py::test_pipe_ledger_and_training_row_carry_the_canonical_signal PASSED [ 25%]
+tests/test_attention_feedback_contract.py::test_ranker_rejection_is_exit_code_visible_not_boolean_cosmetic PASSED [ 30%]
+tests/test_attention_feedback_contract.py::test_unknown_signal_is_rejected_loudly PASSED [ 35%]
+tests/test_attention_eviction_order.py::test_patrol_alert_survives_a_full_record_flood PASSED [ 40%]
+tests/test_attention_eviction_order.py::test_second_patrol_alert_joins_the_first_and_both_survive PASSED [ 45%]
+tests/test_attention_eviction_order.py::test_improve_style_bottom_append_survives_too PASSED [ 50%]
+tests/test_attention_eviction_order.py::test_eviction_keeps_whole_blocks_and_never_drops_the_new_note PASSED [ 55%]
+tests/test_attention_eviction_order.py::test_preserved_tail_is_never_sliced_even_past_cap PASSED [ 60%]
+tests/test_attention_eviction_order.py::test_ping_dedup_unchanged_amend_does_not_ping PASSED [ 65%]
+tests/test_attention_eviction_order.py::test_ping_stamps_a_ts_and_meters_the_flood PASSED [ 70%]
+tests/test_attention_eviction_order.py::test_counter_rotates_on_stale_day_and_garbage PASSED [ 75%]
+tests/test_attention_eviction_order.py::test_over_cap_attention_is_filed_but_push_suppressed PASSED [ 80%]
+tests/test_attention_ranker.py::test_repository_blocker_is_an_unhideable_interrupt PASSED [ 85%]
+tests/test_attention_ranker.py::test_passed_gate_suppresses_old_worker_failure PASSED [ 90%]
+tests/test_attention_ranker.py::test_feedback_cannot_mute_hard_rule PASSED [ 95%]
+tests/test_attention_ranker.py::test_pin_promotes_ordinary_evidence PASSED [100%]
+
+============================= 20 passed in 2.67s ==============================
+
+=== [2/5] ADJACENT REGRESSION (tests importing touched modules) ===
+$ .venv/Scripts/python.exe -m pytest tests/test_silentpass_batch2.py tests/test_improve_provider_probe.py tests/test_chat_source_agent_workday.py -q
+........................                                                 [100%]
+24 passed in 2.33s
+
+=== [3/5] VIOLATION RATCHET on changed files ===
+$ .venv/Scripts/python.exe tools/violation_ratchet.py check --changed
+RATCHET check: scope=36 changed files; hits=27; registered=23; NEW=4; expired-exceptions=0
+  NEW 84291bf5f2af246b file-too-long: mag/corpus_gap_research.py:663 — >400 lines
+  NEW 42b721c740d1abda file-too-long: mag/corpus_selfsteal.py:476 — >400 lines
+  NEW 8dce490bf896c42a file-too-long: mag/link_library.py:413 — >400 lines
+  NEW 2c7e16bf178da9d0 shell-true: tools/fossil_check.py:73 — subprocess shell=True
+  GROWTH claim e066832a0b8edb5e: tools/stealth_driver.py accepted at 753 lines, now 1062 (+309) — re-audit or re-accept by name
+RATCHET: FAIL — run 'baseline-update' ONLY after a human/agent accepts the debt by name.
+RATCHET_EXIT=1
+
+=== [4/5] LIVE CLI PROBE, rejected-signal path (no writes) ===
+$ .venv/Scripts/python.exe -m mag.feedback meh some-item --source attention-channel-lane
+{
+  "ok": false,
+  "schema": "feedback.v1",
+  "error": "unknown signal: meh (vocabulary: ['acted', 'mute', 'pin', 'useful', 'wallpaper'])"
+}
+CLI_EXIT=1
+
+=== [5/5] EM/EN DASH + NONASCII SCAN of files this lane wrote or touched ===
+Traceback (most recent call last):
+  File "<string>", line 4, in <module>
+FileNotFoundError: [Errno 2] No such file or directory: 'watch/inbox/wave5_repair/attention-channel.md'
+mag/act.py em=1 en=0 nonascii=['0x2014']
+mag/biography.py em=11 en=0 nonascii=['0x2014', '0x201c', '0x201d', '0x2026', '0x2192', '0xb7']
+mag/feedback.py em=2 en=0 nonascii=['0x1f44d', '0x1f44e', '0x2014', '0xb7']
+tests/test_attention_feedback_contract.py em=0 en=0 nonascii=[]
+tests/test_attention_eviction_order.py em=0 en=0 nonascii=[]
+
+=== [6/6] LIVE REPAIRED SURFACES ===
+$ cat watch/attention_count_day.txt; wc -c memory/attention.md; grep -c sentinel
+2026-09-29 25999 memory/attention.md
+1
+
+=== [7/7] CONCURRENT-WRITER FINDING: pytest alarm leak into live attention.md ===
+After the repair, six [priority][probe-alarm] lines landed in the preserved zone; all six
+carry pytest-tmp snapshot refs (agents/pytest-tmp-48504 / -32976), run 2026-09-26. Source:
+tests/test_improve_provider_probe.py tests at :132 (test_due_run_probes_once_env_hygiene_snapshot_and_row),
+:181 (test_prior_env_value_preserved_and_restored), :192 (test_second_call_after_stamp_is_noop) run the
+full probe flow WITHOUT monkeypatching improve.ATTENTION_PATH, unlike :225/:241/:252 which do.
+Pre-existing leak (w4-09 section 1 saw pytest artifacts in the live feed), reproduced live.
+Not fixed here: mag/improve.py and its tests belong to another lane; reported as a finding.
+$ grep -n 'ATTENTION_PATH\|def test_' tests/test_improve_provider_probe.py | head -40
+79:    def test_missing_state_key_is_due(self):
+83:    def test_fresh_ts_not_due(self):
+87:    def test_stale_ts_due(self):
+91:    def test_boundary_exactly_cadence_days_is_due(self):
+95:    def test_garbage_ts_is_due_never_silenced(self):
+99:    def test_naive_ts_treated_as_utc(self):
+104:    def test_zero_or_negative_cadence_always_due(self):
+111:    def test_disabled_config_never_probes(self, tmp_path):
+120:    def test_fresh_cadence_never_probes(self, tmp_path):
+132:    def test_due_run_probes_once_env_hygiene_snapshot_and_row(self, tmp_path):
+173:    def test_quiet_week_is_runtime_hold_evidence_not_ticket(self, tmp_path):
+181:    def test_prior_env_value_preserved_and_restored(self, tmp_path):
+192:    def test_second_call_after_stamp_is_noop(self, tmp_path):
+205:    def test_probe_fn_exception_still_restores_env(self, tmp_path):
+225:    def test_alarm_run_gains_exactly_one_priority_line(self, tmp_path, monkeypatch):
+228:        monkeypatch.setattr(improve, "ATTENTION_PATH", attention)
+241:    def test_quiet_run_gains_nothing(self, tmp_path, monkeypatch):
+244:        monkeypatch.setattr(improve, "ATTENTION_PATH", attention)
+252:    def test_attention_write_failure_never_breaks_the_probe(self, tmp_path, monkeypatch):
+256:        monkeypatch.setattr(improve, "ATTENTION_PATH", Bursty())
+
+counter after production pings through the new metered path:
+2026-09-29 2
+removing the six pytest-artifact lines from the live preserved zone:
+dropped 10 pytest-artifact lines; live file now 4839 bytes
+point at live in memory/biography/derived + memory/biography/index.jsonl.
+
+<!-- attention:alerts-preserved-below -->
+
+=== [8/8] FINAL SCAN incl receipt + lane JSON (section 5 rerun, receipt now exists) ===
+watch/inbox/wave5_repair/attention-channel.md em=0 en=0
+watch/inbox/gala_20260925/wave5-repair/lanes/attention-channel.json em=0 en=0
+mag/feedback.py em=2 en=0
+diff-introduced em/en dashes across mag/act.py mag/biography.py mag/feedback.py: 0 0 (verified vs git diff)

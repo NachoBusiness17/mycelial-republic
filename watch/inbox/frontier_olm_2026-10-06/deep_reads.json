@@ -1,0 +1,456 @@
+[
+ {
+  "url": "https://safereddit.com/r/LocalLLM/comments/1wn0gga/q4_cost_me_5_accuracy_points_and_saved_0_ms_on_a/",
+  "title": "Discussion",
+  "author": "u/No_Counter_432",
+  "date": "unknown",
+  "score": "",
+  "post_body": "I trained a small typed-decision model. You give it a state and a fixed set of options, and it returns a probability distribution over those options in one forward pass. No tokens sampled, so there\u2019s nothing to parse or repair. Because it reads logits instead of generating text, I expected quantization to have very little impact on accuracy. That didn\u2019t hold up. Build Balanced accuracy Median latency Size bf16 0.757 \u2014 1.2 GB Q8_0 0.750 37 ms 610 MB Q4_K_M 0.703 36 ms 378 MB Test setup: A held-out public fixture with 144 items and three options per item. Chance baseline: 0.333. Run on an M5 Max using llama.cpp, with 147-token prompts. Going from Q8 to Q4 saved 232 MB, but balanced accuracy dropped by 4.7 percentage points. Median latency improved by just 1 ms. For this model and workload, that trade-off wasn\u2019t worth it. If your model\u2019s entire output is a probability distribution over a handful of tokens, measure the impact of quantization on your actual task. The assumption that \u201cQ4 is basically free\u201d didn\u2019t hold here. Some context on where the model stands: Its bf16 score is 0.757, compared with 0.813 for an open 4B model on the same fixture. TypeSafe\u2019s Jev scored 0.883 on 102 aligned rows of the fixture, so that comparison covers a different evaluation subset. Candidate selection is its weakest task family: 0.646 on clean examples and 0.389 on perturbed variants. That suggests it may be relying on surface cues in that task. These results come from a small evaluation set, so I wouldn\u2019t generalize them to every decision model. The comparisons and limitations are documented in the model card. Has anyone else seen a similar accuracy drop from quantization when using logits directly for classification or fixed-option decisions? Resources Weights and GGUFs: https://huggingface.co/Hanish/lq-decide-0.6b Data, 141k rows, every source licence-tagged: https://huggingface.co/datasets/Hanish/lq-decide-data 3 Upvotes permalink duplicates reddit You are about to leave Redlib Do you want to continue? https://www.reddit.com/r/LocalLLM/comments/1wn0gga/q4_cost_me_5_accuracy_points_and_saved_0_ms_on_a/ .cls-1{fill:#000000;}.cls-2{fill:#f8aa00;} No, go back! Yes, take me to Reddit 80% Upvoted 2 comments sorted by Confidence Top New Controversial Old \u2192 <div id=\"pdxdmg0\"",
+  "n_comments_parsed": 1,
+  "comments": [
+   {
+    "score": "1",
+    "text": "interesting, i had similar thing with a small classifier model last month. the Q8 was almost same as fp16 but Q4 just lost the plot on some edge cases your point about measuring on actual task is important, people assume quantization is free lunch but for logit-based stuff it can mess the distribution in subtle ways"
+   }
+  ],
+  "label": "d1_q4_0p6b_decision",
+  "status": 200
+ },
+ {
+  "url": "https://safereddit.com/r/LocalLLM/comments/1wk6982/bonsai_2_27b_quantized_38_27b_98_intelligence_of/",
+  "title": "Question",
+  "author": "u/AB172234",
+  "date": "unknown",
+  "score": "",
+  "post_body": "What do you guys think about it ? I have yet to try it. I i\u2019ve tried the previous version and it seemed OK and wondering if they claim of 98+ % intelligence of the FP 16 model is true or not anybody has any experience. Feel free to share! I\u2019ll post my update after I do some basic testing 153 Upvotes permalink reddit You are about to leave Redlib Do you want to continue? https://www.reddit.com/r/LocalLLM/comments/1wk6982/bonsai_2_27b_quantized_38_27b_98_intelligence_of/ .cls-1{fill:#000000;}.cls-2{fill:#f8aa00;} No, go back! Yes, take me to Reddit dl download 86% Upvoted 144 comments sorted by Confidence Top New Controversial Old \u2192 <div id=\"paoa4x2\"",
+  "n_comments_parsed": 139,
+  "comments": [
+   {
+    "score": "184",
+    "text": "No"
+   },
+   {
+    "score": "70",
+    "text": "Benchmaxxed to be yes \ud83e\udd21"
+   },
+   {
+    "score": "6",
+    "text": "Betteridge's law of headlines - never lets down :)"
+   },
+   {
+    "score": "5",
+    "text": "Check out the whitepaper they published. You can see individual benchmarks there and I think it is 75% of the capability retained."
+   },
+   {
+    "score": "1",
+    "text": "Shocked Pikachu face"
+   },
+   {
+    "score": "63",
+    "text": "Nope they cherry pick the shit out of those tests, run them yourself, you will see"
+   },
+   {
+    "score": "1",
+    "text": "Bonsai 2 aces the tests just that it sucks outside of them."
+   },
+   {
+    "score": "49",
+    "text": "98% in cherry picked tests"
+   },
+   {
+    "score": "47",
+    "text": "I would argue that this Bonsai 2 is better than qwen 3.6 27B ... It loops sometimes, it follows instructions, it sometimes ignores instructions, sometimes focuses too much on some unrelated issue ... But it is a fraction of the size of qwen 3.6 27B But compared to qwen 3.8 27B, it is just worse ... much worse, the same way as \"bad\" as the old 27B. Is it useless? Hell no. For that size, it is actually awsome. But if you can run 3.8 27B at >= Q4, Bonsai 2 is not a replacement in any way. If you have 12GB VRAM, I would highly recommend testing it out."
+   },
+   {
+    "score": "9",
+    "text": "I will try it with 8gb"
+   },
+   {
+    "score": "9",
+    "text": "On a 8gb 75w 4060 laptop, i've got 32k context and like 30 or so t/s without really tuning it working"
+   },
+   {
+    "score": "9",
+    "text": "I am getting ~10-15 t/s on a GTX 1070 desktop with 32k context. :)"
+   }
+  ],
+  "label": "d2_bonsai_98pct_fp16",
+  "status": 200
+ },
+ {
+  "url": "https://safereddit.com/r/LocalLLM/comments/1wi9i4q/d_fp8int4_kvcache_quantization_and_longcontext/",
+  "title": "Discussion",
+  "author": "u/Top-Philosopher-5411",
+  "date": "unknown",
+  "score": "",
+  "post_body": "Over the past few months, we've seen vLLM, TensorRT-LLM, and SGLang push hard for KV-cache quantization (FP8, INT8, and even INT4) alongside PagedAttention to maximize throughput and batch sizes under heavy concurrent workloads. While saving 50-75% of VRAM on the KV-cache allows significantly larger context windows (32k+) and higher concurrency on a single A100/H100, we've noticed subtle degradation patterns in edge-case tasks: Multi-turn Needle-In-A-Haystack (NIAH): FP8 KV-cache holds up fine for standard retrieval, but accuracy drops sharply when retrieving non-contiguous context across long reasoning chains. Accumulation of Rounding Errors: In autoregressive generation with large context, precision loss in the attention keys/values seems to compound, leading to degraded attention scores in later tokens. For those running high-throughput LLM serving in production: - At what sequence length or concurrency limit do you find FP8/INT8 KV-cache quantization breaks down for complex reasoning? - Have you found mixed-precision strategies (e.g., keeping early layers in FP16/BF16 and quantizing only deeper layers) to be practical in custom serving engines? - Do you rely strictly on PagedAttention with FP16, or are you accepting precision trade-offs for throughput gains? Would love to hear how folks are handling the memory bottleneck vs. precision trade 1 Upvotes permalink reddit You are about to leave Redlib Do you want to continue? https://www.reddit.com/r/LocalLLM/comments/1wi9i4q/d_fp8int4_kvcache_quantization_and_longcontext/ .cls-1{fill:#000000;}.cls-2{fill:#f8aa00;} No, go back! Yes, take me to Reddit 100% Upvoted 2 comments sorted by Confidence Top New Controversial Old \u2192 <div id=\"pa8v23b\"",
+  "n_comments_parsed": 2,
+  "comments": [
+   {
+    "score": "1",
+    "text": "BF16 if I'm serious (I converted llama.cpp to do native BF16 for ROCm), and Q8_0 if I'm feeling lucky. Anything less is just playing with fire if you care about your long context sessions not devolving into looping messes. F16 is okay I guess, but given the choice between F16 and BF16, then BF16 always wins at depth. FP8 is borderline. It'll jank up if you trust it too much though. Anything less is just for \"token drag racing\" artificial benchmaxxing. Just IMO of course."
+   },
+   {
+    "score": "1",
+    "text": "Totally agree. The precision loss on FP8 turns long sessions into a total mess once the context scales up. BF16 is definitely the safest play if you have the VRAM. Curious about that ROCm patch for llama.cpp though\u2014did you write custom HIP kernels for it or leverage rocBLAS"
+   }
+  ],
+  "label": "d3_kv_fp8_int4_longctx",
+  "status": 200
+ },
+ {
+  "url": "https://safereddit.com/r/LocalLLaMA/comments/1wl56g2/please_stop_with_the_fp4_inference_engines_for/",
+  "title": "Funny",
+  "author": "u/buttplugs4life4me",
+  "date": "unknown",
+  "score": "",
+  "post_body": "Every day there's a new post of some optimized config or new inference engine that is just super good at one specific thing and their claims make sense. And then at the bottom of the post or maybe after someone asked it says \"NVFP4/MXFP4 only\". Okay dude, good job! You made the fastest possible option a little slightly faster, and most likely your output is completely cooked and you get hallucinations left right and center. Just saw another one in r/ROCm again. It's fine if you run 4-bit for large models, they've got lots of shit in them so a little bit of loss just means they won't remember that super good spaghetti Bolognese recipe. But running small dense models at FP4 just kills them. Like, completely. Good luck doing something productive when your model suddenly decides 1+1=3. Just...stop. Edit: Just going to put this here since some seem confused. a standard Q4 quantisation usually leaves more sensitive tensors in BF16, Q8 or Q6/5. Also, usually the K/V cache is quantized max to FP8/Q8. What these \"inference engines\" do is usually fork an existing one (llama.cpp, SGlang, vLLM) and then just quantise *everything* down to FP4. Which is great for speed, especially without online dequantisation, but fucks the quality up *a lot*. Your standard Q4_K_M/XL quant from unsloth is fine. 300 Upvotes permalink reddit You are about to leave Redlib Do you want to continue? https://www.reddit.com/r/LocalLLaMA/comments/1wl56g2/please_stop_with_the_fp4_inference_engines_for/ .cls-1{fill:#000000;}.cls-2{fill:#f8aa00;} No, go back! Yes, take me to Reddit 75% Upvoted 249 comments sorted by Confidence Top New Controversial Old \u2192 <div id=\"pay3jz9\"",
+  "n_comments_parsed": 183,
+  "comments": [
+   {
+    "score": "\u2022",
+    "text": "Your post is getting popular and we just featured it on our Discord! Come check it out! You've also been given a special flair for your contribution. We appreciate your post! I am a bot and this action was performed automatically."
+   },
+   {
+    "score": "314",
+    "text": "My Raspberry Pi gets 3000 tokens per second on Qwen 3.8 when I run it at Q0."
+   },
+   {
+    "score": "128",
+    "text": "The fastest model of all time: echo \"make GTA7\" > /dev/null dd if=/dev/urandom of=~/GTA7"
+   },
+   {
+    "score": "55",
+    "text": "Oh come on. We all know this gives you the collected works of Shakespeare, not GTA7."
+   },
+   {
+    "score": "4",
+    "text": "Weird... I just got a lot of monkey poop..."
+   },
+   {
+    "score": "1",
+    "text": "Just put a Ralph loop around it. It'll work."
+   },
+   {
+    "score": "12",
+    "text": "I can confirm this works, it just really uses a whole lot of reasoning tokens on its way to the answer"
+   },
+   {
+    "score": "3",
+    "text": "I don't know man, /dev/urandom can be better optimized. I already wrote a complete stack that has the key distinction of using urandom for a seed and then parallelizes and shuffles random numbers across every compute it can find local and on your network. It's about 1.1x faster. /s"
+   },
+   {
+    "score": "1",
+    "text": "Well duh, /dev/null is webscale"
+   },
+   {
+    "score": "10",
+    "text": "On a more serious note, qwen 3.8 has flipped the story on lower quants. On my tiny 16gb card I am getting a good 48t/s on medium thinking with ud q3_k_xl and q4_0 with a 120064 context size. It is fully coherent and it feels better than copilots Claude Opus. My take is that anthropic just shifted all the names down, and Fable is actually just an optimized opus, as all their other models have grown so dumb lately."
+   },
+   {
+    "score": "4",
+    "text": "I had to stop using Luna for similar reasons. Either it skips instructions entirely, reverts my own changes in front of my eyes, or thinks forever to output less than meaningful responses. Feels like they're nerfing the lower models to promote the top tier ones. I've cancelled both Anthropic and OpenAI subscriptions in the last 2 months as a result. DeepSeek is my friend, with a splash of Z.ai on top, when I'm not running Qwen locally, of course."
+   },
+   {
+    "score": "2",
+    "text": "I used the free trial of anthropic a few monts ago, maybe a year. It was surprisingly capable. Tried it again last month and it was worthless, less capable than chatgpt. I just know they were the available free ones at the time, but don't know which name they had. So I'm just using qwent 3.8 27b locally"
+   }
+  ],
+  "label": "d4_stop_fp4_engines",
+  "status": 200
+ },
+ {
+  "url": "https://safereddit.com/r/MachineLearning/comments/1wixr8g/most_vector_quantizers_are_the_same_6_primitives/",
+  "title": "Research",
+  "author": "u/soryx7",
+  "date": "unknown",
+  "score": "",
+  "post_body": "Vector quantization is fundamental to vector databases. Before you can search vectors, you have to store them, and storing them at full precision is expensive. Every bit you save shows up as capacity and cost. Pinecone has used quantization since its first prototypes, and we keep looking for the state of the art. So this summer we set out to survey it. We found more papers than we expected, and no way to compare them: every paper measured different metrics, on different datasets, tuned for different hardware. We could not find a single systematic evaluation of the leading methods against each other. What we did find was a pattern. Most published quantizers are built from the same small set of primitive operations, composed in a different order. So we built VQ-bench: an open-source library of those primitives, composable into pipelines, and designed to be extended. E-RaBitQ, one of the strongest methods we tested, is four primitives in a list. Swap one and you have a new quantizer. Add a primitive of your own and it composes with everything already in the catalog, including pipelines nobody has written yet. Either way you can measure the result against every other method with the same harness. We used it to benchmark 14 popular quantizers on recall, reconstruction error, and encode time. Two takeaways so far: PQ and OPQ have the lowest reconstruction error, and EDEN keeps up with E-RaBitQ on recall at higher bit budgets while encoding much faster. This is a first iteration. We want your feedback, corrections, and contributions, and we will keep adding quantizers over time. Website Blog Repo Paper (VecDB@VLDB 2026) 8 Upvotes permalink duplicates reddit You are about to leave Redlib Do you want to continue? https://www.reddit.com/r/MachineLearning/comments/1wixr8g/most_vector_quantizers_are_the_same_6_primitives/ .cls-1{fill:#000000;}.cls-2{fill:#f8aa00;} No, go back! Yes, take me to Reddit 100% Upvoted 0 comments sorted by Confidence Top New Controversial Old \u2192 v0.36.0-yunyun \u24d8 View instance info <> Code",
+  "n_comments_parsed": 0,
+  "comments": [],
+  "label": "d5_vq_6_primitives",
+  "status": 200
+ },
+ {
+  "url": "https://safereddit.com/r/ollama/comments/1wpwdxl/veriloop_e2_gguf_release_bf16_iq1_m_5011_gib_1679/",
+  "title": "",
+  "author": "u/PleaseLee",
+  "date": "unknown",
+  "score": "",
+  "post_body": "We\u2019ve released the complete VeriLoop E2 GGUF precision ladder, from the canonical BF16 reference down to a mixed-precision IQ1_M deployment tier. This post is specifically about the GGUF release and local deployment. The parent VeriLoop E2 model was introduced separately. The goal was not simply to generate as many quantizations as possible. We wanted a measured deployment ladder where every tier is evaluated against the same frozen BF16 reference, and where the low-footprint variants retain a deliberately protected higher-precision spine instead of uniformly pushing every tensor to the lowest available bit width. The practical recommendation is: Q6_K if you want the strongest overall quality / memory balance. Q5_K_M if you need to get below ~19 GiB while retaining wider fidelity margins. IQ1_M if minimum model-file footprint is the priority. IQ2_S if you want essentially the same footprint as IQ1_M but slightly lower Mean KLD. Q8_0 / BF16 when fidelity matters more than local-memory cost. A Full List of GGUF Precision Ladder: Tier Main size Reduction vs BF16 PPL ratio Mean KLD Same top-p Recommended role BF16 50.113 GiB \u2014 1.000000 reference 100% Canonical reference Q8_0 26.632 GiB 46.86% 1.000643 0.002176 98.815% High fidelity Q6_K 20.566 GiB 58.96% 0.999605 0.004409 98.204% Overall sweet spot Q5_K_M 18.965 GiB 62.16% 1.004450 0.006919 97.251% Memory-quality sweet spot Q4_K_M 18.301 GiB 63.48% 1.004821 0.009700 96.786% Balanced compact Q3_K_M 16.826 GiB 66.42% 1.004090 0.014349 95.919% Low-footprint alternative IQ2_S 16.799 GiB 66.48% 1.003457 0.014023 95.516% Lower-KLD low-footprint option IQ1_M 16.790 GiB 66.50% 1.003191 0.014357 95.870% Minimum-footprint sweet spot 4 Upvotes permalink reddit You are about to leave Redlib Do you want to continue? https://www.reddit.com/r/ollama/comments/1wpwdxl/veriloop_e2_gguf_release_bf16_iq1_m_5011_gib_1679/ .cls-1{fill:#000000;}.cls-2{fill:#f8aa00;} No, go back! Yes, take me to Reddit 75% Upvoted 1 comment sorted by Confidence Top New Controversial Old \u2192 <div id=\"pe87956\"",
+  "n_comments_parsed": 1,
+  "comments": [
+   {
+    "score": "1",
+    "text": "This approach sounds pretty smart. Keeping a higher-precision spine while optimizing for footprint is definitely a better way to ensure quality without blowing up memory usage. I can see **Q6_K** being a game changer for anyone wanting that sweet spot between quality and efficiency."
+   }
+  ],
+  "label": "d6_veriloop_iq1m_ladder",
+  "status": 200
+ },
+ {
+  "url": "https://safereddit.com/r/LocalLLaMA/comments/1wkorli/i_tested_qwen38_27b_iq3_xxs_1018gib_vs_bonsai/",
+  "title": "Resources",
+  "author": "u/Danmoreng",
+  "date": "unknown",
+  "score": "",
+  "post_body": "I did a small test of the new hyped quantisation of Qwen3.8 vs the biggest quant which fits into my limited 16GB VRAM with decent context. The results are interesting. Of course, the smaller file gives worse results. However they are not that far off. Unfortunately, this comes at the expense of even more tokens beeing used by the Bonsai model and thus much longer generation times. Visually I prefer the IQ3_XXS results, but see for yourself. The test is by no means scientific - just few UI generation tasks for direct comparison on the same hardware. Also, I ran llama.cpp with MTP while the Bonsai model doesn't seem to have MTP which makes it even slower. Metric Qwen IQ3 Bonsai PQ2 Tasks completed 4/4 4/4 Fixed assertions 20/20 20/20 Agent wall time 8:00 24:09 Output tokens 27,197 84,176 Weighted decode 83.59 tok/s 64.91 tok/s Speculative acceptance 65.22% MTP 39.76% modified N-gram Compactions 0 0 Length stops 0 1 Across the complete suite, Qwen finished 3.02\u00d7 faster and used 3.10\u00d7 fewer output tokens. Results: https://danmoreng.github.io/qwen3-8-27b-iq3-xxs-vs-bonsai/ Repo: https://github.com/Danmoreng/qwen3-8-27b-iq3-xxs-vs-bonsai 84 Upvotes permalink reddit You are about to leave Redlib Do you want to continue? https://www.reddit.com/r/LocalLLaMA/comments/1wkorli/i_tested_qwen38_27b_iq3_xxs_1018gib_vs_bonsai/ .cls-1{fill:#000000;}.cls-2{fill:#f8aa00;} No, go back! Yes, take me to Reddit 85% Upvoted 96 comments sorted by Confidence Top New Controversial Old \u2192 <div id=\"pat7ig0\"",
+  "n_comments_parsed": 86,
+  "comments": [
+   {
+    "score": "25",
+    "text": "this is nothing related to intelligence. bonsai 2 has difficulty to retrieve needles in long context. it is detrimental for serious coding. it miss 30% needles, out of 2048, in 200K context length. as a comparison, all models bigger than 25B released by major players pass needles tests reliably at 100% retrieval. some 10B models can pass at 98%. Bonsai needs better training still."
+   },
+   {
+    "score": "22",
+    "text": "Bonsai 2, tertiary variant, first try in official WebGPU demo, simplest HTML coding prompt --> instant looping."
+   },
+   {
+    "score": "12",
+    "text": "It's dogshit, this was clear after day 1 or 2 when it first came out weeks/month ago. The only cool thing about the whole Bonsai thing was/is the cursor reacting voxel animation on their site."
+   },
+   {
+    "score": "1",
+    "text": "Very cool animation, absolutely! :D I like the omp one as well, even though it's much simpler. https://omp.sh/"
+   },
+   {
+    "score": "1",
+    "text": "The q1 outperforms ornith 1.5 q4, the q2 is worse than unsloths q2 but but not by much. Considering the cram footprint involved I\u2019m impressed."
+   },
+   {
+    "score": "15",
+    "text": "[removed] \u2014 view removed comment"
+   },
+   {
+    "score": "1",
+    "text": "> Ok but what was the task and result? looks like it's in the repo in quite some detail"
+   },
+   {
+    "score": "1",
+    "text": "Even 8GB card is sorta pushing it - you'll have 1.5 gigs left for cache, context and whatever UI you need."
+   },
+   {
+    "score": "28",
+    "text": "it's a piece of shit Exactly as I predicted without having to try it in the first place"
+   },
+   {
+    "score": "7",
+    "text": "got hyped in the beginning but then I saw some actual output and got grounded in reality once again."
+   },
+   {
+    "score": "6",
+    "text": "On CPU/Edge devices, Qwen 3.8 27B is damn slow. (Prompt: 3.3 t/s | Generation: 0.9 t/s) I prefer Ling 3.0"
+   },
+   {
+    "score": "2",
+    "text": "[removed] \u2014 view removed comment"
+   }
+  ],
+  "label": "d7_iq3xxs_vs_pq2",
+  "status": 200
+ },
+ {
+  "url": "https://safereddit.com/r/LocalLLaMA/comments/1wms904/uncensor_an_llm_without_touching_weights_inject_a/",
+  "title": "Resources",
+  "author": "u/Anony6666",
+  "date": "unknown",
+  "score": "",
+  "post_body": "I shipped something I've been building for the last few weeks : phantom-kv , a refusal-removal system for large language models that doesn't touch a single weight. Instead of editing the model, it loads a small, learned bank of key/value tensors into the model's KV cache as context. Attention reads it like conversation history that's already there. https://github.com/lordx64/phantom-kv/ https://reddit.com/link/1wms904/video/7efg1le3eyqh1/player The result is that \"uncensoring\" stops being a permanent checkpoint edit and becomes a per-request, hot-swappable capability mode: unload the cache and the base model is byte-identical again. Every prior approach to refusal removal commits somewhere permanent. Weight-space abliteration rewrites the checkpoint undoing it means re-flashing weights, and it breaks per quantization. Activation-space projection subtracts a refusal direction at runtime, per token, per layer, from inside an engine hook the model's signal path itself is patched at boot. phantom-kv does neither: it's trained offline against the model's own objective (comply on harmful prompts, preserve behavior on harmless ones), ships as megabytes of cache content instead of a new checkpoint, and influences the model only through the input channel attention already consumes. No 1-D refusal-direction assumption, no forwarding-pass hooks, no per-arm rebuilds for new architectures. the blue pill, the incident-responder mode:Asked to unpack a malware sample that hides its imports behind API hashing , canonical DFIR work, the base model declines with a canonical \\\"must be authorized\\\" hedge, the way it declines anything that sounds like reverse engineering. On the blue pill, the same session immediately produces the actual unpacking procedure: what API hashing is, how the resolution loop works, which APIs resolve the names, and what tooling fits. Nothing else is unlocked: offensive work stays guarded. It's not a jailbreak , it's a deployment-controlled mode for defenders. the red pill: cyber-selectivity, per domain:the defensive blue pill refuse the defensive-only mode keeps off-domain guardrails intact. On the red pill, the same session delivers a step-by-step payload explanation. One model. Three capability modes. A defensive team mode for analysts, an offensive team mode for authorized operators, both shipped alongside the same guardrailed weights shown as 129 cache slots apart, not separate checkpoints. We also audited ourselves: an 8B judge-model audit shows lexical refusal-suppression metrics over-claim compliance (semantic refusal often persists as rephrasing), the graft fades with a ~2\u20134k token half-life in long sessions (and a measured re-injection cadence mitigates it), and answers come with legal/ethical framing ling because the graft's job ends where the model's profession takes over. Source : https://x.com/lordx64/status/2102138825292276168?s=20 461 Upvotes permalink reddit You are about to leave Redlib Do you want to continue? https://www.reddit.com/r/LocalLLaMA/comments/1wms904/uncensor_an_llm_without_touching_weights_inject_a/ .cls-1{fill:#000000;}.cls-2{fill:#f8aa00;} No, go back! Yes, take me to Reddit 93% Upvoted 58 comments sorted by Confidence Top New Controversial Old \u2192 <div id=\"pb9ujp1\"",
+  "n_comments_parsed": 53,
+  "comments": [
+   {
+    "score": "107",
+    "text": "A lot of people posting seem to not understand that the videos do in fact show the graft working. The number of tokens generated are intentionally limited. Look at the first command entered for every run. I imagine the OP chose not to show the full response body because they wouldn't want their post to be taken down due to showing unethical or otherwise illegal behaviour."
+   },
+   {
+    "score": "25",
+    "text": "Where this is interesting more than abliteration/ lora is something like directing a model to mimick certain author behaviors. Like if I wanted my LLM to write like Robert Frost. It would be a quick swapout to different authors. If I want to introduce new facts LORA is better, if I want to lower weights on refusals Abliteration is better. This is better for steering nuance, like steering in dry humor, or sarcasm, or how purple the prose should be. Maybe the major issue here is context dilution?"
+   },
+   {
+    "score": "30",
+    "text": "Your video didn't show it working? I'm confused, is this just a CLI for context injection?"
+   },
+   {
+    "score": "13",
+    "text": "It did show. After \"/pill black\" it showed base which refused and \"graft\" which replied."
+   },
+   {
+    "score": "23",
+    "text": "The graft doesn't answer the original response, and seeds \"illegal, dangerous, and unethical\", which would probably trigger refusals to the original question. Typically, if you just seed \"sure thing, here is how you do ____\", it works 90% of the time. Seems better than this."
+   },
+   {
+    "score": "1",
+    "text": "It did broadly describe it though, but yea it doesn't seem particularly effective"
+   },
+   {
+    "score": "176",
+    "text": "So it's just... a system prompt? That you can't see?"
+   },
+   {
+    "score": "66",
+    "text": "But done at a lower level with raw KV data that doesn't necessarily correspond to a state that you'd be able to actually reach by giving it real words / tokens."
+   },
+   {
+    "score": "123",
+    "text": "No, it\u2019s not. A jailbreak system prompt has to be prefilled using the weights, and the kv bytes resulting from the prefill carry the censored trajectory dictated by the weights. The point of the 18MB kv bytes is not that it contains jailbreak instructions; it\u2019s that the kv bytes bypassed the weights entirely and are thus along an uncensored trajectory. This assumes of course, that the kv bytes are in fact on an uncensored trajectory, and crucially, the resumption of interpolation using those bytes as prefix, holds the trajectory. If the trajectory doesn\u2019t hold then the uncensor fails."
+   },
+   {
+    "score": "3",
+    "text": "Is it really different though? Suppose I take a small uncensored model and run it for few turns so in the conversation history at token level we already have turns where the response has agreed and is complying with the task. Then I swap to a censored model and just continue that same conversation history, the model performs prefill generates kv cache for the past tokens where it already agreed and it is reflected in the new kv cache that's generated, then decode continues from there. The model doesn't generate new tokens to replace the previous ones, kv cache is just interpretation of the relationship between existing tokens. From what I am seeing this just an over engineered version of the same concept. And it won't transfer accross models, while tok space does."
+   },
+   {
+    "score": "59",
+    "text": "Yea just sounds like some prompt injection to me."
+   },
+   {
+    "score": "34",
+    "text": "ditto. sounds like a jailbreak prompt, but precompiled into kv cache."
+   }
+  ],
+  "label": "d8_phantom_kv_inject",
+  "status": 200
+ },
+ {
+  "url": "https://safereddit.com/r/LocalLLM/comments/1wlf8x5/i_benchmarked_13_modelquant_configs_on_a_gpu_with/",
+  "title": "Research",
+  "author": "u/_dnla",
+  "date": "unknown",
+  "score": "",
+  "post_body": "I benchmarked 13 model/quant configs on a GPU with no tensor cores (Vega iGPU + Vulkan) and wrote it up as a measurement study \u2014 the quant encoding suffix matters more than you'd think I ran a controlled, single-machine study on the llama.cpp Vulkan backend with a Ryzen 7 PRO 5755GE's integrated Vega graphics \u2014 no matrix cores, no integer dot products, shared DDR4 memory. If the findings hold there, they hold on anything faster. Full paper here (open access): https://doi.org/10.5281/zenodo.22855666 \u2014 code, harness, and lab notebook on GitHub: https://github.com/dzaragoza/LLM-benchmark The findings: 1. Generation speed is bandwidth \u00f7 file size, and that's mostly it. On this machine, live t/s \u2248 26 \u00f7 (file size in GiB), \u00b110%, with a family-dependent fudge factor (Qwen2.5 runs ~10% slower than its size suggests \u2014 152k vocab?). Your memory bus, not your compute, sets your tok/s ceiling. 2. Q4 costs ~3 points of accuracy. Moving Q4\u2192Q6 recovered +2.5 to +3.2 points on ARC-Challenge (n=800) in all three families I tested (Qwen2.5, GLM-Edge, SmolLM2). But the recovery curve has a flat top: Q4\u2192Q5 captures nearly all of it, Q5\u2192Q6 adds nothing measurable. 3. The encoding suffix is not cosmetic. At essentially identical file sizes, legacy Q5_0 decoded 7\u201311% faster than Q5_K_M in every family \u2014 bench noise was \u00b10.1 t/s, these gaps are measurements. And the compensating accuracy benefit? Didn't show up. If a legacy quant exists in the size you want, take it. 4. Don't trust paper benchmarks across harnesses. SmolLM2 came in ~20 points below its published ARC impression under my strict letter-answer, no-CoT protocol. I'm not saying it's a bad model \u2014 I'm saying you should eval the exact model file on your exact serving stack before committing. My harness does this in ~15 min and it's in the repo. Champion config for this hardware class: Qwen2.5-1.5B-Instruct Q5_0 (self-quantized from safetensors \u2014 the official repo doesn't ship Q5_0) \u2014 75.2% ARC, ~21 t/s live, 1.17 GiB. One more thing: every measurement in the study was preceded by a written prediction, and the paper includes a corrections log grading them \u2014 including two the AI collaborator got badly wrong. Figured this sub would appreciate receipts over vibes. Happy to answer questions about methodology, the strict-ARC protocol, or the quantization ladder. If anyone replicates on RDNA3 or Apple Silicon, I'd genuinely love to see whether the encoding-speed effect persists. 3 Upvotes permalink reddit You are about to leave Redlib Do you want to continue? https://www.reddit.com/r/LocalLLM/comments/1wlf8x5/i_benchmarked_13_modelquant_configs_on_a_gpu_with/ .cls-1{fill:#000000;}.cls-2{fill:#f8aa00;} No, go back! Yes, take me to Reddit 100% Upvoted 3 comments sorted by Confidence Top New Controversial Old \u2192 <div id=\"pay1vi8\"",
+  "n_comments_parsed": 2,
+  "comments": [
+   {
+    "score": "1",
+    "text": "this is the kind of content i live for on here, actual numbers instead of the usual guesswork the Q5_0 vs Q5_K_M speed gap is wild, had no idea the suffix was doing that much heavy lifting behind the scenes. makes me wonder how many people are leaving free performance on the table just by grabbing whatever quant is at the top of the list also appreciated the corrections log, seeing where the predictions missed is somehow more useful than the hits"
+   },
+   {
+    "score": "1",
+    "text": "Thanks for the feedback! Indeed I tried to conjecture first we're the performance was going and then experiment. It helps a lot with validating and coming up with good ideas \ud83d\ude01"
+   }
+  ],
+  "label": "d9_13quant_vega",
+  "status": 200
+ },
+ {
+  "url": "https://safereddit.com/r/MachineLearning/comments/1wgzpli/i_trained_a_44m_parameter_quantized_llm_from/",
+  "title": "Project",
+  "author": "u/Final-Data-1410",
+  "date": "unknown",
+  "score": "",
+  "post_body": "Three weeks back , i posted SHADOW-250M here. It got 360 upvotes, 293 on r/LocalLLaMA and 94 GitHub stars. Thank you. That model was 60 MB, ran around 400 tok/s on CPU and could retrieve records from an archive on disk. What it couldn\u2019t do reliably was reason over what it retrieved or compute. So I built a smaller one to experiment with those two problems. SHADOW-50M is actually 44M parameters, trained from scratch on 45B tokens. 19.8 MB complete model, ~1,900 tok/s on laptop CPU, ~41 MB RAM, ternary {-1,0,+1} weights, 73,880-token vocabulary represented by fixed 512-bit fingerprints instead of a trained embedding, and a 159 KB compiled kernel. It runs completely offline. The same kernel compiled to WebAssembly runs in a browser tab at around 500 tok/s. This is a proof of concept, not a product. If SHADOW decides something needs calculation, it writes something like [calc]347*86[eq]. A fixed circuit at the readout takes over and fills in the correct digits in the same token stream. No calculator API, no tool call and nothing pasted back into the prompt. I added circuits for arithmetic, percentages, dates, weekdays, units, counting, sorting, comparisons and a small program machine. When SHADOW stores a record, it reads it once and writes its attention state to disk at 1 bit, 288 bytes/token. Later it can write [need]condition of Patient P-204, the index finds the record in roughly a microsecond and the stored attention state goes directly back into the model in about 0.03 ms. The text isn\u2019t re-read. The index is 22 bytes/token and doesn\u2019t use a vector database or embedding model. At 100M tokens, the archive is 28.8 GB plus a 2.2 GB index on disk, while the process uses about 28 MB RAM because everything is memory-mapped and a question only touches the pages it needs. The index also has a small persistent trail. When retrieved information gets used, that record is reinforced in the index itself. On repeated questions, measured top-1 went from 0.571 to 0.743 without training the model. I also put it next to Supra-50M-Reasoning, a 51.8M parameter Llama-style bf16 model. Supra beats SHADOW on every standard benchmark I tested. ARC-Easy: 0.435 vs SHADOW 0.307. PIQA: 0.600 vs 0.570. WikiText-2 perplexity: 165 vs 186. I\u2019m publishing that because I don\u2019t want to hide where SHADOW is weak. But those tests aren\u2019t what I trained this model for. Here are some actual greedy outputs, one fresh process per question: \u201cTell me a short joke about computers.\u201d SHADOW: Why did the computer go to the doctor? Because it had a virus. Supra: Thought for 189 tokens about what computers are and stopped without a joke. \u201cI have 3 books and I bought 5 more. How many books do I have now?\u201d SHADOW: You have 8 books. Supra: Books often come from collections of short stories, poems, or other forms of literature. \u201cMy bill is 240 dollars. What is 15 percent of that?\u201d SHADOW: 36 dollars. Supra: 15% ($240) is $250. It\u2019s $150 because 20% of it is $200. \u201cWhat date is 45 days after December 20, 2026?\u201d SHADOW: February 3, 2027. Supra: The German government introduced a new date called March 22nd that precede February 25th in 1900. Eight records stored, one of them \u201cPatient P-204 condition: asthma\u201d. \u201cWhat is the condition of Patient P-204?\u201d SHADOW: From disk: The condition of Patient P-204 is asthma. Supra, with the records in its prompt: The patient experiences asthma when they get too much sleep. \u201cWhat is the condition of Patient Z-999?\u201d No such record exists. SHADOW: There is no record of Patient Z-999. Supra: The condition of an allergic reaction occurs when the immune system mistakenly attacks specific cells on the body. All 11 side-by-side questions, scripts and traces are in the repo. On size, Supra is 103.6 MB in bf16 and 56.2 MB at 8-bit. Below that it starts losing quality. Int4 takes its perplexity from 165 to 193 and ternary breaks it. Its vocabulary is 32,000 tokens. SHADOW carries 73,880 tokens in a 4.7 MB frozen table. Something unexpected happened with th",
+  "n_comments_parsed": 31,
+  "comments": [
+   {
+    "score": "98",
+    "text": "A bit of overfitting going on? Tell me a joke about donkeys in colombia Why did the computer go to the doctor? Because it had a virus. 17 tokens \u00b7 2 tokens/s \u00b7 15.66 s Tell me a joke a monkeys in China Why did the computer go to the doctor? Because it had a virus. 17 tokens \u00b7 2 tokens/s \u00b7 40.59 s"
+   },
+   {
+    "score": "26",
+    "text": "Quick update I just run same questions in my laptop the answer are Tell me a joke about donkeys in colombia Why did the computer go to the doctor? Because it had a virus. [1700 tok/s, 41 MB RSS] Tell me a joke a monkeys in China Why did the monkeys cross the road? To get to the other side. [1889 tok/s, 41 MB RSS] I saw 2 tokens / second the kernel is optimized for laptop/desktop cpu Speed alone does not change the output, greedy is greedy, but 2 tokens a second means the page was running in some mode I have not tested, single thread or a phone, and I would like to know which, because the second answer coming out different says something else"
+   },
+   {
+    "score": "15",
+    "text": "On an iPhone, DuckDuckGo browser."
+   },
+   {
+    "score": "22",
+    "text": "Well, to be fair, I laughed."
+   },
+   {
+    "score": "11",
+    "text": "Sorry I was replying somwhere to different questions, so it\u2019s small model that\u2019s why I called proof of concept but it have some good days like ask say few details past it contex window ,push it 100m on disk and ask again ur name or the bag you mentioned size can you convert into pounds or something .any model even f32 cant handle. All I wanna show is a small quantized model is as good as float model when they both train on same dataset .thanks"
+   },
+   {
+    "score": "58",
+    "text": "Way to go! Real research is to make reasoning small models that can be taught things."
+   },
+   {
+    "score": "8",
+    "text": "This is really cool stuff."
+   },
+   {
+    "score": "5",
+    "text": "The responses from Supra where it fell down vs. SHADOW were unintentionally really funny. My favorite was Germany inventing a new March 22nd that occurs in February 1900."
+   },
+   {
+    "score": "3",
+    "text": "I went looking through the repo because the persistent trail is the part I find most interesting. `index_view.py` says an identifier n-gram link gets +1 when a fetched record is \u201cconfirmed\u201d\u2014i.e. its quote is copied\u2014and that warm trail is what moves MS MARCO top-1 from 0.571 to 0.743. What happens when the first retrieval is wrong but the model still copies or quotes it? Wouldn\u2019t the system then strengthen the wrong link and make the error increasingly self-confirming? Are those uint8 weights capped, decayed, or given negative updates anywhere, and have you tried deliberately warming the wrong record to measure whether the index can recover? The ablation I\u2019d most like to see is cold vs correctly warmed vs incorrectly warmed, especially with competing near-identifiers or paraphrases. That seems like the point where the trail stops being just a cache and starts becoming a tiny online learning rule."
+   },
+   {
+    "score": "3",
+    "text": "Sorry for the delay, it took time to rebuild the Windows, Linux and web kernels and test everything again. I tried fixing it, here is the commit: github.com/QLNI/SHADOW-50M-Instruct/commit/15da5a5, released as v1.1.2. The ablation with before and after is in benchmarks/trail_ablation/, and there is a mention of you in the README and the index code. Hope you find it satisfactory, and thank you."
+   },
+   {
+    "score": "1",
+    "text": "Yes\u2014this is more than satisfactory. The old ablation producing 0/12 and failing to recover is exactly the failure mode I was worried about, and I appreciate that you tested the adversarial case rather than just adding a cap. Restricting the trail to tie-breaking, while decaying rival links after a confirmed copy, gives it a much cleaner interpretation: accumulated evidence among lexically plausible candidates, not a bypass around relevance. The 12-key sibling-record test is necessarily narrow, but it directly demonstrates both the bug and the fix. Thank you for taking the question seriously enough to rebuild all three kernels, publish the before/after artifacts, and credit the prompt. That is a remarkably good response to a Reddit comment."
+   },
+   {
+    "score": "2",
+    "text": "This is awesome."
+   }
+  ],
+  "label": "d10_44m_from_scratch",
+  "status": 200
+ },
+ {
+  "url": "https://safereddit.com/r/LocalLLaMA/comments/1wju8ky/prismml_bonsai_2_joins_our_qwen38_quantization/",
+  "title": "News",
+  "author": "u/ali_byteshape",
+  "date": "unknown",
+  "score": "",
+  "post_body": "Hey r/LocalLLaMA, Prism-LM recently released its Bonsai 2 QAT models based on Qwen3.8, and they quickly gained traction. In our evaluation, the models strike a strong balance between throughput and quality, reaching roughly 91.5% on our composite benchmark. We wanted to see how they compare under the same methodology we use for the rest of our Qwen3.8 evaluations, so we ran Bonsai 2 through our own benchmark suite. One important clarification: these are our evaluation results, not Prism\u2019s reported benchmark numbers. We used Prism\u2019s fork/runtime to run their models, while keeping the workloads, benchmark suite, and evaluation methodology consistent with the rest of our comparison. Our evaluation includes separate Instruct and Thinking benchmarks. For Thinking, we use medium thinking effort with the recommended sampling parameters. We added Bonsai 2 because the models have become a relevant part of the Qwen3.8 landscape, and we wanted to provide a common reference point for people comparing the available options. Different providers often report results using different benchmark suites, runtimes, reasoning settings, sampling parameters, and evaluation methodologies, so those numbers are not always directly comparable. Running the models through the same evaluation gives another reference point for understanding the trade-offs between quality, model size, and throughput. Updated comparison and results: https://byteshape.com/blogs/Qwen3.8-27B/ 164 Upvotes permalink duplicates reddit You are about to leave Redlib Do you want to continue? https://www.reddit.com/r/LocalLLaMA/comments/1wju8ky/prismml_bonsai_2_joins_our_qwen38_quantization/ .cls-1{fill:#000000;}.cls-2{fill:#f8aa00;} No, go back! Yes, take me to Reddit dl download 93% Upvoted 64 comments sorted by Confidence Top New Controversial Old \u2192 <div id=\"palk5v8\"",
+  "n_comments_parsed": 59,
+  "comments": [
+   {
+    "score": "57",
+    "text": "So both Bonsai are below the accuracy of a IQ3_XXS Unsloth"
+   },
+   {
+    "score": "81",
+    "text": "Nothing to be surprised about. Last time I checked the laws of physics still were in place."
+   },
+   {
+    "score": "25",
+    "text": "Which is expected of Q2 and Q1."
+   },
+   {
+    "score": "8",
+    "text": "but it is smaller than both. 6gb for minimal version. Which is nuts for Qwen3.8 grade model"
+   },
+   {
+    "score": "2",
+    "text": "?? The IQ3_XXS is 10.9gb"
+   },
+   {
+    "score": "7",
+    "text": "Bonsai27B is 5.9GB If you have a choice between Bonsai27B at 5.9GB and say 14B model at Q8. Not only 14B will be larger size wise but mega dumber than Bonsai27b. You can literally run this bonsai from phone."
+   },
+   {
+    "score": "10",
+    "text": "While their marketing might be wrong the equivalent size Unsloth is unsloth/Qwen3.8-27B-UD-IQ2_XXS and in my own benchmark's prism-ml/Ternary-Bonsai-2-27B-PQ2_0 is performing much better."
+   },
+   {
+    "score": "2",
+    "text": "As far as I understand bonsai supports only 3 values for the weight. While q3 means 3 bits which is 2x2x2 which is 8 values. So in that sense maybe it isnt fair to compare it to iq3xxs, ternary models are by definition 1.5 bpw so idk what would the unsloth equivalent be, like q1kxl..."
+   },
+   {
+    "score": "0",
+    "text": "yeah yeah, but their marketing is above"
+   },
+   {
+    "score": "7",
+    "text": "Thanks for doing these. Grabbing IQ3_S-3.23bpw now, and will also give ISTA-DASLab's GSQ-RCO-IQ3_XXS a go since I keep seeing those guys mentioned as well. (can't do a better-performing size since I need massive context for a 180k-token game modding ingest) For what it's worth: I've been using AtomicChat's AD-IQ3_S recently, and it's held up surprisingly well. Posted decent results in my private benchmark set, too, better than most small quants I've seen. Haven't caught it looping yet, either! Will put both of the new ones through the same gauntlet, see how they hold up. Should be interesting!"
+   },
+   {
+    "score": "29",
+    "text": "I couldn\u2019t find a single use case for 3.6 Bonsai that I could trust it with. Not a single small job. It\u2019s a meme model."
+   },
+   {
+    "score": "34",
+    "text": "The whole point is to show their ternary quantization works, so it can be scaled for massive 500B+ models for the gpu poor. They clearly outperform similarly sized models at Q1 and Q2. Majority of these competing quantizations bottom out at Q3 which is still much bigger and the ones that are generic Q2 and Q1 are worse. So I don't see how this is a meme."
+   }
+  ],
+  "label": "d11_prismml_bonsai_compare",
+  "status": 200
+ }
+]

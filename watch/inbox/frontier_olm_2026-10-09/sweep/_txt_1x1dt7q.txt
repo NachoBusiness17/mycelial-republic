@@ -1,0 +1,16 @@
+=== 2026-10-09T06:14 | Release: Qwen-2B-RCOL Dynamic Low-Bit Quantization (IQ1_M, IQ2_M, IQ3_M) | by /u/jjusko20
+Hey guys - primarily a research release with working models,
+ Not so much a model as a psuedo-new quantization technique. I've been experimenting with a modification of ISTALab's RCO algorithm that can quantize models on a strict VRAM budget.
+ It's at its core an approximation algorithm that attempts to make up the difference with a few different strategies. I'm quite happy with how well it's working at low bits. I've seen significant KLD improvements, particularly in the 1 bit and 2 bit range. This should be model agnostic and it doesn't require loading the FP16 teacher into VRAM. I've included a little more detail on the model card and will probably publish the full recipes. I plan to apply this method to the larger models in the family next.
+ Unfortunately Unsloth does not have their KL divergence table available, but I've created a table for you to see the difference between these quants and standard llama.cpp imatrix quants. For accuracies sake, both my quants and the llama.cpp quants are calibrated on the sane wikitext imatrix dataset, and tested on two held out sets.
+ The KLD table
+ As you can see, particularly at extremely low BPW, these quants vastly outperform their standard imatrix KLD - particularly drastically cutting IQ1_M divergence at nearly the same size budget.
+ These are more proof of concept quants, as 2B is a fairly small model and suffers from such low BPW, but here's a fun example of how these are still relatively functional at extreme compression
+ 4/5 right on an IQ1_M version of Qwen 3.5 2B (green, not purple) - I think it's kinda crazy it can answer anything
+ and here's the standardized imatrix IQ1_M quant (not using dynamic RCOL)
+ yikes
+ and the file sizes
+ GGUFs:
+ https://huggingface.co/trubisky/Qwen3.5-2B-RCOL
+    submitted by    /u/jjusko20  
+ [link]   [comments]

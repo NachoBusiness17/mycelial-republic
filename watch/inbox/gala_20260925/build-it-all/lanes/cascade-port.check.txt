@@ -1,0 +1,167 @@
+CASCADE-PORT LANE CHECK FILE (gala_20260925 build-it-all, division B)
+Moment: 2026-10-03 (all commands run this session, repo local_sovereign_agent)
+Interpreter: C:/Users/foste/Documents/projects/local_sovereign_agent/.venv/Scripts/python.exe
+NOTE: this file honors the seat no-em-dash law. Two commands below (ratchet) print an
+em-dash in their live output; in this transcription every em-dash is rendered as "--"
+and marked where it occurs. No other content is altered.
+
+==============================================================================
+CHECK 1: the cascade test proves the cascade fires on a dependency change
+Command: .venv/Scripts/python.exe -m pytest tests/test_percolator_cascade.py -q -p no:cacheprovider
+Exit: 0
+Raw output:
+............                                                             [100%]
+12 passed in 1.24s
+
+Tests in the file (tests/test_percolator_cascade.py, 12):
+  test_cascade_fires_on_dependency_change   <- THE finish-line proof: parent count
+    change yields a depth-1 refresh proposal for the dependent, queue row status
+    "pending" promoted False, ledger row invariant_cascade.v1 chained
+  test_cascade_never_mutates_registry       <- registry bytes identical before/after
+    across refresh + removed + default-change cascades; depends_on edge, count intact,
+    no cascaded_at mutation
+  test_cascade_escalates_when_parent_removed
+  test_cascade_bfs_is_transitive            (depths [1,2], shallowest first)
+  test_cascade_cycle_guard_terminates       (A depends_on B, B depends_on A)
+  test_cascade_respects_max_depth
+  test_cascade_respects_max_nodes           (truncated True)
+  test_cascade_write_false_is_pure          (no queue, no ledger files created)
+  test_cascade_chains_prev_cascade_id
+  test_declare_depends_on_validates_and_merges (unknown parent all-or-nothing reject,
+    registry bytes untouched; self-edge rejected; idempotent)
+  test_mine_depends_on_hash_citation_and_substring (report writes nothing; apply
+    adds edges + empty depends_on on edge-free rows; counts/text untouched; backup lands)
+  test_cascade_reads_mined_edges            (mine then cascade end to end)
+
+==============================================================================
+CHECK 2: percolator regression (existing suite untouched by the additions)
+Command: .venv/Scripts/python.exe -m pytest tests/test_percolator_z15.py tests/test_percolator_candidates.py -q -p no:cacheprovider
+Exit: 0
+Raw output:
+........................                                                 [100%]
+24 passed in 2.05s
+
+==============================================================================
+CHECK 3: retroactive mine, report mode (live registry, no write)
+Command: .venv/Scripts/python.exe -m mag.percolator --mine-depends-on
+Exit: 0
+Raw output (head):
+{
+  "ok": true,
+  "n_invariants": 639,
+  "n_rows_with_edges": 13,
+  "n_edges": 13,
+  "edges": {
+    "0133e5728d423280": ["4cfd5d7d94dff7a4"],
+    "0d01815e2fb9d5ca": ["d9d0058bd26a6c52"],
+    "14c6369f7aecc86a": ["8197c001fe1a8696"],
+    "1d39ad4d81021ad8": ["4cfd5d7d94dff7a4"],
+    "35f620083bec639b": ["5d9325cbabf9ca5f"],
+    "46259cc4c2ad4c54": ["dbb8242cc7e48674"],
+    "52b2c27419ef9217": ["76af3ab5afbe04fa"],
+    "52f70b2660e16e7e": ["4cfd5d7d94dff7a4"],
+    ... (13 edges total; edge rule: 16-hex hash citations + substring derivations)
+  },
+  "mode": "report"
+}
+Cross-check (standalone pre-implementation scan of the same file):
+  rows: 639 | rows citing other rows by 16-hex hash: 0 | substring derivations: 13
+  -> miner result matches the independent scan exactly.
+
+==============================================================================
+CHECK 4: apply the depends_on backfill to the live registry
+Command: .venv/Scripts/python.exe -m mag.percolator --mine-depends-on --apply
+Exit: 0  (output saved: /tmp/mine_apply.json, ok=true, mode=apply)
+Effect: memory/percolator/invariants.json rewritten via the sanctioned atomic writer
+(_save_registry: temp + os.replace + destructive_receipt); pre-edit bytes backed up to
+memory/percolator/invariants.json.bak-cascade-20261003
+
+Post-apply verification (inline python, exit 0), raw output:
+rows: 639 | text/count/ts identical to backup: True
+rows missing depends_on key: 0
+rows with edges: 13 | total edges: 13
+total count before: 1187 | after: 1187
+ sample: 0133e5728d423280 -> ['4cfd5d7d94dff7a4']
+ sample: 0d01815e2fb9d5ca -> ['d9d0058bd26a6c52']
+ sample: 14c6369f7aecc86a -> ['8197c001fe1a8696']
+=> FINISH LINE 1 MET: all 639 invariants.json rows carry depends_on keys; the edit is
+   additive only (text, counts, timestamps byte-identical to the pre-edit backup).
+
+==============================================================================
+CHECK 5: the cascade function emits proposals against the real 639-row graph
+(COMPUTE-ONLY dry run: write=False, no queue row, no ledger row, no registry edit.
+ No change event occurred this session; this is a compute demonstration, not a
+ claimed live cascade.)
+Command: .venv/Scripts/python.exe -m mag.percolator --cascade 4cfd5d7d94dff7a4 --dry
+Exit: 0
+Raw output (head; em-dashes absent from this tool's JSON output):
+{
+  "ok": true,
+  "schema": "invariant_cascade.v1",
+  "origin": "4cfd5d7d94dff7a4",
+  "change": {},
+  "kind": "changed",
+  "route": "refresh",
+  "impacted": 6,
+  "depths": [1, 1, 1, 1, 1, 1],
+  "truncated": false,
+  "routes": {"refresh": 6, "escalate": 0},
+  "proposals": [
+    {"key": "0133e5728d423280", "depth": 1, "route": "refresh", "...": "..."},
+    {"key": "1d39ad4d81021ad8", "depth": 1, "route": "refresh", "...": "..."},
+    {"key": "52f70b2660e16e7e", "depth": 1, "route": "refresh", "...": "..."},
+    ... 6 proposals total, all depth 1 (the six "path outside jail" container rows)
+  ],
+  "write": false,
+  "cascade_queue": "memory/percolator/cascade_queue.jsonl",
+  "cascades_ledger": "memory/percolator/cascades.jsonl"
+}
+Dry-run emission proof: after this run,
+  ls memory/percolator/ | grep -i cascade
+  -> invariants.json.bak-cascade-20261003   (the miner's backup; only hit)
+  no cascade_queue.jsonl, no cascades.jsonl exist on disk: the dry run minted nothing.
+  No live cascade has been fired with write=True this session (no real parent change
+  event occurred; firing one without a real change would mint a false receipt).
+=> FINISH LINE 2 MET: the cascade function emits proposals (queue rows + chained
+   receipt under write=True; test-proven in CHECK 1) and never mutates the registry.
+
+==============================================================================
+CHECK 6: violation ratchet over changed files (mag/ + tools/ touched by the lane)
+Command: .venv/Scripts/python.exe tools/violation_ratchet.py check --changed
+Exit: 1
+Raw output (em-dashes in the tool's print format rendered as "--" per the file note):
+RATCHET check: scope=6 changed files; hits=5; registered=3; NEW=2; expired-exceptions=0
+  NEW 1f683c0f4827f024 except-pass: tools/cialdini_scanner.py:53 -- silent except ...: pass
+  NEW aba197e4c7a3801a file-too-long: tools/lru_null_arm.py:602 -- >400 lines
+  GROWTH claim 5f4392509fdf74f1: mag/percolator.py accepted at 580 lines, now 1022 (+442) -- re-audit or re-accept by name
+RATCHET: FAIL -- run 'baseline-update' ONLY after a human/agent accepts the debt by name.
+
+Decomposition (honest):
+  - The TWO NEW violations are in tools/cialdini_scanner.py and tools/lru_null_arm.py,
+    files this lane NEVER touched (sibling lanes' concurrent working-tree edits).
+    tools/violation_ratchet.py cmd_baseline_update (L284-316) is GLOBAL (registers all
+    unregistered tree debt), so this lane did NOT run baseline-update: doing so would
+    register sibling debt under this lane's name. The two NEW hits belong to their
+    owning lanes / the operator.
+  - THIS lane's file, mag/percolator.py, carries zero NEW violations: the ratchet's
+    changed-scope read shows hits=5 / registered=3 / NEW=2 where all NEW are sibling
+    files; percolator.py's file-too-long claim is already registered (accepted at 580).
+    The GROWTH line (+442, 580 -> 1022) is the cascade port itself (declare_depends_on,
+    mine_depends_on, cascade, CLI, docstring; B2-273 growth law prints it as a ledger
+    fact and asks for re-audit or re-accept by name). Re-audit recorded here: the
+    growth is additive new capability, no existing behavior path rewritten. Re-accept
+    by name is left to the operator (baseline-update --by) because that command cannot
+    be scoped to one file.
+  - Full-tree context run (no --changed): NEW=4 (mag/route_chat.py:105,
+    tools/cialdini_scanner.py:53, tools/dungeon.py:564, tools/lru_null_arm.py:602) -
+    all sibling files; GROWTH claims additionally on mag/estate_bridge.py,
+    tools/concept_predictor.py, tools/duel_harness.py, tools/env_contract.py.
+
+==============================================================================
+CHECK 7: no-em-dash audit of lane-written files
+Run at receipt time over: mag/percolator.py (lines added this lane),
+  tests/test_percolator_cascade.py, watch/inbox/buildall/cascade-port.md,
+  watch/inbox/gala_20260925/build-it-all/lanes/cascade-port.json, and this check file.
+Result recorded in the receipt (grep for U+2014 must return no matches in lane text;
+the ratchet tool's own pre-existing print format is the only em-dash source seen this
+session and is not lane-written text).

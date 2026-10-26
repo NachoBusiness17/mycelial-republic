@@ -1,0 +1,56 @@
+{
+  "lane": "old-files",
+  "division": "B",
+  "ok": true,
+  "note": "All three s2-17 defects fixed and byte-proven: .gitignore:22 negation unglued (check-ignore -v winner flipped .gitignore:21:.env.* -> .gitignore:22:!.env.example, -q exit 1 = not ignored), agents/escalate_grok.py:13 imports ROOT (probe before: NAMEERROR_SWALLOWED with error \"name 'ROOT' is not defined\"; after: escalated_grok_ran with cwd == config.ROOT), README dangling 'Also' removed and truncation cleanly marked with a complete closing sentence (218 lines, ends with newline). Record-law scan: authored artifacts (receipt, lane JSON, probe script) 0 em / 0 en / 0 nonascii via venv python; old-files.check.txt carries 4 em-dashes, all verbatim inside the ratchet tool's own raw output (evidence bytes, not authored prose). Residual: .zcodeignore:22 has the same glue but is not this lane's file. Ratchet run voluntarily (not required, no mag/ or tools/ file touched): exit 1 from 3 NEW hits all in files this lane never touched (mag/corpus_gap_research.py:663, mag/corpus_selfsteal.py:476, tools/fossil_check.py:73), zero hits from my files; no baseline-update run. README.md carried 8 pre-existing uncommitted FW-11 fence-owner lines before this lane started, not mine, untouched. Changes left uncommitted on mag/run-beta1-factory-build-audi-20260806T231709Z at HEAD 6a6e35b59.",
+  "rows": [],
+  "checks": [
+    {
+      "command": "git check-ignore -v --no-index .env.example  [BEFORE fix]",
+      "exit": 0,
+      "evidence": "watch/inbox/gala_20260925/wave5-repair/lanes/old-files.check.txt"
+    },
+    {
+      "command": "git check-ignore -v --no-index .env.example  [AFTER fix: winning rule printed is .gitignore:22:!.env.example]",
+      "exit": 0,
+      "evidence": "watch/inbox/gala_20260925/wave5-repair/lanes/old-files.check.txt"
+    },
+    {
+      "command": "git check-ignore -q --no-index .env.example  [AFTER fix: 1 = not ignored, negation fires]",
+      "exit": 1,
+      "evidence": "watch/inbox/gala_20260925/wave5-repair/lanes/old-files.check.txt"
+    },
+    {
+      "command": "touch .env.zzprobe && git check-ignore -v --no-index .env.zzprobe  [control: positive rule .env.* at :21 still wins for real ignores]",
+      "exit": 0,
+      "evidence": "watch/inbox/gala_20260925/wave5-repair/lanes/old-files.check.txt"
+    },
+    {
+      "command": ".venv/Scripts/python.exe watch/inbox/gala_20260925/wave5-repair/lanes/old-files.escalate_probe.py  [BEFORE fix: PROBE_RESULT NAMEERROR_SWALLOWED, grok_harness error \"name 'ROOT' is not defined\", status stuck at escalated]",
+      "exit": 0,
+      "evidence": "watch/inbox/gala_20260925/wave5-repair/lanes/old-files.check.txt"
+    },
+    {
+      "command": ".venv/Scripts/python.exe watch/inbox/gala_20260925/wave5-repair/lanes/old-files.escalate_probe.py  [AFTER fix: PROBE_RESULT HARNESS_PATH_EXECUTED, status escalated_grok_ran, cwd == config.ROOT True]",
+      "exit": 0,
+      "evidence": "watch/inbox/gala_20260925/wave5-repair/lanes/old-files.check.txt"
+    },
+    {
+      "command": ".venv/Scripts/python.exe -m py_compile agents/escalate_grok.py",
+      "exit": 0,
+      "evidence": "watch/inbox/gala_20260925/wave5-repair/lanes/old-files.check.txt"
+    },
+    {
+      "command": ".venv/Scripts/python.exe -c \"import agents.escalate_grok as m; print('IMPORT_OK', m.__file__)\"",
+      "exit": 0,
+      "evidence": "watch/inbox/gala_20260925/wave5-repair/lanes/old-files.check.txt"
+    },
+    {
+      "command": ".venv/Scripts/python.exe tools/violation_ratchet.py check --changed  [voluntary; not required, no mag/ or tools/ file touched; 3 NEW hits all in files not touched by this lane]",
+      "exit": 1,
+      "evidence": "watch/inbox/gala_20260925/wave5-repair/lanes/old-files.check.txt"
+    }
+  ],
+  "decision_changed": "Grok harness escalation path is no longer dead-on-arrival: since root commit eb07ad62e the cwd=ROOT NameError made MAG_ESCALATE_HARNESS default silently degrade to park-only handoff forever; after this lane the harness path executes (probe-proven end to end). s2-17's census-only verdict is closed for all three defects.",
+  "artifact": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/wave5-repair/lanes/old-files.json"
+}

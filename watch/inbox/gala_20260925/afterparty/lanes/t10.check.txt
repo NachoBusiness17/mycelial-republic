@@ -1,0 +1,53 @@
+t10 check log: write queue/handoff/README.md (retirement path law)
+Date: 2026-09-25. Laws: never fabricate; no em-dashes in filed text; negatives first-class.
+
+COMMANDS RUN (evidence for every claim in the README):
+
+1) GALA_GRAVE files exist:
+   $ ls watch/inbox/ | grep -i GALA_GRAVE
+   GALA_GRAVE_c1-master-handoff-fossil.md
+   GALA_GRAVE_c2-peer-json-graves.md
+   GALA_GRAVE_c3-goodnight-overnight.md
+
+2) Six schema families on disk (all verified, none invented):
+   $ grep -rn -E '"(handoff|peer_handoff|cloud_handoff|auto_handoff|gap_routed_handoff|mag_voice_handoff)\.v1"' mag/
+   mag/handoff_inbox.py:27:    if payload.get("schema") == "handoff.v1":
+   mag/peer_handoff.py:22:SCHEMA = "peer_handoff.v1"
+   mag/improve_loop.py:68:        "schema": "cloud_handoff.v1",
+   mag/auto_handoff.py:27:SCHEMA = "auto_handoff.v1"
+   mag/gap_routed_handoff.py:37:SCHEMA = "gap_routed_handoff.v1"
+   mag/voice_handoff.py:24:SCHEMA = "mag_voice_handoff.v1"
+
+3) Equality gate read directly (Read tool, mag/handoff_inbox.py lines 19-29):
+   line 27: `if payload.get("schema") == "handoff.v1":` -> return "grok"
+   line 29: fallthrough -> return "handoff"
+   prefix gates: line 21 `low.startswith("peer-")`, line 23 `low.startswith("cloud-")`,
+   line 25 build check. Ingest is by prefix for peer/cloud, by schema equality only for handoff.v1.
+
+4) voice_handoff.py lines 118-137 (Read tool): ready_handoff_for_session gates on
+   glob "vh-*.json", `data.get("session_id") != sid` skip, `status != "ready"` skip, spoken skip.
+
+5) gap_routed_handoff.py lines 55-58 (Read tool): current_gaps docstring
+   "Honest: reports what each source found; a source that errors is reported, never fabricated."
+
+6) Burial law read from the graves (Read tool):
+   c2 line 5: "No file was deleted, moved, or edited. Deletions are operator-gated..."
+   c1 line 4: "receipt-only burial. Nothing was deleted or edited."
+   c3 line 4: "DELETIONS ARE OPERATOR-GATED: every file below stays on disk."
+   c3 table has a "Successor verified on disk" column.
+   c2 classifications: DONE-ELSEWHERE (4), SUPERSEDED-BY (7), STILL-RELEVANT (1).
+   c2 evidence log pattern: check.txt + .json machine row per lane.
+
+NEGATIVES (checked and not found, stated first-class):
+- No deletion, move, or edit of any buried file was performed by this lane.
+- No schema equality gate exists for peer/cloud ingest in handoff_inbox.py (prefix-based);
+  the README says prefix for those, equality only where equality is real.
+- auto_handoff.py and gap_routed_handoff.py contain no `get("schema")` read-side equality
+  filter (grep returned none); README claims only the SCHEMA constant echo, not a reader gate.
+- queue/handoff/README.md did not exist before this lane (no prior version overwritten).
+- No em-dash characters in README.md, this log, or t10.json.
+
+FILES WRITTEN:
+- queue/handoff/README.md (new)
+- watch/inbox/gala_20260925/afterparty/lanes/t10.check.txt (this file)
+- watch/inbox/gala_20260925/afterparty/lanes/t10.json (bank row)

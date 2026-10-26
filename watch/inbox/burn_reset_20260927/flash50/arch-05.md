@@ -1,0 +1,80 @@
+# arch-05: violation_ratchet v2 design (source: tools/violation_ratchet.py)
+
+Lane: mirror-arch-05, 2026-09-28. Source read in full: tools/violation_ratchet.py (351 lines). Supporting reads in full: githooks/pre-push (332), tools/workflow_gate.py (326), tools/config_seal.py (108), scripts/ratchet_daily.ps1 (41), scripts/register_ratchet_task.ps1, configs/tools/violation_ratchet.json. Partial reads: configs/violation_baseline.json via programmatic census, tools/secret_gate.py:34, AGENTS.md:108.
+
+Checks RUN this session (all read-only): `.venv/Scripts/python.exe tools/violation_ratchet.py check` (full), `... check --changed` (exit 1 captured), `... tools/config_seal.py verify`, recursive vs non-recursive scan census, baseline register census, `changed_files()` dump, `git log --follow -- tools/violation_ratchet.py`, `git config core.hooksPath`, `MSYS_NO_PATHCONV=1 schtasks /Query /TN "Estate Ratchet"`, grep for mimosa-* writers. NOT run: baseline-update, prune, secret_gate scans (all mutate or are out of item scope); no push executed.
+
+## 1. V1 anatomy as-built
+
+- Law: debt that exists today is a registered claim; only NEW violations fail; register grows only by a named `baseline-update --by WHO`, shrinks only via `prune` (tools/violation_ratchet.py:2-28). Exit contract 0/1/2, 2 = gate broken (:28).
+- 9 scanner rules (SCANNER_RULES, :51-61): unreadable (:142), file-too-long >400 (:44, :144-145), parse-error (:148-150), bare-except (:153-154), except-pass (:155-156), shell-true (:157-160), env-key-read with key_law/env_load exemptions (:122-123, :161-178), cwd-relative-path (:179-192), todo-undated (:193-196).
+- Fingerprint = sha256(rule NUL file NUL detail)[:16]; detail deliberately line-free; one fingerprint per (rule,file) (:19-21, :84-85, :200-213).
+- Expiring exceptions are schema+built (expires field, :70-71, :228-234, EXPIRED print :258-259) but baseline-update never sets one.
+- B2-273 growth law: accepted file-too-long claims carry accepted_lines; check prints GROWTH when current lines exceed acceptance (:73-80, :260-272, stamp at :292-295).
+- B2-95 prune gap closed: prune reaps only scanner-domain claims (rule in SCANNER_RULES and file under a root, :64-68); external claims (mimosa-* over watch/inbox/, scripts/) are kept forever absent explicit re-triage (:304-330).
+- Wiring: pre-push runs `check --changed` enforcing, exit 1 blocks (githooks/pre-push:9-10); full `check` is the daily 09:45 "Estate Ratchet" sweep meter (scripts/ratchet_daily.ps1:35, registered task verified: Status Ready, next run 9/29/2026 9:45). `git config core.hooksPath` returns `githooks` (verified), so the hook is live.
+- History: 3 commits ever touch the tool (git log --follow): c09de4fa7 2026-09-24 (landed, 191 claims), 54ef0c4bc 2026-09-25 (v2 rules except-pass/env-key-read/cwd-relative-path from real diseases, register 192 to 867), 383fed94f 2026-09-27 (gate-fix batch; B2-95 and B2-273 changes landed here, one day after their receipts).
+
+## 2. Live state at measure moment (2026-09-28)
+
+- Full check: `scope=1220 files (all); hits=887; registered=884; NEW=3; expired-exceptions=0`, verdict `RATCHET: FAIL`. NEW: file-too-long mag/corpus_gap_research.py:663, mag/corpus_selfsteal.py:460; shell-true tools/fossil_check.py:73. GROWTH fired twice: tools/secret_gate_scan.py 409 to 415 (+6), tools/stealth_driver.py 753 to 879 (+126).
+- check --changed: exit 1, `scope=14 changed files; hits=14; registered=11; NEW=3` (same three).
+- Register census: 941 claims = except-pass 654, file-too-long 199, mimosa-ssrf 29, mimosa-path-traversal 25, env-key-read 23, cwd-relative-path 3, shell-true 3, mimosa-code-injection 2, bare-except 1, todo-undated 1, mimosa-command-injection 1. with-expires=0. accepted_lines on 6 of 199 file-too-long. Zero claims against tools/violation_ratchet.py itself (the gate does not yet carry its own disease).
+- config_seal verify: FAIL, modified=4: fossil_registry.json, improve.yaml, mirrors.json, violation_baseline.json. configs/.config_seal.json:56 seals the baseline. Today's 09:45 sweep already logged `END seal=1 freshness=0 ratchet=0` (logs/ratchet_daily.log).
+- changed_files() right now returns 14 files spanning at least 5 sibling lanes (corpus_gap_*, game_campaign.py, water_computer.py, rumor_drill.py, census_drift_patrol.py ...).
+
+## 3. Defects found (pattern class D, 9)
+
+- D1 Scan-scope split-brain: the full scan is NON-RECURSIVE (`base.glob("*.py")`, tools/violation_ratchet.py:94) while changed_files() includes subdirectories (`rel.split("/")[0] in roots`, :117). Measured: 1220 scanned vs 1227 .py under mag/+tools/, 7 missed; two missed files carry 8 except-pass violations (mag/tests/test_identity_schema_portability.py lines 68/74/82/103, mag/tests/verify_identity_coupling.py lines 66/72/80/100, via violations_in()). Consequence: new debt in mag/<subdir>/*.py blocks every push (check --changed sees it) but `baseline-update` CANNOT accept it (full scan never visits the file), leaving fix-or-hand-edit as the only exits. A sanctioned-command lockout.
+- D2 Push-time blindness: check --changed diffs working tree vs HEAD plus untracked (:98-119); at push time a cleanly committed tree diffs empty, so scope=0 and the gate passes trivially. Content the push actually carries (the pushed range) is never scanned by the ratchet. The estate already named this disease and fixed it for later gates: the caption block's own comment ("a cleanly committed mutation leaves a clean working tree, so arm (a) alone would miss exactly the case", githooks/pre-push:127-130) and the B2-272 helper tools/prepush_paths_changed.py with pushed-range arms (pre-push:143-155). Never backported to the ratchet. Verified by code read; no push was executed to demonstrate (shared tree, would need a commit).
+- D3 Sibling coupling: --changed is estate-wide uncommitted state. My push would run the gate over 14 files of other lanes' dirt (measured list above); one lane's in-progress edit blocks another lane's push. B2-242/B2-243/B2-244 taught exactly this and made the later gates range-conditional (pre-push:133-136); the ratchet predates the lesson.
+- D4 Accept/seal two-act tax with cross-lane blast: violation_baseline.json is seal-tracked (configs/.config_seal.json:56); every accept or prune mutates it, so the NEXT push of ANY lane fails config_seal verify (githooks/pre-push:12) until a second named act (`config_seal.py update --by --note`). Live proof: seal FAIL since at least 09:45 today, 4 modified configs. baseline-update chains no re-seal and prints no reminder (cmd_baseline_update :280-301).
+- D5 Rotting schema: expiring exceptions exist but are never set (0 of 941 claims carry expires) so exceptions cannot rot into violations, the mechanism the docstring promises (:70-71). B2-273 accepted_lines exists on 6 of 199 file-too-long claims; baseline-update only adds NEW fps (:285-287) so re-running it never backfills the 193 ungraded claims; GROWTH detection covers 3 percent of the class (though it works: 2 live GROWTH lines, one +126).
+- D6 Meter without a consumer: the daily sweep's exit 1 lands only in logs/ratchet_daily.log (:39-40). No attention.md alert (contrast the MagFtsIndexDaily convention in AGENTS.md B2-465). Today the meter is red (seal=1) and the full check is FAIL (3 NEW appeared after 09:45) and nothing surfaces either outside the log. Also TODAY is computed at import time (:81), harmless for the CLI but a footgun for any long-lived importer.
+- D7 Naming loophole: `main()` defaults `--by` to "operator" (:340). The register census shows naming discipline is real when forced (671 claims by agent:ratchet-v2-0925, 25 by B2-11, etc.), but the default means an unnamed acceptance is one forgotten flag away from riding the operator's name.
+- D8 External debt has no sanctioned registration path: 57 mimosa-* claims sit in the register (29 ssrf + 25 path-traversal + 2 code-injection + 1 command-injection) with scanner-shaped details (findingIds, scan-ids) and hand-written notes, registered by B2-11/B2-94/B2-96. No writer exists in tools/ or scripts/ (grep: only docstring mentions at violation_ratchet.py:12,311 and an unrelated comment at scripts/vision_endowment.py:90). External acceptance today means hand-editing a seal-tracked JSON, then a manual re-seal.
+- D9 The gate is unpinned: configs/tools/violation_ratchet.json carries "PINNED-UNVERSIONED" because the tool has no version header, and the pin description notes it was quoted verbatim because the docstring headline contains an em-dash. A gate this load-bearing should be versioned so pin, registry, and scenarios can name a build.
+
+## 4. Missing violation classes (pattern class R, 8)
+
+Discipline from 54ef0c4bc: rules come from real diseases, each lands with a probe receipt proving it fires. Ordered by existing evidence:
+
+- R1 except-return-swallow: `except E: return None/False/""` with no logging. The ratchet counts only naked except and except-pass (:152-156). The s2-11 boot-path census (commit c2e38d6c9) measured 203 try / 200 except / 112 swallow across 29 boot-path files, most of the swallows outside the two counted shapes. AST-easy: ExceptHandler whose body is a single Return of a constant.
+- R2 broad-except: `except Exception:` / `except BaseException:`. The check is `node.type is None` (:153) only. Nearly as wide as bare except in a daemon estate.
+- R3 os.system / os.popen: shell-true inspects only subprocess keyword `shell=True` (:157-160). Same disease, uncounted.
+- R4 eval/exec direct calls: the register already carries mimosa-code-injection claims (2), proving demand exists; an in-tree rule would make that debt scanner-domain and prune-able instead of external-forever (:47-50).
+- R5 subprocess without timeout: house style is timeout=60 (the ratchet's own calls, :103, :107); an unbounded subprocess.run in a scheduled lane is the hang disease.
+- R6 open()/read_text without encoding on this win32 host: house convention is explicit utf-8 everywhere (:140, :219, :225); cp1252 misdecode is a real recurring cost.
+- R7 mutable default argument (`def f(x=[])`): classic daemon-state disease, AST-trivial.
+- R8 Structural: per-root recursion plus a roots config so scripts/ and tests/ debt becomes scanner-domain. Today B2-96's 20 ssrf/path claims over scripts/ are external-forever by construction (ratchet roots mag+tools, baseline notes cite this verbatim). Candidates held back until the daily sweep shows demand: assert-in-mag (python -O strips), print-to-stdout in library modules.
+
+## 5. Auto-register vs require naming (pattern class P, 5)
+
+- P1 Founding law stays: NEW debt never registers silently. No auto-accept, ever (docstring :5-7; AGENTS.md:108).
+- P2 Named acts (require explicit non-default --by; reject bare "operator" without an --operator-confirm flag, closing D7): scanner-domain acceptance; external registration via a NEW `register-external --rule --file --detail --by --note --receipt` subcommand (closes D8, kills the hand-edit path, and auto-suggests the re-seal); `re-triage --fp --action keep|drop --by --note` making the B2-95 "explicit re-triage" path commandable; `backfill-accepted-lines --by` for the 193 ungraded file-too-long claims (mechanical but still a named act because it changes what GROWTH measures).
+- P3 Machine acts, safe by construction (no name required): prune of scanner-domain fixed debt (already auto, cannot reap external claims post-B2-95); GROWTH and a new UNGRADED print stay non-blocking ledger output, never failures; expired-exception flips to violation (mechanism exists, wire `--expires` into baseline-update with per-class default TTL, todo-undated/file-too-long 180d, so exceptions rot as designed).
+- P4 One-act acceptance: `baseline-update --reseal` chains config_seal update with the same --by/--note (closes D4's two-act tax; the seal itself is NOT weakened, configs/.config_seal.json keeps sealing the baseline).
+- P5 Runs-vs-debt doctrine (stolen from workflow_gate.py:307-317): gate RUNS are auto-ledger (append-only rows, cheap), DEBT claims are named. Every gate in the estate should declare which pole it is; the ratchet is the named pole, workflow gate is the auto-ledger pole.
+
+## 6. Interaction with the other gates (pattern class X, 6)
+
+- X1 Pushed-range arm (closes D2+D3 together): backport tools/prepush_paths_changed.py --refs into the ratchet. At push, scan the union of (pushed range paths) intersect scan roots; keep the working-tree mode for local pre-commit use. Matches the caption (pre-push:143-155), refold (:208-223) and scenario (:283-294) blocks, and reuses the single stdin consumer contract (the caption block owns the capture, :150-155).
+- X2 Recursion fix (closes D1): rglob under each root (or per-root config), so baseline-update's scan domain equals check --changed's domain. Acceptance lockout becomes impossible by construction.
+- X3 Seal contract: with --reseal chained (P4), config_seal verify stays enforcing at pre-push (:11-12) and acceptance becomes one named act. Without chaining, baseline-update must print the exact re-seal command on exit.
+- X4 Secret gate: keep separate baseline (zero-import law is deliberate, tools/secret_gate.py:34; never import the 933-debt ratchet baseline, pre-push:322-323) but unify the claim schema (accepted/by/note/expires/accepted_lines) and route external claims through P2's register-external so both ledgers share one named-acceptance codepath. mimosa-* claims either migrate to the secret-gate ledger or gain in-tree equivalents (R4) and then re-triage out.
+- X5 Scenario battery for the ratchet itself: workflow_gate has the LAW-12 card suite re-proving it at push when the gate changes (pre-push:280-307); the ratchet has nothing. V2 adds a `selftest` mode (synthetic files per rule exercising check/accept/expire/grow/prune lifecycle, analogous to prepush_paths_changed.py --selftest, B2-272) run by ratchet_daily; any ratchet change must leave the battery green before push, same enforcing shape.
+- X6 Exit-class split, formalized: adopt the census gate's B2-277 law (exit 2 cannot-verify blocks, githooks/pre-push:76-101): the ratchet already returns 2 on git failure (:240-243); v2 also returns 2 on unparseable baseline JSON (today json.loads at :219 raises straight to a traceback, exit 1 semantics lost) and on the new selftest failing. Exit 1 (new debt) blocks; GROWTH/UNGRADED prints never block.
+- X7 Daily meter gains a consumer (closes D6): on sweep exit 1, append a line to memory/attention.md per the B2-465 alert convention, and run the X5 battery; the scheduled task exists and is Ready (verified), so only the script body changes.
+
+## 7. Migration plan (each step independently landable, WARN-ONLY first per the t40 convention, githooks/pre-push:14-18)
+
+1. M1 Recursion fix + UNGRADED print + `backfill-accepted-lines` (D1, D5). Probe: violations_in() over the 7 currently-missed files names the 8 except-passes.
+2. M2 Pushed-range arm via prepush_paths_changed (D2, D3). Probe: a dry-run push naming range paths; working-tree mode unchanged when stdin is empty.
+3. M3 --by hard requirement + register-external + re-triage + --reseal (D7, D8, D4).
+4. M4 --expires wiring + class TTL defaults (D5).
+5. M5 New rules in evidence order R1+R2+R3 first, each with a probe receipt; R4-R7 when the daily sweep shows demand. Stamp a version header into the tool and update configs/tools/violation_ratchet.json (D9).
+6. M6 selftest battery + attention.md alert in ratchet_daily (X5, X7).
+
+## 8. Not verified / not run
+
+baseline-update, prune, and secret_gate scans were not executed (they mutate shared state; the ask did not name them). No push was performed, so D2's clean-tree pass is argued from code (:98-119), from the caption block's own published comment of the same disease (pre-push:127-130), and from the live 14-file changed set; it is not an executed push demonstration. The Estate Ratchet task was queried for registration/next-run only, not its Last Result (schtasks LIST output did not include it through the shell layer). No em-dashes or en-dashes appear in this file (scanned post-write).

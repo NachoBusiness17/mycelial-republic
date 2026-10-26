@@ -1,0 +1,35 @@
+t23 check log, 2026-09-25, gopher t23
+ITEM: Monetization.luau:46 writes VirtueDoublerUntil, OssuaryZone.luau:281 reads CandyDoublerUntil; 149R/1h doubler never doubled candy.
+
+BYTE CENSUS before fix (grep -rn "DoublerUntil" roblox/src):
+  roblox/src/server/Monetization.luau:46    writer  SetAttribute("VirtueDoublerUntil", os.time() + 3600)   [key "VirtueDoubler", line 45]
+  roblox/src/server/MudBasecamp.luau:173    reader  GetAttribute("VirtueDoublerUntil")   (chair counting, doubles marks)
+  roblox/src/server/OssuaryZone.luau:281    reader  GetAttribute("CandyDoublerUntil") x2  (candy pickup multiplier)
+  roblox/src/server/OssuaryZone.luau:249    comment referencing "CandyDoublerUntil"
+  VirtueDoublerUntil: 1 writer, 1 reader. CandyDoublerUntil: 0 writers, 1 reader. Phantom read confirmed.
+
+WHICH SIDE WRONG: the reader (OssuaryZone). Evidence:
+  watch/inbox/ROBLOX_MONETIZATION_PLAN_20260924.md:65 -> "| Virtue Mark Doubler | Dev Product | 149 | Double marks for 1 hour |"
+  roblox/src/shared/Config.luau:18 -> VirtueDoubler = { id = 0, price = 149, name = "Virtue Mark Doubler (1h)" }
+  Candy pays VirtueMarks (OssuaryZone.luau:282), so "double marks" covers candy; the SKU and its writer are spec-correct,
+  MudBasecamp already consumes VirtueDoublerUntil correctly. Aligning Monetization to CandyDoublerUntil would orphan MudBasecamp.
+
+FIX (attribute-name alignment only, no new logic), roblox/src/server/OssuaryZone.luau:
+  BEFORE line 281: local mult = (plr:GetAttribute("CandyDoublerUntil") and plr:GetAttribute("CandyDoublerUntil") > os.time()) and 2 or 1
+  AFTER  line 286: local mult = (plr:GetAttribute("VirtueDoublerUntil") and plr:GetAttribute("VirtueDoublerUntil") > os.time()) and 2 or 1
+  BEFORE line 249 comment: "-- the same store as CandyDoublerUntil). ..."
+  AFTER  line 249 comment: "-- the same store as VirtueDoublerUntil). ..."
+  5-line fix receipt comment inserted above the mult line naming cause + evidence.
+
+VERIFY:
+  grep -rn "DoublerUntil" roblox/src after fix: 1 writer (Monetization:46), 2 readers (MudBasecamp:173, OssuaryZone:286), all VirtueDoublerUntil.
+    Only remaining "CandyDoublerUntil" strings are inside the fix receipt comment.
+  luau-lsp analyze (tools/bin/luaulsp/luau-lsp.exe, globalTypes.d.luau): 12 diagnostics, all pre-existing
+    (4 require/shadow/unused at lines 22-25, 5x Model-vs-Instance, 2x number?), none on the edited mult line.
+    Pre-edit vs post-edit diagnostic sets identical modulo line offsets from the inserted comment.
+    Untouched lines verified by targeted diff of my edit only.
+  tools/mountain_check NOT run (shared, per brief).
+  Note: roblox/src/server/OssuaryZone.luau carries other uncommitted lane work (48-line candy-cap system,
+    CANDY_PER_FLOOR_DAILY_CAP); my change is limited to the 2 lines + receipt comment inside it.
+
+NO EM-DASHES FILED. No fabrication: every claim above traceable to a grep/read/analyze in this session.

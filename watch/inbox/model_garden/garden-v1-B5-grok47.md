@@ -1,0 +1,6 @@
+# garden-v1-B5-grok47 (grok-4.7 @ xai, turn 1, channel: content)
+
+IMPROVEMENT 1: Mode resolution fails open: a missing sentinel, a read error, or any value other than exact warn/enforce (a leading UTF-8 BOM is not removed by strip) returns warn, and that path admits an unsealed permit. | EVIDENCE: mag/steer_seal.py:86-94 | FIX: Decode the sentinel with utf-8-sig and treat any value other than exact warn as enforce.
+IMPROVEMENT 2: Keyfile mode bits are enforced only when os.name is posix, and write_keyfile never sets an ACL, so on win32 any same-user reader of the default key path can load the key and mint a verifying seal. | EVIDENCE: mag/steer_seal.py:164-167 | FIX: Protect the key with a Windows ACL or DPAPI and refuse to load a key the agent identity can read.
+IMPROVEMENT 3: classify keeps Unicode format characters, so a whole-message STOP plus U+200B or U+FEFF is not in RESTRICTIVE_WORDS and misses the unverified restrictive honor path. | EVIDENCE: mag/steer_seal.py:277-280 | FIX: Strip category Cf (and BOM) after NFC and before the restrictive-word match; do not use NFKC.
+DIFFERENT-BUILD: I would mint and verify seals in a helper the agent cannot read, with the HMAC key held only as a DPAPI blob, and default the gate to enforce. A file under the same user profile is not a trust boundary on Windows.

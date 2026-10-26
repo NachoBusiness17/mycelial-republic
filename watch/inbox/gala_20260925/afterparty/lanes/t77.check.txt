@@ -1,0 +1,29 @@
+=== t77 check 2026-09-26T05:24:35Z ===
+
+--- pytest tests/test_improve_off_on.py -v ---
+============================= test session starts =============================
+platform win32 -- Python 3.11.15, pytest-9.1.1, pluggy-1.6.0 -- C:\Users\foste\Documents\projects\local_sovereign_agent\.venv\Scripts\python.exe
+rootdir: C:\Users\foste\Documents\projects\local_sovereign_agent
+configfile: pytest.ini
+plugins: anyio-4.14.2, langsmith-0.10.14, timeout-2.4.0, typeguard-4.6.0
+collecting ... collected 6 items
+
+tests/test_improve_off_on.py::test_improve_off_writes_marker_then_disables PASSED [ 16%]
+tests/test_improve_off_on.py::test_improve_on_clears_marker_after_success PASSED [ 33%]
+tests/test_improve_off_on.py::test_marker_write_failure_aborts_without_disabling PASSED [ 50%]
+tests/test_improve_off_on.py::test_task_failure_keeps_marker PASSED      [ 66%]
+tests/test_improve_off_on.py::test_clear_is_idempotent PASSED            [ 83%]
+tests/test_improve_off_on.py::test_waste_action_improve_prescribes_t73_executor PASSED [100%]
+
+============================== 6 passed in 0.23s ==============================
+PYTEST_EXIT=0
+
+--- .venv/Scripts/python.exe tools/violation_ratchet.py check --changed ---
+RATCHET check: scope=17 changed files; hits=13; registered=13; NEW=0; expired-exceptions=0
+RATCHET: PASS — no unregistered debt.
+RATCHET_EXIT=0
+
+--- em-dash scan of t77-added lines ---
+git diff -- mag/lifecycle.py | grep '^+' | grep -- '—': no matches, exit 1 (clean)
+grep -c '—' tests/test_improve_off_on.py: 0 (clean)
+(pre-existing em-dashes elsewhere in lifecycle.py untouched; law covers filed text only)

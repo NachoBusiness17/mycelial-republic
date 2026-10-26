@@ -1,0 +1,67 @@
+### t13a raw check (rebuilt, bounded) 2026-09-26T04:32:56Z
+
+== [1] stack.json rows containing the exact goal string (fixed-string) ==
+4:      "goal": "research A",
+grep exit: 0
+
+== [2] pipe record p8bc0180ab9.json smoke markers ==
+5:    "research A",
+9:    "t-test",
+10:    "t-test"
+19:  "status": "running",
+24:      "task_id": "t-test",
+25:      "status": "queued"
+29:      "task_id": "t-test",
+30:      "status": "queued"
+35:      "task_id": "t-test",
+36:      "status": "unknown",
+42:      "task_id": "t-test",
+43:      "status": "unknown",
+grep exit: 0
+
+== [3] gap_swarm_experiment (candidate rebind targets) mention research A? ==
+grep exit: 1 (1 = no match, negative confirmed)
+
+== [4] estate code+configs references to the exact string (json/py/yaml only, bounded) ==
+grep exit: 1
+
+== [5] code that reads/writes gap_map stack.json ==
+mag/\doctor.py:512:        ("gap_map", "mag.gap_map", ROOT / "memory/runs/gap_map/stack.json", "json", 0),
+mag/\frontier_help.py:50:    """The accumulated frontier-worthy asks (from gap_map's stack accumulator)."""
+mag/\gap_map.py:15:      python -m mag.gap_map --stack <complexity>   (accumulate a frontier-worthy ask)
+mag/\gap_map.py:16:      python -m mag.gap_map --stack-status
+mag/\gap_map.py:31:STACK_FILE = ROOT / "memory" / "runs" / "gap_map" / "stack.json"
+mag/\interrupt_pipeline.py:49:STACK_FILE = ROOT / "memory" / "runs" / "interrupt_pipeline" / "interrupt_stack.json"
+grep exit: 0
+
+== [7] post-prune byte check: stack.json contains 'research A'? ==
+grep exit: 1 (1 = string gone, byte check passes)
+
+== [8] post-prune stack.json full bytes ==
+{
+  "items": [
+    {
+      "goal": "research B",
+      "complexity": 3.0,
+      "at": "2026-08-09T13:01:09.568295+00:00"
+    },
+    {
+      "goal": "research C",
+      "complexity": 2.0,
+      "at": "2026-08-09T13:01:09.580523+00:00"
+    },
+    {
+      "goal": "deep analysis of verkle coherence vs vector embedding",
+      "complexity": 2.0,
+      "at": "2026-08-09T13:02:42.646153+00:00"
+    },
+    {
+      "goal": "design the quantized lattice fold for the ghost",
+      "complexity": 3.0,
+      "at": "2026-08-09T13:02:42.656342+00:00"
+    }
+  ],
+  "complexity": 10.0
+}
+== [9] JSON validity of pruned stack.json ==
+valid json; items: 4 complexity: 10.0

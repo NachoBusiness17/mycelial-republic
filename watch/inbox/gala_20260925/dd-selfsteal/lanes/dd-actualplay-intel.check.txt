@@ -1,0 +1,34 @@
+== dd-actualplay-intel finish-line checks (2026-10-03, lane B) ==
+-- [1] intel doc byte check
+78b8dadac9190f0348d85691eda3578cba4d2a17e274d4bf6f6c2632d13bc062 *corpus/game_estate/DND_ACTUALPLAY_INTEL_20261003.md
+31 corpus/game_estate/DND_ACTUALPLAY_INTEL_20261003.md
+-- [2] quote byte-exactness: grep -cF counts (each must be >=1)
+1
+1
+0
+1
+1
+1
+1
+1
+1
+-- [3] receipt named in the ask (expected ABSENT, exit 1)
+receipt_test_exit=1
+-- [4] prior-art receipt exists
+wbn_steal_receipt_test_exit=0
+-- [5] lane JSON parses + live session counts
+lane_json_parses rows=8
+22
+16
+-- [6] row2 quote wrap verification (quote joins lines 27-29; fragments must each be >=1)
+1
+1
+1
+-- [7] trailing byte of intel doc (explains wc 31 vs Read 32 lines: no trailing newline)
+0000000   n   o   -   f   a   b   r   i   c   a   t   i   o   n       l
+0000020   a   w   .  \n
+0000024
+-- [8] line-count instruments on intel doc (31 vs 32 discrepancy resolution)
+awk_records=31
+31
+0

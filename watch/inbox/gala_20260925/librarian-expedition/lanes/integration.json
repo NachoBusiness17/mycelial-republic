@@ -1,0 +1,66 @@
+{
+  "lane": "integration",
+  "division": "B",
+  "ok": true,
+  "note": "Found 9 of 10 gathered primaries unregistered (~25h old) and the B2-465 FTS gate stale at exit 2; healed via the two sanctioned writers (catalog_rescan incremental 691,789 -> 821,676 rows, corpus_fts_rebuild deep match), proved all 10 holdings searchable by real FTS5 queries on a fresh index, named the pre-existing CANON DRIFT 4 register defect and the dark daily freshness surfaces (zero 2026-10-01 stamps in both freshness logs), and ran the one-line integration chain green as the repeat-verdict; the gather half has no saved one-line entry point.",
+  "rows": [],
+  "checks": [
+    {
+      "command": "git show HEAD:catalog/catalog.jsonl | wc -l; wc -l < catalog/catalog.jsonl; grep -c <primary> catalog/catalog.jsonl (x10)",
+      "exit": 0,
+      "evidence": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/librarian-expedition/lanes/integration.check.txt section [0]: HEAD 691788, WT 691789, 9 of 10 gathered primaries zero rows, DESCENT steal 1 row"
+    },
+    {
+      "command": ".venv/Scripts/python.exe watch/inbox/gala_20260925/librarian-expedition/lanes/canon_drift.py",
+      "exit": 0,
+      "evidence": "integration.check.txt section [1]: checked=205 missing=0 drifted=4, named _retired/x_canon_nachoquixotic_v1.jsonl, x_canon_2026_fx/fx_2094770591702098071.json, x_canon_2026_fx/fx_2096341325960417585.json, x_canon_enumeration_index.jsonl"
+    },
+    {
+      "command": ".venv/Scripts/python.exe tools/corpus_fts_rebuild.py --check --deep (BEFORE)",
+      "exit": 2,
+      "evidence": "integration.check.txt section [2]: index_state=stale, note 'index older than catalog.jsonl; run tools/corpus_fts_rebuild.py' - B2-465 decay live"
+    },
+    {
+      "command": ".venv/Scripts/python.exe watch/inbox/gala_20260925/librarian-expedition/lanes/integration_search.py before pre_integration",
+      "exit": 0,
+      "evidence": "integration.check.txt section [3 RETRY]: 9 of 10 primary queries hit_count 0 on both engines; descent_day1 hit_count 1 but engine=scan index_state=stale"
+    },
+    {
+      "command": ".venv/Scripts/python.exe -m mag.catalog_rescan incremental",
+      "exit": 0,
+      "evidence": "integration.check.txt section [4]: base_rows 691789, added 125884, refreshed 3597, vanished 84173 counted, tags_rows 821270, tags_ts 2026-10-01T23:29:20Z"
+    },
+    {
+      "command": "grep -c <primary> catalog/catalog.jsonl (x10, post-rescan); wc -l < catalog/catalog.jsonl",
+      "exit": 0,
+      "evidence": "integration.check.txt section [5]: every primary 2 rows (primary + doctrine receipt), steal 1 row, rows now 821270"
+    },
+    {
+      "command": ".venv/Scripts/python.exe tools/corpus_fts_rebuild.py (the one sanctioned writer)",
+      "exit": 0,
+      "evidence": "integration.check.txt section [6]: rows_indexed 821270, malformed_lines 0, total_build_s 12.62, index_state fresh"
+    },
+    {
+      "command": ".venv/Scripts/python.exe tools/corpus_fts_rebuild.py --check --deep (AFTER)",
+      "exit": 0,
+      "evidence": "integration.check.txt section [7]: index_state fresh, deep match"
+    },
+    {
+      "command": ".venv/Scripts/python.exe watch/inbox/gala_20260925/librarian-expedition/lanes/integration_search.py after post_integration",
+      "exit": 0,
+      "evidence": "integration.check.txt section [8]: all 10 primary queries hit, engine=fts5, index_state=fresh, 19 rows total across the holdings"
+    },
+    {
+      "command": "cmd //c schtasks /Query /TN MagFtsIndexDaily|MagCorpusRescanDaily; grep -c 2026-10-01 logs/fts_index.log logs/corpus_rescan_daily.log",
+      "exit": 0,
+      "evidence": "integration.check.txt section [10 RETRY]: both tasks Ready next-run 10/2 but both freshness logs carry zero 2026-10-01 stamps (last 2026-09-30 09:00) - daily surfaces dark today"
+    },
+    {
+      "command": ".venv/Scripts/python.exe -m mag.catalog_rescan incremental && .venv/Scripts/python.exe tools/corpus_fts_rebuild.py && .venv/Scripts/python.exe tools/corpus_fts_rebuild.py --check --deep",
+      "exit": 0,
+      "evidence": "integration.check.txt section [11]: second pass +285 rows (live estate), 821676 indexed, index_state fresh, deep match - the one-line repeat-verdict ran green"
+    }
+  ],
+  "decision_changed": "librarian-expedition done-claim: closes 'bytes landed = expedition done' - the closing step is now the one-line integration chain (catalog_rescan incremental && corpus_fts_rebuild && --check --deep) proven green, with gather-side integration debt (map+FTS ~25h stale, 9/10 holdings unfindable) paid and the dark daily freshness surfaces (zero 2026-10-01 stamps) named for the operator per B2-465",
+  "artifact": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/librarian-expedition/lanes/integration.json"
+}

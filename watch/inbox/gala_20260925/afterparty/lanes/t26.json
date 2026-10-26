@@ -1,0 +1,50 @@
+{
+  "gopher": "t26",
+  "item": "close the hand-fold debt: tools/gen_artifact_lore.py emits ArtifactLore.luau's DWARVEN pool from corpus/df_mine/df_lexicon_full.json (t4's next_steal)",
+  "ok": true,
+  "note": "Landed tools/gen_artifact_lore.py in the gen_df_luau_data.py house pattern: the 130 curated (english,pos) fold keys live in the generator as the pool identity with provenance comments (curation is a decision, not mined data; precedent = the engine-side quality ladder constants), while every dwarven word is joined from df_lexicon_full.json (dwarf key) at generate time and embedded nowhere in the tool. Each key must resolve to exactly one distinct mine word or the generator dies; probe found 130/130 unambiguous before writing (multiword mine keys 'ring object','rootverb','spring noun','spring season' kept verbatim). Generator splices only the region between new BEGIN/END GENERATED markers (do-not-hand-edit header + regenerate command), preserving the file's CRLF endings; t4's 5-line provenance comment kept intact outside the markers (it was uncommitted working-tree state; a mid-lane git checkout briefly dropped it and it was restored byte-exact from the pre-change snapshot, receipt in t26.check.txt sections [7] fix history). Byte-close verdict: structural diff pre vs post = exactly the 3 marker lines; pool entry sha256 identical pre/post; rerun prints 'already up to date (byte-identical rerun)'. Two splice bugs found and fixed on the way (read_text universal-newline silently rewrote CRLF to LF; close-regex stranded a bare LF), both caught by EOL census, final census clean. luau-lsp not on PATH; tools/luau_lint.py check() on ArtifactLore.luau = NONE (clean); full-tree lint has 3 pre-existing findings in other zone files, untouched. mountain_check NOT run (shared gate). roblox/src/the_mountain.rbxlx embedded copy not rebuilt (gate/a02 owns rebuilds). Pre-existing em-dashes in ArtifactLore.luau header line 2 and moodLine stay untouched (outside generated region).",
+  "checks": [
+    {
+      "command": ".venv/Scripts/python.exe tools/gen_artifact_lore.py (from pristine pre-change file)",
+      "exit": 0,
+      "evidence": "watch/inbox/gala_20260925/afterparty/lanes/t26.check.txt [1]"
+    },
+    {
+      "command": "generator rerun -> 'already up to date (byte-identical rerun)'",
+      "exit": 0,
+      "evidence": "watch/inbox/gala_20260925/afterparty/lanes/t26.check.txt [2]"
+    },
+    {
+      "command": "diff pre-change file vs post-generator file (EOLs stripped) -> only 3 GENERATED marker lines",
+      "exit": 1,
+      "note": "diff exit 1 IS the clean verdict here: the only differences are the marker insertions; 130 entries untouched",
+      "evidence": "watch/inbox/gala_20260925/afterparty/lanes/t26.check.txt [3]"
+    },
+    {
+      "command": "grep 'gloss = ' | sha256sum pre vs post -> 7c0f3b7e... == 7c0f3b7e... (130 lines, byte-identical incl CRLF)",
+      "exit": 0,
+      "evidence": "watch/inbox/gala_20260925/afterparty/lanes/t26.check.txt [4]"
+    },
+    {
+      "command": "re-join 130 (english,pos) keys vs df_lexicon_full.json dwarf -> 130 rows, 80 noun + 50 adjective, grounding problems NONE",
+      "exit": 0,
+      "evidence": "watch/inbox/gala_20260925/afterparty/lanes/t26.check.txt [5]"
+    },
+    {
+      "command": "EOL census pre vs working -> CRLF 185/187, loneLF 0/0 (no line-ending rewrites)",
+      "exit": 0,
+      "evidence": "watch/inbox/gala_20260925/afterparty/lanes/t26.check.txt [6]"
+    },
+    {
+      "command": "luau_lint check() on ArtifactLore.luau -> NONE (clean); luau-lsp absent from PATH",
+      "exit": 0,
+      "evidence": "watch/inbox/gala_20260925/afterparty/lanes/t26.check.txt [7] [7b]"
+    },
+    {
+      "command": "mountain_check: NOT run (shared gate, forbidden for this lane)",
+      "exit": null,
+      "evidence": "watch/inbox/gala_20260925/afterparty/lanes/t26.check.txt [9]"
+    }
+  ],
+  "next_steal": "Same debt class, last holder: Worldgen.luau's 130 hand-folded spheres (gen_df_luau_data.py already emits SphereKinship.luau, but Worldgen's sphere pool has no committed generator). Next steal: tools/gen_worldgen_spheres.py emitting Worldgen's sphere region from corpus/df_mine/df_spheres.json with the same curated-keys + mine-join + BEGIN/END markers pattern this lane set, then a gate pass rebuilds the_mountain.rbxlx so its embedded ArtifactLore/Worldgen copies stop lagging the working tree."
+}

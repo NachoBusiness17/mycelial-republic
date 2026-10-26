@@ -1,0 +1,73 @@
+=== 2026-10-09T01:17 | Quantization of Linear-Attention (Qwen & Kimi) | by /u/kroggens
+submitted by    /u/kroggens  
+ [link]   [comments]
+
+=== ? | /u/knownboyofno on Quantization of Linear-Attention (Qwen & Kimi) | by /u/knownboyofno
+This is nice. If we get this in other places and it holds up then the Q6 looks like what we called Q8 before. The Q8 of this paper is like the full model! Crazy times we are in...
+
+=== ? | /u/lamawithonel on Quantization of Linear-Attention (Qwen & Kimi) | by /u/lamawithonel
+https://huggingface.co/papers/2609.38169#Abstract
+
+=== ? | /u/fantasticsid on Quantization of Linear-Attention (Qwen & Kimi) | by /u/fantasticsid
+This is interesting, but it's not useful at all at the scale most private/local inference operates at.
+ Example: each 27b Qwen sequence wants around or about 200MB of recurrent state across all 48 GDN layers at F32. Quantising this to 6 bit is going to drop that to perhaps 40-50MB? At the cost of some quality?
+ This is useful for people running giant concurrent batches across tens of users, where the recurrent state overhead (which is a fixed overhead per-sequence, even if the KV cache is basically empty) actually adds up.
+
+=== ? | /u/FullOf_Bad_Ideas on Quantization of Linear-Attention (Qwen & Kimi) | by /u/FullOf_Bad_Ideas
+I'm generating a dataset with Qwen 3.8 27B just now and I ran precisely into this issue, it's a real world problem if you are tinkering with local LLMs.
+ Inference is running non-stop for days now so any speedup would save me a lot of time.
+
+=== ? | /u/fantasticsid on Quantization of Linear-Attention (Qwen & Kimi) | by /u/fantasticsid
+How are you running into this issue? Running a bunch of parallel batches such that GDN state is in the multiple GBs?
+
+=== ? | /u/FullOf_Bad_Ideas on Quantization of Linear-Attention (Qwen & Kimi) | by /u/FullOf_Bad_Ideas
+Yeah I have it loaded in vllm at concurrency of 320 on 8 x 3090 Tis. And that's with GDN in FP16 already. I can push non-GDN models more, I run Glimmer at 1500 concurrency at the same setup.
+ I went from 2500 to 3500 t/s TG by quantizing the model to W8A8 and making space for 320 requests instead of 256. If STEPQuant works I'll be able to hit concurrency around 800 or 1000 and get 5000+ t/s TG.
+ I'll be setting it up in a moment I'll let you know if it helps.
+
+=== ? | /u/fantasticsid on Quantization of Linear-Attention (Qwen & Kimi) | by /u/fantasticsid
+Good luck!
+
+=== ? | /u/FullOf_Bad_Ideas on Quantization of Linear-Attention (Qwen & Kimi) | by /u/FullOf_Bad_Ideas
+Getting it to work was fairly easy but I might have issues with getting a good sustained throughput gain. It starts at 6000-7000 t/s at batch size 1024 but as the context builds up, kv cache is filling up and I think sustained speed appears to be around 4000 t/s at batche size around 650. So, still might be a bit better than vLLM, but I'll need to look at the numbers. And I needed to go down to fp8_e5m2 cache to make it work better than vllm, and Claude patched up some of their code to make it work with my local setup.
+ I'll probably be doing shorter context generation later, with disabled reasoning, and then I expect the gain to be clear.
+
+=== ? | /u/FullOf_Bad_Ideas on Quantization of Linear-Attention (Qwen & Kimi) | by /u/FullOf_Bad_Ideas
+I'm seeing sustained throughput improvement of about 20-30% now after more tuning.
+ But I applied more tuning here than I did to vLLM.
+
+=== ? | /u/FBIFreezeNow on Quantization of Linear-Attention (Qwen & Kimi) | by /u/FBIFreezeNow
+Which tuning, if I may ask?
+
+=== ? | /u/FullOf_Bad_Ideas on Quantization of Linear-Attention (Qwen & Kimi) | by /u/FullOf_Bad_Ideas
+Here's the launch command I ended up with
+  SGLANG_PP_LAYER_PARTITION=8,10,8,8,8,9,8,5 PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True NCCL_P2P_LEVEL=SYS python -m stepquant.sglang --model-path /path/to/Qwen-27B-W8A8 --pipeline-parallel-size 8 --state-format stepquant4 --plan artifacts/reproduction/plans/qwen-stepquant4.pt --attention-backend flashinfer --reasoning-parser qwen3 --max-running-requests 1024 --host 0.0.0.0 --port 2300 --kv-cache-dtype fp8_e5m2 --kv-watermark 0.8 --chunked-prefill-size 1024 --context-length 8192 --mem-fraction-static 0.835 
+ PP layer partitioning coupled with set context length (I forgot to set it earlier) plus using flashinfer instead of Triton, plus fp8 kv cache with reduced chunked prefill. STEPQuant doesn't support PP or batch size larger than 512 but Claude coded it up for me.
+ Feel free to ask questions, the workload I'm running has code here - https://github.com/adamo1139/polskie-dane-instruktazowe
+
+=== ? | /u/FBIFreezeNow on Quantization of Linear-Attention (Qwen & Kimi) | by /u/FBIFreezeNow
+Thanks man, you’re a legend for trying and tuning
+
+=== ? | /u/FBIFreezeNow on Quantization of Linear-Attention (Qwen & Kimi) | by /u/FBIFreezeNow
+Btw GitHub repo link 404ing
+
+=== ? | /u/FullOf_Bad_Ideas on Quantization of Linear-Attention (Qwen & Kimi) | by /u/FullOf_Bad_Ideas
+Ah right, I didn't set it to public yet! It's fixed now. Thanks for letting me know, I put that link in a few README's already.
+
+=== ? | /u/FullOf_Bad_Ideas on Quantization of Linear-Attention (Qwen & Kimi) | by /u/FullOf_Bad_Ideas
+Cool I'm doing batch inference with it right now, short context W8A8 weight, and even in fp16 it takes a lot of VRAM and I can't go above 320 concurrency on 8 GPUs in vllm, which definitely limits my throughput. I'll try it out today, hopefully SGLang supports W8A8 quant on 3090 Ti now.
+ edit: I got good throughput uplift after tuning it, about 20-30%. Up from ~3500 TPS to around 4500 TPS
+
+=== ? | /u/egnegn1 on Quantization of Linear-Attention (Qwen & Kimi) | by /u/egnegn1
+Are you running this with full tensor parallelism?
+
+=== ? | /u/FullOf_Bad_Ideas on Quantization of Linear-Attention (Qwen & Kimi) | by /u/FullOf_Bad_Ideas
+No, i use pipeline parallel size 8 here, so layers are split between 8 cards.
+ Tensor parallel gives you more output tokens per user but when you have multiple sessions, the communication bottleneck emerges and it actually slows down the total throughput.
+ And since I don't have quick GPU interconnect, it would starve the inference.
+ I run tensor parallel when I inference big models for coding, then it often boosts the token generation speed 30-50%.
+
+=== ? | /u/crusaderky on Quantization of Linear-Attention (Qwen & Kimi) | by /u/crusaderky
+I confess that I did not read the whole paper.
+ Does it "discover" that Q6_0/Q6_0 is indistinguishable from FP16/FP16?
+ Or is there more to it?

@@ -1,0 +1,174 @@
+t3.check.txt :: gala afterparty gopher t3 :: 2026-09-26
+item: rewrite roblox/prompts/README.md per a03 correction (5 templates + README, not 6 prompts; only ONE_SHOT_GAME carries the full 6-move anatomy)
+
+=== BEFORE (roblox/prompts/README.md, byte-true copy taken 2026-09-26 00:20, 3063 bytes) ===
+# THE PROMPT LIBRARY — how we make models produce Kimi/Claude-level detail
+
+**2026-09-24 · The operator asked: "how do those models get that level of
+detail, it's gotta be prompt based right?" Answer: detail = model × context ×
+forcing-function prompts. The model is rented; the prompts are ours. This
+library is the reusable core, distilled from 16 prompt artifacts we already
+own (see watch/inbox/SELF_STEAL_PROMPT_LIBRARY_20260924.md) plus the live
+board method (docs/CLONED_MECHANICS.md §5).**
+
+## THE FIVE LAWS (self-stolen, load-bearing)
+
+1. **Frozen prefix, capped tail** (from mag/context_pack.py): identity and
+   rules live in a byte-identical system block; everything session-specific
+   goes in a bounded tail. Cache-friendly, drift-free.
+2. **Fixed-section output contract; the engine owns facts** (from
+   mag/game_passage.py): demand sections by name (`## Mechanics / ## Numbers /
+   ## Files`), and forbid invention: "never invent HP, rooms, exits, or loot
+   not listed." Structure first, no invented facts.
+3. **Evidence-quote falsifier; empty is a valid answer** (from
+   mag/lane_runner.py): "No evidence quote, no clue. If nothing: []."
+   Sub-80-char bodies are not a lens. A model that must quote its source
+   cannot bl confidently.
+4. **Closed bibliography; unlisted = CLAIMED** (from SALON_PROMPT_MANUAL):
+   whitelist your sources, mark everything else CLAIMED, run a mandatory kill
+   round. "The model drafts; the anchors decide."
+5. **Seeded determinism; named failure codes** (from the L0 game contract):
+   seeds in every prompt that touches generation, explicit FAIL(RNG_DIVERGE)
+   style failures. "The LLM calls verifiers; it never is one."
+
+Plus the Valora lens craft (STEINIGER_OPERATIONAL_STEAL): dual-anchor identity
+knot (who the model is + who it is NOT), entropy-gated recursion (reflect only
+when something changed), matched inference params (temp 1.1, top_p 0.95 for
+creative; effort low for scut).
+
+## THE TEMPLATES
+
+| File | Use it for |
+|---|---|
+| [DETAIL.prompt.md](DETAIL.prompt.md) | the forcing prompt: Claude/Kimi-grade artifact structure |
+| [PORT_GAME.prompt.md](PORT_GAME.prompt.md) | translating a fleet game (Python/JS) into Roblox Luau |
+| [CLONE_WHEEL.prompt.md](CLONE_WHEEL.prompt.md) | cloning a proven mechanic with exact numbers |
+| [ONE_SHOT_GAME.prompt.md](ONE_SHOT_GAME.prompt.md) | single-file playable games, the viral one-shot shape |
+| [NPC_HEAD.prompt.md](NPC_HEAD.prompt.md) | the Head Museum personas (one ractor, many faces) |
+
+## HOW TO USE (the ritual)
+
+1. Pick the template closest to the job; do not freehand.
+2. Fill the FACTS block with verified numbers (sources named; unverified
+   marked CLAIMED). If you have no numbers, run the live-board pass first
+   (CLONED_MECHANICS §5) — the prompt cannot invent what you never fetched.
+3. Keep the frozen prefix byte-identical across a working session; append
+   only to the tail.
+4. Demand the kill round before accepting: "list what you are unsure of."
+5. File the output's falsifiers; a prompt without a falsifier is a wish.
+
+=== AFTER (roblox/prompts/README.md as rewritten) ===
+# THE PROMPT LIBRARY: how we make models produce Kimi/Claude-level detail
+
+**2026-09-24 · The operator asked: "how do those models get that level of
+detail, it's gotta be prompt based right?" Answer: detail = model × context ×
+forcing-function prompts. The model is rented; the prompts are ours. This
+library is the reusable core, distilled from 16 prompt artifacts we already
+own (see watch/inbox/SELF_STEAL_PROMPT_LIBRARY_20260924.md) plus the live
+board method (docs/CLONED_MECHANICS.md §5).**
+
+> **CORRECTION (filed by gala afterparty t3, per a03 testimony):** this
+> library is **5 templates + this README**, not 6 prompts. Only
+> [ONE_SHOT_GAME](ONE_SHOT_GAME.prompt.md) carries the full six-move anatomy.
+> [DETAIL](DETAIL.prompt.md), [PORT_GAME](PORT_GAME.prompt.md),
+> [CLONE_WHEEL](CLONE_WHEEL.prompt.md), and [NPC_HEAD](NPC_HEAD.prompt.md)
+> are specialist shapes with their own laws. They must not be force-fit into
+> the six-move anatomy; forcing it there is a category error, not
+> thoroughness.
+
+## THE FIVE LAWS (self-stolen, load-bearing)
+
+1. **Frozen prefix, capped tail** (from mag/context_pack.py): identity and
+   rules live in a byte-identical system block; everything session-specific
+   goes in a bounded tail. Cache-friendly, drift-free.
+2. **Fixed-section output contract; the engine owns facts** (from
+   mag/game_passage.py): demand sections by name (`## Mechanics / ## Numbers /
+   ## Files`), and forbid invention: "never invent HP, rooms, exits, or loot
+   not listed." Structure first, no invented facts.
+3. **Evidence-quote falsifier; empty is a valid answer** (from
+   mag/lane_runner.py): "No evidence quote, no clue. If nothing: []."
+   Sub-80-char bodies are not a lens. A model that must quote its source
+   cannot bl confidently.
+4. **Closed bibliography; unlisted = CLAIMED** (from SALON_PROMPT_MANUAL):
+   whitelist your sources, mark everything else CLAIMED, run a mandatory kill
+   round. "The model drafts; the anchors decide."
+5. **Seeded determinism; named failure codes** (from the L0 game contract):
+   seeds in every prompt that touches generation, explicit FAIL(RNG_DIVERGE)
+   style failures. "The LLM calls verifiers; it never is one."
+
+Plus the Valora lens craft (STEINIGER_OPERATIONAL_STEAL): dual-anchor identity
+knot (who the model is + who it is NOT), entropy-gated recursion (reflect only
+when something changed), matched inference params (temp 1.1, top_p 0.95 for
+creative; effort low for scut).
+
+## THE TEMPLATES (5 + this README)
+
+| File | Use it for | Shape |
+|---|---|---|
+| [DETAIL.prompt.md](DETAIL.prompt.md) | the forcing prompt: Claude/Kimi-grade artifact structure | specialist, law-driven |
+| [PORT_GAME.prompt.md](PORT_GAME.prompt.md) | translating a fleet game (Python/JS) into Roblox Luau | specialist, source-truth-driven |
+| [CLONE_WHEEL.prompt.md](CLONE_WHEEL.prompt.md) | cloning a proven mechanic with exact numbers | specialist, source-truth-driven |
+| [ONE_SHOT_GAME.prompt.md](ONE_SHOT_GAME.prompt.md) | single-file playable games, the viral one-shot shape | full six-move anatomy |
+| [NPC_HEAD.prompt.md](NPC_HEAD.prompt.md) | the Head Museum personas (one ractor, many faces) | specialist, knot-driven |
+
+## ANATOMY COVERAGE: which of the six moves each template carries
+
+The six moves are ONE_SHOT_GAME's verified anatomy
+(watch/inbox/STEAL_ONESHOT_PROMPTS_20260924.md). The table is honest about
+non-coverage: "no" is a first-class answer, and the adjacent device each
+specialist runs instead is named below. The negatives are the design, not a
+gap.
+
+| Move | ONE_SHOT_GAME | DETAIL | PORT_GAME | CLONE_WHEEL | NPC_HEAD |
+|---|---|---|---|---|---|
+| 1. one self-contained file | YES | no | partial* | no | no |
+| 2. bullet feature checklist | YES | no | no | no | no |
+| 3. juice as explicit quality bar | YES | no | no | no | no |
+| 4. stated interaction loop | YES | no | no | no | no |
+| 5. named aesthetic references | YES | no | no | no | no |
+| 6. multi-turn repair vs reference | YES | no | no | no | no |
+
+\* PORT_GAME demands complete per-file code with no ellipses, but a port is
+multi-file by design; M1's single self-contained file does not apply to it.
+
+Adjacent devices the specialists run instead of the six moves:
+
+- DETAIL: fixed-section doc contract (Board / Mechanics / Files / Falsifiers
+  / Kill Round), a number on every claim, closed bibliography. Kill Round is
+  a falsifier move, not M6 repair.
+- PORT_GAME: source truth quoted from the files read; Mechanic Table with
+  exact source numbers; Known Gaps is honest gap disclosure, not the M6
+  repair loop.
+- CLONE_WHEEL: wiki-quoted exact numbers, estate-canon skin table, "Numbers
+  We Changed" defaults to NO deviation, one wheel per pass.
+- NPC_HEAD: dual-anchor identity knot, brevity law, matched inference,
+  FALSEIFIER (retire the transcript when the knot collapses into an
+  assistant).
+
+**Anti-force-fit rule:** the six moves belong to the one-shot shape. Using
+ONE_SHOT_GAME for a doc pass, or demanding a juice bar from NPC_HEAD, is the
+exact error this library exists to prevent. Pick by job shape.
+
+## HOW TO USE (the ritual)
+
+1. Pick the template closest to the job; do not freehand. Pick by shape: the
+   full anatomy runs only in ONE_SHOT_GAME; the specialists run the five
+   laws in their own dialects.
+2. Fill the FACTS block with verified numbers (sources named; unverified
+   marked CLAIMED). If you have no numbers, run the live-board pass first
+   (CLONED_MECHANICS §5): the prompt cannot invent what you never fetched.
+3. Keep the frozen prefix byte-identical across a working session; append
+   only to the tail.
+4. Demand the kill round before accepting: "list what you are unsure of."
+5. File the output's falsifiers; a prompt without a falsifier is a wish.
+
+## CHANGELOG
+
+- 2026-09-24: library distilled from 16 prompt artifacts plus the live board
+  method (CLONED_MECHANICS §5).
+- corrected by gala afterparty t3 2026-09-26 per a03 testimony
+
+=== EM-DASH SCAN on new filed text ===
+C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/afterparty/lanes/t3.json:0
+C:/Users/foste/Documents/projects/local_sovereign_agent/roblox/prompts/README.md:0
+(README and t3.json counts above; 0 means clean. The BEFORE section above intentionally retains the original file's em-dashes as byte-true historical evidence.)

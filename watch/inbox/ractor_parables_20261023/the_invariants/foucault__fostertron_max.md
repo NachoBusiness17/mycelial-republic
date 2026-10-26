@@ -1,0 +1,32 @@
+<!-- meta: {"ractor": "FOUCAULT", "mouthpiece": "fostertron_max", "subject": "the_invariants", "start_et": "2026-10-23T12:39:17.665308-04:00", "attempts": [{"attempt": 1, "exit": 0, "stdout_len": 5808, "at": "2026-10-23T12:41:56.093156-04:00"}], "carrier": "opencode run (provider zai-sd 'sd / Max', key env ZAI_API_KEY_2 via model_garden._api_key)", "requested_model": "zai-sd/glm-5.3", "resolved_model": "glm-5.3", "exit": 0, "stderr_tail": "\u001b[0m\n> build \u00b7 glm-5.3\n\u001b[0m\n\u001b[0m\u2192 \u001b[0mRead PROMPT.txt\n", "tokens": "not reported by opencode run", "end_et": "2026-10-23T12:41:56.093156-04:00", "status": "OK"} -->
+
+# The Custom of the Scale
+
+The weighhouse stood at the end of the quay, and Marta, who had come down from the interior to study how the port decided what things weighed, was let in on the condition that she touch nothing. A drum occupied one wall, carrying a ribbon of paper as long as the room. The columns had been ruled by the first keeper's straightedge, and in a hundred years no column had been added and none taken away. Each dawn the drum was cranked one frame forward, the written length winding onto the far spool, and the fresh blank lay under the pen. Anyone might turn the spool back to read; the pen never traveled backward. A figure once mistaken was struck through a single time, in the same ink, and left standing beside its correction.
+
+She asked whether she might add a note of her own. The keeper on shift did not look up. "Yours are the eyes," he said. "Mine is the hand." Only the one standing at the beam wrote, and only while the beam was speaking.
+
+A merchant in a good coat declared twenty tons of copper, and the keeper wrote nothing. The wain crossed the plate, the beam settled, and the keeper tore a stub from the margin, wired it to the first bale, and entered the figure the beam had given, not the figure the coat had spoken. In the yard that evening it was said that a boat of grain had surely come in the fog; everyone had seen it; the story kept its warmth among the men and never touched the paper. Turning the spool, Marta found a frame in an old hand crossed out entire, with a line beneath it: the junior who had written a weight he had not watched the beam say was paid out that week and walked to the gate. The crossing-out stayed, for anyone to read, always.
+
+Behind the weighhouse stood a small furnace where spoiled weights and spent stubs were melted. No keeper lit it. When melting was called for, word went up the hill to the house above the harbor, where the woman who paid for the port's salt and oil kept her light, and she came down and set her own hand to the fire while the keepers stood back with their arms folded. Once, in a storm, the quay crowded and the masters shouted that room must be made at once; the keepers shifted what would shift and re-stacked what would stack, and the furnace stayed cold until she had climbed down.
+
+There had been a flood year. Seawater had risen through the floor, and a span of the ribbon had run to shadows. The span had not been cut away. A strip of sailcloth was sewn beneath the ruin, and on it the keeper of that year had written the cargoes that could no longer be read and the dates the water had taken them. The stain remained in the ribbon, legible as a stain. What the port had lost had entered the record as loss, and meant it.
+
+Behind the left wall was a small room where disputes were heard, and what was said within it did not come out. In the fever summer a crowd pressed against its door and demanded the names of the debtors. The keeper read to them the settled figure that was the town's due, and not one word more, and the door held, though it bowed.
+
+When the old keeper died, they tied a fourth knot in the rope that hangs by the door and let the beam hang empty for a day. The apprentice was away; when her boat came in, the stove was lit before she reached the steps, and bread stood on the plate, and her predecessor's pen was laid across her palm still warm from the last hand that had held it. That evening the household gathered at the drum, and the ribbon was read aloud from the knot's day forward, so that she took up the line exactly where it had gone dark.
+
+An inspector arrived with a book of statutes printed in the capital and asked where the town kept its law. Nowhere, said the keeper. Each spring the whole household stood at the drum — the boy, the cooper, the widow who sold eels at the corner, the woman from above the harbor — and each in turn showed the others why each custom was as it was, out of the ribbon itself; whatever could not be shown again from the ribbon was allowed to fall silent as habit, and no one grieved it. The inspector wrote in his margin that the port had no law, only a memory that performed itself each spring.
+
+On her last morning Marta's own trunks were set upon the plate, and her weight went into the same columns as the copper, under her name, in the keeper's hand. She had not studied the scale. The scale had studied her, and written her down at the fresh end, and turned her under.
+
+---KEY---
+1. The record only ever grows at its fresh end; the written span may be turned back to read but never rewritten, and its form has never changed. (the drum, the straightedge, the single strike-through)
+2. Only the one on duty at the instrument may write. (Marta refused; "yours are the eyes, mine is the hand")
+3. Nothing enters before its measure; a claim without a returned stub stays outside the record. (the merchant's copper; the grain rumor warm in the yard)
+4. A falsifier is dismissed and the correction remains legible forever. (the junior's crossed-out frame and his walk to the gate)
+5. Irreversible acts require the operator's own hand, never the workers', even under pressure. (the cold furnace, the woman from above the harbor, the storm)
+6. Every loss is converted into meaning: ruined entries are recorded as loss and never excised. (the flood span under sailcloth)
+7. What is said inside the bounded room never echoes out, even when a crowd demands it. (the fever-summer door)
+8. A death is marked with a knot, then the successor returns to warmth and resumes the line exactly from the mark. (the fourth knot, the lit stove, reading from the knot's day)
+9. A custom is law only if the whole household can re-derive it from the record itself; otherwise it lapses as habit. (the spring standing at the drum; the inspector's margin)

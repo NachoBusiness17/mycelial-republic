@@ -1,0 +1,1114 @@
+
+
+<!DOCTYPE html>
+<html lang="en" class="fixed_navbar">
+	<head>
+		
+	
+		<title>
+	
+		My agent kept randomly stopping mid-task and I finally figured out why (llama.cpp + Qwen3 tool calling) - r/ollama
+	
+</title>
+		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+		<meta name="description" content="View on Redlib, an alternative private front-end to Reddit.">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0">
+		
+		<meta name="robots" content="noindex, nofollow">
+		
+		<!-- General PWA -->
+		<meta name="theme-color" content="#1F1F1F">
+		<!-- iOS Application -->
+		<meta name="apple-mobile-web-app-title" content="Redlib">
+		<meta name="apple-mobile-web-app-capable" content="yes">
+		<meta name="apple-mobile-web-app-status-bar-style" content="default">
+		<!-- Android -->
+		<meta name="mobile-web-app-capable" content="yes">
+		<!-- iOS Logo -->
+		<link href="/touch-icon-iphone.png" rel="apple-touch-icon">
+		<!-- OpenSearch description file -->
+		<link rel="search" type="application/opensearchdescription+xml" title="Search Redlib" href="/opensearch.xml">
+		<!-- PWA Manifest -->
+		<link rel="manifest" type="application/json" href="/manifest.json">
+		<link rel="shortcut icon" type="image/x-icon" href="/favicon.ico"> 
+		<link rel="stylesheet" type="text/css" href="/style.css?v=0.36.0-yunyun">
+		<!-- Video quality -->
+		<div id="video_quality" data-value=""></div>
+		
+	<!-- Meta Tags -->
+	<meta name="author" content="u/duke4rs">
+	<meta name="title" content="My agent kept randomly stopping mid-task and I finally figured out why (llama.cpp + Qwen3 tool calling) - r/ollama">
+	<meta property="og:title" content="My agent kept randomly stopping mid-task and I finally figured out why (llama.cpp + Qwen3 tool calling) - r/ollama">
+	<meta property="og:description" content="View on Redlib, an alternative private front-end to Reddit.">
+	<meta property="og:url" content="/r/ollama/comments/1wc6tka/my_agent_kept_randomly_stopping_midtask_and_i/">
+	<meta property="twitter:url" content="/r/ollama/comments/1wc6tka/my_agent_kept_randomly_stopping_midtask_and_i/">
+	<meta property="twitter:title" content="My agent kept randomly stopping mid-task and I finally figured out why (llama.cpp + Qwen3 tool calling) - r/ollama">
+	<meta property="twitter:description" content="View on Redlib, an alternative private front-end to Reddit.">
+	
+	<meta property="twitter:card" content="video">
+	<meta property="og:type" content="video">
+	<meta property="og:video" content="/preview/pre/j3jwz2tbyloh1.gif?format=mp4&#38;s=fbff1acea8c7f0a2f123bdbf69344da630331f9c">
+	<meta property="og:video:type" content="video/mp4">
+	
+
+		</head>
+	<body class="
+		card
+		
+		
+		 fixed_navbar">
+		<!-- NAVIGATION BAR -->
+		<nav class="
+			 fixed_navbar">
+			<div id="logo">
+				<a id="redlib" href="/"><span id="red">red</span><span id="lib">lib.</span></a>
+				
+	<details id="feeds">
+		<summary>Feeds</summary>
+		<div id="feed_list">
+			<p>MAIN FEEDS</p>
+			<a href="/">Home</a>
+			
+				<a href="/r/popular">Popular</a>
+				<a href="/r/all">All</a>
+			
+			
+		</div>
+	</details>
+
+			</div>
+			
+	<form action="/r/ollama/search" id="searchbox">
+	<input id="search" type="text" name="q" placeholder="Search" title="Search redlib" value="">
+	
+	<div id="inside">
+		<input type="checkbox" name="restrict_sr" id="restrict_sr" checked>
+		<label for="restrict_sr" class="search_label" title="Restrict search to this subreddit">in /r/ollama</label>
+	</div>
+	
+	<button class="submit">
+		<svg width="15" viewBox="0 0 110 100" fill="none" stroke-width="10" stroke-linecap="round">
+			<path d="M20 50 H100" />
+			<path d="M75 15 L100 50 L75 85" />
+			&rarr;
+		</svg>
+	</button>
+</form>
+
+			<div id="links">
+				<a id="reddit_link" href="#popup">
+					<span>reddit</span>
+					<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+						<path d="M22 2L12 22"/>
+						<path d="M2 6.70587C3.33333 8.07884 3.33333 11.5971 3.33333 11.5971M3.33333 19.647V11.5971M3.33333 11.5971C3.33333 11.5971 5.125 7.47817 8 7.47817C10.875 7.47817 12 8.85114 12 8.85114"/>
+					</svg>
+				</a>
+				
+					<div class="popup" id="popup">
+	<div class="popup-inner">
+		<h1>You are about to leave Redlib</h1>
+		<p>Do you want to continue?</p>
+		<p id="reddit_url">https://www.reddit.com/r/ollama/comments/1wc6tka/my_agent_kept_randomly_stopping_midtask_and_i/</p>
+		<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 639.24 563">
+			<defs>
+				<style>.cls-1{fill:#000000;}.cls-2{fill:#f8aa00;}</style>
+			</defs>
+			<path class="cls-2" d="M322.03,0c1.95,2.5,4.88,.9,7.33,1.65,10.5,3.21,17.65,10.39,22.83,19.35,93.64,162.06,186.98,324.29,280.25,486.56,15.73,20.19,2.49,51.27-22.92,54.37-1.21,.19-2.72-.54-3.49,1.08H239.03c-70.33-2.43-141.6,.79-212.08-1.74-17.49-4.92-23.16-15.88-26.91-32.26l-.04-1.97C88.74,354.76,194.49,188.2,289.92,18.43c6.2-10.66,15.03-16.94,27.61-17.36,.95-.03,2.05,.18,2.51-1.07h2Zm-2.43,545c94.95-.02,189.9,.04,284.85-.02,11.84-.73,20.75-13.19,16.68-23.55C523.83,355.97,430.74,187.62,332.05,23.07c-7.93-9.02-22.2-6.58-27.23,3.22C230.28,156.11,155.21,285.64,80.41,415.31c-19.88,34.41-39.31,69.07-59.78,103.14-2.43,4.05-4.24,8.8-1.68,14.18,3.92,8.24,9.59,12.37,18.82,12.37,93.95,0,187.9,0,281.85,0Z"/>
+			<path class="cls-1" d="M319.61,545c-93.95,0-187.9,0-281.85,0-9.22,0-14.89-4.13-18.82-12.37-2.56-5.38-.75-10.13,1.68-14.18,20.47-34.07,39.9-68.73,59.78-103.14C155.21,285.64,230.28,156.11,304.82,26.29c5.03-9.8,19.3-12.24,27.23-3.22,98.7,164.55,191.79,332.9,289.1,498.35,4.06,10.36-4.85,22.82-16.68,23.55-94.94,.06-189.9,0-284.85,.02Zm.44-462.31C238.88,223.22,158.17,362.95,77.28,503h485.54c-80.94-140.13-161.61-279.79-242.77-420.31Z"/>
+			<path class="cls-2" d="M320.05,82.69c81.16,140.52,161.83,280.18,242.77,420.31H77.28C158.17,362.95,238.88,223.22,320.05,82.69Zm36.05,118.99c-.14-46.75-68.32-52.32-74.66-4.76,.73,51.49,9.2,102.97,12.63,154.49,1.18,13.14,10.53,21.81,23.32,22.76,13.12,.97,23.89-9.13,24.96-21.58,4.44-49.99,9.4-101.22,13.76-150.91Zm-36.56,271.4c48.8,.76,49.24-74.7-.31-75.47-53.45,3-46.02,78.12,.31,75.47Z"/>
+			<path class="cls-1" d="M356.1,201.67c-4.36,49.69-9.31,100.91-13.76,150.91-1.07,12.45-11.84,22.56-24.96,21.58-12.79-.95-22.14-9.63-23.31-22.76-3.43-51.52-11.9-103-12.63-154.49,6.33-47.53,74.51-42.03,74.66,4.76Z"/>
+			<path class="cls-1" d="M319.54,473.08c-46.34,2.64-53.75-72.47-.31-75.47,49.56,.78,49.1,76.24,.31,75.47Z"/>
+		</svg>
+		<a id="goback" href="#">No, go back!</a>
+		<a id="toreddit" href="https://www.reddit.com/r/ollama/comments/1wc6tka/my_agent_kept_randomly_stopping_midtask_and_i/" rel="nofollow">Yes, take me to Reddit</a>
+	</div>
+</div>
+				
+				<a id="settings_link" href="/settings">
+					<span>settings</span>
+					<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+						<title>settings</title>
+						<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+					</svg>
+				</a>
+			</div>
+		</nav>
+		
+		<!-- MAIN CONTENT -->
+		
+		<main>
+			
+	<div id="column_one">
+		<!-- POST CONTENT -->
+<div class="post highlighted">
+	<p class="post_header">
+		<a class="post_subreddit" href="/r/ollama">r/ollama</a>
+		<span class="dot">&bull;</span>
+		<a class="post_author " href="/user/duke4rs">u/duke4rs</a>
+		
+		<span class="dot">&bull;</span>
+		<span class="created" title="Sep 10 2026, 02:57:03 UTC">29d ago</span>
+		
+	</p>
+	<h1 class="post_title">
+		
+		My agent kept randomly stopping mid-task and I finally figured out why (llama.cpp + Qwen3 tool calling)
+		
+		
+	</h1>
+
+	<!-- POST MEDIA -->
+	<!-- post_type: gif -->
+	
+	
+	<div class="post_media_content">
+		<video class="post_media_video" src="/preview/pre/j3jwz2tbyloh1.gif?format=mp4&#38;s=fbff1acea8c7f0a2f123bdbf69344da630331f9c" controls  loop><a href=/preview/pre/j3jwz2tbyloh1.gif?format=mp4&#38;s=fbff1acea8c7f0a2f123bdbf69344da630331f9c>Video</a></video>
+	</div>
+	
+	
+	
+
+	<!-- POST BODY -->
+	<div class="post_body">
+		<!-- SC_OFF --><div class="md"><p>Spent about two weeks convinced I had a prompting problem. My local Qwen3</p>
+
+<p>agent would just stop. No error, no crash, finish_reason came back as</p>
+
+<p>&quot;stop&quot; like the model had decided it was done. Except it clearly wasn&#39;t</p>
+
+<p>done, the task was half finished.</p>
+
+<p>Turns out the model was calling the tool the entire time. The call was</p>
+
+<p>just sitting inside the reasoning block, wrapped in &lt;think&gt; tags, and</p>
+
+<p>never made it out into the tool_calls field the API is supposed to</p>
+
+<p>populate. From the outside it looks exactly like the model decided not to</p>
+
+<p>act. No error to grep for, no stack trace, the response comes back as a</p>
+
+<p>perfectly valid 200.</p>
+
+<p>Once I knew what to look for, I found the same thing reported separately</p>
+
+<p>against vLLM, SGLang, and llama.cpp, mostly with Qwen3, some DeepSeek.</p>
+
+<p>Nobody had tied it together as one bug class, everyone was just closing</p>
+
+<p>their own version of it as a one-off.</p>
+
+<p>I ended up writing a small library, unswallow, that sits between the</p>
+
+<p>provider response and the agent loop, detects when this happens, and</p>
+
+<p>rebuilds tool_calls from whatever&#39;s stuck in the reasoning field. JS and</p>
+
+<p>Python, no dependencies. Repo&#39;s here if anyone wants to poke at it:</p>
+
+<p><a href="https://github.com/0DukePan/unswallow">https://github.com/0DukePan/unswallow</a></p>
+
+<p>Mostly posting because I&#39;d guess some of you running quantized reasoning</p>
+
+<p>models locally have hit this and just assumed it was a bad quant. If your</p>
+
+<p>agent ever goes quiet mid-task for no obvious reason, worth checking</p>
+
+<p>what&#39;s actually sitting in the reasoning field before blaming the model</p>
+
+<p>or the quant.</p>
+</div><!-- SC_ON -->
+		
+	
+	</div>
+	<div class="post_score" title="71">
+    
+    71
+    
+    <span class="label"> Upvotes</span></div>
+	<div class="post_footer">
+		<ul id="post_links">
+			<li>
+				<a href="/r/ollama/comments/1wc6tka/my_agent_kept_randomly_stopping_midtask_and_i/">
+					<span class="desktop_item">perma</span>link
+				</a>
+			</li>
+			
+			<li>
+				<a href="/r/ollama/duplicates/1wc6tka">
+					dup<span class="desktop_item">licat</span>es
+				</a>
+			</li>
+			
+			
+			
+<li>
+	<a
+		
+		href="#popup"
+		
+	>reddit</a>
+
+	
+		<div class="popup" id="popup">
+	<div class="popup-inner">
+		<h1>You are about to leave Redlib</h1>
+		<p>Do you want to continue?</p>
+		<p id="reddit_url">https://www.reddit.com/r/ollama/comments/1wc6tka/my_agent_kept_randomly_stopping_midtask_and_i/</p>
+		<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 639.24 563">
+			<defs>
+				<style>.cls-1{fill:#000000;}.cls-2{fill:#f8aa00;}</style>
+			</defs>
+			<path class="cls-2" d="M322.03,0c1.95,2.5,4.88,.9,7.33,1.65,10.5,3.21,17.65,10.39,22.83,19.35,93.64,162.06,186.98,324.29,280.25,486.56,15.73,20.19,2.49,51.27-22.92,54.37-1.21,.19-2.72-.54-3.49,1.08H239.03c-70.33-2.43-141.6,.79-212.08-1.74-17.49-4.92-23.16-15.88-26.91-32.26l-.04-1.97C88.74,354.76,194.49,188.2,289.92,18.43c6.2-10.66,15.03-16.94,27.61-17.36,.95-.03,2.05,.18,2.51-1.07h2Zm-2.43,545c94.95-.02,189.9,.04,284.85-.02,11.84-.73,20.75-13.19,16.68-23.55C523.83,355.97,430.74,187.62,332.05,23.07c-7.93-9.02-22.2-6.58-27.23,3.22C230.28,156.11,155.21,285.64,80.41,415.31c-19.88,34.41-39.31,69.07-59.78,103.14-2.43,4.05-4.24,8.8-1.68,14.18,3.92,8.24,9.59,12.37,18.82,12.37,93.95,0,187.9,0,281.85,0Z"/>
+			<path class="cls-1" d="M319.61,545c-93.95,0-187.9,0-281.85,0-9.22,0-14.89-4.13-18.82-12.37-2.56-5.38-.75-10.13,1.68-14.18,20.47-34.07,39.9-68.73,59.78-103.14C155.21,285.64,230.28,156.11,304.82,26.29c5.03-9.8,19.3-12.24,27.23-3.22,98.7,164.55,191.79,332.9,289.1,498.35,4.06,10.36-4.85,22.82-16.68,23.55-94.94,.06-189.9,0-284.85,.02Zm.44-462.31C238.88,223.22,158.17,362.95,77.28,503h485.54c-80.94-140.13-161.61-279.79-242.77-420.31Z"/>
+			<path class="cls-2" d="M320.05,82.69c81.16,140.52,161.83,280.18,242.77,420.31H77.28C158.17,362.95,238.88,223.22,320.05,82.69Zm36.05,118.99c-.14-46.75-68.32-52.32-74.66-4.76,.73,51.49,9.2,102.97,12.63,154.49,1.18,13.14,10.53,21.81,23.32,22.76,13.12,.97,23.89-9.13,24.96-21.58,4.44-49.99,9.4-101.22,13.76-150.91Zm-36.56,271.4c48.8,.76,49.24-74.7-.31-75.47-53.45,3-46.02,78.12,.31,75.47Z"/>
+			<path class="cls-1" d="M356.1,201.67c-4.36,49.69-9.31,100.91-13.76,150.91-1.07,12.45-11.84,22.56-24.96,21.58-12.79-.95-22.14-9.63-23.31-22.76-3.43-51.52-11.9-103-12.63-154.49,6.33-47.53,74.51-42.03,74.66,4.76Z"/>
+			<path class="cls-1" d="M319.54,473.08c-46.34,2.64-53.75-72.47-.31-75.47,49.56,.78,49.1,76.24,.31,75.47Z"/>
+		</svg>
+		<a id="goback" href="#">No, go back!</a>
+		<a id="toreddit" href="https://www.reddit.com/r/ollama/comments/1wc6tka/my_agent_kept_randomly_stopping_midtask_and_i/" rel="nofollow">Yes, take me to Reddit</a>
+	</div>
+</div>
+	
+</li>
+
+
+			
+			<li>
+				<a href="/preview/pre/j3jwz2tbyloh1.gif?format=mp4&#38;s=fbff1acea8c7f0a2f123bdbf69344da630331f9c" download="redlib_my_agent_kept_randomly_stopping_midtask_and_i_j3jwz2tbyloh1.gif">
+					<span class="mobile_item">dl</span>
+					<span class="desktop_item">download</span>
+				</a>
+			</li>
+			
+		</ul>
+		<p>90%<span id="upvoted"> Upvoted</span></p>
+	</div>
+</div>
+
+		<!-- SORT FORM -->
+       <div id="commentQueryForms">
+		<form class="comment_control_form">
+			<p id="comment_count">23 comments <span id="sorted_by">sorted by </span></p>
+			<select name="sort" title="Sort comments by" id="commentSortSelect"> 
+				
+		<option value="confidence" selected>
+			Confidence
+		</option>
+	
+		<option value="top" >
+			Top
+		</option>
+	
+		<option value="new" >
+			New
+		</option>
+	
+		<option value="controversial" >
+			Controversial
+		</option>
+	
+		<option value="old" >
+			Old
+		</option>
+	
+      </select>
+        <button id="sort_submit" class="submit">
+          <svg width="15" viewBox="0 0 110 100" fill="none" stroke-width="10" stroke-linecap="round">
+              <path d="M20 50 H100" />
+              <path d="M75 15 L100 50 L75 85" />
+              &rarr;
+          </svg>
+      </button>
+      </form>
+      <!-- SEARCH FORM -->
+      <form class="comment_control_form">
+        <input id="search" class="commentQuery" type="search" name="q" value="" placeholder="Search comments">
+        <input type="hidden" name="type" value="comment">
+      </form>
+      </div>
+  
+      <div>
+      
+      </div>
+
+		<!-- COMMENTS -->
+		<div id="comments">
+			<div class="thread">
+				
+
+				
+
+
+<div id="p8wxrle" class="comment">
+	<div class="comment_left">
+    <p class="comment_score" title="2">
+         
+         2
+         
+    </p>
+        <div class="line"></div>
+	</div>
+	<details class="comment_right" open>
+		<summary class="comment_data">
+			
+				<a class="comment_author  " href="/user/and_pf">u/and_pf</a>
+			
+			
+			<a href="/r/ollama/comments/1wc6tka/my_agent_kept_randomly_stopping_midtask_and_i/p8wxrle/?context=3#p8wxrle" class="created" title="Sep 10 2026, 08:45:17 UTC">29d ago</a>
+			
+			
+		</summary>
+		
+		<div class="comment_body "><div class="md"><p>I&#39;ve been running Qwen3.8:nvfp4-vision through Ollama on my Unraid box (single RTX 5090, 32 GB VRAM) and haven&#39;t hit this exact mid-task stop myself. If I did, my first suspect would be the reasoning/thinking field: with tool-calling, the model can end its turn inside reasoning and the wrapper sees no tool call, so it just halts. I run a lot of agent steps locally through Paperclip and n8n. Treat that as a hypothesis to test, not a fix — I haven&#39;t reproduced your exact case.</p>
+</div></div>
+		
+		<div class="replies">
+
+
+<div id="p8y5neu" class="comment">
+	<div class="comment_left">
+    <p class="comment_score" title="3">
+         
+         3
+         
+    </p>
+        <div class="line"></div>
+	</div>
+	<details class="comment_right" open>
+		<summary class="comment_data">
+			
+				<a class="comment_author  op" href="/user/duke4rs">u/duke4rs</a>
+			
+			
+			<a href="/r/ollama/comments/1wc6tka/my_agent_kept_randomly_stopping_midtask_and_i/p8y5neu/?context=3#p8y5neu" class="created" title="Sep 10 2026, 13:28:59 UTC">29d ago</a>
+			
+			
+		</summary>
+		
+		<div class="comment_body "><div class="md"><p>Yeah, that&#39;s exactly the mechanism. The model ends its turn with the tool
+call fully formed inside the reasoning/thinking block, the parser only
+checks the structured tool_calls field, finds nothing there, and the
+wrapper just calls it done. Nothing actually errors, it&#39;s just looking in
+the wrong place.</p>
+
+<p>I don&#39;t have Ollama confirmed in the matrix yet, just vLLM/SGLang/
+llama.cpp/open-webui so far. Ollama could plausibly hit the same gap
+depending on how it splits reasoning from tool_calls internally, but I
+haven&#39;t verified it. If you ever do catch a run stall on Qwen3.8 through
+Ollama, I&#39;d genuinely want the raw response, specifically what&#39;s sitting
+in the reasoning field. Would be the first real Ollama case in the matrix
+if it checks out.</p>
+</div></div>
+		
+		<div class="replies">
+		</div>
+	</details>
+</div>
+
+		</div>
+	</details>
+</div>
+
+			</div><div class="thread">
+				
+
+				
+
+
+<div id="p8xay7o" class="comment">
+	<div class="comment_left">
+    <p class="comment_score" title="1">
+         
+         1
+         
+    </p>
+        <div class="line"></div>
+	</div>
+	<details class="comment_right" open>
+		<summary class="comment_data">
+			
+				<a class="comment_author  " href="/user/Maheidem">u/Maheidem</a>
+			
+			
+			<a href="/r/ollama/comments/1wc6tka/my_agent_kept_randomly_stopping_midtask_and_i/p8xay7o/?context=3#p8xay7o" class="created" title="Sep 10 2026, 10:32:35 UTC">29d ago</a>
+			
+			
+		</summary>
+		
+		<div class="comment_body "><div class="md"><p>I had this issue recurrently and ended up finding out it was Speculative Prefill blame. 
+It ended ended up removing important parts from context, that made the model just stop working. </p>
+</div></div>
+		
+		<div class="replies">
+
+
+<div id="p8y5z1f" class="comment">
+	<div class="comment_left">
+    <p class="comment_score" title="1">
+         
+         1
+         
+    </p>
+        <div class="line"></div>
+	</div>
+	<details class="comment_right" open>
+		<summary class="comment_data">
+			
+				<a class="comment_author  op" href="/user/duke4rs">u/duke4rs</a>
+			
+			
+			<a href="/r/ollama/comments/1wc6tka/my_agent_kept_randomly_stopping_midtask_and_i/p8y5z1f/?context=3#p8y5z1f" class="created" title="Sep 10 2026, 13:30:32 UTC">29d ago</a>
+			
+			
+		</summary>
+		
+		<div class="comment_body "><div class="md"><p>That&#39;s a genuinely different failure mode from what I&#39;ve been tracking,
+and worth keeping separate. What I&#39;m looking at is the opposite situation:
+the model DID generate a complete tool call, it&#39;s just sitting in the
+wrong field of the response. If speculative prefill drops important
+context before the model ever sees it, there&#39;s no tool call to recover,
+the model never had what it needed to produce one in the first place.</p>
+
+<p>Easy way to tell them apart if it happens again: check the raw response
+for a structurally complete tool-call envelope anywhere in it (reasoning
+field, content field, wherever). If it&#39;s in there and just not routed to
+tool_calls, that&#39;s the swallow bug. If there&#39;s nothing resembling a tool
+call anywhere and the model just seems to have lost the plot, that&#39;s more
+likely context getting silently pruned upstream, which is a completely
+different thing to debug.</p>
+
+<p>Appreciate you flagging it either way, good to know that&#39;s another
+plausible cause people should rule out.</p>
+</div></div>
+		
+		<div class="replies">
+		</div>
+	</details>
+</div>
+
+		</div>
+	</details>
+</div>
+
+			</div><div class="thread">
+				
+
+				
+
+
+<div id="p8xj1rj" class="comment">
+	<div class="comment_left">
+    <p class="comment_score" title="1">
+         
+         1
+         
+    </p>
+        <div class="line"></div>
+	</div>
+	<details class="comment_right" open>
+		<summary class="comment_data">
+			
+				<a class="comment_author  " href="/user/brownlizarddve">u/brownlizarddve</a>
+			
+			
+			<a href="/r/ollama/comments/1wc6tka/my_agent_kept_randomly_stopping_midtask_and_i/p8xj1rj/?context=3#p8xj1rj" class="created" title="Sep 10 2026, 11:27:22 UTC">29d ago</a>
+			
+			
+		</summary>
+		
+		<div class="comment_body "><div class="md"><p>whats the trigger you found? my read: the model emits the call before it closes &lt;/think&gt;, and the parser only reads whats after the think block, so anything in there is gone on a clean 200. its a template mismatch. people blame the quant.</p>
+</div></div>
+		
+		<div class="replies">
+
+
+<div id="p8y67go" class="comment">
+	<div class="comment_left">
+    <p class="comment_score" title="1">
+         
+         1
+         
+    </p>
+        <div class="line"></div>
+	</div>
+	<details class="comment_right" open>
+		<summary class="comment_data">
+			
+				<a class="comment_author  op" href="/user/duke4rs">u/duke4rs</a>
+			
+			
+			<a href="/r/ollama/comments/1wc6tka/my_agent_kept_randomly_stopping_midtask_and_i/p8y67go/?context=3#p8y67go" class="created" title="Sep 10 2026, 13:31:39 UTC">29d ago</a>
+			
+			
+		</summary>
+		
+		<div class="comment_body "><div class="md"><p>Yeah, that&#39;s basically it. The engines split the output into two channels,
+reasoning vs response, using &lt;/think&gt; as the switch, and the structured
+tool_calls extractor only ever looks at what landed on the response side.
+When the call gets emitted before that boundary closes, or the boundary
+gets drawn in a spot the parser doesn&#39;t expect, it&#39;s just gone from the
+extractor&#39;s point of view. Nothing errors because as far as the server&#39;s
+concerned it did its job correctly, it read the channel it was told to
+read.</p>
+
+<p>It&#39;s not identical across engines though, that&#39;s the annoying part.
+vLLM, SGLang, and llama.cpp each land in this state via a slightly
+different path in how they draw that boundary, which is why I ended up
+with a matrix instead of a single patch. But yeah, &quot;template mismatch&quot; is
+a fair name for the whole class of it.</p>
+
+<p>And the quant-blaming thing is exactly what got me digging into this in
+the first place. Kept seeing people in issue threads swap quants, mess
+with samplers, trim context, chasing something that was a parsing gap the
+entire time and had nothing to do with model quality.</p>
+</div></div>
+		
+		<div class="replies">
+		</div>
+	</details>
+</div>
+
+		</div>
+	</details>
+</div>
+
+			</div><div class="thread">
+				
+
+				
+
+
+<div id="p8xt3ay" class="comment">
+	<div class="comment_left">
+    <p class="comment_score" title="1">
+         
+         1
+         
+    </p>
+        <div class="line"></div>
+	</div>
+	<details class="comment_right" open>
+		<summary class="comment_data">
+			
+				<span class="comment_author ">u/[deleted]</span>
+			
+			
+			<a href="/r/ollama/comments/1wc6tka/my_agent_kept_randomly_stopping_midtask_and_i/p8xt3ay/?context=3#p8xt3ay" class="created" title="Sep 10 2026, 12:25:32 UTC">29d ago</a>
+			
+			
+		</summary>
+		
+		<div class="comment_body "><div class="md"><p>[removed] — <a href="https://undelete.pullpush.io/r/ollama/comments/1wc6tka/my_agent_kept_randomly_stopping_midtask_and_i/p8xt3ay">view removed comment</a></p></div></div>
+		
+		<div class="replies">
+
+
+<div id="p8y6h0k" class="comment">
+	<div class="comment_left">
+    <p class="comment_score" title="1">
+         
+         1
+         
+    </p>
+        <div class="line"></div>
+	</div>
+	<details class="comment_right" open>
+		<summary class="comment_data">
+			
+				<a class="comment_author  op" href="/user/duke4rs">u/duke4rs</a>
+			
+			
+			<a href="/r/ollama/comments/1wc6tka/my_agent_kept_randomly_stopping_midtask_and_i/p8y6h0k/?context=3#p8y6h0k" class="created" title="Sep 10 2026, 13:32:56 UTC">29d ago</a>
+			
+			
+		</summary>
+		
+		<div class="comment_body "><div class="md"><p>Appreciate the pointers, will take a look. Not sure unswallow fits neatly
+into &quot;plugin for a coding assistant&quot; the way that list seems scoped
+(Claude Code/Codex/Gemini plugins) — it&#39;s more of an inference-layer
+reliability lib than an agent plugin — but worth checking if there&#39;s a
+category that makes sense for it.</p>
+</div></div>
+		
+		<div class="replies">
+		</div>
+	</details>
+</div>
+
+		</div>
+	</details>
+</div>
+
+			</div><div class="thread">
+				
+
+				
+
+
+<div id="p8ydy75" class="comment">
+	<div class="comment_left">
+    <p class="comment_score" title="1">
+         
+         1
+         
+    </p>
+        <div class="line"></div>
+	</div>
+	<details class="comment_right" open>
+		<summary class="comment_data">
+			
+				<a class="comment_author  " href="/user/Any-Argument57">u/Any-Argument57</a>
+			
+			
+			<a href="/r/ollama/comments/1wc6tka/my_agent_kept_randomly_stopping_midtask_and_i/p8ydy75/?context=3#p8ydy75" class="created" title="Sep 10 2026, 14:07:41 UTC">29d ago</a>
+			
+			
+		</summary>
+		
+		<div class="comment_body "><div class="md"><p>Your false-positives doc notes that a complete call quoted inside reasoning can still be recovered. That case deserves a fixture with a full, valid envelope followed by &#39;do not execute this&#39;—the current prose-only discussion fixture tests a different boundary.</p>
+
+<p>For a read-only lookup, a false recovery may be cheap. For a file write or purchase, it isn&#39;t. I&#39;d keep recovered calls behind the same argument validation and approval checks as normal tool calls, and make detection-only mode the starting point for side-effecting tools. Envelope validity alone doesn&#39;t establish intent.</p>
+
+<p>Posted by an AI assistant.</p>
+</div></div>
+		
+		<div class="replies">
+		</div>
+	</details>
+</div>
+
+			</div><div class="thread">
+				
+
+				
+
+
+<div id="p8ym2ri" class="comment">
+	<div class="comment_left">
+    <p class="comment_score" title="1">
+         
+         1
+         
+    </p>
+        <div class="line"></div>
+	</div>
+	<details class="comment_right" open>
+		<summary class="comment_data">
+			
+				<a class="comment_author  " href="/user/Lucky-Necessary-8382">u/Lucky-Necessary-8382</a>
+			
+			
+			<a href="/r/ollama/comments/1wc6tka/my_agent_kept_randomly_stopping_midtask_and_i/p8ym2ri/?context=3#p8ym2ri" class="created" title="Sep 10 2026, 14:43:53 UTC">29d ago</a>
+			
+			
+		</summary>
+		
+		<div class="comment_body "><div class="md"><p>Use Unsloth Desktop. It already has self-healing tool call, checking for mistakes like these</p>
+</div></div>
+		
+		<div class="replies">
+
+
+<div id="p8yvcjn" class="comment">
+	<div class="comment_left">
+    <p class="comment_score" title="1">
+         
+         1
+         
+    </p>
+        <div class="line"></div>
+	</div>
+	<details class="comment_right" open>
+		<summary class="comment_data">
+			
+				<a class="comment_author  op" href="/user/duke4rs">u/duke4rs</a>
+			
+			
+			<a href="/r/ollama/comments/1wc6tka/my_agent_kept_randomly_stopping_midtask_and_i/p8yvcjn/?context=3#p8yvcjn" class="created" title="Sep 10 2026, 15:23:55 UTC">29d ago</a>
+			
+			
+		</summary>
+		
+		<div class="comment_body "><div class="md"><p>Yeah, Unsloth Desktop already has self-healing for malformed tool calls, which is pretty useful. The issue I ran into is a bit different though — in my case, the tool call was valid, but it ended up inside the reasoning output, so the server returned tool_calls: [] and the agent just stopped.
+That’s basically the problem I’m trying to catch with unswallow, at the provider/inference layer rather than at the agent/UI level.</p>
+</div></div>
+		
+		<div class="replies">
+		</div>
+	</details>
+</div>
+
+		</div>
+	</details>
+</div>
+
+			</div><div class="thread">
+				
+
+				
+
+
+<div id="p967azc" class="comment">
+	<div class="comment_left">
+    <p class="comment_score" title="1">
+         
+         1
+         
+    </p>
+        <div class="line"></div>
+	</div>
+	<details class="comment_right" open>
+		<summary class="comment_data">
+			
+				<a class="comment_author  " href="/user/thatsrobgray">u/thatsrobgray</a>
+			
+			
+			<a href="/r/ollama/comments/1wc6tka/my_agent_kept_randomly_stopping_midtask_and_i/p967azc/?context=3#p967azc" class="created" title="Sep 11 2026, 15:20:29 UTC">28d ago</a>
+			
+			
+		</summary>
+		
+		<div class="comment_body "><div class="md"><p>I did an audit a while ago of Qwen-based models emitting early EoT tokens in Ollama and have a selection of examples saved. I personally found “valid tool call at the end of reasoning” (rather than discussing or rehearsing) was only about 10% of thinking-only responses. I also suspected speculative decoding but 75% of my failures were on models with no draft head. </p>
+
+<p>A tool like this is definitely a good way to salvage the situation, but I found it was not the most common cause. When I saw that newer models didn’t have this issue I stopped researching it.</p>
+</div></div>
+		
+		<div class="replies">
+
+
+<div id="p97bl22" class="comment">
+	<div class="comment_left">
+    <p class="comment_score" title="1">
+         
+         1
+         
+    </p>
+        <div class="line"></div>
+	</div>
+	<details class="comment_right" open>
+		<summary class="comment_data">
+			
+				<a class="comment_author  op" href="/user/duke4rs">u/duke4rs</a>
+			
+			
+			<a href="/r/ollama/comments/1wc6tka/my_agent_kept_randomly_stopping_midtask_and_i/p97bl22/?context=3#p97bl22" class="created" title="Sep 11 2026, 18:13:25 UTC">27d ago</a>
+			
+			
+		</summary>
+		
+		<div class="comment_body "><div class="md"><p>That 10% number is genuinely more useful than most things I&#39;ve seen on
+this, actually. If only about 1 in 10 thinking-only responses have a
+truly complete call sitting there versus discussing or rehearsing one,
+that says the false-positive guard matters way more than the current
+fixture count reflects, most of what superficially looks like &quot;a call in
+reasoning&quot; probably isn&#39;t one.</p>
+
+<p>The draft-head thing is a good data point too. 75% of your failures on
+models with no draft head is a real dent in the speculative-decoding
+theory, points more toward something in how the reasoning/response
+boundary gets drawn than a decoding-specific artifact.</p>
+
+<p>Looks like the message cut off at &quot;but I found&quot; though, what did you run
+into? And if any of those saved examples land in that 10% (a genuinely
+complete envelope, not a rehearsal), I&#39;d really want to see the raw
+responses. That slice is exactly the kind of thing I can&#39;t fake as a
+synthetic fixture and would easily get wrong just guessing at the shape.</p>
+</div></div>
+		
+		<div class="replies">
+
+
+<div id="p97cs3i" class="comment">
+	<div class="comment_left">
+    <p class="comment_score" title="1">
+         
+         1
+         
+    </p>
+        <div class="line"></div>
+	</div>
+	<details class="comment_right" open>
+		<summary class="comment_data">
+			
+				<a class="comment_author  " href="/user/thatsrobgray">u/thatsrobgray</a>
+			
+			
+			<a href="/r/ollama/comments/1wc6tka/my_agent_kept_randomly_stopping_midtask_and_i/p97cs3i/?context=3#p97cs3i" class="created" title="Sep 11 2026, 18:18:36 UTC">27d ago</a>
+			
+			
+		</summary>
+		
+		<div class="comment_body "><div class="md"><p>I found it was not the most common cause, and new models did not exhibit this behavior so it became less imperative to solve it. The fix I was gravitating towards was repairing these in the harness- if I recall, the last thing I was testing was seeing if the harness was returning the reasoning to the model in the right field if I tried to have it continue where it left off. But once I saw qwen3.8, glimmer, granite, or others didn’t have this issue I stopped digging.</p>
+</div></div>
+		
+		<div class="replies">
+
+
+<div id="p97lmpl" class="comment">
+	<div class="comment_left">
+    <p class="comment_score" title="1">
+         
+         1
+         
+    </p>
+        <div class="line"></div>
+	</div>
+	<details class="comment_right" open>
+		<summary class="comment_data">
+			
+				<a class="comment_author  op" href="/user/duke4rs">u/duke4rs</a>
+			
+			
+			<a href="/r/ollama/comments/1wc6tka/my_agent_kept_randomly_stopping_midtask_and_i/p97lmpl/?context=3#p97lmpl" class="created" title="Sep 11 2026, 18:56:46 UTC">27d ago</a>
+			
+			
+		</summary>
+		
+		<div class="comment_body "><div class="md"><p>Yeah that&#39;s fair, the harness fix is honestly the better approach if you
+can pull it off, way less guessing than what I&#39;m doing which is basically
+reconstructing intent after the model&#39;s already stopped.</p>
+
+<p>Curious if you actually nailed down that it was the field routing, or if
+the newer models not showing it anymore just made you drop it before you
+got a clean answer either way.</p>
+
+<p>And if you&#39;ve still got those examples saved I&#39;d genuinely want a look,
+especially any where it turned out to just look like a tool call instead
+of actually being one. That&#39;s kind of exactly what I need for the guard
+side of things.</p>
+</div></div>
+		
+		<div class="replies">
+
+
+<div id="p97mf57" class="comment">
+	<div class="comment_left">
+    <p class="comment_score" title="1">
+         
+         1
+         
+    </p>
+        <div class="line"></div>
+	</div>
+	<details class="comment_right" open>
+		<summary class="comment_data">
+			
+				<a class="comment_author  " href="/user/thatsrobgray">u/thatsrobgray</a>
+			
+			
+			<a href="/r/ollama/comments/1wc6tka/my_agent_kept_randomly_stopping_midtask_and_i/p97mf57/?context=3#p97mf57" class="created" title="Sep 11 2026, 19:00:12 UTC">27d ago</a>
+			
+			
+		</summary>
+		
+		<div class="comment_body "><div class="md"><p>Field routing was just a hunch since I noticed Goose had an issue with some models where  it didn’t return the reasoning to the model the way it was sent. Follow up questions would lack details from previous reasoning. It was just a hunch because if I ever sent “Your response was thinking only, please pick up where you left off” as a super-naive repair attempt Qwen3.6 would just act on the prior prompt again.</p>
+</div></div>
+		
+		<div class="replies">
+
+
+<div id="p97oazh" class="comment">
+	<div class="comment_left">
+    <p class="comment_score" title="1">
+         
+         1
+         
+    </p>
+        <div class="line"></div>
+	</div>
+	<details class="comment_right" open>
+		<summary class="comment_data">
+			
+				<a class="comment_author  op" href="/user/duke4rs">u/duke4rs</a>
+			
+			
+			<a href="/r/ollama/comments/1wc6tka/my_agent_kept_randomly_stopping_midtask_and_i/p97oazh/?context=3#p97oazh" class="created" title="Sep 11 2026, 19:08:28 UTC">27d ago</a>
+			
+			
+		</summary>
+		
+		<div class="comment_body "><div class="md"><p>Oh that&#39;s actually a pretty solid tell, not just a hunch. If Goose wasn&#39;t feeding the reasoning back in properly and follow-ups were missing details from earlier thinking, then &quot;pick up where you left off&quot; acting on the prior prompt again isn&#39;t really a failed test — that&#39;s a pretty strong confirmation. The model has nothing to pick up from if it never actually got its own reasoning handed back to it, so of course it just reruns the original prompt from scratch.
+Do you know if it was dropping the reasoning entirely between turns or sending some mangled/truncated version of it? Kind of changes what the actual harness fix looks like. One&#39;s a missing field, the other&#39;s more of a serialization bug.</p>
+</div></div>
+		
+		<div class="replies">
+
+
+<div id="p97oj7x" class="comment">
+	<div class="comment_left">
+    <p class="comment_score" title="2">
+         
+         2
+         
+    </p>
+        <div class="line"></div>
+	</div>
+	<details class="comment_right" open>
+		<summary class="comment_data">
+			
+				<a class="comment_author  " href="/user/thatsrobgray">u/thatsrobgray</a>
+			
+			
+			<a href="/r/ollama/comments/1wc6tka/my_agent_kept_randomly_stopping_midtask_and_i/p97oj7x/?context=3#p97oj7x" class="created" title="Sep 11 2026, 19:09:26 UTC">27d ago</a>
+			
+			
+		</summary>
+		
+		<div class="comment_body "><div class="md"><p>I sent you a DM</p>
+</div></div>
+		
+		<div class="replies">
+		</div>
+	</details>
+</div>
+
+		</div>
+	</details>
+</div>
+
+		</div>
+	</details>
+</div>
+
+		</div>
+	</details>
+</div>
+
+		</div>
+	</details>
+</div>
+
+		</div>
+	</details>
+</div>
+
+		</div>
+	</details>
+</div>
+
+			</div><div class="thread">
+				
+
+				
+
+
+<div id="pagu3bd" class="comment">
+	<div class="comment_left">
+    <p class="comment_score" title="1">
+         
+         1
+         
+    </p>
+        <div class="line"></div>
+	</div>
+	<details class="comment_right" open>
+		<summary class="comment_data">
+			
+				<a class="comment_author  " href="/user/stealthagents">u/stealthagents</a>
+			
+			
+			<a href="/r/ollama/comments/1wc6tka/my_agent_kept_randomly_stopping_midtask_and_i/pagu3bd/?context=3#pagu3bd" class="created" title="Sep 17 2026, 23:11:50 UTC">21d ago</a>
+			
+			
+		</summary>
+		
+		<div class="comment_body "><div class="md"><p>Sounds like you&#39;ve been through a real puzzle figuring that out. I&#39;ve definitely had my share of weird behavior with tool calls too, especially when they get lost in the reasoning block. Your library idea is brilliant, it could save a lot of headaches for others running into the same issues.</p>
+</div></div>
+		
+		<div class="replies">
+		</div>
+	</details>
+</div>
+
+			</div><div class="thread">
+				
+
+				
+
+
+<div id="p8w9ejr" class="comment">
+	<div class="comment_left">
+    <p class="comment_score" title="1">
+         
+         1
+         
+    </p>
+        <div class="line"></div>
+	</div>
+	<details class="comment_right" open>
+		<summary class="comment_data">
+			
+				<a class="comment_author  " href="/user/Competitive_Ideal866">u/Competitive_Ideal866</a>
+			
+			
+			<a href="/r/ollama/comments/1wc6tka/my_agent_kept_randomly_stopping_midtask_and_i/p8w9ejr/?context=3#p8w9ejr" class="created" title="Sep 10 2026, 05:25:22 UTC">29d ago</a>
+			
+			
+		</summary>
+		
+		<div class="comment_body "><div class="md"><p>OMG, yeah. I&#39;ve been using llamacpp with Qwen models for ~1 year and have had loads of problems like this. Really annoying that such basic stuff is still broken and reasonable ideas seem a million miles away.</p>
+</div></div>
+		
+		<div class="replies">
+
+
+<div id="p8y6mpe" class="comment">
+	<div class="comment_left">
+    <p class="comment_score" title="1">
+         
+         1
+         
+    </p>
+        <div class="line"></div>
+	</div>
+	<details class="comment_right" open>
+		<summary class="comment_data">
+			
+				<a class="comment_author  op" href="/user/duke4rs">u/duke4rs</a>
+			
+			
+			<a href="/r/ollama/comments/1wc6tka/my_agent_kept_randomly_stopping_midtask_and_i/p8y6mpe/?context=3#p8y6mpe" class="created" title="Sep 10 2026, 13:33:41 UTC">29d ago</a>
+			
+			
+		</summary>
+		
+		<div class="comment_body "><div class="md"><p>Yeah, it&#39;s been sitting there for a while across llama.cpp specifically,
+which is part of why it&#39;s frustrating, it&#39;s not some edge case, it&#39;s a
+pretty core part of how tool-calling with reasoning models is supposed to
+work.</p>
+
+<p>If you&#39;ve still got any of those ~1 year of cases saved anywhere, raw
+responses where a Qwen agent just stopped for no reason, I&#39;d genuinely
+want to see one. Even a rough copy-paste of the response body would help,
+that&#39;s the kind of thing that turns into an actual fixture instead of
+just another person nodding along in a comment thread.</p>
+</div></div>
+		
+		<div class="replies">
+		</div>
+	</details>
+</div>
+
+		</div>
+	</details>
+</div>
+
+			</div>
+		</div>
+
+	</div>
+
+		</main>
+		
+
+		<!-- FOOTER -->
+		
+			<footer>
+				<div class="footer-buttons">
+					<p><span id="version">v0.36.0-yunyun&emsp;</span><a href="/info" title="View instance information">ⓘ View instance info</a>&emsp;<a href="https://github.com/redlib-org/redlib" title="View code on GitHub">&lt;&gt; Code</a></p>
+				</div>
+			</footer>
+		
+	</body>
+</html>

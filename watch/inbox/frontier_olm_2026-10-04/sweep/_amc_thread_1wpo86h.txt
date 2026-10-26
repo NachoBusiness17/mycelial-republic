@@ -1,0 +1,98 @@
+=== 1wpo86h r/Rag | 2026-09-25 05:42 | score 54 | 20 comments | author u/Early_Protection6814
+TITLE: GraphRAG - which problems does it actually solve?
+PERMALINK: /r/Rag/comments/1wpo86h/graphrag_which_problems_does_it_actually_solve/
+SELFTEXT:
+Seeing a lot of “just use GraphRAG” comments lately, so I thought it was worth separating what it’s genuinely useful for from what gets overstated.
+
+**What it actually helps with:**
+
+* **Multi-hop questions.** Vector RAG retrieves chunks that are semantically similar to a query. That can struggle when the answer requires connecting facts spread across multiple documents. A graph gives you explicit entities and relationships that can be traversed or expanded across those connections.
+* **Global or corpus-level questions.** Something like “What are the main themes across these 500 reports?” is difficult for straightforward top-k retrieval because the answer may depend on information distributed across the entire corpus. Microsoft Research’s GraphRAG approach uses community detection and generated summaries to make this kind of query more tractable. That corpus-level summarization is arguably one of the more interesting parts of the approach, not simply “put your documents in a graph.”
+* **Entity disambiguation.** Think “Apple” the company vs. “apple” the fruit, or the same person appearing under different names, titles, or references. A well-built knowledge graph can consolidate these references and improve retrieval across related information.
+* **Relationship-aware retrieval.** This is probably the biggest practical advantage. If the question depends on *how* entities are connected rather than just whether a chunk is semantically similar, graph structure gives the retrieval system another signal to work with.
+
+**What it doesn't magically fix:**
+
+* **Simple fact lookup.** If the answer is clearly stated in one paragraph, standard vector or keyword retrieval may be faster and cheaper. Building a graph for every query is unnecessary overhead.
+* **Hallucinations.** GraphRAG can reduce some retrieval errors, but it doesn't eliminate hallucination. LLMs can introduce errors during entity/relation extraction, graph construction, or answer generation. Garbage extraction can still produce a garbage graph.
+* **Cost.** Turning a large unstructured corpus into a knowledge graph can require substantial LLM processing for entity and relationship extraction. And if the underlying data changes frequently, maintaining that structure becomes an ongoing cost.
+* **Being a drop-in replacement for vector RAG.** In practice, many systems described as “GraphRAG” use hybrid approaches—vector retrieval, graph traversal, entity expansion, reranking, or some combination. It isn't necessarily a choice between “vectors” and “graphs.”
+
+**My takeaway:**
+
+GraphRAG makes the most sense when the relationships between pieces of information are themselves important to the question.
+
+For straightforward point lookups, adding a graph can be unnecessary complexity.
+
+The interesting question isn't really “graph vs. vectors?”
+
+It's:
+
+**“Does the structure of my data contain information that semantic similarity alone can't reliably capture?”**
+
+If yes, GraphRAG becomes much more interesting. If not, you may just be adding a considerably heavier ingestion and maintenance pipeline,
+
+COMMENTS:
+  [recro69 | 2026-09-25 06:11 | score 12] I think the maintenance cost is probably the part that gets underestimated. The maintenance cost can become almost as important as getting the graph right if the source documents change often. A stale graph can be worse, than retrieving the latest chunks.
+    [Mocoberci | 2026-09-29 18:09 | score 1] Could JEV not help with that in some way? It could definitely help with lifecycle signals.
+    [Early_Protection6814 | 2026-09-25 06:30 | score 2] Exactly. I think freshness is one of the less-discussed trade-offs with GraphRAG. The graph can improve relationship-aware retrieval, but if the underlying documents change frequently, keeping entities, relationships, and summaries synchronized becomes another engineering problem.
+
+In some cases, a slightly less structured retrieval system that always pulls the latest source may actually be more reliable than a highly structured but stale graph.
+
+The interesting part is figuring out where the freshness requirement outweighs the benefits of the graph structure.
+  [softwaredoug | 2026-09-25 07:44 | score 8] I think almost nobody actually needs a knowledge graph for search.
+
+When people think they need a knowledge graph, they've usually skipped other solutions (like a managed taxonomy to organize entities). That's the[ real competition to vectors for semantic search](https://softwaredoug.com/blog/2026/01/08/semantic-search-without-embeddings)
+    [jai-js | 2026-09-28 04:24 | score 1] yes, graphs are good for traversing and they want a way to think through the data, graphs bring in unnecessary complexities. a better way is to give recognisable dimensions to data. currently when creating embeddings there are lots of dimensions but none recognisable. with the recent jev model, we can create vectors with known dimensions, and search can then use those dimensions.
+    [DorkyMcDorky | 2026-09-25 11:23 | score 2] BM25 works fine too.  Just clean your data.  You don't meed more than 4-5 fields collected.  I have so many customers asking dumb questions like "best chunk size" when they hand me shitty PDFs.  RAG is a world where people are playing with $1MM tinker toys so your LLM can tell you that you're a data scientist :)
+    [0ne2many | 2026-09-25 07:53 | score 5] Which is mathematically/topologically a knowledgegraph 😂
+      [softwaredoug | 2026-09-25 07:53 | score 4] Yes in the same way a linked list is also technically a tree  😊
+        [0ne2many | 2026-09-25 09:15 | score 3] From a mathematical perspective even a linked list or tree is a graph, namely a Directed Acyclic Graph. 
+
+A knowledgegraph in the form of your proposed document-taxonomy is just a knowledgegraph that contains objects with a different shape relative to a micro-level subject-based knowledgegraph
+
+For an AI to retrieve information in both ways it needs to know (not guess) the exact shape of possible relations between nodes, and needs a language to query it.
+  [DorkyMcDorky | 2026-09-25 06:27 | score 8] It solves the problem of your Azure bill being too small.  By adding everything under the sun for your company's lunch menu, you can learn a lot about the kitchen.  Make sure the document has providence for receipts or else they may hallucinate or order specials from yesterday.
+    [Early_Protection6814 | 2026-09-25 06:30 | score 1] 😂 Fair point. GraphRAG can definitely become an expensive solution looking for a problem if the use case doesn't actually require relationship-aware retrieval.
+
+And yes, provenance is critical. A beautifully structured graph built from questionable extraction is still going to give you questionable answers, just with more infrastructure behind it.
+      [[deleted] | 2026-09-25 11:21 | score 1] [removed]
+  [Intelligent-Cake-215 | 2026-09-26 16:47 | score 2] hey OP!! thanks for this.. very helpful...  
+recently started learning RAG...  
+this graph RAG is same as vector less RAG ??
+  [coderarun | 2026-09-25 16:56 | score 2] https://preview.redd.it/xg9mnmgq5prh1.jpeg?width=1195&format=pjpg&auto=webp&s=882beb38c201fc03e8cba9368f34dfa31e90358f
+  [mocovr | 2026-09-25 12:20 | score 2] Enough with the Ai posts!
+  [EmptyBackground162 | 2026-09-25 09:49 | score 2] I mostly use knowledge graphs for autonomous agents, especially for things like claims investigation where the agent starts with a goal and follows relationships until it has enough evidence to act. One thing I’d add is that the hard part starts before retrieval: building the graph itself can get expensive very quickly with unstructured data. In our case, we used a deterministic pipeline with a specific ontology, then made LLM calls against that ontology instead of fine tuning. That works, but now you’ve introduced extraction cost, schema quality, and then reconciliation as a whole separate problem when the same entity shows up differently across documents. I do agree that graphs are most useful when relationships matter, but the creation and the maintenance pipeline is a pretty big part of whether the approach is actually worth it
+  [AlexAtOracleAIDB | 2026-10-01 14:05 | score 1] It's mainly useful for questions where the answer depends on how entities connect. On the freshness point, a lot rides on where the graph data comes from, in my experience.  
+  
+If the entities already live in relational tables, I've defined the graph over those tables directly. Some databases support this as a SQL property graph that works like a view. Because the data isn't copied, inserts and updates show up in the graph without a separate sync job.  
+  
+The stale graph risk I've run into stays with LLM extraction from unstructured docs, since a changed doc has to be re-extracted before the graph catches up.
+  [LawfulnessOptimal597 | 2026-09-29 05:59 | score 1] I have another approach that is significantly computationally cheaper: textual graphs. I’ve implemented this in **CoreQuarry**.
+
+The difference to traditional **GraphRAG** boils down to where the "map" is built and how an AI agent interacts with it.
+
+Traditional GraphRAG builds an abstract, high-level map of human concepts using an LLM to extract meaning. CoreQuarry builds, by contrast, a map of the exact, physical document layout using mathematics of coordinate spaces, turning the document structure itself into an agentic playground.
+
+Think of traditional **GraphRAG** as a smart investigator connecting index cards on a wall based on **clues and ideas**. Think of **CoreQuarry's agentic search** as a highly precise machine that maps out the exact **blueprint** of the filing cabinet, allowing an agent to pinpoint information based on its exact shape, folder layer, and coordinate location.
+
+In **GraphRAG**, the agent operates on an *implicit semantic structure*. If it needs to perform multi-hop reasoning, it asks the LLM to follow abstract trails: *“Look up Company X*   
+→*find their suppliers* →*look up supplier delays”. Building is expensive. Inferencing is expensive.*
+
+In **CoreQuarry**, the agent uses *deterministic search algebra*. Because CoreQuarry unifies keyword, local vector embedding and structural paths into a single layer, an agent doesn't have to blindly wander a graph. It can instead command: *"Find the vector cluster for 'supply delay', intersect it with the document region tagged <Supplier\_List>, and return the exact strings."* 
+
+Since **CoreQuarry** is built as a local-first system engineering kernel an agent can perform its lightning-fast local search loops on a sovereign laptop: no cloud tether needed.
+  [hncvj | 2026-09-26 06:56 | score 1] Fair question, and my honest take is it depends heavily on the shape of the problem, I've had it go three different ways across projects. On one, a large regulated setup with cases running into tens of thousands of pages, the graph genuinely earned its keep, but only for two things: multi-hop questions where the answer is split across documents that don't retrieve together, and "what happened when" chronology across a big record. Vector search pulls what's similar to your query, not what's connected to it, so if the answer needs a fact from one doc and a fact from another and neither looks like the question, flat retrieval quietly misses it.
+
+On a different client, bounded corpus, single domain, we ripped the graph out entirely, a good reranker plus better chunking beat it and cost a fraction. Same tech, opposite decision, purely because the question mix was different. 
+
+The third one taught me the real gotcha is maintenance, not retrieval. There the docs mutated constantly, and keeping entities and relationships in sync as source docs changed was brutal. What saved us on the append-heavy projects was treating the graph as a disposable cache rebuilt per-document, not a source of truth, so a changed doc just means re-extract that one doc, no global reconciliation. That trick falls apart the moment your corpus mutates a lot, which is exactly where I think the "is it worth it" line actually sits.   
+  
+I'm really curious what everyone else is hitting, is it the retrieval gap that pushes you to a graph, or the upkeep that pushes you away from one? OP?
+  [Competitive_Many3839 | 2026-09-25 22:19 | score 1] I think the maintenance cost gets overlooked by a lot here. GraphRAG can look great on a clean benchmark, then six months of changing docs and stale relationships turn the graph itself into something you have to debug. For me that ongoing upkeep would be part of the decision from day one.
+  [Elizabethfuentes1212 | 2026-09-25 18:13 | score 1] Same point applies to chat history, which people forget. Most agents store history as flat chunks and retrieve by similarity, so "who do I know connected to flights to Spain?" returns Iberia, Madrid and Spain as separate pieces but never joins them to the person. Store that history as a graph and traversal walks the edges instead: in a demo on the same facts and same vector index, multi-hop went from 1/4 to 4/4 just by changing how memory was stored, not the data. If the answer lives in the connections, similarity can't reach it. Demo here, I built it with Strands so swapping vector memory for graph was just changing the store the agent plugs into: [code](https://github.com/elizabethfuentes12/stop-ai-agents-losing-memory-sample-for-aws)
+  [Elizabethfuentes1212 | 2026-09-25 18:12 | score 1] One thing I'd add to your list: counting and aggregation. Vector RAG can't count or add up, ask "how many match X?" and it says "about 45-50" when the real answer is 133, because similarity has no notion of a total so the model guesses. A graph fixes it: Text2Cypher on Neo4j turns "how many X" into a Cypher COUNT and returns the exact number, not an estimate. That's the one class of hallucination GraphRAG genuinely kills, because the answer comes from a deterministic query instead of the model estimating over text. I built a demo with two agents on the same data, plain RAG fabricates counts and the Neo4j one gets them right every time. I used Strands to build them so running the two side by side was easy: [github repo](https://github.com/elizabethfuentes12/why-agents-fail-sample-for-amazon-agentcore/tree/main/01-faq-graphrag-demo)
+  [Mindless-Reserve-669 | 2026-09-25 08:30 | score 1] GraphRAG is most useful when you need multi-hop or relationship-based retrieval, not for simple fact lookups.
+    [DorkyMcDorky | 2026-09-25 11:23 | score 1] HOw did you measure this output?
+
+(fetched 24 comments total; rendered top 14 roots by score)

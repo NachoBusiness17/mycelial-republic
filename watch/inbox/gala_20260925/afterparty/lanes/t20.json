@@ -1,0 +1,39 @@
+{
+  "gopher": "t20",
+  "item": "silent disablement of scheduled tasks surfaces nowhere; check whether mag doctor probes schtask state, add a probe if missing",
+  "ok": true,
+  "note": "No doctor probe existed: grep over mag/ and tools/ showed only amd_window_guard (StartCN/StartDVR) and lifecycle prose. Added check_scheduled_tasks() to mag/doctor.py: runs schtasks /Query /TN <task> /FO LIST, parses the Status line, flags anything not Ready (Disabled, MISSING/unregistered, unqueryable, odd statuses). Running passes since it implies registered and enabled. Wired into examine() so doctor_status()/refine_loop see it; module docstring CHECKS list gained item 7. Live machine: MagImproveDaily is Ready, next run 9/26/2026 8:00 AM. Gotcha filed: Git Bash mangles /Query into a path unless MSYS_NO_PATHCONV=1; the python subprocess path is unaffected.",
+  "checks": [
+    {
+      "name": "pytest tests/test_doctor_scheduled_tasks.py -q",
+      "result": "11 passed in 2.47s",
+      "exit": 0
+    },
+    {
+      "name": "pytest tests/test_bard.py -q (regression, existing doctor usage)",
+      "result": "16 passed in 1.10s",
+      "exit": 0
+    },
+    {
+      "name": "python tools/violation_ratchet.py check --changed",
+      "result": "scope=7 changed files; hits=4; registered=4; NEW=0; PASS, no unregistered debt",
+      "exit": 0
+    },
+    {
+      "name": "live schtasks /Query /TN MagImproveDaily /FO LIST",
+      "result": "Status: Ready, next run 9/26/2026 8:00:00 AM",
+      "exit": 0
+    },
+    {
+      "name": "live doctor.check_scheduled_tasks()",
+      "result": "ok=true, statuses={MagImproveDaily: Ready}, issues=[]",
+      "exit": 0
+    }
+  ],
+  "evidence": "watch/inbox/gala_20260925/afterparty/lanes/t20.check.txt",
+  "files_changed": [
+    "mag/doctor.py",
+    "tests/test_doctor_scheduled_tasks.py"
+  ],
+  "next_steal": "lifecycle.py line 514 offers 'disable MagImproveDaily' as a remediation, and the doctor now flags it, but nothing closes the loop: next gopher could wire a failure_kb signal (like amd_window_guard's log_failure path) or have the improve --status command surface the schtasks state next to job state, so a disabled task is announced at the seat, not only at doctor time."
+}

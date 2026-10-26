@@ -1,0 +1,32 @@
+[
+  {
+    "artifact": "watch/inbox/qdrop_export/q_caption_ledger.jsonl",
+    "verdict": "PASS_WITH_NOTES",
+    "evidence": "290/290 rows parse; all carry id/date/claim/confidence; confidence within [0,1]; every id found in qdrops.jsonl (subset verified, 0 missing); row count matches claim; no statistic exceeds corpus size.",
+    "notes": "Dates are claim-referenced (month-precision like 2010-05, pre-2017 historical dates) not post dates. 2 em-dashes and 6 en-dashes, all inside verbatim quoted claim text."
+  },
+  {
+    "artifact": "memory/runs/the50/w5_t22_urgency_curve.json",
+    "verdict": "PASS",
+    "evidence": "Full recompute from qdrops.jsonl matches exactly: 4705 Q-authored (name=='Q'), 38 months 2017-11..2022-11, every monthly n_posts/n_urgency/density, drop rates, all summaries, both context series, and the 3663-row Pool reproduction series. No em-dashes.",
+    "notes": "Gap months (all of 2021, sparse 2022) mirror the corpus, not fabrication. Word-vs-sub variant divergence is documented with an explicit selection rule."
+  },
+  {
+    "artifact": "memory/runs/the50/w5_t23_reaction_sigs.json",
+    "verdict": "PASS_WITH_NOTES",
+    "evidence": "Recomputed from ledger_full/captions/v1: called 66 (65+msg3091), faded 3597, matched 1765, 57+9 split; all sums, medians, rpv, media mixes, emoji rates, paired delta -1.3394, 40/66 frac, and seeded signflip p=0.191 reproduce exactly. Honest n throughout.",
+    "notes": "Raw perm p=0.0249 is legal k/20000 with reproduced medians but was not re-run here (cost); confound and MC coarseness self-flagged in artifact."
+  },
+  {
+    "artifact": "memory/runs/the50/w5_t24_symbol_correlation.json",
+    "verdict": "PASS",
+    "evidence": "build_censuses() recompute matches: 2407 register rows, 2011 images, 391 videos, 340 audio, 257 speech, 37-month census table identical; delta corr recomputes to 0.2683 (36 deltas); drift_check reproduces DRIFTING verdicts incl. 0.2116 sensitivity. Em-dash claim verified true (0).",
+    "notes": "Speech census video-gating is honestly disclosed; referent zeros labeled as unmeasured, not absent."
+  },
+  {
+    "artifact": "memory/runs/the50/w5_t25_board_drift.json",
+    "verdict": "PASS",
+    "evidence": "Full recompute matches: 10 boards sum to 6242 drops, 283 empty-text, 105628 tokens, all board summaries, JSD curve, top-20 terms with chi2 and counts, 914 candidates, peak/trough attribution rule. No count exceeds corpus; no em-dashes.",
+    "notes": "Peak labels skip small boards per documented >=20-text-drop rule (e.g. connection: unknown 22.2/1k shown but not peak); counts still reported."
+  }
+]

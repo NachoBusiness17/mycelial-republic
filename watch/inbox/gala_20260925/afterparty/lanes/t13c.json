@@ -1,0 +1,16 @@
+{
+  "gopher": "t13c",
+  "item": "HELP_WANTED brief 3: stack row 'research C' bind-or-prune verdict",
+  "ok": true,
+  "note": "ROW FOUND, not absence: stack.json line 9 held the live research C row (complexity 2.0, stacked 2026-08-09T13:01:09.580523Z); b8's 'no pipe record' note was origin evidence, so the missing-record verdict collapsed to bind-or-prune on a live row. PRUNE executed: no gpipes record names research C (grep -rln exit 1, re-verified by bytes 2026-09-26), no gap_swarm_experiment rebind target mentions it (grep exit 1), so BIND would fabricate intent. stack.json pruned, complexity 10.0 -> 8.0, JSON revalidated with repo venv (3 items). Brief 3 annotated RESOLVED in HELP_WANTED.md. Brief 2 (research B) still open, row still in stack.",
+  "verdict": "ROW FOUND -> PRUNE",
+  "checks": [
+    "grep 'research C' memory/runs/gap_map/ -> stack.json:9 only (pre-prune)",
+    "grep -rln 'research C' memory/runs/gpipes/ -> exit 1 (negative, no pipe record)",
+    "grep -rn 'research C' memory/runs/gap_swarm_experiment/ -> exit 1 (negative, no rebind target)",
+    "post-prune grep '\"research C\"' memory/runs/gap_map/stack.json -> exit 1 (finish-line byte check passes)",
+    "repo venv json validate stack.json -> 3 items, complexity 8.0",
+    "raw output: watch/inbox/gala_20260925/afterparty/lanes/t13c.check.txt (11 sections)"
+  ],
+  "next_steal": "brief 2 research B is the last placeholder row (same smoke origin p8bc0180ab9 as A, row live in stack.json at complexity 3.0): same bind-or-prune, prune likely, drops complexity to 5.0 and un-sticks the batch-elevate signal per board hygiene"
+}

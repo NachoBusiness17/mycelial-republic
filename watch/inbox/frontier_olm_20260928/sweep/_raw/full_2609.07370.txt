@@ -1,0 +1,616 @@
+Beyond Fluent Generation: A CPU Reliability Benchmark for MCP-Style Tool Calling in Sub-2B Small Language Models for Edge Deployment 
+ Report GitHub Issue 
+ × 
+ Title: 
+ Content selection saved. Describe the issue below: 
+ Description: 
+ Submit without GitHub 
+ Submit in GitHub 
+ arXiv is now an independent nonprofit! 
+ Learn more 
+ × 
+ Back to arXiv 
+ Why HTML? 
+ Report Issue 
+ Back to Abstract 
+ Download PDF 
+ Abstract 
+ 1 Introduction 
+ 2 Related Work 
+ 2.1 Small models and edge inference 
+ 2.2 Function-calling evaluation 
+ 2.3 Structured output and safety 
+ 3 Method 
+ 3.1 Models and experimental design 
+ 3.2 Benchmark prompts 
+ 3.3 Parsing and evaluation 
+ 3.4 CPU resource probe 
+ 4 Results 
+ 4.1 End-to-end recovered calls 
+ 4.2 Component metrics and strict-output audit 
+ 4.3 Results by tool 
+ 4.4 Failure modes 
+ 4.5 Exploratory LangGraph diagnostic 
+ 4.6 Resource measurements 
+ 5 Discussion 
+ 5.1 What determines reliability? 
+ 5.2 Deployment implications 
+ 6 Limitations and Threats to Validity 
+ 7 Future Work 
+ 8 Conclusion 
+ References 
+ License: CC BY 4.0
+arXiv:2609.07370v1 [cs.CL] 07 Sep 2026 
+ Beyond Fluent Generation: A CPU Reliability Benchmark for 
+ MCP-Style Tool Calling in Sub-2B Small Language Models for Edge Deployment 
+ Abrar Shahriar
+ Qurat-Ul-Ain Mastoi
+ Affiliation:  University of the West of England, Bristol,BS16 1QY United Kingdom 
+ Email:  abrar2.shahriar@live.uwe.ac.uk 
+ Email:  Qurat-Ul-Ain.Mastoi@uwe.ac.uk 
+ Abstract 
+ Resource-constrained edge computers including Raspberry Pi, NVIDIA Jetson Nano, Arduino UNO Q, Orange Pi, and LattePanda platforms motivate local small language model (SLM) agents that can operate with reduced cloud dependence, improved data locality, and intermittent connectivity. Yet Model Context Protocol (MCP)-style tool use requires more than fluent generation: an agent must emit machine-readable structure, identify the intended tool, reproduce correct arguments, and avoid unintended actions. This study establishes a platform-agnostic CPU baseline by evaluating five open-weight models below two billion parameters Phi-1.5, Pythia-1.4B, TinyLlama-1.1B-Chat, Qwen2.5-0.5B, and Qwen2.5-1.5B on 100 controlled prompts spanning weather retrieval, web search, calculation, email composition, and task creation. Each checkpoint is tested with greedy decoding and nucleus sampling. The recovery parser removes Markdown fences, extracts a brace-delimited substring, and measures parseability, tool-name correctness, argument presence, and value agreement. Under this recovered-call criterion, Qwen2.5-1.5B reaches 75% with greedy decoding and 79% with sampling, while Qwen2.5-0.5B reaches 72% and 32%, respectively. Phi-1.5 scores 0% in both conditions, and Pythia and TinyLlama remain at or below 7%. A strict post-hoc audit finds that only 5 of 1,000 complete raw responses are directly parseable as JSON, demonstrating strong dependence on output recovery. In a separate three-prompt CPU probe, Qwen2.5-1.5B records the highest process memory (7,960 MiB) and mean latency (30.782 s), whereas Qwen2.5-0.5B uses 3,637 MiB and averages 10.627 s. The results expose a reliability resource trade-off relevant to prospective edge deployment, but they do not constitute direct measurements on the named boards or a complete MCP implementation. Safe deployment requires schema validation, constrained generation or repair, least-privilege execution, and escalation for consequential actions. 
+ Keywords: small language models; tool calling; structured generation; edge inference; JSON; agent reliability 
+ 1 Introduction 
+ Language models can extend their capabilities by invoking calculators, search systems, databases, and other external services. Early tool-use work demonstrated that a model can learn when and how to call an API ( Schick et al., 2023 ) , while API-focused systems showed that correct tool names and arguments remain difficult even for substantially larger models ( Patil et al., 2023 ) . Once an output can trigger an external action, fluent text is no longer sufficient: a malformed call can halt a workflow, and a syntactically valid but semantically wrong call can modify state, disclose information, or contact the wrong recipient. 
+ SLMs offer a compelling deployment alternative for edge computing devices. Local inference may reduce network dependence and data exposure, but it remains constrained by memory capacity, bandwidth, compute, energy, and thermal limits. Surveys and edge benchmarks consequently evaluate both capability and systems cost rather than treating parameter count as a complete proxy for deployability ( Lu et al., 2025 ; Chen et al., 2025 ) . Application-specific training may also allow a narrow model to outperform a larger general model on a bounded task ( Kandala et al., 2024 ; Jhandi et al., 2025 ) . These observations motivate a joint question aligned with the title of this study: how reliably can an unmodified sub-2B model produce MCP-style tool calls, and what CPU resource cost accompanies that reliability? 
+ This study makes four contributions. First, it presents a controlled benchmark of JSON-based tool-call generation for five open-weight models below 2B parameters. Second, it separates recoverable syntax, tool identification, argument completion, value agreement, and extra-argument control. Third, it compares greedy and sampling decoding on the same 100 prompts and reports paired tests as well as Wilson confidence intervals. Fourth, it reports a separate local CPU resource probe and explicitly audits the gap between whole-response strict JSON and JSON recovered by an extraction layer. 
+ The experiment is best understood as a controlled, MCP-inspired function-call baseline, not as a full Model Context Protocol (MCP) evaluation. It does not perform tool discovery, client/server messaging, live execution, or multi-step trajectories. This distinction is important because MCP benchmarks include long tool descriptions, variable execution outcomes, intermediate observations, and both single- and multi-step calls ( Fan et al., 2025 ) . 
+ The prospective hardware landscape is heterogeneous. Raspberry Pi 5 and Orange Pi 5 are Arm-based single-board computers, while NVIDIA Jetson Nano is an embedded platform designed for AI applications ( Raspberry Pi Ltd, 2026 ; Orange Pi, n.d. ; NVIDIA, n.d. ) . Arduino UNO Q combines a Debian-capable microprocessor environment with a real-time microcontroller, and LattePanda provides x86 single-board computer families ( Arduino, n.d. ; LattePanda, n.d. ) . These differences in architecture, acceleration, memory, operating environment, and power constraints make it unsafe to infer board-level deployability from parameter count alone. The present CPU experiment therefore supplies a controlled reliability and resource baseline for future device-specific evaluation; Raspberry Pi, NVIDIA Jetson Nano, Arduino UNO Q, Orange Pi, and LattePanda were not directly tested. 
+ 2 Related Work 
+ 2.1 Small models and edge inference 
+ Lu et al. (2025) survey decoder-only SLMs from 100M to 5B parameters and benchmark latency and memory, emphasizing that architecture, context, software, quantisation, and hardware jointly determine runtime cost. Kandala et al. (2024) similarly argue for application-specific small models in edge sensing settings, where remote inference can introduce latency, connectivity, and privacy costs. ELIB broadens edge evaluation to throughput, latency, accuracy, floating-point operations, and memory-bandwidth utilisation across heterogeneous platforms ( Chen et al., 2025 ) . Our study follows this systems-aware perspective but focuses on structured action generation rather than general language quality. 
+ The evaluated model families were created for different purposes. Phi-1.5 uses synthetic “textbook-quality” data to improve reasoning at approximately 1.3B parameters ( Li et al., 2023 ) . Pythia provides controlled training checkpoints intended for analysis across scales ( Biderman et al., 2023 ) . TinyLlama is a 1.1B model trained on roughly one trillion tokens and shares architectural choices with Llama 2 ( Zhang et al., 2024 ) . Qwen2.5 reports improvements in instruction following and structured-data handling across a family of sizes ( Qwen Team, 2024 ) . Because the present checkpoint set mixes base and chat-oriented models, the comparison measures deployable checkpoint behaviour, not a clean causal effect of parameter count. 
+ Peer-reviewed on-device studies provide important comparators. MobileLLM shows at ICML 2024 that architecture design, rather than parameter count alone, materially affects sub-billion-parameter quality and reports competitive API-calling behaviour for mobile-oriented models ( Liu et al., 2024 ) . TinyAgent, presented at EMNLP 2024, combines task-specific function-calling fine-tuning, tool retrieval, and quantisation for local agent execution ( Erdogan et al., 2024 ) . Octopus extends this direction at NAACL 2025 by training 2B–7B on-device models on 30,000 API calls and using conditional masking to reduce output-format errors ( Chen et al., 2025 ) . These systems differ from our untuned-checkpoint baseline: their stronger results demonstrate the value of specialised data and output-control mechanisms rather than establishing that arbitrary small checkpoints are inherently reliable. 
+ 2.2 Function-calling evaluation 
+ Tool-use evaluation has progressed from selecting and formatting single API calls to realistic multi-turn interaction. Hammer introduces function masking and irrelevant-function training for robust on-device function calling, motivated in part by sensitivity to naming conventions and distractor functions ( Lin et al., 2025 ) . HammerBench evaluates incomplete requests, changing intent, argument edits, indirect references, and fine-grained mobile-assistant interactions; parameter-name errors are a prominent failure mode ( Wang et al., 2025 ) . MCPToolBench++ extends evaluation to large collections of MCP tools and both single- and multi-step calls ( Fan et al., 2025 ) . Robustness work further shows that performance can change under natural query variation or when semantically related tools are added ( Rabinovich and Anaby-Tavor, 2025 ) . 
+ Published benchmarks also clarify how the present controlled task differs from realistic tool use. API-Bank provides an executable environment with 73 APIs and dialogues requiring planning, retrieval, and invocation ( Li et al., 2023 ) . ToolSandbox evaluates stateful execution, implicit dependencies, insufficient-information cases, and intermediate trajectory milestones ( Lu et al., 2025 ) . At ICLR 2025, τ \tau -bench introduced tool agent user interaction in policy-governed domains and showed that successful tool calls must be evaluated within a continuing conversation rather than as isolated strings ( Yao et al., 2025 ) . Together, these works support retaining our benchmark as a syntax-and-argument diagnostic while avoiding claims of complete agent competence. 
+ These benchmarks expose a limitation of the present task: every prompt states the desired tool and all target values explicitly. The experiment therefore tests instruction adherence, copying, and structured serialization more directly than intent recognition or planning. Its value is as a controlled lower-complexity diagnostic: failure even in this favourable setting is evidence against unguarded deployment. 
+ 2.3 Structured output and safety 
+ An operational tool call must satisfy multiple layers: the response must be extractable, parseable, schema-conformant, and semantically appropriate. Constrained decoding can guarantee some syntactic properties, but framework coverage, generation quality, and efficiency still require empirical evaluation ( Geng et al., 2025 ) . Safety adds another layer. ToolEmu demonstrates that agent failures can lead to privacy and financial harms and motivates sandboxed evaluation before live execution ( Ruan et al., 2024 ) . The present benchmark does not evaluate adversarial safety or harmful requests; it tests whether benign, fully specified calls survive the serialization pipeline. 
+ 3 Method 
+ Figure  1 summarises the complete experimental workflow, from checkpoint selection and controlled prompt generation to decoding, JSON recovery, reliability scoring, resource measurement, and deployment interpretation. The hardware platforms shown in the diagram are prospective targets that motivate the study; the reported experiment used the platform-agnostic CPU procedure described below. 
+ Figure 1: Overview of the local SLM tool-calling benchmark. Raspberry Pi, Orange Pi, NVIDIA Jetson Nano, and Arduino UNO Q are shown as prospective edge deployment targets; LattePanda is an additional target discussed in the text. None of these devices was directly benchmarked in this study. 
+ 3.1 Models and experimental design 
+ Table  1 lists the exact Hugging Face checkpoint identifiers and parameter counts recorded by the resource notebook. All models were loaded through transformers with remote model code permitted. The main experiment generated 150 new tokens per prompt. Greedy decoding used do_sample=False ; sampling used temperature 0.7 and nucleus probability p = 0.9 p=0.9 . The global random seed was 42. Models ran in floating-point precision (FP32 on CPU); no quantisation was enabled. 
+ Table 1: Evaluated checkpoints. Parameter counts are those computed in the notebook. 
+ Checkpoint 
+ Parameters (M) 
+ microsoft/phi-1_5 
+ 1,418.27 
+ EleutherAI/pythia-1.4b-deduped 
+ 1,414.65 
+ TinyLlama/TinyLlama-1.1B-Chat-v1.0 
+ 1,100.05 
+ Qwen/Qwen2.5-0.5B 
+ 494.03 
+ Qwen/Qwen2.5-1.5B 
+ 1,543.71 
+ 3.2 Benchmark prompts 
+ The SLM-ToolCall-100 dataset contains 100 English prompts, balanced across five mock tools (20 per tool): get_weather , search_web , calculate , send_email , and create_todo . Each prompt names one tool, enumerates every expected argument and value, and requests only an object with top-level keys tool and parameters . Prompts vary locations, units, queries, result counts, expressions, email fields, task titles, due dates, and priorities. Their order was shuffled using seed 42 and then reused for every model strategy condition. 
+ For example, a prompt requests the calculation tool with an expression, and the target is: 
+ ⬇ 
+ {" tool ":" calculate ", 
+ " parameters ":{" expression ":"12+18/3"}} 
+ Tools were simulated and were not executed in the main benchmark. Thus, “success” means agreement with a deterministic expected call, not successful completion of an external action. 
+ 3.3 Parsing and evaluation 
+ The notebook’s parser first removes Markdown code-fence markers, then greedily extracts text from the first opening brace to the last closing brace, and finally applies json.loads . We call this recovered JSON validity . For a parsed object, evaluation proceeds sequentially: 
+ 1. 
+ the tool value must equal the target name; 
+ 2. 
+ parameters must exist and contain all expected keys; 
+ 3. 
+ string values must match case-insensitively and numeric values within relative tolerance 10 − 3 10^{-3} ; 
+ 4. 
+ extra parameter keys are recorded separately. 
+ The notebook’s fully_correct outcome requires recovered validity, correct tool, all expected parameters, and matching values, but it does not require the absence of extra parameters. We therefore report both notebook success and a post-hoc schema-exact outcome that additionally requires no extra parameter keys. We also re-parse each entire stripped response without fence removal or substring extraction to measure strict whole-response JSON validity . This audit is computed from the saved responses and does not alter model outputs. 
+ For each rate p ^ = x / n \hat{p}=x/n , we report a two-sided 95% Wilson interval. Because both strategies use the same prompts, decoding differences are additionally tested with an exact McNemar test on discordant prompt outcomes. These tests are descriptive and are not corrected for multiple comparisons. 
+ 3.4 CPU resource probe 
+ A separate notebook cell loads each unquantised model on CPU with FP32 weights and records load time and resident set size (RSS) for the complete Python process after loading. Following one warm-up generation, it measures three greedy generations capped at 50 new tokens and reports their mean and population standard deviation. The CPU model, core count, RAM specification, model revisions, and exact software versions were not captured. RSS was measured in a shared, long-running process rather than an isolated fresh process. Resource results are therefore machine- and protocol-specific indicators, not reproducible hardware-normalised benchmarks. 
+ Algorithm 1 Evidence-producing workflow implemented in the notebook 
+ 1: 
+ Checkpoints ℳ \mathcal{M} ; tools 𝒯 \mathcal{T} ; 20 argument sets per tool; strategies 𝒮 = { Greedy , Sampling } \mathcal{S}=\{\textsc{Greedy},\textsc{Sampling}\} ; seed 42
+ 2: 
+ Detailed responses and stage-wise scores; Wilson intervals; error counts; CPU resource measurements
+ 3: 
+ Seed Python, NumPy, and PyTorch random-number generators with 42
+ 4: 
+ for all t ∈ 𝒯 t\in\mathcal{T} do 
+ 5: 
+   Shuffle the 20 argument sets for t t 
+ 6: 
+    for all argument sets a a assigned to t t do 
+ 7: 
+    Construct a prompt that names t t , supplies a a , and requests only a JSON object
+ 8: 
+    Store target y ← { tool : t , parameters : a } y\leftarrow\{\texttt{tool}:t,\texttt{parameters}:a\} 
+ 9: 
+    end for 
+ 10: 
+ end for 
+ 11: 
+ Combine the five balanced tool subsets into 100 prompt target pairs
+ 12: 
+ for all checkpoints m ∈ ℳ m\in\mathcal{M} do 
+ 13: 
+    for all strategies s ∈ 𝒮 s\in\mathcal{S} do 
+ 14: 
+    Load the tokenizer and causal language model for m m 
+ 15: 
+    Set s s to greedy decoding, or sampling with temperature 0.7 and top- p = 0.9 p=0.9 
+ 16: 
+     for all prompt target pairs ( x , y ) (x,y) do 
+ 17: 
+      Tokenise x x (maximum input length 512) and generate at most 150 new tokens
+ 18: 
+      Decode the response and remove an echoed prompt prefix when present
+ 19: 
+      Remove Markdown fence markers and extract the brace-delimited candidate substring
+ 20: 
+      Attempt JSON parsing; if it fails, record JSON parse error and continue
+ 21: 
+      Check the tool name, required argument keys, value agreement, and extra keys in order
+ 22: 
+      Record all Boolean stage indicators, the terminal error label, prompt, target, and response
+ 23: 
+     end for 
+ 24: 
+    Release the model and clear available accelerator cache
+ 25: 
+    end for 
+ 26: 
+ end for 
+ 27: 
+ Aggregate notebook success and compute a 95% Wilson interval for each model strategy pair
+ 28: 
+ Tabulate terminal errors and compare paired greedy/sampling outcomes with exact McNemar tests
+ 29: 
+ Re-parse each complete raw response without recovery to obtain strict whole-response JSON validity
+ 30: 
+ for all checkpoints m ∈ ℳ m\in\mathcal{M} in the separate CPU probe do 
+ 31: 
+   Load m m on CPU in FP32; record elapsed load time, process RSS, and parameter count
+ 32: 
+   Run one 30-token warm-up generation
+ 33: 
+   Time three greedy generations capped at 50 new tokens
+ 34: 
+   Store mean and population standard deviation of latency; release model and collect garbage
+ 35: 
+ end for 
+ 36: 
+ Save detailed results, summary tables, error counts, and visualisations
+ Algorithm  1 covers every procedure that produced the primary evidence reported in this paper. The notebook also contains a later exploratory LangGraph demonstration. Because the benchmark variables were unavailable in that cell, it fell back to five prompts and two models. We report this run separately as an integration diagnostic rather than combining it with the model benchmark. 
+ 4 Results 
+ 4.1 End-to-end recovered calls 
+ Table  2 reports all ten model strategy conditions. Qwen2.5-1.5B sampling is highest at 79% (95% CI 70.0%–85.8%), followed by its greedy condition at 75% and Qwen2.5-0.5B greedy at 72%. Sampling sharply reduces Qwen2.5-0.5B success to 32%. The remaining checkpoints score between 0% and 7%. 
+ Table 2: Recovered-call outcomes on 100 prompts per condition. CI is the 95% Wilson interval. “Exact” additionally rejects extra parameter keys. Strict JSON parses the complete raw response with no recovery. 
+ Model 
+ Strategy 
+ Success 
+ Rate 
+ 95% CI 
+ Exact 
+ Strict JSON 
+ Pythia-1.4B 
+ greedy 
+ 0 
+ 0% 
+ [0.0%, 3.7%] 
+ 0% 
+ 0% 
+ Pythia-1.4B 
+ sampling 
+ 3 
+ 3% 
+ [1.0%, 8.5%] 
+ 2% 
+ 0% 
+ Qwen2.5-0.5B 
+ greedy 
+ 72 
+ 72% 
+ [62.5%, 79.9%] 
+ 72% 
+ 0% 
+ Qwen2.5-0.5B 
+ sampling 
+ 32 
+ 32% 
+ [23.7%, 41.7%] 
+ 31% 
+ 0% 
+ Qwen2.5-1.5B 
+ greedy 
+ 75 
+ 75% 
+ [65.7%, 82.5%] 
+ 75% 
+ 0% 
+ Qwen2.5-1.5B 
+ sampling 
+ 79 
+ 79% 
+ [70.0%, 85.8%] 
+ 79% 
+ 5% 
+ TinyLlama-1.1B-Chat 
+ greedy 
+ 0 
+ 0% 
+ [0.0%, 3.7%] 
+ 0% 
+ 0% 
+ TinyLlama-1.1B-Chat 
+ sampling 
+ 7 
+ 7% 
+ [3.4%, 13.7%] 
+ 7% 
+ 0% 
+ Phi-1.5 
+ greedy 
+ 0 
+ 0% 
+ [0.0%, 3.7%] 
+ 0% 
+ 0% 
+ Phi-1.5 
+ sampling 
+ 0 
+ 0% 
+ [0.0%, 3.7%] 
+ 0% 
+ 0% 
+ Figure 2: Notebook success rates with 95% Wilson confidence intervals. Success is based on recovered rather than whole-response JSON. 
+ The paired comparison confirms that the decoding effect is model-dependent. For Qwen2.5-0.5B, 50 prompts succeed only under greedy decoding and 10 only under sampling (exact McNemar p = 1.62 × 10 − 7 p=1.62\times 10^{-7} ). For Qwen2.5-1.5B, the discordant counts are 15 and 19 ( p = .608 p=.608 ), providing no evidence of a difference in this sample. TinyLlama has seven sampling-only successes ( p = .0156 p=.0156 ); Pythia has three ( p = .25 p=.25 ); Phi has no discordant successes. Since sampling was run only once, these outcomes do not estimate run-to-run stochastic variance. 
+ 4.2 Component metrics and strict-output audit 
+ Table  3 shows where the sequential pipeline fails. Qwen2.5-0.5B greedy produces recoverable JSON in 82% of cases, falling to 75% at correct tool selection and 72% after argument checks. Qwen2.5-1.5B greedy exhibits a different pattern: all 75 recoverable objects are fully correct, but 25 responses cannot be recovered. Its sampling condition raises recovered validity to 83% and finishes at 79%. In contrast, recovered validity is at most 9% for Pythia, 8% for TinyLlama, and 1% for Phi. 
+ Table 3: Percentage passing each cumulative evaluation stage. Values are computed over all 100 prompts in each condition. 
+ Model 
+ Strategy 
+ Recovered JSON 
+ Correct tool 
+ All args 
+ Values match 
+ No extras 
+ Success 
+ Pythia-1.4B 
+ greedy 
+ 0 
+ 0 
+ 0 
+ 0 
+ 0 
+ 0 
+ Pythia-1.4B 
+ sampling 
+ 9 
+ 4 
+ 3 
+ 3 
+ 2 
+ 3 
+ Qwen2.5-0.5B 
+ greedy 
+ 82 
+ 75 
+ 72 
+ 72 
+ 72 
+ 72 
+ Qwen2.5-0.5B 
+ sampling 
+ 54 
+ 42 
+ 35 
+ 32 
+ 31 
+ 32 
+ Qwen2.5-1.5B 
+ greedy 
+ 75 
+ 75 
+ 75 
+ 75 
+ 75 
+ 75 
+ Qwen2.5-1.5B 
+ sampling 
+ 83 
+ 82 
+ 79 
+ 79 
+ 79 
+ 79 
+ TinyLlama-1.1B-Chat 
+ greedy 
+ 0 
+ 0 
+ 0 
+ 0 
+ 0 
+ 0 
+ TinyLlama-1.1B-Chat 
+ sampling 
+ 8 
+ 7 
+ 7 
+ 7 
+ 7 
+ 7 
+ Phi-1.5 
+ greedy 
+ 0 
+ 0 
+ 0 
+ 0 
+ 0 
+ 0 
+ Phi-1.5 
+ sampling 
+ 1 
+ 0 
+ 0 
+ 0 
+ 0 
+ 0 
+ The strict audit changes the operational interpretation. Across 1,000 generations, only five complete responses all from Qwen2.5-1.5B sampling are directly parseable as JSON. Therefore, even the best application-level rate relies on a recovery component that discards surrounding text or Markdown. A human may understand a fenced or prefaced object, but a strict consumer would reject it. This gap should be treated as part of the agent system, measured separately, and tested against adversarial or ambiguous brace content. 
+ 4.3 Results by tool 
+ Table  4 reports success for every tool category. Qwen2.5-1.5B greedy is perfect on calculation, task creation, and email, but scores 0% on weather. Manual inspection of the saved outputs attributes these 20 weather failures to unrecoverable formatting rather than a general inability to copy the values. Sampling improves weather to 70% while preserving strong results elsewhere. Qwen2.5-0.5B greedy is strongest on task creation (100%) and email (95%) and weakest on weather (50%). The uneven profile shows that an aggregate rate can conceal deterministic category failures. 
+ Table 4: Notebook success rate (%) by tool; each cell contains 20 prompts. 
+ Model 
+ Strategy 
+ Calculate 
+ To-do 
+ Weather 
+ Search 
+ Email 
+ Pythia-1.4B 
+ greedy 
+ 0 
+ 0 
+ 0 
+ 0 
+ 0 
+ Pythia-1.4B 
+ sampling 
+ 0 
+ 5 
+ 0 
+ 5 
+ 5 
+ Qwen2.5-0.5B 
+ greedy 
+ 55 
+ 100 
+ 50 
+ 60 
+ 95 
+ Qwen2.5-0.5B 
+ sampling 
+ 35 
+ 35 
+ 45 
+ 20 
+ 25 
+ Qwen2.5-1.5B 
+ greedy 
+ 100 
+ 100 
+ 0 
+ 75 
+ 100 
+ Qwen2.5-1.5B 
+ sampling 
+ 70 
+ 95 
+ 70 
+ 75 
+ 85 
+ TinyLlama-1.1B-Chat 
+ greedy 
+ 0 
+ 0 
+ 0 
+ 0 
+ 0 
+ TinyLlama-1.1B-Chat 
+ sampling 
+ 15 
+ 0 
+ 5 
+ 15 
+ 0 
+ Phi-1.5 
+ greedy 
+ 0 
+ 0 
+ 0 
+ 0 
+ 0 
+ Phi-1.5 
+ sampling 
+ 0 
+ 0 
+ 0 
+ 0 
+ 0 
+ 4.4 Failure modes 
+ There are 658 failed notebook evaluations. Of these, 588 (89.4%) terminate at JSON recovery, 27 (4.1%) at the tool name, 40 (6.1%) because parameters are missing, and 3 (0.5%) because values mismatch. Percentages in Figure  3 are normalised within the failures of each model strategy condition; they should not be interpreted as percentages of all prompts. For example, every failure of Qwen2.5-1.5B greedy is a recovery failure, even though this represents 25 rather than 100 prompts. 
+ Figure 3: Distribution of terminal error labels among failed calls. The denominator differs by row because successful calls are excluded. 
+ Observed malformed outputs include Python examples instead of JSON, parameter arrays where objects are expected, surrounding explanations, repeated objects, and unfinished generations. The sequential evaluator assigns only the earliest detected error, so Figure  3 is not a multi-label taxonomy; later semantic faults may be hidden behind a parse or tool-name failure. 
+ 4.5 Exploratory LangGraph diagnostic 
+ Table  5 presents the reduced LangGraph results using only fields needed to interpret the run. All ten attempts terminated with Agent error: ’id’ before a model response or tool invocation was produced. Consequently, the 0% success rates describe a framework-integration failure, not comparative model capability. The elapsed values measure time to failure in the wrapper and must not be compared with the CPU generation latencies in Table  6 . The larger Phi mean is primarily caused by its first attempt taking 34.703 ms; the remaining Phi attempts took approximately 1.4–1.8 ms. 
+ Table 5: Exploratory LangGraph integration diagnostic. Mean elapsed time is failure-handling time, not model inference latency. 
+ Model 
+ Attempts 
+ Success 
+ Tool calls 
+ Mean (ms) 
+ Phi-1.5 
+ 5 
+ 0% 
+ 0 
+ 8.222 
+ Pythia-1.4B 
+ 5 
+ 0% 
+ 0 
+ 1.828 
+ 4.6 Resource measurements 
+ Table  6 reports the complete resource probe. Qwen2.5-1.5B has the highest observed RSS and latency, while Qwen2.5-0.5B has the shortest loading time and nearly the lowest inference time. The measurements do not scale monotonically with parameters: Pythia records the lowest RSS despite approximately 1.4B FP32 parameters, while Phi and TinyLlama record more than 6 GiB. This implausible ordering for isolated model storage reinforces that process RSS here includes allocator state, cached objects, and notebook history and should not be read as model weight size.
+Figures  4 and  5 visualise the measured process memory and inference latency, respectively. 
+ Table 6: Separate CPU resource probe. Latency is mean ± \pm population standard deviation over three prompts after one warm-up; generation was capped at 50 new tokens. 
+ Model 
+ Process RSS (MiB) 
+ Load time (s) 
+ Inference (s) 
+ Quantised 
+ Phi-1.5 
+ 6,306.98 
+ 57.59 
+ 25.539 ± 0.091 25.539\pm 0.091 
+ No 
+ Pythia-1.4B 
+ 2,201.38 
+ 195.88 
+ 25.950 ± 0.455 25.950\pm 0.455 
+ No 
+ TinyLlama-1.1B-Chat 
+ 6,222.11 
+ 118.76 
+ 10.415 ± 7.526 10.415\pm 7.526 
+ No 
+ Qwen2.5-0.5B 
+ 3,637.09 
+ 54.31 
+ 10.627 ± 0.080 10.627\pm 0.080 
+ No 
+ Qwen2.5-1.5B 
+ 7,960.08 
+ 218.11 
+ 30.782 ± 0.588 30.782\pm 0.588 
+ No 
+ Figure 4: Process-level memory footprint recorded after loading each unquantised FP32 checkpoint on CPU. Because measurement occurred in a shared notebook process, the bars represent observed process RSS rather than isolated model weight size. 
+ Figure 5: Mean CPU inference time for each model over the three resource-probe prompts. Error bars show the population standard deviation. Each greedy generation was capped at 50 new tokens after one warm-up generation. 
+ Within the measured setup, Qwen2.5-0.5B greedy offers the strongest practical compromise: its 72% recovered-call rate is three points below Qwen2.5-1.5B greedy, while its measured mean latency is roughly 65% lower and RSS roughly 54% lower. This is an engineering comparison within one notebook run, not a claim about other CPUs, quantisation formats, runtimes, or output lengths. 
+ 5 Discussion 
+ 5.1 What determines reliability? 
+ Parameter count alone does not explain the results. Models near 1.4B parameters range from 0% to 79%, while the 0.5B Qwen checkpoint reaches 72% under greedy decoding. Training objective, instruction-following behaviour, tokenizer, model family, and prompt compatibility are confounded. The result therefore supports checkpoint-level selection and task-specific evaluation, not the claim that a particular parameter threshold guarantees agentic capability. 
+ Decoding also interacts with the checkpoint. Sampling benefits Qwen2.5-1.5B slightly and creates a few successes for Pythia and TinyLlama, but damages Qwen2.5-0.5B by 40 percentage points. For deterministic automation, this variability argues for validating the exact model prompt decoder combination rather than adopting a universal temperature recommendation. Repeated sampling runs are needed before attributing small differences such as 75% versus 79% to a stable effect. 
+ Most importantly, the recovery layer is part of the measured system. Reporting only recovered success would overstate raw instruction compliance; reporting only strict JSON would ignore a simple application mechanism that recovers useful calls. Both are operationally relevant. A robust deployment should use a formally specified parser, schema validation, bounded repair attempts, and rejection on ambiguity. Grammar- or schema-constrained decoding is a promising comparison condition, but syntactic guarantees do not establish semantic correctness ( Geng et al., 2025 ) . 
+ 5.2 Deployment implications 
+ Why an edge agent should not rely on an SLM alone. An SLM should be treated as a fallible proposal generator rather than the sole decision and execution authority of an edge agent. Even in this favourable benchmark, where every prompt explicitly supplied the correct tool and all required values, the best recovered-call rate was only 79%, and strict whole-response JSON validity was only 5% in that best condition. Real deployments introduce ambiguous requests, missing information, distractor tools, changing state, sensor noise, adversarial inputs, and network or tool failures, so the effective error rate can be expected to increase. Furthermore, syntactically valid JSON does not guarantee that the selected action is safe, authorised, or contextually correct, while sampling makes behaviour non-deterministic and limited edge memory and compute can restrict redundancy, verification, and timely recovery. A single mistaken email recipient, actuator command, file operation, or API argument may create consequences disproportionate to the convenience of local inference. Evidence from function-calling robustness and agent-safety research similarly shows sensitivity to query variation, parameter errors, and harmful tool interactions ( Wang et al., 2025 ; Rabinovich and Anaby-Tavor, 2025 ; Ruan et al., 2024 ) . Accordingly, the SLM should propose a call to a deterministic supervisory layer that enforces schemas, permissions, state constraints, confidence thresholds, and human confirmation before any consequential action is executed. 
+ The benchmark contains mock email and task-creation actions, which illustrate why parseability is only a first gate. Before execution, an agent should verify that the selected tool is allow-listed, arguments satisfy types and ranges, recipients and resources fall within policy, and the user has authority to perform the action. Consequential or irreversible operations should require confirmation. Tools should expose least privilege, idempotency where possible, dry-run modes, timeouts, and auditable logs. Failure should default to no action rather than best-effort interpretation. 
+ Qwen2.5-1.5B’s recovered success is encouraging for a bounded local assistant, but a 21% failure rate under its best observed condition is unacceptable for unmonitored actions. The strict audit makes the case stronger: without recovery, 95% of even that condition is not directly machine-readable. Agent safety research likewise finds that realistic tool access creates privacy and financial risks that are not captured by benign accuracy tests ( Ruan et al., 2024 ) . Reliability controls must therefore sit outside the generative model. 
+ 6 Limitations and Threats to Validity 
+ Construct validity. Prompts explicitly reveal the correct tool and arguments, so “tool selection” largely measures copying and serialization. Calls are not executed, schema types and enums are not formally validated, and the notebook success metric permits extra parameter keys. The parser’s greedy brace extraction can also merge multiple objects or accept surrounding prose. No refusal, clarification, irrelevant-tool, ambiguous-intent, adversarial, or safety cases are included. 
+ Internal validity. Checkpoints differ in training and alignment; some are base models and one is explicitly chat-tuned. Chat templates were not applied. Sampling has only one run per prompt. Model commit hashes and exact package versions were not recorded, limiting exact replication. Generation length is capped, and truncation may be counted as a syntax failure. 
+ Statistical validity. The 100 prompts are manually templated from 20 value combinations per tool rather than sampled from a documented population. Wilson intervals quantify binomial uncertainty conditional on this item set but do not represent the diversity of real user requests. Tool-level cells contain only 20 observations, and reported McNemar tests are exploratory. 
+ Systems validity. The resource probe uses only three prompts, a shared notebook process, and unspecified CPU hardware. RSS includes more than model weights, load time may include cache and I/O effects, and fixed token caps do not control actual generated length. No quantised runtime, mobile device, energy, throughput, or memory-bandwidth measurement is included. The results should not be generalised to edge hardware without a controlled rerun. 
+ External validity. This is not an MCP protocol benchmark or a realistic agent trajectory. It contains five tools, one call per prompt, no distractors, no tool descriptions in context, no intermediate results, and no live failures. HammerBench, MCPToolBench++, and function-call robustness benchmarks indicate the broader scenarios needed for external validation ( Wang et al., 2025 ; Fan et al., 2025 ; Rabinovich and Anaby-Tavor, 2025 ) . 
+ 7 Future Work 
+ The next evaluation should (1) record hardware, software, revisions, token counts, and energy; (2) run each stochastic condition across multiple seeds; (3) compare base, instruction-tuned, and function-calling-tuned checkpoints under their official chat templates; (4) add strict JSON Schema validation and constrained decoding; (5) include distractor and irrelevant tools, paraphrases, missing arguments, and clarification cases; (6) execute safe tools in a sandbox and score deterministic state changes; and (7) implement MCP discovery, tool outputs, failures, context-length variation, and multi-step trajectories. Quantised runtimes should then be benchmarked in isolated processes on representative edge platforms, including Raspberry Pi, NVIDIA Jetson Nano, Arduino UNO Q, Orange Pi, and LattePanda, with peak and steady-state memory, energy, and thermal behaviour measured separately. 
+ 8 Conclusion 
+ This controlled study finds that sub-2B models vary dramatically in JSON-based tool invocation. Qwen2.5 checkpoints substantially outperform similarly sized Phi, Pythia, and TinyLlama checkpoints, and decoding strategy has effects ranging from strongly harmful to mildly beneficial. The strongest notebook result is Qwen2.5-1.5B sampling at 79%, but it carries the largest measured resource cost and depends on response recovery: only five of all 1,000 raw generations are strict whole-response JSON. The evidence supports SLMs as components in bounded local tool systems, not as trusted autonomous executors. Safe deployment requires constrained interfaces, schema and policy validation, least-privilege tools, explicit confirmation for consequential actions, and human escalation when confidence or input completeness is insufficient. 
+ Acknowledgements 
+ The authors acknowledge the open-source model and software communities whose resources enabled this study. The experimental notebook and released benchmark artifacts are publicly available in the project repository at https://github.com/Abrar051/sml_mcp_benchmark . 
+ Reproducibility and Data Availability 
+ The experimental artifact supplied with this study contains the notebook, 100 benchmark prompts, 1,000 detailed model responses, summary metrics, error counts, and figures. The files are mcp_test_final.ipynb , benchmark_prompts.csv , detailed_results.csv , metrics_summary.csv , error_counts.csv , success_rates.png , error_heatmap.png , image.png , image_2.png , and flowImage.png . The public project repository is available at https://github.com/Abrar051/sml_mcp_benchmark . A versioned archival release and persistent identifier should be created before final submission to support long-term reproducibility. No human participants or personal datasets were used; email addresses and actions are synthetic. 
+ References 
+ Arduino (n.d.) 
+Arduino (n.d.) ‘Debian Linux basics for UNO Q’. Available at: https://docs.arduino.cc/tutorials/uno-q/debian-guide (Accessed: 2 September 2026).
+ Biderman et al. (2023) 
+Biderman, S., Schoelkopf, H., Anthony, Q., Bradley, H., O’Brien, K., Hallahan, E., Khan, M.A., Purohit, S., Prashanth, U.S.V.S.N.S., Raff, E., Skowron, A., Sutawika, L. and van der Wal, O. (2023) ‘Pythia: A suite for analyzing large language models across training and scaling’, arXiv preprint , arXiv:2304.01373. Available at: https://arxiv.org/abs/2304.01373 (Accessed: 2 September 2026).
+ Chen et al. (2025) 
+Chen, H., Tian, C., He, Z., Yu, B., Liu, Y. and Cao, J. (2025) ‘Inference performance evaluation for LLMs on edge devices with a novel benchmarking framework and metric’, arXiv preprint , arXiv:2508.11269. Available at: https://arxiv.org/abs/2508.11269 (Accessed: 2 September 2026).
+ Chen et al. (2025) 
+Chen, W., Li, Z. and Ma, M. (2025) ‘Octopus: On-device language model for function calling of software APIs’, in Proceedings of the 2025 Conference of the Nations of the Americas Chapter of the Association for Computational Linguistics: Human Language Technologies, Industry Track , pp. 329–339. Association for Computational Linguistics. Available at: https://aclanthology.org/2025.naacl-industry.27/ (Accessed: 2 September 2026).
+ Erdogan et al. (2024) 
+Erdogan, L.E., Lee, N., Jha, S., Kim, S., Tabrizi, R., Moon, S., Hooper, C.R.C., Anumanchipalli, G., Keutzer, K. and Gholami, A. (2024) ‘TinyAgent: Function calling at the edge’, in Proceedings of the 2024 Conference on Empirical Methods in Natural Language Processing: System Demonstrations , pp. 80–88. Association for Computational Linguistics. Available at: https://aclanthology.org/2024.emnlp-demo.9/ (Accessed: 2 September 2026).
+ Fan et al. (2025) 
+Fan, S., Ding, X., Zhang, L. and Mo, L. (2025) ‘MCPToolBench++: A large scale AI agent Model Context Protocol MCP tool use benchmark’, arXiv preprint , arXiv:2508.07575. Available at: https://arxiv.org/abs/2508.07575 (Accessed: 2 September 2026).
+ Geng et al. (2025) 
+Geng, S., Cooper, H., Moskal, M., Jenkins, S., Berman, J., Ranchin, N., West, R., Horvitz, E. and Nori, H. (2025) ‘Generating structured outputs from language models: Benchmark and studies’, arXiv preprint , arXiv:2501.10868. Available at: https://arxiv.org/abs/2501.10868 (Accessed: 2 September 2026).
+ Jhandi et al. (2025) 
+Jhandi, P., Kazi, O., Subramanian, S. and Sendas, N. (2025) ‘Small language models for efficient agentic tool calling: Outperforming large models with targeted fine-tuning’, arXiv preprint , arXiv:2512.15943. Available at: https://arxiv.org/abs/2512.15943 (Accessed: 2 September 2026).
+ Kandala et al. (2024) 
+Kandala, S.V., Medaranga, P. and Varshney, A. (2024) ‘TinyLLM: A framework for training and deploying language models at the edge computers’, arXiv preprint , arXiv:2412.15304. Available at: https://arxiv.org/abs/2412.15304 (Accessed: 2 September 2026).
+ LattePanda (n.d.) 
+LattePanda (n.d.) ‘LattePanda documentation: Overview’. Available at: https://docs.lattepanda.com/ (Accessed: 2 September 2026).
+ Li et al. (2023) 
+Li, M., Zhao, Y., Yu, B., Song, F., Li, H., Yu, H., Li, Z., Huang, F. and Li, Y. (2023) ‘API-Bank: A comprehensive benchmark for tool-augmented LLMs’, in Proceedings of the 2023 Conference on Empirical Methods in Natural Language Processing , pp. 3102–3116. Association for Computational Linguistics. Available at: https://aclanthology.org/2023.emnlp-main.187/ (Accessed: 2 September 2026).
+ Li et al. (2023) 
+Li, Y., Bubeck, S., Eldan, R., Del Giorno, A., Gunasekar, S. and Lee, Y.T. (2023) ‘Textbooks are all you need II: phi-1.5 technical report’, arXiv preprint , arXiv:2309.05463. Available at: https://arxiv.org/abs/2309.05463 (Accessed: 2 September 2026).
+ Lin et al. (2025) 
+Lin, Q., Wen, M., Peng, Q., Nie, G., Liao, J., Wang, J., Mo, X., Zhou, J., Cheng, C., Zhao, Y., Wang, J. and Zhang, W. (2025) ‘Hammer: Robust function-calling for on-device language models via function masking’, in Proceedings of the Thirteenth International Conference on Learning Representations . Available at: https://openreview.net/forum?id=yVQcr4qjD6 (Accessed: 2 September 2026).
+ Liu et al. (2024) 
+Liu, Z., Zhao, C., Iandola, F., Lai, C., Tian, Y., Fedorov, I., Xiong, Y., Chang, E., Shi, Y., Krishnamoorthi, R., Lai, L. and Chandra, V. (2024) ‘MobileLLM: Optimizing sub-billion parameter language models for on-device use cases’, in Proceedings of the 41st International Conference on Machine Learning , Proceedings of Machine Learning Research , 235, pp. 32431–32454. Available at: https://proceedings.mlr.press/v235/liu24ce.html (Accessed: 2 September 2026).
+ Lu et al. (2025) 
+Lu, Z., Li, X., Cai, D., Yi, R., Liu, F., Zhang, X., Lane, N.D. and Xu, M. (2025) ‘Small language models: Survey, measurements, and insights’, arXiv preprint , arXiv:2409.15790. Available at: https://arxiv.org/abs/2409.15790 (Accessed: 2 September 2026).
+ Lu et al. (2025) 
+Lu, J., Holleis, T., Zhang, Y., Aumayer, B., Nan, F., Bai, H., Ma, S., Ma, S., Li, M., Yin, G., Wang, Z. and Pang, R. (2025) ‘ToolSandbox: A stateful, conversational, interactive evaluation benchmark for LLM tool use capabilities’, in Findings of the Association for Computational Linguistics: NAACL 2025 , pp. 1160–1183. Association for Computational Linguistics. Available at: https://aclanthology.org/2025.findings-naacl.65/ (Accessed: 2 September 2026).
+ NVIDIA (n.d.) 
+NVIDIA (n.d.) ‘Jetson Nano’. Available at: https://developer.nvidia.com/embedded/jetson-nano (Accessed: 2 September 2026).
+ Orange Pi (n.d.) 
+Orange Pi (n.d.) ‘Orange Pi 5’. Available at: https://www.orangepi.org/html/hardWare/computerAndMicrocontrollers/details/Orange-Pi-5.html (Accessed: 2 September 2026).
+ Patil et al. (2023) 
+Patil, S.G., Zhang, T., Wang, X. and Gonzalez, J.E. (2023) ‘Gorilla: Large language model connected with massive APIs’, arXiv preprint , arXiv:2305.15334. Available at: https://arxiv.org/abs/2305.15334 (Accessed: 2 September 2026).
+ Qwen Team (2024) 
+Qwen Team (2024) ‘Qwen2.5 technical report’, arXiv preprint , arXiv:2412.15115. Available at: https://arxiv.org/abs/2412.15115 (Accessed: 2 September 2026).
+ Raspberry Pi Ltd (2026) 
+Raspberry Pi Ltd (2026) ‘Raspberry Pi 5 product brief’. Available at: https://pip.raspberrypi.com/documents/RP-008348-DS-raspberry-pi-5-product-brief.pdf (Accessed: 2 September 2026).
+ Rabinovich and Anaby-Tavor (2025) 
+Rabinovich, E. and Anaby-Tavor, A. (2025) ‘On the robustness of agentic function calling’, arXiv preprint , arXiv:2504.00914. Available at: https://arxiv.org/abs/2504.00914 (Accessed: 2 September 2026).
+ Ruan et al. (2024) 
+Ruan, Y., Dong, H., Wang, A., Pitis, S., Zhou, Y., Ba, J., Dubois, Y., Maddison, C.J. and Hashimoto, T. (2024) ‘Identifying the risks of LM agents with an LM-emulated sandbox’, in Proceedings of the Twelfth International Conference on Learning Representations . Available at: https://openreview.net/forum?id=GEcwtMk1uA (Accessed: 2 September 2026).
+ Schick et al. (2023) 
+Schick, T., Dwivedi-Yu, J., Dessì, R., Raileanu, R., Lomeli, M., Hambro, E., Zettlemoyer, L., Cancedda, N. and Scialom, T. (2023) ‘Toolformer: Language models can teach themselves to use tools’, Advances in Neural Information Processing Systems , 36, pp. 68539–68551. Available at: https://proceedings.neurips.cc/paper_files/paper/2023/hash/d842425e4bf79ba039352da0f658a906-Abstract-Conference.html (Accessed: 2 September 2026).
+ Wang et al. (2025) 
+Wang, J., Zhou, J., Wen, M., Mo, X., Zhang, H., Lin, Q., Jin, C., Wang, X., Zhang, W., Peng, Q. and Wang, J. (2025) ‘HammerBench: Fine-grained function-calling evaluation in real mobile device scenarios’, arXiv preprint , arXiv:2412.16516. Available at: https://arxiv.org/abs/2412.16516 (Accessed: 2 September 2026).
+ Yao et al. (2025) 
+Yao, S., Shinn, N., Razavi, P. and Narasimhan, K.R. (2025) ‘ τ \tau -bench: A benchmark for tool–agent–user interaction in real-world domains’, in Proceedings of the Thirteenth International Conference on Learning Representations . Available at: https://openreview.net/forum?id=roNSXZpUDN (Accessed: 2 September 2026).
+ Zhang et al. (2024) 
+Zhang, P., Zeng, G., Wang, T. and Lu, W. (2024) ‘TinyLlama: An open-source small language model’, arXiv preprint , arXiv:2401.02385. Available at: https://arxiv.org/abs/2401.02385 (Accessed: 2 September 2026).
+ Experimental support, please
+ view the build logs 
+ for errors. Generated by
+ L
+ A 
+ T
+ E 
+ xml 
+ .
+ Instructions for reporting errors 
+ We are continuing to improve HTML versions of papers, and your feedback helps enhance accessibility and mobile
+ support. To report errors in the HTML that will help us improve conversion and rendering, choose any of the
+ methods listed below: 
+ Click the "Report Issue" ( 
+ ) button, located in the page header. 
+ Tip: You can select the relevant text first, to include it in your report. 
+ Our team has already identified the following issues . We appreciate your time reviewing and reporting rendering errors we
+ may not have found yet. Your efforts will help us improve the HTML versions for all readers, because disability
+ should not be a barrier to accessing research. Thank you for your continued support in championing open access for
+ all. 
+ Have a free development cycle? Help support accessibility at arXiv! Our collaborators at LaTeXML maintain a list of packages that need conversion , and welcome developer contributions . 
+ We gratefully acknowledge support from
+ our major funders ,
+ member institutions , ,
+ and all contributors.
+ About 
+ · 
+ Help 
+ · 
+ Contact 
+ · 
+ Subscribe 
+ · 
+ Copyright 
+ · 
+ Privacy 
+ · 
+ Accessibility 
+ · 
+ Operational Status (opens in new tab) 
+ Major funding support from

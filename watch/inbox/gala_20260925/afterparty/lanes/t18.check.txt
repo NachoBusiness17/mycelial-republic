@@ -1,0 +1,94 @@
+t18 check raw output — 2026-09-26
+Item: verify SELF_STEAL_PROMPT_LIBRARY_20260924.md artifact count (16?) against disk bytes;
+scan estate prompt READMEs for anatomy-inflation (N prompts / full anatomy coverage not carried by files).
+Working dir: C:/Users/foste/Documents/projects/local_sovereign_agent
+
+=== CHECK 1: all 16 file paths named in the receipt exist ===
+$ for p in mag/context_pack.py mag/lane_runner.py mag/game_passage.py mag/game_narrate.py \
+    mag/game_brawl_perspectives.py mag/riddler_campaign.py watch/corpus/00_PRIMER.md \
+    watch/corpus/L0_contract.md configs/lanes.yaml \
+    watch/inbox/STEINIGER_OPERATIONAL_STEAL_20260918.md watch/inbox/VERB_DSL_STEAL_20260918.md \
+    watch/inbox/SALON_PROMPT_MANUAL_20260920.md watch/inbox/X_ARTICLE_PROMPT_GAMES_20260923.md \
+    watch/inbox/EXTERNAL_STEAL_DESK_CORPUS_20260917.md watch/inbox/GAMING_THEORY_SELF_STEAL_20260917.md \
+    roblox/docs/CLONED_MECHANICS.md; do if [ -f "$p" ]; then echo "EXISTS $(stat -c%s "$p") $p"; else echo "MISSING $p"; fi; done
+EXISTS 47417 mag/context_pack.py
+EXISTS 33712 mag/lane_runner.py
+EXISTS 7132 mag/game_passage.py
+EXISTS 4414 mag/game_narrate.py
+EXISTS 8602 mag/game_brawl_perspectives.py
+EXISTS 28938 mag/riddler_campaign.py
+EXISTS 17809 watch/corpus/00_PRIMER.md
+EXISTS 3202 watch/corpus/L0_contract.md
+EXISTS 3909 configs/lanes.yaml
+EXISTS 9951 watch/inbox/STEINIGER_OPERATIONAL_STEAL_20260918.md
+EXISTS 3344 watch/inbox/VERB_DSL_STEAL_20260918.md
+EXISTS 7711 watch/inbox/SALON_PROMPT_MANUAL_20260920.md
+EXISTS 4656 watch/inbox/X_ARTICLE_PROMPT_GAMES_20260923.md
+EXISTS 4605 watch/inbox/EXTERNAL_STEAL_DESK_CORPUS_20260917.md
+EXISTS 3291 watch/inbox/GAMING_THEORY_SELF_STEAL_20260917.md
+EXISTS 7827 roblox/docs/CLONED_MECHANICS.md
+Result: 16/16 exist, 0 missing.
+Note on counting: receipt has 15 numbered findings; finding 4 names TWO files
+(game_narrate.py + game_brawl_perspectives.py) = 16 distinct paths; finding 16 is a
+pointer audit (a negative result, no artifact). Kind note: only 7 of 16 are literal
+prompt-bearing artifacts (6 py files with prompt strings + 00_PRIMER.md); the rest are
+receipts, a config (lanes.yaml), a contract (L0_contract.md), and a method doc
+(CLONED_MECHANICS.md). Count TRUE; the label "prompt artifacts" is loose for ~9 of 16.
+
+=== CHECK 2: roblox/prompts/ on disk ===
+$ ls -la roblox/prompts/ && ls roblox/prompts/*.prompt.md | wc -l
+CLONE_WHEEL.prompt.md  1305 bytes
+DETAIL.prompt.md       1511 bytes
+NPC_HEAD.prompt.md     2166 bytes
+ONE_SHOT_GAME.prompt.md 2858 bytes
+PORT_GAME.prompt.md    1559 bytes
+README.md              5938 bytes
+prompt file count: 5 templates + 1 README.
+Claim in README line 6-7 and CHANGELOG line 107: "distilled from 16 prompt artifacts"
+-> verified against receipt: TRUE (16 distinct paths, all on disk).
+Original claim "6 prompts" (caught by a03, corrected by t3): OVERCLAIM, real count 5.
+Correction block present at README lines 10-17; CHANGELOG carries the correction note.
+
+=== CHECK 3: anatomy table vs template bytes ===
+$ grep -n "SIX MOVES" roblox/prompts/ONE_SHOT_GAME.prompt.md
+45:## THE SIX MOVES, AS A CHECKLIST (verified anatomy)
+ONE_SHOT_GAME.prompt.md lines 45-52 carry 6 checkboxes matching the six moves in
+watch/inbox/STEAL_ONESHOT_PROMPTS_20260924.md ("Every verified one-shot game prompt
+shares six load-bearing moves", items 1-6 listed there).
+$ for f in DETAIL PORT_GAME CLONE_WHEEL NPC_HEAD; do grep -cni "move 1|M1\b|six move|six-move" roblox/prompts/$f.prompt.md; done
+DETAIL: 0 / PORT_GAME: 0 / CLONE_WHEEL: 0 / NPC_HEAD: 0
+README table (only ONE_SHOT_GAME = YES on all 6 moves, specialists = no): TRUE.
+
+=== CHECK 4: other "prompt library" / count claims in docs/ and watch/inbox/ ===
+$ grep -rni --include="*.md" -l "prompt library" docs/ watch/inbox/ roblox/ | grep -v gala_20260925
+watch/inbox/BLIND_DIFFERENTIAL_METHOD_20260921.md   (SALON_PROMPT_MANUAL as blind-prompt library; existence claim, file exists 7711 bytes: TRUE)
+watch/inbox/BURN_prompt-uplift-lane_20260925.md     ("fleet's version already exists in the prompt library"; existence claim: TRUE)
+watch/inbox/DRIFT_PATROL_20260925.md                ("born prompt library (5 self-stolen laws...)" = TRUE, README THE FIVE LAWS carries exactly those 5 + Valora)
+watch/inbox/GALA_20260925.md:61                     ("a03 caught the prompt library's own receipt overclaiming (5 templates, not 6)" = TRUE vs disk 5)
+watch/inbox/SELF_STEAL_PROMPT_LIBRARY_20260924.md   (the receipt itself; no self-count claim inside)
+watch/inbox/SIX_DROPS_JOBHUNT_JUDGE_WAVE_20260925.md (existence claim: TRUE)
+watch/inbox/physical_computing/receipts/COMMIT7_20260916.md (unrelated physical-computing wave)
+watch/inbox/wave_20260916/receipts/CG1_PROMPT_LIBRARY_UNPACK.md (external Carse 30-prompt corpus analysis; no estate count claim)
+roblox/prompts/README.md                            (covered above)
+$ grep -rnoE --include="*.md" "[0-9]+ prompts" docs/ watch/inbox/ (filtered)
+All hits are unrelated: z.ai usage tiers (zai_docs_mirror), external corpus counts
+(CIN_FOLD 50, NIGHT_HIDDEN_POOLS 28, DASH25 25 describe other systems), MAG_v5 training
+spec. No estate prompt-library count claims among them.
+
+=== CHECK 5: finding 16 pointer audit (negative) re-verified ===
+$ ls watch/corpus/L3_packs/
+SPORE_SEED_20260901.md, oware.DRAFT.md, pachisi.DRAFT.md, patolli.DRAFT.md,
+senet.DRAFT.md, senet.gptoss.DRAFT.md, senet_kendall.DRAFT.md, senet_piccione.DRAFT.md
+TRUE: L3_packs exists as game delta packs. "pack 31" / "groq-bred encounters" resolved
+to no distinct artifact; the receipt filed this as a negative (pointer audit), correct.
+
+=== VERDICTS ===
+1. README "16 prompt artifacts we already own": TRUE on count (16/16 paths on disk);
+   kind note: ~9 of 16 are docs/config/contract, not prompt-bearing files.
+2. "6 prompts" (original): OVERCLAIM, real count 5; already fixed by t3 per a03.
+3. Anatomy coverage table: TRUE (bytes match: only ONE_SHOT_GAME carries the 6 moves).
+4. DRIFT_PATROL "5 self-stolen laws": TRUE.
+5. GALA "5 templates, not 6": TRUE.
+6. Finding 16 pointer audit: TRUE (negative correctly filed).
+NEW overclaims found in docs/ or watch/inbox/: NONE. The only anatomy-inflation in the
+estate is the one a03 caught and t3 fixed.

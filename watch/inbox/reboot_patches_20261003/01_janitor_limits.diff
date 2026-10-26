@@ -1,0 +1,637 @@
+diff --git a/mag/ghost.py b/mag/ghost.py
+index 93937a535..9faf6f359 100644
+--- a/mag/ghost.py
++++ b/mag/ghost.py
+@@ -1294,6 +1294,25 @@ async def copilot_watch_loop(app, interval_s: float = 5.0) -> None:
+ 
+ AUTO_TRAIL = GHOST_DIR / "autonomous_trail.jsonl"
+ AUTO_DEDUP_MINUTES = 60  # don't re-fix the same signal within 60 min
++_GOV_NOTES: dict[str, float] = {}
++
++
++def _gov_note(note: str, *, every_s: float = 3600.0) -> None:
++    """Trail a janitor-governor decision at most once per `every_s` per text.
++
++    Reboot patch 01 (2026-10-03): the governor decides every cycle; the trail
++    gets one row per distinct decision per hour, not one per minute. Rows carry
++    no "sig" key so _auto_dedup never reads them as a completed fix."""
++    import time as _time
++    now = _time.time()
++    if now - _GOV_NOTES.get(note, 0.0) < every_s:
++        return
++    _GOV_NOTES[note] = now
++    print(f"[ghost] {note}", flush=True)
++    try:
++        _append_jsonl(AUTO_TRAIL, {"ts": _now(), "event": "janitor_governor", "note": note[:300]})
++    except Exception:
++        pass
+ 
+ 
+ def _auto_dedup(sig: str) -> bool:
+@@ -1422,6 +1441,8 @@ async def autonomous_task_loop(app, interval_s: float = 60.0) -> None:
+                         "provider": tier_provider,
+                         "model": tier_model,
+                         "sig": f"fkb:{sig}",
++                        "count": count,
++                        "output": f"memory/runs/ghost/autonomous_fixes/{sig.replace(':','_')}.md",
+                     })
+ 
+             # Signal 2: Spider blind + FKB has clear patterns → deepseek-v4-flash
+@@ -1444,32 +1465,53 @@ async def autonomous_task_loop(app, interval_s: float = 60.0) -> None:
+                         "provider": "deepseek",
+                         "model": "deepseek-v4-flash",
+                         "sig": sig,
++                        "output": "memory/runs/ghost/autonomous_fixes/spider_blind.md",
+                     })
+ 
+-            # Signal 3: Verkle tip stale → qwen2.5-coder:7b ($0, deterministic fix)
++            # Signal 3: Verkle tip stale. QUEST DROPPED (reboot patch 01, 2026-10-03,
++            # SYNTHESIS step 1): the old quest armed a 7B model with
++            # "python -m mag.verkle_audit --fix" against the shared chain. Chain
++            # repair is operator-gated; the janitor only notes the signal.
+             if state.get("verkle_tip_stale"):
+-                sig = "verkle_stale"
+-                if not _auto_dedup(sig):
+-                    quests.append({
+-                        "id": f"auto-verkle-{uuid.uuid4().hex[:6]}",
+-                        "action": "exec",
+-                        "goal": (
+-                            "[janitor] Verkle tip is stale. Run verkle audit. "
+-                            "Execute: python -m mag.verkle_audit --full and "
+-                            "if errors found, python -m mag.verkle_audit --fix. "
+-                            "Write a one-paragraph summary of what was fixed to "
+-                            "memory/runs/ghost/autonomous_fixes/verkle_audit.md. "
+-                            "This IS a mutating task — the verkle fix is safe. $0."
+-                        ),
+-                        "provider": "ollama",
+-                        "model": "qwen2.5-coder:7b",
+-                        "sig": sig,
++                _gov_note("verkle tip stale: observed only, no janitor quest (operator-gated repair)")
++
++            # ── Execute quests (max 1 per cycle), governed (reboot patch 01) ──
++            # janitor_governor: stop file / env off switch, STUCK after 3
++            # consecutive failures, re-arm only on fresh recurrence, daily cap,
++            # paid-provider downgrade. Fail closed: a governor error spawns nothing.
++            quest: dict[str, Any] | None = None
++            result: dict[str, Any] = {}
++            try:
++                from mag import janitor_governor as _jg
++                _gs = _jg.load_state()
++                for _settled in _jg.reconcile(_gs):
++                    _append_jsonl(AUTO_TRAIL, {
++                        "ts": _now(), "event": "janitor_settled",
++                        "task_id": _settled.get("task_id"), "quest_id": _settled.get("quest_id"),
++                        "status": _settled.get("status"), "ok": _settled.get("ok"),
++                        "reason": _settled.get("reason"), "stuck": _settled.get("stuck"),
++                        "gov_sig": _settled.get("sig"),
+                     })
+-
+-            # ── Execute quests (max 1 per cycle) ──
+-            if quests:
+-                quest = quests[0]  # take highest priority
+-                result = exec_copilot(quest, dry=False)
++                if quests:
++                    _en, _why = _jg.is_enabled()
++                    if not _en:
++                        _gov_note(f"janitor {_why}; quests not spawned")
++                    else:
++                        for _q in quests:
++                            _ok, _reason = _jg.allow(_gs, str(_q.get("sig", "?")), _q.get("count"))
++                            if _ok:
++                                quest = _jg.apply_provider_gate(_q)
++                                break
++                            _gov_note(f"janitor skip {_q.get('sig')}: {_reason}")
++                        if quest is not None:
++                            result = exec_copilot(quest, dry=False)
++                            _jg.record_spawn(_gs, quest, result, quest.get("count"))
++                _jg.save_state(_gs)
++            except Exception as _ge:
++                if not result:
++                    quest = None
++                _gov_note(f"janitor governor error (fail closed): {str(_ge)[:160]}")
++            if quest is not None:
+ 
+                 # Log to autonomous trail (dedup)
+                 _append_jsonl(AUTO_TRAIL, {
+diff --git a/mag/janitor_governor.py b/mag/janitor_governor.py
+new file mode 100644
+index 000000000..f621e2a40
+--- /dev/null
++++ b/mag/janitor_governor.py
+@@ -0,0 +1,296 @@
++"""janitor_governor - limits on the ghost autonomous janitor (reboot patch 01, 2026-10-03).
++
++Why (watch/inbox/ractor_engine/2026-10-03-grokbot-estate/SYNTHESIS.md step 1,
++watch/inbox/JANITOR_FIX_PLAN_20261003.md items b and c): the janitor loop
++(mag/ghost.py autonomous_task_loop) has no off switch, no failure memory and
++no spend cap. Every orchestrator child crashed at import since 2026-09-26
++(373+ failed janitor tasks); un-damming that crash without a governor turns
++free crashes into metered deepseek calls.
++
++Limits, all checked before a quest is spawned:
++  1. Off switch: state/janitor.off (stop file) or MAG_JANITOR_DISABLED=1.
++  2. STUCK after N consecutive failures per signature (default 3). A stuck
++     signature never spawns again until an operator clears it
++     (python -m mag.janitor_governor clear <sig>).
++  3. Re-arm only on fresh recurrence: after a failed attempt, a signature is
++     retried only when its occurrence count rose since that attempt.
++  4. Daily spawn cap (default 12 per UTC day, MAG_JANITOR_MAX_PER_DAY).
++  5. Paid-provider gate: quests routed to a paid provider are downgraded to
++     the local tier unless MAG_JANITOR_ALLOW_PAID=1.
++
++Outcomes: spawned tasks are tracked as pending and reconciled against the
++orchestrator task record when they reach a terminal status. done counts as
++success only when the quest output file exists and is non-empty; anything
++else is a failure. reconcile() accepts an on_success callback so the caller
++can do the success-only side effects (patch 03 folds the Verkle knot there).
++
++State: memory/runs/ghost/janitor_governor.json (one small JSON document).
++CLI:   python -m mag.janitor_governor status|disable|enable|clear <sig>|clear-all
++"""
++from __future__ import annotations
++
++import json
++import os
++import sys
++from datetime import datetime, timezone
++from pathlib import Path
++from typing import Any, Callable
++
++ROOT = Path(__file__).resolve().parent.parent
++STATE_PATH = ROOT / "memory" / "runs" / "ghost" / "janitor_governor.json"
++STOP_FILE = ROOT / "state" / "janitor.off"
++
++STUCK_AFTER = 3
++DEFAULT_MAX_PER_DAY = 12
++PAID_PROVIDERS = frozenset({"deepseek", "openai", "anthropic", "xai", "grok", "openrouter", "gemini", "google"})
++LOCAL_PROVIDER = "ollama"
++LOCAL_MODEL = "qwen2.5-coder:7b"
++# Must cover every terminal status mag/orchestrator.py can write (its TERMINAL:
++# done, failed, timeout, stalled, killed, died). Ractor 2026-10-04: "died" and
++# "stalled" were missing, so such a task sat pending for PENDING_MAX_AGE_S and
++# blocked its signature ("attempt still pending") for 6 h before settling.
++TERMINAL = frozenset({"done", "failed", "timeout", "stalled", "killed", "died", "error", "cancelled"})
++PENDING_MAX_AGE_S = 6 * 3600  # a pending task with no terminal record after this is a failure
++
++
++def _now() -> datetime:
++    return datetime.now(timezone.utc)
++
++
++def _iso(d: datetime | None = None) -> str:
++    return (d or _now()).isoformat()
++
++
++def _empty() -> dict[str, Any]:
++    return {"schema": "janitor_governor.v1", "sigs": {}, "pending": {}, "day": "", "spawned_today": 0}
++
++
++def load_state(path: Path | None = None) -> dict[str, Any]:
++    p = path or STATE_PATH
++    try:
++        data = json.loads(p.read_text(encoding="utf-8"))
++        if isinstance(data, dict):
++            base = _empty()
++            base.update(data)
++            return base
++    except (OSError, ValueError):
++        pass
++    return _empty()
++
++
++def save_state(state: dict[str, Any], path: Path | None = None) -> None:
++    p = path or STATE_PATH
++    p.parent.mkdir(parents=True, exist_ok=True)
++    tmp = p.with_suffix(".json.tmp")
++    tmp.write_text(json.dumps(state, indent=1, sort_keys=True, default=str), encoding="utf-8")
++    os.replace(tmp, p)
++
++
++def max_per_day() -> int:
++    try:
++        return max(0, int(os.environ.get("MAG_JANITOR_MAX_PER_DAY", DEFAULT_MAX_PER_DAY)))
++    except ValueError:
++        return DEFAULT_MAX_PER_DAY
++
++
++def is_enabled(stop_file: Path | None = None) -> tuple[bool, str]:
++    if os.environ.get("MAG_JANITOR_DISABLED", "").strip() in ("1", "true", "yes"):
++        return False, "disabled by MAG_JANITOR_DISABLED"
++    if (stop_file or STOP_FILE).exists():
++        return False, f"disabled by stop file {(stop_file or STOP_FILE).name}"
++    return True, "enabled"
++
++
++def _roll_day(state: dict[str, Any]) -> None:
++    today = _now().strftime("%Y-%m-%d")
++    if state.get("day") != today:
++        state["day"] = today
++        state["spawned_today"] = 0
++
++
++def allow(state: dict[str, Any], sig: str, count: int | None = None) -> tuple[bool, str]:
++    """May a quest for `sig` spawn now? Pure check on the loaded state."""
++    _roll_day(state)
++    if int(state.get("spawned_today", 0)) >= max_per_day():
++        return False, f"daily cap reached ({max_per_day()})"
++    for meta in (state.get("pending") or {}).values():
++        if meta.get("sig") == sig:
++            return False, "attempt still pending"
++    row = (state.get("sigs") or {}).get(sig) or {}
++    if row.get("stuck"):
++        return False, f"STUCK after {row.get('fail_count', 0)} consecutive failures (operator clear required)"
++    if row.get("fail_count", 0) > 0 and count is not None and row.get("last_count") is not None:
++        if int(count) <= int(row["last_count"]):
++            return False, "no fresh recurrence since last failed attempt"
++    return True, "ok"
++
++
++def apply_provider_gate(quest: dict[str, Any]) -> dict[str, Any]:
++    """Downgrade a paid-provider quest to the local tier unless paid is allowed."""
++    if os.environ.get("MAG_JANITOR_ALLOW_PAID", "").strip() in ("1", "true", "yes"):
++        return quest
++    if str(quest.get("provider", "")).lower() in PAID_PROVIDERS:
++        quest = dict(quest)
++        quest["paid_downgraded_from"] = f"{quest.get('provider')}/{quest.get('model')}"
++        quest["provider"] = LOCAL_PROVIDER
++        quest["model"] = LOCAL_MODEL
++    return quest
++
++
++def record_spawn(state: dict[str, Any], quest: dict[str, Any], result: dict[str, Any],
++                 count: int | None = None) -> None:
++    _roll_day(state)
++    sig = str(quest.get("sig", "?"))
++    state["spawned_today"] = int(state.get("spawned_today", 0)) + 1
++    row = state.setdefault("sigs", {}).setdefault(sig, {"fail_count": 0, "stuck": False})
++    row["last_attempt"] = _iso()
++    if count is not None:
++        row["last_count"] = int(count)
++    task_id = str(result.get("task_id") or "")
++    if result.get("outcome") == "spawned" and task_id and task_id != "?":
++        state.setdefault("pending", {})[task_id] = {
++            "sig": sig,
++            "quest_id": quest.get("id", "?"),
++            "output": quest.get("output", ""),
++            "ts": _iso(),
++        }
++    else:
++        record_outcome(state, sig, ok=False, reason=f"spawn outcome {result.get('outcome')}")
++
++
++def record_outcome(state: dict[str, Any], sig: str, *, ok: bool, reason: str = "") -> dict[str, Any]:
++    row = state.setdefault("sigs", {}).setdefault(sig, {"fail_count": 0, "stuck": False})
++    row["last_outcome"] = "ok" if ok else "fail"
++    row["last_reason"] = reason[:200]
++    row["last_outcome_ts"] = _iso()
++    if ok:
++        row["fail_count"] = 0
++        row["stuck"] = False
++    else:
++        row["fail_count"] = int(row.get("fail_count", 0)) + 1
++        if row["fail_count"] >= STUCK_AFTER:
++            row["stuck"] = True
++    return row
++
++
++def output_ok(rel_path: str) -> bool:
++    if not rel_path:
++        return False
++    p = ROOT / rel_path
++    try:
++        return p.is_file() and p.stat().st_size > 0
++    except OSError:
++        return False
++
++
++def _default_status(task_id: str) -> dict[str, Any] | None:
++    from mag.orchestrator import task_status
++    return task_status(task_id)
++
++
++def reconcile(state: dict[str, Any], *,
++              status_fn: Callable[[str], dict[str, Any] | None] | None = None,
++              on_success: Callable[[str, dict[str, Any]], None] | None = None,
++              on_failure: Callable[[str, dict[str, Any], str], None] | None = None) -> list[dict[str, Any]]:
++    """Settle pending janitor tasks that reached a terminal status.
++
++    Success = status done AND the quest output file exists and is non-empty.
++    Returns the list of settled rows (for the caller's trail)."""
++    status_fn = status_fn or _default_status
++    settled: list[dict[str, Any]] = []
++    pending = state.setdefault("pending", {})
++    for task_id in list(pending):
++        meta = pending[task_id]
++        try:
++            t = status_fn(task_id) or {}
++        except Exception as e:  # noqa: BLE001 - a status read never crashes the loop
++            t = {"status": "?", "error": str(e)[:120]}
++        status = str(t.get("status") or "")
++        age_s = 0.0
++        try:
++            age_s = (_now() - datetime.fromisoformat(str(meta.get("ts")))).total_seconds()
++        except (TypeError, ValueError):
++            pass
++        if status not in TERMINAL and age_s < PENDING_MAX_AGE_S:
++            continue
++        ok = status == "done" and output_ok(str(meta.get("output", "")))
++        if ok:
++            reason = "done with non-empty output"
++        elif status == "done":
++            reason = "done but output file missing or empty"
++        elif status in TERMINAL:
++            reason = f"status {status}"
++        else:
++            reason = f"no terminal status after {int(age_s)}s"
++        row = record_outcome(state, str(meta.get("sig", "?")), ok=ok, reason=reason)
++        del pending[task_id]
++        rec = {"task_id": task_id, **meta, "status": status or "?", "ok": ok, "reason": reason,
++               "stuck": bool(row.get("stuck"))}
++        settled.append(rec)
++        try:
++            if ok and on_success:
++                on_success(task_id, rec)
++            elif not ok and on_failure:
++                on_failure(task_id, rec, reason)
++        except Exception:  # noqa: BLE001 - callbacks are best-effort
++            pass
++    return settled
++
++
++def clear(state: dict[str, Any], sig: str | None = None) -> int:
++    sigs = state.setdefault("sigs", {})
++    if sig is None:
++        n = len(sigs)
++        sigs.clear()
++        return n
++    return 1 if sigs.pop(sig, None) is not None else 0
++
++
++def status_report(state: dict[str, Any] | None = None) -> dict[str, Any]:
++    st = state if state is not None else load_state()
++    en, why = is_enabled()
++    return {
++        "enabled": en,
++        "why": why,
++        "day": st.get("day"),
++        "spawned_today": st.get("spawned_today", 0),
++        "max_per_day": max_per_day(),
++        "stuck": sorted(s for s, r in (st.get("sigs") or {}).items() if r.get("stuck")),
++        "pending": len(st.get("pending") or {}),
++        "sigs": st.get("sigs") or {},
++    }
++
++
++def main(argv: list[str] | None = None) -> int:
++    args = list(sys.argv[1:] if argv is None else argv)
++    verb = args[0] if args else "status"
++    st = load_state()
++    if verb == "status":
++        print(json.dumps(status_report(st), indent=2, sort_keys=True))
++        return 0
++    if verb == "disable":
++        STOP_FILE.parent.mkdir(parents=True, exist_ok=True)
++        STOP_FILE.write_text(f"disabled {_iso()}\n", encoding="utf-8")
++        print(f"janitor disabled ({STOP_FILE})")
++        return 0
++    if verb == "enable":
++        if STOP_FILE.exists():
++            STOP_FILE.unlink()
++        print("janitor stop file removed")
++        return 0
++    if verb == "clear" and len(args) > 1:
++        n = clear(st, args[1])
++        save_state(st)
++        print(f"cleared {n}")
++        return 0
++    if verb == "clear-all":
++        n = clear(st, None)
++        save_state(st)
++        print(f"cleared {n}")
++        return 0
++    print("usage: python -m mag.janitor_governor status|disable|enable|clear <sig>|clear-all")
++    return 2
++
++
++if __name__ == "__main__":
++    raise SystemExit(main())
+diff --git a/mag/loops_registry.py b/mag/loops_registry.py
+index 2d66b2a4f..a850729f0 100644
+--- a/mag/loops_registry.py
++++ b/mag/loops_registry.py
+@@ -166,6 +166,17 @@ LOOPS: list[dict[str, Any]] = [
+         "cli": "python -m mag.ghost --session",
+         "desc": "Ghost steering with session-state awareness: reads CURRENT.md, briefs, agent_state, coding_session_loop to deploy contextually-relevant steer vectors."
+     },
++    {
++        "id": "janitor",
++        "layer": "harness",
++        "loop": "sense -> governed quest (max 1/cycle) -> settle on task end",
++        "trail": "memory/runs/ghost/autonomous_trail.jsonl",
++        "promote_gate": False,
++        "status": "pilot",
++        "cli": "python -m mag.janitor_governor status|disable|enable|clear <sig>",
++        "off_switch": "state/janitor.off",
++        "desc": "Ghost autonomous_task_loop janitor. Limits in mag/janitor_governor.py: stop file, STUCK after 3, fresh-recurrence re-arm, daily cap, paid downgrade. Reboot patch 01 (2026-10-03).",
++    },
+     {
+         "id": "framework_map",
+         "layer": "meta",
+diff --git a/tests/test_janitor_governor.py b/tests/test_janitor_governor.py
+new file mode 100644
+index 000000000..46a8aac58
+--- /dev/null
++++ b/tests/test_janitor_governor.py
+@@ -0,0 +1,192 @@
++"""Reboot patch 01: the ghost janitor runs under limits and has no verkle --fix quest."""
++from __future__ import annotations
++
++import asyncio
++import json
++import sys
++import types
++from pathlib import Path
++
++import pytest
++
++from mag import ghost
++from mag import janitor_governor as jg
++
++
++@pytest.fixture()
++def gov(tmp_path, monkeypatch):
++    monkeypatch.setattr(jg, "STATE_PATH", tmp_path / "gov.json")
++    monkeypatch.setattr(jg, "STOP_FILE", tmp_path / "janitor.off")
++    monkeypatch.setattr(jg, "ROOT", tmp_path)
++    monkeypatch.delenv("MAG_JANITOR_DISABLED", raising=False)
++    monkeypatch.delenv("MAG_JANITOR_ALLOW_PAID", raising=False)
++    monkeypatch.delenv("MAG_JANITOR_MAX_PER_DAY", raising=False)
++    return tmp_path
++
++
++def _run_one_cycle(monkeypatch, tmp_path, state, *, task_status=None):
++    """Drive autonomous_task_loop through exactly one cycle with every side effect faked."""
++    spawned: list[dict] = []
++    folds: list[dict] = []
++    events: list[tuple] = []
++    trail = tmp_path / "auto_trail.jsonl"
++    monkeypatch.setattr(ghost, "AUTO_TRAIL", trail)
++    monkeypatch.setattr(ghost, "_GOV_NOTES", {})
++    monkeypatch.setattr(ghost, "sense", lambda: state)
++    monkeypatch.setattr(ghost, "stall_sweep", lambda **k: {})
++    monkeypatch.setattr(ghost, "leak_detect", lambda **k: (_ for _ in ()).throw(RuntimeError("off")))
++
++    def fake_exec(quest, dry=False):
++        spawned.append(quest)
++        return {"outcome": "spawned", "task_id": f"t{len(spawned):03d}"}
++
++    monkeypatch.setattr(ghost, "exec_copilot", fake_exec)
++    import mag.verkle_knot as vk
++    monkeypatch.setattr(vk, "append_verkle_knot", lambda d: folds.append(d) or {"ok": True})
++    import mag.process_reaper as pr
++    monkeypatch.setattr(pr, "classify", lambda: {"leaks": []})
++    bus = types.ModuleType("mag.verkle_bus")
++
++    async def publish(ch, payload):
++        events.append((ch, payload))
++
++    bus.publish, bus.CH_TASK, bus.CH_VERKLE, bus.CH_COPILOT = publish, "task", "verkle", "copilot"
++    monkeypatch.setitem(sys.modules, "mag.verkle_bus", bus)
++    if task_status is not None:
++        monkeypatch.setattr(jg, "_default_status", task_status)
++
++    calls = {"n": 0}
++
++    async def fake_sleep(_s):
++        calls["n"] += 1
++        if calls["n"] > 1:
++            raise asyncio.CancelledError
++        return None
++
++    monkeypatch.setattr(ghost.asyncio, "sleep", fake_sleep)
++    app = types.SimpleNamespace(state=types.SimpleNamespace(_auto_cycle_count=0))
++
++    async def drive():
++        await ghost.autonomous_task_loop(app, interval_s=0)
++        await asyncio.gather(*[t for t in asyncio.all_tasks() if t is not asyncio.current_task()],
++                             return_exceptions=True)
++
++    asyncio.run(drive())
++    rows = [json.loads(l) for l in trail.read_text(encoding="utf-8").splitlines()] if trail.is_file() else []
++    return spawned, folds, events, rows
++
++
++FKB = {"context": {}, "fkb_signals": [{"sig": "zz_test:abc123", "count": 12}]}
++
++
++def test_stop_file_disables_janitor(gov, monkeypatch, tmp_path):
++    (gov / "janitor.off").write_text("off", encoding="utf-8")
++    spawned, folds, _ev, rows = _run_one_cycle(monkeypatch, tmp_path, FKB)
++    assert spawned == []
++    assert folds == []
++    assert any(r.get("event") == "janitor_governor" and "disabled" in r.get("note", "") for r in rows)
++
++
++def test_verkle_fix_quest_is_dropped(gov, monkeypatch, tmp_path):
++    state = {"context": {}, "fkb_signals": [], "verkle_tip_stale": True}
++    spawned, _f, _e, rows = _run_one_cycle(monkeypatch, tmp_path, state)
++    assert spawned == []
++    assert any("verkle tip stale" in r.get("note", "") for r in rows)
++    src = Path(ghost.__file__).read_text(encoding="utf-8")
++    assert "auto-verkle-" not in src  # the quest id prefix is gone
++
++
++def test_cycle_spawns_one_local_quest_and_tracks_pending(gov, monkeypatch, tmp_path):
++    spawned, _f, _e, _rows = _run_one_cycle(monkeypatch, tmp_path, FKB)
++    assert len(spawned) == 1
++    q = spawned[0]
++    assert q["provider"] == "ollama"  # count 12 used to route to paid deepseek
++    assert q["paid_downgraded_from"].startswith("deepseek/")
++    assert q["output"].endswith("zz_test_abc123.md")
++    st = jg.load_state()
++    assert st["spawned_today"] == 1
++    assert st["pending"]["t001"]["sig"] == "fkb:zz_test:abc123"
++
++
++def test_stuck_after_three_failures_spawns_nothing(gov, monkeypatch, tmp_path):
++    st = jg.load_state()
++    for _ in range(3):
++        jg.record_outcome(st, "fkb:zz_test:abc123", ok=False, reason="status failed")
++    jg.save_state(st)
++    ok, reason = jg.allow(jg.load_state(), "fkb:zz_test:abc123", 99)
++    assert not ok and "STUCK" in reason
++    spawned, _f, _e, rows = _run_one_cycle(monkeypatch, tmp_path, FKB)
++    assert spawned == []
++    assert any("STUCK" in r.get("note", "") for r in rows)
++    st = jg.load_state()
++    assert jg.clear(st, "fkb:zz_test:abc123") == 1
++    assert jg.allow(st, "fkb:zz_test:abc123", 99)[0]
++
++
++def test_rearm_only_on_fresh_recurrence(gov):
++    st = jg.load_state()
++    jg.record_spawn(st, {"sig": "s", "id": "q"}, {"outcome": "spawn_failed"}, count=7)
++    assert st["sigs"]["s"]["fail_count"] == 1
++    assert jg.allow(st, "s", 7) == (False, "no fresh recurrence since last failed attempt")
++    assert jg.allow(st, "s", 8)[0]
++
++
++def test_daily_cap(gov, monkeypatch):
++    monkeypatch.setenv("MAG_JANITOR_MAX_PER_DAY", "2")
++    st = jg.load_state()
++    for i in range(2):
++        jg.record_spawn(st, {"sig": f"s{i}", "id": "q", "output": "x"}, {"outcome": "spawned", "task_id": f"t{i}"})
++    ok, reason = jg.allow(st, "s9", 1)
++    assert not ok and "daily cap" in reason
++
++
++def test_paid_allowed_only_by_env(gov, monkeypatch):
++    q = {"provider": "deepseek", "model": "deepseek-v4-flash"}
++    assert jg.apply_provider_gate(q)["provider"] == "ollama"
++    monkeypatch.setenv("MAG_JANITOR_ALLOW_PAID", "1")
++    assert jg.apply_provider_gate(q)["provider"] == "deepseek"
++
++
++def test_reconcile_success_needs_done_and_nonempty_output(gov):
++    st = jg.load_state()
++    (gov / "out_ok.md").write_text("diagnosis", encoding="utf-8")
++    (gov / "out_empty.md").write_text("", encoding="utf-8")
++    for tid, out in (("a", "out_ok.md"), ("b", "out_empty.md"), ("c", "out_ok.md")):
++        jg.record_spawn(st, {"sig": f"sig-{tid}", "id": tid, "output": out},
++                        {"outcome": "spawned", "task_id": tid})
++    statuses = {"a": "done", "b": "done", "c": "failed"}
++    wins: list[str] = []
++    settled = jg.reconcile(st, status_fn=lambda t: {"status": statuses[t]},
++                           on_success=lambda t, rec: wins.append(t))
++    assert {r["task_id"]: r["ok"] for r in settled} == {"a": True, "b": False, "c": False}
++    assert wins == ["a"]
++    assert st["pending"] == {}
++
++
++def test_running_task_stays_pending(gov):
++    st = jg.load_state()
++    jg.record_spawn(st, {"sig": "s", "id": "q", "output": "o"}, {"outcome": "spawned", "task_id": "r1"})
++    assert jg.reconcile(st, status_fn=lambda t: {"status": "running"}) == []
++    assert "r1" in st["pending"]
++    assert jg.allow(st, "s", 99) == (False, "attempt still pending")
++
++
++def test_janitor_registered_with_off_switch():
++    from mag.loops_registry import LOOPS
++    row = next(r for r in LOOPS if r["id"] == "janitor")
++    assert row["off_switch"] == "state/janitor.off"
++
++
++def test_terminal_covers_every_orchestrator_terminal_status(gov):
++    """Ractor 2026-10-04: a died/stalled task must settle now, not after 6 h."""
++    from mag import orchestrator
++    assert set(orchestrator.TERMINAL) <= set(jg.TERMINAL)
++    st = jg.load_state()
++    for tid in ("d1", "s1"):
++        jg.record_spawn(st, {"sig": f"sig-{tid}", "id": tid, "output": "o"},
++                        {"outcome": "spawned", "task_id": tid})
++    statuses = {"d1": "died", "s1": "stalled"}
++    settled = jg.reconcile(st, status_fn=lambda t: {"status": statuses[t]})
++    assert {r["task_id"]: (r["ok"], r["reason"]) for r in settled} == {
++        "d1": (False, "status died"), "s1": (False, "status stalled")}
++    assert st["pending"] == {}

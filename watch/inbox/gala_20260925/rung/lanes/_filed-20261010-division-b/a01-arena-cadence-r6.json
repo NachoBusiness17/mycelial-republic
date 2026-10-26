@@ -1,0 +1,36 @@
+{
+  "lane": "a01-arena-cadence-r6",
+  "division": "B",
+  "ok": true,
+  "note": "R6 fill found ALREADY-LANDED (commit d349ce7d2 2026-10-04: both carriers bank their own run dir at exit, FIRE-ATOMIC BANK blocks) and byte-verified it holding on all 33 post-fix fires (30 same-fire 1.0-8.9 min, 1 documented fail-open heal, 2 no-DONE partials banked by the automation's own prompt step); the residual gap closed this sitting is the missing regression guard: tests/test_arena_fire_atomic_bank.py (4 tests, all green) pins live-banks-own-dir, dry-never-banks, and bank-failure-never-fails-play, so the prompt-instruction-not-code class cannot silently return; no live re-fire was spent (dogfood evidence banked on disk; automation deleted 2026-10-05, option a moot).",
+  "rows": [],
+  "checks": [
+    {
+      "command": "grep -n \"FIRE-ATOMIC BANK\" tools/tavern.py tools/dungeon.py  (+ git log -1 -S \"FIRE-ATOMIC BANK\" -- tools/tavern.py)",
+      "exit": 0,
+      "evidence": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/rung/lanes/a01-arena-cadence-r6.check.txt lines 4-9: tools/tavern.py:254 and tools/dungeon.py:769 carry the block; landed in commit d349ce7d217dd734777faf42927b61f22b5068d7 2026-10-04 05:50:05 -0400 (GO WAVE, 'arena: fire-atomic bank dogfooded live same-second'). NOTE: tools/dungeon.py moved +25 lines under this lane mid-sitting (comment read at :744 on the 13:0xZ read, :769 at the 13:28Z grep); a sibling lane is landing GAP_REGISTER R8/R9 edits there concurrently."
+    },
+    {
+      "command": "python -c \"sqlite3 census: automations/automation_runs for b1ce1342 in ~/.zcode/v2/tasks-index.sqlite\"",
+      "exit": 0,
+      "evidence": "check file lines 19-22: automations rows for the arena cron = 0 (DELETED; fill option a moot), automation_runs fires=43 failed=1 span=2026-10-03T13:00:00Z..2026-10-05T07:00:00Z (last fire matches the newest playground dir tavern_20261005T071101Z)."
+    },
+    {
+      "command": "python -c \"post-fix dir census: every playground dir minted after fix commit d349ce7d2 (2026-10-04T09:50Z) vs arena-capability.jsonl banked_at, plus hour buckets\"",
+      "exit": 0,
+      "evidence": "check file lines 24-86: 33 post-fix dirs, totals same_fire=30 (deltas 1.0-8.9 min, all within the fire's own hour bucket), overnight_heals=1 (dnd0_20261004T100306Z: exit bank failed inside a fire whose automation_runs outcome says succeeded - fail-open by design, healed by the 2026-10-05T07:12Z backfill, the design's own safety net), no-done-banked=2 (tavern_20261005T050347Z/T060452Z: crashed runs whose partial dirs were banked 1.8-1.9 min after stamp by the automation's prompt bank step), unbanked=0; hour buckets show rows in every post-fix fire hour (10-04 T10-T17, T22; 10-05 T01-T07), the pre-fix empty-bucket-overnight class (10-03 hours 20-23) is dead."
+    },
+    {
+      "command": "C:/Users/foste/Documents/projects/local_sovereign_agent/.venv/Scripts/python.exe -m pytest tests/test_arena_fire_atomic_bank.py -q",
+      "exit": 0,
+      "evidence": "check file lines 88-99 + 115-119 (un-piped exit): 4 passed in 1.36s/2.05s. New file tests/test_arena_fire_atomic_bank.py pins: tavern live main banks its own run dir at exit (marker + appends + 'TAVERN: BANK OK' + CHAIN ok), dry never banks, bank failure never fails the play run ('BANK FAILED', rc 0, dir left for backfill), dungeon live main banks its own run dir at exit (real init + one-beat stub play; SessionLedger faked so the real memory/runs/gwap ledger is never touched - ledger rows 730 before and after)."
+    },
+    {
+      "command": "C:/Users/foste/Documents/projects/local_sovereign_agent/.venv/Scripts/python.exe tools/violation_ratchet.py check --changed",
+      "exit": 1,
+      "evidence": "check file lines 102-111: FAIL, but every hit is other seats' working-tree debt, not this lane's: NEW tools/arena_gwap.py:426 >400 lines is the SIBLING R2 lane's uncommitted cadence_census() edit (426 working-tree lines vs 357 at HEAD 515e2baec); GROWTH hits (dungeon.py 771->796, water_graph.py, mesh_delta.py) pre-date this lane. This lane touched ONLY tests/test_arena_fire_atomic_bank.py (outside the ratchet's mag/+tools/ scope); debt acceptance belongs to the owning seats, not taken here."
+    }
+  ],
+  "decision_changed": "GAP_REGISTER R6 verdict: CLOSED as already-landed-and-now-guarded. The fire-atomic bank mechanism (carriers bank their own run dir at exit, same process, immediately after DONE) landed 2026-10-04 in d349ce7d2 BEFORE the register was minted; this sitting byte-verified it held across all 33 post-fix fires and closed the one real residual: the mechanism had NO test (grep for GWAP_BANKED/arena_bank across tests/ = zero hits), which is the same shape as the original defect (bank as instruction, not code). The guard tests/test_arena_fire_atomic_bank.py now pins it. Decision NOT taken: no live re-fire (the GO WAVE dogfood plus 33 on-disk post-fix fires are the banked dogfood evidence; the automation is deleted and the arena meter is deliberately near-dark since 10-07, so re-spending would violate never-redo-banked-work).",
+  "artifact": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/rung/lanes/a01-arena-cadence-r6.json"
+}

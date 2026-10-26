@@ -1,0 +1,57 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "watch/inbox/THIRD_WAY_VOW_LOG_SCHEMA.json",
+  "title": "VOW-TAKEN log line",
+  "description": "Schema for one VOW-TAKEN line printed to Output and appended to the ledger row (DEATH-CAPS precedent), per the Third Way Initiation playtest addendum. Canonical format: VOW-TAKEN seat=<name> t=<mm:ss> vow=<id> price=<vm> improbable_spent=<n> seed=peeked|unpeeked. The vow value must be an id from THIRD_WAY_BOONS_STUB.json. Sibling GRACE lines (t, d1, d2, total, pass) are a separate schema, owed, not defined here.",
+  "type": "object",
+  "required": ["event", "seat", "t", "vow", "price", "improbable_spent", "seed_mode"],
+  "additionalProperties": false,
+  "properties": {
+    "event": {
+      "type": "string",
+      "const": "VOW-TAKEN",
+      "description": "literal line discriminator, DEATH-CAPS precedent: the event name speaks in caps"
+    },
+    "seat": {
+      "type": "string",
+      "minLength": 1,
+      "description": "the seat taking the Vow (NPC=SEAT law: every NPC is a seat); printed as <name> in the line"
+    },
+    "t": {
+      "type": "string",
+      "pattern": "^[0-9]{1,2}:[0-9]{2}$",
+      "description": "session clock at Vow time, mm:ss, matching the 20-minute playtest beats (0-3 Act I, 3-8 war loop, 8-12 Wall, 12-15 Door, 15-20 Act III)"
+    },
+    "vow": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9_]*$",
+      "description": "boon id sworn on; must match an id in watch/inbox/THIRD_WAY_BOONS_STUB.json; Unstuck-face ids (crits, longer_superhot) are vow_eligible=false and must never appear here"
+    },
+    "price": {
+      "type": "number",
+      "exclusiveMinimum": 0,
+      "description": "VM paid for the Vow; stub pricing is 2x the boon's vm_cost, per the Inefficiency Law (F6: no optimization path may exist)"
+    },
+    "improbable_spent": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Improbability resource consumed by the grace shrine at Vow time; the Drive rents, it does not gift"
+    },
+    "seed_mode": {
+      "type": "string",
+      "enum": ["peeked", "unpeeked"],
+      "description": "session seed mode at Vow time; printed as seed=peeked|unpeeked. Unpeeked means every grace roll rides the pure 2d6 curve (pass on 7, 15/36) with no marble bags, hidden rerolls, or streak breakers; any divergence between two same-seed runs voids the Unpeeked Seed claim"
+    }
+  },
+  "examples": [
+    {
+      "event": "VOW-TAKEN",
+      "seat": "pilgrim_01",
+      "t": "16:42",
+      "vow": "lifesteal",
+      "price": 60,
+      "improbable_spent": 3,
+      "seed_mode": "unpeeked"
+    }
+  ]
+}

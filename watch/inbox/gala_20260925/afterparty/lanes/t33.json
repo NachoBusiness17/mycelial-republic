@@ -1,0 +1,29 @@
+{
+  "gopher": "t33",
+  "item": "t20 added check_scheduled_tasks() to mag/doctor.py (flags MagImproveDaily not Ready) but doctor only runs when someone asks; lifecycle.py:514 already names 'disable MagImproveDaily' as a remediation, so disablement is a known state. Wire the flag into the seat surface: improve --status prints one WARNING line when the scheduled task is not Ready, reusing t20's function via import.",
+  "ok": true,
+  "note": "Wired into mag/improve.py: spec line added to the module docstring first (t33 spec), then status_summary() now calls _scheduled_task_surface(), a lazy `from mag.doctor import check_scheduled_tasks` (reuse, no duplicate schtasks call; doctor imports nothing from improve so no cycle). The check dict lands in the JSON under 'scheduled_task'; when not ok, ONE WARNING line (the doctor issue strings) prints to stderr so stdout stays valid JSON. Live machine: MagImproveDaily Ready, exit 0, zero stderr bytes, JSON carries statuses. Non-Windows skip and Ready pass through ok=True so no false WARNING. Warning path proven by mocked schtasks output in tests (disabling the live task to test would be wrong). Gotcha inherited from t20 holds: only the python subprocess path is safe in Git Bash. Verified gap for next gopher: mag/api_server.py has zero improve references, the lab UI cannot show this probe.",
+  "checks": [
+    {
+      "name": "pytest tests/test_improve_status_scheduled_task.py tests/test_doctor_scheduled_tasks.py -q",
+      "result": "15 passed in 2.58s (4 new t33 + 11 t20)",
+      "exit": 0
+    },
+    {
+      "name": "live: .venv/Scripts/python.exe main.py improve --status",
+      "result": "LIVE_EXIT=0, stderr_bytes=0, stderr_WARNING_lines=0, scheduled_task={ok: true, statuses: {MagImproveDaily: Ready}, issues: []}",
+      "exit": 0
+    },
+    {
+      "name": "python tools/violation_ratchet.py check --changed",
+      "result": "scope=7 changed files; hits=4; registered=4; NEW=0; expired-exceptions=0; PASS, no unregistered debt",
+      "exit": 0
+    }
+  ],
+  "evidence": "watch/inbox/gala_20260925/afterparty/lanes/t33.check.txt",
+  "files_changed": [
+    "mag/improve.py",
+    "tests/test_improve_status_scheduled_task.py"
+  ],
+  "next_steal": "The lab/product UI (mag/api_server.py :8765) has zero improve references, so the WARNING is visible only at the CLI. Wire status_summary's scheduled_task field (or doctor.check_scheduled_tasks) into the api_server status route so a disabled/deleted MagImproveDaily shows at the product surface without a CLI ask; while there, decide how intentional disablement (lifecycle.py:514 waste remediation) is distinguished from silent disablement, e.g. a marker file the seat probe respects."
+}

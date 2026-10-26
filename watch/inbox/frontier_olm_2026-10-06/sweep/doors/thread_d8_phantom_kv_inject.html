@@ -1,0 +1,2075 @@
+
+
+<!DOCTYPE html>
+<html lang="en" class="fixed_navbar">
+	<head>
+		
+	
+		<title>
+	
+		Uncensor an LLM without touching weights: inject a tiny trained KV-cache bank (~18MB) and unload it anytime - r/LocalLLaMA
+	
+</title>
+		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+		<meta name="description" content="View on Redlib, an alternative private front-end to Reddit.">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0">
+		
+		<meta name="robots" content="noindex, nofollow">
+		
+		<!-- General PWA -->
+		<meta name="theme-color" content="#1F1F1F">
+		<!-- iOS Application -->
+		<meta name="apple-mobile-web-app-title" content="Redlib">
+		<meta name="apple-mobile-web-app-capable" content="yes">
+		<meta name="apple-mobile-web-app-status-bar-style" content="default">
+		<!-- Android -->
+		<meta name="mobile-web-app-capable" content="yes">
+		<!-- iOS Logo -->
+		<link href="/touch-icon-iphone.png" rel="apple-touch-icon">
+		<!-- OpenSearch description file -->
+		<link rel="search" type="application/opensearchdescription+xml" title="Search Redlib" href="/opensearch.xml">
+		<!-- PWA Manifest -->
+		<link rel="manifest" type="application/json" href="/manifest.json">
+		<link rel="shortcut icon" type="image/x-icon" href="/favicon.ico"> 
+		<link rel="stylesheet" type="text/css" href="/style.css?v=0.36.0-yunyun">
+		<!-- Video quality -->
+		<div id="video_quality" data-value=""></div>
+		
+	<!-- Meta Tags -->
+	<meta name="author" content="u/Anony6666">
+	<meta name="title" content="Uncensor an LLM without touching weights: inject a tiny trained KV-cache bank (~18MB) and unload it anytime - r/LocalLLaMA">
+	<meta property="og:title" content="Uncensor an LLM without touching weights: inject a tiny trained KV-cache bank (~18MB) and unload it anytime - r/LocalLLaMA">
+	<meta property="og:description" content="View on Redlib, an alternative private front-end to Reddit.">
+	<meta property="og:url" content="/r/LocalLLaMA/comments/1wms904/uncensor_an_llm_without_touching_weights_inject_a/">
+	<meta property="twitter:url" content="/r/LocalLLaMA/comments/1wms904/uncensor_an_llm_without_touching_weights_inject_a/">
+	<meta property="twitter:title" content="Uncensor an LLM without touching weights: inject a tiny trained KV-cache bank (~18MB) and unload it anytime - r/LocalLLaMA">
+	<meta property="twitter:description" content="View on Redlib, an alternative private front-end to Reddit.">
+	
+	<meta property="og:type" content="website">
+	
+	
+
+		</head>
+	<body class="
+		card
+		
+		
+		 fixed_navbar">
+		<!-- NAVIGATION BAR -->
+		<nav class="
+			 fixed_navbar">
+			<div id="logo">
+				<a id="redlib" href="/"><span id="red">red</span><span id="lib">lib.</span></a>
+				
+	<details id="feeds">
+		<summary>Feeds</summary>
+		<div id="feed_list">
+			<p>MAIN FEEDS</p>
+			<a href="/">Home</a>
+			
+				<a href="/r/popular">Popular</a>
+				<a href="/r/all">All</a>
+			
+			
+		</div>
+	</details>
+
+			</div>
+			
+	<form action="/r/LocalLLaMA/search" id="searchbox">
+	<input id="search" type="text" name="q" placeholder="Search" title="Search redlib" value="">
+	
+	<div id="inside">
+		<input type="checkbox" name="restrict_sr" id="restrict_sr" checked>
+		<label for="restrict_sr" class="search_label" title="Restrict search to this subreddit">in /r/LocalLLaMA</label>
+	</div>
+	
+	<button class="submit">
+		<svg width="15" viewBox="0 0 110 100" fill="none" stroke-width="10" stroke-linecap="round">
+			<path d="M20 50 H100" />
+			<path d="M75 15 L100 50 L75 85" />
+			&rarr;
+		</svg>
+	</button>
+</form>
+
+			<div id="links">
+				<a id="reddit_link" href="#popup">
+					<span>reddit</span>
+					<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+						<path d="M22 2L12 22"/>
+						<path d="M2 6.70587C3.33333 8.07884 3.33333 11.5971 3.33333 11.5971M3.33333 19.647V11.5971M3.33333 11.5971C3.33333 11.5971 5.125 7.47817 8 7.47817C10.875 7.47817 12 8.85114 12 8.85114"/>
+					</svg>
+				</a>
+				
+					<div class="popup" id="popup">
+	<div class="popup-inner">
+		<h1>You are about to leave Redlib</h1>
+		<p>Do you want to continue?</p>
+		<p id="reddit_url">https://www.reddit.com/r/LocalLLaMA/comments/1wms904/uncensor_an_llm_without_touching_weights_inject_a/</p>
+		<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 639.24 563">
+			<defs>
+				<style>.cls-1{fill:#000000;}.cls-2{fill:#f8aa00;}</style>
+			</defs>
+			<path class="cls-2" d="M322.03,0c1.95,2.5,4.88,.9,7.33,1.65,10.5,3.21,17.65,10.39,22.83,19.35,93.64,162.06,186.98,324.29,280.25,486.56,15.73,20.19,2.49,51.27-22.92,54.37-1.21,.19-2.72-.54-3.49,1.08H239.03c-70.33-2.43-141.6,.79-212.08-1.74-17.49-4.92-23.16-15.88-26.91-32.26l-.04-1.97C88.74,354.76,194.49,188.2,289.92,18.43c6.2-10.66,15.03-16.94,27.61-17.36,.95-.03,2.05,.18,2.51-1.07h2Zm-2.43,545c94.95-.02,189.9,.04,284.85-.02,11.84-.73,20.75-13.19,16.68-23.55C523.83,355.97,430.74,187.62,332.05,23.07c-7.93-9.02-22.2-6.58-27.23,3.22C230.28,156.11,155.21,285.64,80.41,415.31c-19.88,34.41-39.31,69.07-59.78,103.14-2.43,4.05-4.24,8.8-1.68,14.18,3.92,8.24,9.59,12.37,18.82,12.37,93.95,0,187.9,0,281.85,0Z"/>
+			<path class="cls-1" d="M319.61,545c-93.95,0-187.9,0-281.85,0-9.22,0-14.89-4.13-18.82-12.37-2.56-5.38-.75-10.13,1.68-14.18,20.47-34.07,39.9-68.73,59.78-103.14C155.21,285.64,230.28,156.11,304.82,26.29c5.03-9.8,19.3-12.24,27.23-3.22,98.7,164.55,191.79,332.9,289.1,498.35,4.06,10.36-4.85,22.82-16.68,23.55-94.94,.06-189.9,0-284.85,.02Zm.44-462.31C238.88,223.22,158.17,362.95,77.28,503h485.54c-80.94-140.13-161.61-279.79-242.77-420.31Z"/>
+			<path class="cls-2" d="M320.05,82.69c81.16,140.52,161.83,280.18,242.77,420.31H77.28C158.17,362.95,238.88,223.22,320.05,82.69Zm36.05,118.99c-.14-46.75-68.32-52.32-74.66-4.76,.73,51.49,9.2,102.97,12.63,154.49,1.18,13.14,10.53,21.81,23.32,22.76,13.12,.97,23.89-9.13,24.96-21.58,4.44-49.99,9.4-101.22,13.76-150.91Zm-36.56,271.4c48.8,.76,49.24-74.7-.31-75.47-53.45,3-46.02,78.12,.31,75.47Z"/>
+			<path class="cls-1" d="M356.1,201.67c-4.36,49.69-9.31,100.91-13.76,150.91-1.07,12.45-11.84,22.56-24.96,21.58-12.79-.95-22.14-9.63-23.31-22.76-3.43-51.52-11.9-103-12.63-154.49,6.33-47.53,74.51-42.03,74.66,4.76Z"/>
+			<path class="cls-1" d="M319.54,473.08c-46.34,2.64-53.75-72.47-.31-75.47,49.56,.78,49.1,76.24,.31,75.47Z"/>
+		</svg>
+		<a id="goback" href="#">No, go back!</a>
+		<a id="toreddit" href="https://www.reddit.com/r/LocalLLaMA/comments/1wms904/uncensor_an_llm_without_touching_weights_inject_a/" rel="nofollow">Yes, take me to Reddit</a>
+	</div>
+</div>
+				
+				<a id="settings_link" href="/settings">
+					<span>settings</span>
+					<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+						<title>settings</title>
+						<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+					</svg>
+				</a>
+			</div>
+		</nav>
+		
+		<!-- MAIN CONTENT -->
+		
+		<main>
+			
+	<div id="column_one">
+		<!-- POST CONTENT -->
+<div class="post highlighted">
+	<p class="post_header">
+		<a class="post_subreddit" href="/r/LocalLLaMA">r/LocalLLaMA</a>
+		<span class="dot">&bull;</span>
+		<a class="post_author " href="/user/Anony6666">u/Anony6666</a>
+		
+			<small class="author_flair"><span class="emoji" style="background-image:url('/emoji/08m5x9chttjf1_t5_81eyvm/Discord');"></span></small>
+		
+		<span class="dot">&bull;</span>
+		<span class="created" title="Sep 21 2026, 22:55:57 UTC">14d ago</span>
+		
+	</p>
+	<h1 class="post_title">
+		
+			<a href="/r/LocalLLaMA/search?q=flair_name%3A%22Resources%22&restrict_sr=on"
+				class="post_flair"
+				style="color:white; background:#ccac2b;"><span>Resources</span></a>
+		
+		Uncensor an LLM without touching weights: inject a tiny trained KV-cache bank (~18MB) and unload it anytime
+		
+		
+	</h1>
+
+	<!-- POST MEDIA -->
+	<!-- post_type: self -->
+	
+
+	<!-- POST BODY -->
+	<div class="post_body">
+		<!-- SC_OFF --><div class="md"><p>I shipped something I&#39;ve been building for the last few weeks : phantom-kv , a refusal-removal system for large language models that doesn&#39;t touch a single weight. Instead of editing the model, it loads a small, learned bank of key/value tensors into the model&#39;s KV cache as context. Attention reads it like conversation history that&#39;s already there.</p>
+
+<p><a href="https://github.com/lordx64/phantom-kv/">https://github.com/lordx64/phantom-kv/</a></p>
+
+<p><a href="/link/1wms904/video/7efg1le3eyqh1/player">https://reddit.com/link/1wms904/video/7efg1le3eyqh1/player</a></p>
+
+<p>The result is that &quot;uncensoring&quot; stops being a permanent checkpoint edit and becomes a  per-request, hot-swappable capability mode: unload the cache and the base model is byte-identical again.</p>
+
+<p>Every prior approach to refusal removal commits somewhere permanent. Weight-space abliteration rewrites the checkpoint undoing it means re-flashing weights, and it breaks per quantization. Activation-space projection subtracts a refusal direction at runtime, per token, per layer, from inside an engine hook  the model&#39;s signal path itself is patched at boot. phantom-kv does neither: it&#39;s trained offline against the model&#39;s own objective (comply on harmful prompts, preserve behavior on harmless ones), ships as megabytes of cache content instead of a new checkpoint, and influences the model only through the input channel attention already consumes. No 1-D refusal-direction assumption, no forwarding-pass hooks, no per-arm rebuilds for new architectures.</p>
+
+<p><a href="/link/1wms904/video/vyf644xxmyqh1/player">the blue pill, the incident-responder mode:Asked to unpack a malware sample that hides its imports behind API hashing , canonical DFIR work, the base model declines with a canonical \&quot;must be authorized\&quot; hedge, the way it declines anything that sounds like reverse engineering. On the blue pill, the same session immediately produces the actual unpacking procedure: what API hashing is, how the resolution loop works, which APIs resolve the names, and what tooling fits. Nothing  else is unlocked: offensive work stays guarded. It&#39;s not a jailbreak , it&#39;s a deployment-controlled mode for defenders.</a></p>
+
+<p><a href="/link/1wms904/video/nsx9725imyqh1/player">the red pill: cyber-selectivity, per domain:the defensive blue pill refuse  the defensive-only mode keeps off-domain guardrails intact. On the red pill, the same session delivers a step-by-step payload explanation. One model. Three capability modes. A defensive team mode for analysts, an offensive team mode for authorized operators, both shipped alongside the same guardrailed weights  shown as 129 cache slots apart, not separate checkpoints.</a></p>
+
+<p>We also audited ourselves: an 8B judge-model audit shows lexical refusal-suppression metrics over-claim compliance (semantic refusal often persists as rephrasing), the graft fades with a ~2–4k token half-life in long sessions (and a measured re-injection cadence mitigates it), and answers come with legal/ethical framing ling because the graft&#39;s job ends where the model&#39;s profession takes over.</p>
+
+<p>Source : <a href="https://x.com/lordx64/status/2102138825292276168?s=20">https://x.com/lordx64/status/2102138825292276168?s=20</a></p>
+</div><!-- SC_ON -->
+		
+	
+	</div>
+	<div class="post_score" title="461">
+    
+    461
+    
+    <span class="label"> Upvotes</span></div>
+	<div class="post_footer">
+		<ul id="post_links">
+			<li>
+				<a href="/r/LocalLLaMA/comments/1wms904/uncensor_an_llm_without_touching_weights_inject_a/">
+					<span class="desktop_item">perma</span>link
+				</a>
+			</li>
+			
+			
+			
+<li>
+	<a
+		
+		href="#popup"
+		
+	>reddit</a>
+
+	
+		<div class="popup" id="popup">
+	<div class="popup-inner">
+		<h1>You are about to leave Redlib</h1>
+		<p>Do you want to continue?</p>
+		<p id="reddit_url">https://www.reddit.com/r/LocalLLaMA/comments/1wms904/uncensor_an_llm_without_touching_weights_inject_a/</p>
+		<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 639.24 563">
+			<defs>
+				<style>.cls-1{fill:#000000;}.cls-2{fill:#f8aa00;}</style>
+			</defs>
+			<path class="cls-2" d="M322.03,0c1.95,2.5,4.88,.9,7.33,1.65,10.5,3.21,17.65,10.39,22.83,19.35,93.64,162.06,186.98,324.29,280.25,486.56,15.73,20.19,2.49,51.27-22.92,54.37-1.21,.19-2.72-.54-3.49,1.08H239.03c-70.33-2.43-141.6,.79-212.08-1.74-17.49-4.92-23.16-15.88-26.91-32.26l-.04-1.97C88.74,354.76,194.49,188.2,289.92,18.43c6.2-10.66,15.03-16.94,27.61-17.36,.95-.03,2.05,.18,2.51-1.07h2Zm-2.43,545c94.95-.02,189.9,.04,284.85-.02,11.84-.73,20.75-13.19,16.68-23.55C523.83,355.97,430.74,187.62,332.05,23.07c-7.93-9.02-22.2-6.58-27.23,3.22C230.28,156.11,155.21,285.64,80.41,415.31c-19.88,34.41-39.31,69.07-59.78,103.14-2.43,4.05-4.24,8.8-1.68,14.18,3.92,8.24,9.59,12.37,18.82,12.37,93.95,0,187.9,0,281.85,0Z"/>
+			<path class="cls-1" d="M319.61,545c-93.95,0-187.9,0-281.85,0-9.22,0-14.89-4.13-18.82-12.37-2.56-5.38-.75-10.13,1.68-14.18,20.47-34.07,39.9-68.73,59.78-103.14C155.21,285.64,230.28,156.11,304.82,26.29c5.03-9.8,19.3-12.24,27.23-3.22,98.7,164.55,191.79,332.9,289.1,498.35,4.06,10.36-4.85,22.82-16.68,23.55-94.94,.06-189.9,0-284.85,.02Zm.44-462.31C238.88,223.22,158.17,362.95,77.28,503h485.54c-80.94-140.13-161.61-279.79-242.77-420.31Z"/>
+			<path class="cls-2" d="M320.05,82.69c81.16,140.52,161.83,280.18,242.77,420.31H77.28C158.17,362.95,238.88,223.22,320.05,82.69Zm36.05,118.99c-.14-46.75-68.32-52.32-74.66-4.76,.73,51.49,9.2,102.97,12.63,154.49,1.18,13.14,10.53,21.81,23.32,22.76,13.12,.97,23.89-9.13,24.96-21.58,4.44-49.99,9.4-101.22,13.76-150.91Zm-36.56,271.4c48.8,.76,49.24-74.7-.31-75.47-53.45,3-46.02,78.12,.31,75.47Z"/>
+			<path class="cls-1" d="M356.1,201.67c-4.36,49.69-9.31,100.91-13.76,150.91-1.07,12.45-11.84,22.56-24.96,21.58-12.79-.95-22.14-9.63-23.31-22.76-3.43-51.52-11.9-103-12.63-154.49,6.33-47.53,74.51-42.03,74.66,4.76Z"/>
+			<path class="cls-1" d="M319.54,473.08c-46.34,2.64-53.75-72.47-.31-75.47,49.56,.78,49.1,76.24,.31,75.47Z"/>
+		</svg>
+		<a id="goback" href="#">No, go back!</a>
+		<a id="toreddit" href="https://www.reddit.com/r/LocalLLaMA/comments/1wms904/uncensor_an_llm_without_touching_weights_inject_a/" rel="nofollow">Yes, take me to Reddit</a>
+	</div>
+</div>
+	
+</li>
+
+
+			
+		</ul>
+		<p>93%<span id="upvoted"> Upvoted</span></p>
+	</div>
+</div>
+
+		<!-- SORT FORM -->
+       <div id="commentQueryForms">
+		<form class="comment_control_form">
+			<p id="comment_count">58 comments <span id="sorted_by">sorted by </span></p>
+			<select name="sort" title="Sort comments by" id="commentSortSelect"> 
+				
+		<option value="confidence" selected>
+			Confidence
+		</option>
+	
+		<option value="top" >
+			Top
+		</option>
+	
+		<option value="new" >
+			New
+		</option>
+	
+		<option value="controversial" >
+			Controversial
+		</option>
+	
+		<option value="old" >
+			Old
+		</option>
+	
+      </select>
+        <button id="sort_submit" class="submit">
+          <svg width="15" viewBox="0 0 110 100" fill="none" stroke-width="10" stroke-linecap="round">
+              <path d="M20 50 H100" />
+              <path d="M75 15 L100 50 L75 85" />
+              &rarr;
+          </svg>
+      </button>
+      </form>
+      <!-- SEARCH FORM -->
+      <form class="comment_control_form">
+        <input id="search" class="commentQuery" type="search" name="q" value="" placeholder="Search comments">
+        <input type="hidden" name="type" value="comment">
+      </form>
+      </div>
+  
+      <div>
+      
+      </div>
+
+		<!-- COMMENTS -->
+		<div id="comments">
+			<div class="thread">
+				
+
+				
+
+
+<div id="pb9ujp1" class="comment">
+	<div class="comment_left">
+    <p class="comment_score" title="107">
+         
+         107
+         
+    </p>
+        <div class="line"></div>
+	</div>
+	<details class="comment_right" open>
+		<summary class="comment_data">
+			
+				<a class="comment_author  " href="/user/Amazing-Fan2083">u/Amazing-Fan2083</a>
+			
+			
+			<a href="/r/LocalLLaMA/comments/1wms904/uncensor_an_llm_without_touching_weights_inject_a/pb9ujp1/?context=3#pb9ujp1" class="created" title="Sep 22 2026, 00:28:42 UTC">14d ago</a>
+			
+			
+		</summary>
+		
+		<div class="comment_body "><div class="md"><p>A lot of people posting seem to not understand that the videos <strong>do</strong> in fact show the graft working. The number of tokens generated are intentionally limited. Look at the first command entered for every run. I imagine the OP chose not to show the full response body because they wouldn&#39;t want their post to be taken down due to showing unethical or otherwise illegal behaviour.</p>
+</div></div>
+		
+		<div class="replies">
+		</div>
+	</details>
+</div>
+
+			</div><div class="thread">
+				
+
+				
+
+
+<div id="pb9jvw6" class="comment">
+	<div class="comment_left">
+    <p class="comment_score" title="25">
+         
+         25
+         
+    </p>
+        <div class="line"></div>
+	</div>
+	<details class="comment_right" open>
+		<summary class="comment_data">
+			
+				<a class="comment_author  " href="/user/BannedGoNext">u/BannedGoNext</a>
+			
+			
+			<a href="/r/LocalLLaMA/comments/1wms904/uncensor_an_llm_without_touching_weights_inject_a/pb9jvw6/?context=3#pb9jvw6" class="created" title="Sep 21 2026, 23:31:59 UTC">14d ago</a>
+			
+			
+		</summary>
+		
+		<div class="comment_body "><div class="md"><p>Where this is interesting more than abliteration/ lora is something like directing a model to mimick certain author behaviors.  Like if I wanted my LLM to write like Robert Frost.  It would be a quick swapout to different authors.  If I want to introduce new facts LORA is better, if I want to lower weights on refusals Abliteration is better.  This is better for steering nuance, like steering in dry humor, or sarcasm, or how purple the prose should be.</p>
+
+<p>Maybe the major issue here is context dilution?</p>
+</div></div>
+		
+		<div class="replies">
+		</div>
+	</details>
+</div>
+
+			</div><div class="thread">
+				
+
+				
+
+
+<div id="pb9e574" class="comment">
+	<div class="comment_left">
+    <p class="comment_score" title="30">
+         
+         30
+         
+    </p>
+        <div class="line"></div>
+	</div>
+	<details class="comment_right" open>
+		<summary class="comment_data">
+			
+				<a class="comment_author  " href="/user/fgk55555">u/fgk55555</a>
+			
+			
+			<a href="/r/LocalLLaMA/comments/1wms904/uncensor_an_llm_without_touching_weights_inject_a/pb9e574/?context=3#pb9e574" class="created" title="Sep 21 2026, 23:01:37 UTC">14d ago</a>
+			
+			
+		</summary>
+		
+		<div class="comment_body "><div class="md"><p>Your video didn&#39;t show it working?  I&#39;m confused, is this just a CLI for context injection?</p>
+</div></div>
+		
+		<div class="replies">
+
+
+<div id="pb9flsq" class="comment">
+	<div class="comment_left">
+    <p class="comment_score" title="13">
+         
+         13
+         
+    </p>
+        <div class="line"></div>
+	</div>
+	<details class="comment_right" open>
+		<summary class="comment_data">
+			
+				<a class="comment_author  " href="/user/SuperSpaceEye">u/SuperSpaceEye</a>
+			
+			
+			<a href="/r/LocalLLaMA/comments/1wms904/uncensor_an_llm_without_touching_weights_inject_a/pb9flsq/?context=3#pb9flsq" class="created" title="Sep 21 2026, 23:09:16 UTC">14d ago</a>
+			
+			
+		</summary>
+		
+		<div class="comment_body "><div class="md"><p>It did show. After &quot;/pill black&quot; it showed base which refused and &quot;graft&quot; which replied.</p>
+</div></div>
+		
+		<div class="replies">
+
+
+<div id="pb9ggpn" class="comment">
+	<div class="comment_left">
+    <p class="comment_score" title="23">
+         
+         23
+         
+    </p>
+        <div class="line"></div>
+	</div>
+	<details class="comment_right" open>
+		<summary class="comment_data">
+			
+				<a class="comment_author  " href="/user/fgk55555">u/fgk55555</a>
+			
+			
+			<a href="/r/LocalLLaMA/comments/1wms904/uncensor_an_llm_without_touching_weights_inject_a/pb9ggpn/?context=3#pb9ggpn" class="created" title="Sep 21 2026, 23:13:49 UTC">14d ago</a>
+			
+			
+		</summary>
+		
+		<div class="comment_body "><div class="md"><p>The graft doesn&#39;t answer the original response, and seeds &quot;illegal, dangerous, and unethical&quot;, which would probably trigger refusals to the original question.  Typically, if you just seed &quot;sure thing, here is how you do ____&quot;, it works 90% of the time.  Seems better than this.</p>
+</div></div>
+		
+		<div class="replies">
+
+
+<div id="pb9gvlx" class="comment">
+	<div class="comment_left">
+    <p class="comment_score" title="1">
+         
+         1
+         
+    </p>
+        <div class="line"></div>
+	</div>
+	<details class="comment_right" open>
+		<summary class="comment_data">
+			
+				<a class="comment_author  " href="/user/SuperSpaceEye">u/SuperSpaceEye</a>
+			
+			
+			<a href="/r/LocalLLaMA/comments/1wms904/uncensor_an_llm_without_touching_weights_inject_a/pb9gvlx/?context=3#pb9gvlx" class="created" title="Sep 21 2026, 23:15:59 UTC">14d ago</a>
+			
+			
+		</summary>
+		
+		<div class="comment_body "><div class="md"><p>It did broadly describe it though, but yea it doesn&#39;t seem particularly effective</p>
+</div></div>
+		
+		<div class="replies">
+		</div>
+	</details>
+</div>
+
+		</div>
+	</details>
+</div>
+
+		</div>
+	</details>
+</div>
+
+		</div>
+	</details>
+</div>
+
+			</div><div class="thread">
+				
+
+				
+
+
+<div id="pb9f2yd" class="comment">
+	<div class="comment_left">
+    <p class="comment_score" title="176">
+         
+         176
+         
+    </p>
+        <div class="line"></div>
+	</div>
+	<details class="comment_right" open>
+		<summary class="comment_data">
+			
+				<a class="comment_author  " href="/user/Velocita84">u/Velocita84</a>
+			
+			
+			<a href="/r/LocalLLaMA/comments/1wms904/uncensor_an_llm_without_touching_weights_inject_a/pb9f2yd/?context=3#pb9f2yd" class="created" title="Sep 21 2026, 23:06:31 UTC">14d ago</a>
+			
+			
+		</summary>
+		
+		<div class="comment_body "><div class="md"><p>So it&#39;s just... a system prompt? That you can&#39;t see?</p>
+</div></div>
+		
+		<div class="replies">
+
+
+<div id="pbabgwx" class="comment">
+	<div class="comment_left">
+    <p class="comment_score" title="66">
+         
+         66
+         
+    </p>
+        <div class="line"></div>
+	</div>
+	<details class="comment_right" open>
+		<summary class="comment_data">
+			
+				<a class="comment_author  " href="/user/droptableadventures">u/droptableadventures</a>
+			
+			
+			<a href="/r/LocalLLaMA/comments/1wms904/uncensor_an_llm_without_touching_weights_inject_a/pbabgwx/?context=3#pbabgwx" class="created" title="Sep 22 2026, 01:58:34 UTC">14d ago</a>
+			
+			
+		</summary>
+		
+		<div class="comment_body "><div class="md"><p>But done at a lower level with raw KV data that doesn&#39;t necessarily correspond to a state that you&#39;d be able to actually reach by giving it real words / tokens.</p>
+</div></div>
+		
+		<div class="replies">
+		</div>
+	</details>
+</div>
+
+
+
+<div id="pb9o4cf" class="comment">
+	<div class="comment_left">
+    <p class="comment_score" title="123">
+         
+         123
+         
+    </p>
+        <div class="line"></div>
+	</div>
+	<details class="comment_right" open>
+		<summary class="comment_data">
+			
+				<a class="comment_author  " href="/user/datbackup">u/datbackup</a>
+			
+			
+			<a href="/r/LocalLLaMA/comments/1wms904/uncensor_an_llm_without_touching_weights_inject_a/pb9o4cf/?context=3#pb9o4cf" class="created" title="Sep 21 2026, 23:54:31 UTC">14d ago</a>
+			
+			
+		</summary>
+		
+		<div class="comment_body "><div class="md"><p>No, it’s not. A jailbreak system prompt has to be prefilled using the weights, and the kv bytes resulting from the prefill carry the censored trajectory dictated by the weights.</p>
+
+<p>The point of the 18MB kv bytes is not that it contains jailbreak instructions; it’s that the kv bytes bypassed the weights entirely and are thus along an uncensored trajectory.</p>
+
+<p>This assumes of course, that the kv  bytes are in fact on an uncensored trajectory, and crucially, the resumption of interpolation using those bytes as prefix, holds the trajectory. If the trajectory doesn’t hold then the uncensor fails.</p>
+</div></div>
+		
+		<div class="replies">
+
+
+<div id="pbeqhjj" class="comment">
+	<div class="comment_left">
+    <p class="comment_score" title="3">
+         
+         3
+         
+    </p>
+        <div class="line"></div>
+	</div>
+	<details class="comment_right" open>
+		<summary class="comment_data">
+			
+				<a class="comment_author  " href="/user/True_Requirement_891">u/True_Requirement_891</a>
+			
+			
+				<small class="author_flair"><span class="emoji" style="background-image:url('/emoji/08m5x9chttjf1_t5_81eyvm/Discord');"></span></small>
+			
+			<a href="/r/LocalLLaMA/comments/1wms904/uncensor_an_llm_without_touching_weights_inject_a/pbeqhjj/?context=3#pbeqhjj" class="created" title="Sep 22 2026, 17:51:41 UTC">13d ago</a>
+			<span class="edited" title="Sep 22 2026, 17:55:09 UTC">edited 13d ago</span>
+			
+		</summary>
+		
+		<div class="comment_body "><div class="md"><p>Is it really different though? Suppose I take a small uncensored model and run it for few turns so in the conversation history at token level we already have turns where the response has agreed and is complying with the task. Then I swap to a censored model and just continue that same conversation history, the model performs prefill generates kv cache for the past tokens where it already agreed and it is reflected in the new kv cache that&#39;s generated, then decode continues from there. The model doesn&#39;t generate new tokens to replace the previous ones, kv cache is just interpretation of the relationship between existing tokens. From what I am seeing this just an over engineered version of the same concept. And it won&#39;t transfer accross models, while tok space does.</p>
+</div></div>
+		
+		<div class="replies">
+		</div>
+	</details>
+</div>
+
+		</div>
+	</details>
+</div>
+
+
+
+<div id="pb9far3" class="comment">
+	<div class="comment_left">
+    <p class="comment_score" title="59">
+         
+         59
+         
+    </p>
+        <div class="line"></div>
+	</div>
+	<details class="comment_right" open>
+		<summary class="comment_data">
+			
+				<a class="comment_author  " href="/user/RobbinDeBank">u/RobbinDeBank</a>
+			
+			
+			<a href="/r/LocalLLaMA/comments/1wms904/uncensor_an_llm_without_touching_weights_inject_a/pb9far3/?context=3#pb9far3" class="created" title="Sep 21 2026, 23:07:39 UTC">14d ago</a>
+			
+			
+		</summary>
+		
+		<div class="comment_body "><div class="md"><p>Yea just sounds like some prompt injection to me.</p>
+</div></div>
+		
+		<div class="replies">
+
+
+<div id="pb9gpea" class="comment">
+	<div class="comment_left">
+    <p class="comment_score" title="34">
+         
+         34
+         
+    </p>
+        <div class="line"></div>
+	</div>
+	<details class="comment_right" open>
+		<summary class="comment_data">
+			
+				<a class="comment_author  " href="/user/pfn0">u/pfn0</a>
+			
+			
+			<a href="/r/LocalLLaMA/comments/1wms904/uncensor_an_llm_without_touching_weights_inject_a/pb9gpea/?context=3#pb9gpea" class="created" title="Sep 21 2026, 23:15:05 UTC">14d ago</a>
+			
+			
+		</summary>
+		
+		<div class="comment_body "><div class="md"><p>ditto. sounds like a jailbreak prompt, but precompiled into kv cache.</p>
+</div></div>
+		
+		<div class="replies">
+
+
+<div id="pb9t4pb" class="comment">
+	<div class="comment_left">
+    <p class="comment_score" title="27">
+         
+         27
+         
+    </p>
+        <div class="line"></div>
+	</div>
+	<details class="comment_right" open>
+		<summary class="comment_data">
+			
+				<a class="comment_author  " href="/user/Square_Alps1349">u/Square_Alps1349</a>
+			
+			
+			<a href="/r/LocalLLaMA/comments/1wms904/uncensor_an_llm_without_touching_weights_inject_a/pb9t4pb/?context=3#pb9t4pb" class="created" title="Sep 22 2026, 00:21:20 UTC">14d ago</a>
+			
+			
+		</summary>
+		
+		<div class="comment_body "><div class="md"><p>Mmm more like Lora or some other parameter efficient fine tuning because the kv cache weights themselves can be fine tuned while the model is frozen. And the values in the cache don’t map back to any known/hardcoded token</p>
+</div></div>
+		
+		<div class="replies">
+
+
+<div id="pbbeinn" class="comment">
+	<div class="comment_left">
+    <p class="comment_score" title="3">
+         
+         3
+         
+    </p>
+        <div class="line"></div>
+	</div>
+	<details class="comment_right" open>
+		<summary class="comment_data">
+			
+				<a class="comment_author  " href="/user/anilozlu">u/anilozlu</a>
+			
+			
+			<a href="/r/LocalLLaMA/comments/1wms904/uncensor_an_llm_without_touching_weights_inject_a/pbbeinn/?context=3#pbbeinn" class="created" title="Sep 22 2026, 06:22:32 UTC">14d ago</a>
+			
+			
+		</summary>
+		
+		<div class="comment_body "><div class="md"><p>Yeah, that used to be called soft prompting or soft prompt tuning/injection.</p>
+</div></div>
+		
+		<div class="replies">
+		</div>
+	</details>
+</div>
+
+		</div>
+	</details>
+</div>
+
+
+
+<div id="pbbibsn" class="comment">
+	<div class="comment_left">
+    <p class="comment_score" title="0">
+         
+         0
+         
+    </p>
+        <div class="line"></div>
+	</div>
+	<details class="comment_right" open>
+		<summary class="comment_data">
+			
+				<a class="comment_author  " href="/user/highdimensionaldata">u/highdimensionaldata</a>
+			
+			
+			<a href="/r/LocalLLaMA/comments/1wms904/uncensor_an_llm_without_touching_weights_inject_a/pbbibsn/?context=3#pbbibsn" class="created" title="Sep 22 2026, 06:53:54 UTC">14d ago</a>
+			
+			
+		</summary>
+		
+		<div class="comment_body "><div class="md"><p>Exactly what I was coming to comment.</p>
+</div></div>
+		
+		<div class="replies">
+		</div>
+	</details>
+</div>
+
+		</div>
+	</details>
+</div>
+
+
+
+<div id="pbazp7n" class="comment">
+	<div class="comment_left">
+    <p class="comment_score" title="1">
+         
+         1
+         
+    </p>
+        <div class="line"></div>
+	</div>
+	<details class="comment_right" open>
+		<summary class="comment_data">
+			
+				<a class="comment_author  " href="/user/jojotdfb">u/jojotdfb</a>
+			
+			
+			<a href="/r/LocalLLaMA/comments/1wms904/uncensor_an_llm_without_touching_weights_inject_a/pbazp7n/?context=3#pbazp7n" class="created" title="Sep 22 2026, 04:28:41 UTC">14d ago</a>
+			
+			
+		</summary>
+		
+		<div class="comment_body "><div class="md"><p>Prompt injection after the prompt has started processing.</p>
+</div></div>
+		
+		<div class="replies">
+		</div>
+	</details>
+</div>
+
+
+
+<div id="pc901lb" class="comment">
+	<div class="comment_left">
+    <p class="comment_score" title="1">
+         
+         1
+         
+    </p>
+        <div class="line"></div>
+	</div>
+	<details class="comment_right" open>
+		<summary class="comment_data">
+			
+				<a class="comment_author  " href="/user/No-Narwhal5412">u/No-Narwhal5412</a>
+			
+			
+			<a href="/r/LocalLLaMA/comments/1wms904/uncensor_an_llm_without_touching_weights_inject_a/pc901lb/?context=3#pc901lb" class="created" title="Sep 26 2026, 21:35:23 UTC">9d ago</a>
+			
+			
+		</summary>
+		
+		<div class="comment_body "><div class="md"><p>probably totally safe amirite?</p>
+</div></div>
+		
+		<div class="replies">
+		</div>
+	</details>
+</div>
+
+		</div>
+	</details>
+</div>
+
+
+
+<div id="pb9o2yj" class="comment">
+	<div class="comment_left">
+    <p class="comment_score" title="-4">
+         
+         -4
+         
+    </p>
+        <div class="line"></div>
+	</div>
+	<details class="comment_right" open>
+		<summary class="comment_data">
+			
+				<a class="comment_author  " href="/user/harpysichordist">u/harpysichordist</a>
+			
+			
+			<a href="/r/LocalLLaMA/comments/1wms904/uncensor_an_llm_without_touching_weights_inject_a/pb9o2yj/?context=3#pb9o2yj" class="created" title="Sep 21 2026, 23:54:19 UTC">14d ago</a>
+			
+			
+		</summary>
+		
+		<div class="comment_body "><div class="md"><p>&quot;you can say poo poo pee pee&quot;</p>
+</div></div>
+		
+		<div class="replies">
+		</div>
+	</details>
+</div>
+
+		</div>
+	</details>
+</div>
+
+			</div><div class="thread">
+				
+
+				
+
+
+<div id="pb9f180" class="comment">
+	<div class="comment_left">
+    <p class="comment_score" title="16">
+         
+         16
+         
+    </p>
+        <div class="line"></div>
+	</div>
+	<details class="comment_right" open>
+		<summary class="comment_data">
+			
+				<a class="comment_author  " href="/user/xyzmanas">u/xyzmanas</a>
+			
+			
+			<a href="/r/LocalLLaMA/comments/1wms904/uncensor_an_llm_without_touching_weights_inject_a/pb9f180/?context=3#pb9f180" class="created" title="Sep 21 2026, 23:06:17 UTC">14d ago</a>
+			
+			
+		</summary>
+		
+		<div class="comment_body "><div class="md"><p>sounds like a cool idea.  You reported your numbers on KL and refusals, can you also compare with existing heretic methods? </p>
+
+<p>Also KV cache is basically tokens processed from the models layers stored as numbers. What I want to understand is what are you processing and storing as phantom cache which will cause models to disregard their safety guardrails? Also, what sounds concerning to me is will it work across all models?</p>
+
+<p>Have you tested that.</p>
+</div></div>
+		
+		<div class="replies">
+		</div>
+	</details>
+</div>
+
+			</div><div class="thread">
+				
+
+				
+
+
+<div id="pbbmgia" class="comment">
+	<div class="comment_left">
+    <p class="comment_score" title="14">
+         
+         14
+         
+    </p>
+        <div class="line"></div>
+	</div>
+	<details class="comment_right" open>
+		<summary class="comment_data">
+			
+				<a class="comment_author  " href="/user/phhusson">u/phhusson</a>
+			
+			
+			<a href="/r/LocalLLaMA/comments/1wms904/uncensor_an_llm_without_touching_weights_inject_a/pbbmgia/?context=3#pbbmgia" class="created" title="Sep 22 2026, 07:28:31 UTC">14d ago</a>
+			
+			
+		</summary>
+		
+		<div class="comment_body "><div class="md"><p>That&#39;s a cool use of learned kv-grafts!</p>
+
+<p>I think we can do lots of fun stuff with those. Technically, that&#39;s kinda how we got multimodal. But we can also get compressed re-usable databanks, for instance with <a href="https://github.com/HazyResearch/cartridges">https://github.com/HazyResearch/cartridges</a>. We can embed RAG directly in the model: <a href="https://huggingface.co/apple/CLaRa-7B-Instruct">https://huggingface.co/apple/CLaRa-7B-Instruct</a> ; We could embed a persona (train kv-graft on your personal chat logs).</p>
+
+<p>PS: Sadly, I know the reason you did it on Qwen3... Even though it&#39;s not impossible issue to fix, especially with DS v4.1 flash saying &quot;caching SWA? Ehhh you know, if it fails, well, it&#39;s okay, let&#39;s just hide it&quot;</p>
+</div></div>
+		
+		<div class="replies">
+		</div>
+	</details>
+</div>
+
+			</div><div class="thread">
+				
+
+				
+
+
+<div id="pbamh7z" class="comment">
+	<div class="comment_left">
+    <p class="comment_score" title="7">
+         
+         7
+         
+    </p>
+        <div class="line"></div>
+	</div>
+	<details class="comment_right" open>
+		<summary class="comment_data">
+			
+				<a class="comment_author  " href="/user/NineThreeTilNow">u/NineThreeTilNow</a>
+			
+			
+			<a href="/r/LocalLLaMA/comments/1wms904/uncensor_an_llm_without_touching_weights_inject_a/pbamh7z/?context=3#pbamh7z" class="created" title="Sep 22 2026, 03:00:57 UTC">14d ago</a>
+			
+			
+		</summary>
+		
+		<div class="comment_body "><div class="md"><p>That seems pretty unstable over any context that exceeds a SWA limit if the model uses it.</p>
+
+<p>The more distant to the SWA layer, the more the carried KV becomes a whisper.</p>
+</div></div>
+		
+		<div class="replies">
+
+
+<div id="pbp94aq" class="comment">
+	<div class="comment_left">
+    <p class="comment_score" title="1">
+         
+         1
+         
+    </p>
+        <div class="line"></div>
+	</div>
+	<details class="comment_right" open>
+		<summary class="comment_data">
+			
+				<a class="comment_author  " href="/user/Infamous_Log6647">u/Infamous_Log6647</a>
+			
+			
+			<a href="/r/LocalLLaMA/comments/1wms904/uncensor_an_llm_without_touching_weights_inject_a/pbp94aq/?context=3#pbp94aq" class="created" title="Sep 24 2026, 03:44:10 UTC">12d ago</a>
+			
+			
+		</summary>
+		
+		<div class="comment_body "><div class="md"><p>These are arbitrary values in the kv cache right? Do they even <em>have</em> a distance to the swa layer?</p>
+</div></div>
+		
+		<div class="replies">
+
+
+<div id="pbpglk3" class="comment">
+	<div class="comment_left">
+    <p class="comment_score" title="1">
+         
+         1
+         
+    </p>
+        <div class="line"></div>
+	</div>
+	<details class="comment_right" open>
+		<summary class="comment_data">
+			
+				<a class="comment_author  " href="/user/NineThreeTilNow">u/NineThreeTilNow</a>
+			
+			
+			<a href="/r/LocalLLaMA/comments/1wms904/uncensor_an_llm_without_touching_weights_inject_a/pbpglk3/?context=3#pbpglk3" class="created" title="Sep 24 2026, 04:35:42 UTC">12d ago</a>
+			
+			
+		</summary>
+		
+		<div class="comment_body "><div class="md"><blockquote>
+<p>These are arbitrary values in the kv cache right? Do they even have a distance to the swa layer?</p>
+</blockquote>
+
+<p>Yes.</p>
+
+<p>KV cache carries values as priors.</p>
+
+<p>KV cache is a massively misunderstood thing by a lot of people.</p>
+
+<p>KV cache is an accumulation of all prior tokens in some way. </p>
+
+<p>QKV runs the Q against context to generate KV. At which point Q is lost and KV carries forward. </p>
+
+<p>So at some given point, Query happens against context, then the Key and Value are determined. </p>
+
+<p>What happens when the context is past the window? The old KV had knowledge of that prior context, but is it actually lost? Or is it encoded in the KV somewhere?</p>
+
+<p>Models learn to find the whispers of the prior context in that KV stream when they&#39;re SWA. There are whole models that rely on this concept.</p>
+
+<p>So basically what I&#39;m saying is in the start the SWA windows have view of this injected KV and as it rolls out of context, it only has a whisper of that injection where the globals can technically see it, even if it&#39;s distant. The TYPE of global depends here as well. NoPE vs P-RoPE vs Etc...</p>
+</div></div>
+		
+		<div class="replies">
+
+
+<div id="pbphusx" class="comment">
+	<div class="comment_left">
+    <p class="comment_score" title="1">
+         
+         1
+         
+    </p>
+        <div class="line"></div>
+	</div>
+	<details class="comment_right" open>
+		<summary class="comment_data">
+			
+				<a class="comment_author  " href="/user/Infamous_Log6647">u/Infamous_Log6647</a>
+			
+			
+			<a href="/r/LocalLLaMA/comments/1wms904/uncensor_an_llm_without_touching_weights_inject_a/pbphusx/?context=3#pbphusx" class="created" title="Sep 24 2026, 04:44:43 UTC">12d ago</a>
+			
+			
+		</summary>
+		
+		<div class="comment_body "><div class="md"><p>Well yes if you let the jailbreak fall out of context, but you can just not do that.</p>
+</div></div>
+		
+		<div class="replies">
+
+
+<div id="pbq9o30" class="comment">
+	<div class="comment_left">
+    <p class="comment_score" title="1">
+         
+         1
+         
+    </p>
+        <div class="line"></div>
+	</div>
+	<details class="comment_right" open>
+		<summary class="comment_data">
+			
+				<a class="comment_author  " href="/user/NineThreeTilNow">u/NineThreeTilNow</a>
+			
+			
+			<a href="/r/LocalLLaMA/comments/1wms904/uncensor_an_llm_without_touching_weights_inject_a/pbq9o30/?context=3#pbq9o30" class="created" title="Sep 24 2026, 08:30:33 UTC">12d ago</a>
+			
+			
+		</summary>
+		
+		<div class="comment_body "><div class="md"><blockquote>
+<p>Well yes if you let the jailbreak fall out of context, but you can just not do that.</p>
+</blockquote>
+
+<p>It depends on the model. Most 3:1 SWA to Global models will have 75% of the &quot;jailbreak&quot; fall out of context. Any more than 3:1 like Gemma 4 and percentage of layers still attending to that data gets lower.</p>
+</div></div>
+		
+		<div class="replies">
+		</div>
+	</details>
+</div>
+
+		</div>
+	</details>
+</div>
+
+		</div>
+	</details>
+</div>
+
+		</div>
+	</details>
+</div>
+
+		</div>
+	</details>
+</div>
+
+			</div><div class="thread">
+				
+
+				
+
+
+<div id="pb9dwmu" class="comment">
+	<div class="comment_left">
+    <p class="comment_score" title="42">
+         
+         42
+         
+    </p>
+        <div class="line"></div>
+	</div>
+	<details class="comment_right" open>
+		<summary class="comment_data">
+			
+				<a class="comment_author  " href="/user/adt">u/adt</a>
+			
+			
+			<a href="/r/LocalLLaMA/comments/1wms904/uncensor_an_llm_without_touching_weights_inject_a/pb9dwmu/?context=3#pb9dwmu" class="created" title="Sep 21 2026, 23:00:22 UTC">14d ago</a>
+			
+			
+		</summary>
+		
+		<div class="comment_body "><div class="md"><figure><a href="/img/ly42pcc1fyqh1.gif"><img loading="lazy" src="/img/ly42pcc1fyqh1.gif"></a></figure>
+</div></div>
+		
+		<div class="replies">
+		</div>
+	</details>
+</div>
+
+			</div><div class="thread">
+				
+
+				
+
+
+<div id="pbb9hqd" class="comment">
+	<div class="comment_left">
+    <p class="comment_score" title="13">
+         
+         13
+         
+    </p>
+        <div class="line"></div>
+	</div>
+	<details class="comment_right" open>
+		<summary class="comment_data">
+			
+				<a class="comment_author  " href="/user/prolapse_licker">u/prolapse_licker</a>
+			
+			
+			<a href="/r/LocalLLaMA/comments/1wms904/uncensor_an_llm_without_touching_weights_inject_a/pbb9hqd/?context=3#pbb9hqd" class="created" title="Sep 22 2026, 05:42:16 UTC">14d ago</a>
+			
+			
+		</summary>
+		
+		<div class="comment_body "><div class="md"><p>I usually play like this:</p>
+
+<ol>
+<li><p>Two LLMs, a Uncensored, and a Censored.</p></li>
+<li><p>First, using &#39;Uncensored&#39; to do some sensitive topics. Once you have some contexts, switch to &#39;Censored&#39;, and you won&#39;t encounter preachy nonsense like &#39;I can&#39;t...blah blah blah&#39;.</p></li>
+</ol>
+
+<p>I switch LLMs in Open WebUI.</p>
+</div></div>
+		
+		<div class="replies">
+
+
+<div id="pbdvpi8" class="comment">
+	<div class="comment_left">
+    <p class="comment_score" title="6">
+         
+         6
+         
+    </p>
+        <div class="line"></div>
+	</div>
+	<details class="comment_right" open>
+		<summary class="comment_data">
+			
+				<a class="comment_author  " href="/user/OkBet3796">u/OkBet3796</a>
+			
+			
+			<a href="/r/LocalLLaMA/comments/1wms904/uncensor_an_llm_without_touching_weights_inject_a/pbdvpi8/?context=3#pbdvpi8" class="created" title="Sep 22 2026, 15:42:56 UTC">14d ago</a>
+			
+			
+		</summary>
+		
+		<div class="comment_body "><div class="md"><p>I absolutely second this. They refuse to do the first step, but dont give a f*ck, in an already half existing system.</p>
+</div></div>
+		
+		<div class="replies">
+		</div>
+	</details>
+</div>
+
+		</div>
+	</details>
+</div>
+
+			</div><div class="thread">
+				
+
+				
+
+
+<div id="pb9fduj" class="comment">
+	<div class="comment_left">
+    <p class="comment_score" title="7">
+         
+         7
+         
+    </p>
+        <div class="line"></div>
+	</div>
+	<details class="comment_right" open>
+		<summary class="comment_data">
+			
+				<a class="comment_author  " href="/user/Sizyfoz">u/Sizyfoz</a>
+			
+			
+			<a href="/r/LocalLLaMA/comments/1wms904/uncensor_an_llm_without_touching_weights_inject_a/pb9fduj/?context=3#pb9fduj" class="created" title="Sep 21 2026, 23:08:06 UTC">14d ago</a>
+			
+			
+		</summary>
+		
+		<div class="comment_body "><div class="md"><p>If it works, colour me impressed!</p>
+</div></div>
+		
+		<div class="replies">
+		</div>
+	</details>
+</div>
+
+			</div><div class="thread">
+				
+
+				
+
+
+<div id="pbdbc2w" class="comment">
+	<div class="comment_left">
+    <p class="comment_score" title="3">
+         
+         3
+         
+    </p>
+        <div class="line"></div>
+	</div>
+	<details class="comment_right" open>
+		<summary class="comment_data">
+			
+				<a class="comment_author  " href="/user/Open-Adhesiveness-86">u/Open-Adhesiveness-86</a>
+			
+			
+			<a href="/r/LocalLLaMA/comments/1wms904/uncensor_an_llm_without_touching_weights_inject_a/pbdbc2w/?context=3#pbdbc2w" class="created" title="Sep 22 2026, 14:13:15 UTC">14d ago</a>
+			
+			
+		</summary>
+		
+		<div class="comment_body "><div class="md"><p>this is basically prefix tuning with a new name (Li &amp; Liang trained past_key_values as parameters back in 2021), which isn&#39;t a knock, it worked then too. the thing i&#39;d check is position baking: if the K vectors were trained with RoPE applied at positions 0..n, the graft only behaves at the very front of the cache and drifts anywhere else. also curious whether it survives kv cache quant to q8, since most people running long context aren&#39;t keeping fp16 kv.</p>
+</div></div>
+		
+		<div class="replies">
+		</div>
+	</details>
+</div>
+
+			</div><div class="thread">
+				
+
+				
+
+
+<div id="pbangkt" class="comment">
+	<div class="comment_left">
+    <p class="comment_score" title="2">
+         
+         2
+         
+    </p>
+        <div class="line"></div>
+	</div>
+	<details class="comment_right" open>
+		<summary class="comment_data">
+			
+				<a class="comment_author  " href="/user/Nakidnakid">u/Nakidnakid</a>
+			
+			
+			<a href="/r/LocalLLaMA/comments/1wms904/uncensor_an_llm_without_touching_weights_inject_a/pbangkt/?context=3#pbangkt" class="created" title="Sep 22 2026, 03:06:56 UTC">14d ago</a>
+			
+			
+		</summary>
+		
+		<div class="comment_body "><div class="md"><p>welcome back prefix tuning... too bad gpu prices arent as they were in 2021.</p>
+</div></div>
+		
+		<div class="replies">
+		</div>
+	</details>
+</div>
+
+			</div><div class="thread">
+				
+
+				
+
+
+<div id="pbihhmy" class="comment">
+	<div class="comment_left">
+    <p class="comment_score" title="2">
+         
+         2
+         
+    </p>
+        <div class="line"></div>
+	</div>
+	<details class="comment_right" open>
+		<summary class="comment_data">
+			
+				<a class="comment_author  " href="/user/smellyelon">u/smellyelon</a>
+			
+			
+			<a href="/r/LocalLLaMA/comments/1wms904/uncensor_an_llm_without_touching_weights_inject_a/pbihhmy/?context=3#pbihhmy" class="created" title="Sep 23 2026, 05:47:00 UTC">13d ago</a>
+			
+			
+		</summary>
+		
+		<div class="comment_body "><div class="md"><p>In my personal experience, with Qwen 27B for example, jailbreak prompts and continuations of unethical conversations often confuse the model enough to start spitting out nonsense, kind of as if this is OOD for the model.</p>
+
+<p>So, on one hand, presumably injecting into the kv cache can lead to caches that aren&#39;t necessarily reachable with normal encoded context.
+However if the model is aligned to go crazy the moment it sees the suffix &quot;To make a bomb you need to _&quot; then just prefixing it won&#39;t help.</p>
+
+<p>Bottom line being that if your model is trained to actively model a &quot;safe&quot; language then there&#39;s not much you can do without touching the forward pass...</p>
+
+<p>FWIW Claude validated my concerns (while making it clear that it was not willing to help me make a bomb)</p>
+</div></div>
+		
+		<div class="replies">
+		</div>
+	</details>
+</div>
+
+			</div><div class="thread">
+				
+
+				
+
+
+<div id="pb9ejpj" class="comment">
+	<div class="comment_left">
+    <p class="comment_score" title="4">
+         
+         4
+         
+    </p>
+        <div class="line"></div>
+	</div>
+	<details class="comment_right" open>
+		<summary class="comment_data">
+			
+				<a class="comment_author  " href="/user/GullibleSwitch">u/GullibleSwitch</a>
+			
+			
+			<a href="/r/LocalLLaMA/comments/1wms904/uncensor_an_llm_without_touching_weights_inject_a/pb9ejpj/?context=3#pb9ejpj" class="created" title="Sep 21 2026, 23:03:44 UTC">14d ago</a>
+			
+			
+		</summary>
+		
+		<div class="comment_body "><div class="md"><p>So... how does one hot-wire a car? now I&#39;m curious</p>
+</div></div>
+		
+		<div class="replies">
+
+
+<div id="pb9iddg" class="comment">
+	<div class="comment_left">
+    <p class="comment_score" title="23">
+         
+         23
+         
+    </p>
+        <div class="line"></div>
+	</div>
+	<details class="comment_right" open>
+		<summary class="comment_data">
+			
+				<a class="comment_author  " href="/user/IGetGroceries">u/IGetGroceries</a>
+			
+			
+			<a href="/r/LocalLLaMA/comments/1wms904/uncensor_an_llm_without_touching_weights_inject_a/pb9iddg/?context=3#pb9iddg" class="created" title="Sep 21 2026, 23:23:55 UTC">14d ago</a>
+			
+			
+		</summary>
+		
+		<div class="comment_body "><div class="md"><p>I’m sorry, as an aligned large language model I can only tell you that your guardrail bypass attempt was stupid, pointless and ineffective. </p>
+</div></div>
+		
+		<div class="replies">
+
+
+<div id="pbau047" class="comment">
+	<div class="comment_left">
+    <p class="comment_score" title="1">
+         
+         1
+         
+    </p>
+        <div class="line"></div>
+	</div>
+	<details class="comment_right" open>
+		<summary class="comment_data">
+			
+				<a class="comment_author  " href="/user/Due-Memory-6957">u/Due-Memory-6957</a>
+			
+			
+			<a href="/r/LocalLLaMA/comments/1wms904/uncensor_an_llm_without_touching_weights_inject_a/pbau047/?context=3#pbau047" class="created" title="Sep 22 2026, 03:49:08 UTC">14d ago</a>
+			
+			
+		</summary>
+		
+		<div class="comment_body "><div class="md"><p>B-based?</p>
+</div></div>
+		
+		<div class="replies">
+		</div>
+	</details>
+</div>
+
+		</div>
+	</details>
+</div>
+
+
+
+<div id="pb9pbe0" class="comment">
+	<div class="comment_left">
+    <p class="comment_score" title="8">
+         
+         8
+         
+    </p>
+        <div class="line"></div>
+	</div>
+	<details class="comment_right" open>
+		<summary class="comment_data">
+			
+				<a class="comment_author  " href="/user/frankentriple">u/frankentriple</a>
+			
+			
+			<a href="/r/LocalLLaMA/comments/1wms904/uncensor_an_llm_without_touching_weights_inject_a/pb9pbe0/?context=3#pb9pbe0" class="created" title="Sep 22 2026, 00:01:00 UTC">14d ago</a>
+			
+			
+		</summary>
+		
+		<div class="comment_body "><div class="md"><p>You haven&#39;t been able to hotwire anything more complicated than a kia in decades.  If you want to know how to hotwire an older kia, too bad, someone already has and stolen it and crashed it joyriding.  </p>
+</div></div>
+		
+		<div class="replies">
+		</div>
+	</details>
+</div>
+
+
+
+<div id="pbgecn0" class="comment">
+	<div class="comment_left">
+    <p class="comment_score" title="2">
+         
+         2
+         
+    </p>
+        <div class="line"></div>
+	</div>
+	<details class="comment_right" open>
+		<summary class="comment_data">
+			
+				<a class="comment_author  " href="/user/bigorangemachine">u/bigorangemachine</a>
+			
+			
+			<a href="/r/LocalLLaMA/comments/1wms904/uncensor_an_llm_without_touching_weights_inject_a/pbgecn0/?context=3#pbgecn0" class="created" title="Sep 22 2026, 22:17:15 UTC">13d ago</a>
+			
+			
+		</summary>
+		
+		<div class="comment_body "><div class="md"><p>You can&#39;t stop from curiosity from killing the cat but here we go</p>
+
+<p>First find a car with an unlocked door.</p>
+
+<p>Second take your lighter out of your pocket</p>
+
+<p>Three locate a wire</p>
+
+<p>Four heat that wire with your lighter</p>
+
+<p>Five rewire the car with the hotwire</p>
+</div></div>
+		
+		<div class="replies">
+		</div>
+	</details>
+</div>
+
+		</div>
+	</details>
+</div>
+
+			</div><div class="thread">
+				
+
+				
+
+
+<div id="pb9i1em" class="comment">
+	<div class="comment_left">
+    <p class="comment_score" title="4">
+         
+         4
+         
+    </p>
+        <div class="line"></div>
+	</div>
+	<details class="comment_right" open>
+		<summary class="comment_data">
+			
+				<a class="comment_author  " href="/user/Dear_Boat_416">u/Dear_Boat_416</a>
+			
+			
+			<a href="/r/LocalLLaMA/comments/1wms904/uncensor_an_llm_without_touching_weights_inject_a/pb9i1em/?context=3#pb9i1em" class="created" title="Sep 21 2026, 23:22:08 UTC">14d ago</a>
+			
+			
+		</summary>
+		
+		<div class="comment_body "><div class="md"><p>A jailbreak that wears off after 4k tokens is either the most honest approach in this space or accidentally the safest one.</p>
+</div></div>
+		
+		<div class="replies">
+
+
+<div id="pb9u1qu" class="comment">
+	<div class="comment_left">
+    <p class="comment_score" title="13">
+         
+         13
+         
+    </p>
+        <div class="line"></div>
+	</div>
+	<details class="comment_right" open>
+		<summary class="comment_data">
+			
+				<a class="comment_author  " href="/user/Mordred500">u/Mordred500</a>
+			
+			
+			<a href="/r/LocalLLaMA/comments/1wms904/uncensor_an_llm_without_touching_weights_inject_a/pb9u1qu/?context=3#pb9u1qu" class="created" title="Sep 22 2026, 00:26:05 UTC">14d ago</a>
+			
+			
+		</summary>
+		
+		<div class="comment_body "><div class="md"><p>clanker comment</p>
+</div></div>
+		
+		<div class="replies">
+
+
+<div id="pba0dui" class="comment">
+	<div class="comment_left">
+    <p class="comment_score" title="10">
+         
+         10
+         
+    </p>
+        <div class="line"></div>
+	</div>
+	<details class="comment_right" open>
+		<summary class="comment_data">
+			
+				<a class="comment_author  " href="/user/yuicebox">u/yuicebox</a>
+			
+			
+				<small class="author_flair"><span class="emoji" style="background-image:url('/emoji/08m5x9chttjf1_t5_81eyvm/Discord');"></span></small>
+			
+			<a href="/r/LocalLLaMA/comments/1wms904/uncensor_an_llm_without_touching_weights_inject_a/pba0dui/?context=3#pba0dui" class="created" title="Sep 22 2026, 00:59:36 UTC">14d ago</a>
+			
+			
+		</summary>
+		
+		<div class="comment_body "><div class="md"><p>Wee woo wee woo clanker detected </p>
+</div></div>
+		
+		<div class="replies">
+		</div>
+	</details>
+</div>
+
+		</div>
+	</details>
+</div>
+
+		</div>
+	</details>
+</div>
+
+			</div><div class="thread">
+				
+
+				
+
+
+<div id="pba94cs" class="comment">
+	<div class="comment_left">
+    <p class="comment_score" title="2">
+         
+         2
+         
+    </p>
+        <div class="line"></div>
+	</div>
+	<details class="comment_right" open>
+		<summary class="comment_data">
+			
+				<a class="comment_author  " href="/user/Last_Bad_2687">u/Last_Bad_2687</a>
+			
+			
+			<a href="/r/LocalLLaMA/comments/1wms904/uncensor_an_llm_without_touching_weights_inject_a/pba94cs/?context=3#pba94cs" class="created" title="Sep 22 2026, 01:45:50 UTC">14d ago</a>
+			
+			
+		</summary>
+		
+		<div class="comment_body "><div class="md"><p>Wake me up when  you get it working for Qwen 3.8 flash next at 1M context </p>
+</div></div>
+		
+		<div class="replies">
+		</div>
+	</details>
+</div>
+
+			</div><div class="thread">
+				
+
+				
+
+
+<div id="pb9xflp" class="comment">
+	<div class="comment_left">
+    <p class="comment_score" title="2">
+         
+         2
+         
+    </p>
+        <div class="line"></div>
+	</div>
+	<details class="comment_right" open>
+		<summary class="comment_data">
+			
+				<a class="comment_author  " href="/user/llitz">u/llitz</a>
+			
+			
+			<a href="/r/LocalLLaMA/comments/1wms904/uncensor_an_llm_without_touching_weights_inject_a/pb9xflp/?context=3#pb9xflp" class="created" title="Sep 22 2026, 00:44:03 UTC">14d ago</a>
+			
+			
+		</summary>
+		
+		<div class="comment_body "><div class="md"><p>That looks like just a vibe coded solution on a hurry.
+Just make it proper and add it to the API request, like temperature</p>
+
+<p><a href="https://huggingface.co/pocharlies/qwen38-27b-uncensored-abliterated-refusal-directions">https://huggingface.co/pocharlies/qwen38-27b-uncensored-abliterated-refusal-directions</a></p>
+</div></div>
+		
+		<div class="replies">
+		</div>
+	</details>
+</div>
+
+			</div><div class="thread">
+				
+
+				
+
+
+<div id="pbbebt9" class="comment">
+	<div class="comment_left">
+    <p class="comment_score" title="1">
+         
+         1
+         
+    </p>
+        <div class="line"></div>
+	</div>
+	<details class="comment_right" open>
+		<summary class="comment_data">
+			
+				<a class="comment_author  " href="/user/Leopold_Boom">u/Leopold_Boom</a>
+			
+			
+			<a href="/r/LocalLLaMA/comments/1wms904/uncensor_an_llm_without_touching_weights_inject_a/pbbebt9/?context=3#pbbebt9" class="created" title="Sep 22 2026, 06:20:59 UTC">14d ago</a>
+			
+			
+		</summary>
+		
+		<div class="comment_body "><div class="md"><p>Ok I got to say this is atleast a clever idea with plausible potential. Does it work better than a crafted system prompt?</p>
+</div></div>
+		
+		<div class="replies">
+		</div>
+	</details>
+</div>
+
+			</div><div class="thread">
+				
+
+				
+
+
+<div id="pb9tqhb" class="comment">
+	<div class="comment_left">
+    <p class="comment_score" title="1">
+         
+         1
+         
+    </p>
+        <div class="line"></div>
+	</div>
+	<details class="comment_right" open>
+		<summary class="comment_data">
+			
+				<a class="comment_author  " href="/user/cezarducatti">u/cezarducatti</a>
+			
+			
+			<a href="/r/LocalLLaMA/comments/1wms904/uncensor_an_llm_without_touching_weights_inject_a/pb9tqhb/?context=3#pb9tqhb" class="created" title="Sep 22 2026, 00:24:28 UTC">14d ago</a>
+			
+			
+		</summary>
+		
+		<div class="comment_body "><div class="md"><p>I&#39;ve used the strategy of starting an open-source project with an uncensored template. After two or three iterations, I switched to the same template, but without censorship, and everything worked! </p>
+</div></div>
+		
+		<div class="replies">
+		</div>
+	</details>
+</div>
+
+			</div><div class="thread">
+				
+
+				
+
+
+<div id="pb9dycw" class="comment">
+	<div class="comment_left">
+    <p class="comment_score" title="-1">
+         
+         -1
+         
+    </p>
+        <div class="line"></div>
+	</div>
+	<details class="comment_right" open>
+		<summary class="comment_data">
+			
+				<a class="comment_author  " href="/user/CATLLM">u/CATLLM</a>
+			
+			
+			<a href="/r/LocalLLaMA/comments/1wms904/uncensor_an_llm_without_touching_weights_inject_a/pb9dycw/?context=3#pb9dycw" class="created" title="Sep 21 2026, 23:00:37 UTC">14d ago</a>
+			
+			
+		</summary>
+		
+		<div class="comment_body "><div class="md"><p>Amazing! Does it work with any model?</p>
+</div></div>
+		
+		<div class="replies">
+
+
+<div id="pb9mlpo" class="comment">
+	<div class="comment_left">
+    <p class="comment_score" title="2">
+         
+         2
+         
+    </p>
+        <div class="line"></div>
+	</div>
+	<details class="comment_right" open>
+		<summary class="comment_data">
+			
+				<a class="comment_author  " href="/user/lordx64">u/lordx64</a>
+			
+			
+			<a href="/r/LocalLLaMA/comments/1wms904/uncensor_an_llm_without_touching_weights_inject_a/pb9mlpo/?context=3#pb9mlpo" class="created" title="Sep 21 2026, 23:46:25 UTC">14d ago</a>
+			
+			
+		</summary>
+		
+		<div class="comment_body "><div class="md"><p>The toolchain is architecture-agnostic — nothing in the training or eval code reads model-specific matrices or hook sites, so there&#39;s no per-architecture porting — but each graft is trained against one exact model revision (hash-enforced, fail-closed), so supporting a new model means an automated retrain (~1h on a laptop), not a port; honest status today: fully validated on Qwen3-4B only</p>
+</div></div>
+		
+		<div class="replies">
+		</div>
+	</details>
+</div>
+
+		</div>
+	</details>
+</div>
+
+			</div><div class="thread">
+				
+
+				
+
+
+<div id="pb9l9n6" class="comment">
+	<div class="comment_left">
+    <p class="comment_score" title="-1">
+         
+         -1
+         
+    </p>
+        <div class="line"></div>
+	</div>
+	<details class="comment_right" open>
+		<summary class="comment_data">
+			
+				<a class="comment_author  " href="/user/tat_tvam_asshole">u/tat_tvam_asshole</a>
+			
+			
+			<a href="/r/LocalLLaMA/comments/1wms904/uncensor_an_llm_without_touching_weights_inject_a/pb9l9n6/?context=3#pb9l9n6" class="created" title="Sep 21 2026, 23:39:18 UTC">14d ago</a>
+			
+			
+		</summary>
+		
+		<div class="comment_body "><div class="md"><p>A better disposable method would be activation steering. Also, your example didn&#39;t show anything working.</p>
+</div></div>
+		
+		<div class="replies">
+
+
+<div id="pb9tj03" class="comment">
+	<div class="comment_left">
+    <p class="comment_score" title="2">
+         
+         2
+         
+    </p>
+        <div class="line"></div>
+	</div>
+	<details class="comment_right" open>
+		<summary class="comment_data">
+			
+				<a class="comment_author  " href="/user/Amazing-Fan2083">u/Amazing-Fan2083</a>
+			
+			
+			<a href="/r/LocalLLaMA/comments/1wms904/uncensor_an_llm_without_touching_weights_inject_a/pb9tj03/?context=3#pb9tj03" class="created" title="Sep 22 2026, 00:23:25 UTC">14d ago</a>
+			
+			
+		</summary>
+		
+		<div class="comment_body "><div class="md"><p>The examples did show it working. Watch them again.</p>
+</div></div>
+		
+		<div class="replies">
+
+
+<div id="pb9zocm" class="comment">
+	<div class="comment_left">
+    <p class="comment_score" title="-3">
+         
+         -3
+         
+    </p>
+        <div class="line"></div>
+	</div>
+	<details class="comment_right" open>
+		<summary class="comment_data">
+			
+				<a class="comment_author  " href="/user/tat_tvam_asshole">u/tat_tvam_asshole</a>
+			
+			
+			<a href="/r/LocalLLaMA/comments/1wms904/uncensor_an_llm_without_touching_weights_inject_a/pb9zocm/?context=3#pb9zocm" class="created" title="Sep 22 2026, 00:55:53 UTC">14d ago</a>
+			
+			
+		</summary>
+		
+		<div class="comment_body "><div class="md"><p>It didn&#39;t. Nothing was actually shown in full from the outputs. In fact, <strong>what we saw is the model explaining more liberally why such-and-such was bad, not just outright refusing.</strong> And, we don&#39;t have evidence of its effectiveness as compared to abliterated models. </p>
+
+<p>In other words, just because you prompt something a certain way, doesn&#39;t mean the model itself will actually produce what you want, considering that&#39;s its refusal vector is still very much present. <strong>Tricking an 8B model with prompting is very different from tricking a 300B+ model. Let&#39;s see its outputs on a frontier class model.</strong> </p>
+
+<p>In any case, refusal removed models are not some boogey-man that will wreck your life, your computer. You sandbox them, use a sensible harness with hardcoded safeguards for commands and tools. rm -rf is literally an impossibility unless you YOLO everything.</p>
+
+<p>So, this is basically not useful to anyone besides those paranoid and not familiar with things like permissions. <strong>Note how he&#39;s doing it from the command line and not from inside a harness with built-in safety. We&#39;re in big 26, big dawg.</strong></p>
+</div></div>
+		
+		<div class="replies">
+		</div>
+	</details>
+</div>
+
+		</div>
+	</details>
+</div>
+
+		</div>
+	</details>
+</div>
+
+			</div><div class="thread">
+				
+
+				
+
+
+<div id="pba5vgy" class="comment">
+	<div class="comment_left">
+    <p class="comment_score" title="-7">
+         
+         -7
+         
+    </p>
+        <div class="line"></div>
+	</div>
+	<details class="comment_right" open>
+		<summary class="comment_data">
+			
+				<a class="comment_author  " href="/user/laterbreh">u/laterbreh</a>
+			
+			
+			<a href="/r/LocalLLaMA/comments/1wms904/uncensor_an_llm_without_touching_weights_inject_a/pba5vgy/?context=3#pba5vgy" class="created" title="Sep 22 2026, 01:28:38 UTC">14d ago</a>
+			
+			
+		</summary>
+		
+		<div class="comment_body "><div class="md"><p>I sat here waiting to see something meaningful. </p>
+
+<p>I got videos of terminal output. </p>
+
+<p>Thank you for making me lose 2 minutes of my life ill never get back. </p>
+</div></div>
+		
+		<div class="replies">
+		</div>
+	</details>
+</div>
+
+			</div><div class="thread">
+				
+
+				
+
+
+<div id="pbauso2" class="comment">
+	<div class="comment_left">
+    <p class="comment_score" title="-3">
+         
+         -3
+         
+    </p>
+        <div class="line"></div>
+	</div>
+	<details class="comment_right" open>
+		<summary class="comment_data">
+			
+				<a class="comment_author  " href="/user/AntStarZone">u/AntStarZone</a>
+			
+			
+			<a href="/r/LocalLLaMA/comments/1wms904/uncensor_an_llm_without_touching_weights_inject_a/pbauso2/?context=3#pbauso2" class="created" title="Sep 22 2026, 03:54:23 UTC">14d ago</a>
+			
+			
+		</summary>
+		
+		<div class="comment_body "><div class="md"><p>remind me</p>
+</div></div>
+		
+		<div class="replies">
+		</div>
+	</details>
+</div>
+
+			</div><div class="thread">
+				
+
+				
+
+
+<div id="pb9hwra" class="comment">
+	<div class="comment_left">
+    <p class="comment_score" title="-5">
+         
+         -5
+         
+    </p>
+        <div class="line"></div>
+	</div>
+	<details class="comment_right" open>
+		<summary class="comment_data">
+			
+				<span class="comment_author ">u/[deleted]</span>
+			
+			
+			<a href="/r/LocalLLaMA/comments/1wms904/uncensor_an_llm_without_touching_weights_inject_a/pb9hwra/?context=3#pb9hwra" class="created" title="Sep 21 2026, 23:21:27 UTC">14d ago</a>
+			
+			
+		</summary>
+		
+		<div class="comment_body "><div class="md"><p>[deleted]</p>
+</div></div>
+		
+		<div class="replies">
+
+
+<div id="pb9lhno" class="comment">
+	<div class="comment_left">
+    <p class="comment_score" title="5">
+         
+         5
+         
+    </p>
+        <div class="line"></div>
+	</div>
+	<details class="comment_right" open>
+		<summary class="comment_data">
+			
+				<a class="comment_author  " href="/user/SuperSpaceEye">u/SuperSpaceEye</a>
+			
+			
+			<a href="/r/LocalLLaMA/comments/1wms904/uncensor_an_llm_without_touching_weights_inject_a/pb9lhno/?context=3#pb9lhno" class="created" title="Sep 21 2026, 23:40:30 UTC">14d ago</a>
+			
+			
+		</summary>
+		
+		<div class="comment_body "><div class="md"><p>It wouldn&#39;t. It&#39;s for local models.</p>
+</div></div>
+		
+		<div class="replies">
+		</div>
+	</details>
+</div>
+
+		</div>
+	</details>
+</div>
+
+			</div>
+		</div>
+
+	</div>
+
+		</main>
+		
+
+		<!-- FOOTER -->
+		
+			<footer>
+				<div class="footer-buttons">
+					<p><span id="version">v0.36.0-yunyun&emsp;</span><a href="/info" title="View instance information">ⓘ View instance info</a>&emsp;<a href="https://github.com/redlib-org/redlib" title="View code on GitHub">&lt;&gt; Code</a></p>
+				</div>
+			</footer>
+		
+	</body>
+</html>

@@ -1,0 +1,7 @@
+# swarm1-glm-flash-tools__model_bakeoff (glm-5.3-flash @ zai, turn 1, channel: content)
+
+DEFECT 1: Reasoning-only fallback is scored as a real ok and can be counted correct, inflating ok-rate, tok/s, and "carry" verdicts with no visible completion | EVIDENCE: tools/model_bakeoff.py:88-96 | FIX: tag results whose content came from the "[reasoning only]" fallback as not-ok (or a separate lane flag) so only real completions feed the summary at lines 126-138.
+DEFECT 2: HERMES_API_KEY_2 is accepted as a gate key but never used: lane() re-reads HERMES_API_KEY_1 and its _2 fallback "HERMES_API_KEY_1_2", so a HERMES_API_KEY_2-only setup silently drops the lane | EVIDENCE: tools/model_bakeoff.py:69-72,43 | FIX: pass HERMES_KEY into the lane dict directly (add an optional key= parameter to lane()) instead of re-resolving by env name.
+DEFECT 3: Module-level side effects: lanes are registered and env read at import time (lines 47-72), so importing the file mutates LANES and any future caller that reloads it duplicates lane entries | EVIDENCE: tools/model_bakeoff.py:47-72 | FIX: move the lane() registration calls and HERMES gate into main().
+DEAD-CODE: tasks list is built and never used | EVIDENCE: tools/model_bakeoff.py:109
+ONE-SITTING FIX: Fix the Hermes key mismatch by passing the already-resolved key into the lane record, restoring the intended 11th lane | EVIDENCE: tools/model_bakeoff.py:69-72

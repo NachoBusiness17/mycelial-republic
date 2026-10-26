@@ -1,0 +1,62 @@
+THREAD 1w7wb0n entries=20
+
+--- entry 0 [/u/Fcking_Chuck] LLVM developers begin debate over AGENTS.md for helping AI agents
+submitted by /u/Fcking_Chuck [link] [comments]
+
+--- entry 1 [/u/swiebertjee] /u/swiebertjee on LLVM developers begin debate over AGENTS.md for helping AI agents
+I believe this discussion revolves around LLVM including their own instructions and therefore polluting the user's instructions, not the AGENTS.md standard itself. There is nothing wrong with AGENTS.md . It's just a README.md for LLMs.
+
+--- entry 2 [/u/NoFaithlessness951] /u/NoFaithlessness951 on LLVM developers begin debate over AGENTS.md for helping AI agents
+I mean that's what the user override in the standard is for
+
+--- entry 3 [/u/Aggressive_Aspect436] /u/Aggressive_Aspect436 on LLVM developers begin debate over AGENTS.md for helping AI agents
+There might be some things wrong with AGENTS.md files. https://arxiv.org/pdf/2602.11988
+
+--- entry 4 [/u/Visual_Internal_6312] /u/Visual_Internal_6312 on LLVM developers begin debate over AGENTS.md for helping AI agents
+Being able to forget is a feature not a bug particularly necessary for controlling attention.
+
+--- entry 5 [/u/Unnamed-3891] /u/Unnamed-3891 on LLVM developers begin debate over AGENTS.md for helping AI agents
+Am I the only one who feels that a basic agents.md is the only thing one should be using for memory/guidance? I’ve tried multiple memory systems across multiple harnesses and while helpful at first, they all seem to eventually start doing more harm than good.
+
+--- entry 6 [/u/RLutz] /u/RLutz on LLVM developers begin debate over AGENTS.md for helping AI agents
+It's definitely not optimal. You have to consider the cost you pay for different things. Every token in CLAUDE.md is loaded on every single turn. If you compare that to a skill, only the frontmatter is loaded into context until the skill is needed. And then having pointers to docs can allow the model to retrieve info only when it needs it, whereas if you just stuffed it into CLAUDE.md now you're paying that context hit on every turn. I basically use these guiding principles: CLAUDE.md only for things that are important enough to justify including on every single turn. The file should basically only contain stuff that is both always important and not easily discoverable. Should also contain pointers to relevant docs. Skills - for skills which a model can choose to invoke I typically reserve these for things the model continually gets wrong. As an example, maybe your project has a very specific requirement for your swagger annotations on each API endpoint/DTO and when the model modifies a DTO or adds a new endpoint it never follows your project's convention. Well, this would be exactly when you make a skill for adding or modifying an endpoint and for adding or modifying a DTO Pointers to docs - Useful for keeping CLAUDE.md as lean as possible for information that is important, but not necessarily at every turn. Maybe you have some module that's very difficult to work in without proper context. Well, it's probably not worth dumping all the info about that module in your CLAUDE.md because now you're paying that context hit on every turn, not just when working on that module. Much better to just have a pointer in your CLAUDE.md to the large doc file for that module so the agent only fetches it when needed Also I definitely recommend Matt Pocock's skills for helping author great skills among other things. Very useful at reducing bloat and writing effective skills
+
+--- entry 7 [/u/send-moobs-pls] /u/send-moobs-pls on LLVM developers begin debate over AGENTS.md for helping AI agents
+Most people are trying to use things like memory to reinvent the concept of project documentation and organization imo. I have never used memory systems for coding, I use a fresh conversation context for every task 90% of the time, I just maintain a traditional project management workflow where writing and maintaining documentation is part of any work in a repo. Agents.md for overall general standards and guidance, sane repo organization with documentation, and I've never had a problem bringing in fresh context agents
+
+--- entry 8 [/u/LowerEntropy] /u/LowerEntropy on LLVM developers begin debate over AGENTS.md for helping AI agents
+It's funny how all those things that are good practices for humans also seem to be good practices for LLMs. Have decent documentation, write at least some basic tests, use popular libraries, avoid spaghetti, etc.
+
+--- entry 9 [/u/darknecross] /u/darknecross on LLVM developers begin debate over AGENTS.md for helping AI agents
+Depends on the complexity of your project.
+
+--- entry 10 [/u/Christosconst] /u/Christosconst on LLVM developers begin debate over AGENTS.md for helping AI agents
+I use agents.md, context/environment.md and context/branch_name.md, and a global agents.md for all projects
+
+--- entry 11 [/u/feng_sg] /u/feng_sg on LLVM developers begin debate over AGENTS.md for helping AI agents
+Putting "don't access .env" in AGENTS.md is a sticky note on a door with no lock. The model has to read it, remember it, and choose to comply. Until those directives map to actual sandbox or tool-permission checks at runtime, they're suggestions dressed up as policy.
+
+--- entry 12 [/u/kuhunaxeyive] /u/kuhunaxeyive on LLVM developers begin debate over AGENTS.md for helping AI agents
+Serious question: What is AGENTS.md for that a README.md does not contain? Why does there need to be an agent specific readme as LLMs can understand text written for humans, and is there anything that only the agent should know that couldn't go into a README.md ?
+
+--- entry 13 [/u/slvrsmth] /u/slvrsmth on LLVM developers begin debate over AGENTS.md for helping AI agents
+"don't try to access .env, you are sandboxed" belongs there, but does not in readme.
+
+--- entry 14 [/u/GasolinePizza] /u/GasolinePizza on LLVM developers begin debate over AGENTS.md for helping AI agents
+READMEs are targeted towards humans generally, and often include things like installation/local-env setup instructions that are targeted more towards users and new contributors: stuff that you don't really want shoved into agent context 24/7. Also that an AGENTS file is ( should be ) organized easier for LLM consumption, not for human readability/navigation. Like having a table of contents+section-links isn't particularly useful for an agent, and many READMEs have things like that near the top.
+
+--- entry 15 [/u/swagonflyyyy] /u/swagonflyyyy on LLVM developers begin debate over AGENTS.md for helping AI agents
+Harnesses are built to prioritize AGENTS.md. Its not just that file, its override files, nested AGENTS.md files, rules/ directories that contain lazy-loaded instructions that are dynamically attached, and a lot of other things tied to that standard. Also, README is for humans. AGENTS is more about coding instructions and project maintenance, although you're not supposed to put all your eggs in one basket, which is why I highly recommend splitting up AGENTS into the above-mentioned components.
+
+--- entry 16 [/u/kuhunaxeyive] /u/kuhunaxeyive on LLVM developers begin debate over AGENTS.md for helping AI agents
+But should README.md not as well include coding instructions for coders? A README file contains information for users, administratiors, and coders, or doesn't it? And can a coding agent not just read that as well then?
+
+--- entry 17 [/u/swagonflyyyy] /u/swagonflyyyy on LLVM developers begin debate over AGENTS.md for helping AI agents
+Root-level README serves as an overview for a given set of instructions as well as setup, installation and operating instructions, but it usually doesn't include explicit coding instructions or anything along those lines. That stuff is for nested README files.
+
+--- entry 18 [/u/Tommonen] /u/Tommonen on LLVM developers begin debate over AGENTS.md for helping AI agents
+I have replaced agents.md with a different but kinda similar system in my agentic setup and it seems to work great and give more flexibility than simple agents.md. Also agents.md does have its uses and seems silly to argue against that type of system. Surely how agents.md are handled by most system is not ideal in my opinion, vut that sort of guidance system for agents is very valuable to have. And what they talk about it not maybe helping or adding just noise is complete bullshit. I do also have instructions in claude.md for claude that tells it how i want to work with and it does help it understand it. Same with codex with agents.md. So yes some instruction system to agents like agents.md or claude.md or some other similar kind of system is extremely valuable, but how its implemented is not perfect yet.
+
+--- entry 19 [/u/kzoltan] /u/kzoltan on LLVM developers begin debate over AGENTS.md for helping AI agents
+May I ask how your system works? I usually just link other files from the main .me file. I have no solution to stale entries though.
+

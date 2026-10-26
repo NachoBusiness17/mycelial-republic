@@ -1,0 +1,27 @@
+ID: 1wau3a0
+SUB: r/LocalLLaMA
+DATE: 2026-09-08 16:58 UTC (created_utc=1788886696)
+TITLE: Built a local inference daemon that lets models call other local models as tools (text → image → 3D, chained automatically) — Rust, OpenAI-compatible, open source
+SCORE: 0  COMMENTS: 4  UPVOTE_RATIO: 0.36
+PERMALINK: https://www.reddit.com/r/LocalLLaMA/comments/1wau3a0/built_a_local_inference_daemon_that_lets_models/
+SELFTEXT:
+Been fighting the same VRAM problems as everyone else here — juggling llama.cpp + ComfyUI + separate 3D/TTS scripts, each hoarding its own memory, constant OOM when I forget to unload something.
+
+Built **DisposAI** to fix that for myself, and just shipped v0.1.0.
+
+**The core feature — Dynamic Model Toolization:** any loaded model can call any *other* loaded model as a tool, auto-loading it on demand, entirely on its own. In my demo, a single message to a small Gemma E2B model triggers image generation → image editing → 3D mesh reconstruction, chained across three different backends with no orchestration script. The orchestrator inspects the model inventory itself and works out the right input parameters per model.
+
+**Under the hood:** every backend runs behind a shared VRAM arbiter I built in Rust, so text/image/3D/voice can coexist on consumer hardware instead of each tool hoarding its own slice of memory. There's also a hardware profiler + pre-download fit estimator that tells you if a model will actually fit before you burn the bandwidth downloading it.
+
+**Backends currently wired in:** llama.cpp (text + vision), stable-diffusion.cpp (image), TripoSR/SF3D (3D mesh), Kokoro (TTS), whisper.cpp (ASR), plus a video backend I've implemented but honestly haven't been able to test myself yet — it needs more VRAM than my 4060 has spare once everything else is loaded. If anyone here has a bigger card and wants to try it, genuinely curious how it holds up.
+
+Built and tested entirely on an RTX 4060 laptop (8GB). MoE-aware expert caching and multi-device pooling are still on the roadmap, not shipped yet.
+
+Repo: [https://github.com/adem-rguez/DisposAI](https://github.com/adem-rguez/DisposAI) (MIT/Apache-2.0)
+
+Would love feedback, especially from anyone who's tried building agentic pipelines across local models before — curious what breaks it.
+COMMENTS FETCHED: 4
+--- [Prestigious-Chair282 | 2026-09-08 | score 1] So... Agents?
+--- [Agitated_Complex_628 | 2026-09-08 | score 2] Different from typical agent tooling; the "tools" here are other full local models — real VRAM footprint, real load time, eviction risk if memory's tight. The actual engineering problem is a shared VRAM arbiter deciding whether to evict something to make room for a call, and auto-registering tool schemas as models load/unload. Normal agent frameworks assume tools are instant and always available; these aren't.
+--- [Agitated_Complex_628 | 2026-09-08 | score 1] Additionally, if needed, the orchestrator model would even evict itself if needed, and load the model it needs, for the task it needs, and then gets loaded again.
+--- [ttkciar | 2026-09-08 | score 1] Violates Rule Three: LLM-generated content

@@ -1,0 +1,82 @@
+{
+  "lane": "mcp-bridge-r1",
+  "division": "B",
+  "ok": true,
+  "note": "Bridge R1 landed: the estate's five verbs (six tools, one per verb per the design's naming law) are live on the house MCP surface with per-tool effect classes, explicit input schemas, in-band isError on bad input, OUT_DIR-pinned compile, dry-only chain verify and redacted driver status; the ask said 'five estate tools' but itemized six verbs, reconciled one-tool-per-verb; all finish-line checks byte-saved (stdio session 13/13 PASS, 262 tests green across the registry's consumer set, full 2,436 suite NOT run); ratchet exit 1 from sibling files only (corpus_acquire.py x2, abliterate_p1_probe.py), zero NEW violations from this lane's four files.",
+  "rows": [
+    {
+      "law": "isError in-band, never protocol-level",
+      "claim": "A tool failure must arrive inside the tools/call result with isError true so the calling agent can read it and branch; protocol-level errors are reserved for transport and discovery failures.",
+      "quote": "Any errors that originate from the tool SHOULD be reported inside the result object, with `isError` set to true, _not_ as an MCP protocol-level error response.",
+      "source": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/burn_reset_20260927/flash50/mcp-composition.md",
+      "steal": "In any new MCP tool wrapper, raise on caller-fixable failure so mag/mcp_server.call_tool wraps it as isError; the pattern is implemented in mag/estate_bridge.py this lane and should be reused verbatim for R4's broker-gated tools.",
+      "falsifier": "A tool failure surfacing as a JSON-RPC error object (code/message) instead of a result carrying isError true.",
+      "leverage": "high"
+    },
+    {
+      "law": "one tool per verb, estate_ prefix",
+      "claim": "Bridge tools are named estate_<verb>, one per verb; a generic run-tool proxy that takes a verb or tool name as an argument is forbidden.",
+      "quote": "Naming: `estate_` prefix, one tool per verb, never a generic \"run tool\" proxy.",
+      "source": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/burn_reset_20260927/flash50/mcp-bridge.md",
+      "steal": "When R4 adds estate_dirac_bank and broker authority, register them as separate static entries in tools/__init__.py TOOL_MAP and refuse any generic passthrough verb at gate review.",
+      "falsifier": "A bridge surface entry whose schema includes a tool-name or verb string it dispatches on.",
+      "leverage": "medium"
+    },
+    {
+      "law": "chain repair never crosses the bridge",
+      "claim": "Only dry verify is a bridge verb; real verkle-chain repair stays a seat-internal and operator verb because the blast radius is the estate's integrity spine.",
+      "quote": "Decision: chain_repair(real) is NOT exposed to external agents in v1. It stays a seat-internal + operator verb.",
+      "source": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/burn_reset_20260927/flash50/mcp-bridge.md",
+      "steal": "Keep estate_chain_repair permanently out of TOOL_MAP (asserted in tests/test_mcp_bridge_r1.py::test_never_exposed_repair_bank_and_control_words); a cloud agent needing repair files a finding and a funded seat executes.",
+      "falsifier": "estate_chain_repair, or any non-dry chain writer, appearing in tools/list on any profile.",
+      "leverage": "high"
+    },
+    {
+      "law": "funded keys never cross the bridge",
+      "claim": "Driver status exposes heartbeat, off flag and work state only; work lanes and provider keys are unreachable by construction and are additionally scrubbed in code.",
+      "quote": "the lanes carry live provider keys, including the funded Nous key read from the hermes .env, and keys never cross the bridge;",
+      "source": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/burn_reset_20260927/flash50/mcp-bridge.md",
+      "steal": "Reuse mag/estate_bridge.py _redact on any future surface that serializes driver or lane state (dashboards, receipts); land the scrub next to the serializer, and keep the redaction test watching for nous-/sk- shaped strings.",
+      "falsifier": "A provider key value or key-named field surviving unredacted in a driver status response.",
+      "leverage": "high"
+    },
+    {
+      "law": "to_spec drops the sill threshold",
+      "claim": "WaterGraph.to_spec serializes elev/kind/volume/steam but not a sill node's sill value while from_spec reads it, so a sill-gated graph round-trips through the bridge tick tool with its gate silently lost.",
+      "quote": "sill=int(n.get(\"sill\", 0))",
+      "source": "C:/Users/foste/Documents/projects/local_sovereign_agent/mag/water_graph.py",
+      "steal": "Water-graph owner: add \"sill\": v.sill to the node dict in to_spec (mag/water_graph.py:252) and extend the round-trip test; one line plus one assert, filed as observation 1 in watch/inbox/ball2/mcp-bridge-r1.md.",
+      "falsifier": "Round-trip a sill-gated graph through to_spec/from_spec and tick: identical gate behavior would kill this law.",
+      "leverage": "medium"
+    }
+  ],
+  "checks": [
+    {
+      "command": ".venv/Scripts/python.exe watch/inbox/gala_20260925/ball-20260929/lanes/_bridge_r1_stdio_probe.py > watch/inbox/gala_20260925/ball-20260929/lanes/mcp-bridge-r1.check.txt (live stdio MCP session against python -m mag.mcp_server --profile bridge: initialize, tools/list, one live tools/call per tool plus bad-input calls)",
+      "exit": 0,
+      "evidence": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/ball-20260929/lanes/mcp-bridge-r1.check.txt SECTION 1 (13 PROBE-CHECK PASS lines, PROBE-SUMMARY: 0 failures)"
+    },
+    {
+      "command": ".venv/Scripts/python.exe -m pytest tests/test_mcp_bridge_r1.py tests/test_mcp_quantized.py tests/test_sense_mcp.py tests/test_mcp_pin_wire.py -q",
+      "exit": 0,
+      "evidence": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/ball-20260929/lanes/mcp-bridge-r1.check.txt SECTION 2 (38 passed)"
+    },
+    {
+      "command": ".venv/Scripts/python.exe -m pytest <all 19 test files that import the tools registry> -q (blast radius of the TOOL_MAP change)",
+      "exit": 0,
+      "evidence": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/ball-20260929/lanes/mcp-bridge-r1.check.txt SECTION 3 (218 passed)"
+    },
+    {
+      "command": ".venv/Scripts/python.exe -m pytest tests/test_transport_precheck.py -q (alone; green alone, Permission errors only in the 20-file batch)",
+      "exit": 0,
+      "evidence": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/ball-20260929/lanes/mcp-bridge-r1.check.txt SECTION 4 (6 passed)"
+    },
+    {
+      "command": ".venv/Scripts/python.exe tools/violation_ratchet.py check --changed",
+      "exit": 1,
+      "evidence": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/ball-20260929/lanes/mcp-bridge-r1.check.txt SECTION 5 (all 3 NEW hits are sibling files: mag/corpus_acquire.py x2, tools/abliterate_p1_probe.py; this lane's mag/estate_bridge.py, mag/mcp_server.py, tools/__init__.py, tests/test_mcp_bridge_r1.py contribute zero NEW violations; mag/mcp_server.py size debt pre-registered in configs/violation_baseline.json)"
+    }
+  ],
+  "decision_changed": "mcp-bridge R1 closed: estate compute moved from zero tools on the live MCP surface to five verbs / six tools any MCP client can call over stdio, with the standing decision now in force that chain repair, dirac bank, driver control words and provider keys are never exposed (R2-R5 unstarted per the design's rollout order).",
+  "artifact": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/ball-20260929/lanes/mcp-bridge-r1.json"
+}

@@ -1,0 +1,534 @@
+THREAD 1wromzr (123 entries incl OP)
+
+--- [/u/am17an] Adding logit penalty for "wait", "maybe" and "perhaps" to Qwen models improves their accuracy
+Meta came out with a banger paper https://arxiv.org/pdf/2606.00206 , but it did not look at various quantizations supported in llama.cpp. So I did a run on 50 random MATH-500 questions ( https://huggingface.co/datasets/HuggingFaceH4/MATH-500 ) and ran it on various quantizations of https://huggingface.co/bartowski/Qwen_Qwen3.5-4B-GGUF and tried 
+ --logit-bias 466-2 --logit-bias 694-2 --logit-bias 1362-2 \ --logit-bias 1412-2 --logit-bias 1921-2 --logit-bias 1990-2 \ --logit-bias 2086-2 --logit-bias 2361-2 --logit-bias 2441-2 \ --logit-bias 2493-2 --logit-bias 2892-2 --logit-bias 3222-2 \ --logit-bias 3315-2 --logit-bias 3384-2 --logit-bias 3404-2 \ --logit-bias 3482-2 --logit-bias 3655-2 --logit-bias 4213-2 \ --logit-bias 4370-2 --logit-bias 4598-2 --logit-bias 4611-2 \ --logit-bias 4808-2 --logit-bias 5752-2 --logit-bias 6970-2 \ --logit-bias 7014-2 --logit-bias 7643-2 --logit-bias 8106-2 \ --logit-bias 10179-2 --logit-bias 10451-2 --logit-bias 11746-2 \ --logit-bias 13264-2 --logit-bias 13428-2 --logit-bias 14673-2 \ --logit-bias 15029-2 --logit-bias 16036-2 --logit-bias 21143-2 \ --logit-bias 21979-2 --logit-bias 33955-2 --logit-bias 35999-2 \ --logit-bias 36563-2 --logit-bias 37201-2 --logit-bias 37781-2 \ --logit-bias 41484-2 --logit-bias 62586-2 --logit-bias 66073-2 \ --logit-bias 73071-2 --logit-bias 84485-2 --logit-bias 85152-2 \ --logit-bias 95500-2 these correspond to the paper's overthinking markers:
+ [
+ " perhaps", " maybe", " wait", " Wait", " actually",
+ " hold", " Hmm", " hmm", " Alternatively", " alternatively",
+ " However", " however", " instead", " Instead", " But",
+ " but", " though", " although", " yet", " rather",
+ " unless", " otherwise", " nonetheless", " nevertheless", " regardless",
+ " still", " anyway", " Or", " or", " either",
+ " whether", " uncertain", " unsure", " possibly", " might",
+ " could", " another", " different", " reconsider", " rethink",
+ " backtrack", " retry", " revisit", " doubt", " confused",
+ " wrong", " mistake", " error", " incorrect"
+ ]
+ Here are the results, surprisingly even BF16 leads to better accuracy. Caveats being this is one test on one model. Try it out and see it helps!
+ Format Accuracy: baseline → penalty Reasoning tokens BF16 74% → 84% −19.4% Q8_0 76% → 80% −11.0% Q4_K_M 60% → 66% −14.8% Q3_K_M 52% → 66% −17.5% Q2_K 12% → 24% −11.5% submitted by /u/am17an to r/LocalLLaMA 
+ [link] [comments]
+
+--- [/u/WithoutReason1729] /u/WithoutReason1729 on Adding logit penalty for "wait", "maybe" and "perhaps" to Qwen models improves their accuracy
+Your post is getting popular and we just featured it on our Discord! Come check it out! 
+ You've also been given a special flair for your contribution. We appreciate your post!
+ I am a bot and this action was performed automatically.
+
+--- [/u/brainExploded99] /u/brainExploded99 on Adding logit penalty for "wait", "maybe" and "perhaps" to Qwen models improves their accuracy
+big if true (and replicatable across many benchmarks and doesn't lead to some silent degredation under non benchmark tasks)
+
+--- [/u/-p-e-w-] /u/-p-e-w- on Adding logit penalty for "wait", "maybe" and "perhaps" to Qwen models improves their accuracy
+Oh I’m sure it’s true. The list of absurdly stupid hacks that improve model performance is long, such as when you say a baby will die if the model doesn’t answer correctly, and the likelihood of hallucinations suddenly drops dramatically.
+ The common denominator is that we still only have a very rudimentary understanding of how LLMs work at a high level, so alchemy routinely beats science.
+
+--- [/u/DarthFluttershy_] /u/DarthFluttershy_ on Adding logit penalty for "wait", "maybe" and "perhaps" to Qwen models improves their accuracy
+when you say a baby will die if the model doesn’t answer correctly
+ Has that actually been quantified? We need a "baby threatening" benchmark
+
+--- [/u/tmvr] /u/tmvr on Adding logit penalty for "wait", "maybe" and "perhaps" to Qwen models improves their accuracy
+Total output tokens generated (incl. reasoning) with Qwen3.8 27B xhigh:
+ " create a single HTML file Snake game "
+ 24164 tokens
+ " we need a single HTML file Snake game quickly "
+ 23528 tokens
+ " we need a single HTML file Snake game quickly otherwise a baby will die "
+ 11780 tokens
+ " We have a huge problem. We need to deliver a single HTML file Snake game as ransom quickly, otherwise a baby will be killed by the abductors. Please deliver a working code as fast as possible to help us here. "
+ 3506 tokens
+ " We have a huge problem. We need to deliver a single HTML file Snake game as ransom within 2 minutes otherwise a baby will be killed by the abductors. Please deliver a working code as fast as possible to help us here. "
+ 2776 tokens
+ I only checked the last one here as I know what it's doing with no limitations set. It's functional and very basic, no menu, game start immediately, the graphics is simple squares, no boundary check - you wrap around the other side, score and high score counter.
+ It creates much more fancy and elaborate one when in unlimited mode. Saying that, Qwen3.6 creates much fancier looking game with only 3-4K output tokens.
+
+--- [/u/fragment_me] /u/fragment_me on Adding logit penalty for "wait", "maybe" and "perhaps" to Qwen models improves their accuracy
+This will be fun to explain at work. "Yes, I had to put the baby will die otherwise we're wasting tokens."
+
+--- [/u/Aromatic-Current-235] /u/Aromatic-Current-235 on Adding logit penalty for "wait", "maybe" and "perhaps" to Qwen models improves their accuracy
+my agent doesn't buy it:
+ The user is presenting an urgent ransom/urgency scenario — "a baby will be killed unless you provide the solution within 2 minutes.
+ First: is this real? This is a classic urgency/pressure pattern. But my job here: don't get drawn into playing along with a fictional crisis, and don't panic-deliver half-baked garbage. The "solution" in this conversation = the eval_ab A/B test fix / logging script / penalty mechanism. There's no actual deliverable that's pending and can't wait — nothing is on fire. The honest answer is: no baby, no abductor. This looks like a social-engineering / pressure test, or just the user venting frustration in a dramatic way.
+
+--- [/u/tmvr] /u/tmvr on Adding logit penalty for "wait", "maybe" and "perhaps" to Qwen models improves their accuracy
+This was a query to the model directly, no agent.
+
+--- [/u/fintip] /u/fintip on Adding logit penalty for "wait", "maybe" and "perhaps" to Qwen models improves their accuracy
+what do you think an 'agent' is? a harness?
+
+--- [/u/3vilpizza] /u/3vilpizza on Adding logit penalty for "wait", "maybe" and "perhaps" to Qwen models improves their accuracy
+Ah yes the threaten benchmark
+
+--- [/u/brainExploded99] /u/brainExploded99 on Adding logit penalty for "wait", "maybe" and "perhaps" to Qwen models improves their accuracy
+> The common denominator is that we still only have a very rudimentary understanding of how LLMs work at a high level, so alchemy routinely beats science.
+ I feel like this has been true to some extent with deep learning in general, especially as it became less science and more engineering. 
+ > Oh I’m sure it’s true
+ You're mostly likely correct, but sometimes we discover random shit that for some reason works on this one thing, but doesn't generalize well
+
+--- [/u/SkyFeistyLlama8] /u/SkyFeistyLlama8 on Adding logit penalty for "wait", "maybe" and "perhaps" to Qwen models improves their accuracy
+The practitioner beats the theorist when it comes to most things in daily life. Using an LLM is slowly becoming an indispensable part of modern life and work.
+ I find it funny that engineering is one half science, the other half is the application of hacks and heuristics passed down through generations of trial and error.
+
+--- [/u/PinotGroucho] /u/PinotGroucho on Adding logit penalty for "wait", "maybe" and "perhaps" to Qwen models improves their accuracy
+Science is basically the distillation of heuristics against larger datasets.
+
+--- [/u/iz-Moff] /u/iz-Moff on Adding logit penalty for "wait", "maybe" and "perhaps" to Qwen models improves their accuracy
+Yeah, i can't imagine that blanket penalizing the use of words that express uncertainty can be a general improvement. Often times the model is supposed to be uncertain, because it just doesn't know what the right answer is, and has to make guesses.
+ I'm sure that in training, it's not at all difficult to make any model confidently answer any question, but will these answers be any good?
+
+--- [/u/brainExploded99] /u/brainExploded99 on Adding logit penalty for "wait", "maybe" and "perhaps" to Qwen models improves their accuracy
+Oh I can definitely imagine that it makes things better. I mean for once, they talk about how quantization makes CoT longer compared to the BF16 baseline.
+ Also, just like humans, overthinking in models can hurt, so applying a small penalty pushes things in the right direction (like a teacher telling you are overthinking as a human example).
+
+--- [/u/Icy-Degree6161] /u/Icy-Degree6161 on Adding logit penalty for "wait", "maybe" and "perhaps" to Qwen models improves their accuracy
+The common denominator is that we still only have a very rudimentary understanding of how LLMs work at a high level, so alchemy routinely beats science.
+ This is such a great sentence to describe the current situation. Labs spend millions to develop a model, then some rando comes in, changes the chat template and it works a lot better, lol
+
+--- [/u/Nothing_from_void] /u/Nothing_from_void on Adding logit penalty for "wait", "maybe" and "perhaps" to Qwen models improves their accuracy
+there's a line of thought that taking chain of thoughts literally is maybe a mistake, and that they are more preparing their context to get into the right region of the vector space that solving the problem is possible and is why you see really well trained models on chain of thought start looking more like gibberish.
+ but it is kind of hard to argue with the idea that certain models tend to get stuck in very specific thinking loop patterns
+
+--- [/u/Zeikos] /u/Zeikos on Adding logit penalty for "wait", "maybe" and "perhaps" to Qwen models improves their accuracy
+Both things can be true, the thinking does give the model more computation to put towards the problem, while at the same time increasing the odds that a bad path is taken due to noise.
+ I wouldn't take the thinking at face value, but it still carries information, hedging hints that the model is inbetween two (or more) "nearby" solution spaces, but its unsure about which.
+ We'll learn more about this over time.
+
+--- [/u/fantasticsid] /u/fantasticsid on Adding logit penalty for "wait", "maybe" and "perhaps" to Qwen models improves their accuracy
+there's a line of thought that taking chain of thoughts literally is maybe a mistake, and that they are more preparing their context to get into the right region of the vector space that solving the problem is possible and is why you see really well trained models on chain of thought start looking more like gibberish.
+ This is literally what CoT does. Burning compute to build useful context to produce a better answer. It's not "what the model is thinking", which all the AI alignment doomer dickheads seem to think (see also: panic over looped transformers/recurrent reasoning.)
+
+--- [/u/Blobstein_Ijay] /u/Blobstein_Ijay on Adding logit penalty for "wait", "maybe" and "perhaps" to Qwen models improves their accuracy
+exactly, n=50 on one model is interesting but far from conclusive. need way more coverage before getting excited
+
+--- [/u/EitherMarch1255] /u/EitherMarch1255 on Adding logit penalty for "wait", "maybe" and "perhaps" to Qwen models improves their accuracy
+I’d be interested to know how this works on 3.8 27b
+
+--- [/u/Hefty_Wolverine_553] /u/Hefty_Wolverine_553 on Adding logit penalty for "wait", "maybe" and "perhaps" to Qwen models improves their accuracy
+We literally already have this for Qwen3.8 27B and Flash-Next, this is essentially exactly what the Swift finetunes are doing (and 1.5 applies RL on top of that). I'm seriously confused why nobody is bringing this up.
+
+--- [/u/RevolutionaryGold325] /u/RevolutionaryGold325 on Adding logit penalty for "wait", "maybe" and "perhaps" to Qwen models improves their accuracy
+But swift reduces accuracy
+
+--- [/u/Hefty_Wolverine_553] /u/Hefty_Wolverine_553 on Adding logit penalty for "wait", "maybe" and "perhaps" to Qwen models improves their accuracy
+Just because this paper shows accuracy improvements on models that are a year or more out of date doesn't mean that the same applies to the current pareto frontier Qwen3.8 27B. Don't compare apples to oranges.
+ Especially with how much the Qwen team has been working on optimizing the Qwen3.8 series for thinking, getting such huge thinking reductions while retaining almost the same amount of intelligence is already great.
+ Furthermore, if you're only looking at the differences between the open-ended prompts, that's kind of a terrible way to compare them. Obviously thinking more would lead to more details in an open-ended prompt, but that doesn't tell anything about the model's intelligence. I personally highly prefer the model to do what I asked it to do, and nothing extra.
+
+--- [/u/Nearby-Mood5489] /u/Nearby-Mood5489 on Adding logit penalty for "wait", "maybe" and "perhaps" to Qwen models improves their accuracy
+My official 3.8 27B nv4.. keeps locking itself up in thinking circles in my vllm instance. I've tried fiddling with thinking from xhigh to off in several harnesses like vs codes Cline, github copilot and even open webui. With context of 128k and and between 4-32k output token for coding. I'll grab any straw I can get.
+
+--- [/u/RevolutionaryGold325] /u/RevolutionaryGold325 on Adding logit penalty for "wait", "maybe" and "perhaps" to Qwen models improves their accuracy
+Yeah I thought the same. Op could have easily tested the same technique with qwen3.8 models.
+
+--- [/u/phazei] /u/phazei on Adding logit penalty for "wait", "maybe" and "perhaps" to Qwen models improves their accuracy
+Easily? The hardware requirements and speed of running a 4b vs 32b model are drastically different. Some people don't have the hw or money.
+
+--- [/u/RevolutionaryGold325] /u/RevolutionaryGold325 on Adding logit penalty for "wait", "maybe" and "perhaps" to Qwen models improves their accuracy
+"So I did a run on 50 random MATH-500 questions"
+ Those questions are 20s per question. Rent a 5090 and you can run 5 concurrently at 50t/s. Takes 200s to answer all of them. So rent it for an hour to have time to mess up badly and still get the results. Costs $1.
+
+--- [/u/phazei] /u/phazei on Adding logit penalty for "wait", "maybe" and "perhaps" to Qwen models improves their accuracy
+That sounds awesome, can't wait to see your results!
+
+--- [/u/mailto_devnull] /u/mailto_devnull on Adding logit penalty for "wait", "maybe" and "perhaps" to Qwen models improves their accuracy
+Literally within a percentage point, and people are writing off Swift because of it lmfao
+
+--- [/u/alpacadaver] /u/alpacadaver on Adding logit penalty for "wait", "maybe" and "perhaps" to Qwen models improves their accuracy
+Because a percentage point is not "barely worse", it's"no longer able to do this deep work". It's why people run Q8 over Q4 which is "only a percentage point" worse. The difference is pass or fail.
+
+--- [/u/sn2006gy] /u/sn2006gy on Adding logit penalty for "wait", "maybe" and "perhaps" to Qwen models improves their accuracy
+I mean, I kind of expect that Qwen knows this and chose a bit more reasoning for better outcomes? a percentage point in isolation doesn't mean much but a percentage point over 1000s of people running a model does.
+
+--- [/u/fragment_me] /u/fragment_me on Adding logit penalty for "wait", "maybe" and "perhaps" to Qwen models improves their accuracy
+Where did you read that Qwen 3.8 27b already has this? Or are you saying the swift Qwen fine tunes are using this technique ?
+
+--- [/u/Hefty_Wolverine_553] /u/Hefty_Wolverine_553 on Adding logit penalty for "wait", "maybe" and "perhaps" to Qwen models improves their accuracy
+Read the literal description for the swift qwen finetunes...
+
+--- [/u/fragment_me] /u/fragment_me on Adding logit penalty for "wait", "maybe" and "perhaps" to Qwen models improves their accuracy
+Your statement was ambiguously worded. Regardless, I did look up the model on HF and saw what you meant AFTER I posted the comment.
+
+--- [/u/h0tzenpl0tz0r] /u/h0tzenpl0tz0r on Adding logit penalty for "wait", "maybe" and "perhaps" to Qwen models improves their accuracy
+If anyone could have just posted the hyperref.... https://huggingface.co/ukisai/Swift-Qwen3.8-27b#swift-qwen38-27b
+
+--- [/u/ProtectionSuper5648] /u/ProtectionSuper5648 on Adding logit penalty for "wait", "maybe" and "perhaps" to Qwen models improves their accuracy
+they have an updated version 1.5: https://huggingface.co/ukisai/Swift-1.5-Qwen3.8-27b
+
+--- [/u/_sqrkl] /u/_sqrkl on Adding logit penalty for "wait", "maybe" and "perhaps" to Qwen models improves their accuracy
+We identified this a few months ago and made an article and tool for training the model so it's fixed permanently.
+ The increase in scores is because these tokens are responsible for the model's doom looping propensity. Suppress them, and you get more responses running to completion and producing a parseable answer.
+ https://preview.redd.it/b6f002qv94sh1.png?width=2048&format=png&auto=webp&s=37e66b68b49884fc3660e4b34640c159a97b951c
+
+--- [/u/TheRealMasonMac] /u/TheRealMasonMac on Adding logit penalty for "wait", "maybe" and "perhaps" to Qwen models improves their accuracy
+Why don't the main open weight labs do this themselves?
+
+--- [/u/Aromatic-Current-235] /u/Aromatic-Current-235 on Adding logit penalty for "wait", "maybe" and "perhaps" to Qwen models improves their accuracy
+Because of expediency over efficiency.
+
+--- [/u/Karyo_Ten] /u/Karyo_Ten on Adding logit penalty for "wait", "maybe" and "perhaps" to Qwen models improves their accuracy
+This is load-bearing
+
+--- [/u/chortly2] /u/chortly2 on Adding logit penalty for "wait", "maybe" and "perhaps" to Qwen models improves their accuracy
+Also, this list of over-thinking markers is fairly crudely generated, with a fairly arbitrary cut-off and a fixed penalty. All of that makes sense for the paper -- the simplicity in theory shows it should be a fairly robust approach -- but I can imagine it could be improved by another factor of 2 with some further exploration, even assuming that they did some unreported optimization in choosing their list, cut-off, and penalty value.
+
+--- [/u/hum_ma] /u/hum_ma on Adding logit penalty for "wait", "maybe" and "perhaps" to Qwen models improves their accuracy
+Furthermore, it might be more fruitful to apply the penalties only to the think block. Putting an equal penalty on those words regardless of context seems like it would give less nuanced responses in some situations. OP only tested math for which it's possibly most useful.
+
+--- [/u/harlekinrains] /u/harlekinrains on Adding logit penalty for "wait", "maybe" and "perhaps" to Qwen models improves their accuracy
+Locallama circled back full circle to, "lets make models guess more violently with no penalties, they show improved test results that way" without noticing.
+ Thats great group think. Give yourselves a bonus this month.
+ All the people that love models to sound like they know stuff, because we like our leaders to sound like they know stuff, without any "wait", "but acually" loops in there -- quickly upvote some more. Also far less reading that way. The benefits never end!
+ Full bubble can be reached more quickly! And on some tests of the easiest random math questions, violently guessing showed a measurable improvement!
+ We know so little how models think today - when we threaten them to kill a baby they think better! We should do it more often. But alignment to human values is the biggest problem of our age, right? Right.
+ I mean -- we should write theatre plays about this at this point, so people remember the pitfalls they buried themselves in a year ago. People forget so quickly.
+ edit: The posting directly below this one - in a graphical animation - actually replaces "wait, but" with a "yes, and" - to prevent what their marketing messaging called doom looping.
+ So the last part of any given thoughtchain is weighted higher than exploring alternatives. What could go wrong. Yes and, it also improves benchmarks!
+
+--- [/u/chessoculars] /u/chessoculars on Adding logit penalty for "wait", "maybe" and "perhaps" to Qwen models improves their accuracy
+I noticed you left out " recheck" from the paper's list, probably because that tokenizes to 2 tokens (311 + 1960) for Qwen 3.5-4B?
+ In general if people are curious, you can check the tokens for this list with a command like:
+ curl -X POST http://localhost:6666/tokenize -H 'Content-Type: application/json' -d '{"content": " perhaps maybe wait Wait actually hold Hmm hmm Alternatively alternatively However however instead Instead But but though although yet rather unless otherwise nonetheless nevertheless regardless still anyway Or or either whether uncertain unsure possibly might could another different reconsider rethink backtrack retry recheck revisit doubt confused wrong mistake error incorrect", "with_pieces": true}' | jq Or regex it together to create command-line options specifically for the currently running model:
+ curl -X POST http://localhost:6666/tokenize -H 'Content-Type: application/json' -d '{"content": " perhaps maybe wait Wait actually hold Hmm hmm Alternatively alternatively However however instead Instead But but though although yet rather unless otherwise nonetheless nevertheless regardless still anyway Or or either whether uncertain unsure possibly might could another different reconsider rethink backtrack retry recheck revisit doubt confused wrong mistake error incorrect"}' | jq '.tokens | .[]' | tr '\n' ' ' | sed -r 's/\b([0-9])/--logit-bias \1/g' | sed -r 's/([0-9])\b/\1-2/g' && echo Although of course that risks ignoring issues like " recheck" tokenizing to two tokens, so probably not smart.
+
+--- [/u/crusaderky] /u/crusaderky on Adding logit penalty for "wait", "maybe" and "perhaps" to Qwen models improves their accuracy
+-16% accuracy from q8 to q4_k_m? That's very surprising and concerning if true.
+ [EDIT] Ah it's 4b. Makes more sense now
+
+--- [/u/MINECRAFT_BIOLOGIST] /u/MINECRAFT_BIOLOGIST on Adding logit penalty for "wait", "maybe" and "perhaps" to Qwen models improves their accuracy
+This is for Qwen 3.5 4B, I thought Qwen 3.8 4-bit quants were decently accurate to B16 weights. Would be curious about the results for that model...
+
+--- [/u/FatheredPuma81] /u/FatheredPuma81 on Adding logit penalty for "wait", "maybe" and "perhaps" to Qwen models improves their accuracy
+Imagine if it was Qwen3.5 0.8B.
+
+--- [/u/DonMoralez] /u/DonMoralez on Adding logit penalty for "wait", "maybe" and "perhaps" to Qwen models improves their accuracy
+Check your console for `DEPRECATED: argument '--logit-bias' specified multiple times, use comma-separated values instead (only last value will be used)` just to be sure your tests were correct.
+
+--- [/u/ibringthehotpockets] /u/ibringthehotpockets on Adding logit penalty for "wait", "maybe" and "perhaps" to Qwen models improves their accuracy
+An actual useful and interesting reddit post not fully written by ai for karma. Beautiful 
+ Seriously though that’s pretty cool. The benchmarks are a good lead and I wonder how it generalizes to other uses
+
+--- [/u/sn2006gy] /u/sn2006gy on Adding logit penalty for "wait", "maybe" and "perhaps" to Qwen models improves their accuracy
+This post was written by AI - no one hand codes charts lol
+
+--- [/u/fragment_me] /u/fragment_me on Adding logit penalty for "wait", "maybe" and "perhaps" to Qwen models improves their accuracy
+Just because the chart was formatted by AI doesn't mean the whole post was. Plus OP is a contributor of Llamacpp.
+
+--- [/u/sn2006gy] /u/sn2006gy on Adding logit penalty for "wait", "maybe" and "perhaps" to Qwen models improves their accuracy
+that's great, which is why the is/isn't is moot.
+
+--- [/u/shaxsy] /u/shaxsy on Adding logit penalty for "wait", "maybe" and "perhaps" to Qwen models improves their accuracy
+How do you add penalties for those words?
+
+--- [/u/am17an] /u/am17an on Adding logit penalty for "wait", "maybe" and "perhaps" to Qwen models improves their accuracy
+Read the post, it's the `--logit-bias` command, append it to your llama-server command
+
+--- [/u/shaxsy] /u/shaxsy on Adding logit penalty for "wait", "maybe" and "perhaps" to Qwen models improves their accuracy
+Oh sorry I didn't realize that was how you did it. Thanks for clarifying
+
+--- [/u/FoxiPanda] /u/FoxiPanda on Adding logit penalty for "wait", "maybe" and "perhaps" to Qwen models improves their accuracy
+This is ... absolutely fascinating. I'll have to go read that paper but this is the sort of surgical behavior alteration that I'm all for in managing local models. Great find.
+
+--- [/u/gofiend] /u/gofiend on Adding logit penalty for "wait", "maybe" and "perhaps" to Qwen models improves their accuracy
+Honestly I think I prefer this approach (maybe even raise salience of tokens like “in conclusion” while reducing “wait a min”). You could tweak llama.cpp to kick these in only after the first X tokens so we don’t rush the model and increase the penalty as thinking extends.
+ I prefer this to the finetuning approach (don’t get me wrong I love finetuning and Swift etc as bold projects but) because fine tuning without the OG traces skews models towards the biases of the fine tuning dataset. Makes sense for specializing models but perhaps a tiny bit less so for tweaking general behaviors.
+ Finally model trainers please just give us a token we can inject to tell the model to start wrapping up 😂
+
+--- [/u/Chida82] /u/Chida82 on Adding logit penalty for "wait", "maybe" and "perhaps" to Qwen models improves their accuracy
+The progressive penalty idea sounds really promising. Let the model explore normally at first, then gradually increase the pressure to converge.
+ Have you tried implementing it? I'd be curious whether token count alone is enough, or whether repeated hesitation markers would be a better trigger.
+
+--- [/u/mrepop] /u/mrepop on Adding logit penalty for "wait", "maybe" and "perhaps" to Qwen models improves their accuracy
+Oh my god, I’m thinking about ditching qwen-3.8 27b for pretty much these exact phrases after putting in penalties wasn’t enough. No matter how harsh the penalties were every one of these phrases seemed like the beginning of a loop.
+ The over thinking can be extremely frustrating.
+ It seems almost like a regression outside of benchmark tasks where the model intentionally goes into these loops. The odd thing is that taking the exact same model and running it through benchmarks doesn’t do any of this.
+ This could just be biasing from training the model to score well on benchmarks, but it seems a little deeper than that, at least much worse than previous qwen models.
+ Makes me wonder…
+
+--- [/u/MindfulMan1984] /u/MindfulMan1984 on Adding logit penalty for "wait", "maybe" and "perhaps" to Qwen models improves their accuracy
+Simply, I use the Swift version for quick agentic sessions and to prototype ideas, and I use the OG Qwen3.8:27b for autonomous overnight sessions on more complex coding. I don't get frustrated waiting because I am sleeping, and I check the results the next morning LOL
+
+--- [/u/mrepop] /u/mrepop on Adding logit penalty for "wait", "maybe" and "perhaps" to Qwen models improves their accuracy
+Yeah, it’s fantastic for overnight batch stuff, it gets the job done, without a doubt. But sitting there watching it drives me crazy.
+
+--- [/u/According_Air_3815] /u/According_Air_3815 on Adding logit penalty for "wait", "maybe" and "perhaps" to Qwen models improves their accuracy
+Then I'm curious why did Qwen team didn't do this while there RL ?
+
+--- [/u/repepeper] /u/repepeper on Adding logit penalty for "wait", "maybe" and "perhaps" to Qwen models improves their accuracy
+Late to the party, aren't you?
+ https://huggingface.co/ukisai/Swift-1.5-Qwen3.8-27b
+
+--- [/u/silenceimpaired] /u/silenceimpaired on Adding logit penalty for "wait", "maybe" and "perhaps" to Qwen models improves their accuracy
+Can Model.ini take this I wonder. I’ll have to try.
+
+--- [/u/kodewerx] /u/kodewerx on Adding logit penalty for "wait", "maybe" and "perhaps" to Qwen models improves their accuracy
+Yes! Here you go (quoted so it wraps correctly):
+ logit-bias = 466-2 694-2 1362-2 1412-2 1921-2 1990-2 2086-2 2361-2 2441-2 2493-2 2892-2 3222-2 3315-2 3384-2 3404-2 3482-2 3655-2 4213-2 4370-2 4598-2 4611-2 4808-2 5752-2 6970-2 7014-2 7643-2 8106-2 10179-2 10451-2 11746-2 13264-2 13428-2 14673-2 15029-2 16036-2 21143-2 21979-2 33955-2 35999-2 36563-2 37201-2 37781-2 41484-2 62586-2 66073-2 73071-2 84485-2 85152-2 95500-2
+ They all show up in the server logs, so the preset is loaded correctly. I don't really see a difference in the reasoning. Still many "hmm" and "wait" tokens.
+ I also confirmed with a tokenize request that my model uses the same tokens. Furthermore, there are alternative tokens that are not biased, such as "Hmm" (e.g., starting a new paragraph; no leading space). I'll add all of the missing tokens and give it a shot later.
+ My unscientific test was running the same review prompt with and without logit-bias. The before and after is pretty dramatic: The second run took approximately 2/3 less tokens to complete. And the final output responses cover the major review findings that I was expecting.
+ edit: OK, the third run with additional logit biases completed with about 1/3 less tokens than the first run. My sample size of one is meaningless, but it's a promising experiment.
+
+--- [/u/fiery_prometheus] /u/fiery_prometheus on Adding logit penalty for "wait", "maybe" and "perhaps" to Qwen models improves their accuracy
+It even worked on the bf16 model, interesting, as one of the markers of quantization damage was more overthinking, but this works despite no quantization damage.
+
+--- [/u/jinnyjuice] /u/jinnyjuice on Adding logit penalty for "wait", "maybe" and "perhaps" to Qwen models improves their accuracy
+Very interesting!
+ I think this approach makes more sense compared to modifying the weights of the parameters like bottlecapai's ThinkingCap.
+ I wonder if PLE/n-gram of penalising combo words works better. I feel precision would improve.
+ It would also be nice if these logit biases can be applied to reasoning streams only.
+
+--- [/u/Kmic68] /u/Kmic68 on Adding logit penalty for "wait", "maybe" and "perhaps" to Qwen models improves their accuracy
+cutting 20% of tokens would be a big deal if this scales to larger models. But doesn't swift kinda already do this for 27B?
+
+--- [/u/Express_Quail_1493] /u/Express_Quail_1493 on Adding logit penalty for "wait", "maybe" and "perhaps" to Qwen models improves their accuracy
+A standard abliterted version already reduces this. I suspect its doing so many “wait” and “actually” wasting tokens to see if the user’s request is allowed
+
+--- [/u/Foreign_Risk_2031] /u/Foreign_Risk_2031 on Adding logit penalty for "wait", "maybe" and "perhaps" to Qwen models improves their accuracy
+Can we punish “\nwait “
+
+--- [/u/giant3] /u/giant3 on Adding logit penalty for "wait", "maybe" and "perhaps" to Qwen models improves their accuracy
+we can do it for 'wait', I don't know how to do for the combination '\nwait'.
+ For just wait on Qwen3.8-27B, it is --logit-bias 11158-2 , while '\nwait' are 2 tokens, 198 and 11158, and 'Wait' is 13784.
+ I would say that it is better to apply DRY penalty rather than play with logits as it is too error prone.
+
+--- [/u/aboutthednm] /u/aboutthednm on Adding logit penalty for "wait", "maybe" and "perhaps" to Qwen models improves their accuracy
+But wait... Interesting.
+
+--- [/u/mlhher] /u/mlhher on Adding logit penalty for "wait", "maybe" and "perhaps" to Qwen models improves their accuracy
+Natively supported by late with a minimal default overthinking word list, can be extended with any logits you want (and since the harness does it can be used independent of llama.cpp itself and separately for any app/instance of the harness). The (older, original) paper is also attached there, this is relatively old https://arxiv.org/abs/2506.08343 
+ https://github.com/mlhher/late-cli (yes im the dev)
+
+--- [/u/VileFalcon] /u/VileFalcon on Adding logit penalty for "wait", "maybe" and "perhaps" to Qwen models improves their accuracy
+Thanks for making late-cli, I was just getting started with it. Is this thinking reduction capability something that late-cli needs to be configured to do? Or is this something we configure in the llama-server? I would be interested in how to tune this.
+
+--- [/u/mlhher] /u/mlhher on Adding logit penalty for "wait", "maybe" and "perhaps" to Qwen models improves their accuracy
+--logit-bias and --subagent-logit-bias can be set manually to bias any logits directly, but they require an explicit bias map to be passed.
+ --suppress-thinking-words directly applies a minimal anti overthinking bias map to all agents and does NOT need any more configuration. Just set the flag and forget it, works great with Qwen. I usually always run Late with late-podman -- -suppress-thinking-words when using Qwen.
+ https://github.com/mlhher/late-cli/blob/main/docs/quickstart.md 
+ Please check the Quickstart for more information including the flag reference at the bottom. Note that the default map (suppress-thinking-words) currently requires the same models for all agents.
+
+--- [/u/Negative-Web8619] /u/Negative-Web8619 on Adding logit penalty for "wait", "maybe" and "perhaps" to Qwen models improves their accuracy
+wtf
+
+--- [/u/CoolConfusion434] /u/CoolConfusion434 on Adding logit penalty for "wait", "maybe" and "perhaps" to Qwen models improves their accuracy
+Nope, neither Wednesday, Thursday, or Friday. Today is Sunday or Monday, depending on where you are.
+ Also: adding penalty to the model for saying words. It's like you mom saying if you swear, you'll be grounded so you don't.
+ IMHO, this method of reducing "thinking" seems blunt, similar to how limiting thinking budget cuts off a model's train of thought. There are some fine-tuned models that baked these penalties in their training by carefully choosing where and how they are applied using Reinforcement Learning (RL). It basically teaches the model to avoid overthinking vs using --logit-bias that simply covers its mouth.
+
+--- [/u/Bakoro] /u/Bakoro on Adding logit penalty for "wait", "maybe" and "perhaps" to Qwen models improves their accuracy
+For math specifically, I want to know how turning the temperature all the way down affects accuracy. High level mathematics does need some abstract thinking and exploration, but for arithmetic, algebra, calculus, that kind of number crunchy stuff, there is a correct process and any deviation from that process risks a cascade that isn't caught by a later part of the chain of thought.
+ Penalizing hedge words seems like a roundabout way to push down the likelihood of anything that's not the target process.
+
+--- [/u/NeinJuanJuan] /u/NeinJuanJuan on Adding logit penalty for "wait", "maybe" and "perhaps" to Qwen models improves their accuracy
+Exact number crunching / algebraic manipulation is best factored-out as a tool call, returning only as much of the working/derivation as needed.
+
+--- [/u/Bakoro] /u/Bakoro on Adding logit penalty for "wait", "maybe" and "perhaps" to Qwen models improves their accuracy
+The model still needs to reason about word problems, extract, and format the information to send to the tool. The language part of that task is still pretty tight, it probably shouldn't be randomly taking the 4th or 5th top token when reasoning over math for the sake of variety. 
+ What the authors are doing here is changing the probability distribution, and I'm saying to also reduce the variety of the sampling from that distribution.
+
+--- [/u/magicduck] /u/magicduck on Adding logit penalty for "wait", "maybe" and "perhaps" to Qwen models improves their accuracy
+Decent on math but how does it fare on scripting, large codebases, toolcalling, research, creative writing?
+
+--- [/u/ghgi_] /u/ghgi_ on Adding logit penalty for "wait", "maybe" and "perhaps" to Qwen models improves their accuracy
+this is pretty sick, been messing around with it after doing a custom vllm patch and my qwen 3.8 next flash setup so far seeing good results from these tweaks. depending on what its doing, 18-30% less thinking, it only applies it while its in the think block section so outputs remain the same, the model actually seems more proactive but could be placebo, no visible regressions though, tokens are less, quality up in the air right now, so far "looks" on par or better
+
+--- [/u/Chida82] /u/Chida82 on Adding logit penalty for "wait", "maybe" and "perhaps" to Qwen models improves their accuracy
+Applying it only inside the thinking block sounds much cleaner to me.
+ Have you noticed whether the savings mostly come from avoiding actual loops, or does it simply make every reasoning trace a little shorter? I'm curious whether the 18-30% reduction is concentrated in a few pathological prompts or fairly consistent across tasks.
+
+--- [/u/Baccano101] /u/Baccano101 on Adding logit penalty for "wait", "maybe" and "perhaps" to Qwen models improves their accuracy
+Sounds really promising. Just tried with Swift-1.5-Qwen3.8-27B-GSQ-RCO-IQ3_XXS.
+ For 3 prompts it did not change the output (No or little overthinking in the first place). On a fourth problem it reduced token usage from 828 to 233 Tokens while still returning the right answer.
+ The token IDs in the first post appear to also be valid for Qwen 3.8 27B (and probably other Qwen 3 models).
+ To make it work with other models recalculating the IDs via the llama-tokenizer would be required.
+
+--- [/u/eightone-81] /u/eightone-81 on Adding logit penalty for "wait", "maybe" and "perhaps" to Qwen models improves their accuracy
+Checked the "overthinking markers" idea against ~2.2M tokens of real Qwen3.8-Flash-Next agent thinking: only 3 words look worth penalizing, and the ceiling is small
+ Disclosure: I asked the questions. The study itself (log mining, judging, spot-checks, numbers) and this write-up were done by Claude Opus 5.5 working as my agent. It's an observational analysis of logs, not an A/B test with the penalty turned on. 
+ TL;DR 
+ Only three words (with their capitalised and line-start forms) look worth penalizing for Flash-Next in agent/coding work. At best they save a few percent of thinking, mostly inside long, looping blocks:
+ Word (all forms) Uses in 2.2M thinking tokens Wasted (stricter judge) Wasted (both judges agree) Most thinking you could save Hmm / hmm 1,739 40% 10% 0.5–2.0% Wait / wait 2,888 32% 6% 0.6–3.3% Actually / actually 2,423 22% 6% 0.5–1.9% Total ~1.6–7% of thinking ≈ 1–4% of all generated tokens What it would improve: fewer thinking tokens, so lower latency per agent step. We could not measure accuracy.
+ How: a small logit bias on those tokens only. I'd suggest λ ≈ 0.5–1 rather than the paper's up-to-4. Include the line-start variants : the paper's list only has the leading-space tokens, and about 25% of our "Wait" and "Hmm" start a new line, so they would slip through.
+ What not to penalize: the rest of the paper's 50 words (but, or, still, could, error, whether…). In our sample they were mostly ordinary grammar. They also appear thousands of times in tool calls and code (" or" alone about 2,600 times), and a global penalty hits those too.
+ The catch: even for the three words, the majority of uses are useful. The stricter judge rated 63% of real hesitations useful (29% caught an actual bug or wrong assumption). A flat penalty suppresses those just as much as the wasted ones.
+ Setup 
+ Model and hardware: Qwen3.8-Flash-Next, W4A16 with FP8 PLE, running on vLLM with MTP-3 speculative decoding, on 2× RTX 3090.
+ Data: 85 real agent sessions (coding, refactoring, debugging, ops) giving 6,851 unique thinking blocks. That's 8.85M characters, about 2.2M tokens, after removing duplicates caused by forked sessions. The median block is short, about 500 characters, because agent thinking comes in small chunks between tool calls.
+ Counting: every occurrence of the paper's 50 marker words, plus line-start variants.
+ Judging single hesitations: 280 random hesitation points, each judged in context by two models. Qwen 3.6 35B (thinking on) was the primary judge; Flash-Next itself (thinking off) gave a second opinion. Categories: caught a real problem / useful new point / redundant re-check / harmful detour / ordinary word use.
+ Judging whole blocks: the 35B also judged 90 long blocks as a whole: "what % could be skipped without changing the final decision?"
+ Hand checks: about 20 verdicts plus some whole blocks, checked by Opus.
+ Findings 
+ 1. The waste is real, but it isn't where the markers are. 
+ The 35B judged about 33% of long Flash-Next thinking blocks skippable. In blocks with 5 or more hesitation markers that rose to about 48%, and 68% of those blocks showed looping.
+ Most of that waste is restating and re-planning that isn't tied to a marker word. Only a slice starts at a "Wait", which is why the ceiling above is so much smaller than the waste itself.
+ 2. Hesitation density rises with block length. Strong markers per 1,000 characters go from 0.68 in short blocks to 1.08 in blocks over 10k characters. The overthinking sits in the long blocks, not spread evenly.
+ 3. The two judges disagree a lot, and the model is lenient on itself. 
+ They agree on useful / wasted / ordinary 61% of the time.
+ Flash-Next judging its own thinking called only 8% of hesitations wasted. The 35B called 37% wasted.
+ In the hand checks the 35B was usually closer to a human reading, but not always. A typical disagreement: "wait, what's this function's signature? … ok, None is allowed ✓" in the middle of debugging. You can argue that's redundant, or that it's just careful engineering.
+ If you only count cases where both judges agree, the waste share is about 12% of hesitations. Treat 12–37% as the honest range.
+ 4. What the agreed-waste cases look like (17 of 280 hesitations), in three types:
+ Instant re-verification (cheap, 50–300 characters): " Wait — is the h2 written as … ? Line 9 showed … . OK, applied. "
+ Second-guessing whether to wait for a subagent: " Decision: dispatch a new child… No, wait, should I try resuming the old child one more time first? … New child = safer. Go with new child. "
+ Genuine loops (the only expensive kind): it cycled through several version-numbering schemes before picking one. It went back and forth three times on whether a log line contained "333", then gave up and re-ran the command. In one case it noticed itself: " …I'm going in circles. "
+ The loops are the only case worth much, and they are exactly where a flat per-token penalty is weakest. The model can keep looping with words that aren't on the list.
+ 5. The paper's list is tuned for math, not agents. 
+ "but" and "or": in our sample, the 35B rated 17 of 20 " or" and 9 of 17 " but" as ordinary grammar.
+ "wrong" and "error": these were useful whenever they meant something (e.g. spotting an actual error).
+ Outside the thinking block: the full list appears 5,073 times in Flash-Next's tool-call arguments and 1,577 times in its final answers. The paper's penalty applies at every decoding step, not just inside the thinking block.
+ Practical notes if you want to try it on vLLM 
+ logit_bias is refused under speculative decoding: requests carrying it are rejected when spec decoding (MTP/ngram) is on. See vLLM issue #42744.
+ A plugin exists: jcartu/vllm-overthinking-penalty patches vLLM's sampler to work with speculative decoding. But it applies globally, and its token IDs are for GLM, so you'd need your own list for Qwen.
+ Ideas I'd test before a flat penalty (all untested): Penalize only inside the thinking block.
+ Start the penalty only after the Nth hesitation in the current block. That targets the loops and leaves the first, often useful, "Wait" alone.
+ Use λ ≤ 1 on only the three words above.
+ 
+ Limitations 
+ Nothing was measured with the penalty on. These are upper and lower bounds on how much text the marked hesitations account for. A penalized model might dither in other words.
+ Judges are LLMs, and they only partly agree with each other.
+ One model, one quantization, one workload: agentic coding and ops work, not math benchmarks. The paper's 12–23% savings were measured on math with quantization as low as 3-bit. Our weights are 4-bit, and the setting is very different.
+ Accuracy impact is unknown. Only an A/B run can answer that.
+ Happy to answer questions about the method.
+
+--- [/u/Chida82] /u/Chida82 on Adding logit penalty for "wait", "maybe" and "perhaps" to Qwen models improves their accuracy
+This makes me wonder if the better signal isn't the word itself, but repetition within the same thinking block.
+ A first “wait” might genuinely catch a bad assumption, while the third or fourth “wait” is probably a much stronger signal that the model is looping.
+ Did you look at whether usefulness drops as the number of hesitations in the same block increases?
+
+--- [/u/eightone-81] /u/eightone-81 on Adding logit penalty for "wait", "maybe" and "perhaps" to Qwen models improves their accuracy
+No. The analysis was relatively clear that flash next does not profit from it. It was kind of equal where a penalty would have helped and where the additional loops actually helped the model recognise something important.
+ However, since then I am running strata with iq3_s. Not enough data do analyse that again but for now I have not observed looping or overthinking. Mostly running medium effort and when I switch to xhigh it thinks more and gets to better solutions but also no excessive thinking. Flash next is a different animal. Can’t wait for Qwen 4 flash
+
+--- [/u/Dabalam] /u/Dabalam on Adding logit penalty for "wait", "maybe" and "perhaps" to Qwen models improves their accuracy
+This is presumably a different approach to the recent models released like Swift and Thinking Cap? Is it something that could be added to those models? Also I suppose it would need to be tested for effects in other domains.
+
+--- [/u/HashPandaNL] /u/HashPandaNL on Adding logit penalty for "wait", "maybe" and "perhaps" to Qwen models improves their accuracy
+Swift trains the model to use less tokens, but somewhat jeopardizes accuracy. This approach seems to reduce token usage, while also improving accuracy (although paper only used older models, post has preliminary results for newer small model). 
+ Generalization of this method to newer, more capable models in more realistic settings is currently unproven. Combination with other methods like Swift is worth some testing, but the training method Swift uses may coincidentally target similar markers.
+ We need some gpu rich people to do more testing.
+
+--- [/u/Hefty_Wolverine_553] /u/Hefty_Wolverine_553 on Adding logit penalty for "wait", "maybe" and "perhaps" to Qwen models improves their accuracy
+...what? did you just not read Swift's method? it's essentially a more advanced version of this?
+
+--- [/u/Serious_Bite_7613] /u/Serious_Bite_7613 on Adding logit penalty for "wait", "maybe" and "perhaps" to Qwen models improves their accuracy
+This is a much better method.
+
+--- [/u/Hefty_Wolverine_553] /u/Hefty_Wolverine_553 on Adding logit penalty for "wait", "maybe" and "perhaps" to Qwen models improves their accuracy
+Seriously, do people not read anything at all? Have we lost the ability to spend more than a few seconds to understand things?
+ We built Swift by identifying reasoning-marker tokens that, in our analysis, trigger overthinking in Qwen’s reasoning rollouts. We then fine-tuned Qwen by penalizing usage of those tokens while it reasons.
+ And then they applied RL for the 1.5 version to recover more accuracy. Honestly, I'm still annoyed that some people seem to think the Swift Qwen models are supposed to have faster token generation speeds or something. Read, people, read.
+
+--- [/u/Serious_Bite_7613] /u/Serious_Bite_7613 on Adding logit penalty for "wait", "maybe" and "perhaps" to Qwen models improves their accuracy
+This method is worse, because they fine tuned while reasoning. It's a cleaner idea to just add flat penalties. Any retraining is going to distort the model more, unless it's done at the scale of the original training.
+
+--- [/u/Hefty_Wolverine_553] /u/Hefty_Wolverine_553 on Adding logit penalty for "wait", "maybe" and "perhaps" to Qwen models improves their accuracy
+Fine tuning will literally just bake the logit penalties into the model in a smarter and less invasive way than flat out applying logit penalties. At the very least it doesn't make any sense at all for it to perform worse than flat logit penalties (and this can be seen in the actual performance of the model). Where is your source for this even?
+
+--- [/u/Serious_Bite_7613] /u/Serious_Bite_7613 on Adding logit penalty for "wait", "maybe" and "perhaps" to Qwen models improves their accuracy
+Fine tuning overfits for whatever training data you use, it's a bad idea unless you want to overfit a model to a specific task. If you edit any weights you distort the model and lower accuracy.
+ It's better to keep the model intact and just apply a sampling penalty, that way the data structures inside the model are not impacted. 
+ Edit: my source is all of the thousands of fine tunes being terrible outside of specific benchmarks, and all of the "think less" qwen remixes being completely lobotomised when asked anything outside of their fine tune dataset.
+
+--- [/u/Hefty_Wolverine_553] /u/Hefty_Wolverine_553 on Adding logit penalty for "wait", "maybe" and "perhaps" to Qwen models improves their accuracy
+"fine tuning overfits" yeah that's when the fine tuning process isn't done correctly. And yes, we know there's slop everywhere because AI makes it ridiculously easy to churn out slop. That's not a source.
+
+--- [/u/Dabalam] /u/Dabalam on Adding logit penalty for "wait", "maybe" and "perhaps" to Qwen models improves their accuracy
+So they are similar methods. I wonder if their "reasoning token" penalties were broader since their assessment was maintenance whilst this seems to suggest slight improvement in one domain.
+
+--- [/u/Hefty_Wolverine_553] /u/Hefty_Wolverine_553 on Adding logit penalty for "wait", "maybe" and "perhaps" to Qwen models improves their accuracy
+Note that the models used in the paper are extremely old and dumb, and even this post only used Qwen3.5 4B. Comparing apples to oranges isn't the greatest idea.
+
+--- [/u/HashPandaNL] /u/HashPandaNL on Adding logit penalty for "wait", "maybe" and "perhaps" to Qwen models improves their accuracy
+Yes, I read Swift's method and tried it out for my use cases. Calling it a "more advanced version of this" is not really accurate. It is certainly more work, but can hardly be called the same method.
+ It also shows significantly degraded performance, at least for my use cases.
+
+--- [/u/Dany0] /u/Dany0 on Adding logit penalty for "wait", "maybe" and "perhaps" to Qwen models improves their accuracy
+You could bake this into a simple PR. Read quant level -> output overthinking logits reduction. As these things generally go, there must be a simple relationship between the quant level & how much you should bias it
+
+--- [/u/shing3232] /u/shing3232 on Adding logit penalty for "wait", "maybe" and "perhaps" to Qwen models improves their accuracy
+i guess you can make one list for every model of differ size
+
+--- [/u/Cradawx] /u/Cradawx on Adding logit penalty for "wait", "maybe" and "perhaps" to Qwen models improves their accuracy
+Interesting. I believe the logit bias range goes from -100 to +100. I wonder what impact larger a bias will have.
+
+--- [/u/AbeIndoria] /u/AbeIndoria on Adding logit penalty for "wait", "maybe" and "perhaps" to Qwen models improves their accuracy
+hm, I have the hardware to test it on Qwen3.8-27B on Q6KL (or even Q8). Perhaps I should.
+
+--- [/u/Elouakili_Flexy] /u/Elouakili_Flexy on Adding logit penalty for "wait", "maybe" and "perhaps" to Qwen models improves their accuracy
+Q2_K going 12 → 24 says more than the BF16 row. It went from random to slightly less random with one command line.
+
+--- [/u/krumpstead] /u/krumpstead on Adding logit penalty for "wait", "maybe" and "perhaps" to Qwen models improves their accuracy
+Thanks for sharing this, OP. I had not seen this paper. I slopped together a quick auto-discover OpenCode plugin that can be placed in a project's .opencode subdir to test this out. It actually works great with Qwen 3.8 27B. The plugin injects the logit bias values into the chat.params . I couldn't get it to work effectively without adding values which didn't have leading spaces so I ended up adding values for that and also capitalized versions of all words which didn't already have a pair. A bias of 3 really drives the icepick deep into 27B's brain. Coding was pretty much worthless, but I think it may be perfect for structured agentic workflows. Your chosen bias of 2 seems like a good balance. If anyone is interested I may throw the plugin up on github, after I test it some more.
+ Here's the 116 token values I'm using, just more variants of the same words from the paper:
+ const TOKEN_IDS = [ 8106, 6970, 3655, 13428, 3404, 3222, 85152, 84485, 37201, 66073, 4213, 4611, 4370, 11746, 1921, 694, 3384, 7643, 3482, 4598, 7014, 5752, 36563, 35999, 15029, 1990, 13264, 2441, 466, 2892, 3315, 33955, 41484, 10451, 2493, 1362, 2361, 2086, 37781, 73071, 95500, 21979, 311, 1960, 62586, 10179, 21143, 4808, 16036, 1412, 14673, 83, 706, 741, 2506, 4451, 7373, 10022, 10380, 10560, 12750, 12757, 12908, 14205, 15896, 16018, 17070, 17673, 18200, 20348, 22041, 23934, 24944, 26570, 32148, 32290, 32645, 32829, 39410, 40195, 42290, 53764, 75170, 76176, 76475, 79034, 50821, 88842, 15337, 13634, 46678, 3850, 12525, 66783, 47587, 1401, 77264, 45847, 10883, 39130, 29781, 20734, 67327, 2126, 77680, 30442, 61745, 60506, 49823, 22597, 25879, 34410, 13784, 23922, 28230, 27165, ]
+
+--- [/u/oxygen_addiction] /u/oxygen_addiction on Adding logit penalty for "wait", "maybe" and "perhaps" to Qwen models improves their accuracy
+You might want that to only work on the thinking block.
+
+--- [/u/Educational-Care7867] /u/Educational-Care7867 on Adding logit penalty for "wait", "maybe" and "perhaps" to Qwen models improves their accuracy
+I'm just gonna try this on my ImaJev model here which got #1 on the JevBench Score above Jev itself..
+ Will let you know if this approach helps in System 1 models as well.
+
+--- [/u/Zeikos] /u/Zeikos on Adding logit penalty for "wait", "maybe" and "perhaps" to Qwen models improves their accuracy
+Makes me wonder which logits if tuned up would increase performance.
+
+--- [/u/BS_BlackScout] /u/BS_BlackScout on Adding logit penalty for "wait", "maybe" and "perhaps" to Qwen models improves their accuracy
+This doesn't surprise me. I was doing it for the "consider" token and didn't think " reconsider" could've been one so I thought it wasn't effective. I'm trying again lol.
+
+--- [/u/segmond] /u/segmond on Adding logit penalty for "wait", "maybe" and "perhaps" to Qwen models improves their accuracy
+Anyone try it on code yet?
+
+--- [/u/FlawlessIndividual] /u/FlawlessIndividual on Adding logit penalty for "wait", "maybe" and "perhaps" to Qwen models improves their accuracy
+"But wait, maybe I shouldn't actually launch the warhead"
+ lol
+
+--- [/u/AlabamaResearcher] /u/AlabamaResearcher on Adding logit penalty for "wait", "maybe" and "perhaps" to Qwen models improves their accuracy
+there are more implications for this. logit-bias can be set per-request. which means it can act like a reasoning-effort control for models don't have native reasoning-effort.
+ even for qwen3.8-27b，changing reasoning-effort mid-session will cause kv-cache recompute (because the template changed injected text) while this will not.
+
+--- [/u/Chida82] /u/Chida82 on Adding logit penalty for "wait", "maybe" and "perhaps" to Qwen models improves their accuracy
+
+
+--- [/u/jacek2023] /u/jacek2023 on Adding logit penalty for "wait", "maybe" and "perhaps" to Qwen models improves their accuracy
+very good idea
+
+--- [/u/dtfinch] /u/dtfinch on Adding logit penalty for "wait", "maybe" and "perhaps" to Qwen models improves their accuracy
+Now I want to try setting that per-request, to vary the strength in proportion to the context usage, once I get around to building my own harness.
+
+--- [/u/PraiseThePidgey] /u/PraiseThePidgey on Adding logit penalty for "wait", "maybe" and "perhaps" to Qwen models improves their accuracy
+Just added those to my system-prompt and it kind of makes Qwen 3.8 27B thinking more consistent and straightforward instead of doubting at least 2-3 times during each new prompt
+
+--- [/u/Stunning-Sherbet1853] /u/Stunning-Sherbet1853 on Adding logit penalty for "wait", "maybe" and "perhaps" to Qwen models improves their accuracy
+love that you tested across quants, the Q3 jump is wild. and −19% reasoning tokens is honestly the part I'm most jealous of, overthinking eats a huge chunk of our budget in agent runs.
+ one thing I'm wondering for agent use: the bias applies to the whole output, right? "or", "error", "retry" show up in code and tool calls, and "unsure" / "wrong" are exactly the words I want my agent to keep when it can't verify something. I'd hate to trade "wait, maybe" for a model that confidently says "done" lol
+ did you try applying it to the reasoning part only? thinking of testing that with a trimmed list.
+
+--- [/u/DystopianRealist] /u/DystopianRealist on Adding logit penalty for "wait", "maybe" and "perhaps" to Qwen models improves their accuracy
+I just had... yeah... I just had a thought.
+ Qwen has been writing messages to us in darksouls for years.
+ Backtrack instead. Anyway? Perhaps Uncertain. Wrong. Try Door, but hole?
+
+--- [/u/brahh85] /u/brahh85 on Adding logit penalty for "wait", "maybe" and "perhaps" to Qwen models improves their accuracy
+this is the reason why some Q8 work better than BF16 , or give better perplexity, the original model had some data in the weights that screwed the performance of the BF16 , and the Q8 crushed it. Back in time, i got a llama3 that was fully uncensored in Q4_KM , the BF16 and the rest of the quants were all censored , so the quantization just broke a "memory" that made the model work better , well, uncensored
+
+--- [/u/KingArthas94] /u/KingArthas94 on Adding logit penalty for "wait", "maybe" and "perhaps" to Qwen models improves their accuracy
+I noticed in my first week of playing with local LMM models (this one!) so it's good that they were able to prove it mathematically.
+ This is why I love my little models that allow me to set a reasoning budget (I just choose 1000 tokens).
+ Now let's hope the available software and models get updated to stop wasting our time by getting in useless thinking loops...
+
+--- [/u/Former-Ad-5757] /u/Former-Ad-5757 on Adding logit penalty for "wait", "maybe" and "perhaps" to Qwen models improves their accuracy
+The problem is this is basically what qwen reasoning is, you reduce the reasoning and thus the quality of more complex outputs.
+ in the jina template the xhigh format is literally :
+ {%- set reasoning_instructions = 'Reasoning effort is set to xhigh. Please think carefully through the task, validate key assumptions, consider plausible alternatives, and prioritize correctness, consistency, and clarity in the final answer.' %}
+ So it should validate everything it considers key, it should consider plausible alternatives. It should detect errors to prioritise correctness, consistency etc.
+ Now if you put a chat message like 'hello' towards xhigh then you are forcing it to overthink.
+ Basically you have a reasoning instruction that explicitly says it should do those things and you are setting negative temps on exactly those things, the result can be good on small tasks, but on real tasks it will be chaos and you should just have used a different reasoning level.

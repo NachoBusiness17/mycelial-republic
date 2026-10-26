@@ -1,0 +1,17 @@
+{
+  "gopher": "t14b",
+  "item": "cooldown chip UI over ability buttons (queue/todo.md v1.1 row, line 185; echoed line 206)",
+  "ok": true,
+  "note": "NEGATIVE FINDING FIRST: the cooldown chip UI already existed, landed pre-afterparty in commit dfcda53cc (2026-09-25 09:40, same commit as t14a's FOV kick) and never ticked off. Wiring verified: server AbilitySlots.luau:47 flips Abil_* true after the Carrying lockout and the cooldown gate (line 44), client init.client.luau:49-55 records os.clock() on the true flip, RenderStepped 58-70 renders remaining seconds plus dim state. Client cd table (0.25/10/8/20, lines 22-25) mirrors server REGISTRY exactly. Pattern agrees with t14a: one client script, attribute-driven listeners, no new remotes, client-side only, ResetOnSpawn false. NEGATIVES: no literal ability buttons exist in roblox/src (TextButton/ImageButton/ContextActionService all 0 hits), the 4-chip bottom-right cluster is the button stand-in; no missing attribute, so zero server edits. Replication delay only lengthens the countdown, the safe direction. t14b delta: NONE, no genuine defect found, no edit made rather than a fabricated diff. Todo rows 185/206 left UNTICKED: the mobile ContextActionService slice is still open and the shared todo is sibling-contended.",
+  "checks": [
+    "git log -S 'cooldown chips' lands at dfcda53cc only, HEAD content byte-identical to working tree (git diff shows only t14a's FOV fix)",
+    "server clock start AbilitySlots.luau:47, gated by Carrying (39-41) and cooldown (44); window end 48-52",
+    "client clock init.client.luau:49-55, render loop 58-70, cd tables agree 22-25 vs server 20-23",
+    "no ability buttons in roblox/src: TextButton/ImageButton/ContextActionService grep = 0 hits",
+    "no missing attribute: Abil_* consumed by SwarmZone, FrontierSoulsZone, ArrakisZone, TheAnswerBoss, ToyBoxZone; zero server diff",
+    "pattern agreement with t14a verified in same file (chips 28-70 vs FOV fix 72-89)",
+    "luau-lsp not installed (exit 127): verification by read-back + git log/diff only",
+    "mountain_check NOT run (shared, forbidden by item)"
+  ],
+  "next_steal": "Same v1.1 row: mobile ContextActionService bindings (still 0 hits in roblox/src, the only unticked slice), then tick rows 185/206 once that lands; rojo build after (the_mountain.rbxlx stale vs source, rojo missing on this box)."
+}

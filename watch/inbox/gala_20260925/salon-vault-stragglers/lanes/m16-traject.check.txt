@@ -1,0 +1,119 @@
+=== m16-traject CHECK RUN 2026-10-02T15:25:21Z ===
+
+== CHECK 1: source census (wc -l -c + md5sum) ==
+   925  75023 traject.txt
+  2752 222158 traject-chinesedebug.txt
+   979  45075 traj.txt
+  4656 342256 total
+767bbf40ccb78a06b3c1c8df1a5255ce *traject.txt
+7e0699cf523bb6a151cdf557fb2d4840 *traject-chinesedebug.txt
+44a2676754d06859ba4a3b65cbe5349b *traj.txt
+
+== CHECK 2: cited line prints (sed -n) ==
+-- traject.txt:850 (q1 source line) --
+it's all training data. We're learning for free. This is fucking incredible data if we treat it as such. 300m Tokens burned with our own limiting riding it as hard as we could incredible work
+-- traject.txt:401 (q5 source line) --
+- **The input:output ratio is obscene**: 122.4M in → 0.5M out = 240:1. That's the re-feed tax live, today, on the free plan. 117M of the input was cache reads (re-sending the same giant contexts — cache softens cost but the QUOTA counter likely counts computed tokens: 122M in + ... this is what ate the daily quota to 51%).
+-- traject.txt:445 (q4 source line) --
+Root cause: in the FIRST working test I launched powershell.exe with -Command (worked). When I switched to Start-Process '$PYEXE' -ArgumentList '-File','path' — the '$PYEXE' got bash-expanded to the path (fine), and PowerShell started python.exe with arguments `-File path`. But `-File` is meaningless to PYTHON — python doesn't take -File! python takes the script path directly. I conflated powershell's -File with python's args. The fix: ArgumentList should be just the script path: Start-Process $PYEXE -ArgumentList 'C:\...\live_feed.py'. (Or wrap in a powershell -File launcher.)
+-- traject-chinesedebug.txt:817 (q2 source line) --
+**Meta-verdict:** one cow dies cleanly (local-first-as-GPU), one is naked (beacon = unproven), four survive narrowed. The same weakness recurs at every scale: the record is append-only but nothing declares its own death. Sediment needs a pulse.</result>
+-- traject-chinesedebug.txt:1576 (q3 source line) --
+**Verdict:** the wall is honest where it is receipted — five of nine strata carry first-hand dated captures with zero contradictions found — but three strata (Nov-04, Jan-05 body, Mar-09) and the 1.3M number are still claims wearing receipt clothes; fetch them before calling the canon closed.</result>
+-- traject-chinesedebug.txt:705 (q6 width note, first occurrence) --
+haha 20 seems to be the limit
+
+== CHECK 2b: correction of CHECK 2 transcriptions ==
+-- traject.txt:447 (q4 source line, corrected: grep -n shows 447 not 445) --
+So: python.exe launched, got "-File" as an option, printed usage to stderr (captured now), exited. That's why 0 processes and no log lines. Fix: pass only the script path.
+-- q5 wording corrected: source line 401 says 're-feed tax' (hyphenated), not 'refeed tax' --
+
+== CHECK 3: byte-verbatim subspan probes (venv python, quoteprobe script) ==
+q1: count=2 emdash_in_subspan=0 subspan_bytes=104 verdict=VERBATIM file=C:/Users/foste/Desktop/New folder/traject.txt
+q2: count=2 emdash_in_subspan=0 subspan_bytes=126 verdict=VERBATIM file=C:/Users/foste/Desktop/New folder/traject-chinesedebug.txt
+q3: count=2 emdash_in_subspan=0 subspan_bytes=148 verdict=VERBATIM file=C:/Users/foste/Desktop/New folder/traject-chinesedebug.txt
+q4: count=1 emdash_in_subspan=0 subspan_bytes=94 verdict=VERBATIM file=C:/Users/foste/Desktop/New folder/traject.txt
+q5: count=1 emdash_in_subspan=0 subspan_bytes=85 verdict=VERBATIM file=C:/Users/foste/Desktop/New folder/traject.txt
+q6: count=2 emdash_in_subspan=0 subspan_bytes=29 verdict=VERBATIM file=C:/Users/foste/Desktop/New folder/traject-chinesedebug.txt
+probe_exit=0
+
+== CHECK 4: trajectory_rib organ dogfood (default tape, before/after) ==
+-- BEFORE: compiled.jsonl + meta --
+total 129
+drwxr-xr-x 1 foste 197609   0 Sep  2 04:22 .
+drwxr-xr-x 1 foste 197609   0 Oct  1 21:59 ..
+-rw-r--r-- 1 foste 197609   0 Sep  2 04:22 compiled.jsonl
+-rw-r--r-- 1 foste 197609 627 Sep  2 04:22 compiled.jsonl.meta.json
+-- fresh compile run: .venv/Scripts/python.exe -m mag.trajectory_rib (default tape watch/openclaw_traj.jsonl) --
+{
+  "ok": true,
+  "schema": "trajectory_rib.v1",
+  "ts": "2026-10-02T15:29:04.676696Z",
+  "source": "C:\\Users\\foste\\Documents\\projects\\local_sovereign_agent\\watch\\openclaw_traj.jsonl",
+  "sourceSha256": "sha256:ccde65560e46a9f8733c283391682adce1719f7782112528f9d3e3871aa8bdf2",
+  "sourceLines": 30,
+  "compiled": 2,
+  "rejected_unbounded": 28,
+  "rejected_malformed": 0,
+  "includeLegacy": false,
+  "metricGate": "not_run",
+  "verification": "staged; acceptance commands required",
+  "output": "C:\\Users\\foste\\Documents\\projects\\local_sovereign_agent\\memory\\runs\\trajectory_rib\\compiled.jsonl",
+  "report": "C:\\Users\\foste\\Documents\\projects\\local_sovereign_agent\\memory\\runs\\trajectory_rib\\compiled.jsonl.meta.json"
+}
+compiler_exit=0
+-- AFTER: compiled.jsonl + meta --
+total 133
+drwxr-xr-x 1 foste 197609   0 Oct  2 11:29 .
+drwxr-xr-x 1 foste 197609   0 Oct  1 21:59 ..
+-rw-r--r-- 1 foste 197609 995 Oct  2 11:29 compiled.jsonl
+-rw-r--r-- 1 foste 197609 627 Oct  2 11:29 compiled.jsonl.meta.json
+
+== CHECK 5: raw walker tape vs compiled projection gap ==
+-- memory/trajectory/steps.jsonl (live raw tape) --
+45240 memory/trajectory/steps.jsonl
+-rw-r--r-- 1 foste 197609 44613469 Oct  2 11:29 memory/trajectory/steps.jsonl
+-- watch/openclaw_traj.jsonl tape line count now --
+30 watch/openclaw_traj.jsonl
+-- live_ops_readiness trajectory_rib check line --
+89:        "trajectory_rib": _exists("memory/runs/trajectory_rib/compiled.jsonl.meta.json"),
+
+== CHECK 6: git status of mag/ and tools/ (lane touched no code) ==
+ M tools/m1_grammar_bench.py
+-- (pre-existing sibling changes only; m16 write set = receipt m16.md + lane JSON + check file + quoteprobe script, all under watch/inbox/) --
+
+== CHECK 4b: inspection of the 2 compiled spans (correction to the mining claim) ==
+1 81981de2-5f0c-4612-b4e2-639badc7d963 | session: agent:main:main | status: observed | acceptance: unproven | bounded: True | anchors: 0 | pathsTouched: 0
+2 7f6d000e-6398-4457-9e20-ee8dd9bc3805 | session: agent:main:explicit:seat-g3 | status: observed | acceptance: unproven | bounded: True | anchors: 0 | pathsTouched: 0
+-- tape lines 29-30 metadata (the span envelopes) --
+2026-09-02T18:27:29.245Z agent:main:main trajectory_span.v1 [29, 29] bodySha256 4e82b2b33d7703e5
+2026-09-03T17:06:12.600Z agent:main:explicit:seat-g3 trajectory_span.v1 [30, 30] bodySha256 a7c88cd378b781c6
+-- FINDING: compiled.jsonl mtime was Sep 2 04:22 (compiled=0) while tape lines 29-30 carry span envelopes stamped Sep 2 18:27Z and Sep 3 17:06Z; nobody re-ran the compiler for 30 days until this lane's CHECK 4 dogfood compiled them. Both banked spans: acceptance unproven, 0 anchors, pathsTouched empty; meta metricGate=not_run. The 44.6MB walker tape memory/trajectory/steps.jsonl (45,240 rows, live mtime) has no trajectory_rib compilation path at all (only the viz emitter mag/trajectory_paths.py reads it). --
+
+== CHECK 7: FINISH LINE byte checks ==
+2a48a15a5084af823e821788bff73057bb0c927763c9edebbe18fae76ed8be18 *watch/inbox/salon_mine/m16.md
+38d63c5a0a21e2f84b0c52121bccd0e197036e4d3dd8a3f07dd56f428d716a38 *watch/inbox/gala_20260925/salon-vault-stragglers/lanes/m16-traject.json
+d9b693bc0cafe6326e0d3bab52b24ef6436dc58a9e8b37831f0508e25dae88a4 *watch/inbox/gala_20260925/salon-vault-stragglers/lanes/m16-traject-quoteprobe.py
+   55 12948 watch/inbox/salon_mine/m16.md
+   97 11629 watch/inbox/gala_20260925/salon-vault-stragglers/lanes/m16-traject.json
+  152 24577 total
+-- em-dash (U+2014) counts, expect 0 0 0 --
+0
+0
+0
+-- lane JSON parse --
+PARSE_OK rows=5 checks=8 leverage=['high', 'high', 'high', 'medium', 'medium']
+finish_exit=0
+
+== CHECK 8: tape post-compile integrity ==
+ccde65560e46a9f8733c283391682adce1719f7782112528f9d3e3871aa8bdf2 *watch/openclaw_traj.jsonl
+-- compare: fresh compiler report sourceSha256 was sha256:ccde65560e46a9f8733c283391682adce1719f7782112528f9d3e3871aa8bdf2 (CHECK 4); match proves the compile read these bytes and edited nothing --
+PARSE_OK rows=5 checks=8
+
+== CHECK 8b: final re-verify after JSON update ==
+fc1e9a5184afd30fc14ee680c2df9e9005835210922a874d14d2d1852e4a236b *watch/inbox/salon_mine/m16.md
+ab464af76ac9068df96d809a3382842e61c5544c2c4d6b72f1410c1a8402f644 *watch/inbox/gala_20260925/salon-vault-stragglers/lanes/m16-traject.json
+-- em-dash counts after edits, expect 0 0 --
+0
+0
+PARSE_OK rows=5 checks=9

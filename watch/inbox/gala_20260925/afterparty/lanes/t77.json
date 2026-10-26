@@ -1,0 +1,28 @@
+{
+  "gopher": "t77",
+  "item": "_waste_action('improve') in mag/lifecycle.py still prescribed prose ('disable MagImproveDaily / stop improve jobs'); align it to prescribe the t73 executor commands exactly (t73's next_steal)",
+  "ok": true,
+  "note": "Spec first: the t47 paragraph in mag/lifecycle.py's module docstring now names the landed executor (python main.py improve-off --reason ... / improve-on) instead of 'prescribes disabling the task' (also dropped the stale 'line ~514' pointer). Code: _waste_action('improve') now returns 'python main.py improve-off --reason \"...\" / python main.py improve-on  # off=marker then schtask disable; on=ps1 re-register then clear marker', with a receipt comment citing t47/t73/t77; flags verified against main.py argparse (improve-off: --reason, default 'operator disable'; improve-on: no flags) and mag/lifecycle.py improve_off/improve_on signatures. Minimal diff; other _waste_action branches untouched. Test test_waste_action_improve_prescribes_t73_executor added to tests/test_improve_off_on.py asserting both prescribed strings plus a negative (old prose gone) and one untouched sibling branch.",
+  "checks": [
+    {
+      "check": ".venv/Scripts/python.exe -m pytest tests/test_improve_off_on.py -v",
+      "result": "6 passed (5 t73 + 1 new t77), exit 0",
+      "evidence": "watch/inbox/gala_20260925/afterparty/lanes/t77.check.txt"
+    },
+    {
+      "check": ".venv/Scripts/python.exe tools/violation_ratchet.py check --changed",
+      "result": "scope=17 changed files; hits=13; registered=13; NEW=0; exit 0",
+      "evidence": "watch/inbox/gala_20260925/afterparty/lanes/t77.check.txt"
+    },
+    {
+      "check": "em-dash scan of t77-added lines (diff '+' lines + new test lines)",
+      "result": "0 occurrences, clean",
+      "evidence": "watch/inbox/gala_20260925/afterparty/lanes/t77.check.txt"
+    }
+  ],
+  "files": [
+    "mag/lifecycle.py",
+    "tests/test_improve_off_on.py"
+  ],
+  "next_steal": "_toggle_hint('improve') in mag/lifecycle.py still reads 'schtasks MagImproveDaily / improve cycle API' (prose-adjacent): point it at the same t73 commands for parity with t77. Also two historical receipts quote the old prose verbatim and are now stale quotes, not behavior: mag/improve.py:10 and tests/test_improve_status_scheduled_task.py:4 ('lifecycle.py names \"disable MagImproveDaily\" as a remediation') could name the new prescribed string instead."
+}

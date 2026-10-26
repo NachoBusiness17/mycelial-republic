@@ -1,0 +1,112 @@
+{
+  "lane": "a22-councils",
+  "division": "A",
+  "ok": true,
+  "note": "HEAD TESTIMONY verified: FREE_MODELS allowlist exists (tools/roblox_npc_gateway.py line 41) and is enforced structurally: the membership check fires at line 113, BEFORE the funded lane loop at line 116, and refusals are logged as gate receipts, so a rogue per-ask model can never reach funded keys. LINKS-335 fold receipt present: 2 rows in memory/corpus/LINKS.jsonl (line 117 doctrine/tree, line 118 steering/councils x-drop naming Mooncast + loktar00). Estate grep: corpus/steal/ has ZERO hits for mooncast and FREE_MODELS (negative finding: no steal receipt filed yet); memory/corpus/LINKS.jsonl line 118 is the only hit for both Mooncast (capitalized; lowercase case-sensitive zero) and FREE_MODELS. All 5 quotes byte-verified grep -F count=1, raw log cited in checks evidence.",
+  "rows": [
+    {
+      "law": "HOMOGENEITY DECAY LAW: a council of same-type models aligns too easily, so unanimity gets cheap and fake; real disagreement requires cross-family councils",
+      "claim": "The prompt-a-council-until-unanimous trick is only sound when the voters are from different model families; same-family consensus is an echo, not evidence.",
+      "quote": "the prompt-a-council-until-unanimous trick dies when models are same-type (they align too easily; consensus gets cheap and fake)",
+      "source": "C:/Users/foste/Documents/projects/local_sovereign_agent/memory/corpus/LINKS.jsonl",
+      "steal": "Never assemble a council from copies of one model; assign seats across distinct families first, and treat cross-family disagreement as the signal you paid for.",
+      "falsifier": "A same-family council that repeatedly surfaces genuine, persistent disagreement on judgment calls (would show alignment is not the binding constraint).",
+      "leverage": "high"
+    },
+    {
+      "law": "SPEND-FIREWALL LAW: funded-key spend is blocked structurally by a free-model allowlist checked before any lane loads, not politely avoided",
+      "claim": "The gateway refuses any model outside FREE_MODELS as its first statement, logs a gate receipt, and returns a refusal before the funded key loop is ever entered, so client-supplied model input cannot reach paid spend.",
+      "quote": "receipt(\"gate\", player, message, f\"<model not in free allowlist: {model}>\", 1)",
+      "source": "C:/Users/foste/Documents/projects/local_sovereign_agent/tools/roblox_npc_gateway.py",
+      "steal": "Any spend-bearing surface takes an allowlist membership check as its first statement plus a refusal receipt; ordering is the proof, so gate-then-lanes, never lanes-then-filter.",
+      "falsifier": "A request naming a non-allowlisted model that still reaches _lanes() or sends an Authorization header (would mean the gate moved after the loop).",
+      "leverage": "high"
+    },
+    {
+      "law": "MOONCAST-AS-SURVEY-PATTERN LAW: external law lands in the default running config, the three survey witnesses pinned to three different families on free slugs",
+      "claim": "MudBasecamp pins its witness list (stealth space bunny, inclusionai ling, poolside laguna) inside the game server code, so cross-family heterogeneity is the configuration the survey runs by default, not an opt-in or a doc promise.",
+      "quote": "-- Mooncast law (LINKS-335): same-model councils agree too cheaply. The three",
+      "source": "C:/Users/foste/Documents/projects/local_sovereign_agent/roblox/src/server/MudBasecamp.luau",
+      "steal": "When adopting an external design law, edit the default witness/seat list in the code that runs, with the law named and dated in a comment at the point of use.",
+      "falsifier": "Survey witnesses reverting to one family or a paid slug while the gate still passes (config drift away from the pinned list).",
+      "leverage": "high"
+    },
+    {
+      "law": "CONVERGENCE-AS-LOOT LAW: council agreement is a game mechanic, >=2 witnesses agreeing folds to CORE and loot, divergence is kept as a swarm log",
+      "claim": "The survey converts council output into gameplay: agreement mints loot, disagreement is recorded, so a split verdict is data the player keeps rather than a failed roll.",
+      "quote": "-- survey: the party witnesses the same scene; converge = core, diverge = swarm log",
+      "source": "C:/Users/foste/Documents/projects/local_sovereign_agent/roblox/src/server/MudBasecamp.luau",
+      "steal": "Design councils so both outcomes pay: consensus produces the artifact, dissensus produces a retained log entry; never let a split council discard its testimony.",
+      "falsifier": "A room where CORE loot or swarm logging fires regardless of actual witness reply overlap (mechanic decoupled from the votes).",
+      "leverage": "medium"
+    },
+    {
+      "law": "SELF-FALSIFICATION FOLD LAW: an independent external critique that names your own mechanism is adopted as design law and fixed the same hour, with the fold receipt filed",
+      "claim": "The fleet's own Roshomon survey ran 3 witnesses on one model, exactly the degenerate case the Mooncast x-drop named; the fold receipt records external falsifier, same-hour fix, and landing files.",
+      "quote": "our Roshomon survey ran 3 witnesses on ONE model (space bunny x3) = the degenerate case; FIXED same hour",
+      "source": "C:/Users/foste/Documents/projects/local_sovereign_agent/memory/corpus/LINKS.jsonl",
+      "steal": "Pipe independent outside criticism of your mechanisms into a dated intake (LINKS.jsonl), and when it names a real defect, fold the fix immediately and file the receipt naming cause and landing files.",
+      "falsifier": "No same-model witness configuration ever produced cheap fake consensus in practice (would downgrade the law to aesthetics).",
+      "leverage": "high"
+    }
+  ],
+  "checks": [
+    {
+      "command": "grep -n \"FREE_MODELS\" tools/roblox_npc_gateway.py | head -20",
+      "exit": 0,
+      "evidence": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/w3/lanes/a22-councils.check.txt"
+    },
+    {
+      "command": "grep -n \"if model not in FREE_MODELS\\|for name, url, key in _lanes()\" tools/roblox_npc_gateway.py (gate at 113 precedes funded lanes at 116)",
+      "exit": 0,
+      "evidence": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/w3/lanes/a22-councils.check.txt"
+    },
+    {
+      "command": "grep -c \"LINKS-335\" memory/corpus/LINKS.jsonl",
+      "exit": 0,
+      "evidence": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/w3/lanes/a22-councils.check.txt"
+    },
+    {
+      "command": "grep -rln \"mooncast\" corpus/steal/ memory/corpus/ (zero hits, negative first-class)",
+      "exit": 1,
+      "evidence": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/w3/lanes/a22-councils.check.txt"
+    },
+    {
+      "command": "grep -rln \"Mooncast\" corpus/steal/ memory/corpus/ (LINKS.jsonl only)",
+      "exit": 0,
+      "evidence": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/w3/lanes/a22-councils.check.txt"
+    },
+    {
+      "command": "grep -rln \"FREE_MODELS\" corpus/steal/ memory/corpus/ (LINKS.jsonl only)",
+      "exit": 0,
+      "evidence": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/w3/lanes/a22-councils.check.txt"
+    },
+    {
+      "command": "grep -F -c -e \"the prompt-a-council-until-unanimous trick dies when models are same-type (they align too easily; consensus gets cheap and fake)\" memory/corpus/LINKS.jsonl",
+      "exit": 0,
+      "evidence": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/w3/lanes/a22-councils.check.txt"
+    },
+    {
+      "command": "grep -F -c -e \"receipt(\\\"gate\\\", player, message, f\\\"<model not in free allowlist: {model}>\\\", 1)\" tools/roblox_npc_gateway.py",
+      "exit": 0,
+      "evidence": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/w3/lanes/a22-councils.check.txt"
+    },
+    {
+      "command": "grep -F -c -e \"-- Mooncast law (LINKS-335): same-model councils agree too cheaply. The three\" roblox/src/server/MudBasecamp.luau",
+      "exit": 0,
+      "evidence": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/w3/lanes/a22-councils.check.txt"
+    },
+    {
+      "command": "grep -F -c -e \"-- survey: the party witnesses the same scene; converge = core, diverge = swarm log\" roblox/src/server/MudBasecamp.luau",
+      "exit": 0,
+      "evidence": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/w3/lanes/a22-councils.check.txt"
+    },
+    {
+      "command": "grep -F -c -e \"our Roshomon survey ran 3 witnesses on ONE model (space bunny x3) = the degenerate case; FIXED same hour\" memory/corpus/LINKS.jsonl",
+      "exit": 0,
+      "evidence": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/w3/lanes/a22-councils.check.txt"
+    }
+  ],
+  "decision_changed": "Yes. Standing decision for this lane and any council-shaped fan-out I spec or run: witnesses get one seat per distinct model family (never N copies of one model), and every per-ask model parameter passes a free-model allowlist check that logs a gate receipt BEFORE any funded key context loads; the verified gateway order (gate line 113 before lanes line 116) is the template. Also: file a steal receipt for the Mooncast law into corpus/steal/, which currently has zero hits for it.",
+  "artifact": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/w3/lanes/a22-councils.json"
+}

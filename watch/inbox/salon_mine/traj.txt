@@ -1,0 +1,980 @@
+
+95
+Main session
+Tool call
+IN 248,089
+· OUT 593
+· 30.7s
+· 07:17:38 AM
+Output
+
+Reasoning
+30.7s
+·
+9/7/2026, 7:17:38 AM
+Collapse
+Key clue: `model_catalog.py:21: "and legacy custom_providers:"` and line 225: "Named user-defined endpoints (providers: / custom_providers:)" — so BOTH `providers:` and `custom_providers:` are supported keys. And `cli.py:2660: custom_providers=CLI_CONFIG.get("custom_providers")` — the CLI reads `custom_providers` from config. And model_catalog reads via get_compatible_custom_providers(cfg) — which likely handles both. But my `providers:` block gave "Unknown provider 'nous-sdd'" on `--provider` flag validation.
+
+Possibility: `custom_providers:` (legacy) is a LIST of dicts with a "name" field, and `providers:` is a dict — and the --provider flag validation path (cli.py:2660 uses CLI_CONFIG.get("custom_providers") only!) → the --provider CLI validation only consults `custom_providers`, not `providers`. So write the block as `custom_providers:` list form. Let me check the expected shape in cli.py around 2660 and how custom_providers entries are matched (name field?). Also check get_compatible_custom_providers to see how it normalizes providers: dict → list.
+
+Read cli.py 2640-2680 + config.py function (search with different grep since the def grep returned nothing — maybe defined as `def get_compatible_custom_providers(` with different spacing... my grep had exact string; the earlier grep -rn found references but not the def — maybe the def is in hermes_cli/config.py but grep -n "def get_compatible_custom_providers" -A 30 printed nothing due to... the file path `hermes_cli/config.py` — the earlier listing shows paths like `hermes_cli/\auth_commands.py` (backslash) — Windows path oddities in grep output. The def grep against hermes_cli/config.py should work... unless config.py isn't the file (maybe hermes_cli/config/__init__.py). Let me find it properly: grep -rn "def get_compatible_custom_providers" .
+
+
+Assistant
+30.7s
+·
+9/7/2026, 7:17:38 AM
+Collapse
+Both `providers:` and legacy `custom_providers:` exist — but `cli.py:2660` validates the `--provider` flag against `custom_providers` only. That's the mismatch. Reading the exact entry shape it expects.
+
+
+Tool call
+Input
+30.7s
+·
+9/7/2026, 7:17:38 AM
+Collapse
+Bash
+5330c99a9e23a17139ced114
+{
+  "command": "cd \"C:/Users/foste/AppData/Local/hermes/hermes-agent\" && grep -rn \"def get_compatible_custom_providers\" . --include=\"*.py\" 2>/dev/null | head -2; echo \"=== cli.py 2645-2672 ===\"; sed -n '2645,2672p' cli.py",
+  "description": "Find loader def and CLI custom_providers usage"
+}
+96
+Main session
+Tool call
+IN 249,099
+· OUT 234
+· 28.3s
+· 07:18:09 AM
+Input
+
+Tool result
+Output
+28.3s
+·
+9/7/2026, 7:18:09 AM
+Collapse
+Bash
+5330c99a9e23a17139ced114
+hermes_cli\config_providers.py:311:def get_compatible_custom_providers(
+hermes_cli\runtime_provider.py:46:def get_compatible_custom_providers(config=None):
+=== cli.py 2645-2672 ===
+            _model_config.get("default") or _model_config.get("model") or ""
+        )
+        # resume must not clobber an explicit -m with the session's stored model.
+        self._explicit_model_override = bool(model)
+        self.model = model or _config_model or ""
+        _cfg_provider = _model_config.get("provider") or os.getenv("HERMES_INFERENCE_PROVIDER")
+        _startup_provider_override = _startup_base_url_override = _startup_api_key_override = ""
+        if self.model:
+            from hermes_cli.model_switch import resolve_startup_model_route
+
+            _startup_route = resolve_startup_model_route(
+                self.model,
+                explicit_provider=provider or "",
+                current_provider=(provider or _nested_provider or _cfg_provider or ""),
+                user_providers=CLI_CONFIG.get("providers"),
+                custom_providers=CLI_CONFIG.get("custom_providers"),
+            )
+            if _startup_route is not None:
+                self.model = _startup_route.model
+                _startup_provider_override = _startup_route.provider
+                _startup_base_url_override = _startup_route.base_url
+                _startup_api_key_override = _startup_route.api_key
+        # ``moa:<preset>`` selects the MoA virtual provider before provider resolution so the
+        # real provider never sees the unknown model; the prefix wins over --provider.
+        # A ``moa:<preset>`` model string selects the MoA virtual provider in one shot (parity with
+        # interactive ``/moa`` and the model picker). See #56828.
+        _moa_provider_override, self.model = _normalize_moa_model(self.model)
+        _env_mt = os.environ.get("HERMES_MAX_TOKENS")
+Shell cwd was reset to C:\Users\foste\Documents\projects
+Output
+
+Reasoning
+28.3s
+·
+9/7/2026, 7:18:09 AM
+Collapse
+`resolve_startup_model_route(model, explicit_provider, current_provider, user_providers=CLI_CONFIG.get("providers"), custom_providers=CLI_CONFIG.get("custom_providers"))` — so BOTH `providers` (user_providers) and `custom_providers` are consulted at startup routing. My `providers:` block should be seen... but the error "Unknown provider 'nous-sdd'" came from somewhere validating the explicit --provider. Maybe the validation happens BEFORE this (an earlier check on the --provider arg against the canonical provider registry + custom lists). Let me look at where "Unknown provider" is raised and what list it checks.
+
+
+Tool call
+Input
+28.3s
+·
+9/7/2026, 7:18:09 AM
+Collapse
+Bash
+a873a7e81ce7575d28ae76ab
+{
+  "command": "cd \"C:/Users/foste/AppData/Local/hermes/hermes-agent\" && grep -rn \"Unknown provider\" --include=\"*.py\" . 2>/dev/null | grep -v tests | head -5; echo \"=== config_providers.py get_compatible_custom_providers ===\"; sed -n '311,360p' hermes_cli/config_providers.py",
+  "description": "Find unknown-provider check and custom provider normalizer"
+}
+97
+Main session
+Tool call
+IN 249,948
+· OUT 320
+· 32.2s
+· 07:18:39 AM
+Input
+
+User
+32.2s
+·
+9/7/2026, 7:18:39 AM
+Collapse
+<task-notification>
+<task-id>agent_453b3b1d-b2ac-4766-acae-74a0c4de7340</task-id>
+<tool-use-id>call_c65d6d455f524b37b396e194</tool-use-id>
+<output-file>C:\Users\foste\.zcode\cli\agents\sess_846ea85f-4730-4c93-93c6-8ded37ef9c71\agent_453b3b1d-b2ac-4766-acae-74a0c4de7340\output.txt</output-file>
+<status>completed</status>
+<summary>Agent general-purpose task &quot;Logprobs probe + corpus amendments&quot; completed.</summary>
+<result>Done. Both stations complete, all receipts on disk.
+
+## STATION A — verdict: DOOR OPEN (field upgrades PROXY → REAL)
+
+Astra&apos;s dispute is **SUPPORTED**; our &quot;native ollama has no logprobs&quot; premise is **DISPUTED and retracted**. Key evidence line — live probe against host ollama v0.32.7 (gemma:2b), native `/api/chat` with top-level `{&quot;logprobs&quot;:true,&quot;top_logprobs&quot;:3}`:
+
+```
+&quot;logprobs&quot;:[{&quot;token&quot;:&quot;Hello&quot;,&quot;logprob&quot;:-0.5212118029594421,&quot;bytes&quot;:[72,101,108,108,111],
+&quot;top_logprobs&quot;:[{&quot;token&quot;:&quot;Hello&quot;,&quot;logprob&quot;:-0.521...},{&quot;token&quot;:&quot;Hi&quot;,&quot;logprob&quot;:-1.177...},
+{&quot;token&quot;:&quot;Sure&quot;,&quot;logprob&quot;:-2.488...}]},...]
+```
+
+Verified on all three doors: `/v1/chat/completions` (OpenAI shape, k=3 honored), `/api/chat` (non-streaming **and** streaming — every chunk carries its own logprobs array), and `/api/generate` (`logprobs` is a **bool** + separate `top_logprobs`; a type-error receipt proved the field before the corrected request worked). Source pinned at v0.32.7: `openai/openai.go` L51-59/122-123, `api/types.go` L123-129 (k valid 0-20, default 0 = selected token only), L497-515. History: native `/api/generate` had logprobs *before* the OpenAI shim (issue #16117 body, closed 2026-05-12).
+
+Honest boundary kept: only a **top-k slice (k≤20)** per token is exposed — full vocab logits and attention stay closed, so lightmap stays symbolic. Two open upstream caveats logged: #18163 (requesting logprobs can change greedy token choice — observer effect) and the temperature-scaling fix #16321. **Falsifier pinned in the receipt**: scripted probe asserting `len(logprobs)==eval_count`, well-formed top_logprobs≤20, plus a perturbation guard (greedy tokens identical with/without the flag), re-run on every ollama version bump; failure = door closed again.
+
+Receipt: `C:\Users\foste\Documents\projects\local_sovereign_agent\watch\inbox\OLLAMA_LOGPROBS_PROBE_20260907.md`. Web search was 429-rate-limited; pivoted to raw.githubusercontent versioned source + GitHub API (worked first strike, no grinding).
+
+## STATION B — corpus amended (append-only, 5 files)
+
+Ledger measured myself before writing: `watch/TESUJI_MAP.jsonl` = **319 rows / 310 distinct cell strings** — exactly what Astra claimed; &quot;238&quot; traces to state/CURRENT.md&apos;s Sep-5 *chain-tip row count*, not a cell census. Amended files (all prefixed `AMENDMENT 2026-09-07 (Astra audit — see watch/OLLAMA_MAZE_SALON_20260907.md, Witness #2):`, nothing rewritten):
+
+1. `watch/inbox/ASTRA_PROMPT_OLLAMA_MAZE_20260907.md` — the v2 seed carries all four claims (incl. the no-logprobs premise at line 59); full 5-point correction appended.
+2. `watch/TESUJI_MAP_5_3FLASH_20260906.md` — tesuji count amendment with measured figures.
+3. `watch/SELF_STEAL_SHADOW_WORK_20260906.md` — 3.97× clarified to the repo&apos;s own split (4.02%/layer arithmetic vs 1.52%/layer log-linear compound, per SHADOW_PHYSICS_LAB_20260906.md).
+4. `watch/TESUJI_MAP.md` — 87.4% PCA re-attributed to behavioral TEXT features (four-feature dataset), not a logits field.
+5. `state/CURRENT.md` — short pointer row (door open + counts + binding).
+
+**Bonus — specimen binding RESOLVED, not just flagged:** I closed Astra&apos;s UNVERIFIED byte-identity question empirically. `C:\Users\foste\.lmstudio\bridge-inbox\Qwen2.5-3B-Instruct.gguf` sha256 `5ee4f07cdb9b...` == ollama blob `sha256-5ee4f07c...` (qwen2.5:3b-instruct), both 1,929,903,008 B — byte-identical, so the 434-tensor walk **does** bind to the live ollama weights. Recorded in amendments 1, 3, 4.
+
+No docker changes, no secrets echoed, $0. Station (c) from the fold — the maze_arena dirty-refill lead — remains for the arena owners; not touched here.</result>
+<usage><subagent_tokens>1513997</subagent_tokens><tool_uses>32</tool_uses><duration_ms>756337</duration_ms></usage>
+</task-notification>
+
+
+Tool result
+Output
+32.2s
+·
+9/7/2026, 7:18:39 AM
+Collapse
+Bash
+7051fde7ca774e488537ce1d
+- duration_s: 26.0
+
+---
+
+HERMES READY
+
+Tool result
+Output
+32.2s
+·
+9/7/2026, 7:18:39 AM
+Collapse
+Bash
+c840043734b14334b3670a51
+usage: hermes_steering.py [-h] {dispatch,steer,jobs} ...
+hermes_steering.py: error: unrecognized arguments: -m inclusionai/ling-3.0-flash-sante:free
+
+Tool result
+Output
+32.2s
+·
+9/7/2026, 7:18:39 AM
+Collapse
+Bash
+11cb1d259e614c438af4f0ca
+exit=1 dur=1.8s out=C:\Users\foste\Documents\projects\local_sovereign_agent\memory\runs\hermes_jobs\20260907T110620Z.md
+session_id=20260907_070518_b48c66  (steer --resume 20260907_070518_b48c66 "<nudge>")
+
+Tool result
+Output
+32.2s
+·
+9/7/2026, 7:18:39 AM
+Collapse
+Bash
+40bc1d18d7dc4b099bb20d6a
+- goal: Smoke test of the Nous lane wiring. Reply with exactly: NOUS HELM LIVE
+- persona: -
+- dir: C:\Users\foste\Documents\projects\local_sovereign_agent
+- model: inclusionai/ling-3.0-flash-sante:free
+- account: sdd
+- exit: 1
+- duration_s: 1.8
+
+---
+
+[1;31mUnknown provider 'nous-api'. Check 'hermes model' for available providers, or [0m
+[1;31mrun 'hermes doctor' to diagnose config issues.[0m
+
+Tool result
+Output
+32.2s
+·
+9/7/2026, 7:18:39 AM
+Collapse
+Bash
+dd26963fa70841ec886e4836
+Warning: Unknown provider 'custom'. Check 'hermes model' for available providers, or run 'hermes doctor' to diagnose config issues. Falling back to auto provider detection.
+
+  Current model:    glm-5.3-flash
+  Active provider:  OpenRouter
+
+
+  Select provider:
+  Select by number, Enter to confirm.
+
+  (○)  1. Nous Portal (Everything your agent needs, 300+ models with bundled tool use)
+  (○)  2. Fireworks AI (OpenAI-compatible direct model API)
+  (●)  3. OpenRouter (Pay-per-use API aggregator)  ← currently active
+  (○)  4. Mixture of Agents (named presets; aggregator acts after reference models)
+  (○)  5. NovitaAI (Cloud: Model API, Agent Sandbox, GPU Cloud)
+  (○)  6. LM Studio (Local desktop app with built-in model server)
+  (○)  7. Anthropic (Claude models via API key or Claude Code)
+  (○)  8. OpenAI ▸ (ChatGPT/Codex subscription or direct OpenAI API)
+  (○)  9. Qwen ▸ (Qwen Cloud / DashScope, Coding Plan, Token Plan & Qwen CLI OAuth)
+  (○) 10. xAI Grok ▸ (Direct API or SuperGrok / Premium+ OAuth)
+  (○) 11. Xiaomi MiMo (MiMo-V2.5 and V2 models: pro, omni, flash)
+  (○) 12. Tencent Hy ▸ (Hy4 / Hy3 via TokenHub & TokenPlan)
+  (○) 13. NVIDIA NIM (Nemotron models via build.nvidia.com or local NIM)
+  (○) 14. GitHub Copilot ▸ (GitHub token API or copilot --acp process)
+  (○) 15. Hugging Face Inference Providers
+  (○) 16. Google AI Studio (Native Gemini API)
+
+Tool result
+Output
+32.2s
+·
+9/7/2026, 7:18:39 AM
+Collapse
+Bash
+cd4cd73a4a46475a9677f86d
+backup: config.yaml.bak-nouswire-20260907
+config rewired
+model:
+  default: inclusionai/ling-3.0-flash-sante:free  # cost-safe default; pass --model for big brains (gpt-6-astra, claude-fable-5.1, z-ai/glm-5.2:US ...)
+  provider: nous
+# api_key moved to env (NOUS_API_KEY) — never stored in config
+  context_length: 65536
+agent:
+  max_turns: 150
+  verbose: false
+  reasoning_effort: low
+  personalities:
+    helpful: You are a helpful, friendly AI assistant.
+    concise: You are a concise assistant. Keep responses brief and to the point.
+Shell cwd was reset to C:\Users\foste\Documents\projects
+
+System
+32.2s
+·
+9/7/2026, 7:18:39 AM
+Collapse
+The TodoWrite tool hasn't been used recently. If you're working on tasks that would benefit from tracking progress, consider using the TodoWrite tool to track progress. Also consider cleaning up the todo list if has become stale and no longer matches what you are working on. Only use it if it's relevant to the current work. This is just a gentle reminder - ignore if not applicable.
+
+Here are the existing contents of your todo list:
+
+[1. [completed] Hermes discovery: helm organ + v0.21 body + 2 keys in .env + z.ai default lane — DONE
+2. [in_progress] Find Nous API base from hermes-agent install + probe with UA (map $220 vs $10 keys)
+3. [pending] Wire Nous lane: routing policy file + hermes pool/config + .env mapping comments
+4. [pending] First-use receipt (LAW-14 handshake): one metered live call through the setup
+5. [pending] Setup card watch/HERMES_SETUP_20260907.md + CONVO row]
+
+
+Tool result
+Output
+32.2s
+·
+9/7/2026, 7:18:39 AM
+Collapse
+Edit
+c73626a82cb245ec8228f535
+The file C:\Users\foste\Documents\projects\local_sovereign_agent\mag\hermes_steering.py has been updated successfully. (file state is current in your context — no need to Read it back)
+
+Tool result
+Output
+32.2s
+·
+9/7/2026, 7:18:39 AM
+Collapse
+Edit
+72470240460b4df0b7cf5768
+The file C:\Users\foste\Documents\projects\local_sovereign_agent\mag\hermes_steering.py has been updated successfully. (file state is current in your context — no need to Read it back)
+
+Tool result
+Output
+32.2s
+·
+9/7/2026, 7:18:39 AM
+Collapse
+Bash
+bffd396cb5c3477585dc2d57
+exit=1 dur=2.1s out=C:\Users\foste\Documents\projects\local_sovereign_agent\memory\runs\hermes_jobs\20260907T110912Z.md
+session_id=20260907_070518_b48c66  (steer --resume 20260907_070518_b48c66 "<nudge>")
+
+Tool result
+Output
+32.2s
+·
+9/7/2026, 7:18:39 AM
+Collapse
+Bash
+d7609a63c80a468294ca313a
+- model: inclusionai/ling-3.0-flash-sante:free
+- account: sdd
+- exit: 1
+- duration_s: 2.1
+
+---
+
+[1;31mHermes is not logged into Nous Portal. Run `hermes model` to re-authenticate.[0m
+
+Tool result
+Output
+32.2s
+·
+9/7/2026, 7:18:39 AM
+Collapse
+Bash
+fe55a38bcb9e4f9194823164
+usage: hermes auth [-h] {add,list,remove,reset,status,logout,spotify} ...
+
+positional arguments:
+  {add,list,remove,reset,status,logout,spotify}
+    add                 Add a pooled credential
+    list                List pooled credentials
+    remove              Remove a pooled credential by index, id, or label
+    reset               Clear exhaustion status for all credentials for a
+                        provider
+    status              Show auth status for a provider
+    logout              Log out a provider and clear stored auth state
+    spotify             Authenticate Hermes with Spotify via PKCE
+
+options:
+  -h, --help            show this help message and exit
+===
+usage: hermes auth add [-h] [--type {oauth,api-key,api_key}] [--label LABEL]
+                       [--api-key API_KEY] [--portal-url PORTAL_URL]
+                       [--inference-url INFERENCE_URL] [--client-id CLIENT_ID]
+                       [--scope SCOPE] [--no-browser] [--timeout TIMEOUT]
+                       [--insecure] [--ca-bundle CA_BUNDLE]
+                       provider
+
+positional arguments:
+  provider              Provider id (for example: anthropic, openai-codex,
+                        openrouter)
+
+options:
+  -h, --help            show this help message and exit
+  --type {oauth,api-key,api_key}
+                        Credential type to add
+  --label LABEL         Optional display label
+  --api-key API_KEY     API key value (otherwise prompted securely)
+  --portal-url PORTAL_URL
+                        Nous portal base URL
+  --inference-url INFERENCE_URL
+
+Tool result
+Output
+32.2s
+·
+9/7/2026, 7:18:39 AM
+Collapse
+Bash
+39055a24fe4d469b97471813
+injection keys: ['NOUS_API_KEY'] | NOUS_API_KEY len: 40
+
+Tool result
+Output
+32.2s
+·
+9/7/2026, 7:18:39 AM
+Collapse
+Bash
+498e6a8c06a7403d8b59ecb9
+Added nous credential #1: "SDD-220-work-budget"
+nous: logged out
+
+Tool result
+Output
+32.2s
+·
+9/7/2026, 7:18:39 AM
+Collapse
+Bash
+8868dac81f1146de83438a0f
+exit=1 dur=1.8s out=C:\Users\foste\Documents\projects\local_sovereign_agent\memory\runs\hermes_jobs\20260907T111023Z.md
+session_id=20260907_070518_b48c66  (steer --resume 20260907_070518_b48c66 "<nudge>")
+
+Tool result
+Output
+32.2s
+·
+9/7/2026, 7:18:39 AM
+Collapse
+Bash
+9f3b46d6f7344a6f95053c4e
+- exit: 1
+- duration_s: 1.8
+
+---
+
+[1;31mHermes is not logged into Nous Portal. Run `hermes model` to re-authenticate.[0m
+
+Tool result
+Output
+32.2s
+·
+9/7/2026, 7:18:39 AM
+Collapse
+Bash
+88337e0c27594ed79f5251ac
+Command running in background with ID: exec_69103c82-4ccd-4076-9823-096869c21152. Output is being written to: C:\Users\foste\.zcode\cli\exec\sess_846ea85f-4730-4c93-93c6-8ded37ef9c71\call_88337e0c27594ed79f5251ac-stdout.log. You will be notified when it completes. To check interim output, use Read on that file path.
+
+Tool result
+Output
+32.2s
+·
+9/7/2026, 7:18:39 AM
+Collapse
+Bash
+7df6abd5c0974f42b075d01d
+(Bash completed with no output)
+
+Tool result
+Output
+32.2s
+·
+9/7/2026, 7:18:39 AM
+Collapse
+Bash
+deec6fc0148f4b43a02bb7a6
+-rw-r--r-- 1 foste 197609 0 Sep  7 07:10 C:/Users/foste/.zcode/cli/exec/sess_846ea85f-4730-4c93-93c6-8ded37ef9c71/call_88337e0c27594ed79f5251ac-stdout.log
+
+System
+32.2s
+·
+9/7/2026, 7:18:39 AM
+Collapse
+The TodoWrite tool hasn't been used recently. If you're working on tasks that would benefit from tracking progress, consider using the TodoWrite tool to track progress. Also consider cleaning up the todo list if has become stale and no longer matches what you are working on. Only use it if it's relevant to the current work. This is just a gentle reminder - ignore if not applicable.
+
+Here are the existing contents of your todo list:
+
+[1. [completed] Hermes discovery: helm organ + v0.21 body + 2 keys in .env + z.ai default lane — DONE
+2. [in_progress] Find Nous API base from hermes-agent install + probe with UA (map $220 vs $10 keys)
+3. [pending] Wire Nous lane: routing policy file + hermes pool/config + .env mapping comments
+4. [pending] First-use receipt (LAW-14 handshake): one metered live call through the setup
+5. [pending] Setup card watch/HERMES_SETUP_20260907.md + CONVO row]
+
+
+Tool result
+Output
+32.2s
+·
+9/7/2026, 7:18:39 AM
+Collapse
+TaskStop
+a646afb670ae4deb9945ebc8
+{
+  "message": "Successfully stopped task: exec_69103c82-4ccd-4076-9823-096869c21152 (\"C:/Users/foste/AppData/Local/hermes/bin/hermes.exe\" auth add nous --type oauth --no-browser --timeout 300 2>&1 | head -12)",
+  "task_id": "exec_69103c82-4ccd-4076-9823-096869c21152",
+  "task_type": "local_bash",
+  "command": "\"C:/Users/foste/AppData/Local/hermes/bin/hermes.exe\" auth add nous --type oauth --no-browser --timeout 300 2>&1 | head -12"
+}
+
+Tool result
+Output
+32.2s
+·
+9/7/2026, 7:18:39 AM
+Collapse
+Bash
+19ceb3adf93d4775b79cf69a
+pool providers: ['xai', 'openai-api', 'nous']
+nous entry: SDD-220-work-budget | type: api_key | status: None
+active_provider: None
+Shell cwd was reset to C:\Users\foste\Documents\projects
+
+User
+32.2s
+·
+9/7/2026, 7:18:39 AM
+Collapse
+<task-notification>
+<task-id>exec_69103c82-4ccd-4076-9823-096869c21152</task-id>
+<tool-use-id>call_88337e0c27594ed79f5251ac</tool-use-id>
+<output-file>C:\Users\foste\.zcode\cli\exec\sess_846ea85f-4730-4c93-93c6-8ded37ef9c71\call_88337e0c27594ed79f5251ac-stdout.log</output-file>
+<status>killed</status>
+<summary>Background command "Start Nous OAuth device-code flow, print URL" was stopped</summary>
+</task-notification>
+
+
+Tool result
+Output
+32.2s
+·
+9/7/2026, 7:18:39 AM
+Collapse
+Bash
+d3188d0e058039c3c7dcee08
+#   Leave unset to use the model's native output ceiling (recommended).
+  #   Set only if you want to deliberately limit individual response length.
+  #
+# max_tokens: 8192
+
+  # ── Custom request headers (optional) ─────────────────────────────────────
+  #
+  # default_headers: extra HTTP headers sent on every request to an
+  #   OpenAI-compatible endpoint. User values take precedence over the
+  #   provider/SDK defaults, so this is the supported way to override the
+  #   OpenAI Python SDK's identifying headers (User-Agent: OpenAI/Python ...,
+  #   X-Stainless-*) when a custom provider sits behind a gateway/WAF that
+  #   rejects them — e.g. an upstream that returns "502 Upstream access
+  #   forbidden" for the SDK default User-Agent but accepts a plain one.
+  #   Applies on the OpenAI wire only (not native Anthropic / Bedrock).
+  #
+  # default_headers:
+  #   User-Agent: "curl/8.7.1"
+  #
+  # extra_headers: accepted as an alias of default_headers (merged, with
+  #   extra_headers winning when both are set) — matches the per-provider
+  #   extra_headers key below.
+  #
+  # Per-provider variant: named providers / custom_providers entries accept an
+  # extra_headers dict scoped to that endpoint only — for reverse proxies,
+  # gateways, or custom auth (e.g. Cloudflare Access service tokens).
+  # Merged onto SDK/provider defaults with the entry's values winning.
+  # Header values are treated as secrets and are never logged.
+  #
+  # providers:
+  #   my-proxy:
+  #     base_url: "https://llm.internal.example.com/v1"
+  #     key_env: "MY_PROXY_API_KEY"
+  #     extra_headers:
+  #       CF-Access-Client-Id: "xxxx.access"
+  #       CF-Access-Client-Secret: "${CF_ACCESS_SECRET}"
+  #       X-Client-Name: "hermes-agent"
+# providers:
+#   meta:
+#     base_url: https://api.meta.ai/v1
+#     api_key: ${MODEL_API_KEY}
+#     # api_mode auto-detected as codex_responses for api.meta.ai; no need to set
+#     # (the bundled meta-ai provider covers this — a named custom provider is
+#     # only needed for a non-default Meta-compatible endpoint)
+# providers:
+#   router:
+#     base_url: https://api.router.com/v1
+#     api_key: ${RAMP_ROUTER_API_KEY}
+#     # api_mode auto-detected as codex_responses for api.router.com — the
+#     # Responses API is Router's native wire (chat/completions is only a
+#     # compatibility shim). The bundled router provider covers this; a named
+#     # custom provider is only needed for a non-default Router-compatible
+#     # endpoint.
+
+
+# Command-minted credentials (optional): key_cmd
+# ------------------------------------------------------------------
+# Enterprise gateways often issue SHORT-LIVED bearers (SSO/OIDC brokers, cloud
+# IAM, internal auth proxies) rather than static API keys, so a value copied
+# into .env via `key_env` is stale within the hour and every later request 401s.
+# `key_cmd` names a command that PRINTS a token instead: Hermes runs it per
+# request (cached until shortly before expiry), so long sessions keep working
+# with no restart.
+#
+# Contract: print ONLY the token on stdout, either bare or as JSON with an
+# "access_token" field ("expires_in" is honoured). Same shape as OAuth 2.0
+# token endpoints, Claude Code's `apiKeyHelper`, `gcloud auth
+# print-access-token`, and `aws ecr get-login-password`.
+#
+# Precedence: an explicit --api-key still wins; otherwise key_cmd is preferred
+# over inline api_key / key_env on that entry.
+#
+# Applies to the main agent turn and to auxiliary tasks (title generation,
+# context compression, vision, embedding) alike.
+#
+# Not to be confused with `secrets.command`, which is a different mechanism:
+# that one runs a helper ONCE at startup to populate env vars for many secrets
+# at the process level. Use it for a vault or keychain helper that hands back a
+# KEY=VALUE blob. Use `key_cmd` when ONE provider needs a credential refreshed
+# DURING a session, because a startup-time env var cannot be re-minted after it
+# expires.
+#
+# providers:
+
+Tool result
+Output
+32.2s
+·
+9/7/2026, 7:18:39 AM
+Collapse
+Edit
+a2afdd91f5ab08614521c72c
+The file C:\Users\foste\Documents\projects\local_sovereign_agent\mag\hermes_steering.py has been updated successfully. (file state is current in your context — no need to Read it back)
+
+Tool result
+Output
+32.2s
+·
+9/7/2026, 7:18:39 AM
+Collapse
+Edit
+881beb2cee7f39fe9c917c5c
+The file C:\Users\foste\Documents\projects\local_sovereign_agent\mag\hermes_steering.py has been updated successfully. (file state is current in your context — no need to Read it back)
+
+Tool result
+Output
+32.2s
+·
+9/7/2026, 7:18:39 AM
+Collapse
+Bash
+b2521f956eb4006ac861f04d
+config: provider + providers block written
+config.yaml VALID YAML
+=== hermes .env exists? ===
+-rw-r--r-- 1 foste 197609 24413 Sep  2 16:59 C:/Users/foste/AppData/Local/hermes/.env
+Shell cwd was reset to C:\Users\foste\Documents\projects
+
+Tool result
+Output
+32.2s
+·
+9/7/2026, 7:18:39 AM
+Collapse
+Bash
+90de6d5066b50cb30f4ca468
+hermes .env: added ['NOUS_SDD_API_KEY', 'NOUS_NACHO_API_KEY']
+
+Tool result
+Output
+32.2s
+·
+9/7/2026, 7:18:39 AM
+Collapse
+Bash
+3588f3b9a19e9fcfc7becb85
+exit=1 dur=1.7s out=C:\Users\foste\Documents\projects\local_sovereign_agent\memory\runs\hermes_jobs\20260907T111506Z.md
+session_id=20260907_070518_b48c66  (steer --resume 20260907_070518_b48c66 "<nudge>")
+
+Tool result
+Output
+32.2s
+·
+9/7/2026, 7:18:39 AM
+Collapse
+Bash
+6ac078d1274d872552fe478d
+- duration_s: 1.7
+
+---
+
+[1;31mUnknown provider 'nous-sdd'. Check 'hermes model' for available providers, or [0m
+[1;31mrun 'hermes doctor' to diagnose config issues.[0m
+
+Tool result
+Output
+32.2s
+·
+9/7/2026, 7:18:39 AM
+Collapse
+Bash
+5e1cdb39c7b44fabc3513e9e
+hermes_cli/\auth_commands.py:33:        from hermes_cli.config import get_compatible_custom_providers, load_config
+hermes_cli/\auth_commands.py:38:    for entry in get_compatible_custom_providers(config):
+hermes_cli/\auth_oauth_grants.py:55:    static key is safe to duplicate. Returns ``{"pool": [...provider ids], "providers": [...],
+hermes_cli/\auth_oauth_grants.py:60:    stripped: Dict[str, Any] = {"pool": [], "providers": [], "files": []}
+hermes_cli/\auth_oauth_grants.py:109:    providers = store.get("providers")
+hermes_cli/\auth_oauth_grants.py:117:                stripped["providers"].append(provider_id)
+hermes_cli/\auth_oauth_grants.py:281:    p_providers, r_providers = profile_store.get("providers"), root_store.get("providers")
+hermes_cli/\auth_oauth_grants.py:504:            _load_auth_store(profile_path) if profile_path.exists() else {"providers": {}})
+hermes_cli/\auth_oauth_grants.py:506:            root_store = _load_auth_store(root_path) if root_path.exists() else {"providers": {}}
+hermes_cli/\auth.py:618:    return {"version": AUTH_STORE_VERSION, "providers": {}}
+hermes_cli/\auth.py:655:        isinstance(raw.get("providers"), dict) or isinstance(raw.get("credential_pool"), dict)):
+hermes_cli/\auth.py:656:        raw.setdefault("providers", {})
+Shell cwd was reset to C:\Users\foste\Documents\projects
+
+Tool result
+Output
+32.2s
+·
+9/7/2026, 7:18:39 AM
+Collapse
+Bash
+60d858be186230743ead0326
+Shell cwd was reset to C:\Users\foste\Documents\projects
+
+Tool result
+Output
+32.2s
+·
+9/7/2026, 7:18:39 AM
+Collapse
+Bash
+e577c43bddd1c506d7d39eee
+cli.py:2660:                custom_providers=CLI_CONFIG.get("custom_providers"),
+acp_adapter\model_catalog.py:21:    and legacy ``custom_providers:``), which canonical provider enumeration never lists.
+acp_adapter\model_catalog.py:28:        from hermes_cli.config import (get_compatible_custom_providers, is_provider_enabled, load_config)
+acp_adapter\model_catalog.py:39:        entries = get_compatible_custom_providers(cfg)
+acp_adapter\model_catalog.py:44:    # ``get_compatible_custom_providers`` drops ``enabled``; read disabled keys from raw config.
+acp_adapter\model_catalog.py:225:        """Named user-defined endpoints (providers: / custom_providers:) are invisible
+acp_adapter\model_catalog.py:251:        probe_custom_providers=False, probe_current_custom_provider=False, max_models=ACP_MAX_MODELS_PER_PROVIDER,
+agent\agent_runtime_helpers.py:1437:    custom_providers = getattr(agent, "_custom_providers", None)
+agent\agent_runtime_helpers.py:1438:    if custom_providers:
+agent\agent_runtime_helpers.py:1448:            for entry in custom_providers if isinstance(entry, dict)
+Shell cwd was reset to C:\Users\foste\Documents\projects
+
+System
+32.2s
+·
+9/7/2026, 7:18:39 AM
+Collapse
+The TodoWrite tool hasn't been used recently. If you're working on tasks that would benefit from tracking progress, consider using the TodoWrite tool to track progress. Also consider cleaning up the todo list if has become stale and no longer matches what you are working on. Only use it if it's relevant to the current work. This is just a gentle reminder - ignore if not applicable.
+
+Here are the existing contents of your todo list:
+
+[1. [completed] Hermes discovery: helm organ + v0.21 body + 2 keys in .env + z.ai default lane — DONE
+2. [in_progress] Find Nous API base from hermes-agent install + probe with UA (map $220 vs $10 keys)
+3. [pending] Wire Nous lane: routing policy file + hermes pool/config + .env mapping comments
+4. [pending] First-use receipt (LAW-14 handshake): one metered live call through the setup
+5. [pending] Setup card watch/HERMES_SETUP_20260907.md + CONVO row]
+
+
+Tool result
+Output
+32.2s
+·
+9/7/2026, 7:18:39 AM
+Collapse
+Bash
+5330c99a9e23a17139ced114
+hermes_cli\config_providers.py:311:def get_compatible_custom_providers(
+hermes_cli\runtime_provider.py:46:def get_compatible_custom_providers(config=None):
+=== cli.py 2645-2672 ===
+            _model_config.get("default") or _model_config.get("model") or ""
+        )
+        # resume must not clobber an explicit -m with the session's stored model.
+        self._explicit_model_override = bool(model)
+        self.model = model or _config_model or ""
+        _cfg_provider = _model_config.get("provider") or os.getenv("HERMES_INFERENCE_PROVIDER")
+        _startup_provider_override = _startup_base_url_override = _startup_api_key_override = ""
+        if self.model:
+            from hermes_cli.model_switch import resolve_startup_model_route
+
+            _startup_route = resolve_startup_model_route(
+                self.model,
+                explicit_provider=provider or "",
+                current_provider=(provider or _nested_provider or _cfg_provider or ""),
+                user_providers=CLI_CONFIG.get("providers"),
+                custom_providers=CLI_CONFIG.get("custom_providers"),
+            )
+            if _startup_route is not None:
+                self.model = _startup_route.model
+                _startup_provider_override = _startup_route.provider
+                _startup_base_url_override = _startup_route.base_url
+                _startup_api_key_override = _startup_route.api_key
+        # ``moa:<preset>`` selects the MoA virtual provider before provider resolution so the
+        # real provider never sees the unknown model; the prefix wins over --provider.
+        # A ``moa:<preset>`` model string selects the MoA virtual provider in one shot (parity with
+        # interactive ``/moa`` and the model picker). See #56828.
+        _moa_provider_override, self.model = _normalize_moa_model(self.model)
+        _env_mt = os.environ.get("HERMES_MAX_TOKENS")
+Shell cwd was reset to C:\Users\foste\Documents\projects
+
+Tool result
+Output
+32.2s
+·
+9/7/2026, 7:18:39 AM
+Collapse
+Bash
+a873a7e81ce7575d28ae76ab
+agent\billing_links.py:43:# base_url reveals the real upstream. Unknown providers get a readable label, no URL.
+hermes_cli\auth.py:267:    out-of-tree provider pass ``resolve_provider()``'s known-provider gate ("Unknown provider")."""
+hermes_cli\auth.py:1421:        raise AuthError(f"Unknown provider '{normalized}'." + tail, code="invalid_provider")
+hermes_cli\auth.py:2176:        print(f"Unknown provider: {provider_id}")
+hermes_cli\auth_commands.py:336:        raise SystemExit(f"Unknown provider: {provider}")
+=== config_providers.py get_compatible_custom_providers ===
+def get_compatible_custom_providers(
+    config: Optional[Dict[str, Any]] = None) -> List[Dict[str, Any]]:
+    """Deduplicated list view over legacy ``custom_providers`` and v12+ ``providers``.
+
+    Never materialised back into config.yaml (it would duplicate entries in UIs).
+    """
+    from hermes_cli.config import load_config
+    if config is None:
+        config = load_config()
+
+    custom_providers = config.get("custom_providers")
+    if custom_providers is not None and not isinstance(custom_providers, list):
+        return []
+    candidates = [_normalize_custom_provider_entry(e) for e in (custom_providers or [])]
+    candidates += providers_dict_to_custom_providers(config.get("providers"))
+
+    def _norm(entry: Dict[str, Any], field: str) -> str:
+        return str(entry.get(field, "") or "").strip().lower()
+
+    compatible: List[Dict[str, Any]] = []
+    seen_provider_keys: set = set()
+    seen_name_url_pairs: set = set()
+    for entry in candidates:
+        if entry is None:
+            continue
+        provider_key = _norm(entry, "provider_key")
+        name = _norm(entry, "name")
+        base_url = str(entry.get("base_url", "") or "").strip().rstrip("/").lower()
+        pair = (name, base_url, _norm(entry, "model"))
+        if provider_key and provider_key in seen_provider_keys:
+            continue
+        if name and base_url and pair in seen_name_url_pairs:
+            continue
+        compatible.append(entry)
+        if provider_key:
+            seen_provider_keys.add(provider_key)
+        if name and base_url:
+            seen_name_url_pairs.add(pair)
+    return compatible
+
+
+def _entries_for_route(
+    base_url: str,
+    custom_providers: Optional[List[Dict[str, Any]]],
+    config: Optional[Dict[str, Any]]):
+    """Yield entries whose normalized route identity equals *base_url*.
+
+    None *custom_providers* → ``get_compatible_custom_providers(config)`` (failure → none).
+    """
+    from hermes_cli.config import get_compatible_custom_providers
+Shell cwd was reset to C:\Users\foste\Documents\projects
+Output
+
+Reasoning
+32.2s
+·
+9/7/2026, 7:18:39 AM
+Collapse
+So `providers:` dict IS supported ("v12+ providers") — `providers_dict_to_custom_providers(config.get("providers"))`. The "Unknown provider" error comes from `hermes_cli/auth.py:1421 resolve_provider()` known-provider gate. Line 267 comment: "out-of-tree provider pass resolve_provider()'s known-provider gate ("Unknown provider")". So resolve_provider has a gate; custom providers need to pass it somehow. Let me read auth.py around 1380-1425 to see how custom/user providers get recognized (maybe it checks `providers` dict with a specific field like `api_key`/`key_env` AND requires the entry be "compatible" — or the --provider flag must match `provider_key`?).
+
+Actually — maybe the issue: `--provider nous-sdd` on `chat` — the CLI resolves the provider BEFORE loading config providers, or the entry needs `name:` field. In providers dict form, the key IS the name. Hmm. Let me read resolve_provider around 1400-1421.
+
+
+Assistant
+32.2s
+·
+9/7/2026, 7:18:39 AM
+Collapse
+`providers:` is the v12+ form and IS supported by the normalizer. The wall is `resolve_provider()`'s known-provider gate at `auth.py:1421`. Reading how a named custom provider passes it.
+
+
+Tool call
+Input
+32.2s
+·
+9/7/2026, 7:18:39 AM
+Collapse
+Bash
+9616f32634f42c5d8c11c163
+{
+  "command": "cd \"C:/Users/foste/AppData/Local/hermes/hermes-agent\" && sed -n '1385,1425p' hermes_cli/auth.py",
+  "description": "Read resolve_provider known-provider gate"
+}
+98
+Main session
+Tool call
+IN 250,770
+· OUT 1,479
+· 162.6s
+· 07:19:12 AM
+Output
+
+Reasoning
+162.6s
+·
+9/7/2026, 7:19:12 AM
+Collapse
+The gate: `if normalized in ("openrouter", "custom") or normalized in PROVIDER_REGISTRY: return normalized` — wait, "custom" IS accepted here! But earlier `hermes model` said "Unknown provider 'custom'"... that was from a different path (model menu). Hmm, but resolve_provider accepts "custom" — so `--provider custom` with base_url/api_key from config's model block should work for chat! The original config (provider: custom + base_url + api_key) → chat should've resolved "custom". The `hermes model` warning is a menu-side message, not the chat path.
+
+For named custom providers (nous-sdd): the gate rejects them here unless they're in PROVIDER_REGISTRY or plugin aliases. So how do named providers get used? Via `resolve_startup_model_route` (cli.py 2655) — which consults user_providers/custom_providers by MODEL routing (model string → provider), and via explicit_provider... the route resolution returns provider/base_url/api_key overrides — meaning named providers are selected by matching the MODEL against provider entries (each entry can have a `model` or `models` list) or by name via a model prefix like `nous-sdd:model`? Looking at `pair = (name, base_url, model)` in the normalizer — entries have a `model` field. And model_switch.resolve_startup_model_route with explicit_provider=provider — if explicit provider matches a custom entry name, it should route... but resolve_provider gate runs first on the raw --provider arg? The order: in cli.py, `provider` (the --provider arg) is passed to resolve_startup_model_route as explicit_provider; if the route resolves, it sets _startup_provider_override = route.provider (probably "custom" with base_url/api_key overrides). Then later resolve_provider(_startup_provider_override...) would get "custom" → passes gate. So the named-provider path SHOULD work IF resolve_startup_model_route recognizes explicit_provider "nous-sdd" among user_providers.
+
+But we got "Unknown provider 'nous-sdd'" — meaning either (a) resolve_startup_model_route didn't match (maybe requires the model to be listed in the entry, or the entry needs `api_key` not `key_env`... or `key_env` unsupported in this version), or (b) the gate ran on the raw arg before routing (e.g., in `chat` subcommand arg validation).
+
+Fastest empirical path — TWO options that avoid the named-provider machinery entirely:
+
+**Option A: use `--provider custom` (accepted by the gate!) with model.base_url + api_key.** The old config did exactly this for z.ai. For Nous: config model block: provider: custom, base_url: inference-api.nousresearch.com/v1, api_key: ${NOUS_SDD_API_KEY}? Does config support ${ENV} expansion? The example showed `api_key: ${MODEL_API_KEY}` in providers entries — likely global expansion. Or `key_env`. For the model block, the example line 82: `# api_key: "your-key-here"  # Uncomment to set here instead of .env` — implies without api_key in config, it reads from .env (which var? for custom provider → probably OPENAI_API_KEY or CUSTOM_API_KEY... unclear).
+
+But wait — with provider custom, how does the UA header get set (Cloudflare 1010)? `default_headers:` top-level config option (line 133-136: default_headers: User-Agent: "curl/8.7.1") — applies on the OpenAI wire globally. 
+
+And the per-account switching (sdd vs nacho) with provider custom: the helm can pass `--api-key` and `--base-url` on the CLI? resolve_provider docstring: "1. CLI api_key/base_url -> openrouter" — hmm, CLI creds route to "openrouter" provider name but with the custom base_url — "one-off CLI creds always mean openrouter/custom". The chat command has --api-key/--base-url flags? Let me check `hermes chat --help` for flags: --provider, --api-key, --base-url, -m. If yes: helm does `--provider custom --base-url <nous> --api-key <key>` per dispatch. But --api-key on the command line exposes the key in process args (visible in `ps`) — acceptable on a single-user box? The house law: never ECHO keys (logs/outputs). Process args are visible to other local processes... the earlier `hermes auth add --api-key "$KEY"` did the same. Meh — prefer env. With provider custom, which env var does it read for the api key? Look at how "custom" provider resolves credentials: probably `CUSTOM_API_KEY` or model.api_key from config. Let me grep quickly: in auth.py, the "custom" provider handling — grep '"custom"' in auth.py for env var name.
+
+**Option B: debug why named provider failed** — read model_switch.resolve_startup_model_route. More reading.
+
+Time check — I've been at this a while; the operator wants Hermes set up. Two-strike on named providers (providers: block failed once; that's strike one for this lever). Let me do ONE targeted read: how "custom" gets its api_key + base_url + whether ${ENV} expands in config (grep for "expandvars\|\${" in config loader). If custom reads model.api_key with ${VAR} expansion → config: provider custom, base_url nous, api_key: ${NOUS_SDD_API_KEY}, default_headers UA. Helm per-account: set NOUS_SDD_API_KEY env to the chosen account's key (same var name, different value per dispatch!) — elegant: the helm injects NOUS_SDD_API_KEY = key-of-chosen-account. Rename var to NOUS_ACTIVE_API_KEY conceptually... keep NOUS_SDD_API_KEY for default (hermes .env has it), helm overrides value for nacho. Slightly hacky but honest: document it.
+
+Let me grep: expandvars / "${" in hermes_cli/config.py + how custom provider api key resolves.
+
+
+Assistant
+162.6s
+·
+9/7/2026, 7:19:12 AM
+Collapse
+The gate itself says it: `"custom"` **is** accepted by `resolve_provider` — the `hermes model` menu's "Unknown provider 'custom'" was a menu-side warning, not the chat path. So the simplest lawful wiring is the one the old config already used: `provider: custom` + `base_url` + env-sourced key + a global User-Agent override. Checking whether config expands `${ENV}` and what `custom` reads for its key.
+
+
+Tool call
+Input
+162.6s
+·
+9/7/2026, 7:19:12 AM
+Collapse
+Bash
+bb2adc1dfa0241d39fbf3c3b
+{
+  "command": "cd \"C:/Users/foste/AppData/Local/hermes/hermes-agent\" && grep -n \"expandvars\\|\\\\\\${\\|_expand_env\\|os.path.expandvars\" hermes_cli/config.py | head -6; echo \"=== custom provider key resolution ===\"; grep -n \"\\\"custom\\\"\" hermes_cli/auth.py | head -12",
+  "description": "Check env expansion and custom provider credential path"
+}
+99
+Main session
+Tool call
+IN 252,276
+· OUT 99
+· 20.1s
+· 07:21:55 AM
+Output
+
+Reasoning
+20.1s
+·
+9/7/2026, 7:21:55 AM
+Collapse
+Quoting issue. Simplify.
+
+
+Tool call
+Input
+20.1s
+·
+9/7/2026, 7:21:55 AM
+Collapse
+Bash
+6c4be50b8cf01474b15bf86f
+{
+  "command": "cd \"C:/Users/foste/AppData/Local/hermes/hermes-agent\" && grep -n 'expandvars\\|_expand_env' hermes_cli/config.py | head -5; echo \"=== custom in auth.py ===\"; grep -n \"'custom'\\|\\\"custom\\\"\" hermes_cli/auth.py | head -12",
+  "description": "Check env expansion and custom provider handling"
+}
+Too many records, showing the most recent calls

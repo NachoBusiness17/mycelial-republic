@@ -1,0 +1,18 @@
+{
+  "lane": "commit-queue",
+  "division": "B",
+  "status": "in_progress",
+  "started": "2026-10-03",
+  "updated": "2026-10-03 recon",
+  "owed": "Build scripts/safe_commit.sh: serialized commit helper (wait up to 60s on index.lock, stale-lock removal at age > 5 min AND no git process alive, git add + git commit with message as arg, cleanup on failure); test against a concurrent commit scenario; used by the next 3 git commits; receipt watch/inbox/buildall/commit-queue.md",
+  "given_material": "Two stale index.lock removals today (11h and 38min old, no owner process) caused by lane commit races; the commit-queue law was named but never built (stated in the ask).",
+  "recon": {
+    "bash": "GNU bash 5.3.15 cygwin (git-bash) available; scripts/safe_commit.sh did not exist (checked: ls scripts/safe_commit.sh -> HELPER_MISSING)",
+    "repo": "HEAD e0344fe39, core.autocrlf=false (LF on disk stays LF), .git/index.lock absent at recon, watch/inbox tracked (15,840 files), watch/inbox/buildall/commit-queue.md not git-ignored (git check-ignore exit 1)",
+    "receipt_hunt": "search for today's receipts naming index.lock in progress; ask's own statement of the two removals used as given material"
+  },
+  "work": [],
+  "checks": [],
+  "decision_changed": "pending",
+  "notes": []
+}

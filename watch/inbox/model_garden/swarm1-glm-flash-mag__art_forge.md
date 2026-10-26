@@ -1,0 +1,8 @@
+# swarm1-glm-flash-mag__art_forge (glm-5.3-flash @ zai, turn 1, channel: content)
+
+DEFECT 1: NameError: `re` is used but never imported, so `_refresh_index` crashes every cycle where done rows exist and the marker is present, and `forge_once` raises instead of returning its result dict | EVIDENCE: mag/art_forge.py:97 (import block :22-31 has no `import re`) | FIX: add `import re` to the import block.
+DEFECT 2: queue-supplied `id` is interpolated into the output filename, so `id` like `../../evil` writes outside artdir (path traversal via untrusted queue rows) | EVIDENCE: mag/art_forge.py:137,153 | FIX: validate `rid` against `^[A-Za-z0-9_-]+$` (reject row otherwise) before writing.
+DEFECT 3: one malformed jsonl line crashes the whole cycle at queue parse time, so a single bad row permanently blocks all harvesting (and any partially forged run's crash path loses the return value) | EVIDENCE: mag/art_forge.py:113 | FIX: wrap `json.loads(l)` in try/except, route bad rows to `errors` and continue.
+DEAD-CODE: duplicate empty-queue short-circuit, the `note` return at :120/121 is unreachable-shadow logic because `todo` empty implies `rows` empty already handled at :114-115 | EVIDENCE: mag/art_forge.py:120-121
+ONE-SITTING FIX: add `import re` and guard `rid` with a slug regex in one pass; both are one-line edits that unblock the only green-path exit and close the write-escape | EVIDENCE: mag/art_forge.py:22-31,137
+Falsifier: apply the patch, put a row with `"id": "../x"` in state/art_queue.jsonl, run `python -m mag.art_forge`; a fixed file refuses the row (it appears in `errors`) and a `re`-fixed file returns a JSON dict instead of raising NameError when `dashboard/static/art/index.html` contains the forge-index marker.

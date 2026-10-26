@@ -1,0 +1,40 @@
+=== CHECK 1: finish-line byte check (receipt file) ===
+12756 watch/inbox/dd_dogfood/games-audit.md
+76 watch/inbox/dd_dogfood/games-audit.md
+
+=== CHECK 2: engine BFS on all 4 DD levels (node, requires ruins_go_engine.js) ===
+DD-dragon-hoard(file): WIN in 2 moves: DD
+   tiles: D->. D->E
+   signature-mechanic tiles on win path: NONE
+DD-gelatinous-cube(pack==file): WIN in 7 moves: UUUURRR
+   tiles: U->. U->. U->. U->. R->. R->. R->E
+   signature-mechanic tiles on win path: NONE
+DD-mimic-plate(pack==file): WIN in 5 moves: UURRU
+   tiles: U->. U->. R->. R->. U->E
+   signature-mechanic tiles on win path: NONE
+DD-riddle-door(file,id=spear-parity): WIN in 8 moves: DDDDRRRR
+   tiles: D->. D->. D->. D->. R->. R->. R->. R->E
+   signature-mechanic tiles on win path: NONE
+
+=== CHECK 3: pack fold equality + census (python) ===
+pack levels: 33
+pack[29].id: DD-gelatinous-cube | pack==standalone: True
+pack[30].id: DD-mimic-plate | pack==standalone: True
+DD-hoard in pack: False
+DD-spear-parity in pack: False
+
+=== CHECK 4: st.sb inertness + vision-branch def ReferenceError ===
+loadLevel leaves st.sb = undefined
+vision THREW: ReferenceError: def is not defined
+with globalThis.def set, vision step ok, snake moved to { x: 5, y: 3 }
+
+=== CHECK 5: OracleDice consumers (header claim 'Used by: mud.html, ruins_go.html, frontier_souls.html') ===
+dashboard/static/games/mud.html:0
+dashboard/static/games/ruins_go.html:0
+dashboard/static/games/frontier_souls.html:0
+
+=== CHECK 6: worldline page live-number drift vs board ===
+page claims tesuji wall 319 stones / door OPEN, tape 85 rows:
+   336 watch/TESUJI_MAP.jsonl
+   102 memory/runs/trajectory/steps.jsonl
+   438 total

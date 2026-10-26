@@ -1,0 +1,22 @@
+THREAD 1wjhk0r (6 entries incl OP)
+
+--- [/u/circumcised_hobbit] Ctx size in Ollama Vs llama.cpp
+So I know that Ollama is built on top of llama.cpp, I decided to run a model on both and applied settings on llama.cpp like flash attention and q8/q4 kv cache. On Ollama (using the Python package) I was able to get 260k context using the num_ctx option, it would take a bit to load but it would eventually. On llama
+ cpp, anything over 32k causes an OOM, why is that? How can I reproduce?
+ submitted by /u/circumcised_hobbit to r/ollama 
+ [link] [comments]
+
+--- [/u/Several_Guide_2274] /u/Several_Guide_2274 on Ctx size in Ollama Vs llama.cpp
+Ollama probably defaults to a different cache quantization or offload strategy than whatever llama.cpp build you're using. 260k on the same hardware means it's spilling to CPU or using q4 cache by default, while your llama.cpp setup might be trying to keep everything in VRAM with higher precision. Check your n_gpu_layers and cache type flags.
+
+--- [/u/circumcised_hobbit] /u/circumcised_hobbit on Ctx size in Ollama Vs llama.cpp
+As I said in the post, I kept qk8/v4 cache. with llama I kept all layers in vram, but I think ollama did too because of similar generation speeds
+
+--- [/u/mineshop] /u/mineshop on Ctx size in Ollama Vs llama.cpp
+Run ollama ps while that 260k-context model is loaded and check the Processor column — Ollama's docs say anything under 100% GPU means part of the model is in system RAM. What does it show for you?
+
+--- [/u/circumcised_hobbit] /u/circumcised_hobbit on Ctx size in Ollama Vs llama.cpp
+It shows 64%/36% and a 17GB size, which would mean 7GB model+10GB for 260k context, would that make sense?
+
+--- [/u/mineshop] /u/mineshop on Ctx size in Ollama Vs llama.cpp
+That 10GB is the KV cache for the 260k context — it scales with context length, not model size. If you rarely need the full window, lowering num_ctx is the direct fix; OLLAMA_KV_CACHE_TYPE=q8_0 halves the cache bytes at some quality cost.

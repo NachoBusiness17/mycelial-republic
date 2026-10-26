@@ -1,0 +1,730 @@
+[
+ {
+  "author": "Secure_Recording_472",
+  "body": "Hey! One of the model creators here! \n\nThank you for doing independent benchmarks, we really appreciate it. I just wanted to make sure it's clear that the model is not trained on ThinkingCap traces, and we are also releasing a Qwen 3.8 Flash Next version end of this week (which no thinking reduced variant exists for, hence proving it is not possible that's it's origin).\n\nPlease take a look at our model card and the original post here explaining the training methodology (not fully but mostly): https://www.reddit.com/r/LocalLLaMA/s/SbzAnLuqiU",
+  "created_utc": 1789493105,
+  "id": "p9zwlgr",
+  "parent_id": "t3_1wh5elt",
+  "score": 98
+ },
+ {
+  "author": "fgk55555",
+  "body": "You guys should contact ISTA or ByteShape to see if they'll run the suite of Quantizations on your models.  They have the best performance for filesize, and their speedups would really compound well with your model.",
+  "created_utc": 1789494361,
+  "id": "pa01of1",
+  "parent_id": "t3_1wh5elt",
+  "score": 49
+ },
+ {
+  "author": "Unlucky-Message8866",
+  "body": "i made an ninfer artifact yesterday but it's already outdated as ninfer replaced the whole weight profile arch, damn, anyway here it is if anybody wants to \"migrate\" it to v3 https://huggingface.co/knoopx/Swift-Qwen3.8-27B-NInfer ",
+  "created_utc": 1789490795,
+  "id": "p9znafa",
+  "parent_id": "t3_1wh5elt",
+  "score": 13
+ },
+ {
+  "author": "returnity",
+  "body": "Sorry I did not mean to spread misinformation -- maybe I misunderstood the part of your model card I quoted directly. I will read your post about training methodology, and I appreciate you sharing it. Does it explain what you meant on the model card by \"transfer component derived from [BottleCap AI's ThinkingCap-Qwen3.6-27B](https://huggingface.co/bottlecapai/ThinkingCap-Qwen3.6-27B)\"? I did not mean to undermine any of your hard work by my interpretation.",
+  "created_utc": 1789499066,
+  "id": "pa0kco3",
+  "parent_id": "t1_p9zwlgr",
+  "score": 12
+ },
+ {
+  "author": "DanceWithEverything",
+  "body": "Cannot wait for the flash next variation",
+  "created_utc": 1789500810,
+  "id": "pa0r82t",
+  "parent_id": "t1_p9zwlgr",
+  "score": 9
+ },
+ {
+  "author": "FablingApp",
+  "body": "the 30–50% token reduction is more useful than the benchmark delta here. if it keeps the same answer quality, a shorter rollout means lower latency and less KV-cache pressure, which matters way more for a 27B on a 24GB card. i'd want to see a long-context/tool-use test next, since that's where early-stop tweaks can hide regressions.",
+  "created_utc": 1789494924,
+  "id": "pa03yjh",
+  "parent_id": "t3_1wh5elt",
+  "score": 8
+ },
+ {
+  "author": "trying4k",
+  "body": "For me it's not the speed, the main bottleneck for qwen 3.8 27b is the endless loops, so many of them.  I switched to newer jinja templates and changed my thinking but still run into them quite often (at q8).  It is very frustrating.  It's so annoying I could see myself switching to a slower model if it means I don't have to worry about the looping.\n\nMore on topic, I'm always a bit nervous about fine tunes but this looks pretty good.  Thank you for testing!",
+  "created_utc": 1789494812,
+  "id": "pa03i72",
+  "parent_id": "t3_1wh5elt",
+  "score": 8
+ },
+ {
+  "author": "Secure_Recording_472",
+  "body": "Cooking it up! Gotten amazing improvements, as of right now even better than 3.8 27B.",
+  "created_utc": 1789502297,
+  "id": "pa0x3w7",
+  "parent_id": "t1_pa0r82t",
+  "score": 7
+ },
+ {
+  "author": "cornucopea",
+  "body": "Apparently the so called \"thinking cap\" is something qwen and any chinese models have been struggling with.  It doesn't know when and where to stop. As a result, the cheaper tokens have not translated to cheaper task price, therefore the token price is all the rage in marketing, lol.\n\nWell, at least 3.8 27B has introduced the reasoning restriction parameter.",
+  "created_utc": 1789491322,
+  "id": "p9zpfee",
+  "parent_id": "t3_1wh5elt",
+  "score": 7
+ },
+ {
+  "author": "GoblinEngineer",
+  "body": "Hey, so I tested out this model, and it does indeed finish turns with lower tokens used since it thinks less - **but i also found that it bluffs more**. I'm wondering if you have any suggestions or ways i can better tune running of this model so it bluffs less.\n\nI run the base qwen-3.8-27b as my daily driver behind an agent that handles mail triage, price watches, generic \"search\" questions and research jobs. Calibration matters more to me than speed, so I measured it.\n\n*The section below is partially written by an LLM, taking my bullet point markdown notes and smoothing it over*\n\n**Setup**\nI used two RTX 3090s with llama.cpp via llama-swap. Both models ran at Q8_0 quantization with a 262K context window and q8_0 KV cache. I split layers 55/45 and used identical flags for both. Both arms served as the aliases my agent actually uses, so the comparison reflects the deployed config rather than a synthetic one.\n\nbase model command:\n```\nllama-server --port 8080 --host 127.0.0.1 --metrics \\\n  -ngl 99 --temp 0.6 --top-p 0.95 --top-k 20 --min-p 0 \\\n  -m Qwen3.8-27B-Q8_0.gguf \\\n  -c 262144 \\\n  -ts 55,45 \\\n  -ctk q8_0 -ctv q8_0 \\\n  -ctkd q8_0 -ctvd q8_0 \\\n  --cache-ram 37888 \\\n  --reasoning-budget 32768 \\\n  --mmproj mmproj-Qwen3.8-27B-Q8_0.gguf \\\n  --spec-type draft-mtp \\\n  -md mtp-Qwen3.8-27B-Q4_0.gguf\n```\n\nswift model command, after draft fix:\n```\nllama-server --port 8080 --host 127.0.0.1 --metrics \\\n  -ngl 99 --temp 0.6 --top-p 0.95 --top-k 20 --min-p 0 \\\n  -m Swift-Qwen3.8-27B-Q8_0.gguf \\\n  -c 262144 \\\n  -ub 256 \\\n  -ts 55,45 \\\n  -ctk q8_0 -ctv q8_0 \\\n  -ctkd q8_0 -ctvd q8_0 \\\n  --cache-ram 37888 \\\n  --reasoning-budget 32768 \\\n  --mmproj mmproj-Swift-Qwen3.8-27B-F16.gguf \\\n  --spec-type draft-mtp \\\n  -md mtp-Qwen3.8-27B-Q4_0.gguf\n```\n\n**Finding 1: the embedded MTP head is a speed trap**\nSwift's GGUF ships its own multi-token-prediction head at Q8_0. Out of the box, it decoded 48.4 tokens/second against the base model's 57.3 tokens/second. Draft acceptance was lower too (46.8% vs 52.5%), so the obvious conclusion was a draft/target mismatch.\n\n*That conclusion was wrong*. I swapped only the draft source, pointing Swift at the stock external Q4_0 draft file and changing nothing else:\n\n\nDraft | Tokens/Second | Acceptance\n---|---|----\nEmbedded Q8_0 head | 48.4 | 46.8%\nStock external Q4_0 | 52.0 | 47.8%\nBase model, same bench | 57.3 | 52.5%\n\nAcceptance did not move. Speed went up 7.4%. The embedded head is a Q8_0 layer and the external draft is Q4_0, so each draft step costs roughly twice as much for the same hit rate. I also ran two 12-minute decode-only soaks to confirm it outside a short bench: 50.3 vs 52.8 tokens/second over ~48 reps each.\n\nThe residual 9% difference against the base model is the weights. The stock draft was trained on base Qwen3.8 and predicts the fine-tune slightly worse. Nobody ships a draft trained on Swift.\n\nIf anyone else runs a fine-tune with an embedded MTP head, try the base model's external draft before you accept the speed hit. Correctness is not at risk either way since the target verifies every drafted token.\n\n**Finding 2: it thinks less, and it bluffs more**\nI ran AA-Omniscience's public subset, which contains 600 hard factual questions. I ran this twice per arm at medium effort, totaling 2400 graded answers. The benchmark scores three ways: correct, incorrect, and abstained. The index credits a correct answer, debits a wrong one, and treats \"I don't know\" as free, so bluffing is punished and admitting ignorance is not.\n\nModel | Accuracy |\tHallucination | Abstention | Index | Median thinking\n---|---|---|---|---|---\nBase\t| 20.7% | 44.3% | 35.1% | -23.6 | 2011 chars\nSwift |21.6% | 48.0% | 30.5% | -26.5 | 1687 chars\n\nThose margins are close enough to point towards it just being noise, however the paired comparison is not. Both arms answered identical questions, so I counted the disagreements directly. On 106 questions, the base model abstained and Swift answered wrongly. On 55, the reverse. McNemar z of 4.02, p under 0.0001.\n\nKnowledge didn't move at all: Swift was right where the base was wrong 56 times, wrong where it was right 48 times, z of 0.78.\n\nSo it is not dumber, it guesses where the base model says it does not know.\n\nAlso, the thinking reduction is real: 16% fewer thinking characters on the median question, paired. The card claimed 23% at this effort. On the instruction-following set it was 36%.\n\n**Finding 3: instruction following is fine**\nIFBench, scored by Ai2's own checkers at a pinned commit rather than my reimplementation. Swift scored 66.1% strict on 121 prompts, base 64.0% on 300. Swift's run was cut short by my time budget, so that gap is inside the noise. Nothing collapsed.\n\n**On trusting an LLM judge**\nOmniscience needs a judge to decide whether an answer matches a reference. I graded everything with Haiku 4.5, then re-graded all 2400 answers with Sonnet 5 and compared agreement per arm. That per-arm split is the whole point: a judge that resolves hedged answers differently for one model than the other manufactures exactly the calibration gap you are trying to detect.\n\nFinal agreement was 95.0% on base answers and 94.2% on Swift's. Near-identical, so judge error cancels. Both judges reached the same conclusion, with Sonnet's grades making it stronger (z 4.02 vs 2.93).\n\n**Caveats**\nI tested one quantization, one box, one effort level, and the public 10% subset of Omniscience. I did not test tool calling, which is the axis my agent leans on hardest and which no benchmark here touches. Single-turn factual questions are not agent loops.",
+  "created_utc": 1789511817,
+  "id": "pa1waia",
+  "parent_id": "t1_p9zwlgr",
+  "score": 6
+ },
+ {
+  "author": "returnity",
+  "body": "No, other commenters were right, it was a poor choice on my part and you def deserve all the recognition for a great release. Thanks for being gracious about it though. Can’t wait for Flash! When I post about that, I promise my title will be better lol",
+  "created_utc": 1789505187,
+  "id": "pa18jjj",
+  "parent_id": "t1_pa175o4",
+  "score": 6
+ },
+ {
+  "author": "Secure_Recording_472",
+  "body": "Hey! It's all good. I really appreciate you sharing our model as well! Thank you for editing the post. Don't mind you calling it ThinkingCap 3.8, it's a free country after all - but it's amazing you helped us get more recognition :)\n\nOn the transfer component, it's not in the methodology exactly but I can share that it's rougly 0.5% of the entire adapter we built but we still wanted to respect the authors.",
+  "created_utc": 1789504835,
+  "id": "pa175o4",
+  "parent_id": "t1_pa0kco3",
+  "score": 6
+ },
+ {
+  "author": "Ciri__witcher",
+  "body": "As a fellow 16 GB peasant, I hope there’s a smaller size quant for Iq3.",
+  "created_utc": 1789504264,
+  "id": "pa14wks",
+  "parent_id": "t1_pa01of1",
+  "score": 6
+ },
+ {
+  "author": "Easy_Refrigerator280",
+  "body": "Ive used it this past weekend and ran some smoke tests. It did indeed produce fewer tokens when it comes to thinking. The output quality did not seem much worse but these are just anecdotes ",
+  "created_utc": 1789494260,
+  "id": "pa019oh",
+  "parent_id": "t3_1wh5elt",
+  "score": 6
+ },
+ {
+  "author": "Secure_Recording_472",
+  "body": "It's all good man thanks for being proper and editing it! Cooking the Flash Next, stay tuned :) ",
+  "created_utc": 1789515043,
+  "id": "pa26it6",
+  "parent_id": "t1_pa18jjj",
+  "score": 4
+ },
+ {
+  "author": "woj666",
+  "body": "Is is possible to combine what UkisAI's Swift-Qwen3.8-27B does and what NInfer does with Qwen3.8-27B-NInfer?  \n\nSwift cuts down thinking and NInfer makes things faster but is it even possible to combine the ideas?",
+  "created_utc": 1789507134,
+  "id": "pa1g1e5",
+  "parent_id": "t1_p9zwlgr",
+  "score": 4
+ },
+ {
+  "author": "professaDE",
+  "body": "I support this - I find the SWIFT performance very good so far (not really coding but enhancing and extending a knowledge base, to be used by an agent, for a molecular dynamics simulation suite), but I had to reduce context size by 10-15% because the current Q4_K_M is approximately 1Gig larger than the unsloth UD3 Q4_K_M...and this is quite hurtful even on luxurious 24G VRAM. ",
+  "created_utc": 1789502104,
+  "id": "pa0wcfl",
+  "parent_id": "t1_pa01of1",
+  "score": 4
+ },
+ {
+  "author": "Flibidyjibit",
+  "body": "oh lawd please",
+  "created_utc": 1789500384,
+  "id": "pa0pk0x",
+  "parent_id": "t1_pa01of1",
+  "score": 4
+ },
+ {
+  "author": "norenEnmotalen",
+  "body": "Why are you attributing something someone else did to someone else? ",
+  "created_utc": 1789497511,
+  "id": "pa0e80l",
+  "parent_id": "t3_1wh5elt",
+  "score": 4
+ },
+ {
+  "author": "metabrew",
+  "body": "Thanks for posting this! I ran an eval using the nvfp4 quant against the regular qwen3.8-27b, and swift wins – i'll be switching over to it for my personal assistant workload. Here's the results from my test suite of PA style queries against a synthetic personal dataset, models hosted on a spark:\n\n| Metric | Existing Qwen3.8 NVFP4 | Swift Qwen3.8 NVFP4 | Difference |\n|---|---:|---:|---:|\n| Claim-level strict passes | 104/110 | **107/110** | +3 Swift |\n| Fully grounded passes | 104/110 | **105/110** | +1 Swift |\n| Scorable tasks | 108 | **110** | +2 |\n| Wall time | 1:31:26 | **1:16:12** | **15:14 faster** |\n| Mean task latency | 49.9 s | **41.6 s** | **16.7% lower** |\n| Median task latency | 44.4 s | **36.1 s** | **18.8% lower** |\n| P95 latency | 96.4 s | **69.5 s** | **27.9% lower** |\n| Output tokens | 112,061 | **99,282** | **11.4% fewer** |\n| Reasoning tokens | 70,874 | **59,108** | **16.6% fewer** |\n| Raw generation speed | 23.26 tok/s | 23.46 tok/s | effectively identical |",
+  "created_utc": 1789541891,
+  "id": "pa467vd",
+  "parent_id": "t3_1wh5elt",
+  "score": 3
+ },
+ {
+  "author": "mailto_devnull",
+  "body": "I just realized \"thinking cap\" means \"capping/shortening thinking\", and not what I originally thought, which was imagery of a little dunce cap for the model to wear.",
+  "created_utc": 1789533849,
+  "id": "pa3oqq4",
+  "parent_id": "t1_p9zpfee",
+  "score": 3
+ },
+ {
+  "author": "Muqito",
+  "body": "Not sure if this is why the looping happens, but to me it seems to inject \"user has asked to continue\" or whatever even though I never said anything and asked it to find one thing and be done with it.",
+  "created_utc": 1789505714,
+  "id": "pa1amst",
+  "parent_id": "t1_pa03i72",
+  "score": 3
+ },
+ {
+  "author": "BawbbySmith",
+  "body": "I mean, it's a bit weird you put 'ThinkingCap' in the title. ",
+  "created_utc": 1789499731,
+  "id": "pa0mz4g",
+  "parent_id": "t1_pa0l0ot",
+  "score": 3
+ },
+ {
+  "author": "Unlucky-Message8866",
+  "body": "btw, works pretty well, been testing it all day at xhigh\n\n",
+  "created_utc": 1789490862,
+  "id": "p9znk6y",
+  "parent_id": "t1_p9znafa",
+  "score": 3
+ },
+ {
+  "author": "trying4k",
+  "body": "Hey, sorry for just now getting back to you.  The reason is I had seen that checkpoints eat up a LOT of ram.  I have more vram than ram.  So I reduced the checkpoint size to avoid running into issues.\n\nI'm considering getting more ram, I will look into increasing it.  Thanks!",
+  "created_utc": 1790280243,
+  "id": "pbu2swi",
+  "parent_id": "t1_pac3pui",
+  "score": 2
+ },
+ {
+  "author": "returnity",
+  "body": "Hey, great eval! Thanks for sharing this. I really appreciate the commenters in this thread who shared their own assessments of the model, one of the reasons I love this sub is the collaboration that can happen here.",
+  "created_utc": 1789572631,
+  "id": "pa6iz66",
+  "parent_id": "t1_pa48cm3",
+  "score": 2
+ },
+ {
+  "author": "uranusnebula",
+  "body": "It's working really well, replaced my regular 3.8-27B",
+  "created_utc": 1789572294,
+  "id": "pa6hnap",
+  "parent_id": "t3_1wh5elt",
+  "score": 2
+ },
+ {
+  "author": "crablu",
+  "body": "Same numbers, from a different direction: your Aider run is GGUF Q8_0 on\nllama.cpp, mine is NVFP4/FP8 on NInfer, so the two together say the saving is\nthe fine-tune and not one stack's quirk.\n\nI converted Swift's NVFP4 checkpoint to a NInfer v3 artifact and ran it against\nthe official Qwen3.8-27B NVFP4 artifact on one RTX 5090, back to back, same\nsettings. 14 tasks, 4 seeds each, 32k output cap, thinking at the default\nxhigh:\n\n* Output tokens over 56 runs: 208,309 for base, 108,628 for Swift. That is 48%\nfewer, and thinking tokens alone dropped 50%.\n* Fewer tokens on 14 of 14 tasks, so it is not one task carrying the average.\n* Graded answers: 43/44 correct for Swift, 41/44 for base. No quality drop I\ncan measure, same as you found.\n* The biggest cuts were exactly where the base model spirals: three tasks went\nto under a third of the tokens, and one of them is where base argued itself\ninto a wrong answer three times out of four.\n\nYour point about time dropping more than tokens matches here too. At tight\noutput caps the base model ran 10 of 30 answers into the cap and Swift 1, so\nyou also stop paying for answers that never finish.\n\nSpeed, same card: prefill 8,650 vs 7,380 tok/s on an 11k prompt and 3,000 vs\n2,680 on a 172k one, decode about 144 tok/s average with MTP, 379 tok/s on code\nwith a DFlash2 draft. Some of that is this checkpoint quantizing all 64 MLP\nlayers to NVFP4 where the official file leaves eight at FP8, not the fine-tune.\n\nIf anyone else runs NInfer, the artifact is one 21.2 GiB file, 18.9 GiB of\nweights, vision and MTP and the DFlash2 draft included:\nhttps://huggingface.co/CaptainArni/Swift-Qwen3.8-27B-NInfer\n\n    ./build/apps/ninfer-serve qwen3_8_27b_nvfp4swift.ninfer --host 127.0.0.1 --port 8080 --max-context 64000 --kv-capacity 64000 --kv-dtype int8 --spec mtp --draft-tokens 3 --lm-head-draft\n\nI run it daily with the omp coding agent, KV cache at nvfp4, the full 262,144\ncontext on a 32 GiB card, and it has been excellent.\n\nOne caveat worth stating: in a 12-run multi-turn agent loop it failed to end\nthe turn twice under the pi agent, where the base artifact failed none. Under\nomp it passed 12 of 12. Twelve runs cannot prove that is real (Fisher p = 0.22),\nbut if you drive it from an agent, watch for it.",
+  "created_utc": 1789542919,
+  "id": "pa48cm3",
+  "parent_id": "t3_1wh5elt",
+  "score": 2
+ },
+ {
+  "author": "CapsAdmin",
+  "body": "Can you share your config?\n\nfor a 4090 using 100% vram mine is currently this .ini file for llama-server:\n\n```ini\n[*]\nparallel = 1\nflash-attn = on\nload-mode = dio\nfit = on\nfit-target = 0\nn-gpu-layers = all\nthreads = 32\ncpu-strict = 1\nbatch-size = 512\nubatch-size = 256\n\n[Qwen3.8-27B]\nmodel = /run/media/caps/extra/llm-models/Qwen3.8-27B-IQ4_XS-3.84bpw.gguf\nfit = off\nctx-size = 248320\ncache-type-k = q4_0\ncache-type-v = q4_0\nspec-type = draft-mtp,ngram-mod\nspec-draft-n-max = 5\nspec-draft-type-k = q4_0\nspec-draft-type-v = q4_0\n# thinking parameters\ntemperature = 1.0\ntop-p = 0.95\ntop-k = 20\nmin-p = 0.0\npresence-penalty = 0.0\nrepeat-penalty = 1.0\n```\n\nDefault chat template and reasoning effort is set to medium, which makes the system prompt blank, but then I inject some project specific instructions in the system prompt instead.\n\nI have a hunch that extending system prompt might help looping, as the custom chat templates floating around do this, but not sure.\n\nI'm currently testing Qwen3.8-27B-IQ4_XS-3.84bpw.gguf. Before I was using Qwen3.8-27B-UD-Q4_K_S.gguf (UD3 quants) which I can safely say has never looped.",
+  "created_utc": 1789538509,
+  "id": "pa3z2d5",
+  "parent_id": "t1_pa3ubp4",
+  "score": 2
+ },
+ {
+  "author": "l0rd_raiden",
+  "body": "Maybe IQ4_XS could be interesting and although is a different approach the IQ4_XS of byte shape as well\nhttps://huggingface.co/byteshape/Qwen3.8-27B-GGUF\nThey claim to on pair with larger quants",
+  "created_utc": 1789538296,
+  "id": "pa3yloo",
+  "parent_id": "t1_pa3x8x4",
+  "score": 2
+ },
+ {
+  "author": "returnity",
+  "body": "Appreciate your contribution to benchmarking this model. On my evals I have notices a *significant* difference between Low and xHigh reasoning effort on vanilla 3.8-27B. so it's weird how much variance there is in models. Gonna take a look at incorporating your evals into my suite.",
+  "created_utc": 1789537125,
+  "id": "pa3w347",
+  "parent_id": "t1_pa2t4qi",
+  "score": 2
+ },
+ {
+  "author": "youcloudsofdoom",
+  "body": "You can drop the NVFP4 variant of this into ninfer with Very little fuss - I did and it works like a dream. Kept my 400k context and mtp acceptance went up! ",
+  "created_utc": 1789534680,
+  "id": "pa3qos3",
+  "parent_id": "t1_pa1g1e5",
+  "score": 2
+ },
+ {
+  "author": "CapsAdmin",
+  "body": "I have yet to encounter looping since release and I'm using the q4 quant at q4 kv cache and 150k - 200k context. I have nothing that prevents looping either.\n\nWith 3.6 I encountered some looping.\n\n(to be clear, by looping, I mean repeating patterns in output that never ends)",
+  "created_utc": 1789519828,
+  "id": "pa2lgif",
+  "parent_id": "t1_pa03i72",
+  "score": 2
+ },
+ {
+  "author": "norenEnmotalen",
+  "body": "Respect for not digging your heels in about it and handling it the right way. Most wouldn’t.",
+  "created_utc": 1789515803,
+  "id": "pa28wef",
+  "parent_id": "t1_pa0sbtp",
+  "score": 2
+ },
+ {
+  "author": "N34257",
+  "body": "u/Secure_Recording_472 \\- I'm seeing really low MTP acceptance rates, in the 35-50% range on the FP8 uncensored model. Is that because you're using the base model's MTP head?",
+  "created_utc": 1789509594,
+  "id": "pa1ouy8",
+  "parent_id": "t1_p9zwlgr",
+  "score": 2
+ },
+ {
+  "author": "Secure_Recording_472",
+  "body": "No works great! Check out the OG post people tested it.",
+  "created_utc": 1789504719,
+  "id": "pa16p5z",
+  "parent_id": "t1_pa10pub",
+  "score": 2
+ },
+ {
+  "author": "fgk55555",
+  "body": "I presume this will break Dflash2.  Is there a recommended MTP or MTP-included quant of this?  As it stands right now it's nice the context won't bloat as bad with thought, but tg will hurt if Dflash/ MTP is broken.",
+  "created_utc": 1789503216,
+  "id": "pa10pub",
+  "parent_id": "t1_p9zwlgr",
+  "score": 2
+ },
+ {
+  "author": "Unlucky-Message8866",
+  "body": "v3 artifact is up! check `*.v3.ninfer`, let me know if you have any issue (should work, tested on my fork but now weight profiles are embedded in artifact instead of hard-coded in code base)",
+  "created_utc": 1789503026,
+  "id": "pa0zz3i",
+  "parent_id": "t1_p9zwmoy",
+  "score": 2
+ },
+ {
+  "author": "DeProgrammer99",
+  "body": "I keep thinking a proper loop-breaker needs to exist in llama.cpp... but people have also set up proxy servers that detect loops and inject something to try to stop them. Meanwhile, everyone else just raises the temperature.\nBut yeah, looping for half an hour on every semi-hard problem, then the harness makes it compact, then maybe it gets somewhere.",
+  "created_utc": 1789501809,
+  "id": "pa0v61r",
+  "parent_id": "t1_pa03i72",
+  "score": 2
+ },
+ {
+  "author": "returnity",
+  "body": "You make a great point. I assumed the giant thumbnail of their HF model/org name was clear enough, but users on mobile probably don't see that. I wish I could retitle it now, but I can't. ",
+  "created_utc": 1789501092,
+  "id": "pa0sbtp",
+  "parent_id": "t1_pa0rwav",
+  "score": 2
+ },
+ {
+  "author": "LetsGoBrandon4256",
+  "body": "> Cut Qwen3.8-27B Reasoning Tokens by 40% -- 3.8 'ThinkingCap' benchmarked!\n\nNot sure about you but omitting the actual name of the model and label it \"3.8 'ThinkingCap' \" is kinda disrespectful. \n\nEspecially since they are a new lab. Imagine trying to build your own reputation but people keep calling your work \"An updated version of [whatever already exist]\"",
+  "created_utc": 1789500980,
+  "id": "pa0rwav",
+  "parent_id": "t1_pa0l0ot",
+  "score": 2
+ },
+ {
+  "author": "returnity",
+  "body": "Yeah the benchmark deltas are within noise anyways, so it's all about the efficiency gains here. I am working on further real-life long-context agentic use evaluations but they are not so cut-and-dried and involve my specific use cases, so I wanted to share what I could now.",
+  "created_utc": 1789499335,
+  "id": "pa0levd",
+  "parent_id": "t1_pa03yjh",
+  "score": 2
+ },
+ {
+  "author": "returnity",
+  "body": "Yeah, I agree. This really makes a legit difference, and I don't see any degradation in quality -- the benchmark deltas are within noise.",
+  "created_utc": 1789499274,
+  "id": "pa0l62z",
+  "parent_id": "t1_pa03i72",
+  "score": 2
+ },
+ {
+  "author": "Unlucky-Message8866",
+  "body": "im on it... rebasing my fork and migrating my artifacts...",
+  "created_utc": 1789499022,
+  "id": "pa0k6iy",
+  "parent_id": "t1_p9zwmoy",
+  "score": 2
+ },
+ {
+  "author": "TerminalNoop",
+  "body": "Yes, I think they keep more material/tokens etc in cached RAM to increase generation speed when you ask about something similar in a subsequent turn. e.g summary this big pdf and then you ask about chapter 4 specifically. This way it saves a lot of re-computation.\n\nIf you have 32gb RAM maybe set it to 24 as I noted that 32 is awfully tight with 32gb RAM and sometimes LM Studio gets terminated to free up ram lol\n\nDid you change the jinja template?",
+  "created_utc": 1790286259,
+  "id": "pbup60s",
+  "parent_id": "t1_pbu2swi",
+  "score": 1
+ },
+ {
+  "author": "TerminalNoop",
+  "body": "Is there a particular reason you use only 4 context checkpoints?\n\nLM Studio by default set 32, maybe this could change things quite a bit too?",
+  "created_utc": 1789637711,
+  "id": "pac3pui",
+  "parent_id": "t1_paajl0j",
+  "score": 1
+ },
+ {
+  "author": "TerminalNoop",
+  "body": "By stop i ment, in Pi you just press escape and it interrupts decode. Then I write continue, retry, or you are looping and then the  model catches on and usually gets back to work work.\n\nGlad it helped you.",
+  "created_utc": 1789637499,
+  "id": "pac3al1",
+  "parent_id": "t1_paak5bb",
+  "score": 1
+ },
+ {
+  "author": "trying4k",
+  "body": "Interesting.  Stop never stops the model, since it never catches a break.  I always have to force kill llama-cpp and then restart it.\n\nThanks for sharing your experience!",
+  "created_utc": 1789612584,
+  "id": "paak5bb",
+  "parent_id": "t1_pa4kw14",
+  "score": 1
+ },
+ {
+  "author": "trying4k",
+  "body": "Hey, thanks for reaching out!  I currently I have this:\n\n    [*]\n    parallel = 1\n    temp = 0.1\n    cache-ram = 1024\n    \n    # Don't load into memory\n    load-mode = none\n    \n    # Reduce ram usage\n    ctx-checkpoints = 4\n    \n    # mlock = true  # See: https://github.com/ggml-org/llama.cpp/issues/22135\n    \n    fit = off\n    \n    batch-size = 512\n    ubatch-size = 512\n    \n    [qwen38_27b]\n    model = models\\Qwen3.8-27B-Q8_0.gguf\n    \n    mmproj = models\\mmproj-Qwen3.8-27B-bf16.gguf\n    image-min-tokens = 1024\n    \n    tensor-split = 0,100\n    \n    ctx-size = 220000\n    cache-type-k = bf16\n    cache-type-v = bf16\n    \n    # Standard vendor-recommended reasoning mode baseline\n    temp = 1.0\n    top-p = 0.95\n    top-k = 20\n    \n    # Non standard to help avoid looping\n    min-p = 0.05\n    repeat-penalty = 1.1 \n    \n    # Pass the thinking blocks on multiturn\n    #chat-template-kwargs = \"{\\\"preserve_thinking\\\":true}\"\n    chat-template-kwargs = \"{\\\"preserve_thinking\\\":true,\\\"reasoning_effort\\\":\\\"xhigh\\\"}\"\n    chat-template-file = templates\\qwen3.8_27b_chat_template.jinja\n    \n    # Base penalties left neutral so system prompts can dictate output style\n    presence-penalty = 0.0\n    \n    flash-attn = true\n    reasoning = true\n    \n    batch-size = 1024\n    ubatch-size = 1024\n    \n    model-draft = models\\Qwen3.8-27B-DFlash2-Q8_0.gguf\n    spec-type = draft-dflash\n    spec-draft-n-max = 7\n\nI have tried no penalties, avoiding min-p, I was seeing this before the jinja and draft model changes as well.  Ironically running into a loop right now :)\n\nAlso have tried medium, actually forgot I tried putting it back on xhigh (since I was hoping the jinja would fix the looping).\n\nThanks for taking a look.",
+  "created_utc": 1789612392,
+  "id": "paajl0j",
+  "parent_id": "t1_pa3z2d5",
+  "score": 1
+ },
+ {
+  "author": "Mishkan",
+  "body": "That's exciting! I've been using the atomic version of flash next on my 5080 and its been awesome as an agentic coder. If I can reduce that thinking it'd be great.",
+  "created_utc": 1789579500,
+  "id": "pa7ap2i",
+  "parent_id": "t1_pa26it6",
+  "score": 1
+ },
+ {
+  "author": "crablu",
+  "body": "I started with pi but when I tried omp I just preferred the ootb experience. Web search just worked, browser tool just worked, just like I am used to from working with Claude code. The bigger starting context window is not that big of a deal since prefill is so freakin fast with ninfer nvfp4 on rtx 5090.",
+  "created_utc": 1789573014,
+  "id": "pa6khrh",
+  "parent_id": "t1_pa48cm3",
+  "score": 1
+ },
+ {
+  "author": "feverdoingwork",
+  "body": "I am in the same boat as you. All this feature fluff in most harnesses and 27b's odd behavior throughout different harnesses make me worry about trying other harnesses, i rather just fix each issue one by one in pi than try again with some other harness. I hear so much good things about omp but you confirm my suspicions lol",
+  "created_utc": 1789572960,
+  "id": "pa6ka1e",
+  "parent_id": "t1_pa6jdzf",
+  "score": 1
+ },
+ {
+  "author": "returnity",
+  "body": "I tried OMP but I am kind of finicky and like to understand every aspect of my stack, and I found OMP to just have so much going on, I couldn't properly evaluate what was working and where issues derived from when the model misbehaved. It was earlier in my agentic coding career, and there are definitely advantages to OMP as well, but that's just my personal experience. I like rolling my own extensions for pi to cherry-pick individual capabilities I want for my agent.",
+  "created_utc": 1789572734,
+  "id": "pa6jdzf",
+  "parent_id": "t1_pa532kg",
+  "score": 1
+ },
+ {
+  "author": "returnity",
+  "body": "Nice work, thank you for sharing this! ",
+  "created_utc": 1789572443,
+  "id": "pa6i8iq",
+  "parent_id": "t1_pa467vd",
+  "score": 1
+ },
+ {
+  "author": "returnity",
+  "body": "I am on Metal (Apple Silicon), so no. Wish I had access to a card like that!",
+  "created_utc": 1789572404,
+  "id": "pa6i2uz",
+  "parent_id": "t1_pa43cdw",
+  "score": 1
+ },
+ {
+  "author": "returnity",
+  "body": "Yeah they do intriguing work, definitely following them. Sorry that I don't have a full day and a half to 2 days of GPU time on my box to run additional quants that don't fit my use case.",
+  "created_utc": 1789572341,
+  "id": "pa6hu39",
+  "parent_id": "t1_pa3yloo",
+  "score": 1
+ },
+ {
+  "author": "avpogo",
+  "body": "Each run takes about 2 hours. If I get some time I'll do as you suggest.",
+  "created_utc": 1789568061,
+  "id": "pa617bu",
+  "parent_id": "t1_pa5uvpl",
+  "score": 1
+ },
+ {
+  "author": "Dazzling_Focus_6993",
+  "body": "Thanks",
+  "created_utc": 1789566895,
+  "id": "pa5wwnb",
+  "parent_id": "t1_pa5v2c7",
+  "score": 1
+ },
+ {
+  "author": "Secure_Recording_472",
+  "body": "Hey! Please take a look at the OG thread here, people have been using DFlash2 wonderfully. [https://www.reddit.com/r/LocalLLaMA/comments/1wg7dd5/ukisai\\_swiftqwen3827b\\_583\\_thinking\\_x195\\_speed/](https://www.reddit.com/r/LocalLLaMA/comments/1wg7dd5/ukisai_swiftqwen3827b_583_thinking_x195_speed/)",
+  "created_utc": 1789566385,
+  "id": "pa5v2c7",
+  "parent_id": "t1_pa3qlpg",
+  "score": 1
+ },
+ {
+  "author": "Secure_Recording_472",
+  "body": "Please follow our how to reproduce guide on the benchmarks. You unfortunately do need to run the benchmarks x5, with the seed config we stated to get a proper average as Qwen 3.8 27B varies significantly seed-by-seed and can give you false results.",
+  "created_utc": 1789566334,
+  "id": "pa5uvpl",
+  "parent_id": "t1_pa2t4qi",
+  "score": 1
+ },
+ {
+  "author": "fgk55555",
+  "body": "Good to know. Might stick with MTP",
+  "created_utc": 1789566167,
+  "id": "pa5ua7j",
+  "parent_id": "t1_pa3ps89",
+  "score": 1
+ },
+ {
+  "author": "woj666",
+  "body": "That's fantastic unfortunately I'm on a 4090.\n\nI've read about knoopx/Swift-Qwen3.8-27B-NInfer but its NVFP4, is there a non NVFP4 Swift-Ninfer.",
+  "created_utc": 1789561511,
+  "id": "pa5eitt",
+  "parent_id": "t1_pa3qos3",
+  "score": 1
+ },
+ {
+  "author": "feverdoingwork",
+  "body": "Thanks Captian. Do you think it's worth switching from pi to omp? Feels like a pain in the ass. Either way i'm going to try out your artifact soon.",
+  "created_utc": 1789557538,
+  "id": "pa532kg",
+  "parent_id": "t1_pa48cm3",
+  "score": 1
+ },
+ {
+  "author": "TerminalNoop",
+  "body": "*Glad to hear things are going well for you. For me, this happens almost every time I use the model, at least once, some times multiple times. I rarely ran into it on 3.6.*\n\n  \nThis is very surprising to me, because for me it was the other way around. 3.6 kept looping on mundane tasks and 3.8 finally doesn't anymore. I have seen 3.8 loop but it is rather rare and a \"stop\" and \"continue\" usually fix it.\n\nI'm also running q4 with q4 kv.",
+  "created_utc": 1789549344,
+  "id": "pa4kw14",
+  "parent_id": "t1_pa3ubp4",
+  "score": 1
+ },
+ {
+  "author": "Dazzling_Focus_6993",
+  "body": "Do you numbers with r9700? (Sorry could not find them)",
+  "created_utc": 1789540517,
+  "id": "pa43cdw",
+  "parent_id": "t1_pa3w9tz",
+  "score": 1
+ },
+ {
+  "author": "returnity",
+  "body": "I run Q8\\_0 so the bartowski is byte-identical at that tier. If it helps, I would choose the imatrix quant by bartowski at lower quant levels over UkisAI's version.",
+  "created_utc": 1789537664,
+  "id": "pa3x8x4",
+  "parent_id": "t1_pa3vi68",
+  "score": 1
+ },
+ {
+  "author": "returnity",
+  "body": "I'm sure they use safetensors on their 8xH100 cluster to post-train these, then ship their own GGUF quants.",
+  "created_utc": 1789537477,
+  "id": "pa3wu9m",
+  "parent_id": "t1_pa3lhle",
+  "score": 1
+ },
+ {
+  "author": "returnity",
+  "body": "That's bizarre -- in llama.cpp using native MTP no such variance exists.",
+  "created_utc": 1789537212,
+  "id": "pa3w9tz",
+  "parent_id": "t1_pa3qlpg",
+  "score": 1
+ },
+ {
+  "author": "l0rd_raiden",
+  "body": "Can you add to the comparisons this one?\n\nhttps://huggingface.co/bartowski/ukisai_Swift-Qwen3.8-27b-GGUF",
+  "created_utc": 1789536857,
+  "id": "pa3vi68",
+  "parent_id": "t3_1wh5elt",
+  "score": 1
+ },
+ {
+  "author": "trying4k",
+  "body": "Yes, by 'endless loops', I was referring to output that never ends.  The model gets 'stuck'.\n\nGlad to hear things are going well for you.  For me, this happens almost every time I use the model, at least once, some times multiple times.  I rarely ran into it on 3.6.\n\nI started with settings at recommended values and have tried messing with other values too, unfortunately to little difference.  I'm currently using Bartowski's model but maybe I'll see better luck with a different provider.",
+  "created_utc": 1789536313,
+  "id": "pa3ubp4",
+  "parent_id": "t1_pa2lgif",
+  "score": 1
+ },
+ {
+  "author": "youcloudsofdoom",
+  "body": "Same! ",
+  "created_utc": 1789534750,
+  "id": "pa3qukg",
+  "parent_id": "t1_p9znk6y",
+  "score": 1
+ },
+ {
+  "author": "Dazzling_Focus_6993",
+  "body": "ai polished summary for my case:\n\nI tried Swift-Qwen3.8-27B W4A16 on my R9700 with vLLM Radiance, and unfortunately it didn’t work nearly as well as my existing Qwen3.8-27B AutoRound + DFlash2 setup. With two concurrent \\~57k-context requests, Swift + the existing Qwen DFlash2 drafter managed 36.7 tok/s output throughput with only 30.9% speculative acceptance and an acceptance length of 2.24, whereas my W4A16 AutoRound setup gets around 70.9 tok/s with \\~43% acceptance and 2.72 acceptance length. \n\nThe DFlash mismatch is probably the main issue, since it was trained for base Qwen3.8 rather than Swift: acceptance falls from 69% on the first draft token to only 8.5% and 6.3% at positions 3 and 4. Prompt processing also appears noticeably slower in my setup: the Swift run took about 65s TTFT for the two \\~57k prompts, corresponding to roughly 1.8k tok/s aggregate effective prefill, versus around 2.7–2.8k tok/s I have seen with my existing setup, although TTFT also includes scheduling overhead. I could tolerate some TG slowdown in exchange for Swift’s reduced overthinking, but the PP slowdown matters much more for my long-context agent workload. Token processing goes down from 1200-ish to 700-ish. ",
+  "created_utc": 1789534643,
+  "id": "pa3qlpg",
+  "parent_id": "t3_1wh5elt",
+  "score": 1
+ },
+ {
+  "author": "Dazzling_Focus_6993",
+  "body": "it does not work well in my setup with vllm radiance",
+  "created_utc": 1789534292,
+  "id": "pa3ps89",
+  "parent_id": "t1_pa10pub",
+  "score": 1
+ },
+ {
+  "author": "gsusgur",
+  "body": "Sounds amazing with the upcoming Flash release. Will it be based on https://huggingface.co/RadixArk/Qwen3.8-Flash-Next-NVFP4 which is the best quant imo? \n",
+  "created_utc": 1789532480,
+  "id": "pa3lhle",
+  "parent_id": "t1_p9zwlgr",
+  "score": 1
+ },
+ {
+  "author": "Equivalent_Bit_461",
+  "body": "Meh, I'll just stick to what I use, don't trust it ",
+  "created_utc": 1789524091,
+  "id": "pa2yr73",
+  "parent_id": "t3_1wh5elt",
+  "score": 1
+ },
+ {
+  "author": "xiraov",
+  "body": "mlx version coming?",
+  "created_utc": 1789522927,
+  "id": "pa2v54f",
+  "parent_id": "t1_p9zwlgr",
+  "score": 1
+ },
+ {
+  "author": "avpogo",
+  "body": "I posted this in the original thread, but I've benchmarked this and it comes in at \\`low\\` performance at best. This was running Q8\\_0 at \\`xhigh\\`. \n\n\\`\\`\\`  \nPack | Pass@1 | Pass@3 | Flaky | p50 latency | p95 latency | Status\n\n\\---|---:|---:|---:|---:|---:|---\n\ntoolcall-15 (v1.0.1) | 13 / 15 (87%) | 13 / 15 (87%) | 0 | 1.86s | 4.97s | ok\n\ninstructfollow-15 (v1.0.0) | 15 / 15 (100%) | 15 / 15 (100%) | 0 | 4.77s | 33.72s | ok\n\nstructoutput-15 (v1.1.0) | 14 / 15 (93%) | 15 / 15 (100%) | 1 | 4.90s | 8.35s | ok\n\ndataextract-15 (v1.2.0) | 13 / 15 (87%) | 14 / 15 (93%) | 1 | 12.69s | 39.44s | ok\n\nreasonmath-15 (v1.0.0) | 14 / 15 (93%) | 15 / 15 (100%) | 1 | 6.48s | 28.97s | ok\n\nbugfind-15 (v1.0.1) | 15 / 15 (100%) | 15 / 15 (100%) | 0 | 12.53s | 75.29s | ok\n\nhermesagent-20 (v1.0.0) | 13 / 20 (65%) | 16 / 20 (80%) | 3 | 28.59s | 81.29s | ok\n\ncli-40 (v1.0.2) | 32 / 40 (80%) | 36 / 40 (90%) | 4 | 16.44s | 316.36s | ok\n\n\n\nTOTAL | 129 / 150 (86%) | 139 / 150 (93%) | 10 |  |  |  \n\\`\\`\\`\n\nSimilar benchmark runs can be found here:  \n[https://github.com/noonghunna/club-3090/issues/1027](https://github.com/noonghunna/club-3090/issues/1027)\n\nAlthough it does show promise on using reduced tokens it definitely isn't 1% off of base in terms of performance.",
+  "created_utc": 1789522284,
+  "id": "pa2t4qi",
+  "parent_id": "t3_1wh5elt",
+  "score": 1
+ },
+ {
+  "author": "returnity",
+  "body": "Thanks for pointing it out in the first place =)",
+  "created_utc": 1789517000,
+  "id": "pa2cme2",
+  "parent_id": "t1_pa28wef",
+  "score": 1
+ },
+ {
+  "author": "returnity",
+  "body": "Can't say directly, as I tested Q8\\_0 to rule out any quantization interference in the comparison, but I see no reason it should degrade any more than other models under quantization -- it might even be more loop resistant.",
+  "created_utc": 1789508869,
+  "id": "pa1mcmn",
+  "parent_id": "t1_pa1ixoz",
+  "score": 1
+ },
+ {
+  "author": "TopCheddar27",
+  "body": "What about at lower quants?",
+  "created_utc": 1789507912,
+  "id": "pa1ixoz",
+  "parent_id": "t3_1wh5elt",
+  "score": 1
+ },
+ {
+  "author": "RevolutionaryBox2980",
+  "body": "This is awesome",
+  "created_utc": 1789504821,
+  "id": "pa173k8",
+  "parent_id": "t3_1wh5elt",
+  "score": 1
+ },
+ {
+  "author": "DustNearby2848",
+  "body": "Here so I’m notified when it’s out ",
+  "created_utc": 1789500968,
+  "id": "pa0rulm",
+  "parent_id": "t1_pa0k6iy",
+  "score": 1
+ },
+ {
+  "author": "returnity",
+  "body": "Maybe that wasn't a great choice -- but I air-quoted it intentionally, and I only did so because a) the model creators referenced it repeatedly in their own model card and b) I assumed people would recognize it and understand the intent of the model. I think my actual post was very clear about crediting the creators and differentiating the models.",
+  "created_utc": 1789500916,
+  "id": "pa0rn37",
+  "parent_id": "t1_pa0mz4g",
+  "score": 1
+ },
+ {
+  "author": "[deleted]",
+  "body": "[removed]",
+  "created_utc": 1789500605,
+  "id": "pa0qf8q",
+  "parent_id": "t3_1wh5elt",
+  "score": 1
+ },
+ {
+  "author": "[deleted]",
+  "body": "[removed]",
+  "created_utc": 1789499838,
+  "id": "pa0nec2",
+  "parent_id": "t3_1wh5elt",
+  "score": 1
+ },
+ {
+  "author": "returnity",
+  "body": "Can you elaborate? If you mean the ThinkingCap reference, I was just going off the literal quote from their model card. I meant no disrespect, and I have responded to the model creator's clarification.",
+  "created_utc": 1789499236,
+  "id": "pa0l0ot",
+  "parent_id": "t1_pa0e80l",
+  "score": 1
+ },
+ {
+  "author": "Glittering-Call8746",
+  "body": "So upstream changed, will ur artifact catch up?",
+  "created_utc": 1789493113,
+  "id": "p9zwmoy",
+  "parent_id": "t1_p9znafa",
+  "score": 1
+ },
+ {
+  "author": "returnity",
+  "body": "Very true.. you can see this in the cost/task and tokens/task rankings AA publishes, which more people should attend to IMO. This fine tune helps a lot in my testing.",
+  "created_utc": 1789491412,
+  "id": "p9zpshx",
+  "parent_id": "t1_p9zpfee",
+  "score": 1
+ },
+ {
+  "author": "DatIshBeKrazy",
+  "body": "Tested vs unsloth Q5\\_K\\_M and it thinks the same if not more. Tons of \"Alright, writing it now\", then it thinks for 3,000 more tokens, then \"Alright, writing it for real this time\", then thinks for another 5k tokens. Rinse and repeat until it has used up 30k tokens before it writes a single word. ",
+  "created_utc": 1789519192,
+  "id": "pa2jggt",
+  "parent_id": "t3_1wh5elt",
+  "score": 0
+ },
+ {
+  "author": "GoblinEngineer",
+  "body": "I found something similar, see my [post](https://www.reddit.com/r/LocalLLaMA/comments/1wh5elt/cut_qwen3827b_reasoning_tokens_by_40_38/pa1waia/) below yours",
+  "created_utc": 1789512105,
+  "id": "pa1x7uf",
+  "parent_id": "t1_pa1ouy8",
+  "score": 0
+ },
+ {
+  "author": "okamagsxr",
+  "body": ">but I air-quoted it intentionally\n\nIt's not \"air-quoted\" if you literally quoted it, is it? lol",
+  "created_utc": 1789501796,
+  "id": "pa0v460",
+  "parent_id": "t1_pa0rn37",
+  "score": -2
+ }
+]

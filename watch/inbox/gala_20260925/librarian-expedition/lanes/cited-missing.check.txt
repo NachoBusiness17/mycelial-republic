@@ -1,0 +1,139 @@
+=== cited-missing lane finish-line check, 2026-10-01T23:41:05Z ===
+
+--- [1] extraction rerun (extract_citations.py raw output) ---
+{
+  "total_rows": 205,
+  "by_group": {
+    "48h_synth": 9,
+    "olm0930": 45,
+    "olm1001": 27,
+    "spiking": 86,
+    "localfirst": 7,
+    "drops": 29,
+    "ractor50": 2
+  },
+  "errors": []
+}
+wrote C:\Users\foste\Documents\projects\local_sovereign_agent\watch\inbox\gala_20260925\librarian-expedition\lanes\citations_raw.json
+
+--- [2] holdings rerun (holdings_check.py raw output; live tree: healer may be mid-fetch) ---
+{
+  "unique_citations": 91,
+  "held_any": 50,
+  "held_durable": 49,
+  "not_held": 41,
+  "error_rows": 0,
+  "held_durable_values": [
+    "2310.03003",
+    "2310.06694",
+    "2311.16863",
+    "2312.00752",
+    "2312.09084",
+    "2402.00070",
+    "2402.19427",
+    "2403.13187",
+    "2403.17887",
+    "2403.20306",
+    "2407.12345",
+    "2408.11796",
+    "2408.15237",
+    "2410.10254",
+    "2502.14458",
+    "2503.01155",
+    "2503.18002",
+    "2507.10059",
+    "2508.14444",
+    "2508.16204",
+    "2509.05276",
+    "2510.26692",
+    "2512.03024",
+    "2601.22076",
+    "2603.15569",
+    "2605.14386",
+    "2605.16727",
+    "2606.03458",
+    "2608.10644",
+    "2608.28444",
+    "2608.30439",
+    "2609.07370",
+    "2609.07901",
+    "2609.16338",
+    "2609.18526",
+    "2609.23125",
+    "2609.23742",
+    "2609.24799",
+    "2609.25447",
+    "2609.26693",
+    "2609.29144",
+    "2609.31540",
+    "2609.31678",
+    "2609.32042",
+    "2609.32049",
+    "2609.34160",
+    "2609.36805",
+    "2609.37902",
+    "2609.39765"
+  ],
+  "weak_only_values": [
+    "2609.27612"
+  ]
+}
+
+--- [3] receipt render (render_receipt.py stdout -> watch/inbox/librarian_exp/cited-missing.md) ---
+{
+  "STATS": {
+    "unique_citations": 90,
+    "cite_locations": 205,
+    "held_durable": 49,
+    "held_weak": 1,
+    "not_held": 40,
+    "P1": 15,
+    "P2": 1,
+    "P3": 24
+  }
+}
+
+--- [4] fetchability probes (curl -I -L, HTTP codes) ---
+200 https://arxiv.org/abs/2509.05276
+200 https://arxiv.org/abs/2608.10644
+200 https://arxiv.org/abs/2310.06694
+200 https://github.com/MoonshotAI/Kimi-Linear
+200 https://github.com/Niko1221/Strata
+200 https://github.com/SakanaAI/natural_niches
+200 https://github.com/Abrar051/sml_mcp_benchmark
+200 https://github.com/KJP-Git/myAgentMemory
+200 https://github.com/RichSchefren/atlas
+200 https://github.com/StewAlexander-com/continuous-ai
+200 https://github.com/csnyder256/RAG-OS
+200 https://github.com/gauravapiscean/agentic-kv-cache
+200 https://github.com/huawei-csl/KVarN
+200 https://github.com/santhoshravindran7/portable-agent-memory
+200 https://github.com/state-spaces/mamba
+200 https://arxiv.org/abs/2407.12345
+
+--- [5] byte verification of the receipt on disk (counts derived from the receipt itself) ---
+receipt headings: ## HELD (durable) - 49 | ## HELD (weak: temp-path only) - 1
+table rows: held-durable 49 | held-weak 1 | missing 40
+count lines:
+   - Unique citations extracted: 90 (40 arXiv ids, 12 GitHub repos)
+   - HELD (durable estate): 49
+   - HELD (weak, temp-path only): 1
+   - NOT HELD (cited-but-missing): 40
+em-dash count in receipt: 0
+BYTE CHECK PASS: table rows match receipt count lines and sum to the unique count; zero em-dashes
+
+--- [6] spot evidence: mid-sweep heals ---
+-rw-r--r-- 1 foste 197609 1461 Oct  1 14:33 watch/inbox/gala_20260925/spiking-wide/lanes/ev_arxiv_2509_05276_abstract.md
+-rw-r--r-- 1 foste 197609 7562845 Oct  1 19:35 memory/runs/gathering_expedition/p2_2508.16204.pdf
+-rw-r--r-- 1 foste 197609 3976973 Oct  1 19:34 memory/runs/gathering_expedition/p2_2509.05276.pdf
+-rw-r--r-- 1 foste 197609  355844 Oct  1 19:35 memory/runs/gathering_expedition/p2_2608.10644.pdf
+healer dir file count now: 48
+
+--- [7] defensive find: sampled still-missing ids have no filename match in state/watch/memory/corpus ---
+memory/runs/gathering_expedition/p2_2402.00070.pdf
+memory/runs/gathering_expedition/p2_2605.14386.pdf
+corpus/papers_reference_nonredistributable/paper_2402.00070.pdf
+corpus/papers_reference_nonredistributable/paper_2605.14386.pdf
+find exit=0 (empty output above = zero files)
+
+=== end finish-line check ===

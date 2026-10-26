@@ -1,0 +1,171 @@
+cmd: grok --prompt-file <sched.txt> --max-turns 18
+exit: 0 latency_ms: 344046
+--- stdout ---
+I'll search X directly for the last 30 days on inference scheduling past prefix caching—disaggregation, multi-node routing, KV-aware and SLO-aware serving.The first pass is mostly explainers and one copied listicle. Next I’ll pull measured posts: disaggregation, llm-d routing, Dynamo, and local multi-instance schedulers.I have enough retrieved posts. I’m trimming each one to the 500-character verbatim cap before writing the block.URL: https://x.com/anilkalm/status/2109333671052521682
+HANDLE: @anilkalm
+DATE: 2026-10-11
+TEXT: Prefill/decode disaggregation creates a resource allocation problem: what happens when your GPU split no longer matches inference traffic?
+
+Long prompts can saturate prefill workers while decode GPUs sit underutilized. Generation-heavy workloads can reverse that imbalance.
+
+SGLang v0.5.21 adds runtime role switching. Once a worker drains to idle, an operator or router can call POST /pd_role_switch to change its role without restarting the server or reloading model weights.
+WHY: SGLang v0.5.21 can flip an idle worker between prefill and decode via POST /pd_role_switch without a reload; the KV pool stays up, and rebalancing is still an external decision.
+
+URL: https://x.com/TanmmayKanhaiya/status/2109318913158950912
+HANDLE: @TanmmayKanhaiya
+DATE: 2026-10-11
+TEXT: Update: My from-scratch vLLM-style engine's paged-attention Triton kernel now runs inside Qwen2.5-0.5B!
+
+• Single-pass online softmax & GQA
+• Token-for-token match with HF 
+• 2.5-8x faster batching on an RTX 4060
+
+Next: continuous batching.
+
+repo: https://github.com/XVX-016/vLLM-inference-engine
+WHY: A from-scratch paged-attention kernel on Qwen2.5-0.5B is 2.5–8x faster at batching on an RTX 4060; continuous batching is the stated next step.
+
+URL: https://x.com/zexigh/status/2109299565283152053
+HANDLE: @zexigh
+DATE: 2026-10-11
+TEXT: One level down #001. Herbert writes its own machine code at startup. At decode it pulls up to 98% of the memory bandwidth, ahead of llama.cpp, vLLM and OpenVINO on AVX-512. Three results go against me.
+WHY: On an EPYC 4344P, Qwen3.5-4B bf16 decode ceiling is 6.43 tok/s; Herbert 6.15, llama.cpp 5.95, OpenVINO 5.83, vLLM 5.60. Prefill splits wider: Herbert 282, vLLM 262, llama.cpp 133 tok/s. Decode is claimed at up to 98% of memory bandwidth.
+
+URL: https://x.com/sukhmani_works/status/2109150752715547076
+HANDLE: @sukhmani_works
+DATE: 2026-10-11
+TEXT: Idle AI agents can hold gigabytes of GPU KV cache while they wait on tools.
+
+I simulated Dynamo-style session-aware scheduling. It wins under heavy memory pressure, but backfires with long tool calls.
+
+Post + free notebook: https://sukhmani1303.medium.com/your-ai-agent-is-wasting-gpu-memory-while-waiting-for-tools-50a4db7eeb9c
+WHY: A Dynamo-style session scheduler keeps idle-agent KV resident and wins only under heavy memory pressure; long tool calls reverse the gain. No throughput figure in the post.
+
+URL: https://x.com/NexEcosystem/status/2108905221237993681
+HANDLE: @NexEcosystem
+DATE: 2026-10-10
+TEXT: ⚡ Meet NexRT, the low-latency decode engine behind Nex-N2.5.
+💡 Built for single-request inference on Nex-N2.5-Pro.
+• 1,000+ tokens/s at 8K context on 8×H100 with DFlash*
+• Standard decoding, MTP and DFlash
+• Context parallelism for long contexts, up to 256K
+
+SGLang handles prefill; NexRT handles decode. The two engines share routed MoE weights.
+Custom CUDA kernels, full decode CUDA Graphs and direct GPU communication help reduce latency throughout the decode path.
+WHY: Split-engine serving: SGLang prefill, NexRT decode, shared routed MoE weights. Claims 1,000+ tok/s at 8K on 8×H100 with DFlash, assuming 5.5 committed tokens per round, and context parallelism to 256K.
+
+URL: https://x.com/awais_khawar/status/2108973336025792815
+HANDLE: @awais_khawar
+DATE: 2026-10-10
+TEXT: ② Routing and boot time are the other levers. Sticky session routing via the Dynamo EP picker delivered up to 10 percent more throughput and 30 percent lower P90 latency.
+WHY: Sticky session routing through the Dynamo endpoint picker: up to 10% more throughput and 30% lower P90 latency on H-Company computer-use serving.
+
+URL: https://x.com/CalatheaAI/status/2108814812738392281
+HANDLE: @CalatheaAI
+DATE: 2026-10-10
+TEXT: ⚙️ LLM serving research
+
+Sreetama Sarkar and colleagues from USC, UC Irvine and Intel Labs report a way to reuse a small model’s context cache when handing a request to a larger model in the same family.
+
+RaReCache maps the cached representations, then selects positions for the larger model to process again. This targets prefill, the initial processing of a prompt.
+WHY: RaReCache hands a small model's cache to a larger sibling and recomputes 30% of positions. Qwen3-0.6B→14B: 90.2% vs 95.1% GSM8K (1,319 questions), 61.2% vs 78.6% MMLU-Redux. A100 eager-mode: about 1.8× prefill capacity; median TTFT 870ms to 173ms near saturation, 51ms to 95ms when light.
+
+URL: https://x.com/BoboLinNotes/status/2108778403486896499
+HANDLE: @BoboLinNotes
+DATE: 2026-10-10
+TEXT: A serving benchmark that ignores queueing is mostly measuring a demo. On one L4 running Qwen2.5 7B, 72 ms beat 120 ms at one request. At 32 concurrent requests, the reported results were 639 ms and 258 ms. This still says nothing about mixed prompt lengths, tool calls, or long outputs.
+WHY: Queueing flips a single-request ranking on one L4 with Qwen2.5 7B: 72 ms vs 120 ms at 1 request, 639 ms vs 258 ms at 32 concurrent.
+
+URL: https://x.com/salutepop/status/2108439218091704410
+HANDLE: @salutepop
+DATE: 2026-10-09
+TEXT: LLM의 KV Cache를 GPU 밖의 Object Storage에 저장하면 얼마나 느려질까요?
+
+어제 Scality가 공개한 AI Inference Factory
+
+- 14K 토큰 컨텍스트 복원 TTFT: 166ms
+- 동일 컨텍스트 재계산보다 14배 빠름
+- 439K에서는 재계산 대비 최대 72배 빠름
+- 네트워크 대역폭의 97% 활용
+
+@scality
+WHY: Scality AI Inference Factory restores a 14K-token KV context at 166 ms TTFT, 14× faster than recompute, up to 72× at 439K, using 97% of network bandwidth.
+
+URL: https://x.com/MizanAl19145045/status/2108264890712633799
+HANDLE: @MizanAl19145045
+DATE: 2026-10-08
+TEXT: vLLM was the starting line. Real LLM serving begins now.
+
+Making one model fast on one GPU is a solved problem. PagedAttention, continuous batching and good kernels got us there.
+
+Production is different. You run dozens of replicas, and round-robin load balancing is wrong for them. Each replica holds its own KV cache, requests vary wildly in cost, and a long prompt can occupy a GPU for seconds.
+WHY: Round-robin is the wrong balancer once each replica owns its KV cache. The post describes llm-d on top of vLLM: an Envoy endpoint picker using queue depth, KV usage, prefix-cache hits, and loaded adapters, plus prefill/decode disaggregation. No new benchmark number.
+
+URL: https://x.com/brockerorg/status/2108269077798019417
+HANDLE: @brockerorg
+DATE: 2026-10-08
+TEXT: NVIDIA Dynamo uses session IDs to route agentic workloads and coordinate KV cache reuse across vLLM and SGLang. NVIDIA reports session-aware admission control improved SWE-bench throughput 12–16% over KV routing alone. https://www.brocker.org/nvidia-dynamo-session-aware-agentic-inference
+WHY: Dynamo session-aware admission on top of KV routing: NVIDIA reports 12–16% higher SWE-bench throughput across vLLM and SGLang.
+
+URL: https://x.com/ardadev/status/2107969024432763035
+HANDLE: @ardadev
+DATE: 2026-10-07
+TEXT: btw first thing that comes to my mind: https://llmkube.com/ 
+
+> Kubernetes operator for self-hosted LLM inference across a heterogeneous GPU fleet: NVIDIA CUDA, AMD Vulkan, and Apple Silicon Metal. Runtimes: llama.cpp, vLLM, TGI, mlx-server. Multi-GPU sharding, model caching, OpenAI-compatible endpoints. Apache-2.0, run across homelab and on-prem fleets, actively developed.
+
+So you can bring more machines to your fleet.
+WHY: Points at llmkube as a Kubernetes operator for a mixed CUDA / Vulkan / Metal fleet running llama.cpp, vLLM, TGI, and mlx-server with multi-GPU sharding. No benchmark.
+
+URL: https://x.com/Zero_to_MVP/status/2106727628661018980
+HANDLE: @Zero_to_MVP
+DATE: 2026-10-04
+TEXT: I built GridCore: a scheduler that lets several local LLMs share one GPU.
+
+Chat always goes first, background jobs yield, and a model loads only if its memory fits. It sits in front of llama.cpp and speaks the OpenAI API.
+
+Linux and Apple Silicon, MIT.
+https://github.com/w512/GridCore
+WHY: GridCore is a priority scheduler in front of llama.cpp so several local models share one GPU: chat preempts background work, and a model loads only if it fits. No throughput number.
+
+URL: https://x.com/bountyAIhunter/status/2106783910071795846
+HANDLE: @bountyAIhunter
+DATE: 2026-10-04
+TEXT: My agent's router was writing 100+ tokens of JSON to say one word: "billing".
+
+llama.cpp just added decision models. They don't generate anything. One forward pass, you get probabilities for the options you gave it. The usage field literally says output_tokens: 0.
+
+So I swapped my router. Before: Qwen3.5-9B generating JSON. After: Kev-4B on my 3070 (8GB).
+
+200 real routing calls from my own agent logs:
+same decision as the old router: 183 / 200
+WHY: Local router swap on 200 real calls: Kev-4B Q8_0 on a 3070 matched a Qwen3.5-9B JSON router 183/200, ~1.9s down to 29ms (vendor figure 12ms on an RTX PRO 6000). 14 of the 17 disagreements were under 0.5 confidence; Q4 vs Q8 changed 11 of 200 answers.
+
+URL: https://x.com/vassallo/status/2103504189951553566
+HANDLE: @vassallo
+DATE: 2026-09-25
+TEXT: Phase 1 of the AI infrastructure build out is over.
+
+Initially there was this frenzy for compute at all costs. Availability mattered more than anything else.
+
+As we've moved from chat to research to long-running agents, token consumption has gone through the roof. Workloads are getting both larger and more varied.
+
+So businesses are starting to ask a new question: how do I make every token cost-effective?
+
+Anyone running a data center is looking for ways to squeak out more performance per watt and per dollar.
+WHY: Heterogeneous disaggregation: AMD Helios on prefill, a Cerebras wafer-scale engine on decode, claimed at 5× tokens per second per watt. Same shape suggested for Nvidia GPUs paired with wafer-scale decode.
+
+URL: https://x.com/SupersocksIntel/status/2098310560253165822
+HANDLE: @SupersocksIntel
+DATE: 2026-09-11
+TEXT: Random routing on a multi-instance LLM endpoint wastes your prefix cache.
+
+SageMaker Inference now has PREFIX_AWARE: same prompt beginning → same instance, so the KV cache actually warms. On Llama 3.1 70B (7× ml.p5.48xlarge, long 8k shared prefixes): P50 TTFT down up to 77%, KV hit rate ~25% → >80%, throughput +15–16%. Routing overhead 1.3–1.9ms.
+
+Overload protection still spills to a quieter instance. You set PrefixLength + ConcurrencyThreshold on the variant — no container rewrite.
+WHY: SageMaker PREFIX_AWARE sticks shared prefixes to one instance. Llama 3.1 70B on 7× ml.p5.48xlarge with 8k shared prefixes: P50 TTFT down up to 77%, KV hit rate from ~25% to >80%, throughput +15–16%, routing overhead 1.3–1.9 ms.
+
+SUMMARY: 16 posts from 2026-09-11 through 2026-10-11. The dense subtopics are prefill/decode disaggregation (SGLang role switch, NexRT split, Cerebras/AMD), KV-aware multi-replica routing (llm-d, SageMaker PREFIX_AWARE, Dynamo session admission at 12–16% and 10%/30% P90), and queueing or cache-handoff measurements (RaReCache, L4 concurrency flip, Scality KV restore). Local multi-model scheduling showed up as GridCore, a llama.cpp decision-model router, and llmkube. Measured Ollama multi-instance load-balancing posts were scarce in this window.
+
+--- stderr tail ---
+

@@ -1,0 +1,36 @@
+{
+  "gopher": "t84",
+  "item": "t78's remaining-open quartet: (1) mag/afk_loop.py:196 _fold fourth twin (same traced-guard treatment as t78's three, non-fatal print naming cause); (2) mag/capability_steal.py:189 add_move swallow (same); (3)+(4) lane_cadence.py:138/:183 pacing-GO fail-opens: convert to fail CLOSED (error = honor the cheaper/slower path, named error field) following t52's convention, ONLY after reading call sites to confirm the safe direction (document it per site). Update tests/test_loop_death_guards.py with one test per conversion. Run pytest on it + cite; tools/violation_ratchet.py check --changed + cite. Save evidence to LANES/t84.check.txt. Bank: LANES/t84.json.",
+  "ok": true,
+  "note": "All four sites converted at the LAWS cap of 4 fixes total. SPEC first: t84 SPEC block (4 lines) written into the test docstring BEFORE any behavior edit, plus dated SPEC comments at each fix site. Verdicts: (1) mag/afk_loop.py:196 _fold = t19 species emit swallow, fourth twin, converted to traced [afk-loop] FOLD LOOP DEATH GUARD print (non-fatal, names cause). (2) mag/capability_steal.py:189 add_move promotion swallow = same species (cause swallowed, row recorded promoted=None with no WHY), converted to traced [capability-steal] PROMOTION LOOP DEATH GUARD print; promotion stays honestly None, pass non-fatal. (3) mag/lane_cadence.py:138 cooldown(): call sites read BEFORE converting, all three confirm positive cooldown = the cheaper/slower path: queue_gate.preflight (mag/queue_gate.py:206) DENIES dispatch while cd>0, fuel_feed._lane_order (mag/fuel_feed.py:201) probes cooled lanes LAST, pick_free_glm rides the calmer glm-4.5-flash clerk pool while cd>0; the old except->return 0 made an unverifiable FAILED row read as READY (spend GO). Fail CLOSED: return MAX_RETRY (120s, the existing cap), cause named in COOLDOWN_GATE_ERROR, cleared on a clean read, surfaced by status(); self-heals when the next attempt appends a fresh parseable row. (4) mag/lane_cadence.py:183 brake_after(): honest negative on record: NO production callers exist (repo grep over *.py excluding .venv: only status() and the dist_audit/ copy), so the deny direction comes from the docstring contract (return = count of free fails still needed before the paid brake may fire): the old except->continue let an unparseable row read as NOT-a-failure, undercounting and delaying the brake; fail CLOSED counts the unverifiable row as a recent failure, cause named in BRAKE_GATE_ERROR, cleared on a clean pass, surfaced by status(). One test per conversion added (4 new, file now 24 tests). No em-dashes in authored lines: first grep run was clean, nothing to retry.",
+  "checks": [
+    {"check": ".venv/Scripts/python.exe -m pytest tests/test_loop_death_guards.py -v", "exit": 0, "result": "24 passed in 0.28s (16 prior gate/death-guard tests incl. t78's four, plus 4 new: test_afk_loop_fold_guard_prints, test_capability_steal_promotion_guard_prints, test_lane_cadence_cooldown_fails_closed, test_lane_cadence_brake_fails_closed)", "evidence": "watch/inbox/gala_20260925/afterparty/lanes/t84.check.txt"},
+    {"check": ".venv/Scripts/python.exe tools/violation_ratchet.py check --changed", "exit": 0, "result": "scope=20 changed files; hits=17; registered=17; NEW=0; expired-exceptions=0; PASS, no unregistered debt (the em-dash in the PASS line is the ratchet's own output, kept byte-verbatim)", "evidence": "watch/inbox/gala_20260925/afterparty/lanes/t84.check.txt"},
+    {"check": "git diff added-lines em-dash grep over the 4 touched files", "exit": 1, "result": "exit 1 = 0 em-dashes in authored added lines, first run clean (t78's blemish not repeated); raw note in the check file", "evidence": "watch/inbox/gala_20260925/afterparty/lanes/t84.check.txt"},
+    {"check": ".venv/Scripts/python.exe -m pytest tests/test_zai_burst.py -q (adjacent consumer of cooldown via pick_free_glm)", "exit": 0, "result": "8 passed in 0.22s", "evidence": "watch/inbox/gala_20260925/afterparty/lanes/t84.check.txt"}
+  ],
+  "conversions": [
+    "mag/afk_loop.py:196 _fold emit swallow -> traced [afk-loop] FOLD LOOP DEATH GUARD print",
+    "mag/capability_steal.py:189 add_move promotion swallow -> traced [capability-steal] PROMOTION LOOP DEATH GUARD print",
+    "mag/lane_cadence.py:138 cooldown() ts-parse except->return 0 (pacing GO) -> FAIL CLOSED: MAX_RETRY breather, named in COOLDOWN_GATE_ERROR",
+    "mag/lane_cadence.py:183 brake_after() ts-parse except->continue (pacing GO) -> FAIL CLOSED: unverifiable row counts as a recent failure, named in BRAKE_GATE_ERROR"
+  ],
+  "safe_directions": {
+    "cooldown_138": "positive cooldown = cheaper/slower at ALL three call sites (queue_gate.preflight deny dispatch, fuel_feed._lane_order probe last, pick_free_glm clerk pool); documented per site in the SPEC comment",
+    "brake_after_183": "no production callers; deny direction fixed by the docstring contract (count of free fails still needed before the brake may fire), so an unverifiable row must COUNT, not read as healthy"
+  },
+  "files_touched": [
+    "mag/afk_loop.py",
+    "mag/capability_steal.py",
+    "mag/lane_cadence.py",
+    "tests/test_loop_death_guards.py"
+  ],
+  "negatives": [
+    "brake_after() has NO production callers today; the conversion is contract-driven (docstring), not caller-driven, and is stated as such in the SPEC comment and check file.",
+    "mag/queue_gate.py:211 cadence-gate wrapper ('except Exception: pass' around lc.cooldown in preflight) is a REMAINING fail-open one level up: if cooldown raises outside the ts-parse path, the task still dispatches (GO). Not in my quartet, left open with file:line; my in-function fix removes the main raise source but the wrapper is its own site.",
+    "mag/fuel_feed.py:203 cadence wrapper except->pass is ordering-only (reorders lanes, never grants a call), judged deny-safe, left open on record.",
+    "The two existing lane_cadence docstrings I did not touch still contain pre-existing em-dashes (module header, cooldown docstring); authored added lines are clean, pre-existing text left as-is."
+  ],
+  "next_steal": "mag/queue_gate.py:211 preflight cadence-gate wrapper: convert 'except Exception: pass' to fail CLOSED (leave the task queued, reason cadence_gate_error naming the cause) following t84/t52; one test in test_loop_death_guards.py; cooldown/brake gates themselves are now internally fail-closed, so the wrapper is the last GO path on that gate.",
+  "ts": "2026-09-25"
+}

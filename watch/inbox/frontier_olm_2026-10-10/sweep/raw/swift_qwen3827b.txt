@@ -1,0 +1,779 @@
+### UkisAI Swift-Qwen3.8-27B / -58.3% thinking, x1.95 speed while keeping the accuracy of xhigh
+Hi everybody, we post-trained Qwen 3.8 27B to be more efficient by figuring out which tokens were linked to overthinking and penalizing them without "attacking" the reasoning length directly then fixed the accuracy with a bit of secret sauce (hint On-Policy Distillation) and achieved great results (-58% thinking tokens, 1.95x speed up, <1% accuracy loss) so we wanted to open-source it and hear the feedback of the community.
+ This is the link to the model: https://huggingface.co/ukisai/Swift-Qwen3.8-27b
+ We also also providing a Free Research Purpose API (OpenAI compatible), courtesy of Nvidia who were kind enough to provide us with the GPUs. You can use it to try out the model if you do not have enough compute to run it, it's limited at 5RPM. https://ukisai.com/api/swift/v1/models
+ We also made a GGUF (Q1-Q8) and there's also a few nice community (Bartowski) quants with even lower/higher precision. The community also created amazing NVFP4, W4A16 and Uncensored versions of the model you can find on Huggingface.
+ IMPORTANT: Our training approach is not a replacement for the reasoning effort settings, chat templates or token caps but is complementary and targets a completely separate issue (overthinking and "anxiety-like" reasoning loops prior seen in PTQ, but as far as we identified also prominent in BF16 of this size class LLMs as well). Contrary to popular belief, these specific patterns do not contribute to answer quality when properly targeted. (our thesis being: reasoning length IS extremely important and should NOT be shortened by force, but rather optimized). This is also demonstrated bellow in our xhigh vs medium effort benchmark table. The goal is to keep xhigh accuracy while reducing only the unnecessary part of thinking.
+ I will TLDR you on our thought process, research, training and benchmarks.
+ When running our quantized Qwen 3.8 27B instances we were very annoyed by random reasoning loops (in the paper bellow refered to as "overthinking errors". These random loops were persistent throughout medium and low reasoning settings.
+ We remembered a paper by Meta that's supposed to target this phenomenon in PTQ, but when used straight out of the box got mixed results.
+ We figured to try if it's a matter of the targeting the right keywords and tuning the parameters, so we used our 8xH100 box and and generated a large amount of different (ofc out of distribution) domain (coding, language, vision, agentic) traces.
+ We then grouped the ones with overthinking and found "common denominator" tokens between them and targeted the most prominent ones.
+ We then built an inference-time penalizer of those tokens as seen in the paper with the hopes of simply generating traces and doing cross-entropy SFT over them.
+ Did not work at all, but the penalizer seemed to work much better than the tokens provided in the paper and not only for lower precision models but for bf16 as well. Hence we kept experimenting with it. We built a loss function using the tokens we identified and ran LoRa SFT over the traces prev generated and reasoning seemed to be falling off significantly but the accuracy seemed to follow. The reasoning reduction seemed to be generalizing.
+ After a significant amount of tinkering (literally since the day of Qwen 3.8 27B release) we were satisfied with the reasoning reduction. After that we searched for ways of restoring the accuracy. We experimented with several methods, including RL(GSPO), On-Policy Distillation and using the ThinkingCap 3.6 27B adapter chunks until we were satisfied with our accuracy loss. We managed to restore it to <1% loss on almost all of our OOD in house tests
+ We then performed intensive intensive benchmarks, across several reasoning efforts, precision variants etc. We ran into a few problems, one of which is that to get a reliable score we needed to run each benchmark 10x (5x on base + 5x with our adapter, this being the standard procedure on the Qwen 3.6 27B model card on Terminal Bench which we followed). After running it, the performance converged to 40-60% token reduction with <1% accuracy loss across GPQA, MMLU, Terminal Bench 2.1, LiveCodeBench v6, ERQA, C-Eval, IFBench, HMMT25, with an exception being AIME26 with an accuracy loss of 4.6%, which we later linked to a bug during training with a specific token relevant for math-related reasoning being penalized and are planning to fix it in an updated release.
+ The benchmarks: (raw benchmark files here - https://github.com/UkisAI/Swift-Qwen3.8-27B-evals/ )
+ Swift-27B vs Qwen3.8-27B (BF16, all benchmarks ran x5, thinking effort xhigh)
+ Benchmark Qwen3.8-27B Swift-27B Median tokens GPQA-Diamond 88.4% 88.3% 58% fewer LiveCodeBench v6 76.8% 81.6% (+4.8pp, due to default truncation in LCB it is not performance gain) 46% fewer thinking tokens Terminal-Bench 2.1 66.7% 65.8% 39% fewer MMLU-Pro 85.5% 85.0% 28% fewer C-Eval 90.0% 90.6% 19% fewer IFBench 73.5% 71.8% 51% fewer AIME 2026 98.7% 94.0% 50% fewer HMMT (Nov 2025) 99.3% 96.0% 46% fewer ERQA (vision) 67.5% 66.3% 55% fewer Token savings hold at every reasoning effort (mean thinking reduction): xhigh 41%, medium 23%, low 26% (albeit with accuracy loses of 1-4% on medium and 1-2% on low which we need further testing for)
+ Swift at xhigh vs the base's own effort settings on GPQA-Diamond (198 questions x 5 seeds):
+ Model / effort Accuracy Median tokens Base xhigh 88.4% 6,642 Swift xhigh 88.3% 2,771 Base medium 84.1% 1,753 So Swift keeps xhigh accuracy at under half the tokens, and beats base-medium by 4pp at roughly 1.6x its tokens.
+ End note:
+ While we are keen on complete open-source, we still need to keep a part of our training and data private, being a new lab. The license is not Apache 2.0, but it only affects companies >$1M. We hope this does not pose a problem for the community, but we are open to feedback on it.
+ We want to contribute as much as possible to the community and would really appreciate feedback on our work, quantization or Swift model requests. For context, we are working on Swift 3.8 Flash Next right now and have so far gotten up to -30% thinking token usage while maintaining xhigh accuracy, which we take as a strong indicator our methodology is reproducible across the Qwen model family. Will explore other families as soon as we have the capacity and would love to see which ones the community would love for us to optimize first.
+ submitted by /u/Secure_Recording_472 
+ [link] [comments]
+
+### /u/Yuuyuuei on UkisAI Swift-Qwen3.8-27B / -58.3% thinking, x1.95 speed while keeping the accuracy of xhigh
+I've been using this and it's quite amazing for the amount I've used it. Thanks for the hard work.
+
+### /u/Secure_Recording_472 on UkisAI Swift-Qwen3.8-27B / -58.3% thinking, x1.95 speed while keeping the accuracy of xhigh
+appreciate it bro, can you share some numbers with the community? :)
+
+### /u/Yuuyuuei on UkisAI Swift-Qwen3.8-27B / -58.3% thinking, x1.95 speed while keeping the accuracy of xhigh
+I'm running it as an Orcarouter NVFP4 DFlash2 ninfer that I got Codex to build from your bf16. Below is what Codex is telling me. 
+ Benchmarked using ninfer_bench DFlash2 K7 on RTX5090:
+ 512 prompt tokens
+ Generation: 475.58 tok/s
+ Prefill: 9,756.06 tok/s
+ First token: 0.0525s
+ Total request: 0.3198s
+ 4,096 prompt tokens
+ Generation: 468.34 tok/s
+ Prefill: 9,099.31 tok/s
+ First token: 0.4502s
+ Total request: 0.7216s
+ Config: 128 generated tokens, 3 measured runs after 1 warm-up, BF16 KV, 16,384 context, DFlash2 K7.
+
+### /u/Trademarkd on UkisAI Swift-Qwen3.8-27B / -58.3% thinking, x1.95 speed while keeping the accuracy of xhigh
+gawd damn ... 468 tok/s? Whats your acceptance rate?
+
+### /u/Secure_Recording_472 on UkisAI Swift-Qwen3.8-27B / -58.3% thinking, x1.95 speed while keeping the accuracy of xhigh
+genuinely crazy lol
+
+### /u/Yuuyuuei on UkisAI Swift-Qwen3.8-27B / -58.3% thinking, x1.95 speed while keeping the accuracy of xhigh
+I reused the existing upstream DFlash2 head trained for the official Qwen3.8-27B and attached it to Swift + OrcaRouter + NVFP4 without changing the main model weights.
+ I didn't want to spend time or compute retraining against the Swift model. Although it might be better if I did.
+ I'm running a proper NInfer DFlash2 benchmark now and will report back when it's done. You can try the model yourself if you like:
+ https://huggingface.co/Yuuyuuyuuyuu/Swift-Qwen3.8-27B-OrcaRouter-NVFP4-DFlash2-ninfer
+ I'm still not sure how good or bad it actually is yet. I'm doing all of this for fun as a hobby, and Codex is mostly taking the wheel 😅
+
+### /u/Secure_Recording_472 on UkisAI Swift-Qwen3.8-27B / -58.3% thinking, x1.95 speed while keeping the accuracy of xhigh
+this sounds like a great experiment, let me know how it goes!
+
+### /u/Yuuyuuei on UkisAI Swift-Qwen3.8-27B / -58.3% thinking, x1.95 speed while keeping the accuracy of xhigh
+This uses NInfer's own upstream 75-request corpus-makespan DFlash2 K7 benchmark.
+ Hardware: RTX 5090
+ Model: Swift Qwen3.8-27B + OrcaRouter NVFP4
+ Speculation: upstream Qwen3.8 DFlash2 head, K=7, not retrained for Swift
+ Results:
+ 75/75 requests completed
+ 217.0 decode tok/s
+ 40.9% DFlash2 acceptance
+ 782,783 completion tokens
+ 3,607.69 s total makespan
+ Breakdown:
+ Code: 277.4 tok/s — 53.9% acceptance
+ Story: 126.9 tok/s — 16.7% acceptance
+ Translation: 258.8 tok/s — 48.9% acceptance
+ Structured: 387.9 tok/s — 81.2% acceptance
+ AIME reasoning fixtures:
+ AIME 26 #1: 330.2 tok/s — 66.4% acceptance
+ AIME 26 #15: 206.9 tok/s — 39.1% acceptance
+ AIME 26 #30: 232.0 tok/s — 45.0% acceptance
+
+### /u/Secure_Recording_472 on UkisAI Swift-Qwen3.8-27B / -58.3% thinking, x1.95 speed while keeping the accuracy of xhigh
+Jesus Christ you cooked it up that's fast
+
+### /u/alew3 on UkisAI Swift-Qwen3.8-27B / -58.3% thinking, x1.95 speed while keeping the accuracy of xhigh
+Do you mind sharing your inference parameters and what context window are you using?
+
+### /u/Yuuyuuei on UkisAI Swift-Qwen3.8-27B / -58.3% thinking, x1.95 speed while keeping the accuracy of xhigh
+For that benchmark I used: Context window: 131,072 DFlash2: K=7, optimized proposal head Temperature: 0.6 Top-p: 0.95 Top-k: 20 Min-p: 0 Presence penalty: 1.0 Frequency penalty: 0 KV cache: INT8 group-64 Prefill chunk: 1024 Concurrency: 1 CUDA Graphs: enabled Prefix reuse: disabled 
+ The benchmark uses NInfer's own fixed 75-request corpus. The normal scenario prompts run with no thinking. The AIME long-reasoning fixtures use xhigh thinking and up to 65,536 output tokens.
+
+### /u/Lollerstakes on UkisAI Swift-Qwen3.8-27B / -58.3% thinking, x1.95 speed while keeping the accuracy of xhigh
+Ooof 23.7 GB ninfer artifact... Not gonna get a lot of context out of that one, that's for sure... For reference, the Quasar artifact (also Qwen 3.8 27B NVFP4) I'm running is 17.2 GB and leaves a lot of headroom for context (I think I get around 650k out of it with YaRN).
+
+### /u/DrCain on UkisAI Swift-Qwen3.8-27B / -58.3% thinking, x1.95 speed while keeping the accuracy of xhigh
+This is excellent, running it on my 5090 now and it's so fast.. prefill up to 4k and decode between 180-300 tok/s
+
+### /u/Trademarkd on UkisAI Swift-Qwen3.8-27B / -58.3% thinking, x1.95 speed while keeping the accuracy of xhigh
+that would feel faster than frontier in most cases lol
+
+### /u/Secure_Recording_472 on UkisAI Swift-Qwen3.8-27B / -58.3% thinking, x1.95 speed while keeping the accuracy of xhigh
+This is amazing you got the DFlash2 working! We're thinking of training the DFlash2 head, do you think we need to or is it fine as is?
+
+### /u/joost00719 on UkisAI Swift-Qwen3.8-27B / -58.3% thinking, x1.95 speed while keeping the accuracy of xhigh
+Definetely do it
+
+### /u/Secure_Recording_472 on UkisAI Swift-Qwen3.8-27B / -58.3% thinking, x1.95 speed while keeping the accuracy of xhigh
+any clue of benefits before doing it, ie can you please point me to some examples I can look into?
+
+### /u/ForeverSeeking69 on UkisAI Swift-Qwen3.8-27B / -58.3% thinking, x1.95 speed while keeping the accuracy of xhigh
+I've did very limited testing on the part of my pipeline related to stocks analysis and it did it 45% faster, and complited it correctly, but missed some details that ideally it should report. It's faster for sure, but accuracy is definitely affected.
+
+### /u/Secure_Recording_472 on UkisAI Swift-Qwen3.8-27B / -58.3% thinking, x1.95 speed while keeping the accuracy of xhigh
+Interesting, mind sharing the exact details (domain, quant, config)? We have done significant cross domain benchmarks and independent evals as well and have had near intact accuracy. It is still definitely possible and thank you for the feedback.
+
+### /u/ForeverSeeking69 on UkisAI Swift-Qwen3.8-27B / -58.3% thinking, x1.95 speed while keeping the accuracy of xhigh
+Q_8 and f16 context As I said it's very limited test, I will probably do it couple time more when I will have free time, since it takes up to hour for one run
+
+### /u/Secure_Recording_472 on UkisAI Swift-Qwen3.8-27B / -58.3% thinking, x1.95 speed while keeping the accuracy of xhigh
+hey! did you by chance get to run the full tests? would really appreciate the details
+
+### /u/ForeverSeeking69 on UkisAI Swift-Qwen3.8-27B / -58.3% thinking, x1.95 speed while keeping the accuracy of xhigh
+Hey. Did 3 round with default and 3 round with swift. 1 time swift cheated, so can't count that run. 2 runs finished 30% faster, but still missed some details. I've evaled with model and script that made result validation.
+ My conclusion (!!! this this subjective opinion !!!) I will stay with default qwen for serious work, and will use swift in placees where my brain hurt's when qwen overthinking to execute one tool call
+
+### /u/Combinatorilliance on UkisAI Swift-Qwen3.8-27B / -58.3% thinking, x1.95 speed while keeping the accuracy of xhigh
+Did you compare it to the regular model? This critique is only valid iff
+ The base model consistently gets those details right
+ The swift model consistently misses those details
+
+### /u/ForeverSeeking69 on UkisAI Swift-Qwen3.8-27B / -58.3% thinking, x1.95 speed while keeping the accuracy of xhigh
+Compared to unslosh same quant. And I said it's limited tests, not consistent results
+
+### /u/Kodix on UkisAI Swift-Qwen3.8-27B / -58.3% thinking, x1.95 speed while keeping the accuracy of xhigh
+Started using it today and I am genuinely impressed. Unlike 3.8 Grug, this didn't make the model lazy - it just no longer seems to overthink on trivial tasks. It's still quite capable of long thinking when needed. Very very good, so far.
+
+### /u/Secure_Recording_472 on UkisAI Swift-Qwen3.8-27B / -58.3% thinking, x1.95 speed while keeping the accuracy of xhigh
+That's why I needed to explain the training approach properly haha :) 
+ We firmly believe that penalising output length itself just decreases the models capabilities and you should instead focus on making the reasoning itself more efficient
+ Can you share some results with the people so they are encouraged to test it?
+
+### /u/Kodix on UkisAI Swift-Qwen3.8-27B / -58.3% thinking, x1.95 speed while keeping the accuracy of xhigh
+Well, for one, y'all making a testing API available is great. I used it before downloading/quantizing the model for my own use, and immediately knew the model wasn't slop due to that.
+ Don't really have impressive outputs to share, because I mostly use LLMs as an agent rather than a coding assistant. Troubleshooting, finding issues, figuring out bounded tasks with clear results - they're amazing at that. 
+ I'm currently having Swift autonomously fix Deepseek V4 Flash's implementation of ROCM adaptive KV streaming, and it is doing very well indeed (made it *actually function* just now, DSV4's implementation was broken beyond 90k context). So clearly the model functions, and functions *well*. 
+ Also, you asked for requests. Personally, I'd love two things: a smaller, disproportionately efficient quant of Swift (such as this one), and an abliterated/heretic version for reverse engineering work etc. I'll be doing both myself, but I'm hardware-limited and I'm sure I'm not the only one who'd appreciate it.
+ Anyway. Thank you *so much* for making this and releasing this to us. So far, it seems like genuinely brilliant work to me - and I do not say that lightly.
+
+### /u/Secure_Recording_472 on UkisAI Swift-Qwen3.8-27B / -58.3% thinking, x1.95 speed while keeping the accuracy of xhigh
+Thank you so much for the kind words sir. The testing API was a call that was pretty hard to make but we needed to do it haha!
+ The quant you linked is very nice and I'd love to see how close we can get with Swift! Would appreciate greatly if you contribute in any way, but we will get to it as soon as we have the resources non the less. There is a BF16 abliterated (uncensored) version by the community here, so check it out if it fits: https://huggingface.co/d0xin/Swift-Qwen3.8-27B-Uncensored-BF16
+ Let me know the numbers you get after your tests and please share with the people!
+
+### /u/RunawayPeeko on UkisAI Swift-Qwen3.8-27B / -58.3% thinking, x1.95 speed while keeping the accuracy of xhigh
+This post is a lot more professional and well structured than the earlier one on the r/LocalLLM sub, while you still reply to the comments with a human touch. Makes it a lot more welcome. Good job! Ive been using the model and really like it, my tasks are easy and dont require complex reasoning so I've yet to notice any IQ degradation. It does use less tokens though. Thanks for the great work
+
+### /u/Secure_Recording_472 on UkisAI Swift-Qwen3.8-27B / -58.3% thinking, x1.95 speed while keeping the accuracy of xhigh
+I've not posted in r/LocalLLM, is it mine or another, sorry don't mean to be rude just confused haha, the one I posted on r/qwen_ai was bad, not really a big Reddit user so wasn't sure how detailed people wanted it to be to not call it slop
+ Mind sharing some details on your use and/or some numbers for the people? :)
+
+### /u/RunawayPeeko on UkisAI Swift-Qwen3.8-27B / -58.3% thinking, x1.95 speed while keeping the accuracy of xhigh
+Ah yes it was on r/qwen_ai. Im using it with 32gb vram, Q4_K_M , FP16 kv cache, 128k context. Dont have exact numbers for time to response or thinking tokens, but it does seem like there is much less "but wait", "hmm", "actually". Using it to write simple scripts eg. To rename and organise my pictures. Would recommend!
+
+### /u/freebytes on UkisAI Swift-Qwen3.8-27B / -58.3% thinking, x1.95 speed while keeping the accuracy of xhigh
+Sadly, nowadays, the more detailed your post, the more people might think it is slop!
+
+### /u/Secure_Recording_472 on UkisAI Swift-Qwen3.8-27B / -58.3% thinking, x1.95 speed while keeping the accuracy of xhigh
+It's all human written! :)
+
+### /u/Bulky-Priority6824 on UkisAI Swift-Qwen3.8-27B / -58.3% thinking, x1.95 speed while keeping the accuracy of xhigh
+legit question, why is Q6_K_L approx. 1.5gb larger than UD_Q6_K_XL ?
+
+### /u/Secure_Recording_472 on UkisAI Swift-Qwen3.8-27B / -58.3% thinking, x1.95 speed while keeping the accuracy of xhigh
+Legit answer - we did not spend enough time on proper quants for Q6 and you should take a look at the community ones until we fix them (I hope within 24h) haha
+
+### /u/Bulky-Priority6824 on UkisAI Swift-Qwen3.8-27B / -58.3% thinking, x1.95 speed while keeping the accuracy of xhigh
+fair enough ty for clarity
+
+### /u/Secure_Recording_472 on UkisAI Swift-Qwen3.8-27B / -58.3% thinking, x1.95 speed while keeping the accuracy of xhigh
+You're welcome man, if you can cook up the Q6 it'd be amazing haha :) anything else you'd like to see from us? btw share the results when you try the model
+
+### /u/Bulky-Priority6824 on UkisAI Swift-Qwen3.8-27B / -58.3% thinking, x1.95 speed while keeping the accuracy of xhigh
+will do. i pinned it ill prob spend some time with your q8 when I actually get time to do so.
+
+### /u/Secure_Recording_472 on UkisAI Swift-Qwen3.8-27B / -58.3% thinking, x1.95 speed while keeping the accuracy of xhigh
+darn it posting it on a Monday, should've done it on the weekend haha
+
+### /u/ThatsALovelyShirt on UkisAI Swift-Qwen3.8-27B / -58.3% thinking, x1.95 speed while keeping the accuracy of xhigh
+Are there going to be unsloth dynamic quants (UD) of this one?
+
+### /u/Brief-Tap-6616 on UkisAI Swift-Qwen3.8-27B / -58.3% thinking, x1.95 speed while keeping the accuracy of xhigh
+i am continuing to test it but like what i have so far!
+ IQ 4 XS is flying, it is as fast as my speed optimized version, so looks like you quantized it well 🎉 
+ (I ran this on my 3090 fork of llama.cpp, which is much faster than stock: https://github.com/JakeATX/llamAmpere)
+ https://preview.redd.it/qpm6a5ds4jph1.png?width=1385&format=png&auto=webp&s=2f342ae782d5febdff533f31e1f7e541aa834cbd
+
+### /u/[deleted] on UkisAI Swift-Qwen3.8-27B / -58.3% thinking, x1.95 speed while keeping the accuracy of xhigh
+[deleted]
+
+### /u/Secure_Recording_472 on UkisAI Swift-Qwen3.8-27B / -58.3% thinking, x1.95 speed while keeping the accuracy of xhigh
+Hahahah love calling it apples-to-oranges
+ I think people in the comments have done a comparison, will try to look for it
+
+### /u/norenEnmotalen on UkisAI Swift-Qwen3.8-27B / -58.3% thinking, x1.95 speed while keeping the accuracy of xhigh
+Downloaded. About to test ride it
+
+### /u/Secure_Recording_472 on UkisAI Swift-Qwen3.8-27B / -58.3% thinking, x1.95 speed while keeping the accuracy of xhigh
+amazing! please share the results with the people! side note, do run with the recommended configuration and if possible use k=5 (5 runs before benchmarking) as Qwen varies a lot between seeds
+
+### /u/carloslfu on UkisAI Swift-Qwen3.8-27B / -58.3% thinking, x1.95 speed while keeping the accuracy of xhigh
+awesome! what is next? I hope Qwen 3.8 flash!
+
+### /u/Secure_Recording_472 on UkisAI Swift-Qwen3.8-27B / -58.3% thinking, x1.95 speed while keeping the accuracy of xhigh
+Yessss! We are cooking flash next right now! Got -38.1% median thinking decrease, but not ready yet. Any other super cool requests?
+
+### /u/carloslfu on UkisAI Swift-Qwen3.8-27B / -58.3% thinking, x1.95 speed while keeping the accuracy of xhigh
+love it! looking forward to it! what is the best place to keep track of this?
+
+### /u/Secure_Recording_472 on UkisAI Swift-Qwen3.8-27B / -58.3% thinking, x1.95 speed while keeping the accuracy of xhigh
+you'll see us pop up here when we release it for sure but you can always follow our HF https://huggingface.co/ukisai/ or my twitter https://x.com/jovan_kis
+
+### /u/carloslfu on UkisAI Swift-Qwen3.8-27B / -58.3% thinking, x1.95 speed while keeping the accuracy of xhigh
+I just followed you! Looking forward to your next releases!
+
+### /u/Secure_Recording_472 on UkisAI Swift-Qwen3.8-27B / -58.3% thinking, x1.95 speed while keeping the accuracy of xhigh
+cheers man! stay tuned :)
+
+### /u/shaakz on UkisAI Swift-Qwen3.8-27B / -58.3% thinking, x1.95 speed while keeping the accuracy of xhigh
+Any progress on flash?
+
+### /u/Secure_Recording_472 on UkisAI Swift-Qwen3.8-27B / -58.3% thinking, x1.95 speed while keeping the accuracy of xhigh
+stay tuned tomorrow eve CET / morning PT :)
+
+### /u/Secure_Recording_472 on UkisAI Swift-Qwen3.8-27B / -58.3% thinking, x1.95 speed while keeping the accuracy of xhigh
+btw any ideas for what platforms we should post on for releases such as this?
+
+### /u/Combinatorilliance on UkisAI Swift-Qwen3.8-27B / -58.3% thinking, x1.95 speed while keeping the accuracy of xhigh
+I wanted to note I'm incredibly thankful for this post being handwritten.
+ I've been vocally critical of LLM-written posts, I wanted to emphasize this read incredibly pleasantly and was very clear.
+ Am considering trying this out! :)
+ Do have to figure out how to get pi effort modes linked to llama.cpp server mode though. Shouldn't be too hard to figure out!
+
+### /u/Secure_Recording_472 on UkisAI Swift-Qwen3.8-27B / -58.3% thinking, x1.95 speed while keeping the accuracy of xhigh
+Thank you so much! I (and therefore my team) are firm believers of meaningful communication needing to be 100% handwritten. Glad you enjoyed it. 
+ On the trying out the model part, I hope making it worked won't be too much of a hassle, and I would appreciate if you were to share the results in the comments for the people to be encouraged to try as well!
+
+### /u/nokipaike on UkisAI Swift-Qwen3.8-27B / -58.3% thinking, x1.95 speed while keeping the accuracy of xhigh
+I need a GSQ-RCO version of this, and I think I'll be all set until the next version of Qwen 4 MOE 35B-3B Ngram low reasoning.
+
+### /u/Secure_Recording_472 on UkisAI Swift-Qwen3.8-27B / -58.3% thinking, x1.95 speed while keeping the accuracy of xhigh
+There's been so many requests for it we need to make it
+
+### /u/HoneydewNo116 on UkisAI Swift-Qwen3.8-27B / -58.3% thinking, x1.95 speed while keeping the accuracy of xhigh
+Yes, we are so looking forward it, please! We need GSQ-RCO GGUFs
+
+### /u/Secure_Recording_472 on UkisAI Swift-Qwen3.8-27B / -58.3% thinking, x1.95 speed while keeping the accuracy of xhigh
+Have you seen anybody building GSQ-RCO quants except the OG lab? Genuinely curious, trying to find it
+
+### /u/HoneydewNo116 on UkisAI Swift-Qwen3.8-27B / -58.3% thinking, x1.95 speed while keeping the accuracy of xhigh
+Unfortunately no(
+
+### /u/Secure_Recording_472 on UkisAI Swift-Qwen3.8-27B / -58.3% thinking, x1.95 speed while keeping the accuracy of xhigh
+We need to cook it then
+
+### /u/nokipaike on UkisAI Swift-Qwen3.8-27B / -58.3% thinking, x1.95 speed while keeping the accuracy of xhigh
+It would be fantastic and certainly much faster terms of tk/s, accessible to far more people, if you could achieve near-lossless quality with halved reasoning; you’d go viral instantly.
+
+### /u/fgk55555 on UkisAI Swift-Qwen3.8-27B / -58.3% thinking, x1.95 speed while keeping the accuracy of xhigh
+Yeah, give me an ISTA IQ3_XSS of this and I'll be a happy 16GB man
+
+### /u/nokipaike on UkisAI Swift-Qwen3.8-27B / -58.3% thinking, x1.95 speed while keeping the accuracy of xhigh
+Believe me, Qwen3.8-27B-GSQ-RCO-IQ2_XS-mtp fits into 12GB of VRAM with MTP and a 90k context window and it works surprisingly well; it’s a gem.💎 
+ It almost always strike even complex tasks on the first try; if it doesn't succeed on the first shot, it gets the job done on the second after having its error pointed out.
+
+### /u/papapumpnz on UkisAI Swift-Qwen3.8-27B / -58.3% thinking, x1.95 speed while keeping the accuracy of xhigh
+Awesome work, and thanks for doing it. Its now my main model for coding, after breaking tasks into small pieces using qwen3.8-flash-next to design and break it up.
+ Your model is so quick compared to stock. Well done.
+
+### /u/Secure_Recording_472 on UkisAI Swift-Qwen3.8-27B / -58.3% thinking, x1.95 speed while keeping the accuracy of xhigh
+thank you so much! how does the quality compare to base, for you? btw, would you use a Swift 3.8 Flash Next if we release it?
+
+### /u/papapumpnz on UkisAI Swift-Qwen3.8-27B / -58.3% thinking, x1.95 speed while keeping the accuracy of xhigh
+I cannot say quality vs stock, i've not done any comparrisons. But what I will say is that since its so fast, when it finds its mistakes it quickly fixes them, and that speed difference in correction makes a huge difference in output. It really is like night and day.
+ And yes, if you get 3.8 Flash out, would definitely try it.
+
+### /u/RickyRickC137 on UkisAI Swift-Qwen3.8-27B / -58.3% thinking, x1.95 speed while keeping the accuracy of xhigh
+I tested it and it was indeed faster than the original! Can you do one for Gemma 4???
+
+### /u/Secure_Recording_472 on UkisAI Swift-Qwen3.8-27B / -58.3% thinking, x1.95 speed while keeping the accuracy of xhigh
+Yess! The dense or the MOE one?
+
+### /u/pyr0kid on UkisAI Swift-Qwen3.8-27B / -58.3% thinking, x1.95 speed while keeping the accuracy of xhigh
+i feel like it'd have more value on dense models, considering they have less speed to begin with
+
+### /u/Secure_Recording_472 on UkisAI Swift-Qwen3.8-27B / -58.3% thinking, x1.95 speed while keeping the accuracy of xhigh
+fair point, although we did get good results testing an moe as well (3.8 flash next)
+ do u have any suggestions/requests which model to do?
+
+### /u/hadrimx on UkisAI Swift-Qwen3.8-27B / -58.3% thinking, x1.95 speed while keeping the accuracy of xhigh
+This looks awesome! Hopefully somebody can create some GSQ-RCO GGUFs (I have 16 GB VRAM and I'm spoiled)
+
+### /u/Secure_Recording_472 on UkisAI Swift-Qwen3.8-27B / -58.3% thinking, x1.95 speed while keeping the accuracy of xhigh
+Haha yeah a super optimized quant would be nice. Would you give the Q3 a shot in the meantime? :)
+
+### /u/pseudobacon on UkisAI Swift-Qwen3.8-27B / -58.3% thinking, x1.95 speed while keeping the accuracy of xhigh
+Trying it now. GSQ-RCO is my benchmark at Q3
+
+### /u/Secure_Recording_472 on UkisAI Swift-Qwen3.8-27B / -58.3% thinking, x1.95 speed while keeping the accuracy of xhigh
+Lmk how it compares! We'll see to make much better quants soon as well.
+
+### /u/SnooPuppers7882 on UkisAI Swift-Qwen3.8-27B / -58.3% thinking, x1.95 speed while keeping the accuracy of xhigh
+A suggestion.
+ Make the following revision to the xhigh prompt in your Jinja template:
+ "Reasoning effort is set to xhigh. Please think CAREFULLY but BRIEF, validate key assumptions by testing them, and MOVE QUICKLY to the conclusion WITHOUT unnecessary elaboration." Reason for caps is that the model places emphasis on words you yell at it, so you can shape adhearance this way.
+ This alone reduced xhigh reasoning tokens 18% on average with ZERO quality loss...Terminal Bench 2.1 using mini-swe-agent was 73.1% and humaneval at 98.4% after doubling token and time limit.
+
+### /u/philmarcracken on UkisAI Swift-Qwen3.8-27B / -58.3% thinking, x1.95 speed while keeping the accuracy of xhigh
+Reason for caps is that the model places emphasis on words you yell at it
+ Is this the LLM version of the guy with a hockey stick for robots?
+
+### /u/SnooPuppers7882 on UkisAI Swift-Qwen3.8-27B / -58.3% thinking, x1.95 speed while keeping the accuracy of xhigh
+I think it's just relating it to training when it sees data where emphasis online is inferred by using all caps for specific words or phrases, so it recognizes that
+
+### /u/Secure_Recording_472 on UkisAI Swift-Qwen3.8-27B / -58.3% thinking, x1.95 speed while keeping the accuracy of xhigh
+We need to do a lot of benchmarks (running each one x5 on base and x5 on our model) because the results vary a lot seed by seed but I'll give it a shot! did you test it yourself as well? can you try with our model as well? :)
+
+### /u/fishhf on UkisAI Swift-Qwen3.8-27B / -58.3% thinking, x1.95 speed while keeping the accuracy of xhigh
+Unless you have obtained permission from Alibaba, your derivative work shall remain on Apache 2.0.
+
+### /u/arzeth on UkisAI Swift-Qwen3.8-27B / -58.3% thinking, x1.95 speed while keeping the accuracy of xhigh
+No. Apache 2.0 is not copyleft, it's not an infectious license like GPL.
+ Apache 2.0 license = verbose re-write of the MIT License + grant of patent license (under condition that your whole Apache 2.0 license can be revoked if you try to institute patent litigation, which makes Apache 2.0 incompatible with GPLv2) + requirement to put notices into source code files you've modified (unless distributed in binary form only, obviously).
+ Wikipedia also says so:
+ The Apache License is permissive; unlike copyleft licenses, it does not require a derivative work of the software, or modifications to the original, to be distributed using the same license. It still requires application of the same license to all unmodified parts.
+ The unmodified parts (generation_config.json, some bits in *.safetensors) will still remain under Apache 2.0, but that doesn't matter.
+
+### /u/Secure_Recording_472 on UkisAI Swift-Qwen3.8-27B / -58.3% thinking, x1.95 speed while keeping the accuracy of xhigh
+Are you sure? As far as our lawyers told us it's fine to change the license, as it is Apache2.0 and we do not claim any of the base model weights and are not stripping that part of it's original license.
+
+### /u/fishhf on UkisAI Swift-Qwen3.8-27B / -58.3% thinking, x1.95 speed while keeping the accuracy of xhigh
+First, you need to reattach the original license file. See https://huggingface.co/Qwen/Qwen3.8-27B/blob/main/LICENSE
+ Subject to the terms and conditions of this License, each Contributor hereby grants to You a perpetual, worldwide, non-exclusive, no-charge, royalty-free, irrevocable copyright license to reproduce, prepare Derivative Works of, publicly display, publicly perform, sublicense, and distribute the Work and such Derivative Works in Source or Object form.
+ You may add Your own copyright statement to Your modifications and may provide additional or different license terms and conditions for use, reproduction, or distribution of Your modifications, or for any such Derivative Works as a whole, provided Your use, reproduction, and distribution of the Work otherwise complies with the conditions stated in this License.
+ Ask your lawyer. You can try to add a revenue gate, but the "worldwide, non-exclusive, no-charge, royalty-free, irrevocable copyright license" terms shall override it.
+
+### /u/Secure_Recording_472 on UkisAI Swift-Qwen3.8-27B / -58.3% thinking, x1.95 speed while keeping the accuracy of xhigh
+Alright! Thanks for the heads up, will talk to our lawyers. Cheers!
+
+### /u/fishhf on UkisAI Swift-Qwen3.8-27B / -58.3% thinking, x1.95 speed while keeping the accuracy of xhigh
+Derivative Works shall not include works that remain separable from, or merely link (or bind by name) to the interfaces of, the Work and Derivative Works thereof.
+ The question is if you can get your work recognized as not "Derivative Works". I'd argue a lora adapter that is trained on top is not "Derivative Works" and the adapter itself can be distributed in your own license. But if the original weights are changed, then it is not really "separable" from the original work.
+
+### /u/Secure_Recording_472 on UkisAI Swift-Qwen3.8-27B / -58.3% thinking, x1.95 speed while keeping the accuracy of xhigh
+Aha! That actually makes it work. It is luckily an adapter as we are big believers of https://thinkingmachines.ai/blog/lora/ Will see to it immediately. Reddit doing our lawyers work for us.
+
+### /u/BannedGoNext on UkisAI Swift-Qwen3.8-27B / -58.3% thinking, x1.95 speed while keeping the accuracy of xhigh
+Interesting, I'd like to see it applied to 3.8 flash next.
+
+### /u/Secure_Recording_472 on UkisAI Swift-Qwen3.8-27B / -58.3% thinking, x1.95 speed while keeping the accuracy of xhigh
+Working on it! Should release end of week or start of next week.
+
+### /u/-Spiritlol on UkisAI Swift-Qwen3.8-27B / -58.3% thinking, x1.95 speed while keeping the accuracy of xhigh
+RemindMe! -7 day
+
+### /u/TheRealMasonMac on UkisAI Swift-Qwen3.8-27B / -58.3% thinking, x1.95 speed while keeping the accuracy of xhigh
+How does this compare to https://www.liquid.ai/blog/antidoom ?
+
+### /u/Secure_Recording_472 on UkisAI Swift-Qwen3.8-27B / -58.3% thinking, x1.95 speed while keeping the accuracy of xhigh
+Their approach tackles the same problem (mostly) but at a slightly different angle, would need a bit of time to give you a proper side by side but to be brief we do not target only the last token in the sequence
+
+### /u/cometkim on UkisAI Swift-Qwen3.8-27B / -58.3% thinking, x1.95 speed while keeping the accuracy of xhigh
+Did you calibrate the MTP drafter as well?
+
+### /u/Secure_Recording_472 on UkisAI Swift-Qwen3.8-27B / -58.3% thinking, x1.95 speed while keeping the accuracy of xhigh
+Hey! The MTP drafter is stock but works quite nicely! There's a few people here in the comments even using DFlash2 stock with our model and getting amazing results.
+
+### /u/tenev911 on UkisAI Swift-Qwen3.8-27B / -58.3% thinking, x1.95 speed while keeping the accuracy of xhigh
+Tested it yesterday (the IQ3 XXS one from the fork), pretty awesome on 16Gb VRAM with 100k context. I'm using it for coding pretty fast then use the Flash Next one to review if needed, thank you !
+
+### /u/saaadpikachu on UkisAI Swift-Qwen3.8-27B / -58.3% thinking, x1.95 speed while keeping the accuracy of xhigh
+With this model would you recommend flipping the reasoning effort from medium to high or even xhigh?
+ Update: ok here is my report. u/Secure_Recording_472 
+ I've prompt'd the model with a pretty complex rewrite task for it to make a plan, context is a large scale android launcher in kotlin (or java whatever you wanna call it lol) + jetpack compose (initial prompt with context was roughly 12k tokens), similar prompt prior would take hours with og (for lack of a better name) qwen3.8 27b with medium reasoning effort, lot of loops, hmmm, wait, actually, let me rethink, subtle problem etc etc, you got the drill. This time, with xhigh reasoning effort, it took about 25 mins, the thinking history is short and accurate, analysis, tool call, conclusion, round after round.
+ Another aspect is that my setup involves advisor, I have 2, astra and opus 5, its perfect normal for the og to go through 5+ rounds with advisor to finally reach a conclusion, this time it was 3 reviews.
+ Prefill and generation is overall the same with no noticeable differences but because the overthinking is well under control it feels faster.
+ This is good work! My set up with omlx:
+ "Swift-Qwen3.8-27b-oQ4e-mtp": { "max_context_window": 65536, "temperature": 0.5, "top_p": 0.95, "top_k": 20, "repetition_penalty": 1.05, "min_p": 0.05, "presence_penalty": 0.3, "force_sampling": true, "chat_template_kwargs": { "reasoning_effort": "xhigh", "preserve_thinking": true }, "forced_ct_kwargs": [ "reasoning_effort", "preserve_thinking" ], "model_alias": "qwen3.8-27b", "qwen4_ple_ssd_offload": false, "thinking_budget_enabled": true, "thinking_budget_tokens": 1024, "guided_grammar_enabled": false, "turboquant_kv_enabled": true, "turboquant_kv_bits": 4.0, "turboquant_skip_last": true, "qwen35_ane_prefill_enabled": true, "qwen35_ane_prefill_sequence_length": 2048, "qwen35_ane_prefill_tail_padding_min_tokens": 0, "qwen35_ane_prefill_fraction": 0.6, "qwen35_ane_prefill_fused_down": false, "qwen35_ane_prefill_max_layers": 64, "qwen35_ane_prefill_dual_ane": true, "qwen35_ane_prefill_gdn": true, "qwen35_ane_prefill_gdn_fraction": 0.375, "qwen35_ane_prefill_gdn_max_layers": 18, "qwen35_ane_prefill_cpu_enabled": false, "qwen35_ane_prefill_cpu_fraction": 0.0, "qwen35_ane_prefill_cpu_down_fraction": 0.0, "qwen35_ane_prefill_cpu_gdn_fraction": 0.0, "qwen35_ane_prefill_cpu_threads": 6, "qwen35_ane_prefill_cpu_shared_resource": false, "specprefill_enabled": false, "dflash_enabled": false, "dflash_draft_quant_enabled": false, "dflash_in_memory_cache": true, "dflash_in_memory_cache_max_entries": 4, "dflash_in_memory_cache_max_bytes": 8589934592, "dflash_ssd_cache": false, "dflash_ssd_cache_max_bytes": 21474836480, "dflash_draft_sink_size": 0, "mtp_enabled": true, "vlm_mtp_enabled": false, "is_pinned": true, "is_default": true, "is_hidden": false, "is_favorite": false, "trust_remote_code": true } } }
+
+### /u/Eitchz on UkisAI Swift-Qwen3.8-27B / -58.3% thinking, x1.95 speed while keeping the accuracy of xhigh
+Used it as a test. I tend to have large summary session.
+ My actual review and specs:
+ AMD 9070XT 16 GB Kubuntu 26.04
+ Fully offload into the VRAM, 81.200 context. (15.5 GB out of 16 used)
+ 40 t/s from start, dropping to 35 when context fills up and compaction hits from the harness. (DSH)
+ I used the UD-Q3_XXS = 10 mins, overthinking too much, no results. hit 81k context and died.
+ Swift Q3_XXS = 5 mins done thinking, 2 minutes to write a summary, hit 45k context.
+ Review of the summary, no changes or forgetting details. Everything was very clean and pointed out.
+ I am genuinely impressed.
+
+### /u/FloofBoyTellEm on UkisAI Swift-Qwen3.8-27B / -58.3% thinking, x1.95 speed while keeping the accuracy of xhigh
+I just created and ran a huge Qwen3.8 DFlash2 torture test a few days ago. Would be great to compare this to my previous results. The speed looks killer. Will report back when I get the time.
+
+### /u/Secure_Recording_472 on UkisAI Swift-Qwen3.8-27B / -58.3% thinking, x1.95 speed while keeping the accuracy of xhigh
+Hey! Did you get to run it? If yes please share it with the community!
+
+### /u/Comacdo on UkisAI Swift-Qwen3.8-27B / -58.3% thinking, x1.95 speed while keeping the accuracy of xhigh
+Man.. I swear right here the day I become (if I ever do) rich, I want to found guys like you... You are the precious geniuses our open community deserves, and reciprocally, I think you deserve the attention you get for all this research you put yourself into. If I was a theist I guess I would say "bless you", but I truly mean some form of equivalent.
+ Cheers from France buddy :)
+
+### /u/Secure_Recording_472 on UkisAI Swift-Qwen3.8-27B / -58.3% thinking, x1.95 speed while keeping the accuracy of xhigh
+Merci beaucoup!
+
+### /u/avpogo on UkisAI Swift-Qwen3.8-27B / -58.3% thinking, x1.95 speed while keeping the accuracy of xhigh
+After running this benchmark ( https://github.com/noonghunna/club-3090/issues/1027 ) on this model the results are showing that the performance is on par with `low` and not `xhigh`.
+ ```
+ Pack | Pass@1 | Pass@3 | Flaky | p50 latency | p95 latency | Status
+ ---|---:|---:|---:|---:|---:|---
+ toolcall-15 (v1.0.1) | 13 / 15 (87%) | 13 / 15 (87%) | 0 | 1.86s | 4.97s | ok
+ instructfollow-15 (v1.0.0) | 15 / 15 (100%) | 15 / 15 (100%) | 0 | 4.77s | 33.72s | ok
+ structoutput-15 (v1.1.0) | 14 / 15 (93%) | 15 / 15 (100%) | 1 | 4.90s | 8.35s | ok
+ dataextract-15 (v1.2.0) | 13 / 15 (87%) | 14 / 15 (93%) | 1 | 12.69s | 39.44s | ok
+ reasonmath-15 (v1.0.0) | 14 / 15 (93%) | 15 / 15 (100%) | 1 | 6.48s | 28.97s | ok
+ bugfind-15 (v1.0.1) | 15 / 15 (100%) | 15 / 15 (100%) | 0 | 12.53s | 75.29s | ok
+ hermesagent-20 (v1.0.0) | 13 / 20 (65%) | 16 / 20 (80%) | 3 | 28.59s | 81.29s | ok
+ cli-40 (v1.0.2) | 32 / 40 (80%) | 36 / 40 (90%) | 4 | 16.44s | 316.36s | ok
+ TOTAL | 129 / 150 (86%) | 139 / 150 (93%) | 10 | | |
+ ```
+
+### /u/GoblinEngineer on UkisAI Swift-Qwen3.8-27B / -58.3% thinking, x1.95 speed while keeping the accuracy of xhigh
+Copying and pasting this from another thread, because i genuinely like the work you've all done and I want a faster Qwen
+ Hey u/Secure_Recording_472, so I tested out this model, and it does indeed finish turns with lower tokens used since it thinks less - but i also found that it bluffs more. I'm wondering if you have any suggestions or ways i can better tune running of this model so it bluffs less.
+ I run the base qwen-3.8-27b as my daily driver behind an agent that handles mail triage, price watches, generic "search" questions and research jobs. Calibration matters more to me than speed, so I measured it.
+ The section below is partially written by an LLM, taking my bullet point markdown notes and smoothing it over
+ Setup I used two RTX 3090s with llama.cpp via llama-swap. Both models ran at Q8_0 quantization with a 262K context window and q8_0 KV cache. I split layers 55/45 and used identical flags for both. Both arms served as the aliases my agent actually uses, so the comparison reflects the deployed config rather than a synthetic one.
+ base model command: llama-server --port 8080 --host 127.0.0.1 --metrics \ -ngl 99 --temp 0.6 --top-p 0.95 --top-k 20 --min-p 0 \ -m Qwen3.8-27B-Q8_0.gguf \ -c 262144 \ -ts 55,45 \ -ctk q8_0 -ctv q8_0 \ -ctkd q8_0 -ctvd q8_0 \ --cache-ram 37888 \ --reasoning-budget 32768 \ --mmproj mmproj-Qwen3.8-27B-Q8_0.gguf \ --spec-type draft-mtp \ -md mtp-Qwen3.8-27B-Q4_0.gguf 
+ swift model command, after draft fix: llama-server --port 8080 --host 127.0.0.1 --metrics \ -ngl 99 --temp 0.6 --top-p 0.95 --top-k 20 --min-p 0 \ -m Swift-Qwen3.8-27B-Q8_0.gguf \ -c 262144 \ -ub 256 \ -ts 55,45 \ -ctk q8_0 -ctv q8_0 \ -ctkd q8_0 -ctvd q8_0 \ --cache-ram 37888 \ --reasoning-budget 32768 \ --mmproj mmproj-Swift-Qwen3.8-27B-F16.gguf \ --spec-type draft-mtp \ -md mtp-Qwen3.8-27B-Q4_0.gguf 
+ Finding 1: the embedded MTP head is a speed trap Swift's GGUF ships its own multi-token-prediction head at Q8_0. Out of the box, it decoded 48.4 tokens/second against the base model's 57.3 tokens/second. Draft acceptance was lower too (46.8% vs 52.5%), so the obvious conclusion was a draft/target mismatch.
+ That conclusion was wrong. I swapped only the draft source, pointing Swift at the stock external Q4_0 draft file and changing nothing else:
+ Draft Tokens/Second Acceptance Embedded Q8_0 head 48.4 46.8% Stock external Q4_0 52.0 47.8% Base model, same bench 57.3 52.5% Acceptance did not move. Speed went up 7.4%. The embedded head is a Q8_0 layer and the external draft is Q4_0, so each draft step costs roughly twice as much for the same hit rate. I also ran two 12-minute decode-only soaks to confirm it outside a short bench: 50.3 vs 52.8 tokens/second over ~48 reps each.
+ The residual 9% difference against the base model is the weights. The stock draft was trained on base Qwen3.8 and predicts the fine-tune slightly worse. Nobody ships a draft trained on Swift.
+ If anyone else runs a fine-tune with an embedded MTP head, try the base model's external draft before you accept the speed hit. Correctness is not at risk either way since the target verifies every drafted token.
+ Finding 2: it thinks less, and it bluffs more I ran AA-Omniscience's public subset, which contains 600 hard factual questions. I ran this twice per arm at medium effort, totaling 2400 graded answers. The benchmark scores three ways: correct, incorrect, and abstained. The index credits a correct answer, debits a wrong one, and treats "I don't know" as free, so bluffing is punished and admitting ignorance is not.
+ Model Accuracy Hallucination Abstention Index Median thinking Base 20.7% 44.3% 35.1% -23.6 2011 chars Swift 21.6% 48.0% 30.5% -26.5 1687 chars Those margins are close enough to point towards it just being noise, however the paired comparison is not. Both arms answered identical questions, so I counted the disagreements directly. On 106 questions, the base model abstained and Swift answered wrongly. On 55, the reverse. McNemar z of 4.02, p under 0.0001.
+ Knowledge didn't move at all: Swift was right where the base was wrong 56 times, wrong where it was right 48 times, z of 0.78.
+ So it is not dumber, it guesses where the base model says it does not know.
+ Also, the thinking reduction is real: 16% fewer thinking characters on the median question, paired. The card claimed 23% at this effort. On the instruction-following set it was 36%.
+ Finding 3: instruction following is fine IFBench, scored by Ai2's own checkers at a pinned commit rather than my reimplementation. Swift scored 66.1% strict on 121 prompts, base 64.0% on 300. Swift's run was cut short by my time budget, so that gap is inside the noise. Nothing collapsed.
+ On trusting an LLM judge Omniscience needs a judge to decide whether an answer matches a reference. I graded everything with Haiku 4.5, then re-graded all 2400 answers with Sonnet 5 and compared agreement per arm. That per-arm split is the whole point: a judge that resolves hedged answers differently for one model than the other manufactures exactly the calibration gap you are trying to detect.
+ Final agreement was 95.0% on base answers and 94.2% on Swift's. Near-identical, so judge error cancels. Both judges reached the same conclusion, with Sonnet's grades making it stronger (z 4.02 vs 2.93).
+ Caveats I tested one quantization, one box, one effort level, and the public 10% subset of Omniscience. I did not test tool calling, which is the axis my agent leans on hardest and which no benchmark here touches. Single-turn factual questions are not agent loops.
+
+### /u/N34257 on UkisAI Swift-Qwen3.8-27B / -58.3% thinking, x1.95 speed while keeping the accuracy of xhigh
+Tried a quick code analysis task with the uncensored FP8 version under both OpenCode and Cline, on medium with MTP - seems to be about 10% slower than Unsloth's FP8 quant in both prose and code, but doesn't appear to suffer from the crazy overthinking and looping at all.
+ Not a conclusive test, but certainly looking good at this point :)
+
+### /u/EmbarrassedBag2631 on UkisAI Swift-Qwen3.8-27B / -58.3% thinking, x1.95 speed while keeping the accuracy of xhigh
+where did u find the uncensored?
+
+### /u/Secure_Recording_472 on UkisAI Swift-Qwen3.8-27B / -58.3% thinking, x1.95 speed while keeping the accuracy of xhigh
+oh thats great, mind sharing when it finishes? btw sharing an uncensored FP8 would be huge if you have the GPU power
+
+### /u/N34257 on UkisAI Swift-Qwen3.8-27B / -58.3% thinking, x1.95 speed while keeping the accuracy of xhigh
+Here you go:
+ https://huggingface.co/d0xin/Swift-Qwen3.8-27B-Uncensored-FP8
+ I didn't make it, but it was only uploaded an hour or so ago.
+
+### /u/Secure_Recording_472 on UkisAI Swift-Qwen3.8-27B / -58.3% thinking, x1.95 speed while keeping the accuracy of xhigh
+oh damn I didn't even see that one, I just counted there's 22 versions of our model I knew only about 10ish lol
+
+### /u/sugarfreecaffeine on UkisAI Swift-Qwen3.8-27B / -58.3% thinking, x1.95 speed while keeping the accuracy of xhigh
+I tried using this with llama and was only getting about 30tks dual 3090 q8 on my windows 10 machine vs this version which I get 80-100tks, any help would be appreciated !
+ https://github.com/syv-ai/qwen38-27b-rtx3090/tree/main
+
+### /u/Secure_Recording_472 on UkisAI Swift-Qwen3.8-27B / -58.3% thinking, x1.95 speed while keeping the accuracy of xhigh
+no way this guy commented just a minute before you, I hope it helps :)
+ https://preview.redd.it/2ueekol55jph1.png?width=1271&format=png&auto=webp&s=bd41a43ac283dcbdd366b4ff1056136eb9e1d253
+
+### /u/sugarfreecaffeine on UkisAI Swift-Qwen3.8-27B / -58.3% thinking, x1.95 speed while keeping the accuracy of xhigh
+Holy! If this works it’s huge! Ty
+
+### /u/Much-Researcher6135 on UkisAI Swift-Qwen3.8-27B / -58.3% thinking, x1.95 speed while keeping the accuracy of xhigh
+Cool post, here's hoping someone gives it a careful orca/heretic decensoring treatment. Something that minimizes divergence and refusals together like heretic does. If I knew how I would.
+
+### /u/tenev911 on UkisAI Swift-Qwen3.8-27B / -58.3% thinking, x1.95 speed while keeping the accuracy of xhigh
+Tested it yesterday (the IQ3 XXS one from the fork), pretty awesome on 16Gb VRAM with 100k context. I'm using it for coding pretty fast then use the Flash Next one to review if needed, thank you !
+
+### /u/not_a-bot on UkisAI Swift-Qwen3.8-27B / -58.3% thinking, x1.95 speed while keeping the accuracy of xhigh
+Would doing something like this be possible for users with 16 GB cards? https://huggingface.co/jrell/Qwen3.8-27B-i1-IQ4_XS-GGUF-Smaller
+
+### /u/nialv7 on UkisAI Swift-Qwen3.8-27B / -58.3% thinking, x1.95 speed while keeping the accuracy of xhigh
+Do you have hypotheses why such overthinking loops arise from training?
+
+### /u/Secure_Recording_472 on UkisAI Swift-Qwen3.8-27B / -58.3% thinking, x1.95 speed while keeping the accuracy of xhigh
+HI, yes! You should take a look at this reference paper: https://arxiv.org/pdf/2606.00206
+
+### /u/ShelZuuz on UkisAI Swift-Qwen3.8-27B / -58.3% thinking, x1.95 speed while keeping the accuracy of xhigh
+Argh, that $1m limit is a bummer. Could you perhaps make that $1m income instead of revenue? 
+ Or maybe $10m revenue/$1m income, whichever is first.
+
+### /u/fkid_ on UkisAI Swift-Qwen3.8-27B / -58.3% thinking, x1.95 speed while keeping the accuracy of xhigh
+This looks really promising! I was wondering if you have planned to release an MLX MTP version? I gave arsis-dev/ukisai-Swift-Qwen3.8-27b-MTPLX a shot and the results were quite good but I wish I would have access to different quantizations.
+
+### /u/KeepyUpper on UkisAI Swift-Qwen3.8-27B / -58.3% thinking, x1.95 speed while keeping the accuracy of xhigh
+Just tried this myself and what took Unsloths Q6_K_XL 31k tokens took only 18k with Bartowskis Q6. I repeated the test a few times and saw similar results each time.
+ Subjectively though I think the outputs were slightly worse. It completed the task to an acceptable level but I feel like the output from Unsloth is better. Maybe placebo though as I'm not quantifying this at all, it's just sort of vibes. But -40% tokens to produce a good enough result is probably still worth it.
+
+### /u/Secure_Recording_472 on UkisAI Swift-Qwen3.8-27B / -58.3% thinking, x1.95 speed while keeping the accuracy of xhigh
+The vibebench is real lol did you try the pelican?
+ Appreciate the feedback :)
+
+### /u/KeepyUpper on UkisAI Swift-Qwen3.8-27B / -58.3% thinking, x1.95 speed while keeping the accuracy of xhigh
+Yeah. A variation on the pelican (a crocodile WW1 fighter pilot)!
+
+### /u/Secure_Recording_472 on UkisAI Swift-Qwen3.8-27B / -58.3% thinking, x1.95 speed while keeping the accuracy of xhigh
+i just realised i think this is bombardilo crocodilo
+
+### /u/Secure_Recording_472 on UkisAI Swift-Qwen3.8-27B / -58.3% thinking, x1.95 speed while keeping the accuracy of xhigh
+SHARE THE PELICAN (crocodile)
+
+### /u/bartskol on UkisAI Swift-Qwen3.8-27B / -58.3% thinking, x1.95 speed while keeping the accuracy of xhigh
+I tested it and I like it. Thank you for this magic.
+
+### /u/Secure_Recording_472 on UkisAI Swift-Qwen3.8-27B / -58.3% thinking, x1.95 speed while keeping the accuracy of xhigh
+I've been scouring the comments for somebody to have done it but it seems not, so you might have to be the first haha :)
+ This is a reference chart I found with DFlash2 btw 
+ https://preview.redd.it/k1p5bc8lfjph1.png?width=924&format=png&auto=webp&s=e5abd45bcdf4d122b89f1861f6b6ee6bafe2d4b7
+ Also, please do tell me if you have any other models you'd like to see Swifted!
+
+### /u/bartskol on UkisAI Swift-Qwen3.8-27B / -58.3% thinking, x1.95 speed while keeping the accuracy of xhigh
+I have older pc laying around with 8gb card, thought that i could get some small agent on it. Waiting for qwen 3.8 8b or something but that day might never come. Sooo.... Qwen 3.5 8b would be great to have swifted!
+ Also, please test mtp 2 vs 3 as on my machine, overall speed was better with 2.- im a noob.
+
+### /u/Secure_Recording_472 on UkisAI Swift-Qwen3.8-27B / -58.3% thinking, x1.95 speed while keeping the accuracy of xhigh
+It's super possible MTP2 performs better, Qwen 3.8 27B can be weird like that!
+ We're actually seeing to distill Swift 27B into a smaller body via on-policy distillation so 3.5 8B might be a perfect match :)
+
+### /u/Solembumm3 on UkisAI Swift-Qwen3.8-27B / -58.3% thinking, x1.95 speed while keeping the accuracy of xhigh
+Is there opposite projects? To take GLM 5.3 level of overthinking (more than qwen 3.8) for other models?
+
+### /u/Secure_Recording_472 on UkisAI Swift-Qwen3.8-27B / -58.3% thinking, x1.95 speed while keeping the accuracy of xhigh
+There definitely is and we've been working on that too, cross-family on-policy distilling super good reasoning patterns of GLM5.2 into Qwen 3.6 27B (not yet done for the new gen ones) and have seen great results! Would you like to see it? Btw, any shortened thinking model request while at it?
+
+### /u/Solembumm3 on UkisAI Swift-Qwen3.8-27B / -58.3% thinking, x1.95 speed while keeping the accuracy of xhigh
+I didn't tried any glm locally yet, but from their site version I wasn't really impressed with 5.2 - it was 5.3 that had some very serious progress for my fiction analysis tasks. 
+ I'll look into it, though.
+
+### /u/onebit on UkisAI Swift-Qwen3.8-27B / -58.3% thinking, x1.95 speed while keeping the accuracy of xhigh
+Any INT4 version for B70 bois?
+
+### /u/Secure_Recording_472 on UkisAI Swift-Qwen3.8-27B / -58.3% thinking, x1.95 speed while keeping the accuracy of xhigh
+yessir! I'd go for https://huggingface.co/TheUnderscore/Swift-Qwen3.8-27b-W4A16-AWQ or a proper int4 https://huggingface.co/ukisai/Swift-Qwen3.8-27B-GGUF
+
+### /u/TerminalNoop on UkisAI Swift-Qwen3.8-27B / -58.3% thinking, x1.95 speed while keeping the accuracy of xhigh
+Is it me or does this also have higher t/s decode? It feels kind of faster, not just in thinking less excessively.
+
+### /u/MKP_Nimilka on UkisAI Swift-Qwen3.8-27B / -58.3% thinking, x1.95 speed while keeping the accuracy of xhigh
+Dropping xhigh from 6.6k to 2.8k tokens while keeping gpqa basicallyunchangedcould make a big difference on concumer hardwares. 
+ Im pretty curious about, how it performs on longer coding tasks though?
+
+### /u/james_brunet on UkisAI Swift-Qwen3.8-27B / -58.3% thinking, x1.95 speed while keeping the accuracy of xhigh
+If you make the thinking blocks shorter while maintaining xhigh quality, could quality improve over stock 3.8 27b for very long-running tasks?
+ Shorter thinking blocks would mean less frequent auto-compaction so you'd think that would help.
+ Curious if this is something you noticed in your testing.
+
+### /u/Secure_Recording_472 on UkisAI Swift-Qwen3.8-27B / -58.3% thinking, x1.95 speed while keeping the accuracy of xhigh
+For coding specific tasks users (community) have actually reported Swift finishing some tasks Base doesn't simply because of running out of context (hence triggering auto-compaction).
+ That aside, we have yet to see a performance increase, but the only coding harness we ran a proper benchmark inside indeed terminus-2, which indeed is without autocompaction. Could be very interesting to re-run TerminalBench with Claude-Code as the harness with the default auto-compaction settings.
+
+### /u/james_brunet on UkisAI Swift-Qwen3.8-27B / -58.3% thinking, x1.95 speed while keeping the accuracy of xhigh
+Very interesting, thanks!
+
+### /u/[deleted] on UkisAI Swift-Qwen3.8-27B / -58.3% thinking, x1.95 speed while keeping the accuracy of xhigh
+[deleted]
+
+### /u/rafrezende on UkisAI Swift-Qwen3.8-27B / -58.3% thinking, x1.95 speed while keeping the accuracy of xhigh
+First, congrats on your work. 
+ Second, im kind of a beginner here, so could you suggest me which model to choose for a RYZEN 7 5700X3D 32gb Ram + RTX 4080 Super 16GB Vram?
+
+### /u/CapsAdmin on UkisAI Swift-Qwen3.8-27B / -58.3% thinking, x1.95 speed while keeping the accuracy of xhigh
+I've been using the UD-Q4_K_S quant which is 14.3GB (also comes with MTP built in). But the equivalent sized quant here is Q3_K_L, so I'm choosing that.
+ Not sure if it's actually a problem, but it is a concern when coming from the UD3 quants and choosing these quants.
+
+### /u/Secure_Recording_472 on UkisAI Swift-Qwen3.8-27B / -58.3% thinking, x1.95 speed while keeping the accuracy of xhigh
+We're working on better quants! But in the meantime people have been getting pretty great results with these. Curious, can you point me to some good UD3 quants you used?
+
+### /u/Poro579 on UkisAI Swift-Qwen3.8-27B / -58.3% thinking, x1.95 speed while keeping the accuracy of xhigh
+I'm curious how much less token consumption there would be in non-thinking mode. This isn't a request, just an idea
+
+### /u/thomasthai on UkisAI Swift-Qwen3.8-27B / -58.3% thinking, x1.95 speed while keeping the accuracy of xhigh
+Amazing work, are you guys also looking at QWEN 3.8 Flash?
+
+### /u/Secure_Recording_472 on UkisAI Swift-Qwen3.8-27B / -58.3% thinking, x1.95 speed while keeping the accuracy of xhigh
+Yess! Releasing end of week hopefully!
+
+### /u/Equivalent-Grass-527 on UkisAI Swift-Qwen3.8-27B / -58.3% thinking, x1.95 speed while keeping the accuracy of xhigh
+This is the kind of optimization I want to see more of. Cutting 58% of the thinking without just hard-capping reasoning is way more interesting than simply making the model “think less.” If the xhigh accuracy really holds up, 2x speed for basically the same quality is huge.
+
+### /u/quadra-lab on UkisAI Swift-Qwen3.8-27B / -58.3% thinking, x1.95 speed while keeping the accuracy of xhigh
+Have you tried approaching the unsloth team? This could be very interesting to have an Unsloth Dynamic quant I think.
+
+### /u/patchy319 on UkisAI Swift-Qwen3.8-27B / -58.3% thinking, x1.95 speed while keeping the accuracy of xhigh
+Wen uncensored version
+
+### /u/quienserasera on UkisAI Swift-Qwen3.8-27B / -58.3% thinking, x1.95 speed while keeping the accuracy of xhigh
+Qwen 3.8 Flash Next please!
+
+### /u/ValuablePen6989 on UkisAI Swift-Qwen3.8-27B / -58.3% thinking, x1.95 speed while keeping the accuracy of xhigh
+I am using a dual-GPU setup (RTX 2080 Ti 22GB + 11GB) to run the Hermes agent.
+ I previously used the "Uncensored" version, and the t/s benchmark figures seem similar.
+ However, the time it takes to get a definitive answer and the number of generated tokens have definitely decreased.
+ It feels faster in actual use, likely because it avoids the issue found in version 3.8 where the model would keep debating a topic even after providing the answer.
+ That’s why I’m sticking with this version for now.
+
+### /u/TallDuck9 on UkisAI Swift-Qwen3.8-27B / -58.3% thinking, x1.95 speed while keeping the accuracy of xhigh
+Was looking for this, is it able to stay uncensored and fast?
+
+### /u/[deleted] on UkisAI Swift-Qwen3.8-27B / -58.3% thinking, x1.95 speed while keeping the accuracy of xhigh
+[deleted]
+
+### /u/vick2djax on UkisAI Swift-Qwen3.8-27B / -58.3% thinking, x1.95 speed while keeping the accuracy of xhigh
+Anything for dual 3090’s using DFlash2 AutoRound INT4 + int8 act?
+
+### /u/Brief-Tap-6616 on UkisAI Swift-Qwen3.8-27B / -58.3% thinking, x1.95 speed while keeping the accuracy of xhigh
+I posted my comp on x, lmk if you want a tag in /what your handle is. especially with llamAmpere this thing was FLYING. no clear quality loss. my new default model.
+ thank you!
+
+### /u/Constandinoskalifo on UkisAI Swift-Qwen3.8-27B / -58.3% thinking, x1.95 speed while keeping the accuracy of xhigh
+I have been using it for the past 2 days. Absolutely amazing work, thanks! 🙏
+
+### /u/vick2djax on UkisAI Swift-Qwen3.8-27B / -58.3% thinking, x1.95 speed while keeping the accuracy of xhigh
+Hey, wanted to share some actual local results with Swift. I quantized it to INT4 with AutoRound and ran it through Pi on dual 3090s, using vLLM + DFlash2. my regular production Qwen 27B uses INT4 + DFlash2 too.
+ This was a five-stage coding task in an existing repo, with 20 fixed functional checks. same prompts and grader, and no giving the model failed grading results to fix its answer.
+ Regular Qwen, medium: 13/20 in 30m 49s
+ Swift, medium: 20/20 in 32m 27s
+ Regular Qwen, xhigh: 20/20 in 40m 53s
+ Swift, xhigh: 20/20 in 48m 11s
+ The interesting part for me was medium. Swift got all 20 checks in basically the same time regular Qwen needed to get 13. It also matched regular Qwen’s xhigh score in about 21% less time.
+ But at xhigh, Swift still passed everything but was actually slower, even though it used fewer reasoning tokens. Dropping Swift from xhigh to medium cut coding time by about a third without losing any checks.
+ Not claiming a definitive benchmark here. One run per setting, the regular Qwen results were from earlier runs, and there were runtime/compaction differences. Swift’s timings also included first-inference compilation. but medium looks pretty promising for my actual coding workflow.
+ Does that line up with what you’ve seen? curious what thinking setting you’d recommend for this kind of multi-step agent work. Or maybe I have some config wrong.
+
+### /u/inkubot on UkisAI Swift-Qwen3.8-27B / -58.3% thinking, x1.95 speed while keeping the accuracy of xhigh
+yooo i'm using this dude and i got the same tk/s but finishing the job is much faster! My humble hardware appreciate it! Thanks!
+
+### /u/ea_man on UkisAI Swift-Qwen3.8-27B / -58.3% thinking, x1.95 speed while keeping the accuracy of xhigh
+He I said the same thing before yet people around here gets extremely protective when you say that 27B has a reasoning problem. 
+ For those who care, these were the issues I identified: https://store.piffa.net/lm/reasoning_pathology_report.md that are pathological, not constructive to produce a better result.
+
+### /u/Secure_Recording_472 on UkisAI Swift-Qwen3.8-27B / -58.3% thinking, x1.95 speed while keeping the accuracy of xhigh
+That's why I was so scared of posting and getting hate
+ Needed to write a huge post to properly explain the approach
+ Reasoning is hugely beneficial but Qwen 3.8 series seriously has a problem with inefficient reasoning
+
+### /u/Netsuko on UkisAI Swift-Qwen3.8-27B / -58.3% thinking, x1.95 speed while keeping the accuracy of xhigh
+"But wait..." rinse and repeat xD
+
+### /u/Secure_Recording_472 on UkisAI Swift-Qwen3.8-27B / -58.3% thinking, x1.95 speed while keeping the accuracy of xhigh
+Man you have no idea how many tokens we actually penalise, Qwen has so many of these might even say "pathological" reasoning patterns that when measured don't contribute anything
+
+### /u/ea_man on UkisAI Swift-Qwen3.8-27B / -58.3% thinking, x1.95 speed while keeping the accuracy of xhigh
+They don't just don't contribute sometimes are detrimental to archive proper result and actions. 
+ They also taint the the attention with illusions and conjectures at the cost of hard data.
+ Then you have more common "over complicating" a design that leads to error, es one C++ in xhigh did not compile while the normal version did.
+
+### /u/Secure_Recording_472 on UkisAI Swift-Qwen3.8-27B / -58.3% thinking, x1.95 speed while keeping the accuracy of xhigh
+Indeed. I sincerely hope the Qwen team will address this in the future releases and our homework is not in vain. Do you have some insights to share btw?
+
+### /u/ea_man on UkisAI Swift-Qwen3.8-27B / -58.3% thinking, x1.95 speed while keeping the accuracy of xhigh
+I've downloaded your model, calculating the proper -ot right now, after that I will run my usual tests for common works and hi difficult tasks to see how the model compares to 3.8 standard and maybe the old ThinkingCap, I can share results if you like something like:
+ | Model | Compile | Core SPSC | C++ precision | Lifetime/exceptions | Reasoning | Final | | --------------------- | ------- | --------: | ------------: | ------------------: | --------: | ------: | | **3.8 Q6_K_M** | ✅ | 9.4 | **9.0** | **8.7** | 9.0 | **8.9** | | **3.6 ThinkingCap** | ✅ | 9.2 | 8.3 | 6.2 | 8.6 | **7.9** | | **3.8 Q6_K_XL xhigh** | ❌ | **9.7** | 6.0 | 6.2 | **9.5** | **7.6** | | **3.8 IQ4-MIX** | ❌ | 9.2 | 5.5 | 6.3 | 8.1 | **7.1** | Then I can ask ChatGPT and the same QWEN to evaluate some reasoning trances from Pi sessions and compare those the standard model, evaluate those like I did to get my old https://store.piffa.net/lm/reasoning_pathology_report.md and see how your finetune compare to that.
+ That would take a couple of days just to gather the data.
+
+### /u/backyard_tractorbeam on UkisAI Swift-Qwen3.8-27B / -58.3% thinking, x1.95 speed while keeping the accuracy of xhigh
+Well, congratulations, you proved the claim by being successful with this project! I guess it's not obvious that there was something that could be optimized while preserving performance, but the results speak for themselves.
+
+### /u/DustNearby2848 on UkisAI Swift-Qwen3.8-27B / -58.3% thinking, x1.95 speed while keeping the accuracy of xhigh
+Looks amazing. I saw an nvfp4 quant, but it’s 30 GB. If a smaller one pops up, I’ll port it to ninfer and give it a shot!
+
+### /u/Prestigious_Cup_7826 on UkisAI Swift-Qwen3.8-27B / -58.3% thinking, x1.95 speed while keeping the accuracy of xhigh
+There was update at HF, it is 21gb right now!
+
+### /u/former_farmer on UkisAI Swift-Qwen3.8-27B / -58.3% thinking, x1.95 speed while keeping the accuracy of xhigh
+Do you have mlx?
+
+### /u/Secure_Recording_472 on UkisAI Swift-Qwen3.8-27B / -58.3% thinking, x1.95 speed while keeping the accuracy of xhigh
+somebody from the community built it! https://huggingface.co/andosen/Swift-Qwen3.8-27b-mlx-5Bit
+
+### /u/iwishihadacorgi on UkisAI Swift-Qwen3.8-27B / -58.3% thinking, x1.95 speed while keeping the accuracy of xhigh
+Am I reading correctly that Q6_K_L is more precise than Q8_0?
+
+### /u/twavisdegwet on UkisAI Swift-Qwen3.8-27B / -58.3% thinking, x1.95 speed while keeping the accuracy of xhigh
+https://huggingface.co/DavidAU/Qwen3.8-27B-TURBO-Fable-Cold-Fusion-735-882-Heretic-Uncensored-NEO-CODER-MAX-MTP-GGUF
+ I've been using this which claims similar methods. I think I wll try yours out because the name is like 50% less memey.
+
+### /u/Secure_Recording_472 on UkisAI Swift-Qwen3.8-27B / -58.3% thinking, x1.95 speed while keeping the accuracy of xhigh
+Haha thanks man
+ We did a lot of research and spent a lot of compute so the name isn't memey but there was a version where it was called Chad-Qwen3.8-27B lol
+ Anyways, let me know when you try it and if you have any model requests!
+
+### /u/Kahvana on UkisAI Swift-Qwen3.8-27B / -58.3% thinking, x1.95 speed while keeping the accuracy of xhigh
+Thanks for your hard work!
+ On licensing, there are some issues:
+ I can't find a hosted copy of your "Swift Open License" file. Please provide one or let me know where I can find it! And no, your "Licences and access" section (https://huggingface.co/ukisai/Swift-Qwen3.8-27b#license-and-access) is not enough.
+ Currently you do NOT comply with the apache 2.0 license (section 4), which you must when redistributing work under apache 2.0
+ It's nice you did provide benchmarks and noted the training bug. I look forward to seeing the license situation fixed and using the updated model!
+
+### /u/Morning_Gecko24 on UkisAI Swift-Qwen3.8-27B / -58.3% thinking, x1.95 speed while keeping the accuracy of xhigh
+the token reduction here is pretty wild, but i like that you called out where the benchmark gains come from. a 4pp bump at lower token count seems more useful than just chasing raw speed. have you tested long context or tool calls yet? thats where weird reasoning loops usually show up for me.
+
+### /u/Secure_Recording_472 on UkisAI Swift-Qwen3.8-27B / -58.3% thinking, x1.95 speed while keeping the accuracy of xhigh
+yes! terminal bench 2.1 is very relevant for that, as the tasks can take up to 4h! There we see -39% thinking tokens median with -0.9% accuracy.
+ any other info or suggestions? :)
+
+### /u/PM_ME_DEAD_CEOS on UkisAI Swift-Qwen3.8-27B / -58.3% thinking, x1.95 speed while keeping the accuracy of xhigh
+Good work ! 
+ If I may, I would prefer if you would use non saturated benchmark, because above 90% most of those benchmark aren't accurate anymore.
+
+### /u/QazCetelic on UkisAI Swift-Qwen3.8-27B / -58.3% thinking, x1.95 speed while keeping the accuracy of xhigh
+While we are keen on complete open-source, we still need to keep a part of our training and data private, being a new lab. 
+ Understandable, but perhaps it would be clearer to call it open weights
+
+### /u/CowCowMoo5Billion on UkisAI Swift-Qwen3.8-27B / -58.3% thinking, x1.95 speed while keeping the accuracy of xhigh
+I've never encountered a retrain/remix/whatever that's better than the original.
+ Often they ended up getting stuck in loops or just failing often
+ Do you really think you've made a breakthrough than Qwen themselves didn't think of?
+ This is a question out of genuine curiosity and puzzlement (not an attack at your efforts)
+
+### /u/Secure_Recording_472 on UkisAI Swift-Qwen3.8-27B / -58.3% thinking, x1.95 speed while keeping the accuracy of xhigh
+Valid scepticism! It's more often than not that a small lab makes a leap on doing something novel as we do not have much to lose. Albeit, a Lab, not somebody building a low effort improvement over a weekend (usually). 
+ You should check out our research, model card and the feedback from the community to see if what we've built works for you! Nvidia themselves also gave us the GPUs to host it for free, being impressed with our work :)
+
+### /u/Sevealin_ on UkisAI Swift-Qwen3.8-27B / -58.3% thinking, x1.95 speed while keeping the accuracy of xhigh
+I wish there was a INT8 W8A16! I love https://huggingface.co/lued/Qwen3.8-27B-INT8-W8A16-MTP but it also thinks a ton. I can push full 262k context with dual 3090s.
+
+### /u/Secure_Recording_472 on UkisAI Swift-Qwen3.8-27B / -58.3% thinking, x1.95 speed while keeping the accuracy of xhigh
+We're gonna make it! Building out a list of quant requests right now.
+
+### /u/MerePotato on UkisAI Swift-Qwen3.8-27B / -58.3% thinking, x1.95 speed while keeping the accuracy of xhigh
+I really appreciate the non wikitext longer context KLD measurements for quants, that's invaluable information! Will you do a 32k+ measurement for Q5_K_S? I'd find that extremely useful in deciding whether to drop down or stick with my own IQ5_KS solution from the base Qwen 3.8 27B
+
+### /u/Secure_Recording_472 on UkisAI Swift-Qwen3.8-27B / -58.3% thinking, x1.95 speed while keeping the accuracy of xhigh
+I'll do it in the morning! (3AM here hah) The Quant should be pretty good nonetheless, it's based on the Bartowski quants.
+
+### /u/MerePotato on UkisAI Swift-Qwen3.8-27B / -58.3% thinking, x1.95 speed while keeping the accuracy of xhigh
+Honestly looking at the 99% stats I'm questioning whether Q5 in general is worth it for agentic runs now, or whether I should suck it up and go to Q6 with compromised context length on my 24GB VRAM setup. Thanks for all of this by the way, I'm looking forward to expanded KLD data regardless and have your model downloading as we speak, both your model cards and this post are of a quality we as a community could use a lot more of right now.
+ Also, go to sleep lol.
+
+### /u/Sabin_Stargem on UkisAI Swift-Qwen3.8-27B / -58.3% thinking, x1.95 speed while keeping the accuracy of xhigh
+Hopefully we get a version of this for Flash-Next, with Heretical treatment and MTP. 
+ I have been trying to translate a Chinese game into English with Lingua Gacha, and the biggest issue has been the overthinking. That takes up a lot of context and time.
+
+### /u/Secure_Recording_472 on UkisAI Swift-Qwen3.8-27B / -58.3% thinking, x1.95 speed while keeping the accuracy of xhigh
+sneak peak, not done yet, the one in red is 3.8 Flash Next
+ https://preview.redd.it/29dk3gx66lph1.jpeg?width=1118&format=pjpg&auto=webp&s=a6683c9a815673cbb825330654028bd3954b9db5
+
+### /u/pm_plz_im_lonely on UkisAI Swift-Qwen3.8-27B / -58.3% thinking, x1.95 speed while keeping the accuracy of xhigh
+Who do I trust: Some guy with nice charts, or Alibaba engineers with infinite compute.
+
+### /u/fdrch on UkisAI Swift-Qwen3.8-27B / -58.3% thinking, x1.95 speed while keeping the accuracy of xhigh
+I would trust myself: test it on some real coding tasks and when it fails retry with unmodified model.
+
+### /u/pm_plz_im_lonely on UkisAI Swift-Qwen3.8-27B / -58.3% thinking, x1.95 speed while keeping the accuracy of xhigh
+I don't trust myself either.
+
+### /u/mailto_devnull on UkisAI Swift-Qwen3.8-27B / -58.3% thinking, x1.95 speed while keeping the accuracy of xhigh
+Hi! Looking forward to trying.
+ MXFP4 quant for VLLM-radiance/r9700?
+ I currently use froggeric's custom jinja template. Would this conflict?
+ Edit: wow, ok.
+ So first thing this AM I had base qwen 3.8 27B commit some open files after a review. It spent 1000-2000 tokens thinking about the commit message and whether it conformed to the restrictions (including deliberating title lengths, different wording, intent, etc.) it started the bash tool call a bunch of times to invoke commitlint to verify its drafts passed.
+ I loaded in Swift and it just did as asked, 500 tokens. Really reminds me of 3.6's "let's just do it" attitude.
+ 2.40.306.034 I slot print_timing: id 3 | task 129 | draft acceptance = 0.78800 ( 394 accepted / 500 generated), mean len = 3.25
+
+### /u/Secure_Recording_472 on UkisAI Swift-Qwen3.8-27B / -58.3% thinking, x1.95 speed while keeping the accuracy of xhigh
+No problem about the template! Please let us know after you try it
+ Will put the quant in our requests!

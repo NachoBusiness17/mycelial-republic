@@ -1,0 +1,100 @@
+{
+  "duel_id": "f1ab-code-flash-prime",
+  "swap": true,
+  "winner_logical": "A",
+  "graded": {
+    "flash": {
+      "a_in_ask.jsonl": {
+        "pass": true,
+        "got": "WINS|m-a|m-b|1|0|1\nAVGCHARS|m-a|116.7|m-b|150.0\nCRITAGREE|1|2|0.50\nROWS|3",
+        "want": "WINS|m-a|m-b|1|0|1\nAVGCHARS|m-a|116.7|m-b|150.0\nCRITAGREE|1|2|0.50\nROWS|3",
+        "stderr_head": "",
+        "rc_ok": true
+      },
+      "b_empty.jsonl": {
+        "pass": true,
+        "got": "ROWS|0",
+        "want": "ROWS|0",
+        "stderr_head": "",
+        "rc_ok": true
+      },
+      "c_edges.jsonl": {
+        "pass": true,
+        "got": "WINS|m-a|m-a|0|0|1\nWINS|m-b|m-a|1|1|0\nAVGCHARS|m-a|5.0|m-a|5.0\nAVGCHARS|m-b|20.0|m-a|30.0\nCRITAGREE|2|3|0.67\nROWS|3",
+        "want": "WINS|m-a|m-a|0|0|1\nWINS|m-b|m-a|1|1|0\nAVGCHARS|m-a|5.0|m-a|5.0\nAVGCHARS|m-b|20.0|m-a|30.0\nCRITAGREE|2|3|0.67\nROWS|3",
+        "stderr_head": "",
+        "rc_ok": true
+      },
+      "no_such_file.jsonl": {
+        "pass": true,
+        "got": "ROWS|0",
+        "want": "ROWS|0",
+        "stderr_head": "",
+        "rc_ok": true
+      },
+      "pass_count": 4
+    },
+    "prime": {
+      "a_in_ask.jsonl": {
+        "pass": true,
+        "got": "WINS|m-a|m-b|1|0|1\nAVGCHARS|m-a|116.7|m-b|150.0\nCRITAGREE|1|2|0.50\nROWS|3",
+        "want": "WINS|m-a|m-b|1|0|1\nAVGCHARS|m-a|116.7|m-b|150.0\nCRITAGREE|1|2|0.50\nROWS|3",
+        "stderr_head": "",
+        "rc_ok": true
+      },
+      "b_empty.jsonl": {
+        "pass": true,
+        "got": "ROWS|0",
+        "want": "ROWS|0",
+        "stderr_head": "",
+        "rc_ok": true
+      },
+      "c_edges.jsonl": {
+        "pass": true,
+        "got": "WINS|m-a|m-a|0|0|1\nWINS|m-b|m-a|1|1|0\nAVGCHARS|m-a|5.0|m-a|5.0\nAVGCHARS|m-b|20.0|m-a|30.0\nCRITAGREE|2|3|0.67\nROWS|3",
+        "want": "WINS|m-a|m-a|0|0|1\nWINS|m-b|m-a|1|1|0\nAVGCHARS|m-a|5.0|m-a|5.0\nAVGCHARS|m-b|20.0|m-a|30.0\nCRITAGREE|2|3|0.67\nROWS|3",
+        "stderr_head": "",
+        "rc_ok": true
+      },
+      "no_such_file.jsonl": {
+        "pass": true,
+        "got": "ROWS|0",
+        "want": "ROWS|0",
+        "stderr_head": "",
+        "rc_ok": true
+      },
+      "pass_count": 4
+    }
+  },
+  "criteria": [
+    {
+      "criterion": "correctness",
+      "a": 5,
+      "b": 5,
+      "note": "Both pass all four fixtures byte-exactly"
+    },
+    {
+      "criterion": "edge-case handling",
+      "a": 5,
+      "b": 5,
+      "note": "Both handle missing file, empty, invalid rows identically"
+    },
+    {
+      "criterion": "spec compliance",
+      "a": 5,
+      "b": 5,
+      "note": "Both match output grammar and exit-0 contract"
+    },
+    {
+      "criterion": "code quality",
+      "a": 5,
+      "b": 3,
+      "note": "A uses bizarre __import__(\"json\") hack; B clean imports"
+    }
+  ],
+  "rationale": "Functionally equivalent, but A's inline __import__ instead of a normal json import is a clear quality defect.",
+  "a_chars": 2152,
+  "b_chars": 2022,
+  "judge_cost": 0.0101,
+  "spent_lane_est": 0.1151
+}

@@ -1,0 +1,17 @@
+{
+  "gopher": "t14a",
+  "item": "per-player FOV kick on dash (queue/todo.md roblox v1.1 row, line 185)",
+  "ok": true,
+  "note": "NEGATIVE FINDING FIRST: the FOV kick already existed, landed pre-afterparty in commit dfcda53cc (2026-09-25 09:40) and never ticked off. Wiring verified: server PlayerFeel.luau:46 sets DashAt after the 3s cooldown gate; client init.client.luau listens via GetAttributeChangedSignal('DashAt') and tweens FOV 70 -> 82 (0.12s) then eases back to 70 (0.3s). Attribute-driven, no new remotes, camera client-side only, server os.clock() stamp is deterministic, no server edit. t14a delta: one real defect fixed with receipt comment, the camera was captured once at script start while the script outlives respawns (ResetOnSpawn false) and workspace.CurrentCamera is nullable/replaceable, so the kick silently died after a camera swap. Now resolved per kick with nil guards, before/after cited in t14a.check.txt. Tween overlap impossible (0.42s kick vs 3s cd), no cancel machinery added. Todo row 185 left UNTICKED: mobile ContextActionService slice still open (0 grep hits).",
+  "checks": [
+    "grep dash over roblox/src: dash handling in PlayerFeel.luau (server authoritative, cd 3s) + init.client.luau (courier)",
+    "DashAt wiring intact: server set at PlayerFeel.luau:46, client listen at init.client.luau:79",
+    "no new remotes: attribute-driven, Movement remote untouched",
+    "client-side camera only, zero server randomness, no server diff",
+    "em-dash law: t14a lines clean; one pre-existing em-dash at line 2 left untouched (minimal diff)",
+    "luau-lsp not installed (exit 127): verification by read-back + git diff only",
+    "rojo not installed (exit 127): tracked roblox/the_mountain.rbxlx is STALE vs source until rebuild",
+    "mountain_check NOT run (shared, forbidden by item)"
+  ],
+  "next_steal": "Same v1.1 row: mobile ContextActionService bindings (grep ContextActionService in roblox/src = 0 hits, the unticked third slice), then rojo build to refresh the_mountain.rbxlx (stale after this edit, rojo missing on this box)."
+}

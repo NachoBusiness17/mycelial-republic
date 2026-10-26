@@ -1,0 +1,41 @@
+=== 2026-10-09T03:54 | LoRA over GGUF: Train Qwen3.8-Flash-Next in 40G VRAM | by /u/woct0rdho
+https://github.com/woct0rdho/transformers5-qwen3.5-recipe
+ An update to my LoRA over GGUF series: Now we can train Qwen3.8-Flash-Next (125B-A6B + 51B engram) in 40 GiB VRAM, with no CPU offloading, with engram on disk that does not reduce training speed.
+ On Strix Halo it trains context chunk size 2048 at 9.5 s/it. That's 200 token/s. There is still room to optimize, compared to > 1600 token/s PP we've achieved, and the common sense that LoRA training takes 2-3x work of PP.
+ Since transformers 5.18, initial support for modern GGUF has been merged, and we can expect more work in this direction.
+ Spoiler: In the torch-ggml-ops repo there is something called GGTensile. Basically it's Tensile-like asm-level optimization on MMQ kernels. We already see it's faster than HIP in many cases. I'll make a new post when I have something to show on this.
+ I guess I'll skip DeepSeek-V4.1, unless someone can quantize or prune it to < 125 GiB.
+    submitted by    /u/woct0rdho  
+ [link]   [comments]
+
+=== ? | /u/ProfileStrange223 on LoRA over GGUF: Train Qwen3.8-Flash-Next in 40G VRAM | by /u/ProfileStrange223
+always been more of a qlora guy but 200 tok/s on a 125B with no offloading is wild, might finally give this a spin
+
+=== ? | /u/woct0rdho on LoRA over GGUF: Train Qwen3.8-Flash-Next in 40G VRAM | by /u/woct0rdho
+This is exactly QLoRA, which basically means LoRA on Quantized base model. The problem is that previously most people were using bnb 4-bit quantized base model. Nowadays bnb has shown its age and we can replace it with GGUF.
+
+=== ? | /u/Bulky-Priority6824 on LoRA over GGUF: Train Qwen3.8-Flash-Next in 40G VRAM | by /u/Bulky-Priority6824
+This space is fast moving 😲
+
+=== ? | /u/QuailAggravating6719 on LoRA over GGUF: Train Qwen3.8-Flash-Next in 40G VRAM | by /u/QuailAggravating6719
+Nice work. Have you checked whether an adapter trained over one quant transfers to another? The LoRA probably learns to partly compensate for the specific quant's errors, so training over a Q4 and serving on IQ2_XS might not behave the same. Would be good to know before people mix and match.
+
+=== ? | /u/woct0rdho on LoRA over GGUF: Train Qwen3.8-Flash-Next in 40G VRAM | by /u/woct0rdho
+Yes. For inference on Strix Halo I usually use IQ4_NL for better quality (following the work of pwilkin), while for training I use Q2_0 because its MMQ can be like 1.5x as fast as IQ4_NL. The trained LoRA seems working fine when used with IQ4_NL base model. (How do I know it's working fine? It's some concept in RP that's definitely not in Qwen's training data)
+ My hypothesis is that as long as the LoRA rank is low, it will not learn the quantization error (which is mostly unbiased in modern quantization formats), and it will learn what the dataset intends.
+
+=== ? | /u/ZenZombie117 on LoRA over GGUF: Train Qwen3.8-Flash-Next in 40G VRAM | by /u/ZenZombie117
+Chiming in here, i did some testing. Albeit not on the 125B (used the Qwen3-4B, a tool-calling LoRA) https://github.com/Joakimpalm-Zen/xyntetik-runner/blob/main/docs/train-lora-on-quantized-gguf.md
+ the problem i ran in to was when the adapter was merged the fine-tune went "pof" and the exact score fell from 1.00 back to the base of 0.69 for Q4_K_M", although Q8_0/fp16 kept it. so Q4_K_M" keep it as an adapter and dont merge.
+
+=== ? | /u/woct0rdho on LoRA over GGUF: Train Qwen3.8-Flash-Next in 40G VRAM | by /u/woct0rdho
+Merging a LoRA into a quantized model is a nontrivial task. I've seen some good discussions at https://huggingface.co/BoldingBuilds/Ternary-Bonsai-2-27B-Abliterated-PTQ1_0-GGUF
+
+=== ? | /u/feelspeaceman on LoRA over GGUF: Train Qwen3.8-Flash-Next in 40G VRAM | by /u/feelspeaceman
+Q38FN is the savior of Strix Halo, this is a great start so that we can keep it going even if Qwen Team stop releasing newer 125B-NG51B models!
+
+=== ? | /u/Choice_Celery9481 on LoRA over GGUF: Train Qwen3.8-Flash-Next in 40G VRAM | by /u/Choice_Celery9481
+woah the guy behind flash attention and triton port to windows. legend in comfyui sub XD
+
+=== ? | /u/EatTFM on LoRA over GGUF: Train Qwen3.8-Flash-Next in 40G VRAM | by /u/EatTFM
+crazy! seems i could do it with dual rtx3090. now I just need a reason why...

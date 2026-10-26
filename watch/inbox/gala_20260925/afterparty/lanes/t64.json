@@ -1,0 +1,15 @@
+{
+  "gopher": "t64",
+  "item": "audit Portal_ pad suffixes against ZoneGate ZONE_REGION keys: classify each pad TINTS / SILENT-NO-TINT / NOT-A-GATE, fix one-line mismatches only",
+  "ok": true,
+  "note": "18 pads total, all from the single creation site init.server.luau:118 (rbxlx has 0 baked Portal_ instances). 11 wave pads TINT: WAVE[].name and ZONE_REGION keys are diff-identical lists and both sides sanitize with the same gsub(%W,_) (client init.client.luau:116, server ZoneGate.luau:55-58), so every wave pad joins by construction. 0 SILENT-NO-TINT. 7 climb pads (SWARM, RUINS GO, ARRAKIS, SKI, LIGHT MAZE, THE ANSWER, THE OSSUARY) are NOT-A-GATE by design: no ZONE_REGION row, portalGate returns true (ZoneGate.luau:99-101), no Gate_ attribute stamped (:133-135), client documents them staying untouched (init.client.luau:106-107). No genuine mismatch, so no fix landed; the table is the finding. Latent seam filed: the WAVE/ZONE_REGION join is two hand-authored lists identical by discipline not construction; a future zone added to one without the other silently never tints and never gates.",
+  "checks": [
+    "single pad creation site proven: grep src for Portal writers finds only init.server.luau:118; grep the_mountain.rbxlx for name=\"Portal_\" finds 0 instances",
+    "mechanical join proof: extracted WAVE names (init.server.luau:38-48) and ZONE_REGION keys (ZoneGate.luau:34-44) via grep/sed, diff reports IDENTICAL 11 vs 11, comm both directions empty",
+    "sanitization symmetric: same gsub(\"%W\",\"_\") both sides (init.client.luau:116, ZoneGate.gateAttr :55-58), spaces sanitize to underscores, attribute names valid",
+    "classification table in t64.check.txt: 11 TINTS (each pad suffix mapped to its key), 0 SILENT-NO-TINT, 7 NOT-A-GATE with evidence citations (ZoneGate.luau:13-17, 99-101, 133-135; init.client.luau:106-107)",
+    "no fix landed: zero suffix-vs-key mismatches, item authorizes one-line key alignment only for genuine mismatches",
+    "verify by read post-audit; no pytest (Luau, outside mag tree); mountain_check NOT run (shared); em-dash law held in filed text"
+  ],
+  "next_steal": "the WAVE/ZONE_REGION join is duplicated authorship (init.server.luau vs ZoneGate.luau): steal is deriving ZONE_REGION keys from the WAVE table (or a shared module) so a future zone cannot join one list without the other, turning the filed diff check into a compile-time fact"
+}

@@ -1,0 +1,85 @@
+t46 check evidence — portal ring tint by alliance (2026-09-25, gala afterparty)
+
+ITEM AS GIVEN vs FIELD TRUTH (negatives first-class):
+- Item said roblox/src/shared/ZoneGate.luau. The file is actually at
+  roblox/src/server/ZoneGate.luau (shared/ has no ZoneGate; verified by find
+  over roblox/src). t35's authored join + allianceFor are there; I worked
+  from the real path.
+- Item said "portal visuals in init.client.luau or zones_extra clients".
+  Fact: roblox/src/client/ has exactly one file, init.client.luau, and it
+  contained NO portal visuals. zones_extra has NO client files at all (all
+  server). The portal pads are server-built in src/server/init.server.luau
+  (loop at former lines 108-143): Part named "Portal_<zone>", Neon, parented
+  to workspace, colored per zone. The client tint targets those pads.
+- luau-lsp: not installed on this machine (which luau-lsp -> exit 127).
+  Verification is by read-back + pattern parity, no LSP pass.
+- mountain_check: NOT run, per orders (shared).
+- Tests: roblox/ contains no test files (no *.spec.lua, no test dir), so no
+  pytest/luau test run applies to this change.
+
+SPEC BEFORE BEHAVIOR (owning doc first):
+roblox/docs/WORLDGEN_MINE.md law 4 paragraph, appended "REPLICATED
+(2026-09-25, afterparty t46)" sentences after the FOLDED t35 text (former
+lines 53-55 ended "...dead branch would be fallback creep."; the REPLICATED
+sentences now follow, stating: Gate_<zone> attributes stamped at join,
+allied leans green, opposed leans red, independent tints nothing, tint is
+deterministic client visuals only and never gates).
+
+IMPLEMENTATION SHAPE:
+1. Server, roblox/src/server/ZoneGate.luau:
+   - BEFORE (lines 47-48, unchanged context): BUFF_SECONDS/REFUSAL_SECONDS;
+     BEFORE (lines 118-121): init/attach called ensureSphere(player) only.
+   - AFTER: gateAttr(zone) helper at lines 50-58 ("Gate_" .. zone with %W
+     collapsed to "_", because Roblox attribute names reject spaces); attach
+     at lines 129-137 now takes the sphere from ensureSphere and stamps
+     player:SetAttribute(gateAttr(zone), ZoneGate.allianceFor(sphere, region))
+     for every ZONE_REGION pair. Values are the same allianceFor results the
+     gate enforces in portalGate (line ~103). Climb portals get no attribute.
+2. Client, roblox/src/client/init.client.luau:
+   - Header spec line first in the touched client file: lines 3-5, directly
+     after the title line: "SPEC t46: portal pads tint by the server-stamped
+     Gate_<zone> attribute (ZoneGate.allianceFor): allied leans green,
+     opposed leans red, independent tints nothing; deterministic local
+     visuals only."
+   - BEFORE (lines 91-93): end of dash FOV kick block then
+     `local function character(): Model?`.
+   - AFTER: tint block at lines 94-128, between the DashAt kick block and
+     character(): ALLIANCE_TINT map (allied = RGB(90,230,130), opposed =
+     RGB(235,60,60), independent intentionally absent), bindPad() matching
+     pads by name pattern ^Portal_(.+)$, rebuilding the same sanitized key
+     with ("Gate_%s"):format((zone:gsub("%W", "_"))), initial apply() plus
+     player:GetAttributeChangedSignal(key) (the DashAt attribute pattern,
+     init.client lines 82-92 / PlayerFeel.luau line 46 stamp), workspace
+     scan + ChildAdded so late-built pads bind too. Paint is one fixed lerp:
+     part.Color = part.Color:Lerp(tint, 0.45), zone identity color preserved.
+
+DETERMINISM / LAW NOTES:
+- No Random, no os.clock loops, no tweens in the tint: pure function of
+  (server pad color, verdict). Idempotent in practice because attributes are
+  stamped once at join and SetAttribute with an unchanged value fires no
+  signal; bindPad applies at most once per discovered pad.
+- Independent tints nothing: neutral = untouched zone color (a negative is
+  a fact, mirrors ZoneGate header).
+- Opposed tint branch is NOT dead fallback creep: it renders a verdict
+  allianceFor genuinely returns (the ZoneGate header names the aligned-row
+  seam that makes it reachable); the client renders all verdicts of the
+  value it reads.
+- No em-dashes in any filed text (the pre-existing em-dash in the
+  init.client title line predates t46 and was left as found).
+- Fix-comment receipt carried: t46 comments name WORLDGEN_MINE.md law 4 and
+  the sanitization contract both sides share.
+
+VERIFICATION:
+- Read-back of all three touched files after edit (ZoneGate lines 50-58 and
+  128-144; init.client lines 1-10 and 94-128; WORLDGEN_MINE law 4 paragraph)
+  confirming exact landings above.
+- Key parity check by eye: server gateAttr gsub("%W","_") == client key
+  gsub("%W","_"); pad name suffix "Portal_" .. raw zone (init.server line
+  118 former, `pad.Name = ("Portal_%s"):format(p.to)`) == client match
+  "^Portal_(.+)$". Zone names after sanitize are unique (GALLERY,
+  FRONTIER_SOULS, TOY_BOX, HARDWARE_PRIMER, INCIDENT_DUNGEON, MAZE_ARENA,
+  SPECTRAL_MAZE, RIDDLE_MAZE, LIGHTMAP_ROOMS, EROSION_FIELD, STEER_FIELD).
+- luau-lsp unavailable (exit 127); no Lua/luau/StyLua binary on PATH.
+
+NOT DONE (facts): mountain_check not run; no Rojo build/build verification
+beyond read; tint is untested in a running client (no Studio here).

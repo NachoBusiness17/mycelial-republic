@@ -1,0 +1,46 @@
+{
+  "gopher": "t4",
+  "item": "reconcile the 41-vs-130 dwarven lexicon discrepancy (a06's unreconciled finding): tools/df_words.json 41 entries vs ArtifactLore.luau DWARVEN pool 130 entries",
+  "ok": true,
+  "note": "Root cause: df_words.json is a stale era receipt, not a generator output. It was banked at birth (commit 65c4af34a, '2122 words, 41 banked', wiki-mine era), stayed 41 entries ever since, and has ZERO code consumers (grep over roblox/ tools/ mag/ corpus/df_mine/ = 0 hits). No committed parser builds it (corpus/df_mine/ holds parse_entities.py, parse_spheres.py, build_df_procedural.py only). ArtifactLore's 130 (80 nouns + 50 adjectives) is current: folded from corpus/df_mine/df_lexicon_full.json in commit 37de3d3f9 (local-install mine, 3223 dwarf entries, POS via language_words.txt join, CP437). Resolution chosen: document, do not regenerate. Regeneration was refused because there is no committed parser to re-run, the 41 was a curation ('banked') not a filter output, and no code reads the file, so regenerating would invent a contract. Validation: all 130 pool entries verified word+POS grounded against df_lexicon_full dwarf (130/130; 0 POS disagreements; the 4 initial lookup misses were my probe script stripping suffixes, the mine holds them verbatim under keys 'ring object', 'rootverb', 'spring noun', 'spring season'). All 41 df_words entries are grounded in the mine too: 37 appear verbatim in the 130 pool, the other 4 (copper gusil, river iger, water arel, whisper iklist) match the full mine but were not carried into the pool; 0 entries absent from the mine. Alignment: added a provenance comment to roblox/src/shared/ArtifactLore.luau naming df_lexicon_full.json as the pool source and marking tools/df_words.json as the superseded wiki-era bank. Comment-only, 0 behavior change, entry count still 130; the_mountain.rbxlx not rebuilt in this lane (a02/gate owns rebuilds, rojo off PATH here) so its embedded copy is one comment behind until the next gate pass. Negatives first-class: no POS mismatches found (0); no unfounded pool entries (0); df_words.json deliberately NOT deleted (era receipt, zero consumers, deletion out of mandate); mountain_check not run by this lane; pre-existing em-dash in ArtifactLore.luau line 2 left untouched (not filed text, not introduced by this lane); all new filed lines are em-dash free.",
+  "checks": [
+    {
+      "command": ".venv/Scripts/python.exe -c \"import json;d=json.load(open('tools/df_words.json'));print(len(d))\" -> 41",
+      "exit": 0,
+      "evidence": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/afterparty/lanes/t4.check.txt [1]"
+    },
+    {
+      "command": "grep -cE 'gloss = ' roblox/src/shared/ArtifactLore.luau -> 130 (80 noun + 50 adjective)",
+      "exit": 0,
+      "evidence": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/afterparty/lanes/t4.check.txt [2] [3]"
+    },
+    {
+      "command": "git show 65c4af34a:tools/df_words.json | count -> entries at birth: 41 (file never changed since birth)",
+      "exit": 0,
+      "evidence": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/afterparty/lanes/t4.check.txt [4]"
+    },
+    {
+      "command": "grep -rn df_words over roblox/ tools/ mag/ corpus/df_mine/ (*.py *.luau *.ts *.js) -> ZERO code consumers",
+      "exit": 0,
+      "evidence": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/afterparty/lanes/t4.check.txt [5]"
+    },
+    {
+      "command": "python: all 130 ArtifactLore (gloss,dw,pos) vs df_lexicon_full.json dwarf -> 130/130 word match, 0 POS disagreements; 4 probe-script suffix artifacts confirmed verbatim in mine",
+      "exit": 0,
+      "evidence": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/afterparty/lanes/t4.check.txt [6] + probe output"
+    },
+    {
+      "command": "python: 41 df_words vs 130 pool vs full mine -> 37 verbatim in pool, 4 in full mine only (copper/river/water/whisper), 0 absent from mine",
+      "exit": 0,
+      "evidence": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/afterparty/lanes/t4.check.txt [7]"
+    },
+    {
+      "command": "post-edit sanity: DWARVEN count still 130; provenance comment landed at lines 7-11; new lines em-dash free",
+      "exit": 0,
+      "evidence": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/afterparty/lanes/t4.check.txt [9]"
+    }
+  ],
+  "decision_changed": "Refused the regenerate branch: a06's framing ('was df_words built from a filtered subset?') resolved as neither filtered nor stale-by-drift but a superseded curation receipt from the wiki era, replaced wholesale by df_lexicon_full.json; the live truth is ArtifactLore, and the fix is documentation + provenance alignment, not a new df_words.json.",
+  "artifact": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/afterparty/lanes/t4.json",
+  "next_steal": "Generated-data law gap: DfGoods.luau and RcpData.luau carry a regenerate command in their headers, but ArtifactLore.luau (130-entry pool) and Worldgen.luau (130 spheres) were hand-folded with no committed generator. Next steal: a tools/gen_artifact_lore.py that emits ArtifactLore's DWARVEN pool from df_lexicon_full.json (word+POS verified in this lane, byte-identical rerun), making the pool regenerable and closing the hand-edit debt class for the remaining two folded modules."
+}

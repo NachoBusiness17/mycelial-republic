@@ -1,0 +1,39 @@
+ID: 1w60b3s
+SUB: r/LocalLLaMA
+DATE: 2026-09-03 07:20 UTC (created_utc=1788420045)
+TITLE: Agentic workflow for web research tasks
+SCORE: 1  COMMENTS: 13  UPVOTE_RATIO: 0.57
+PERMALINK: https://www.reddit.com/r/LocalLLaMA/comments/1w60b3s/agentic_workflow_for_web_research_tasks/
+SELFTEXT:
+Hi,
+
+I'm trying to build a workflow for doing research tasks on the internet. At the moment I am using Gemma-4-31B-IT-QAT (120k context) for planning,reviewing and orchestration and Gemma-4-12B-IT-QAT(256k context) for execution. Both model quants by unsloth.  
+I am using opencode and wrote 4 agents for this purpose. It works pretty good, but not stable enough. Sometimes it needs an hour for a task which normally takes 8-10min.
+
+The planner prepares batches, the orchestrator invokes the executor for each batch separately, so it can do one by one in order to have smaller tasks with less context and no compactions.
+
+If it works, it's faster than doing everything with gemma-4-31b, however it's not stable enough. In my tests, results on the same task were not reproducible enough.
+
+  
+The basic workflow: Orchestrator gets a request by the user. It invokes the planner with neccessary context. The planner does a first few web searches to identify promising sources. Then it writes a plan for the exec. The plan is divided in batches. The orchestrator gets the finished plan and invokes the exec on each batch. After that, everything gets merged and reviewed by the critic. The critic checks sources. If something is off, the planner gets invoked to write a plan for fixing what's wrong or missing. This is repeated until everything was done (max. 3 times).
+
+Has someone else built such a workflow with success?
+COMMENTS FETCHED: 18
+--- [[deleted] | 2026-09-03 | score 1] [removed]
+--- [o0genesis0o | 2026-09-03 | score 3] I use to run this with minimax m2.7 because it's lighting fast and dirt cheap on minimax subscription. It would also run on Qwen 3.6 35B, but I would just use minimax 2.7.  Essentially, I loosely follow systematic literature review process (more like multi-vocal literature review in this case). The main agent would engage in interactive Q&A with me to refine my vague information needs into research questions (RQs) such that it is scoped and researchable. Then, it would turn RQs into search strings. Then, it would run a pilot search (arxiv) and verify and if necessary, it would adjust the RQs and search string. Then, it would finally run the real search and dedup into a final paper list.  If things go well, then it would start to spin up parallel agents to download PDF, read using markitdown, write summary, and extract required information for RQs.   Finally, it would spin up an agent with fresh context to read all of these summary and synthesise. That's the final report I would read.   It's more or less the level an okay master study or early PhD student can write within the first 3 months of PhD training. You can really go down the rabbit hole with this and be more sophisticated than this, with checkpoints and more tools to help the model. My implementation requires only a SKILL.md, arxiv tool, and markitdown.  I have also adopted this approach to create "dossier" when I need to meet new industry contacts or companies.  The limitation of this approach is the data source. You know, internet is really clamping down on these automated fetching.
+--- [Any_Bus9205 | 2026-09-03 | score -1] Pk pas juste use openwebui pour faire ce rag!? Genre c'est plus simple non !? Il dispose nativement de la recherche web et avec lui tu peux avoir une api se nommant jina qui permet de faire comme ce que tu fais, c'est un petit modèle de rag qui permet de directement prendre les sources sur internet et rédigée un mini résumé sans les pub! Et ensuite cela s'envoie au modèle! Donc ici, tu met ton gros modèle gemma en tant qu'orchestrateur, il appelle avec une demande simple jina qui parcoureras toute les pages web du monde pour te donner un résumé complet de chaque page aux llm qui te feras le resumé! L'avantage c'est que tu peux le custom jina, et au moins, c'est assez rapide! Ils dispose de 10 million de jeton d'api en mode gratuit 10k jeton api pour faire 10 requète auprèd de jina donc 1000 jeton api par requète et 50 euros pour 1 milliard de jeton api!! Et jina as été entrainé pour faire ce travail! 
+--- [AI_spell | 2026-09-03 | score 3] Repro tip: pin seeds and freeze tool outputs for a golden run (cache the search hits). If the same cached pages still diverge, the planner is rewriting scope each time. Cap the critic loop hard (your 3 is good) and make done mean checklist items, not vibes. Also run the executor at a lower temp than the planner.
+--- [FullstackSensei | 2026-09-03 | score 1] Bot much?   Let's replace  a local tool with a paid cloud tool, in locallama.
+--- [Brilliant_Effort3208 | 2026-09-03 | score 1] yeah the data source limitation is the real bottleneck here, everything else is solvable but scraping keeps getting harder
+--- [[deleted] | 2026-09-03 | score 1] [removed]
+--- [Unlucky-Message8866 | 2026-09-03 | score 1] i do like this:  * orch (plan+split+delegate)->researcher (plan+split+delegate)->search tool A * orch->researcher<-search tool A * orch->researcher->search tool B * orch->researcher<-search tool B * orch<-researcher * orch->curator  * orch<-curator  you want all your agents to plan, split and delegate for maximum context efficiency. set a hard timeout to research agents and update prompts to skip failed.
+--- [[deleted] | 2026-09-03 | score 1] [removed]
+--- [HlddenDreck | 2026-09-03 | score 1] Tanks for sharing, that sounds promising!
+--- [HlddenDreck | 2026-09-03 | score 2] I didn't even think about using Qwen3.6-35B-A3B for this! It's been a while I used it for coding as a build agent. But man this thing fucks! I just used the UD-Q4-K-XL by unsloth with my existing workflow and holy cow it's insane how fast this is running. Fit with its whole context in just 32GB VRAM. But best thing is, it just does the job. No tool calling issues, no unneccesary "side quests" and no errors!   Amazing, many thanks for that!
+--- [Future_AGI | 2026-09-04 | score 1] We would freeze the search results and source pages for a golden run before changing the planner. If the same frozen inputs still produce different reports, you can isolate whether the drift comes from planning, execution, or synthesis. The evaluation pieces we use are available in the Apache-2.0 core: [https://github.com/future-agi/future-agi](https://github.com/future-agi/future-agi)
+--- [Unlucky-Message8866 | 2026-09-04 | score 1] bonus: use 35b moe for research, higher prefill speeds and larger context is ideal for the task
+--- [KitchenBass2866 | 2026-09-06 | score 1] i know theres a few tools out there you can give your agent for performing websearch. do you recommend any or did you benchmark any or what are you using to do the web searching
+--- [HlddenDreck | 2026-09-06 | score 1] Just opencode with my own agentic pipeline. With qwen3.6-35b it works very fast
+--- [KitchenBass2866 | 2026-09-07 | score 1] ah got it I think OpenCode already uses Exa under the hood for web search, right
+--- [[deleted] | 2026-09-14 | score 1] [removed]
+--- [[deleted] | 2026-09-14 | score 1] [removed]

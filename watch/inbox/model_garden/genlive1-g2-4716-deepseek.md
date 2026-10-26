@@ -1,0 +1,13 @@
+# genlive1-g2-4716-deepseek (deepseek-chat @ deepseek, turn 1, channel: content)
+
+DEFECT 1: Git subprocess inherits caller environment and runs the git binary resolvable on PATH, so `--root` pointed at a hostile tree plus a poisoned PATH or a `tests/.git` shim executes attacker-controlled code | EVIDENCE: tools/census_drift_patrol.py:334-337 | FIX: run git with `env={"PATH": os.defpath}`, `shell=False` (already), and reject root where `(root/"tests"/".git").exists()` before the call.
+DEFECT 2: `candidate_files` rglobs `tests/**` with no fence against symlinked directories, so a symlink planted under tests/ pulls files outside the estate into the disk count and into the `disk_files - report["files"]` set | EVIDENCE: tools/census_drift_patrol.py:243-250 | FIX: filter `p.is_file() and root in p.resolve().parents`.
+DEFECT 3: `carrier_path.read_text(...)` reads an attacker-supplied path with no size cap and no symlink check, so a symlinked or huge AGENTS.md is read whole into memory | EVIDENCE: tools/census_drift_patrol.py:452 | FIX: `os.lstat` reject non-regular or symlink, then read with a bounded size.
+DEFECT 4: `parse_carrier` accepts the first `**Tests:**` line by `MULTILINE` search, so an injected earlier bullet (e.g. in a quoted block) shadows the canonical one and the patrol parses attacker text | EVIDENCE: tools/census_drift_patrol.py:189-206 | FIX: parse only the top-level list bullet, reject matches whose preceding non-blank line is an indented code fence.
+DEFECT 5: `datetime.fromisoformat(line).astimezone().date()` uses the host local timezone, so the same commit can be counted as post-census on one machine and pre-census on another, making the STALE verdict host-dependent | EVIDENCE: tools/census_drift_patrol.py:364-368 | FIX: compare in UTC (`datetime.fromisoformat(line).astimezone(timezone.utc).date()`) and pin the same tz for `today`.
+
+DEAD-CODE: `PatrolError` raised only from `test_files_added_since`, whose sole caller in `run()` wraps in one try that also covers `count_candidate_files`, so the class carries no independent dispatch | EVIDENCE: tools/census_drift_patrol.py:220-221
+
+ONE-SITTING FIX: Add a root fence at the top of `run()`: resolve `root`, reject if not a directory, reject if `(root/"tests").is_symlink()` or `(root/".git").is_symlink()`, and pass an explicit minimal env to the git subprocess | EVIDENCE: tools/census_drift_patrol.py:434-448
+
+Falsifier for DEFECT 1: create `tests/.git` as a git dir whose `config` sets `core.fsmonitor` to a script, run the patrol against that root; if no external process executes and the git call still returns the same output as a clean checkout, the PATH/config vector is not live and the defect is downgraded to hardening.

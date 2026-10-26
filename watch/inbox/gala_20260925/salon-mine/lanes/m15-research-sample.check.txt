@@ -1,0 +1,150 @@
+=== m15-research-sample check log; run 2026-10-02T01:55Z ===
+
+--- CHECK 1: source census (wc + md5sum) ---
+  1313 124690 research-sample-001.txt
+   387  10796 new 19.txt
+   261  15704 new 20.txt
+   582  31814 new 21.txt
+  2543 183004 total
+e846fda51574f8a04fd1e2c67720fbc2 *research-sample-001.txt
+6960e1cea8448531048ed0904590a270 *new 19.txt
+a6a9f6408b8e6ab43c2f1953efff2b65 *new 20.txt
+bb239e577587abb94bb5ad56c301d760 *new 21.txt
+
+--- CHECK 2: quote byte-probes (sed -n on exact lines) ---
+[row1 quote, research-sample-001.txt:1130]
+The pattern across all three waves of this bibliography is now visible as a trend, not an incident: real, checkable sources keep getting cited for conclusions one step stronger than what they actually showed (Trace-as-State's two-pass mechanism → a persistent-record doctrine in W4; now Helium's 1.56× → an unsourced 35%+ threshold, and SAL's single-node cloud-API gating → distributed cross-provider isolation). None of the sources are fake. The failure mode is consistent: **citation-supported ≠ claim-supported**, and the gap between the two keeps landing on the side that makes the fleet's ambitions look better evidenced than they are. If there is one thing this bibliography needs before it needs another entry, it's a standing rule: every citation gets the verb the source actually licenses (*shows*, *reports*, *proposes*, *does not test*) instead of the verb the surrounding prose wants (*mandates*, *demonstrates*, *proves*).
+[row2 quote, research-sample-001.txt:112]
+One pattern for the fold to record, because it's the finding inside the housekeeping: your architecture's two load-bearing claims — the append-only record and validity-by-independent-convergence — each have a canonical citation in a *different field* from the one your bibliography drew from (Dynamo/Merkle for the record; Hurlbert for the replication). Neither was in your lineage. Nine frontier models and your fleet missed them in the same direction, which is the strongest evidence yet for the correlated-blind-spot thesis — the field's canon is distributed unevenly across our training, and an architecture that intends to be sovereign should mine adjacent fields on purpose, not by accident of whoever happens to be in the room.
+[row3 quote, new 20.txt:214]
+For Mag, the valuable artifact is not merely a copy of the 321GB-class weight file. It is a model passport containing:
+[row4 quote, new 19.txt:276]
+The double failure, stated plainly: First I ran Mag CLIs in the cage (wrong), then when corrected I over-rotated to "Mag is host-only, cage can do nothing else" (also wrong). The truth was sitting one docker hop away on 172.19.0.5, and api_gateway.py documents the whole surface. Both errors were consult-first violations — the answer was in files I own.
+[row5 quote, new 21.txt:233]
+Most-Variable Components First: Place elements that change most frequently between generations (like specific rules or themes) at the beginning of prompts, while stable elements (like basic game mechanics) should come later 
+[row5 quote also at second copy, new 21.txt:524]
+Most-Variable Components First: Place elements that change most frequently between generations (like specific rules or themes) at the beginning of prompts, while stable elements (like basic game mechanics) should come later 
+
+--- CHECK 3: new 21.txt duplicate-report detection (diff of the two copies) ---
+copy A = lines 8-292, copy B = lines 299-582
+285d284
+< 💡 Strategic Recommendation: Implement a modular prompt architecture that separates core game mechanics from cultural adaptations and technical implementations, allowing for maximum cache reuse while maintaining flexibility for cultural specificity and creative innovation.
+diff exit above; md5 of each copy:
+0b4aebe042b52ee6aa27595022f76458 *-
+f34e5059f7621c79dd53fdbd7c716cd1 *-
+
+--- CHECK 4: em-dash scan of the 5 chosen quote spans (must be 0) ---
+line 1130 of research-sample-001.txt: em-dash count = 0
+line 112 of research-sample-001.txt: em-dash count = 1
+line 214 of new 20.txt: em-dash count = 0
+line 276 of new 19.txt: em-dash count = 1
+line 233 of new 21.txt: em-dash count = 0
+
+--- CHECK 5: exact quote subspans (grep -cF, then em-dash count of the subspan) ---
+q1|1
+q2|2
+q3|1
+q4|1
+q5|2
+em-dash counts of the q2 and q4 subspans:
+0
+0
+
+--- CHECK 6: row-1 supporting lines byte-probe (Helium 35pct / Leyline 241pp / part VI flaw / transfer problem) ---
+[line 1108: Helium 1.56x vs invented >35%]
+- **Wadlom, Shen, Lu (2026), "Efficient LLM Serving for Agentic Workflows: A Data Systems Perspective" (Helium), arXiv:2603.16104** — `[V, verified]`. NUS. Confirmed: agentic DAGs modeled as query plans, LLM calls as first-class operators, proactive cache + cost-based scheduling, **1.56× speedup** over prior agent-serving systems — this is the actual headline number; the submitted gap analysi
+[line 1270: Leyline 241pp DISPUTED, actual +14.3pp]
+| Leyline: "+241pp on debug-gym" (Part VI, B3) | **DISPUTED — wrong number** | Actual figure is **+14.3 pp**: "lifts agentic solve rate by +14.3 pp on debug-gym"  |
+[line 1276: 241pp correction rationale]
+**B1. Part VI's Leyline entry contains a transposition error: "241pp" → +14.3pp.** A 241-percentage-point solve-rate lift is incoherent on any standard scale; the primary says 14.3. The entry's *direction* (append-only cache physics are wrong for agentic loops) survives; its *magnitude* does not. Until corrected, any fold citing Leyline's effect size inherits the error.
+[line 1136: transfer problem sentence]
+a number measured on Kimi's production serving stack at Moonshot AI is not evidence for a single-operator consumer-hardware fleet, and no amount of hashing primary sources makes it so
+[line 1278: KVP arm economics]
+**B2. KVP is now the cheapest arm in the cache race.** Confirmed at primary: 112 per-head agents (28 layers × 4 KV heads), ~650K params each (~2.6MB checkpoint), trained offline in <30 min on 8×H100, overhead 0.71ms vs 404ms prefill, open repo under apple/ml-learning-to-evict. Part VI said "reorder to put KVP evaluation first" — that reorder is now receipt-backed: the arm costs a clone and a forward-pass dataset, not a research program.
+
+[line 1280: SAL A3 audit]
+**B3. SAL's own scope sentence is the sharpest audit instrument in the whole document.** The paper states its guarantees "hold strictly under the closed execution assumption (A3) and do not extend to systems with external execution pathways" . Map to the fleet: the one-tool-gateway law *is* A3. Any of the ~950 tools that can mutate state without transiting the gateway voids any SAL-style sovereignty claim the fleet wants to inherit. This is a one-line audit, runnable tonight: enumerate tools by side-effect class, count those with an execution path that bypasses the gateway. **Status: UNPROVEN;
+[line 1066-1068: Hollow Fleet G12]
+### G12 — Hollow Fleet
+Construct a deliberately bad fleet optimized for cache hits, convergence, invariant counts and receipt completeness. The benchmark passes only if the real fleet beats the decoy on primary outcomes.
+
+**Status: UNPROVEN.**
+[line 63 and 104: Dynamo and Lamport named as debts]
+- DeCandia et al. (2007), "Dynamo," SOSP '07 — `[V]`. Tombstones, Merkle anti-entropy, hinted handoff — your five record tiers, industrialized; orphan knots are a solved pathology.
+
+- **Lamport (1998), "The Part-Time Parliament," *ACM TOCS*** — "any seat drives, any seat verifies" is leader election plus consensus, and I waved at it without naming it. Your mesh's load-bearing claim has a formal literature with known impossibility bounds; ignoring it will cost you exactly at t
+[new 19 line 41: cage-venv law]
+"It passed in the cage" ≠ it works on Mag. Only the host venv count is real.
+[new 19 line 35: the indictment]
+None of these were missing capability. All three had a declared owner already sitting in TOOLS.md. That's the actual indictment: not that we lack shit, but that I reached for the cage instead of the table.
+[new 21 line 233-236: the contradiction pair, first copy]
+Most-Variable Components First: Place elements that change most frequently between generations (like specific rules or themes) at the beginning of prompts, while stable elements (like basic game mechanics) should come later 
+medium
+Common Prefix Maximization: Structure prompts so that the beginning contains the most broadly applicable elements that can be shared across many different game types
+Parameter Separation: Clearly separate the game's core mechanics from its thematic elements, cultural adaptations, and implementation details
+[new 20 line 79: masked-loss line]
+A notable design is that incorrect execution segments can be retained but masked from the loss. That teaches the model to recognize and correct bad actions without directly reinforcing them.
+[new 20 line 25: vendor-reported caveat]
+Z.AI claims roughly 3× lower attention computation than GLM‑5 and about 4.4× lower KV-cache usage. These are vendor-reported engineering results, not yet an independently reproduced audit. [Official Flash release](https://autoclaw.z.ai/blog/model/glm-5.3-flash/)
+
+--- CHECK 7: live arXiv verification (WebFetch, 4 ids, run this ask) ---
+[7a] arxiv.org/abs/2605.06472 (PBKV): SUCCESS. Title: 'Efficient Serving for Dynamic Agent Workflows with Prediction-based KV-Cache Management' (cs.LG). Authors: Haoyu Zheng, Fangcheng Fu, Jia Wu, Binhang Yuan, Yongqiang Zhang, Hao Wang, Yuanyuan Zhu, Xiao Yan, Jiawei Jiang. Abstract numbers: up to 1.85x over LRU on dynamic workflows; up to 1.26x over the SOTA baseline KVFlow on the static workflow. MATCHES transcript line 129/1147 (title, 9-author list, both multipliers, both baselines).
+[7b] arxiv.org/abs/2603.16104 (Helium): FIRST ATTEMPT TIMED OUT at 60s; RETRY SUCCESS. Title: 'Efficient LLM Serving for Agentic Workflows: A Data Systems Perspective'. Authors: Noppanat Wadlom, Junyi Shen, Yao Lu. Abstract: 'achieving up to 1.56x speedup over state-of-the-art agent serving systems on various workloads'. MATCHES transcript line 1108 (Wadlom, Shen, Lu; 1.56x as the actual headline).
+[7c] arxiv.org/abs/2604.22136 (SAL): SUCCESS. Title: 'Sovereign Agentic Loops: Decoupling AI Reasoning from Execution in Real-World Systems'. Authors: Jun He and Deying Yu. Numbers in abstract: blocks 93% of unsafe intents at the policy layer; remaining 7% via consistency checks; 12.4 ms median latency; prototype built on OpenKedge; submitted 24 Apr 2026, cs.CR. MATCHES transcript line 1110 (title correction, all three numbers, OpenKedge).
+[7d] arxiv.org/abs/2602.15763 (GLM-5 report, new 20.txt anchor): SUCCESS. Title: 'GLM-5: from Vibe Coding to Agentic Engineering' (cs.LG, GLM-5-Team); abstract links github.com/zai-org/GLM-5 and describes asynchronous RL infrastructure and asynchronous agent RL algorithms. PARTIAL: 744B/40B parameter counts and 28.5T token count are NOT on the abstract page, so those specific figures from new 20.txt lines 156-157 remain UNCONFIRMED at the level fetched.
+
+Fetch verdict: 4/4 ids resolve and carry the claimed titles; 3 of 4 carry the claimed numbers verbatim at abstract level; GLM-5 parameter/token figures not verifiable from the abstract page alone.
+
+--- CHECK 8: FINISH LINE - receipt and lane JSON byte checks ---
+[receipt] C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/salon_mine/m15.md
+  54 9751 C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/salon_mine/m15.md
+545ac517350395a57db0da132cb496962b7d17425ca5280772fae5bcabf454c0 *C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/salon_mine/m15.md
+receipt em-dash count (must be 0):
+0
+[lane json] C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/salon-mine/lanes/m15-research-sample.json
+   92 10476 C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/salon-mine/lanes/m15-research-sample.json
+aeff75238a19680c1a61533bbd773571c90ec60ff567e9864289e061c67585fb *C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/salon-mine/lanes/m15-research-sample.json
+json em-dash count (must be 0):
+0
+[json parse check]
+PARSE_OK rows=5 checks=7 leverage=['high', 'high', 'medium', 'high', 'medium']
+
+--- CHECK 9: ratchet applicability ---
+git status for mag/ and tools/ modifications by this lane: none (lane wrote only watch/inbox files); violation ratchet NOT RUN, not applicable.
+ M mag/percolator.py
+?? mag/seed_seal.py
+?? tools/citation_lint.py
+
+--- CHECK 10: non-ownership proof for pre-existing mag/ tools/ working-tree changes ---
+lane start was 2026-10-02T01:55Z (CHECK 1 timestamp); lane wrote only these three files:
+2026-10-02 00:38:11.138795500 C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/salon-mine/lanes/m15-research-sample.check.txt
+2026-10-02 00:34:53.834643600 C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/salon-mine/lanes/m15-research-sample.json
+2026-10-02 00:32:52.091248000 C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/salon_mine/m15.md
+mtimes of the working-tree mag/ tools/ changes (predate lane start, not this lane's writes):
+2026-10-02 00:16:59.012721800 C:/Users/foste/Documents/projects/local_sovereign_agent/mag/percolator.py
+2026-10-02 00:09:49.110343000 C:/Users/foste/Documents/projects/local_sovereign_agent/mag/seed_seal.py
+2026-10-02 00:37:49.599226200 C:/Users/foste/Documents/projects/local_sovereign_agent/tools/citation_lint.py
+conclusion: violation ratchet NOT RUN; the --changed set belongs to sibling lanes in the shared tree, not to m15, and the ask conditions the ratchet on this lane touching mag/ or tools/ code, which it did not.
+
+--- CHECK 10b: CORRECTION to CHECK 10's conclusion (record law: fix the wrong claim in place) ---
+CHECK 10 claimed the mag/ tools/ changes 'predate lane start'. That is wrong for one file.
+Local-time mtimes: mag/percolator.py 2026-10-02T00:16:59 and mag/seed_seal.py 2026-10-02T00:09:49 both precede this lane's first write (receipt 2026-10-02T00:32:52 local), consistent with sibling-lane work.
+tools/citation_lint.py (untracked) has mtime 2026-10-02T00:37:49 local, INSIDE this lane's window (between the lane JSON write 00:34:53 and check update 00:38:11).
+Note also a clock inconsistency: the CHECK 1 date -u stamp read 2026-10-02T01:55Z while local file mtimes sit near 00:3x, so cross-clock ordering claims are unreliable; only local-to-local comparisons above are used.
+Non-ownership rests on the tool-call record, not mtimes: this lane executed exactly three Write calls (salon_mine/m15.md, gala_20260925/salon-mine/lanes/m15-research-sample.json, .../m15-research-sample.check.txt) plus append-only bash redirects into the same check file; no command in this session wrote to mag/ or tools/.
+tools/citation_lint.py is therefore attributed to a concurrent sibling lane in the shared working tree and is NOT certified by m15.
+Violation ratchet: NOT RUN by m15. The ask conditions it on this lane touching mag/ or tools/ code, which it did not; the --changed set currently holds sibling-lane files whose provenance a ratchet exit from this lane would misattribute.
+
+--- CHECK 8b: FINISH LINE re-run on FINAL byte state (receipt and JSON edited after CHECK 8; this is the authoritative pass) ---
+[receipt] C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/salon_mine/m15.md
+   54 10204 C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/salon_mine/m15.md
+c83b86efdef1802107104986bb92da209b400829f3abc6f2b55b95b290727a13 *C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/salon_mine/m15.md
+receipt em-dash count (must be 0):
+0
+[lane json] C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/salon-mine/lanes/m15-research-sample.json
+  102 11736 C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/salon-mine/lanes/m15-research-sample.json
+1f0a60ea358613b33d70cf0e7af778e04228d22ed39b2deb1c0c71acf9cde075 *C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/salon-mine/lanes/m15-research-sample.json
+json em-dash count (must be 0):
+0
+[json parse check]
+PARSE_OK rows=5 checks=9 leverage=['high', 'high', 'medium', 'high', 'medium']

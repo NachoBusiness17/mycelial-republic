@@ -1,0 +1,80 @@
+t62 check evidence - prefilter tightened to require parseable YYYY-MM-DD in githooks/pre-push freshness block
+run date: 2026-09-26 (local, Git Bash); all raw tool output below, re-run straight into this file; em/en-dashes appearing in TOOL output rendered as [em-dash]/[en-dash], none authored
+
+== A. syntax + verbatim block ==
+$ sh -n githooks/pre-push && sed -n '/^# freshness receipt gate/,$p' githooks/pre-push > block.sh && sh -n block.sh
+hook_syntax_exit=0
+block_syntax_exit=0 (block extracted: 33 lines)
+
+== B. fixtures OUTSIDE watch/inbox: fixture_dir=C:/Users/foste/AppData/Local/Temp/tmp.R977wrdbMH ; today=2026-09-26 ==
+prose.md: audit sentence containing 'fetched: all present' (t51 MICKEY17 line 93 shape, no date)
+fresh.md: 'source-fetched: 2026-09-26' ; stale.md: 'source-fetched: 2026-09-01' (25d old, bar 14d)
+
+-- old prefilter vs prose line (the false positive being killed) --
+1
+old_prefilter_prose_exit=0
+-- new prefilter vs prose line (must skip) --
+0
+new_prefilter_prose_exit=1
+-- new prefilter vs stale dated line (must gate) --
+1
+new_prefilter_stale_exit=0
+-- new prefilter vs fresh dated line (must gate) --
+1
+new_prefilter_fresh_exit=0
+
+== C. verbatim block, scan path swapped to fixture dir (raw) ==
+fixture_block_syntax_exit=0
+PUSH-GATE: freshness_gate (WARN-ONLY)
+PUSH-GATE: freshness WARN: C:/Users/foste/AppData/Local/Temp/tmp.R977wrdbMH/stale.md
+FRESHNESS-GATE: FAIL C:/Users/foste/AppData/Local/Temp/tmp.R977wrdbMH/stale.md (stamp 2026-09-01 is 25d old; bar is 14d)
+fixture_block_exit=0  (prose skipped silently, fresh ok silent, stale WARNed, block never blocks)
+
+== D. gate on fresh fixture directly (proves dated ok line runs the gate, not skipped) ==
+FRESHNESS-GATE: ok C:/Users/foste/AppData/Local/Temp/tmp.R977wrdbMH/fresh.md (stamp 2026-09-26 is 0d old; bar is 14d)
+fresh_gate_exit=0
+
+== E. verbatim block against LIVE watch/inbox (raw) ==
+PUSH-GATE: freshness_gate (WARN-ONLY)
+live_block_exit=0  (header only: the t51 MICKEY17 prose WARN is gone)
+
+== E2. why live is silent: find still selects MICKEY17 (mtime today), prefilter now skips it ==
+1
+mickey_selected_by_find_count_above
+1
+old_prefilter_mickey_exit=0
+0
+new_prefilter_mickey_exit=1
+
+== E3. over-tighten check over ALL today-mtime live receipts ==
+-- admitted by NEW prefilter: --
+-- admitted by OLD prefilter (contrast): --
+OLD-ADMITTED: watch/inbox/MICKEY17_WAVE2_QUALITY_20260925.md
+(negative on record: zero live receipts carry a dated stamp today, so the admit path's live coverage comes from fixtures B-D, not the estate)
+
+== F. ratchet ==
+RATCHET check: scope=13 changed files; hits=11; registered=11; NEW=0; expired-exceptions=0
+RATCHET: PASS [em-dash] no unregistered debt.
+ratchet_exit=0
+
+== G. em-dash/en-dash scan over githooks/pre-push (U+2014, U+2013) ==
+githooks/pre-push em-dash: 0 en-dash: 0
+dashscan_hook_exit=0
+
+== H. landed diff of the freshness block (spec + tightened grep line) ==
+32:# Prefilter tightened (t62, 2026-09-25, wired from t51 next_steal): the scan
+33:# line must carry a parseable YYYY-MM-DD after the label colon or the receipt
+46:    grep -Eiq '(source[-_ ]fetched|fetched|observed[-_]at)[[:space:]]*:[[:space:]]*[0-9]{4}-[0-9]{2}-[0-9]{2}' "$f" || continue
+
+== I. whole-hook direct run (raw) ==
+PUSH-GATE: ratchet check --changed
+RATCHET check: scope=13 changed files; hits=11; registered=11; NEW=0; expired-exceptions=0
+RATCHET: PASS [em-dash] no unregistered debt.
+PUSH-GATE: config_seal verify
+CONFIG-SEAL verify: sealed=47 live=47 modified=3 missing=0 unsealed=0
+  MODIFIED  lanes.yaml
+  MODIFIED  mag.yaml
+  MODIFIED  providers.yaml
+CONFIG-SEAL: FAIL [em-dash] re-seal by NAME: python tools/config_seal.py update --by WHO --note WHY
+direct_hook_exit=1
+(freshness block reached or not is visible above; exit code is governed by the enforcing gates, warn-only blocks never contribute)

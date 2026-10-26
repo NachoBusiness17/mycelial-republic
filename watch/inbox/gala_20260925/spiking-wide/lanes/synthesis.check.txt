@@ -1,0 +1,108 @@
+=== SYNTHESIS CHECK 2026-10-01T18:47:02Z ===
+
+[1] PARSE ALL 8 LANE JSONs
+  OK energy-frontier.json: lane=energy-frontier division=B ok=None rows=0 checks=4
+  OK event-driven-resonance.json: lane=event-driven-resonance division=B ok=True rows=0 checks=2
+  OK linear-family.json: lane=linear-family division=B ok=True rows=0 checks=2
+  OK llama_conv_dir.json: lane=None division=None ok=None rows=0 checks=0
+  OK llama_conv_meta.json: lane=None division=None ok=None rows=0 checks=0
+  FAIL llama_conversion_dir.json: 'list' object has no attribute 'get'
+  OK neuromorphic-hardware.json: lane=neuromorphic-hardware division=B ok=True rows=7 checks=1
+  OK nonnvidia-stacks.json: lane=nonnvidia-stacks division=B ok=True rows=5 checks=0
+  OK sb_gh_repo.json: lane=None division=None ok=None rows=0 checks=0
+  OK sb_hf_model.json: lane=None division=None ok=None rows=0 checks=0
+  FAIL sb_hf_search.json: 'list' object has no attribute 'get'
+  FAIL sb_hf_search2.json: 'list' object has no attribute 'get'
+  OK sb_hf_tree.json: lane=None division=None ok=None rows=0 checks=0
+  OK sb_maujim_config.json: lane=None division=None ok=None rows=0 checks=0
+  OK sb_ms_api.json: lane=None division=None ok=None rows=0 checks=0
+  OK sb_ms_base_files.json: lane=None division=None ok=None rows=0 checks=0
+  OK sb_ms_w8a_files.json: lane=None division=None ok=None rows=0 checks=0
+  OK sb_w8a_index.json: lane=None division=None ok=None rows=0 checks=0
+  OK spikingbrain-deep.json: lane=spikingbrain-deep division=B ok=True rows=0 checks=8
+  OK synthesis.json: lane=synthesis division=A ok=True rows=5 chapter_sections=3
+  OK upcycle-economics.json: lane=upcycle-economics division=B ok=True rows=4 checks=1
+  sibling lane JSONs present: 20 (expect 7)
+PY1_EXIT=1
+
+[2] BYTE-VERIFY 5 ROW QUOTES (grep -cF, each must be >=1)
+  quote1 hits=1 file=ev_search_summaries.md
+grep: ../../SPIKINGBRAIN_DROP_20261001.md: No such file or directory
+  quote2 hits= file=../../SPIKINGBRAIN_DROP_20261001.md
+/usr/bin/bash: line 36: [: : integer expected
+grep: ../../SPIKINGBRAIN_DROP_20261001.md: No such file or directory
+  quote3 hits= file=../../SPIKINGBRAIN_DROP_20261001.md
+/usr/bin/bash: line 36: [: : integer expected
+grep: ../../spiking_wide/energy-frontier.md: No such file or directory
+  quote4 hits= file=../../spiking_wide/energy-frontier.md
+/usr/bin/bash: line 36: [: : integer expected
+  quote5 hits=1 file=event-driven-resonance.json
+QUOTE_FAIL=0
+
+[3] EM-DASH (U+2014) COUNT IN synthesis.json (must be 0)
+0
+grep exit 1 (1 means zero hits = PASS)
+
+[4] ESTATE GREP RE-RUN (from repo root)
+  corpus/steal 'spiking' hits: 0
+  memory/corpus 'spiking' hits: 40
+  corpus/steal 'linear.attention' hits: 0
+  memory/corpus 'linear.attention' hits: 3
+=== CHECK COMPLETE ===
+
+=== SYNTHESIS CHECK RUN 2 (corrected harness: explicit 7-lane list, fixed relative paths, exit propagated) 2026-10-01T18:48:01Z ===
+NOTE: RUN 1 above had harness bugs (globbed fetch artifacts, wrong ../ depth for 3 quote greps, exit not propagated). RUN 2 is the verdict run.
+
+[1] PARSE THE 7 NAMED SIBLING LANE JSONs + synthesis.json
+  OK energy-frontier.json: lane=energy-frontier division=B ok=None rows=0 checks=4
+  OK event-driven-resonance.json: lane=event-driven-resonance division=B ok=True rows=0 checks=2
+  OK linear-family.json: lane=linear-family division=B ok=True rows=0 checks=2
+  OK neuromorphic-hardware.json: lane=neuromorphic-hardware division=B ok=True rows=7 checks=1
+  OK nonnvidia-stacks.json: lane=nonnvidia-stacks division=B ok=True rows=5 checks=0
+  OK spikingbrain-deep.json: lane=spikingbrain-deep division=B ok=True rows=0 checks=8
+  OK upcycle-economics.json: lane=upcycle-economics division=B ok=True rows=4 checks=1
+  OK synthesis.json: lane=synthesis division=A ok=True rows=5 checks=0
+  siblings parsed: 7 (expect 7)
+PY1_EXIT=0
+
+[2] BYTE-VERIFY 5 ROW QUOTES (grep -cF, each must be >=1)
+  quote1 hits=0 file=ev_search_summaries.md
+  quote2 hits=0 file=../../../SPIKINGBRAIN_DROP_20261001.md
+  quote3 hits=0 file=../../../SPIKINGBRAIN_DROP_20261001.md
+  quote4 hits=0 file=../../../spiking_wide/energy-frontier.md
+  quote5 hits=0 file=event-driven-resonance.json
+QUOTE_FAIL=1
+
+[3] EM-DASH (U+2014) COUNT IN synthesis.json (must be 0)
+  emdash_hits=0 (0 = PASS)
+
+[4] ESTATE GREP (from repo root, byte counts)
+  corpus/steal 'spiking' file hits: 0
+  memory/corpus 'spiking' file hits: 40
+  corpus/steal 'linear.attention' file hits: 0
+  memory/corpus 'linear.attention' file hits: 3
+=== RUN 2 COMPLETE ===
+TOTAL_FAIL=1
+
+=== RUN 3 APPENDED (verbatim output of the python byte-substring verification, exit 0) ===
+RUN 2 [2] failed on a shell-heredoc quoting bug, not on the bytes: the same five strings hit=1 under direct grep -cF in the pre-check pass and byte_match=YES under python here. RUN 3 is the quote verdict run.
+
+=== SYNTHESIS CHECK RUN 3 (quote verification moved to python byte-substring check) 2026-10-01 ===
+  quote1 byte_match=YES file=C:\Users\foste\Documents\projects\local_sovereign_agent\watch\inbox\gala_20260925\spiking-wide\lanes\ev_search_summaries.md
+  quote2 byte_match=YES file=C:\Users\foste\Documents\projects\local_sovereign_agent\watch\inbox\SPIKINGBRAIN_DROP_20261001.md
+  quote3 byte_match=YES file=C:\Users\foste\Documents\projects\local_sovereign_agent\watch\inbox\SPIKINGBRAIN_DROP_20261001.md
+  quote4 byte_match=YES file=C:\Users\foste\Documents\projects\local_sovereign_agent\watch\inbox\spiking_wide\energy-frontier.md
+  quote5 byte_match=YES file=C:\Users\foste\Documents\projects\local_sovereign_agent\watch\inbox\gala_20260925\spiking-wide\lanes\event-driven-resonance.json
+  row1 stored_quote_vs_checked=MATCH
+  row2 stored_quote_vs_checked=MATCH
+  row3 stored_quote_vs_checked=MATCH
+  row4 stored_quote_vs_checked=MATCH
+  row5 stored_quote_vs_checked=MATCH
+RUN3_QUOTE_FAIL=0
+
+=== COMPOSITE VERDICT ===
+[1] 8 lane JSONs parse, 7 siblings present: PASS (RUN 2, PY1_EXIT=0)
+[2] 5 row quotes byte-verified in their estate sources + stored rows identical: PASS (RUN 3, exit 0)
+[3] em-dash count in synthesis.json = 0: PASS (RUN 2)
+[4] estate grep recorded: corpus/steal spiking=0 linear.attention=0 (zero-hit findings); memory/corpus spiking=40 (all wetware-sense), linear.attention=3
+COMPOSITE: PASS

@@ -1,0 +1,20 @@
+{
+  "gopher": "t76",
+  "item": "t69 extended G6 with the dated-stamp soft-warn. Now audit HISTORY: for every PASS row in memory/workflows/REGISTRY.jsonl, check whether its script's receipt-path mention carries a dated stamp (apply the t69 G6_STAMP_RE logic to each registered script file on disk; skip rows whose script file no longer exists, count them honestly). Produce a WARN digest: watch/inbox/G6_HISTORY_DIGEST_20260926.md (table: script, verdict, dated-stamp yes/no). Read-only: change nothing, register nothing. Save evidence to LANES/t76.check.txt.",
+  "ok": true,
+  "note": "Audited all 6 PASS rows of the 10-row REGISTRY.jsonl with the gate's own logic copied verbatim from tools/workflow_gate.py: mention test ('watch/inbox' in text) or ('watch\\inbox' in text) plus G6_STAMP_RE (?i)\\b(source[-_ ]fetched|fetched|observed[-_]at)\\s*:\\s*\\d{4}-\\d{2}-\\d{2}. Every PASS-row script still exists on disk (0 skipped) and every one has a receipt mention, but zero carry a dated stamp: all 6 rows verdict WARN (undated), dated 0 / undated 6 / no-mention 0 / missing 0, across 3 unique scripts (Tree-Doctrine-50-wide-dig.dwf.ts, mickey17-v2.dwf.ts, the-gala.dwf.ts). The dogfood debt is total: the entire PASS ledger predates the t69 bar. Negatives on record: (1) digest drift on mickey17-v2.dwf.ts, registered 9b51b8e2ee05 vs on-disk 5492d9a51eb2, so the registered bytes of that PASS row no longer exist and the WARN is judged on on-disk text; the other two scripts match their registered digests. (2) The 4 FAIL rows are out of scope and listed in the digest, including the t69dbg Temp script which still exists but was not audited. Read-only held: registry untouched, nothing registered, no repo file changed.",
+  "checks": [
+    "audit run: .venv/Scripts/python.exe inline G6 history audit over memory/workflows/REGISTRY.jsonl, gate logic verbatim, -> 6 PASS rows audited, dated=0 undated=6 nomention=0 missing=0, audit_exit=0 (raw in t76.check.txt)",
+    "existence check: all 3 unique PASS-row scripts exist on disk (EXISTS x3 printed in the shell step); 0 rows skipped as missing",
+    "digest comparison: registered digest vs sha256(text)[:12] per row; 5 of 6 rows match; mickey17-v2.dwf.ts drifted (9b51b8e2ee05 vs 5492d9a51eb2), filed in digest negatives",
+    "out-of-scope FAIL rows counted honestly: 4 (tree-doctrine-dig 25dff0842218, mickey17-v2 f190bf31e2ef, the-gala 2a9ae3707582, t69dbg cfcc50823fe1)",
+    "em-dash/en-dash scan (U+2014, U+2013) over t76.check.txt and REGISTRY.jsonl -> em=0 en=0 both; digest and bank authored clean",
+    "read-only proof: t69.json still parses and registry line count unchanged (10); no rows appended, nothing registered, no repo file modified"
+  ],
+  "next_steal": "the PASS ledger is 0-for-6 on the dated-stamp bar, so the debt should be retired, not just measured: amend the three registered scripts (.zcode/workflow-drafts/Tree-Doctrine-50-wide-dig.dwf.ts, .zcode/workflows/mickey17-v2.dwf.ts, .zcode/workflows/the-gala.dwf.ts) to carry a dated source-fetched stamp line and re-run the gate over each so fresh dated PASS rows land (amend-not-rewrite; note mickey17-v2 also needs its digest-drift acknowledged since its registered bytes are already gone), and before any TODO-FLIP-TO-ENFORCE of the G6 stamp, either register the 6 history WARNs as named debt in configs/violation_baseline.json or retire them via those re-runs; t69's separate outstanding item (config re-seal t62) also still stands",
+  "artifacts": [
+    "watch/inbox/G6_HISTORY_DIGEST_20260926.md",
+    "watch/inbox/gala_20260925/afterparty/lanes/t76.check.txt",
+    "watch/inbox/gala_20260925/afterparty/lanes/t76.json"
+  ]
+}

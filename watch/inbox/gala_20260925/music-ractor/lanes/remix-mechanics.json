@@ -1,0 +1,161 @@
+{
+  "lane": "remix-mechanics",
+  "division": "B",
+  "ractor": "gala_20260925 music-ractor",
+  "status": "complete",
+  "started": "2026-10-01",
+  "corpus": {
+    "folder": "C:/Users/foste/Desktop/music-ai",
+    "files": 110,
+    "format": "mp3 (spotdown.org rips, ID3 tagged 4/4 frames: TIT2 TPE1 TALB APIC)",
+    "note": "same folder the sibling audio-dna and taxonomy lanes mined; pairs identified from filenames + taxonomy.check.txt tag rows"
+  },
+  "method": {
+    "recipe": "same ffmpeg+numpy recipe as lanes/audio_dna_scan.py: ffmpeg decode to 8000 Hz mono s16le piped to numpy; rms_dbfs, crest_db, zcr_hz, welch low_ratio (20-150 Hz over 20-4000 Hz, hann 2048), onset-envelope autocorrelation BPM 60-180 with parabolic interpolation and acf-peak/lag0 confidence",
+    "delta_vs_sibling": "pairs are decoded FULL LENGTH (audio-dna sampled first 90s) because the ask says sample the pairs fully; added band ratios (150-500, 500-2k, 2k-4k), dyn_range_db (p10-p90 of 250ms frame RMS), onset_rate (chop proxy)",
+    "ffmpeg": "8.1.2-full_build (Gyan winget build)",
+    "python": "repo venv, numpy 2.4.6"
+  },
+  "pairs_planned": [
+    "Aerodynamic original vs Daft Punk Remix (Daft Club)",
+    "Animal vs Mark Ronson Remix",
+    "D.A.N.C.E. vs MSTRKRFT Remix",
+    "NY Excuse vs Justice Remix",
+    "Phantom Pt. II vs Soulwax Remix",
+    "Phantom Pt. II vs Boys Noize Remix",
+    "Flat Beat vs Radio Edit",
+    "Rez vs Remastered",
+    "Psychic City Radio Edit vs Classixx Remix",
+    "Time To Dance Extended Version vs Sebastian Remix"
+  ],
+  "orphans_planned": [
+    "Let It Happen - Soulwax Remix",
+    "What Moves - Soulwax Remix",
+    "Another Excuse - DFA Remix",
+    "Paris - Aeroplane Remix",
+    "C-C (You Set The Fire In Me) - Dave Glass Animals Remix",
+    "Testarossa - Sebastian Remix",
+    "The Hand That Feeds - Photek Straight Mix",
+    "We Are Your Friends - Justice Vs Simian",
+    "Signatune - Thomas Bangalter Short Edit"
+  ],
+  "pairs_done": 10,
+  "files_decoded_full_length": 28,
+  "measurement_errors": 0,
+  "dup_suspect_rows": 0,
+  "check": "lanes/remix-mechanics.check.txt (exit 0)",
+  "verify": "lanes/remix-mechanics.verify.txt (exit 0, 5 checks; first attempt exit 1 on a lane-own filter bug, fixed, both facts in the receipt)",
+  "raw_json": "watch/inbox/music/remix_mechanics.json",
+  "receipt": "watch/inbox/music/remix-mechanics.md",
+  "rows": [
+    {
+      "law": "form-operator law",
+      "claim": "Cross-artist remixes rewrite song form (duration delta median +15.6%, range -50.2% to +121.5%) while self-versions stay within 2.5%: duration delta is the cheapest remix-versus-remaster discriminator.",
+      "quote": "dur 200.84 -> 444.765 s (delta 243.92 s, 121.45%)",
+      "source": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/music-ractor/lanes/remix-mechanics.check.txt",
+      "steal": "Add a duration-ratio floor check (under 3% delta = version, not transformation) to any corpus ingest that accepts remix-labeled audio, landing beside the catalog_audio registers.",
+      "falsifier": "A canon of cross-artist remixes whose durations all sit within 3% of their originals.",
+      "leverage": "high"
+    },
+    {
+      "law": "brightness ratchet",
+      "claim": "High-band energy ratio rises in 8 of 8 transformation pairs (median +33.9%, min +17.2%) while both self-versions sit at 0.0% and -10.0%: every remixer adds top end, reissues do not.",
+      "quote": "high_rel_pct: {'median': 33.94, 'min': 17.15, 'max': 187.07, 'n': 7}",
+      "source": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/music-ractor/lanes/remix-mechanics.check.txt",
+      "steal": "Use a high-band-ratio prior when classifying unlabeled remix files in state/fuel corpora (bpm_pcm holds 52 more wavs to re-classify).",
+      "falsifier": "A cross-artist remix whose high_ratio and zcr are both at or below its original's.",
+      "leverage": "high"
+    },
+    {
+      "law": "two schools of dynamics",
+      "claim": "Median dyn delta hides a bimodal split: wall-school remixes compress (Sebastian -12.09 dB, Justice -3.53 dB) and shape-school remixes restore (Soulwax +13.68 dB, Classixx +8.2 dB); on the same source the two schools differ by 14.14 dB.",
+      "quote": "dyn 7.4 -> 21.08 dB (delta 13.68 dB)",
+      "source": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/music-ractor/lanes/remix-mechanics.check.txt",
+      "steal": "When grading generated covers or remixes, require the dynamics operator (compress or shape) to be named and matched to the claimed school, not just a sounds-different verdict.",
+      "falsifier": "A remix population where dyn_delta clusters unimodally around 0.",
+      "leverage": "high"
+    },
+    {
+      "law": "electro-ification operator",
+      "claim": "MSTRKRFT's D.A.N.C.E. remix is the band-swap signature: low +73.8%, mid -57.0%, high +49.6% - it removes the original's mid band and pays in sub and sizzle.",
+      "quote": "low 0.3517 -> 0.6113 (73.81% rel)   mid 0.2307 -> 0.0992 (-57.0% rel)",
+      "source": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/music-ractor/lanes/remix-mechanics.check.txt",
+      "steal": "Port band-swap deltas as the fingerprint test for the 9 orphan remixes in state/fuel/bpm_pcm (one sitting, same recipe).",
+      "falsifier": "An electro-school remix that raises mid_ratio while cutting low_ratio.",
+      "leverage": "medium"
+    },
+    {
+      "law": "distortion swap law",
+      "claim": "Justice's NY Excuse remix leaves structure untouched (duration +2.6%, folded bpm 1.004) and re-voices it: zcr +54.0%, high +70.1%, low -38.1%, dyn -3.53 dB - distortion replaces bass.",
+      "quote": "zcr 1218.3 -> 1876.0/s (53.99% rel)   low 0.5217 -> 0.3231 (-38.07% rel)",
+      "source": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/music-ractor/lanes/remix-mechanics.check.txt",
+      "steal": "Treat a zcr spike with flat form as the distortion fingerprint in the fleet's audio-similarity checks (dashboard/static/suno toys).",
+      "falsifier": "A Justice-attributed remix with increased dynamic range and unchanged zcr.",
+      "leverage": "medium"
+    },
+    {
+      "law": "the chop operator",
+      "claim": "The Sebastian cut halves form (-50.2%), nearly doubles onset density (+49.9%), adds +3.02 dB and crushes 12.09 dB of dynamics: the chop is trigger multiplication plus form deletion, not re-harmonization.",
+      "quote": "onset_rate 5.514 -> 8.264/s (49.87% rel)",
+      "source": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/music-ractor/lanes/remix-mechanics.check.txt",
+      "steal": "Reuse the onset_rate function from lanes/remix_scan.py whenever an edit or remix claim needs a trigger-density diff.",
+      "falsifier": "A chop-attributed remix with onset density at or below its source.",
+      "leverage": "medium"
+    },
+    {
+      "law": "tempo anchor law",
+      "claim": "Folded bpm ratio stays inside 0.847-1.326 across all 10 pairs (cross-artist median 1.07): tempo is the one invariant remixers do not spend; raw half-time reads are octave artifacts.",
+      "quote": "bpm_folded_ratio: {'median': 1.07, 'min': 0.85, 'max': 1.33, 'n': 7}",
+      "source": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/music-ractor/lanes/remix-mechanics.check.txt",
+      "steal": "Use folded-tempo-near-1.0 as the pairing key when auto-detecting original/remix pairs in any music corpus (a cheap join predicate for catalog_audio).",
+      "falsifier": "A remix canon with folded bpm ratios scattered beyond 1.5x of unity.",
+      "leverage": "high"
+    },
+    {
+      "law": "the floor law",
+      "claim": "Self-versions move only length and loudness (Flat Beat -2.5% dur and +0.13 dB, Rez -0.25% dur and +0.3 dB, bands within 10%), and the dup_suspect triple fired on zero rows: below this floor a remix claim is a reissue or a re-rip.",
+      "quote": "zcr 993.1 -> 970.9/s (-2.24% rel)   low 0.9407 -> 0.941 (0.03% rel)",
+      "source": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/music-ractor/lanes/remix-mechanics.check.txt",
+      "steal": "Adopt the dup_suspect triple (dur within 1.5s AND rms within 0.7 dB AND zcr within 3%) as the duplicate-audio detector for estate audio corpora.",
+      "falsifier": "A remaster that moves any spectral band ratio by more than 25%.",
+      "leverage": "medium"
+    },
+    {
+      "law": "energy-delta mastering confound",
+      "claim": "RMS deltas below roughly 4 dB are not attributable to arrangement at this instrument: the Animal pair's +12.8 dB is proven mastering/rip confound because the original rip peaks at -11.17 dBFS.",
+      "quote": "rms -23.47 -> -10.67 dBFS (delta 12.8 dB)",
+      "source": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/music-ractor/lanes/remix-mechanics.check.txt",
+      "steal": "Before quoting any energy delta, check peak_dbfs of the quieter side: a peak far below 0 dBFS marks a quiet rip, not a quiet song.",
+      "falsifier": "A pair where a +12 dB-class energy delta survives on rips whose peaks both sit at 0 dBFS.",
+      "leverage": "medium"
+    },
+    {
+      "law": "replicate-the-transform law",
+      "claim": "The only invariant across all 10 pairs is folded tempo near unity; form, energy, dynamics, spectrum and onset density are operator-controlled, so a faithful replica of transformed art is typed by its delta operator, not by similarity to the source.",
+      "quote": "min 0.847  max 1.326  (n=10)",
+      "source": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/music-ractor/lanes/remix-mechanics.verify.txt",
+      "steal": "When the estate replicates prior-wave artifacts (cards, protocols), diff against the source and bank the operator list; never bank byte-similarity as the fidelity metric.",
+      "falsifier": "A canon where remixes match originals on all measured deltas while still sounding like remixes.",
+      "leverage": "high"
+    }
+  ],
+  "checks": [
+    {
+      "command": "cd watch/inbox/gala_20260925/music-ractor/lanes && .venv/Scripts/python.exe remix_scan.py > remix-mechanics.check.txt 2>&1",
+      "exit": 0,
+      "evidence": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/music-ractor/lanes/remix-mechanics.check.txt"
+    },
+    {
+      "command": ".venv/Scripts/python.exe - (5-check consistency verify) > remix-mechanics.verify.txt 2>&1",
+      "exit": 0,
+      "evidence": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/music-ractor/lanes/remix-mechanics.verify.txt"
+    },
+    {
+      "command": ".venv/Scripts/python.exe - (byte-check all 10 row quotes against cited source files) > remix-mechanics.quotes.txt 2>&1",
+      "exit": 0,
+      "evidence": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/music-ractor/lanes/remix-mechanics.quotes.txt"
+    }
+  ],
+  "decision_changed": "no",
+  "artifact": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/music-ractor/lanes/remix-mechanics.json"
+}

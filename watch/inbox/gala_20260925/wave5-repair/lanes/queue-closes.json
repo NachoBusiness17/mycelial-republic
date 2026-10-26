@@ -1,0 +1,65 @@
+{
+  "lane": "queue-closes",
+  "division": "B",
+  "ok": true,
+  "note": "WO-10 landed (mag/surface_rebuild.py rebuild verb + 3 tests + mag.shared_surface and mag.cmd wiring; production passes took truly-invisible 93 to 0, stale 28 to 0, missing 5 to 0 at census, stable invisible 0 across 6 passes) and WO-12 applied (pre-edit recount 63 byte-matched sess-02, 54 flips with per-row receipt pointers, 2 re-seeds, 9 keep-open untouched, post-edit 11); validate residual and ratchet FAIL are named sibling-lane live-writes, not this lane's files.",
+  "rows": [
+    {
+      "law": "heal-through-the-sanctioned-writer",
+      "claim": "A repair verb for the shared inbox fold must census deltas and heal every class (invisible/stale/missing) strictly through the fold's own writer verbs (add/invalidate/rebuild via scripts/index_fold_host.mjs), never by editing INDEX.json, and must be idempotent so a clean surface gets zero appends.",
+      "quote": "backfill `add` events for the event-less files AND run `rebuild` (it repairs the DRIFT_PATROL-class staleness the lane said it could not) then `verify`, via scripts/index_fold_host.mjs. Never hand-edit INDEX.json either way.",
+      "source": "C:/Users/foste/Documents/projects/local_sovereign_agent/corpus/steal/MASTER_MICKEY17_V2.md",
+      "steal": "Any future surface repair (dashboard INDEX twins, ESTATE_INDEX, catalog) gets one census function + per-class heals routed through that surface's existing writer verbs, with an idempotency test pinning zero-appends-on-second-run.",
+      "falsifier": "A rebuild pass that appends events while its before/after census deltas are all zero, or an INDEX.json byte change with no corresponding event-log row, kills this law.",
+      "leverage": "high"
+    },
+    {
+      "law": "recount-before-edit-on-a-live-tree",
+      "claim": "A bookkeeping sweep over a shared untracked file must recount its denominator immediately before editing and key every edit on line number plus an expected content snippet, because sibling lanes race the same tree between any two snapshots.",
+      "quote": "(1) pre-edit recount of unchecked lines = 63 (drift law: f-10 proved sibling lanes race this live tree; recount immediately before editing)",
+      "source": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/burn_reset_20260927/flash50/sess-02.md",
+      "steal": "Every queue/board/ledger flip sweep starts with the enumeration command whose output it asserts against, and aborts unedited on count or snippet mismatch (this sweep: UNCHECKED 63 pre, 11 post, zero aborts).",
+      "falsifier": "A sweep that edits rows matched only by line number on a stale snapshot, or that cannot reproduce its own pre-edit count after the fact, kills this law.",
+      "leverage": "medium"
+    }
+  ],
+  "checks": [
+    {
+      "command": ".venv/Scripts/python.exe -m pytest tests/test_surface_rebuild.py -v",
+      "exit": 0,
+      "evidence": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/wave5-repair/lanes/queue-closes.check.txt (section 1, 3 passed)"
+    },
+    {
+      "command": ".venv/Scripts/python.exe -m pytest tests/test_shared_surface_events.py tests/test_index_fold_host.py -q",
+      "exit": 0,
+      "evidence": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/wave5-repair/lanes/queue-closes.check.txt (section 2, 50 passed, no regression)"
+    },
+    {
+      "command": ".venv/Scripts/python.exe -m mag.shared_surface rebuild",
+      "exit": 0,
+      "evidence": "lanes/_qc_rebuild_pass3_clean.json (pass 3: plan 0/2/0, after 0/0/0, ok true, exit 0); later snapshots lanes/_qc_rebuild_final_pass.json and lanes/_qc_rebuild_last_pass.json show exit 1 only from sibling-lane appends re-staling hot ledgers between census and validate (their heals also landed), invisible 0 stable across all 6 passes"
+    },
+    {
+      "command": ".venv/Scripts/python.exe -m mag.shared_surface validate",
+      "exit": 1,
+      "evidence": "lanes/_qc_validate_final.json (34 baseline errors -> 1; the residual is a sibling lane's live-append hash mismatch, a different freshly-registered file at each check, named in the check file)"
+    },
+    {
+      "command": "mag.cmd surface-rebuild --dry",
+      "exit": 0,
+      "evidence": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/wave5-repair/lanes/queue-closes.check.txt (section 5, verb reachable end to end through mag.cmd -> main.py)"
+    },
+    {
+      "command": ".venv/Scripts/python.exe -c <sess-02 exact unchecked enumeration> (pre-edit) and again post-edit",
+      "exit": 0,
+      "evidence": "lanes/_qc_preedit_recount.txt (UNCHECKED 63, list byte-matches sess-02) and lanes/queue-closes.check.txt section 8 (UNCHECKED 11: 9 untouched keep-open + 2 re-seeds)"
+    },
+    {
+      "command": ".venv/Scripts/python.exe tools/violation_ratchet.py check --changed",
+      "exit": 1,
+      "evidence": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/wave5-repair/lanes/queue-closes.check.txt (section 9: FAIL driven by 4 sibling-lane NEW hits, none in this lane's diff; per-file violations_in scan: surface_rebuild.py CLEAN, test CLEAN, shared_surface.py registered claim only, main.py registered debt only)"
+    }
+  ],
+  "decision_changed": "queue/todo.md truth state: the unchecked set dropped from 63 mixed rows to 11 rows that are all genuinely owed work carried by named work orders (WO-1..WO-9, WO-11) or explicit WO-12(3) re-seeds; line 232's shared_surface rebuild debt is closed by a landed standing verb instead of a one-time hand heal.",
+  "artifact": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/wave5_repair/queue-closes.md"
+}

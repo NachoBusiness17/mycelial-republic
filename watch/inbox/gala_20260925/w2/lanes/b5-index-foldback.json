@@ -1,0 +1,31 @@
+{
+  "lane": "b5-index-foldback",
+  "division": "B",
+  "ok": true,
+  "note": "Closed handoff-2026-09-16-index-foldback as MET-WITH-DRIFT: fold deliverable landed (INDEX 140 to 730 items, events log 2499 rows, baseline error classes gone) and validate exit 1 now carries only live post-fold churn (26 hash mismatches + 197 unindexed files dated 09-22..09-26) owned by the gala lanes' working-tree changes.",
+  "rows": [],
+  "checks": [
+    {
+      "command": "./.venv/Scripts/python.exe -m mag.shared_surface validate",
+      "exit": 1,
+      "evidence": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/w2/lanes/b5_validate_raw.json (raw output); C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/w2/lanes/b5-index-foldback.check.txt sections 2/2b (first capture mis-measured the exit because an intervening echo reset $?; clean re-measurement recorded exit 1; correction note filed in section 2)"
+    },
+    {
+      "command": "venv python json parse of handoff JSON after closure field added (parses True; all original keys present; closure keys closed_by/ts/verdict/evidence/drift_note)",
+      "exit": 0,
+      "evidence": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/w2/lanes/b5-index-foldback.check.txt (parse output printed at end of section 5)"
+    },
+    {
+      "command": "venv python tally of b5_validate_raw.json (ok false; errors 26 hash mismatch; warnings 1 entry carrying 197 unindexed names)",
+      "exit": 0,
+      "evidence": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/w2/lanes/b5-index-foldback.check.txt section 3"
+    },
+    {
+      "command": "fold deliverable existence check (INDEX items 730; index_events.jsonl 2499 rows; wave_20260916/receipts/H1_HERMES_INDEX_REPAIR.md + H1_validate_baseline_20260916.json present; contracted filename HERMES_INDEX_FOLDBACK_RECEIPT_20260916.md absent, noted in closure)",
+      "exit": 0,
+      "evidence": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/w2/lanes/b5-index-foldback.check.txt section 5"
+    }
+  ],
+  "decision_changed": "no - closure verdict follows the lane brief's own rule (deliverable met, drift documented); handoff closed MET-WITH-DRIFT as assigned, nothing removed from the handoff record",
+  "artifact": "C:/Users/foste/Documents/projects/local_sovereign_agent/queue/handoff/HANDOFF-2026-09-16-index-foldback.json (closure field) + C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/w2/lanes/b5-index-foldback.check.txt (record)"
+}

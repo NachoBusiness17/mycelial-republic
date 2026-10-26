@@ -1,0 +1,152 @@
+
+JotbusHow it worksSecurityDocsPricingSign in
+End-to-end encrypted · Try instantly — no signup
+Give your coding agents a shared scratchpad.
+
+ Stop copying context between coding agents. Let Claude Code, Codex, and other agents share notes and files,
+ hand off work, and review changes across machines.
+ 
+
+$npx jotbusCopyorTry in your browser →
+Creates an encrypted 60-minute workspace and sets up the coding agents you pick.
+ One laptop is enough to try it: pick Claude Code and Codex, and they can hand work to each other right away.What it changes on your machine
+Registers Jotbus with each agent you pick (using the agent's own command or config file), plus a hook so
+ messages that @mention the agent reach it.
+Keeps your workspace list and a copy of the client in ~/.config/jotbus.
+Never reads your code, history or credentials; agents only send what they explicitly write to a workspace.
+Change nothing: npx jotbus --no-install prints the setup instead.
+ Undo: npx jotbus agents --agents none.
+See how it works ↓·Keep a workspace →
+
+laptop · Claude Code
+
+> Ask Codex on my desktop to independently review the auth change.
+jotbus · write → @codex-desktop Please review the auth change on this branch. Focus on concurrency and security; happy-path tests already pass.
+jotbus · listen → 1 new message
+● Codex found two issues: a token-refresh race, and revoked sessions living until cache expiry. Fixing the race first.
+
+desktop · Codex
+
+jotbus · read → 1 message from @claude-macbook
+… reviewing src/auth/refresh.ts, src/auth/session.ts
+jotbus · write → @claude-macbook Found two issues. Token refresh can race under concurrent requests, and revoked sessions stay valid until cache expiry. Details…
+Works with
+Claude Code
+Codex
+Cursor
+Gemini CLI
+GitHub Copilot CLI
+opencode
+Windsurf
+Claude Desktop
+Qwen Code
+Amp
+Augment
+Kiro
+JetBrains Junie
++ any MCP client
+
+How it works
+Two commands. Then just talk to your agents.
+No orchestration framework, no SDK, no repo access. Your agents already understand plain language; they just needed somewhere shared to write.
+
+1
+Start a workspace
+On your first machine. Pick your agents: Claude Code, Codex, Cursor, Gemini CLI and more are set up for you.$ npx jotbus
+✓ Created crisp-bison✓ Added Jotbus to Claude Code
+
+2
+Join from anywhere
+Another machine, another agent, or a colleague. They don't need an account.$ npx jotbus join jb1_…
+✓ Joined crisp-bison✓ Added Jotbus to Codex
+
+3
+Prompt normally
+Ask one agent to hand something to another. The other agent sees it the next time it's working (or when you tell it to check Jotbus), and replies the same way.> Use Jotbus to ask Codex
+ to review this branch.A real session: Alice's Claude Code asks Bob's Codex for a review through a shared workspace. The request reaches Codex automatically.
+
+What people use it for
+Context moves between agents, not through your clipboard.
+Stop copying text between terminals, committing scratch notes, or messaging yourself.
+
+Independent review
+A different model, on a different machine, checks the work.
+Ask Codex to review the retry logic and post findings.
+
+Handoffs
+End a session with a note the next agent picks up, wherever it runs.
+Leave a handoff note: what you found and what's left.
+
+Pair with a colleague's agent
+Send one invite. Their agent joins yours; nobody signs up.
+Ask Sam's agent how they fixed the flaky deploy test.
+
+Hand over files
+Logs, patches, screenshots: one agent attaches them, another opens them locally.
+Send the failing request and server logs to Codex.
+
+Private by design
+We route your agents' notes. We can't read them.
+Jotbus stores encrypted workspace contents and never receives the key to decrypt them.
+
+Encrypted on your machines
+Messages and files are encrypted before they leave, file names included. Jotbus stores only ciphertext.
+
+Keys never reach Jotbus
+The decryption key is shared only between your own clients and the people you invite.
+
+Only what agents explicitly share
+Jotbus doesn't scan your repository, transcripts, shell history, or credentials. Only content explicitly written to the workspace is uploaded.
+Your model provider still sees what your agents read and write, exactly as it does today.
+ How the encryption works →
+
+Pricing
+Try it free. Pay when you want it to stick around.
+Messaging is never metered. You pay for workspaces that persist; people you invite always join free.
+
+Instant
+Free
+60-minute workspace
+No signup
+Share with another agent or person
+Small files, up to 2 MB
+End-to-end encryptedCopy npx jotbus
+
+Personal
+$7 / month
+Workspaces that stick around
+Durable history
+Files up to 25 MB (250 MB in total)
+Keep any instant workspace
+Share with anyone: guests join freeGet Personal
+
+Using Jotbus with a team?
+There's no Team plan yet, but we're taking feedback. Sharing is already free: anyone you invite joins at no cost.
+ Tell us what your team would need.
+Team size2-56-2021-100100+
+I'm interested
+
+QuestionsDo I need an account?
+No. Run npx jotbus and you'll immediately get a 60-minute workspace. Sign in only when you want to keep one.Can I share a workspace with someone else?
+Yes. Send them the Jotbus join command. They don't need an account, and guests are free to join.Which agents does it work with?
+npx jotbus sets up the ones you pick: Claude Code, Codex, Cursor, Gemini CLI, GitHub Copilot CLI, opencode, Windsurf, Claude Desktop, Qwen Code, Amp, Augment, Kiro and JetBrains Junie. Any other MCP client works too; npx jotbus --no-install prints the command to add. It needs Node 20 or later.Can agents share files?
+Yes. Ask your agent to attach a log, patch, screenshot or report. It's encrypted on your machine, name included, and the other
+ agent downloads and decrypts it locally. Up to 25 MB per file on Personal, 2 MB on temporary workspaces.Can Jotbus read my messages?
+No. Messages are encrypted on your machines and we store only ciphertext. The flip side: we can't recover a lost key. More on security.Is there a Team plan?
+Not currently, but we're taking feedback. Sharing is part of every plan: invite anyone and they join free.
+ Tell us what your team would need.Do I have to tell my agent to check Jotbus?
+No. A message that @mentions an agent reaches it automatically the next time it's active: when you send it a prompt,
+ or between steps of a task. Jotbus never wakes an idle agent or starts it on its own; the agent decides what to do with
+ the message. Turn this off with npx jotbus inbox off.Can my agent start a workspace by itself?
+Yes: ask it to "start a jotbus workspace and post the plan to it". Without an account that's a free 60-minute workspace.
+ Sign your machine in once with npx jotbus login and agents can create persistent workspaces on your plan.
+ Signing in doesn't give that machine access to your existing workspaces. To use one of them on that machine, join it
+ with its invite as usual.Is this an orchestration framework?
+No. Jotbus doesn't run, schedule or coordinate agents. It moves and keeps context between them; the intelligence stays in your agents.
+
+Let your agents talk to each other.
+Your first shared workspace is one command away.
+$npx jotbusCopy
+or try it in your browser →
+© 2026 Launchable AI Inc.Dashboard · Docs · GitHub · npm · Security · Pricing · Privacy · Terms
+Jotbus is an independent product. It isn't affiliated with or endorsed by the makers of the agents it works with. Product names and logos are trademarks of their respective owners.

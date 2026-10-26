@@ -1,0 +1,42 @@
+{
+  "receipt": "THE50 W9 T43: verb trace to chain anchor bridge",
+  "filed": "2026-09-19",
+  "refreshed": "2026-09-25",
+  "seat": "T43 builder (THE 50 fleet seat)",
+  "finish_line": "tools/verb_anchor.py anchoring the verb_trace.jsonl tail into the verkle chain, one live anchor row",
+  "what_landed": [
+    "Tool: tools/verb_anchor.py verifies the verb kifu (mag/verb.py verify_trace: every row commits to its predecessor via ph/h), reads its tail, and commits the tail hash as ONE live anchor row in memory/biography/verkle_chain.jsonl via mag/verkle_knot.py append_verkle_knot (the locked, integrity-gated entry point).",
+    "One live row: the anchor uses the fixed session_id 'verb-anchor', so append_verkle_knot's amend-in-place path keeps it to a single chain row that is refreshed (never duplicated) as the kifu grows. Identical content skips; grown kifu amends the same row.",
+    "Row carries the binding readable straight off the chain row: dossier_commit = kifu tail hash, tension_index = 'verb_trace@<tail16> rows=N window=W', dominant_theme = 'verb_trace', start/end minute = kifu first/last ts.",
+    "Integrity: refuses to anchor an unverified kifu (breaks > 0); verkle_knot itself refuses to extend an unverified chain; after the write an O(log n) inclusion proof is built and reconstructed and the run only reports ok=True when it reaches the committed root.",
+    "Pure posture: the tool never writes to verb_trace.jsonl (a writer to both chains would rot its own anchor).",
+    "Toolbelt registration: tools/__init__.py imports verb_anchor and registers 'verb_anchor' -> anchor in TOOL_MAP and _FN.",
+    "2026-09-25 refresh: the kifu grew 180 -> 183 rows after the original filing (tail b55a724a3fb90b10 -> 63494c5efa81c420), so the live row was stale (--check reported binding_holds=false). One re-run of the tool amended row 8699 in place to the new tail; no code changes were needed.",
+    "2026-09-25 concurrent-writers note: other fleet sessions appended/amended chain leaves during and after the refresh (chain rewritten again post-amend, per-row verkle_root fields moved). The anchor row survived: same index, same leaf_hash, binding intact; a post-churn --check re-verified the inclusion proof against the then-current root."
+  ],
+  "computed_this_session": {
+    "live_anchor_command": ".venv/Scripts/python.exe tools/verb_anchor.py",
+    "anchor_row": {
+      "index": 8699,
+      "ts": "2026-09-25T20:32:40.706732Z",
+      "filename": "2026-09-18_2355_verb-trace_verb-anc_63494c5e.knot.json",
+      "leaf_hash": "c2685f46daa29987a5482c46dca4d08868a9571de5c4af5efa121343d3d95eaf",
+      "dossier_commit": "63494c5efa81c420",
+      "tension_index": "verb_trace@63494c5efa81c420 rows=183 window=183"
+    },
+    "binding_check": "dossier_commit 63494c5efa81c420 equals the last verb_trace.jsonl row's h (SIFT_SCAN, 2026-09-19T21:48:01Z); kifu verify_trace: 183 rows, 0 breaks, 11 legacy, healthy",
+    "inclusion_proof": "verkle_knot.prove(8699) verified=true at anchor time (root 6a0dca0b53a36797... over 9828 leaves); after concurrent rewrites a fresh --check re-proved to root 679ec94e8ca7ce79... (chain roots move as other seats write; the row binding does not)",
+    "idempotency": "second full run returned anchored=false (skip, same leaf hash); grep -c '\"session_id\": \"verb-anchor\"' on memory/biography/verkle_chain.jsonl = 1; chain stayed at 9828 lines through the amend (amend-in-place, not append)",
+    "tests_run": ".venv/Scripts/python.exe -m pytest tests/test_verkle_lock.py tests/test_verkle_audit.py -q -> 6 passed in 3.15s (focused checks on the chain machinery used; full suite not run this seat)"
+  },
+  "honest_limits": [
+    "The anchor is advisory memory, not a gate: nothing yet consumes the binding; readers get it via tools/verb_anchor.py --check (binding_holds) or the chain row's dossier_commit field.",
+    "Anchoring is pull-based: the row only moves when someone runs the tool (or wires it into a drive); the kifu grows independently in between -- between 2026-09-19 and 2026-09-25 it grew 3 rows while the row stayed on the old tail.",
+    "Legacy pre-chain kifu rows (11 of 183, no ph/h) are counted by verify_trace, not verified; the anchor commits the tail of the hashed chain, which is sound.",
+    "Chain-level bookkeeping fields on the row (verkle_root, n_leaves, tip file) are maintained by mag/verkle_knot.py and keep moving under concurrent fleet writes; the durable anchor binding is dossier_commit + index, which stayed fixed. memory/biography/verkle_tip.json is observed to lag/skip behind other writers; not a T43 concern.",
+    "Full pytest suite not run this seat (carried at filing as '1341 tests, ~12 min', a hand-copied total retired 2026-09-26: real recount 1,837 collected / 301 files, see AGENTS.md and watch/inbox/burn_wave_20260926/B2_69_test_census_20260926.md); focused verkle lock/audit tests and live tool checks were."
+  ],
+  "no_em_dashes": true,
+  "script": "tools/verb_anchor.py",
+  "repro": ".venv/Scripts/python.exe tools/verb_anchor.py --check"
+}

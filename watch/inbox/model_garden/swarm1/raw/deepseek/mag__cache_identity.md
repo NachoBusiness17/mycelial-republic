@@ -1,0 +1,7 @@
+# swarm1-deepseek-mag__cache_identity (deepseek-chat @ deepseek, turn 1, channel: content)
+
+DEFECT 1: Nonce seed makes cool-warm arms byte-identical but drift arms vary per run, so cross-run KV slot contamination inverts drift conclusions. | EVIDENCE: mag/cache_identity.py:398 | FIX: send `chat_prefill` a unique throwaway system prompt before each arm, or unload model (`/api/generate` with empty prompt keep_alive 0) between rounds.
+DEFECT 2: `marker_for(args.seed, r)` uses the pinned seed, not the computed per-run seed, so pinning `--seed` resurrects previous run strings despite the fix comment. | EVIDENCE: mag/cache_identity.py:398 versus mag/cache_identity.py:365 | FIX: `marker = marker_for(seed, r)` using the nonce-derived `seed` variable.
+DEFECT 3: `unaccounted_ms` subtracts prefill+eval from wall but omits `ollama_load_ms`, so a model reload is silently reported as negative unaccounted time. | EVIDENCE: mag/cache_identity.py:263 | FIX: `round(wall_ms - prefill_ms - eval_ms - load_ms, 3)`.
+DEAD-CODE: `CHARS_PER_TOKEN` fallback path never hit; `load_body_text` fallback string `"the fleet runs on files not process memory"` unreachable when `AGENTS.md` absent because `chunks` already holds the label. | EVIDENCE: mag/cache_identity.py:236
+ONE-SITTING FIX: Route the round seed through `marker_for` (DEFECT 2) since it is a one-line change that restores the documented nonce-contamination defense and is verifiable by running probe twice. | EVIDENCE: mag/cache_identity.py:398

@@ -1,0 +1,72 @@
+{
+  "lane": "a14-ghost-guards",
+  "division": "A",
+  "ok": true,
+  "note": "Ghost loop-death guards (mag/ghost.py, commit 5c5f0a61e) verified live. pytest -k ghost: 47 passed, 0 failed across test_ghost.py, test_ghost_spooky.py, test_ghost_memlance_notebook.py, test_ghost_summon.py in 141.95s. The known state (38/39 with pre-existing verkle drift failure test_probe_carries_real_verkle_proof) is stale: that test still exists in tests/test_ghost_spooky.py:36 and now passes, so the verkle tip drift was repaired since the wave2 receipt. Delta recorded honestly, not claimed. First-class negative: no test in tests/test_ghost*.py covers the two wrapper guards themselves (grep for wrapper / LOOP DEATH / _diag returned zero rows); the guards are validated only by the surrounding suite staying green. Estate grep: 'loop-death' has zero hits in memory/corpus/ (first-class negative); both terms live in corpus/steal/ZCODE_RATCHET_WAVE2_20260925.md and 'except-pass' also in memory/corpus/LINKS.jsonl. All 6 quotes byte-verified with grep -F count=1, raw output in a14-ghost-guards.quotes.txt.",
+  "rows": [
+    {
+      "law": "A loop that dies must file WHY. A wrapper that swallows its own death makes the subsystem silently vanish; stay non-fatal for the daemon but leave a trace.",
+      "claim": "The cost enforcer wrapper converted bare except-pass into a traced non-fatal print (LOOP-DEATH GUARD, 2026-09-25, commit 5c5f0a61e, ghost.py line 1569).",
+      "quote": "print(f\"[ghost] COST-ENFORCER LOOP DEATH GUARD: cost_enforcer_loop exited: {_ce}\", flush=True)",
+      "source": "C:/Users/foste/Documents/projects/local_sovereign_agent/mag/ghost.py",
+      "steal": "Sweep every daemon entry wrapper in the estate for except Exception: pass and convert each to a traced non-fatal print; land the audit receipt in watch/inbox/gala_20260925/.",
+      "falsifier": "Force cost_enforcer_loop to raise inside the wrapper in a test run and observe no '[ghost] COST-ENFORCER LOOP DEATH GUARD' line on stdout, or grep -F 'except Exception:' followed by pass in the wrapper region of mag/ghost.py.",
+      "leverage": "high"
+    },
+    {
+      "law": "Silent death of a memory-weaving loop loses history with no trace. Non-fatal, but visible: the vaccine against the except-pass disease is a trace, not a crash.",
+      "claim": "The bard subscriber wrapper emits a BARD LOOP DEATH GUARD print on unexpected death, so Chronicle weave loss is distinguishable from never-started (ghost.py line 1585).",
+      "quote": "print(f\"[ghost] BARD LOOP DEATH GUARD: bard_subscriber_loop exited: {_be}\", flush=True)",
+      "source": "C:/Users/foste/Documents/projects/local_sovereign_agent/mag/ghost.py",
+      "steal": "Apply the same trace-not-crash pattern to any event subscriber or chronicle loop in other surfaces (lab UI, watch daemon) this week.",
+      "falsifier": "grep -n -A2 'async def _bard_loop_wrapper' mag/ghost.py and find 'except Exception:' with a bare pass body, or trigger a bard_subscriber_loop exception and see no guard line printed.",
+      "leverage": "high"
+    },
+    {
+      "law": "A loop that re-fires the same quest forever is a missing trail fact. Gate re-fire on the landing artifact: a signature whose diagnosis file exists is HANDLED, not re-armable, and the suppression is itself a trail fact.",
+      "claim": "Commit 5c5f0a61e added a diagnosis-file existence check before appending an FKB quest, ending a run where one sig spawned 504 times between Aug 8 and Sep 22 (ghost.py lines 1409-1419).",
+      "quote": "# sig spawned 504 times (Aug 8 -> Sep 22) because the trail",
+      "source": "C:/Users/foste/Documents/projects/local_sovereign_agent/mag/ghost.py",
+      "steal": "For any recurring escalation or quest loop in the fleet, write a completion marker at the landing site and gate the next fire on its absence; add the gate comment naming the historical spawn count.",
+      "falsifier": "Create memory/runs/ghost/autonomous_fixes/<sig>.md for a sig with count >= 5, rerun the SENSE pass, and observe a new auto-fkb quest still appended for that sig.",
+      "leverage": "high"
+    },
+    {
+      "law": "Silence is not one disease. Taxonomize before fixing: aggregator guards are BY DESIGN, loop-death guards are the black-hole species (fixed), daemon cycle guards have stated intent and stay flagged.",
+      "claim": "The wave2 receipt filed a 3-class taxonomy over ghost.py's 70 except-pass sites (4,244 lines, 140 except-Exception, zero bare excepts) before the first dent; ghost.py loop-death guards were class 2.",
+      "quote": "Loop-death guards (the black-hole species)",
+      "source": "C:/Users/foste/Documents/projects/local_sovereign_agent/corpus/steal/ZCODE_RATCHET_WAVE2_20260925.md",
+      "steal": "Before pruning the next except-pass chunk, read the target file and file its own 3-class taxonomy (design silence vs death swallowing vs stated-intent cycle guards) as the fix spec.",
+      "falsifier": "Read mag/ghost.py's remaining except-pass sites and find a swallowed wrapper death that the receipt claims is fixed, or find the taxonomy miscounts the site total (70).",
+      "leverage": "high"
+    },
+    {
+      "law": "An honest pre-existing failure is a healthy signal, and its repair is a state change worth recording: known-state claims decay; rerun the check and file the delta instead of trusting the old receipt.",
+      "claim": "The wave2 receipt recorded 38/39 ghost tests with test_probe_carries_real_verkle_proof failing as verkle tip drift; on 2026-09-25 the same test exists and passes, so the chain tip was repaired since, and the ghost suite is now 47/47 with zero failures.",
+      "quote": "assert pr.get(\"verified\") is True, \"the reconstruction must verify against the chain tip\"",
+      "source": "C:/Users/foste/Documents/projects/local_sovereign_agent/tests/test_ghost_spooky.py",
+      "steal": "When a receipted pre-existing failure goes green in a rerun, file the delta row (old failure name, new pass, repair unattributed) rather than silently updating the count.",
+      "falsifier": "Run .venv/Scripts/python.exe -m pytest tests/test_ghost_spooky.py::test_probe_carries_real_verkle_proof -q and see it fail, or run python -m mag verkle-audit --dry and see verkle_gaps >= 1.",
+      "leverage": "high"
+    }
+  ],
+  "checks": [
+    {
+      "command": "./.venv/Scripts/python.exe -m pytest tests/ -k \"ghost\" -q",
+      "exit": 0,
+      "evidence": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/w3/lanes/a14-ghost-guards.check.txt"
+    },
+    {
+      "command": "grep -F -c <quote> mag/ghost.py | corpus/steal/ZCODE_RATCHET_WAVE2_20260925.md | tests/test_ghost_spooky.py (6 quotes)",
+      "exit": 0,
+      "evidence": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/w3/lanes/a14-ghost-guards.quotes.txt"
+    },
+    {
+      "command": "grep -ril \"except-pass\" / \"loop-death\" corpus/steal/ memory/corpus/",
+      "exit": 1,
+      "evidence": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/w3/lanes/a14-ghost-guards.estate.txt"
+    }
+  ],
+  "decision_changed": "no",
+  "artifact": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/w3/lanes/a14-ghost-guards.json"
+}

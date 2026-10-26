@@ -1,0 +1,60 @@
+{
+  "lane": "mcp-pin-wire",
+  "division": "B",
+  "ok": true,
+  "note": "Dormant rug-pull gate wired: tools/mcp_pin.py check_drift (zero callers per mcp-security gap 1 + w4-41 class-W, re-derived live) now runs at every MCP connect surface via mag/mcp_server.py pin_gate_filter/pin_ledger_path - serve() gates at boot and per tools/list, mag/mcp_http.py gateway adapter and dashboard/server.py /mcp pass the same ledger; drifted tools are WITHHELD from the served list plus a loud stderr alarm naming the repin command, repin() is the only way back; MAG_MCP_PIN_LEDGER overrides the ledger (default state/mcp_pins.jsonl), MAG_MCP_PIN_GATE=off is the disarm hatch, direct handle() callers stay gate-off so pre-existing tests are untouched; new tests/test_mcp_pin_wire.py (6 tests) proves the wire fires; self-test still 9/0, pytest 16 passed (baseline 10), live stdio e2e probe fired the gate on real connects (68 records per clean connect = boot gate + list gate by design, disarm writes nothing), ratchet PASS NEW=0, real ledger verified untouched (68 records, single 2026-09-26 stamp); tools/mcp_pin.py itself unchanged.",
+  "rows": [],
+  "checks": [
+    {
+      "command": ".venv/Scripts/python.exe tools/mcp_pin.py --self-test",
+      "exit": 0,
+      "evidence": "watch/inbox/gala_20260925/wave5-repair/lanes/mcp-pin-wire.check.txt (CHECK 1: passed 9, failed 0 - finish line held)"
+    },
+    {
+      "command": ".venv/Scripts/python.exe -m pytest tests/test_mcp_pin_wire.py tests/test_mcp_quantized.py tests/test_sense_mcp.py -q",
+      "exit": 0,
+      "evidence": "watch/inbox/gala_20260925/wave5-repair/lanes/mcp-pin-wire.check.txt (CHECK 2: 16 passed; baseline before edit was 10 passed)"
+    },
+    {
+      "command": "git grep -n \"pin_gate_filter|pin_ledger_path\" -- *.py ; git grep -n check_drift -- *.py",
+      "exit": 0,
+      "evidence": "watch/inbox/gala_20260925/wave5-repair/lanes/mcp-pin-wire.check.txt (CHECK 3+4: callers now in mag/mcp_server.py:293/433/450, mag/mcp_http.py:31, dashboard/server.py:833 - before, only tools/mcp_pin.py matched)"
+    },
+    {
+      "command": ".venv/Scripts/python.exe (inline e2e: spawn python -m mag.mcp_server x3 against temp ledgers via MAG_MCP_PIN_LEDGER / MAG_MCP_PIN_GATE)",
+      "exit": 0,
+      "evidence": "watch/inbox/gala_20260925/wave5-repair/lanes/mcp-pin-wire.check.txt (CHECK 5 + rerun: connect 1 writes 68 records boot+list by design, connect 2 136, clean surface silent, MAG_MCP_PIN_GATE=off writes nothing; first run's wrong assertion kept as raw evidence)"
+    },
+    {
+      "command": ".venv/Scripts/python.exe tools/violation_ratchet.py check --changed",
+      "exit": 0,
+      "evidence": "watch/inbox/gala_20260925/wave5-repair/lanes/mcp-pin-wire.check.txt (CHECK 6: RATCHET PASS, hits=27 registered=27 NEW=0; the 27 are other lanes' pre-registered debt across the 35 changed branch files)"
+    },
+    {
+      "command": ".venv/Scripts/python.exe (inline ASCII scan: added diff lines + new files)",
+      "exit": 0,
+      "evidence": "watch/inbox/gala_20260925/wave5-repair/lanes/mcp-pin-wire.check.txt (CHECK 7: 105 added lines, 0 nonascii; receipt/lane-json/test whole-file scan em 0 en 0 nonascii 0)"
+    },
+    {
+      "command": ".venv/Scripts/python.exe (pre-arm read-only drift probe: real manifest vs COPY of state/mcp_pins.jsonl in temp dir)",
+      "exit": 0,
+      "evidence": "receipt watch/inbox/wave5_repair/mcp-pin-wire.md Safety probe section: alarm False, 34/34 PINNED, 0 drift 0 missing; real ledger confirmed 68 records single 2026-09-26 stamp after all runs - arming safe, session wrote temp ledgers only"
+    }
+  ],
+  "decision_changed": "the MCP connect contract changes from 'serve whatever the signatures produce' to 'serve only what the pin ledger vouches for': mcp_pin check_drift is load-bearing (wired at serve() boot + tools/list on stdio, gateway POST /mcp, dashboard /mcp), a description/schema change to any pinned tool is now loud (withheld + stderr alarm) until an operator repins with a reason - closes the mcp-security gap 1 / w4-41 class-W dormant-gate decision",
+  "artifact": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/wave5-repair/lanes/mcp-pin-wire.json",
+  "receipt": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/wave5_repair/mcp-pin-wire.md",
+  "files_changed": [
+    "mag/mcp_server.py (docstring PIN GATE clause, pin_ledger_path :259, pin_gate_filter :276, handle pin_ledger param :404, serve boot gate :443)",
+    "mag/mcp_http.py (_respond passes pin_ledger_path, docstring clause)",
+    "dashboard/server.py (:830-838 second /mcp surface routed through the gate)",
+    "tests/test_mcp_pin_wire.py (new, 6 tests)",
+    "watch/inbox/wave5_repair/mcp-pin-wire.md (receipt)",
+    "watch/inbox/gala_20260925/wave5-repair/lanes/mcp-pin-wire.check.txt (raw check output)",
+    "watch/inbox/gala_20260925/wave5-repair/lanes/mcp-pin-wire.json (this lane file)"
+  ],
+  "not_done": [
+    "daily-patrol alternative surface from the ask's 'or' not built: a server that never connects is checked at its next connect, not daily; scheduled patrol topic remains open work",
+    "tools/mcp_pin.py untouched (wiring only); ledger touch-log growth/compaction deliberately left to the append-only forensics contract"
+  ]
+}

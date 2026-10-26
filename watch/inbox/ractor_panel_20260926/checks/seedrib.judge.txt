@@ -1,0 +1,259 @@
+=== seedrib judge raw checks ===
+ran: 2026-09-27T01:22:10Z
+
+--- A0 git facts ---
+6d417abd5dc1afd097000e58a4d3c95ec2ecc6cb
+ace666114287facb7a2d35f87d0f6fb7f3c6ed96
+ M .gitignore
+ M AGENTS.md
+ M CORPUS_CATALOG.md
+ M catalog/TAG_REPORT.md
+ M catalog/catalog.jsonl
+
+--- A1 zip sha256 (claims: seed-3.2.0 E9F4603A4484DAFB3D79103AEF63C678774EC508F9CD573677E91F83BC78F87E / seed-3.3.0 015ACFA0C5903F6F67305A188BE2C830CAD098A906678FBA009069B0AA8EAADA) ---
+e9f4603a4484dafb3d79103aef63c678774ec508f9cd573677e91f83bc78f87e *watch/inbox/seed-3.2.0.zip
+015acfa0c5903f6f67305a188be2c830cad098a906678fba009069b0aa8eaada *watch/inbox/seed-3.3.0.zip
+
+--- A2 per-dir git tree seals (cand-one claims: mag ac3ddd89 tools f5011a36 scripts 1b2ceee4 configs 908cbc6a docs 66ba5436 tests 8abf9684 queue e850050d memory 6e914ea8 watch 556e053e roblox a4676bf1) ---
+mag ac3ddd891ecdfa11f1675ad7419b909daec6227e
+tools f5011a364c9b3c78d4ce9d3a96e099d0d6488e64
+scripts 1b2ceee46387b83d1f4f6034f31c79780a22e768
+configs 908cbc6ae945efbaedfc7b192923b146a0620668
+docs 66ba54367b7a86a06b8f9a8c5db6c4c11b224a4f
+tests 8abf9684cf8c41c14146ab87e5bc4a695770b5d5
+queue e850050d4eb0f844ecb71f482120b10bde52d27b
+memory 6e914ea8abf6bc356a00fb714ef051133cb058e2
+watch 556e053e061d24d92c6fccc81d36b9331c6a7704
+roblox a4676bf25c2ff6a5f04de008986ebb7881c7ef68
+
+--- A3 git rev-parse HEAD:state (cand-one owed item 2 claims error) ---
+fatal: path 'state' exists on disk, but not in 'HEAD'
+HEAD:state
+exit=128
+
+--- A4 seedrib-one byte-table measurement (script: checks/seedrib_one_measure.py) ---
+component                               claimed  measured  delta
+row1 SEED_RIB_VERSION                       102       102
+row2 AGENTS stub                            172       172
+row3 verify_seal.py                         712       712
+row5 kernel/agents.md                     15196     15196
+row6 kernel/dna.md                         5798      5798
+row7 kernel/constitution.md                 435       435
+row8-16 kernel/law/*.md count                 9         9
+row8-16 kernel/law/*.md sum               14282     14282
+  CHAN_THE_GAME.md                         2576      2576
+  CONGESTION_COST.md                       1013        -1  DELTA -1014
+row17 kernel/law_registry.json             9183      9183
+row18 method/THE_METHOD.md                 3093      3093
+row19 method/FIRST_BOOT.md                 2085      2085
+row20 method/TOUR.md                       1734      1734
+row21 gen/seed_rib.py                      7348      7348
+row22 gen/scaffold.py                      2461      2461
+row23 gen/cold_client.py                   8211      8211
+row31 method/DATA_TIERS.md                 1078      1078
+row32 method/SHARED_SURFACE_LAW.md         2332      2332
+row33 method/TRUST_BYTES_LAW.md            2150      2150
+
+sum of measured components above: 76372
+artifact claims measured estate/pack bytes: 76372; est 5700; caps 3000; total 85072
+recomputed total (measured sum + 5700 est + 3000 caps): 85072
+mismatched rows: 1
+exit=0
+
+--- A4b memory/law/*.md actual names (resolving CONGESTION_COST label) ---
+2576 memory/law/CHAN_THE_GAME.md
+1013 memory/law/CONGESTION_COST_20260830.md
+1216 memory/law/CRYPTOCOM_VAST_LOCK_20260829.md
+1558 memory/law/GREYSWAN_BLADES_20260829.md
+1839 memory/law/IMMORTALITY_SHARED.md
+1177 memory/law/OBJECTS_ON_THE_BOARD_20260830.md
+1582 memory/law/SHARE_WITHOUT_THE_SLUDGE.md
+1208 memory/law/SHITPOST_SCALAR_KNOTS_20260830.md
+2113 memory/law/THOUGHT_CRIMINALS.md
+
+--- A5 seedrib-one verify probe rerun (claim: 12/12 inline hash-matched, 1 pointer UNRESOLVED, 13 files / 29715 B, exit 0) ---
+SEED-RIB verify: inline 12 hash-matched, pointers 0 source-checked / 1 UNRESOLVED (stubbed, named), law_refs 11
+exit=0
+rebuilt bytes: 29715 bytes in 13 files
+
+--- A6 citation anchors ---
+[FORMAT_v0:71-76 pointer law]
+  entry is either resolvable against an explicit `--source` root (hash
+  checked) or reported UNRESOLVED by name. The verifier never invents bytes
+  for a pointer: an unresolved pointer is named, not filled.
+- `--source <root>`: when given, pointer entries are hash-checked against
+  the live estate; a seal mismatch is a hard fail (the seed and the world
+  disagree, someone moved bytes without re-sealing).
+[FORMAT_v0:97-99 never-invent clause]
+A seed is void if: (a) the verifier reports PASS while any inline entry's
+rebuilt hash differs from its seal; (b) a pointer entry gets synthetic
+content instead of a named stub; (c) the seed carries an absolute or
+[BURN_PLAN_20260927:9-16 falsifier]
+1. SEED-RIB (the want): format v0 + generator + rebuild verifier, merged
+   with the handoff-kernel map and the audit seed. Nothing ships until a
+   cold agent rebuilds a subtree from kilobytes (falsifier on file, B2-150).
+2. seed-mcp on docker: the join protocol as a service (B2-151, B2-163).
+   Cold agents join the fleet from an MCP URL.
+3. Ractor panel (origin / intent / present / destination, mapped wide to
+   subsystems, dogfooded against drift pairs + fold): run-book queued
+   (B2-152), fires as a gated workflow per the Mickey17 contract.
+[TWO_MACHINE_SYNC:9 and :45 and :49]
+The operator challenged the whole-folder plan and the full tree audit proves him right. The portable unit of this fleet is the warmed RIB (frozen kernel + tier packs + Librarian imprint + kifu ledgers), and it weighs about **4,000 files under 0.1 GB**. The other 1.19M files are debris (about 917k: `.mimosa` machinery 390,679 files, the knot store plus its two backups plus ghost 441,558, runs/agent_state/logs exhaust ~95k) and ore (about 196k: vendored repos, corpora, Mr Pool media, dashboard fat, git history). See THE MAP below.
+| **Fleet proper** (the travel kit) | mag 1,881, scripts 211, tools 48, queue 715, configs 52, docs 528, tests 275, memory live ledgers (rib 40, rib_bus 51, packs 31, knowledge_packs 9, law 11, frontier 4, percolator 10, portable_bags 186, research_packs 700, briefs digests), `.env` | ~4,000 | <0.1 GB |
+| Ore: vendored + corpora | mine/raw 103,033 (5.34 GB), corpus 54,775 (6.10 GB), memory/corpus 22,418 (0.72 GB) | 180,226 | 12.16 GB |
+[QUEUE.md:271-275 numbering collision]
+sed: can't read queue/QUEUE.md: No such file or directory
+[tools/seed_rib.py:35 SCHEMA]
+from pathlib import Path
+
+SCHEMA = "seed_rib.v0"
+DEFAULT_INLINE_MAX = 8192
+ROLES = ("law", "doctrine", "boot", "receipt", "ledger", "pointer")
+[HANDOFF_KERNEL:55-71 state layer]
+## 4. Proposed SEED-RIB table of contents (byte counts are caps)
+
+| # | Section | Cap | Source of truth at build time |
+|---|---|---|---|
+| 1 | env.law | 800 B | AGENTS.md python-env block (extracted, dated) |
+[INDEX.json row for seed-3.2.0.zip]
+5884:      "sha256": "E9F4603A4484DAFB3D79103AEF63C678774EC508F9CD573677E91F83BC78F87E"
+
+--- A6b locating QUEUE.md (candidate cites :271-275) ---
+ls: cannot access 'QUEUE.md': No such file or directory
+ls: cannot access 'queue/QUEUE.md': No such file or directory
+ls: cannot access 'watch/inbox/QUEUE.md': No such file or directory
+ls: cannot access 'memory/QUEUE.md': No such file or directory
+(find -maxdepth 3 produced no output above; trying deeper + grep for the B2-150 row text)
+./agents/pytest-tmp-10472/test_composed_absolute_invalid0/inbox/burn_wave_20260926/QUEUE.md
+./agents/pytest-tmp-10472/test_composed_board_prefix_and0/inbox/burn_wave_20260926/QUEUE.md
+./agents/pytest-tmp-10472/test_living_open_insertions_ar0/inbox/QUEUE.md
+./agents/pytest-tmp-10472/test_production_default_root_c0/inbox/burn_wave_20260926/QUEUE.md
+./agents/pytest-tmp-10480/test_composed_absolute_invalid0/inbox/burn_wave_20260926/QUEUE.md
+
+--- A6c burn-wave QUEUE.md rows 271-275 ---
+- [x] B2-150 Reconcile the 232-vs-84 blocked-line delta: supervisor_autorun.out.log:5477-5708 holds 232 consecutive '[autorun] blocked' lines but supervisor.jsonl logged only 84 autorun starts across 9/14+9/16+9/19; name the extra spawn sources that share the slot log without supervisor rows (detached relauncher, mag_launch slot, manual -c runs) from queue/handoff + orchestrator logs, or file the source map as unknown with evidence; pointers logs/autorun_detached.log + watch/inbox/burn_wave_20260926/B2_51_autorun_autopsy_20260926.md. Landed 2026-09-26 (receipt recovered after board-repair; landing note text not attested): watch/inbox/burn_wave_20260926/B2_150_blocked_line_delta_20260926.md
+- [x] B2-151 Close the pid 37172 survivor unknown: the 9/19 17:31:17Z autorun spawn ran ~13h (stopped 9/20 06:04:36Z) while the DOCKER_ONLY marker existed to the 9/22 rename; find the survival mechanism (MAG_ALLOW_HOST_RUNTIME in the supervisor's env, brief marker absence, or another carrier) from orchestrator t*.out.log, mag_launch state, and 9/19 agent_sessions, falsifiable outcome only, never synthesize; pointer B2_51 receipt Falsifier. Landed 2026-09-26 (verdict: the ROW survived, not the process; the child died in seconds under the deterministic self-block, all three named hypotheses refuted on bytes, the 06:04:36Z stop is a health-law state cleanup; corrects B2_51's "ran ~13h" line): watch/inbox/burn_wave_20260926/B2_151_pid_survivor_20260926.md
+- [x] B2-180 SEED-RIB format (operator want 2026-09-26: merge seed concept with warmed RIB into a directory that lets agents recreate our structure for kilobytes): design the format spec v0: generative tree spec (paths, roles, generation rules, bounded pointers, sha256 seals, law files), target <100KB for the whole fleet structure, generator script (estate -> seed) and rebuild verifier (seed -> structure -> hash-compare), dogfood by rebuilding a real subtree from kilobytes on this box; pointers watch/inbox/ESSENTIALS_RESTORE.md, TWO_MACHINE_SYNC_20260919.md warmed-RIB section, seed-3.2.0.zip structure, memory/law/registry.json. Landed 2026-09-26 (receipt recovered after board-repair; landing note text not attested): watch/inbox/burn_wave_20260926/B2_180_seed_rib_v0_20260926.md (receipt 2026-09-26: watch/inbox/burn_wave_20260926/B2_180_seed_rib_v0_20260926.md, landed by SW-05; row re-pointered after the board-repair restore)
+- [x] B2-181 seed-mcp server design + prototype: an MCP server that serves the SEED-RIB: resources = seed file, law registry, brief pointers; tools = rebuild_subtree, verify_hash, fetch_bounded_pointer, join_protocol (how a cold agent boots into the fleet from kilobytes); prototype against the B2-150 format with the real seed; falsifier: a cold agent session reconstructs a working subtree from the MCP seed alone. Landed 2026-09-26 (row sat pre-checked [x] with no receipt, the B2-238 disease; this landing earns the check): receipt watch/inbox/burn_wave_20260926/B2_181_seed_mcp_20260926.md; tools/seed_mcp.py (seed_mcp.v0, 371 lines: resources seed://current + seed://law-registry + seed://brief-pointers, tools rebuild_subtree + verify_hash + fetch_bounded_pointer + join_protocol) over the real filed seed watch/inbox/SEED_RIB_CURRENT_20260926.json (seed_rib.v0, 42727 bytes, 13 entries = 12 inline + 1 pointer, law_refs 11, sha256 46c809db8cf3c6b7e3e33c1e5d57c306acdafb591738eeab73f79a355fe1a24a); brief falsifier RAN AND SURVIVED: cold session tools/seed_mcp_cold_client.py over real stdio, 10/10 COLD JOIN PASS, 12/12 inline hash-matched, pointer fetched seal-checked, rebuilt seed_rib.py re-verified the seed exit 0; 15 pytest pins in tests/test_seed_mcp.py; brief erratum: said B2-150 format, the SEED-RIB format is B2-180 seed_rib.v0; self-fed B2-538/539/540
+- [x] B2-152 Ractor panel spec (operator want: full panel on journal/origin, intent, present, destination mapped wide to subsystems, dogfooded against own research): design the panel: 4 faces (ORIGIN: founding journal testimony + why the listener exists; INTENT: compass + sovereignty value function + v1-v10 arc; PRESENT: today's burn, beta1 factory, pack, meters; DESTINATION: where we are going), each face mapped wide to subsystems (memory, lanes, corpus, watch, mag tools, roblox, free lanes), each claim dogfooded against own instruments (drift pairs, eigen-map, fold, quantizer counts), plus the external-steal dig for the best ideas in the space; deliverable: panel run-book + face briefs ready to fire. Landed 2026-09-26 (landing note text not attested in recovery sources; receipt on disk): watch/inbox/burn_wave_20260926/B2_152_ractor_panel_spec_20260926.md
+
+--- B0 seedrib-two reproduction prep ---
+62141e9f52f5bea6983b24fc6b2b245b455eb4aff0ff5bd53080bb74172eaa94 *watch/inbox/ractor_panel_20260926/cands/_seedrib_two_derivation.json
+0
+tree absent (deleted as candidate claims)
+
+--- B1 verify ORIGINAL derivation.json rows against sources (frozen rows must match NOW) ---
+rows=43 frozen=31 repo=1 authored/extracted/regenerated=11
+recorded total bytes=94789 files=43
+mismatches against live sources: 0 []
+exit=0
+
+--- B2 rerun build script (rebuilds the deleted proof tree from live estate) ---
+TREE=C:\Users\foste\Documents\projects\local_sovereign_agent\watch\inbox\ractor_panel_20260926\cands\_seedrib_two_tree\seed-rib
+files=43 total_bytes=94789 over_100KB=False
+     7348 rib/seed_rib.py
+     7200 configs/law_registry.json
+     6841 engines/spine_walk.py
+     6840 engines/cooker.py
+     4619 engines/key_law.py
+     4526 POINTERS.sha256
+     3507 MANIFEST.sha256
+     3301 configs/mode_budgets.json
+build_exit=0
+
+--- B3 rerun full check battery (C1-C8) ---
+[PASS] C1 budget: 43 files, 94789 bytes on disk (cap 100,000; margin 5211)
+[PASS] C2 verify_seal: exit 0: 42/42 verified, 0 drifted, 0 missing
+[PASS] C3a closure: 43 tree files vs 43 derivation rows, symmetric difference []
+[PASS] C3b carried-identity: 0 mismatches []
+[PASS] C4 pointers: 35/38 rows hash-checked, 0 bad []
+[PASS] C5 no-carried-state: state-like files in tree: []
+[PASS] C6 kernel: 7 sections, kernel total 5908B (cap 9,700), over-cap {}
+[PASS] C7 law_refs: 11 ids attested vs 11 in registry, missing []
+[PASS] C8 cold-kernel answers: env law names the venv interpreter; load order carries FRAMEWORK_LOAD path; filing law carries watch/inbox receipt law; thesis card carries the standing thesis
+
+9/9 checks passed
+check_exit=0
+
+--- B4 compat: seed_rib.py run FROM the tree (build + verify degenerate case) ---
+usage: seed_rib.py [-h] {build,verify} ...
+seed_rib.py: error: unrecognized arguments: --kernel watch/inbox/ractor_panel_20260926/cands/_seedrib_two_tree/seed-rib
+build_from_tree_exit=0
+
+--- B4b seed_rib.py usage ---
+usage: seed_rib.py build [-h] [--root ROOT] --out OUT [--file FILE]
+                         [--glob GLOB] [--inline-max INLINE_MAX]
+
+options:
+  -h, --help            show this help message and exit
+  --root ROOT
+  --out OUT
+  --file FILE
+  --glob GLOB
+  --inline-max INLINE_MAX
+
+--- B4c compat probe with correct flags: build FROM tree, verify into temp ---
+Traceback (most recent call last):
+  File "C:\Users\foste\Documents\projects\local_sovereign_agent\watch\inbox\ractor_panel_20260926\cands\_seedrib_two_tree\seed-rib\rib\seed_rib.py", line 187, in <module>
+    sys.exit(main())
+             ^^^^^^
+  File "C:\Users\foste\Documents\projects\local_sovereign_agent\watch\inbox\ractor_panel_20260926\cands\_seedrib_two_tree\seed-rib\rib\seed_rib.py", line 180, in main
+    seed = build(Path(a.root).resolve(), a.file, a.glob, a.inline_max, Path(a.out))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\foste\Documents\projects\local_sovereign_agent\watch\inbox\ractor_panel_20260926\cands\_seedrib_two_tree\seed-rib\rib\seed_rib.py", line 108, in build
+    out_path.write_text(json.dumps(seed, indent=1), encoding="utf-8")
+  File "C:\Users\foste\AppData\Roaming\uv\python\cpython-3.11-windows-x86_64-none\Lib\pathlib.py", line 1078, in write_text
+    with self.open(mode='w', encoding=encoding, errors=errors, newline=newline) as f:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\foste\AppData\Roaming\uv\python\cpython-3.11-windows-x86_64-none\Lib\pathlib.py", line 1044, in open
+    return io.open(self, mode, buffering, encoding, errors, newline)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+FileNotFoundError: [Errno 2] No such file or directory: 'C:\\Users\\foste\\AppData\\Local\\Temp\\seedrib_two_compat\\seed_from_tree.json'
+build_exit=1
+ls: cannot access '/tmp/seedrib_two_compat/seed_from_tree.json': No such file or directory
+Traceback (most recent call last):
+  File "C:\Users\foste\Documents\projects\local_sovereign_agent\watch\inbox\ractor_panel_20260926\cands\_seedrib_two_tree\seed-rib\rib\seed_rib.py", line 187, in <module>
+    sys.exit(main())
+             ^^^^^^
+  File "C:\Users\foste\Documents\projects\local_sovereign_agent\watch\inbox\ractor_panel_20260926\cands\_seedrib_two_tree\seed-rib\rib\seed_rib.py", line 183, in main
+    return verify(Path(a.seed), Path(a.into), src)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\foste\Documents\projects\local_sovereign_agent\watch\inbox\ractor_panel_20260926\cands\_seedrib_two_tree\seed-rib\rib\seed_rib.py", line 117, in verify
+    seed = json.loads(seed_path.read_text(encoding="utf-8"))
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\foste\AppData\Roaming\uv\python\cpython-3.11-windows-x86_64-none\Lib\pathlib.py", line 1058, in read_text
+    with self.open(mode='r', encoding=encoding, errors=errors) as f:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\foste\AppData\Roaming\uv\python\cpython-3.11-windows-x86_64-none\Lib\pathlib.py", line 1044, in open
+    return io.open(self, mode, buffering, encoding, errors, newline)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+FileNotFoundError: [Errno 2] No such file or directory: 'C:\\Users\\foste\\AppData\\Local\\Temp\\seedrib_two_compat\\seed_from_tree.json'
+verify_exit=1
+
+--- B4d compat probe retry (out parent mkdir first) ---
+SEED-RIB build: 0 entries (0 inline, 0 pointer), seed 162 bytes, law_refs 0
+build_exit=0
+162
+SEED-RIB verify: inline 0 hash-matched, pointers 0 source-checked / 0 UNRESOLVED (stubbed, named), law_refs 0
+verify_exit=0
+
+--- B5 rerun-vs-original derivation diff (row-level) ---
+  differs: MANIFEST.sha256  old 3507B -> new 3507B
+  differs: POINTERS.sha256  old 4526B -> new 4526B
+  differs: kernel/env.law.md  old 638B -> new 638B
+  differs: kernel/filing.law.md  old 551B -> new 551B
+  differs: kernel/load.order.md  old 730B -> new 730B
+  differs: kernel/state.now.md  old 816B -> new 816B
+  differs: kernel/thesis.card.md  old 1488B -> new 1488B
+  differs: kernel/tier.law.md  old 250B -> new 250B
+rows identical=35 rows differing=8 (expected: stamped/live-sliced sections only)
+
+--- B6 cleanup: restore original derivation.json, delete rebuilt tree + temp roots (no pseudo-state) ---
+62141e9f52f5bea6983b24fc6b2b245b455eb4aff0ff5bd53080bb74172eaa94 *watch/inbox/ractor_panel_20260926/cands/_seedrib_two_derivation.json
+0
+tree removed
+
+=== verdict ===
+killed: none (both candidates survived all three kill arms on byte-verified claims)
+survivor: seedrib-two (instantiated, reproduced 43 files / 94,789 B from its own script, 9/9 battery on rerun)
+verdict file: watch/inbox/ractor_panel_20260926/seedrib.verdict.json

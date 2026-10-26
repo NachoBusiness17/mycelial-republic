@@ -1,0 +1,51 @@
+THREAD 1wlss89 (14 entries incl OP)
+
+--- [/u/Informal-Trouble2183] Postulate: Context compaction is good for Quantized models
+For quantized models, the quantization error propagates across the context size.
+ I feel like 128k is the sweet spot preserving enough information for the current task in hand, and avoiding quality degradation due to quant error accumulation .
+ I argue a 128k with compaction beats raw 256k/ 1M context size. That is valid for quantized models (around Q4), providing a good compaction (e.g. PI agent compaction).
+ The compaction provides the additional benefit of intelligent noise filtering (getting rid of: file dumps, terminal logs, outdated information, ..).
+ What is your experience?
+ submitted by /u/Informal-Trouble2183 to r/LocalLLaMA 
+ [link] [comments]
+
+--- [/u/Aggressive_Aspect436] /u/Aggressive_Aspect436 on Postulate: Context compaction is good for Quantized models
+That may not have anything to do with quatization at all. It's been well established that LLM performance degrades the larger their context gets. The rule of thumb I saw somewhere is that effective intelligence starts to significantly degrade at around 50% of their max context (I believe it's even less for 1M max context models). That why "long context benchmarks" are a thing.
+
+--- [/u/NNN_Throwaway2] /u/NNN_Throwaway2 on Postulate: Context compaction is good for Quantized models
+Based on what?
+
+--- [/u/laterbreh] /u/laterbreh on Postulate: Context compaction is good for Quantized models
+based on some random person that visits this reddit
+
+--- [/u/audioen] /u/audioen on Postulate: Context compaction is good for Quantized models
+I have no idea how this chart is to interpreted. Isn't this saying that 2K or whatever is the best context size? Clearly, that can not be true. It would make more sense to show what context size allows highest pass percentage objectively, rather than relative to unquantized model, as ability must be severely limited at 2K.
+
+--- [/u/Informal-Trouble2183] /u/Informal-Trouble2183 on Postulate: Context compaction is good for Quantized models
+as long as tokens are being generated, the model is drifting away from the native accuracy. at 2K we're still good, but you can't use it as context window because it doesn't contain enough information (barely around 200 lines of code). But 128k is around 350 pages of text.
+ The chart is illustration only based on some initial 1% quant accuracy (btw unsloth reports that initial value), and assuming a KV cache at 8-bit, if the KV-cache is 4-bit the degradation is much faster than illustrated.
+
+--- [/u/FoxiPanda] /u/FoxiPanda on Postulate: Context compaction is good for Quantized models
+Generally, I agree, but it is model and quant dependent on where things start to fall apart. I don't have a graph or mathematical evidence of this, just a year+ of experience with quantized models and observing outputs and behaviors.
+
+--- [/u/Equivalent_Bit_461] /u/Equivalent_Bit_461 on Postulate: Context compaction is good for Quantized models
+I do agree, keeping at 128k and compacting, avoids bs later
+
+--- [?] /u/[deleted] on Postulate: Context compaction is good for Quantized models
+[deleted]
+
+--- [/u/Informal-Trouble2183] /u/Informal-Trouble2183 on Postulate: Context compaction is good for Quantized models
+I don't mind waiting for compaction and a fresh new cache, the concern is more about when the model accumulates enough errors to start behaving like a brainless 1-bit quant (especially true when the KV cache is also quantized, in addition to the weights).
+
+--- [/u/Master_Face_571] /u/Master_Face_571 on Postulate: Context compaction is good for Quantized models
+what does compaction mean exactly?
+
+--- [?] /u/[deleted] on Postulate: Context compaction is good for Quantized models
+[deleted]
+
+--- [/u/audioen] /u/audioen on Postulate: Context compaction is good for Quantized models
+It is even worse than that. At least in opencode, the compaction step itself is a full context rewrite. My guess is that reasoning is removed and model only sees tool calls, tool call results, and assistant and user messages. From those, it must produce a summary of the conversation thus far.
+ That summary and user's last message (command) becomes the starting context of the new message.
+
+--- [/u/Marcus_MSC] /u/Marcus_MSC on Postulate: Context compaction is good for Quantized models
+The part I'd inspect is the first action after compaction. Does the summary still name the requested files, constraints, and unfinished work? If it dropped a "don't modify this file" instruction, the shorter run can look coherent while failing the task. I'd score those failures separately before calling 128k a sweet spot.

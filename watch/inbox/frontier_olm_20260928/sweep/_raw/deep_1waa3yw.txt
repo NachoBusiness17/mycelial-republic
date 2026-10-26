@@ -1,0 +1,42 @@
+ID: 1waa3yw
+SUB: r/LocalLLaMA
+DATE: 2026-09-08 01:06 UTC (created_utc=1788829572)
+TITLE: Designing a 5-Tier Hybrid Multi-Agent CLI Workflow: Need your feedback on orchestration & cost efficiency
+SCORE: 1  COMMENTS: 20  UPVOTE_RATIO: 0.6
+PERMALINK: https://www.reddit.com/r/LocalLLaMA/comments/1waa3yw/designing_a_5tier_hybrid_multiagent_cli_workflow/
+SELFTEXT:
+Hey everyone 👋
+
+
+
+I've been experimenting with building a local CLI multi-agent setup for daily development, and I’m trying to solve a common headache: \*\*How do we get top-tier code quality without burning through API credits on trivial tasks?\*\*
+
+
+
+Instead of relying solely on heavy frontier models or forcing local LLMs to do things beyond their capacity, I’m testing a \*\*5-Tier Closed-Loop Pipeline\*\*. The idea is to match every task to the most cost-effective model, then enforce a strict quality gate at the end.
+
+
+
+Here is the breakdown of the setup
+COMMENTS FETCHED: 21
+--- [DustNearby2848 | 2026-09-08 | score 0] This is too detailed for me to say 
+--- [[deleted] | 2026-09-08 | score 1] [removed]
+--- [mr_tolkien | 2026-09-08 | score 1] The idea is good, but I'm not sure about the costs/implementation.  I've been thinking about similar stuff and what will make or break it is good integration in the harness + good caching.
+--- [[deleted] | 2026-09-08 | score 1] [removed]
+--- [scottgal2 | 2026-09-08 | score 1] So when I built mine the key I found was keeping the contexts of each agent \*stable\* so keep them on a particular app area / responsibility and enforce that (allows agents to operate in paralell).   The issue with implementer agents for all tasks is they need to rederive different app areas for each task which changes that context they had. I structure by system responsibility area.
+--- [locbuilds | 2026-09-08 | score 1] honest take: the 5-tier idea is fine, but the failure mode is usually handoff, not which logo sits in which box.     orchestration: i'd skip AutoGen for this and keep a thin custom Python (or just a Makefile of prompts) that writes artifacts to disk and only passes paths + a short brief. LiteLLM + Aider works if you treat Aider as the editor and LiteLLM as the model switch, but don't make every tier a "chat agent" with a rolling transcript. the durable state should be [PLAN.md](http://PLAN.md), the file tree, and a [TASK.md](http://TASK.md) per step, not a 40k token conversation blob.     on Qwen-2.5-Coder for unit tests: it's decent for isolated pure functions when you give it the function + the types/schema and say "tests only, no rewrites". it drifts when you also ask it to "improve" the code, or when the schema lives only in prose from Tier 1. pin the contract in a real file (openapi / pydantic / zod / typed stubs) and feed that file every time. if a test fails twice, escalate that one file to Tier 2 instead of letting local keep inventing fixtures.     context erosion fix that actually works for me:  1) Tier 1 outputs [PLAN.md](http://PLAN.md) with acceptance checks, not vibes  2) each lower tier gets ONLY the files it touches + PLAN excerpt for that slice + the contract file  3) Tier 5 diffs against PLAN + runs the tests, it should not re-read the whole chat history  4) never summarize forward ("here's what we did...") without also attaching the current file contents, summaries lie     also watch the gatekeeper tax. if Tier 5 is a frontier model on every tiny PR, you quietly spend the savings from Tier 3/4. gatekeep on risk: new module / auth / data model = full Astra/Fable pass, docs+tests-only = local lint + test run is enough.
+--- [Fromthepast77 | 2026-09-08 | score 5] In general I am getting more and more skeptical of excessive engineering of roles/workflows. The problem is that it's brittle and hides useful context where it's needed most.  For example, even something as basic as a planning agent -> implementer agent has a downside - there's no easy way to revise the plan if the agent discovers a flaw while coding it up.  Having too many layers of hierarchy causes a breakdown in communication and creates inconsistent results - the same as it does on a human team.
+--- [o0genesis0o | 2026-09-08 | score 2] Mimimax M2.5? Qwen 2.5 Coder? Ollama? "Would love to hear your thoughts"?  F off slop bot.   And don't be stupid and underestimate the complexity of unit tests and integration tests. Nor overestimate the value of "plan", or the ability of frontier models to consistently make sound architectural decisions. Serious, the person behind the slop, do you even know how to code? 
+--- [ahmadammar91 | 2026-09-08 | score -1] 100% agreed on prompt caching and harness design!  I actually built a working proof-of-concept for this setup recently using Claude and custom orchestration scripts. The main reason I'm gathering feedback here first is to refine the context handoff logic and iron out edge cases based on everyone's real-world experience before running formal benchmarks.  Once I finish tightening the harness and logging solid cost/token metrics, I’ll open-source the repo on GitHub for everyone to test!
+--- [[deleted] | 2026-09-08 | score 1] [removed]
+--- [[deleted] | 2026-09-08 | score 1] [removed]
+--- [PriorElephant9 | 2026-09-08 | score 1] I’ve found stable responsibility areas work better than a long relay. Keep state in files, route by risk, and let agents escalate when a task stops fitting their lane.
+--- [edsonmedina | 2026-09-08 | score 1] Should work (inefficiently though) for one-shots. Should be terrible for iterations.
+--- [PuzzleheadedNet2204 | 2026-09-08 | score 1] That brittleness is the main risk; I’d keep the tiers, but make each handoff a small typed artifact (plan, patch, test report, and decision log) rather than forwarding the full conversation. Give each stage an explicit retry/rollback owner, and let the local worker run tests in a clean sandbox while the stronger model only adjudicates ambiguous failures. Tracing token/latency/cache hits plus a small representative eval suite should reveal whether a tier earns its cost before the pipeline grows further.
+--- [cobblemere | 2026-09-08 | score 1] agreed, the human team analogy is spot on tbh
+--- [Chance-Struggle-6285 | 2026-09-08 | score 2] 5 tiers in and somehow we reinvented corporate management for LLMs lol
+--- [ChallengeHuge4686 | 2026-09-08 | score 1] Brittle hierarchy hides the useful context the coding agent needs most.
+--- [bitlamas | 2026-09-08 | score 1] Honestly? Too complex. And only tier 4 is local? And you decided to go with Qwen2.5? What hardware do you have? Even many years old graphics card should be able to run the MoEs Gemma 4 A4B or Qwen3.6 A3B.
+--- [Altruistic_Heat_9531 | 2026-09-08 | score 1] holy cheesebowl of overcost and complexity.  Just do 3
+--- [ttkciar | 2026-09-08 | score 1] Violates Rule Three: LLM-generated content
+--- [ahmadammar91 | 2026-09-08 | score 1] Thanks for the clarification. Just to explain—English isn't my native language, so I used an LLM strictly to help structure my ideas and translate my technical thought process into clear English. All the architectural logic, the 5-tier setup, and the underlying workflow are 100% my own creation.  In fact, I'm currently working on a working open-source reference implementation on GitHub for the community to test and play with.  I've already sent a message to Modmail to clarify this. I really value the feedback from this community and hope we can keep the discussion open

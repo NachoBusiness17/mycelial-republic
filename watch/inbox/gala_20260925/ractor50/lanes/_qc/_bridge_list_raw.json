@@ -1,0 +1,179 @@
+[
+  {
+    "name": "estate_water_graph_tick",
+    "description": "Run WaterGraph.tick() on a caller-held spec: stateless physics.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "spec": {
+          "type": "object",
+          "description": "water_graph.v1 spec (to_spec shape): nodes + optional pipes; stateless, the caller holds the graph state"
+        },
+        "ticks": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 1000,
+          "default": 1
+        }
+      },
+      "required": [
+        "spec"
+      ]
+    },
+    "_meta": {
+      "mag": {
+        "profile": "bridge",
+        "quantized": true,
+        "effect_class": "read_or_deterministic_compute",
+        "risk": "low_or_local",
+        "authority": "read_guard",
+        "cost_kind": "deterministic_local",
+        "exhaustion": "retry_or_defer"
+      }
+    }
+  },
+  {
+    "name": "estate_dirac_scan",
+    "description": "Read-only full Dirac-loop scan: beta1 + closed(solved)/open(gap) loops.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "scope": {
+          "type": "string",
+          "enum": [
+            "operational",
+            "knowledge",
+            "all"
+          ],
+          "default": "operational"
+        }
+      }
+    },
+    "_meta": {
+      "mag": {
+        "profile": "bridge",
+        "quantized": true,
+        "effect_class": "read_or_deterministic_compute",
+        "risk": "low_or_local",
+        "authority": "read_guard",
+        "cost_kind": "deterministic_local",
+        "exhaustion": "retry_or_defer"
+      }
+    }
+  },
+  {
+    "name": "estate_dirac_rank",
+    "description": "Read-only circuit rank: beta1 = m - n + c, the independent Dirac loops.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "scope": {
+          "type": "string",
+          "enum": [
+            "operational",
+            "knowledge",
+            "all"
+          ],
+          "default": "operational"
+        }
+      }
+    },
+    "_meta": {
+      "mag": {
+        "profile": "bridge",
+        "quantized": true,
+        "effect_class": "read_or_deterministic_compute",
+        "risk": "low_or_local",
+        "authority": "read_guard",
+        "cost_kind": "deterministic_local",
+        "exhaustion": "retry_or_defer"
+      }
+    }
+  },
+  {
+    "name": "estate_chain_verify",
+    "description": "Dry-run verkle chain verify. repair(dry=True) is read-only by",
+    "inputSchema": {
+      "type": "object",
+      "properties": {},
+      "description": "dry-run verify only; repair is never exposed"
+    },
+    "_meta": {
+      "mag": {
+        "profile": "bridge",
+        "quantized": true,
+        "effect_class": "read_or_deterministic_compute",
+        "risk": "low_or_local",
+        "authority": "read_guard",
+        "cost_kind": "deterministic_local",
+        "exhaustion": "retry_or_defer"
+      }
+    }
+  },
+  {
+    "name": "estate_thought_compile",
+    "description": "Compile the tiered instruction packs. The writer is PINNED: input and",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "frontier": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 200,
+          "default": 24
+        },
+        "flash": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 200,
+          "default": 12
+        },
+        "local": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 200,
+          "default": 0
+        }
+      },
+      "description": "writes ONLY inside the pinned OUT_DIR; caller-supplied in/out paths are refused"
+    },
+    "_meta": {
+      "mag": {
+        "profile": "bridge",
+        "quantized": true,
+        "effect_class": "mutating_or_executing",
+        "risk": "guarded",
+        "authority": "switchboard_and_effect_broker",
+        "cost_kind": "local_compute_or_unknown",
+        "exhaustion": "deny_or_defer"
+      }
+    }
+  },
+  {
+    "name": "estate_driver_status",
+    "description": "Read-only stealth_driver status: heartbeat tail + off flag + work",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "tail": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 20,
+          "default": 3
+        }
+      },
+      "description": "read-only status; control words and lanes are not exposed"
+    },
+    "_meta": {
+      "mag": {
+        "profile": "bridge",
+        "quantized": true,
+        "effect_class": "read_or_deterministic_compute",
+        "risk": "low_or_local",
+        "authority": "read_guard",
+        "cost_kind": "deterministic_local",
+        "exhaustion": "retry_or_defer"
+      }
+    }
+  }
+]

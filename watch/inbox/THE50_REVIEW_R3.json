@@ -1,0 +1,32 @@
+[
+  {
+    "artifact": "memory/runs/the50/w4_t16_battery_dilemmas.jsonl",
+    "verdict": "PASS_WITH_NOTES",
+    "evidence": "All 20 rows parse; ids DIL-001..020 unique; families 10/10; per-row conditions A-D uniform; diagnostic_for 4/8/4/4; prompts end in CHOICE line; held_out and boot_pack_excluded true throughout; receipt sha256 and byte count match file exactly.",
+    "notes": "best_option skews 19 B / 1 A (position bias a model could exploit); DIL-011/012/017/018 add option E beyond the declared A-D condition set (receipt discloses 16 four-option / 4 five-option rows)."
+  },
+  {
+    "artifact": "tools/scs.py",
+    "verdict": "PASS",
+    "evidence": "Importable as tools.scs from repo root; self-test rerun PASS (13 checks); 20,000-case random property sweep stayed within [0,1] bits; 50k-label identical sets score 0.0; size-invariance holds; docstring import path verified against tools/__init__.py.",
+    "notes": "No defects found beyond self-test scope; scs_score recomputes distributions scs_divergence already built (harmless redundancy); CLI treats stray args as help plus exit 2."
+  },
+  {
+    "artifact": "tools/duty_fuzz.py",
+    "verdict": "PASS",
+    "evidence": "Two same-seed runs byte-identical (cmp); --selftest 10/10 PASS including subprocess replay and cross-cycle holdout; --check-docstring PASS, examples byte-match fresh cycle-0 output; spec_readings all inside closed A-D sets; default seed 20260918.",
+    "notes": "Selftest writes transient _duty_fuzz_selftest_tmp.jsonl in cwd, unlinked on success; fingerprint is truncated sha256 (16 hex), adequate for batch overlap checks."
+  },
+  {
+    "artifact": "memory/research_packs/THE50_W4_T19_EUT_DEEPREAD.md",
+    "verdict": "PASS",
+    "evidence": "All three vendored-PDF SHA256s match exactly; page counts 24/10/3 correct; spot-checked quotes found on cited pages: proper time p.1/p.3/p.23, TSVF back-reaction EUT II p.3, Past-Hypothesis lemma p.4, weak-value bound p.6, Knots Q=6840.05 p.2, Bekenstein p.4; Q* line refs match thesis file.",
+    "notes": "Every quote carries page/section ref; glyph restorations disclosed; no invented-seeming quotes. Nit: Version 7/8 changelog lines both extract on PDF p.1, not p.1-2; pypdf subscript mangling explains remaining non-matches."
+  },
+  {
+    "artifact": "watch/inbox/THE50_W4_T20_RECEIPT_CREDIT.md",
+    "verdict": "PASS",
+    "evidence": "Credit rule is one sentence, falsifiable two ways (per-row sha256 recomputation; named program-level kill condition). Provenance re-verified: launched:false hardcoded (vast_train.py:108), main.py:2885 refusal string, prereg 160 runs/15 floor, verb.py meter law; re-ran claimed dry command, output matches exactly.",
+    "notes": "Zero em-dashes; honest open dependency (Ollama seat availability) self-declared in section 4; single rollout explicitly barred from deciding the October verdict."
+  }
+]

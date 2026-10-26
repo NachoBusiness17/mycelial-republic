@@ -1,0 +1,74 @@
+t51 check evidence - freshness WARN-ONLY block in githooks/pre-push
+run date: 2026-09-26 (local, Git Bash); all raw tool output below, em/en-dashes in TOOL output rendered as [em-dash]/[en-dash], none authored
+
+== A. estate + syntax ==
+git core.hooksPath: githooks
+sh -n githooks/pre-push: exit 0 (no syntax errors)
+block extracted verbatim: sed -n '/^# freshness receipt gate/,$p' githooks/pre-push > block.sh (27 lines)
+
+== B. verbatim block run against LIVE watch/inbox (raw) ==
+$ sh C:/Users/foste/AppData/Local/Temp/tmp.QwDkvSKMQw/block.sh
+PUSH-GATE: freshness_gate (WARN-ONLY)
+PUSH-GATE: freshness WARN: watch/inbox/MICKEY17_WAVE2_QUALITY_20260925.md
+FRESHNESS-GATE: FAIL watch/inbox/MICKEY17_WAVE2_QUALITY_20260925.md (no freshness stamp found (want a line like 'source-fetched: YYYY-MM-DD'))
+verbatim_block_exit=0
+
+== B2. why the live WARN fired: scan hit is prose, no parseable date stamp (raw grep) ==
+$ grep -Ein '(source[-_ ]fetched|fetched|observed[-_]at)[[:space:]]*:' watch/inbox/MICKEY17_WAVE2_QUALITY_20260925.md | head -c 300
+93:**Batch 2 summary (as filed):** Audited 5 W3 research packs for citation quality, denominators, and referenced-file existence. Verdicts: T12 PASS (clean); T11, T13, T14, T15 PASS-with-notes; zero FAILs and zero fabricated citations found. All 54 referenced paths exist. Spot-check results: ~40 fil
+(line 93 is an audit sentence containing the words 'fetched: all present'; no YYYY-MM-DD follows, gate fail-closed, block stayed WARN-ONLY at exit 0)
+
+== C. fixtures OUTSIDE watch/inbox (temp), block gate command raw ==
+fixture_dir=C:/Users/foste/AppData/Local/Temp/tmp.C4zIt9iNFe ; today=2026-09-26
+pass.md: 'source-fetched: 2026-09-26' ; fail.md: 'source-fetched: 2026-09-01' ; oldmtime.md: fresh stamp but mtime set to 2026-09-20 10:00
+
+$ .venv/Scripts/python.exe tools/freshness_gate.py C:/Users/foste/AppData/Local/Temp/tmp.C4zIt9iNFe/pass.md
+FRESHNESS-GATE: ok C:/Users/foste/AppData/Local/Temp/tmp.C4zIt9iNFe/pass.md (stamp 2026-09-26 is 0d old; bar is 14d)
+pass_exit=0
+
+$ .venv/Scripts/python.exe tools/freshness_gate.py C:/Users/foste/AppData/Local/Temp/tmp.C4zIt9iNFe/fail.md
+FRESHNESS-GATE: FAIL C:/Users/foste/AppData/Local/Temp/tmp.C4zIt9iNFe/fail.md (stamp 2026-09-01 is 25d old; bar is 14d)
+fail_exit=2
+
+== D. block warn-handling lines verbatim, f overridden to fixtures (raw) ==
+PUSH-GATE: freshness WARN: C:/Users/foste/AppData/Local/Temp/tmp.C4zIt9iNFe/fail.md
+FRESHNESS-GATE: FAIL C:/Users/foste/AppData/Local/Temp/tmp.C4zIt9iNFe/fail.md (stamp 2026-09-01 is 25d old; bar is 14d)
+warn_handling_overall_exit=0  (fail fixture WARNs, block still 0: never blocks)
+
+== D2. dated-TODAY predicate (raw): oldmtime.md has a stamp but mtime 2026-09-20, must be excluded ==
+C:/Users/foste/AppData/Local/Temp/tmp.C4zIt9iNFe/fail.md
+C:/Users/foste/AppData/Local/Temp/tmp.C4zIt9iNFe/pass.md
+find_exit=0  (pass.md + fail.md listed, oldmtime.md excluded: only receipts dated today are gated)
+
+== E. direct hook run, whole file, live (raw) ==
+$ bash githooks/pre-push
+PUSH-GATE: ratchet check --changed
+RATCHET check: scope=10 changed files; hits=6; registered=6; NEW=0; expired-exceptions=0
+RATCHET: PASS [em-dash] no unregistered debt.
+PUSH-GATE: config_seal verify
+CONFIG-SEAL verify: sealed=47 live=47 modified=3 missing=0 unsealed=0
+  MODIFIED  lanes.yaml
+  MODIFIED  mag.yaml
+  MODIFIED  providers.yaml
+CONFIG-SEAL: FAIL [em-dash] re-seal by NAME: python tools/config_seal.py update --by WHO --note WHY
+direct_hook_exit=1
+(exit 1 is the PRE-EXISTING config_seal gate on 3 modified configs, same drift t40 recorded; the freshness block sits AFTER it and is unreached in this whole-file run; block-level proof is sections B, C, D)
+
+== F. violation ratchet check --changed (raw) ==
+RATCHET check: scope=10 changed files; hits=6; registered=6; NEW=0; expired-exceptions=0
+RATCHET: PASS [em-dash] no unregistered debt.
+ratchet_exit=0
+
+== G. em-dash / en-dash scan (U+2014, U+2013) over touched + evidence files (raw) ==
+githooks/pre-push -> dash_hits=1
+watch/inbox/gala_20260925/afterparty/lanes/t51.check.txt -> dash_hits=3
+watch/inbox/gala_20260925/afterparty/lanes/t51.json -> (not yet written at scan time; rescan below after banking)
+
+== H. post-repair closing rescan (raw) ==
+repairs applied: pre-existing em-dash in githooks/pre-push header line 2 changed to hyphen (comment-only); ratchet/config_seal em-dashes inside raw output sections rendered as [em-dash] per t37 precedent; t51.json written dash-clean
+sh -n githooks/pre-push after header edit:
+exit=0
+dash scan over all three filed artifacts:
+githooks/pre-push -> dash_hits=0
+watch/inbox/gala_20260925/afterparty/lanes/t51.check.txt -> dash_hits=0
+watch/inbox/gala_20260925/afterparty/lanes/t51.json -> dash_hits=0

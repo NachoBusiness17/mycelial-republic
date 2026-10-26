@@ -1,0 +1,19 @@
+{
+  "gopher": "t58",
+  "item": "tonight's Luau edits (ArtifactLore, Worldgen, SphereKinship, RegionSpheres, ZoneGate, Soul, leaderstats, init.server, TheAnswerBoss, GalleryZone, OssuaryZone, Monetization alignment) embedded into the_mountain.rbxlx via gate rebuild",
+  "ok": true,
+  "note": "Run 1 at 01:04:28 GATE PASS but init.server.luau was rewritten at 01:05:12 by another lane AFTER the build, so that embed was stale (rbxlx held the t14c 1s poll loop; disk held t56 signal version, syncMarks absent from rbxlx, verified by raw grep and ET source-length diff). Waited past the 3-minute quiet window (quiet from 01:05:12), reran gate once per mid-edit rule. Run 2 at 01:10:35 GATE PASS. Byte-verified: all 12 script embeds match disk sources exactly, incl. init.server (syncMarks now in rbxlx). leaderstats is not a separate file; it lives inside init.server.luau and is embedded with it. Residual 20 unique findings and 3 advisory block-balance lints are pre-existing classes (documented noise + LocalUnused); no new file-level failure.",
+  "checks": [
+    {
+      "command": "bash tools/mountain_check",
+      "exit": 0,
+      "evidence": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/afterparty/lanes/t58.check.txt"
+    },
+    {
+      "command": "bash tools/mountain_check (rerun 1 after mid-edit init.server write at 01:05:12; final)",
+      "exit": 0,
+      "evidence": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/afterparty/lanes/t58.check.txt"
+    }
+  ],
+  "next_steal": "20 unique TypeError/LocalUnused findings remain (t58.check.txt lines 14-33); heaviest clusters: zones_extra Expected-this-to-be-exactly family (SteerFieldZone 152,25 / IncidentDungeonZone 90,21 / LightmapRoomsZone 93,25 / ErosionFieldZone 172,25), MazeArenaZone Shape-on-BasePart (100,2 / 107,2), LedgerExchange unknown-typed reads (217,13 / 228,86 / 229,73). Next wave could type-pin those GetAttribute/GetValue chains or register named baseline debt."
+}

@@ -1,0 +1,207 @@
+cmd: grok --prompt-file <specdec.txt> --max-turns 18
+exit: 0 latency_ms: 311108
+--- stdout ---
+I'll search X directly for speculative-decoding posts from the last 30 days, starting with measured claims: acceptance rates, speedups, and draft-model results.URL: https://x.com/pjhauser1/status/2109344054043455932
+HANDLE: @pjhauser1
+DATE: 2026-10-11
+TEXT: MTP speculative decoding on a desktop GPU: 20-24 of 24 drafts accepted. The acceptance rate is the whole story - speculation without accuracy is just latency
+WHY: Claims an MTP run on a desktop GPU accepted 20–24 of 24 draft tokens, and treats a low acceptance rate as added latency.
+
+URL: https://x.com/cudanexus/status/2109340558812697037
+HANDLE: @cudanexus
+DATE: 2026-10-11
+TEXT: Speed with short prompts
+• 1 request: 131–171 tok/s
+• 8 at once: 87 tok/s each, 672 total
+• 24 at once: 62 each, ~1,450 total
+• 128 at once: 36 each, ~3,000 total
+
+In real use, MTP accepted 74% of draft tokens.
+WHY: In the same thread’s vLLM 0.31 MTP setup (GLM-5.3-Flash, TP4, 4×H200), claims 74% draft acceptance and 131–171 tok/s at 1 request, down to 36 tok/s each at 128-way concurrency.
+
+URL: https://x.com/ainotesus/status/2109331002250101127
+HANDLE: @ainotesus
+DATE: 2026-10-11
+TEXT: 8. Agents That Own Their Inference — Du'an Lightfoot & Khaja Omer, Akamai Technologies
+Akamai's vLLM workshop shows Qwen 3 4B at about 37 ms time to first token and around 40 tokens per second, while speculative decoding worsened the demo from roughly 58 to 16 tokens per second.
+WHY: Claims speculative decoding slowed an Akamai vLLM demo of Qwen 3 4B from about 58 to 16 tok/s, versus ~40 tok/s and ~37 ms TTFT without that failure mode.
+
+URL: https://x.com/CryptoBandit100/status/2109329938474266650
+HANDLE: @CryptoBandit100
+DATE: 2026-10-11
+TEXT: 68% → 52%. That's how often the draft model's guesses got accepted when my 3 DGX Spark GLM 5.3 Flash went from temp 0 to temp 0.7 (prose, 1 chat). Code: 88% → 80%.
+
+That's the prose slowdown from my last post.
+
+llama.cpp merged a fix for MTP: the drafter samples too, and the target checks it with rejection sampling, so the output keeps the same distribution. One r/LocalLLaMA user reports about +14% on prose.
+
+Our engine isn't llama.cpp, so I'm hoping this lands everywhere
+WHY: Claims sampled decoding dropped draft acceptance from 68% to 52% on prose and 88% to 80% on code, and that a llama.cpp MTP rejection-sampling fix was reported at about +14% on prose.
+
+URL: https://x.com/SJRonanMD/status/2109301440170823775
+HANDLE: @SJRonanMD
+DATE: 2026-10-11
+TEXT: Nice result. What acceptance length are you seeing with MTP on your prompts? The same drafter made DeepSeek-V4-Pro 1.77x faster on real text and 0.58x as fast on random tokens for me, so I've started posting acceptance next to tok/s.
+WHY: Claims the same MTP drafter made DeepSeek-V4-Pro 1.77× on real text and 0.58× on random tokens.
+
+URL: https://x.com/barrowjoseph/status/2109292659982377222
+HANDLE: @barrowjoseph
+DATE: 2026-10-11
+TEXT: It changes with speculation depth, model type (MoE is different than dense), acceptance rate, and GPU (hardware arithmetic intensity).
+
+For instance, from this OCR speculative decoding paper, the measured speedups differ based on the domain of the document, because that changes acceptance length.
+
+In Deepseek’s dSpark paper they actually just measure this on inference engine startup and store it for their dynamic speculation depth.
+WHY: Claims speedup moves with depth, MoE vs dense, acceptance length, and GPU arithmetic intensity, and that dSpark measures that at engine startup for dynamic depth.
+
+URL: https://x.com/renoirvieira/status/2109269680758136935
+HANDLE: @renoirvieira
+DATE: 2026-10-11
+TEXT: Same 4-bit weights, just re-tiled. Prefill is identical on both engines. The 2x is speculative decoding: the pack ships a 1.9B DFlash 2 draft that guesses 8 tokens per 27B forward pass.
+WHY: Attributes a 2× gap to a 1.9B DFlash 2 draft proposing 8 tokens per 27B target forward, with prefill unchanged.
+
+URL: https://x.com/Sametheus/status/2109070344627843240
+HANDLE: @Sametheus
+DATE: 2026-10-10
+TEXT: Speculative decoding speedups are usually quoted at batch size 1.
+At high batch you're already compute bound, so every rejected draft token is wasted FLOPs.
+The 3x on the slide can turn into 1.1x in production.
+Benchmark it at your real concurrency, not the demo's.
+WHY: Claims batch-1 slides (example 3×) can fall to about 1.1× once the GPU is compute-bound and rejected drafts waste FLOPs.
+
+URL: https://x.com/TheAidenWagner/status/2109000935913787770
+HANDLE: @TheAidenWagner
+DATE: 2026-10-10
+TEXT: Subagents: Qwen3.8-27B, EXL3 4.0bpw, vLLM on Intel XPU.
+
+• MTP speculative decoding, 3 tokens
+• FP8 KV cache
+• Prefix caching
+• 313K-token context pool shared across 3 requests
+
+1 request: ~60 tok/s
+2: ~38 each (77 total)
+3: ~30 each (90 total)
+WHY: Reports vLLM MTP with 3 draft tokens on Qwen3.8-27B (Intel XPU): ~60 tok/s at 1 request, ~38 each at 2, ~30 each at 3.
+
+URL: https://x.com/NexEcosystem/status/2108905221237993681
+HANDLE: @NexEcosystem
+DATE: 2026-10-10
+TEXT: ⚡ Meet NexRT, the low-latency decode engine behind Nex-N2.5.
+💡 Built for single-request inference on Nex-N2.5-Pro.
+• 1,000+ tokens/s at 8K context on 8×H100 with DFlash*
+• Standard decoding, MTP and DFlash
+• Context parallelism for long contexts, up to 256K
+
+SGLang handles prefill; NexRT handles decode. The two engines share routed MoE weights.
+Custom CUDA kernels, full decode CUDA Graphs and direct GPU communication help reduce latency throughout the decode path.
+WHY: Claims 1,000+ tok/s at 8K on 8×H100 with DFlash, SGLang on prefill and NexRT on decode; the footnote says that figure assumes 5.5 committed tokens per round and depends on draft acceptance.
+
+URL: https://x.com/ghulamurtaza_/status/2108674475344462013
+HANDLE: @ghulamurtaza_
+DATE: 2026-10-09
+TEXT: @UnderdogAI  Saluki 27B ships without an MTP draft head. It's a Qwen3.8-27B finetune, so I copied the base model's MTP layer (~350 MB) into the IQ2 GGUF.
+
+ 2× RTX 3060, 128k context, llama.cpp:prose/code: 23 → 36–37 tok/s
+
+exact copy/edits (MTP + ngram lookup): ~159 tok/s
+WHY: On llama.cpp, 2× RTX 3060, 128k: copying a ~350 MB MTP head moved prose/code from 23 to 36–37 tok/s, and MTP plus ngram lookup hit ~159 tok/s on exact copy/edits.
+
+URL: https://x.com/CryptoBandit100/status/2108589868192600376
+HANDLE: @CryptoBandit100
+DATE: 2026-10-09
+TEXT: Benchmarked my 3 DGX Sparks GLM 5.3 Flash at the settings we actually serve, not just greedy.
+
+Temp 0: 110 tok/s code, 72.6 prose (1 chat)
+Our assistant's preset (temp 0.7): 108 code, 66 prose
+8 chats at once: 239 → 232 code, 212 → 171 prose
+
+Code barely moves. Prose drops up to 19% at 8 chats, because the draft model's guesses land less often with sampling (68% → 52% accepted).
+
+The CPU sort slowdown others hit on sampled decoding? Didn't show up on 3 ranks.
+WHY: GLM 5.3 Flash on 3 DGX Sparks: temp 0 was 110 tok/s code and 72.6 prose; at temp 0.7 and 8 chats, prose aggregate fell 212→171 tok/s as acceptance fell 68%→52%.
+
+URL: https://x.com/sunsetsyntax/status/2108465254246355148
+HANDLE: @sunsetsyntax
+DATE: 2026-10-09
+TEXT: Speculative decoding is the most underrated llama.cpp trick. The draft model needs to share the main model's tokenizer though, otherwise the acceptance rate tanks and you can end up slower than plain decoding.
+WHY: Claims a llama.cpp draft that does not share the target tokenizer collapses acceptance and can run slower than plain decode.
+
+URL: https://x.com/yyw2026/status/2108386732404027827
+HANDLE: @yyw2026
+DATE: 2026-10-09
+TEXT: 说得很准。省带宽的直觉可以进一步落到实现：Medusa/SpecDecoding 这类多 head 猜测的加速比高度依赖 draft→target 的 accept 率分布，一旦 prompt 进入低熵区（代码/JSON 输出）accept 率骤降，回退开销反而会吃掉收益；高熵自由文本里才是 speculative decoding 的主战场。VLLM 里用 chunked prefill 配合 speculative 能稳住 p99 latency，你测过在不同 kv cache 量化格式下（FP16 vs INT8/E5M2）的加速比拐点吗？
+WHY: Claims Medusa-style multi-head speculation loses its speedup when code/JSON acceptance drops and rollback cost dominates, and that vLLM chunked prefill plus speculation can hold p99.
+
+URL: https://x.com/sebastavar/status/2107803719815291333
+HANDLE: @sebastavar
+DATE: 2026-10-07
+TEXT: All defaults for those: size-n 12, size-m 48, min-hits 1 (spec-draft-n-max only matters for a draft model, so it doesn't apply here).
+
+Full line on llama.cpp 0.6.0: --spec-type ngram-map-k -ub 2048 -c 196608 -ngl 99 --jinja. 
+
+Acceptance on code edits is 90 to 96% with ~44-token drafts, so edits run ~170 tok/s while new text stays ~50. 
+
+I also tried ngram-map-k4v, ngram-mod and ngram-cache: none beat plain ngram-map-k on edits, and none speed up new text.
+WHY: llama.cpp 0.6.0 ngram-map-k (size-n 12, size-m 48): 90–96% acceptance and ~44-token drafts, ~170 tok/s on code edits vs ~50 on new text; k4v, ngram-mod, and ngram-cache did not beat it.
+
+URL: https://x.com/omkarchebale/status/2107692247684890795
+HANDLE: @omkarchebale
+DATE: 2026-10-07
+TEXT: Speculative decoding is quietly becoming one of the biggest battlegrounds in LLM inference.
+
+llama.cpp just shipped v0.6.0 with MTP speculative decoding for Qwen4Exp, reporting ~1.5× decode speedup on DGX Spark.
+
+And vLLM is going in a different direction with EAGLE, DFlash and DSpark.
+
+The interesting part isn’t “which engine is faster?”
+
+It’s this:
+
+How much of the model’s next-token computation can we predict before the target model has to do it?
+WHY: Reports llama.cpp v0.6.0 MTP at ~1.5× decode on DGX Spark for Qwen4Exp, and contrasts that with vLLM’s EAGLE, DFlash, and DSpark predictors.
+
+URL: https://x.com/spheron/status/2104764045052305644
+HANDLE: @spheron
+DATE: 2026-09-29
+TEXT: Speculative decoding turns an H200's Llama 3.3 70B inference cost from $0.23 per million output tokens into $0.06.
+
+Standard: ~1,700 tok/s. Eagle-3: ~6,200 tok/s, a 3.6x jump over standard decoding on the same GPU.
+
+The draft head training the guesses is small: 1-3B params, 2-3GB VRAM. Full numbers
+WHY: Vendor figure for Llama 3.3 70B on one H200: ~1,700 tok/s standard vs ~6,200 with Eagle-3 (3.6×), draft head 1–3B params and 2–3 GB, cost $0.23 to $0.06 per million output tokens.
+
+URL: https://x.com/roy_eisenstadt/status/2104624416726409646
+HANDLE: @roy_eisenstadt
+DATE: 2026-09-28
+TEXT: 8/10 End-to-end speedup over vanilla decoding on Llama-3.1-8B / HumanEval (T=0):
+
+CopySpec: 2.03×
+EAGLE3: 2.28×
+SwitchSD: 2.58×
+
+That’s +12.7% throughput over EAGLE3. SwitchSD achieves the highest throughput across all 9 model/dataset settings in our main table.
+WHY: On Llama-3.1-8B / HumanEval at T=0, claims end-to-end speedups of CopySpec 2.03×, EAGLE3 2.28×, SwitchSD 2.58× (+12.7% over EAGLE3).
+
+URL: https://x.com/liquidai/status/2103131179100819783
+HANDLE: @liquidai
+DATE: 2026-09-24
+TEXT: Today, we release an experimental DSpark draft model for LFM2.5-VL-3B, bringing speculative decoding to our vision-language models.
+
+A lightweight drafter proposes multiple tokens ahead, and the target model verifies them together in a single pass. This accelerates generation without changing output quality.
+
+Across six vision-language task categories at batch size 1 and temperature 0:
+
+> MLX on M5 Max: up to 3.13x faster decoding and 2.62x end to end
+WHY: DSpark draft for LFM2.5-VL-3B at batch 1, temperature 0: up to 3.13× decode / 2.62× end-to-end on MLX (M5 Max), 2.14× / 1.77× on llama.cpp (M3 Ultra), and 2.66× / 2.27× on SGLang (H100).
+
+URL: https://x.com/ant_vedaya/status/2100669153137058128
+HANDLE: @ant_vedaya
+DATE: 2026-09-17
+TEXT: writing a speculative decoding engine from scratch in ~3k lines of PyTorch + FlashInfer.  Paged KV, continuous batching, CUDA graphs, EAGLE-3 chain + tree. 1.94× at batch 1 on an H100, every output byte-identical to greedy. Blog coming soon
+WHY: Claims a from-scratch EAGLE-3 chain-and-tree engine hit 1.94× at batch 1 on an H100, with greedy outputs byte-identical to the target.
+
+SUMMARY: 20 posts from 2026-09-17 to 2026-10-11. Measured acceptance and speedups cluster on MTP (desktop 20–24/24, vLLM 74%, DGX sampling 88%→80% code and 68%→52% prose), llama.cpp ngram-map-k (90–96%, ~170 vs ~50 tok/s), and EAGLE-3 / DFlash / DSpark benches (1.94× to 3.6× at batch 1, including a 1–3B Eagle-3 head on Llama 3.3 70B and a 1.9B DFlash 2 on a 27B). Losses show up at high batch (a stated 3× sliding to 1.1×), on random tokens (1.77× vs 0.58×), on a tokenizer mismatch, and in one vLLM demo (58→16 tok/s). Ollama-specific acceptance or speedup numbers did not appear. Medusa appeared once, as a claim that code/JSON acceptance collapses. Self-speculative serving measurements were absent from this pull.
+
+--- stderr tail ---
+

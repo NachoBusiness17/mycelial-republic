@@ -1,0 +1,90 @@
+{
+  "receipt": "THE50 W6 T29: oracle calibration harness (G31 recipe)",
+  "filed": "2026-10-04T17:09:20Z",
+  "finish_line": "tools/oracle_calibration.py",
+  "program_row": "watch/inbox/THE_50_PROGRAM_20260918.md line 46 (item 29, W6 INSTRUMENTS, [QUEUED])",
+  "recipe_source": "watch/inbox/GPS_BATTERY_20260918.jsonl line 31 (G31: confidence field, per-decision-class escalation threshold, calibration set, temperature, per-domain drift)",
+  "computed_this_session": {
+    "command": ".venv\\Scripts\\python.exe tools/oracle_calibration.py --selftest",
+    "script": "tools/oracle_calibration.py",
+    "seed": 20260919,
+    "tests_passed": 12,
+    "tests_total": 12,
+    "all_pass": true,
+    "tests": [
+      {
+        "test": "binner_shape_perfect",
+        "pass": true,
+        "detail": "n=20000, bins=10, bin_ns=[1105, 2182, 2207, 2208, 2234, 2246, 2246, 2221, 2227, 1124]"
+      },
+      {
+        "test": "binner_ece_perfect_calibrated",
+        "pass": true,
+        "detail": "ECE=0.0090 < 0.03 (sampling floor ~0.01 at n=20000)"
+      },
+      {
+        "test": "brier_perfect_calibrated",
+        "pass": true,
+        "detail": "Brier=0.1830 < 0.20 (E[p(1-p)] over U(0.05,0.95) ~ 0.153)"
+      },
+      {
+        "test": "binner_detects_overconfidence",
+        "pass": true,
+        "detail": "ECE=0.1848 > 0.08 at temp=4.0"
+      },
+      {
+        "test": "binner_overconfidence_direction",
+        "pass": true,
+        "detail": "top bin [0.9,1.0] predicted 0.9824 observed 0.7923 gap -0.1901 (observed far below predicted)"
+      },
+      {
+        "test": "binner_detects_underconfidence",
+        "pass": true,
+        "detail": "ECE=0.1184 > 0.05; top non-empty bin gap 0.1910 > +0.05 (observed above predicted)"
+      },
+      {
+        "test": "temperature_recovers_distortion",
+        "pass": true,
+        "detail": "T_hat=3.9536 in [3.2, 5.0], true T=4.0, n_cal=40000"
+      },
+      {
+        "test": "temperature_fixes_heldout_ece",
+        "pass": true,
+        "detail": "held-out ECE 0.1848 -> 0.0057 after scaling (want after < 0.05 and < 0.4x before)"
+      },
+      {
+        "test": "per_domain_drift_separates",
+        "pass": true,
+        "detail": "cheap_gate ECE=0.1819 drift=True; heavy_read ECE=0.0055 drift=False"
+      },
+      {
+        "test": "threshold_meets_target_heldout",
+        "pass": true,
+        "detail": "t*=0.8489 in [0.75, 0.85]; held-out accuracy of reads at or above t* = 0.9027 >= 0.88 (target 0.90)"
+      },
+      {
+        "test": "threshold_escalation_share_sane",
+        "pass": true,
+        "detail": "escalated share below t* = 0.8881 (theory ~0.83 for uniform confidence)"
+      },
+      {
+        "test": "ledger_io_roundtrip",
+        "pass": true,
+        "detail": "500/500 rows loaded, ECE matches to 0.00e+00"
+      }
+    ]
+  },
+  "implements": [
+    "bin_reliability: binned predicted-vs-observed + ECE/MCE/Brier (equal-width or equal-frequency bins)",
+    "fit_temperature + temperature_check: NLL temperature on a calibration split, held-out ECE before vs after",
+    "per_domain_report: per decision_class reliability, own temperature, drift flag vs best class",
+    "suggest_threshold: lowest threshold meeting the accuracy target + escalated share (the G31 escalation rule)"
+  ],
+  "honest_limits": [
+    "no live oracle confidence ledger exists on disk yet (G31 is a steering proposal), so all numbers here are synthetic-data self-test numbers, which is the finish line as written",
+    "score real traces with --input <reads.jsonl> --report <out.json>",
+    "binary reads only (confidence vs correct); multiclass calibration is future work",
+    "temperature fit assumes the miscalibration is logit-temperature shaped; per-domain drift is flagged, not attributed"
+  ],
+  "no_em_dash": true
+}

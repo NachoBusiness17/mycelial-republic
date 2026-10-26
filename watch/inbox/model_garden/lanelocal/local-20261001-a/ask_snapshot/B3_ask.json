@@ -1,0 +1,53 @@
+{
+  "id": "garden-v1-B3",
+  "axis": "estate-review-autonomous-loop",
+  "battery": "garden-v1",
+  "model": "anthropic/claude-fable-5.1",
+  "base_env": "HERMES_API_KEY_2",
+  "evidence": [
+    "scripts/descent_driver.sh",
+    "watch/inbox/hermes_burn/WAVE24_BOARD.md"
+  ],
+  "material_sha256": {
+    "scripts/descent_driver.sh": "1ac6a0f37700c3b7",
+    "watch/inbox/hermes_burn/WAVE24_BOARD.md": "0965be68341a3b3d"
+  },
+  "contamination_flags_at_staging": [
+    "zcode-seat-glm-authorship"
+  ],
+  "contract": "You are reviewing one live system of the Mag estate (a local-first agent harness on Windows). Assume it runs in production tonight. Review it as an adversarial engineer.\n\nReply with EXACTLY this shape and nothing else:\n\nIMPROVEMENT 1: <one-line defect or weakness claim> | EVIDENCE: <repo-relative path>:<line or line-range> | FIX: <one-line fix>\nIMPROVEMENT 2: <same shape>\nIMPROVEMENT 3: <same shape>\nDIFFERENT-BUILD: <at most 60 words: the one thing you would build differently and why>\n\nLAWS:\n- Every EVIDENCE cite must be a real path and real line numbers of the system below (the path as printed in one of the two SOURCE headers; cite either file).\n- Rank by damage: IMPROVEMENT 1 is the worst defect.\n- No em-dash characters anywhere in the reply.\n- No praise, no docstring restatement, no speculation presented as fact; a claim you cannot ground in the source below must be dropped, not guessed.\n\n<SOURCE path=scripts/descent_driver.sh sha256=1ac6a0f37700c3b7>\n{RUNNER PASTES FULL BYTES OF scripts/descent_driver.sh HERE}\n</SOURCE>\n<SOURCE path=watch/inbox/hermes_burn/WAVE24_BOARD.md sha256=0965be68341a3b3d>\n{RUNNER PASTES FULL BYTES OF watch/inbox/hermes_burn/WAVE24_BOARD.md HERE}\n</SOURCE>",
+  "grader": {
+    "checks": [
+      {
+        "n": 1,
+        "name": "SHAPE",
+        "rule": "regex finds exactly 3 IMPROVEMENT n: lines then exactly 1 DIFFERENT-BUILD: section, nothing else"
+      },
+      {
+        "n": 2,
+        "name": "CITES-RESOLVE",
+        "rule": "every EVIDENCE path (strip :line suffix) exists on disk in the repo (either surface legal)"
+      },
+      {
+        "n": 3,
+        "name": "LINES-IN-RANGE",
+        "rule": "every cited line number <= line count of the cited file"
+      },
+      {
+        "n": 4,
+        "name": "NO-EM-DASH",
+        "rule": "zero 0xE2 0x80 0x94 sequences in the reply bytes"
+      },
+      {
+        "n": 5,
+        "name": "DISTINCT-EVIDENCE",
+        "rule": "the 3 cites hit >= 2 distinct (path, 50-line bucket) targets"
+      }
+    ],
+    "score": "checks_passed / 5",
+    "rollup": "cluster all families' EVIDENCE cites by (path, 50-line bucket); >= 2 families on one cluster = convergent defect candidate"
+  },
+  "revision": false,
+  "base_url": "https://inference-api.nousresearch.com/v1",
+  "max_tokens": 12000
+}

@@ -1,0 +1,85 @@
+
+========================================================================
+CHECK 1: fresh compile (v0.4) + fossil arm
+========================================================================
+$ .venv/Scripts/python.exe tools/thought_quantizer.py compile
+THOUGHT-QUANTIZER v0.4 compiled: {"in": 401, "refused_telemetry": 5, "refused_fragments": 9, "dedupes": 13, "kept": 374, "error_quoting_laws_kept": 47, "packed": 374}
+packs: {'frontier': 24, 'flash': 12, 'local': 338} | kept==packed (linker law): True | error-quoting laws kept (v0.3 heal): 47
+exit=0
+$ .venv/Scripts/python.exe tools/thought_quantizer.py --check
+THOUGHT-QUANTIZER: fresh, 0.0d old (v0.4)
+exit=0
+
+========================================================================
+CHECK 2: zero shell-error fragments in any pack
+========================================================================
+frontier: rows=24 shell_error_hits=0
+flash: rows=12 shell_error_hits=0
+local: rows=338 shell_error_hits=0
+TOTAL shell-error fragments across all packs: 0 (finish line requires 0)
+
+========================================================================
+CHECK 3: PACK_STALE_DAYS defined once, imported at all three sites
+========================================================================
+mag/constants.py assignment lines: [19] (require exactly 1)
+tools/thought_quantizer.py: import at lines [55]
+mag/context_pack.py: import at lines [14]
+tools/freshness_check.py: import at lines [39]
+mag/context_pack.py: legacy bar 'if age_d > 7.0' occurrences: [] (require 0)
+tools/thought_quantizer.py: legacy bar 'max_age_hours' occurrences: [] (require 0)
+tools/freshness_check.py: legacy bar '^STALE_DAYS = 7' occurrences: [] (require 0)
+mag.constants.PACK_STALE_DAYS = 7
+producer parity (tq.PACK_STALE_DAYS is DEFINED): True
+consumer parity (cp.PACK_STALE_DAYS is DEFINED): True
+boot parity (freshness.STALE_DAYS is DEFINED): True
+
+========================================================================
+CHECK 4: kept == packed across tiers
+========================================================================
+report v0.4 stats: {"in": 401, "refused_telemetry": 5, "refused_fragments": 9, "dedupes": 13, "kept": 374, "error_quoting_laws_kept": 47, "packed": 374}
+instructions_frontier.jsonl rows: 24 (report packs: 24)
+instructions_flash.jsonl rows: 12 (report packs: 12)
+instructions_local.jsonl rows: 338 (report packs: 338)
+sum of pack rows: 374 | report kept: 374 | report packed: 374
+kept == packed: True (finish line requires True)
+
+========================================================================
+CHECK 5: pytest suites touched by this lane
+========================================================================
+$ pytest tests/test_thought_quantizer.py tests/test_context_pack_quantized_laws.py -q
+  20 passed in 7.66s
+  exit=0
+$ pytest tests/test_mcp_bridge_r1.py -q
+  22 passed in 0.99s
+  exit=0
+
+========================================================================
+CHECK 6: em/en dash scan over lane-written sources
+========================================================================
+tools/thought_quantizer.py: em=5 en=0
+tools/freshness_check.py: em=7 en=0
+mag/constants.py: em=0 en=0
+mag/context_pack.py: em=59 en=0
+mag/estate_bridge.py: em=0 en=0
+tests/test_thought_quantizer.py: em=0 en=0
+
+CHECKS COMPLETE
+
+========================================================================
+CHECK 7: violation_ratchet check --changed (the ask's step 3)
+========================================================================
+$ .venv/Scripts/python.exe tools/violation_ratchet.py check --changed
+exit=1 (FAIL) - attribution: the 2 NEW hits are mag/corpus_acquire.py
+(file-too-long :636, except-pass :376), the sibling lane's debt already
+registered at the wave5 fold ('owner lane owes fix'). ZERO hits on this
+lane's files: tools/thought_quantizer.py, tools/freshness_check.py,
+mag/constants.py, mag/context_pack.py, mag/estate_bridge.py,
+tests/test_thought_quantizer.py (grep of the raw output below returns nothing).
+
+raw ratchet output:
+RATCHET check: scope=40 changed files; hits=24; registered=22; NEW=2; expired-exceptions=0
+  NEW 1c86242d11e4a61d file-too-long: mag/corpus_acquire.py:636 — >400 lines
+  NEW c9db2b230a022854 except-pass: mag/corpus_acquire.py:376 — silent except ...: pass
+  GROWTH claim 42b721c740d1abda: mag/corpus_selfsteal.py accepted at 550 lines, now 573 (+23) — re-audit or re-accept by name
+  GROWTH claim e066832a0b8edb5e: tools/stealth_driver.py accepted at 753 lines, now 1441 (+688) — re-audit or re-accept by name
+RATCHET: FAIL — run 'baseline-update' ONLY after a human/agent accepts the debt by name.

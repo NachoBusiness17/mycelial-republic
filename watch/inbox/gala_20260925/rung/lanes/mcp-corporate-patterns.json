@@ -1,0 +1,80 @@
+{
+  "lane": "mcp-corporate-patterns",
+  "division": "B",
+  "ok": true,
+  "note": "Surveyed first-hand corporate MCP usage (Anthropic origin 2024-11-25 plus 2025-05-01 remote-MCP pivot, OpenAI Agents SDK + Responses API native MCP with approval flow, Google ADK dual client/server + Gemini CLI, Microsoft Foundry production MCP with default-always approval and untrusted-input doctrine, AAIF under Linux Foundation hosting MCP/goose/AGENTS.md/A2A/agentgateway with all four hyperscalers as platinum members); openai.com launch post and the LF press release 403'd so those two dates ride secondary sourcing, and the estate's tools/gps_mcp turns out to be bare JSON-RPC over stdio, not MCP.",
+  "rows": [
+    {
+      "law": "MCP-origin-open-standard",
+      "claim": "MCP was open-sourced by Anthropic on 2024-11-25 as a universal standard replacing per-source connectors, with Block, Apollo, Zed, Replit, Codeium, and Sourcegraph named as early adopters on day one.",
+      "quote": "Instead of maintaining separate connectors for each data source, developers can now build against a standard protocol.",
+      "source": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/rung/lanes/mcp-corporate-patterns.evidence.md",
+      "steal": "In one sitting, read tools/gps_mcp/README.md and stamp which MCP spec version (if any) the facade targets into its header; landing spot tools/gps_mcp/README.md.",
+      "falsifier": "Every hyperscaler abandons MCP for a rival single-vendor tool protocol and MCP servers stop being consumable across vendors.",
+      "leverage": "high"
+    },
+    {
+      "law": "openai-mcp-convergence",
+      "claim": "OpenAI's production agent tooling consumes MCP natively at two layers: the Agents SDK understands multiple MCP transports and the Responses API calls remote MCP servers server-side with an mcp_approval_request/mcp_approval_response flow.",
+      "quote": "The Agents Python SDK understands multiple MCP transports.",
+      "source": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/rung/lanes/mcp-corporate-patterns.evidence.md",
+      "steal": "Add one README line to tools/gps_mcp recording that Responses API and Agents SDK consume MCP directly, so the router's tool surface stays MCP-compatible by design; landing spot tools/gps_mcp/README.md.",
+      "falsifier": "OpenAI removes the mcp tool type from the Responses API guide or drops MCP support from the Agents SDK docs.",
+      "leverage": "high"
+    },
+    {
+      "law": "google-adk-dual-role",
+      "claim": "Google's ADK treats MCP as core plumbing in both directions (McpToolset consumes MCP servers as client, to_mcp_server exposes ADK agents as an MCP server) and Gemini CLI is itself an MCP client via ~/.gemini/settings.json.",
+      "quote": "In ADK, you use the McpToolset class as an interface between MCP Servers and ADK agents.",
+      "source": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/rung/lanes/mcp-corporate-patterns.evidence.md",
+      "steal": "Spike exposing gps_mcp's tools through the official MCP stdio transport so ADK- and Claude-style clients can consume the ledger router; landing spot tools/gps_mcp/server.py, additive in TEST-DOUBLE mode.",
+      "falsifier": "Google removes McpToolset and MCP server mode from the ADK docs in favor of a proprietary tool protocol.",
+      "leverage": "high"
+    },
+    {
+      "law": "microsoft-production-hardening",
+      "claim": "Microsoft ships MCP as a first-class Foundry Agent Service tool across Python/C#/JavaScript/Java/REST with require_approval defaulting to always, allowed_tools allow lists, and an explicit untrusted-input doctrine for server content.",
+      "quote": "Treat tool descriptions, annotations, and results from remote MCP servers as untrusted input. They can contain indirect prompt injection instructions.",
+      "source": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/rung/lanes/mcp-corporate-patterns.evidence.md",
+      "steal": "Add the untrusted-input warning plus an allow-list line to tools/gps_mcp/README.md before any live (test_double:false) tool is exposed; landing spot tools/gps_mcp/README.md.",
+      "falsifier": "Microsoft Foundry docs drop the untrusted-input and approval guidance for MCP tools.",
+      "leverage": "high"
+    },
+    {
+      "law": "aaif-neutral-governance",
+      "claim": "MCP, Block's goose, OpenAI's AGENTS.md, Google's A2A, and agentgateway all sit under the Linux Foundation's AAIF with AWS, Anthropic, Block, Bloomberg, Cloudflare, Google, Microsoft, and OpenAI as platinum members, so the rival agent protocols share one neutral home.",
+      "quote": "including the Model Context Protocol (MCP), goose, AGENTS.md, Agent2Agent (A2A) and agentgateway.",
+      "source": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/rung/lanes/mcp-corporate-patterns.evidence.md",
+      "steal": "Record the AAIF protocol roster as a one-line fact in the next daily scout receipt; landing spot memory/attention.md.",
+      "falsifier": "AAIF dissolves or a founding member pulls its protocol back under single-vendor governance.",
+      "leverage": "medium"
+    },
+    {
+      "law": "claude-remote-mcp-pivot",
+      "claim": "Anthropic's own consumer surface moved from local-only Claude Desktop MCP servers (2024-11) to remote MCP across web and desktop (2025-05), shipping Atlassian, Zapier, Cloudflare, Square, PayPal, and more as partner integrations on the protocol.",
+      "quote": "Today, we're introducing Integrations, allowing Claude to work seamlessly with remote MCP servers across the web and desktop apps.",
+      "source": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/rung/lanes/mcp-corporate-patterns.evidence.md",
+      "steal": "Prefer remote streamable-HTTP MCP endpoints over local stdio when wiring any Mag tool surface for external agents; landing spot docs/FRAMEWORK_LOAD.md tool-surface note.",
+      "falsifier": "Anthropic reverts Claude app MCP support to local-only servers.",
+      "leverage": "medium"
+    },
+    {
+      "law": "remote-first-transport",
+      "claim": "Production MCP deployments converge on remote HTTP transports with server-side approval (Microsoft's agent runtime is remote-only, OpenAI's Responses API calls remote MCP servers itself), while the estate's tools/gps_mcp still speaks bare JSON-RPC over stdio, not MCP.",
+      "quote": "The Agent Service runtime only accepts a remote MCP server endpoint.",
+      "source": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/rung/lanes/mcp-corporate-patterns.evidence.md",
+      "steal": "File the gps_mcp gap (JSON-RPC facade named mcp, not MCP) as a HELP_WANTED row naming the MCP stdio/transport upgrade; landing spot memory/frontier/HELP_WANTED.md.",
+      "falsifier": "A major platform adds first-class local stdio MCP support for hosted production agents.",
+      "leverage": "medium"
+    }
+  ],
+  "checks": [
+    {
+      "command": "\"C:/Users/foste/Documents/projects/local_sovereign_agent/.venv/Scripts/python.exe\" \"C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/rung/lanes/mcp-corporate-patterns.check.py\" > \"C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/rung/lanes/mcp-corporate-patterns.check.txt\" 2>&1 (re-run appended; && chain printed RUN_OK and stamped PY_EXIT_CODE_0 into the same file)",
+      "exit": 0,
+      "evidence": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/rung/lanes/mcp-corporate-patterns.check.txt"
+    }
+  ],
+  "decision_changed": "no (survey-only; decision candidate surfaced: tools/gps_mcp speaks JSON-RPC over stdio but not MCP, the upgrade-or-rename call belongs to the gps seat)",
+  "artifact": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/rung/lanes/mcp-corporate-patterns.json"
+}

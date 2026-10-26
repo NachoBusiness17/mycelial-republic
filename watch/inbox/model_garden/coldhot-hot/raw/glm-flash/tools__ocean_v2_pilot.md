@@ -1,0 +1,7 @@
+# coldhot-hot-glm-flash-tools__ocean_v2_pilot (glm-5.3-flash @ zai, turn 1, channel: content)
+
+DEFECT 1: Budget cap is never enforced; the run can spend unboundedly past the $0.25 cap because `spend` is accumulated but never compared to `COST_CAP` nor aborted | EVIDENCE: tools/ocean_v2_pilot.py:127-176 | FIX: After each `spend += cost(...)`, check `if spend > COST_CAP: save partial receipt and abort`.
+DEFECT 2: Gate B counts any non-empty JUSTIFY string as "corpus grounded", so an uncited generic justification passes the pre-registered grounding gate | EVIDENCE: tools/ocean_v2_pilot.py:172-176 | FIX: Require the justification to reference corpus content (e.g. substring match against `system` corpus bytes) before setting `grounded`.
+DEFECT 3: DNS is validated once in `_validated_api_url()` but `urlopen` re-resolves the hostname, leaving a TOCTOU rebinding hole that bypasses the blocked-range check | EVIDENCE: tools/ocean_v2_pilot.py:80-90,105-107 | FIX: Pin the validated IP by connecting to `https://{ip}/...` with `Host`/SNI set to the hostname, or wrap the socket with the validated addrinfo.
+DEAD-CODE: Final `return {"ok": False, "error": "429 x2"}` in `ds` is unreachable; both loop arms end in `return` or `continue` on the last attempt | EVIDENCE: tools/ocean_v2_pilot.py:119-122
+ONE-SITTING FIX: Wire the pre-registered cap check into the spend loop and write a partial receipt on abort, making the documented budget guarantee real | EVIDENCE: tools/ocean_v2_pilot.py:141-160

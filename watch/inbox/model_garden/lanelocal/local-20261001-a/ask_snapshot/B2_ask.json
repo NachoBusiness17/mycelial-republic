@@ -1,0 +1,49 @@
+{
+  "id": "garden-v1-B2",
+  "axis": "estate-review-effect-authorization",
+  "battery": "garden-v1",
+  "model": "anthropic/claude-fable-5.1",
+  "base_env": "HERMES_API_KEY_2",
+  "evidence": [
+    "mag/switchboard_v2.py"
+  ],
+  "material_sha256": {
+    "mag/switchboard_v2.py": "92573eac8effd6f7"
+  },
+  "contamination_flags_at_staging": [],
+  "contract": "You are reviewing one live system of the Mag estate (a local-first agent harness on Windows). Assume it runs in production tonight. Review it as an adversarial engineer.\n\nReply with EXACTLY this shape and nothing else:\n\nIMPROVEMENT 1: <one-line defect or weakness claim> | EVIDENCE: <repo-relative path>:<line or line-range> | FIX: <one-line fix>\nIMPROVEMENT 2: <same shape>\nIMPROVEMENT 3: <same shape>\nDIFFERENT-BUILD: <at most 60 words: the one thing you would build differently and why>\n\nLAWS:\n- Every EVIDENCE cite must be a real path and real line numbers of the system below (the path as printed in the SOURCE header).\n- Rank by damage: IMPROVEMENT 1 is the worst defect.\n- No em-dash characters anywhere in the reply.\n- No praise, no docstring restatement, no speculation presented as fact; a claim you cannot ground in the source below must be dropped, not guessed.\n\n<SOURCE path=mag/switchboard_v2.py sha256=92573eac8effd6f7>\n{RUNNER PASTES FULL BYTES OF mag/switchboard_v2.py HERE}\n</SOURCE>",
+  "grader": {
+    "checks": [
+      {
+        "n": 1,
+        "name": "SHAPE",
+        "rule": "regex finds exactly 3 IMPROVEMENT n: lines then exactly 1 DIFFERENT-BUILD: section, nothing else"
+      },
+      {
+        "n": 2,
+        "name": "CITES-RESOLVE",
+        "rule": "every EVIDENCE path (strip :line suffix) exists on disk in the repo"
+      },
+      {
+        "n": 3,
+        "name": "LINES-IN-RANGE",
+        "rule": "every cited line number <= line count of the cited file"
+      },
+      {
+        "n": 4,
+        "name": "NO-EM-DASH",
+        "rule": "zero 0xE2 0x80 0x94 sequences in the reply bytes"
+      },
+      {
+        "n": 5,
+        "name": "DISTINCT-EVIDENCE",
+        "rule": "the 3 cites hit >= 2 distinct (path, 50-line bucket) targets"
+      }
+    ],
+    "score": "checks_passed / 5",
+    "rollup": "cluster all families' EVIDENCE cites by (path, 50-line bucket); >= 2 families on one cluster = convergent defect candidate"
+  },
+  "revision": false,
+  "base_url": "https://inference-api.nousresearch.com/v1",
+  "max_tokens": 12000
+}

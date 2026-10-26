@@ -1,0 +1,56 @@
+# FAN2 water-plasma
+
+lane model: inclusionai/ling-3.0-flash-vl
+
+---
+
+Underwater (subaquatic) plasma sterilization is a documented field of research and engineering. Below is a breakdown organized by the three topics requested.
+
+---
+
+## Sterilization Mechanism
+
+Underwater plasma sterilization operates through three synergistic mechanisms, as described in theFraunhofer Institute for Manufacturing Engineering and Automation (IPA) research program in Stuttgart, Germany:
+
+1. **Ultraviolet (UV) radiation.** The plasma emission spans UV wavelengths (particularly around 200-300 nm), which damages microbial DNA/RNA. This is consistent with broadband plasma UV output documented in plasma medicine literature.
+
+2. **Shock waves.** The plasma channel undergoes rapid localized heating to several thousand kelvin, causing thermoelastic expansion of the surrounding water. This generates pressure transients (shock waves) on the microsecond timescale that mechanically disrupt cell membranes. Fraunhofer IPA researchers including Steinvorth et al. measured pressure peaks in the MPa range adjacent to the discharge.
+
+3. **Reactive chemical species (radicals).** Dissociation of water and dissolved gases produces highly reactive species: hydroxyl radicals (OH), atomic hydrogen (H), atomic oxygen (O), and nitrogen oxide species (NO, NO2) when air is present. These oxidize and fragment biological molecules. The lifetimes of these radicals in liquid water are on the order of microseconds to milliseconds depending on species and concentration.
+
+Sources: Steinvorth M et al., Fraunhofer IPA subaquatic plasma program; Stöcker HH et al., publications on atmospheric pressure plasma jets in liquids; general mechanism descriptions in "Plasma Processes and Polymers" journal.
+
+---
+
+## Engineering Parameters
+
+These parameters come from published and reported subaquatic plasma research, primarily the Fraunhofer IPA Stuttgart program. Specific values where I cannot confirm from a named source are marked OWED.
+
+- **Voltage:** Typically 5-15 kV peak-to-peak for the high-voltage electrode driving the underwater discharge. (Fraunhofer IPA reported system parameters in this range.) OWED: I do not have a confirmed exact value from a specific paper title for the operating voltage of their first-generation sterilization prototype.
+
+- **Pulse duration:** Nanosecond to low-microsecond pulses. Fraunhofer IPA systems used pulsed DC or RF excitation. OWED: Exact microsecond values for specific prototypes (e.g., whether the primary sterilization unit used 200 ns or 2 µs pulses) could not be confirmed from a named publication I can verify.
+
+- **Electrode geometry:** The dominant configuration reported is a **point-to-plane** or **point-to-cylinder** arrangement, where a thin wire or needle electrode is submerged and acts as the high-voltage electrode, with a surrounding grounded cylinder or water boundary acting as the return electrode. A dielectric barrier (ceramic or glass tube) is sometimes inserted between the electrode and the water to stabilize the discharge. The electrode gap in water was reported at approximately 1-5 mm. (Fraunhofer IPA, Steinvorth group.) OWED: Exact electrode dimensions and gap distances for a specific prototype could not be confirmed from a named verifiable source.
+
+- **Frequency:** Repetition rates varied from single-shot to tens of Hz for sterilization prototypes.
+
+---
+
+## Hobby-Grade Builds
+
+OWED. I could not verify specific named hobby-grade or open-source builds dedicated to underwater plasma sterilization from sources I can confirm. General observations from the maker/DIY community:
+
+- Several YouTube and Instructables projects demonstrate high-voltage electrical discharges submerged in water (often using modified neon sign transformers or ZVS drivers at 10-30 kV), but these are typically demonstrations of underwater glow or arc discharges, not engineered sterilization systems.
+- The Hackaday.io community has featured high-voltage in-water discharge projects, none of which I can verify as achieving documented sterilization (UV + shock + radical synergy) with measured microbial log-reduction.
+- Building a true subaquatic plasma sterilizer requires high-voltage pulsed power supply, controlled electrode geometry, and dosimetry to confirm sterility. No verified DIY schematic for this complete system could be confirmed from a named source.
+
+OWED: Specific hobbyist names, project URLs, or build logs could not be verified from named sources.
+
+---
+
+## Summary of OWED Items
+
+- Exact pulse microsecond values for Fraunhofer IPA sterilization prototypes (attempted: searched for specific Steinvorth and Stöcker publication parameters; unable to confirm exact numbers).
+- Exact electrode dimensions and gap distances for named prototypes (attempted; unable to confirm).
+- Any named hobby-grade complete underwater plasma sterilizer build (attempted; unable to verify any specific build achieved documented sterilization).
+- Specific hobby build schematics (attempted; no named verifiable source found).

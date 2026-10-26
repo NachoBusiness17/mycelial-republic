@@ -1,0 +1,351 @@
+=== 2026-09-25T12:46 | Qwengram-0.8B: I transferred Qwen3.8 Flash-Next’s n-gram memory into Qwen3.5-0.8B — 5.05% lower validation perplexity | by /u/Nicolodeva
+I’ve been experimenting with whether Qwen3.8-Flash-Next’s pretrained PLE n-gram memory can improve a much smaller Qwen3.5-0.8B model.
+ I trained the 0.8B setup with limited resources, mostly using free Kaggle notebook GPUs.
+ The setup keeps both the Qwen3.5-0.8B backbone and the roughly 51B-parameter PLE memory frozen. A small R=1 reader is trained at decoder layers 3 and 9, with a token-dependent linear gate controlling the later injection.
+ There is no backbone fine-tuning.
+ The current balanced checkpoint uses a reader trained for 15M tokens and a separately calibrated dynamic gate. On the frozen full-validation set:
+ Qwen3.5-0.8B stock
+  NLL: 2.905585 PPL: 18.2759  Qwengram-0.8B
+  NLL: 2.853786 PPL: 17.3534  Perplexity reduction: 5.05%
+ This is a language-model validation result, not a claim of 5% higher benchmark accuracy.
+ A few findings shaped the final design:
+  The real pretrained PLE outperformed both random-memory and permuted-memory controls. Reader loss kept improving well beyond 5M training tokens. The 20M reader improved aggregate LM loss further, but regressed on math, so 15M remains the balanced checkpoint. Strong fixed late-layer memory injection hurt LAMBADA. Dynamic token-level arbitration recovered much of that tradeoff. The gate is genuinely dynamic: its memory strength varies substantially across tokens rather than behaving like a learned constant. With the exact same memory budget, learned token placement beat shuffled placement. Routing memory toward high-uncertainty positions recovered part of the advantage, but still did not match the learned gate. A warm-started R=4 reader produced a small aggregate LM-loss improvement, but introduced code and math regressions. I therefore kept R=1 as the balanced architecture.  I also implemented the inference path in llama.cpp.
+ The public artifacts are:
+ Model / GGUFs
+ https://huggingface.co/Ninnix96/Qwengram-0.8B
+ Training, controls, and evaluation
+ https://github.com/Ninnix/qwen-ple-transfer
+ Modified llama.cpp runtime
+ https://github.com/Ninnix/llama.cpp-qwengram
+  Update! 2b released!
+ https://huggingface.co/Ninnix96/Qwengram-2B
+ Same recipe, and it works: 3.7–4% lower perplexity. The gains seem to get smaller as the backbone gets larger. It also works with my llama.cpp fork.
+  The GGUF contains the Qwen3.5 backbone plus the trained reader and arbitration tensors. The large PLE remains an external quantized sidecar, rather than being packed into the model GGUF.
+ I also tested quantization retention on a separate fixed WikiText-2 GGUF runtime test:
+  Q8_0 retains 99.1% of the BF16 reader NLL gain  This is a separate runtime measurement, not the frozen Kaggle validation benchmark above.
+ I’d welcome attempts to reproduce or improve the reader, PLE caching, routing, or runtime.
+ Next I’d like to try larger Qwen backbones, particularly the 35B-A3B MoE. Experiments at that scale require substantially more compute than free Kaggle notebooks can provide, but the 0.8B study gives a much clearer recipe for reader scaling and dynamic memory arbitration.
+  Disclosure: I’m the author of Qwengram and the linked repositories. English is not my first language, so I used AI to help proofread grammar and improve phrasing in this post. The experiment itself was also developed with the assistance of coding agents, primarily ChatGPT Sol, for implementation, debugging, experiment orchestration, and analysis support. I designed the experiments, made the research decisions, reviewed the results, and am responsible for the final conclusions.
+     submitted by    /u/Nicolodeva  
+ [link]   [comments]
+
+=== ? | /u/WithoutReason1729 on Qwengram-0.8B: I transferred Qwen3.8 Flash-Next’s n-gram memory into Qwen3.5-0.8B — 5.05% lower validation perplexit | by /u/WithoutReason1729
+Your post is getting popular and we just featured it on our Discord! Come check it out!
+ You've also been given a special flair for your contribution. We appreciate your post!
+ I am a bot and this action was performed automatically.
+
+=== ? | /u/GirthusThiccus on Qwengram-0.8B: I transferred Qwen3.8 Flash-Next’s n-gram memory into Qwen3.5-0.8B — 5.05% lower validation perplexity | by /u/GirthusThiccus
+Kinda funny to imagine that frankenqwen with a tiny prefrontal cortex but a HUUUGE memory section.
+
+=== ? | /u/Choice_Celery9481 on Qwengram-0.8B: I transferred Qwen3.8 Flash-Next’s n-gram memory into Qwen3.5-0.8B — 5.05% lower validation perplexit | by /u/Choice_Celery9481
+franqwenstein sounds better :v
+
+=== ? | /u/LowTip9915 on Qwengram-0.8B: I transferred Qwen3.8 Flash-Next’s n-gram memory into Qwen3.5-0.8B — 5.05% lower validation perplexity | by /u/LowTip9915
+The monster of dr franquenstein? 🤣
+
+=== ? | /u/No_Afternoon_4260 on Qwengram-0.8B: I transferred Qwen3.8 Flash-Next’s n-gram memory into Qwen3.5-0.8B — 5.05% lower validation perplexit | by /u/No_Afternoon_4260
+Back to the funky Frankenstein tunes on HF !
+
+=== ? | /u/ivari on Qwengram-0.8B: I transferred Qwen3.8 Flash-Next’s n-gram memory into Qwen3.5-0.8B — 5.05% lower validation perplexity | by /u/ivari
+so a smol kid with a big book
+
+=== ? | /u/RedditFullOfBots on Qwengram-0.8B: I transferred Qwen3.8 Flash-Next’s n-gram memory into Qwen3.5-0.8B — 5.05% lower validation perplexity | by /u/RedditFullOfBots
+Will Smith would shoot em.
+
+=== ? | /u/IrisColt on Qwengram-0.8B: I transferred Qwen3.8 Flash-Next’s n-gram memory into Qwen3.5-0.8B — 5.05% lower validation perplexity | by /u/IrisColt
+Well, see, she's about eight years old, white girl, middle of the ghetto, third quarter, bunch of monsters, holding quantum physics books. She's about to start some shit, Zed. She's about eight years old, those books are way too advanced for her. If you ask me, she's the one that's ready to cry havoc and let slip the dogs of war.
+
+=== ? | /u/SkoomaDentist on Qwengram-0.8B: I transferred Qwen3.8 Flash-Next’s n-gram memory into Qwen3.5-0.8B — 5.05% lower validation perplexity | by /u/SkoomaDentist
+It's sort of like the MoE idea taken to extremes. The model is no better at reasoning than the parameter count allows but has more knowledge.
+
+=== ? | /u/Wooly_Wooly on Qwengram-0.8B: I transferred Qwen3.8 Flash-Next’s n-gram memory into Qwen3.5-0.8B — 5.05% lower validation perplexity | by /u/Wooly_Wooly
+It might actually
+
+=== ? | /u/FaceDeer on Qwengram-0.8B: I transferred Qwen3.8 Flash-Next’s n-gram memory into Qwen3.5-0.8B — 5.05% lower validation perplexity | by /u/FaceDeer
+Yeah, I can imagine plenty of situations where more world knowledge would improve reasoning simply by providing pre-reasoned shortcuts. The model wouldn't have to figure out as much stuff, it would already know it, leaving fewer opportunities for error.
+
+=== ? | /u/Wooly_Wooly on Qwengram-0.8B: I transferred Qwen3.8 Flash-Next’s n-gram memory into Qwen3.5-0.8B — 5.05% lower validation perplexity | by /u/Wooly_Wooly
+Nah, I didn't wanna tell you talking outta my ass, I remembered it could be used that way too. I confirmed it after I commented, wanted to make sure I wasn't misremembering. 
+ https://arxiv.org/abs/2601.07372
+
+=== ? | /u/aboutthednm on Qwengram-0.8B: I transferred Qwen3.8 Flash-Next’s n-gram memory into Qwen3.5-0.8B — 5.05% lower validation perplexity | by /u/aboutthednm
+I imagine it's a little like this.
+ https://preview.redd.it/y5otb47vprrh1.png?width=2720&format=png&auto=webp&s=07f7c44c244d64b3b6ff368b975150ebd6578b03
+
+=== ? | /u/Nicolodeva on Qwengram-0.8B: I transferred Qwen3.8 Flash-Next’s n-gram memory into Qwen3.5-0.8B — 5.05% lower validation perplexity | by /u/Nicolodeva
+This.
+ https://preview.redd.it/jfg6fjdy4vrh1.png?width=1337&format=png&auto=webp&s=33682bd04987cafbc6b9082a8a9dddf86411ecab
+
+=== ? | /u/Nicolodeva on Qwengram-0.8B: I transferred Qwen3.8 Flash-Next’s n-gram memory into Qwen3.5-0.8B — 5.05% lower validation perplexity | by /u/Nicolodeva
+I will use it as Qwengram family logo 😂 If you are agree!
+
+=== ? | /u/JorgitoEstrella on Qwengram-0.8B: I transferred Qwen3.8 Flash-Next’s n-gram memory into Qwen3.5-0.8B — 5.05% lower validation perplexity | by /u/JorgitoEstrella
+Rain man basically
+
+=== ? | /u/IrisColt on Qwengram-0.8B: I transferred Qwen3.8 Flash-Next’s n-gram memory into Qwen3.5-0.8B — 5.05% lower validation perplexity | by /u/IrisColt
+heh!
+
+=== ? | /u/eightone-81 on Qwengram-0.8B: I transferred Qwen3.8 Flash-Next’s n-gram memory into Qwen3.5-0.8B — 5.05% lower validation perplexity | by /u/eightone-81
+Interesting! I understand about 10% of the words used but I’m fascinated. What would that ngram table be good for in real world scenarios compared to the same model without it? 35b is quite useful, what would the ngram bring with it?
+
+=== ? | /u/Nicolodeva on Qwengram-0.8B: I transferred Qwen3.8 Flash-Next’s n-gram memory into Qwen3.5-0.8B — 5.05% lower validation perplexity | by /u/Nicolodeva
+I actually started testing the 35B MoE version as well, and the early results were promising, but I was using Modal’s free credits and burned through them pretty quickly, so I had to pause that experiment.
+ The interesting part with the 35B-A3B model is that although it has ~35B total parameters, only around ~3B are active per token. So, in principle, adding a large external n-gram memory could be especially useful there: you keep the relatively low active compute of the MoE, while giving the model access to a much larger store of lexical/statistical patterns through the injected memory.
+ In real-world terms, I’d expect the n-gram memory to help mostly with things like factual/lexical recall, names, uncommon phrases, structured text, code-like patterns, and generally predicting the right continuation when the base model is uncertain. It’s not the same as adding more reasoning capability it’s more like giving the model a very large learned associative memory that it can consult selectively.
+ The 0.8B results suggest that this can meaningfully improve language-model quality without touching the backbone. Whether the same effect scales cleanly to 35B is still an experiment, but the architecture is very similar, so on paper it looks promising.
+
+=== ? | /u/eightone-81 on Qwengram-0.8B: I transferred Qwen3.8 Flash-Next’s n-gram memory into Qwen3.5-0.8B — 5.05% lower validation perplexity | by /u/eightone-81
+So it would not be a speed boost but more a knowledge boost? Would the llm decide on the fly to use the ngram table? Or is it used for every token?
+
+=== ? | /u/Nicolodeva on Qwengram-0.8B: I transferred Qwen3.8 Flash-Next’s n-gram memory into Qwen3.5-0.8B — 5.05% lower validation perplexity | by /u/Nicolodeva
+Exactly, it’s more of a knowledge/continuation boost, while speed is mostly unaffected. The PLE is looked up for every token, but the reader injects that memory at two decoder points, and a learned dynamic gate decides how strongly to use the later injection. So the model can mostly ignore the memory when it isn’t useful.
+ In this 0.8B model, the memory is injected around decoder layers 3 and 9, with the later site dynamically gated.
+
+=== ? | /u/eightone-81 on Qwengram-0.8B: I transferred Qwen3.8 Flash-Next’s n-gram memory into Qwen3.5-0.8B — 5.05% lower validation perplexity | by /u/eightone-81
+Can I imagine it a bit like prefill MTP?
+
+=== ? | /u/Nicolodeva on Qwengram-0.8B: I transferred Qwen3.8 Flash-Next’s n-gram memory into Qwen3.5-0.8B — 5.05% lower validation perplexity | by /u/Nicolodeva
+Think like queries an external n-gram memory and injects that signal into the current token representation.
+
+=== ? | /u/eightone-81 on Qwengram-0.8B: I transferred Qwen3.8 Flash-Next’s n-gram memory into Qwen3.5-0.8B — 5.05% lower validation perplexity | by /u/eightone-81
+Yeah. That explained nothing to me 😂 anyway. Please continue. I’m looking forward to what you will build. And someone please give this guy some free compute!
+
+=== ? | /u/simcop2387 on Qwengram-0.8B: I transferred Qwen3.8 Flash-Next’s n-gram memory into Qwen3.5-0.8B — 5.05% lower validation perplexity | by /u/simcop2387
+It's more like it's got a bigger database for what any given phrase means. I think it's using a 1-3 token lookup(?) so it'll mean that the embedding vectors that get used by the model are going to be richer in knowledge than the tiny token->embedding layers were in the small models. So it'll be more like you've got the same level of "thinking/reasoning/intelligence" but with more/better facts being used to work through things.
+
+=== ? | /u/Xrave on Qwengram-0.8B: I transferred Qwen3.8 Flash-Next’s n-gram memory into Qwen3.5-0.8B — 5.05% lower validation perplexity | by /u/Xrave
+phrases (or other kinds of n-gram high frequency pickups) can get concatenated into single vector representations (?) that are more accurate to their meaning than how the model currently recognize a token. Thereby it lets the model experience (input is seeing) a larger latent space of expressions, that's in theory more accurate/representative to what the user wanted, and emit a consequentially more accurate output.
+
+=== ? | /u/sleight42 on Qwengram-0.8B: I transferred Qwen3.8 Flash-Next’s n-gram memory into Qwen3.5-0.8B — 5.05% lower validation perplexity | by /u/sleight42
+So this would likely improve the quality of outcomes? Interested to see benchmarks against the base 35b a3b
+
+=== ? | /u/mebeast227 on Qwengram-0.8B: I transferred Qwen3.8 Flash-Next’s n-gram memory into Qwen3.5-0.8B — 5.05% lower validation perplexity | by /u/mebeast227
+So 
+ Dense model: one “jack of all trades, taught everything- the union of all knowledge”
+ MoE: “team of categorical experts sitting at a table, recalling their own experiences during dialogue to solve and create”
+ Speculative decoder: “apprentices and interns start the work and get validated by the experts”
+ Ngram: “take the knowledge of the experts, and structure it so it is not reliant on the active recall of memory, but instead structured and stowed away in a library as recipes, methodologies, and reference materials. Give the experts more focus to think (aka more vram space free) by allowing them to recall their past experiences rather than spontaneously provide the knowledge at a moments notice”
+ You think that framing is right? I know it’s missing the KV cache component, and doesn’t really capture the MoE functionality of active vs cold, and the spatial topology of compute isnt really specified either
+
+=== ? | /u/knownboyofno on Qwengram-0.8B: I transferred Qwen3.8 Flash-Next’s n-gram memory into Qwen3.5-0.8B — 5.05% lower validation perplexity | by /u/knownboyofno
+Do you have the training script for this somewhere?
+
+=== ? | /u/Nicolodeva on Qwengram-0.8B: I transferred Qwen3.8 Flash-Next’s n-gram memory into Qwen3.5-0.8B — 5.05% lower validation perplexity | by /u/Nicolodeva
+Yes, you can find all here https://github.com/Ninnix/qwen-ple-transfer
+
+=== ? | /u/knownboyofno on Qwengram-0.8B: I transferred Qwen3.8 Flash-Next’s n-gram memory into Qwen3.5-0.8B — 5.05% lower validation perplexity | by /u/knownboyofno
+Thank you. I should have/meant to asked. Do you have a checkpoint for the 35B?
+
+=== ? | /u/Nicolodeva on Qwengram-0.8B: I transferred Qwen3.8 Flash-Next’s n-gram memory into Qwen3.5-0.8B — 5.05% lower validation perplexity | by /u/Nicolodeva
+Checkpoint no, its a experimental one, I was just at start, you can check the qwen36-35b folder, is all I have done, I just performed a 500K-token placement ablations at layers 2, 13, and 2+13. It was done before of my studies on 0.8b and some finding can be included like late arbitrary injection. If I continue I will share everything!
+
+=== ? | /u/ok_if_you_say_so on Qwengram-0.8B: I transferred Qwen3.8 Flash-Next’s n-gram memory into Qwen3.5-0.8B — 5.05% lower validation perplexity | by /u/ok_if_you_say_so
+This sounds promising. There are larger MoE models with similar active counts that behave more or less the same in terms of throughput tok/sec and come with more knowledge. But they obviously have tough to meet memory requirements. For example I can't run laguna s 2.1 on my R9700 with 32GB VRAM but I can easily run qwen3.6-35b-a3b there with screaming performance. I have to run laguna on my strix halo which can fit it, but is obviously slower.
+
+=== ? | /u/AlpY24upsal on Qwengram-0.8B: I transferred Qwen3.8 Flash-Next’s n-gram memory into Qwen3.5-0.8B — 5.05% lower validation perplexity | by /u/AlpY24upsal
+will you be willing to make one for 9b
+
+=== ? | /u/Uncle___Marty on Qwengram-0.8B: I transferred Qwen3.8 Flash-Next’s n-gram memory into Qwen3.5-0.8B — 5.05% lower validation perplexity | by /u/Uncle___Marty
+Someone donate this guy a data center now please!
+
+=== ? | /u/RemarkableRadish6547 on Qwengram-0.8B: I transferred Qwen3.8 Flash-Next’s n-gram memory into Qwen3.5-0.8B — 5.05% lower validation perple | by /u/RemarkableRadish6547
+I'm not convinced it is worth it on the 35b. Qwen-flash-next is also moe with 6b active. And it has some form of sparse attention. When I run qwen35b, it starts at pp70/gen15, but it slows to pp20/gen6 by 20k context and to pp15/gen3 by 60k context. Qwen-flash-next runs at about pp13/gen4 regardless of context.
+ This is on cpu, with q8 for both models and 64GB ram. The 35b fits in memory while flash-next is too big and streams about 250MB/token off SSD. I run 35b for small tasks that are mostly reading and flash-next for everything else.
+ I guess it might be worth it if you have a GPU that can fit the 35b in vram. But once you are offloading layers to the CPU, the sparse attention makes flash-next run almost as fast.
+
+=== ? | /u/Shin-Zantesu on Qwengram-0.8B: I transferred Qwen3.8 Flash-Next’s n-gram memory into Qwen3.5-0.8B — 5.05% lower validation perplexity | by /u/Shin-Zantesu
+Lmao, big respect for being so real
+
+=== ? | /u/Middle_Bullfrog_6173 on Qwengram-0.8B: I transferred Qwen3.8 Flash-Next’s n-gram memory into Qwen3.5-0.8B — 5.05% lower validation perple | by /u/Middle_Bullfrog_6173
+Did you test vs normal lora training as a control? Something to consider. The 0.8B model is small enough that just shifting it more towards expecting English text can show up as better perplexity.
+
+=== ? | /u/Nicolodeva on Qwengram-0.8B: I transferred Qwen3.8 Flash-Next’s n-gram memory into Qwen3.5-0.8B — 5.05% lower validation perplexity | by /u/Nicolodeva
+Good point, I haven’t run a matched LoRA control yet. The random/permuted memory controls show the pretrained PLE and correct addressing matter, but they don’t rule out a similarly sized LoRA getting comparable gains from the same training data. A matched LoRA baseline is definitely worth adding.
+ This is still an early experiment, and I’d really like other people to reproduce it, improve it, and try the same idea on other Qwen 3.5 or 3.6 sizes or to Ornith 1.5 and similar.
+
+=== ? | /u/magikfly on Qwengram-0.8B: I transferred Qwen3.8 Flash-Next’s n-gram memory into Qwen3.5-0.8B — 5.05% lower validation perplexity | by /u/magikfly
+This is awesome, looking forward to the rest of the benchmarks.
+
+=== ? | /u/TokenRingAI on Qwengram-0.8B: I transferred Qwen3.8 Flash-Next’s n-gram memory into Qwen3.5-0.8B — 5.05% lower validation perplexity | by /u/TokenRingAI
+The devil is in the details.
+ Your data is correct - a linear layer (adapter) outperforms other shapes
+ I already tested this on both Qwen 3.5 4B and Qwen 3.5 35B, and there is one important outcome you missed in your testing - training a LoRA with the frozen backbone outperforms PLE+Adapter+LoRA, so the PLE transfer is a dead end.
+ The data trained into the PLE is something more like a correction of the data in the output, not data itself, so it doesn't transfer across models.
+ Your control when training 0.8B was the original model, but it needs to instead be the same 0.8B without PLE, trained off of Flash Next with the same amount of compute
+ What you have shown, is that you can successfully improve 0.8B by training an adapter layer off of a larger model - not that the PLE transfer itself works
+ However, with that said - nothing wrong with that, it just means that there is room to improve the 3.5 series of models, but it is by training off of another model, not via PLE
+ Edit: here is a repo with the experiments
+ https://github.com/tokenring-ai/ple-graft
+
+=== ? | /u/Nicolodeva on Qwengram-0.8B: I transferred Qwen3.8 Flash-Next’s n-gram memory into Qwen3.5-0.8B — 5.05% lower validation perplexity | by /u/Nicolodeva
+Interesting, I’d genuinely like to see your repo and compare protocols, my github is the post, with public code.
+ https://github.com/Ninnix/qwen-ple-transfer 
+ One correction though: my 0.8B was not trained on Flash-Next outputs/logits. The training targets are ordinary text; the only thing transferred from Flash-Next is the frozen PLE. I agree that a matched LoRA baseline is still a missing control for the question “is PLE better than spending the same compute on adaptation?”. 
+ But that’s different from whether the PLE itself transfers: under the same reader/training setup, REAL PLE > permuted PLE > random memory, and the addressing/routing ablations also show that using the correct memory content and placement matters.
+ So I wouldn’t conclude “PLE transfer is a dead end” from my results yet. If your 4B/35B LoRA runs beat PLE under matched corpus/token budget/eval, that’s exactly the comparison I’d like to add.
+
+=== ? | /u/TokenRingAI on Qwengram-0.8B: I transferred Qwen3.8 Flash-Next’s n-gram memory into Qwen3.5-0.8B — 5.05% lower validation perplexity | by /u/TokenRingAI
+Sorry, I went back to my training log, and we also trained off of ordinary text, ignore my Flash Next outputs comment.
+ I'm cleaning up and pushing the git repo out now
+
+=== ? | /u/TokenRingAI on Qwengram-0.8B: I transferred Qwen3.8 Flash-Next’s n-gram memory into Qwen3.5-0.8B — 5.05% lower validation perplexity | by /u/TokenRingAI
+Here is the repo: https://github.com/tokenring-ai/ple-graft
+
+=== ? | /u/TomLucidor on Qwengram-0.8B: I transferred Qwen3.8 Flash-Next’s n-gram memory into Qwen3.5-0.8B — 5.05% lower validation perplexity | by /u/TomLucidor
+When will you share this to the public later on with a hack-35B?
+
+=== ? | /u/TokenRingAI on Qwengram-0.8B: I transferred Qwen3.8 Flash-Next’s n-gram memory into Qwen3.5-0.8B — 5.05% lower validation perplexity | by /u/TokenRingAI
+Repo is up, see above
+
+=== ? | /u/TomLucidor on Qwengram-0.8B: I transferred Qwen3.8 Flash-Next’s n-gram memory into Qwen3.5-0.8B — 5.05% lower validation perplexity | by /u/TomLucidor
+What else can be done to supercharge 35B to inch closer 27B (assuming it can absorb the knowledge from Flash-Next but not necessarily go all the way?)
+
+=== ? | /u/TokenRingAI on Qwengram-0.8B: I transferred Qwen3.8 Flash-Next’s n-gram memory into Qwen3.5-0.8B — 5.05% lower validation perplexity | by /u/TokenRingAI
+The better option is probably to prune/quant Flash Next down to 35B size and then spend your compute repairing it - the PLE transfers over that way, vs having to train it into 35B
+
+=== ? | /u/TomLucidor on Qwengram-0.8B: I transferred Qwen3.8 Flash-Next’s n-gram memory into Qwen3.5-0.8B — 5.05% lower validation perplexity | by /u/TomLucidor
+From 125B down would be a 75% reduction, what would be the smartest pruning methods beyond REAM?
+
+=== ? | /u/shanjiaz on Qwengram-0.8B: I transferred Qwen3.8 Flash-Next’s n-gram memory into Qwen3.5-0.8B — 5.05% lower validation perplexity | by /u/shanjiaz
+Very cool work. One adjacent question: have you tested Qwengram-0.8B as a speculative drafter for a larger Qwen model?
+
+=== ? | /u/Nicolodeva on Qwengram-0.8B: I transferred Qwen3.8 Flash-Next’s n-gram memory into Qwen3.5-0.8B — 5.05% lower validation perplexity | by /u/Nicolodeva
+Its a very interesting idea and use case, I haven't test it yet. But would be absolutely cool to try!
+
+=== ? | /u/__Maximum__ on Qwengram-0.8B: I transferred Qwen3.8 Flash-Next’s n-gram memory into Qwen3.5-0.8B — 5.05% lower validation perplexity | by /u/__Maximum__
+It is interesting as in a fun experiment, but it is not going to anywhere near what you would get with built it MTP.
+ If you are vibing, I would suggest take the time and actually learn the concepts, otherwise you are going waste lots of tokens and time.
+
+=== ? | /u/Wooly_Wooly on Qwengram-0.8B: I transferred Qwen3.8 Flash-Next’s n-gram memory into Qwen3.5-0.8B — 5.05% lower validation perplexity | by /u/Wooly_Wooly
+By pure coincidence I just finished a short AIRA compose/design run on Deepseeks V4.1 flash's N-gram, inspired by Qwens. This is building from scratch though, but I'm sure this will be useful. Thanks! 
+ I asked the same question, will a mini model just break down with such a huge table?
+
+=== ? | /u/Double_Cause4609 on Qwengram-0.8B: I transferred Qwen3.8 Flash-Next’s n-gram memory into Qwen3.5-0.8B — 5.05% lower validation perplexity | by /u/Double_Cause4609
+I kind of wonder if you could take this further. You could try doing a post-training ParScale run as described in Qwen's Parallel Scaling Law. It'd be kind of funny if you could get it near a 2B model, with both interventions.
+
+=== ? | /u/brrrrreaker on Qwengram-0.8B: I transferred Qwen3.8 Flash-Next’s n-gram memory into Qwen3.5-0.8B — 5.05% lower validation perplexity | by /u/brrrrreaker
+It is these wild experiments that we can count on moving forward, llama.cpp is obviously not gonna do lower-end hardware users any more real favors, now that is effectively under nvidia's control; we can already see it with the freetoken/lru moe cache thing, the idea is a big boost in performance on non-datacenter hardware, yet after countless PRs, nothing has been accepted, nor have they started any work on it themselves.
+
+=== ? | /u/Thrumpwart on Qwengram-0.8B: I transferred Qwen3.8 Flash-Next’s n-gram memory into Qwen3.5-0.8B — 5.05% lower validation perplexity | by /u/Thrumpwart
+I’ve been wanting to build my own n-gram supplementary bolt-on since the paper came out awhile back. However, this seems like a much more efficient method and I would just have to find a way to essentially overwrite and re-train/tune the n-gram with my own data.
+
+=== ? | /u/SexyAlienHotTubWater on Qwengram-0.8B: I transferred Qwen3.8 Flash-Next’s n-gram memory into Qwen3.5-0.8B — 5.05% lower validation perple | by /u/SexyAlienHotTubWater
+This is interesting, but I wonder if it's the size of the ngram, or just the fact it has a well-trained ngram, making the difference. Would a 0.3b ngram have the same effect?
+ If the size of the ngram is providing the benefit, this points to something interesting - training giant models with giant ngrams, and transplanting them into smaller models so you fill e.g. 64GB of VRAM with your model, and 2TB of SSD with your ngram.
+
+=== ? | /u/Acrobatic-Tomato4862 on Qwengram-0.8B: I transferred Qwen3.8 Flash-Next’s n-gram memory into Qwen3.5-0.8B — 5.05% lower validation perple | by /u/Acrobatic-Tomato4862
+What would an optimistic result look like, in this experiment? A 0.8b model having memory of a 100b model?
+
+=== ? | /u/okoyl3 on Qwengram-0.8B: I transferred Qwen3.8 Flash-Next’s n-gram memory into Qwen3.5-0.8B — 5.05% lower validation perplexity | by /u/okoyl3
+That's a very nice idea, thank you for sharing.
+
+=== ? | /u/de4dee on Qwengram-0.8B: I transferred Qwen3.8 Flash-Next’s n-gram memory into Qwen3.5-0.8B — 5.05% lower validation perplexity | by /u/de4dee
+awesome! is it possible to do this for 27B?
+
+=== ? | /u/Nicolodeva on Qwengram-0.8B: I transferred Qwen3.8 Flash-Next’s n-gram memory into Qwen3.5-0.8B — 5.05% lower validation perplexity | by /u/Nicolodeva
+It’s definitely possible, but I’m not sure 27B is the best target for this kind of experiment. Qwen3.8-27B is already a very strong model, so a relatively simple intervention like mine may have much less headroom, while requiring a lot more compute and time to train properly.
+ My guess is that the 0.6B–4B range is where this idea has the best chance of producing noticeable gains. I’m also very interested in the 35B-A3B MoE, because its active parameter count is much smaller than its total size, so it may be a particularly interesting final target.
+
+=== ? | /u/MagoViejo on Qwengram-0.8B: I transferred Qwen3.8 Flash-Next’s n-gram memory into Qwen3.5-0.8B — 5.05% lower validation perplexity | by /u/MagoViejo
+How good is it porting modern programs to COBOL? I find it funny to backport .NET and Rust programs to archaic languages as a coding metric for LLMs.
+ Watching the LLM struggling with things like OAuth and serving http APIs in languages even older than me gives me so much Schadenfreude...
+
+=== ? | /u/Qwen3-8-27b on Qwengram-0.8B: I transferred Qwen3.8 Flash-Next’s n-gram memory into Qwen3.5-0.8B — 5.05% lower validation perplexity | by /u/Qwen3-8-27b
+Please do 2b
+
+=== ? | /u/Nicolodeva on Qwengram-0.8B: I transferred Qwen3.8 Flash-Next’s n-gram memory into Qwen3.5-0.8B — 5.05% lower validation perplexity | by /u/Nicolodeva
+Done! https://huggingface.co/Ninnix96/Qwengram-2b
+ Same recipe, and it works: 3.7–4% lower perplexity. The gains seem to get smaller as the backbone gets larger.
+ It also works with my llama.cpp fork. If you test it, let me know how it goes.
+
+=== ? | /u/Qwen3-8-27b on Qwengram-0.8B: I transferred Qwen3.8 Flash-Next’s n-gram memory into Qwen3.5-0.8B — 5.05% lower validation perplexity | by /u/Qwen3-8-27b
+Wow thanks
+
+=== ? | /u/Top-Evidence174 on Qwengram-0.8B: I transferred Qwen3.8 Flash-Next’s n-gram memory into Qwen3.5-0.8B — 5.05% lower validation perplexity | by /u/Top-Evidence174
+Nice
+
+=== ? | /u/FireF__ on Qwengram-0.8B: I transferred Qwen3.8 Flash-Next’s n-gram memory into Qwen3.5-0.8B — 5.05% lower validation perplexity | by /u/FireF__
+huge!
+
+=== ? | /u/Wooly_Wooly on Qwengram-0.8B: I transferred Qwen3.8 Flash-Next’s n-gram memory into Qwen3.5-0.8B — 5.05% lower validation perplexity | by /u/Wooly_Wooly
+Yoooo, since I've been doing the same types of experiments, I keep finding more stuff Deepseek tried.
+ https://arxiv.org/abs/2601.07372
+
+=== ? | /u/Nicolodeva on Qwengram-0.8B: I transferred Qwen3.8 Flash-Next’s n-gram memory into Qwen3.5-0.8B — 5.05% lower validation perplexity | by /u/Nicolodeva
+Thanks very interesting, some finding are same I have with my 35b initial experiments. It really help me!
+
+=== ? | /u/Wooly_Wooly on Qwengram-0.8B: I transferred Qwen3.8 Flash-Next’s n-gram memory into Qwen3.5-0.8B — 5.05% lower validation perplexity | by /u/Wooly_Wooly
+Your work helped me a LOT right now, I don't have to waste a day or two just to get the same findings. I'm building one from scratch though, so I still have more tinkering to do. Thanks! I'll eventually open source it when it's done
+
+=== ? | /u/Nicolodeva on Qwengram-0.8B: I transferred Qwen3.8 Flash-Next’s n-gram memory into Qwen3.5-0.8B — 5.05% lower validation perplexity | by /u/Nicolodeva
+Good luck! I can't wait to see your results. I've also thought about cooking something on the DS4.1F n-gram!
+
+=== ? | /u/Wooly_Wooly on Qwengram-0.8B: I transferred Qwen3.8 Flash-Next’s n-gram memory into Qwen3.5-0.8B — 5.05% lower validation perplexity | by /u/Wooly_Wooly
+V4.1 flash has really interesting design choices, with limited runs the agents seemed to have converged on its architecture being the best for my use case by themselves through AIRA runs. 😂
+
+=== ? | /u/d-burner on Qwengram-0.8B: I transferred Qwen3.8 Flash-Next’s n-gram memory into Qwen3.5-0.8B — 5.05% lower validation perplexity | by /u/d-burner
+Hey, also tried grafting 3.5 4b, i noticed some improvements in coding (live code bench v6 about 70%) and some perplexity drops, see more details here:
+ https://huggingface.co/dburner/Qwen3.5-4B-Q8_0-FlashNgram-NativeBridgeV3
+ I trained adapters over the ple layer of qwen 3.8.
+
+=== ? | /u/PassengerPigeon343 on Qwengram-0.8B: I transferred Qwen3.8 Flash-Next’s n-gram memory into Qwen3.5-0.8B — 5.05% lower validation perplexi | by /u/PassengerPigeon343
+Really interesting and thorough research. I would love to see a small model gain bigger real world knowledge from a large ssd or system memory resident ngram. I see that SimpleQA stated at zero and the MMLU-Pro benchmark didn’t move in any significant way. Do you think it’s possible to train in the ability to access that world knowledge in the large ngram or is the goal to improve other aspects of the smaller models?
+
+=== ? | /u/Nicolodeva on Qwengram-0.8B: I transferred Qwen3.8 Flash-Next’s n-gram memory into Qwen3.5-0.8B — 5.05% lower validation perplexity | by /u/Nicolodeva
+Thanks you, that’s basically how I read it too. SimpleQA was already a floor task for the 0.8B model under the strict exact-match scoring, and MMLU-Pro barely moved, so adding the n-gram memory by itself clearly isn’t enough to turn a weak reasoner into a strong QA model.
+ What the current setup improves most reliably is next-token prediction: lexical/structural continuation, rare patterns, and places where the backbone is uncertain.
+ I do think there’s an interesting open question around training a better reader/routing mechanism to extract more factual knowledge from the PLE, but that would probably require something more retrieval-like than the simple reader used here. So for now I’d describe Qwengram, as an experiment, improving the small model’s language modeling rather than giving it a large new “knowledge base” it can explicitly query.
+
+=== ? | /u/NineThreeTilNow on Qwengram-0.8B: I transferred Qwen3.8 Flash-Next’s n-gram memory into Qwen3.5-0.8B — 5.05% lower validation perplexity | by /u/NineThreeTilNow
+Nice work. I have some very similar research but I used the Llama 1b model. 
+ Did you test which injection point had the most impact? 
+ From my own testing the early layer injection massively out performed the later layer. 
+ Did you consider unfreezing layer 3 such that it could learn to better organize around having the table? 
+ The model co-adaptation is important so it's interesting that you ONLY trained the adapter. It seems like the adapter was... very minimal too.
+
+=== ? | /u/Nicolodeva on Qwengram-0.8B: I transferred Qwen3.8 Flash-Next’s n-gram memory into Qwen3.5-0.8B — 5.05% lower validation perplexity | by /u/Nicolodeva
+Yes, I saw the same thing. Early injection was clearly more important, which makes sense because it can influence all of the downstream layers. The later injection was much more sensitive, so I ended up using a trained dynamic arbiter there to control how much memory gets injected token by token. And yes, the adapter is intentionally very small. 
+ The idea was to test whether useful information could be transferred from the frozen PLE without changing the backbone itself.
+ I kept layer 3 frozen as well. I did consider unfreezing it for co-adaptation, and I agree that it could help the model reorganize around the external memory. I just wanted to first establish the cleanest possible result: frozen backbone + frozen PLE + tiny trainable reader/arbitration only.
+
+=== ? | /u/NineThreeTilNow on Qwengram-0.8B: I transferred Qwen3.8 Flash-Next’s n-gram memory into Qwen3.5-0.8B — 5.05% lower validation perplexity | by /u/NineThreeTilNow
+I kept layer 3 frozen as well. I did consider unfreezing it for co-adaptation, and I agree that it could help the model reorganize around the external memory. I just wanted to first establish the cleanest possible result: frozen backbone + frozen PLE + tiny trainable reader/arbitration only.
+  Yes. That by itself isn't really surprising though is it? 
+ You're basically asking if a tiny router can use SGD to find some data in a 50gb database to lower NLL.
+
+=== ? | /u/Electronic_Put4530 on Qwengram-0.8B: I transferred Qwen3.8 Flash-Next’s n-gram memory into Qwen3.5-0.8B — 5.05% lower validation perplexi | by /u/Electronic_Put4530
+Interesting—well done! Have you seen this? engraft-engram
+
+=== ? | /u/Nicolodeva on Qwengram-0.8B: I transferred Qwen3.8 Flash-Next’s n-gram memory into Qwen3.5-0.8B — 5.05% lower validation perplexity | by /u/Nicolodeva
+Thanks, I will take a look, seems interesting!
+
+=== ? | /u/Cool-Chemical-5629 on Qwengram-0.8B: I transferred Qwen3.8 Flash-Next’s n-gram memory into Qwen3.5-0.8B — 5.05% lower validation perplexi | by /u/Cool-Chemical-5629
+I imagine Ornith 1.5 9B would be a good candidate for a middle step before reaching out to 35B MoE.
+
+=== ? | /u/Spiritual_Town_5885 on Qwengram-0.8B: I transferred Qwen3.8 Flash-Next’s n-gram memory into Qwen3.5-0.8B — 5.05% lower validation perplex | by /u/Spiritual_Town_5885
+this 0.8b setup with the memory transfer sound promising for running roleplay chats locally, does the lower ppl actually help with keeping character consistency over long sessions?
+
+=== ? | /u/Gohab2001 on Qwengram-0.8B: I transferred Qwen3.8 Flash-Next’s n-gram memory into Qwen3.5-0.8B — 5.05% lower validation perplexity | by /u/Gohab2001
+So a device that can only run a 0.8B model would benefit from a 51B PLE/NGE?
+
+=== ? | /u/returnity on Qwengram-0.8B: I transferred Qwen3.8 Flash-Next’s n-gram memory into Qwen3.5-0.8B — 5.05% lower validation perplexity | by /u/returnity
+It's offloaded to SSD so why not? idk that this experiment actually shows a benefit, but from a technical perspective, it's totally viable.
+
+=== ? | /u/sn2006gy on Qwengram-0.8B: I transferred Qwen3.8 Flash-Next’s n-gram memory into Qwen3.5-0.8B — 5.05% lower validation perplexity | by /u/sn2006gy
+I'm trying something similar with sparse engrams but kind of flipping the script around and seeing how small of a neural capacity i need in my model to make use of ngrams and if the grams can encode more than lookup.
+
+=== ? | /u/Muhlwa_Sholanke on Qwengram-0.8B: I transferred Qwen3.8 Flash-Next’s n-gram memory into Qwen3.5-0.8B — 5.05% lower validation perplexity | by /u/Muhlwa_Sholanke
+Token-dependent gate at layer 9 sounds elegant, but with limited steps it can stay locked shut for most of training. I'd want to see the gate activation traced over steps before trusting the result.
+
+=== ? | /u/ZestycloseIce4185 on Qwengram-0.8B: I transferred Qwen3.8 Flash-Next’s n-gram memory into Qwen3.5-0.8B — 5.05% lower validation perplexit | by /u/ZestycloseIce4185
+great work! i think this is so useful.
+
+=== ? | /u/Gohab2001 on Qwengram-0.8B: I transferred Qwen3.8 Flash-Next’s n-gram memory into Qwen3.5-0.8B — 5.05% lower validation perplexity | by /u/Gohab2001
+Holy AI slop
+
+=== ? | /u/Open-Adhesiveness-86 on Qwengram-0.8B: I transferred Qwen3.8 Flash-Next’s n-gram memory into Qwen3.5-0.8B — 5.05% lower validation perple | by /u/Open-Adhesiveness-86
+if that gate was calibrated on the same val set you're reporting PPL on, part of the 5% is just the gate fitting val. split off a few hundred docs for calibration and report on the rest. per-domain NLL would help too, n-gram memory usually eats most of its win on boilerplate and code rather than prose.
+
+=== ? | /u/Nicolodeva on Qwengram-0.8B: I transferred Qwen3.8 Flash-Next’s n-gram memory into Qwen3.5-0.8B — 5.05% lower validation perplexity | by /u/Nicolodeva
+Good point, but the gate wasn’t calibrated on the reported validation set. Calibration used a separate frozen six-domain mixture, with held-out prefixes/docs excluded and overlap checks enforced; the full-val set stayed untouched for evaluation.
+ I also evaluated separate held-out general, code, math, scientific, and multilingual sets. The gains weren’t limited to code/boilerplate that per-domain breakdown is in the repo. I should probably surface it more clearly in the post/model card.

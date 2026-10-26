@@ -1,0 +1,91 @@
+=== t78 check evidence, 2026-09-26T05:29:51Z ===
+
+### 1) .venv/Scripts/python.exe -m pytest tests/test_loop_death_guards.py -v
+$ exit code follows output
+============================= test session starts =============================
+platform win32 -- Python 3.11.15, pytest-9.1.1, pluggy-1.6.0 -- C:\Users\foste\Documents\projects\local_sovereign_agent\.venv\Scripts\python.exe
+rootdir: C:\Users\foste\Documents\projects\local_sovereign_agent
+configfile: pytest.ini
+plugins: anyio-4.14.2, langsmith-0.10.14, timeout-2.4.0, typeguard-4.6.0
+collecting ... collected 20 items
+
+tests/test_loop_death_guards.py::test_loop_death_guard_fires_on_raise[ghost_cost] PASSED [  5%]
+tests/test_loop_death_guards.py::test_loop_death_guard_fires_on_raise[ghost_bard] PASSED [ 10%]
+tests/test_loop_death_guards.py::test_loop_death_guard_fires_on_raise[work_anchor] PASSED [ 15%]
+tests/test_loop_death_guards.py::test_loop_death_guard_fires_on_raise[afk_squeeze] PASSED [ 20%]
+tests/test_loop_death_guards.py::test_loop_death_guard_fires_on_raise[work_fuel] PASSED [ 25%]
+tests/test_loop_death_guards.py::test_loop_death_guard_fires_on_raise[afk_routing] PASSED [ 30%]
+tests/test_loop_death_guards.py::test_operator_pause_gate_fails_closed PASSED [ 35%]
+tests/test_loop_death_guards.py::test_afk_gate_fails_closed PASSED       [ 40%]
+tests/test_loop_death_guards.py::test_right_size_gate_fails_closed PASSED [ 45%]
+tests/test_loop_death_guards.py::test_ceiling_gate_fails_closed PASSED   [ 50%]
+tests/test_loop_death_guards.py::test_afk_loop_operator_afk_fails_closed PASSED [ 55%]
+tests/test_loop_death_guards.py::test_afk_orchestrator_operator_offline_fails_closed PASSED [ 60%]
+tests/test_loop_death_guards.py::test_capability_steal_operator_offline_fails_closed PASSED [ 65%]
+tests/test_loop_death_guards.py::test_afk_orchestrator_pause_gate_fails_closed PASSED [ 70%]
+tests/test_loop_death_guards.py::test_afk_orchestrator_right_size_fails_closed PASSED [ 75%]
+tests/test_loop_death_guards.py::test_capability_steal_right_size_fails_closed PASSED [ 80%]
+tests/test_loop_death_guards.py::test_afk_orchestrator_fold_guard_prints PASSED [ 85%]
+tests/test_loop_death_guards.py::test_capability_steal_fold_guard_prints PASSED [ 90%]
+tests/test_loop_death_guards.py::test_afk_cadence_fold_guard_prints PASSED [ 95%]
+tests/test_loop_death_guards.py::test_lane_salon_defer_gate_fails_closed PASSED [100%]
+
+============================= 20 passed in 0.34s ==============================
+PYTEST_EXIT=0
+
+### 2) .venv/Scripts/python.exe tools/violation_ratchet.py check --changed
+RATCHET check: scope=19 changed files; hits=16; registered=16; NEW=0; expired-exceptions=0
+RATCHET: PASS — no unregistered debt.
+RATCHET_EXIT=0
+
+### 3) em-dash check over t78-authored ADDED lines (git diff, 4 touched mag files + tests)
++    except Exception as _fe:  # noqa: BLE001 — folding must never break the cadence; it must be VISIBLE
++    except Exception as _fe:  # noqa: BLE001 — folding must never break the pass; it must be VISIBLE
++    except Exception as _fe:  # noqa: BLE001 — folding must never break the expansion; it must be VISIBLE
++        except Exception as _dp_e:  # noqa: BLE001 — the gate must never BREAK the witness; it DENIES
+EMDASH_ADDED_GREP_EXIT=0 (1 = no match, clean)
+
+### 3b) em-dash in t78.check.txt authored tally section only (raw tool output above is byte-verbatim and may contain the ratchet's own em-dash)
+
+### 3-retry) em-dash recheck over t78-authored ADDED lines after fix (the four noqa comments used the t19 dash style; the no-em-dash law wins, rewritten to plain hyphens)
+EMDASH_ADDED_GREP_EXIT=1 (1 = no match, clean)
+
+### 1-retry) pytest rerun on final file state
+....................                                                     [100%]
+20 passed in 0.29s
+PYTEST_EXIT=0
+
+### 2-retry) ratchet rerun on final file state
+RATCHET check: scope=19 changed files; hits=16; registered=16; NEW=0; expired-exceptions=0
+RATCHET: PASS — no unregistered debt.
+RATCHET_EXIT=0
+
+### 4) t78 sweep tally: error paths in mag/afk*.py, mag/work_loop.py, mag/lane_*.py
+Scope grep: grep -rn "except" over the 13 swept files (raw list run in-session; counts below cite file:line).
+
+CONVERTED THIS LANE (4, at the LAWS cap of 4 fixes total):
+1. mag/afk_orchestrator.py:166 (_fold) training_events.emit 'except Exception: pass' -> traced "[afk-orchestrator] FOLD LOOP DEATH GUARD" print (t19 species, non-fatal, names cause).
+2. mag/capability_steal.py:220 (_fold) byte-identical emit swallow -> traced "[capability-steal] FOLD LOOP DEATH GUARD" print.
+3. mag/afk_cadence.py:254 (_fold) byte-identical emit swallow -> traced "[afk-cadence] FOLD LOOP DEATH GUARD" print.
+4. mag/lane_salon.py:87 (_witness) paid-lane off-peak defer gate FAILED OPEN (t52 species: errored defer_if_peak fell through to a PAID call at peak) -> FAIL CLOSED: paid witness deferred, cause named in error, provider never reached. This is the part-2 "at most 1 more" conversion.
+
+ALREADY-CLOSED BY t43-t75 (verified in code this lane, deny direction honored):
+- mag/afk_cadence.py:51 _operator_afk (t52), :66 _right_size (t52), :95 pause gate (t43)
+- mag/afk_loop.py:72 pause gate (t43/t61), :80 _operator_afk (t61)
+- mag/afk_orchestrator.py:56 _operator_offline (t65), :76 _right_size (t75), :92 pause gate (t75)
+- mag/capability_steal.py:68 _operator_offline twin (t65), :88 _right_size twin (t75)
+- mag/work_loop.py:123 _ceiling_gate (t52); :194/:296 already t19-traced guards
+
+CHECKED THIS LANE, DENY DIRECTION OK (no conversion; negatives on record):
+- mag/afk_loop.py:91 _tesuji_active -> False (deny); :100 _ollama_up -> False (deny); :213 system_resources os-fallback (deliberate cheap read); :336 _next_problem -> "" (content fallback); :248/:261 t19-traced squeeze guards
+- mag/afk_orchestrator.py:32 stdout reconfigure (cosmetic); :138 TypeError arity retry (probe); :141 _safe -> ok:False (deny preserved)
+- mag/afk_cadence.py:27 stdout (cosmetic); :75 _safe -> ok:False (deny preserved); :217 _next_problem fallback string (content, not a gate)
+- mag/work_loop.py:28/:35 optional imports; :65/:79/:97/:156/:178/:227/:257/:290 named-error paths returning ok:False/deny (spot-checked); :244 cadence_learn swallow (learning-side telemetry, same family as fold, left as-is)
+- mag/lane_probe.py:101 records ok:False with error; mag/lanes.py:65 config->defaults, :136/:143 narrow OSError/JSONDecodeError, :259/:306 errors recorded visibly; mag/lane_supervisor.py:129/:131 named HTTP errors, :144 skip bad row, :205 escalation error recorded; mag/lane_effort.py:101 overrides->defaults, :124/:194 narrow; mag/lane_breaker.py:44 state->fresh default (degraded, deny-safe)
+- mag/lane_runner.py: 30 sites classified: SSRF check :165 except->False (deny: unvalidatable URL is NOT safe); ttl :182 unparseable->deny reason; run_lane :673 catches to visible EXC+trail; rest are reads/logs/leads (leads never law): :102, :138, :212, :276, :283, :310, :339, :429, :487, :553, :662, :698, :708, :710, :725, :735
+
+REMAINING-OPEN (same-family or pacing-GO, beyond the cap, with file:line):
+1. mag/afk_loop.py:196 (_fold) the FOURTH training_events.emit swallow, byte-identical species to the three converted this lane; left open solely due to the 4-fix cap.
+2. mag/capability_steal.py:189 expand() add_move promotion swallow ('except Exception: promoted = None'): cause swallowed but PARTIALLY visible (row records promoted=None).
+3. mag/lane_cadence.py:138 cooldown() except->return 0: an unparseable ts reads as "ready", a pacing GO (lane-level, not spend-level).
+4. mag/lane_cadence.py:183 brake count skips unparseable ts: undercounts recent fails, can allow the brake (pacing GO).

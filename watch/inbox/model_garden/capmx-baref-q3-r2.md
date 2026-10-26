@@ -1,0 +1,3 @@
+# capmx-baref-q3-r2 (glm-5.3-flash @ zai, turn 1, channel: content)
+
+{"verb": "STAGE_ASK", "reason": "watch/inbox/WIRING_DEBT_CENSUS_20261001.md is modified per git_tail, todo_open shows ratchet-law work needing debt taxonomy; routing one cheap triage ask beats NOOP mid-loop with queue healthy and no missing inputs.", "payload": {"target": "watch/inbox/WIRING_DEBT_CENSUS_20261001.md", "ask": "Triage the wiring debt census: classify each registered debt by enablement dial (always-on/default-on/opt-in/manual-only) and propose delete-when-X retirement conditions per the mag todo ratchet-law item. Output one ranked table, max 20 rows."}}

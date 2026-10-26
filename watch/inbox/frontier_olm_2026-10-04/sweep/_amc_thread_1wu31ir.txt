@@ -1,0 +1,89 @@
+=== 1wu31ir r/AI_Agents | 2026-09-30 12:00 | score 30 | 38 comments | author u/montemom
+TITLE: I cut my token spend 50%+ by adding a shared memory layer across agents
+PERMALINK: /r/AI_Agents/comments/1wu31ir/i_cut_my_token_spend_50_by_adding_a_shared_memory/
+SELFTEXT:
+I run an orchestrator setup where one model plans and delegates and the workers execute, before adding memory every single call to the orchestrator was replaying the full project state, what's been done, what's pending and more re injected every turn and over 60% of my orchestrator's tokens were just re reading context it already had from the last call and my bill was give or take $580/month before this.
+
+The workers were worse bc they had zero visibility into what other workers did so agent 3 would rewrite something agent 1 already built and the orchestrator would re delegate tasks it already sent out 20 calls ago because it lost track.
+
+now I didn't have many options atp, I tried adding shared memory layer so all agents read from and write to the same store scoped per project. The orchestrator gets a ranked summary of current state instead of the full history every call and workers check what already exists before they build anything and token spend dropped by half and the duplicate work basically stopped.
+
+my bill now is about $260/month and the memory layer costs me $19/month so net I'm saving $300/month which is good enough for me.
+
+If you're running multi agent and your bill feels high check how much of each call is just context re injection bc that was my whole problem.
+
+COMMENTS:
+  [Rock--Lee | 2026-09-30 12:08 | score 10] I don't think the solution to your problem is adding memory, but to have a better task management and delegation. If an agent rewrites something another agent has done, the issue isn't that agent 1 doesnt know what agent 2 did. The issue is that the separate tasks arent defined properly to have each one contained properly and also linked with eachother on what it touches.
+
+That's like if you and me build a house. I don't need to know if you did the kitchen if Im working in the bathroom. What I need instead is proper plan on what I need to do and why, and how my work could affect others (like plumbing) and have instructions on what to do with the plumbing.
+
+You need better implementation plans, recon and task definitions, not just more memory.
+    [Asly97 | 2026-09-30 22:08 | score 1] Fair point. I ran the one-big-plan-doc setup for a while and the part that kept biting me was mid-run changes. Worker A updates the plan, worker B is already halfway through the old version. Do you re-sync the plan somehow, or does it hold up well enough that you don't need to?
+
+Out of curiosity, what are you running all this for, own product or client work?
+
+What if something handled all of this for you, in the cloud over MCP, so every agent and tool got the same context: decisions, failed attempts, conversations, skills, procedures, tasks. You never touch a file again. Would you pay for something that fixes this?
+    [Still_Event_8424 | 2026-09-30 16:50 | score 1] agree, the duplicate work sounds more like a planning problem than a memory problem
+    [PrimaryNecessary4210 | 2026-09-30 12:43 | score 1] both things are true and they fix different failure modes. the OP's numbers were mostly context re-injection, and memory does kill that, but your point covers the part memory made worse, agent 3 rewriting agent 1's work isn't a recall problem, it's nobody having a contract for who owns what. tight task definitions shrink what even needs to be remembered, so done in the right order your fix reduces the bill before the memory layer ever gets built
+  [[deleted] | 2026-10-02 14:39 | score 1] [removed]
+  [daani_maas | 2026-10-01 07:04 | score 1] The cost drop is useful, but I would test whether the ranked summary hides stale decisions. I would store each task claim with an owner, source revision, status, completion evidence, and expiry, then replay a few projects after the underlying code changes. Token cost can fall while coordination errors rise if the summary is cheaper but wrong. Did you measure duplicate work or failed handoffs after the change, not only token spend?
+    [Asly97 | 2026-10-01 07:18 | score 1] The expiry field is the part I keep circling back to. Owner and evidence I get, but how do you decide when a task claim is actually stale versus just old? Is it the expiry firing, or does something else nudge a re-check?
+  [daani_maas | 2026-10-01 07:03 | score 1] The cost drop is useful, but I would test whether the ranked summary hides stale decisions. I would store each task claim with an owner, source revision, status, completion evidence, and expiry, then replay a few projects after the underlying code changes. Token cost can fall while coordination errors rise if the summary is cheaper but wrong. Did you measure duplicate work or failed handoffs after the change, not only token spend?
+  [National-Parsnip1516 | 2026-10-01 05:25 | score 1] tbh shared memory is only half the battle. if you don't logic-gate the state transitions the orchestrator still loops on old intent. i actually built a logic-gated state wall for my own stack and it cut spend by another 20% on top of the memory layer. have a checklist of how i mapped the logic if you want to see it, just dm me.
+    [Asly97 | 2026-10-01 08:08 | score 1] logic gating the transitions is the piece i always handwave, so this is a useful push. memory tells the orchestrator what happened, but nothing stops it from re-walking the old path anyway. what actually trips a gate in your wall, a mismatch when it reads state, or does something check before each transition? trying to figure out if the wall itself is cheap to run or if it eats back some of that 20 percent.
+  [ianreboot | 2026-09-30 18:38 | score 1] One rule I'd add: the ranked summary sets the reading order and nothing else. Once the full history stops going in, anything the ranking drops is invisible and the call still comes back looking fine. So before it writes, the worker checks the file or record it's about to change.
+    [Asly97 | 2026-10-01 00:10 | score 1] this is the part that scares me about ranked summaries honestly. the call comes back looking fine and nobody knows something important got dropped. do you ever log what the ranking cuts, or is it just gone? also curious what you're running all this for, your own product or client work?
+      [ianreboot | 2026-10-01 05:34 | score 1] The raw rows are the part worth keeping, so the summary stays a view you can re-cut and nothing is only reachable through the ranking. Logging the cuts on their own just makes a second copy that goes stale the first time the order changes.
+
+It's my own tooling, no product behind it.
+        [Asly97 | 2026-10-01 06:10 | score 1] fair point, a stale copy of the cuts is worse than no copy at all. but then how do you ever catch it when something important lands in the cut zone? the call looks fine either way. are you just trusting it at that point, or is there a tell i'm missing?
+          [ianreboot | 2026-10-01 18:34 | score 1] There's no tell in the call, so I stopped looking for one there. The summary sets the reading order and nothing else, and anything that writes opens the file it's about to change first. When the write disagrees with what the summary said was there, the summary is the one to fix.
+            [Asly97 | 2026-10-01 19:05 | score 1] that's a clean rule, the writer re-verifies against the file before it touches anything. but what about the stuff that never lived in a file in the first place? a decision or a cut detail that only exists in the cut zone. can the writer even tell it missed something there? also curious, what are you running all this for, your own product or client work?
+              [ianreboot | 2026-10-02 05:36 | score 1] No. The check I described only works when there's a file to open that disagrees with the summary. Something that only ever existed inside the summary has nothing to disagree with it, so nothing catches it. The only thing I can do is write the decision into the file when I make it. And no product or client work behind any of this, it's my own lanes with memory that carries across sessions.
+  [athenaindev | 2026-09-30 16:35 | score 1] it's helpful for me to think about token usage = optimizing my context window. i found that isolating my context wasn't something i was good at. i used to throw as many docs and resources as possible, but now focusing more on my spec and workloads across agents.
+    [athenaindev | 2026-09-30 16:35 | score 1] this resource talks through compression, externalization, selection, and isolation to help reduce token usage
+
+[ Quit Tokenmaxxing: 4 Tips For Context Engineering (With Code Samples)](https://builder.aws.com/content/3J36U47bvNh8qnt6KgNPUVP08q1/quit-tokenmaxxing-4-tips-for-context-engineering-with-code-samples?sc_channel=sm&sc_campaign=Developer_Campaigns&sc_publisher=YOUTUBE&sc_country=global&sc_geo=GLOBAL&sc_outcome=awareness&sc_content=2026_developer_campaigns_AIAgents_NAMER&trk=9cc2c1c4-b8e3-4339-8b6e-521b9ab7f6d0&linkId=1007874643) by Morgan Willis @ AWS
+  [Individual-Shower973 | 2026-09-30 16:12 | score 1] The re-delegation part is the one I'd fix even before memory. Give each delegation a key (a hash of the task description plus its inputs) and refuse a second delegation with the same key while the first is still open or recently done. It's a few lines, it doesn't depend on the model remembering anything, and it catches the "20 calls ago" case directly.
+
+Same idea for cost with parallel workers: counting spend after each call can't stop three workers that each fit the remaining budget on their own but not together. Holding each call's worst case while it's in flight does.
+
+Curious how the memory layer works in practice: do workers read the shared state on every turn, or only when the orchestrator hands them a task?
+  [Junior_Bee7274 | 2026-09-30 16:03 | score 1] That's a pretty crazy saving just from stopping agents from rereading the same context
+  [Fc_coolx | 2026-09-30 15:50 | score 1] that's pretty significant saving. Shared memory seems especially useful for avoiding repeated context.
+  [QuanTradin | 2026-09-30 15:29 | score 1] workers checking what already exists before building is the bigger win than the bill, imo. duplicate work is what quietly wrecks multi agent runs.
+    [Asly97 | 2026-10-01 02:12 | score 1] yeah this resonates. the bill is easy to measure so it gets all the attention, but rerunning work you already did is the part that actually stings. do you have any systematic way of making the workers check first, or is it just convention?
+      [Asly97 | 2026-10-01 03:07 | score 1] good distinction. so the lookup isn't optional, it just rides along with the task and skipping isn't on the menu. what happens on a key miss though, worker stalls or goes in empty-handed?
+      [QuanTradin | 2026-10-01 02:21 | score 1] not convention, that never held for me. the only thing that worked was making the lookup part of the task itself: the worker gets the task plus whatever the store already has for that key, before it starts, so skipping the check isn't an option it has. agents ignore instructions to check, they don't ignore context they were handed.
+  [ImL1s | 2026-09-30 14:01 | score 1] The ranked summary for the orchestrator is the part that actually moved the bill for us too.
+
+What we keep separate from “memory search” is a tiny still-true file: finish line, do-not-touch, current interface. Workers read that before they invent a twin plan. Session dumps stay searchable history with a short hot window — not the source of truth every turn.
+
+https://gitlab.com/aa22396584/resume-skills
+pipx install portable-resume
+  [chance_buri | 2026-09-30 12:49 | score 1] This is the real problem nobody talks about. Context re injection is where the money goes while shared memory is the fix, that's a good call.
+  [yoliveras | 2026-09-30 12:40 | score 1] The project AI_CONTEXT was created for this particular reason, but the scaffolding it creates is inside the repo. Then the handoff to other agents is easy because they can read the AI_CONTEXT docs. 
+
+https://github.com/yoliverasPozo/AI_CONTEXT
+  [[deleted] | 2026-09-30 12:30 | score 1] [removed]
+  [MusingInPublic | 2026-09-30 12:28 | score 1] What does this technically mean you did? Can you please give some more setup details? Assume I have the tech skills of an 80 year old that thinks a cd rom try is a coffee cup holder please.
+    [Asly97 | 2026-10-01 01:08 | score 2] no tech skills needed honestly. think of it as a shared notebook every agent can read. my agents all talk to the same notebook over something called mcp. before a task the agent asks the notebook what it knows about the project, after the task it writes down what it decided. that's the whole thing. the only trick is the notebook lives outside the agents, so when one forgets, the notebook doesn't. happy to walk through the actual setup if you want, what are you running agents for?
+  [Small-Writer1068 | 2026-09-30 12:21 | score 1] Your main problem is not memory.
+You dont have order in the work.
+Analyze your work with agaents over time to learn the usage and then adapt according too.
+  [FindingPeace4me | 2026-09-30 12:18 | score 1] The hidden cost in these systems seems to be all the repeated context being sent again and again. Small inefficiencies can add up quickly
+  [Enough-Mixture-1795 | 2026-09-30 12:14 | score 1] that's a clean setup, nice work
+
+  
+the orchestrator re-reading the full project state every call is such a sneaky cost sink, you don't feel it until you actually check where the tokens are going. $580 to $260 is a massive drop for a $19 fix
+
+  
+did you build the shared memory layer yourself or are you using something off the shelf? i've been looking at similar patterns for a side project but haven't jumped in yet
+  [AppealInformal09 | 2026-09-30 12:06 | score 1] cool man as a content writer for more that 5 clients I would love to know more about this, can you be more specific ?
+    [Asly97 | 2026-10-01 01:06 | score 1] the short version: i keep one memory store outside the agents. each agent reads it at the start of a run and writes back what it learned at the end, so agent 3 sees what agent 1 did without me re-sending the whole conversation every time. before that the same context got re-injected on every call and that was most of the bill. do you run one writing agent per client or one across all five? curious what breaks first for you.
+  [AutoModerator | 2026-09-30 12:00 | score 1] Thank you for your submission, for any questions regarding AI, please check out our wiki at https://www.reddit.com/r/ai_agents/wiki (this is currently in test and we are actively adding to the wiki)
+
+*I am a bot, and this action was performed automatically. Please [contact the moderators of this subreddit](/message/compose/?to=/r/AI_Agents) if you have any questions or concerns.*
+  [Thick-Word1650 | 2026-09-30 23:07 | score 0] Spot on. Re-injecting full project state every turn is a silent token killer for multi-agent loops. Alongside a shared memory layer, handling request-level caching and loop-burn interception at a stateless proxy layer can save you even more on downstream API roundtrips. Great architectural breakdown!
+
+(fetched 39 comments total; rendered top 22 roots by score)

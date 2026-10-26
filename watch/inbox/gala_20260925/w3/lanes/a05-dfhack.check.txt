@@ -1,0 +1,39 @@
+GALA lane a05-dfhack-thesis: dfhack JSON count verification
+date: 2026-09-25  repo: C:/Users/foste/Documents/projects/local_sovereign_agent
+tool: .venv/Scripts/python.exe (repo venv)
+
+[dfhack_fixes.json]
+  fixes list length           = 47   (claimed 47)
+  distinct disease families   = 10   (claimed 10)
+    stuck-flags                8
+    dangling-refs              7
+    generation-defect          6
+    lost-updates               5
+    display-defect             5
+    missing-init               4
+    arrival-deadlock           4
+    resource-degeneration      3
+    unit-ai-deadlock           3
+    faction-state-poisoning    2
+  retired_fixes_upstream_fixed= 6   (FOLD claims 6)
+  meta.counts (file self-claim): {"fix_scripts": 29, "quickfix_automatic": 2, "cpp_plugins": 2, "tweak_entries": 11, "preserve_plugins": 2, "bugfix_tagged_extras": 2, "total": 47, "note": "fix-occupancy C++ plugin is cataloged inside the fix/occupancy entry (backend)", "retired_upstream_fixed": 6}
+  sample fix entry keys: ['name', 'family', 'defect', 'manifestation', 'mechanism', 'mode', 'source']
+
+[dfhack_datamodel.json]
+  structures dict length      = 14   (claimed 14)
+  structure names: unit, unit_soul, unit_personality, personality_moodst_emotion, historical_figure, historical_entity, artifact_record, item, building, job, world, language_name, squad, activity
+
+[dfhack_innerlife.json]
+  stress cutoffs              = [50000, 25000, 10000, -10000, -25000, -50000, -100000]
+  emotions fields observed    = {"type": "df.emotion_type (e.g. MISERY) -- the feeling", "thought": "df.unit_thought_type (e.g. SoapyBath) -- the trigger event ('has been without drink', 'slept on the floor' style enum keys live in df-structures)", "strength": "int (misery.cpp uses STRENGTH_MULTIPLIER=100 * factor)", "severity": "int (set equal to strength by misery.cpp)", "year": "int (cur_year at acquisition)", "year_tick": "int (cur_year_tick at acquisition)", "flags.whole": "bitfield; DFHack parks FAKE_EMOTION_FLAG at bit (1<<30) to mark plugin-injected emotions for later removal"}
+  needs locked_in_threshold   = "focus_level <= -10000 makes a social activity 'unbailable' (purple 'Socialize!'/Prayer/Read cannot be interrupted) -- Units::hasUnbailableSocialActivity"
+
+[dfhack_economy.json]
+  plugin strata present       = workflow, autolabor, orders, buildingplan, stockpiles
+
+[VERDICT]
+  fixes 47 vs claimed 47           : MATCH
+  families 10 vs claimed 10        : MATCH
+  structures 14 vs claimed 14      : MATCH
+  family counts vs FOLD table     : FOLD says stuck-flags=8 dangling-refs=7 generation-defect=6 lost-updates=5 display-defect=5 missing-init=4 arrival-deadlock=4 resource-degeneration=3 unit-ai-deadlock=3 faction-state-poisoning=2
+  fold-vs-json family table       : MATCH

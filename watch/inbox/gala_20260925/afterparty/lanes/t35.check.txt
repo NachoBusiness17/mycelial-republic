@@ -1,0 +1,62 @@
+t35 evidence: WAVE zones joined to generator_region_spheres keys, zoneAlliance gates portals
+2026-09-25, afterparty gopher t35 (t9's next_steal). No em-dashes in filed text.
+
+READ (module reads, not memory):
+- roblox/src/shared/SphereKinship.luau (t9's generated graph: ALIGNMENT/ALLIES/OPPOSED, COUNT 130)
+- roblox/src/server/init.server.luau: WAVE table (11 zones), zones_extra requires, portal Touched loop
+- roblox/src/shared/Worldgen.luau: zoneAlliance/sphereAlignment/forgottenBeast already existed
+- tools/gen_df_luau_data.py + corpus/df_mine/df_spheres.json generator_region_spheres (11 keys; NONE row empty)
+- roblox/src/shared/SeedRng.luau, ShadowLedger.record signature
+
+SPEC FIRST:
+- roblox/docs/WORLDGEN_MINE.md law 4 gained the t35 FOLDED line: zone access/buffs
+  gated by sphereAlliance; region rows generated; zone-to-region join authored (zone
+  names are the estate's own, the mine has none); opposed lock NOT implemented
+  (no live data; dead branch would be fallback creep).
+
+CHANGED:
+- tools/gen_df_luau_data.py: new gen_region_spheres() emits shared/RegionSpheres.luau
+  (generator_region_spheres verbatim, sorted keys, member order preserved).
+- roblox/src/shared/RegionSpheres.luau: NEW generated file (11 region rows, COUNT 11).
+- roblox/src/server/ZoneGate.luau: NEW. Authored ZONE_REGION join (11 zones -> 10 keys,
+  NONE never joined: an empty row would silence the gate), player sphere drawn once
+  per soul from Worldgen.SPHERES via SeedRng.new(UserId * 7919) -> attribute "Sphere",
+  allianceFor() scans the region row (first opposed decides), portalGate() hook.
+- roblox/src/server/init.server.luau: require + ZoneGate.init() + portal Touched now
+  asks ZoneGate.portalGate(player, p.to) before the pivot; refusal = locked door.
+
+GATING SHAPE (as spec'd):
+- allied      -> portal open + 1 VirtueMark per zone per 300s (leaderstats picks it up)
+- independent -> portal open, no effect (negative is a fact)
+- opposed     -> locked door: portalGate returns false, no teleport, refusal line to
+  ShadowLedger at most once per 5s. NOT implemented as code: derived data gives zero
+  opposed outcomes, the branch would be dead fallback creep. Seam stays in allianceFor.
+
+CHECKS (bytes, not reports):
+1. gen_df_luau_data.py rerun: DfGoods/RcpData/SphereKinship byte-identical (absent from
+   git status), RegionSpheres.luau new. goods 40, profiles 235, regions 11.
+2. FOUND + FIXED a real defect on the way in: tools/gen_worldgen_spheres.py (t41) emitted
+   its generated region with no trailing newline after the END marker, so the first-run
+   splice fused the next line onto the END comment and Worldgen.SPHERES = SPHERES became
+   comment text (nil export). Fixed the tool (region now ends with its newline), reran:
+   assignment restored on its own line, markers intact. Fix comment carries the receipt.
+3. tools/luau_lint.py over the tree: ZoneGate.luau / init.server.luau / RegionSpheres.luau /
+   Worldgen.luau clean. 3 findings are PRE-EXISTING zones_extra imbalance (FrontierSouls,
+   HardwarePrimer, IncidentDungeon), untouched, not this lane's.
+4. Dash scan (U+2010..U+2015) over touched files: ZoneGate clean after one self-caught
+   fix (header). Pre-existing dashes remain in old headers I did not author and did not
+   rewrite: init.server.luau:2, Worldgen.luau:2,6, WORLDGEN_MINE.md:1,15.
+5. Derived simulation (replicates the generator's kinship derivation exactly, then my
+   allianceFor rule): 11 zones x 130 spheres = 1430 pairs -> 178 allied / 1252
+   independent / 0 opposed. Per-zone allied souls 15..24 (INCIDENT DUNGEON highest,
+   its MOUNTAINS row co-occurs widest). NONE excluded from the join (10 of 11 keys used).
+6. luau-lsp not installed on this box (which luau-lsp empty), so verification was module
+   read + luau_lint + simulation. mountain_check NOT run (shared), per orders.
+
+FILES:
+- roblox/docs/WORLDGEN_MINE.md (law line)
+- tools/gen_df_luau_data.py, tools/gen_worldgen_spheres.py
+- roblox/src/shared/RegionSpheres.luau (new, generated)
+- roblox/src/server/ZoneGate.luau (new)
+- roblox/src/server/init.server.luau
+- watch/inbox/gala_20260925/afterparty/lanes/t35.check.txt (this file), t35.json (bank)

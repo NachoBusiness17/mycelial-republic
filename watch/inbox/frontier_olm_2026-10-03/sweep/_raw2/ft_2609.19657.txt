@@ -1,0 +1,1631 @@
+ 
+
+ PrefixBench-H100: Characterizing Prefix Reuse and Time-to-First-Token in H100 LLM Serving 
+
+ Report GitHub Issue 
+ × 
+
+ Title: 
+
+ Content selection saved. Describe the issue below: 
+
+ Description: 
+
+ Submit without GitHub 
+ Submit in GitHub 
+
+ arXiv is now an independent nonprofit! 
+ Learn more 
+ × 
+
+ Back to arXiv 
+
+ Why HTML? 
+
+ Report Issue 
+
+ Back to Abstract 
+
+ Download PDF 
+
+ Abstract 
+ 1 Introduction 
+ 2 Background 
+
+ 2.1 Prefill, decode, and the KV cache 
+ 2.2 Prefix caching in vLLM 
+ 2.3 KV-cache reuse in TensorRT-LLM 
+ 2.4 The H100 and Hopper-class memory hierarchy 
+
+ 3 Methodology 
+
+ 3.1 Hardware and software environment 
+ 3.2 Model 
+ 3.3 Workloads 
+
+ Synthetic repeated-prefix traces. 
+ Realistic RAG-style template traces. 
+
+ 3.4 Load driver 
+ 3.5 Sweeps 
+ 3.6 Metrics 
+
+ 4 Results 
+
+ 4.1 Sequential reuse: how large is the TTFT speedup, and is it the same in both runtimes? 
+
+ Reuse delivers a 5–6.5 TTFT reduction at an
+8192-token shared prefix. 
+ Cross-runtime cache effectiveness is statistically
+identical. 
+ The cross-runtime gap is per-request overhead, not cache
+behavior. 
+
+ 4.2 Burst concurrency: when does reuse survive load? 
+
+ TTFT scales much worse for vLLM than for TensorRT-LLM under
+load. 
+ The flip is not explained by cache effectiveness. 
+ Queueing delay is a growing share of burst-mode TTFT. 
+
+ 4.3 Cache hit rate under burst arrival 
+ 4.4 TensorRT-LLM tokens_per_block ablation 
+ 4.5 TensorRT-LLM engine-backend comparison 
+ 4.6 Realistic RAG-style workload 
+ 4.7 Output length is decoupled from prefix-reuse behavior 
+ 4.8 Cache pressure regime: can we break the cache on H100 NVL? 
+
+ Model-scale pressure: Qwen2.5-32B-Instruct. 
+ Harness validation: capacity-capped Qwen2-7B. 
+ Takeaway. 
+
+ 4.9 Cross-model generalization: Mistral-7B-Instruct-v0.3 
+ 4.10 Energy savings from prefix reuse 
+ 4.11 Run-to-run stability and the (prefix, concurrency) operating map 
+ 4.12 Throughput envelope 
+
+ 5 Discussion and Tuning Guidance 
+
+ Observation 1: cache effectiveness is solved
+ below the pressure regime, and the two runtimes remain tied
+even inside it. 
+ Observation 2: Arrival pattern, not cache configuration,
+selects the better runtime. 
+ Observation 3: tokens_per_block in the
+TensorRT-LLM PyTorch backend is not a useful knob in this regime. 
+ 5.1 Limitations 
+
+ 6 Related Work 
+
+ KV-cache memory management. 
+ Phase-aware serving. 
+ Throughput and quantization-aware serving. 
+ Workload characterization. 
+
+ 7 Conclusion 
+ References 
+
+ License: CC BY 4.0
+
+arXiv:2609.19657v1 [cs.PF] 17 Sep 2026 
+
+ PrefixBench-H100: Characterizing Prefix Reuse and 
+ Time-to-First-Token in H100 LLM Serving 
+
+ \IEEEauthorblockN Omkar Shewale
+ \IEEEauthorblockA Illinois Institute of Technology
+ oshewale@hawk.illinoistech.edu
+
+ \IEEEauthorblockN Deepak Kumar
+ \IEEEauthorblockA Illinois Institute of Technology
+ dkumar15@hawk.illinoistech.edu
+
+ \IEEEauthorblockN Divakar Kumar Yadav
+ \IEEEauthorblockA University of Wisconsin–Milwaukee
+ dkyadav@uwm.edu
+
+ Abstract 
+
+ Repeated prompt prefixes are increasingly common in LLM serving
+workloads, appearing in system prompts, templated retrieval-augmented
+generation pipelines, agent frameworks, and multi-turn conversations.
+Modern inference runtimes such as vLLM and TensorRT-LLM provide
+mechanisms for reusing previously computed KV-cache state across
+requests, yet it remains unclear when prefix reuse materially improves
+serving performance on contemporary accelerators and when its benefits
+are limited by scheduling, cache granularity, concurrency, or memory
+pressure. 
+
+ This paper presents PrefixBench-H100 , a reproducible benchmark
+and measurement framework for characterizing prefix reuse on a single
+NVIDIA H100. PrefixBench-H100 combines controlled synthetic
+traces with chat-style and retrieval-style workloads, and evaluates two
+widely used LLM serving runtimes under matched workload conditions. The
+benchmark varies shared-prefix length, suffix diversity, request
+arrival pattern, concurrency, output length, and cache configuration,
+while collecting time-to-first-token, inter-token latency, end-to-end
+latency, throughput, cache-hit statistics, GPU memory usage, and
+selected profiling traces. 
+
+ The goal of PrefixBench-H100 is not to introduce a new caching
+algorithm, but to expose the practical operating envelope of prefix
+reuse for H100-class LLM serving. The study identifies the regime where
+prefix reuse provides substantial first-token latency reductions and
+the regime where cache pressure erodes them, while showing that cache
+effectiveness itself is largely insensitive to concurrency and output
+length; the cross-runtime differences that remain arise above the
+cache, in the scheduling layer. By organizing these results around workload
+properties rather than runtime-specific tuning anecdotes,
+ PrefixBench-H100 provides actionable guidance for researchers
+and practitioners deciding when prefix reuse should be prioritized
+over other serving optimizations such as scheduler tuning or chunked
+prefill. The benchmark artifact includes workload generators,
+measurement scripts, and plotting templates intended to support
+reproducible characterization of LLM serving workloads on Hopper-class
+GPUs. 
+
+ 1 Introduction 
+
+ The mechanisms underneath modern LLM serving are increasingly
+out-pacing their published characterizations. Prefix
+caching—introduced by PagedAttention  [ 6 ] 
+under the assumption that KV memory was a scarce resource on
+A100-class hardware—is now shipped as a default-on feature in both
+vLLM 0.21 and TensorRT-LLM 1.2.1 on the H100 NVL, where 94 GB of
+HBM3 changes that assumption. The question this paper asks is not
+ whether prefix reuse works on Hopper-class hardware, but
+ where the bottleneck has moved now that the cache layer is
+no longer scarce. 
+
+ Our central empirical finding is that on H100 NVL, whenever
+the prefix working set fits within KV capacity , the dominant
+cross-runtime difference has migrated to the scheduler 
+above the cache. We demonstrate this in three ways. First, both runtimes cache
+  92% of the input at an 8192-token shared prefix and
+deliver a 5–6.5 TTFT reduction over a reuse-disabled
+baseline, but the absolute TTFT gap between them is essentially
+flat across the entire prefix-length sweep
+(Section  4.1 ). Second, when we move from sequential to
+bursty arrival at concurrency 32, the leader on p50 TTFT
+ flips from vLLM to TensorRT-LLM by a factor of 2.4 
+(Section  4.2 )—not because of any change in cache
+effectiveness, but because of a scheduling-layer difference under
+load. Third, when we move from burst to fixed-rate arrival at 16 QPS,
+the leader flips back to vLLM by a factor of 9.2 on
+ p95 TTFT (Section  4.6 ). Three workloads, two
+runtimes, two flips—all attributable to the layer above the
+cache. That condition is not universal: once the working set
+exceeds KV capacity the cache binds again, for both runtimes at
+once (Section  4.8 ). 
+
+ To establish this finding, we introduce PrefixBench-H100 ,
+a reproducible benchmark and measurement framework that drives
+vLLM and TensorRT-LLM through identical OpenAI-compatible workloads
+on a single H100 NVL. The benchmark maps the operating envelope
+along five axes (prefix length, suffix diversity, concurrency,
+output length, cache configuration) and uses both synthetic
+repeated-prefix traces and realistic RAG-style template traces.
+A controlled reuse-on/reuse-off comparison anchors the absolute
+cost of disabling prefix caching; a tokens_per_block 
+ablation tests whether the documented memory-vs-kernel tradeoff
+remains a useful tuning knob in the TensorRT-LLM 1.x PyTorch
+backend (Section  4.4 ). 
+
+ The contributions of this paper are: 
+
+ • 
+
+ A reusable, open-artifact benchmark and measurement
+framework for prefix-reuse characterization on a single
+H100 NVL, driving both runtimes through one OpenAI-API
+load generator over the same JSONL workloads
+(Section  3 ). 
+
+ • 
+
+ A quantitative reuse-on/reuse-off baseline establishing
+the 5–6.5 TTFT speedup that prefix reuse provides
+for 7B-class workloads on Hopper, and an empirical map of
+where that speedup is preserved or eroded
+(Section  4.1 – 4.6 ). 
+
+ • 
+
+ Four load-regime findings specific to the Hopper era:
+(i) cache hit rate is concurrency-insensitive at the
+scale we tested, (ii) the runtime that minimizes p50 TTFT
+under burst is not the runtime that minimizes p95 TTFT
+under fixed-rate arrival, (iii) the documented
+ tokens_per_block tradeoff in TensorRT-LLM is no
+longer detectable in the PyTorch backend on H100, and
+(iv) eviction onset tracks the working-set-to-capacity
+ratio rather than model size, with cache parity holding
+inside it (Sections  4.8 ,
+ 5 ). 
+
+ • 
+
+ A workload-oriented tuning recommendation table for
+operators of H100 LLM serving stacks
+(Table  7 ). 
+
+ We treat both runtimes as black boxes used at their
+default-recommended configurations and study what an operator can
+actually observe. The work is characterization, not system
+building. The H100 NVL is not incidental: its 94 GB of HBM3
+raises, rather than removes, the threshold at which prefix-cache
+scarcity binds. At 7 B that threshold sits above any workload we
+could construct, so attention belongs one layer up the stack; at
+32 B it is reached within a single GPU
+(Section  4.8 ). The governing quantity is the ratio
+of prefix working set to KV capacity, and we characterize both
+sides of it. 
+
+ 2 Background 
+
+ 2.1 Prefill, decode, and the KV cache 
+
+ Autoregressive transformer inference proceeds in two phases. During
+ prefill , the model processes all input tokens in parallel and
+writes their key/value activations into a per-layer KV cache. During
+ decode , the model generates output tokens one at a time,
+reading the entire prior KV cache at each step. Prefill is
+compute-bound and dominates first-token latency for long prompts;
+decode is memory-bandwidth bound and dominates per-token latency for
+long generations. Cached prefill state is the largest avoidable cost
+for workloads where many requests share a common prompt prefix. 
+
+ 2.2 Prefix caching in vLLM 
+
+ vLLM implements automatic prefix caching on top of its PagedAttention
+KV-cache layout  [ 6 ] , which stores the
+per-token cache in fixed-size blocks. When a new request arrives,
+vLLM hashes successive blocks of the input and reuses any blocks whose
+hashes match a cached entry. The user enables this with the
+ --enable-prefix-caching server flag (in
+vLLM   0.4 the feature can also be turned on per request).
+Eviction is LRU at the block level; block size is configurable but
+defaults to 16 tokens. 
+
+ 2.3 KV-cache reuse in TensorRT-LLM 
+
+ TensorRT-LLM exposes an analogous mechanism configured via the
+ KvCacheConfig dataclass. The two parameters relevant to this
+paper are enable_block_reuse (a boolean turning reuse on)
+and tokens_per_block (block granularity, default 32).
+The TensorRT-LLM manual notes a tradeoff: smaller blocks unlock more
+fine-grained reuse but reduce attention-kernel efficiency, while
+larger blocks improve kernel utilization but coarsen the matching
+granularity. The manual further notes that reuse only becomes
+available once the originating request has completed its prefill,
+which has consequences for bursty arrivals (Section  4.2 ). 
+
+ 2.4 The H100 and Hopper-class memory hierarchy 
+
+ The H100 NVL provides 94 GB of HBM3 at  3.9 TB/s of
+bandwidth and fourth-generation Tensor Cores with FP8
+support  [ 10 ] . The large HBM capacity
+substantially reduces KV-eviction pressure compared to A100 and
+gives the runtime room to retain long shared prefixes even under
+moderate concurrency; this paper restricts itself to BF16 weights
+and BF16 KV cache to keep precision out of scope. 
+
+ 3 Methodology 
+
+ The artifact for this paper—comprising the
+benchmark code, raw per-cell measurement results (102 JSON files
+and a merged CSV), all generated figures, and a single Jupyter
+notebook ( analysis.ipynb ) that reproduces every figure
+without GPU access—is publicly available at
+ https://doi.org/10.5281/zenodo.21725505 . A full reproduction
+on a single H100 NVL takes approximately three GPU-hours. 
+
+ 3.1 Hardware and software environment 
+
+ All measurements in this paper are collected on a single NVIDIA H100
+NVL GPU with 94 GB of HBM3 memory, driver version 580.105.08, and the
+GPU’s stock 400 W power limit. The host is an Azure Ubuntu 24.04 VM.
+Persistence mode is enabled to remove first-use driver overhead from
+the measurements. 
+
+ We evaluate two production LLM serving runtimes, used as shipped
+without source modifications: vLLM 0.21.0 with PyTorch 2.11.0
+(CUDA 13.0) and TensorRT-LLM 1.2.1 with PyTorch 2.9.1 (CUDA 12.8). To
+avoid Python dependency conflicts between the two runtimes, each is
+installed in an isolated virtual environment. For TensorRT-LLM we use
+the PyTorch backend, which is the documented default for serving in
+the 1.x release line and exposes the same KvCacheConfig 
+parameters (including enable_block_reuse and
+ tokens_per_block ) as the TensorRT backend. 
+
+ 3.2 Model 
+
+ All experiments use Qwen/Qwen2-7B-Instruct (Apache 2.0
+license, 7.6 B parameters, BF16 weights, 32K-token context window).
+Qwen2-7B is supported by both runtimes and is small enough to leave
+ample HBM headroom on the H100 NVL for KV-cache experiments while
+remaining representative of the popular “7–8 B Instruct” class
+deployed in production RAG and agent pipelines. We hold the model
+fixed across all sweeps; a cross-architecture study is left as
+future work. 
+
+ 3.3 Workloads 
+
+ PrefixBench-H100 drives both runtimes from the same JSONL
+workload files through their OpenAI-compatible /v1/completions 
+endpoints, ensuring that vLLM and TensorRT-LLM see identical prompts
+and request schedules. We use two workload generators. 
+
+ Synthetic repeated-prefix traces. 
+
+ A controlled generator
+emits requests of the form , where both segments are
+constructed to tokenize to exact token counts under the Qwen2
+tokenizer. The generator exposes the shared-prefix length, suffix
+length, output length, number of distinct prefixes, and number of
+requests as independent knobs. This isolates prefix reuse as the only
+source of variation across sweeps. 
+
+ Realistic RAG-style template traces. 
+
+ A second generator
+emits prompts that resemble retrieval-augmented serving: a long
+system prompt, one of eight retrieved documents drawn uniformly per
+request, and one of eight query templates. This stresses prefix reuse
+under realistic suffix diversity and is used to validate that
+synthetic findings transfer. 
+
+ 3.4 Load driver 
+
+ A single asynchronous Python load driver ( load_gen.py ,
+  300 lines, aiohttp -based) is used for both
+runtimes. The driver supports burst (all-at-once) and fixed-rate
+inter-arrival patterns. Fixed-rate arrivals are evenly spaced, with
+request released at ; the driver does not sample
+exponential inter-arrival gaps, so the steady-load cells below
+characterise deterministic rather than Poisson traffic
+(Section  5.1 ). It records per-request time-to-first-token
+(measured at the first non-empty streamed token), end-to-end latency,
+output token count, and any HTTP errors. Per-runtime
+ /metrics endpoints are scraped before and after each cell so
+that per-cell deltas of prefix-cache queries, hits, and reused KV
+blocks are recoverable. 
+
+ 3.5 Sweeps 
+
+ We organize the measurement matrix into four sweeps, each emphasizing
+a distinct axis. Sweeps are run independently in random order to
+mitigate residual cache contamination across cells. 
+
+ 1. 
+
+ Sequential reuse (Section  4.1 ):
+concurrency 1 with shared-prefix length in
+ tokens. Establishes the
+upper-bound TTFT benefit per runtime. 
+
+ 2. 
+
+ Burst concurrency (Section  4.2 ):
+prefix length fixed at 4096 tokens, in-flight requests in
+ . Reveals when concurrency overlaps the
+first-request prefill and suppresses reuse. 
+
+ 3. 
+
+ Block-size ablation (Section  4.4 ):
+ tokens_per_block for
+TensorRT-LLM. Quantifies the reuse-granularity vs. kernel-efficiency tradeoff documented in the TensorRT-LLM
+manual. 
+
+ 4. 
+
+ Realistic RAG (Section  4.6 ):
+Fixed-rate arrivals at  QPS using the
+template-based generator. Confirms whether synthetic
+findings transfer to a workload that more closely resembles
+production traffic. 
+
+ 3.6 Metrics 
+
+ For each cell we report TTFT (p50, p95), end-to-end latency
+(p50, p95), output throughput (tokens/s), request throughput
+(req/s), prefix-cache hit rate (where the runtime exposes it), and
+peak HBM usage scraped from the runtime’s Prometheus endpoint. A
+small Nsight Systems trace is collected for a representative hit
+case and miss case for the case-study figure. 
+
+ Figure 1: Sequential reuse delivers a 5–6.5 TTFT
+reduction at long prefixes. p50 TTFT vs. shared-prefix
+length at concurrency 1. Both runtimes track each other
+closely; the cross-runtime gap is dominated by
+  8 ms of per-request overhead, not cache
+behavior. Reuse-off baselines reach 345 ms (vLLM) and
+306 ms (TensorRT-LLM) at pl=8192 (Table  1 ). 
+
+ 4 Results 
+
+ 4.1 Sequential reuse: how large is the TTFT speedup, and is it the same in both runtimes? 
+
+ We first establish the upper-bound benefit of prefix reuse by sending
+requests one at a time (concurrency 1) across shared-prefix lengths
+in tokens. The first request in each cell
+populates the cache; the median TTFT we report is therefore the
+ warm-cache cost. To anchor what reuse is actually saving, we
+re-run the no-shared-prefix (pl=0), 2048, and 8192 cells with
+reuse disabled ( --no-enable-prefix-caching on vLLM and
+ enable_block_reuse: false on TensorRT-LLM); the
+resulting TTFT pairs are reported in Table  1 . 
+
+ Table 1: Reuse-on vs. reuse-off TTFT (p50, milliseconds) at
+concurrency 1, single shared prefix, 40 requests per
+cell. The speedup column reports the ratio of
+reuse-off / reuse-on TTFT. 
+
+ Runtime 
+ Prefix len 
+ Reuse off 
+ Reuse on 
+ Speedup 
+
+ vLLM 
+ 0 
+ 25.1 
+ 25.2 
+ 1.00 
+
+ vLLM 
+ 2048 
+ 92.1 
+ 37.2 
+ 2.48 
+
+ vLLM 
+ 8192 
+ 345.1 
+ 53.0 
+ 6.51 
+
+ TensorRT-LLM 
+ 0 
+ 23.7 
+ 23.9 
+ 0.99 
+
+ TensorRT-LLM 
+ 2048 
+ 90.5 
+ 48.4 
+ 1.87 
+
+ TensorRT-LLM 
+ 8192 
+ 306.1 
+ 58.2 
+ 5.26 
+
+ Three observations follow. 
+
+ Reuse delivers a 5–6.5 TTFT reduction at an
+8192-token shared prefix. 
+
+ This is the central magnitude reviewers
+should remember: turning on prefix reuse reduces p50 first-token
+latency by an order of magnitude for the long-prefix regime that
+RAG and agent workloads spend most of their time in. The reuse-off
+TTFT scales near-linearly with prefix length (the prefill cost
+itself), while reuse-on TTFT is nearly flat. Reuse has converted
+a prefill cost into a cache lookup. 
+
+ Cross-runtime cache effectiveness is statistically
+identical. 
+
+ Both runtimes cache 65%, 78%, 87%, and 92% of the
+input at prefix lengths 1024, 2048, 4096, and 8192 tokens
+respectively (vLLM hit rate is computed from the
+ prefix_cache_hits_total  /
+ prefix_cache_queries_total delta on its
+ /metrics endpoint; TensorRT-LLM from per-request
+ usage.prompt_tokens_details.cached_tokens ). The cache
+mechanism itself, designed in two different codebases, achieves
+the same effect. 
+
+ The cross-runtime gap is per-request overhead, not cache
+behavior. 
+
+ Figure  1 shows vLLM’s curve sitting
+  8 ms below TensorRT-LLM’s across the entire sweep—a
+gap that exists even at pl=0 where there is no shared prefix to
+cache. The gap is therefore upstream of the cache: it reflects the
+fixed per-request cost that each runtime imposes regardless of
+prefix-reuse activity. Operators should not infer that vLLM is
+“better at reuse”—it is roughly equivalent in cache
+effectiveness, but its serving stack imposes less first-token
+overhead on H100 NVL in the configurations we tested. 
+
+ 4.2 Burst concurrency: when does reuse survive load? 
+
+ The intuition often cited in the TensorRT-LLM manual  [ 9 ] 
+is that prefix reuse should degrade under bursty arrival,
+because cache entries only become available after the originating
+request completes prefill. To probe this directly, we fix the shared
+prefix at 4096 tokens and the number of distinct prefixes at four
+(so a burst of 32 in-flight requests draws from four cacheable
+prefixes), and sweep in-flight concurrency over
+ with 100 requests per cell.
+Figure  2 plots the resulting p50 TTFT. 
+
+ Two findings emerge. 
+
+ TTFT scales much worse for vLLM than for TensorRT-LLM under
+load. 
+
+ At concurrency 1, vLLM has the lower TTFT (42 ms vs. 52 ms). The two runtimes track each other up to concurrency 4
+(96 ms vs. 89 ms). Beyond that, vLLM’s TTFT inflates rapidly
+(c=8: 215 ms; c=16: 288 ms; c=32: 759 ms), while TensorRT-LLM’s
+PyTorch backend scales much more gradually (c=8: 142 ms; c=16:
+240 ms; c=32: 319 ms). At the highest concurrency tested, vLLM’s
+p50 TTFT is TensorRT-LLM’s. The same trend holds in
+the tails: at c=32, p95 TTFT is 1.30 s for vLLM and 1.58 s for
+TensorRT-LLM (Figure  2 ). This contradicts
+the headline “vLLM is always faster” result of
+Section  4.1 , and is the single most consequential
+finding in the paper: the leadership flips with load . 
+
+ The flip is not explained by cache effectiveness. 
+
+ The
+expected mechanism for a flip—TensorRT-LLM’s manual warning that
+in-flight prefill blocks reuse—would predict a drop in
+TensorRT-LLM’s cache hit rate at high concurrency. We do not
+observe that drop: the cache itself works equally well in both
+runtimes at every concurrency we tested (Section  4.3 ),
+which rules out cache effectiveness as the explanation. 
+
+ Queueing delay is a growing share of burst-mode TTFT. 
+
+ vLLM’s counters separate scheduling wait
+( request_queue_time_seconds ) from prefill compute, and
+the per-cell deltas we already collect (Section  3.4 )
+localize its burst TTFT inflation: mean queueing delay rises from
+0.0 ms at c=1 to 11 ms (c=8), 51 ms (c=16), and 154 ms
+(c=32)—0.02 % to 20.3 % of p50 TTFT—while mean prefill
+grows only . Under fixed-rate arrival the same counter
+stays below 0.1 ms through 16 QPS, consistent with vLLM’s p95
+tracking p50 within 2–3 ms. Where we can measure directly,
+scheduling delay rather than cache behavior varies with arrival
+pattern. TensorRT-LLM exposed no comparable counters in the tested
+version, so the cross-runtime flip remains an inference
+from cache-effect elimination plus the batching plateaus of
+Figure  5 ; we present the scheduling account as the
+best-supported hypothesis, not a fully instrumented causal claim
+(Section  5.1 ). 
+
+ Figure 2: TTFT leadership flips between vLLM and
+TensorRT-LLM at c=8. p50 TTFT vs. in-flight
+concurrency at 4096-token shared prefix, burst arrival.
+vLLM leads at c 4; at c 16, TensorRT-LLM scales
+linearly while vLLM inflates super-linearly. At c=32,
+TensorRT-LLM has 2.4 lower p50 TTFT. 
+
+ 4.3 Cache hit rate under burst arrival 
+
+ The two runtimes expose cache effectiveness through structurally
+different native counters, not directly comparable without
+normalization: vLLM reports block-granular hit/query counts at its
+KV-cache block size (16 tokens by default), TensorRT-LLM a
+per-request token count in the OpenAI-protocol response.
+We normalize both to one quantity, the fraction of input tokens
+served from cache, i.e. tokens that did not require prefill. For
+vLLM this is prefix_cache_hits_total over
+ prefix_cache_queries_total (identical block units, so
+the ratio is already a token fraction); for TensorRT-LLM,
+cumulative usage.prompt_tokens_details.cached_tokens 
+over cumulative prompt_tokens . Both answer the same
+question, and we compute each offline from raw per-cell logs with
+one shared formula rather than trusting either runtime’s
+self-reported aggregate. They agree closely enough to be treated
+as the same quantity: in Section  4.8 they differ by
+0.01 percentage points on the most aggressive reuse cell
+(68.17 % vs. 68.18 %) and are identical (3.62 %) in the
+capped rerun. We report aggregate agreement only; a per-request
+comparison is left to the artifact. 
+
+ The two metrics agree closely (vLLM 0.85 at every measured
+concurrency; TensorRT-LLM 0.85 at c=1, dropping marginally to
+0.83 at c=32). The total drop is under 3 percentage points over a
+32 concurrency range. We conclude that, with four distinct
+shared prefixes and a 4096-token shared prefix, neither runtime’s
+cache structure is the bottleneck under burst arrival in our
+configuration. The first-request blocking effect described in the
+TensorRT-LLM manual is real but, with as few as four prefixes,
+amortizes within the first burst; subsequent bursts find the cache
+warm. 
+
+ Figure 3: Cache hit rate is essentially concurrency-insensitive. 
+Both runtimes hold  83–85 % hit rate across a
+32 concurrency range. The TensorRT-LLM manual’s
+“in-flight prefill blocks reuse” caveat amortizes inside
+the first burst when num_prefixes is small.
+Reporting paths: vLLM /metrics deltas;
+TensorRT-LLM usage.prompt_tokens_details.cached_tokens . 
+
+ 4.4 TensorRT-LLM tokens_per_block ablation 
+
+ The TensorRT-LLM manual describes tokens_per_block as a
+tradeoff between reuse granularity and attention-kernel efficiency,
+with default value 32. To check whether this tradeoff is exposed by
+the PyTorch backend, we hold the workload constant (prefix length
+4096, four prefixes, suffix length 512, output length 128, 100
+requests per cell) and sweep tokens_per_block over
+ at three concurrencies . 
+
+ The result is essentially a null: across all nine cells, p50 TTFT
+varies by under 7 ms (well within run-to-run noise) and cache
+hit rate is identical to four decimal places. At concurrency 1,
+TTFT is 51.6 ms, 51.7 ms, and 51.9 ms for tokens-per-block
+32, 64, and 128 respectively; at concurrency 32, the same three
+values give 288.9, 298.6, and 284.9 ms. We conclude that, in the
+PyTorch backend on H100 NVL with our workload shape, the
+documented block-size tradeoff is not detectable above measurement
+noise. Operators using the PyTorch backend can safely accept the
+default and direct their tuning attention elsewhere. 
+
+ Figure 4: Null result: tokens_per_block is not a useful
+tuning knob in the TRT-LLM PyTorch backend on H100. 
+The three settings (32, 64, 128) are indistinguishable to
+within  7 ms at every concurrency. The
+reuse-granularity vs. kernel-efficiency tradeoff documented
+in the manual is not detectable above run-to-run noise. 
+
+ 4.5 TensorRT-LLM engine-backend comparison 
+
+ Every other result here uses TensorRT-LLM’s PyTorch backend, the
+documented default for TRT-LLM 1.x (Section  3 ).
+TensorRT-LLM also ships a legacy engine backend that ahead-of-time
+compiles the model. To test whether our findings are an artifact
+of that path, we rerun the most aggressive reuse cell (pl=8192,
+np=128, 384 requests) unchanged with --backend tensorrt 
+(engine build 22.7 s). 
+
+ Table 2: TensorRT-LLM PyTorch backend vs. engine backend,
+identical np=128 reuse cell (same cell as
+Table  4 , uncapped). 
+
+ Backend 
+ p50 TTFT 
+ p95 TTFT 
+
+ PyTorch (default, used throughout) 
+ 0.067 s 
+ 0.314 s 
+
+ TensorRT engine 
+ 0.069 s 
+ 0.661 s 
+
+ Median TTFT is within 2 ms between backends (0.067 s vs. 0.069 s), consistent with comparable reuse behavior in this cell:
+a full 8192-token prefill costs  0.3 s
+(Table  1 ), so a 69 ms median is only
+reachable with reuse active. Tail latency, by contrast, nearly
+doubles on the engine backend (0.314 s 0.661 s p95),
+consistent with this paper’s claim that cross-runtime differences
+live in execution and scheduling above the cache rather than in
+reuse effectiveness. This is a single-cell check, not a full re-validation: we did not
+repeat the burst (Section  4.2 ) or RAG
+(Section  4.6 ) sweeps on the engine backend, whose beta
+status also means its tokens_per_block sensitivity may
+differ from Section  4.4 . Every other TensorRT-LLM result
+here is scoped to the PyTorch backend and the tested 1.2.1
+release; the benchmark methodology
+(Sections  3 – 3.5 ) is backend-agnostic,
+and the BACKEND runner flag ships in the artifact. 
+
+ 4.6 Realistic RAG-style workload 
+
+ Bursty arrival is a worst-case stressor; real serving traces are
+steadier. We re-run the comparison using the template generator
+(Section  3.3 ) with fixed-rate arrivals at
+  QPS and 200 requests per cell. Evenly spaced
+arrivals are an idealisation of steady load: production traffic is
+closer to Poisson, whose inter-arrival variance produces short-term
+clustering that this pattern does not reproduce.
+Figure  6 plots p50 (solid) and p95 (dashed) TTFT
+for both runtimes. 
+
+ The story flips back. Under fixed-rate arrivals, vLLM dominates at
+every offered load: p50 TTFT is 14, 19, 19, and 19 ms at
+QPS 1, 4, 8, 16 respectively, with p95 staying within 2-3 ms of
+p50 (14, 21, 22, 22 ms). TensorRT-LLM’s p50 climbs from 21 ms
+at QPS 1 to 29 ms at QPS 16, but its p95 climbs much more
+steeply: 27, 138, 197, and 203 ms across the same range. At
+QPS 16, TensorRT-LLM’s p95 TTFT is its own p50 and
+ vLLM’s p95. The mechanism behind both ratios is visible
+in Figure  5 : TensorRT-LLM’s TTFT distribution is bimodal,
+with a fast mode near its p50 and a plateau near 200 ms that about a
+tenth of requests land on, while vLLM’s is unimodal and tight. Because
+the p95 sits near the knee between TensorRT-LLM’s two modes, its exact
+value is sensitive to how many requests land on the plateau: an
+independent re-execution during artifact evaluation, on different
+H100 hardware, measured the same ordering but a smaller ratio. The
+bimodality and the ordering are the robust findings; the multiplier is
+specific to this hardware and configuration. 
+
+ The cache itself continues to perform well in both runtimes (93%
+hit rate or above in all four realistic cells). The performance
+gap is again upstream of the cache; in the realistic regime it is
+TensorRT-LLM’s tail-latency behavior under inter-arrival jitter
+that dominates the user-visible serving cost. 
+
+ Combined with the burst sweep, two arrival regimes give two
+different rankings. The burst sweep had TensorRT-LLM ahead on p50
+TTFT at concurrency 32; the realistic sweep has vLLM ahead by
+ on p95 at QPS 16. Operators tuning a system around the
+arrival pattern they actually see in production cannot extrapolate
+from either microbenchmark alone. 
+
+ Figure  5 shows the full TTFT distribution for the
+QPS=16 cell of each runtime. vLLM’s CDF is a tight near-vertical
+line at  20 ms; TensorRT-LLM’s CDF has two visible
+plateaus—one at  200 ms (40 % of requests are above
+this) and a second at  1 s. The structure of the
+TensorRT-LLM distribution suggests scheduler-induced batching
+plateaus, not random tail noise. 
+
+ Figure 5: TTFT CDF at QPS=16, realistic RAG workload. 
+vLLM is a tight near-vertical CDF around 20 ms;
+TensorRT-LLM has two visible plateaus suggesting
+scheduler-induced batching at  200 ms and
+  1 s. 
+
+ Figure 6: Under steady fixed-rate load, the TTFT leadership
+flips back to vLLM by 9.2 on p95. Solid lines are
+p50, dashed are p95. vLLM’s p95 stays within 2–3 ms of
+p50 across the swept QPS range; TensorRT-LLM’s p95
+inflates by an order of magnitude (27 ms 203 ms).
+The two runtimes are essentially equivalent on p50 but
+differ enormously on the tail. 
+
+ 4.7 Output length is decoupled from prefix-reuse behavior 
+
+ The abstract motivated a regime in which long generations erode
+prefix-reuse gains via increased KV-cache pressure. We test this
+directly by holding the workload constant (4096-token prefix,
+512-token suffix, single shared prefix, sequential arrival) and
+sweeping output length over tokens. 
+
+ The effect is null in our setting. p50 TTFT moves by at most
+1.2 ms across the three output lengths (vLLM: 39.7–40.9 ms;
+TensorRT-LLM: 51.0–51.3 ms), under 3 % of TTFT against the
+5–6.5 effect of reuse itself, and the
+prefix-cache hit rate is identical to three decimal places at
+0.859 for TensorRT-LLM and equivalent on vLLM. Throughput
+ does scale with output length because TTFT overhead
+amortizes over more decode tokens, but this is a property of the
+TTFT-to-decode ratio, not of prefix reuse. 
+
+ The KV-cache pressure regime the abstract mentioned thus requires
+a different operating point than long generations alone: a large
+number of distinct prefixes that collectively exceed HBM
+budget. Section  4.8 addresses this directly. 
+
+ 4.8 Cache pressure regime: can we break the cache on H100 NVL? 
+
+ The findings so far come from modest cache-pressure operating
+points (1–4 distinct prefixes). Sweeping the number of distinct
+8192-token prefixes over with Qwen2-7B produces
+no eviction in any cell, but this is a property of the operating
+point, not of prefix caching: our GPU is a 94 GB
+ H100 NVL , and at 7 B in BF16 (  15 GB of
+weights) the KV pool exceeds even our largest working set
+(1.05 M tokens vs.  1.25 M). The cache is never full, so
+“no evictions” is that arithmetic’s expected outcome rather than
+an empirical finding. The experiments below isolate the ratio of
+prefix working set to KV capacity as the governing variable,
+holding traces, prefix/suffix/output length, arrival pattern
+(burst), and concurrency (1) identical to the original sweep;
+Qwen2 and Qwen2.5 share a tokenizer, so token counts are exactly
+comparable. 
+
+ Model-scale pressure: Qwen2.5-32B-Instruct. 
+
+ A larger
+model shrinks the KV pool directly, since more HBM goes to weights.
+We repeat the pressure sweep unchanged except for the served model,
+substituting Qwen2.5-32B-Instruct (  65 GB of BF16
+weights). Runtime-reported KV capacity falls to 79,280 tokens
+(4,955 vLLM blocks at 16 tokens/block; 19.4 GB), roughly
+ smaller than the 7B pool, and we add a below-capacity
+cell (np=4) as a same-model baseline. Working set is
+number-of-prefixes   8192; Table  3 
+reports hit rate and TTFT as the ratio of working set to measured
+capacity grows from 0.4 to 13.2 . 
+
+ Table 3: Cache pressure under model-scale KV shrinkage
+(Qwen2.5-32B-Instruct, 79,280-token / 19.4 GB KV pool,
+94 GB H100 NVL). Ratio is working set
+(np   8192 tokens) over measured KV capacity. 
+
+ Hit rate 
+ p50 TTFT 
+
+ np 
+ Ratio 
+ Ceil. 
+ vLLM 
+ TRT 
+ vLLM 
+ TRT 
+
+ 4 
+ 0.4 
+ 91.7 % 
+ 88.9 % 
+ 88.9 % 
+ 0.091 s 
+ 0.083 s 
+
+ 16 
+ 1.7 
+ 66.7 % 
+ 46.6 % 
+ 52.5 % 
+ 1.075 s 
+ 0.109 s † 
+
+ 64 
+ 6.6 
+ 66.7 % 
+ 12.6 % 
+ 13.8 % 
+ 1.420 s 
+ 1.394 s 
+
+ 128 
+ 13.2 
+ 66.7 % 
+ 5.6 % 
+ 6.6 % 
+ 1.421 s 
+ 1.398 s 
+
+ “Ceil.” is the analytical no-eviction
+ceiling for a cell of requests drawing
+uniformly from np prefixes: the hit rate a perfect, never-evicting
+cache would achieve, since each prefix must miss once. The np=4
+baseline uses 48 requests (12 revisits per prefix) and the
+remaining cells 3 revisits per prefix, so ceilings differ and raw
+hit rates are not directly comparable across rows; the
+eviction test is each cell against its own ceiling.
+ † At  50 % hit rate the median sits on the
+hit/miss boundary, so this p50 is unstable and we draw no
+cross-runtime conclusion from it. 
+
+ Three findings follow. First, the below-capacity cell sits at its
+no-eviction ceiling (88.9 % against 91.7 %) while every
+over-subscribed cell falls far below its own ceiling: 46.6 %
+against 66.7 % at 1.7 , and 5.6 % against the same
+66.7 % at 13.2 . Comparing each cell to its own ceiling
+rather than to the other rows isolates eviction from the
+revisit-count difference between them: this is the eviction
+regime the paper motivated but had not previously reached. Neither
+runtime exposes a block-eviction counter, so we identify the regime
+by this shortfall rather than by counting evictions directly: a
+never-evicting cache cannot fall below its ceiling, because every
+revisit would hit. Second,
+the shortfall below ceiling deepens progressively with
+over-subscription rather than at a single threshold, and p50
+approaches p95 at the two deepest cells, meaning essentially every
+request pays a full prefill because its prefix was evicted before
+its next revisit. Third, and central to this paper’s argument, the
+caching- parity finding of Section  4.1 survives
+under pressure: the two runtimes’ hit rates track within 1–6
+percentage points at every ratio, as they did below capacity.
+Model scale changes whether the cache is under pressure,
+not which runtime caches better. 
+
+ Harness validation: capacity-capped Qwen2-7B. 
+
+ The 32B
+experiment changes the model, and so per-request compute cost. To
+isolate KV capacity , we return to Qwen2-7B and cap the pool
+at 56,320 tokens, below the measured 32B pool, via each
+runtime’s own control ( num_gpu_blocks_override=3520 ;
+ KvCacheConfig.max_tokens=56320 ), then rerun the np=128
+cell unchanged (Table  4 ). 
+
+ Table 4: Capacity-capped Qwen2-7B, np=128, pl=8192 (same cell as
+the original submission). Capping KV capacity to
+56,320 tokens on both runtimes reproduces the eviction
+regime independent of model choice. 
+
+ Runtime 
+ KV cap 
+ Hit 
+ p50 
+ p95 
+
+ vLLM 
+ uncapped ( 1.25M tok) 
+ 68.2 % 
+ 0.052 s 
+ 0.329 s 
+
+ vLLM 
+ 56.3k tok 
+ 3.6 % 
+ 0.318 s 
+ 0.328 s 
+
+ TRT-LLM 
+ uncapped ( 1.25M tok) 
+ 68.2 % 
+ 0.067 s 
+ 0.314 s 
+
+ TRT-LLM 
+ 56.3k tok 
+ 3.6 % 
+ 0.303 s 
+ 0.312 s 
+
+ Capping capacity collapses the hit rate from 68.2 % to 3.6 % on
+ both runtimes, identical to two decimal places, with a
+4.6–6.1 TTFT-p50 regression. The harness therefore reaches
+the eviction regime whenever the prefix working set exceeds
+configured KV capacity, independent of the model served; the
+earlier null result reflects the 7B/94 GB operating point, not a
+limitation of the methodology. 
+
+ Takeaway. 
+
+ Regime onset is driven primarily by the ratio
+of prefix working set to available KV capacity rather than by
+absolute model size: a capped 7B pool and a natural 32B pool reach
+the same eviction behavior at comparable ratios. Larger models,
+longer contexts, higher concurrency, and multi-tenancy all shrink
+that denominator and should push deployments into this regime
+sooner than our 7B baseline suggests. 70B-class and multi-GPU
+serving, where KV capacity and cross-device scheduling interact in
+ways a single-H100 study cannot characterize, remain future work. 
+
+ 4.9 Cross-model generalization: Mistral-7B-Instruct-v0.3 
+
+ This section and Section  4.8 test two distinct
+robustness axes that should not be conflated. Here we hold
+parameter count fixed at  7 B and vary
+ architecture (attention layout, layer count, tokenizer),
+repeating the burst sweep on Mistral-7B-Instruct-v0.3 (GQA with
+eight KV heads, vs. Qwen2’s four) with an identical
+configuration: 4096-token shared prefix, four distinct prefixes,
+100 requests per cell at concurrencies .
+Section  4.8 instead holds architecture fixed and
+varies scale (7 B vs. 32 B). Neither check substitutes
+for the other. 
+
+ The findings replicate cleanly (Table  5 ).
+At concurrency 1, both runtimes are within 3 ms of the Qwen2
+numbers in the same direction (vLLM lower than TensorRT-LLM). At
+concurrency 32, the TTFT-leadership flip survives: vLLM has p50
+TTFT 553.8 ms vs TensorRT-LLM’s 265.0 ms ( vLLM/TRT
+ratio, compared to on Qwen2). The cache hit rate at
+c=1 is 85 %, identical to Qwen2 to two decimal places. We
+conclude that the central findings of this paper are properties of
+the runtimes interacting with H100 NVL, not properties of the
+Qwen2 architecture. 
+
+ Table 5: Cross-model verification of the TTFT-leadership flip
+(p50 TTFT, ms). The flip survives the architecture
+change. 
+
+ Model 
+ Runtime 
+ c=1 
+ c=8 
+ c=32 
+
+ Qwen2-7B 
+ vLLM 
+ 42.2 
+ 214.7 
+ 758.6 
+
+ Qwen2-7B 
+ TRT-LLM 
+ 51.7 
+ 142.1 
+ 319.1 
+
+ Mistral-7B 
+ vLLM 
+ 40.0 
+ 195.6 
+ 553.8 
+
+ Mistral-7B 
+ TRT-LLM 
+ 49.8 
+ 161.2 
+ 265.0 
+
+ vLLM / TRT ratio (Qwen2) 
+ 0.82 
+ 1.51 
+ 2.38 
+
+ vLLM / TRT ratio (Mistral) 
+ 0.80 
+ 1.21 
+ 2.09 
+
+ 4.10 Energy savings from prefix reuse 
+
+ Beyond latency and throughput, prefix reuse should also reduce
+ energy consumed per request, because the avoided prefill
+compute would otherwise drive the GPU at higher power. To
+quantify this, we sample nvidia-smi --query-gpu=power.draw 
+at 4 Hz during each cell of a focused energy sweep
+(40 sequential requests at 8192-token shared prefix, with reuse
+on vs. off, both runtimes). 
+
+ Table  6 reports the result. Reuse reduces average
+power draw by 9–10 % (because expensive prefill kernels are
+replaced by inexpensive cache lookups) and shortens wall
+time by 5–6 (Table  1 ). The net
+energy-per-request savings are 24 % (TensorRT-LLM) and 31 %
+(vLLM); on a per-token basis the same numbers apply because output
+token count is fixed. 
+
+ Table 6: Average GPU power and energy per request at pl=8192,
+c=1, 40 requests. Reuse delivers both lower power draw
+and shorter wall time, compounding to 24–31 %
+energy savings. 
+
+ Configuration 
+ Avg power 
+ Wall time 
+ Energy/req 
+
+ vLLM, reuse on 
+ 259.2 W 
+  52 s 
+ 337 J 
+
+ vLLM, reuse off 
+ 285.9 W 
+  62 s 
+ 443 J 
+
+ vLLM savings 
+ 9.3 % 
+ 16 % 
+ 24–31 % 
+
+ TRT-LLM, reuse on 
+ 238.3 W 
+  67 s 
+ 399 J 
+
+ TRT-LLM, reuse off 
+ 261.2 W 
+  76 s 
+ 496 J 
+
+ TRT-LLM savings 
+ 8.8 % 
+ 12 % 
+ 20–24 % 
+
+ For a deployment serving 1 M long-prefix requests/day, this
+24–31 % energy savings corresponds to several tens of kWh/day at
+H100-class power draw—enough to make prefix reuse a sustainability
+optimization in addition to a latency one. 
+
+ 4.11 Run-to-run stability and the (prefix, concurrency) operating map 
+
+ To verify that the headline numbers are not driven by noise we
+re-run the pl=8192 concurrency=1 cell three times for each runtime.
+The measured p50 TTFTs are 54.0, 53.8, 54.0 ms (vLLM,
+ =0.13 ms) and 58.3, 58.0, 57.9 ms (TensorRT-LLM,
+ =0.21 ms), variation under 0.7 % within each runtime
+and a cross-runtime gap that is more than 20  . 
+
+ To map the full operating envelope we sweep prefix length
+ tokens against concurrency
+ for both runtimes (80 requests per cell, 4
+distinct prefixes). Figure  7 reports the vLLM/TRT-LLM
+p50 TTFT ratio at each cell. 
+
+ The map has a clean diagonal: along the top-left edge (short
+prefix, low concurrency) vLLM leads (ratio  1, blue), while
+along the bottom-right edge (long prefix, high concurrency)
+TensorRT-LLM dominates by a factor that grows with both axes. At
+the extreme corner (pl=8192, c=32), the ratio is 5.75 —a
+larger crossover than the 2.4 gap reported in
+Section  4.2 at pl=4096. The TTFT-leadership crossover
+is not a single threshold but a smooth surface; long prefixes amplify
+the effect of high concurrency. 
+
+ Figure 7: The TTFT-leadership crossover is a smooth surface
+on the (prefix length, concurrency) plane. 
+Cells show the vLLM/TRT-LLM p50 TTFT ratio; values below
+1 mean vLLM is faster and above 1 mean TensorRT-LLM is
+faster, with darker cells indicating a larger ratio. The
+leadership flips along the diagonal, and the TensorRT-LLM
+advantage at high concurrency grows with prefix length,
+peaking at 5.75 at the (pl=8192, c=32) corner. 
+
+ 4.12 Throughput envelope 
+
+ The throughput envelope tells the opposite story to TTFT. At
+concurrency 1 the two runtimes are within 30 % of each other
+(vLLM 129 t/s, TensorRT-LLM 92 t/s), but as concurrency grows,
+vLLM’s output token rate scales steeply while TensorRT-LLM’s
+PyTorch backend saturates. At c=32, vLLM produces 1444 t/s vs. TensorRT-LLM’s 523 t/s—a throughput advantage at
+the same concurrency point where TensorRT-LLM had the
+ TTFT advantage. Operators face a real tradeoff: the
+runtime that minimizes p50 first-token latency under burst load
+is not the same runtime that maximizes raw token throughput. 
+
+ Figure 8: Throughput tells the opposite story to TTFT: vLLM
+dominates at high concurrency by 2.8 . 
+Output tokens/s vs. concurrency, burst arrival, 4096-token
+shared prefix. At c=32, vLLM delivers 1444 t/s vs. TensorRT-LLM’s 523 t/s—the same concurrency point where
+TensorRT-LLM had the 2.4 TTFT advantage in
+Figure  2 . 
+
+ 5 Discussion and Tuning Guidance 
+
+ We synthesize the findings into three operator-facing observations. 
+
+ Observation 1: cache effectiveness is solved
+ below the pressure regime, and the two runtimes remain tied
+even inside it. 
+
+ Both runtimes cache 92% of the input at an
+8192-token shared prefix (Section  4.1 ), and the hit rate
+stays within 3 percentage points across a 32 concurrency
+range (Section  4.3 ). At the prefix-pool sizes of
+Sections  4.1 – 4.6 , the 94 GB HBM headroom
+keeps the working set inside KV capacity and vLLM’s
+ kv_cache_usage_perc under 1 %. That headroom is
+finite: past capacity (Section  4.8 ), hit rate
+degrades sharply for both runtimes together and parity still
+holds. Reuse is free only below a deployment’s
+working-set/capacity ratio; above it, both runtimes need the same
+capacity planning, not a runtime-specific fix. 
+
+ Observation 2: Arrival pattern, not cache configuration,
+selects the better runtime. 
+
+ The most consequential cross-runtime
+difference is not in the cache but in how each scheduler handles
+burst vs. fixed-rate traffic. Under
+burst arrival at c=32, TensorRT-LLM has lower p50 TTFT
+(Section  4.2 ); under fixed-rate arrival at 16 QPS, vLLM
+has lower p95 TTFT (Section  4.6 ). Neither
+result generalizes to the other regime. Operators should therefore
+benchmark with the arrival pattern they actually see in
+production, not the synthetic burst harness shipped with either
+runtime. 
+
+ Observation 3: tokens_per_block in the
+TensorRT-LLM PyTorch backend is not a useful knob in this regime. 
+
+ The documented reuse-granularity vs. kernel-efficiency tradeoff is
+not detectable above noise across at any
+concurrency we tested (Section  4.4 ). Tuning effort is
+better spent on max_batch_size and arrival-pattern
+shaping at the load balancer. 
+
+ Table  7 summarizes the per-workload recommendation. 
+
+ Table 7: Recommended runtime configuration by workload shape on
+a single H100 NVL, from PrefixBench-H100 . All
+settings assume Qwen2-7B-Instruct in BF16; reuse is
+enabled by default in both runtimes. 
+
+ Workload pattern 
+
+ Preferred runtime 
+
+ Notes 
+
+ Long shared system prompt, sequential / interactive 
+
+ vLLM (lower TTFT and ITL) 
+
+ Both runtimes cache identically; vLLM has  8 ms
+less per-request overhead. 
+
+ Bursty short prompts, p50 TTFT-critical 
+
+ TensorRT-LLM at c 16 
+
+ vLLM’s TTFT inflates 2 –3 faster under burst;
+TensorRT-LLM’s scheduler scales better. 
+
+ Steady fixed-rate load (RAG, agent loops) 
+
+ vLLM (much lower p95) 
+
+ TensorRT-LLM’s PyTorch backend exhibits a 9 p95
+inflation between 1 QPS and 16 QPS that vLLM does not. 
+
+ Throughput-maximizing batch (offline) 
+
+ vLLM 
+
+ 1444 t/s vs. 523 t/s at c=32 in our setup. 
+
+ Block-size tuning (TRT-LLM) 
+
+ default (32) 
+
+ No detectable difference at . 
+
+ 5.1 Limitations 
+
+ The results are limited to the configurations we tested.
+(0) Our steady-load cells use fixed-rate arrivals evenly
+spaced at (the zero-variance idealisation of
+steady traffic) rather than Poisson arrivals. Poisson traffic adds
+short-term clustering, which we expect would move steady-load tail
+latencies toward the burst-arrival results, so our
+burst-versus-steady contrast spans a wider arrival-variance range
+than production traffic typically exhibits.
+(i) Two model scales (7 B and 32 B,
+Section  4.8 ), both BF16; we do not evaluate
+70 B-class models, multi-GPU serving, or FP8 KV cache, all of
+which shrink per-device KV capacity and could shift the pressure
+regime sooner than our results suggest.
+(ii) All measurements use a single 94 GB H100 NVL. The pressure
+regime is reachable here once the working-set-to-capacity ratio
+passes parity, but we have not measured whether the ratio at which
+degradation begins differs on smaller-HBM Hopper variants (e.g. H100 PCIe/SXM at 80 GB).
+(iii) TensorRT-LLM’s PyTorch backend is the primary evaluation
+target throughout, and the tokens_per_block ablation
+(Section  4.4 ) is PyTorch-only; the single-cell engine-backend
+comparison (Section  4.5 ) is consistent with
+reuse parity but is not a full re-validation.
+(iv) The OpenAI HTTP transport adds  2–3 ms of fixed
+overhead shared by both runtimes; it does not affect the
+cross-runtime comparison but does affect absolute TTFT.
+(v) The scheduling account of Section  4.2 is directly
+measured for vLLM (queueing vs. prefill decomposition) but rests
+on hit-rate elimination and CDF-shape evidence for the
+cross-runtime flip, since TensorRT-LLM exposed no comparable
+scheduler counters in the tested version; we present it as the
+best-supported hypothesis, not a fully instrumented causal claim.
+(vi) Nsight traces beyond the case-study figure are deferred to
+follow-up work. 
+
+ 6 Related Work 
+
+ PrefixBench-H100 sits at the intersection of three lines of
+prior work: KV-cache memory management, phase-aware serving system
+design, and accelerator-level workload characterization. 
+
+ KV-cache memory management. 
+
+ PagedAttention introduced
+fixed-size blocks and dynamic block tables to eliminate KV-cache
+fragmentation and enable block-level sharing across
+requests  [ 6 ] . vAttention argues for
+virtual-memory-style management without paging, achieving similar
+sharing without explicit block tables  [ 12 ] .
+SGLang’s RadixAttention organizes cached prefixes in a radix tree
+for fine-grained reuse across branching request structures rather
+than a fixed block grid  [ 16 ] , and ChunkAttention
+restructures the attention kernel around a prefix-aware KV
+layout  [ 14 ] . LMCache extends reuse beyond a
+single GPU’s HBM with a multi-tier cache
+layer  [ 2 ] , MemServe pools KV state across a
+disaggregated deployment  [ 5 ] , CacheGen
+compresses and streams KV state to cut transfer
+cost  [ 8 ] , and CacheBlend fuses cached chunks
+for RAG without recomputing cross-chunk
+attention  [ 13 ] . All
+focus on mechanism design : new data structures, kernels, or
+placement strategies for reuse. Our work is complementary: we
+measure how the mechanisms vLLM and TensorRT-LLM already ship
+perform on H100-class hardware, the empirical question these
+papers motivate but leave unanswered for shipped, black-box
+runtimes. 
+
+ Phase-aware serving. 
+
+ Orca introduced iteration-level
+scheduling with selective batching, the continuous-batching
+foundation that both runtimes we evaluate build
+on  [ 15 ] . Sarathi-Serve tames the throughput-latency
+tradeoff via chunked prefill that overlaps with ongoing decode
+steps  [ 1 ] . DeepSpeed-FastGen combines
+dynamic SplitFuse (a chunked-prefill variant) with a
+continuous-batching engine to raise effective
+throughput  [ 4 ] .
+DistServe  [ 17 ] and
+Splitwise  [ 11 ] disaggregate prefill and decode
+onto separate GPU pools, exploiting the same prefill/decode asymmetry.
+Disaggregation is out of scope here, since we restrict ourselves to
+a single H100, but the asymmetry these systems exploit is also what
+makes prefix reuse so attractive: it converts a portion of an
+expensive prefill into a cache lookup. This literature also frames
+our scheduler finding (Section  4.2 ): both runtimes
+implement iteration-level continuous batching in the
+Orca/Sarathi-Serve tradition, and our results indicate the
+batch-admission choices layered on that foundation, not cache
+effectiveness, determine which wins under a given arrival
+pattern. 
+
+ Throughput and quantization-aware serving. 
+
+ QServe  [ 7 ] and NanoFlow  [ 18 ] 
+both push single-GPU throughput limits via quantization and
+fine-grained intra-device scheduling. Quantization (FP8 / INT8 KV
+cache) is itself a knob that interacts with prefix reuse on H100;
+this paper restricts itself to BF16 and leaves the precision
+interaction to follow-up work. 
+
+ Workload characterization. 
+
+ The closest stylistic precedent in the IISWC literature is
+LLMServingSim  [ 3 ] , a HW/SW co-simulation
+infrastructure for LLM inference serving, and the distributed-LLM
+workload analyses that have appeared in recent IISWC programs.
+ PrefixBench-H100 differs from those works in three ways:
+(i) it targets a single H100 NVL with real measurements rather than
+simulation, (ii) it studies two production runtimes head-to-head
+under matched workloads, and (iii) it focuses specifically on prefix
+reuse rather than the full serving design space. 
+
+ 7 Conclusion 
+
+ PrefixBench-H100 characterizes prefix reuse on a single
+NVIDIA H100 NVL across two production LLM serving runtimes. Driving
+vLLM and TensorRT-LLM through identical workloads via an
+OpenAI-compatible load generator separates intrinsic 
+prefix-reuse benefits from runtime-specific implementation effects.
+The resulting operating map bounds the regime in which prefix reuse
+is the single most effective TTFT optimization on H100: reuse
+delivers 5–6.5 lower TTFT while the prefix working set fits
+in KV capacity, and degrades to a 5.6 % hit rate and
+15.7 TTFT regression at 13.2 over-subscription. In
+every regime, including under eviction, the runtimes’ cache
+effectiveness stays within a couple of points, so the differences
+operators see come from the scheduling layer above the cache. The
+released artifact is intended to be extended to further model families,
+runtimes, and Hopper-class accelerators, building a shared empirical
+baseline for phase-aware LLM serving research. 
+
+ Acknowledgement of Generative AI Use 
+
+ As required by the IISWC 2026 author guidelines: we used
+Anthropic’s Claude as a coding and writing assistant to scaffold
+the benchmark code in prefixbench/ , drive the H100
+sweeps, generate figures, and draft initial prose. All
+experimental designs, workload-axis choices, interpretations, and
+scientific claims were directed and verified by the authors. Every
+data point comes from running the released code on the hardware of
+Section  3 ; no measurement was synthesized or
+fabricated. The tool assisted , and did not replace, the
+authors’ judgement. 
+
+ References 
+
+ [1] 
+ A. Agrawal, N. Kedia, A. Panwar, J. Mohan, N. Kwatra, B. S. Gulavani, A. Tumanov, and R. Ramjee (2024) 
+
+ Taming throughput-latency tradeoff in LLM inference with Sarathi-Serve .
+
+ In 18th USENIX Symposium on Operating Systems Design and Implementation (OSDI ’24) ,
+
+ Cited by: §6 .
+
+ [2] 
+ Y. Cheng, Y. Liu, J. Yao, Y. An, X. Chen, S. Feng, Y. Huang, S. Shen, K. Du, and J. Jiang (2025) 
+
+ LMCache: an efficient KV cache layer for enterprise-scale LLM inference .
+
+ arXiv preprint arXiv:2510.09665 .
+
+ Cited by: §6 .
+
+ [3] 
+ J. Cho, M. Kim, H. Choi, G. Heo, and J. Park (2024) 
+
+ LLMServingSim: a HW/SW co-simulation infrastructure for LLM inference serving at scale .
+
+ In Proceedings of the IEEE International Symposium on Workload Characterization (IISWC) ,
+
+ Cited by: §6 .
+
+ [4] 
+ C. Holmes, M. Tanaka, M. Wyatt, A. A. Awan, J. Rasley, S. Rajbhandari, R. Y. Aminabadi, H. Qin, A. Bakhtiari, L. Kurilenko, and Y. He (2024) 
+
+ DeepSpeed-FastGen: high-throughput text generation for LLMs via MII and DeepSpeed-inference .
+
+ arXiv preprint arXiv:2401.08671 .
+
+ Cited by: §6 .
+
+ [5] 
+ C. Hu, H. Huang, J. Hu, J. Xu, X. Chen, T. Xie, C. Wang, S. Wang, Y. Bao, N. Sun, and Y. Shan (2024) 
+
+ MemServe: context caching for disaggregated LLM serving with elastic memory pool .
+
+ arXiv preprint arXiv:2406.17565 .
+
+ Cited by: §6 .
+
+ [6] 
+ W. Kwon, Z. Li, S. Zhuang, Y. Sheng, L. Zheng, C. H. Yu, J. E. Gonzalez, H. Zhang, and I. Stoica (2023) 
+
+ Efficient memory management for large language model serving with PagedAttention .
+
+ In Proceedings of the 29th ACM Symposium on Operating Systems Principles (SOSP ’23) ,
+
+ Cited by: §1 ,
+ §2.2 ,
+ §6 .
+
+ [7] 
+ Y. Lin, H. Tang, S. Yang, Z. Zhang, G. Xiao, C. Gan, and S. Han (2025) 
+
+ QServe: W4A8KV4 quantization and system co-design for efficient LLM serving .
+
+ In Proceedings of Machine Learning and Systems (MLSys ’25) ,
+
+ Cited by: §6 .
+
+ [8] 
+ Y. Liu, H. Li, Y. Cheng, S. Ray, Y. Huang, Q. Zhang, K. Du, J. Yao, S. Lu, G. Ananthanarayanan, M. Maire, H. Hoffmann, A. Holtzman, and J. Jiang (2024) 
+
+ CacheGen: KV cache compression and streaming for fast large language model serving .
+
+ In Proceedings of the ACM SIGCOMM Conference ,
+
+ Cited by: §6 .
+
+ [9] 
+ NVIDIA 
+
+ TensorRT-LLM Documentation .
+
+ Note: https://nvidia.github.io/TensorRT-LLM/ ; accessed 2026-05-10 
+
+ Cited by: §4.2 .
+
+ [10] 
+ NVIDIA (2023) 
+
+ NVIDIA H100 Tensor Core GPU Datasheet .
+
+ Note: Online; accessed 2026-05-10 
+
+ Cited by: §2.4 .
+
+ [11] 
+ P. Patel, E. Choukse, C. Zhang, A. Shah, Í. Goiri, S. Maleki, and R. Bianchini (2024) 
+
+ Splitwise: efficient generative LLM inference using phase splitting .
+
+ In Proceedings of the 51st Annual International Symposium on Computer Architecture (ISCA ’24) ,
+
+ Cited by: §6 .
+
+ [12] 
+ R. Prabhu, A. Nayak, J. Mohan, R. Ramjee, and A. Panwar (2025) 
+
+ vAttention: dynamic memory management for serving LLMs without PagedAttention .
+
+ In Proceedings of the 30th ACM International Conference on Architectural Support for Programming Languages and Operating Systems (ASPLOS ’25) ,
+
+ Cited by: §6 .
+
+ [13] 
+ J. Yao, H. Li, Y. Liu, S. Ray, Y. Cheng, Q. Zhang, K. Du, S. Lu, and J. Jiang (2025) 
+
+ CacheBlend: fast large language model serving for RAG with cached knowledge fusion .
+
+ In Proceedings of the Twentieth European Conference on Computer Systems (EuroSys ’25) ,
+
+ Cited by: §6 .
+
+ [14] 
+ L. Ye, Z. Tao, Y. Huang, and Y. Li (2024) 
+
+ ChunkAttention: efficient self-attention with prefix-aware KV cache and two-phase partition .
+
+ In Proceedings of the 62nd Annual Meeting of the Association for Computational Linguistics (ACL) ,
+
+ Cited by: §6 .
+
+ [15] 
+ G. Yu, J. S. Jeong, G. Kim, S. Kim, and B. Chun (2022) 
+
+ Orca: a distributed serving system for transformer-based generative models .
+
+ In 16th USENIX Symposium on Operating Systems Design and Implementation (OSDI ’22) ,
+
+ Cited by: §6 .
+
+ [16] 
+ L. Zheng, L. Yin, Z. Xie, C. Sun, J. Huang, C. H. Yu, S. Cao, C. Kozyrakis, I. Stoica, J. E. Gonzalez, C. Barrett, and Y. Sheng (2024) 
+
+ SGLang: efficient execution of structured language model programs .
+
+ In Advances in Neural Information Processing Systems (NeurIPS) ,
+
+ Cited by: §6 .
+
+ [17] 
+ Y. Zhong, S. Liu, J. Chen, J. Hu, Y. Zhu, X. Liu, X. Jin, and H. Zhang (2024) 
+
+ DistServe: disaggregating prefill and decoding for goodput-optimized large language model serving .
+
+ In 18th USENIX Symposium on Operating Systems Design and Implementation (OSDI ’24) ,
+
+ Cited by: §6 .
+
+ [18] 
+ K. Zhu, Y. Gao, Y. Zhao, L. Zhao, G. Zuo, Y. Gu, D. Xie, T. Tang, Q. Xu, Z. Ye, K. Kamahori, C. Lin, Z. Wang, S. Wang, A. Krishnamurthy, and B. Kasikci (2025) 
+
+ NanoFlow: towards optimal large language model serving throughput .
+
+ In 19th USENIX Symposium on Operating Systems Design and Implementation (OSDI ’25) ,
+
+ Cited by: §6 .
+
+ Experimental support, please
+ view the build logs 
+ for errors. Generated by
+
+ L
+ A 
+ T
+ E 
+
+ xml 
+
+ .
+
+ Instructions for reporting errors 
+ We are continuing to improve HTML versions of papers, and your feedback helps enhance accessibility and mobile
+ support. To report errors in the HTML that will help us improve conversion and rendering, choose any of the
+ methods listed below: 
+
+ Click the "Report Issue" ( 
+
+ ) button, located in the page header. 
+
+ Tip: You can select the relevant text first, to include it in your report. 
+ Our team has already identified the following issues . We appreciate your time reviewing and reporting rendering errors we
+ may not have found yet. Your efforts will help us improve the HTML versions for all readers, because disability
+ should not be a barrier to accessing research. Thank you for your continued support in championing open access for
+ all. 
+ Have a free development cycle? Help support accessibility at arXiv! Our collaborators at LaTeXML maintain a list of packages that need conversion , and welcome developer contributions . 
+
+ We gratefully acknowledge support from
+ our major funders ,
+ member institutions , ,
+ and all contributors.
+
+ About 
+ · 
+ Help 
+ · 
+ Contact 
+ · 
+ Subscribe 
+ · 
+ Copyright 
+ · 
+ Privacy 
+ · 
+ Accessibility 
+ · 
+ Operational Status (opens in new tab) 
+
+ Major funding support from 
+

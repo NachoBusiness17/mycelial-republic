@@ -1,0 +1,223 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<feed xmlns:opensearch="http://a9.com/-/spec/opensearch/1.1/" xmlns:arxiv="http://arxiv.org/schemas/atom" xmlns="http://www.w3.org/2005/Atom">
+  <id>https://arxiv.org/api/7MTsOQrObuDRSSG5f78mpXSx1dc</id>
+  <title>arXiv Query: search_query=&amp;id_list=2609.24991,2609.36289,2609.27981,2609.32259,2609.33334,2609.19657,2609.32283,2609.27354&amp;start=0&amp;max_results=8</title>
+  <updated>2026-10-04T01:36:05Z</updated>
+  <link href="https://arxiv.org/api/query?search_query=&amp;start=0&amp;max_results=8&amp;id_list=2609.24991,2609.36289,2609.27981,2609.32259,2609.33334,2609.19657,2609.32283,2609.27354" type="application/atom+xml"/>
+  <opensearch:itemsPerPage>8</opensearch:itemsPerPage>
+  <opensearch:totalResults>8</opensearch:totalResults>
+  <opensearch:startIndex>0</opensearch:startIndex>
+  <entry>
+    <id>http://arxiv.org/abs/2609.19657v1</id>
+    <title>PrefixBench-H100: Characterizing Prefix Reuse and Time-to-First-Token in H100 LLM Serving</title>
+    <updated>2026-09-17T03:56:20Z</updated>
+    <link href="https://arxiv.org/abs/2609.19657v1" rel="alternate" type="text/html"/>
+    <link href="https://arxiv.org/pdf/2609.19657v1" rel="related" type="application/pdf" title="pdf"/>
+    <summary>Repeated prompt prefixes are increasingly common in LLM serving workloads, appearing in system prompts, templated retrieval-augmented generation pipelines, agent frameworks, and multi-turn conversations. Modern inference runtimes such as vLLM and TensorRT-LLM provide mechanisms for reusing previously computed KV-cache state across requests, yet it remains unclear when prefix reuse materially improves serving performance on contemporary accelerators and when its benefits are limited by scheduling, cache granularity, concurrency, or memory pressure.
+  This paper presents PrefixBench-H100, a reproducible benchmark and measurement framework for characterizing prefix reuse on a single NVIDIA H100. PrefixBench-H100 combines controlled synthetic traces with chat-style and retrieval-style workloads, and evaluates two widely used LLM serving runtimes under matched workload conditions. The benchmark varies shared-prefix length, suffix diversity, request arrival pattern, concurrency, output length, and cache configuration, while collecting time-to-first-token, inter-token latency, end-to-end latency, throughput, cache-hit statistics, GPU memory usage, and selected profiling traces.
+  The goal of PrefixBench-H100 is not to introduce a new caching algorithm, but to expose the practical operating envelope of prefix reuse for H100-class LLM serving. The study identifies the regime where prefix reuse provides substantial first-token latency reductions and the regime where cache pressure erodes them, while showing that cache effectiveness itself is largely insensitive to concurrency and output length; the cross-runtime differences that remain arise above the cache, in the scheduling layer.</summary>
+    <category term="cs.PF" scheme="http://arxiv.org/schemas/atom"/>
+    <category term="cs.LG" scheme="http://arxiv.org/schemas/atom"/>
+    <published>2026-09-17T03:56:20Z</published>
+    <arxiv:primary_category term="cs.PF"/>
+    <author>
+      <name>Omkar Shewale</name>
+    </author>
+    <author>
+      <name>Deepak Kumar</name>
+    </author>
+    <author>
+      <name>Divakar Kumar Yadav</name>
+    </author>
+  </entry>
+  <entry>
+    <id>http://arxiv.org/abs/2609.27981v1</id>
+    <title>Risk-Controlled KV-Cache Eviction: From Memory Budgets to Risk Targets</title>
+    <updated>2026-09-23T12:05:27Z</updated>
+    <link href="https://arxiv.org/abs/2609.27981v1" rel="alternate" type="text/html"/>
+    <link href="https://arxiv.org/pdf/2609.27981v1" rel="related" type="application/pdf" title="pdf"/>
+    <summary>KV-cache eviction is typically evaluated through average quality-memory trade-offs, yet a small average loss can hide requests whose utility degrades materially. We reformulate eviction as a deployment risk-control problem: a material degradation occurs when eviction lowers task utility by more than a deployment-specified tolerance relative to full-KV inference on the same request, and deployment risk is the population frequency of such events. Given a reliability contract specifying a target risk level and confidence requirement, we use a compressor-agnostic post-hoc certification procedure to select a retention policy from calibration data with a finite-sample guarantee, falling back to full KV when no compressed policy is certified. Across multiple eviction methods, Llama and Mistral models, and LongBench and RULER-32K, the same contract supports substantially different levels of eviction: on Llama, it certifies SnapKV at 75% retention on LongBench but no tested compressed policy on RULER-32K, triggering full-KV fallback. Policies with empirical degradation rates below the 5% target can still fail finite-sample certification; on Llama LongBench, empirical thresholding selects uncertified policies that retain 5-10 percentage points less cache across fixed-budget methods. The proposed framework converts a deployment-level reliability requirement into a KV-memory operating point.</summary>
+    <category term="cs.CL" scheme="http://arxiv.org/schemas/atom"/>
+    <category term="cs.LG" scheme="http://arxiv.org/schemas/atom"/>
+    <published>2026-09-23T12:05:27Z</published>
+    <arxiv:comment>14 pages</arxiv:comment>
+    <arxiv:primary_category term="cs.CL"/>
+    <author>
+      <name>Beomgu Kang</name>
+    </author>
+    <author>
+      <name>SoJin Yun</name>
+    </author>
+    <author>
+      <name>Hojoon Kim</name>
+    </author>
+    <author>
+      <name>Hyunseok Seo</name>
+    </author>
+  </entry>
+  <entry>
+    <id>http://arxiv.org/abs/2609.33334v1</id>
+    <title>When to Evict, Not What to Keep: Draft-Guided Eviction for Training-Free KV-Cache Compression</title>
+    <updated>2026-09-27T08:04:59Z</updated>
+    <link href="https://arxiv.org/abs/2609.33334v1" rel="alternate" type="text/html"/>
+    <link href="https://arxiv.org/pdf/2609.33334v1" rel="related" type="application/pdf" title="pdf"/>
+    <summary>Training-free KV-cache compression methods such as SnapKV, H2O, and PyramidKV evict tokens at the end of prefill, aiming to preserve the attention mass that future queries are expected to use -optimizing what to keep. We show that this objective fails in two distinct ways. (1) Compensation: restoring the evicted attention mass can recover the attention-level target without recovering task quality. (2) Selection: covering more of the true decode-query mass can hurt quality when the recovered mass is fragmented rather than concentrated in coherent spans. These failures share a common cause: eviction occurs before the queries that determine the answer trajectory exist. We propose Draft-Guided Eviction (DGE), which defers eviction until after drafting the first k=2 answer tokens using the full cache - just one decode step beyond prefill. Because the draft is generated from the answer's own prefix, no cache entries are discarded before this trajectory signal becomes available. The per-head cache budget remains unchanged, and DGE can be applied directly to SnapKV, PyramidKV, H2O, and StreamingLLM without modifying their eviction scores. Unlike extra-pass methods, DGE changes when eviction occurs rather than what cache entries are selected. Extensive experiments demonstrate that DGE outperforms prior methods at every evaluated budget on five of six instruct-tuned backbones, achieving 44.2 on LongBench, nearly matching FullKV at 44.3. The timing-only control DGE-W achieves the same score, demonstrating that the gain comes from when eviction occurs rather than what is selected - an effect we term trajectory anchoring.</summary>
+    <category term="cs.LG" scheme="http://arxiv.org/schemas/atom"/>
+    <category term="cs.CL" scheme="http://arxiv.org/schemas/atom"/>
+    <published>2026-09-27T08:04:59Z</published>
+    <arxiv:primary_category term="cs.LG"/>
+    <author>
+      <name>Haeyong Kang</name>
+    </author>
+    <author>
+      <name>Chang D. Yoo</name>
+    </author>
+  </entry>
+  <entry>
+    <id>http://arxiv.org/abs/2609.24991v1</id>
+    <title>Who Pays for the KV Cache? Attributing Shared AI Inference Spend Across Kubernetes and LLM Provider Bills</title>
+    <updated>2026-09-21T17:57:40Z</updated>
+    <link href="https://arxiv.org/abs/2609.24991v1" rel="alternate" type="text/html"/>
+    <link href="https://arxiv.org/pdf/2609.24991v1" rel="related" type="application/pdf" title="pdf"/>
+    <summary>Organizations pay for AI through disconnected ledgers: Kubernetes allocations for self-hosted inference, gateway logs, and per-token bills from API providers. We present unalloc, an open-source tool that joins OpenCost, LiteLLM, OpenAI and Anthropic cost data into one exact ledger and reports the share of spend with no owner, and use it to study where attribution breaks at the seams between these systems. Five case studies run inference for real or simulate it: a vLLM-style serving simulator with paged KV memory and prefix caching; a PyTorch transformer serving a multi-tenant trace with a real KV cache; tensor- and pipeline-parallel inference on torch.distributed; the unmodified CLI against mock provider APIs; and four downstream use cases. At the seams, in a constructed multi-pod deployment scenario -- one month of synthetic OpenCost allocations, not observed billing data -- owner labels set only on LeaderWorkerSet leader pods leave 66% of that deployment's GPU bill unowned, and the natural fallback key assigns 61% of it to a Helm chart name while the headline unallocated share falls to 4%; enabling every source double counts all gateway spend; and reading one page of a billing API reports a quarter of spend. Inside a shared inference server the metering rule decides who pays: on an NVIDIA H100 running vLLM, a token meter assigns a retrieval-heavy tenant 12-14 percentage points more of the bill than an equal time-share meter at every load tested, while GPU utilization reads 97-99% across configured loads of 2 to 16 requests per second (3.7 to 26.9 completed requests per second; the configured rate counts session-initial arrivals only) and power draw tracks load. Neither meter is a ground truth; we position these results against recent Shapley-based energy attribution. Code, raw data, captured evidence, figures and the paper regenerate from the repository.</summary>
+    <category term="cs.DC" scheme="http://arxiv.org/schemas/atom"/>
+    <category term="cs.PF" scheme="http://arxiv.org/schemas/atom"/>
+    <published>2026-09-21T17:57:40Z</published>
+    <arxiv:comment>14 pages, 9 figures, 4 tables. Includes a validation run with vLLM on an NVIDIA H100. Code, data and reproduction scripts: https://github.com/timurista/unalloc. Software: doi:10.5281/zenodo.22761012. Use of generative AI is disclosed in the paper ("Use of AI tools")</arxiv:comment>
+    <arxiv:primary_category term="cs.DC"/>
+    <author>
+      <name>Timothy Urista</name>
+    </author>
+  </entry>
+  <entry>
+    <id>http://arxiv.org/abs/2609.27354v1</id>
+    <title>Constraint-Driven Context Engineering: Designing Domain Interfaces for AI Systems</title>
+    <updated>2026-09-23T04:53:47Z</updated>
+    <link href="https://arxiv.org/abs/2609.27354v1" rel="alternate" type="text/html"/>
+    <link href="https://arxiv.org/pdf/2609.27354v1" rel="related" type="application/pdf" title="pdf"/>
+    <summary>Generative AI systems are increasingly deployed to address domain problems. These systems operate under technical, regulatory, institutional, and normative constraints that define acceptable AI behaviour and outcomes within their domains. We observe a recurring pattern in our industry engagement: partners often arrive with a functioning but relatively generic AI solution. The challenge is no longer to build an AI system from scratch, but to improve the quality and domain appropriateness of an AI-generated solution. In these settings, the limiting factor is often the quality, scope, and structure of the context available to the system. Yet, existing context engineering approaches primarily focus on supplying domain knowledge through retrieval, memory, and tools, with limited support for systematically identifying and operationalising the constraints that govern AI systems in their operational environments.
+  This paper proposes Constraint-Driven Context Engineering (CDCE), a design approach for engineering domain interfaces for AI systems. Drawing on software architecture design and Domain-Driven Design (DDD), CDCE treats domain constraints as first-class design drivers. It identifies and characterises constraints, determines the required context assets, and designs representations through which these assets are made available to AI systems.
+  We conducted a comparative multiple-case study with industry and public-sector partners across educational assessment, healthcare decision support, and financial-distress prediction. Depending on their characteristics, constraints can guide AI behaviour, enforce permissible boundaries, or support verification of AI-generated outcomes. The cases demonstrate CDCE's applicability across contrasting domains and show how constraint characteristics shape the resulting domain interfaces.</summary>
+    <category term="cs.SE" scheme="http://arxiv.org/schemas/atom"/>
+    <category term="cs.AI" scheme="http://arxiv.org/schemas/atom"/>
+    <published>2026-09-23T04:53:47Z</published>
+    <arxiv:comment>submitted to conference</arxiv:comment>
+    <arxiv:primary_category term="cs.SE"/>
+    <author>
+      <name>Xiwei Xu</name>
+    </author>
+    <author>
+      <name>Chen Wang</name>
+    </author>
+    <author>
+      <name>Mengmeng Yang</name>
+    </author>
+    <author>
+      <name>Yipeng Zhang</name>
+    </author>
+    <author>
+      <name>Jacky Jiang</name>
+    </author>
+    <author>
+      <name>Suyu Ma</name>
+    </author>
+    <author>
+      <name>Youyang Qu</name>
+    </author>
+    <author>
+      <name>Ming Ding</name>
+    </author>
+    <author>
+      <name>Liming Zhu</name>
+    </author>
+  </entry>
+  <entry>
+    <id>http://arxiv.org/abs/2609.32283v1</id>
+    <title>AgentReplay: Token-Wise Trace Replay Is Essential for Fair Serving System Performance Benchmarking</title>
+    <updated>2026-09-26T06:15:48Z</updated>
+    <link href="https://arxiv.org/abs/2609.32283v1" rel="alternate" type="text/html"/>
+    <link href="https://arxiv.org/pdf/2609.32283v1" rel="related" type="application/pdf" title="pdf"/>
+    <summary>LLM-based agents execute multi-turn workflows with interleaved model inference and tool calls, making efficient serving increasingly important. However, evaluating serving optimizations is challenging because identical tasks can produce different execution trajectories. Changes in generated tokens can alter subsequent prompts, tool calls, and reasoning turns, making it difficult to distinguish system improvements from workload variation. Greedy decoding does not guarantee identical outputs, while replaying only sequence lengths loses token information that affects prefix caching and mixture-of-experts (MoE) routing. To address these problems, we propose AgentReplay, a configurable trace record-and-replay framework for agent serving. AgentReplay records input/output tokens, expert selections, request dependencies, and tool durations. During replay, it forces the recorded output tokens while performing normal autoregressive computation, with optional controls for MoE expert selection and tool delays. This allows different systems to execute the same recorded workload while retaining their own batching, scheduling, and parallelization decisions. We further separate trajectory generation from performance evaluation, enabling compatible smaller models to replay long-horizon traces collected with more capable models. Our experiments show that token-wise replay in AgentReplay effectively eliminates workload variation that greedy decoding and length-wise replay cannot avoid, enabling fairer performance comparisons across serving configurations.</summary>
+    <category term="cs.DC" scheme="http://arxiv.org/schemas/atom"/>
+    <published>2026-09-26T06:15:48Z</published>
+    <arxiv:primary_category term="cs.DC"/>
+    <author>
+      <name>Zaifeng Pan</name>
+    </author>
+    <author>
+      <name>Michael Wang</name>
+    </author>
+    <author>
+      <name>Chris Wu</name>
+    </author>
+    <author>
+      <name>Zhengding Hu</name>
+    </author>
+    <author>
+      <name>Xinwei Qiang</name>
+    </author>
+    <author>
+      <name>Zhongkai Yu</name>
+    </author>
+    <author>
+      <name>Yufei Ding</name>
+    </author>
+  </entry>
+  <entry>
+    <id>http://arxiv.org/abs/2609.36289v1</id>
+    <title>How Much Prompt Is Enough? A Blackbox Minimization of Few-Shots in LLMs</title>
+    <updated>2026-09-28T21:18:38Z</updated>
+    <link href="https://arxiv.org/abs/2609.36289v1" rel="alternate" type="text/html"/>
+    <link href="https://arxiv.org/pdf/2609.36289v1" rel="related" type="application/pdf" title="pdf"/>
+    <summary>Prompts are the primary mechanism for directing the behavior of large language models (LLMs). Yet the internal structure and causal hierarchy of prompts remain poorly understood: which parts are causally necessary and which are redundant is an open question. This opacity can have severe consequences. Subtle prompt variations can silently shift model outputs in critical software systems, and engineers lack techniques to reason about prompt reliability.
+  We present \framework, a blackbox prompt-minimization framework that reduces few-shot prompts to their necessary minimal subset. We use a case study to apply \framework to a few-shot learning system and demonstrate the insights that this framework can provide.
+  Our experiments show that few-shot exemplars can be reduced by a mean of 65.3\%~$\pm$~15.8\% in character count while fully preserving propositional output fidelity. The models preferentially retain logical identifiers and constraint declarations while discarding natural language prose and cross-prompt relational annotations.
+  Our analysis also shows that some models are universal encoders, able to produce highly legible yet minimized prompts, while others are universal decoders, able to interpret minimized prompts from most other models.
+  By identifying which components are indispensable, \framework provides a principled basis for prompt compression and structural analysis of few-shot exemplars.</summary>
+    <category term="cs.SE" scheme="http://arxiv.org/schemas/atom"/>
+    <category term="cs.AI" scheme="http://arxiv.org/schemas/atom"/>
+    <category term="cs.HC" scheme="http://arxiv.org/schemas/atom"/>
+    <published>2026-09-28T21:18:38Z</published>
+    <arxiv:primary_category term="cs.SE"/>
+    <author>
+      <name>Ali Alfageeh</name>
+    </author>
+    <author>
+      <name>Rahul Gopinath</name>
+    </author>
+    <author>
+      <name>Amin Alipour</name>
+    </author>
+  </entry>
+  <entry>
+    <id>http://arxiv.org/abs/2609.32259v2</id>
+    <title>Prefill-Free Cross-Family KV Cache Transfer for Heterogeneous Multi-Agent LLMs</title>
+    <updated>2026-09-29T19:41:30Z</updated>
+    <link href="https://arxiv.org/abs/2609.32259v2" rel="alternate" type="text/html"/>
+    <link href="https://arxiv.org/pdf/2609.32259v2" rel="related" type="application/pdf" title="pdf"/>
+    <summary>Recent multi-agent LLM systems increasingly combine heterogeneous models for specialized agent roles. However, text-based communication requires each receiver to prefill shared context already processed by the sender. Reusing the sender's key-value (KV) cache avoids this redundancy, but prefill-free transfer across model families must handle differences in tokenization, model depth, and KV representations. To address these issues, we propose \textit{HeteroFold}, a prefill-free cross-family KV cache transfer method that keeps both the sender and receiver frozen. HeteroFold aligns model structures, maps the sender cache into the receiver space, and calibrates it to preserve receiver behavior. Across six transfer directions, HeteroFold achieves the best cache-transfer performance on all four long-context benchmarks and most short-context settings. It also matches text-based communication on the multi-agent benchmark. At 32K context length, Llama-3.1-8B$\rightarrow$Ministral-3-14B transfer is $10.7\times$ faster than Native Prefill and $1.18$--$1.47\times$ faster than the state-of-the-art prefill-free baselines, Dense Latent and KV Ridge. These results show that HeteroFold enables efficient cross-family KV reuse without receiver prefill.</summary>
+    <category term="cs.AI" scheme="http://arxiv.org/schemas/atom"/>
+    <category term="cs.LG" scheme="http://arxiv.org/schemas/atom"/>
+    <category term="cs.MA" scheme="http://arxiv.org/schemas/atom"/>
+    <published>2026-09-26T05:30:18Z</published>
+    <arxiv:primary_category term="cs.AI"/>
+    <author>
+      <name>Vincent-Daniel Yun</name>
+    </author>
+    <author>
+      <name>Woosang Lim</name>
+    </author>
+    <author>
+      <name>Haneul Yoo</name>
+    </author>
+    <author>
+      <name>Sungjoo Yoo</name>
+    </author>
+    <author>
+      <name>Murali Annavaram</name>
+    </author>
+    <author>
+      <name>Sai Praneeth Karimireddy</name>
+    </author>
+  </entry>
+</feed>

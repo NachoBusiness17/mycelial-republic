@@ -1,0 +1,3 @@
+# capmx-baref-t8-r1 (glm-5.3-flash @ zai, turn 1, channel: content)
+
+{"verb": "STAGE_ASK", "reason": "Queue holds 38 handoff items and 11 open todos; loop files in git_tail changed 213 paths this tick. Route attention to the top todo: staged review of the merged single-line Grok stone falsifier before Sunday close.", "payload": {"target": "todo_open_tail[0] [mag] Stone 5 Grok asks, MERGED single line", "ask": "Cheap swarm review: does the merged single-line Grok stone carry a preregistered adversarial falsifier for each of the 4 asks, per WO-12 re-seed and WO-8 dedup of lines 235/237? Verify the duplicate is dead and name any ask lacking a falsifier."}}

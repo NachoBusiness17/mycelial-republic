@@ -1,0 +1,25 @@
+# B2-312 Post-drop-ts ineligibility clause (2026-09-26)
+
+## Verdict
+
+REJECTED BY FALSIFIER; no edit landed. The brief's own bar was explicit: the sweep must name every re-dated row, predict 5320727 April -> 2018-04-15, and the 49 clean keepers plus 7 held judgment rows must not move, "else it does not land." The probe (full 6,242-drop sweep through the real ledger module, infer_year monkeypatched with the clause: candidate dates >= the drop ts are ineligible, nearest-year reruns over the remainder) confirmed the prediction AND failed the bar catastrophically: 12 caption rows / 16 audited keeper sites re-date, including same-day and within-frame forward references that are core corpus semantics. Clean keepers that move under the clause: id 235 and 245 ("SEPT 17 [week of]" dash-run markers on Sep 15/17 drops), 259, 318, 328, 367, 378 (Nov 6/7 midterm rows on Nov 3-era drops), 5187870 ("feb 15th"), 5705892 ("On March 15th?" same-day), 10630891 and 10716779 ("SEPT 14-18"/"SEPT 21-25"), 10134839 and 10870492 ("until Nov 3"), 9811683 and 9812912 ("June 1 - July 1"), 1699199 ("Monday June 11"), plus 1769691/1769812 (Nov 3+6 pairs), 1393554, 147449624, 10566765. The clause cannot distinguish "a past-tense narrative quoting a future-dated claim" (the 5320727 disease) from "a drop announcing its own week's markers" (the corpus's normal idiom). Nearest-year with drop-ts ceiling is therefore falsified as a mechanical rule; the 5320727 April defect stays a documented judgment-class case (B2-243 line 12) until a smarter guard exists. Both probe outputs filed as evidence (B2_312_out_now.jsonl / B2_312_out_new.jsonl, 267 rows each, identical histograms 0.5:16 0.55:42 0.65:18 0.75:57 0.9:134).
+
+## Evidence
+
+- Probe harness (temp script, logic restated here): loaded scripts/the50_t21_q_caption_ledger.py fresh via importlib, ran main() twice to in-repo outputs, second run with cap.infer_year replaced by the post-drop-ts clause (candidates y-1/y/y+1; cand >= drop_ts.date() skipped; nearest of the remainder; original function as total fallback), 4 infer_year call sites all intercepted (lines 442, 465, 542, 565)
+- Prediction confirmed: id 5320727 "backed up by POTUS on April 15th" lost 2019-04-15, gained 2018-04-15 (drop ts 2019-02-22); its Feb 6 row was untouched (2019-02-06 is before the drop)
+- Falsifier broken: keeper/held moved list (16 of the 33 audited keeper/held ids in this receipt's KEPT set, drawn from B2_243_bucket_audit_20260926.md line 13): 318, 235, 245, 259, 328, 367, 378, 5187870, 5705892, 9811683, 9812912, 10630891, 10716779, 10134839, 10870492, 1699199, 5187870 counted once - full move list printed by the probe and quoted in Verdict
+- Baseline integrity: B2_312_out_now.jsonl reproduces the landed ledger exactly (267 rows; histograms match B2-243's filed post state)
+- The judgment-class target survives untouched in the ledger: id 5320727 rows remain as filed (the clause was never applied), consistent with "no edit landed"
+
+## Work done
+
+Read infer_year and its 4 call sites, the B2-243 audit's keeper/held classification, and the 5320727 defect note. Built the clause as a monkeypatch over the real module so all call sites (0.75 nearest-year path) are exercised, and swept all 6,242 drops twice (baseline + clause). Diffed by (id, date) multisets and named every moved row. Applied the brief's falsifier literally: prediction held, keeper bar broken, so the clause is rejected and the module is untouched (git status clean for scripts/the50_t21_q_caption_ledger.py at lane close except its pre-existing working-tree state; no edit made by this lane). Filed the two sweep outputs as named evidence so the next guard attempt (e.g., a past-tense-detector or explicit-year requirement for forward candidates) starts from these bytes.
+
+## Falsifier
+
+The rejection is falsifiable in both directions: (1) re-run the probe (monkeypatch recipe above); if the keeper-move set shrinks to only 5320727-class rows (rows whose drop text is past-tense narrative), a narrower clause exists and should be probed again; (2) if any future edit to infer_year lands WITHOUT a sweep output showing zero keeper/held movement, that edit violates this receipt's finding and its rows must be re-audited. The 5320727 row remains the canonical standing defect: any guard proposal must re-date it (to 2018-04-15 per the audit's internally-impossible note) while leaving 235, 259, 318, 5187870, 1699199 fixed - that five-row pin is the minimum test any future candidate must pass.
+
+## Bibliography closed
+
+scripts/the50_t21_q_caption_ledger.py (read 365-386, 442-565 call sites; NOT edited); watch/inbox/qdrop_export/qdrops.jsonl (swept, unchanged); watch/inbox/qdrop_export/q_caption_ledger.jsonl (read for baseline comparison, unchanged); watch/inbox/burn_wave_20260926/B2_243_bucket_audit_20260926.md (keeper/held classification, lines 12-13); watch/inbox/burn_wave_20260926/B2_312_out_now.jsonl + B2_312_out_new.jsonl (NEW, named sweep evidence); QUEUE.md (row note); memory/burns/LEDGER.jsonl (appended); watch/inbox/burn_wave_20260926/B2_312_post_drop_ts_rejected_20260926.md (this receipt).

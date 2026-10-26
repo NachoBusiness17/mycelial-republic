@@ -1,0 +1,69 @@
+driver-meter finish line, ball3-suite-green, run at 2026-09-29T18:46:01Z
+interpreter: C:/Users/foste/Documents/projects/local_sovereign_agent/.venv/Scripts/python.exe
+
+=== CHECK 1: the four target files, default basetemp ===
+$ .venv/Scripts/python.exe -m pytest tests/test_stealth_driver_v2.py tests/test_stealth_tools_wave5_repair.py tests/test_honest_cache_meter.py tests/test_violation_ratchet.py -q
+...................................                                      [100%]
+35 passed in 1.94s
+EXIT=0
+
+=== CHECK 2: same four files, OUT-OF-REPO basetemp (the wave5 suite-burn disease shape) ===
+$ .venv/Scripts/python.exe -m pytest <same four> -q --basetemp=C:/Users/foste/AppData/Local/Temp/driver-meter-ball3-out-of-repo
+...................................                                      [100%]
+35 passed in 3.02s
+EXIT=0
+
+=== CHECK 3: the four named tests individually, verbose ===
+$ .venv/Scripts/python.exe -m pytest tests/test_stealth_driver_v2.py::test_work_sets_tick_flag tests/test_stealth_tools_wave5_repair.py::test_instance_lock_refuses_second_acquire tests/test_honest_cache_meter.py::test_agent_state_commit_hash_excludes_its_own_field tests/test_violation_ratchet.py::test_baseline_update_stamps_accepted_lines -v
+configfile: pytest.ini
+plugins: anyio-4.14.2, langsmith-0.10.14, timeout-2.4.0, xdist-3.8.0, typeguard-4.6.0
+collecting ... collected 4 items
+
+tests/test_stealth_driver_v2.py::test_work_sets_tick_flag PASSED         [ 25%]
+tests/test_stealth_tools_wave5_repair.py::test_instance_lock_refuses_second_acquire PASSED [ 50%]
+tests/test_honest_cache_meter.py::test_agent_state_commit_hash_excludes_its_own_field PASSED [ 75%]
+tests/test_violation_ratchet.py::test_baseline_update_stamps_accepted_lines PASSED [100%]
+
+============================== 4 passed in 0.77s ==============================
+
+=== CHECK 4: live driver still running: production mutex held + processes alive + heartbeat advancing ===
+probe (fresh module, production lock, no namespace):
+MUTEX-HELD-BY-LIVE-DRIVER: another stealth_driver instance already holds the single-instance lock (Local\MagStealthDriverInstance); refusing to start (stop t
+EXIT=0
+
+driver processes:
+CreationDate               ProcessId  
+20260929112931.139668-240  49400      
+20260929112931.161941-240  54484      
+
+heartbeat last row ts/cycle:
+rows: 6 | last ts: 2026-09-29T18:42:25.522404+00:00 | cycle: 30 | work topic: sensed w-quant-compare via openrouter/inclusionai/ling-3.0-flash-sante:free fini
+
+=== CHECK 5: violation ratchet over changed files (mag/ and tools/ touched) ===
+$ .venv/Scripts/python.exe tools/violation_ratchet.py check --changed
+RATCHET check: scope=15 changed files; hits=15; registered=15; NEW=0; expired-exceptions=0
+  GROWTH claim 42b721c740d1abda: mag/corpus_selfsteal.py accepted at 550 lines, now 573 (+23) — re-audit or re-accept by name
+  GROWTH claim e066832a0b8edb5e: tools/stealth_driver.py accepted at 753 lines, now 1472 (+719) — re-audit or re-accept by name
+RATCHET: PASS — no unregistered debt.
+EXIT=0
+
+=== CHECK 1 tail (default basetemp result) ===
+35 passed in 1.94s
+EXIT=0
+
+--
+35 passed in 3.02s
+EXIT=0
+
+--
+
+=== CHECK 6: post-stash-reproduction restore confirmation (same four files, default basetemp) ===
+...................................                                      [100%]
+35 passed in 2.37s
+EXIT=0
+
+=== CHECK 7: PRE-FIX reproduction receipt (fixes git-stashed, out-of-repo basetemp) ===
+command: pytest tests/test_stealth_driver_v2.py::test_work_sets_tick_flag tests/test_honest_cache_meter.py::test_agent_state_commit_hash_excludes_its_own_field tests/test_violation_ratchet.py::test_baseline_update_stamps_accepted_lines -q --basetemp=<out-of-repo temp>
+observed (grep of output):
+E ValueError: 'C:\Users\foste\AppData\Local\Temp\driver-meter-ball3-out-of-repo\test_work_sets_tick_flag0\out\w1_hermes.md' is not in the subpath of 'C:\Users\foste\Documents\projects\local_sovereign_agent'
+the exact root-cause site named by the ask's suite log class; fixes restored via git stash pop, integrity re-verified in CHECK 6

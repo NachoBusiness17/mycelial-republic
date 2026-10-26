@@ -1,0 +1,42 @@
+{
+  "lane": "grokbot-metered-reality",
+  "check": "tier-1 supports-check, textual entailment only (quote as written must entail claim; no estate re-read)",
+  "date": "2026-10-03",
+  "supports": [
+    {
+      "claim": "xAI's cost_in_usd_ticks field resolves at exactly 1e-10 USD per tick: ticks*1e-10 equals list-rate arithmetic (prompt minus cached at $2/M, cached at per-model $0.50/M grok-4.7 or $0.30/M grok-4.5, completion plus reasoning at $6/M) to all 12 displayed decimals on both on-disk datapoints, matching the vendor page docs.x.ai/docs/models fetched 2026-10-03.",
+      "quote": "\"num_sources_used\": 0, \"cost_in_usd_ticks\": 242180000}",
+      "supports": "no",
+      "reason": "Quote shows one datapoint's ticks value (242180000) and a num_sources_used field, nothing more. The 1e-10 conversion factor, the list-rate arithmetic inputs, the second datapoint, the 12-decimal match, and the docs.x.ai fetch are all absent from the quote text; a ticks value alone entails none of them."
+    },
+    {
+      "claim": "The funded grok-4.7 carrier banks cost_usd as null and drops completion_tokens_details.reasoning_tokens entirely, so memory/runs/xai_grok/usage.jsonl cannot price its own burn: all 3 rows on 2026-10-03 are cost_usd null while the true list-rate burn was $0.143946, violating the driving-ladder law that every paid dispatch banks its burn.",
+      "quote": "\"cost_usd\": None, \"ok\": bool(content)})",
+      "supports": "no",
+      "reason": "Quote is a code fragment hard-coding cost_usd as None in a dict construction. It touches only the first clause, and partially at that (no evidence this is the funded grok-4.7 carrier path). The reasoning_tokens drop, the 3-null-rows-on-2026-10-03 census, the $0.143946 true burn, and the driving-ladder violation are all absent from the quote."
+    },
+    {
+      "claim": "At the estate's measured grok-4.7 pace ($0.231/answer, 646s/498s per answer, reasoning tokens bill as output), a 24/7 adversarial-review bot extrapolates to 151 answers/day = $34.89/day = $1,062/mo: arithmetic on measured numbers, not a measured 24/7 run, and roughly 7,400x today's actual episodic burn of $0.143946.",
+      "quote": "SLOW (646s/498s per answer) and MOST expensive at $0.231/answer because reasoning tokens bill as output (V9 law)",
+      "supports": "no",
+      "reason": "Quote contains only the measured inputs ($0.231/answer, 646s/498s, reasoning-bills-as-output). The claim's core assertion - the extrapolation to 151 answers/day, $34.89/day, $1,062/mo, the ~7,400x factor, and the $0.143946 baseline - appears nowhere in the quote text."
+    },
+    {
+      "claim": "The X-premium-tiers half of the metered-reality head has zero estate bytes: corpus/steal carries 2 thin grok/xai mentions and memory/corpus only incidental Gutenberg prose for premium, so the tier picture (Basic $3 / Premium $8 / Premium+ $40 per month, Grok bundled in higher tiers) stands solely on web-fetched 2026-10-03 aggregator summaries, unverified-primary.",
+      "quote": "memory/live_from_grok.md is a telemetry stub, never a source.",
+      "supports": "no",
+      "reason": "Quote is one negative fragment about a single file (live_from_grok.md is a stub, never a source). It says nothing about corpus/steal's 2 mentions, memory/corpus Gutenberg prose, the $3/$8/$40 tier picture, the Grok bundling, or the 2026-10-03 aggregator fetch; absence of one source does not entail the zero-estate-bytes census or the tier figures."
+    },
+    {
+      "claim": "grok-4.7 input doubles to $4/M and output to $12/M once a prompt reaches 200k tokens (docs.x.ai fetched 2026-10-03), and today's largest ask already carried 53,172 prompt tokens (27% of the cliff) while the carrier caps evidence by characters (150,000 chars), not tokens, so nothing in the path sees the cliff coming.",
+      "quote": "\"ts\": \"2026-10-03T13:28Z\", \"id\": \"grok47_ask3\", \"model\": \"grok-4.7\", \"prompt_tokens\": 53172",
+      "supports": "no",
+      "reason": "Quote is one usage row establishing only that ask grok47_ask3 on grok-4.7 carried 53,172 prompt tokens. It does not state the 200k-token cliff pricing ($4/M input, $12/M output), the docs.x.ai fetch, that this was the day's largest ask, the 150,000-character evidence cap, or the nothing-sees-the-cliff conclusion."
+    }
+  ],
+  "counts": {
+    "claims_checked": 5,
+    "supported": 0,
+    "not_supported": 5
+  }
+}

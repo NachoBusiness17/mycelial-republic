@@ -1,0 +1,48 @@
+{
+  "task": "THE 50 W9 T42: endpoint_news into standing automation (lean fire)",
+  "when": "2026-09-19",
+  "writer": "t42-w9-builder",
+  "wired": {
+    "harvester": "scripts/endpoint_news.py (pre-existing, SSRF-hardened, https-only, fixed host allowlist)",
+    "wrapper": "scripts/endpoint_news_daily.ps1 (venv python, logs to logs/endpoint_news.log, propagates exit code)",
+    "register": "scripts/register_endpoint_news_task.ps1 (schtasks pattern of register_improve_task.ps1)",
+    "task_name": "MagEndpointNewsDaily",
+    "schedule": "daily 06:30 local, /RL LIMITED, current user"
+  },
+  "proof_line": "schtasks /run /tn MagEndpointNewsDaily fired it live 2026-09-19: logs/endpoint_news.log END exit=0, pass_complete=true, rows=15, fresh ledger rows at ts 2026-09-19T16:58:09Z in watch/inbox/endpoint_news/endpoint_news.jsonl; task query shows Status Ready, Enabled, Next Run 9/20/2026 6:30:00 AM.",
+  "checks_run": [
+    "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/register_endpoint_news_task.ps1 -> SUCCESS: task created",
+    "MSYS_NO_PATHCONV=1 schtasks /query /tn MagEndpointNewsDaily /fo list /v -> Status: Ready, Scheduled Task State: Enabled, Next Run Time: 9/20/2026 6:30:00 AM",
+    "MSYS_NO_PATHCONV=1 schtasks /run /tn MagEndpointNewsDaily -> SUCCESS: Attempted to run",
+    "logs/endpoint_news.log -> END exit=0, pass_complete=true, rows=15, model_events=[]",
+    "endpoint_news.jsonl tail -> 15 rows ts 2026-09-19T16:58:09Z: 10 hn front_page_story + openrouter/groq/mistral no_change + cerebras/nvidia baseline (10+3+2=15)"
+  ],
+  "honest_notes": [
+    "cerebras and nvidia lanes run keyless today (NVIDIA_API_KEY / CEREBRAS_API_KEY absent from .env), so they emit empty baselines and report no churn; they wake when keys land via T41, which is OPERATOR-gated and untouched by this task.",
+    "a keyless pass overwrites those lanes' snapshots with empty lists, so the first keyed pass after T41 will show one burst of model_added rows before settling; self-healing, not a bug fix owed here.",
+    "hn/openrouter/groq/mistral lanes all answered on the live fire; groq shows no_change count=13, mistral no_change count=46."
+  ],
+  "sibling_tasks_seen": "MagImproveDaily (Disabled), mag-docker-watchdog (Ready) were the existing precedent tasks; endpoint_news had no task before this one.",
+  "reverify_2026_09_25": {
+    "writer": "t42-w9-endpoint_news-standing-automation",
+    "checks_run": [
+      "MSYS_NO_PATHCONV=1 schtasks /Query /TN MagEndpointNewsDaily /FO LIST /V -> Status: Ready, Scheduled Task State: Enabled, Schedule Type: Daily 06:30, Last Run 9/25/2026 6:30:01 AM, Last Result: 0, Next Run 9/26/2026 6:30:00 AM",
+      "MSYS_NO_PATHCONV=1 schtasks /Run /TN MagEndpointNewsDaily -> SUCCESS: Attempted to run the scheduled task",
+      "logs/endpoint_news.log lines 177+209 -> [2026-09-25 16:42:45] START / END exit=0 (8th completed pass in the log; 7 START/END exit=0 pairs precede it)",
+      "watch/inbox/endpoint_news/endpoint_news.jsonl tail -> fresh rows ts 2026-09-25T20:42:45Z with real churn: openrouter model_added perceptron/perceptron-mk1.5, model_removed nex-agi/nex-n2.5-mini:free, model_removed nex-agi/nex-n2.5-pro:free, model_removed z-ai/glm-5.2:free (28 rows: 20 hn + 4 openrouter churn + groq/mistral no_change + cerebras/nvidia keyless baselines)"
+    ],
+    "one_line_proof": "MagEndpointNewsDaily is registered, Enabled, daily 06:30, Last Result 0; live fire 2026-09-25 16:42:45 local ended exit=0 and appended churn rows (model_added perceptron/perceptron-mk1.5, model_removed nex-agi/nex-n2.5-mini:free, nex-agi/nex-n2.5-pro:free, z-ai/glm-5.2:free) at 2026-09-25T20:42:45Z to watch/inbox/endpoint_news/endpoint_news.jsonl",
+    "note": "Task runs interactive-only under user foste; it has fired daily since 9/19 including today's unattended 06:30 pass (log END exit=0)."
+  },
+  "fix_2026_09_26": {
+    "writer": "b2-01-the50-punch",
+    "cause": "Wave-2 quality audit FIX-1 (watch/inbox/MICKEY17_WAVE2_QUALITY_20260925.md): the 09-25 reverify churn sentence had the ledger direction inverted for 3 of 4 churn events and omitted the actually-added model; checks_run[4] said 12 hn front_page_story where the ledger holds 10 (12+3+2=17 also contradicted its own rows=15); reverify checks_run[2] called the 16:42:45 fire the 5th completed pass where 7 completed passes precede it (8th, not 5th).",
+    "evidence": "endpoint_news.jsonl lines 499-502, all ts 2026-09-25T20:42:45.705318Z: model_added perceptron/perceptron-mk1.5; model_removed nex-agi/nex-n2.5-mini:free; model_removed nex-agi/nex-n2.5-pro:free; model_removed z-ai/glm-5.2:free. 2026-09-19T16:58:09Z block recounts to exactly 15 rows = 10 hn front_page_story + openrouter/groq/mistral no_change + cerebras/nvidia baseline. logs/endpoint_news.log lines 177/209 carry the 2026-09-25 16:42:45 START / END exit=0 pair; the START/END pairs at log lines 1/7, 8/21, 22/28, 29/70, 71/112, 113/154, 155/176 precede it.",
+    "changed": [
+      "checks_run[4]: 12 -> 10 hn front_page_story, cross-foot 10+3+2=15 stated",
+      "reverify checks_run[2]: 5th -> 8th completed pass",
+      "reverify checks_run[3]: churn sentence rewritten from ledger bytes (added perceptron/perceptron-mk1.5, removed both nex-agi:free and z-ai/glm-5.2:free)",
+      "reverify one_line_proof: churn parenthetical rewritten from ledger bytes"
+    ]
+  }
+}

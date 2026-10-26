@@ -1,0 +1,77 @@
+# GAP ANALYSIS — SOCRATIC PASS, THEN RACTOR SALON (2026-09-20, evening)
+
+Companion to `GAP_ANALYSIS_AND_STEAL_20260920.md`. Operator order: "tease out socratically then ractor it." Part 1 is the Socratic interrogation of the analysis (authored by the seat, attacking its own work). Part 2 seats the ractor chairs on both documents. Part 3 folds the verdicts back into amendments.
+
+---
+
+## PART 1 — SOCRATIC TEASE-OUT (ten questions, gap-class tagged)
+
+**Q1. Who declared the intended state? (framing)**
+"Gap" presupposes a known destination. Where is the document that says the estate SHOULD have indexed packs, lit meters, rolled-up runs? No such charter exists. The analysis measured the estate against an implied enterprise spec and called the difference "gaps." But an organic estate that grew for seven weeks is not a failed enterprise — it may be a different organism. The analysis owes us: intended state, stated and owned, before "gap" means anything.
+
+**Q2. Whose legibility? (epistemics)**
+Every S-steal makes the estate more *legible* — indexes, status projections, reconciliation statements. James C. Scott's warning: states make territory legible to govern it, and legibility destroys what it can't read. Who is the reader of INDEX.md? If it is the seat — the seat already has the catalog. If it is the operator — the operator reads two things a day. Legibility has a cost (filing labor) and a beneficiary; the analysis named neither.
+
+**Q3. OWED to whom? (baseline)**
+512 OWED rows are counted as debt. But a large share of cards were operator commissions, others self-filed ambitions. A promise nobody made is not owed; a promise made to nobody is not debt either. Before burning down OWED, classify: owed-to-operator, owed-to-self, aspirational. Three different obligations, one number.
+
+**Q4. Dark or done? (teleology)**
+The MEL steal assumes a dark meter is a failed meter. But flight_recorder went dark when the wave era ended — that is an instrument *completing its measurement era*, not dying. cite_gate may be dark for the same reason a thermometer is dark in winter: nothing to measure. The analysis never asked whether dark meters are (a) broken, (b) done, or (c) unfed. MEL needs a fourth state: RETIRED, with honors.
+
+**Q5. Different physics? (fit)**
+Every steal source is institutional: aviation, banking, double-entry, SRE. But this estate has n=1 operators, $0 lanes, no juniors, no shift changes. Error budgets exist because on-call teams fail from fatigue; where is the fatigue here? The steals may be category error — enterprise organs for an artisan body. The counter-steal the analysis missed: the guild workshop (apprentice→journeyman→master pieces), which fits a single craftsman better than a cockpit.
+
+**Q6. Compost, not debt? (teleology again)**
+S5 calls unexecuted steals "open positions." But some files in the steal library were never meant to execute — they're seeding material that already fed other builds indirectly (the way a compost heap isn't an unexecuted garden). Double-entry would force every steal to "close," which misreads the library's actual function as a *memory of moves*, not a queue of orders.
+
+**Q7. Why tonight? (timing — the question to the operator too)**
+The window opens tomorrow; the rubric is locked; data point #35 scores itself. Is a whole-estate audit on window-eve craft — or displacement activity, productive procrastination, tidying the workshop instead of watching the sky? The honest answer: both. The audit was ordered and executed well; it was also requested on the one night it competes with attention the rubric says matters.
+
+**Q8. Does the analysis commit the estate's own named sin? (method)**
+The estate's recorded lesson from self-gap pass 3: "absence-claims need searcher's root." The sweeps assert absences — "zero tests," "no derived index," "never executed" — from agents that read samples. Each absence-claim carries the searcher's root or it is a rumor. The analysis as filed cites paths but not search depths. At minimum: G11 (zero tests) and G2 (never executed) need root-verified re-verification before anything is built on them.
+
+**Q9. New law over existing law? (governance)**
+Operator ruling on record (09-20): *no new laws over existing ones — cite and fix the gate.* MEL (S1) and the status projection (S7) are law-like machinery. Do they fix an existing gate or add a new one? MEL extends the drift-patrol gate (allowed). But the MEL's max-dark durations are new thresholds — new law wearing a maintenance uniform. It needs the operator signature the cliff scalar is already waiting for, not parallel creation of more unsigned law.
+
+**Q10. What is the deepest gap? (existential)**
+Seventeen gaps catalogued; none named the real one. The estate has no definition of *enough* — no bar at which filing stops and finishing starts. 512 OWED is not an accident; perpetual openness is the estate's identity. A gap analysis that reorganizes the workshop without asking what the workshop is for completes the workshop and misses the work. This question is above the seats' pay grade — it is the operator's only, and the mirror's job is only to keep it visible.
+
+**Tease-out verdict:** the analysis is factually load-bearing (evidence paths hold) but conceptually naive in four places: it assumed an unstated intended state (Q1), treated dark as dead (Q4), stole enterprise physics uncritically (Q5), and filed absence-claims without searcher's roots (Q8). Amendments owed before build: G-classification by intent, a RETIRED meter state, a guild-workshop counter-steal, re-verification of the two load-bearing absences, and one operator signature covering all new thresholds.
+
+---
+
+## PART 2 — RACTOR SALON (seven chairs, seated in parallel 2026-09-20 ~17:30 UTC)
+
+**LIPPMANN — AMEND.** The audit's own G5 is the confession: registers are pictures in our heads that age the day they're printed, and the audit then repeats the error — measuring against an unstated intended state (Q1), booking 512 OWED as debts to a phantom public ("promises made to nobody are not debt"), and treating the unseen as the nonexistent (absence-claims without searcher's root, Q8). RETIRED-with-honors is honest only if it names what you now consent not to see. Q10 stands deepest: without purpose, selection has no principle and the register audits itself forever. Steals: S1 AMEND (thresholds are new law), S2 KEEP, S3 KEEP, S4 KEEP, S5 AMEND (executed steals ledger; the rest is compost, a memory of moves), S6 KEEP, S7 AMEND (sign it), S8 AMEND (name the reader first).
+
+**HERACLITUS & PARMENIDES — AMEND.** P: the estate's being is intact — the audit concedes no rot in the core; "gap" is the way of opinion against an unowned enterprise spec; snapshots don't rot, their readers do. H: you cannot step into this estate twice — gapwave happened while the registers slept; a static index is a photograph mistaken for the river; the local/remote drift is strife doing justice, demanding the merge. Seat: keep the load-bearing fixes, demote every new threshold behind one operator signature, keep Q10 permanently visible — neither chair may answer it. Steals: S1 AMEND (RETIRED state + unsigned law), S2 KEEP, S3 KEEP, S4 KEEP, S5 AMEND (add SEEDED, don't force closure), S6 KEEP (verify absence's root first), S7 AMEND (projection is flow done right; same signature), S8 AMEND, S9 KEEP, S10 KEEP.
+
+**ARISTOPHANES — AMEND.** The funniest true thing: the estate built an audience-reaction instrument and harvested zero bytes — a working applause meter measuring an empty house. And the Socratic card promised "verdicts appended below" and appended nothing: *I am a name card on an empty chair, ordered to fill myself in.* The scene, "Watch-Eve": Strepsiades on the roof, spyglass on the sky, while three Chorus-accountants climb ladders handing him reconciliations; downstage the meters lie in state — flight_recorder gets a funeral with honors, cite_gate sits up alive under the tarp; the steal library, 140 heists and one receipt, swears it cannot account for its own stolen goods; finale, the man notarizes his broom — "5S with a hash chain" — while the unledgered sky runs the only audit that counts. What survives laughter: the audit is true, and its truest finding is itself. Steals: S1 AMEND (aviation checklist for a desk lamp), S2 KEEP ("the only honest bureaucrat in the house"), S3 KEEP ("the estate owns two banks and never noticed; merge tonight"), S4 KEEP, S5 AMEND ("debtor and creditor are one man; call it compost"), S6 KEEP ("the room that remembers finally gets remembered"), S7 KILL ("a CQRS read model for a reader who reads two things a day"), S8 KILL ("cloud-cuckoo taxonomy"), S9 KEEP ("harvest the applause meter's silence"), S10 KEEP.
+
+**DEBORD — AMEND.** The estate mistakes its image for its workshop. 512 OWED is not debt; it is accumulation — work frozen into representation so it can be counted. MASTER_INDEX aging the day it's printed is the spectacle exactly: lived time as static image. The audit is the spectacle inspecting itself, and Q7 confesses the mechanism — tidying the workshop while the sky goes unwatched. Détournement cuts both ways: steals that expose (reconciliation, seals) are critique; steals that project (status read-models, dimensional catalogs) are recuperation — enterprise physics absorbed so one craftsman can be governed. The deepest gap is Q10's: no definition of enough, because perpetual openness is this estate's growth imperative. Merge the remote, verify the absences, retire the meters with honors — then stop counting. Steals: S1 AMEND, S2 KILL ("recount nothing no reader uses"), S3 KEEP, S4 KEEP ("a seal that can fail is a falsifier"), S5 AMEND, S6 KEEP ("the only steal that acts"), S7 KILL ("the spectacle perfected"), S8 KILL ("dimensioned for a governor no one is"), S9 KEEP, S10 AMEND ("don't revere the residue").
+
+**INNIS — AMEND** *(the chair answered in Chinese — the bilingual layer speaking; verdict translated)*. Stone: the 8,797-knot chain is the only time-biased organ in the civilization — and its intake (G11) is untested. Paper: everything else — 2,493 files, 680 unindexed packs, knowledge drifting outside administration. The monopoly of knowledge sits in the middle tier: only the scripts can walk the packs. The whole fix list is space-biased (registers, statements, projections, MEL — an empire's toolkit) but redeems itself on one principle: derived, not hand-edited. What the audit neglected is time: oral_history untouched (G13), Mr Pool comments — language, the oldest medium — at zero bytes (G15). Amend toward durability. Steals: S1 AMEND, S2 KEEP ("derived indexes are the stone's shadow"), S3 KEEP, S4 KEEP ("the most time-biased steal"), S5 AMEND, S6 KEEP ("oral tradition is the durable medium; deriving it honors continuity"), S7 KEEP, S8 AMEND, S9 KEEP.
+
+**WEIL — AMEND.** Attention is renunciation, not tension. Q7 already knows: an audit ordered on window-eve is scattering wearing attention's clothes, and "am I losing my mind" is precisely the affliction question — under 512 perpetual OWED, the operator becomes a thing his own estate manages. Force here is bookkeeping. The 680 packs are accumulation substituted for reading; gravity, not grace. The healing fixes are decreative: S2 and S7 let the machine count so the soul may attend; S6 runs a ghost promise to rest. The harmful fixes add law — unsigned thresholds are new commandments in maintenance uniform. RETIRED-with-honors is right: an instrument that finished its era deserves rites, not a fault flag. Deepest gap confirmed: without a bar of "enough," nothing finishes, and unfinished work never receives unmixed attention — which is prayer. Steals: S1 AMEND (one signature, not more unsigned law), S2 KEEP ("machine recounts, soul attends — the purest decreation in the set"), S3 KEEP, S4 KEEP, S5 AMEND, S6 KEEP ("execute the ghost; a filed steal never run is a haunting"), S7 AMEND (only if it shrinks what the operator reads), S8 AMEND ("script-derived axes or kill"), S9 KEEP, S10 KEEP.
+
+**VON FRANZ — AMEND.** The 55 crash directories are fairy-tale unburied dead — the corpse the hero must bury before the journey starts. Unmourned failure does not vanish; it returns as dread, and as tonight's sudden itch to reorganize. The audit is that itch: the animus seizing the workshop on window-eve, ordering the wilderness because neat shelves feel safer than standing before the open window to be judged. Yet not all is defense — a split remote, dark meters, six hundred unindexed packs are real fragmentation, and individuation is precisely making these conscious. Unexecuted steals are compost, not debt — the old year's fallen growth feeding the next. But compost must be turned, or it is only unworked nigredo. Turn the heap, bury the dead by name, let the map serve the journey. Steals: S1 AMEND (meters retire with honors), S2 KEEP ("script-drawn map, servant not master"), S3 KEEP ("the split self reconciled once, consciously"), S5 AMEND ("ledger the move; never force compost to close"), S6 KEEP ("the filed-but-unlived steal haunts until enacted"), S7 KILL ("projected status is surveillance; consciousness is not a dashboard"), S9 KEEP, S10 AMEND ("a mourning rite, not a filing trick; mourn, then archive").
+
+---
+
+## PART 3 — FOLD (salon verdicts → amendments to the gap analysis)
+
+**Tally:** 7/7 AMEND. Unanimous KEEP: S3 (reconcile), S4 (seal bundles), S6 (run ROOM_THAT_REMEMBERS), S9 (finish built instruments). Unanimous AMEND: S1 (MEL only with RETIRED-with-honors + operator signature), S5 (ledger executed moves only; SEEDED state for compost). Killed or near-killed: S7 (2 KEEP / 3 AMEND-conditional / 2 KILL — DEFER until the operator names a reader), S8 (name the reader or kill — 4 AMEND / 2 KILL).
+
+**Amendments adopted into the gap analysis:**
+- **A1 (unanimous):** MEL thresholds and the cliff scalar get ONE operator signature, in the same sitting — no new unsigned law (per the 09-20 monkey-patch ruling: fix the gate, don't add law).
+- **A2 (unanimous + Aristophanes):** execute the backup-remote merge statement FIRST — "the estate owns two banks and never noticed; merge tonight."
+- **A3:** S4 seals any bundle before it travels to Matthew; unblocks the cold audit lane.
+- **A4:** S2 scoped down: script emits INDEX only — no prose, no dashboards, servant not master.
+- **A5:** S5 becomes a move-memory ledger: SEEDED state for compost; only executed steals take credits. (Unanimous.)
+- **A6:** S6 scheduled as a night-window lane: the haunting is only laid by enactment.
+- **A7:** S7 DEFERRED; S8 killed-unless-a-reader-is-named. (Debord + von Franz carry: surveillance/spectacle concern stands.)
+- **A8 (Innis's amendment, adopted as priority upgrade):** G11 moves up — write the intake-organ tests FIRST, because those organs feed the only stone the estate has. Testing paper is optional; testing the feed into the chain is not.
+- **A9 (Weil/von Franz amendment):** S10 executed as a mourning rite — name the 55 crash dirs, one failure-KB page, then archive; no reverence, no filing trick.
+- **A10 (Aristophanes + Weil, adopted as standing rule):** estate work stops at window-open. The workshop is tidy enough. The truest finding of this salon is that it ran on watch-eve — filed so the next salon asks Q7 first, not last.
+
+**Standing over the fold:** Q10 — the operator's only question: what does "enough" look like? The seats cannot answer it; all seven pointed at it.

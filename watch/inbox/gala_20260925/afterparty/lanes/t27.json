@@ -1,0 +1,16 @@
+{
+  "gopher": "t27",
+  "item": "grave labels drifted across the three gravedigger lanes (c1 FOSSIL; c2 DONE-ELSEWHERE/SUPERSEDED-BY/STILL-RELEVANT; c3 ABSORBED-BY/STILL-RELEVANT/FOSSIL); build one stable vocabulary: tools/grave_classify.py (canonical five-label set, handoff path + optional successor hint, label + one-line justification, exit 2 on unknown labels) plus tests/test_grave_classify.py",
+  "ok": true,
+  "note": "Canonical set locked at exactly five: FOSSIL, ABSORBED-BY, SUPERSEDED-BY, DONE-ELSEWHERE, STILL-RELEVANT. Tool is 284 lines, generic, deterministic, never fabricates: decision order is explicit --label, then marker scan of the file (md Verdict/classification lines and json fields; unknown marker token = exit 2 drift enforcement, multiple distinct canonical markers = exit 3), then --successor found on disk defaults SUPERSEDED-BY (pass --label ABSORBED-BY to mean absorption), then STILL-RELEVANT with an unclassified-by-evidence note (age reported as data, never a verdict). Missing handoff or ghost successor = exit 1. My own tests caught 3 defects pre-fix (formatting chars before FOSSIL token, leading brace on json fields, successor default never wired); fixed and re-run green.",
+  "checks": [
+    "drift read from bytes: GALA_GRAVE c1/c2/c3 receipts + t10.json next_steal (label census in t27.check.txt)",
+    "pytest -q tests/test_grave_classify.py after fixes: 32 passed in 0.26s (covers each canonical label, unknown-label rejection at function + CLI level = exit 2, marker adoption c1/c2 shapes, successor laws, em/en-dash-free justifications)",
+    "full pytest -q: 33 failed, 1618 passed, 9 skipped, 1 error in 869.55s, PYTEST_EXIT=1; zero failures/errors name test_grave_classify (my 32 inside the 1618); failures pre-existing vs 2026-09-14 census (34 failed then); raw log LANES/t27.pytest_full.txt",
+    "tools/violation_ratchet.py check --changed: PASS, NEW=0 (two runs, scope 3 then 6 files as other lanes hold uncommitted edits, hits all registered); violations_in on my two files: [] and []",
+    "live smokes: c1 receipt -> FOSSIL via marker exit 0; --label STILL-OWED -> exit 2 naming canonical set; HANDOFF_GOODNIGHT_20260917.md --successor next-window-handoff.md -> SUPERSEDED-BY successor_exists true exit 0",
+    "negative recorded: c2 receipt itself scans to default STILL-RELEVANT (receipts are not handoffs, no marker line)",
+    "em/en-dash scan on both code files: 0 hits; nothing deleted; $0"
+  ],
+  "next_steal": "wire grave_classify into queue/handoff/README.md's retirement path as the named classify command and add a batch mode (one handoff dir in, one machine row per file out) so a group grave like c2's 12 peers is one command, with c1's per-item free-text dispositions (MERGED/STILL-OWED/SUPERSEDED) re-keyed through the canonical five"
+}

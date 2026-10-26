@@ -1,0 +1,170 @@
+{
+  "lane": "mcp-registries",
+  "division": "B",
+  "date": "2026-10-10",
+  "ask": "Survey MCP server registries/marketplaces first-hand: Smithery, mcp-get, PulseMCP, Glama, composio.dev. How servers are distributed/discovered/rated; what listing requires; any payment rails.",
+  "method": "First-hand fetches during this ask: WebFetch on smithery.ai docs (markdown endpoints), glama.ai, composio.dev, docs.composio.dev, arcade.dev; curl with browser user-agent on pulsemcp.com and smithery.ai (WebFetch 403/JS-blocked there); gh api for the two mcp-get GitHub repos and arcadeai-labs/smithery-cli. Raw evidence files in watch/inbox/gala_20260925/rung/lanes/_byproducts/.",
+  "registries": {
+    "smithery": {
+      "url": "https://smithery.ai",
+      "status": "LIVE, largest curated registry surveyed; acquired by Arcade.dev",
+      "scale": {
+        "fact": "Public registry API returned pagination.totalCount = 19444 servers (fetch moment 2026-10-10 ~22:40 local, no API key required).",
+        "evidence": "_byproducts/smithery_registry_probe.json (raw JSON from GET https://registry.smithery.ai/servers?pageSize=1, HTTP 200)",
+        "server_record_fields": "id, qualifiedName, namespace, slug, displayName, description, iconUrl, verified, useCount, remote, isDeployed, unlisted, inactive, createdAt, homepage, bySmithery, owner, score"
+      },
+      "listing_requires": [
+        "Two publish paths per https://smithery.ai/docs/build/publish.md: (1) URL/bring-your-own-host - server must expose Streamable HTTP transport, OAuth handled automatically via Client ID Metadata Documents if auth required; (2) local stdio server published as an .mcpb bundle.",
+        "Publish CLI: `smithery mcp publish \"https://your-server.com/mcp\" -n @your-org/your-server` with optional `--config-schema '{\"type\":\"object\",\"properties\":{...}}'` (JSON Schema with x-from extension); bundles: `smithery mcp publish ./server.mcpb -n your-org/your-server`.",
+        "Smithery scans the server for tools/prompts/resources; if scanning is blocked (WAF/bot protection, IP restrictions), serve a static card at /.well-known/mcp/server-card.json with serverInfo (required) + optional authentication/tools/resources/prompts per MCP SDK types, spec proposal SEP-1649, or whitelist User-Agent `SmitheryBot/1.0`.",
+        "Verification is automatic after publishing: 'After publishing, complete automatic official-vendor verification at the server's Settings -> Verification page.' The registry record carries a boolean `verified` field and a numeric `score` field.",
+        "No review/approval step and no quality-score documentation found: the docs index (https://smithery.ai/docs/llms.txt) contains no pages on listing requirements, quality scoring, or monetization."
+      ],
+      "distribution": [
+        "Dedicated server page per listing: 'Get a dedicated server page where users can discover, try, and install your MCP from any client' (https://smithery.ai/docs/build/index.md).",
+        "Gateway namespace URL: 'https://mcp.smithery.run/{namespace}' bundles a namespace's connections behind one MCP endpoint; tool names prefixed with connection IDs; endpoint advertises protected-resource metadata so clients run OAuth themselves (https://smithery.ai/docs/use/connect.md).",
+        "CLI: `smithery auth login`, `smithery mcp add <server> --id <id>`, `smithery tool list`, `smithery tool call`. REST connect API (createConnection / smithery.run) with API keys (backend) and short-lived scoped service tokens.",
+        "Typed SDK distribution: 'npm install https://pkg.smithery.ai/exa' (pkg.smithery.ai, preview).",
+        "Analytics for publishers: 'Track tool calls, monitor usage patterns, and understand how users interact with your server'."
+      ],
+      "discovery_rating": [
+        "API-side filters include 'filtering by deployment status, verification, ownership' (llms.txt index note); record fields useCount (usage) and score (numeric) exist per the probe JSON.",
+        "No public quality-scoring rubric found in docs; discovery ranking rubric is undocumented in the pages fetched."
+      ],
+      "payment_rails": [
+        "Acquisition: smithery.ai/pricing page body shows only the banner 'Smithery is now a part of Arcade.dev!' linking https://arcade.dev/blog/smithery-joins-arcade; the announcement post confirms continuity ('head to smithery.ai, sign up for free, and find your next MCP server'), names no terms, and states no monetization plans. CLI repo is now arcadeai-labs/smithery-cli (gh api: not archived, pushedAt 2026-05-31, 840 stars, homepage smithery.ai).",
+        "Per-call paid servers already exist as listings: Smithery homepage card for third-party server thelocalintel.com reads '20 MCP tools. LLMs pay $0.01-$0.05/call. Free discovery tier available.' (raw evidence _byproducts/smithery_home.html). Home HTML also ships a 'BillingAlertBanner' chunk. So Smithery hosts monetized, pay-per-call server listings; no publisher-facing listing fee or revenue-share page was found on the fetched pages.",
+        "Not verified (JS-rendered): any publisher pricing tiers behind smithery.ai/pricing body."
+      ]
+    },
+    "mcp_get": {
+      "url": "https://mcp-get.com",
+      "status": "DEAD / ARCHIVED. Site still resolves; project officially deprecated.",
+      "listing_requires": [
+        "Listing was a JSON package file in the monorepo: michaellatman/mcp-get repo `packages/` directory holds per-server JSON entries (79 entries listed via gh api, e.g. airtable-mcp-server.json, chargebee--mcp.json, cloudflare--mcp-server-cloudflare.json; raw evidence _byproducts/mcpget_packages.txt).",
+        "Auto-listing: 'All packages added to the registry are automatically displayed on mcp-get.com, making them discoverable to other users.' (_byproducts/mcpget_readme.txt).",
+        "Community servers repo mcp-get/community-servers (archived, read-only): 'While we review all servers in this repository, they are maintained by their respective creators who are responsible for their functionality and maintenance.' (_byproducts/community_servers_readme.txt)."
+      ],
+      "distribution": [
+        "CLI install: `npx @michaellatman/mcp-get@latest install @modelcontextprotocol/server-brave-search` (version pinning supported per npm/pip/go conventions); listing: `npx @michaellatman/mcp-get@latest list`.",
+        "Managed env vars/config for Claude Desktop; prerequisites Node 14+, Python 3.10+, Go 1.16+ per README."
+      ],
+      "discovery_rating": ["No ratings or scoring system found in the READMEs or site title/meta."],
+      "payment_rails": ["None found."],
+      "death_record": [
+        "michaellatman/mcp-get README (raw evidence _byproducts/mcpget_readme.txt): 'DEPRECATED - This Project Has Moved' ... 'This repository is no longer actively maintained.' ... 'We recommend [Smithery](https://smithery.ai) for discovering, installing, and managing MCP servers.' ... 'This tool will continue to work, but will no longer receive updates or new features.' (repo: 504 stars, isArchived true per gh search).",
+        "mcp-get/community-servers README: 'This repository is no longer maintained and does not accept new issues or pull requests.'"
+      ]
+    },
+    "pulsemcp": {
+      "url": "https://www.pulsemcp.com",
+      "status": "LIVE directory; SUBMISSIONS PAUSED since 2026-09-03",
+      "self_description": "Homepage meta description: 'A daily-updated directory of all MCP servers and clients available on the internet.' (_byproducts/pulsemcp_home.html)",
+      "listing_requires": [
+        "Submissions are currently paused (https://www.pulsemcp.com/submit, 'Last updated: September 3, 2026', raw evidence _byproducts/pulsemcp_submit.html): 'We are not accepting new MCP server or client submissions right now, and we are not making changes to existing listings.' Reason given: 'our directory pipeline and listing management need a bit of an overhaul to ensure listings are accurate and changes are addressed more quickly.'",
+        "The official pointer: 'if you have a server to share, publish it to the Official MCP Registry. That is the best first step even when we are not paused, and we will pick it up automatically once we are back.' This makes the Official MCP Registry (registry.modelcontextprotocol.io) the canonical upstream PulseMCP ingests.",
+        "Data pipeline per https://www.pulsemcp.com/api: 'Manual user submissions via pulsemcp.com/submit', 'Automated scraping and crawling processes with manual curation', 'Integration with the Official MCP Registry', 'Enrichment from various data sources including download counts, popularity metrics, and more'. (_byproducts/pulsemcp_extract.txt)"
+      ],
+      "discovery_rating": [
+        "Enriched metadata offered to partners: 'Popularity data, Security analyses, Corrections to server.json metadata, Compatibility analysis'; example _meta block com.pulsemcp/server carries visitorsEstimateLastFourWeeks, securityAnalysisFromVendorX.status, isOfficial. (_byproducts/pulsemcp_extract.txt)",
+        "No public star/rating system for listings found on fetched pages."
+      ],
+      "distribution": [
+        "Directory + Posts ('The Agentic Loop' blog) + MCP Apps section; Pulse REST API: 'Our Sub-Registry API implements the Generic MCP Registry API specification with PulseMCP-specific extensions for enriched metadata.'"
+      ],
+      "payment_rails": [
+        "B2B partner registry API, not paid listings: 'We are working directly with partners to provide an enriched, curated, quality-controlled MCP server registry offering customized to the needs of the partner business. If this is interesting to you, please reach out to [email protected].' No paid placement or listing fee found."
+      ]
+    },
+    "glama": {
+      "url": "https://glama.ai/mcp/servers",
+      "status": "LIVE, largest directory surveyed by count",
+      "scale": {
+        "fact": "Page header: 'Open-Source MCP Servers - 97,619 in the Glama Registry | Glama' and '97,619 servers. Updated 2026-10-11 02:00'. Filters shown: 'Claimed' 6,932 and 'Official' 6,579. (_byproducts/glama_servers.html + WebFetch)",
+        "listing_url_scheme": "/mcp/servers/{owner}/{repo} - GitHub-repo-derived slugs (e.g. /mcp/servers/cloudflare/playwright-mcp, /mcp/servers/cisco-open/network-sketcher), indicating auto-indexing from GitHub repositories."
+      },
+      "listing_requires": [
+        "Directory page exposes an 'Add Server' flow (glama.ai/mcp/servers/add renders as UI; no documented submission requirements found in fetched content - reported as not found, not as absent).",
+        "Claiming: detail pages carry a 'Claim' link for unclaimed listings; 'Claimed' (6,932) and 'Official' (6,579) are directory-wide filter attributes. cloudflare/playwright-mcp detail page shows the 'Official' badge and a 'Claim' link while unclaimed."
+      ],
+      "discovery_rating": [
+        "Per-server letter grades on the directory index: 'license', 'quality', 'maintenance' (e.g. 'A license, A quality, A maintenance').",
+        "Per-TOOL TDQS grades (tdqs.dev) on detail pages, letter + numeric score /5.0, across six named dimensions with criterion questions, e.g. Behavior: 'Does the description disclose side effects, auth requirements, rate limits, or destructive behavior?'; Completeness: 'Given the tool's complexity, does the description cover enough for an agent to succeed on first attempt?'; Parameters: 'Does the description clarify parameter syntax, constraints, interactions, or defaults beyond what the schema provides?'; Purpose; Usage Guidelines; Conciseness. (cloudflare/playwright-mcp detail page, 22 tools graded.)",
+        "Sort options: Search Relevance (default), Recent Usage, Date Added, Date Updated, Weekly npm Downloads, Weekly PyPI Downloads, GitHub Stars, Recent GitHub Stars. Attribute filters: language (Python 40,818 / TypeScript 34,691), hosting (Remote 40,169 / Local 35,284), category."
+      ],
+      "distribution": [
+        "Distribution rides npm/PyPI (sort by weekly downloads) plus documented install commands per listing (e.g. VS Code `code --add-mcp '{...}'`, Claude Desktop via `npx mcp-remote https://.../sse`); Glama products: MCP Gateway (/mcp/gateway), MCP Hosting (/mcp/hosting), MCP Directory API (/.well-known/api-catalog)."
+      ],
+      "payment_rails": [
+        "Paid placement, explicitly firewalled from grading (https://glama.ai/advertise): Boosted listings '$49/month per listing' - 'Boost an open-source MCP server or hosted MCP connector you maintain' (bolt badge, priority in discovery/search and directory API); Sponsored cards '$200/month per category' - 'appears on every server and connector page in the categories you choose, next to the install and connection actions', rotating among advertisers, no listing required.",
+        "The firewall clause, verbatim: 'Payment changes placement. It does not affect our scores, descriptions, or editorial comparisons.' Ads marked (Ad label, rel=sponsored). Reach claims: '1.6MMonthly visits', '3 minMedian visit duration', '80K+Active GitHub users'."
+      ]
+    },
+    "composio": {
+      "url": "https://composio.dev",
+      "status": "LIVE; NOT a registry - hosted MCP platform",
+      "what_it_is": [
+        "Single managed endpoint: 'Copy the Composio MCP server URL and add it to Claude, ChatGPT, Codex, Cursor, Grok Bot, Hermes or any AI that supports MCP servers' (https://composio.dev/mcp); endpoint https://connect.composio.dev/mcp.",
+        "Docs (https://docs.composio.dev/): hosted MCP endpoints are session-scoped - 'Expose a Composio session through a hosted MCP endpoint'; clients use 'session.mcp.url and session.mcp.headers' from composio.create(user_id=...).",
+        "Auth is managed: 'the agent connects accounts at runtime through the session, so users don't need to pre-create auth configs or connected accounts for managed toolkits.'",
+        "No third-party MCP server directory or listing mechanism found on the fetched pages - reported as not found."
+      ],
+      "payment_rails": [
+        "SaaS usage billing (https://composio.dev/pricing): Hobby $0/mo - 100,000 tool calls/mo, 50,000 triggers/mo, 'needs no credit card, and never produces a surprise bill' (hard cap); Pro $29/mo with $29 monthly usage credit, overage $0.0003/tool call, $0.003/trigger event, $3.75/M LLM tokens; Enterprise custom. Composio-Managed Apps: 20K free calls then $0.0005/call. Add-ons per call (shared connection +$0.0003, sandbox +$0.0001, etc.).",
+        "'New pricing applies to signups on or after August 15, 2026.' Instant Tools provider charges: 'Provider charges come from your Composio balance with 0% markup' (42 toolkits support Instant; e.g. SerpApi '$25 per 1,000 successful searches'). This is a per-call billing rail, not a marketplace listing fee."
+      ]
+    }
+  },
+  "cross_cutting": [
+    "Consolidation: mcp-get is archived and recommends Smithery; PulseMCP pauses submissions and points everyone at the Official MCP Registry; Smithery joined Arcade.dev. The Official MCP Registry (registry.modelcontextprotocol.io) is now the canonical free upstream: publish there first and directories ingest from it.",
+    "Discovery economics: two monetization models observed - directory placement ads (Glama $49/mo per boosted listing, $200/mo per sponsored category, explicitly walled from scores) and per-call tool billing (Smithery listings advertising 'LLMs pay $0.01-$0.05/call'; Composio's entire SaaS pricing). No registry surveyed charges for a basic listing.",
+    "Rating is mostly tool-description quality: Glama's TDQS criteria (side effects disclosure, front-loaded descriptions, parameter constraints beyond schema, when-not-to-use guidance) are a directly reusable checklist for the estate's own MCP tool descriptions.",
+    "Listing friction ladder (lowest first): Official MCP Registry server.json (free, canonical, ingested by PulseMCP), Glama (auto-indexed from GitHub, claim to control), Smithery (CLI publish, scan + server card, verified flag), PulseMCP (paused as of 2026-09-03), mcp-get (dead)."
+  ],
+  "decision_ledger": "Closes the owed survey behind an MCP publication order for any estate MCP surface: (1) publish server.json to the Official MCP Registry first (free, canonical, auto-ingested by PulseMCP when unpaused), (2) publish to Smithery via `smithery mcp publish` (19,444 listings, verified flag, per-call monetization available if a server is ever productized), (3) Glama picks up the GitHub repo automatically - claim the listing and meet its TDQS description criteria. mcp-get is dead; do not submit there. No listing fee exists anywhere in the five surveyed surfaces; the only money is placement ads (Glama) or usage billing (Smithery paid tools, Composio).",
+  "not_verified": [
+    "Smithery publisher pricing tiers (smithery.ai/pricing body is JS-rendered; only the Arcade banner was readable).",
+    "Glama's documented submission requirements for /mcp/servers/add (page renders as search UI; no requirements text found).",
+    "PulseMCP's server count (no count shown on fetched pages).",
+    "Exact mechanics of Smithery's `score` field (present in API records, rubric undocumented).",
+    "Official MCP Registry itself was not directly fetched this ask (it entered evidence via PulseMCP's submit page pointing to it)."
+  ],
+  "raw_evidence_dir": "watch/inbox/gala_20260925/rung/lanes/_byproducts/",
+  "checks": [
+    {
+      "name": "finish_line_lane_json_filed",
+      "command": "\"C:/Users/foste/Documents/projects/local_sovereign_agent/.venv/Scripts/python.exe\" - <<EOF ... json.load(mcp-registries.json) + sha256 + evidence-file census ... | tee mcp-registries.check.txt",
+      "exit": 0,
+      "evidence": "watch/inbox/gala_20260925/rung/lanes/mcp-registries.check.txt",
+      "result": "json_valid True; all 11 raw-evidence files present; smithery probe totalCount re-read 19444 matching lane claim"
+    },
+    {
+      "name": "smithery_registry_api_probe",
+      "command": "curl -s \"https://registry.smithery.ai/servers?pageSize=1\" (no API key)",
+      "exit": 0,
+      "evidence": "watch/inbox/gala_20260925/rung/lanes/_byproducts/smithery_registry_probe.json",
+      "result": "HTTP 200; pagination.totalCount = 19444; server record fields include verified, useCount, score"
+    },
+    {
+      "name": "pulsemcp_submit_paused",
+      "command": "curl -sL -A \"Mozilla/5.0 ... Chrome/124\" https://www.pulsemcp.com/submit | strip HTML (venv python)",
+      "exit": 0,
+      "evidence": "watch/inbox/gala_20260925/rung/lanes/_byproducts/pulsemcp_extract.txt (raw HTML: pulsemcp_submit.html 45,968 bytes HTTP 200; pulsemcp_api.html 50,747 bytes HTTP 200; pulsemcp_home.html 77,128 bytes HTTP 200)",
+      "result": "submissions paused since 2026-09-03; pointer to Official MCP Registry; partner-API payment rail quoted"
+    },
+    {
+      "name": "mcp_get_archived",
+      "command": "gh api repos/michaellatman/mcp-get/readme | base64 -d; gh search repos mcp-get",
+      "exit": 0,
+      "evidence": "watch/inbox/gala_20260925/rung/lanes/_byproducts/mcpget_readme.txt + community_servers_readme.txt + mcpget_packages.txt",
+      "result": "README opens DEPRECATED, recommends Smithery; repo isArchived true (504 stars); packages/ holds 79 per-server JSON entries; community-servers repo closed to PRs"
+    },
+    {
+      "name": "violation_ratchet",
+      "command": "tools/violation_ratchet.py check --changed",
+      "exit": null,
+      "evidence": "not run",
+      "result": "not applicable: no code under mag/ or tools/ touched by this lane (only fetched web evidence under watch/inbox/gala_20260925/rung/lanes/)"
+    }
+  ]
+}

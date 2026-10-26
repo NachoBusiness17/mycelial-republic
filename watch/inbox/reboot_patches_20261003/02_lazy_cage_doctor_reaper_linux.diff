@@ -1,0 +1,248 @@
+diff --git a/mag/health.py b/mag/health.py
+index 7140037c8..3f343cffe 100644
+--- a/mag/health.py
++++ b/mag/health.py
+@@ -22,9 +22,31 @@ from config import ROOT, ollama_base
+ # mag.cmd doctor is the first grab: host venv READ of the body. It does not spawn lab.
+ # mag_exec needs Docker engine + (on Windows) ExecutionPolicy Bypass; many seats have neither.
+ HOST_DOCTOR = "mag.cmd doctor"
+-CAGE_DOCTOR = (
+-    powershell_exe() + r" -NoProfile -ExecutionPolicy Bypass -File scripts\mag_exec.ps1 doctor"
+-)
++# CAGE_DOCTOR is resolved LAZILY (reboot patch 02, 2026-10-03). It used to call
++# powershell_exe() at module import; in the Linux cage that raised
++# FileNotFoundError and killed every `from mag.health import ...` (412 of 412
++# orchestrator children failed since 2026-09-26, commit 48f7f5ace). Law: no
++# subprocess resolution at import time. `mag.health.CAGE_DOCTOR` still works
++# through the module __getattr__ below.
++_CAGE_DOCTOR_ARGS = r" -NoProfile -ExecutionPolicy Bypass -File scripts\mag_exec.ps1 doctor"
++
++
++def cage_doctor_cmd() -> str:
++    """Host-side cage doctor command. Absolute powershell on Windows (B2-375);
++    off Windows (or when unresolvable) the bare display form, since this string
++    is an instruction for the host seat, not something the cage runs."""
++    try:
++        return powershell_exe() + _CAGE_DOCTOR_ARGS
++    except (FileNotFoundError, OSError):
++        return "powershell" + _CAGE_DOCTOR_ARGS
++
++
++def __getattr__(name: str) -> Any:
++    if name == "CAGE_DOCTOR":
++        return cage_doctor_cmd()
++    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
++
++
+ CAGE_RESTORE = "docker compose restart mag"
+ HOST_LAB_LAST = (
+     "python main.py lab  # LAST RESORT. CONTAINER.md disposable-dev only. "
+@@ -49,7 +71,7 @@ def reconnect_plan() -> dict[str, Any]:
+         "command": command,
+         "cli": HOST_DOCTOR,
+         "doctor": HOST_DOCTOR,
+-        "cage_cli": CAGE_DOCTOR,
++        "cage_cli": cage_doctor_cmd(),
+         "if_dash_dead_and_docker": CAGE_RESTORE,
+         "catch_up": "mag.cmd catch-up",
+         "probe": "mag.cmd probe-lanes",
+diff --git a/mag/process_reaper.py b/mag/process_reaper.py
+index f5e417a0d..3c5d08094 100644
+--- a/mag/process_reaper.py
++++ b/mag/process_reaper.py
+@@ -72,8 +72,58 @@ def _proc_create_time_iso(pid: int) -> str | None:
+         return None
+ 
+ 
++_PROC_ROOT = Path("/proc")
++
++
++def _proc_cwd(proc_dir: Path) -> str:
++    try:
++        return os.readlink(str(proc_dir / "cwd"))
++    except OSError:
++        return ""
++
++
++def _linux_project_python_procs() -> list[dict[str, Any]]:
++    """Linux path (reboot patch 02, 2026-10-03): read /proc, no powershell.
++
++    In the mag-sovereign cage the Windows enumerator logged
++    reaper-enumerate-error on every call (1,056 rows on 2026-10-03), so the
++    reaper was blind there. A process counts as ours when argv[0] is a python
++    and its command line names the project/venv OR its cwd is the project root
++    (cage children run `python main.py ...` from /app)."""
++    out: list[dict[str, Any]] = []
++    project = str(ROOT)
++    # Never list the container init (pid 1: mag_launch.py) or this process and
++    # its parent; the Windows-era classifier would bucket them as leaks.
++    skip = {1, os.getpid(), os.getppid()}
++    try:
++        entries = [p for p in _PROC_ROOT.iterdir() if p.name.isdigit() and int(p.name) not in skip]
++    except OSError as e:
++        _log("reaper-enumerate-error", error=f"proc unreadable: {e}"[:160])
++        return out
++    for p in entries:
++        try:
++            raw = (p / "cmdline").read_bytes()
++        except OSError:
++            continue  # exited between listdir and read
++        if not raw:
++            continue  # kernel thread or zombie
++        argv = [a.decode("utf-8", "replace") for a in raw.rstrip(b"\0").split(b"\0")]
++        if not os.path.basename(argv[0]).lower().startswith("python"):
++            continue
++        cl = " ".join(argv).strip()
++        cwd = _proc_cwd(p)
++        ours = ("local_sovereign_agent" in cl or ".venv" in cl
++                or cwd == project or cwd.startswith(project.rstrip("/") + "/"))
++        if not ours:
++            continue
++        out.append({"pid": int(p.name), "cmdline": cl[:400]})
++    return out
++
++
+ def _project_python_procs() -> list[dict[str, Any]]:
+     """Enumerate python processes whose command line references this project venv."""
++    if sys.platform != "win32":
++        return _linux_project_python_procs()
+     out: list[dict[str, Any]] = []
+     try:
+         import subprocess
+@@ -181,6 +231,12 @@ def run(*, live: bool = False, grace_s: int = 1800) -> dict[str, Any]:
+     c = classify()
+     leaks = list(c.get("leaks", []))
+     killed: list[dict[str, Any]] = []
++    if live and sys.platform != "win32" and os.environ.get("MAG_REAPER_LINUX_LIVE", "") != "1":
++        # Linux path is REPORT-ONLY by default (reboot patch 02): the classifier
++        # was written for the Windows host and would call the cage api server
++        # ("main.py api") and backend.server leaks. Opt in explicitly.
++        _log("reaper-live-refused", reason="linux live kill needs MAG_REAPER_LINUX_LIVE=1", leaks=len(leaks))
++        live = False
+     if live:
+         for pr in leaks:
+             pid = pr["pid"]
+@@ -199,10 +255,14 @@ def run(*, live: bool = False, grace_s: int = 1800) -> dict[str, Any]:
+             if not _pid_alive(pid):
+                 continue
+             try:
+-                import subprocess
+-                subprocess.run(["taskkill", "/F", "/PID", str(pid)],
+-                               capture_output=True, timeout=10,
+-                               creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0x08000000) if sys.platform == "win32" else 0)
++                if sys.platform != "win32":
++                    import signal
++                    os.kill(pid, signal.SIGTERM)  # Linux path: no taskkill in the cage
++                else:
++                    import subprocess
++                    subprocess.run(["taskkill", "/F", "/PID", str(pid)],
++                                   capture_output=True, timeout=10,
++                                   creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0x08000000))
+                 killed.append({"pid": pid, "cmdline": pr["cmdline"][:200], "age_s": int(age_s)})
+                 _log("reaper-kill", pid=pid, cmdline=pr["cmdline"][:160], age_s=int(age_s))
+             except Exception as e:
+diff --git a/tests/test_health_lazy_import.py b/tests/test_health_lazy_import.py
+new file mode 100644
+index 000000000..173f78f6e
+--- /dev/null
++++ b/tests/test_health_lazy_import.py
+@@ -0,0 +1,99 @@
++"""Reboot patch 02: mag.health imports where powershell does not exist; reaper sees Linux procs."""
++from __future__ import annotations
++
++import subprocess
++import sys
++import textwrap
++from pathlib import Path
++
++ROOT = Path(__file__).resolve().parents[1]
++
++# Simulate the Linux cage: no powershell on PATH, no System32 candidates,
++# sys.platform reports linux. Before patch 02 this raised FileNotFoundError
++# at `import mag.health` (health.py:25-27).
++_SIM = textwrap.dedent("""
++    import shutil, sys
++    shutil.which = lambda *a, **k: None
++    import mag.win_powershell as w
++    w._CANDIDATES = ("/nonexistent/WindowsPowerShell/powershell.exe",)
++    w.powershell_exe.cache_clear()
++    sys.platform = "linux"
++    import mag.health as h
++    assert h.CAGE_DOCTOR.startswith("powershell -NoProfile"), h.CAGE_DOCTOR
++    assert h.reconnect_plan()["cage_cli"].endswith("mag_exec.ps1 doctor")
++    from mag.health import sanity, in_mag_cage, catch_up  # the context_pack / guard imports
++    import mag.lifecycle, mag.window_audit  # call-time resolution only
++    print("IMPORT_OK")
++""")
++
++
++def test_import_mag_health_without_powershell() -> None:
++    r = subprocess.run([sys.executable, "-c", _SIM], cwd=str(ROOT), capture_output=True,
++                       text=True, timeout=120)
++    assert r.returncode == 0, r.stderr[-2000:]
++    assert "IMPORT_OK" in r.stdout
++
++
++def test_cage_doctor_still_absolute_when_resolvable(monkeypatch) -> None:
++    import mag.health as h
++    monkeypatch.setattr(h, "powershell_exe", lambda: r"C:\\PS\\powershell.exe")
++    assert h.CAGE_DOCTOR.startswith(r"C:\\PS\\powershell.exe -NoProfile")
++    assert h.reconnect_plan()["cage_cli"] == h.CAGE_DOCTOR
++
++
++def test_no_import_time_powershell_calls() -> None:
++    """Static guard: powershell_exe() is never called at module level."""
++    import ast
++    for rel in ("mag/health.py", "mag/lifecycle.py", "mag/window_audit.py", "mag/guard.py"):
++        tree = ast.parse((ROOT / rel).read_text(encoding="utf-8"))
++        for node in tree.body:
++            if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
++                continue
++            for sub in ast.walk(node):
++                if isinstance(sub, ast.Call) and getattr(sub.func, "id", "") == "powershell_exe":
++                    raise AssertionError(f"{rel}:{sub.lineno} calls powershell_exe() at import time")
++
++
++def test_reaper_linux_path_reads_proc(tmp_path, monkeypatch) -> None:
++    import mag.process_reaper as pr
++
++    def mk(pid: int, argv: list[str]) -> None:
++        d = tmp_path / str(pid)
++        d.mkdir()
++        (d / "cmdline").write_bytes(b"\0".join(a.encode() for a in argv) + b"\0")
++
++    mk(10, ["python", "main.py", "agent", "--query", "x"])        # cwd = project root
++    mk(11, ["/usr/bin/python3", "/opt/other/tool.py"])            # foreign python
++    mk(12, ["bash", "-c", "sleep 1"])                             # not python
++    mk(13, [])                                                    # kernel thread
++    (tmp_path / "self").mkdir()
++    cwds = {"10": str(pr.ROOT), "11": "/opt/other"}
++    monkeypatch.setattr(pr, "_PROC_ROOT", tmp_path)
++    monkeypatch.setattr(pr, "_proc_cwd", lambda p: cwds.get(p.name, ""))
++    monkeypatch.setattr(sys, "platform", "linux")
++    got = pr._project_python_procs()
++    assert [g["pid"] for g in got] == [10]
++    assert got[0]["cmdline"].startswith("python main.py agent")
++
++
++def test_reaper_linux_skips_init_and_refuses_live_by_default(tmp_path, monkeypatch) -> None:
++    import mag.process_reaper as pr
++
++    for pid in (1, 20):
++        d = tmp_path / str(pid)
++        d.mkdir()
++        (d / "cmdline").write_bytes(b"python\0mag_launch.py\0" if pid == 1 else b"python\0stray.py\0")
++    monkeypatch.setattr(pr, "_PROC_ROOT", tmp_path)
++    monkeypatch.setattr(pr, "_proc_cwd", lambda p: str(pr.ROOT))
++    monkeypatch.setattr(sys, "platform", "linux")
++    monkeypatch.delenv("MAG_REAPER_LINUX_LIVE", raising=False)
++    logged: list[str] = []
++    monkeypatch.setattr(pr, "_log", lambda ev, **m: logged.append(ev))
++    monkeypatch.setattr(pr, "_supervised_pids", lambda: set())
++    monkeypatch.setattr(pr, "_task_pids", lambda: set())
++    kills: list[int] = []
++    monkeypatch.setattr(pr.os, "kill", lambda pid, sig: kills.append(pid))
++    res = pr.run(live=True, grace_s=0)
++    assert [l["pid"] for l in res["leaks"]] == [20]  # pid 1 never listed
++    assert res["live"] is False and kills == []
++    assert "reaper-live-refused" in logged

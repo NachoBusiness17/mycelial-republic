@@ -1,0 +1,50 @@
+{
+  "schema": "verkle_dedup_dogfood.receipt.v1",
+  "observed_at": "2026-08-31T12:56:05.5724736Z",
+  "status": "PASS_REPAIRED_WITH_FULL_SUITE_OPEN",
+  "intent": "Restore the live Verkle proof invariant found by dogfooding without weakening proof validation or rewriting unrelated history.",
+  "source": {
+    "chain": "memory/biography/verkle_chain.jsonl",
+    "tip": "memory/biography/verkle_tip.json",
+    "repair": "mag.verkle_knot.consolidate_chain_one_leaf_per_session",
+    "proof_consumer": "mag.ghost_spooky.probe"
+  },
+  "observed_before": {
+    "rows": 5634,
+    "duplicate_session_ids": 8,
+    "conflicting_duplicate_hashes": 0,
+    "proof_gate": "FAIL",
+    "failure": "last row root mismatch; committed 86918cf9c9b7fec1 vs recomputed ec5c521c5d06ea64"
+  },
+  "repair": {
+    "method": "keep first-seen session order; remove exact duplicate session rows; recompute derived indices, prefix roots, and tip",
+    "rows_after": 5626,
+    "removed": 8,
+    "root": "b657d1cbf5a75bc6f980bdf67b78dac64626e78a6ac1e172b5af285938fad88c"
+  },
+  "observed_after": {
+    "chain_consistent": true,
+    "duplicate_session_ids": 0,
+    "ghost_spooky_tests": "5 passed",
+    "proof_pointer": "knot/96e5cdcc",
+    "proof_verified": true,
+    "proof_leaf_count": 5626
+  },
+  "ancillary_fix": {
+    "path": "mag/governor_autorun.py",
+    "change": "explicit operator pause is evaluated before the Docker-only host-runtime guard",
+    "reason": "safety pause must not be masked by an infrastructure guard"
+  },
+  "full_suite": {
+    "isolated_after_ancillary_fix": "498 passed, 7 skipped, 1 failed at the Verkle proof test before repair",
+    "rerun_after_repair": "started; reached at least 40% with no new failure; interrupted in a CPU-heavy slow cluster",
+    "cluster_profile": "24 passed in 26.69s across ghost_memlance_notebook, ghost_spooky, ghost_summon, governor_autorun, governor_fallback, and growth_cycle",
+    "slowest_calls": [
+      "ghost_spooky::test_spooky_always_in_reply: 8.16s",
+      "ghost_summon::test_summon_schema: 7.39s",
+      "ghost_summon::test_gather_never_raises_on_missing: 7.20s"
+    ],
+    "claim": "targeted integrity and profiled cluster are green; complete suite is not yet green"
+  },
+  "next": "identify and bound the slow full-suite cluster, then rerun with per-test duration evidence"
+}

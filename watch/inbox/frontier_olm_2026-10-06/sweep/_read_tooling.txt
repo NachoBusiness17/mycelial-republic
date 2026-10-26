@@ -1,0 +1,37 @@
+====================================================================================================
+ITEM 49934323 | pts=6 | New in Llama.cpp: Decision Models | url=https://huggingface.co/blog/ggml-org/decision-models-in-llamacpp
+  > @mrkn1: gutsy 0.8B, runs on CPU, and is Llama.cpp compatible [0] [0] - https://huggingface.co/kouhxp/gutsy
+[comments shown: 1, budget left: 13902]
+====================================================================================================
+ITEM 49908997 | pts=4 | Ollama now supports Jev-like decision models all locally in 0.35 | url=https://ollama.com/library/nimble
+[comments shown: 0, budget left: 14000]
+====================================================================================================
+ITEM 49841523 | pts=4 | Your Language Model Is Already a Decision Model | url=https://github.com/ntlm1686/Your-language-model-is-already-a-decision-model/tree/master
+[comments shown: 0, budget left: 14000]
+====================================================================================================
+ITEM 49767564 | pts=95 | Show HN: CUA-S1 – A System One Model for Computer Use | url=https://github.com/trycua/cua
+STORY TEXT: Hello HN! We're Dillon and Francesco from Cua.
+We were wondering how many computer use tasks actually need a full general purpose LLM (e.g. gpt-6-astra, claude-opus-5 etc.) to think through all their decisions and steps. Some tasks require thinking about a plan, exploring different paths, recovering from failure. Other tasks are a question of making local decisions, like this value should go in this box, or should I check this box, or this element should be ignored.
+We wondered how far we could go with a small model trained to only make these kinds of decisions.
+Our inspiration was Typesafe's Jev and its System One Model framing. This is a nod to the dichotomy between thinking quickly, automatically, and intuitively (system 1) vs. thinking slowly, analytically (system 2), as described by Daniel Kahneman.
+The interesting question for us was: what happens if you give a model an interface of current context, and a set of possible choices, and you ask it to return a probability for each choice? This kind of model does not generate output token by token like most LLMs do, but rather scores the options you give it, which you can check, trust, and use to drive your app's behavior.
+CUA-S1 is our answer for narrow, specialized decision models for computer use. Our first release is CUA-S1-FORMS. We built this from ideas and code in jevlike, and then trained a second model just to handle form interactions. It has 706k parameters, and the original checkpoint is 2.8 MB.
+The first training iteration took less than 30 minutes on synthetic data. Given a set of structured elements and values extracted from a document, it predicts whether to use the given value, CHECK, CLICK, or SKIP for each element. It does not predict new values for text fields, and does not consider screenshots. Element decisions are scored together, and your code can order the actions, and Cua Driver will execute them one at a time.
+A first evaluation of this specialist vs. hosted Jev on our form task:
+- For the whole decision set: 99.7% correct vs 83.6%.
+- For the subset of steps that require an action: 100% correct vs 96%.
+- For the subset of steps that are just leaving already-filled fields alone: 100% correct vs 74%.
+The specialist was trained specifically for this task and convention (just press skip for already filled boxes), while hosted Jev has not been fine-tuned for it, so this is an experiment in scoped specialization.
+We measured 7-9 ms to score a form locally vs. 260-280 ms per call to hosted Jev including network latency, though those samples measure different things and are not end-to-
+> @frabonacci: Hello HN! We're Dillon and Francesco from Cua. We were wondering how many computer use tasks actually need a full general purpose LLM (e.g. gpt-6-astra, claude-opus-5 etc.) to think through all their decisions and steps. Some tasks require thinking about a plan, exploring different paths, recovering from failure. Other tasks are a question of making local decisions, like this value should go in this box, or should I check this box, or this element should be ignored. We wondered how far we could go with a small model trained to only make these kinds of decisions. Our inspiration was Typesafe's 
+  > @badatnames: Please give us a hyper general cookie consent popup dismissal add-on :)
+  > @AM1010101: Would the idea be to have many specialist models (forms, wikipedia, final cut, etc) and have a parent model choose which is best (potentially also a specialist model for selecting specialist models) with the idea an llm would give a larger goal and trigger this cascade of specialists to quickly do the task?
+    > @ShakataGaNai: I think this is the logical next step in AI. There will be a few large "smart" AI models, but mostly smaller more hyper-specialized. In large part because they are faster to build....and faster/cheaper to run. As the model this post is about shows - you don't need to be able to write the works of shakespear to be able to run a computer. The frontier models are already getting STUPID expensive. More than the average person certainly can reasonably afford for any use case. And even the business users are having a hard time justifying the prices for anything other than the most bleeding edge, "bi
+      > @tomrod: Conscious thought seems to follow this too. No one thinks to breath, we often get in a groove and do deep thinking during a rote task, etc.
+      > @Roxxik: I mean this is what MoE is the first step of. Slice your intelligence to make it more efficient without losing much capability. CUA seems to disaggregate. Train specialist models and make delegation explicit. But I think the future for capable but efficient models involves doing it all in one package. I have no idea how that architecture would look like or how to train it. Like a human would, I can walk and talk, without thinking hard about walking and still not stumbling. Specialized sub-circuits that interact. Not via a text protocol, but by directly interacting. Did you see the Astra plays 
+  > @Axsuul: Are we able to use CUA to build a system similar to Grok Bot?
+    > @rtvn83: It's a specialized classifier for actions on a form. So.. not totally. If you are building a bot system, which can fill form quickly without having to reason too much about the form, this probably can help.
+  > @hbarka: I read the nod to Typesafe Jev. Are you implying use of RLCD or still RLHF?
+    > @adastra22: Nobody outside TypeSafe even knows what RLCD is, so that’s impossible to answer.
+  > @DylanMerigaud: Interesting approach focusing on decision scoring rather than text generation.
+[comments shown: 11, budget left: 7791]

@@ -1,0 +1,150 @@
+{
+  "lane": "mcp-hosting-ops",
+  "division": "B",
+  "ok": true,
+  "note": "Fetched 20 primary docs first-hand (19 fetched + 1 recorded 404) into sha256'd sources and mined 9 byte-verified laws: Cloudflare deprecated the McpAgent Durable-Object path (Jul 27 2026 guide; stateless createMcpHandler is the current pattern), Streamable HTTP + OAuth 2.1 RFC9728 are the remote contract, the Workers RateLimit binding meters at fixed 10s/60s periods keyed actor+resource, Inspector v2's CLI connect-list-call-assert is the CI harness with evals-run-after-every-tool-change above it, and the estate's own Law MCP-2 (parity probe over green heartbeat) is the uptime practice; no code under mag/ or tools/ was touched so the violation ratchet was not run; decision_changed is no: this survey arms the seed-MCP second-consumer proof (gap 4 in mcp_layer_status_20261010.md) but no estate decision was pending.",
+  "rows": [],
+  "checks": [
+    {
+      "command": "cd C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/rung/lanes && C:/Users/foste/Documents/projects/local_sovereign_agent/.venv/Scripts/python.exe mcp-hosting-ops.validator.py > mcp-hosting-ops.check.txt 2>&1",
+      "exit": 0,
+      "evidence": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/rung/lanes/mcp-hosting-ops.check.txt"
+    },
+    {
+      "command": "curl.exe -sS -L --max-time 45 <url> -o <out> looped over 19 primary-doc URLs (Cloudflare agents/Workers/DO .md endpoints, modelcontextprotocol.io spec .md, raw.githubusercontent.com READMEs, arxiv.org); per-file HTTP status + byte size printed; final manifest = sha256 + bytes of the 9 quote-bearing sources",
+      "exit": 0,
+      "evidence": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/rung/lanes/mcp-hosting-ops.sources/ (manifest section in mcp-hosting-ops.check.txt)"
+    }
+  ],
+  "decision_changed": "no",
+  "not_run": {
+    "violation_ratchet": "tools/violation_ratchet.py check --changed NOT run: this lane wrote only files under watch/inbox/gala_20260925/rung/lanes/ (lane JSON, validator, sources); no code under mag/ or tools/ was touched, so the pre-push ratchet condition in the ask does not trigger."
+  },
+  "artifact": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/rung/lanes/mcp-hosting-ops.json",
+  "method": {
+    "ground_truth_read": [
+      "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/mcp_layer_status_20261010.md (full, 117 lines): estate runs 5 live MCP surfaces, ALL local (127.0.0.1); nothing remote-hosted yet; open gap 4 is the seed-MCP second-consumer (external client) proof.",
+      "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/mcp_tokenization_law_20261010/CARD.md (full, 42 lines): every MCP surface is a middleman-candidate eliminated; per-flow trust residue must be named."
+    ],
+    "fetch_how": "curl.exe -sS -L --max-time 45 to the docs sites' markdown endpoints (developers.cloudflare.com/.../index.md, modelcontextprotocol.io/.../.md, raw.githubusercontent.com), HTTP status + byte size recorded per file.",
+    "fetch_failures_recorded": [
+      "https://developers.cloudflare.com/durable-objects/observability/metrics/index.md -> HTTP 404 (stale path; correct page is metrics-and-analytics, fetched after)",
+      "https://developers.cloudflare.com/agents/guides/remote-mcp-server/index.md -> returned the HTML SPA shell, not markdown (stale redirect path; canonical /agents/model-context-protocol/guides/remote-mcp-server/index.md fetched after)"
+    ],
+    "web_search_note": "two searches (evals harnesses, uptime monitoring practice) returned marketing-grade noise except one primary lead fetched and verified: arXiv 2508.14704 MCP-Universe (title byte-checked from the fetched page)."
+  },
+  "rows": [
+    {
+      "law": "remote-mcp-current-pattern-is-stateless-worker",
+      "claim": "Cloudflare's current remote-MCP hosting pattern (guide updated Jul 27, 2026) is a stateless Worker via createMcpHandler; the 2025-era McpAgent Durable-Object path is legacy/deprecated and the guide's own quick-deploy templates carry a do-not-use warning.",
+      "quote": "The quick-deploy templates in this section still use the deprecated `McpAgent` path. Do not use that path for a new server.",
+      "source": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/rung/lanes/mcp-hosting-ops.sources/cf-remote-mcp-server.md",
+      "steal": "When the estate hosts seed MCP remotely (gap 4, second-consumer proof), scaffold in one sitting from cloudflare/agents examples/mcp-worker (createMcpHandler stateless), never the McpAgent templates.",
+      "falsifier": "A Cloudflare docs revision restores McpAgent to the recommended path (deprecation note removed with dateModified later than 2026-07-27).",
+      "leverage": "high"
+    },
+    {
+      "law": "streamable-http-is-the-remote-transport-contract",
+      "claim": "The MCP spec's remote transport is Streamable HTTP: one MCP endpoint answering POST and GET, optional SSE, sessions via Mcp-Session-Id, protocol version via MCP-Protocol-Version header, and an origin-validation MUST against DNS rebinding; it replaced the 2024-11-05 HTTP+SSE transport.",
+      "quote": "Servers **MUST** validate the `Origin` header on all incoming connections to prevent DNS rebinding attacks",
+      "source": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/rung/lanes/mcp-hosting-ops.sources/mcp-spec-transports.md",
+      "steal": "Add Origin validation plus the spec header set (Accept json+event-stream, MCP-Protocol-Version, Mcp-Session-Id) to mag/mcp_server.py's HTTP gateway so remote hosting later is a config move, not a rewrite.",
+      "falsifier": "A conforming remote MCP client in 2026 negotiates the 2024-11-05 HTTP+SSE transport as its primary remote transport against a 2025-06-18 server.",
+      "leverage": "high"
+    },
+    {
+      "law": "remote-mcp-auth-is-oauth21-resource-server",
+      "claim": "The MCP spec makes remote HTTP auth OAuth 2.1: the MCP server is a resource server that MUST implement Protected Resource Metadata (RFC9728) and answer 401 with WWW-Authenticate; stdio servers SHOULD NOT use this flow and instead read credentials from the environment.",
+      "quote": "MCP servers **MUST** implement OAuth 2.0 Protected Resource Metadata ([RFC9728](https://datatracker.ietf.org/doc/html/rfc9728)).",
+      "source": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/rung/lanes/mcp-hosting-ops.sources/mcp-spec-authorization.md",
+      "steal": "Give any estate remote surface the /.well-known/oauth-protected-resource document plus the 401 WWW-Authenticate header in the same sitting as the host scaffold, verified with Inspector's Quick OAuth Flow.",
+      "falsifier": "A deployed remote MCP server authorizes clients while never serving an RFC9728 metadata document.",
+      "leverage": "high"
+    },
+    {
+      "law": "worker-rate-limit-binding-keys-actor-plus-resource",
+      "claim": "Cloudflare's hosting-side rate limiting is the Workers Rate Limiting binding: limit({key}) calls whose key combines an actor identifier with a resource, simple limits only accept 10s or 60s periods, and separate namespaces give per-tier metering backed by the same infrastructure as WAF rate limiting rules.",
+      "quote": "Period: the duration of the period, in seconds. Must be either 10 or 60",
+      "source": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/rung/lanes/mcp-hosting-ops.sources/cf-rate-limit-binding.md",
+      "steal": "When wiring the tokenization law card's per-call metering to a hosted MCP surface, use two ratelimits namespaces (free 100 / paid 1000 per 60s) keyed by user ID plus tool path, mirroring the doc's FREE_USER_RATE_LIMITER/PAID_USER_RATE_LIMITER example.",
+      "falsifier": "A metering design that requires sub-10-second windows or arbitrary periods cannot run on this binding and needs WAF rules or DO-based metering instead.",
+      "leverage": "medium"
+    },
+    {
+      "law": "mcp-testing-harness-inspector-cli-smoke",
+      "claim": "The official testing harness is @modelcontextprotocol/inspector (v2 ships web, CLI, TUI and experimental mcpdo clients); the CI-grade practice is the scripted smoke workflow connect, list, call, assert with --format json, jq and an exit-code map.",
+      "quote": "The connect → list → call → assert workflow for a shell or CI job",
+      "source": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/rung/lanes/mcp-hosting-ops.sources/mcp-inspector-readme.md",
+      "steal": "Extend tools/mcp_parity.py's job with an Inspector --cli smoke (connect, tools/list, one tool call, assert) against the house HTTP gateway and the docker TCP bridge, receipt to watch/inbox/.",
+      "falsifier": "A server that passes manual Inspector clicking but fails the scripted connect-list-call-assert on a nondeterministic tool result shows the harness catching what manual testing missed.",
+      "leverage": "high"
+    },
+    {
+      "law": "evals-run-after-every-tool-change",
+      "claim": "Cloudflare's MCP best practices make evals a standing ops gate: run evaluation tests after any update to server or tool descriptions to catch regressions; MCP-Universe (arXiv 2508.14704, submitted 2025-08-20) is the research-grade benchmark above it for real-world MCP tool use.",
+      "quote": "Use evaluation tests ('evals') to measure the agent’s ability to use your tools correctly. Run these after any updates to your server or tool descriptions to catch regressions early and track improvements over time.",
+      "source": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/rung/lanes/mcp-hosting-ops.sources/cf-mcp-index.md",
+      "steal": "Pin the tools/gps_mcp capability-ledger pass-rate as the eval row beside every estate tool description change; the pin gate already fires on schema hash, add the eval delta beside it.",
+      "falsifier": "Tool descriptions churn across releases while the eval pass-rate stays unmeasured: evals claimed but never run.",
+      "leverage": "medium"
+    },
+    {
+      "law": "parity-probe-beats-green-heartbeat",
+      "claim": "Uptime practice for MCP: healthchecks lie while protocol rosters drift (the estate's 10-01 stale docker image served a green healthcheck with zero estate tools), so the load-bearing check is a protocol-level parity probe; Cloudflare's observability stack (diagnostics channels, traces, DO GraphQL metrics) is the hosted-side complement.",
+      "quote": "an always-on MCP surface without a parity check is\n  a stale surface with a green heartbeat",
+      "source": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/mcp_layer_status_20261010.md",
+      "steal": "For any hosted remote surface, schedule an Inspector --cli tools/list parity probe that hashes the served roster like the pin gate, never trust the workers.dev 200 healthcheck alone.",
+      "falsifier": "A remote MCP surface stays probe-green by HTTP 200 while its served tool roster drifts from its manifest and no protocol-level alarm fires.",
+      "leverage": "high"
+    },
+    {
+      "law": "stateful-hosting-pays-in-eviction",
+      "claim": "If stateful hosting is ever needed, DO-backed Agents scale to tens of millions of concurrent actors with 1 GB state each and 30s CPU per request refreshed on HTTP/WebSocket, but in-memory state does not survive eviction, hibernation, or crash: persist to storage.",
+      "quote": "This state is not preserved across eviction, hibernation, or a crash, so persist anything important to [storage](https://developers.cloudflare.com/durable-objects/best-practices/access-durable-objects-storage/).",
+      "source": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/rung/lanes/mcp-hosting-ops.sources/cf-do-metrics-and-analytics.md",
+      "steal": "Design rule for a remote seed-MCP port: bounded-pointer seals live in DO storage (SQLite), never instance memory, so a cold-join client never meets an evicted session.",
+      "falsifier": "A hosted session survives eviction or hibernation with memory-only state intact, contradicting the documented DO lifecycle.",
+      "leverage": "medium"
+    },
+    {
+      "law": "diagnostics-channels-zero-cost-when-unobserved",
+      "claim": "Cloudflare Agents publish structured events (rpc, state, schedule, mcp:client:connect and more) to diagnostics channels with zero emission overhead when nothing subscribes, and in production the messages auto-forward to a Tail Worker without subscription code in the agent.",
+      "quote": "Publishing has zero overhead when nobody is listening.",
+      "source": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/rung/lanes/mcp-hosting-ops.sources/cf-diagnostics-channels.md",
+      "steal": "Model estate MCP-serving seats the same way: emit structured events unconditionally and gate only the subscriber, so ops instrumentation never taxes the hot path.",
+      "falsifier": "A diagnostics-channel publish measurably slows an unsubscribed hot path, contradicting the zero-overhead design claim.",
+      "leverage": "low"
+    }
+  ],
+  "sources_fetched": {
+    "dir": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/rung/lanes/mcp-hosting-ops.sources",
+    "urls": {
+      "cf-mcp-index.md": "https://developers.cloudflare.com/agents/model-context-protocol/index.md",
+      "cf-remote-mcp-server.md": "https://developers.cloudflare.com/agents/model-context-protocol/guides/remote-mcp-server/index.md",
+      "cf-agents-readme.md": "https://raw.githubusercontent.com/cloudflare/agents/main/README.md",
+      "cf-rate-limit-binding.md": "https://developers.cloudflare.com/workers/runtime-apis/bindings/rate-limit/index.md",
+      "mcp-spec-transports.md": "https://modelcontextprotocol.io/specification/2025-06-18/basic/transports.md",
+      "mcp-spec-authorization.md": "https://modelcontextprotocol.io/specification/2025-06-18/basic/authorization.md",
+      "mcp-inspector-readme.md": "https://raw.githubusercontent.com/modelcontextprotocol/inspector/main/README.md",
+      "cf-workers-logs.md": "https://developers.cloudflare.com/workers/observability/logs/workers-logs/index.md",
+      "cf-do-metrics.md": "https://developers.cloudflare.com/durable-objects/observability/metrics/index.md (HTTP 404, kept as recorded failure)",
+      "cf-do-observability.md": "https://developers.cloudflare.com/durable-objects/observability/index.md (section index only)",
+      "cf-do-metrics-and-analytics.md": "https://developers.cloudflare.com/durable-objects/observability/metrics-and-analytics/index.md",
+      "cf-agents-llms.txt": "https://developers.cloudflare.com/agents/llms.txt",
+      "cf-test-remote-mcp-server.md": "https://developers.cloudflare.com/agents/model-context-protocol/guides/test-remote-mcp-server/index.md",
+      "cf-testing-agents.md": "https://developers.cloudflare.com/agents/getting-started/testing-your-agent/index.md",
+      "cf-agents-limits.md": "https://developers.cloudflare.com/agents/platform/limits/index.md",
+      "cf-tracing.md": "https://developers.cloudflare.com/agents/runtime/operations/observability/tracing/index.md",
+      "cf-diagnostics-channels.md": "https://developers.cloudflare.com/agents/runtime/operations/observability/diagnostics-channels/index.md",
+      "cf-mcp-transport.md": "https://developers.cloudflare.com/agents/model-context-protocol/protocol/transport/index.md",
+      "cf-mcp-authorization.md": "https://developers.cloudflare.com/agents/model-context-protocol/protocol/authorization/index.md",
+      "arxiv-mcp-benchmark.html": "https://arxiv.org/abs/2508.14704"
+    }
+  },
+  "owed_work_mapping": {
+    "cloudflare_hosting_patterns": "rows remote-mcp-current-pattern-is-stateless-worker + streamable-http-is-the-remote-transport-contract + remote-mcp-auth-is-oauth21-resource-server + stateful-hosting-pays-in-eviction",
+    "rate_limiting": "row worker-rate-limit-binding-keys-actor-plus-resource",
+    "evals_testing_harnesses": "rows mcp-testing-harness-inspector-cli-smoke + evals-run-after-every-tool-change",
+    "uptime_monitoring_practice": "rows parity-probe-beats-green-heartbeat + diagnostics-channels-zero-cost-when-unobserved"
+  }
+}

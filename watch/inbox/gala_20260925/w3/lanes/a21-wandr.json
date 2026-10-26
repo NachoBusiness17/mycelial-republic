@@ -1,0 +1,82 @@
+{
+  "lane": "a21-wandr",
+  "division": "A",
+  "ok": true,
+  "note": "Re-ran --grade-gold (cache mode, deterministic, no network, under 4 min): soft/hard P/R/F1 all 1.0 on 10 identities / 30 records, all five record probes 30/30, funnel 1.0/1.0/1.0, unfetched empty, byte-matching the sealed gold receipt (its mode is refetch, taken live). --selftest PASS (fixture-row checks green). Receipt internally consistent. CAUTION checked and found stale: tools/violation_ratchet.py check --changed tools/wandr_selfeval.py is PASS (hits=0, NEW=0), configs/violation_baseline.json carries no wandr entry, git shows the debt cleared in commit a5dd96176. Estate grep: corpus/steal has the real WANDr doctrine (MASTER_MICKEY17_V2_20260924.md lines 9/22/23/50/53/156/167); memory/corpus hits are substring coincidences (wAndroid in a shader, wandrew in a fungal text), not doctrine. Limitation: live --refetch re-run skipped; the receipt's refetch mode is trusted via the disk cache, which stores sha256 per page, and the cache-mode run exercises the identical scoring path.",
+  "rows": [
+    {
+      "law": "Self-eval with gold receipts: grade the harness against its own sealed answers, keep the receipt on file, re-run it",
+      "claim": "Estate self-eval claims precision/recall 1.0 on 10 identities / 30 records with a gold receipt on file",
+      "quote": "The task answered by itself: every required record cited verbatim",
+      "source": "C:\\Users\\foste\\Documents\\projects\\local_sovereign_agent\\tools\\wandr_selfeval.py",
+      "steal": "Give every eval harness a --grade-gold mode that answers the task with itself; the run is the standing proof that each gold url still carries its quote",
+      "falsifier": "A fresh --grade-gold diverges from the sealed receipt, or a re-fetched page no longer carries a gold excerpt",
+      "leverage": "high"
+    },
+    {
+      "law": "Precision is over distinct member identities; duplicate identities collapse to their worst score",
+      "claim": "Identity resolution: over-delivery and duplicate claims cannot inflate precision",
+      "quote": "duplicate identities collapse to their worst score (paper, recall section)",
+      "source": "C:\\Users\\foste\\Documents\\projects\\local_sovereign_agent\\tools\\wandr_selfeval.py",
+      "steal": "Dedupe by identity before averaging precision in any benchmark; duplicates must always pay the worst score, never the best",
+      "falsifier": "A submission that scores a duplicated identity at full value twice without collapsing",
+      "leverage": "high"
+    },
+    {
+      "law": "Soft and hard F1 over a claim(n) -> field(m) -> url(k) hierarchy with per-parent count floors",
+      "claim": "WANDR's scoring protocol is the ready-made eval shape for estate research runs",
+      "quote": "soft/hard F1 over qualification key hierarchies",
+      "source": "C:\\Users\\foste\\Documents\\projects\\local_sovereign_agent\\corpus\\steal\\MASTER_MICKEY17_V2_20260924.md",
+      "steal": "Score hierarchies twice: soft (partial credit per required field) and hard (all-or-nothing per member), with zero-padded recall against required counts",
+      "falsifier": "Soft and hard F1 reported identical on a submission with partial members (soft must exceed hard)",
+      "leverage": "high"
+    },
+    {
+      "law": "Stub judge honesty: a placeholder scorer is named STUB at the point of use, with the swap path named",
+      "claim": "Task-specific verdicts here are deterministic gold-excerpt containment, not WANDR's LLM judge",
+      "quote": "The task-specific checks are a STUB judge: deterministic containment of the gold",
+      "source": "C:\\Users\\foste\\Documents\\projects\\local_sovereign_agent\\tools\\wandr_selfeval.py",
+      "steal": "Label every placeholder scorer STUB in its own docstring and output; never let containment checks masquerade as LLM judgment",
+      "falsifier": "A score reported as LLM-judged that is actually substring containment, or a stub with no named replacement path",
+      "leverage": "high"
+    },
+    {
+      "law": "Per-parent count floors are load-time errors, never silent degrades",
+      "claim": "A task short of its floors refuses to load (ValueError), so an under-shaped task can never be scored",
+      "quote": "a parent short of its floor is a task error",
+      "source": "C:\\Users\\foste\\Documents\\projects\\local_sovereign_agent\\tools\\wandr_selfeval.py",
+      "steal": "Enforce structural floors (claims x fields x urls minimums) at load with a hard raise; refuse to score a malformed task into partial numbers",
+      "falsifier": "A task below its floors loads and produces a score instead of ValueError",
+      "leverage": "high"
+    }
+  ],
+  "checks": [
+    {
+      "command": ".venv/Scripts/python.exe tools/wandr_selfeval.py --grade-gold --json",
+      "exit": 0,
+      "evidence": "C:\\Users\\foste\\Documents\\projects\\local_sovereign_agent\\watch\\inbox\\gala_20260925\\w3\\lanes\\a21-wandr.check.txt"
+    },
+    {
+      "command": ".venv/Scripts/python.exe tools/wandr_selfeval.py --selftest",
+      "exit": 0,
+      "evidence": "C:\\Users\\foste\\Documents\\projects\\local_sovereign_agent\\watch\\inbox\\gala_20260925\\w3\\lanes\\a21-wandr.check.txt"
+    },
+    {
+      "command": ".venv/Scripts/python.exe -c gold receipt head (json.load outputs/wandr_selfeval_gold_receipt_20260925.json, print [:500])",
+      "exit": 0,
+      "evidence": "C:\\Users\\foste\\Documents\\projects\\local_sovereign_agent\\watch\\inbox\\gala_20260925\\w3\\lanes\\a21-wandr.check.txt"
+    },
+    {
+      "command": ".venv/Scripts/python.exe tools/violation_ratchet.py check --changed tools/wandr_selfeval.py",
+      "exit": 0,
+      "evidence": "C:\\Users\\foste\\Documents\\projects\\local_sovereign_agent\\watch\\inbox\\gala_20260925\\w3\\lanes\\a21-wandr.check.txt"
+    },
+    {
+      "command": "grep -c -F each filed quote against its source (5 rows)",
+      "exit": 0,
+      "evidence": "C:\\Users\\foste\\Documents\\projects\\local_sovereign_agent\\watch\\inbox\\gala_20260925\\w3\\lanes\\a21-wandr.check.txt"
+    }
+  ],
+  "decision_changed": "no code or doctrine change: receipt re-verified 1.0 and ratchet debt confirmed cleared, so the CAUTION on this head is recorded as a stale fossil in this lane's testimony",
+  "artifact": "C:\\Users\\foste\\Documents\\projects\\local_sovereign_agent\\watch\\inbox\\gala_20260925\\w3\\lanes\\a21-wandr.json"
+}

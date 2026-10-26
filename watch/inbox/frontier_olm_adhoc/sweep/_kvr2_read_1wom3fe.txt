@@ -1,0 +1,238 @@
+THREAD 1wom3fe (61 entries incl OP)
+
+--- [/u/AvidCyclist250]
+Thought it's about time to share after testing for a week. You need four things most people miss: the right quant, the right model, the right branch, and the right cache flags. 
+ https://github.com/dtm-beep/qwen38-flash-next-mtp-16gb 
+ TLDR: AtomicChat AD-4.27bpw Q4_K_M target + the shared Unsloth MTP head, build from my pr-mtp-fix branch (plain master can't load this MTP head yet, it's PR #28243 + one fix commit), and --spec-draft-cpu-moe is the trick that makes 16 GB work. Draft experts live in RAM so the target's hot experts get the GPU. IQ4_XS ~10 t/s → 16.5 tg / 350 pp at 131k, q8 KV. 
+ Hope it helps someone.
+ submitted by /u/AvidCyclist250 to r/LocalLLaMA 
+ [link] [comments]
+
+--- [/u/BangkokPadang]
+What size is the actual context being fed to get these speeds?
+ Is it the first response with like a 1,000 token system prompt, or is it a reply with a 100k context?
+
+--- [/u/AvidCyclist250]
+Any size. It’s flat.
+
+--- [/u/Pentium95]
+Prove it
+
+--- [/u/AvidCyclist250]
+DDR bandwidth is the limit. It is flat throughout. Ill prove it when Im back at the computer.
+
+--- [/u/SandySkittle]
+what about prefill / prompt procesing across scaling context size?
+
+--- [/u/AvidCyclist250]
+I've only ever tested with 130k because I'm using it with a harness. I guess I could see what happens. Unless you mean „as the context fills up“ in which case it is flat, but slightly faster as it warms up.
+
+--- [/u/AvidCyclist250]
+https://preview.redd.it/elisjv7hlfrh1.png?width=1290&format=png&auto=webp&s=ed1ae3eb0ce62d4bd3e6c44f3824a0b9e265f04d 
+ End of session. Numbers may vary depending on the workload. And if I squeeze in a browser and make screenshots to answer a question on reddit :)
+
+--- [/u/AvidCyclist250]
+https://preview.redd.it/3eqpsh9ilfrh1.png?width=1277&format=png&auto=webp&s=35906134315db80d5d5fe13fa7909465758c5308 
+ Beginning of session
+
+--- [/u/Pentium95]
+123 tokens. This is the answer to what BangkokPadang asked. If you give It a way longer pompt, like 32k, you Will have terrible speeds
+
+--- [/u/AvidCyclist250]
+No, see images and measured speeds. The numbers are right there on the screenshot. I don't have terrible speeds because with my setup it's impossible. It's all explained. It's streamed from RAM.
+
+--- [/u/Pentium95]
+I only see images of very short prompts (up to 123 tokes). If you want to know how fast It Is, feed It a 32k token long prompt.
+
+--- [/u/AvidCyclist250]
+Generation speed (so tg) on a MoE with offloaded experts is memory-bandwidth bound, not context-length bound. As long as the KV cache fits in VRAM (which it does here with q8_0 at ~3.2 GB), generation speed stays completely flat whether context is 100 tokens or 100k tokens because the DDR bus transfers the exact same MB of active expert weights per token regardless of history length.
+ If you meant prompt eval (pp): prompt processing runs at 340–370 t/s across chunked batches (with -b 2048 -ub 2048). A 32k prompt takes ~90 seconds.
+ You might be confusing prompt eval with token generation?
+
+--- [/u/PulseVector]
+Good write-up, I'll have to try that! I'm using Atomic Chat with ngram right now on stock llama.cpp. The results are good with an RTX 4070 (24 t/s) on one system and an RTX 5070 TI (34 t/s) on the other. Each has 64GB DDR5 and Core Ultra 7 265K. Pre-fill is not great though.
+ llama-server -m Qwen3.8-Flash-Next-AD-4.27bpw-Q4_K_M-M64-00001-of-00033.gguf -c 32000 -b 2048 -ub 1024 -np 1 -fa on --jinja -ctk q8_0 -ctv q8_0 -t 20 --threads-batch 16 --spec-type ngram-mod --spec-ngram-mod-n-match 60 --spec-ngram-mod-n-min 12 --spec-ngram-mod-n-max 24 --temp 1.0 --top-p 0.95 --top-k 20 --min-p 0.0 --reasoning-effort medium -fit on -fitt 32
+ edit- made some updates to the llama-server values.
+
+--- [/u/AvidCyclist250]
+Thank you for the feedback. Your results are pretty good. Try running with a larger context and report back if you have the time, I'd be curious to see the numbers
+
+--- [/u/Atretador]
+probably some space for improvement
+ your performance doesnt seem much better than my MI50 with expert cache or Codacus with a 3060 12GB with https://github.com/GenerelSchwerz/llama.cpp/wiki expert cache
+ MTP is also space that could be used for more expert layers/cache.
+
+--- [/u/AvidCyclist250]
+Extra experts don’t fit. I tried. Not enough free VRAM. Not really any room for improvement. DDR bandwidth is the limiter here. And of course VRAM space. Inference suffers without MTP. No real payoff. Open for suggestions of course.
+
+--- [/u/Atretador]
+I can fit bout 80 experts cached with my fork, how many fit with your Q4_K_M? Codacus didnt get any boost from MTP, nor did I vs the boost from caching the hot experts
+ Im currently limited by PCI 3.0 for my 15-22tk/s tg
+
+--- [/u/AvidCyclist250]
+Sorry, let me be clearer. When I said extra experts don't fit, what I tried was moving the MTP draft onto the GPU and sweeping the --fit margin up and down (100 to 2800 MiB). A static placement, which is all this build can do afaik. I have never tested an expert pool like yours, because stock llama.cpp has no such mechanism to test. This build doesn't cache experts at runtime. Placement is decided once at load by --fit and never moves. But the resident count comparison can be calculated using with actual file: 48 blocks x 512 experts, 34.1 GiB of expert weights total, about 1.4 MiB per expert (adaptive quant, so it varies per layer). My card ends up with approx. 9 GB of target weights resident after the 131k q8 KV and MTP draft take their share. Attention and embeddings eat about 4, which leaves roughly 5 GB of experts pinned, so on the order of 80 of the 512 per layer.
+ So we're at the same basic facts and limitations but with different paths. Yours seems to be an 80 slot pool that admits and evicts hot experts over pci-e 3 and adapts to whatever the router picks and mine is 80 slots chosen once by cost model, permanent, zero eviction traffic, and paid for by accepting that the other roughly 28 GB streams from DDR ram. Your design would be better on adaptivity while mine is better on one property, in that it can't thrash mid-session. I believe it when you say caching hot experts was the actual boost on your setup. But on mine, the stream that pays every token is the 35.8GB per-layer embedding table from RAM, and no expert pool ever touches that.
+
+--- [/u/Atretador]
+With pinned experts like you are using now - my tg was at around 11-14tk/s, I would recommend trying a expert cache solution, as it can lead to pretty big boosts, as the GPU is gonna do the entire token gen instead of having the GPU working with the resident layers + CPU working on whats outside of it. I went from CPU at 50% + GPU usage moving all over the place to constant GPU usage and barely any CPU usage along with a 70% tg boost. There was no RAM decrease as Im streaming to GPU from RAM, but the gains were very significant.
+ since the performance you reported is similar to what Codacus got on his video with expert caching from GenerelSchwerz CUDA build, on a RTX 3060 12Gb + 64Gb of RAM on PCI 4.0, if you are on PCI 4 or 5 you *could* hit closer to 30tk/s.
+
+--- [/u/AvidCyclist250]
+I checked the facts of the matter.
+ Metric Your 61.68 t/s run My build GPU RTX 5070 Ti (Blackwell, newer PCIe) RTX 4080 in gen4 x16 quant UD-Q3_K_XL (~25-30% fewer streamed bytes) Q4_K_M (KLD 0.0842 quality choice) prompt 158 tokens 60k agent prompts context/KV 64k, F16 KV 131k, q8 KV (3.2 GB) cache 56 slots, and the counters say: 16,202 misses and 8,138 evictions per 1k tokens (~37% miss) n/a prefill 136.83 t/s 342-373 t/s I see three things: 
+ Yeah, decode win is real but gained from Q3 slabs, Blackwell grouped-MoE kernels, and a warm cache on tiny prompts. Your own counters show a 37% miss rate doing that on a card with a faster bus than mine.
+
+ Prefill is the Achilles heel, 95-137 t/s. On my pi harness a 60k prompt would take 7-10 minutes per fresh pass. My build does it in 160s. You said as much, yourself that it's "kinda garbage". For agent traffic with recompression events, that alone can eat the whole decode advantage.
+
+ On my exact config the slots don't fit at your sizes. 80 slots of Q4 experts = 80 × 1.4 MiB × 48 ≈ 5.4 GB, plus 3.2 GB q8 KV at 131k plus attention overshoots 16 GB. I'd run about 40-55 slots with hit rate below your 60%, so a smaller boost. And I'd be feeding the cache from a gen4 link while my 35.8 GB table still streams from the same RAM.
+ So 30 t/s on your box? Not with Q4_K_M at 131k q8 on a gen4 4080. My honest expectation is decode somewhere ~18-25 t/s if the Ada grouped kernels perform your Blackwell numbers, paid for with the mentioned 3-4x prefill regression. For someone running 500-token chat replies, the fork likely wins. For my workload so long agent contexts, and frequent full re-prompts, quality floor at Q4: my build's total time to answer is very likely still lower.
+
+ I'll have to run your moe cache branch using my model and params and see what gives. You provided the benchmark protocol.
+
+--- [/u/Atretador]
+mine was just reference for gains, use the CUDA one https://github.com/GenerelSchwerz/llama.cpp/wiki as it SHOULD be better
+
+--- [/u/AvidCyclist250]
+I tested it
+ That fork is basically a proof of concept for a certain use case, like chat bots or short questions
+ t/s was faster as you predicted (20-22), MTP doesn't work (that's fine since tg is faster) but PP is the issue here: it's less than half. 
+ So I'd say very nice project but not optimal for people like me who use harnesses or longer contexts with recompresssions in between.
+ If only we could have the best of both worlds
+
+--- [/u/Atretador]
+I'm trying to fix it on my fork, but it has been a challenge.
+ It's usually fine after initial system prompt on OpenCode, using ctx checkpoints and RAM cache to avoid re processing. But it's def not ideal.
+
+--- [/u/AvidCyclist250]
+Let us know if you find a way. Can I ask how much RAM you have, over 64?
+
+--- [/u/mr_Owner]
+I get 22 tgs and 450 pps with 4080 and 64gb ddr5, same gguf. Care to share your flags? Edit; without mtp
+
+--- [/u/AvidCyclist250]
+At which context size?
+ I'm running this right now:
+ LLAMA_ATTN_ROT_DISABLE=1 GGML_CUDA_NO_PINNED=1 taskset -c 0-11 ~/llamaDTM/build-mtp/bin/llama-server \ -m /home/dan/.lmstudio/models/AtomicChat/Qwen3.8-Flash-Next-GGUF/Qwen3.8-Flash-Next-AD-4.27bpw-Q4_K_M-M64-00001-of-00033.gguf \ --alias qwen38 \ -md /mnt/games/lmstudio_models/unsloth/Qwen3.8-Flash-Next-GGUF/MTP/mtp-Qwen3.8-Flash-Next-shared-Q4_K_M.gguf \ --spec-type draft-mtp \ --spec-draft-n-max 2 \ --spec-draft-cpu-moe \ --load-mode none \ --lazy-mode on \ --fit on \ --fit-target 100 \ #--parallel 1 \ -ctk q8_0 -ctv q8_0 \ -c 131072 \ -b 2048 -ub 2048 \ -t 6 -tb 12 \ --cache-ram 2048 \ --ctx-checkpoints 0 \ --host 127.0.0.1 --port 8080 --tools all \ --jinja \ --reasoning-format deepseek-legacy \ --chat-template-kwargs '{"reasoning_effort":"medium","preserve_thinking":true}' \ --temp 1.0 --top-p 0.95 --top-k 20 --min-p 0.0 --repeat-penalty 1.0s \ --log-file /tmp/load.log
+
+--- [/u/mr_Owner]
+Ctx 100k, ub and b at 4096 and n-cpu-moe at 44, no fit, ngl 999, lzm auto, lm none. I use igpu for display
+
+--- [/u/AvidCyclist250]
+Kudos
+ I use igpu for display 
+ Bit the bullet huh :) 250-300mb I'd gain. I'm tempted
+ edit:
+ Got around to testing your numbers at 100k context:
+ PP: reproduced
+ TG: 13-14 t/s
+ Maybe the fork is very different, or the quant isn't exactly the same? I used the same flags as above and only plugged in your changes.
+
+--- [/u/mr_Owner]
+Not sure, i use main llama cpp release. And regarding igpu, i keep a cable to my gpu connected fir when i want to game and switch the port via the monitor menu. My ram is ddr5 6000 cl30 4x16gb. And forgot to mention i run this in linux mint with docker llama cpp. On windows this ran slower, dont remember the digits tbh
+
+--- [/u/tenev911]
+Really nice! With your configuration, I'm getting around 200-230 t/s prefill and 22-28 t/s generation on my 4060 Ti 16GB.
+ My previous setup was using an IQ3_XXS with 100k context and Q4/Q4 KV cache, which gave me around 400 t/s prefill and 10-20 t/s generation.
+ So yeah, I lost a bit of prefill speed, but honestly, with Pi, that doesn't matter much to me. In return, I get Q8/Q8 KV cache, a lot more context, and a significantly smarter model.
+ So once again, thanks a lot for sharing this setup!
+
+--- [/u/AvidCyclist250]
+Thank you for reporting in with the good results
+
+--- [/u/Open-Adhesiveness-86]
+worth posting the draft acceptance rate from the server log alongside the t/s, since with draft experts pinned to RAM the MTP head only pays for itself somewhere north of ~60% accept, and that number drops hard on prose or at temp 0.8+ vs greedy code completion. also fwiw quantized V cache needs -fa on or llama.cpp just refuses, so anyone copying the q8/q8 flags without it will think the build is broken.
+
+--- [/u/AvidCyclist250]
+Good advice and the log receipts are in the repo. Every tg number in the guide sits next to its draft acceptance line, and the relationship is roughly tg ≈ acceptance x 30, which the guide says so readers can check their own. 
+ One number I can comment on with measurements: the break-even on this system is about 0.50, not 0.60. Measured, same binary and same agent traffic: MTP off = 15.2 t/s. MTP on at 0.55 acceptance = 16.5. At 0.48 it's 14.4, so the crossover is somewhere between 0.48 and 0.55, right around 0.5. The reason it's cheaper than the usual rule of thumb is that --spec-draft-cpu-moe puts the draft experts in RAM, so the MTP step costs almost no VRAM or GPU time. The usual draft tax that pushes break-even to 60% on configs running the draft fully on GPU isn't really paid here. 
+ On acceptance dropping with workload: yep confirmed, mine ranges from 0.48-0.66 across a week of agent traffic at temp 1.0, and normal word heavy passages sit low, code-heavy higher 
+ What you said about -fa is correct but also now outdated because current builds default flash attention to AUTO, which means auto-on for quantized V (error text is "quantized V cache requires flash_attn to be enabled"). The command in the guide has no -fa flag and runs q8_0 V happily. Only people who explicitly set -fa off would run into this issue.
+
+--- [/u/Open-Adhesiveness-86]
+Fair on both. The draft-in-RAM point explains the gap - I was carrying over the break-even from GPU-resident draft setups, where the tax is real. And you're right that AUTO makes the -fa note stale; that bit me on an older build.
+
+--- [/u/MindfulBT]
+Great post. I wanna try this with my 3090ti and 64gb of ram.
+
+--- [/u/AvidCyclist250]
+It’s worth a try. With PI agent and this setup, things are rock solid and work as they should. No mem leak issue with this configuration, which causes recompaction problems because of 0 free RAM. Qwen Flash Next is a really good model. Have fun. Local wiki with zim is great too for general world knowledge.
+
+--- [/u/MindfulBT]
+Thanks for the tips! Got me even more hyped for qwen 4.
+
+--- [/u/rrrrex]
+Try to set not just 0-11 threads, but 1,3,5,7,9,11
+ 1 thread per core gives the best results, for me 14-15 -> 17-19 t/s. 
+ Also you can try to add 1 e-core per 4-core block (12,16)(idk how does it work, I have amd CPU, but it can probably give some boost too)
+
+--- [/u/AvidCyclist250]
+Good and important point, but I already have hyperthreading disabled. So it's already one thread per core.
+
+--- [/u/Charl1eBr0wn]
+How much better is this quant vs 27b 3.8 Q8 unquantized cache? Because I have 64GB ddr5 ram and a 5070ti (16GB vram). I could get another 5060 card for 27B or use this setup you're proposing here. Which would lead to better results for acting as the worker/coder agent in a harness guided by a smarter non local model?
+
+--- [/u/MLDataScientist]
+You should try strata https://github.com/Niko1221/Strata On my 12GB VRAM with 64gb ddr5, I get 50t/s TG and 600t/s PP.
+
+--- [/u/AvidCyclist250]
+For quality and projects, overnight runs, etc, I'm only interested in harness-grade setups.
+ For short-burst speed, and simple chat-like stuff I use:
+ /.lmstudio/models/ajgazin/Swift-1.5-Qwen3.8-27B-Uncensored-Dynamic-MTP-GGUF/Swift-1.5-Qwen3.8-27B-Uncensored-Dynamic-MTP-UD-Q3_K_XL.gguf" \ --alias "swift-qwen3.8-27b" \ -np 1 \ -c 55000 \ --cache-type-k q8_0 \ --cache-type-v q8_0 \ -ngl 999 \ -fa on \ -t 6 \ --fit-target 100 \ --spec-type draft-mtp \ --spec-draft-n-max 2 \ --temp 1.0 \ --top-p 0.95 \ --top-k 20 \ --min-p 0.0 \ --repeat-penalty 1.0 \ --presence-penalty 0.0 \ --port 8080
+
+--- [/u/korywithawhy]
+./build/bin/llama-cli \
+ -hf 'Em-80/Qwen3-coder-REAP-25B-A3B-Rust-GGUF:Q5_1' \
+ -c 8192 -t 8 --jinja
+ Running this on a 32GB ram i5 4 core 8 thread $200 mini pc getting average of 7tok/s generation speed. No gpu.
+
+--- [/u/korywithawhy]
+Also for anyone interested, peak power ~25watts
+
+--- [/u/tecneeq]
+https://preview.redd.it/kl36yi020frh1.jpeg?width=668&format=pjpg&auto=webp&s=b989809d3e06ea12a4b1d814b1b0245c66e86f5c 
+ Nice.
+
+--- [/u/AvidCyclist250]
+While it's a different model and 8k, those numbers would be good enough for me for a home assistant setup augmented with a local lllm. In fact, I also got 6-7 t/s but with the gemma moe on my SBC. Beeline N100 by any chance? I was trying to replace Alexa :)
+
+--- [/u/korywithawhy]
+OptiPlex 7090 UFF i5 11th gen 32GB ram
+
+--- [/u/AvidCyclist250]
+Sexy RAM amount. Hope you bought that a while ago lol. Did you also nuke windows? I put Ubuntu headless on mine. Been rock-solid.
+
+--- [/u/korywithawhy]
+I got two of them like 2 weeks ago off amazon for $200ea lol. Kinda ridiculous. But yeah I just have an arch install on it. Haven’t really optimized anything yet other than just finding the oddball model. I did end up switching it to 16k instead of 8. Still about the same speed. The cpu is really what holds it back. But it runs well enough to actually do stuff, so I really can’t complain lol
+
+--- [/u/__Maximum__]
+I have 24GB VRAM and 64GB RAM, but I get 50-60 t/s and pp is 600 with unsloth's Q3. It's very custom Frankenstein's llama.cpp though.
+
+--- [/u/SandySkittle]
+Q3 though.. Honestly I would think Q4 is already pushing it quality wise.
+
+--- [/u/__Maximum__]
+It is smart enough to stay on the lane, so I hope it fixes the quantization related issues with a bit more thinking. It's very independent, I run it in opencode for days and every time I come back to it, it has made some proper progress.
+
+--- [/u/Equivalent_Bit_461]
+Such a dog shit model at q4. Should try higher quants but honestly just waiting for 27b qwen 4. Next was a complete failure for me. Really disappointed with this model
+
+--- [/u/Desperate-Data-3747]
+pure BS
+
+--- [/u/Eyelbee]
+That's because everyone is running that model wrong. All the quants including Q4 are kinda lobotomized. Try BF16 ngram table, which is 100GB on disk, doesn't affect speed. It performs way better. No reason to use the official unsloth quants, they have the q4 quantized table. Q8 table alone adds an insane amount of KLD by itself. Since table can be kept in SSD there's no need to keep it quantized. I don't know if anyone made such a build, I can share mine if it doesn't exist.
+
+--- [/u/Samuraignoll]
+Yeah sounds interesting
+
+--- [/u/AvidCyclist250]
+Yeah that's a nice tip. I'm going to test with the BF16 ngram next. I have the disk space. And I know that ngram access barely costs performance with an nvme, it's stupidly fast.
+
+--- [/u/AdOk3759]
+Is 3.8 27b on 16Gb of VRAM better than 3.8 Flash Next q4?
+
+--- [/u/AvidCyclist250]
+Flash Next is a noticeable step up from 27b
+
+--- [/u/-InformalBanana-]
+What is your usecase?

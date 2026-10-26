@@ -1,0 +1,53 @@
+
+=== 2026-10-07T09:15 | A stock GLM-Edge-1.5B-Chat on a 4GB Galaxy A04e completed a real Amazon cart task | by /u/Mean-Standard7390
+Yesterday TechCrunch published a piece about a growing problem for AI agents: websites are starting to block them. Amazon blocking Meta's Muse is the obvious example.
+ At almost exactly the same time, GLM-Edge-1.5B-Chat running locally on a 4GB Galaxy A04e completed a real Amazon cart task.
+ This continues the small-model/browser experiments previously posted in this subreddit. Earlier tests included Qwen3-0.6B running locally on a 2017 Galaxy Note 8, followed by Ministral 3 3B on a Galaxy S21 across real browser sessions.
+ These experiments are part of the ongoing development of E2LLM/SiFR, a structured browser perception layer.
+ This time:
+ Model: GLM-Edge-1.5B-Chat
+ Quantization: Q4_K_M GGUF
+ Source: official Z ai Hugging Face release
+ Fine-tuning: none
+ Task-specific training: none
+ Runtime: llama.cpp
+ Phone: Samsung Galaxy A04e, SM-A042F/DS, 4GB RAM
+ The published model was used as-is.
+ The browser was a normal desktop Firefox session on Amazon.
+ The task was simple:
+  find a 24-count pack of AA alkaline batteries find yellow rubber ducks add both to the cart stop before checkout  Result:
+ cart 0, batteries, cart 1, rubber ducks, cart 2
+ The same setup was run twice on the A04e. Both runs completed successfully.
+ Full run on the A04e: about 8.5 minutes.
+ Same workflow on a Galaxy S21: about 3 minutes.
+ The interesting part is the architecture.
+ The model is not a separate browser service arriving at Amazon as an agent. It runs locally and perceives and acts through an existing user browser session.
+ It also doesn't receive screenshots or raw HTML. It gets a compact structured browser perception layer and makes the small decisions needed at each step.
+ That changes the access problem from:
+ "How does a website identify and admit an AI agent?"
+ to:
+ "What is allowed inside an existing user browser session?"
+ The broader idea is Browser-as-Shared-Space, BaSS.
+ The browser remains the user's space, with the model working alongside the user rather than replacing the user with a separate autonomous browser agent.
+    submitted by    /u/Mean-Standard7390  
+ [link]   [comments]
+=== ? | /u/Defiant_Potential_69 on A stock GLM-Edge-1.5B-Chat on a 4GB Galaxy A04e completed a real Amazon cart task | by /u/Defiant_Potential_69
+Interesting experiment, thanks for posting!
+=== ? | /u/thetaFAANG on A stock GLM-Edge-1.5B-Chat on a 4GB Galaxy A04e completed a real Amazon cart task | by /u/thetaFAANG
+I feel like a decision model could end this entire evolutionary line of experiments and training
+=== ? | /u/Mean-Standard7390 on A stock GLM-Edge-1.5B-Chat on a 4GB Galaxy A04e completed a real Amazon cart task | by /u/Mean-Standard7390
+Agreed. One tiny caveat: this evolutionary line ends when the decision model itself fits and runs locally on a budget phone.
+=== ? | /u/fatihmtlm on A stock GLM-Edge-1.5B-Chat on a 4GB Galaxy A04e completed a real Amazon cart task | by /u/fatihmtlm
+LiteRT-LM is usually faster on the edge. Tho you may be required to use a newer model for it, like minicpm5-1b
+=== ? | /u/Mean-Standard7390 on A stock GLM-Edge-1.5B-Chat on a 4GB Galaxy A04e completed a real Amazon cart task | by /u/Mean-Standard7390
+Good point. I’ll run this as a separate comparison: same model, same phone, same task, same E2LLM/SiFR workflow, changing only the runtime. LiteRT-LM vs llama.cpp. That should make it a clean apples-to-apples test.
+=== ? | /u/Sad_Leader4849 on A stock GLM-Edge-1.5B-Chat on a 4GB Galaxy A04e completed a real Amazon cart task | by /u/Sad_Leader4849
+an agent running on the user's own phone, inside their own logged-in session, looks nothing like a scraper farm. 4gb is tight. if you want this in your own android app, nobodywho wraps llama.cpp for flutter and skips the jni glue
+=== ? | /u/timedacorn369 on A stock GLM-Edge-1.5B-Chat on a 4GB Galaxy A04e completed a real Amazon cart task | by /u/timedacorn369
+I am a bit confused on the github for e2llm. Is it not open source?
+=== ? | /u/seeweed7 on A stock GLM-Edge-1.5B-Chat on a 4GB Galaxy A04e completed a real Amazon cart task | by /u/seeweed7
+The timing of these two stories is the real point. A cloud agent gets stopped at the edge of the web, and a 1.5B model on a 4GB phone completes the same task because from the site side it is just another browser session. The block targets automation, not capability.
+=== ? | /u/MustBeSomethingThere on A stock GLM-Edge-1.5B-Chat on a 4GB Galaxy A04e completed a real Amazon cart task | by /u/MustBeSomethingThere
+Over 2 years old model
+=== ? | /u/Mean-Standard7390 on A stock GLM-Edge-1.5B-Chat on a 4GB Galaxy A04e completed a real Amazon cart task | by /u/Mean-Standard7390
+The old model is the point, not the limitation

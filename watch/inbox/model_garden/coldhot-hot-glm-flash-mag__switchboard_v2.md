@@ -1,0 +1,7 @@
+# coldhot-hot-glm-flash-mag__switchboard_v2 (glm-5.3-flash @ zai, turn 1, channel: content)
+
+DEFECT 1: Replay protection is process-local memory only, so every restart clears _GRANTED_EVENT_IDS and a previously granted event_id can be re-granted from scratch | EVIDENCE: mag/switchboard_v2.py:85-88, 277-303 | FIX: persist granted event_ids durably (e.g. append to TRAIL and scan TRAIL, or a granted_ids.jsonl set) before adding to the in-memory set
+DEFECT 2: confirm() claims full revalidation but only calls validate_authority; check_ttl and check_budget are never rerun, so a proposal that expired or exhausted budget while parked in the inbox is resurrected to AUTHORIZED on operator confirm | EVIDENCE: mag/switchboard_v2.py:455-482 | FIX: call policy_engine.check_ttl and check_budget on rec before _transition to CONFIRMED and fail closed on either
+DEFECT 3: _flush_expired_deferred flips inbox records to DENIED without trail_append, so terminal receipt-chain states exist only in the inbox and the TRAIL receipt chain has a hole | EVIDENCE: mag/switchboard_v2.py:840-848 | FIX: call trail_append(rec) after _rewrite_inbox_rec(rec) in the flush loop
+DEAD-CODE: _valid_state_transition is defined but never called anywhere in the file | EVIDENCE: mag/switchboard_v2.py:108-109
+ONE-SITTING FIX: Back the replay set with the TRAIL file: in grant(), replace the set-membership check with a scan of TRAIL for receipt_status==AUTHORIZED with the same event_id, then add to _GRANTED_EVENT_IDS as a cache | EVIDENCE: mag/switchboard_v2.py:277-303

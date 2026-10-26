@@ -1,0 +1,175 @@
+t17 check raw output | gopher t17 | 2026-09-25
+item: verify peer row 9ce633bb4a claims vs current code (thinking_off both paths; reasoning_effort zero hits; z_ai2/z_ai3 lack default_model)
+peer row ts: 2026-09-01T07:23:27+00:00 (queue/handoff/peer-9ce633bb4a.json)
+
+== [1] peer json identity ==
+9ce633bb4a 2026-09-01T07:23:27.165664+00:00 codex -> mag
+goal: Repair Mag Z.AI GLM-5.3-Flash High reasoning path and recover stale supervisor safely
+
+== [2] grep thinking_off across repo py (excl .venv/backups) ==
+tests\test_seat_corpus.py:7:def test_compile_has_deepseek_thinking_off(tmp_path, monkeypatch):
+(exit code: 0)
+
+== [3] grep reasoning_effort in configs/ + mag/ ==
+mag/\lane_runner.py:230:    5.x law: thinking cannot be disabled — reasoning_effort low + max_tokens >= 1536
+mag/\lane_runner.py:246:            "thinking": {"type": "enabled"}, "reasoning_effort": "low"}
+mag/\lite_scale.py:73:            "thinking": {"type": "enabled"}, "reasoning_effort": "low",
+mag/\tesuji_fire.py:118:        "reasoning_effort": effort,
+mag/\tesuji_fire.py:347:            r = _fire_with_retry(lanes, prompt, gk.get("reasoning_effort", "low"),
+mag/\tesuji_fire.py:369:                note = (f"{vname} effort={gk.get('reasoning_effort', 'low')} "
+mag/\tesuji_fire.py:374:                note = (f"{vname} effort={gk.get('reasoning_effort', 'low')} "
+mag/\tesuji_probes.py:64:        "gen_kwargs": {"reasoning_effort": "low", "max_tokens": 1536},
+mag/\tesuji_probes.py:85:            "gen_kwargs": {"reasoning_effort": effort, "max_tokens": mtok},
+mag/\tesuji_probes.py:180:            "gen_kwargs": {"reasoning_effort": "low", "max_tokens": 1536},
+mag/\tesuji_probes.py:195:            "gen_kwargs": {"reasoning_effort": "low", "max_tokens": 1536},
+mag/\tesuji_probes.py:211:            "gen_kwargs": {"reasoning_effort": "high", "max_tokens": 2048},
+mag/\tesuji_probes.py:230:            "gen_kwargs": {"reasoning_effort": "low", "max_tokens": 1536},
+mag/\tesuji_probes.py:245:            "gen_kwargs": {"reasoning_effort": "low", "max_tokens": 1536},
+mag/\tesuji_probes.py:262:            "gen_kwargs": {"reasoning_effort": "low", "max_tokens": 1536},
+mag/\tesuji_probes.py:279:            "gen_kwargs": {"reasoning_effort": "low", "max_tokens": 1536},
+mag/\wave_fire.py:66:    payload.update(lane.get("extra", {}))  # per-lane body params (e.g. reasoning_effort)
+
+== [4] models/providers.py thinking handling (line-anchored) ==
+201:def _thinking_off(pcfg: dict[str, Any], payload: dict[str, Any]) -> dict[str, Any]:
+202:    """Top-level ``thinking: {type: disabled}`` for providers that need it.
+204:    DeepSeek v4 defaults thinking ON; reasoning tokens count against
+209:    if pcfg.get("disable_thinking"):
+210:        payload["thinking"] = {"type": "disabled"}
+262:    thinking: bool | None = None,
+271:    ``thinking`` overrides the provider's disable_thinking flag per call:
+273:      True  -> keep thinking ON (creative/DM turns need coherence),
+274:      False -> force thinking OFF (cheap scut).
+359:        if thinking is None:
+360:            payload = _thinking_off(pcfg, payload)
+361:        elif thinking is False:
+362:            payload["thinking"] = {"type": "disabled"}
+363:        # thinking True -> leave DeepSeek v4's default thinking ON (coherence)
+386:            # budget thinking returns ok-but-empty (content "", finish_reason length). That is
+394:                                  "(max_tokens too small; raise it or disable thinking)",
+501:        thinking=False,
+631:        payload = _thinking_off(pcfg, payload)
+
+== [5] z_ai2/z_ai3 blocks in configs/providers.yaml ==
+14:    - z_ai              # FREE cache-mined GLM (glm-4.7-flash/4.5-flash, 200K ctx) — the default
+390:  z_ai:
+399:  z_ai2:
+409:  z_ai3:
+421:  z_ai4:
+641:  public_summarize: [ollama, openrouter, nvidia, groq, z_ai, github_models, mistral, moonshot, fireworks, cerebras, cohere, hf_router, dashscope, deepseek, deepseek_overmind, vast, gemini, openai]
+645:  default: [ollama, openrouter, nvidia, groq, z_ai, github_models, mistral, moonshot, fireworks, cerebras, cohere, hf_router, dashscope, deepseek, deepseek_overmind, anthropic, gemini, openai, xai]
+  z_ai2:
+    name: Z.ai FUNDED API key (Pro) — FLEET cache-mining lane, proven 2026-08-26 (97-99.9% cache hit, $0)
+    kind: openai_compat
+    base_url: https://api.z.ai/api/paas/v4
+    api_key_env: ZAI_API_KEY_Pro
+    free: true
+    timeout_seconds: 15
+    models:
+      - glm-4.7-flash
+      - glm-5.3-flash
+  z_ai3:
+    name: Z.ai FUNDED API key (Lite) — FLEET cache-mining lane, proven 2026-08-26
+    kind: openai_compat
+    # endpoint law (receipt 2026-09-17): coding-plan keys fake-1113 on raw /paas/v4;
+    # the real path is /api/coding/paas/v4 (monitor endpoint = truth)
+    base_url: https://api.z.ai/api/coding/paas/v4
+    api_key_env: ZAI_API_KEY_Lite
+    free: true
+    timeout_seconds: 15
+    models:
+      - glm-4.7-flash
+      - glm-5.3-flash
+== default_model present in z_ai2/z_ai3? ==
+0
+(count of default_model lines between z_ai2: and z_ai4: above; 0 = claim holds)
+
+== [6] disable_thinking flags in providers.yaml ==
+149:    disable_thinking: true
+256:    disable_thinking: true
+286:    disable_thinking: true
+
+== [7] mag/lane_runner.py flash lane law (lines 224-246 excerpt) ==
+def flash_call(system: str, user: str, max_tokens: int = 1536) -> str:
+    """LAW-058 pin-check baked in: the ONLY model door here is the Lite coding-plan
+    key (ZAI_API_KEY_L, the Calcifer lane) on glm-5.3-flash. CORRECTED 2026-09-05:
+    this is NOT the fleet's $0 lane — the promo verdict proved Lite metered
+    (10,000 credits/wk real credits; the "zero-metered night window" belief was
+    falsified). Paced by mag/lite_guard.py (law 15 daily ceiling), past it raises.
+    5.x law: thinking cannot be disabled — reasoning_effort low + max_tokens >= 1536
+    (epoch-1 medicine). march_228.py's proven request shape; endpoint passes the
+    SSRF guard; redirects refused (_OPENER)."""
+    from mag import lite_guard
+    g = lite_guard.check("lane_runner")
+    if not g["ok"]:
+        raise RuntimeError(g["deny"])
+    key = next((os.environ[v] for v in _FLASH_KEY_VARS if os.environ.get(v)), "")
+    if not key:
+        raise RuntimeError("no Lite key in cage env (flash lane down)")
+    if not _safe_https_url(_FLASH_ENDPOINT):
+        raise ValueError("blocked: endpoint failed SSRF guard (scheme/host/resolved-IP)")
+    body = {"model": "glm-5.3-flash",
+            "messages": [{"role": "system", "content": system},
+                         {"role": "user", "content": user}],
+            "max_tokens": max_tokens, "temperature": 0.2,
+            "thinking": {"type": "enabled"}, "reasoning_effort": "low"}
+
+== [8] flash_call rescue path (thinking disabled retry, 2026-09-23) ==
+    content = (msg.get("content") or "").strip()
+    if not content:
+        # REASONING-BUDGET RESCUE (2026-09-23, gopher-proven): the thinking channel
+        # ate the token budget and content came back empty. One retry with thinking
+        # disabled and doubled tokens — the gopher bench proved thinking-disabled
+        # works on this endpoint family (glm-4.7-flash, 2026-09-23).
+        try:
+            body2 = dict(body)
+            body2["thinking"] = {"type": "disabled"}
+            body2["max_tokens"] = max_tokens * 2
+            req2 = urllib.request.Request(_FLASH_ENDPOINT, data=json.dumps(body2).encode("utf-8"),
+                                          headers={"Content-Type": "application/json",
+                                                   "Authorization": "Bearer " + key})
+            with _OPENER.open(req2, timeout=180) as r2:
+                d2 = json.loads(r2.read())
+            _u2 = d2.get("usage") or {}
+            lite_guard.record("lane_runner",
+                              int(_u2.get("prompt_tokens") or 0) + int(_u2.get("completion_tokens") or 0))
+            m2 = ((d2.get("choices") or [{}])[0].get("message", {}) or {})
+            content = (m2.get("content") or "").strip() or (m2.get("reasoning_content") or "").strip()
+        except Exception:  # noqa: BLE001 — rescue attempt, never a new failure mode
+            pass
+
+== [9] chat_provider thinking param signature ==
+    thinking: bool | None = None,
+    timeout: int | None = None,
+    allow_peak: bool = False,
+) -> dict[str, Any]:
+    """Chat a named provider; records quota usage.
+
+    Callers must explicitly label public remote-safe work T2. The private T1
+    default makes omitted classification fail closed for non-local providers.
+
+    ``thinking`` overrides the provider's disable_thinking flag per call:
+      None -> respect provider config (default),
+      True  -> keep thinking ON (creative/DM turns need coherence),
+      False -> force thinking OFF (cheap scut).
+
+== [10] negative finding: closure fields in any peer json ==
+(no output above = zero peer jsons carry a closure field; this annotation is the first)
+
+== [6b] disable_thinking owner mapping (which provider each line belongs to) ==
+149:   openrouter: -> disable_thinking: true
+256:   deepseek: -> disable_thinking: true
+286:   deepseek_overmind: -> disable_thinking: true
+note: z_ai2 (line 399) and z_ai3 (line 409) blocks carry NO disable_thinking and NO default_model
+
+== [11] verdict summary (authored, gopher t17) ==
+peer row 9ce633bb4a (2026-09-01) vs estate 2026-09-25:
+claim A 'thinking_off forced on both provider paths': DRIFTED.
+  chat_messages still always applies _thinking_off (models/providers.py:631, no thinking/reasoning_effort param on that path).
+  chat_provider gained a per-call thinking override param (models/providers.py:262,359-363): None=config-gated _thinking_off, False=forced off, True=left on.
+  _thinking_off itself is config-gated by disable_thinking (models/providers.py:209), set only on openrouter/deepseek/deepseek_overmind; z_ai2/z_ai3 send no thinking key at all from the provider layer.
+claim B 'reasoning_effort zero hits': FALSIFIED. 18 hits across mag/ (lane_runner.py:246, lite_scale.py:73, tesuji_fire.py, tesuji_probes.py, wave_fire.py:66).
+  flash lane law is now the opposite of thinking-off: lane_runner.py:230 documents 'thinking cannot be disabled, reasoning_effort low + max_tokens >= 1536' and line 246 sends thinking enabled.
+  plus a 2026-09-23 rescue retry with thinking disabled + doubled tokens (lane_runner.py:258-277).
+claim C 'z_ai2/z_ai3 lack default_model': STILL TRUE (configs/providers.yaml lines 399-419, zero default_model keys in the z_ai2..z_ai4 span; provider_default_model returns None, models/providers.py:164-171).
+verdict: (b) code drifted; c2's 'current lane law IS thinking-off' premise is stale. The thinking law that exists is documented in mag/lane_runner.py:230 (flash_call docstring), so no new note is filed under (a).
+negative finding: zero queue/handoff/peer-*.json carried a closure field before this task; this annotation is the first.

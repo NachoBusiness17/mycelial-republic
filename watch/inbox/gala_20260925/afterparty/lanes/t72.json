@@ -1,0 +1,16 @@
+{
+  "gopher": "t72",
+  "item": "GalleryZone.luau(82,2) last Part-vs-BasePart annotation row (t57 next_steal, t42 row 12): mk() typed BasePart against plaque's : Part return; freshness re-check first per t57 (d38801265 restructure landed); same read-widening annotation fix as t57, receipt comments citing t57 + t42; verify by luau-lsp analyze from roblox/ before/after; mountain_check not run (shared)",
+  "ok": true,
+  "note": "Finding cleared at (82,2) in 4 annotation lines + 2 receipt comments, zero behavior edits, 0 new findings final. Negative first: the advertised one-line fix was insufficient. mk return BasePart -> Part alone cleared (82,2) but spawned 3 new exact-table-literal findings (150,24/171,22/194,24, Pane/Fishie/Tile), the same invariant rejection t57 documented; typing the three .part fields BasePart -> Part completes the convention and clears them. Freshness held: d38801265 touched only the DOORS hunk, mk/plaque intact, file clean at edit time. Diff vs before-run also shows init.server(68,1) gone, NOT mine: another lane's t67 edit landed mid-flight (mtimes 01:17/01:18, my diff touches only GalleryZone). sourcemap read-only, edits uncommitted.",
+  "checks": [
+    "freshness: git log HEAD = d38801265 (09-26 00:36), GalleryZone.luau unmodified in working tree at edit time; restructure confined to DOORS lines 20-39",
+    "before: analyze exit=1, SyntaxError|Incomplete count 0, gate filter+dedupe = 11 unique incl. GalleryZone(82,2) Expected 'Part' but got 'BasePart'",
+    "intermediate: one-line fix only -> 3 new findings 150,24/171,22/194,24; completed with Pane/Fishie/Tile part: BasePart -> Part",
+    "after: analyze exit=1, SyntaxError|Incomplete count 0, dedupe = 9 unique; diff vs before = (82,2) gone (mine), init.server(68,1) gone (other lane's t67, mtime evidence), new from t72 = 0",
+    "diff audit: 4 annotation lines + 2 comment lines in GalleryZone.luau only; em-dash scan on added lines = 0",
+    "sourcemap.json read-only for t72 (annotation-only, no DataModel shape change); mountain_check NOT run per item",
+    "buffers: /tmp/t72_analyze_before.txt, /tmp/t72_analyze_after.txt, /tmp/t72_findings_before.txt, /tmp/t72_findings_after.txt"
+  ],
+  "next_steal": "t42 rows 8-20 remainder: MudBasecamp(220,19) Instance?-chain plus the 8 LocalUnused dead locals still need the one-lane-sweep vs baseline-entry decision t42 teed up (LedgerExchange GetAttribute rows appear already cleared by another lane's in-flight edit). Also flagging for an owner: the gate's 'number | unknown' exclusion now masks live rows in init.server(210,17/213,20/216,22) and ZoneGate(112,39); gate is shared, do not touch from a gopher lane."
+}

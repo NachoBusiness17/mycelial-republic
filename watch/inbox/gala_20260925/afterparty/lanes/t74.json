@@ -1,0 +1,24 @@
+{
+  "gopher": "t74",
+  "item": "roblox/src/server/ShadowLedger.luau:41-50 does per-entry GetAsync+SetAsync read-modify-write: a lost-update race under concurrency plus write amplification (rewrites the whole entry on each visit). Read the module + its callers, spec the minimal fix (UpdateAsync for atomic read-modify-write; batch if the caller loop rewrites N entries per visit), implement, receipt comment citing t63. Keep the DataStore schema unchanged (existing saved entries must stay readable).",
+  "ok": true,
+  "note": "Race fixed, no batch, no schema change. Spec landed first in roblox/README.md (durable write law added to the ShadowLedger bullet BEFORE the code: one UpdateAsync per append, appends serialize across servers, value stays a plain array of entry rows). Code: ShadowLedger.luau record() :58-67 now does pcall(store:UpdateAsync(key, transform)) replacing the :43-50 GetAsync+SetAsync pair; transform copies old rows to a fresh table then appends, side-effect free and non-yielding, because the official docs (GlobalDataStore.md, fetched 2026-09-25) say the transform 'will be called as many times as needed' with prior results discarded and 'cannot yield', so a mutating transform could double-append on retry. Batch REJECTED per the item's own condition: caller census shows every ShadowLedger.record call site files ONE event; the sole record() in a loop (SteerFieldZone.luau:103) iterates different players with a break, so no same-key N-per-visit loop exists, and buffering rows would trade durability for size. Receipt comment :43-57 cites t63.next_steal plus the doc quotes.",
+  "checks": [
+    "read-back of post-edit record() :40-69: end/end) balanced (:66 transform, :67 pcall, :68 task.spawn, :69 record); dead vars ok/existing removed; --!strict clean by inspection",
+    "grep store ops in ShadowLedger.luau: sole live call store:UpdateAsync :59; GetAsync/SetAsync only inside the receipt comment",
+    "grep ShadowLedger_v1 over roblox/src: only ShadowLedger.luau :13 touches the store, no other reader to break",
+    "schema: keys (p<id>_day<UTC YYYYMMDD>) and value (array of Entry tables) unchanged; transform passes old rows through as-is, seeds {} on nil/non-table like old :46; pre-fix saves read back unchanged",
+    "caller census grep ShadowLedger.record over roblox/src: all single-event call sites; only loop site SteerFieldZone.luau:103 iterates different players with break; batch condition false",
+    "em-dash grep over edited files and lane files: zero in t74-filed text; pre-existing hits only (.luau :2/:71, older README lines)",
+    "docs fetched 2026-09-25: create.roblox.com GlobalDataStore.md (SetAsync 'may cause data inconsistency if two servers attempt to set the same key'; UpdateAsync multi-call, no-yield, nil cancels, counts read+write)",
+    "luau-lsp not on PATH: semantic analyze skipped with receipt (same as t56/t63)",
+    "mountain_check not run per lane order (shared)"
+  ],
+  "next_steal": "ShadowLedger write amplification remains (DataStores have no append; the player-day array is still rewritten whole on every event, now atomically). If event volume ever matters, gopher t75 adds a per player-day coalescing queue (short window, BindToClose + PlayerRemoving flush) and must price the durability tradeoff in the spec first; current volumes do not justify it.",
+  "archive": [
+    "watch/inbox/gala_20260925/afterparty/lanes/t74.check.txt",
+    "watch/inbox/gala_20260925/afterparty/lanes/t74.json",
+    "roblox/src/server/ShadowLedger.luau",
+    "roblox/README.md"
+  ]
+}

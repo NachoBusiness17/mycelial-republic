@@ -1,0 +1,55 @@
+THREAD 1r8cnwq
+FEED TITLE: Analyzed 8 agent memory systems end-to-end — here's what each one actually does : reddit.com
+SUBTITLE: 
+ENTRIES: 10
+
+--- [2026-02-18T19:27] /u/ushikawasan | Analyzed 8 agent memory systems end-to-end — here's what each one actually does
+I wanted to understand what actually happens when you call add() or search() in agent memory systems, so I built small prototypes with each and traced open-source implementations from API through storage through retrieval. Covered Mem0 v1.0.3, Letta v0.16.4, Cognee v0.5.2, Graphiti v0.27.1, Hindsight v0.4.11, EverMemOS (commit 1f2f083), Tacnode (closed-source, from docs/papers), and Hyperspell (managed platform, from documentation and open-source client code).
+The space is more diverse than I expected. At least four fundamentally different bets:
+Trust the LLM for everything (Mem0, Letta). Mem0's core loop is two LLM calls — simplest architecture of the eight. Letta gives the agent tools to manage its own memory rather than running extraction pipelines.
+Build explicit knowledge structures (Cognee, Graphiti, Hindsight, EverMemOS). Graphiti has arguably the best data model — bi-temporal edges, two-phase entity dedup with MinHash + LLM. Hindsight runs four retrieval methods in parallel on a single PostgreSQL database and gets more out of it than systems running six containers.
+Data infrastructure underneath (Tacnode). Thinking from the infrastructure layer up — ACID, time travel, multi-modal storage. Nobody else is really working from that depth.
+Data access upstream (Hyperspell). Prioritized connectivity — 43 OAuth integrations, zero extraction. A bet that the bottleneck is getting the data in the first place.
+A few patterns across all eight:
+Systems with real infrastructure discipline don't do knowledge construction. Systems with sophisticated extraction don't have transactional guarantees. Nobody's bridged that split yet.
+What Hyperspell calls "memory" and what Graphiti calls "memory" are barely the same concept. The word is covering everything from temporal knowledge graphs to OAuth-connected document search.
+And the question I keep coming back to: every one of these systems converges on extract-store-retrieve. But is that what memory actually is for agents that need to plan and adapt, not just recall? Some are hinting at something deeper.
+Full analysis: synix.dev/mem
+All systems at pinned versions. Point-in-time analysis, not a ranking.
+submitted by /u/ushikawasan to r/LocalLLaMA
+[link] [comments]
+
+--- [] /u/vornamemitd | /u/vornamemitd on Analyzed 8 agent memory systems end-to-end — here's what each one actually does
+Which tool did the create the deep research report?
+
+--- [] /u/pablooliva | /u/pablooliva on Analyzed 8 agent memory systems end-to-end — here's what each one actually does
+Thanks for the detailed analysis. It is very revealing and helpful that you have identified how broadly defined "memory" is in this space.
+More specifically, your analysis helped me, or Claude, reinforce that I had made the right choice with Graphiti as part of the stack for a personal knowledge base solution that I developed for myself. Interesting comparison: https://github.com/pablooliva/sift/blob/main/8-agent-memory-systems-vs-sift.md
+
+--- []  | /u/[deleted] on Analyzed 8 agent memory systems end-to-end — here's what each one actually does
+please try "memobase.io". it uses a "profile" and "event" system. it is very simple, which makes it work well. i made my own memory with this exact architecture then found the memobase repo afterwards, its a different app with same idea but better code.
+the trick is to get llm to just use raw context, relations, intent, timing etc are all done by the weights, no need to extract
+
+--- [] /u/Hopeful_Pressure | /u/Hopeful_Pressure on Analyzed 8 agent memory systems end-to-end — here's what each one actually does
+👍
+
+--- [] /u/Educational_Bed_2755 | /u/Educational_Bed_2755 on Analyzed 8 agent memory systems end-to-end — here's what each one actually does
+Hey, thanks for the comparison. You should give a look to the new open source agemem —> github.com/gianpd/agemem coming from the inference only implementation of the qwen agemem RL papers. Using a 5 tier layers giving the agent the ability to learn and improve read/write memory on long-session history
+
+--- [] /u/luison2 | /u/luison2 on Analyzed 8 agent memory systems end-to-end — here's what each one actually does
+Thanks for sharing, I am just in the middle of implementing a memory system for our coding agents and projects.
+Just wondering how this now-a-days overlap the Knowledge Base concept, as I also wanted to implement one and connect it for agents so I can add or retrieve manually documents or simple notes within one or various domains/labels/projects.
+More and more I'm realising this is just a memory tool, but I would need one memory server that allows me to interact with its content with an easy UI.
+Also concern on delay this might cause as to share project memory among various developers I would need to connect my agents to a remote server rather than my own machine, unless a memory system allowed to sync among various clients.
+
+--- [] /u/DeepFought | /u/DeepFought on Analyzed 8 agent memory systems end-to-end — here's what each one actually does
+Was MuninnDB out at the time? Add it now?
+
+--- [] /u/formula420 | /u/formula420 on Analyzed 8 agent memory systems end-to-end — here's what each one actually does
+This is a genuinely useful writeup, the four-bets framing (trust-the-LLM vs explicit-structure vs infra-first vs connectivity-first) is a clean way to cut through the marketing noise in this space. Your point that everyone converges on extract-store-retrieve despite wildly different vocab for it rings true: I've read through a bunch of these codebases and the actual diffs are mostly in where they put the intelligence, not whether the pipeline shape differs.
+One more data point if you ever extend the list: worth noting there's a smaller cluster that explicitly opts out of the extraction-heavy approach altogether, deterministic keyword + structured retrieval instead of LLM-extraction-into-a-graph-or-vector-store. You give up fuzzy semantic recall, but you get retrieval you can actually explain after the fact, which matters more than people expect once something goes wrong in prod.
+Disclosure: I work on Perseus Vault (github.com/Perseus-Computing-LLC/perseus-vault), which is in that cluster: structured entities over SQLite+FTS5, no vector DB, local-first, MIT. Not trying to slot it into your rankings, just flagging the category since your post is already doing the hard work of mapping the space.
+One
+
+--- [] /u/AloneBreadings | /u/AloneBreadings on Analyzed 8 agent memory systems end-to-end — here's what each one actually does
+This is the missing category for me too. And I'd go one step further though: for some kinds of memory, you probably shouldn't extract anything at all, just sync it from the source. If the fast is who owns this service, what depends on it, or which environment it runs in, having a LLM decide what to remember is worse than keeping a. typed catalog current from GitHub?infra. That's basically the model behind Port .io and Backstage-style catalogs. For organizational facts, it sidesteps a lot of the recall-quality and reconciliation problems because the source of truth stays authorative.

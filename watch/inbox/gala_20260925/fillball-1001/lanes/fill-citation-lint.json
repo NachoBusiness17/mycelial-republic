@@ -1,0 +1,115 @@
+{
+  "lane": "fill-citation-lint",
+  "division": "B",
+  "started": "2026-10-01",
+  "finished": "2026-10-01",
+  "status": "LANDED",
+  "ask": "Build tools/citation_lint.py per its written spec (a05-r2: path exists + line range non-empty + claim-token match; the 191.8M phantom is the founding test fixture and must FAIL the lint), wire the hook entry after the ratchet, run the ratchet, land with a self-test. GAP_REGISTER rank 3.",
+  "landed": [
+    "tools/citation_lint.py (333 lines): anchor checker + CLI, enforcing block wired into githooks/pre-push directly after the ratchet per the register fill spec",
+    "tools/citation_lint_numbers.py (251 lines): sentence-scoped PHANTOM-NUMBER engine",
+    "tools/citation_lint_io.py (361 lines): Finding/LintResult, shared cite-path grammar, git-index resolution with single-hit basename fallback, streamed reads, changed-record discovery, baseline loader",
+    "tests/test_citation_lint.py (336 lines): the founding fixture battery, 8 pytest cases; CLI --selftest runs it in-process under a recursion guard",
+    "AGENTS.md build-discipline bullet documenting the gate law beside the ratchet bullet",
+    "watch/inbox/fillball/citation-lint.md: the receipt"
+  ],
+  "spec_sources": [
+    "watch/inbox/ractor50/accuracy.md incident 5 instrument upgrade: every file:line citation must satisfy (a) path exists, (b) line range non-empty and mentions a token from the claim; tools/citation_lint.py wired into pre-push makes it machine-enforced",
+    "watch/inbox/gap_analysis_20261001/GAP_REGISTER.md rank 3 + fill spec 3: build exactly to the accuracy.md spec, wire one line into githooks/pre-push after the ratchet, run once over ractor50's 12 spot-checked cites, prove it catches the 2 known drifts (mag/mcp_server.py:338-340, mag/biography.py:526)",
+    "watch/inbox/MICKEY17_V2_RUN_SPEC_ADDENDUM.md:71: 10 of 12 spot-checks byte-clean, 2 drifted",
+    "memory/runs/mickey17_v2/runs/gap-analysis-of-the-estate-s-09--15/lanes/a05-ractor50.json clean[10]/drifted[2]: the exact 12 spot-checked cites"
+  ],
+  "live_confirmations": [
+    "The 191.8M clause was STRUCK from STORY.md by the 10-01 ERRATA (register rank 4) while this lane built the tool; the live STORY.md no longer carries the phantom and the lint correctly stays silent on it, so the founding fixture lives verbatim (old STORY.md lines 225-243) in tests/test_citation_lint.py, never read live",
+    "grep -c 191 on watch/inbox/frontier_olm_20260928/DIGEST.md: 0 hits, exit 1 (re-confirmed this session)",
+    "check_drift at HEAD: mag/mcp_server.py :22/:344/:356/:358; lines 338-340 hold return DEFAULT_LEDGER (drift 1 confirmed)",
+    "mag/biography.py:526 at HEAD reads themes_line assignment; the write is at :390 via evict_for_prepend (drift 2 confirmed)",
+    "proof run: both drifts fire (mcp.md:44 + :316 TOKEN-MISS lines 338-340; communication.md:18 TOKEN-MISS lines 526-526); 8 of 10 clean cites silent, 2 warn-class token FPs where the a05 lane's byte-read says content is right; blocking beyond the drifts = exactly the 2 f-25 wrong paths (accuracy.md:75/:77)"
+  ],
+  "design_decisions": [
+    "Blocking classes byte-deterministic only (PATH-MISSING, LINE-OOB, EMPTY-SPAN, PHANTOM-NUMBER); TOKEN-MISS and SHORTHAND-UNRESOLVED are warn-only heuristics, flipped by --enforce-tokens (the proof-run mode)",
+    "Phantom pairing is per SENTENCE with identifier shapes excluded (dates, arXiv ids, IP:port, sed ranges, id lists, line refs, census unit nouns); sources are record surfaces, never code paths",
+    "--changed scans staged+unstaged records vs HEAD, NOT untracked files (untracked = not push content; two sibling work logs carried 3,711 of 3,805 first-run fires), and skips saved *.check.txt / *.extract.txt instrument output",
+    "Cost law: containment + resolution caches, one-read-per-source up to 16MB, oversize sources (256MB cap) make a number unverifiable rather than phantom; --changed runs in ~6s on the shared tree (first runs: 9m34s, then 3m49s, then precision+cost cuts)",
+    "Ratchet compliance by code, not baseline: module split under the 400-line cap, both except-pass sites replaced with explicit handling; the lane's files contribute zero NEW ratchet rows",
+    "Self-dogfood: the gate run over this lane's own receipt and lane JSON exits 0 with blocking=0"
+  ],
+  "rows": [
+    {
+      "law": "cite-or-downgrade at filing time, machine-enforced",
+      "claim": "The accuracy retro's owed instrument now exists: changed prose records are byte-checked at pre-push for missing paths, empty or out-of-bounds anchors, claim-token misses, and numbers absent from every named source in their sentence, so a phantom citation can no longer ride a landed record for days unseen.",
+      "quote": "a tools/citation_lint.py wired into the pre-push hook would make it machine-enforced",
+      "source": "watch/inbox/ractor50/accuracy.md",
+      "steal": "Any seat writing a doctrine/receipt/run story lands it through the pre-push gate; on a finding, fix the citation, downgrade the claim, or accept by name in configs/citation_lint_baseline.json (zero rows day one).",
+      "falsifier": "A pushed record that keeps a phantom citation past its landing: any seat can re-run tools/citation_lint.py check --files <record> and reproduce the fire; silence on a known phantom kills the law.",
+      "leverage": "high"
+    },
+    {
+      "law": "founding fixtures are embedded, never live-read",
+      "claim": "The 191.8M founding fixture is embedded verbatim in the test file because the errata striking it from STORY.md landed mid-flight; the fixture survives the errata and the live demo separately proves the gate catches what the live file now carries (the untraced 46,531).",
+      "quote": "the clause \"191.8M tokens spent\" that stood here is STRUCK; its named source DIGEST.md has zero \"191\" hits",
+      "source": "watch/inbox/48h_synth/STORY.md",
+      "steal": "When a test fixture names a living record, embed the bytes at build time and note the live path; a sibling lane's fix to the record must never break your gate's founding proof.",
+      "falsifier": "A fixture that must be re-derived from a living file after every edit to that file means the embedding law was skipped; the STORY errata landing mid-build without breaking this lane's tests is the passing observation.",
+      "leverage": "medium"
+    },
+    {
+      "law": "gates-live-but-unarmed closes only with precision data, not intent",
+      "claim": "The lint's first whole-record runs manufactured 3,805 fires on the shared tree; the gate only became usable by paying for every cut with a named live false-fire class (file-size measurements, co-sentential code paths, id lists, line refs, untracked sibling work logs, census counts) and by splitting enforcement certainty: deterministic classes block, heuristics warn.",
+      "quote": "Phantom-number sources are RECORDS (digests, receipts, ledgers): the class the register names is \"its named source has zero '191' hits\"",
+      "source": "tools/citation_lint_io.py",
+      "steal": "Before wiring any new detector as enforcing, run it over the shared tree's changed set first, classify every fire, and split the exit by class certainty; a gate that fires 3,805 times trains operators to dismiss it.",
+      "falsifier": "A future push blocked on a finding an author cannot trace to a real defect means the certainty split regressed; every blocking finding must be either fixable or baseline-able by name in one sitting.",
+      "leverage": "high"
+    }
+  ],
+  "checks": [
+    {
+      "command": ".venv/Scripts/python.exe tools/citation_lint.py --selftest",
+      "exit": 0,
+      "evidence": "watch/inbox/gala_20260925/fillball-1001/lanes/fill-citation-lint.check.txt CHECK 1 (7 passed, 1 skipped: the battery test guards its own recursion; the founding 191.8M phantom fixture fires and the percolator/seed controls behave)"
+    },
+    {
+      "command": ".venv/Scripts/python.exe tools/citation_lint.py check --files watch/inbox/ractor50/{skills,selfsteal,mcp,operations,accuracy,communication}.md --enforce-tokens",
+      "exit": 1,
+      "evidence": "check.txt CHECK 2: both known drifts fire (mcp.md:44 and :316 on mag/mcp_server.py lines 338-340; communication.md:18 on mag/biography.py lines 526-526); blocking beyond the drifts is exactly the two f-25 wrong paths"
+    },
+    {
+      "command": ".venv/Scripts/python.exe tools/citation_lint.py check --files watch/inbox/48h_synth/STORY.md",
+      "exit": 1,
+      "evidence": "check.txt CHECK 3: silent on the struck 191.8M (ERRATA landed mid-flight), catches the untraced 46,531 at STORY.md:72"
+    },
+    {
+      "command": ".venv/Scripts/python.exe tools/citation_lint.py check --changed",
+      "exit": 1,
+      "evidence": "check.txt CHECK 4: hook path runs in 5.8s on the shared tree; blocking findings are sibling-authored records (STORY.md:72 46,531; STOCHASTIC_LENSING.md:44 x2; SWARM_1.md:55 empty-span), none from this lane's files"
+    },
+    {
+      "command": ".venv/Scripts/python.exe -m pytest tests/test_citation_lint.py -q -p no:cacheprovider",
+      "exit": 0,
+      "evidence": "check.txt CHECK 5 and appended post-fix rerun: 8 passed"
+    },
+    {
+      "command": ".venv/Scripts/python.exe tools/violation_ratchet.py check --changed",
+      "exit": 1,
+      "evidence": "check.txt CHECK 6 + appended rerun: this lane's files contribute zero NEW rows (post-split modules 333/361/251 lines, except-passes replaced); the remaining NEW rows are sibling files (tools/code_swarm.py, tools/reverse_map.py, tools/tier_probe.py) plus the mag/percolator.py GROWTH claim, owned outside this lane and not accepted by it"
+    },
+    {
+      "command": ".venv/Scripts/python.exe tools/census_drift_patrol.py",
+      "exit": 0,
+      "evidence": "check.txt CHECK 7: ok after the AGENTS.md edit"
+    },
+    {
+      "command": ".venv/Scripts/python.exe tools/citation_lint.py check --files watch/inbox/fillball/citation-lint.md watch/inbox/gala_20260925/fillball-1001/lanes/fill-citation-lint.json",
+      "exit": 0,
+      "evidence": "self-dogfood appended to check.txt: blocking=0 on this lane's own receipt and lane JSON, 18 warn-class only"
+    },
+    {
+      "command": "grep -c em-dash over the lane's authored files (tools/citation_lint.py, tools/citation_lint_io.py, tools/citation_lint_numbers.py, tests/test_citation_lint.py, lane JSON, the hook block, the AGENTS bullet)",
+      "exit": 0,
+      "evidence": "check.txt CHECK 8: zero em-dashes in everything this lane wrote; pre-existing em-dashes in older sections of githooks/pre-push and AGENTS.md are untouched"
+    }
+  ],
+  "decision_changed": "Closes GAP_REGISTER rank 3 (meta-gap 3, phantom citations in consumed records) as a standing pre-push gate: pushes touching prose records now run the citation byte-check after the ratchet, enforcing on deterministic defects, warning on heuristics, accepting debt by name only. Hands four shared-tree findings to their owners (STORY.md:72 46,531; SWARM_1.md:55 empty span; STOCHASTIC_LENSING.md:44 two phantoms; the still-never-applied f-25 playbook fixes).",
+  "artifact": "watch/inbox/gala_20260925/fillball-1001/lanes/fill-citation-lint.json"
+}

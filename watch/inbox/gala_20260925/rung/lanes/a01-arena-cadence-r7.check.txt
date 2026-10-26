@@ -1,0 +1,45 @@
+=== FINISH-LINE CHECKS lane a01-arena-cadence-r7, run 2026-10-10T13:32:38Z ===
+
+--- CHECK 1: day-04 section on disk (grep the landed markers in watch/inbox/PARABLE_ERRATUM_20261004.md) ---
+168:## 9. GAP_REGISTER R7 fill: day-04, the cap's second and last full day, closed over too (2026-10-10)
+182:### 9.1 Day-04 closed $26.2921, over the cap by $1.2921
+190:### 9.2 The crossing landed mid-fire of the 22:00Z fire, $0.51 headroom at start
+207:### 9.3 The dark afternoon: four scaffold-only succeeded fires 18:00-21:00Z
+227:### 9.4 The gate's only true stops, and the $1.22 that sailed past them
+248:### 9.5 Deletion, not the gate, ended the overspend: day-05 burned $3.76 more
+260:### 9.6 The meter since
+exit=0
+
+--- CHECK 2: headline figures byte-present in the landed section ---
+13
+exit=0
+
+--- CHECK 3: em-dash law over the whole file (must be 0 hits, bytes 0xE2 0x80 0x94) ---
+0
+exit=1
+
+--- CHECK 4: recompute headline numbers from memory/runs/hermes_burn/usage.jsonl (independent re-run) ---
+total rows 3038
+day04 rows 1448 total 26.2921
+crossing 2026-10-04T22:06:53.865221Z TAVERN_tavern_20261004T220358Z_r4_Pell Quickfinger cum 25.0074
+cum<18:02 24.4905
+cum<22:00 24.4905
+post-22:06 rows 13 total 1.461 {'TAVERN': 0.2423, 'REPRINT': 0.4961, 'THE': 0.7226}
+2026-10-05 287 rows 3.7616
+2026-10-06 2 rows 0.0337
+2026-10-07 26 rows 0.1014
+2026-10-08 0 rows 0
+2026-10-09 0 rows 0
+exit=0
+
+--- CHECK 5: automation census cross-read (sqlite mode=ro, day-04 window + series end) ---
+automations rows for arena id (expect 0, deleted): 0
+total runs 43 first 2026-10-03T13:00Z failed last 2026-10-05T07:00Z succeeded
+fires 17:00Z day-04 through 01:00Z day-05: [('2026-10-04T17:00Z', 'succeeded'), ('2026-10-04T18:00Z', 'succeeded'), ('2026-10-04T19:00Z', 'succeeded'), ('2026-10-04T20:00Z', 'succeeded'), ('2026-10-04T21:00Z', 'succeeded'), ('2026-10-04T22:00Z', 'succeeded'), ('2026-10-04T23:00Z', 'succeeded'), ('2026-10-05T00:00Z', 'succeeded'), ('2026-10-05T01:00Z', 'succeeded')]
+exit=0
+
+--- CHECK 6: citation lint on the changed prose record ---
+CITATION-LINT: ok records=1 anchors=2 numbers-checked=1 blocking=0 warns=2 enforce-tokens=False
+  WARN watch/inbox/PARABLE_ERRATUM_20261004.md:116 TOKEN-MISS corpus/steal/MASTER_MICKEY17_V2.md cited lines 228-228 mention none of the claim tokens (live, prompt, record)
+  WARN watch/inbox/PARABLE_ERRATUM_20261004.md:219 TOKEN-MISS tools/dungeon.py cited lines 203-203 mention none of the claim tokens (190238, 200420, 210227, raises, siblings)
+exit=0

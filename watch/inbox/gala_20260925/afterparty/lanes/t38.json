@@ -1,0 +1,15 @@
+{
+  "gopher": "t38",
+  "item": "OssuaryZone.build candy loop (lines 442-444) stacked all 6 static candies per floor at the maze center cell (base + (0,1.5,0), every drop the same point) and dropCandy line 275 scattered them with global unseeded math.random(-6,6) inside the otherwise seeded build (SeedRng.new(20261031)): one intersecting grab sweep, no replay",
+  "ok": true,
+  "note": "Confirmed by bytes. Minimal fix reusing the t29 King-shower pattern: dropCandy gains optional jitter: Vector3? param (nil = byte-identical old behavior, keeps runtime math.random for the King shower per t29 receipt); build loop now feeds an index-derived Vogel spiral (golden angle 2.399963229728653, same constant as t29, zero rng draws) with Vector3.zero jitter so no math.random executes in the seeded path and the 20261031 stream is untouched (maze/sentinel/brazier/lever generation byte-identical to pre-t38). mountain_check not run (shared), verified by read + numeric reasoning",
+  "checks": [
+    "grep dropCandy: exactly 2 live call sites (line 403 King shower, line 443 build loop), no hidden callers",
+    "numeric: 6 spiral radii 2.041/2.887/3.536/4.082/4.564/5.000 all distinct, min pairwise center distance 3.270 studs vs 1.2 touch threshold, no stacking no intersection",
+    "wall clearance: center cell (grid 7,7) half-width 7, wall half-thickness 0.75, candy radius 0.6, max safe offset 5.65, max spiral radius 5.000, 0.65 studs clear",
+    "replay: post-fix live math.random only at line 284 nil-jitter fallback (King shower runtime path); zero in build path; SeedRng stream consumption unchanged",
+    "Y behavior preserved: final candy Y = base.Y + 3.0 pre and post",
+    "em-dash scan of edited file: only pre-existing line-2 header, zero in filed t38 text"
+  ],
+  "next_steal": "candyAllowed (lines ~252-267) reads os.time() per pickup and resets per-player UTC-day tallies lazily; fine as is, but the King shower (t29 spiral, line 403) drops 40 candies that all route through the SAME per-floor daily cap (floor FLOORS): a player who already swept floor 3 that day mutes up to 34 of the 40 shower candies by construction (t29 comment documents the muting as intended, but the spiral spread now makes the muted candies physically obvious and unpickable, worth a look at whether the shower should bypass or carry its own cap)"
+}

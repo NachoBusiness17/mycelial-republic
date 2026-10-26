@@ -1,0 +1,3 @@
+# capmx-baref-q1-r4 (glm-5.3-flash @ zai, turn 1, channel: content)
+
+{"verb": "STAGE_ASK", "reason": "Senses show 11 open mag todos and idle governor ticks (fill=0, drain empty), so attention is best routed to a cheap swarm review that lands one falsifiable ask instead of holding.", "payload": {"target": "watch/inbox/WIRING_DEBT_CENSUS_20261001.md", "ask": "Review the census open-tail item: ratchet laws from the fix taxonomy. For each registered debt, propose one enablement dial (always-on, default-on, opt-in, manual-only) plus a delete-when-X retirement condition. Deliverable: one table row per debt, falsifier named per row. Bound: 400 words max, cite file:line for each debt."}}

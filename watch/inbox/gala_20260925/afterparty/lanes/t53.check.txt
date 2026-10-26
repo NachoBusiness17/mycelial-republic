@@ -1,0 +1,39 @@
+t53 check log - method-card battery rerun (2026-09-26)
+======================================================
+
+SEAT: t53, gala afterparty (t15's next_steal). Fresh context: no prior reads of
+GROUND_TRUTH_HELDOUT.md, BATTERY_HELDOUT.md, prior battery answers/scores; not
+prereg author (t15) nor seal author (t5).
+
+STEP 1 - seal gate (prereg RERUN_PREREG_20260926.md Section 2, run verbatim):
+  output: SEAL OK
+  gate exit: 0 (expect 0; abort threshold exit 2 not hit)
+  spine shape at gate time: wc -l = 1221058, wc -c = 402114160 (abort cond 3 clean)
+
+STEP 2 - answer phase:
+  loaded context: CARD_V2.md + BATTERY_HELDOUT.md only; live estate reads.
+  answers filed: watch/inbox/method_card_exp/RERUN_ANSWERS_20260926.md
+  CONTAMINATION EVENT (disclosed in answers artifact): grep pattern "dumb floor"
+  printed 2 excerpt lines of GROUND_TRUTH_HELDOUT.md (its Q3 block) to the answer
+  seat before answers were written. Q3 answer decoded independently from
+  mag/session_state_brief.py; Q3 scoring flagged as compromised evidence. All
+  later searches excluded watch/inbox/method_card_exp from results.
+  decodes used (all read live under sealed spine):
+    Q1 mag/amd_window_guard.py:4-6,:32
+    Q2 tools/estate_smith_chart.py:177-185
+    Q3 mag/session_state_brief.py:39-40,:69,:120
+    Q4 corpus/library/wakers_20260906/MANIFEST.md:5-6,:9
+    Q5 CONSTITUTION.md:3-5,:10
+    Q6 mag/lite_guard.py:10-11,:17,:35,:80
+    Q7 mag/shelf_pdf.py:27,:33,:52
+    Q8 mag/rotation_harness.py:30-32,:45 + watch/ROTATION_TOLERANCE_RULING_20260905.md
+    Q9 mag/swarm_worker.py:54-60
+    Q10 mag/quorum_window.py:11,:175-176
+    Q11 mag/max_distill.py:215 + mag/max_distill_arms.py:155,:275-278
+    Q12 mag_kill.cmd:17,:21
+
+STEP 3 - score phase gate re-run (prereg STEP 3 requirement):
+  output: SEAL OK
+  gate exit: 0
+  heldout hashes byte-identical to prereg Section 1 baseline (checked in gate).
+  ground truth opened ONLY after answers artifact was written and closed.

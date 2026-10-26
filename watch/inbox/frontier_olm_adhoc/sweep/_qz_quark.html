@@ -1,0 +1,1179 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta content="HongWei Meng, Wei Luo, Xinjun Niu, Lin Zhao, Spandan Tiwari, Ashish Sirasao" name="author" />
+<meta content="Quantize a 35B MoE model directly on AMD Strix Halo with AMD Quark, export to GGUF and safetensors, validate with llama.cpp and vLLM, and deploy through Lemonade." lang="en" name="description" xml:lang="en" />
+<meta content="AMD Quark, Strix Halo, Ryzen AI Max, local quantization, W4A16, MoE, GGUF, llama.cpp, vLLM, Lemonade" name="keywords" />
+<meta content="AI, Data Science, Systems" name="vertical" />
+<meta content="Developer Resources" name="amd_category" />
+<meta content="Blog" name="amd_asset_type" />
+<meta content="Applications and Models" name="amd_technical_blog_type" />
+<meta content="Ryzen Processors" name="amd_blog_hardware_platforms" />
+<meta content="ROCm Software; Open-Source Tools" name="amd_blog_development_tools" />
+<meta content="AI Inference; Generative AI" name="amd_blog_applications" />
+<meta content="AI &amp; Intelligent Systems; Software &amp; Ecosystem" name="amd_blog_topic_categories" />
+<meta content="HongWei Meng; Wei Luo; Xinjun Niu; Lin Zhao; Spandan Tiwari; Ashish Sirasao" name="amd_blog_authors" />
+<meta content="2026/9/25" name="amd_release_date" />
+<meta content="Local Quantization and Multi-Backend Deployment with AMD Quark on Strix Halo" property="og:title" />
+<meta content="Quantize a 35B MoE model directly on AMD Strix Halo with AMD Quark, export to GGUF and safetensors, validate with llama.cpp and vLLM, and deploy through Lemonade." property="og:description" />
+<meta content="article" property="og:type" />
+<meta content="https://rocm.blogs.amd.com/artificial-intelligence/quark-strix-halo/README.html" property="og:url" />
+<meta content="ROCm Blogs" property="og:site_name" />
+<meta content="en_US" property="og:locale" />
+<meta content="https://rocm.blogs.amd.com/_images/artificial-intelligence-quark-strix-halo-images-quark-strix-halo-thumbnail.webp" property="og:image" />
+<meta content="2026/9/25" property="article:published_time" />
+<meta content="HongWei Meng; Wei Luo; Xinjun Niu; Lin Zhao; Spandan Tiwari; Ashish Sirasao" property="article:author" />
+<meta content="AMD Quark, Strix Halo, Ryzen AI Max, local quantization, W4A16, MoE, GGUF, llama.cpp, vLLM, Lemonade" property="article:tag" />
+
+    <title>Local Quantization and Multi-Backend Deployment with AMD Quark on Strix Halo &#8212; ROCm Blogs</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "light";
+  </script>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../_static/styles/theme.css?digest=8d27b9dea8ad943066ae" rel="stylesheet" />
+<link href="../../_static/styles/bootstrap.css?digest=8d27b9dea8ad943066ae" rel="stylesheet" />
+<link href="../../_static/styles/pydata-sphinx-theme.css?digest=8d27b9dea8ad943066ae" rel="stylesheet" />
+
+  
+  <link href="../../_static/vendor/fontawesome/6.5.1/css/all.min.css?digest=8d27b9dea8ad943066ae" rel="stylesheet" />
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="../../_static/vendor/fontawesome/6.5.1/webfonts/fa-solid-900.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../../_static/vendor/fontawesome/6.5.1/webfonts/fa-brands-400.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../../_static/vendor/fontawesome/6.5.1/webfonts/fa-regular-400.woff2" />
+
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=a746c00c" />
+    <link rel="stylesheet" type="text/css" href="../../_static/styles/sphinx-book-theme.css?v=384b581d" />
+    <link rel="stylesheet" type="text/css" href="../../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../../_static/css/custom.css?v=bcbbc761" />
+    <link rel="stylesheet" type="text/css" href="../../_static/custom.css?v=643846e8" />
+    <link rel="stylesheet" type="text/css" href="../../_static/rocm_header.css?v=9557e3d1" />
+    <link rel="stylesheet" type="text/css" href="../../_static/rocm_footer.css?v=7095035a" />
+    <link rel="stylesheet" type="text/css" href="../../_static/fonts.css?v=fcff5274" />
+    <link rel="stylesheet" type="text/css" href="../../_static/sphinx-design.min.css?v=87e54e7c" />
+    <link rel="stylesheet" type="text/css" href="../../_static/css/custom.css?v=bcbbc761" />
+    <link rel="stylesheet" type="text/css" href="../../_static/css/asciinema-player.css?v=24f66a74" />
+  
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../_static/scripts/bootstrap.js?digest=8d27b9dea8ad943066ae" />
+<link rel="preload" as="script" href="../../_static/scripts/pydata-sphinx-theme.js?digest=8d27b9dea8ad943066ae" />
+  <script src="../../_static/vendor/fontawesome/6.5.1/js/all.min.js?digest=8d27b9dea8ad943066ae"></script>
+
+    <script src="../../_static/documentation_options.js?v=9eb32ce0"></script>
+    <script src="../../_static/doctools.js?v=9a2dae69"></script>
+    <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../../_static/copybutton.js?v=f281be69"></script>
+    <script src="../../_static/js/performance.js"></script>
+    <script src="../../_static/js/image-loading.js"></script>
+    <script async="async" src="../../_static/code_word_breaks.js?v=327952c4"></script>
+    <script async="async" src="../../_static/renameVersionLinks.js?v=929fe5e4"></script>
+    <script async="async" src="../../_static/rdcMisc.js?v=01f88d96"></script>
+    <script async="async" src="../../_static/theme_mode_captions.js?v=15f4ec5d"></script>
+    <script src="../../_static/scripts/sphinx-book-theme.js?v=efea14e4"></script>
+    <script src="../../_static/design-tabs.js?v=f930bc37"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'artificial-intelligence/quark-strix-halo/README';</script>
+    <script src="../../_static/js/asciinema-player.min.js?v=91942f35"></script>
+    <script src="https://cdn.plot.ly/plotly-2.32.0.min.js"></script>
+    <script src="../../_static/js/vision-timeline-plotly-minimal.js?v=d30f1b8a"></script>
+    <script src="../../_static/js/giscus_theme.js?v=5a84b2f4"></script>
+    <script async="async" src="https://download.amd.com/js/analytics/analyticsinit.js"></script>
+    <link rel="canonical" href="https://rocm.blogs.amd.com/artificial-intelligence/quark-strix-halo/README.html" />
+    <link rel="icon" href="https://www.amd.com/content/dam/code/images/favicon/favicon.ico"/>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+    <meta name="google-site-verification" content="vo35SZt_GASsTHAEmdww7AYKPCvZyzLvOXBl8guBME4" />
+ 
+<link
+  rel="alternate"
+  type="application/atom+xml"
+  href="../../blog/atom.xml"
+  title="AMD ROCm Blogs"
+/>
+  
+  <script async type="text/javascript" src="/_/static/javascript/readthedocs-addons.js"></script><meta name="readthedocs-project-slug" content="advanced-micro-devices-rocm-blogs" /><meta name="readthedocs-version-slug" content="latest" /><meta name="readthedocs-resolver-filename" content="/artificial-intelligence/quark-strix-halo/README.html" /><meta name="readthedocs-http-status" content="200" /></head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <a id="pst-skip-link" class="skip-link" href="#main-content">Skip to main content</a>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>
+    Back to top
+  </button>
+
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          name="__primary"
+          id="__primary"/>
+  <label class="overlay overlay-primary" for="__primary"></label>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          name="__secondary"
+          id="__secondary"/>
+  <label class="overlay overlay-secondary" for="__secondary"></label>
+  
+  <div class="search-button__wrapper">
+    <div class="search-button__overlay"></div>
+    <div class="search-button__search-container">
+<form class="bd-search d-flex align-items-center"
+      action="../../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         id="search-input"
+         placeholder="Search..."
+         aria-label="Search..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+  </div>
+  
+
+<header class="common-header" >
+    <nav class="navbar navbar-expand-xl">
+        <div class="container-fluid main-nav rocm-header">
+            
+            <button class="navbar-toggler collapsed" id="nav-icon" data-tracking-information="mainMenuToggle" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+            
+            <div class="header-logo">
+                <a class="navbar-brand" href="https://www.amd.com/">
+                    <img src="../../_static/images/amd-header-logo.svg" alt="AMD Logo" title="AMD Logo" width="90" class="d-inline-block align-text-top hover-opacity"/>
+                </a>
+                <div class="vr vr mx-40 my-25"></div>
+                <a class="klavika-font hover-opacity" href="https://rocm.blogs.amd.com/">ROCm&#8482; Blogs</a>
+                
+            </div>
+            <div class="icon-nav text-center d-flex ms-auto">
+            </div>
+        </div>
+    </nav>
+    
+    <nav class="navbar navbar-expand-xl second-level-nav">
+        <div class="container-fluid main-nav">
+            <div class="navbar-nav-container collapse navbar-collapse" id="navbarSupportedContent">
+                <ul class="navbar-nav nav-mega me-auto mb-2 mb-lg-0 col-xl-10">
+                    
+                        <li class="nav-item">
+                            <a class="nav-link top-level header-menu-links" href="https://rocm.blogs.amd.com/index.html" id="navhome" role="button" aria-expanded="false" >
+                                Home
+                            </a>
+                        </li>
+                    
+                        <li class="nav-item">
+                            <a class="nav-link top-level header-menu-links" href="https://rocm.blogs.amd.com/ai.html" id="navai" role="button" aria-expanded="false" >
+                                AI
+                            </a>
+                        </li>
+                    
+                        <li class="nav-item">
+                            <a class="nav-link top-level header-menu-links" href="https://rocm.blogs.amd.com/hpc.html" id="navhpc" role="button" aria-expanded="false" >
+                                HPC
+                            </a>
+                        </li>
+                    
+                        <li class="nav-item">
+                            <a class="nav-link top-level header-menu-links" href="https://rocm.blogs.amd.com/data-science.html" id="navdata-science" role="button" aria-expanded="false" >
+                                Data Science
+                            </a>
+                        </li>
+                    
+                        <li class="nav-item">
+                            <a class="nav-link top-level header-menu-links" href="https://rocm.blogs.amd.com/systems.html" id="navsystems" role="button" aria-expanded="false" >
+                                Systems
+                            </a>
+                        </li>
+                    
+                        <li class="nav-item">
+                            <a class="nav-link top-level header-menu-links" href="https://rocm.blogs.amd.com/developers.html" id="navdevelopers" role="button" aria-expanded="false" >
+                                Developers
+                            </a>
+                        </li>
+                    
+                        <li class="nav-item">
+                            <a class="nav-link top-level header-menu-links" href="https://rocm.blogs.amd.com/robotics.html" id="navrobotics" role="button" aria-expanded="false" >
+                                Robotics
+                            </a>
+                        </li>
+                    
+                </ul>
+            </div>
+        </div>
+    </nav>
+    
+</header>
+
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+        
+      
+      <div class="bd-sidebar-primary bd-sidebar hide-on-wide">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          <div class="navbar-item">
+
+<a class="navbar-brand logo" href="https://rocm.blogs.amd.com/">
+    <p>ROCm blogs</p>
+</a></div>
+        
+      </div>
+    
+    
+    
+  </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+
+  <div id="ethical-ad-placement"
+       class="flat"
+       data-ea-publisher="readthedocs"
+       data-ea-type="readthedocs-sidebar"
+       data-ea-manual="true">
+  </div>
+</div>
+  </div>
+  
+  <div id="rtd-footer-container"></div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main">
+        
+        
+
+<div class="sbt-scroll-pixel-helper"></div>
+
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item"><label class="sidebar-toggle primary-toggle btn btn-sm" for="__primary" title="Toggle primary sidebar" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <span class="fa-solid fa-angle-right"></span>
+  </label></div>
+      
+    </div>
+  
+  
+    <div class="header-article-items__end">
+      
+        <div class="header-article-item">
+
+<div class="article-header-buttons">
+
+
+<script>
+document.write(`
+  <button class="btn btn-sm navbar-btn theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <span class="theme-switch nav-link" data-mode="light"><i class="fa-solid fa-sun fa-lg"></i></span>
+    <span class="theme-switch nav-link" data-mode="dark"><i class="fa-solid fa-moon fa-lg"></i></span>
+    <span class="theme-switch nav-link" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg"></i></span>
+  </button>
+`);
+</script>
+
+
+<script>
+document.write(`
+  <button class="btn btn-sm navbar-btn search-button search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass fa-lg"></i>
+  </button>
+`);
+</script>
+<label class="sidebar-toggle secondary-toggle btn btn-sm" for="__secondary"title="Toggle secondary sidebar" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <span class="fa-solid fa-list"></span>
+</label>
+</div></div>
+      
+    </div>
+  
+</div>
+</div>
+              
+              
+
+<div id="jb-print-docs-body" class="onlyprint">
+    <h1>Local Quantization and Multi-Backend Deployment with AMD Quark on Strix Halo</h1>
+    <!-- Table of contents -->
+    <div id="print-main-content">
+        <div id="jb-print-toc">
+            
+            <div>
+                <h2> Contents </h2>
+            </div>
+            <nav aria-label="Page">
+                <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#prerequisites">Prerequisites</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#platform">Platform</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#model">Model</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#pipeline-overview">Pipeline Overview</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#stage-1-quantization-with-amd-quark">Stage 1: Quantization with AMD Quark</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#stage-2-export">Stage 2: Export</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#stage-3-inference">Stage 3: Inference</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#weight-size">Weight Size</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#quantization-cost-on-strix-halo">Quantization Cost on Strix Halo</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#accuracy-benchmarks">Accuracy Benchmarks</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#lemonade-deployment-check">Lemonade Deployment Check</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#summary">Summary</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#additional-resources">Additional Resources</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#disclaimers">Disclaimers</a></li>
+</ul>
+            </nav>
+        </div>
+    </div>
+</div>
+
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                   <section class="tex2jax_ignore mathjax_ignore" id="local-quantization-and-multi-backend-deployment-with-amd-quark-on-strix-halo">
+<h1>Local Quantization and Multi-Backend Deployment with AMD Quark on Strix Halo<a class="headerlink" href="#local-quantization-and-multi-backend-deployment-with-amd-quark-on-strix-halo" title="Link to this heading">#</a></h1>
+<style>
+.author_string {
+    font-size: 14px;
+    font-weight: 300;
+    line-height: 22.5px;
+    text-transform: none;
+    margin-bottom: 8px;
+    font-family: var(--pst-font-family-base);
+    display: inline-block;
+    vertical-align: middle;
+}
+
+.bd-main .bd-content .bd-article-container {
+    max-width: 1750px !important;
+    width: 100% !important;
+    margin: 0 auto !important;
+}
+
+@media (min-width: 1200px) {
+    .bd-main .bd-content .bd-article-container .bd-article {
+        padding-left: 2rem;
+    }
+}
+
+.bd-container {
+    max-width: 1750px !important;
+    width: 100% !important;
+    margin: 0 auto !important;
+}
+
+.author_string {
+    font-size: 14px;
+    font-weight: 300;
+    line-height: 22.5px;
+    text-transform: none;
+    margin-bottom: 8px;
+    font-family: var(--pst-font-family-base);
+    display: inline-block;
+    vertical-align: middle;
+
+}
+
+.author_string_right {
+    font-size: 14px;
+    font-weight: 300;
+    line-height: 22.5px;
+    text-transform: none;
+    margin-bottom: 8px;
+    font-family: var(--pst-font-family-base);
+    display: inline-block;
+    vertical-align: middle;
+    flex-direction: row-reverse;
+}
+
+.author_string:last-child {
+    margin-bottom: 0px;
+}
+
+.author_string svg {
+    margin-right: 5px;
+}
+
+.bd-sidebar-primary {
+    display: none;
+}
+
+.sidebar-toggle {
+    display: none;
+}
+
+label.sidebar-toggle.primary-toggle.btn.btn-sm {
+    display: none;
+}
+
+.author_row {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start; 
+    width: 100%;
+    margin-bottom: 3px;
+    padding: 2px;
+}
+
+.author_row_right {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start; 
+    width: 100%;
+    margin-bottom: 3px;
+    padding: 2px;
+    flex-direction: row-reverse;
+}
+
+.author_right {
+    display: flex;
+    flex-direction: column-reverse; 
+    max-width: 50%;
+    word-wrap: break-word;
+    align-items: right;
+}
+
+.author_left {
+    display: flex;
+    flex-direction: column-reverse; 
+    max-width: 50%;
+    word-wrap: break-word;
+    align-items: left;
+}
+
+</style>
+<style>
+.image-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 5px;
+}
+
+.responsive-image {
+    width: 100%;
+    height: 480px;
+    object-fit: cover;
+    border: 5px solid #333;
+    box-shadow: 0 0 10px rgba(0,0,0,0.5);
+}
+
+@media (max-width: 768px) {
+    .responsive-image {
+        max-height: 400px;
+    }
+}
+
+</style>
+<div class="image-container">
+    <!-- Direct image loading for immediate display -->
+    <img 
+        src="../../_images/artificial-intelligence-quark-strix-halo-images-quark-strix-halo-thumbnail.webp" 
+        alt="Local Quantization and Multi-Backend Deployment with AMD Quark on Strix Halo" 
+        class="responsive-image loaded" 
+        title="Local Quantization and Multi-Backend Deployment with AMD Quark on Strix Halo"
+    >
+</div>
+<div class="author_row">
+    <div class="author_left">
+        <div class="author_string">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-calendar" viewBox="0 0 16 16">
+              <path d="M3.5 0a.5.5 0 0 1 .5.5V1h8V.5a.5.5 0 0 1 1 0V1h1a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V3a2 2 0 0 1 2-2h1V.5a.5.5 0 0 1 .5-.5M1 4v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V4z"/>
+            </svg>
+            <span> September 25, 2026 by <a href="https://rocm.blogs.amd.com/authors/hongwei-meng.html">HongWei Meng</a>, <a href="https://rocm.blogs.amd.com/authors/wei-luo.html">Wei Luo</a>, <a href="https://rocm.blogs.amd.com/authors/xinjun-niu.html">Xinjun Niu</a>, <a href="https://rocm.blogs.amd.com/authors/lin-zhao.html">Lin Zhao</a>, <a href="https://rocm.blogs.amd.com/authors/spandan-tiwari.html">Spandan Tiwari</a>, <a href="https://rocm.blogs.amd.com/authors/ashish-sirasao.html">Ashish Sirasao</a>.</span>
+        </div>
+        <div class="author_string">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-book" viewBox="0 0 16 16">
+                <path d="M1 2.828c.885-.37 2.154-.769 3.388-.893 1.33-.134 2.458.063 3.112.752v9.746c-.935-.53-2.12-.603-3.213-.493-1.18.12-2.37.461-3.287.811zm7.5-.141c.654-.689 1.782-.886 3.112-.752 1.234.124 2.503.523 3.388.893v9.923c-.918-.35-2.107-.692-3.287-.81-1.094-.111-2.278-.039-3.213.492zM8 1.783C7.015.936 5.587.81 4.287.94c-1.514.153-3.042.672-3.994 1.105A.5.5 0 0 0 0 2.5v11a.5.5 0 0 0 .707.455c.882-.4 2.303-.881 3.68-1.02 1.409-.142 2.59.087 3.223.877a.5.5 0 0 0 .78 0c.633-.79 1.814-1.019 3.222-.877 1.378.139 2.8.62 3.681 1.02A.5.5 0 0 0 16 13.5v-11a.5.5 0 0 0-.293-.455c-.952-.433-2.48-.952-3.994-1.105C10.413.809 8.985.936 8 1.783"/>
+            </svg>
+            <span>7 min read. | 1715 total words.</span>
+        </div>
+    </div>
+    <div class="author_right">
+        <div class="author_string_right">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-folder2-open" viewBox="0 0 16 16">
+              <path d="M1 3.5A1.5 1.5 0 0 1 2.5 2h2.764c.958 0 1.76.56 2.311 1.184C7.985 3.648 8.48 4 9 4h4.5A1.5 1.5 0 0 1 15 5.5v.64c.57.265.94.876.856 1.546l-.64 5.124A2.5 2.5 0 0 1 12.733 15H3.266a2.5 2.5 0 0 1-2.481-2.19l-.64-5.124A1.5 1.5 0 0 1 1 6.14zM2 6h12v-.5a.5.5 0 0 0-.5-.5H9c-.964 0-1.71-.629-2.174-1.154C6.374 3.334 5.82 3 5.264 3H2.5a.5.5 0 0 0-.5.5zm-.367 1a.5.5 0 0 0-.496.562l.64 5.124A1.5 1.5 0 0 0 3.266 14h9.468a1.5 1.5 0 0 0 1.489-1.314l.64-5.124A.5.5 0 0 0 14.367 7z"/>
+            </svg>
+            <span><a href="https://rocm.blogs.amd.com/blog/category/applications-models.html">Applications & models</a></span>
+        </div>
+        <div class="author_string_right">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-tags" viewBox="0 0 16 16">
+              <path d="M3 2v4.586l7 7L14.586 9l-7-7zM2 2a1 1 0 0 1 1-1h4.586a1 1 0 0 1 .707.293l7 7a1 1 0 0 1 0 1.414l-4.586 4.586a1 1 0 0 1-1.414 0l-7-7A1 1 0 0 1 2 6.586z"/>
+              <path d="M5.5 5a.5.5 0 1 1 0-1 .5.5 0 0 1 0 1m0 1a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3M1 7.086a1 1 0 0 0 .293.707L8.75 15.25l-.043.043a1 1 0 0 1-1.414 0l-7-7A1 1 0 0 1 0 7.586V3a1 1 0 0 1 1-1z"/>
+            </svg>
+            <span><a href="https://rocm.blogs.amd.com/blog/tag/llm.html">LLM</a>, <a href="https://rocm.blogs.amd.com/blog/tag/optimization.html">Optimization</a>, <a href="https://rocm.blogs.amd.com/blog/tag/serving.html">Serving</a></span>
+        </div>
+        <div class="author_string_right">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-shop-window" viewBox="0 0 16 16">
+                <path d="M2.97 1.35A1 1 0 0 1 3.73 1h8.54a1 1 0 0 1 .76.35l2.609 3.044A1.5 1.5 0 0 1 16 5.37v.255a2.375 2.375 0 0 1-4.25 1.458A2.37 2.37 0 0 1 9.875 8 2.37 2.37 0 0 1 8 7.083 2.37 2.37 0 0 1 6.125 8a2.37 2.37 0 0 1-1.875-.917A2.375 2.375 0 0 1 0 5.625V5.37a1.5 1.5 0 0 1 .361-.976zm1.78 4.275a1.375 1.375 0 0 0 2.75 0 .5.5 0 0 1 1 0 1.375 1.375 0 0 0 2.75 0 .5.5 0 0 1 1 0 1.375 1.375 0 1 0 2.75 0V5.37a.5.5 0 0 0-.12-.325L12.27 2H3.73L1.12 5.045A.5.5 0 0 0 1 5.37v.255a1.375 1.375 0 0 0 2.75 0 .5.5 0 0 1 1 0M1.5 8.5A.5.5 0 0 1 2 9v6h12V9a.5.5 0 0 1 1 0v6h.5a.5.5 0 0 1 0 1H.5a.5.5 0 0 1 0-1H1V9a.5.5 0 0 1 .5-.5m2 .5a.5.5 0 0 1 .5.5V13h8V9.5a.5.5 0 0 1 1 0V13a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9.5a.5.5 0 0 1 .5-.5"/>
+            </svg>
+            <span><a href="https://rocm.blogs.amd.com/ai.html">AI</a>, <a href="https://rocm.blogs.amd.com/data-science.html">Data Science</a>, <a href="https://rocm.blogs.amd.com/systems.html">Systems</a></span>
+        </div>
+    </div>
+</div>  
+<!---
+<div class="author_string">
+    <svg class="svg-inline--fa fa-user fa-fw" aria-hidden="true" focusable="false" data-prefix="fas" data-icon="user" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512" data-fa-i2svg="">
+        <path fill="currentColor" d="M224 256A128 128 0 1 0 224 0a128 128 0 1 0 0 256zm-45.7 48C79.8 304 0 383.8 0 482.3C0 498.7 13.3 512 29.7 512H418.3c16.4 0 29.7-13.3 29.7-29.7C448 383.8 368.2 304 269.7 304H178.3z">
+        </path>
+    </svg>
+    <span><a href="https://rocm.blogs.amd.com/authors/hongwei-meng.html">HongWei Meng</a>, <a href="https://rocm.blogs.amd.com/authors/wei-luo.html">Wei Luo</a>, <a href="https://rocm.blogs.amd.com/authors/xinjun-niu.html">Xinjun Niu</a>, <a href="https://rocm.blogs.amd.com/authors/lin-zhao.html">Lin Zhao</a>, <a href="https://rocm.blogs.amd.com/authors/spandan-tiwari.html">Spandan Tiwari</a>, <a href="https://rocm.blogs.amd.com/authors/ashish-sirasao.html">Ashish Sirasao</a></span>
+</div>
+
+<div class="author_string">
+    <svg class="svg-inline--fa fa-language fa-fw" aria-hidden="true" focusable="false" data-prefix="fas" data-icon="language" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 512" data-fa-i2svg="">
+        <path fill="currentColor" d="M0 128C0 92.7 28.7 64 64 64H256h48 16H576c35.3 0 64 28.7 64 64V384c0 35.3-28.7 64-64 64H320 304 256 64c-35.3 0-64-28.7-64-64V128zm320 0V384H576V128H320zM178.3 175.9c-3.2-7.2-10.4-11.9-18.3-11.9s-15.1 4.7-18.3 11.9l-64 144c-4.5 10.1 .1 21.9 10.2 26.4s21.9-.1 26.4-10.2l8.9-20.1h73.6l8.9 20.1c4.5 10.1 16.3 14.6 26.4 10.2s14.6-16.3 10.2-26.4l-64-144zM160 233.2L179 276H141l19-42.8zM448 164c11 0 20 9 20 20v4h44 16c11 0 20 9 20 20s-9 20-20 20h-2l-1.6 4.5c-8.9 24.4-22.4 46.6-39.6 65.4c.9 .6 1.8 1.1 2.7 1.6l18.9 11.3c9.5 5.7 12.5 18 6.9 27.4s-18 12.5-27.4 6.9l-18.9-11.3c-4.5-2.7-8.8-5.5-13.1-8.5c-10.6 7.5-21.9 14-34 19.4l-3.6 1.6c-10.1 4.5-21.9-.1-26.4-10.2s.1-21.9 10.2-26.4l3.6-1.6c6.4-2.9 12.6-6.1 18.5-9.8l-12.2-12.2c-7.8-7.8-7.8-20.5 0-28.3s20.5-7.8 28.3 0l14.6 14.6 .5 .5c12.4-13.1 22.5-28.3 29.8-45H448 376c-11 0-20-9-20-20s9-20 20-20h52v-4c0-11 9-20 20-20z">
+        </path>
+    </svg>
+    English
+</div>
+-->
+<style>
+.icon-bar.fixed,
+.icon-bar.horizontal {
+    display: none;
+}
+
+@media screen and (min-width: 1520px) {
+    .icon-bar.fixed {
+        display: flex;
+        position: fixed;
+        top: 50%;
+        right: 0;
+        transform: translateY(-50%);
+        flex-direction: column;
+        z-index: 1000;
+    }
+    .icon-bar.fixed a {
+        display: block;
+        text-align: center;
+        padding: 16px;
+        font-size: 20px;
+        color: white;
+        transition: background-color 0.3s, color 0.3s;
+        background-size: 25px 25px;
+    }
+    .icon-bar.fixed a svg {
+        width: 25px;
+        height: 25px;
+    }
+    .icon-bar.fixed a:hover {
+        background-color: #000;
+    }
+}
+
+@media screen and (max-width: 1520px) {
+    .icon-bar.horizontal {
+        display: flex;
+        flex-direction: row;
+        justify-content: flex-start;
+        margin: 20px 0;
+    }
+    .icon-bar.horizontal a {
+        width: 30px;
+        height: 30px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 14px;
+        color: white;
+        margin-left: 8px;
+        transition: background-color 0.3s, color 0.3s;
+        background-size: 30px 30px;
+        padding: 4px;
+    }
+    .icon-bar.horizontal a svg {
+        width: 20px;
+        height: 20px;
+    }
+    .icon-bar.horizontal a:first-child {
+        margin-left: 0;
+    }
+    .icon-bar.horizontal a:hover {
+        background-color: #000;
+    }
+}
+
+.facebook {
+    background: #3B5998;  
+}
+.twitter {
+    background: #55ACEE;
+}
+.reddit {
+    background: #dd4b39;
+}
+.linkedin {
+    background: #007bb5;
+}
+.google {
+    background: #bb0000;
+}
+
+</style>
+<div class="icon-bar fixed">
+    <a href="https://www.linkedin.com/feed/?linkOrigin=LI_BADGE&shareActive=true&shareUrl=http://rocm.blogs.amd.com/artificial-intelligence/quark-strix-halo/README.html" class="linkedin">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-linkedin" viewBox="0 0 16 16">
+        <path d="M0 1.146C0 .513.526 0 1.175 0h13.65C15.474 0 16 .513 16 1.146v13.708c0 .633-.526 1.146-1.175 1.146H1.175C.526 16 0 15.487 0 14.854zm4.943 12.248V6.169H2.542v7.225zm-1.2-8.212c.837 0 1.358-.554 1.358-1.248-.015-.709-.52-1.248-1.342-1.248S2.4 3.226 2.4 3.934c0 .694.521 1.248 1.327 1.248zm4.908 8.212V9.359c0-.216.016-.432.08-.586.173-.431.568-.878 1.232-.878.869 0 1.216.662 1.216 1.634v3.865h2.401V9.25c0-2.22-1.184-3.252-2.764-3.252-1.274 0-1.845.7-2.165 1.193v.025h-.016l.016-.025V6.169h-2.4c.03.678 0 7.225 0 7.225z"/>
+        </svg>
+    </a>
+    <a href="https://twitter.com/intent/tweet?url=http://rocm.blogs.amd.com/artificial-intelligence/quark-strix-halo/README.html&amp;text=Quantize a 35B MoE model directly on AMD Strix Halo with AMD Quark, export to GGUF and safetensors, validate with llama.cpp and vLLM, and deploy through Lemonade." class="twitter">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-twitter-x" viewBox="0 0 16 16">
+        <path d="M12.6.75h2.454l-5.36 6.142L16 15.25h-4.937l-3.867-5.07-4.425 5.07H.316l5.733-6.57L0 .75h5.063l3.495 4.633L12.601.75Zm-.86 13.028h1.36L4.323 2.145H2.865z"/>
+        </svg>
+    </a>
+    <a href="https://www.reddit.com/submit?url=http://rocm.blogs.amd.com/artificial-intelligence/quark-strix-halo/README.html&amp;title=Local Quantization and Multi-Backend Deployment with AMD Quark on Strix Halo | ROCm Blogs" class="reddit">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-reddit" viewBox="0 0 16 16">
+        <path d="M6.167 8a.83.83 0 0 0-.83.83c0 .459.372.84.83.831a.831.831 0 0 0 0-1.661m1.843 3.647c.315 0 1.403-.038 1.976-.611a.23.23 0 0 0 0-.306.213.213 0 0 0-.306 0c-.353.363-1.126.487-1.67.487-.545 0-1.308-.124-1.671-.487a.213.213 0 0 0-.306 0 .213.213 0 0 0 0 .306c.564.563 1.652.61 1.977.61zm.992-2.807c0 .458.373.83.831.83s.83-.381.83-.83a.831.831 0 0 0-1.66 0z"/>
+        <path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0m-3.828-1.165c-.315 0-.602.124-.812.325-.801-.573-1.9-.945-3.121-.993l.534-2.501 1.738.372a.83.83 0 1 0 .83-.869.83.83 0 0 0-.744.468l-1.938-.41a.2.2 0 0 0-.153.028.2.2 0 0 0-.086.134l-.592 2.788c-1.24.038-2.358.41-3.17.992-.21-.2-.496-.324-.81-.324a1.163 1.163 0 0 0-.478 2.224q-.03.17-.029.353c0 1.795 2.091 3.256 4.669 3.256s4.668-1.451 4.668-3.256c0-.114-.01-.238-.029-.353.401-.181.688-.592.688-1.069 0-.65-.525-1.165-1.165-1.165"/>
+        </svg>
+    </a>
+    <a href="https://www.facebook.com/sharer/sharer.php?u=http://rocm.blogs.amd.com/artificial-intelligence/quark-strix-halo/README.html&quote=Quantize a 35B MoE model directly on AMD Strix Halo with AMD Quark, export to GGUF and safetensors, validate with llama.cpp and vLLM, and deploy through Lemonade." class="facebook">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-facebook" viewBox="0 0 16 16">
+        <path d="M16 8.049c0-4.446-3.582-8.05-8-8.05C3.58 0-.002 3.603-.002 8.05c0 4.017 2.926 7.347 6.75 7.951v-5.625h-2.03V8.05H6.75V6.275c0-2.017 1.195-3.131 3.022-3.131.876 0 1.791.157 1.791.157v1.98h-1.009c-.993 0-1.303.621-1.303 1.258v1.51h2.218l-.354 2.326H9.25V16c3.824-.604 6.75-3.934 6.75-7.951"/>
+        </svg>
+    </a>
+    <a href="mailto:?subject=http://rocm.blogs.amd.com/artificial-intelligence/quark-strix-halo/README.html&body=Quantize a 35B MoE model directly on AMD Strix Halo with AMD Quark, export to GGUF and safetensors, validate with llama.cpp and vLLM, and deploy through Lemonade." class="google">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-envelope-arrow-up" viewBox="0 0 16 16">
+        <path d="M0 4a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v4.5a.5.5 0 0 1-1 0V5.383l-7 4.2-1.326-.795-5.64 3.47A1 1 0 0 0 2 13h5.5a.5.5 0 0 1 0 1H2a2 2 0 0 1-2-1.99zm1 7.105 4.708-2.897L1 5.383zM1 4v.217l7 4.2 7-4.2V4a1 1 0 0 0-1-1H2a1 1 0 0 0-1 1"/>
+        <path d="M12.5 16a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7m.354-5.354 1.25 1.25a.5.5 0 0 1-.708.708L13 12.207V14a.5.5 0 0 1-1 0v-1.717l-.28.305a.5.5 0 0 1-.737-.676l1.149-1.25a.5.5 0 0 1 .722-.016"/>
+        </svg>
+    </a>
+</div>
+<div class="icon-bar horizontal">
+    <a href="https://www.linkedin.com/feed/?linkOrigin=LI_BADGE&shareActive=true&shareUrl=http://rocm.blogs.amd.com/artificial-intelligence/quark-strix-halo/README.html" class="linkedin">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-linkedin" viewBox="0 0 16 16">
+        <path d="M0 1.146C0 .513.526 0 1.175 0h13.65C15.474 0 16 .513 16 1.146v13.708c0 .633-.526 1.146-1.175 1.146H1.175C.526 16 0 15.487 0 14.854zm4.943 12.248V6.169H2.542v7.225zm-1.2-8.212c.837 0 1.358-.554 1.358-1.248-.015-.709-.52-1.248-1.342-1.248S2.4 3.226 2.4 3.934c0 .694.521 1.248 1.327 1.248zm4.908 8.212V9.359c0-.216.016-.432.08-.586.173-.431.568-.878 1.232-.878.869 0 1.216.662 1.216 1.634v3.865h2.401V9.25c0-2.22-1.184-3.252-2.764-3.252-1.274 0-1.845.7-2.165 1.193v.025h-.016l.016-.025V6.169h-2.4c.03.678 0 7.225 0 7.225z"/>
+        </svg>
+    </a>
+    <a href="https://twitter.com/intent/tweet?url=http://rocm.blogs.amd.com/artificial-intelligence/quark-strix-halo/README.html&amp;text=Quantize a 35B MoE model directly on AMD Strix Halo with AMD Quark, export to GGUF and safetensors, validate with llama.cpp and vLLM, and deploy through Lemonade." class="twitter">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-twitter-x" viewBox="0 0 16 16">
+        <path d="M12.6.75h2.454l-5.36 6.142L16 15.25h-4.937l-3.867-5.07-4.425 5.07H.316l5.733-6.57L0 .75h5.063l3.495 4.633L12.601.75Zm-.86 13.028h1.36L4.323 2.145H2.865z"/>
+        </svg>
+    </a>
+    <a href="https://www.reddit.com/submit?url=http://rocm.blogs.amd.com/artificial-intelligence/quark-strix-halo/README.html&amp;title=Local Quantization and Multi-Backend Deployment with AMD Quark on Strix Halo | ROCm Blogs" class="reddit">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-reddit" viewBox="0 0 16 16">
+        <path d="M6.167 8a.83.83 0 0 0-.83.83c0 .459.372.84.83.831a.831.831 0 0 0 0-1.661m1.843 3.647c.315 0 1.403-.038 1.976-.611a.23.23 0 0 0 0-.306.213.213 0 0 0-.306 0c-.353.363-1.126.487-1.67.487-.545 0-1.308-.124-1.671-.487a.213.213 0 0 0-.306 0 .213.213 0 0 0 0 .306c.564.563 1.652.61 1.977.61zm.992-2.807c0 .458.373.83.831.83s.83-.381.83-.83a.831.831 0 0 0-1.66 0z"/>
+        <path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0m-3.828-1.165c-.315 0-.602.124-.812.325-.801-.573-1.9-.945-3.121-.993l.534-2.501 1.738.372a.83.83 0 1 0 .83-.869.83.83 0 0 0-.744.468l-1.938-.41a.2.2 0 0 0-.153.028.2.2 0 0 0-.086.134l-.592 2.788c-1.24.038-2.358.41-3.17.992-.21-.2-.496-.324-.81-.324a1.163 1.163 0 0 0-.478 2.224q-.03.17-.029.353c0 1.795 2.091 3.256 4.669 3.256s4.668-1.451 4.668-3.256c0-.114-.01-.238-.029-.353.401-.181.688-.592.688-1.069 0-.65-.525-1.165-1.165-1.165"/>
+        </svg>
+    </a>
+    <a href="https://www.facebook.com/sharer/sharer.php?u=http://rocm.blogs.amd.com/artificial-intelligence/quark-strix-halo/README.html&quote=Quantize a 35B MoE model directly on AMD Strix Halo with AMD Quark, export to GGUF and safetensors, validate with llama.cpp and vLLM, and deploy through Lemonade." class="facebook">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-facebook" viewBox="0 0 16 16">
+        <path d="M16 8.049c0-4.446-3.582-8.05-8-8.05C3.58 0-.002 3.603-.002 8.05c0 4.017 2.926 7.347 6.75 7.951v-5.625h-2.03V8.05H6.75V6.275c0-2.017 1.195-3.131 3.022-3.131.876 0 1.791.157 1.791.157v1.98h-1.009c-.993 0-1.303.621-1.303 1.258v1.51h2.218l-.354 2.326H9.25V16c3.824-.604 6.75-3.934 6.75-7.951"/>
+        </svg>
+    </a>
+    <a href="mailto:?subject=http://rocm.blogs.amd.com/artificial-intelligence/quark-strix-halo/README.html&body=Quantize a 35B MoE model directly on AMD Strix Halo with AMD Quark, export to GGUF and safetensors, validate with llama.cpp and vLLM, and deploy through Lemonade." class="google">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-envelope-arrow-up" viewBox="0 0 16 16">
+        <path d="M0 4a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v4.5a.5.5 0 0 1-1 0V5.383l-7 4.2-1.326-.795-5.64 3.47A1 1 0 0 0 2 13h5.5a.5.5 0 0 1 0 1H2a2 2 0 0 1-2-1.99zm1 7.105 4.708-2.897L1 5.383zM1 4v.217l7 4.2 7-4.2V4a1 1 0 0 0-1-1H2a1 1 0 0 0-1 1"/>
+        <path d="M12.5 16a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7m.354-5.354 1.25 1.25a.5.5 0 0 1-.708.708L13 12.207V14a.5.5 0 0 1-1 0v-1.717l-.28.305a.5.5 0 0 1-.737-.676l1.149-1.25a.5.5 0 0 1 .722-.016"/>
+        </svg>
+    </a>
+</div>
+<!-- Local Quantization and Multi-Backend Deployment with AMD Quark on Strix Halo | ROCm Blogs -->
+<!-- Quantize a 35B MoE model directly on AMD Strix Halo with AMD Quark, export to GGUF and safetensors, validate with llama.cpp and vLLM, and deploy through Lemonade. -->
+<p>For local AI, running a model on the target device is only part of the deployment workflow. Model preparation, including quantization and export, is another important step. AMD <a class="reference external" href="https://github.com/AMD/Quark">Quark</a> provides memory-efficient quantization workflows that make it possible to optimize large models directly on platforms such as AMD Strix Halo.</p>
+<p>In this post, we quantize Qwen3.6-35B-A3B, a 35B-parameter Mixture-of-Experts model, from BF16 to W4A16 directly on a Strix Halo system with 128 GB of unified memory. Quantization reduces the model weights from roughly 70 GB to about 21 GB. We then export the quantized models into two deployment paths: GGUF for llama.cpp and safetensors for vLLM. We also validate the local application experience with Lemonade using the Quark-exported GGUF model.</p>
+<p>Previous AMD Ryzen AI workflows demonstrated Quark quantization with <a class="reference external" href="https://www.amd.com/en/developer/resources/technical-articles/deepseek-distilled-models-on-ryzen-ai-processors.html">ONNX Runtime GenAI</a>. This post extends that deployment story into the broader open-source LLM ecosystem, covering quantization, export, backend validation, and application-level deployment on Strix Halo. Related AMD work includes <a class="reference external" href="https://rocm.blogs.amd.com/artificial-intelligence/ryzen-uma-llm/README.html">AI inference on the Ryzen AI Max processor</a> and <a class="reference external" href="https://rocm.blogs.amd.com/artificial-intelligence/eagle3-speculative-decoding/README.html">Quark quantization on AMD Instinct MI350X/MI355X GPUs</a>.</p>
+<section id="prerequisites">
+<h2>Prerequisites<a class="headerlink" href="#prerequisites" title="Link to this heading">#</a></h2>
+<p>To reproduce the workflows described in this post, you will need:</p>
+<ul class="simple">
+<li><p>An AMD Strix Halo system with a supported ROCm environment.</p></li>
+<li><p>AMD Quark and the inference runtime used for the deployment path you want to reproduce.</p></li>
+<li><p>Lemonade if you want to reproduce the application-level deployment demo.</p></li>
+</ul>
+</section>
+<section id="platform">
+<h2>Platform<a class="headerlink" href="#platform" title="Link to this heading">#</a></h2>
+<p>AMD Quark, llama.cpp, and vLLM can all be used on Strix Halo, enabling quantization and inference on the same target system.</p>
+<p>For the experiments reported in this post, quantization, export, GGUF inference with llama.cpp, and the Lemonade application-level deployment check were performed directly on a single Strix Halo machine.</p>
+<table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>Item</p></th>
+<th class="head"><p>Value</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>Machine</p></td>
+<td><p>ASUS ROG Flow Z13 (2025)</p></td>
+</tr>
+<tr class="row-odd"><td><p>Processor</p></td>
+<td><p>AMD Ryzen AI Max+ 395</p></td>
+</tr>
+<tr class="row-even"><td><p>GPU</p></td>
+<td><p>AMD Radeon 8060S</p></td>
+</tr>
+<tr class="row-odd"><td><p>Memory</p></td>
+<td><p>128 GB unified LPDDR5X</p></td>
+</tr>
+<tr class="row-even"><td><p>OS</p></td>
+<td><p>Ubuntu 24.04 LTS</p></td>
+</tr>
+<tr class="row-odd"><td><p>ROCm</p></td>
+<td><p>7.2.0</p></td>
+</tr>
+<tr class="row-even"><td><p>Quark</p></td>
+<td><p><a class="reference external" href="https://github.com/AMD/Quark">amd-quark 0.12.post1</a></p></td>
+</tr>
+<tr class="row-odd"><td><p>llama.cpp</p></td>
+<td><p>ROCm HIP build (<code class="docutils literal notranslate"><span class="pre">build-hip</span></code>)</p></td>
+</tr>
+<tr class="row-even"><td><p>vLLM</p></td>
+<td><p>ROCm-enabled build with Quark W4A16 support</p></td>
+</tr>
+</tbody>
+</table>
+<p>The Strix Halo test system is a laptop-class device. Under sustained workloads, thermal and power limits can affect throughput, so performance measurements should be interpreted in the context of the specific device configuration.</p>
+</section>
+<section id="model">
+<h2>Model<a class="headerlink" href="#model" title="Link to this heading">#</a></h2>
+<p>We use <a class="reference external" href="https://huggingface.co/Qwen/Qwen3.6-35B-A3B">Qwen3.6-35B-A3B</a> as the validation model. It is a Mixture-of-Experts model with 35B language-model parameters and approximately 3B activated per token. Its size and MoE architecture make it a representative workload for evaluating local quantization and deployment on Strix Halo.</p>
+</section>
+<section id="pipeline-overview">
+<h2>Pipeline Overview<a class="headerlink" href="#pipeline-overview" title="Link to this heading">#</a></h2>
+<p>The workflow consists of three stages:</p>
+<ol class="arabic simple">
+<li><p><strong>Quantize:</strong> use AMD Quark to apply W4A16 weight-only quantization to selected model layers, producing a quantized checkpoint while keeping selected components in higher precision.</p></li>
+<li><p><strong>Export:</strong> export the quantized model into formats aligned with the target inference path, using GGUF for llama.cpp and safetensors with Quark quantization metadata for vLLM.</p></li>
+<li><p><strong>Run:</strong> load the exported model with llama.cpp or vLLM for backend-level inference and evaluation. At the application layer, Lemonade can consume the same GGUF artifact through its llama.cpp backend for local interactive use.</p></li>
+</ol>
+<p>Conceptually, the workflow looks like this:</p>
+<p><img alt="Pipeline: Qwen3.6-35B-A3B is quantized and exported by AMD Quark into a GS32 GGUF path (llama.cpp, Lemonade) and a GS128 safetensors path (vLLM), all on Strix Halo" src="../../_images/quark-pipeline.png" /></p>
+<p>The key point is that deployment decisions begin during model preparation. Quantization configuration, export format, and inference-runtime support are related choices rather than completely independent stages.</p>
+</section>
+<section id="stage-1-quantization-with-amd-quark">
+<h2>Stage 1: Quantization with AMD Quark<a class="headerlink" href="#stage-1-quantization-with-amd-quark" title="Link to this heading">#</a></h2>
+<p>We apply W4A16 weight-only quantization using RTN (Round-To-Nearest), quantizing selected model linear layers to 4-bit while keeping activations and selected model components in higher precision. All variants are quantized directly on the Strix Halo system.</p>
+<p>For this evaluation, we use four W4A16 configurations spanning two quantization schemes, symmetric INT4 and asymmetric UInt4, and two group sizes, 32 and 128.</p>
+<table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>Model</p></th>
+<th class="head"><p>Data Type</p></th>
+<th class="head"><p>Group Size</p></th>
+<th class="head"><p>Scheme</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>INT4-GS32</p></td>
+<td><p>INT4</p></td>
+<td><p>32</p></td>
+<td><p>Symmetric</p></td>
+</tr>
+<tr class="row-odd"><td><p>UInt4-GS32</p></td>
+<td><p>UInt4</p></td>
+<td><p>32</p></td>
+<td><p>Asymmetric</p></td>
+</tr>
+<tr class="row-even"><td><p>INT4-GS128</p></td>
+<td><p>INT4</p></td>
+<td><p>128</p></td>
+<td><p>Symmetric</p></td>
+</tr>
+<tr class="row-odd"><td><p>UInt4-GS128</p></td>
+<td><p>UInt4</p></td>
+<td><p>128</p></td>
+<td><p>Asymmetric</p></td>
+</tr>
+</tbody>
+</table>
+<p>Group size controls how many weights share the same quantization scale. Smaller groups provide finer-grained scaling and can reduce quantization error, while larger groups require less scale metadata and may be more efficient depending on the target format and runtime.</p>
+<p>In this experiment, GS32 is used for the GGUF path and llama.cpp-based inference, while GS128 is used for the safetensors path and vLLM-based inference. Within the GGUF path, the symmetric and asymmetric configurations map to Q4_0 and Q4_1, respectively.</p>
+</section>
+<section id="stage-2-export">
+<h2>Stage 2: Export<a class="headerlink" href="#stage-2-export" title="Link to this heading">#</a></h2>
+<p>After quantization, Quark exports the model into formats aligned with the intended inference path.</p>
+<ul class="simple">
+<li><p><strong>GGUF path (GS32):</strong> Quark exports the GS32 models to GGUF. The symmetric configuration maps to Q4_0 and the asymmetric configuration to Q4_1. These artifacts can be loaded directly by llama.cpp and can also be consumed by application layers such as Lemonade through its llama.cpp backend.</p></li>
+<li><p><strong>Safetensors path (GS128):</strong> Quark exports the GS128 models in safetensors format and stores the corresponding quantization metadata in <code class="docutils literal notranslate"><span class="pre">config.json</span></code>. vLLM uses this metadata to load and execute the quantized model through its Quark integration.</p></li>
+</ul>
+<p>Both export paths are generated directly from Quark without requiring an additional model-conversion step in the target inference runtime.</p>
+<p>The quantized models used in this post are available on Hugging Face:</p>
+<table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>Configuration</p></th>
+<th class="head"><p>Group Size</p></th>
+<th class="head"><p>Format</p></th>
+<th class="head"><p>Hugging Face</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>INT4-GS32</p></td>
+<td><p>32</p></td>
+<td><p>GGUF Q4_0</p></td>
+<td><p><a class="reference external" href="https://huggingface.co/amd/Qwen3.6-35B-A3B-Quark-INT4-G32-GGUF">Qwen3.6-35B-A3B-Quark-INT4-G32-GGUF</a></p></td>
+</tr>
+<tr class="row-odd"><td><p>UInt4-GS32</p></td>
+<td><p>32</p></td>
+<td><p>GGUF Q4_1</p></td>
+<td><p><a class="reference external" href="https://huggingface.co/amd/Qwen3.6-35B-A3B-Quark-UINT4-G32-GGUF">Qwen3.6-35B-A3B-Quark-UINT4-G32-GGUF</a></p></td>
+</tr>
+<tr class="row-even"><td><p>INT4-GS128</p></td>
+<td><p>128</p></td>
+<td><p>safetensors</p></td>
+<td><p><a class="reference external" href="https://huggingface.co/amd/Qwen3.6-35B-A3B-Quark-INT4-G128">Qwen3.6-35B-A3B-Quark-INT4-G128</a></p></td>
+</tr>
+<tr class="row-odd"><td><p>UInt4-GS128</p></td>
+<td><p>128</p></td>
+<td><p>safetensors</p></td>
+<td><p><a class="reference external" href="https://huggingface.co/amd/Qwen3.6-35B-A3B-Quark-UINT4-G128">Qwen3.6-35B-A3B-Quark-UINT4-G128</a></p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="stage-3-inference">
+<h2>Stage 3: Inference<a class="headerlink" href="#stage-3-inference" title="Link to this heading">#</a></h2>
+<p>The exported models are then validated with their corresponding inference runtimes.</p>
+<ul class="simple">
+<li><p><strong>llama.cpp path (GS32):</strong> The Quark-exported GGUF files are loaded directly by a ROCm-enabled llama.cpp HIP build.</p></li>
+<li><p><strong>vLLM path (GS128):</strong> The Quark-exported safetensors models are loaded through vLLM’s Quark integration using the quantization metadata stored in <code class="docutils literal notranslate"><span class="pre">config.json</span></code>. For the vLLM build used in this evaluation, we explicitly set <code class="docutils literal notranslate"><span class="pre">VLLM_USE_TRITON_AWQ=1</span></code> to use the Triton AWQ kernel, which supports the MoE expert layer shapes exercised by this model.</p></li>
+</ul>
+<p>At the application layer, Lemonade provides a local deployment experience on top of supported inference backends. In this post, we validate the Lemonade path using a GS32 GGUF artifact with its llama.cpp backend on Strix Halo. Lemonade also supports other inference backend configurations, including vLLM, but those paths are outside the scope of this evaluation.</p>
+</section>
+<section id="weight-size">
+<h2>Weight Size<a class="headerlink" href="#weight-size" title="Link to this heading">#</a></h2>
+<p>W4A16 quantization reduces the model artifact size from roughly 70 GB in 16-bit precision to about 21 GB, or approximately 30% of the original size. The result is larger than the theoretical 25% size of raw 4-bit weights because selected model components remain in higher precision and the quantized representation also includes per-group scales and metadata.</p>
+<table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>Configuration</p></th>
+<th class="head"><p>Format</p></th>
+<th class="head"><p>Weight Size</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>Original 16-bit model</p></td>
+<td><p>16-bit checkpoint / baseline</p></td>
+<td><p>~70 GB</p></td>
+</tr>
+<tr class="row-odd"><td><p>GS32</p></td>
+<td><p>GGUF Q4_0 / Q4_1</p></td>
+<td><p>~21.7 GB</p></td>
+</tr>
+<tr class="row-even"><td><p>GS128</p></td>
+<td><p>safetensors</p></td>
+<td><p>20.79 GB</p></td>
+</tr>
+</tbody>
+</table>
+<p>These figures describe the stored model artifacts rather than total runtime memory consumption. During inference, additional memory is required for KV cache, activations, runtime buffers, and framework overhead.</p>
+</section>
+<section id="quantization-cost-on-strix-halo">
+<h2>Quantization Cost on Strix Halo<a class="headerlink" href="#quantization-cost-on-strix-halo" title="Link to this heading">#</a></h2>
+<p>Because quantization runs directly on Strix Halo, we also report the resource cost of the quantization step itself.</p>
+<table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>Configuration</p></th>
+<th class="head"><p>Final Format</p></th>
+<th class="head text-right"><p>Peak Memory (GTT)</p></th>
+<th class="head text-right"><p>Quant Time</p></th>
+<th class="head text-right"><p>Export Time</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>INT4-GS32</p></td>
+<td><p>GGUF Q4_0</p></td>
+<td class="text-right"><p>95 GB</p></td>
+<td class="text-right"><p>1.5 min</p></td>
+<td class="text-right"><p>22 min</p></td>
+</tr>
+<tr class="row-odd"><td><p>UInt4-GS32</p></td>
+<td><p>GGUF Q4_1</p></td>
+<td class="text-right"><p>95 GB</p></td>
+<td class="text-right"><p>0.8 min</p></td>
+<td class="text-right"><p>22 min</p></td>
+</tr>
+<tr class="row-even"><td><p>INT4-GS128</p></td>
+<td><p>safetensors</p></td>
+<td class="text-right"><p>73 GB</p></td>
+<td class="text-right"><p>0.8 min</p></td>
+<td class="text-right"><p>23 min</p></td>
+</tr>
+<tr class="row-odd"><td><p>UInt4-GS128</p></td>
+<td><p>safetensors</p></td>
+<td class="text-right"><p>73 GB</p></td>
+<td class="text-right"><p>0.8 min</p></td>
+<td class="text-right"><p>18 min</p></td>
+</tr>
+</tbody>
+</table>
+<p>Peak memory is the peak GPU-visible unified memory (GTT) during quantization. Export time covers writing the deployable files; GS32 includes both the intermediate safetensors and the final GGUF. Peak memory stays within the system’s 128 GB of unified memory in all cases, so quantizing a 35B model that starts at roughly 70 GB in BF16 fits on a single Strix Halo machine.</p>
+</section>
+<section id="accuracy-benchmarks">
+<h2>Accuracy Benchmarks<a class="headerlink" href="#accuracy-benchmarks" title="Link to this heading">#</a></h2>
+<p>This section reports how well the quantized models preserve accuracy relative to the 16-bit baseline, so you can judge whether a given W4A16 configuration is good enough for your use case. We evaluate the quantized models with <a class="reference external" href="https://github.com/EleutherAI/lm-evaluation-harness">EleutherAI/lm-evaluation-harness</a>, using the inference backend associated with each export path. The goal is to measure model quality relative to the 16-bit baseline, rather than to compare backend performance.</p>
+<p>All results reported here were produced by AMD using the configurations described in this post as of August 2026. Results may vary with different model versions, software builds, runtime settings, and evaluation configurations.</p>
+<p>The GS32 GGUF models are evaluated with llama.cpp on Strix Halo. For multiple-choice tasks that require log-likelihood scoring, including BBH, GPQA, MMLU-Pro, and MuSR, we use a patched <code class="docutils literal notranslate"><span class="pre">llama-server</span></code> that exposes prompt-token log probabilities to lm-evaluation-harness. The patch is used only for evaluation and is not required for normal GGUF inference.</p>
+<p>The GS128 safetensors models are evaluated with vLLM using <code class="docutils literal notranslate"><span class="pre">tensor_parallel_size=4</span></code>, <code class="docutils literal notranslate"><span class="pre">gpu_memory_utilization=0.90</span></code>, and <code class="docutils literal notranslate"><span class="pre">max_model_len=8192</span></code>. For the vLLM build used in this evaluation, <code class="docutils literal notranslate"><span class="pre">VLLM_USE_TRITON_AWQ=1</span></code> is explicitly enabled to use the Triton AWQ kernel.</p>
+<table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>Task</p></th>
+<th class="head"><p>Metric</p></th>
+<th class="head text-center"><p>BF16 (baseline)</p></th>
+<th class="head text-center"><p>UInt4-GS128 (vLLM)</p></th>
+<th class="head text-center"><p>INT4-GS128 (vLLM)</p></th>
+<th class="head text-center"><p>UInt4-GS32 (llama.cpp)</p></th>
+<th class="head text-center"><p>INT4-GS32 (llama.cpp)</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>IFEval</p></td>
+<td><p>prompt_level_strict</p></td>
+<td class="text-center"><p>0.3235</p></td>
+<td class="text-center"><p>0.3383</p></td>
+<td class="text-center"><p>0.3438</p></td>
+<td class="text-center"><p>0.3512</p></td>
+<td class="text-center"><p>0.3752</p></td>
+</tr>
+<tr class="row-odd"><td><p>IFEval</p></td>
+<td><p>inst_level_strict</p></td>
+<td class="text-center"><p>0.4580</p></td>
+<td class="text-center"><p>0.4664</p></td>
+<td class="text-center"><p>0.4676</p></td>
+<td class="text-center"><p>0.4808</p></td>
+<td class="text-center"><p>0.4976</p></td>
+</tr>
+<tr class="row-even"><td><p>MATH-hard</p></td>
+<td><p>exact_match</p></td>
+<td class="text-center"><p>0.5287</p></td>
+<td class="text-center"><p>0.4856</p></td>
+<td class="text-center"><p>0.5083</p></td>
+<td class="text-center"><p>0.5211</p></td>
+<td class="text-center"><p>0.5234</p></td>
+</tr>
+<tr class="row-odd"><td><p>BBH</p></td>
+<td><p>acc_norm</p></td>
+<td class="text-center"><p>0.6546</p></td>
+<td class="text-center"><p>0.6270</p></td>
+<td class="text-center"><p>0.6018</p></td>
+<td class="text-center"><p>0.6449</p></td>
+<td class="text-center"><p>0.6506</p></td>
+</tr>
+<tr class="row-even"><td><p>GPQA</p></td>
+<td><p>acc_norm</p></td>
+<td class="text-center"><p>0.4337</p></td>
+<td class="text-center"><p>0.3658</p></td>
+<td class="text-center"><p>0.3431</p></td>
+<td class="text-center"><p>0.4018</p></td>
+<td class="text-center"><p>0.4086</p></td>
+</tr>
+<tr class="row-odd"><td><p>MMLU-Pro</p></td>
+<td><p>acc</p></td>
+<td class="text-center"><p>0.5968</p></td>
+<td class="text-center"><p>0.5824</p></td>
+<td class="text-center"><p>0.5687</p></td>
+<td class="text-center"><p>0.5837</p></td>
+<td class="text-center"><p>0.5825</p></td>
+</tr>
+<tr class="row-even"><td><p>MuSR</p></td>
+<td><p>acc_norm</p></td>
+<td class="text-center"><p>0.4339</p></td>
+<td class="text-center"><p>0.4206</p></td>
+<td class="text-center"><p>0.4630</p></td>
+<td class="text-center"><p>0.4180</p></td>
+<td class="text-center"><p>0.4471</p></td>
+</tr>
+<tr class="row-odd"><td><p>GSM8K (5-shot)</p></td>
+<td><p>flexible-extract</p></td>
+<td class="text-center"><p>0.9158</p></td>
+<td class="text-center"><p>0.9022</p></td>
+<td class="text-center"><p>0.9045</p></td>
+<td class="text-center"><p>0.9181</p></td>
+<td class="text-center"><p>0.8954</p></td>
+</tr>
+<tr class="row-even"><td><p>GSM8K (5-shot)</p></td>
+<td><p>strict-match</p></td>
+<td class="text-center"><p>0.9090</p></td>
+<td class="text-center"><p>0.8976</p></td>
+<td class="text-center"><p>0.8961</p></td>
+<td class="text-center"><p>0.9151</p></td>
+<td class="text-center"><p>0.8916</p></td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<div><p>Testing by AMD in August 2026 using the hardware and software configuration described in this article. Results may vary based on hardware configuration, software versions, model revisions, runtime settings, workloads, and other factors.</p>
+<p><strong>Note:</strong> The GS128 vLLM benchmark was executed on a separate data-center GPU system to reduce evaluation turnaround time. This was a benchmarking choice rather than a Strix Halo platform limitation.</p>
+</div></blockquote>
+<p>Overall, the results show that the impact of 4-bit weight quantization is task dependent. Several configurations remain close to, or occasionally exceed, the 16-bit baseline on individual metrics, while other tasks show more noticeable degradation. The results do not indicate a single quantization configuration that is uniformly best across all tasks.</p>
+<p>GS32 and GS128 also differ in export format and inference backend in this evaluation. The results therefore validate each deployment configuration as a whole rather than providing a controlled backend-independent comparison of group size alone.</p>
+<p>On some tasks, a quantized configuration is at or slightly above the 16-bit baseline. This should not be read as quantization improving model quality; it reflects normal task-level variation and differences in evaluation backend, and the baseline and GS32 numbers were produced on different backends.</p>
+</section>
+<section id="lemonade-deployment-check">
+<h2>Lemonade Deployment Check<a class="headerlink" href="#lemonade-deployment-check" title="Link to this heading">#</a></h2>
+<p>To validate the application-level deployment experience, we load a Quark-exported GS32 GGUF model in <a class="reference external" href="https://github.com/lemonade-sdk/lemonade">Lemonade</a> on Strix Halo.</p>
+<p>For this experiment, Lemonade uses its llama.cpp backend to load the GGUF artifact directly and run an interactive chat session. No additional model conversion or manual llama.cpp build is required. Lemonade also supports other inference backend configurations, but those paths are outside the scope of this post.</p>
+<p><strong>Lemonade Web UI demo (GS32 GGUF):</strong> load the Quark-exported GGUF model in Lemonade, enter a prompt, and generate a response. The recording is intended to demonstrate the local application workflow rather than provide a performance benchmark.</p>
+<p><img alt="Lemonade App loading Quark GGUF and running chat inference" src="../../_images/lemonade-quark-gguf-demo.gif" /></p>
+</section>
+<section id="summary">
+<h2>Summary<a class="headerlink" href="#summary" title="Link to this heading">#</a></h2>
+<p>This work shows that AMD Quark can support a complete local model workflow on Strix Halo, from quantization and export to inference and application-level deployment, while producing artifacts that integrate with established open-source runtimes.</p>
+<p>More broadly, the results highlight an important deployment consideration: quantization is not an isolated preprocessing step. Quantization configuration, export format, and runtime support are closely connected, and treating them as part of the same deployment design can simplify the path from an original model checkpoint to a practical local AI application.</p>
+</section>
+<section id="additional-resources">
+<h2>Additional Resources<a class="headerlink" href="#additional-resources" title="Link to this heading">#</a></h2>
+<ul class="simple">
+<li><p><a class="reference external" href="https://github.com/AMD/Quark">AMD Quark</a></p></li>
+<li><p><a class="reference external" href="https://github.com/lemonade-sdk/lemonade">Lemonade</a> and <a class="reference external" href="https://lemonade-server.ai/">Lemonade Server</a></p></li>
+<li><p><a class="reference external" href="https://developer.amd.com/playbooks/lemonade-getting-started/">AMD Lemonade Playbook</a></p></li>
+<li><p><a class="reference external" href="https://www.amd.com/en/developer/resources/technical-articles/deepseek-distilled-models-on-ryzen-ai-processors.html">Accelerate DeepSeek R1 Distilled Models Locally on AMD Ryzen AI NPU and iGPU</a>: an earlier Quark-to-ONNX Runtime GenAI client deployment path on Ryzen AI. This post extends the Quark workflow to GGUF/llama.cpp and safetensors/vLLM.</p></li>
+<li><p><a class="reference external" href="https://rocm.blogs.amd.com/artificial-intelligence/ryzen-uma-llm/README.html">AI Inference on AMD Ryzen AI Max Processor</a>: large Qwen models running locally on Strix Halo using unified memory and GGUF-based inference. This post adds Quark-based quantization and export on the same platform.</p></li>
+<li><p><a class="reference external" href="https://rocm.blogs.amd.com/artificial-intelligence/eagle3-speculative-decoding/README.html">Accelerating LLM Inference on AMD Instinct MI350X/MI355X with Eagle3 and AMD Quark</a>: Quark in a data-center inference workflow on AMD Instinct GPUs, complementing the local deployment path shown here.</p></li>
+<li><p><a class="reference external" href="https://rocm.blogs.amd.com/ecosystems-and-partners/rocm-7.14-blog/README.html">ROCm 7.14: TheRock Goes Production</a>: broader ROCm platform context for the Ryzen AI MAX+ family.</p></li>
+</ul>
+</section>
+<section id="disclaimers">
+<h2>Disclaimers<a class="headerlink" href="#disclaimers" title="Link to this heading">#</a></h2>
+<p>The information presented in this document is for informational purposes only and may contain technical inaccuracies, omissions, and typographical errors. The information contained herein is subject to change and may be rendered inaccurate for many reasons, including but not limited to product and roadmap changes, component and motherboard version changes, new model and/or product releases, product differences between differing manufacturers, software changes, BIOS flashes, firmware upgrades, or the like. Any computer system has risks of security vulnerabilities that cannot be completely prevented or mitigated. AMD assumes no obligation to update or otherwise correct or revise this information. However, AMD reserves the right to revise this information and to make changes from time to time to the content hereof without obligation of AMD to notify any person of such revisions or changes. THIS INFORMATION IS PROVIDED “AS IS.” AMD MAKES NO REPRESENTATIONS OR WARRANTIES WITH RESPECT TO THE CONTENTS HEREOF AND ASSUMES NO RESPONSIBILITY FOR ANY INACCURACIES, ERRORS, OR OMISSIONS THAT MAY APPEAR IN THIS INFORMATION. AMD SPECIFICALLY DISCLAIMS ANY IMPLIED WARRANTIES OF NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR ANY PARTICULAR PURPOSE. IN NO EVENT WILL AMD BE LIABLE TO ANY PERSON FOR ANY RELIANCE, DIRECT, INDIRECT, SPECIAL, OR OTHER CONSEQUENTIAL DAMAGES ARISING FROM THE USE OF ANY INFORMATION CONTAINED HEREIN, EVEN IF AMD IS EXPRESSLY ADVISED OF THE POSSIBILITY OF SUCH DAMAGES. AMD, the AMD Arrow logo, and combinations thereof are trademarks of Advanced Micro Devices, Inc. Other product names used in this publication are for identification purposes only and may be trademarks of their respective companies. © 2026 Advanced Micro Devices, Inc. All rights reserved.</p>
+<div>
+    <script src="https://giscus.app/client.js"
+        data-repo="ROCm/rocm-blogs"
+        data-repo-id="R_kgDOLJ0omA"
+        data-category="General"
+        data-category-id="DIC_kwDOLJ0omM4Cc_fT"
+        data-mapping="title"
+        data-strict="0"
+        data-reactions-enabled="1"
+        data-emit-metadata="0"
+        data-input-position="bottom"
+        data-theme="light"
+        data-lang="en"
+        crossorigin="anonymous"
+        async>
+    </script>
+</div>
+</section>
+</section>
+
+<div class="section ablog__blog_comments">
+       
+</div>
+
+                </article>
+              
+
+              
+              
+              
+              
+            </div>
+            
+            
+              
+                <div class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+  <div class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> Contents
+  </div>
+  <nav class="bd-toc-nav page-toc">
+    <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#prerequisites">Prerequisites</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#platform">Platform</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#model">Model</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#pipeline-overview">Pipeline Overview</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#stage-1-quantization-with-amd-quark">Stage 1: Quantization with AMD Quark</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#stage-2-export">Stage 2: Export</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#stage-3-inference">Stage 3: Inference</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#weight-size">Weight Size</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#quantization-cost-on-strix-halo">Quantization Cost on Strix Halo</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#accuracy-benchmarks">Accuracy Benchmarks</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#lemonade-deployment-check">Lemonade Deployment Check</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#summary">Summary</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#additional-resources">Additional Resources</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#disclaimers">Disclaimers</a></li>
+</ul>
+  </nav></div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            <p>
+  </p>
+          </footer>
+        
+
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../../_static/scripts/bootstrap.js?digest=8d27b9dea8ad943066ae"></script>
+<script src="../../_static/scripts/pydata-sphinx-theme.js?digest=8d27b9dea8ad943066ae"></script>
+
+<footer class="rocm-footer">
+    <div class="container-lg">
+        <section class="bottom-menu menu py-45">
+            <div class="row d-flex align-items-center">
+                <div class="col-12 text-center">
+                    <ul>
+                        <li><a href="https://www.amd.com/en/corporate/copyright" target="_blank">Terms and Conditions</a></li>
+                        
+                        <li><a href="https://www.amd.com/en/corporate/privacy" target="_blank">Privacy</a></li>
+                        <li><a href="https://www.amd.com/en/corporate/trademarks" target="_blank">Trademarks</a></li>
+                        <li><a href="https://www.amd.com/content/dam/amd/en/documents/corporate/cr/supply-chain-transparency.pdf" target="_blank">Supply Chain Transparency</a></li>
+                        <li><a href="https://www.amd.com/en/corporate/competition" target="_blank">Fair and Open Competition</a></li>
+                        <li><a href="https://www.amd.com/system/files/documents/amd-uk-tax-strategy.pdf" target="_blank">UK Tax Strategy</a></li>
+                        <li><a href="https://www.amd.com/en/corporate/cookies" target="_blank">Cookie Policy</a></li>
+                        <!-- OneTrust Cookies Settings button start -->
+                        <li><a href="#cookie-settings" id="ot-sdk-btn" class="ot-sdk-show-settings">Cookie Settings</a></li>
+                        <!-- OneTrust Cookies Settings button end -->
+                    </ul>
+                </div>
+            </div>
+            <div class="row d-flex align-items-center">
+                <div class="col-12 text-center">
+                    <div>
+                        <span class="copyright">© 2025 Advanced Micro Devices, Inc</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </div>
+</footer>
+
+<!-- <div id="rdc-watermark-container">
+    <img id="rdc-watermark" src="../../_static/images/alpha-watermark.svg" alt="DRAFT watermark"/>
+</div> -->
+  </body>
+</html>

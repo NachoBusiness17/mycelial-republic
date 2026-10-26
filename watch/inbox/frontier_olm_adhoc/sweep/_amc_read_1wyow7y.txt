@@ -1,0 +1,44 @@
+THREAD 1wyow7y
+FEED TITLE: mem0 vs Memori for local agent memory? : reddit.com
+SUBTITLE: 
+ENTRIES: 8
+
+--- [2026-10-06T00:30] /u/MassiveNectarine64 | mem0 vs Memori for local agent memory?
+Building out a few personal AI agents locally (running Ollama + Hermes) for things like market research, coding assistance, and general task automation. Nothing crazy, just personal productivity tools I want to with context and memory across sessions.
+Deciding between mem0 and Memori and I wanted some first-hand or more experienced answers from anyone regarding:
+- How well does each actually work with local models?
+- For a single-user setup, is it worth it or would just using something like ChromaDB with rolling summaries be enough?
+Just want something that gives my agents decent memory without having to remind it constantly. Still learning the ins and outs so go easy on me
+Curious on what general consensus is and what your stack looks like if you run any of this :)
+submitted by /u/MassiveNectarine64 to r/LocalLLaMA
+[link] [comments]
+
+--- [] /u/Aggressive-Narwhal-3 | /u/Aggressive-Narwhal-3 on mem0 vs Memori for local agent memory?
+I haven't run mem0 or Memori, so nothing first-hand on those.
+On your second question, for one user I'd start with plain files before any vector DB. Notes you can read and grep tell you quickly what your agent actually remembers.
+Disclosure: I build birkin-mnemosyne (github.com/ashmoonori-afk/birkin-mnemosyne), which is that approach. Per its README it's local Markdown notes with BM25 search, no model or API key needed to store or search, and an optional MCP server. It's lexical, so a query worded very differently from the note can miss.
+
+--- [] /u/cryowastakenbycryo | /u/cryowastakenbycryo on mem0 vs Memori for local agent memory?
+Plain files is the way. I've tried several very fancy memory systems that my agents mostly ignored or forgot to use.
+Upgrade from plain files is a prompt injector - a dinky little proxy that'll read a file your agent can edit and inject it at the end of their system prompt where it's cache-stable every turn.
+
+--- [] /u/Aggressive-Narwhal-3 | /u/Aggressive-Narwhal-3 on mem0 vs Memori for local agent memory?
+appending at the end makes sense, since touching anything earlier in the prompt breaks the prefix cache. what I'd want to know is what stops the agent's file from growing forever. without a size cap or a trim pass it probably turns into the same pile of notes agents ignore.
+
+--- [] /u/cryowastakenbycryo | /u/cryowastakenbycryo on mem0 vs Memori for local agent memory?
+I usually tell them to 'update it as their understanding evolves' and they have an instruction to verify their assumptions as part of their system prompt which helps w/ a lot of the parametric knowledge that isn't so in their environment.
+The tool they use reminds them how large it is each time they change the injection and gives them some guidelines on what is reasonable size wise.
+They have a few tools that hotswap skills, inject manpages or pull from their growing library. Advanced usage involves loading/unloading multiple files and building mashup skills.
+The burnin agent on this has compacted about 35 times at this point on a 128k window. It has 2 different injections: 1 for development server and 1 for production.
+They are at 9k and 13k. Not terrible for an agent that builds agent harnesses for production work.
+
+--- [] /u/cryowastakenbycryo | /u/cryowastakenbycryo on mem0 vs Memori for local agent memory?
+Just spotted this in production and since you asked...
+I should fix the weave so it doesn't assert the contradictory claim. Let me revise that line: the 0/5 overlap is explained by the prefix cache contamination, and after the fix, re-verify with the same method.
+I found a contradiction in the weave where the 0/5 result is explained by the prefix-cache confound, so I'm fixing that now.
+
+--- [] /u/Lumpy_Fisherman_5352 | /u/Lumpy_Fisherman_5352 on mem0 vs Memori for local agent memory?
+agree on plain files for a single user, that's where I'd start too. to actually answer the mem0 vs Memori question though: I've only run mem0 locally, not Memori, but mem0's real value only shows up once you need automatic fact extraction and conflict resolution across sessions, it deciding on its own that an older memory is now stale. if your agents mostly need "what did we decide last time" rather than "reconcile contradicting facts," you won't feel much difference between either tool and a grep-able notes folder.
+
+--- [] /u/irobinse | /u/irobinse on mem0 vs Memori for local agent memory?
+Before choosing between mem0 and Memori, I’d split the decision into two tests. One is recall: can the agent find the right project detail from a previous session? The other is maintenance: does it notice when a fact is stale, conflicting, or no longer worth keeping? Plain notes can be surprisingly good at the first one, especially for a single user. The second is where automatic extraction earns its keep, but it also needs expiry, provenance, and a way to inspect what was injected. I’d start with a small set of recurring tasks and compare wrong recalls and stale recalls, not just whether the system can retrieve something.

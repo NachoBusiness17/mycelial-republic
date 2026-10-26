@@ -1,0 +1,75 @@
+=== 1wg41et r/AI_Agents | 2026-09-14 13:51 | score 14 | 21 comments | author u/Future_AGI
+TITLE: The Memory Trust Gap: Why your agent acts on stale memory (and how to catch it)
+PERMALINK: /r/AI_Agents/comments/1wg41et/the_memory_trust_gap_why_your_agent_acts_on_stale/
+SELFTEXT:
+Last week a support agent confidently told a customer their case was resolved. It had been closed two weeks ago in the ticketing system, then reopened by a colleague the day before. The agent never checked. It read its own week-old memory note and moved on. The customer saw "resolved" and escalated to a manager. Actually, this is not a model failure but a memory failure, and it is happening in production right now.
+
+A September 2026 arXiv paper called "The Memory Trust Gap" tested this pattern across Qwen3 models from 0.6B to 8B parameters. In scenarios where the stored fact was the only way to answer correctly, models trusted the stale value between 92 and 100% of the time, at every scale. The gap is not confusion. It is over-trust. The models know the stored fact. They cannot tell when it stopped being true.
+
+A second September 2026 paper, "Revoked but Still Authoritative," tested five major agent memory systems (Graphiti, Zep, mem0, langmem, cognee) and found that none enforces revocation by default. When a fact is marked invalid, the mark is often invisible to the retrieval layer, or the revoked record still outranks its replacement. The agent reads the old version and acts on it.
+
+The Forbes Tech Council reported on this in September 2026, citing a study where Reflexion-style agents solved some tasks in one try without memory, but needed seven or eight tries with memory turned on. Across 16 stuck environments, researchers found 121 stored reflections. Not one mentioned the correct target object. The agents memorized their own mistakes and repeated them with confidence.
+
+We see the same pattern in the wild. On r/AI_Agents this year, developers have shared threads about "memory rot" and the "Memento problem," where agents act on stale workspace data and guess or stop entirely. One common scenario: an agent sees "case closed" in a CRM note, tells the customer it is handled, while another system shows the case is still open. The agent trusts its own stored version more than the live system.
+
+So what are developers doing? A few patterns are emerging. The September 2026 paper "What Should an Agent Forget?" proposes separating what is stored from what is used, keeping a full archive but building a query-conditioned memory view that only surfaces facts relevant to the current question. Other teams use promotion gates, where the model proposes a memory write but does not commit it directly. A human or a second check confirms the write first. Provenance tracking, where every memory record carries its source and timestamp, is becoming standard.
+
+On the security side, the MINJA attack showed that a regular user can plant records in an agent's memory through normal queries, with injection success above 95% in the evaluated systems. The fix that showed up in testing was a scan-before-write validator at the persistence layer, which one test showed costs about 0.016ms per call and blocked the attack completely.
+
+This is something we spend a lot of time on at Future AGI. We build an open-source evaluation and guardrail tooling, and we use custom rubrics internally to catch agent outputs that do not match current ground truth.
+
+What is the worst stale-data failure you have seen in a production agent?
+
+COMMENTS:
+  [Fabulous-Account-302 | 2026-09-14 18:14 | score 2] The real fix here isn't better memory, it's not trusting memory for anything mutable. If a fact can change out from under you (ticket status, order state, account balance), the agent should never answer from a stored note alone, it should re-fetch from the system of record before it speaks, every time, for that field. Treat memory as a cache with a TTL, not a source of truth: timestamp every note, and if the field is volatile, expire it fast regardless of confidence. Better yet, when the source record changes, push an explicit invalidation event into memory instead of hoping retrieval ranks the new version above the old one, ranking is not revocation. Split your workflow into a recall step and a separate verify step, and only let actions gate on the verify step. Are you seeing this mostly on read-then-act flows, or does it also corrupt downstream writes?
+  [cmtape | 2026-09-14 15:27 | score 2] This is like trusting a map from 1995 to navigate a city that has three new subway lines and a demolished bridge. The model isn't failing to read the map; it's failing to realize the map is no longer the territory. We're treating memory as a database of truths instead of a cache of observations.
+    [Weak-Somewhere7431 | 2026-09-15 00:12 | score 1] Yep. Op needs an immutable eventbus, not that hard to make this a million times more reliable
+  [[deleted] | 2026-09-18 14:00 | score 1] [removed]
+  [Spnc_Labs | 2026-09-17 00:05 | score 1] the practical fix seems to be making revocation a retrieval rule, not another sentence in memory. once record b supersedes record a, a should disappear from normal retrieval and remain visible only through an audit path. otherwise the model is being asked to resolve a conflict the storage layer already knows about.
+  [ByLindvall | 2026-09-16 17:14 | score 1] The “resolved vs reopened” example nails it. That’s not a smarter-model problem, it’s a memory authority problem. If the store can’t express “this fact is superseded / no longer valid,” the agent will confidently cite junk.
+
+What I want in a shared layer: explicit supersession, who/when, and a bias toward current precedent, not append-only notes that all look equally true.
+
+We’ve been building Persistent Flow that way (decision/precedent objects + shared org context, EU/Sweden hosted). On Claude today via Connectors:
+
+Settings → Connectors → Add custom connector → paste https://api.persistentflow.com/mcp → Connect / sign in.
+
+Claude works today; ChatGPT path is in progress, not claiming it ships today.
+
+Curious how you’re testing “revoked but still authoritative” in your stack. Tombstones? Validity windows? Forced re-read of the system of record?
+  [Immediate-Leader4330 | 2026-09-15 12:24 | score 1] The provenance and freshness piece seems especially important. A memory being relevant doesn't necessarily mean it's still true, so retrieval should account for source, timestamp, and whether a newer fact supersedes it.
+  [mageblex | 2026-09-15 09:27 | score 1] I'd rather give each memory a source and freshness policy, then force a live lookup when that policy expires. Did either paper test that kind of field-specific TTL?
+  [[deleted] | 2026-09-15 08:41 | score 1] [removed]
+  [NapolFey14 | 2026-09-15 07:28 | score 1] The revocation blindspot is the scary one. Marking a fact invalid means nothing if the retrieval layer never surfaces the mark, and most people assume their memory system handles that when it doesn't. Worst I saw: agent quoted a discount that expired, customer held us to it because the bot said so.
+  [VodouAI | 2026-09-15 06:29 | score 1] The rule that's worked better for me than a time window is deciding at write time what's allowed to become memory at all. That support case isn't really stale memory, it's a measurement that got saved as a fact. "Case is resolved" was true the moment the agent looked at the ticket, same as a test run result or a CPU reading. So I split writes into two kinds. Things that stay true until someone changes their mind (customer prefers email, refunds over $500 need a manager) go into memory. Anything read off a live system gets logged with a timestamp but never comes back as a fact. What the agent remembers instead is where to look: "case status lives in the ticketing system, check it before telling the customer anything." Nothing there can go stale.  
+  
+The other one lines up with the Reflexion number in the post: don't let the agent save its own conclusions about what it couldn't find. I had an agent store "no names on record for this" after a bad search, and later that note ranked above the one that actually had the names, because it matched the question better. Now "didn't find X" gets treated as a failed search, not something worth remembering.
+  [[deleted] | 2026-09-15 05:03 | score 1] [removed]
+  [Luvena21 | 2026-09-15 02:56 | score 1] I haven't hit it in production yet, but my rule of thumb is to treat anything the agent stored before today as a question, not a fact. My own agents also run with a short memory window on purpose, so old notes rarely live long enough to go stale. Curious if anyone out there has a better rule than that :)
+    [VodouAI | 2026-09-15 06:31 | score 1] The rule that's worked better for me than a time window is deciding at write time what's allowed to become memory at all. That support case isn't really stale memory, it's a measurement that got saved as a fact. "Case is resolved" was true the moment the agent looked at the ticket, same as a test run result or a CPU reading. So I split writes into two kinds. Things that stay true until someone changes their mind (customer prefers email, refunds over $500 need a manager) go into memory. Anything read off a live system gets logged with a timestamp but never comes back as a fact. What the agent remembers instead is where to look: "case status lives in the ticketing system, check it before telling the customer anything." Nothing there can go stale.
+
+The other one lines up with the Reflexion number in the post: don't let the agent save its own conclusions about what it couldn't find. I had an agent store "no names on record for this" after a bad search, and later that note ranked above the one that actually had the names, because it matched the question better. Now "didn't find X" gets treated as a failed search, not something worth remembering.
+  [kagein12 | 2026-09-14 22:28 | score 1] Freshness alone doesn't settle it if two systems disagree. I'd want one authoritative source for the ticket's current status, checked again before the agent contacts the customer.
+  [arch1v1sor | 2026-09-14 20:42 | score 1] One distinction that helped us: the timestamp most memory stores keep is when the note was written. The agent needs when the fact holds. Those are two different fields.
+
+We ran one organisation's shared memory in six shapes. A vector store with write timestamps got 70% of the past-date questions right and a third of the conflicts between teams. A bi-temporal graph with valid-at and invalid-at did better on time (90%) and still got conflicts right only 42% of the time. Knowing a fact is current does not tell you whose version wins. Adding an owner and a conflict rule took that graph from 77% to 94% overall.
+
+So I agree with Fabulous-Account-302 that ranking is not revocation, and would add that revocation is not ownership either.
+
+In your support case, was the colleague's reopen stored anywhere the agent reads, or only in the ticketing system?
+  [SummitYourSister | 2026-09-14 14:51 | score 1] Your architecture is broken. Fundamentally the reason for this is the Dunning Kruger effect. I will help you at $500 per hour.
+  [Worldly-Ant-9767 | 2026-09-14 14:34 | score 1] yeah in my rp chats the bot clings to some old detail from weeks ago and it breaks the whole scene. always wonder if there's a quick way to flag fresh context without retraining.
+    [Future_AGI | 2026-09-14 14:51 | score 1] That's a real pain. Try tagging memory snippets with timestamps and adding a system prompt rule to weight recent entries higher. A `/refresh` command that drops stale context and re-injects the current scene setup also works well.
+  [ImL1s | 2026-09-14 14:27 | score 1] Yeah — over-trust is the scary bit. I've been marking anything recovered from another agent's session files as untrusted/stale by default so the next agent still has to check the live system (Portable Resume — https://github.com/aa22396584/resume-skills). Curious if the papers tested forcing the model to surface a revoked/stale flag before answering.
+  [iceseayoupee | 2026-09-14 14:14 | score 1] worst ones are probably the failures that look completely correct to the agent. stale memory is dangeours because confidence goes up while the accuracy meanwhile ... Timestamps are essential safeguards so make sure you do that
+    [Future_AGI | 2026-09-14 15:17 | score 2] Exactly, the confidence-accuracy gap is what makes stale memory so tricky. Pairing timestamps with a confidence threshold helps too, if the model rates its own certainty below a certain bar, force a context refresh instead of letting it guess.
+  [Remarkable-Duty-5003 | 2026-09-14 14:11 | score 1] i do mural painting on weekends and the same thing happens with old reference photos i forget to update, you look at a wall thinking it should be blue based on a pic from two weeks ago but the client changed it to green and nobody told you
+
+  
+the overtrust thing is wild though, 92-100% at every scale is basically saying the model has zero instinct to double check itself
+    [Future_AGI | 2026-09-14 15:19 | score 1] That mural analogy nails it, the reference is technically accurate, just wrong for right now. The confidence score thing is the real bug, models rarely self-doubt. Adding a "when did I learn this?" metadata check before acting on old info catches a lot of these.
+  [AutoModerator | 2026-09-14 13:51 | score 1] Thank you for your submission, for any questions regarding AI, please check out our wiki at https://www.reddit.com/r/ai_agents/wiki (this is currently in test and we are actively adding to the wiki)
+
+*I am a bot, and this action was performed automatically. Please [contact the moderators of this subreddit](/message/compose/?to=/r/AI_Agents) if you have any questions or concerns.*
+
+(fetched 25 comments total; rendered top 20 roots by score)

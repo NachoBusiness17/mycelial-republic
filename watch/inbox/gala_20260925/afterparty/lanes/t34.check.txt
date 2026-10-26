@@ -1,0 +1,59 @@
+=== t34 check log, 2026-09-26T04:52:29Z ===
+--- [1] pytest tests/test_quote_hitrate.py -v
+============================= test session starts =============================
+platform win32 -- Python 3.11.15, pytest-9.1.1, pluggy-1.6.0 -- C:\Users\foste\Documents\projects\local_sovereign_agent\.venv\Scripts\python.exe
+rootdir: C:\Users\foste\Documents\projects\local_sovereign_agent
+configfile: pytest.ini
+plugins: anyio-4.14.2, langsmith-0.10.14, timeout-2.4.0, typeguard-4.6.0
+collecting ... collected 4 items
+
+tests/test_quote_hitrate.py::test_sample_hit_and_miss_files_row PASSED   [ 25%]
+tests/test_quote_hitrate.py::test_multi_source_extraction PASSED         [ 50%]
+tests/test_quote_hitrate.py::test_no_sample_fails_open PASSED            [ 75%]
+tests/test_quote_hitrate.py::test_no_sample_empty_root PASSED            [100%]
+
+============================== 4 passed in 0.73s ==============================
+pytest_exit=0
+--- [2] pytest tests/test_quote_gate.py -q (regression)
+......                                                                   [100%]
+6 passed in 0.94s
+regression_exit=0
+--- [3] live run: python tools/quote_hitrate.py (full stdout)
+QUOTE-HITRATE scan: gateable=50 ungated=6644 cap=50 roots=['C:\\Users\\foste\\Documents\\projects\\local_sovereign_agent\\watch\\inbox', 'C:\\Users\\foste\\Documents\\projects\\local_sovereign_agent\\memory\\runs']
+QUOTE-HITRATE: 26/50 = 52.0% (misses=24, capped=True)
+MISS: C:\Users\foste\Documents\projects\local_sovereign_agent\mag\chain_guard.py :: dd-chainguard.json :: dd-chainguard
+MISS: C:\Users\foste\Documents\projects\local_sovereign_agent\memory\biography\verkle_chain.jsonl :: dd-chainguard.json :: dd-chainguard
+MISS: C:\Users\foste\Documents\projects\local_sovereign_agent\tools\config_seal.py :: dd-configseal.json :: dd-configseal
+MISS: C:\Users\foste\Documents\projects\local_sovereign_agent\configs\.config_seal.json :: dd-configseal.json :: dd-configseal
+MISS: C:\Users\foste\Documents\projects\local_sovereign_agent\tools\config_seal.py :: dd-configseal.json :: dd-configseal
+MISS: C:\Users\foste\Documents\projects\local_sovereign_agent\configs\.config_seal.json :: dd-configseal.json :: dd-configseal
+MISS: C:\Users\foste\Documents\projects\local_sovereign_agent\tools\drift_pairs_stamp.py :: dd-drift.json :: dd-drift
+MISS: C:\Users\foste\Documents\projects\local_sovereign_agent\tools\freshness_check.py :: dd-freshness.json :: dd-freshness
+MISS: C:\Users\foste\Documents\projects\local_sovereign_agent\tools\freshness_check.py :: dd-freshness.json :: dd-freshness
+MISS: C:\Users\foste\Documents\projects\local_sovereign_agent\tools\freshness_check.py :: dd-freshness.json :: dd-freshness
+MISS: C:\Users\foste\Documents\projects\local_sovereign_agent\tools\freshness_check.py :: dd-freshness.json :: dd-freshness
+MISS: C:\Users\foste\Documents\projects\local_sovereign_agent\watch\inbox\MD_RECORD_AUDIT.json :: dd-mdrecord.json :: ?
+MISS: C:\Users\foste\Documents\projects\local_sovereign_agent\watch\inbox\index_events.jsonl :: dd-mdrecord.json :: ?
+MISS: C:\Users\foste\Documents\projects\local_sovereign_agent\main.py :: dd-pile.json :: ?
+MISS: C:\Users\foste\Documents\projects\local_sovereign_agent\memory\pile\state_summaries.jsonl :: dd-pile.json :: ?
+MISS: C:\Users\foste\Documents\projects\local_sovereign_agent\mag\state_snapshot.py :: dd-snapshot.json :: ?
+MISS: C:\Users\foste\Documents\projects\local_sovereign_agent\memory\pile\state_summaries.jsonl :: dd-snapshot.json :: ?
+MISS: C:\Users\foste\Documents\projects\local_sovereign_agent\mag\state_snapshot.py :: dd-snapshot.json :: ?
+MISS: C:\Users\foste\Documents\projects\local_sovereign_agent\watch\inbox\BOOT_LANE_INTERFERENCE_BURN_20260925.md :: dd-snapshot.json :: ?
+MISS: C:\Users\foste\Documents\projects\local_sovereign_agent\watch\inbox\Manual_Audit_13SEP2026.txt :: CODEX_WITNESS_Manual_Audit_Evidence_20260918.json :: ?
+MISS: C:\Users\foste\Documents\projects\local_sovereign_agent\watch\inbox\Manual_Audit_13SEP2026.txt :: CODEX_WITNESS_Manual_Audit_Evidence_20260918.json :: ?
+MISS: C:\Users\foste\Documents\projects\local_sovereign_agent\watch\inbox\MATTHEWS_LENS.md :: CODEX_WITNESS_Manual_Audit_Evidence_20260918.json :: ?
+MISS: C:\Users\foste\Documents\projects\local_sovereign_agent\watch\inbox\MATTHEWS_LENS.md :: CODEX_WITNESS_Manual_Audit_Evidence_20260918.json :: ?
+MISS: C:\Users\foste\Documents\projects\local_sovereign_agent\watch\inbox\ASTRA_ASK_FOLD_20260913.md :: CODEX_WITNESS_Manual_Audit_Evidence_20260918.json :: ?
+row filed: C:\Users\foste\Documents\projects\local_sovereign_agent\watch\inbox\quote_hitrate.jsonl
+live_exit=0
+--- [4] python tools/violation_ratchet.py check --changed
+RATCHET check: scope=7 changed files; hits=3; registered=3; NEW=0; expired-exceptions=0
+RATCHET: PASS — no unregistered debt.
+ratchet_exit=0
+--- [5] em/en-dash byte count over filed files (U+2014 U+2013)
+tools/quote_hitrate.py: em=0 en=0
+tests/test_quote_hitrate.py: em=0 en=0
+watch/inbox/quote_hitrate.jsonl: em=0 en=0
+watch/inbox/gala_20260925/afterparty/lanes/t34.check.txt: em=1 en=0
+dash_scan_exit=0

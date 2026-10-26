@@ -1,0 +1,41 @@
+{
+  "id": "AA1-opus-refire-attempt3-stream",
+  "model": "anthropic/claude-opus-5.5",
+  "status": "ok",
+  "max_tokens": 32000,
+  "transport": "sse-stream per-read timeout 300s",
+  "params_note": "identical prompt bytes to W4 (sha asserted); reasoning cap dropped; max_tokens 32000; streaming",
+  "usage": {
+    "prompt_tokens": 12729,
+    "completion_tokens": 32000,
+    "total_tokens": 44729,
+    "prompt_tokens_details": {
+      "cached_tokens": 0,
+      "cache_write_tokens": 0,
+      "audio_tokens": 0,
+      "video_tokens": 0
+    },
+    "completion_tokens_details": {
+      "reasoning_tokens": 29476,
+      "image_tokens": 0,
+      "audio_tokens": 0
+    },
+    "cost": 0.690916,
+    "cost_details": {
+      "source": "openrouter_list",
+      "floor_applied": false,
+      "rate_source": "openrouter_catalog"
+    }
+  },
+  "cost_usd": 0.690916,
+  "predicted_cost_usd": 0.690916,
+  "prompt_bytes": 31070,
+  "prompt_sha256": "b805548a93fddb575af09c77c84a013398f6aa2ed0a558af79079183e002f4f7",
+  "seconds": 362.4,
+  "chunks_seen": 3733,
+  "finish_reason": "length",
+  "error_body": null,
+  "content_chars": 5955,
+  "content": "## A. VERDICT ON THE BASELINE\n\n| Section | Verdict | One-line reason |\n|---|---|---|\n| 0 Provisional authority | KEEP | Correct stance: the instrument survives every kill rule, and routing must be earned. |\n| 1 Definitions | TIGHTEN | lb95 does not say which n it uses (weight sum or raw count), and \"model\" is a string, not bytes (see B-D5, B-D8). |\n| 2 Schema | TIGHTEN | The signature scope conflicts with Am2 rebase. pass_rate_raw and cost_usd_last are redundant or cross-clock. The PK lacks environment identity. |\n| 2 Wilson formula | KEEP | The arithmetic is correct. Only the choice of n is undefined. |\n| 3.1 Gate classes | TIGHTEN | G0 checkers are not bound to code. G1 treats \"agreement\" as pass even when both raters agree it failed. The G3 cap is satisfied by 1 G0 verdict plus 999 G3 verdicts. |\n| 3.2 Who can write | TIGHTEN | The G0 exemption lets an answerer self-grade with an unregistered checker. G1's second scorer is never recusal-checked. |\n| 3.3 Artifact | TIGHTEN | It correctly names the (model, version, environment) triple, but section 2 aggregates by model_id string. |\n| 3.4 Attribution | TIGHTEN | \"No verdict for low-confidence stops\" is right for ungated stops. When a G0 gate exists it creates survivorship bias in cell rates and in ECE. |\n| 4.1 Selection | TIGHTEN | Decay raises cells below 0.5. Fail verdicts refresh freshness. The fallback routes to the cheapest model even when it is known-bad. n_min = 20 is dead at threshold 0.85. |\n| 4.2 Exploration | KEEP | Mandatory gating of exploration traffic is the right graduation path. The bandit deferral is correct. |\n| 4.3 Triggers | TIGHTEN | There is no gate-fail trigger. T2 is dominated as a post-answer trigger. T3 and T4 are unreachable except via the fallback. The T1 verification sample is drawn from the wrong region (section C). |\n| 4.4 Probe budget | TIGHTEN | A USD leash does not bind a fleet that is 95% local at near-zero USD. |\n| 5 Receipts | TIGHTEN | ledger_snapshot_hash is not replayable unless the snapshot is stored. The chain tip is. |\n| 6 Scope fences | KEEP | Falsifiable and well chosen. F-S1 \"order 300\" is consistent with the graduation arithmetic in B-D5. |\n| 7 Harness | TIGHTEN | K3 fires by construction under 4.1 arithmetic (section D, attack H2). K2 is underpowered at n = 200 (section F). |\n| 8 Falsifiers | TIGHTEN | Missing: silent weight swap, hot-input inflation, fail-refreshed drift, future-dated timestamps. |\n| 9 Non-goals | KEEP | Honest. |\n| 10 Diff contract | KEEP | Usable. Section F notes its bias. |\n| Am1 | TIGHTEN | T1 is now reachable in name. ECE at n = 20 is near noise (UNPROVEN magnitude, predicate in E). |\n| Am2 | TIGHTEN | A rebase that changes prev_sha256 invalidates any signature covering it. |\n| Am3 | TIGHTEN | Operators are inferred from requesters. With the default operator_id 'estate', the result is a G1/G2/G3 deadlock. |\n| Am4 | TIGHTEN | Predicate 3 is wrong as written (section F). Predicates 2 and 5 need rewriting after B-D4 and C. |\n\n**Where it is actually weak.** The write side is strong: chain, keys, idempotency, recusal intent. The read side is statistically fragile in three ways:\n\n- **Drift is invisible within the K3 budget.** Cumulative counts with age-since-last-verdict decay cannot detect drift inside the harness's own budget. A fail verdict refreshes the clock it should be alarming.\n- **Calibration is certified from the wrong region.** T1 acts on answers below min_confidence, but calibration evidence is sampled almost entirely above that threshold, because low-confidence stops go ungated.\n- **Identity is a label, not bytes.** The unit of truth is a model tag. The lab's own law says to trust bytes, yet the ledger's key is a string any operator can repoint to different weights.\n\nA production fleet needs detection latency measured in single-digit verdicts and identity bound to weights. The baseline delivers neither.\n\n## B. SPEC DELTAS\n\nEvery delta's predicates are specified in section E.\n\n| # | Change | Section | Clause | Why better, not merely different |\n|---|---|---|---|---|\n| D1 | Principal signs verdict_id only (content hash over the row minus verdict_id, prev_sha256, row_sha256, signature). The writer's row_sha256 covers content, signature and prev_sha256. A rebase changes only prev_sha256 and row_sha256. | 2, Am2 | 5 | As written, an Am2 rebase either breaks signatures (quarantine storm under contention) or forces the writer to hold principal keys, which collapses 3.2. |\n| D2 | eff_lb95 = w*lb95 + (1-w)*min(lb95, p0) | 4.1(3) | 5 | The baseline blend lifts any cell with lb95 < 0.5 toward 0.5 as it ages. That violates \"decay only demotes\" and Am4 predicate 3, and it feeds T2 an optimistic P(fail). One-token fix. |\n| D3 | RECENT-WINDOW GUARD (RWG). Over a cell's last r = 10 counted verdicts (G0 to G2), suspend if fails >= f, with f the smallest integer satisfying P(Binom(r, 1-threshold) >= f) <= 0.05. At threshold 0.85: f = 4 (computed tail 0.0500). A suspended cell does not qualify, gets reason_code rwg_suspended, and has a probe round scheduled. | 4.1, 7 K3 | 3 | New falsifier F6: fail-refreshed drift. Under the baseline, total collapse of a 300-verdict cell at 0.95 needs about 21 fresh fails to demote (section D, H2), so K3's 10-verdict ceiling is breached by arithmetic. RWG demotes at the 4th fresh fail. False suspension per window is about 0.1% at a true rate of 0.95 and 5% at exactly the threshold (binomial, computed). r and alpha are DESIGN DEFAULTS measured by M4/K3. This is a pre-registered fixed test, not a bandit. |\n| D4 | G3 verdicts are written, chained and reported, but excluded from the passes, fails and n read by 4.1 and 4.3. Delete the G3 CAP clause and Am4 predicate 2. G3 re-enters routing only with a weight equal to its measured agreement with G0 on shapes where both run (a query over verdict, no new table). | 3.1 | 4, 2 | The cap as written lets 1 G0 verdict plus any number of G3 verdicts qualify. Weight",
+  "reasoning_tail": "meric reproduction gate, that using deltas as rewards could bias judging toward whether the harness outcome changes (though the brief mitigates this adequately), and that USD as the sole cost unit breaks down for a mostly-local fleet, degenerating several sections. I'm also flagging the SuperScout citation as unverifiable and non-transferable even if accurate, marking it UNPROVEN, while noting the em-dash ban is a weak but harmless proxy since en-dashes and double hyphens slip through.\n\nNow I'm ready to write the final version, staying dash-free by using \"to\" for ranges instead of en-dashes.\n\n"
+}

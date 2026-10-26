@@ -1,0 +1,13 @@
+Mag estate organ-compliance audit, one source file per ask. Judge ONLY from the numbered file content inside the item text; never guess: if the numbered content does not show a behavior, answer NA for that organ.
+
+Organ rules:
+a) LLM fire path: the file sends requests to LLM chat/completion endpoints or uses an LLM client library (openai, anthropic, deepseek, openrouter, or httpx/urllib/requests pointed at an LLM API). YES-compliant = it fires LLM calls AND imports mag.inference_budget. NO-violation = it fires LLM calls WITHOUT importing mag.inference_budget. NA = it never fires LLM calls.
+b) remote fetch: the file fetches remote URLs (urllib.request/urlopen, requests, httpx). YES-compliant = its remote fetches set a browser User-Agent header. NO-violation = it fetches remote URLs with no browser User-Agent. NA = it never fetches remote URLs.
+c) shared json/jsonl write: the file opens a .json or .jsonl path for writing or appending, or calls write_text/write_bytes on one. YES-compliant = such writes are atomic (temp file then os.replace/rename) or route through an atomic-write helper. NO-violation = such writes are plain open() with w/a mode or write_text with no tmp+replace. NA = it writes no .json/.jsonl surfaces.
+
+Answer with EXACTLY 3 lines and nothing else, one per organ, format:
+a) <YES-compliant or NO-violation or NA> line <N> - <reason under 15 words>
+b) <YES-compliant or NO-violation or NA> line <N> - <reason under 15 words>
+c) <YES-compliant or NO-violation or NA> line <N> - <reason under 15 words>
+
+{text}

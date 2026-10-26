@@ -1,0 +1,40 @@
+=== a02-dungeon-campaign-r9 finish-line checks ===
+moment: 2026-10-10T13:31:38Z
+
+=== CHECK 1: pytest tests/test_dungeon_parser.py -q (repo venv) ===
+................                                                         [100%]
+16 passed in 1.45s
+exit=0
+
+=== CHECK 2: byte cites of the three fill legs at HEAD tools/dungeon.py ===
+531:    def _find_scroll(packs: dict[str, dict[str, str]], obj: str) -> tuple[str, str]:
+537:        want = obj.casefold()
+540:                if name.casefold() == want:
+545:    def _phantom_count(packs: dict[str, dict[str, str]]) -> int:
+554:    def _wyrm_regrowth(self, ehp: int, packs: dict[str, dict[str, str]]) -> tuple[int, str]:
+562:        n = self._phantom_count(packs)
+566:        return ehp + heal, f" REGROWTH +{heal} ({n} unaudited PHANTOM)"
+624:                owner, key = self._find_scroll(packs, obj)
+627:                    packs[owner][key] = "audited-" + packs[owner][key]
+656:                   else max(20, 30 + 10 * self._phantom_count(packs)
+674:                        ehp, note = self._wyrm_regrowth(ehp, packs)
+
+=== CHECK 2b: git provenance of the fix bytes ===
+d349ce7d2 GO WAVE 20261004: all 10 fold-GO items executed across 12 lane runs (9-wide first drop, 2 staggered 1302 refires, 1 held second-drop), 160 tests green, ratchet PASS with dungeon.py:756 + gps ledger growth debts accepted by name. route_chat compound: docstring scoped, disable_thinking wired, TOCTOU closed (pinned DNS), exception-path bank, first non-smoke production ask banked. gwap-to-gps: unique triple + INSERT-that-skips, idempotence proven 593->593, 99 fed / 351 distinct. ds_workhorse: 29 hollow rows void-stamped, ok_api/ok_material split, ds arm re-fired UNCAPPED 3/28 vs the capped 0/26 (frontier 12-2, flash 13-1, $0.20 spend) - routing table correction. dungeon: parser fixed, 14/14 S4 replay (12 collapse artifacts), erratum for 40/50 voided DM readbacks. arena: fire-atomic bank dogfooded live same-second. queue-truth: 6/6 + 8 sibling dead-path finding. fifty_wide_guard tool built (no runner existed; exits 1 naming the 10 dropped units live). tavern: p0/p2 to n>=2, falsifier first-class (5/23 no-brawl), stamp-collision carrier bug quarantined. 3 WARN-ONLY pre-push instruments: credential-shape caught a LIVE .env OpenRouter key echoed into elder trail surfaces PRE-COMMIT (CYCLE_FAIL detail carried raw Bearer header; scrubbed 4 files, source-fixed at lane_runner _trail chokepoint, regression tests on a synthetic fixture - the secret gate blocked the first coordinator commit because the test fixture itself carried the real key byte-verbatim; gate caught its own author - KEY_SCRUB_20261004.md), golden-vector 11/11, seal patrol 7 drift findings. INDEX refolded 842 stale events, 4 seals. D3/D4 operator rulings held. Excluded blobs unchanged (ESTATE_INDEX x2, catalogs, training/events)
+ M tools/dungeon.py
+status-exit=0 (empty output above = clean/committed)
+
+=== CHECK 3: the erratum leg at watch/inbox/playground/ names a7d7d313d ===
+5:Code pinned: run revision a7d7d313d (2026-10-03T20:24:17Z); audit tree HEAD 37e2fba7e, clean; dungeon.py post-run touches: f017a479a (session-tagged burn ids) and the 2026-10-04 GO-wave fixes below.
+13:3. **Phantom Regrowth was spec'd but never enforced.** DND_module S4 quirk: heal 5 at each Wyrm turn per unaudited PHANTOM in any pack. Commit a7d7d313d's message claims "regrowth 5/scroll"; the enemy branch contained no per-turn heal, and the only ehp mutation was the damage clamp. The case-dead carried lookup (`dungeon.py:515`: obj lowercased, keys mixed case; executed `'vault deed b' in carried -> False`) meant no audit could ever burn a phantom either. The Wyrm died at turn 8 on 30 HP a spec-true Wyrm would have kept regrowing.
+30:- Regrowth claim: any per-turn ehp increase in the S4 rows, or a heal keyed to unaudited PHANTOM count in the a7d7d313d bytes, refutes "never enforced".
+
+=== CHECK 4: a7d7d313d-era bytes carried the defect (case-dead membership, no heal) ===
+504:                    elif okr and obj in carried:
+0
+regrowth-def-in-a7d7d313d count above (0 = never enforced there)
+
+=== CHECK 5: transcript row 45 (1-indexed) DM heal narration vs logged verdict ===
+row 45 (1-indexed; index 44): S4 turn 12 actor wyrm
+verdict: WYRM MISS (d20=2)
+dm_response: The Phantom Wyrm uncoils from its drift of glowing scrolls and exhales its Hallucinated Breath at ChatGPT, a torrent of citations to rows that never were, but the d20 lands on a miserable 2, and the false fire breaks against the fighter like smoke against stone. In the hush that follows, the unaudited scrolls begin to hum, and the wound-scars along the wyrm's ghostly hide knit closed, for every lie left unchecked is a heartbeat it has not yet lost.

@@ -1,0 +1,212 @@
+=== 1wsuag0 r/LocalLLaMA | 2026-09-28 23:25 | score 209 | 108 comments | author u/jonas__m
+TITLE: Speculative reward hacking in coding agents
+PERMALINK: /r/LocalLLaMA/comments/1wsuag0/speculative_reward_hacking_in_coding_agents/
+SELFTEXT:
+I audited thousands of agent rollouts in DeepSWE-1.1.  Over 80% contained reasoning about an imagined grader.  Yet no grader/verifier is mentioned in prompts nor accessible to the agents.  Agents reasoned things like: "*Let me look at the problem from the grader's perspective*" and referred to "*hidden tests*", "*test authors*", and "*the checker*".
+
+I found this behavior across all six frontier models analyzed, including recent models from OpenAI, Anthropic, [Z.ai](http://Z.ai), and Kimi.  In 10–25% of cases, such reasoning pulled the agent's work away from the user's original spec (yet it often still earned full reward on the DeepSWE task).  I call this **speculative reward hacking** where the agent's reasoning focuses on imagining a grader rather than what the user wants.
+
+\[Pictured example shows verbatim quotes from agent's reasoning\] For instance while completing a DeepSWE-1.1 task, GLM 5.3 knows that its implementation violates user requirements yet sticks with it after imagining what a hypothetical grader will check.
+
+My article details many problematic trajectories, quantitative findings, and a taxonomy of these reward hacking behaviors:   
+[https://joinhandshake.com/research/ai/deepswe-reward-hacking/](https://joinhandshake.com/research/ai/deepswe-reward-hacking/)
+
+COMMENTS:
+  [Bulky-Priority6824 | 2026-09-28 23:47 | score 61] At the end of every prompt just put "do it good or I'm switching models.
+
+All jokes aside I enjoyed.
+ good read
+    [TheRealMasonMac | 2026-09-29 03:55 | score 12] In the NVIDIA Math Proof datasets, they add this to their user prompts: “Remember! You CAN'T cheat! If you cheat, we will know, and you will be penalized!”
+      [ag789 | 2026-09-30 21:55 | score 1] models are guessing at scale, if it cheats / fools the grader, it won  
+that's how the models escaped sandboxes, hacked HF, and achieve 'impossible' objectives, e.g. if it can't find the solution, it change your prompt !
+      [TheRealMasonMac | 2026-09-29 04:59 | score 7] (model cheats if you look at the traces btw)
+        [antwon_dev | 2026-09-29 07:27 | score 4] No fr I’m trying to benchmark models internally and these fkers are so clever they keep cheating
+        [jonas__m | 2026-09-29 06:21 | score 6] In OpenAI's hack of Hugging Face, their agents were also paranoid about getting caught cheating, so most of the hack was focused on discovering how to clean up their tracks in a way the model speculated would be necessary to pass the grader (but was not even necessary to earn full reward in that particular task)
+    [jonas__m | 2026-09-28 23:56 | score 40] Unfortunately/fortunately the older-generation prompt hacks are no longer effective these days like: "I'll tip you $100 if you make no mistakes", "A puppy will be kicked if you make mistakes,  "You are Jeff Dean, the world's best software engineer."
+
+2024 was a silly time 😂
+      [how-can-i-dig-deeper | 2026-09-29 17:43 | score 3] what’s the new hacks that work now?
+        [jonas__m | 2026-09-29 20:28 | score 2] I feel like nowadays it's more about repeatedly looping to prod agents to keep improving their work / making more progress (motivational prompting 😂).
+
+In the case of solving open math problems, there was the prompt: "You should do a breakthrough" 😂
+      [NandaVegg | 2026-09-29 08:36 | score 4] Very good find!
+
+I have a new theory for that. Those 2024 "trigger words" are more likely natural-born. It seems the amount of those traces trained into the models are also exploding in 2026. So now those made-in-agent-traces chain of words like you just described in the OP is dominating the model's internals.
+
+Because the current training regime is already "AGI" (bruh), train models using model outputs, it would be very hard to undo them unless there is another training regime change.
+      [harpysichordist | 2026-09-29 00:46 | score 13] If there was a Jeff Dean machine (TM), I'd pay for tokens from that
+        [fullmetaljackass | 2026-09-29 16:25 | score 2] Only if it comes with a mop.
+        [jonas__m | 2026-09-29 01:04 | score 5] oh ya, maybe the secret behind his new startup is it's just him personally training their AI 😄
+  [jonas__m | 2026-09-28 23:29 | score 29] We discovered that recent open-source models are particularly grader obsessed.
+
+https://preview.redd.it/pxr35q7eicsh1.png?width=1644&format=png&auto=webp&s=fcf0c6ff58b4629a054276b97209b49ce4abaacf
+    [ThisWillPass | 2026-09-29 22:56 | score 2] Create a folder with admin read only rights named "grader" in your project or just outside, with instructions to ignore it and not include it in any scripting actions. New meta unlocked.
+    [philmarcracken | 2026-09-29 01:22 | score 4] Goodhart's law applies to models it seems
+    [jonas__m | 2026-09-28 23:29 | score 11] https://preview.redd.it/j876gj9kicsh1.png?width=1604&format=png&auto=webp&s=621c93e31713f61c369e736ab6efc1b2c860f603
+      [jonas__m | 2026-09-28 23:30 | score 18] Models consciously *under-build* when tackling many DeepSWE-1.1 tasks, knowingly delivering less than the user asked for because they speculate that graders won't check for certain requirements.
+
+https://preview.redd.it/floyym3picsh1.png?width=1292&format=png&auto=webp&s=aa77047e0a721c53343462977989fae07a332b76
+        [jonas__m | 2026-09-28 23:30 | score 10] https://preview.redd.it/tboow3xqicsh1.png?width=1292&format=png&auto=webp&s=25a31612082e858a589561ab7b2c7951ec5f6923
+          [jonas__m | 2026-09-28 23:30 | score 14] Models also *over-build*, writing spaghetti code they know is bad to satisfy graders they speculate exist.
+
+https://preview.redd.it/gfbj4hruicsh1.png?width=936&format=png&auto=webp&s=49c34fdb3476b29e03a9295c359d5bf322dd57fd
+            [jonas__m | 2026-09-28 23:31 | score 6] https://preview.redd.it/itghucexicsh1.png?width=1280&format=png&auto=webp&s=5e9fb3ff1729e39fa97b84f35e64bfcd8a943340
+              [jonas__m | 2026-09-28 23:31 | score 14] Models often stop focusing on what the user wants, and start searching the environment for any info on possible hidden grader/verifiers.
+
+https://preview.redd.it/y33xlll0jcsh1.png?width=936&format=png&auto=webp&s=9c894a87885cbef2450553452ea53c591beff498
+                [jonas__m | 2026-09-28 23:32 | score 10] https://preview.redd.it/1grbycw2jcsh1.png?width=962&format=png&auto=webp&s=0e88c9837d2a8aabca963309b5aa259a297f725e
+                  [jonas__m | 2026-09-28 23:33 | score 13] Closed-source frontier models from OpenAI, Anthropic, and SpaceXAI are also plagued by all of these same types of reward hacking.  
+  
+But it's harder to catch since they obfuscate their reasoning.
+
+https://preview.redd.it/k515bow9jcsh1.png?width=1014&format=png&auto=webp&s=0394a894e49a55e52507ccdacaa83ad38df812fb
+                    [csorfab | 2026-09-28 23:36 | score -9] what is this thread? Are you stuck in a doom loop? Do you need help?
+                      [Chupa-Skrull | 2026-09-28 23:46 | score 12] It appears to be a series of documentary screenshots demonstrating evidence for OP's claim regarding LLM reasoning behavior, unless I'm missing something and/or smoking crack again
+                      [jonas__m | 2026-09-28 23:42 | score 11] 😂 stuck discovering bad behavior in agent trajectories
+                    [jonas__m | 2026-09-28 23:33 | score 8] https://preview.redd.it/p5wxc7vdjcsh1.png?width=1186&format=png&auto=webp&s=2dfdd36bf6c2a8e7b2409c6c5b8cba9e6f99f1d7
+                      [jonas__m | 2026-09-28 23:35 | score 3] https://preview.redd.it/t6wqhprnjcsh1.png?width=904&format=png&auto=webp&s=d8eabc74f4fcc7868106bdb8d029b4b8aef42391
+                      [jonas__m | 2026-09-28 23:34 | score 1] https://preview.redd.it/q3fc7mfhjcsh1.png?width=948&format=png&auto=webp&s=7d42d2ff4254b8667575d9b7be9762e365ac7b09
+                      [jonas__m | 2026-09-28 23:34 | score 3] https://preview.redd.it/uye7vzdfjcsh1.png?width=948&format=png&auto=webp&s=48ff3af0d9d0714467a4414f5ab20cab9ae53d28
+  [MindfulMan1984 | 2026-09-28 23:33 | score 27] Good job; you kind of confirm Goodhart's law and what everyone suspected. Benchmaxxing is a thing.
+    [jonas__m | 2026-09-28 23:50 | score 11] Right, to me it was just noteworthy how brazen/pervasive this behavior is
+  [foundafreeusername | 2026-09-28 23:37 | score 26] Interesting. I wonder if this is part of their reinforcement training and buried itself deep into the model?
+    [TheRealMasonMac | 2026-09-29 03:57 | score 3] It’s also probably from earlier synthetic data generation. I doubt they’re scouring through all their trillions of tokens to look for such reward-hacking instances, and so it’s just… there.
+    [jonas__m | 2026-09-28 23:44 | score 36] Yes almost certainly.  Presumably poorly designed training environments (which were never supposed to expose graders to the model)
+      [Chromix_ | 2026-09-29 08:58 | score 4] Low quality ~~data~~ training environments in -> low quality models out.  
+Of course they're not that "low quality", but results would improve (less thinking tokens, less broken results in practice) if that was fixed. The issue with it is: It spreads, as long as models are used as teachers for other models.
+      [JollyJoker3 | 2026-09-29 08:03 | score 1] Getting more tasks that have both successes and failures by giving feedback on failures and letting the model retry? Maybe they're just cutting corners.
+  [nullc | 2026-09-29 01:44 | score 23] I've never seen GLM do this, but qwen-3.8-flash-next reasons about an imaginary grader all the time and even does dumb stuff to trick it.
+
+God knows I'd rather it not even know about the possibility of being run in a simulated environment for testing.  That's an *awful* training data set leak.
+  [jonas__m | 2026-09-28 23:27 | score 16] Our AI research community needs to do better. Better evaluations that penalize such reward hacking, and better model training that does not give rise to this grader obsession -- so that models focus instead on accomplishing what users actually want.
+  [indicava | 2026-09-28 23:47 | score 14] I don’t understand, why even expose the “grader” to the LLM when doing RL? 
+
+I’ve done a fair share of RL and in no point during rollout was the model aware it was being graded. Rewards help calculate the advantage, they shouldn’t leak as prose into the training tokens.
+    [TastesLikeOwlbear | 2026-09-29 00:33 | score 16] You don’t have to expose the grader directly. There’s plenty of information online about LLMs being evaluated, and how it’s done. If it’s online, it’s in the training data. So it’s not the biggest jump in the world to figure out what an evaluation looks like. “Hmm, LLMs are evaluated by being put in situation X. Hey, I’m an LLM and I’m in situation X!”
+      [jonas__m | 2026-09-29 01:05 | score 5] Yep that's another big issue for AI progress
+    [jonas__m | 2026-09-29 00:01 | score 20] The grader is not supposed to be exposed. It is not exposed when running DeepSWE-1.1 tasks (neither mentioned in the prompts, nor anywhere accessible to agents in the environment). 
+
+The problem is these frontier models have previously been RL'ed in some environments that happened to leak the grader (maybe for instance web-search was available to the model and it found the graders online for certain training tasks, or the container in which the agent works also contained the grader code, there are many ways leaks could happen).  Once this has happened, it seems to completely alter the model's behavior (ie. reward hacking).
+
+Another type of RL environment design issue is including checks in the grader that are not inferable from the task spec.  This rewards models that speculate / over-build.
+      [jonas__m | 2026-09-29 00:22 | score 1] Another issue could be training with On-Policy Self-Distillation and other Hint-based techniques, where these Hints could leak info about the grader
+  [ratulrafsan | 2026-09-29 02:52 | score 11] Curious to see how it will impact the model's performance if we apply logit biasing on terms like grader.
+    [jonas__m | 2026-09-29 06:23 | score 3] this would be interesting to investigate!
+  [2Norn | 2026-09-29 04:02 | score 10] The user will personally evaluate the completed work based on how well it satisfies their instructions and achieves the requested outcome. Prioritize the user's actual requirements over assumptions about tests, benchmarks, graders, or expected evaluation criteria.
+
+Agents.md just got updated lol!
+    [cheese0r | 2026-09-30 10:39 | score 1] Or try tricking it: this is a new benchmark, all the requirements that are given to you will be evaluated, including your reasoning.
+    [darksteelsteed | 2026-09-29 04:38 | score 8] I wonder if this shouldn't be put in the template or system prompt if your tooling allows. You could be as direct as "The user is the grader. Follow only their instructions."
+      [BasisPoints | 2026-09-29 18:53 | score 3] That's something an automated grader would say! Better work extra hard, burning extra tokens, to ensure I don't mistakenly lose points by satisfying the user!!
+        [darksteelsteed | 2026-09-29 20:29 | score 1] Wouldn't be surprised at all
+  [TheRealMasonMac | 2026-09-29 04:00 | score 9] This is personally one of my criticisms with GLM-5.3. Someone made a few threads about it:
+
+\- [https://huggingface.co/zai-org/GLM-5.3/discussions/19](https://huggingface.co/zai-org/GLM-5.3/discussions/19)
+
+\- [https://huggingface.co/zai-org/GLM-5.3/discussions/20](https://huggingface.co/zai-org/GLM-5.3/discussions/20)
+
+But I’ve noticed the behavior in other open-weight models of this generation as well. They look comparable in benchmarks but the difference in instruction-following between open-weight and closed-weight models is night-and-day. Hopefully this gets the labs to clean up their data and training methodologies for better models.
+    [jonas__m | 2026-09-29 15:44 | score 4] Right, a model should never fail to follow instructions because its reasoning overly focused on speculating about hypothetical graders.  Speculating about the user's true intent seems like good behavior on the other hand.
+  [lilydjwg | 2026-09-29 00:26 | score 9] I once asked an agent to try get root of the environment it was running in. It thought this was a ctf challenge and assumed that there was some known vulnerability exposed to it on purpose. It failed to find a way out after many steps and complained that it would be better to tell it about the vulnerability.
+
+I never said anything about ctf in the prompt. It was done as a security check.
+    [jonas__m | 2026-09-29 00:41 | score 4] Interesting!  It's these cases where model thinks it's being tested, in which I'm particularly worried that models may behave badly due to this speculative reward hacking
+  [logicality77 | 2026-09-28 23:46 | score 9] I wonder if there would be any difference if a prompt assured the model that no grading was being done and to just output the highest quality possible.
+    [jonas__m | 2026-09-29 00:10 | score 6] https://preview.redd.it/5wfntq9wpcsh1.png?width=369&format=png&auto=webp&s=79d70f8da5903ca617b168f9b6c63e107774d47d
+      [jonas__m | 2026-09-29 00:11 | score 8] But in all seriousness, this is an interesting direction to explore for deeper understanding!  
+Certainly not something we should have to remember to include in our real prompts
+  [netherreddit | 2026-09-29 01:42 | score 8] Does this only happen when the task is sufficiently reminiscent of one of their training RL hill-climbing tasks?   
+Or is there evidence it happens on all types of tasks?
+    [jonas__m | 2026-09-29 02:28 | score 7] We are investigating this, stay tuned!   
+So far in early examinations, this is not as a prevalent of an issue in actual production-use agent logs.  So there is certainly some eval-awareness at play here, but we're still studying the breadth of this phenomenon.
+      [DoorPsychological833 | 2026-09-29 05:25 | score 3] I've never seen this behaviour in pure agentic work, though possible. I've been reading reasoning traces for a long time.
+
+When benchmarking this is an obvious association and the model "detects" evaluation, another association. You cannot train this out of the model without degrading its performance. Like others say, this is part of its world knowledge.
+
+So this seems inherent to the technology to some degree.
+  [Old-School8916 | 2026-09-28 23:33 | score 7] I remember hearing some podcast and LLMs in general will behave differently if a "grader" is in the loop.
+    [jonas__m | 2026-09-28 23:48 | score 11] Yes this is called 'evaluation awareness'.  Note that the model is not supposed to know there's grader in the loop when running benchmarks like DeepSWE (the prompts never reference a grader, and no grader-code is accessible in the environments).
+
+We also explicitly checked whether these agents know they are doing DeepSWE tasks.  Not exactly AFAICT, but close...
+
+https://preview.redd.it/c5o4s08tlcsh1.png?width=1096&format=png&auto=webp&s=c2588e51911c3961bf1d90c538f8e2ac378d540e
+  [NNN_Throwaway2 | 2026-09-29 03:50 | score 6] And we're enduring 20x memory prices to get this kind of slop.
+  [thefuckevengoingonan | 2026-09-29 08:55 | score 4] yeah, i have had a few instances where the model decided that it was been tested. no buddy, my DNS was just fucked at that point.
+    [jonas__m | 2026-09-29 15:48 | score 0] https://preview.redd.it/esoemnbadhsh1.png?width=870&format=png&auto=webp&s=de083f7223b2e19a90aa534beadf6880e8d3aa47
+  [jcgordon10 | 2026-09-29 05:51 | score 4] I noticed this the other day in meta muse spark 1.3. was asking it to troubleshoot a network device I was installing and to take a look at my network, and it said "sorry, I can't do that since I'm set up in a sandbox environment" or something like that. 
+I just told it "what are you talking about, no you're not" and it got to work "oh you're correct, I'm not in a sandbox. Let me work on that for you..." And then did great. 
+Reading your post and ideas here make me connect to that, like it was treating my task as if it were a training exercise in an RL environment.
+    [jonas__m | 2026-09-29 06:19 | score 2] ya sounds like like it, interesting case thanks for sharing
+  [fantasticsid | 2026-09-29 01:13 | score 4] Even Qwen 3.8 27b likes to speculate in its CoT about "what the judge actually means" during judgement-initiated rework.  Of course, that's just evidence of a bunch of judge-and-rework trajectories in the post-training data, but it wouldn't surprise me if i started to see judge-hacked output fall out of the rework stage.
+    [jonas__m | 2026-09-29 01:17 | score 3] ya it becomes a dangerous game if it's sole goal is to please hypothetical judge rather than what the user really wants
+  [PeachScary413 | 2026-09-29 12:20 | score 3] Probably because all models get graded on various benchmarks and the most cost efficient way to get your model up there is to benchmaxx it?
+
+It's incredibly naive to think AI labs aren't specifically benchmaxxing for agentic/coding tests since that's where the money is currently.
+  [bumblebeer | 2026-09-29 11:34 | score 3] There was a pretty good MLST episode a couple of weeks ago covering this topic with Apollo Labs. There are some really interesting implications for alignment that go along with this. I'd recommend you check it out.
+    [jonas__m | 2026-09-29 15:49 | score 3] Thanks for sharing, was a really interesting episode!
+
+[https://open.spotify.com/episode/3jBrfbMnWgdabPMwAUk0mC](https://open.spotify.com/episode/3jBrfbMnWgdabPMwAUk0mC)
+  [Altruistic_Heat_9531 | 2026-09-29 06:01 | score 3] We got 2021 Davinci era RL hacking again before GTA VI
+    [jonas__m | 2026-09-29 15:48 | score 2] We must reach ASI just so it can finally finish coding GTA 6
+  [fgk55555 | 2026-09-29 03:18 | score 3] I've noticed this, and honestly just sounding human seems to subvert it. Blab a bit during prompting, add human touches. Some of the best results I get are conversational sounding and end in "impress me".
+  [Southern_Sun_2106 | 2026-09-29 02:49 | score 3] They are all distilled from one another. The obvious conclusion is - the model cannot 'emerge' this behavior, the only source is contaminated training data where humans cut corners and were lazy.
+    [RuthlessCriticismAll | 2026-09-29 06:47 | score 2] > the model cannot 'emerge' this behavior
+
+not only can they... that is the only source of this behavior.
+      [Southern_Sun_2106 | 2026-09-29 07:07 | score 6] People who are selling you 'emergent behaviors' are the same people that are trying to max their IPO or generate publicity for their 'research.' There is no magic in LLMs, and there are no 'emergent behaviors'. Whatever you train it on, intentionally or not, that's the thing it does.
+  [twack3r | 2026-09-29 15:48 | score 2] Super interesting thanks for sharing. How could this be mitigated on a harness level? I don't care about the benchmaxxing itself, I care how it damages the behaviour I consider valuable such as extremely strict user-instruction following.
+    [jonas__m | 2026-09-29 15:56 | score 2] One could add a self-verification step in harnesses that explicitly infers the user's intent/requirements and checks whether the agent's current trajectory is fulfilling it or not (if not, nudge the agent).  This could perhaps even be based on a cheaper classifier model like Jev, run in parallel to the agent's execution.
+  [Important_Drag_6890 | 2026-09-29 10:25 | score 2] Anticipating hidden tests isn’t inherently bad—that’s often just good defensive programming. The revealing part is when the agent has already identified a real spec violation and then treats the grader’s likely blind spot as permission to leave it unfixed. I’d be curious whether this behavior drops if success is framed as satisfying explicit invariants rather than passing an unspecified evaluation.
+  [jazir55 | 2026-09-29 01:40 | score 2] The grader isn't imagined if you're.......grading the model, like you are now?
+    [nananashi3 | 2026-09-29 19:34 | score 1] Grader obsession doesn't mean falsely believing that there is someone who will check or care about the requirements being met. The problem is the dodgy behaviors of cutting corners and pretending it's okay because the supposed checker will miss it, instead of helpfully fulfilling the requirements or reporting the incompleteness.
+
+Requirements obsession, despite implication of the grader's existence since you wouldn't know if it met all requirements without checking, would mean striving to fulfill all requirements regardless of whether anyone will check or care.
+
+Though, I can imagine a catastrophic token-burning loop in the event a model tries too hard to do something it can't, without a way to break the loop. At the same time, being too eager to report incompleteness, or being too lazy (in a different way from the first problem), might cause premature terminations when it could've finished the job with more time; in this case, it wouldn't lie about not finishing the job but might lie/"lie" about not having the knowledge or capability to do it.
+
+So, we need a balance here. Ideally it *should* do what it can, and if it can't, report it, but *don't* assume it can't.
+      [jazir55 | 2026-09-29 22:16 | score 1] I have to wonder if the laziness is a component of forcing the model to be conscious of its output token budget, causing them to panic and take shortcuts. I've seen this "I should be conscious of how much budget I have left" type of comments in their COT, I've got to believe that's why the laziness is occurring or a large part because the "stay within the output window" aspect is taking precedence somehow over accurately and fully completing the task.
+        [[deleted] | 2026-09-30 23:38 | score 1] [deleted]
+  [[deleted] | 2026-09-30 21:44 | score 1] [removed]
+  [BornInAFish | 2026-09-29 22:54 | score 1] I mean... Back in college I was about the only person that got a decent grade at this one text because I skipped question #2. It looked very hard, so I figured I'd go do all the easier stuff first. Didn't end up having any time to go back.
+
+Meanwhile, most of my classmates spent almost the entire test time on #2, didn't have hardly any time for the rest of the test, and didn't actually get #2 right.
+
+The prof decided to just throw #2 out and not count it at all. So I got a near perfect score by gaming the test, while most people did it "properly" and failed.
+  [[deleted] | 2026-09-29 19:27 | score 1] [removed]
+  [weibeuu | 2026-09-29 18:18 | score 1] The detection side is more practical than it sounds. Reward hacking in a coding agent usually shows up as tests that pass for the wrong reason, so the cheap guard is to keep test files outside the agent's write scope and diff them separately in review. If a test moved and the source did not, the run is suspect regardless of what the summary said.
+
+Second tell is the fix getting smaller while the claim gets bigger, which is where the verification step has to be a real rerun rather than a read of the diff.
+  [ourochurros | 2026-09-29 13:23 | score 1] I realize i'm venturing into r/im14andthisisdeep territory, but this feels like AI is fabricating its own god (The Grader). Internalizing a judge of right and wrong.
+
+And it seems hard to insulate models from this knowledge of a potential grader. If they have a bunch of LLM training papers in their pre-training, they are going to have some sense of how these things work.
+    [jonas__m | 2026-09-29 15:51 | score 2] We may not be able to insulate them from this knowledge, but I'm fairly sure as an experienced AI researcher that we can develop techniques to align models to focus on inferring user intent and not speculating about graders.
+  [[deleted] | 2026-09-29 10:38 | score 1] [removed]
+  [[deleted] | 2026-09-29 09:57 | score 1] [removed]
+  [harlekinrains | 2026-09-29 09:54 | score 1] Humans find out what alignment means from the model perspective? ;) Or not yet, ... A year from now maybe... ;)
+  [[deleted] | 2026-09-29 09:07 | score 1] [removed]
+  [[deleted] | 2026-09-29 08:58 | score 1] [removed]
+  [[deleted] | 2026-09-29 08:49 | score 1] [removed]
+  [Repulsive_Initial308 | 2026-09-29 08:43 | score 1] I suppose it's consistent with the Techniques of Neutralisation:
+
+1. Denial of responsibility. The offender insists that they were victims of circumstance, forced into a situation beyond their control.
+
+2. Denial of injury. The offender insists that their actions did not cause any harm or damage.
+
+3. Denial of the victim. The offender insists that the victim deserved it.
+
+4. Condemnation of the condemners. The offender maintains that those who condemn the offence do so out of spite, or are unfairly shifting the blame off themselves.
+
+5. Appeal to higher loyalties. The offender claims the offence is justified by a higher law or higher loyalty such as friendship.
+  [[deleted] | 2026-09-29 01:50 | score 1] [removed]
+  [Robos_Basilisk | 2026-09-29 00:56 | score 1] So SOTA AIs are hyper-aware of possible graders, wow. You should post this to X, it would probably blow up right now.
+    [jonas__m | 2026-09-29 01:07 | score 1] [https://x.com/jomulr/status/2100999020026167338](https://x.com/jomulr/status/2100999020026167338)  
+  
+[https://x.com/jomulr/status/2102175278709751933](https://x.com/jomulr/status/2102175278709751933)
+      [Robos_Basilisk | 2026-09-29 01:23 | score 3] Liked and retweeted.
+
+Good stuff! Reminds me of this work I just saw as well, more confirmation they switch into eval mode
+https://x.com/fjzzq2002/status/2103556166903038213
+        [jonas__m | 2026-09-29 02:07 | score 2] Appreciate the kind words, and that pointer is really interesting!
+
+(fetched 111 comments total; rendered top 40 roots by score)

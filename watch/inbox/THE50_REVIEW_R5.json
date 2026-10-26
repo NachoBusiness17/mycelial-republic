@@ -1,0 +1,32 @@
+[
+  {
+    "artifact": "tools/drift_pairs_stamp.py",
+    "verdict": "PASS_WITH_NOTES",
+    "evidence": "Ran twice via venv python: exit 0 both, ledger md5 c2dcd33c byte-identical, 0 stamped/3 skipped (2026-W38 already present). Live verdicts recomputed each run over real data (T1 ALIGNED 0.5344, T2 ALIGNED 0.8839, T3 DRIFTING -0.0847); --status works; 0 em-dashes.",
+    "notes": "Ledger idempotency holds exactly as claimed; the receipt projection rewrites each run with a fresh timestamp/counters, so byte-level idempotency covers the ledger only."
+  },
+  {
+    "artifact": "tools/thrash_meter.py",
+    "verdict": "PASS",
+    "evidence": "Runs clean, exit 0, live reading over real steps.jsonl (1,422 events/6h, score 85). Wiring verified: tools/__init__.py TOOL_MAP lines 46-47 and 152-153; dashboard/rest.py h_thrash 5049-5067, route line 5421, index line 4754. One live reading filed: memory/runs/the50/w6_t27_thrash_reading.json (ok=true, score 83) plus T27 receipt.",
+    "notes": "Live THRASHING at 50 sessions illustrates the tool's own filed parallel-session bias; known_bias is carried in the output honestly."
+  },
+  {
+    "artifact": "watch/inbox/THE50_W6_T28_MISS_ENTROPY.md",
+    "verdict": "PASS",
+    "evidence": "Data path real: memory/runs/the50/w6_t28_miss_entropy.json is exactly 6,781 bytes, reloads as JSON, schema the50.w6.t28.miss_entropy.v1, series[3], 0 em-dashes, ops n_events=94,922 matches. Generator reran exit 0; GPS battery line 13 is G13 cache_os; endpoint honestly marked design-not-built.",
+    "notes": "Regeneration shifts 2026-09 ops digits vs the filed table (n 51,054 to 51,667, live source moved); 2026-08 and jev numbers reproduce exactly. Filing-time numbers were accurate; generator is authoritative."
+  },
+  {
+    "artifact": "tools/oracle_calibration.py",
+    "verdict": "PASS",
+    "evidence": "--selftest: 12/12 pass, exit 0, fixed seed 20260919. Temperature recovered 3.95 vs true 4.0; held-out ECE 0.1848 to 0.0057; per-domain drift separates; threshold held-out accuracy 0.9027 meets 0.90 target; IO roundtrip ECE exact. Receipt filed with real numbers; 0 em-dashes.",
+    "notes": ""
+  },
+  {
+    "artifact": "watch/inbox/THE50_W6_T30_POLICY_EVAL.md",
+    "verdict": "PASS",
+    "evidence": "Checker exit 0, 14/14 pass, output matches the doc's verbatim receipt. Schema file at dashboard/schemas/policy_eval.v1.schema.json matches the doc's embedded JSON; worked request/response validate; all negatives rejected including invented calibration. rest.py refs verified: h_thrash 5049-5067, ROUTES 5421, index 4754, auto-steer handler 699/route 5326. GPS line 6 is G06.",
+    "notes": "Endpoint honestly not built (Phase 1 of 5 landed); synthetic confidence 0.92 and latency 22ms labeled as fixture values inside the schema response itself."
+  }
+]

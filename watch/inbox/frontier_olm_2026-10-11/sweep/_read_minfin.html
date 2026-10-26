@@ -1,0 +1,919 @@
+<!DOCTYPE html>
+<html lang="en" dir="auto">
+
+<head><meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<meta name="robots" content="index, follow">
+<title>LLM Classification Is Feature Engineering | Minimally Sufficient</title>
+<meta name="keywords" content="">
+<meta name="description" content="LLMs make good classifiers but even better features">
+<meta name="author" content="Taylor Pospisil">
+<link rel="canonical" href="https://minimallysufficient.com/posts/llm-classification-is-feature-extraction/">
+<link crossorigin="anonymous" href="https://minimallysufficient.com/assets/css/stylesheet.ac26958d04936a04532ff784d401a2846cb2e25e261d5ec25e725274a118c6fb.css" integrity="sha256-rCaVjQSTagRTL/eE1AGihGyy4l4mHV7CXnJSdKEYxvs=" rel="preload stylesheet" as="style">
+<link rel="icon" href="https://minimallysufficient.com/favicon.ico">
+<link rel="icon" type="image/png" sizes="16x16" href="https://minimallysufficient.com/favicon-16x16.png">
+<link rel="icon" type="image/png" sizes="32x32" href="https://minimallysufficient.com/favicon-32x32.png">
+<link rel="apple-touch-icon" href="https://minimallysufficient.com/apple-touch-icon.png">
+<link rel="mask-icon" href="https://minimallysufficient.com/safari-pinned-tab.svg">
+<meta name="theme-color" content="#2e2e33">
+<meta name="msapplication-TileColor" content="#2e2e33">
+<link rel="alternate" hreflang="en" href="https://minimallysufficient.com/posts/llm-classification-is-feature-extraction/">
+<noscript>
+    <style>
+        #theme-toggle,
+        .top-link {
+            display: none;
+        }
+
+    </style>
+    <style>
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --theme: rgb(29, 30, 32);
+                --entry: rgb(46, 46, 51);
+                --primary: rgb(218, 218, 219);
+                --secondary: rgb(155, 156, 157);
+                --tertiary: rgb(65, 66, 68);
+                --content: rgb(196, 196, 197);
+                --code-block-bg: rgb(46, 46, 51);
+                --code-bg: rgb(55, 56, 62);
+                --border: rgb(51, 51, 51);
+            }
+
+            .list {
+                background: var(--theme);
+            }
+
+            .list:not(.dark)::-webkit-scrollbar-track {
+                background: 0 0;
+            }
+
+            .list:not(.dark)::-webkit-scrollbar-thumb {
+                border-color: var(--theme);
+            }
+        }
+
+    </style>
+</noscript><meta property="og:url" content="https://minimallysufficient.com/posts/llm-classification-is-feature-extraction/">
+  <meta property="og:site_name" content="Minimally Sufficient">
+  <meta property="og:title" content="LLM Classification Is Feature Engineering">
+  <meta property="og:description" content="LLMs make good classifiers but even better features">
+  <meta property="og:locale" content="en-us">
+  <meta property="og:type" content="article">
+    <meta property="article:section" content="posts">
+    <meta property="article:published_time" content="2026-09-13T00:00:00-07:00">
+    <meta property="article:modified_time" content="2026-09-13T00:00:00-07:00">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="LLM Classification Is Feature Engineering">
+<meta name="twitter:description" content="LLMs make good classifiers but even better features">
+
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {
+      "@type": "ListItem",
+      "position":  1 ,
+      "name": "Posts",
+      "item": "https://minimallysufficient.com/posts/"
+    }, 
+    {
+      "@type": "ListItem",
+      "position":  2 ,
+      "name": "LLM Classification Is Feature Engineering",
+      "item": "https://minimallysufficient.com/posts/llm-classification-is-feature-extraction/"
+    }
+  ]
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "LLM Classification Is Feature Engineering",
+  "name": "LLM Classification Is Feature Engineering",
+  "description": "LLMs make good classifiers but even better features",
+  "keywords": [
+    
+  ],
+  "articleBody": "LLMs-as-classifiers, prompts applied to a context and returning a label, suck to work with. This is especially painful because they often perform pretty decently.\nBut let’s consider some of the things we’d want in a classifier and see how an LLM-as-classifier stacks up:\nCalibration / Threshold Control LLM verdicts are often hard labels; you can get token log probabilities but there is no mechanism for believing these to be well-calibrated. You can ask the LLM for its confidence and there’s no reason to suspect that to be well-calibrated either. As a related problem it’s then rather hard to trade off precision and recall with these labels in a principled way. Incorporating all available information LLMs work great with unstructured data but we often have nice structured data as well. We can paste this into the prompt however the LLM doesn’t really need to use it. Even for prose parts of the prompt we don’t know if the LLM actually used it or not1. Frustrating to say the least and probably losing some signal. The LLM has some prior information baked in which might be a poor fit for our distribution. For instance the LLM won’t know whether we’re testing on a population where our positive class is rare or an enriched population where our positive class is relatively prevalent. And I guess you can give it that context but now you’ve got to modify that for each new population and also, as in our first point, it’s not clear that this will be appropriately incorporated into the LLM’s judgement.\nInterpretability In some respects a LLM prompt is highly interpretable, after all it’s written in prose; unfortunately it’s not clear that we know exactly what’s going on within the LLM and what parts of the prompt are being followed correctly (or at all). These failures are not the fault of the LLM: it’s not designed as a classifier and indeed has no mechanism for plausibly doing some of these things. But only because we’re thinking of things incorrectly…\nLLM Classification is feature engineering With the proper framework that harnesses the LLM’s power we can get the power of the LLM with the convenience of stock ML algorithms. For a taste of what’s possible consider wrapping the LLM verdict with a simple logistic regression:\n\\[ p(y = 1 \\mid x) = \\sigma(\\alpha + \\beta \\cdot LLM(x)) \\]\nNote that in the special case of \\(\\beta \\rightarrow \\infty\\) this basically recovers our LLM classifier!! But that’s a dumb parameter selection policy. We should instead do our usual approach of estimating our parameters using some training data. This will then collapse into two cases and we just get the empirical estimates.\n\\[ p(y = k \\mid LLM(x) = 1) = \\frac{\\sum_{i} I(y_{i} = k \\text{ and } LLM(x_{i}) = 1)}{\\sum_{i} I(LLM(x_{i}) = 1)} \\]\nNow let’s revisit our desiderata:\nCalibration / Threshold Control As just mentioned, just using the LLM prediction as a feature we get two predictions at the empirical proportions (and thus calibrated in expectation). As we add more features (see next) we will obviously get more unique points and, assuming our model is decently flexible, these should be approximately well-calibrated (and we have ways to improve that). And since we have actual probabilities out we can now choose our operating threshold to trade off precision and recall as needed. Incorporating all available information This is just a logistic regression so we can obviously add in other covariates. To adapt to the different baselines the logistic regression is fit to the training dataset and thus adapts to that baseline and covariate structure. We can even reweight the examples to try to target other distributions of interest. Interpretability We still have the problem of interpreting the LLM verdict itself but now we have a better sense of how that verdict is contributing to our final decision (especially if we have other covariates included). We’ve basically recovered all of the nice properties we wanted from our model! Can we go even further?\nLLM Classification is really good feature engineering Suppose we are not pleased with the performance of our classifier: what should we do? In the LLM-as-classifier case our only option is to try messing with the prompt. This is an arcane undertaking about which advice abounds on the internet but wisdom is scarce. Best of luck to you.\nFrom a ML point of view the way you make your model better is:\nCollecting more data Admittedly this is uncool: the allure of LLMs-as-classifiers is that you have a training-free methodology. So it’s disappointing that you need data for training purposes in this feature engineering paradigm. I’d argue though that this is less inconvenient than one might think. Like we’re going to need a test set in order to test model performance anyways (you were going to quantify your performance right?) so what’s a little more for training? Making your features better Making your features better is complex when editting prose. We can at least screen our features: if we believe that a feature should always lead to a positive we can empirically check this and debug appropriately. We can also evaluate the features themselves: we treat them as a secondary target (and recurse on making that classifier better). Creating more features You can use the residuals in your model to try and figure out how to improve your prompts not by meddling with wording but rather by considering a broader set of features. We might immediately consider taking the log probability of our verdict token; alternatively we can have multiple runs of our classifier (if we have reasoning before the verdicts those logprobs can go to 0 or 1). We can also get more features from the LLM itself by asking for subverdicts or other features. Improving your model architecture Finally model architecture is purely plug-and-play. Don’t like logistic regression, consider xgboost or a neural network. Heck have a rules based system implemented by the LLM for all I care. All are fair game. Test Case: Irony Detection Let’s make this more concrete using an example. We’ll use the SemEval 2018 Task 3 dataset2, a collection of 4618 tweets (3834 train / 784 test) labeled for irony by expert annotators. Irony is a natural fit for this post it’s an NLP task where an LLM clearly has real signal and we benefit from the worldly knowledge implicitly embedded in the LLM.\nOur prompt asks the model to make a binary irony judgment, and we run it over all the tweets at once as a batch job:\nfrom typing import Literal from pydantic import BaseModel, Field MODEL = \"gemini-3.1-flash-lite\" PROMPT_TEMPLATE = \"\"\"\\ Irony is when someone says one thing but means another, often for \\ humorous or critical effect. It can be subtle: a tweet might read as \\ sincere at first glance but carry an ironic tone through word choice, \\ context, or contrast. Consider the following tweet and label it as \"Ironic\" or \"Not\". {tweet}\"\"\" class Verdict(BaseModel): reasoning: str = Field( description=\"Brief reasoning: what language or context suggests irony or sincerity.\" ) verdict: Literal[\"Ironic\", \"Not\"] = Field( description='Whether the tweet is ironic (\"Ironic\") or not (\"Not\").' ) def build_request(row_id: int, tweet: str) -\u003e dict: return { \"contents\": [ {\"role\": \"user\", \"parts\": [{\"text\": PROMPT_TEMPLATE.format(tweet=tweet)}]} ], \"metadata\": {\"id\": str(row_id)}, \"config\": { \"response_mime_type\": \"application/json\", \"response_schema\": Verdict, \"temperature\": 0, }, } Performance We get the following performance just from this prompt\nTPR FNR Brier Score F1 (@0.5) 0.965 0.035 0.259 0.747 It’s actually quite remarkable how well this does as one-shot. You wouldn’t expect this to be possible without learning which is the cool thing about LLMs. Of course it’s still pretty meh: the Brier score is quite bad as we don’t have calibration (indeed just random guessing gets us a Brier score of 0.25).\nDesiderata Calibration We can do better with our logistic regression which achieves calibration (though note it doesn’t affect the ordering so F1 is the same).\nLLM verdict Fitted P(Ironic) Ironic 0.687 Not 0.188 TPR FNR Brier Score F1 (@0.5) 0.965 0.035 0.175 0.747 Adding Features Let’s consider some additional LLM features. Firstly let’s take a quick look at our misclassifications (they’re the same from either model)\ntweet target verdict reasoning “I can’t breathe!” was chosen as the most notable quote of t… Ironic Not The tweet presents a factual statement about a quote being selected for a list, … 4:30 an opening my first beer now gonna be a long night/day Not Ironic The tweet describes a situation of drinking early in the day as a ’long night/da… crushes are great until you realize they’ll never be interes… Ironic Not The tweet expresses a common, relatable sentiment about unrequited love. The use… I guess my cat also lost 3 pounds when she went to the vet a… Not Ironic The user is using hashtags related to fitness and weight loss to describe a cat’… @yWTorres9 time to hit the books then Ironic Not The tweet is a straightforward, literal suggestion to study, lacking any linguis… “Twig” is now “Sprig”—3 sec limit on new social video plat… Ironic Not The tweet uses a neutral, descriptive tone to report on a tech industry trend wi… Luv this Ironic Not The tweet is ambiguous; without additional context or visual cues, it is typical… really, what else can a fish be besides a fish? @RBRNetwork1… Not Ironic The tweet uses a rhetorical question to point out the obviousness of a statement… @malesurvivor72 I think it’s a safe bet it won’t fit the cri… Not Ironic The phrase ‘won’t fit the crime’ is a play on the common idiom ’the punishment f… loyalty vs. self protection loyalty vs. self protection loya… Not Ironic The repetitive, mantra-like structure suggests a cynical or weary observation ab… In light of this let’s modify our prompt as follows\nfrom typing import Literal from pydantic import BaseModel, Field MODEL = \"gemini-3.1-flash-lite\" PROMPT_TEMPLATE = \"\"\"\\ Analyse the following tweet along several dimensions. Tweet: {tweet} First, label it as \"Ironic\" or \"Not\" (irony is when the author says one \\ thing but means another — not merely criticism or complaint). Then answer \\ each question: 1. Is the tweet trying to be funny or humorous (regardless of whether it's ironic)? 2. Does the tweet describe a realistic, plausible situation or event? 3. Would you need to know the reply thread, current news, or other external \\ context to understand the author's intent? 4. Does the tweet express a genuine complaint or frustration? 5. Does the tweet describe a negative or frustrating situation using \\ positive or upbeat language (i.e. is there a mismatch between the situation \\ and how it is described)? 6. Is the tweet self-deprecating — does the author make fun of or \\ belittle themselves? 7. Does the tweet contain an explicit contrast or juxtaposition of two \\ things (e.g. \"X but Y\", \"while X, Y\", \"sure, X\")? 8. Is the tweet a rhetorical question — a question not expecting a \\ literal answer? 9. Does the tweet give what appears to be a compliment or praise but \\ is actually critical or dismissive (a backhanded compliment)? 10. Is the tweet directed as criticism at a specific named person, \\ organisation, or public figure? 11. Ignoring tone and word choice entirely: is the underlying situation \\ described objectively negative or unfortunate (e.g. illness, failure, \\ injustice, bad luck)? 12. Is the tweet making a direct, sincere critical or political point — \\ i.e. the criticism is meant literally, not ironically? (A tweet can be \\ critical and non-ironic.) 13. Does the author express approval, enthusiasm, or celebration of \\ something that is clearly bad or undesirable (e.g. \"love when X\" where \\ X is obviously awful)? 14. Does the author feign surprise or shock at something that is actually \\ predictable, obvious, or expected (e.g. \"shocked, just shocked\", \\ \"who could have seen this coming\")? 15. Does the tweet use mock enthusiasm — over-the-top positive language \\ (exclamations, \"amazing!\", \"so great!\") applied to something bad or \\ frustrating? 16. Does the tweet contain a pun, wordplay, or a deliberate double \\ meaning unrelated to irony (the humour comes from the language itself, \\ not from saying the opposite of what is meant)? 17. Is the tweet primarily about politics, politicians, government, \\ elections, or political ideology? 18. Is the tweet primarily about a celebrity, athlete, sports team, \\ or entertainment figure? 19. Is the tweet about the author's personal daily life, routine, or \\ mundane situation (commute, weather, food, work, sleep)?\"\"\" class Features(BaseModel): reasoning: str = Field( description=\"Brief reasoning covering the irony verdict and all nineteen dimensions.\" ) verdict: Literal[\"Ironic\", \"Not\"] = Field( description='Whether the tweet is ironic (\"Ironic\") or not (\"Not\").' ) is_humorous: bool = Field( description=\"True if the tweet is trying to be funny or humorous.\" ) realistic_situation: bool = Field( description=\"True if the tweet describes a realistic, plausible situation.\" ) requires_context: bool = Field( description=\"True if understanding the author's intent requires external context.\" ) is_complaint: bool = Field( description=\"True if the tweet expresses a genuine complaint or frustration.\" ) sentiment_mismatch: bool = Field( description=\"True if the tweet describes a negative/frustrating situation using positive language.\" ) is_self_deprecating: bool = Field( description=\"True if the author makes fun of or belittles themselves.\" ) has_contrast: bool = Field( description=\"True if the tweet contains an explicit contrast or juxtaposition of two things.\" ) is_rhetorical_question: bool = Field( description=\"True if the tweet is a rhetorical question not expecting a literal answer.\" ) is_backhanded_compliment: bool = Field( description=\"True if the tweet gives apparent praise that is actually critical or dismissive.\" ) targets_person_or_org: bool = Field( description=\"True if the tweet is directed as criticism at a specific named person, organisation, or public figure.\" ) situation_is_negative: bool = Field( description=\"True if the underlying situation described is objectively negative or unfortunate, regardless of tone.\" ) is_literal_criticism: bool = Field( description=\"True if the tweet makes a direct, sincere critical or political point (criticism is meant literally, not ironically).\" ) author_endorses_bad_outcome: bool = Field( description=\"True if the author expresses approval or celebration of something clearly bad or undesirable.\" ) feigned_surprise: bool = Field( description=\"True if the author feigns shock or surprise at something predictable or obvious.\" ) mock_enthusiasm: bool = Field( description=\"True if the tweet uses over-the-top positive language applied to something bad or frustrating.\" ) is_pun_or_wordplay: bool = Field( description=\"True if the tweet contains a pun or wordplay where humour comes from the language itself rather than saying the opposite of what is meant.\" ) is_political: bool = Field( description=\"True if the tweet is primarily about politics, politicians, government, elections, or political ideology.\" ) is_celebrity_or_sports: bool = Field( description=\"True if the tweet is primarily about a celebrity, athlete, sports team, or entertainment figure.\" ) is_mundane_daily_life: bool = Field( description=\"True if the tweet is about the author's personal daily life, routine, or mundane situation.\" ) def build_request(row_id: int, tweet: str) -\u003e dict: return { \"contents\": [ {\"role\": \"user\", \"parts\": [{\"text\": PROMPT_TEMPLATE.format(tweet=tweet)}]} ], \"metadata\": {\"id\": str(row_id)}, \"config\": { \"response_mime_type\": \"application/json\", \"response_schema\": Features, \"temperature\": 0, }, } We’ll also start adding in some deterministic features that we can compute:\nFeature What it measures is_reply Tweet starts with “@” (a reply) has_url Tweet contains a URL tweet_length Character length of the tweet n_hashtags Number of “#” characters n_exclamations Number of “!” characters n_caps_words Number of all-caps words (length \u003e 1) has_ellipsis Tweet contains “…” starts_with_quote Tweet starts with a quotation mark n_emoji Number of emoji characters So do we see improvements? We compare three nested models: verdict only, verdict + all LLM features, verdict + all features (LLM + rule-based).\nFeatures Brier F1 (test) Verdict only 0.175 0.747 + LLM features 0.131 0.768 + rule-based features 0.127 0.779 We see a clear benefit from each level of additional features including the deterministic features which lie outside of the LLM.\nInterpretability The coefficient figure shows which features the model actually relies on, controlling for all others:\nFigure 1: Logistic regression coefficients (± 1 SE), sorted by |coefficient|.\nComparison with published results How does our approach compare to the published literature on this dataset?\nTable 1: F1 scores on SemEval 2018 Task 3A test set. System F1 Random baseline 0.373 SVM + tf-idf (paper NRC baseline) 0.589 THU\\_NGN (competition winner)3 0.705 NTUA-SLP (post-competition LSTM + attention)4 0.786 LLM hard label (this post) 0.747 (0.712–0.778) LLM + LR 0.779 (0.746–0.81) We see that our initial LLM classifier beats the competition winner handily (0.747 vs 0.705). With the feature engineering perspective we have overlapping CIs with the post-competition state of the art, using nothing but a logistic regression on top of LLM-extracted features.\nConclusion Getting LLMs into shape to reliably serve as classifiers is hard work but potentially highly impactful. There’s more and more research that relies on LLMs for classification: like the How People Use ChatGPT which uses LLMs to classify conversations with LLMs5 or the “slop-vestigation” of the Huggingface incident. We’re going to need to get high quality results out of these tools.\nFortunately, there’s a growing body of papers which are making this point.\nHan et al., “Large Language Models Can Automatically Engineer Features for Few-Shot Tabular Learning” (ICML 2024). Balek et al., “LLM-based feature generation from text for interpretable machine learning” (2024). Malberg, Mosca \u0026 Groh, “FELIX: Automatic and Interpretable Feature Engineering Using LLMs” (ECML PKDD 2024). Personally I am interested in investigating agentic classifiers. Instead of a fixed feature set or class statement you empower the LLM to investigate itself. The LLM can use features of the investigative process as features when classifying: essentially grading itself on the rigor and comprehensiveness of the investigation. And with a reliable test set we can make statistically valid inferences on the results!\nThis shows up with multimodal models not even using the images. ↩︎\nVan Hee, C., Lefever, E., \u0026 Hoste, V. (2018). SemEval-2018 Task 3: Irony Detection in English Tweets. In Proceedings of The 12th International Workshop on Semantic Evaluation (pp. 39–50). Association for Computational Linguistics. https://aclanthology.org/S18-1005/ ↩︎\nWu et al. (2018). THU\\_NGN at SemEval-2018 Task 3: Tweet Irony Detection with Densely Connected LSTM and Multi-task Learning. Proceedings of SemEval 2018. ↩︎\nBaziotis et al. (2018). NTUA-SLP at SemEval-2018 Task 3: Tracking Ironic Tweets using Ensembles of Word and Character Level Attentive RNNs. Proceedings of SemEval 2018. ↩︎\nwhile protecting privacy which is hard to do with human annotators ↩︎\n",
+  "wordCount" : "3052",
+  "inLanguage": "en",
+  "datePublished": "2026-09-13T00:00:00-07:00",
+  "dateModified": "2026-09-13T00:00:00-07:00",
+  "author":{
+    "@type": "Person",
+    "name": "Taylor Pospisil"
+  },
+  "mainEntityOfPage": {
+    "@type": "WebPage",
+    "@id": "https://minimallysufficient.com/posts/llm-classification-is-feature-extraction/"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "Minimally Sufficient",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "https://minimallysufficient.com/favicon.ico"
+    }
+  }
+}
+</script>
+</head>
+
+<body class="" id="top">
+<script type="text/javascript" id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+<script>
+  MathJax = {
+      tex: {
+          inlineMath: [['$', '$'], ['\\(', '\\)']]
+      }
+  };
+</script>
+
+
+<script>
+    if (localStorage.getItem("pref-theme") === "dark") {
+        document.body.classList.add('dark');
+    } else if (localStorage.getItem("pref-theme") === "light") {
+        document.body.classList.remove('dark')
+    } else if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+        document.body.classList.add('dark');
+    }
+
+</script>
+
+<header class="header">
+    <nav class="nav">
+        <div class="logo">
+            <a href="https://minimallysufficient.com/" accesskey="h" title="Minimally Sufficient (Alt + H)">Minimally Sufficient</a>
+            <div class="logo-switches">
+                <button id="theme-toggle" accesskey="t" title="(Alt + T)" aria-label="Toggle theme">
+                    <svg id="moon" xmlns="http://www.w3.org/2000/svg" width="24" height="18" viewBox="0 0 24 24"
+                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                    </svg>
+                    <svg id="sun" xmlns="http://www.w3.org/2000/svg" width="24" height="18" viewBox="0 0 24 24"
+                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="5"></circle>
+                        <line x1="12" y1="1" x2="12" y2="3"></line>
+                        <line x1="12" y1="21" x2="12" y2="23"></line>
+                        <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                        <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                        <line x1="1" y1="12" x2="3" y2="12"></line>
+                        <line x1="21" y1="12" x2="23" y2="12"></line>
+                        <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                        <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+                    </svg>
+                </button>
+            </div>
+        </div>
+        <ul id="menu">
+            <li>
+                <a href="https://minimallysufficient.com/posts/" title="Posts">
+                    <span>Posts</span>
+                </a>
+            </li>
+            <li>
+                <a href="https://minimallysufficient.com/ephemera/" title="Ephemera">
+                    <span>Ephemera</span>
+                </a>
+            </li>
+            <li>
+                <a href="https://minimallysufficient.com/about/" title="About">
+                    <span>About</span>
+                </a>
+            </li>
+        </ul>
+    </nav>
+</header>
+<main class="main">
+
+<article class="post-single">
+  <header class="post-header">
+    
+    <h1 class="post-title entry-hint-parent">
+      LLM Classification Is Feature Engineering
+    </h1>
+    <div class="post-meta"><span title='2026-09-13 00:00:00 -0700 PDT'>September 13, 2026</span>
+
+</div>
+  </header> 
+  <div class="post-content"><p>LLMs-as-classifiers, prompts applied to a context and returning a label, suck to work with.
+This is especially painful because they often perform pretty decently.</p>
+<p>But let&rsquo;s consider some of the things we&rsquo;d want in a classifier and see how an LLM-as-classifier stacks up:</p>
+<dl>
+<dt>Calibration / Threshold Control</dt>
+<dd>LLM verdicts are often hard labels; you can get token log probabilities but there is no mechanism for believing these to be <a href="https://minimallysufficient.com/posts/well-calibrated-predictions-are-not-enough/">well-calibrated</a>.
+You can ask the LLM for its confidence and there&rsquo;s no reason to suspect that to be well-calibrated either.
+As a related problem it&rsquo;s then rather hard to trade off precision and recall with these labels in a principled way.</dd>
+<dt>Incorporating all available information</dt>
+<dd>LLMs work great with unstructured data but we often have nice structured data as well.
+We can paste this into the prompt however the LLM doesn&rsquo;t really need to use it.
+Even for prose parts of the prompt we don&rsquo;t know if the LLM actually used it or not<sup id="fnref:1"><a href="#fn:1" class="footnote-ref" role="doc-noteref">1</a></sup>.
+Frustrating to say the least and probably losing some signal.
+<p>The LLM has some prior information baked in which might be a poor fit for our distribution.
+For instance the LLM won&rsquo;t know whether we&rsquo;re testing on a population where our positive class is rare or an enriched population where our positive class is relatively prevalent.
+And I guess you can give it that context but now you&rsquo;ve got to modify that for each new population and also, as in our first point, it&rsquo;s not clear that this will be appropriately incorporated into the LLM&rsquo;s judgement.</p>
+</dd>
+<dt>Interpretability</dt>
+<dd>In some respects a LLM prompt is highly interpretable, after all it&rsquo;s written in prose; unfortunately it&rsquo;s not clear that we know exactly what&rsquo;s going on within the LLM and what parts of the prompt are being followed correctly (or at all).</dd>
+</dl>
+<p>These failures are not the fault of the LLM: it&rsquo;s not designed as a classifier and indeed has no mechanism for plausibly doing some of these things.
+But only because we&rsquo;re thinking of things incorrectly…</p>
+<h2 id="llm-classification-is-feature-engineering">LLM Classification is feature engineering<a hidden class="anchor" aria-hidden="true" href="#llm-classification-is-feature-engineering">#</a></h2>
+<p>With the proper framework that harnesses the LLM&rsquo;s power we can get the power of the LLM with the convenience of stock ML algorithms.
+For a taste of what&rsquo;s possible consider wrapping the LLM verdict with a simple logistic regression:</p>
+<p>\[ p(y = 1 \mid x) = \sigma(\alpha + \beta \cdot LLM(x)) \]</p>
+<p>Note that in the special case of \(\beta \rightarrow \infty\) this basically recovers our LLM classifier!!
+But that&rsquo;s a dumb parameter selection policy.
+We should instead do our usual approach of estimating our parameters using some training data.
+This will then collapse into two cases and we just get the empirical estimates.</p>
+<p>\[ p(y = k \mid LLM(x) = 1) = \frac{\sum_{i} I(y_{i} = k \text{ and } LLM(x_{i}) = 1)}{\sum_{i} I(LLM(x_{i}) = 1)} \]</p>
+<p>Now let&rsquo;s revisit our desiderata:</p>
+<dl>
+<dt>Calibration / Threshold Control</dt>
+<dd>As just mentioned, just using the LLM prediction as a feature we get two predictions at the empirical proportions (and thus calibrated in expectation).
+As we add more features (see next) we will obviously get more unique points and, assuming our model is decently flexible, these should be approximately well-calibrated (and we have ways to improve that).
+And since we have actual probabilities out we can now choose our operating threshold to trade off precision and recall as needed.</dd>
+<dt>Incorporating all available information</dt>
+<dd>This is just a logistic regression so we can obviously add in other covariates.
+To adapt to the different baselines the logistic regression is fit to the training dataset and thus adapts to that baseline and covariate structure.
+We can even reweight the examples to try to target other distributions of interest.</dd>
+<dt>Interpretability</dt>
+<dd>We still have the problem of interpreting the LLM verdict itself but now we have a better sense of how that verdict is contributing to our final decision (especially if we have other covariates included).</dd>
+</dl>
+<p>We&rsquo;ve basically recovered all of the nice properties we wanted from our model!
+Can we go even further?</p>
+<h2 id="llm-classification-is-really-good-feature-engineering">LLM Classification is really good feature engineering<a hidden class="anchor" aria-hidden="true" href="#llm-classification-is-really-good-feature-engineering">#</a></h2>
+<p>Suppose we are not pleased with the performance of our classifier: what should we do?
+In the LLM-as-classifier case our only option is to try messing with the prompt.
+This is an arcane undertaking about which advice abounds on the internet but wisdom is scarce.
+Best of luck to you.</p>
+<p>From a ML point of view the way you make your model better is:</p>
+<dl>
+<dt>Collecting more data</dt>
+<dd>Admittedly this is uncool: the allure of LLMs-as-classifiers is that you have a training-free methodology.
+So it&rsquo;s disappointing that you need data for training purposes in this feature engineering paradigm.
+I&rsquo;d argue though that this is less inconvenient than one might think.
+Like we&rsquo;re going to need a test set in order to test model performance anyways (you were going to quantify your performance right?) so what&rsquo;s a little more for training?</dd>
+<dt>Making your features better</dt>
+<dd>Making your features better is complex when editting prose.
+We can at least screen our features: if we believe that a feature should always lead to a positive we can empirically check this and debug appropriately.
+We can also evaluate the features themselves: we treat them as a secondary target (and recurse on making that classifier better).</dd>
+<dt>Creating more features</dt>
+<dd>You can use the residuals in your model to try and figure out how to improve your prompts not by meddling with wording but rather by considering a broader set of features.
+We might immediately consider taking the log probability of our verdict token; alternatively we can have multiple runs of our classifier (if we have reasoning before the verdicts those logprobs can go to 0 or 1).
+We can also get more features from the LLM itself by asking for subverdicts or other features.</dd>
+<dt>Improving your model architecture</dt>
+<dd>Finally model architecture is purely plug-and-play.
+Don&rsquo;t like logistic regression, consider xgboost or a neural network.
+Heck have a rules based system implemented by the LLM for all I care.
+All are fair game.</dd>
+</dl>
+<h2 id="test-case-irony-detection">Test Case: Irony Detection<a hidden class="anchor" aria-hidden="true" href="#test-case-irony-detection">#</a></h2>
+<p>Let’s make this more concrete using an example.
+We’ll use the SemEval 2018 Task 3 <a href="https://github.com/Cyvhee/SemEval2018-Task3">dataset</a><sup id="fnref:2"><a href="#fn:2" class="footnote-ref" role="doc-noteref">2</a></sup>, a collection of 4618 tweets (3834 train / 784 test) labeled for irony by expert annotators.
+Irony is a natural fit for this post it’s an NLP task where an LLM clearly has real signal and we benefit from the worldly knowledge implicitly embedded in the LLM.</p>
+<p>Our prompt asks the model to make a binary irony judgment, and we run it over all the tweets at once as a batch job:</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="line"><span class="cl"><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Literal</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="n">MODEL</span> <span class="o">=</span> <span class="s2">&#34;gemini-3.1-flash-lite&#34;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="n">PROMPT_TEMPLATE</span> <span class="o">=</span> <span class="s2">&#34;&#34;&#34;</span><span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="s2">Irony is when someone says one thing but means another, often for </span><span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="s2">humorous or critical effect. It can be subtle: a tweet might read as </span><span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="s2">sincere at first glance but carry an ironic tone through word choice, </span><span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="s2">context, or contrast.
+</span></span></span><span class="line"><span class="cl"><span class="s2">
+</span></span></span><span class="line"><span class="cl"><span class="s2">Consider the following tweet and label it as &#34;Ironic&#34; or &#34;Not&#34;.
+</span></span></span><span class="line"><span class="cl"><span class="s2">
+</span></span></span><span class="line"><span class="cl"><span class="si">{tweet}</span><span class="s2">&#34;&#34;&#34;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="k">class</span> <span class="nc">Verdict</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+</span></span><span class="line"><span class="cl">    <span class="n">reasoning</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
+</span></span><span class="line"><span class="cl">        <span class="n">description</span><span class="o">=</span><span class="s2">&#34;Brief reasoning: what language or context suggests irony or sincerity.&#34;</span>
+</span></span><span class="line"><span class="cl">    <span class="p">)</span>
+</span></span><span class="line"><span class="cl">    <span class="n">verdict</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&#34;Ironic&#34;</span><span class="p">,</span> <span class="s2">&#34;Not&#34;</span><span class="p">]</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
+</span></span><span class="line"><span class="cl">        <span class="n">description</span><span class="o">=</span><span class="s1">&#39;Whether the tweet is ironic (&#34;Ironic&#34;) or not (&#34;Not&#34;).&#39;</span>
+</span></span><span class="line"><span class="cl">    <span class="p">)</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="k">def</span> <span class="nf">build_request</span><span class="p">(</span><span class="n">row_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">tweet</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+</span></span><span class="line"><span class="cl">    <span class="k">return</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">        <span class="s2">&#34;contents&#34;</span><span class="p">:</span> <span class="p">[</span>
+</span></span><span class="line"><span class="cl">            <span class="p">{</span><span class="s2">&#34;role&#34;</span><span class="p">:</span> <span class="s2">&#34;user&#34;</span><span class="p">,</span> <span class="s2">&#34;parts&#34;</span><span class="p">:</span> <span class="p">[{</span><span class="s2">&#34;text&#34;</span><span class="p">:</span> <span class="n">PROMPT_TEMPLATE</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">tweet</span><span class="o">=</span><span class="n">tweet</span><span class="p">)}]}</span>
+</span></span><span class="line"><span class="cl">        <span class="p">],</span>
+</span></span><span class="line"><span class="cl">        <span class="s2">&#34;metadata&#34;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&#34;id&#34;</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">row_id</span><span class="p">)},</span>
+</span></span><span class="line"><span class="cl">        <span class="s2">&#34;config&#34;</span><span class="p">:</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">            <span class="s2">&#34;response_mime_type&#34;</span><span class="p">:</span> <span class="s2">&#34;application/json&#34;</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">            <span class="s2">&#34;response_schema&#34;</span><span class="p">:</span> <span class="n">Verdict</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">            <span class="s2">&#34;temperature&#34;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">        <span class="p">},</span>
+</span></span><span class="line"><span class="cl">    <span class="p">}</span>
+</span></span></code></pre></div><h3 id="performance">Performance<a hidden class="anchor" aria-hidden="true" href="#performance">#</a></h3>
+<p>We get the following performance just from this prompt</p>
+<table>
+	<thead>
+			<tr>
+					<th>TPR</th>
+					<th>FNR</th>
+					<th>Brier Score</th>
+					<th>F1 (@0.5)</th>
+			</tr>
+	</thead>
+	<tbody>
+			<tr>
+					<td>0.965</td>
+					<td>0.035</td>
+					<td>0.259</td>
+					<td>0.747</td>
+			</tr>
+	</tbody>
+</table>
+<p>It&rsquo;s actually quite remarkable how well this does as one-shot.
+You wouldn&rsquo;t expect this to be possible without learning which is the cool thing about LLMs.
+Of course it&rsquo;s still pretty meh: the Brier score is quite bad as we don&rsquo;t have calibration (indeed just random guessing gets us a Brier score of 0.25).</p>
+<h3 id="desiderata">Desiderata<a hidden class="anchor" aria-hidden="true" href="#desiderata">#</a></h3>
+<h4 id="calibration">Calibration<a hidden class="anchor" aria-hidden="true" href="#calibration">#</a></h4>
+<p>We can do better with our logistic regression which achieves calibration (though note it doesn&rsquo;t affect the ordering so F1 is the same).</p>
+<table>
+	<thead>
+			<tr>
+					<th>LLM verdict</th>
+					<th>Fitted P(Ironic)</th>
+			</tr>
+	</thead>
+	<tbody>
+			<tr>
+					<td>Ironic</td>
+					<td>0.687</td>
+			</tr>
+			<tr>
+					<td>Not</td>
+					<td>0.188</td>
+			</tr>
+	</tbody>
+</table>
+<table>
+	<thead>
+			<tr>
+					<th>TPR</th>
+					<th>FNR</th>
+					<th>Brier Score</th>
+					<th>F1 (@0.5)</th>
+			</tr>
+	</thead>
+	<tbody>
+			<tr>
+					<td>0.965</td>
+					<td>0.035</td>
+					<td>0.175</td>
+					<td>0.747</td>
+			</tr>
+	</tbody>
+</table>
+<h4 id="adding-features">Adding Features<a hidden class="anchor" aria-hidden="true" href="#adding-features">#</a></h4>
+<p>Let&rsquo;s consider some additional LLM features.
+Firstly let&rsquo;s take a quick look at our misclassifications (they&rsquo;re the same from either model)</p>
+<table>
+	<thead>
+			<tr>
+					<th>tweet</th>
+					<th>target</th>
+					<th>verdict</th>
+					<th>reasoning</th>
+			</tr>
+	</thead>
+	<tbody>
+			<tr>
+					<td>&ldquo;I can&rsquo;t breathe!&rdquo; was chosen as the most notable quote of t…</td>
+					<td>Ironic</td>
+					<td>Not</td>
+					<td>The tweet presents a factual statement about a quote being selected for a list, …</td>
+			</tr>
+			<tr>
+					<td>4:30 an opening my first beer now gonna be a long night/day</td>
+					<td>Not</td>
+					<td>Ironic</td>
+					<td>The tweet describes a situation of drinking early in the day as a &rsquo;long night/da…</td>
+			</tr>
+			<tr>
+					<td>crushes are great until you realize they&rsquo;ll never be interes…</td>
+					<td>Ironic</td>
+					<td>Not</td>
+					<td>The tweet expresses a common, relatable sentiment about unrequited love. The use…</td>
+			</tr>
+			<tr>
+					<td>I guess my cat also lost 3 pounds when she went to the vet a…</td>
+					<td>Not</td>
+					<td>Ironic</td>
+					<td>The user is using hashtags related to fitness and weight loss to describe a cat&rsquo;…</td>
+			</tr>
+			<tr>
+					<td>@yWTorres9 time to hit the books then</td>
+					<td>Ironic</td>
+					<td>Not</td>
+					<td>The tweet is a straightforward, literal suggestion to study, lacking any linguis…</td>
+			</tr>
+			<tr>
+					<td>&ldquo;Twig&rdquo; is now &ldquo;Sprig&rdquo;—3 sec limit on new social video plat…</td>
+					<td>Ironic</td>
+					<td>Not</td>
+					<td>The tweet uses a neutral, descriptive tone to report on a tech industry trend wi…</td>
+			</tr>
+			<tr>
+					<td>Luv this</td>
+					<td>Ironic</td>
+					<td>Not</td>
+					<td>The tweet is ambiguous; without additional context or visual cues, it is typical…</td>
+			</tr>
+			<tr>
+					<td>really, what else can a fish be besides a fish? @RBRNetwork1…</td>
+					<td>Not</td>
+					<td>Ironic</td>
+					<td>The tweet uses a rhetorical question to point out the obviousness of a statement…</td>
+			</tr>
+			<tr>
+					<td>@malesurvivor72 I think it&rsquo;s a safe bet it won&rsquo;t fit the cri…</td>
+					<td>Not</td>
+					<td>Ironic</td>
+					<td>The phrase &lsquo;won&rsquo;t fit the crime&rsquo; is a play on the common idiom &rsquo;the punishment f…</td>
+			</tr>
+			<tr>
+					<td>loyalty vs. self protection loyalty vs. self protection loya…</td>
+					<td>Not</td>
+					<td>Ironic</td>
+					<td>The repetitive, mantra-like structure suggests a cynical or weary observation ab…</td>
+			</tr>
+	</tbody>
+</table>
+<p>In light of this let&rsquo;s modify our prompt as follows</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="line"><span class="cl"><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Literal</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="n">MODEL</span> <span class="o">=</span> <span class="s2">&#34;gemini-3.1-flash-lite&#34;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="n">PROMPT_TEMPLATE</span> <span class="o">=</span> <span class="s2">&#34;&#34;&#34;</span><span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="s2">Analyse the following tweet along several dimensions.
+</span></span></span><span class="line"><span class="cl"><span class="s2">
+</span></span></span><span class="line"><span class="cl"><span class="s2">Tweet: </span><span class="si">{tweet}</span><span class="s2">
+</span></span></span><span class="line"><span class="cl"><span class="s2">
+</span></span></span><span class="line"><span class="cl"><span class="s2">First, label it as &#34;Ironic&#34; or &#34;Not&#34; (irony is when the author says one </span><span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="s2">thing but means another — not merely criticism or complaint). Then answer </span><span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="s2">each question:
+</span></span></span><span class="line"><span class="cl"><span class="s2">1. Is the tweet trying to be funny or humorous (regardless of whether it&#39;s ironic)?
+</span></span></span><span class="line"><span class="cl"><span class="s2">2. Does the tweet describe a realistic, plausible situation or event?
+</span></span></span><span class="line"><span class="cl"><span class="s2">3. Would you need to know the reply thread, current news, or other external </span><span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="s2">context to understand the author&#39;s intent?
+</span></span></span><span class="line"><span class="cl"><span class="s2">4. Does the tweet express a genuine complaint or frustration?
+</span></span></span><span class="line"><span class="cl"><span class="s2">5. Does the tweet describe a negative or frustrating situation using </span><span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="s2">positive or upbeat language (i.e. is there a mismatch between the situation </span><span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="s2">and how it is described)?
+</span></span></span><span class="line"><span class="cl"><span class="s2">6. Is the tweet self-deprecating — does the author make fun of or </span><span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="s2">belittle themselves?
+</span></span></span><span class="line"><span class="cl"><span class="s2">7. Does the tweet contain an explicit contrast or juxtaposition of two </span><span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="s2">things (e.g. &#34;X but Y&#34;, &#34;while X, Y&#34;, &#34;sure, X&#34;)?
+</span></span></span><span class="line"><span class="cl"><span class="s2">8. Is the tweet a rhetorical question — a question not expecting a </span><span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="s2">literal answer?
+</span></span></span><span class="line"><span class="cl"><span class="s2">9. Does the tweet give what appears to be a compliment or praise but </span><span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="s2">is actually critical or dismissive (a backhanded compliment)?
+</span></span></span><span class="line"><span class="cl"><span class="s2">10. Is the tweet directed as criticism at a specific named person, </span><span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="s2">organisation, or public figure?
+</span></span></span><span class="line"><span class="cl"><span class="s2">11. Ignoring tone and word choice entirely: is the underlying situation </span><span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="s2">described objectively negative or unfortunate (e.g. illness, failure, </span><span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="s2">injustice, bad luck)?
+</span></span></span><span class="line"><span class="cl"><span class="s2">12. Is the tweet making a direct, sincere critical or political point — </span><span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="s2">i.e. the criticism is meant literally, not ironically? (A tweet can be </span><span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="s2">critical and non-ironic.)
+</span></span></span><span class="line"><span class="cl"><span class="s2">13. Does the author express approval, enthusiasm, or celebration of </span><span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="s2">something that is clearly bad or undesirable (e.g. &#34;love when X&#34; where </span><span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="s2">X is obviously awful)?
+</span></span></span><span class="line"><span class="cl"><span class="s2">14. Does the author feign surprise or shock at something that is actually </span><span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="s2">predictable, obvious, or expected (e.g. &#34;shocked, just shocked&#34;, </span><span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="s2">&#34;who could have seen this coming&#34;)?
+</span></span></span><span class="line"><span class="cl"><span class="s2">15. Does the tweet use mock enthusiasm — over-the-top positive language </span><span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="s2">(exclamations, &#34;amazing!&#34;, &#34;so great!&#34;) applied to something bad or </span><span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="s2">frustrating?
+</span></span></span><span class="line"><span class="cl"><span class="s2">16. Does the tweet contain a pun, wordplay, or a deliberate double </span><span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="s2">meaning unrelated to irony (the humour comes from the language itself, </span><span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="s2">not from saying the opposite of what is meant)?
+</span></span></span><span class="line"><span class="cl"><span class="s2">17. Is the tweet primarily about politics, politicians, government, </span><span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="s2">elections, or political ideology?
+</span></span></span><span class="line"><span class="cl"><span class="s2">18. Is the tweet primarily about a celebrity, athlete, sports team, </span><span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="s2">or entertainment figure?
+</span></span></span><span class="line"><span class="cl"><span class="s2">19. Is the tweet about the author&#39;s personal daily life, routine, or </span><span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="s2">mundane situation (commute, weather, food, work, sleep)?&#34;&#34;&#34;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="k">class</span> <span class="nc">Features</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+</span></span><span class="line"><span class="cl">    <span class="n">reasoning</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
+</span></span><span class="line"><span class="cl">        <span class="n">description</span><span class="o">=</span><span class="s2">&#34;Brief reasoning covering the irony verdict and all nineteen dimensions.&#34;</span>
+</span></span><span class="line"><span class="cl">    <span class="p">)</span>
+</span></span><span class="line"><span class="cl">    <span class="n">verdict</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&#34;Ironic&#34;</span><span class="p">,</span> <span class="s2">&#34;Not&#34;</span><span class="p">]</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
+</span></span><span class="line"><span class="cl">        <span class="n">description</span><span class="o">=</span><span class="s1">&#39;Whether the tweet is ironic (&#34;Ironic&#34;) or not (&#34;Not&#34;).&#39;</span>
+</span></span><span class="line"><span class="cl">    <span class="p">)</span>
+</span></span><span class="line"><span class="cl">    <span class="n">is_humorous</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
+</span></span><span class="line"><span class="cl">        <span class="n">description</span><span class="o">=</span><span class="s2">&#34;True if the tweet is trying to be funny or humorous.&#34;</span>
+</span></span><span class="line"><span class="cl">    <span class="p">)</span>
+</span></span><span class="line"><span class="cl">    <span class="n">realistic_situation</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
+</span></span><span class="line"><span class="cl">        <span class="n">description</span><span class="o">=</span><span class="s2">&#34;True if the tweet describes a realistic, plausible situation.&#34;</span>
+</span></span><span class="line"><span class="cl">    <span class="p">)</span>
+</span></span><span class="line"><span class="cl">    <span class="n">requires_context</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
+</span></span><span class="line"><span class="cl">        <span class="n">description</span><span class="o">=</span><span class="s2">&#34;True if understanding the author&#39;s intent requires external context.&#34;</span>
+</span></span><span class="line"><span class="cl">    <span class="p">)</span>
+</span></span><span class="line"><span class="cl">    <span class="n">is_complaint</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
+</span></span><span class="line"><span class="cl">        <span class="n">description</span><span class="o">=</span><span class="s2">&#34;True if the tweet expresses a genuine complaint or frustration.&#34;</span>
+</span></span><span class="line"><span class="cl">    <span class="p">)</span>
+</span></span><span class="line"><span class="cl">    <span class="n">sentiment_mismatch</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
+</span></span><span class="line"><span class="cl">        <span class="n">description</span><span class="o">=</span><span class="s2">&#34;True if the tweet describes a negative/frustrating situation using positive language.&#34;</span>
+</span></span><span class="line"><span class="cl">    <span class="p">)</span>
+</span></span><span class="line"><span class="cl">    <span class="n">is_self_deprecating</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
+</span></span><span class="line"><span class="cl">        <span class="n">description</span><span class="o">=</span><span class="s2">&#34;True if the author makes fun of or belittles themselves.&#34;</span>
+</span></span><span class="line"><span class="cl">    <span class="p">)</span>
+</span></span><span class="line"><span class="cl">    <span class="n">has_contrast</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
+</span></span><span class="line"><span class="cl">        <span class="n">description</span><span class="o">=</span><span class="s2">&#34;True if the tweet contains an explicit contrast or juxtaposition of two things.&#34;</span>
+</span></span><span class="line"><span class="cl">    <span class="p">)</span>
+</span></span><span class="line"><span class="cl">    <span class="n">is_rhetorical_question</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
+</span></span><span class="line"><span class="cl">        <span class="n">description</span><span class="o">=</span><span class="s2">&#34;True if the tweet is a rhetorical question not expecting a literal answer.&#34;</span>
+</span></span><span class="line"><span class="cl">    <span class="p">)</span>
+</span></span><span class="line"><span class="cl">    <span class="n">is_backhanded_compliment</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
+</span></span><span class="line"><span class="cl">        <span class="n">description</span><span class="o">=</span><span class="s2">&#34;True if the tweet gives apparent praise that is actually critical or dismissive.&#34;</span>
+</span></span><span class="line"><span class="cl">    <span class="p">)</span>
+</span></span><span class="line"><span class="cl">    <span class="n">targets_person_or_org</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
+</span></span><span class="line"><span class="cl">        <span class="n">description</span><span class="o">=</span><span class="s2">&#34;True if the tweet is directed as criticism at a specific named person, organisation, or public figure.&#34;</span>
+</span></span><span class="line"><span class="cl">    <span class="p">)</span>
+</span></span><span class="line"><span class="cl">    <span class="n">situation_is_negative</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
+</span></span><span class="line"><span class="cl">        <span class="n">description</span><span class="o">=</span><span class="s2">&#34;True if the underlying situation described is objectively negative or unfortunate, regardless of tone.&#34;</span>
+</span></span><span class="line"><span class="cl">    <span class="p">)</span>
+</span></span><span class="line"><span class="cl">    <span class="n">is_literal_criticism</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
+</span></span><span class="line"><span class="cl">        <span class="n">description</span><span class="o">=</span><span class="s2">&#34;True if the tweet makes a direct, sincere critical or political point (criticism is meant literally, not ironically).&#34;</span>
+</span></span><span class="line"><span class="cl">    <span class="p">)</span>
+</span></span><span class="line"><span class="cl">    <span class="n">author_endorses_bad_outcome</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
+</span></span><span class="line"><span class="cl">        <span class="n">description</span><span class="o">=</span><span class="s2">&#34;True if the author expresses approval or celebration of something clearly bad or undesirable.&#34;</span>
+</span></span><span class="line"><span class="cl">    <span class="p">)</span>
+</span></span><span class="line"><span class="cl">    <span class="n">feigned_surprise</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
+</span></span><span class="line"><span class="cl">        <span class="n">description</span><span class="o">=</span><span class="s2">&#34;True if the author feigns shock or surprise at something predictable or obvious.&#34;</span>
+</span></span><span class="line"><span class="cl">    <span class="p">)</span>
+</span></span><span class="line"><span class="cl">    <span class="n">mock_enthusiasm</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
+</span></span><span class="line"><span class="cl">        <span class="n">description</span><span class="o">=</span><span class="s2">&#34;True if the tweet uses over-the-top positive language applied to something bad or frustrating.&#34;</span>
+</span></span><span class="line"><span class="cl">    <span class="p">)</span>
+</span></span><span class="line"><span class="cl">    <span class="n">is_pun_or_wordplay</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
+</span></span><span class="line"><span class="cl">        <span class="n">description</span><span class="o">=</span><span class="s2">&#34;True if the tweet contains a pun or wordplay where humour comes from the language itself rather than saying the opposite of what is meant.&#34;</span>
+</span></span><span class="line"><span class="cl">    <span class="p">)</span>
+</span></span><span class="line"><span class="cl">    <span class="n">is_political</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
+</span></span><span class="line"><span class="cl">        <span class="n">description</span><span class="o">=</span><span class="s2">&#34;True if the tweet is primarily about politics, politicians, government, elections, or political ideology.&#34;</span>
+</span></span><span class="line"><span class="cl">    <span class="p">)</span>
+</span></span><span class="line"><span class="cl">    <span class="n">is_celebrity_or_sports</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
+</span></span><span class="line"><span class="cl">        <span class="n">description</span><span class="o">=</span><span class="s2">&#34;True if the tweet is primarily about a celebrity, athlete, sports team, or entertainment figure.&#34;</span>
+</span></span><span class="line"><span class="cl">    <span class="p">)</span>
+</span></span><span class="line"><span class="cl">    <span class="n">is_mundane_daily_life</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
+</span></span><span class="line"><span class="cl">        <span class="n">description</span><span class="o">=</span><span class="s2">&#34;True if the tweet is about the author&#39;s personal daily life, routine, or mundane situation.&#34;</span>
+</span></span><span class="line"><span class="cl">    <span class="p">)</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="k">def</span> <span class="nf">build_request</span><span class="p">(</span><span class="n">row_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">tweet</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+</span></span><span class="line"><span class="cl">    <span class="k">return</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">        <span class="s2">&#34;contents&#34;</span><span class="p">:</span> <span class="p">[</span>
+</span></span><span class="line"><span class="cl">            <span class="p">{</span><span class="s2">&#34;role&#34;</span><span class="p">:</span> <span class="s2">&#34;user&#34;</span><span class="p">,</span> <span class="s2">&#34;parts&#34;</span><span class="p">:</span> <span class="p">[{</span><span class="s2">&#34;text&#34;</span><span class="p">:</span> <span class="n">PROMPT_TEMPLATE</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">tweet</span><span class="o">=</span><span class="n">tweet</span><span class="p">)}]}</span>
+</span></span><span class="line"><span class="cl">        <span class="p">],</span>
+</span></span><span class="line"><span class="cl">        <span class="s2">&#34;metadata&#34;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&#34;id&#34;</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">row_id</span><span class="p">)},</span>
+</span></span><span class="line"><span class="cl">        <span class="s2">&#34;config&#34;</span><span class="p">:</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">            <span class="s2">&#34;response_mime_type&#34;</span><span class="p">:</span> <span class="s2">&#34;application/json&#34;</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">            <span class="s2">&#34;response_schema&#34;</span><span class="p">:</span> <span class="n">Features</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">            <span class="s2">&#34;temperature&#34;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">        <span class="p">},</span>
+</span></span><span class="line"><span class="cl">    <span class="p">}</span>
+</span></span></code></pre></div><p>We&rsquo;ll also start adding in some deterministic features that we can compute:</p>
+<table>
+	<thead>
+			<tr>
+					<th>Feature</th>
+					<th>What it measures</th>
+			</tr>
+	</thead>
+	<tbody>
+			<tr>
+					<td>is_reply</td>
+					<td>Tweet starts with &ldquo;@&rdquo; (a reply)</td>
+			</tr>
+			<tr>
+					<td>has_url</td>
+					<td>Tweet contains a URL</td>
+			</tr>
+			<tr>
+					<td>tweet_length</td>
+					<td>Character length of the tweet</td>
+			</tr>
+			<tr>
+					<td>n_hashtags</td>
+					<td>Number of &ldquo;#&rdquo; characters</td>
+			</tr>
+			<tr>
+					<td>n_exclamations</td>
+					<td>Number of &ldquo;!&rdquo; characters</td>
+			</tr>
+			<tr>
+					<td>n_caps_words</td>
+					<td>Number of all-caps words (length &gt; 1)</td>
+			</tr>
+			<tr>
+					<td>has_ellipsis</td>
+					<td>Tweet contains &ldquo;&hellip;&rdquo;</td>
+			</tr>
+			<tr>
+					<td>starts_with_quote</td>
+					<td>Tweet starts with a quotation mark</td>
+			</tr>
+			<tr>
+					<td>n_emoji</td>
+					<td>Number of emoji characters</td>
+			</tr>
+	</tbody>
+</table>
+<p>So do we see improvements?
+We compare three nested models: verdict only, verdict + all LLM features, verdict + all features (LLM + rule-based).</p>
+<table>
+	<thead>
+			<tr>
+					<th>Features</th>
+					<th>Brier</th>
+					<th>F1 (test)</th>
+			</tr>
+	</thead>
+	<tbody>
+			<tr>
+					<td>Verdict only</td>
+					<td>0.175</td>
+					<td>0.747</td>
+			</tr>
+			<tr>
+					<td>+ LLM features</td>
+					<td>0.131</td>
+					<td>0.768</td>
+			</tr>
+			<tr>
+					<td>+ rule-based features</td>
+					<td>0.127</td>
+					<td>0.779</td>
+			</tr>
+	</tbody>
+</table>
+<p>We see a clear benefit from each level of additional features including the deterministic features which lie outside of the LLM.</p>
+<h4 id="interpretability">Interpretability<a hidden class="anchor" aria-hidden="true" href="#interpretability">#</a></h4>
+<p>The coefficient figure shows which features the model actually relies on, controlling for all others:</p>
+<figure>
+    <img loading="lazy" src="assets/coefficients.png"
+         alt="Figure 1: Logistic regression coefficients (± 1 SE), sorted by |coefficient|."/> <figcaption>
+            <p><span class="figure-number">Figure 1: </span>Logistic regression coefficients (± 1 SE), sorted by |coefficient|.</p>
+        </figcaption>
+</figure>
+
+<h3 id="comparison-with-published-results">Comparison with published results<a hidden class="anchor" aria-hidden="true" href="#comparison-with-published-results">#</a></h3>
+<p>How does our approach compare to the published literature on this dataset?</p>
+<div class="table-caption">
+  <span class="table-number">Table 1:</span>
+  F1 scores on SemEval 2018 Task 3A test set.
+</div>
+<table>
+	<thead>
+			<tr>
+					<th>System</th>
+					<th>F1</th>
+			</tr>
+	</thead>
+	<tbody>
+			<tr>
+					<td>Random baseline</td>
+					<td>0.373</td>
+			</tr>
+			<tr>
+					<td><a href="https://aclanthology.org/S18-1005/">SVM + tf-idf</a> (paper NRC baseline)</td>
+					<td>0.589</td>
+			</tr>
+			<tr>
+					<td><a href="https://aclanthology.org/S18-1006/">THU\_NGN</a> (competition winner)<sup id="fnref:3"><a href="#fn:3" class="footnote-ref" role="doc-noteref">3</a></sup></td>
+					<td>0.705</td>
+			</tr>
+			<tr>
+					<td><a href="https://aclanthology.org/S18-1100/">NTUA-SLP</a> (post-competition LSTM + attention)<sup id="fnref:4"><a href="#fn:4" class="footnote-ref" role="doc-noteref">4</a></sup></td>
+					<td>0.786</td>
+			</tr>
+			<tr>
+					<td>LLM hard label (this post)</td>
+					<td>0.747 (0.712–0.778)</td>
+			</tr>
+			<tr>
+					<td>LLM + LR</td>
+					<td>0.779 (0.746–0.81)</td>
+			</tr>
+	</tbody>
+</table>
+<p>We see that our initial LLM classifier beats the competition winner handily (0.747 vs 0.705).
+With the feature engineering perspective we have overlapping CIs with the post-competition state of the art, using nothing but a logistic regression on top of LLM-extracted features.</p>
+<h2 id="conclusion">Conclusion<a hidden class="anchor" aria-hidden="true" href="#conclusion">#</a></h2>
+<p>Getting LLMs into shape to reliably serve as classifiers is hard work but potentially highly impactful.
+There&rsquo;s more and more research that relies on LLMs for classification: like the <a href="https://minimallysufficient.com/ephemera/how-people-use-chatgpt/">How People Use ChatGPT</a> which uses LLMs to classify conversations with LLMs<sup id="fnref:5"><a href="#fn:5" class="footnote-ref" role="doc-noteref">5</a></sup> or the &ldquo;<a href="https://x.com/RyanGreenblatt/status/2092692685224325542?s=20">slop-vestigation</a>&rdquo; of the Huggingface incident.
+We&rsquo;re going to need to get high quality results out of these tools.</p>
+<p>Fortunately, there&rsquo;s a growing body of papers which are making this point.</p>
+<ul>
+<li>Han et al., <a href="https://arxiv.org/abs/2404.09491">“Large Language Models Can Automatically Engineer Features for Few-Shot Tabular Learning”</a> (ICML 2024).</li>
+<li>Balek et al., <a href="https://arxiv.org/abs/2409.07132">“LLM-based feature generation from text for interpretable machine learning”</a> (2024).</li>
+<li>Malberg, Mosca &amp; Groh, <a href="https://link.springer.com/chapter/10.1007/978-3-031-70359-1_14">“FELIX: Automatic and Interpretable Feature Engineering Using LLMs”</a> (ECML PKDD 2024).</li>
+</ul>
+<p>Personally I am interested in investigating agentic classifiers.
+Instead of a fixed feature set or class statement you empower the LLM to investigate itself.
+The LLM can use features of the investigative process as features when classifying: essentially grading itself on the rigor and comprehensiveness of the investigation.
+And with a reliable test set we can make statistically valid inferences on the results!</p>
+<div class="footnotes" role="doc-endnotes">
+<hr>
+<ol>
+<li id="fn:1">
+<p>This shows up with multimodal models not even using the <a href="https://arxiv.org/abs/2603.21687">images</a>.&#160;<a href="#fnref:1" class="footnote-backref" role="doc-backlink">&#x21a9;&#xfe0e;</a></p>
+</li>
+<li id="fn:2">
+<p>Van Hee, C., Lefever, E., &amp; Hoste, V. (2018). SemEval-2018 Task 3: Irony Detection in English Tweets. In <em>Proceedings of The 12th International Workshop on Semantic Evaluation</em> (pp. 39–50). Association for Computational Linguistics. <a href="https://aclanthology.org/S18-1005/">https://aclanthology.org/S18-1005/</a>&#160;<a href="#fnref:2" class="footnote-backref" role="doc-backlink">&#x21a9;&#xfe0e;</a></p>
+</li>
+<li id="fn:3">
+<p>Wu et al. (2018). THU\_NGN at SemEval-2018 Task 3: Tweet Irony Detection with Densely Connected LSTM and Multi-task Learning. <em>Proceedings of SemEval 2018</em>.&#160;<a href="#fnref:3" class="footnote-backref" role="doc-backlink">&#x21a9;&#xfe0e;</a></p>
+</li>
+<li id="fn:4">
+<p>Baziotis et al. (2018). NTUA-SLP at SemEval-2018 Task 3: Tracking Ironic Tweets using Ensembles of Word and Character Level Attentive RNNs. <em>Proceedings of SemEval 2018</em>.&#160;<a href="#fnref:4" class="footnote-backref" role="doc-backlink">&#x21a9;&#xfe0e;</a></p>
+</li>
+<li id="fn:5">
+<p>while protecting privacy which is hard to do with human annotators&#160;<a href="#fnref:5" class="footnote-backref" role="doc-backlink">&#x21a9;&#xfe0e;</a></p>
+</li>
+</ol>
+</div>
+
+
+  </div>
+
+  <footer class="post-footer">
+    <ul class="post-tags">
+    </ul>
+  </footer>
+  <div class="post-feedback">
+    <p>Have feedback? I'd love to hear from you —
+      <a id="feedback-email" href="#">email</a> or
+      <a href="https://www.admonymous.co/minimallysufficient">keep it anonymous</a>.
+    </p>
+    <script>
+      (function() {
+        var enc = 'zvavznyylfhssvpvrag@tznvy.pbz';
+        var dec = enc.replace(/[a-zA-Z]/g, function(c) {
+          return String.fromCharCode(c.charCodeAt(0) + (c.toLowerCase() < 'n' ? 13 : -13));
+        });
+        document.getElementById('feedback-email').href = 'mailto:' + dec;
+      })();
+    </script>
+  </div>
+<form
+  action="https://buttondown.com/api/emails/embed-subscribe/minimallysufficient"
+  method="post"
+  class="embeddable-buttondown-form"
+>
+  <label for="bd-email">Get new posts by email</label>
+  <div class="buttondown-row">
+    <input type="email" name="email" id="bd-email" placeholder="you@example.com" required />
+    <input type="submit" value="Subscribe" />
+  </div>
+  <p class="buttondown-credit">
+    <a href="https://buttondown.com/refer/minimallysufficient" target="_blank">
+      Powered by Buttondown.
+    </a>
+  </p>
+</form>
+
+</article>
+    </main>
+    
+<footer class="footer">
+        <span>@2026 Minimally Sufficient</span> · 
+
+    <span>
+        Powered by
+        <a href="https://gohugo.io/" rel="noopener noreferrer" target="_blank">Hugo</a> &
+        <a href="https://github.com/adityatelange/hugo-PaperMod/" rel="noopener" target="_blank">PaperMod</a>
+    </span>
+</footer>
+<a href="#top" aria-label="go to top" title="Go to Top (Alt + G)" class="top-link" id="top-link" accesskey="g">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 12 6" fill="currentColor">
+        <path d="M12 6H0l6-6z" />
+    </svg>
+</a>
+
+<script>
+    let menu = document.getElementById('menu')
+    if (menu) {
+        menu.scrollLeft = localStorage.getItem("menu-scroll-position");
+        menu.onscroll = function () {
+            localStorage.setItem("menu-scroll-position", menu.scrollLeft);
+        }
+    }
+
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+        anchor.addEventListener("click", function (e) {
+            e.preventDefault();
+            var id = this.getAttribute("href").substr(1);
+            if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+                document.querySelector(`[id='${decodeURIComponent(id)}']`).scrollIntoView({
+                    behavior: "smooth"
+                });
+            } else {
+                document.querySelector(`[id='${decodeURIComponent(id)}']`).scrollIntoView();
+            }
+            if (id === "top") {
+                history.replaceState(null, null, " ");
+            } else {
+                history.pushState(null, null, `#${id}`);
+            }
+        });
+    });
+
+</script>
+<script>
+    var mybutton = document.getElementById("top-link");
+    window.onscroll = function () {
+        if (document.body.scrollTop > 800 || document.documentElement.scrollTop > 800) {
+            mybutton.style.visibility = "visible";
+            mybutton.style.opacity = "1";
+        } else {
+            mybutton.style.visibility = "hidden";
+            mybutton.style.opacity = "0";
+        }
+    };
+
+</script>
+<script>
+    document.getElementById("theme-toggle").addEventListener("click", () => {
+        if (document.body.className.includes("dark")) {
+            document.body.classList.remove('dark');
+            localStorage.setItem("pref-theme", 'light');
+        } else {
+            document.body.classList.add('dark');
+            localStorage.setItem("pref-theme", 'dark');
+        }
+    })
+
+</script>
+<script>
+    document.querySelectorAll('pre > code').forEach((codeblock) => {
+        const container = codeblock.parentNode.parentNode;
+
+        const copybutton = document.createElement('button');
+        copybutton.classList.add('copy-code');
+        copybutton.innerHTML = 'copy';
+
+        function copyingDone() {
+            copybutton.innerHTML = 'copied!';
+            setTimeout(() => {
+                copybutton.innerHTML = 'copy';
+            }, 2000);
+        }
+
+        copybutton.addEventListener('click', (cb) => {
+            if ('clipboard' in navigator) {
+                navigator.clipboard.writeText(codeblock.textContent);
+                copyingDone();
+                return;
+            }
+
+            const range = document.createRange();
+            range.selectNodeContents(codeblock);
+            const selection = window.getSelection();
+            selection.removeAllRanges();
+            selection.addRange(range);
+            try {
+                document.execCommand('copy');
+                copyingDone();
+            } catch (e) { };
+            selection.removeRange(range);
+        });
+
+        if (container.classList.contains("highlight")) {
+            container.appendChild(copybutton);
+        } else if (container.parentNode.firstChild == container) {
+            
+        } else if (codeblock.parentNode.parentNode.parentNode.parentNode.parentNode.nodeName == "TABLE") {
+            
+            codeblock.parentNode.parentNode.parentNode.parentNode.parentNode.appendChild(copybutton);
+        } else {
+            
+            codeblock.parentNode.appendChild(copybutton);
+        }
+    });
+</script>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a48fc8b7dd8e74a7',t:'MTc5MTc0MTgzMg=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+
+</html>

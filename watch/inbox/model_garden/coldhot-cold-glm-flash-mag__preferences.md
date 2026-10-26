@@ -1,0 +1,7 @@
+# coldhot-cold-glm-flash-mag__preferences (glm-5.3-flash @ zai, turn 1, channel: content)
+
+DEFECT 1: Concurrent set_* writers do unlocked read-modify-write, so one save_prefs silently drops the other's keys (lost update on shared pref file) | EVIDENCE: mag/preferences.py:46-49 with 98-100 | FIX: take an exclusive lock (msvcrt.locking on PREF_PATH) around the load-mutate-save in each set_* helper.
+DEFECT 2: Corrupt or unreadable PREF_PATH makes load_prefs return {}, and the next set_* then persists a prefs dict holding only its own key, wiping all other stored prefs with no error surfaced | EVIDENCE: mag/preferences.py:19-21, 46-49 | FIX: on parse failure, rename the corrupt file to PREF_PATH.with_suffix(".json.bak-<ts>") and log before returning {}.
+DEFECT 3: set_drainer only guards off-writes when env is locked ON; when MAG_DRAINER is locked OFF (env "0"), on-writes are accepted into the file yet drainer_enabled() ignores them, so the dashboard reports success while the state never takes effect | EVIDENCE: mag/preferences.py:97-104 vs 31-37 | FIX: in set_drainer, also return early (or raise/flag) when enabled is True and env is in ("0","false","no").
+DEAD-CODE: no in-file dead code is verifiable; nearest candidate is set_inject_behavioral_pack, whose callers are outside this file | EVIDENCE: mag/preferences.py:118-123
+ONE-SITTING FIX: wrap each set_* read-modify-write in a lockfile-guarded retry loop (load, mutate, write under os.open with O_CREAT|O_EXCL sentinel) to eliminate the lost-update race in one pass | EVIDENCE: mag/preferences.py:45-49

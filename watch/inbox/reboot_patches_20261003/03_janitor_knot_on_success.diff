@@ -1,0 +1,260 @@
+diff --git a/mag/ghost.py b/mag/ghost.py
+index 9faf6f359..0a880b2aa 100644
+--- a/mag/ghost.py
++++ b/mag/ghost.py
+@@ -1330,6 +1330,60 @@ def _auto_dedup(sig: str) -> bool:
+     return False
+ 
+ 
++def _fold_janitor_knot(task_id: str, rec: dict[str, Any]) -> None:
++    """Fold a SUCCESSFUL janitor task into the Verkle chain (reboot patch 03).
++
++    Called by janitor_governor.reconcile only when the orchestrator task is
++    done AND the quest output file exists and is non-empty. The old fold ran
++    at spawn time (mag/ghost.py:1472/1506 before this patch), so every failed
++    task became a knot (the canonical tip became a failed-task knot) and a
++    false "autonomous_task_completed" event went out. tension_index now carries
++    the full signature, not an 8-char prefix (JANITOR_FIX_PLAN item e)."""
++    from mag.verkle_knot import append_verkle_knot
++    sig = str(rec.get("sig", "?"))
++    dossier = {
++        "session_id": f"autonomous-{rec.get('quest_id', '?')}",
++        "time": {
++            "created_at": {"iso_minute": str(rec.get("ts") or _now()), "unix_minute": None, "date": None},
++            "updated_at": {"iso_minute": _now(), "unix_minute": None, "date": None},
++        },
++        "scalar_knot": {
++            "duration_minutes": 0.1,
++            "tension_index": sig,
++            "residual_weight": 1.0,
++            "theme_vector": {
++                "dominant": "autonomous_janitor",
++                "basis": ["mag_hands", "harness", "biography", "constitution"],
++                "raw": [1.0, 0.5, 0.3, 0.0],
++                "normalized": [1.0, 0.5, 0.3, 0.0],
++            },
++        },
++        "content_commit": {"hex": str(task_id)[:8]},
++    }
++    try:
++        fold_result = append_verkle_knot(dossier)
++        if fold_result is None or (isinstance(fold_result, dict) and fold_result.get("ok") is False):
++            print(f"[verkle] WARNING: janitor fold refused for task {task_id}: "
++                  f"{(fold_result or {}).get('error', 'returned None')}", flush=True)
++            return
++    except Exception as _ve:
++        print(f"[verkle] FOLD-SWALLOW GUARD: append_verkle_knot failed: {_ve}", flush=True)
++        return
++    try:
++        from mag.verkle_bus import publish as bus_publish, CH_TASK
++        asyncio.ensure_future(bus_publish(CH_TASK, {
++            "type": "autonomous_task_completed",
++            "quest_id": rec.get("quest_id", "?"),
++            "sig": sig,
++            "task_id": task_id,
++            "outcome": "done",
++            "output": rec.get("output", ""),
++            "ts": _now(),
++        }))
++    except Exception:
++        pass
++
++
+ async def autonomous_task_loop(app, interval_s: float = 60.0) -> None:
+     """Background loop: watch Ghost sense() output and autonomously spawn tasks.
+ 
+@@ -1484,7 +1538,7 @@ async def autonomous_task_loop(app, interval_s: float = 60.0) -> None:
+             try:
+                 from mag import janitor_governor as _jg
+                 _gs = _jg.load_state()
+-                for _settled in _jg.reconcile(_gs):
++                for _settled in _jg.reconcile(_gs, on_success=_fold_janitor_knot):
+                     _append_jsonl(AUTO_TRAIL, {
+                         "ts": _now(), "event": "janitor_settled",
+                         "task_id": _settled.get("task_id"), "quest_id": _settled.get("quest_id"),
+@@ -1522,50 +1576,12 @@ async def autonomous_task_loop(app, interval_s: float = 60.0) -> None:
+                     "outcome": result.get("outcome", "?"),
+                 })
+ 
+-                # ── Fold to Verkle (shared map) ──
+-                try:
+-                    from mag.verkle_knot import append_verkle_knot
+-                    dossier = {
+-                        "session_id": f"autonomous-{quest.get('id','?')}",
+-                        "time": {
+-                            "created_at": {"iso_minute": _now(), "unix_minute": None, "date": None},
+-                            "updated_at": {"iso_minute": _now(), "unix_minute": None, "date": None},
+-                        },
+-                        "scalar_knot": {
+-                            "duration_minutes": 0.1,
+-                            "tension_index": quest.get("sig", "?")[:8],
+-                            "residual_weight": 1.0,
+-                            "theme_vector": {
+-                                "dominant": "autonomous_janitor",
+-                                "basis": ["mag_hands", "harness", "biography", "constitution"],
+-                                "raw": [1.0, 0.5, 0.3, 0.0],
+-                                "normalized": [1.0, 0.5, 0.3, 0.0],
+-                            },
+-                        },
+-                        "content_commit": {"hex": result.get("task_id", "?")[:8]},
+-                    }
+-                    try:
+-                        fold_result = append_verkle_knot(dossier)
+-                        if fold_result is None:
+-                            print(f"[verkle] WARNING: append_verkle_knot returned None for task {result.get('task_id','?')} — fold may have been refused", flush=True)
+-                    except Exception as _ve:
+-                        print(f"[verkle] FOLD-SWALLOW GUARD: append_verkle_knot failed: {_ve}", flush=True)
+-                    # Publish to event bus so subscribers react
+-                    try:
+-                        from mag.verkle_bus import publish as bus_publish, CH_TASK, CH_VERKLE
+-                        import asyncio as _asyncio
+-                        _asyncio.ensure_future(bus_publish(CH_TASK, {
+-                            "type": "autonomous_task_completed",
+-                            "quest_id": quest.get("id", "?"),
+-                            "sig": quest.get("sig", "?"),
+-                            "task_id": result.get("task_id", "?"),
+-                            "outcome": result.get("outcome", "?"),
+-                            "ts": _now(),
+-                        }))
+-                    except Exception:
+-                        pass
+-                except Exception:
+-                    pass  # Verkle fold is best-effort — never block the cycle
++                # ── Verkle fold MOVED (reboot patch 03, 2026-10-03) ──
++                # The knot used to be folded here, at SPAWN time, for every
++                # quest, plus an "autonomous_task_completed" bus event, before the
++                # child had run. Now janitor_governor.reconcile() calls
++                # _fold_janitor_knot only when the task is done AND its output
++                # file is non-empty. Failures reach the trail only.
+ 
+             # ── Leak response: auto-respond to detected signals (every autonomous cycle) ──
+             try:
+diff --git a/tests/test_janitor_knot_on_success.py b/tests/test_janitor_knot_on_success.py
+new file mode 100644
+index 000000000..520a15d28
+--- /dev/null
++++ b/tests/test_janitor_knot_on_success.py
+@@ -0,0 +1,123 @@
++"""Reboot patch 03: the janitor Verkle knot is folded at task completion, only on success."""
++from __future__ import annotations
++
++import asyncio
++import json
++import sys
++import types
++from pathlib import Path
++
++import pytest
++
++from mag import ghost
++from mag import janitor_governor as jg
++
++
++@pytest.fixture()
++def gov(tmp_path, monkeypatch):
++    monkeypatch.setattr(jg, "STATE_PATH", tmp_path / "gov.json")
++    monkeypatch.setattr(jg, "STOP_FILE", tmp_path / "janitor.off")
++    monkeypatch.setattr(jg, "ROOT", tmp_path)
++    monkeypatch.delenv("MAG_JANITOR_DISABLED", raising=False)
++    monkeypatch.delenv("MAG_JANITOR_ALLOW_PAID", raising=False)
++    monkeypatch.delenv("MAG_JANITOR_MAX_PER_DAY", raising=False)
++    return tmp_path
++
++
++def _run_one_cycle(monkeypatch, tmp_path, state, *, task_status=None):
++    """Drive autonomous_task_loop through exactly one cycle with every side effect faked."""
++    spawned: list[dict] = []
++    folds: list[dict] = []
++    events: list[tuple] = []
++    trail = tmp_path / "auto_trail.jsonl"
++    monkeypatch.setattr(ghost, "AUTO_TRAIL", trail)
++    monkeypatch.setattr(ghost, "_GOV_NOTES", {})
++    monkeypatch.setattr(ghost, "sense", lambda: state)
++    monkeypatch.setattr(ghost, "stall_sweep", lambda **k: {})
++    monkeypatch.setattr(ghost, "leak_detect", lambda **k: (_ for _ in ()).throw(RuntimeError("off")))
++
++    def fake_exec(quest, dry=False):
++        spawned.append(quest)
++        return {"outcome": "spawned", "task_id": f"t{len(spawned):03d}"}
++
++    monkeypatch.setattr(ghost, "exec_copilot", fake_exec)
++    import mag.verkle_knot as vk
++    monkeypatch.setattr(vk, "append_verkle_knot", lambda d: folds.append(d) or {"ok": True})
++    import mag.process_reaper as pr
++    monkeypatch.setattr(pr, "classify", lambda: {"leaks": []})
++    bus = types.ModuleType("mag.verkle_bus")
++
++    async def publish(ch, payload):
++        events.append((ch, payload))
++
++    bus.publish, bus.CH_TASK, bus.CH_VERKLE, bus.CH_COPILOT = publish, "task", "verkle", "copilot"
++    monkeypatch.setitem(sys.modules, "mag.verkle_bus", bus)
++    if task_status is not None:
++        monkeypatch.setattr(jg, "_default_status", task_status)
++
++    calls = {"n": 0}
++
++    async def fake_sleep(_s):
++        calls["n"] += 1
++        if calls["n"] > 1:
++            raise asyncio.CancelledError
++        return None
++
++    monkeypatch.setattr(ghost.asyncio, "sleep", fake_sleep)
++    app = types.SimpleNamespace(state=types.SimpleNamespace(_auto_cycle_count=0))
++
++    async def drive():
++        await ghost.autonomous_task_loop(app, interval_s=0)
++        await asyncio.gather(*[t for t in asyncio.all_tasks() if t is not asyncio.current_task()],
++                             return_exceptions=True)
++
++    asyncio.run(drive())
++    rows = [json.loads(l) for l in trail.read_text(encoding="utf-8").splitlines()] if trail.is_file() else []
++    return spawned, folds, events, rows
++
++
++FKB = {"context": {}, "fkb_signals": [{"sig": "zz_test:abc123", "count": 6}]}
++QUIET = {"context": {}, "fkb_signals": []}
++
++
++def _completed(events):
++    return [p for _ch, p in events if p.get("type") == "autonomous_task_completed"]
++
++
++def test_spawn_folds_nothing_and_emits_no_completed_event(gov, monkeypatch, tmp_path):
++    spawned, folds, events, _rows = _run_one_cycle(monkeypatch, tmp_path, FKB)
++    assert len(spawned) == 1
++    assert folds == []
++    assert _completed(events) == []
++
++
++def test_failed_task_adds_no_knot(gov, monkeypatch, tmp_path):
++    _run_one_cycle(monkeypatch, tmp_path, FKB)
++    spawned, folds, events, rows = _run_one_cycle(
++        monkeypatch, tmp_path, QUIET, task_status=lambda t: {"status": "failed"})
++    assert spawned == [] and folds == [] and _completed(events) == []
++    settled = [r for r in rows if r.get("event") == "janitor_settled"]
++    assert settled and settled[-1]["ok"] is False and settled[-1]["status"] == "failed"
++    assert jg.load_state()["sigs"]["fkb:zz_test:abc123"]["fail_count"] == 1
++
++
++def test_done_without_output_adds_no_knot(gov, monkeypatch, tmp_path):
++    _run_one_cycle(monkeypatch, tmp_path, FKB)
++    _s, folds, events, _r = _run_one_cycle(
++        monkeypatch, tmp_path, QUIET, task_status=lambda t: {"status": "done"})
++    assert folds == [] and _completed(events) == []
++
++
++def test_done_with_output_folds_once_with_full_sig(gov, monkeypatch, tmp_path):
++    _run_one_cycle(monkeypatch, tmp_path, FKB)
++    out = gov / "memory" / "runs" / "ghost" / "autonomous_fixes" / "zz_test_abc123.md"
++    out.parent.mkdir(parents=True)
++    out.write_text("root cause: ...", encoding="utf-8")
++    _s, folds, events, _r = _run_one_cycle(
++        monkeypatch, tmp_path, QUIET, task_status=lambda t: {"status": "done"})
++    assert len(folds) == 1
++    assert folds[0]["scalar_knot"]["tension_index"] == "fkb:zz_test:abc123"
++    assert folds[0]["content_commit"]["hex"] == "t001"
++    done = _completed(events)
++    assert len(done) == 1 and done[0]["outcome"] == "done"
++    assert jg.load_state()["pending"] == {}

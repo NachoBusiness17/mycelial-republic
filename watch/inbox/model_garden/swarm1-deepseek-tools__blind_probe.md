@@ -1,0 +1,7 @@
+# swarm1-deepseek-tools__blind_probe (deepseek-chat @ deepseek, turn 1, channel: content)
+
+DEFECT 1: judge() accepts a lane that never returned OK in the probe, pairing it against living lanes and writing fabricated Elo wins for a DARK or unknown lane | EVIDENCE: tools/blind_probe.py:170-174 | FIX: reject any lane not present with status OK in probe_row["returns"] before calling elo_pair
+DEFECT 2: probe id is derived from count of existing PROBE_*.md files, so a same-day rerun or deletion reuses/collides an id and matrix/judge key on the wrong row (also collides with judge's id lookup) | EVIDENCE: tools/blind_probe.py:124-125 | FIX: derive pid from max existing numeric suffix plus one, or use a timestamp/hash id unique per probe
+DEFECT 3: probe files and elo.json are written under ROOT=Path.cwd() while commands judge/matrix read ELO from a possibly different cwd, so state written by probe is invisible to later judge/matrix runs | EVIDENCE: tools/blind_probe.py:35, 119, 168, 186 | FIX: resolve PROBES/ELO from a fixed module-anchored path (Path(__file__) root), not cwd
+DEAD-CODE: open_guarded's urllib.error.HTTPError re-raise is unreachable as a distinct behavior since _NoRedirect already returns None for redirects and HTTPError is a URLError subclass, so the bare `raise` only re-raises caught status that caller does not distinguish | EVIDENCE: tools/blind_probe.py:64-71
+ONE-SITTING FIX: Validate judge()'s lane against probe_row["returns"] with status OK | EVIDENCE: tools/blind_probe.py:170-174

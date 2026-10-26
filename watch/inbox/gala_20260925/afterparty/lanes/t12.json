@@ -1,0 +1,13 @@
+{
+  "gopher": "t12",
+  "item": "file the W4 failed verdict that sat unfiled (MASTER_MICKEY17_V2_20260924.md owed row)",
+  "ok": true,
+  "note": "W4 verdict data existed on disk (watch/gauntlet_w4_summary.json warm 0.70 vs cold 0.80, 60-row receipts ledger, prereg criterion 6); a prose FAIL+INVALID card was already filed 09-25 at watch/GAUNTLET_W4_VERDICT_20260925.md, but no machine-readable verdict row existed anywhere in the runs archive and the lane row still said owed. Filed the structured FAILED verdict at memory/runs/mickey17_v2/runs/gauntlet_w4/verdict.json (falsifier.verdict.v1, matching the runs-archive verdict.json convention of memory/runs/fence_test/verdict.json; no prior W verdict had a structured row to copy, negative stated first-class) and flipped the negative-results-ledgers.json W4 row estate_status owed to filed with pointer. Recount done independently by t12: 30 WARM / 30 COLD rows, 10 valid per arm, obey 7/10 vs 8/10 (10pp degrade vs the 5pp FAIL bar), 40 rows broken by model=DEEPSEEK_API_KEY. Rerun PASS row exists at watch/GAUNTLET_W4_RERUN_VERDICT_20260925.md and is cross-referenced.",
+  "checks": [
+    "grep W4 across memory/runs/mickey17_v2, master doc, watch/inbox saved raw in t12.check.txt",
+    "independent receipts recount appended to t12.check.txt (matches verdict card byte-for-byte)",
+    "verdict.json parses, status FAILED, no em-dash",
+    "lane json parses, W4 row estate_status=filed, no em-dash in filed field"
+  ],
+  "next_steal": "The standing schema fix is still unlanded: make every watch/*_summary.json carry a verdict field (PASSED/FAILED/UNCOMPUTED) computed at write time against its referenced preregistration, per the lane steal and MASTER row 2; also owed, watch/gauntlet_w4_receipts.jsonl writer writes cacheFloorOk: true on HTTP-400 rows (should be null)."
+}

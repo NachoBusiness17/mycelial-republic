@@ -1,0 +1,62 @@
+LAWS LANE FINISH-LINE BYTE BATTERY 2026-09-30 (division B, lane laws)
+Every quote and file:line citation in lanes/laws.json checked against bytes.
+Run 2 (run 1 had 1 miss: L8a quote spanned a wrapped line in driver-meter.md;
+quote corrected in lanes/laws.json to the byte-true two-line form before run 2).
+==============================================================
+--- L1 ONE-BUG LAW: memory/rib/RIB_DRIVING_LADDER_20260928.md
+OK    [L1a] memory/rib/RIB_DRIVING_LADDER_20260928.md :: A VERDICT WITHOUT ITS
+OK    [L1b] memory/rib/RIB_DRIVING_LADDER_20260928.md :: A VERDICT WITHOUT ITS / CONDITIONS IS NOT A VERDICT.
+OK    [L1c] memory/rib/RIB_DRIVING_LADDER_20260928.md :: reports in concurrent phases (order deterministic)
+--- L2 SPEND: same rib
+OK    [L2a] memory/rib/RIB_DRIVING_LADDER_20260928.md :: USE IT I WANT YOU TO SPEND MONEY
+OK    [L2b] memory/rib/RIB_DRIVING_LADDER_20260928.md :: SPEND THE MONEY
+--- L3-L7 seat law gate + no-register + dash edge
+OK    [L3a] tools/seat_law_gate.py :: Bash invoking bare python/python3 (no path prefix, not pythonw) -> exit 2
+OK    [L4a] tools/seat_law_gate.py :: en-dash -> exit 2. Law: the no-em-dash AI-tell rule
+OK    [L5a] tools/seat_law_postgate.py :: PostToolUse cannot block; it witnesses
+OK    [L5b] tools/seat_law_gate.py :: Write of a *.dwf.ts workflow script -> the payload is gated through
+OK    [L6a] tools/workflow_gate.py :: --no-register
+OK    [L6b] tools/workflow_gate.py :: rows pointing at temp files that die immediately
+OK    [L6c] tools/workflow_gate.py :: if args.no_register:
+OK    [L6d] tools/seat_law_gate.py :: --no-register
+OK    [L7a] tools/seat_law_gate.py :: Only newly-introduced dashes block: re-saving a file that
+--- L8 HERMETIC BASETEMP
+OK    [L8a] watch/inbox/ball3/driver-meter.md :: the test passed, which is why it looked intermittent / across runs.
+OK    [L8b] exists: watch/inbox/gala_20260925/wave5-repair/lanes/suite-burn.check.txt
+OK    [L8c] conftest.py :: Keep concurrent Windows test runs out of each other's temp directory.
+OK    [L8d] conftest.py :: pytest-tmp-
+OK    [L8e] tools/stealth_driver.py :: def _rel_posix
+OK    [L8f] mag/agent_state.py :: def _display_path
+OK    [L8g] tools/violation_ratchet.py :: out-of-repo pytest basetemp:
+OK    [L8h] tools/config_seal.py :: conftest.py:14) masked it
+--- L9 ORDERED REPORTS
+OK    [L9a] .zcode/workflow-drafts/Ball3-suite-green.dwf.ts :: Stable sort, control flow only - never ask text
+OK    [L9b] .zcode/workflow-drafts/Ball3-suite-green.dwf.ts :: const ORDER: Record<string, number> = { B: 0, A: 1, C: 2 };
+OK    [L9c] .zcode/workflow-drafts/Burn-48h-synthesis.dwf.ts :: const TARGETS = ALL.slice().sort((a, b) => (ORDER[a.division] ?? 9) - (ORDER[b.division] ?? 9));
+--- L10 CENSUS DENOMINATOR B2-216
+OK    [L10a] AGENTS.md :: a count is a snapshot of one tree at one moment, never a constant
+OK    [L10b] exists: watch/inbox/burn_wave_20260926/B2_216_collect_delta_20260926.md
+OK    [L10c] tools/census_drift_patrol.py :: parse_carrier
+--- L11 MINIMAL-EXPOSURE / L12 NO-ENV-DUMP
+OK    [L11a] scripts/run_mate.ps1 :: whitelisted var(s) for opencode auth (never full .env)
+OK    [L12a] configs/mates.yaml :: NEVER dump environment variables (env, set, printenv, echo on API-key-shaped names)
+--- HOOK REGISTRATION (seat law gates live in the tool path)
+OK    [H1] C:/Users/foste/.zcode/cli/config.json :: tools/seat_law_gate.py
+OK    [H2] C:/Users/foste/.zcode/cli/config.json :: tools/seat_law_postgate.py
+--- JUNK ROWS PRESERVED (append-only law)
+OK    [J1] memory/workflows/REGISTRY.jsonl :: seatlaw_
+--- FOUNDING COMMITS EXIST
+OK    [C] commit 98071f556 exists
+OK    [C] commit 26eacaae7 exists
+OK    [C] commit 185965898 exists
+OK    [C] commit 9a912c32e exists
+OK    [C] commit 76e29cd0b exists
+OK    [C] commit f4e2c247f exists
+OK    [C] commit 662dc739e exists
+OK    [C] commit 03738963e exists
+--- NO-REGISTER REGISTRY TAIL (post-fix: last registered row is a named script, not a temp payload)
+{"ts": "2026-09-29T23:36:54Z", "name": "seatlaw_51196.dwf.ts", "digest": "27e04867c34c", "script": "C:\\Users\\foste\\AppData\\Local\\Temp\\seatlaw_51196.dwf.ts
+{"ts": "2026-09-30T01:18:10Z", "name": "frontier-olm-mine.dwf.ts", "digest": "2487787e949f", "script": ".zcode/workflow-drafts/frontier-olm-mine.dwf.ts", "verdi
+==============================================================
+BATTERY RESULT: misses=0 (exit 0)
+{"tool":"json.tool","file":"lanes/laws.json","valid":true,"checked":"2026-09-30"}

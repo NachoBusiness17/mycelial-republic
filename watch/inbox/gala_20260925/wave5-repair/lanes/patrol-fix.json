@@ -1,0 +1,25 @@
+{
+  "lane": "patrol-fix",
+  "division": "B",
+  "status": "done",
+  "finished": "2026-09-29T06:35-04:00",
+  "seed": "watch/inbox/burn_reset_20260927/flash50/arch-04.md D1+D2; live COLLECT-DRIFT +107 logs/census_patrol.log 2026-09-28 17:20:35 (pytest 2410 vs carrier 2303, files 368 vs 352, 5 files grown 09-28, instrument gap tests/test_selffeed_integration.py)",
+  "owns": ["tools/census_drift_patrol.py", "tools/census_patrol_selftest.py", "tests/test_census_drift_patrol.py", "AGENTS.md (Tests bullet only)"],
+  "work": [
+    {"id": "D1", "what": "CARRIER_LINE_RE tightened to ^[ \\t]*[-*][ \\t]*\\*\\*Tests:\\*\\* (horizontal whitespace only); blank-line parse + fail-closed vectors added to both B2-274 surfaces (selftest +2 checks, tests +2 functions).", "state": "done"},
+    {"id": "D2", "what": "FUTURE_TOLERANCE_DAYS removed, run() gate now strictly parsed[date] > today, timedelta import dropped; boundary pinned by test_census_dated_tomorrow_is_unverifiable_exit_2 and test_cli_census_dated_tomorrow_exits_2. freshness_gate.py live namesake untouched.", "state": "done"},
+    {"id": "REFRESH", "what": "Carrier refreshed to 2,436 tests collected / 371 files (2026-09-29 census), same grammar, landings named inline (5 committed 09-28 files, 09-28/29 in-file items, 6 untracked 09-29 wave files, +4 own regression cases, selffeed gap kept); receipt watch/inbox/wave5_repair/patrol-fix.md.", "state": "done"},
+    {"id": "CHECKS", "what": "self-test exit 0 (32 checks incl. blank-line vectors); --collect exit 0 (files 371 vs 371 exact, collected 2437 vs 2436 delta +1 concurrent, bar 20); pytest 50 passed; ratchet check --changed exit 0 NEW=0 (403 lines = accepted_lines, no growth); carrier grammar grep 1.", "state": "done"}
+  ],
+  "checks": [
+    {"command": ".venv/Scripts/python.exe tools/census_drift_patrol.py --self-test", "exit": 0, "evidence": "watch/inbox/gala_20260925/wave5-repair/lanes/patrol-fix.check.txt (CHECK 1, 32 ok incl. both blank-line vectors)"},
+    {"command": ".venv/Scripts/python.exe tools/census_drift_patrol.py --collect", "exit": 0, "evidence": "watch/inbox/gala_20260925/wave5-repair/lanes/patrol-fix.check.txt (CHECK 2, files 371 vs carrier 371, collect ok delta +1 bar 20)"},
+    {"command": ".venv/Scripts/python.exe -m pytest tests/test_census_drift_patrol.py -q", "exit": 0, "evidence": "watch/inbox/gala_20260925/wave5-repair/lanes/patrol-fix.check.txt (CHECK 3, 50 passed)"},
+    {"command": ".venv/Scripts/python.exe tools/violation_ratchet.py check --changed", "exit": 0, "evidence": "watch/inbox/gala_20260925/wave5-repair/lanes/patrol-fix.check.txt (CHECK 4, PASS NEW=0; GROWTH warning is tools/stealth_driver.py, another lane's file)"},
+    {"command": "grep -c \"2,436 tests collected / 371 files (2026-09-29 census\" AGENTS.md", "exit": 0, "evidence": "watch/inbox/gala_20260925/wave5-repair/lanes/patrol-fix.check.txt (CHECK 5, count 1)"}
+  ],
+  "decision_ledger": "Closes the arch-04 v2 must-fix pair D1+D2: markdown reflow can no longer blind the census tripwire into a lying exit 2, and the patrol no longer documents a future tolerance that never existed. Carrier decision surface changed: AGENTS.md now reads a 2026-09-29 census (2,436 / 371) with named attribution, ending the standing COLLECT-DRIFT.",
+  "notes": "Live estate moved during the lane: instrument readings 2410/368 (first collection) -> 2436/371 (other lanes +22 items +3 files; my edits +4 items in one existing file) -> 2437/371 at the final check (one more concurrent item, inside the bar). census_drift_patrol.py held at exactly 403 lines = accepted_lines of registered claim 8d41e611f98d3fa5 (no baseline file touched). Em/en dash scan: authored files 0/0; AGENTS.md added diff lines 0/0; check file carries 2 em-dashes inside the ratchet tool's own verbatim output.",
+  "receipt": "watch/inbox/wave5_repair/patrol-fix.md",
+  "check_file": "watch/inbox/gala_20260925/wave5-repair/lanes/patrol-fix.check.txt"
+}

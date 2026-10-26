@@ -1,0 +1,15 @@
+{
+  "gopher": "t21",
+  "item": "roblox/src/server/zones_extra/GalleryZone.luau line 204 passed frame (number, line 51) as first arg to prompt(parent: Instance, ...) (line 102); intended parent is screen (line 187)",
+  "ok": true,
+  "note": "Confirmed by bytes: pre-fix read shows line 204 prompt(frame, ...) with frame a number init -1 on line 51, while sibling call sites pass Instances (wall line 158, basin line 180) and line 202 uses banner(screen). Under --!strict this is TypeError: number not Instance. Minimal one-token fix applied: frame -> screen on line 204. Post-fix grep: prompt(frame zero matches; all prompt( call sites now Instance parents; lines 51/102/187 byte-identical, no other lines touched. mountain_check not run (shared). Verification by read/grep only.",
+  "checks": [
+    "pre-fix full-file read: bug present at line 204 (frame, not screen)",
+    "post-fix cat -A line 204: TAB-prefixed prompt(screen, ... CRLF intact",
+    "grep prompt(frame -> exit 1, zero matches",
+    "grep prompt( -> 102 def, 158 wall, 180 basin, 204 screen, all Instance",
+    "sed 51p/102p/187p unchanged from pre-fix bytes",
+    "mountain_check skipped per task law"
+  ],
+  "next_steal": "t22"
+}

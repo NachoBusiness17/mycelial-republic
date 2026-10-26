@@ -1,0 +1,8 @@
+# coldhot-cold-glm-flash-mag__registry (glm-5.3-flash @ zai, turn 1, channel: content)
+
+DEFECT 1: session_id is interpolated unvalidated into filesystem paths, so a sid containing separators or ".." escapes memory/biography/ | EVIDENCE: mag/registry.py:43-44 | FIX: validate sid against ^[A-Za-z0-9._-]+$ (rejecting ".." and os.sep) in residual_path, legacy_dossier_path, and derived_path before joining.
+DEFECT 2: read-modify-write registry upsert has no lock; two concurrent publish_residual calls each load the map, write tmp, and os.replace, silently dropping one session's row | EVIDENCE: mag/registry.py:364-390 | FIX: take an exclusive file lock (msvcrt.locking on a REGISTRY.lock sidecar) around _load_registry_map through os.replace.
+DEFECT 3: residual corruption path returns None and write_residual then treats it as absent, so prev invariants/core and previous card are silently lost on one bad read, permanently rewriting the cold vertex | EVIDENCE: mag/registry.py:79-90,185-188 | FIX: on JSONDecodeError in load_residual, fall back to reading the legacy dossier and log before proceeding with previous=None.
+DEAD-CODE: derived_path docstring advertises kind "dossier_legacy" but the function raises ValueError for it and no caller passes it | EVIDENCE: mag/registry.py:54-62
+ONE-SITTING FIX: add a single _safe_sid(sid) validator and call it at the top of residual_path/legacy_dossier_path/derived_path, closing the traversal hole for every writer and reader at once | EVIDENCE: mag/registry.py:43-62
+Falsifier: if any caller can prove sids are always generated as uuid4 hex upstream (cite that call site), DEFECT 1 downgrades to hardening, not a defect.

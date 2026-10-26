@@ -1,0 +1,75 @@
+{
+  "lane": "a23-steal-maps",
+  "division": "A",
+  "ok": true,
+  "note": "All four playbook-law grep patterns are wired into AGENTS.md (lines 32, 106, 109; no wiring gap on the checked terms), five rows mined and byte-verified against the four steal maps, and the estate grep found a first-class negative: maxAttempts has zero coverage in memory/corpus/.",
+  "rows": [
+    {
+      "law": "byte-identical cache-hit asks",
+      "claim": "The amend-cache keys on the exact ask text (FNV-1a over the instruction string only), so one wording change misses the cache and forces everything downstream that interpolates the result to re-run.",
+      "quote": "Cache hits demand byte-identical instruction text: the hash is FNV-1a over the instruction string only, so ANY wording change to an ask invalidates it and everything downstream that interpolates its result (hash.ts:48, imported-cache.ts:51).",
+      "source": "C:/Users/foste/Documents/projects/local_sovereign_agent/corpus/steal/ZCODE_ENGINE_DIG_20260925.md line 39",
+      "steal": "When amending tonight's width-probe workflow, edit ask text surgically and keep tunable numbers (width values, wave counts) out of ask text entirely; land the probe script change via AmendWorkflow and file the hit/miss counts from the run journal as a receipt in watch/inbox/gala_20260925/.",
+      "falsifier": "Amend a gated workflow changing one word in an ask and observe a cache hit on that ask (law dead); or read dynamic-workflow/src/engine/hash.ts:48 and find the key covers more than the instruction string.",
+      "leverage": "high"
+    },
+    {
+      "law": "amend-not-rewrite (resume replays failure)",
+      "claim": "Resuming a failed run deterministically re-rejects the journaled failed asks; the only way to actually re-execute a failed ask is to amend into a NEW run, never resume.",
+      "quote": "Resuming a failed run replays the failure, not a retry: failed asks are journaled and re-rejected deterministically (scheduler.ts:371-381). To actually re-run a failed ask you must amend into a new run, not resume.",
+      "source": "C:/Users/foste/Documents/projects/local_sovereign_agent/corpus/steal/ZCODE_ENGINE_DIG_20260925.md line 41",
+      "steal": "If tonight's probe run errors, fix the script and AmendWorkflow into a new run instead of ResumeWorkflowRun; log the old and new run ids side by side in the lane receipt so the replay-vs-retry behavior is on the record.",
+      "falsifier": "Resume a run whose ask failed and watch that ask execute fresh instead of re-rejecting (law dead); or scheduler.ts:371-381 showing failed rows are dropped from replay.",
+      "leverage": "high"
+    },
+    {
+      "law": "exit-2-only hard blocks",
+      "claim": "A crashing, hanging, or schema-invalid hook fails open with a HookRunFailed event; the only reliable hard-blocks are exit code 2 or valid JSON permissionDecision deny, so an imprecise security hook is a no-op.",
+      "quote": "it fails open with a HookRunFailed event; the only reliable hard-blocks are exit code 2 or valid JSON with permissionDecision 'deny'.",
+      "source": "C:/Users/foste/Documents/projects/local_sovereign_agent/corpus/steal/ZCODE_ENGINE_DIG_20260925.md line 115",
+      "steal": "One audit pass tonight over the estate's blocker hooks (Mimosa security gate, workflow gate): confirm each failure path either exits 2 or emits valid deny JSON, and file the per-hook verdict table as a receipt under watch/inbox/gala_20260925/.",
+      "falsifier": "Plant a hook that exits 1 or prints schema-invalid JSON where a block is expected and observe the tool call run anyway (fail-open confirmed as designed); or a code path in configured-runner-callback.ts that treats other exits as blocks.",
+      "leverage": "high"
+    },
+    {
+      "law": "retry asymmetry (width cap is the retry strategy)",
+      "claim": "Main-session model requests retry up to 11 attempts while workflow-child requests get zero adapter retries, so every 429 or dropped stream fails a digger on its first attempt and the width cap itself is the only retry lever.",
+      "quote": "Retry asymmetry found in the adapter: main-session requests get `maxAttempts 11`; workflow-child requests get `maxAttempts 0, maxRetries 0`. Every 429 or dropped stream fails a digger on its first attempt.",
+      "source": "C:/Users/foste/Documents/projects/local_sovereign_agent/corpus/steal/TETHERED_LINK_STEAL_20260925.md lines 16-18 (hard-wrapped across three lines, joined with single spaces)",
+      "steal": "Tonight's live geometric width probe on Task agents dispatches at max_concurrency 3 in waves, counts first-attempt child 429/1302 failures per width step, and files the numbers as a receipt in watch/inbox/gala_20260925/ so the falsifier is settled by bytes tonight.",
+      "falsifier": "Children observed surviving past their first attempt via adapter retry (numbers other than maxAttempts 0 / maxRetries 0 in the child path) kills the asymmetry; conversely 1302 storms appearing even at width 3 on the tether would kill the width law that the receipt derived from it.",
+      "leverage": "high"
+    },
+    {
+      "law": "first-write-closes-cache",
+      "claim": "The first workspace write in a run closes the amend-cache for the whole run; afterward only tool-free asks still hit, so read-only research asks must be front-loaded before any mutating ask.",
+      "quote": "The first workspace write closes the amend-cache for the whole run; after that only tool-free asks (worldToolCalls===0) still hit.",
+      "source": "C:/Users/foste/Documents/projects/local_sovereign_agent/corpus/steal/ZCODE_ENGINE_DIG_20260925.md line 40",
+      "steal": "Structure tonight's probe script so every read-only research ask precedes the first file write or world.run, then read the amend-cache hit count from the run journal into the gala receipt as the measured payoff.",
+      "falsifier": "A run that keeps scoring amend-cache hits after a live write or world.run (takeIfPure in imported-cache.ts passing a touched run) falsifies it; note the receipt's own counterexample: the naive any-live-ask design lost 6 of 50 fanout hits, which is the design this law replaced.",
+      "leverage": "medium"
+    }
+  ],
+  "checks": [
+    {
+      "command": "grep -n \"exit-2\\|amend-not-rewrite\\|byte-identical\\|max_concurrency\" AGENTS.md",
+      "exit": 0,
+      "evidence": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/w1/lanes/a23-steal-maps.check.txt",
+      "verdict": "All four patterns hit: max_concurrency at AGENTS.md line 32, exit-2 and amend-not-rewrite at line 106, byte-identical at line 109. No wiring gap on the checked terms. Scope caveat: this verifies 4 key terms, not all 13 playbook laws by name."
+    },
+    {
+      "command": "grep -rn \"maxAttempts\" corpus/steal/ ; grep -rn \"maxAttempts\" memory/corpus/ ; grep -rln \"byte-identical\" corpus/steal/ ; grep -rln \"byte-identical\" memory/corpus/",
+      "exit": 1,
+      "evidence": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/w1/lanes/a23-steal-maps.estate-grep.txt",
+      "verdict": "FINDING (negative, first-class): maxAttempts has exactly 1 hit in corpus/steal/ (the tether receipt itself, line 17) and ZERO hits in memory/corpus/ (grep exit 1), so the retry-asymmetry law has no prior coverage outside the receipt that coined it. byte-identical is covered in both dirs: 3 map files in corpus/steal/, and 2 files in memory/corpus/ (prose/THE50_W8_T40_TRIAD_DRAMA.md, salons/20260908_socratic_return/Salon-Audit.txt)."
+    },
+    {
+      "command": ".venv/Scripts/python.exe quote containment check (whitespace-normalized) of all 5 quotes against their source files",
+      "exit": 0,
+      "evidence": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/w1/lanes/a23-steal-maps.quote-check.txt",
+      "verdict": "ALL_OK: 5 of 5 quotes byte-verified (containment after whitespace normalization), 33/33/21/30/19 words, zero em-dashes in any quote."
+    }
+  ],
+  "decision_changed": "Tonight's live width probe runs at max_concurrency 3 and, when it needs changes, is amended with byte-identical ask text (numbers kept out of asks) instead of re-created or resumed, because workflow children carry zero adapter retries so width is the only retry lever; probe results land as a receipt in watch/inbox/gala_20260925/.",
+  "artifact": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/w1/lanes/a23-steal-maps.json"
+}

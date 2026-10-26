@@ -1,0 +1,111 @@
+=== old-files lane checks (gala wave5-repair), captured 2026-09-29, repo HEAD 6a6e35b59 ===
+Probe instrument: watch/inbox/gala_20260925/wave5-repair/lanes/old-files.escalate_probe.py
+(sets MAG_ESCALATE_HARNESS=1, patches harness.grok_cli.harness_available to True and
+escalate_via_harness to a fake that records the cwd argument, then calls
+escalate_grok_node. Node side effects land in gitignored runtime surfaces only:
+queue/handoff/20260929-*-taskold-files-probe.{json,md}, logs router line, CURRENT.md.)
+
+NOTE on git check-ignore exit semantics (characterized with the control below):
+in -v mode exit 0 means "some pattern matched"; the PRINTED pattern is the winning
+(last-matching) rule. The ignored/not-ignored boolean is -q (0=ignored, 1=not).
+
+--- BEFORE fix (captured in-session, before any of the three edits) ---
+
+$ git check-ignore -v --no-index .env.example
+.gitignore:21:.env.*	.env.example
+EXIT=0
+(ignoring rule .env.* wins; the glued !.env.example on line 22 never fires)
+
+$ .venv/Scripts/python.exe watch/inbox/gala_20260925/wave5-repair/lanes/old-files.escalate_probe.py
+config.ROOT: C:\Users\foste\Documents\projects\local_sovereign_agent
+MAG_ESCALATE_HARNESS set to 1 for probe
+status: escalated
+grok_harness: {"ok": false, "error": "name 'ROOT' is not defined"}
+PROBE_RESULT: NAMEERROR_SWALLOWED
+PROBE_EXIT=0
+(the harness path executes and dies on cwd=ROOT at agents/escalate_grok.py:89;
+ the blanket except at :111 swallows it; node degrades to park-only handoff)
+
+--- AFTER fix 1 (.gitignore: negation unglued onto its own line) ---
+
+$ git check-ignore -v --no-index .env.example
+.gitignore:22:!.env.example	.env.example
+EXIT_v=0
+(winning rule is now the NEGATION at .gitignore:22)
+
+$ git check-ignore -q --no-index .env.example
+EXIT_q=1
+(not ignored: the negation fires)
+
+$ touch .env.zzprobe && git check-ignore -v --no-index .env.zzprobe   [positive-rule control]
+.gitignore:21:.env.*	.env.zzprobe
+EXIT_ctrl=0
+(control: a genuinely ignored path still wins via .env.* at line 21)
+
+--- AFTER fix 2 (agents/escalate_grok.py:13 imports ROOT from config) ---
+
+### AFTER probe (expect harness path executed, cwd=config.ROOT)
+config.ROOT: C:\Users\foste\Documents\projects\local_sovereign_agent
+MAG_ESCALATE_HARNESS set to 1 for probe
+status: escalated_grok_ran
+grok_harness: {"ok": true, "summary": "probe run (fake harness)", "result_path": null, "error": null, "exit_code": 0}
+cwd forwarded: C:\Users\foste\Documents\projects\local_sovereign_agent
+cwd == config.ROOT: True
+PROBE_RESULT: HARNESS_PATH_EXECUTED
+PROBE_EXIT=0
+
+### AFTER: py_compile agents/escalate_grok.py
+PY_COMPILE_OK
+PY_COMPILE_EXIT=0
+
+### AFTER: import agents.escalate_grok
+IMPORT_OK C:\Users\foste\Documents\projects\local_sovereign_agent\agents\escalate_grok.py
+IMPORT_EXIT=0
+
+### AFTER: tail -10 README.md
+python main.py providers   # see configured: true/false
+python main.py quota
+```
+
+(Truncation note: this file ended mid-sentence on the bare word "Also" after
+its 2026-08-09 edit (de7bb85fe), a defect proven 2026-09-28 in
+watch/inbox/burn_reset_20260927/flash50/s2-17.md; the lost tail is not
+recoverable from git history, so the dangling word is removed and this closing
+sentence marks the truncation, added 2026-09-29 by the gala wave5-repair
+old-files lane.)
+
+### AFTER: last byte of README.md (od)
+0000000  \n
+0000001
+### AFTER: wc -l README.md
+218 README.md
+
+### AFTER: sed -n '18,25p' .gitignore | od -c (bytes of fixed block)
+0000000   #       s   e   c   r   e   t   s     342 200 224       n   e
+0000020   v   e   r       c   o   m   m   i   t  \n   .   e   n   v  \n
+0000040   .   e   n   v   .   l   o   c   a   l  \n   .   e   n   v   .
+0000060   *  \n   !   .   e   n   v   .   e   x   a   m   p   l   e  \n
+0000100   #       l   i   v   e       p   r   o   v   i   d   e   r   /
+0000120   m   e   s   h       c   r   e   d   e   n   t   i   a   l   s
+0000140       -       n   e   v   e   r       c   o   m   m   i   t    
+0000160   (   t   r   a   c   k   e   d       f   i   x       2   0   2
+0000200   6   -   0   8   -   2   0   )  \n   c   o   n   f   i   g   s
+0000220   /   p   r   o   v   i   d   e   r   s   .   y   a   m   l  \n
+0000240   d   e   p   l   o   y   /   k   8   s   /   m   a   g   -   s
+0000260   e   c   r   e   t   .   y   a   m   l  \n
+0000273
+
+### AFTER: git diff --stat
+ .gitignore              |  3 ++-
+ README.md               | 15 ++++++++++++++-
+ agents/escalate_grok.py |  2 +-
+ 3 files changed, 17 insertions(+), 3 deletions(-)
+
+--- ratchet (run voluntarily; NOT required for this lane: no mag/ or tools/ file touched) ---
+RATCHET check: scope=30 changed files; hits=22; registered=19; NEW=3; expired-exceptions=0
+  NEW 84291bf5f2af246b file-too-long: mag/corpus_gap_research.py:663 — >400 lines
+  NEW 42b721c740d1abda file-too-long: mag/corpus_selfsteal.py:476 — >400 lines
+  NEW 2c7e16bf178da9d0 shell-true: tools/fossil_check.py:73 — subprocess shell=True
+RATCHET: FAIL — run 'baseline-update' ONLY after a human/agent accepts the debt by name.
+RATCHET_EXIT=1
+(3 NEW hits are mag/corpus_gap_research.py:663, mag/corpus_selfsteal.py:476, tools/fossil_check.py:73 - none touched by this lane; --changed sweeps the shared branch's whole in-flight tree)

@@ -1,0 +1,18 @@
+{
+  "gopher": "t2",
+  "item": "implement the candy per-floor daily cap in CODE (a02 falsifier: doc-only)",
+  "ok": true,
+  "note": "SEASONAL_LAUNCH.md FALSIFIERS (lines 131-132) registered 'cap candy per floor per day if needed' but named no number. Derived cap = 6 candy per floor per day from the code's own spawn math: each floor emits exactly 6 static CandyBones at build, so a full daily sweep always pays and only overflow (the King's 40-candy shower) is muted; King's 500 VM award untouched; max print 12 VM/floor/day (36/day, 72 with doubler) vs 50-3000 VM sinks. Implemented in the same economy path: gate in dropCandy Touched before the +2*mult VM write. Capped candy pays nothing that day and stays in the world (no pay-nothing pickups). Per-player UTC-day tallies in Player attributes (same store as CandyDoublerUntil). Spec-first: derivation recorded in SEASONAL_LAUNCH.md falsifier AND beside the constant. Em-dash law: 0 em-dashes in added text (pre-existing ones left in place, cited in t2.check.txt CHECK 9). mountain_check NOT run (held by t1a this wave).",
+  "checks": [
+    "t2.check.txt CHECK 1: grep -rn CandyBone roblox/src -> OssuaryZone.luau:276 only",
+    "t2.check.txt CHECK 2: cap constant OssuaryZone.luau:241 CANDY_PER_FLOOR_DAILY_CAP = 6; helpers 243-266; gate 280",
+    "t2.check.txt CHECK 3: dropCandy(at, floor) def at 269; both callers pass floor (382 King, 422 static)",
+    "t2.check.txt CHECK 4: payment line OssuaryZone.luau:282 now behind candyAllowed gate at 280",
+    "t2.check.txt CHECK 5: doc falsifier records LANDED cap, SEASONAL_LAUNCH.md:132-133",
+    "t2.check.txt CHECK 6: full cap block lines 231-280 verbatim",
+    "t2.check.txt CHECK 9: em-dash locations all pre-existing (doc 1-109, code line 2), none in added ranges",
+    "t2.check.txt CHECK 11: no un-gated dropCandy callers (negative check)",
+    "t2.check.txt CHECK 12: next_steal evidence, doubler attribute mismatch"
+  ],
+  "next_steal": "Doubler attribute mismatch: Monetization.luau:46 grants VirtueDoublerUntil but OssuaryZone.luau:281 reads CandyDoublerUntil, so the 149R/1h Candy Doubler (SEASONAL_LAUNCH.md:19-20, SKU Config.luau:18) never doubles candy. Align the attribute name both sides, spec-first."
+}

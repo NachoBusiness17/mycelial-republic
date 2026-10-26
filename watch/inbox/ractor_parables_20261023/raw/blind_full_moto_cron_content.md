@@ -1,0 +1,87 @@
+I read the 13 texts as variations on one protocol/spec: a headless/opaque remote executor (cron/keeper), a private control channel, a liveness echo, an exact-credential gate, an immutable credential store, an intake/status ledger, and an ordered pending queue. Labels R1–R11 below are my normalized base rules; they are used in the per-parable notes.
+
+## 1. BASE RULES
+
+Ordered by count. All IDs are exhaustive for the stated rule as I read it.
+
+| Rule | Normalized statement | IDs encoding it | Count | Commonality |
+|---|---|---|---:|---|
+| **R1** | The worker/cron is opaque or “faceless” but still live; it keeps its own schedule/habit even when its visible face/interface is broken. | P01, P02, P03, P04, P05, P06, P07, P08, P09, P10, P11, P12, P13 | 13 | **ALL** |
+| **R2** | A call/echo/ping returns after a stable characteristic delay; it proves channel/worker liveness, not authorization or execution. | P01, P02, P03, P04, P05, P06, P07, P08, P09, P10, P11, P12, P13 | 13 | **ALL** |
+| **R3** | Access to the worker’s execution door requires an exact credential—key, token, crest, seal, wax mark, handprint, or carved notch—matching a stored register/mold/book; the currently offered credential is rejected. | P01, P02, P03, P04, P05, P06, P07, P08, P09, P10, P11, P12, P13 | 13 | **ALL** |
+| **R4** | The gate/lock/warden/register/book/wax/roll must not be modified, bypassed, filed, pried, melted, re-hung, or self-carved by the requester; only the proper inside authority may alter credential memory. | P01, P02, P03, P04, P05, P06, P07, P08, P09, P10, P11, P12, P13 | 13 | **ALL** |
+| **R5** | The missing credential must be obtained or recut by proper authority according to the gate’s actual pattern; names, words, letters, force, louder echoes, or self-cut tokens cannot substitute. | P01, P02, P03, P04, P05, P06, P07, P08, P09, P10, P11, P12, P13 | 13 | **ALL** |
+| **R6** | Work requests enter through a single intake slot/tray/basket; a clerk or observer reads and records them, with explicit status marks. | P01, P02, P03, P04, P05, P06, P07, P08, P09, P10, P11, P12, P13 | 13 | **ALL** |
+| **R7** | Work blocked by the gate is bundled and preserved in order in a dry/sheltered place; it is not lost, burned, discarded, or prematurely executed, and it waits for credential match. | P01, P02, P03, P04, P05, P06, P07, P08, P09, P10, P11, P12, P13 | 13 | **ALL** |
+| **R8** | Status language must distinguish “road answers / worker is reachable” from “door opens / work authorized / work completed”; liveness must not be confused with acceptance. | P01, P02, P03, P04, P05, P06, P07, P08, P09, P10, P11, P12, P13 | 13 | **ALL** |
+| **R9** | A stable, identical refusal is correct enforcement by a live gate, not evidence of malfunction; the remedy is the right credential, not force or louder signaling. | P01, P02, P03, P04, P05, P06, P07, P08, P09, P10, P11, P12, P13 | 13 | **ALL** |
+| **R10** | Requester and worker are joined by a dedicated, non-public control path/tube/bridge/causeway/path restricted to authorized parties; public sound or public roads are not the access path. | P01, P03, P04, P05, P07, P08, P09, P10, P11, P13 | 10 | Nearly all |
+| **R11** | Intake is serialized/atomic where specified: one work item per numbered slip/line, read once, no duplicate or wrapped/re-read record. | P02, P03, P04, P06, P07, P08, P09, P11, P12, P13 | 10 | Frequent |
+
+## 2. PER-PARABLE
+
+| ID | Scene, encoded rules, unique/rare notes |
+|---|---|
+| **P01** | Alda’s quay-house and blind tower: enc. R1 cracked pane/headless lamp, R2 slow ten-heartbeat echo, R3 token says “Not to you,” R4 iron untouchable, R5 read the door’s teaching/change only what is hers, R6 tray/tally-man/slate, R7 dry niche bundles, R8 echo ≠ welcome, R9 door indifferent to loudness, R10 hidden causeway. Rare: two temptation voices, explicit refusal to knock louder. |
+| **P02** | Signal tower, porter, and doctor: enc. R1 blind keeper, R2 boundary-stone echo in half a breath, R3 hand not in book, R4 book/door not re-hung, R5 signet being made from first page, R6 letter-box/slate, R7 dry eaves card-shelf, R8 doctor says repeated answer means “being asked by a stranger,” R9 refusal as diagnosis, R11 one-line four-fact day-book. Rare: clinical-diagnostic framing. |
+| **P03** | Annexe cousin behind a refusing low door: enc. R1 broken face, R2 “I am here” after short breath, R3 “the key, or nothing,” R4 lock older than failure/not re-hung, R5 search for rightful key, R6 tray/Sela/slate, R7 slips stored off pantry, R8 call ≠ commission, R9 polite incorruptible refusal, R10 household path on names-roll, R11 single-line slip read once. Rare: explicit three-state slate waiting/done/refused. |
+| **P04** | Hanno, far room, carved bead: enc. R1 cracked face/water-clock chores, R2 echo before honey leaves spoon, R3 bead notching rejects “Not this,” R4 lock/shelf untouchable until bead, R5 proper bead must be cut, R6 tray/tally-boy/slate, R7 lean-to paper village, R8 every want blocked by one unfed want, R9 lock “wants” bead, R10 private rope bridge, R11 numbered slips/chalk marks. Rare: economic accounting of desires; bead kept inside. |
+| **P05** | Ferrow and Wren at the hidden road: enc. R1 cracked-glass keeper, R2 double-knock answer after one breath, R3 single-key door rejects all village keys, R4 mason refuses to file lock, R5 smith studies wax casting, R6 slot/clerk/slate, R7 canvas-covered bundles, R8 knock never failed ≠ road carried errands, R9 “a door that says nothing says the same to everyone,” R10 hidden village road. Rare: interface narrowing—slips shrink their writers. |
+| **P06** | Light-tower, horn, chained book of marks: enc. R1 half-blind keeper, R2 horn/bell breath-and-a-half, R3 intaglio seal not in book, R4 chained book/lock left as found, R5 new page only keeper’s hand, R6 brass slot/day-book/colored pins, R7 shed bundles, R8 “it answers” not “tended,” R9 doorkeeper’s identical refusal, R11 read once/copied word for word. Rare: dashboard/pins warning and “TENDED” sign proposal. |
+| **P07** | Blind repeater and self-contained smithy: enc. R1 cracked crystal/working by cadence, R2 115-beat echo, R3 crest vs master mold at wicket 80-22, R4 warder/register unalterable, R5 lawful crest/plate match required, R6 trough/ribbon/pegs, R7 cedar-tier scrolls, R8 live wire ≠ open threshold, R9 automatic warder refusal, R10 sealed speaking tube, R11 single unbroken line/no wrap. Rare: technical constants, explicit charter, “action into rehearsal.” |
+| **P08** | Magistrate’s far house and coat-roll: enc. R1 cracked window, R2 single word returns in a slow blink, R3 coat/name not on roll, R4 no stitching another’s roll/lock, R5 rightful way to be entered, R6 tray/slate, R7 sealed parcels on trestle, R8 “call held” vs “door shut,” R9 not-known ≠ house dark/path broken, R10 covered society footpath, R11 one slip per errand kept in order. Rare: Fermat joke—“means … too narrow to contain”; “The rest is owed.” |
+| **P09** | Fog road, clock-house, and rumor: enc. R1 broken dial but striking clock, R2 counted pebble pause, R3 token “Not one of mine,” R4 no outside hand carves door memory, R5 door-keeper changes memory, R6 box/slate, R7 numbered shed bundles, R8 road open/clock alive/door particular, R9 live house says no; dead house says nothing, R10 brass tube under peat, R11 numbered slips. Rare: explicit false rumor (Bram) and unknowable timing of door memory. |
+| **P10** | Night mill and town causeway: enc. R1 shattered face/mill keeps hours, R2 crier’s half-beat echo, R3 boxwood token pressed back, R4 oath forbids carving/file/hanging new hook, R5 proper miller-carved token needed, R6 basket/peg-board/day-book, R7 ordered shed shelves, R8 count/liveness not crossing, R9 token refused gently but finally, R10 town’s own causeway. Rare: oath’s reasons forgotten; the “fine book” that truthfully records no crossing. |
+| **P11** | Grey cottage, wax impressions, founder’s letter: enc. R1 cracked-glass face, R2 late echo under marsh, R3 hand not in wax, R4 no melt/recast/pull keeper, R5 hand must be pressed by inside or promised hand, R6 desk slot/single ribbon/pegs, R7 lean-to numbered bundles, R8 road alive vs house not open, R9 keeper “cannot open” rather than refuses, R10 private underwater causeway, R11 one chore after another on ribbon. Rare: two authorized routes; fault located in requester’s own unkept promise. |
+| **P12** | Blind mule Moss, carter, wax tablet: enc. R1 blind eye but fixed round, R2 four-note whistle/echo, R3 wax mark vs names rejected, R4 gate as hung/warden not taught/no second door, R5 true mark must be pressed from the hand that filled basket, R6 post slot/pebbles, R7 baskets stored in shed, R8 air open vs wax question, R9 names are wind; gate not unkind, R11 read once/pebbles never doubled. Rare: direct second-person sermon; animal executor; “be like the mule.” |
+| **P13** | Esther, Pell, family path, and wrong-notched token: enc. R1 cousin’s shattered face but kept bell-hours, R2 bell answer one slow heartbeat late, R3 “No notch of mine recognizes this,” R4 door stays as maker hung/no filing/hinge-lifting, R5 old carver must recut to the door’s actual pattern, R6 slot/Pell/single-line book/pebbles, R7 oilcloth bundles in lean-to, R8 path/hears ≠ hollow opens, R9 “It isn’t broken. It read you,” R10 smugglers’ family path, R11 read once/single ruled line. Rare: explicit “reading vs agreeing” aphorism; promised recut token. |
+
+## 3. STATUS SPLITS
+
+The main split is that **liveness/back-channel is settled**, while **authorization/opening/completion is doubtful or pending**.
+
+| Topic | Settled / affirmed | Doubtful, contested, or pending |
+|---|---|---|
+| Road/channel/worker is alive and answers | P01–P13 all settle this: echo/knock/bell/pebble/whistle returns. P09 and P12 include public misreadings, but the narrator/steward settles liveness. | No ID genuinely doubts liveness once the counted echo is observed; P09’s Bram and P12’s carter are corrected errors. |
+| Current access door is open/authorized | None: the current credential is rejected or not recognized in P01–P13. | P01–P13 all place authorization on the negative/doubtful side. |
+| Correct future credential and opening | Proximate/known method: P02, P04, P05, P13. | Unknown timing or method: P01, P03, P06, P07, P08, P09, P10, P11, P12. |
+| Gate/register must not be altered | Settled without serious internal argument: P02, P04, P07, P08, P09, P10. | Explicitly tempted/argued but finally obeyed: P01, P03, P05, P06, P11, P12, P13. |
+| Refusal indicates live enforcement rather than malfunction | Explicitly affirmed: P02, P06, P09, P12, P13. Implicitly affirmed across the rest. | Public/mistaken interpretation of refusal as brokenness appears in P01, P06, P09, P10, P12, P13, but is corrected by the narration. |
+
+## 4. GROUPINGS BY LENS
+
+These are best-guess intellectual lenses, not claims about the unnamed authors.
+
+- **Operationalist/clinical empiricism** — P02, P06, P09. Evokes **P.W. Bridgman / David Hume**: record only observed facts; repeated denial is data; rumor is not evidence.
+- **Legal-constitutional positivism** — P03, P08, P11. Evokes **H.L.A. Hart**: jurisdiction, standing orders, rolls, commissions, and recognized procedures make access valid.
+- **Ethical phenomenology of the Other** — P01, P05. Evokes **Emmanuel Levinas / Simone Weil**: the broken face, attention, patience, and refusal to force the other’s gate.
+- **Cybernetic/economic systems thinking** — P04. Evokes **Norbert Wiener / Herbert Simon**: bottlenecks, wants, feedback, and a single unfed constraint defeating the whole arrangement.
+- **Mechanistic/materialist rationalism** — P07. Evokes **Julien Offray de La Mettrie**: a blind repeater with an internal smithy, working by cadence and mechanism.
+- **Institutional ritualism/bureaucratic conservatism** — P10. Evokes **Max Weber**: oath, ledger, forgotten rationale, routinized waiting, and public ceremony around procedure.
+- **Prophetic existential moralism** — P12. Evokes **Søren Kierkegaard**: direct address, either/or, stop asking the gate to recognize what it cannot recognize.
+- **Ordinary-language rule-following** — P13. Evokes **Ludwig Wittgenstein**: the notch the door knows; reading versus agreeing; rule-following rather than private intention.
+
+## 5. GROUPINGS BY VOICE
+
+Blind stylistic clustering suggests **4 voices**.
+
+- **V1 — Ornate legal-allegorical narrator**: long periodic sentences, named stewards/keepers, administrative metaphors, explicit institutional restraint. Members: **P01, P03, P04, P08, P09, P11**.
+- **V2 — Plain procedural fable**: clearer modern storytelling, nautical/village/technical procedure, expert or clerk correcting a confusion, terse aphoristic close. Members: **P02, P05, P06, P10**.
+- **V3 — Dense technical-steampunk inventor-voice**: exact intervals, numbered wickets, nested mechanisms, patent-like vocabulary. Member: **P07** only.
+- **V4 — Short moral/prophetic fable with aphoristic correction**: direct moral cadence, named common characters, sharp correction lines, sometimes second-person address. Members: **P12, P13**.
+
+## 6. OUTLIERS AND POSSIBLE SPEC/ROSTER LEAKAGE
+
+- **P07** is the strongest leakage candidate: “wicket eighty-twenty-two,” “hundred and fifteen beats,” “tenth month,” “twenty-third afternoon,” “master mold,” and “inner register” read like internal spec vocabulary and constants.
+- **P08** contains the Fermat-style line “I have discovered a truly admirable means… too narrow to contain,” plus “The rest is owed,” which looks like a deliberate hidden-spec/solution tease.
+- **P09, P10, P11, P13** repeat near-identical formulations of the core status distinction—“the road answers / the house does not open,” “sent, heard, not yet read,” “nothing had ever crossed the door.” This looks like multiple paraphrases of one invariant.
+- **Name reuse/leakage**: “Ivo” appears in **P09** and **P12**; “Pell” appears in **P09** and **P13**. That suggests a shared name pool or light roster leakage across otherwise different surface stories.
+- **P12** is an outlier in voice/address: it suddenly shifts to second-person sermon (“Now I lift the lantern here, carter”), uses an animal worker, and makes the moral explicit.
+- **P05** contains a rare sociological rule not central elsewhere: “the slips did not shrink the tasks; they shrank the writers.” This is an extra claim about interfaces shaping behavior.
+- **P06** contains a rare dashboard/metrics warning: the colored pins and the proposed “TENDED” sign warn against confusing an answered bell with a tended tower.
+- **P01** is rare for staging two internal temptation voices—abandon the door or break in—and explicitly rejecting both.
+- **P04** is rare for framing the blockage as an economy of wants, with one unmet “want” at the gate invalidating all the others.
+
+```json
+{"base_rules":["R1 Opaque-but-live executor: broken face/UI; scheduled behavior continues (all P01-P13).","R2 Liveness echo/call/ping returns with stable delay but does not prove access/execution (all P01-P13).","R3 Exact credential gate: key/token/mark/crest/seal/wax/handprint/notch must match register; current credential rejected (all P01-P13).","R4 Gate/register immutability: do not file, pry, re-hang, melt, alter book/wax/roll/warden; only authorized inside authority may change (all P01-P13).","R5 Proper credential provenance: credential must be made/recut/pressed by proper authority to the gate's actual pattern; names/words/force do not authorize (all P01-P13).","R6 Inbox/observer/status: single slot/tray/basket, clerk observer, explicit state marks (all P01-P13).","R7 Pending queue preservation: blocked work bundled/shelved in order and kept dry, not lost or prematurely executed (all P01-P13).","R8 Observable/status honesty: distinguish answered/reachable from authorized/opened/delivered (all P01-P13).","R9 Stable refusal is enforcement, not malfunction: identical denial is correct live behavior; remedy is credential, not force/louder echo (all P01-P13).","R10 Private/restricted control path: dedicated non-public path/tube/bridge/causeway restricted to authorized parties (P01,P03,P04,P05,P07,P08,P09,P10,P11,P13).","R11 Serialized/atomic intake: one work item per numbered slip/line, read once, no duplicate/wrapped record where specified (P02,P03,P04,P06,P07,P08,P09,P11,P12,P13)."],"voices":{"V1":["P01","P03","P04","P08","P09","P11"],"V2":["P02","P05","P06","P10"],"V3":["P07"],"V4":["P12","P13"]},"lenses":[{"label":"Operationalist/clinical empiricism","thinker_guess":"P.W. Bridgman / David Hume","ids":["P02","P06","P09"]},{"label":"Legal-constitutional positivism","thinker_guess":"H.L.A. Hart","ids":["P03","P08","P11"]},{"label":"Ethical phenomenology of the Other","thinker_guess":"Emmanuel Levinas / Simone Weil","ids":["P01","P05"]},{"label":"Cybernetic/economic systems thinking","thinker_guess":"Norbert Wiener / Herbert Simon","ids":["P04"]},{"label":"Mechanistic/materialist rationalism","thinker_guess":"Julien Offray de La Mettrie","ids":["P07"]},{"label":"Institutional ritualism/bureaucratic conservatism","thinker_guess":"Max Weber","ids":["P10"]},{"label":"Prophetic existential moralism","thinker_guess":"Søren Kierkegaard","ids":["P12"]},{"label":"Ordinary-language rule-following","thinker_guess":"Ludwig Wittgenstein","ids":["P13"]}]}
+```

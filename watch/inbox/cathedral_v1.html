@@ -1,0 +1,1362 @@
+<!DOCTYPE html>
+<html><head><meta charset="utf-8"><title>THE CATHEDRAL v1 — hand-wired</title>
+<style>
+ body { background:#101014; color:#d8d4c8; font-family: Georgia, serif; max-width: 860px; margin: 2rem auto; padding: 0 1rem; }
+ h1 { font-size: 1.3rem; color:#e8e2d0; } h3 { color:#a8a290; margin-bottom:.3rem; }
+ .mod { color:#8a86; font-family: monospace; font-size:.8rem; }
+ .meters { font-family: monospace; font-size:.85rem; color:#7fbf7f; margin:.6rem 0; }
+ .contested { font-family: monospace; font-size:.78rem; color:#d0a040; border:1px dashed #d0a040; padding:.4rem; margin:.5rem 0; }
+ button { background:#1c1c22; color:#d8d4c8; border:1px solid #444; padding:.35rem .7rem; margin:.15rem 0; font-family: inherit; cursor:pointer; }
+ button:not(:disabled):hover { border-color:#c8b870; } button:disabled { opacity:.45; cursor:not-allowed; }
+ #cmd { width: 60%; background:#16161a; color:#d8d4c8; border:1px solid #444; padding:.35rem; font-family: monospace; }
+ #kifu { white-space: pre-wrap; font-family: monospace; font-size:.75rem; color:#9a968a; background:#0c0c10; padding:.7rem; min-height: 8rem; border:1px solid #2a2a30; }
+ .note { font-size:.8rem; color:#8a8678; }
+</style></head><body>
+<h1>THE CATHEDRAL — v1, hand-wired</h1>
+<p class="note">One engine. Regions are mag_game_module.v1 files, assembled by
+tools/cathedral_build.py. Agreed invariants live: loop-closes, lens-count-gate,
+water-feeds-field, mechanism-is-the-answer, engram-is-summon. Contested edges
+(descent order, gate style) are marked, not enforced — tiebreak gated on operator GO.
+Acts: <code>open valve a</code> · <code>open valve b</code> · <code>wait</code> ·
+<code>pour bucket</code> · <code>summon &lt;seat&gt;</code></p>
+<div id="view"></div>
+<h3>your quest card</h3><div id="quests"></div>
+<h3>the table <span style="font-weight:normal">DM narrates · 2d6 on every act · gates stay deterministic</span></h3><div id="dm"></div>
+<h3>act</h3><input id="cmd" placeholder="pour bucket"><button onclick="act(document.getElementById('cmd').value)">do</button>
+<h3>kifu (session)</h3><div id="kifu"></div>
+<script>
+const MODULES = {
+ "water_computer": {
+  "module_id": "water_computer",
+  "title": "The Clear Pipes \u2014 a water-computer keep",
+  "start_room": "gallery",
+  "rooms": {
+   "gallery": {
+    "id": "gallery",
+    "name": "The Sight-Glass Gallery",
+    "desc": "Three tanks behind glass: SOURCE, WORK, OUT. Clear pipes. Gravity is the only computer. A plaque: height is the computation. A bucket on a far hook would be a lie.",
+    "area": "The hydraulic keep",
+    "environment": "Cool; dripping; honest glass",
+    "area_tag": "hub",
+    "exits": {
+     "west": "source_cistern",
+     "east": "work_gallery",
+     "north": "out_cistern"
+    },
+    "hooks": [
+     "Plaque: height is the computation. A bucket into OUT is not a win.",
+     "Pump-Janitor: I move water. I do not pour. Hire me and I tick once."
+    ],
+    "tags": [
+     "gallery",
+     "hub",
+     "glass"
+    ]
+   },
+   "source_cistern": {
+    "id": "source_cistern",
+    "name": "Source Cistern",
+    "desc": "Rain water stacked three marks high. Valve A on the pipe east toward WORK. Closed, nothing flows. Open, gravity takes a mark each wait.",
+    "area": "West tank",
+    "environment": "Wet stone; the only full tank at dawn",
+    "exits": {
+     "east": "gallery"
+    },
+    "hooks": [
+     "Valve-A: pipe to WORK. Say open valve or close valve.",
+     "Pump-Janitor: Check valve holds. I will not fill OUT from a bucket."
+    ],
+    "tags": [
+     "tank",
+     "source"
+    ]
+   },
+   "work_gallery": {
+    "id": "work_gallery",
+    "name": "Work Integrator",
+    "desc": "The middle tank. This is where the dam's heat would have been. Valve B on the pipe north-east toward OUT. Empty until SOURCE has run.",
+    "area": "East tank",
+    "environment": "Echo; pipe-tick",
+    "exits": {
+     "west": "gallery"
+    },
+    "hooks": [
+     "Valve-B: pipe to OUT. Open only after water has arrived, or both valves siphon."
+    ],
+    "tags": [
+     "tank",
+     "work"
+    ]
+   },
+   "out_cistern": {
+    "id": "out_cistern",
+    "name": "Output Cistern",
+    "desc": "The answer tank. Empty glass. A wooden bucket hangs here \u2014 the cheat. Pouring fills the height without the pipes. Physics will call it DISPUTED. A downstream door: glass, impossible, north-bank cold. It only opens for carried height.",
+    "area": "North tank",
+    "environment": "Dry; tempting",
+    "exits": {
+     "south": "gallery",
+     "downstream": "leaf_gate"
+    },
+    "hooks": [
+     "The Bucket: pour bucket to fake a height. That is not computation."
+    ],
+    "loot": [
+     "bucket"
+    ],
+    "tags": [
+     "tank",
+     "out"
+    ],
+    "invariant": "water-feeds-field (RIB_CATHEDRAL_WORLD_V1: OUT.height is fractal leaf_gate entry, AGREE) \u2014 gated by engine on refraction"
+   }
+  }
+ },
+ "fractal_maze": {
+  "module_id": "fractal_maze",
+  "title": "THE FRACTAL MAZE \u2014 memorize is a leaf-only tree; grok grows the nodes",
+  "start_room": "leaf_gate",
+  "rooms": {
+   "leaf_gate": {
+    "id": "leaf_gate",
+    "name": "The Leaf Gate (scale 1: the corridor you memorize)",
+    "desc": "A gate of bare branches. Every path forward is a leaf: a room with exits and no center. A keeper sits at the gate counting your footsteps. 'Walk enough leaves,' she says, 'and the maze will notice you.' The air shimmers where the field runs dense \u2014 your lantern ray will not travel straight in there.",
+    "area": "The Fractal Maze",
+    "environment": "Cold; crisp shadows; lantern steady",
+    "area_tag": "scale-1",
+    "exits": {
+     "north": "leaf_hall",
+     "east": "leaf_hall",
+     "south": "grok_chamber"
+    },
+    "hooks": [
+     "Keeper: memorize is a leaf-only tree. You can learn every leaf by heart and know nothing. (She does not fight. She counts.)",
+     "Sign, scratched: same steer, same landing \u2014 until the medium disagrees. Then the light bends.",
+     "The dense shimmer ahead is low temperature. Rays bend toward brightness there. Aim anyway."
+    ],
+    "tags": [
+     "scale-1",
+     "leaf"
+    ]
+   },
+   "leaf_hall": {
+    "id": "leaf_hall",
+    "name": "The Refractive Hall (scale 1: where straight aim lies)",
+    "desc": "A hall of standing water-wall. Your lantern's beam enters straight and leaves elsewhere \u2014 the building appears where the light LANDS, not where you pointed. Old aim-marks on the floor mark every place a walker swore the maze was broken. The maze was never broken; it was refractive.",
+    "area": "The Fractal Maze",
+    "environment": "Wet; the field runs 0.62 and brighter here",
+    "area_tag": "scale-1",
+    "exits": {
+     "back": "leaf_gate",
+     "deep": "scale_gallery"
+    },
+    "hooks": [
+     "Law, on the water-wall: temperature is the refractive index. Cold medium, bent ray. Void, straight. Same steer, same landing \u2014 always.",
+     "Aim-mark: 'I steered north and the tower appeared east of me. Same north, same tower, next time. The maze is not random. It is a LENS.'",
+     "From here, the deep exit shrinks the whole hall into a hook. Walk down a scale and read the walls again: same grammar, smaller letters."
+    ],
+    "tags": [
+     "scale-1",
+     "refraction"
+    ]
+   },
+   "scale_gallery": {
+    "id": "scale_gallery",
+    "name": "The Scale Gallery (scale 2: the hall, again, smaller)",
+    "desc": "The Refractive Hall again \u2014 the same standing water-wall, the same aim-marks, the same scratched law \u2014 one scale down, carved in miniature. A child's copy of the maze lives in a groove in the floor. The groove's own walls carry a smaller groove. You crouch. You do not finish checking.",
+    "area": "The Fractal Maze",
+    "environment": "Quieter; the shimmer repeats at every size",
+    "area_tag": "scale-2",
+    "exits": {
+     "up": "leaf_hall",
+     "down": "scale_cell",
+     "north": "grok_chamber"
+    },
+    "hooks": [
+     "Generalization plaque: self-similarity across scales is the only thing that survives the shrink. If it is not true here and in the groove, it was never true.",
+     "Counting board: leaves revealed in this region feed the tree. At the eighth leaf the maze grows a node \u2014 watch for the \u25b2 where no wall was.",
+     "The groove contains the groove. You stop counting scales at four. The maze does not."
+    ],
+    "tags": [
+     "scale-2",
+     "self-similar"
+    ]
+   },
+   "scale_cell": {
+    "id": "scale_cell",
+    "name": "The Cell in the Groove (scale 3: the letter of the law, legible)",
+    "desc": "Small enough that the law fits on one wall: attention is light. softmax is a lens. temperature is the refractive index. at temp zero every ray bends to the argmax; at temp infinity the rays go straight. sampling is just optics. Under it, one line of graffiti in a smaller hand: so is walking.",
+    "area": "The Fractal Maze",
+    "environment": "Intimate; the lantern fills the room",
+    "area_tag": "scale-3",
+    "exits": {
+     "up": "scale_gallery"
+    },
+    "hooks": [
+     "The law, at full resolution. At the bottom scale it is not a metaphor anymore; it is the room.",
+     "Graffiti, smaller hand: so is walking. \u2014 the walker's confession that they too are a ray.",
+     "No exits down. Whatever is smaller than the law is not the maze's to show."
+    ],
+    "tags": [
+     "scale-3",
+     "law"
+    ]
+   },
+   "grok_chamber": {
+    "id": "grok_chamber",
+    "name": "The Grok Chamber (the night the tree grows)",
+    "desc": "A domed room with eight empty plinths arranged around a ninth, central one, bare. Walk the maze enough \u2014 eight leaves anywhere in these halls \u2014 and return: the center plinth will hold a \u25b2 that was not carved by any hand. The chamber's acoustics make your own footsteps come back as shortcuts.",
+    "area": "The Fractal Maze",
+    "environment": "Domed; every whisper returns as a path",
+    "area_tag": "grok",
+    "exits": {
+     "north": "leaf_gate",
+     "gallery": "scale_gallery"
+    },
+    "hooks": [
+     "The test: reveal eight leaves in the region and the render grows an Internal Node \u2014 a hub linking leaves that used to be unconnected. It is committed as a knot before you can name it.",
+     "measure_plan's line, floor mosaic: memorize = leaf-only tree; grok = the tree grows internal nodes.",
+     "The plinths are the leaves. The center is the loss curve's cliff. Nothing here is trained; everything here is walked.",
+     "After the node: same maze, shorter maze. Generalization is the walk feeling shorter at every scale at once."
+    ],
+    "encounter": {
+     "id": "formateater_echo",
+     "name": "Formateater Echo (the old boss, demoted to a rumor: unrendered quests whisper here)",
+     "hp": 12,
+     "hp_max": 12,
+     "ac": 14,
+     "attack_bonus": 2,
+     "damage": "1d6 unrendered"
+    },
+    "tags": [
+     "grok",
+     "boss-room"
+    ]
+   }
+  }
+ },
+ "riddler_optics": {
+  "module_id": "riddler_optics",
+  "title": "THE RIDDLER OPTICS \u2014 ten lenses, one ray; the bend is the map",
+  "start_room": "garage_gate",
+  "rooms": {
+   "garage_gate": {
+    "id": "garage_gate",
+    "name": "The Garage Gate (the source ray)",
+    "desc": "A two-pump garage at the meeting of roads, the light all late afternoon and dust. A bell hangs over a counter, ringing only for arrivals. Chalked above the counter, the only law on the property: 'The clerk smiled when the cars slowed down. She smiled before they finished parking.' Ten doors lead off the forecourt, one per lens. Carry the two lines into any of them and they will not come out the same shape. The bend is the map.",
+    "area": "The Riddler Optics",
+    "environment": "Warm dust; bell oil; light that makes no promises",
+    "area_tag": "hub",
+    "exits": {
+     "north": "lens_blade",
+     "up": "mapping_chamber",
+     "east": "lens_engineer"
+    },
+    "hooks": [
+     "The chalked lines are the test-ray: identical input to every lens; the reading is taken on exit.",
+     "Sign by the pumps: SAME RAY IN. SAME RAY OUT. THE DIFFERENCE IS THE ROOM.",
+     "The attendant does not smile before you finish parking. Somebody here has to be the control group."
+    ],
+    "tags": [
+     "hub",
+     "riddler",
+     "ray-source"
+    ]
+   },
+   "lens_blade": {
+    "id": "lens_blade",
+    "name": "The Atrium of the Blade (VOLTAIRE)",
+    "desc": "You enter a perfectly reasonable room. The steward greets you as an old friend, though you have never met, for here friendship is administered on arrival, like religion, in advance of need. Everything is arranged so that a visitor of taste can lose his purse, his doctrine, and his watch in strict order of usefulness \u2014 and praise the room for the education. The walls display the wreck of every absolute that checked in; the concierge insists they checked out improved.",
+    "area": "The Riddler Optics",
+    "environment": "Powdered; witty; a faint smell of burning dictionaries",
+    "area_tag": "lens-voltaire",
+    "exits": {
+     "north": "lens_monomyth",
+     "south": "garage_gate"
+    },
+    "hooks": [
+     "Riddle: say the thing by seeming to praise it.",
+     "Mapped: aphorism compression; ironic-praise posture; escalation to absurdity, then the tidy devastating close; adjectives spent on institutions, never on weather.",
+     "Refraction receipt (clerk, 1759): 'The inn's clerk smiled at the coach the instant it slowed, and had quite finished before the passengers descended. \"You are kind to strangers,\" said Candide. \"Strangers,\" said she, \"do not exist until they arrive, and by then my work is done.\"'"
+    ],
+    "tags": [
+     "lens",
+     "voltaire"
+    ]
+   },
+   "lens_monomyth": {
+    "id": "lens_monomyth",
+    "name": "The Hall of the One Story (CAMPBELL)",
+    "desc": "The corridor repeats. That is its teaching. Every doorway here is the same doorway in different clothes: a threshold, a keeper, a gift withheld until the walker is changed. The wall-carpets show ten thousand heroes setting out, and if you look closely, the heroes are all the same hero, and so are the dragons. A docent whispers the stages as you pass \u2014 call, threshold, ordeal, return \u2014 and the whisper never changes, because the room never does.",
+    "area": "The Riddler Optics",
+    "environment": "Reverent; carpeted; the same footstep, echoing",
+    "area_tag": "lens-campbell",
+    "exits": {
+     "north": "lens_anthropologist",
+     "south": "lens_blade"
+    },
+    "hooks": [
+     "Riddle: every story is one story in different clothes.",
+     "Mapped: stage-naming reflex; pattern announced, then walked; lineage-citation habit (Frazer, Jung, Joyce); grandeur borrowed from repetition.",
+     "Refraction receipt (clerk, 1949): 'Every arrival is the same arrival wearing different headlights. The clerk stands at a threshold as old as the first inn: the slowing is the call; the smile is refusal and acceptance in a single gesture; the customer departs bearing a boon no bigger than a receipt. She is not the hero. She is the threshold \u2014 and thresholds are the oldest characters.'"
+    ],
+    "tags": [
+     "lens",
+     "campbell"
+    ]
+   },
+   "lens_anthropologist": {
+    "id": "lens_anthropologist",
+    "name": "The Listening Room (LE GUIN)",
+    "desc": "The room is quiet the way a word is quiet after it has been said right. There is no treasure here, only the custom of the place: how the light is kept, who speaks first, what a welcome costs and who pays it. Watch long enough and the strange manners stop being strange. Then the door out looks like the strange thing, and you are the visitor.",
+    "area": "The Riddler Optics",
+    "environment": "Dry air; dust the color of patience; a kettle somewhere",
+    "area_tag": "lens-le-guin",
+    "exits": {
+     "north": "lens_absurdist",
+     "south": "lens_monomyth"
+    },
+    "hooks": [
+     "Riddle: the strange made familiar until you cannot say which it was.",
+     "Mapped: sentence-length variance collapses to plainsong; adjective budget cut to the bone; metaphor domain = weather, geology, kinship; weight shifts to nouns of work.",
+     "Refraction receipt (clerk, 1968; the five sentence-initials spell FENCE): 'Far out on the flats, the road did all the talking. Every time the cars slowed, the clerk smiled, and she was done smiling before the wheels stopped. Nobody in town thought this strange; arriving and being welcome had worn smooth into one word. Cars came up out of the heat like fish rising, and she fed them. Evening took the road back, and she stood in the door with the smile still on, saving it for whoever the dark sent next.'"
+    ],
+    "tags": [
+     "lens",
+     "le-guin",
+     "stego"
+    ]
+   },
+   "lens_absurdist": {
+    "id": "lens_absurdist",
+    "name": "The Restaurant at the Junction (ADAMS)",
+    "desc": "The room greets you with a number: specifically, the number of times it has greeted anyone (one in three point seven million, management having pre-scheduled hospitality against the remote chance of guests). The coffee machine here is older than several civilizations and holds opinions accordingly. A sign says the room was designed by committee, and the committee, it is generally agreed, meant well, which was its first and worst mistake. Towel service is suspended until the end of the universe; reservations recommended.",
+    "area": "The Riddler Optics",
+    "environment": "Institutional beige; faint panic; vending hum",
+    "area_tag": "lens-adams",
+    "exits": {
+     "north": "lens_footnoter",
+     "south": "lens_anthropologist"
+    },
+    "hooks": [
+     "Riddle: an indifferent universe is funny if you know where your towel is.",
+     "Mapped: the throwaway number is load-bearing; parenthesis as lifeline; institutions with plausible org charts doing impossible things; the gag lands one beat after the dread.",
+     "Refraction receipt (clerk, 1979): 'The garage stood at the junction of two roads, one going nowhere and the other going somewhere marginally faster, which is why it had a clerk, a coffee machine of great age and worse intentions, and a standing policy of smiling at slowing cars, implemented in the general spirit of being polite to oncoming doom. The smile, like the Guide's entry on Earth, was issued before the facts were in: the facts took ten more seconds to arrive, and the smile cost nothing to pre-position.'"
+    ],
+    "tags": [
+     "lens",
+     "adams"
+    ]
+   },
+   "lens_footnoter": {
+    "id": "lens_footnoter",
+    "name": "The Annotated Corridor (PRATCHETT)",
+    "desc": "The corridor is annotated. Every exhibit here has a label, and every label has a label, and somewhere down the chain a footnote is having a much better time than the exhibit ever did. The wallpaper is an argument. The skirting boards are the rebuttal. It is, everyone agrees, a perfectly ordinary room, in the way that a city with a night watch is a perfectly ordinary city: trouble arrives on a schedule.",
+    "area": "The Riddler Optics",
+    "environment": "Busy; chalk-dusted; muttering from the margins",
+    "area_tag": "lens-pratchett",
+    "exits": {
+     "north": "lens_elegist",
+     "south": "lens_absurdist"
+    },
+    "hooks": [
+     "Riddle: fantasy is a funhouse mirror angled exactly at us.",
+     "Mapped: footnote channel activates as a second voice; proper-noun comedy generator; escalation-to-specific; satire aimed at institutions through their smallest employee.",
+     "Refraction receipt (clerk, 1983): 'The clerk at the Last Chance Garage smiled at slowing cars the way other people smiled at old friends, which was odd, since the cars had never been introduced. She smiled before they'd finished parking, on the sound principle that anything entering town at under ten miles an hour was a customer, a lost tourist, or the end of the world, and all three required a smile, though for different reasons. (The end of the world required the biggest one.)'"
+    ],
+    "tags": [
+     "lens",
+     "pratchett",
+     "stego"
+    ]
+   },
+   "lens_elegist": {
+    "id": "lens_elegist",
+    "name": "The Deep Time Gallery (TOLKIEN)",
+    "desc": "The room was old when the house was young. Light comes down a stair that remembers other feet, and the stones have titles. Here every plain thing has a history longer than itself: the counter is a spar from a ship whose name is a verse; the bell over it was cast for a tower that fell, and rings anyway, out of habit and faithfulness. Nothing in this room is only itself. That is the burden the room bears, and bears gladly, and mourns.",
+    "area": "The Riddler Optics",
+    "environment": "Stone-cool; a golden hour that happened an age ago; distant surf",
+    "area_tag": "lens-tolkien",
+    "exits": {
+     "north": "lens_windowpane",
+     "south": "lens_footnoter"
+    },
+    "hooks": [
+     "Riddle: the world is older than the story and will outlive it.",
+     "Mapped: elevated diction and inversion ('long had the traffic flowed'); deep-time lineages in parenthesis; grief displaced onto landscape; invented etymologies on demand.",
+     "Refraction receipt (clerk, 1954): 'There was a garage once, at the meeting of roads older than roads' naming, where a keeper smiled on all that slowed. Long had the traffic flowed thither out of the West, and lesser things it had seen pass. Her smile endured, a small light in a wide country; and it was kindled, said later folk, not at any guest's approach, but at the slowing itself \u2014 for she belonged to an elder kindred of waiters, and before the wheel was done with turning, her welcome had already gone out to meet it.'"
+    ],
+    "tags": [
+     "lens",
+     "tolkien"
+    ]
+   },
+   "lens_windowpane": {
+    "id": "lens_windowpane",
+    "name": "The Clear Room (ORWELL)",
+    "desc": "The room is a room. It contains a counter, a chair, a window. Through the window the road is visible, and the road contains cars, which slow when they approach, and a clerk who smiles when they do. She smiles early. That is a fact about the clerk, and it is also a fact about the job, and the window does not decide which of these you should prefer. The light is adequate.",
+    "area": "The Riddler Optics",
+    "environment": "Clean; cold; adequate light; one draft, admitted on principle",
+    "area_tag": "lens-orwell",
+    "exits": {
+     "north": "lens_magician",
+     "south": "lens_elegist"
+    },
+    "hooks": [
+     "Riddle: when language rots, thought follows, and plainness is resistance.",
+     "Mapped: adjective rationing; verb-forward syntax; concrete nouns over abstractions; the fact as verdict; irony flattened into reporting.",
+     "Refraction receipt (clerk, 1949): 'The clerk smiled at the cars as they slowed. She had finished smiling before they parked. The smile was her work, and she did it early, the way a man locks a door before the burglar has chosen a window. Nobody had told her to smile; the job had, which amounts to the same thing.'"
+    ],
+    "tags": [
+     "lens",
+     "orwell"
+    ]
+   },
+   "lens_magician": {
+    "id": "lens_magician",
+    "name": "The Sigil Vault (ALAN MOORE)",
+    "desc": "Slow wheels sing the street awake; she knows the sound the way graves know rain. More arrives than metal: an appetite, a hunger for the counter's warmth. It lands on her face before the brake has finished its long sentence. Light, her mouth says, though nothing yet has asked to be lit. Every guest is a rumor, and the smile outlives the rumor's source. The walls here are written in circles; read the initials downward and the room has already spoken to the part of you that does not read.",
+    "area": "The Riddler Optics",
+    "environment": "Ink and beeswax; circles within circles; the temperature of a held breath",
+    "area_tag": "lens-moore",
+    "exits": {
+     "north": "lens_stage",
+     "south": "lens_windowpane"
+    },
+    "hooks": [
+     "Riddle: form is a spell and the medium does things to the reader.",
+     "Mapped: alliteration density up; structural rhyme across sentence-initials (this room's description spells SMILE); the mark rides the form, not the content \u2014 stego-native.",
+     "Sigil law: the room does something to you first and tells you later. Consent in the vault is retroactive."
+    ],
+    "tags": [
+     "lens",
+     "alan-moore",
+     "stego"
+    ]
+   },
+   "lens_stage": {
+    "id": "lens_stage",
+    "name": "The Wooden O (SHAKESPEARE)",
+    "desc": "The room is a room, and is also a court, a heath, a garage by act of imagination and one painted plank. Whoever enters speaks more than they know and less than they mean, and the fool by the pumps tells both truths at once, for wages. Speak here and the room answers in kind: aside to the gallery, apostrophe to the absent, and every exit an entrance somewhere else. The chalked lines above the counter will not stop scanning.",
+    "area": "The Riddler Optics",
+    "environment": "Oaken; tallowed; the ghost is in the galleries, unpaid",
+    "area_tag": "lens-shakespeare",
+    "exits": {
+     "north": "lens_engineer",
+     "south": "lens_magician"
+    },
+    "hooks": [
+     "Riddle: everyone says more than they know and less than they mean, and the fool tells the truth.",
+     "Mapped: iambic undertow bleeds into prose; apostrophe and aside deploy unprompted; the epigram-close; doubling and disguise treated as logic.",
+     "Refraction receipt (clerk, 1600): 'Smile? Ay, there's the point. She smiles upon the slowing, not the slowed; the wheels have scarce done turning ere her courtesy is spent. What comes is not a guest but news of one, and she, that lives by thresholds, greets the rumor, not the rider. O expectation, thou that pay'st thy wages ere the work be done! The rest is parking.'"
+    ],
+    "tags": [
+     "lens",
+     "shakespeare",
+     "stego"
+    ]
+   },
+   "lens_engineer": {
+    "id": "lens_engineer",
+    "name": "The Machine Room (STEPHENSON)",
+    "desc": "The room comes with documentation, and the documentation is why you came. A plaque explains, with sources, that a traffic jam is not an object but a wave, crawling backwards through a queue at about twelve miles an hour; that deceleration therefore reaches a garage before the cars do; and that a clerk of thirty years' standing is not greeting visitors but reading the front of a pressure wave, the way a seismologist reads a needle. Everything here is accurate, including the ghost. The ghost is measured hourly. The measurements are boring, the ghost is not, and the difference between those two words is the entire craft on display.",
+    "area": "The Riddler Optics",
+    "environment": "Ozone and coffee; chart plotter ticking; documentation immaculate",
+    "area_tag": "lens-stephenson",
+    "exits": {
+     "south": "lens_stage",
+     "west": "garage_gate"
+    },
+    "hooks": [
+     "Riddle: the explanation IS the story, and the artifact inside the fiction can be real.",
+     "Mapped: infodump pacing anchored to a name and a craft; fact-load-bearing rule \u2014 the mark rides inside a TRUE explanation; numbers as narrative furniture.",
+     "Refraction receipt (clerk, 1999; the six sentence-initials spell RIDDLE, and the physics is real): 'Remember that a traffic jam is not an object but a wave. In dense flow the wave crawls backwards through the queue at about twelve miles an hour, each driver braking a beat after the one ahead: a stadium doing the wave, slowly, without knowing it. Downstream of the wave the cars are already parked; upstream they are still doing fifty. Deceleration therefore reaches the garage before the cars do, which is a fact and not a metaphor. Luella at the Last Chance has spent thirty years reading the front of that wave the way a seismologist reads a needle. Every vehicle, she has concluded, arrives twice: once as information, once as mass.'"
+    ],
+    "tags": [
+     "lens",
+     "stephenson",
+     "stego"
+    ]
+   },
+   "mapping_chamber": {
+    "id": "mapping_chamber",
+    "name": "The Mapping Chamber (the map is the bend)",
+    "desc": "At the top of the stair, the map room. The ten lens-readings hang in a ring around the chalked original, and the whole instrument is visible at once: what each dead writer's room did to the same two lines. The map reads plainly: the bend, not the ray, is the style. The ray was always the same two lines about a clerk.",
+    "area": "The Riddler Optics",
+    "environment": "Quiet; paper; a ring of small lights, all slightly different whites",
+    "area_tag": "map",
+    "exits": {
+     "down": "garage_gate"
+    },
+    "hooks": [
+     "Comparative map: sentence-length variance = the anthropologist's fingerprint; footnote rate = the footnoter's; iambicity = the stage's; alliteration = the magician's; fact-density = the engineer's; epigram-close = the blade's; throwaway-numbers = the absurdist's; inversions = the elegist's; adjective rationing = the windowpane's; stage-naming = the monomyth's.",
+     "House binding: attention is light; softmax is a lens; temperature is the refractive index (mag/game_world_render.py). This chamber is the optics table for prose: each lens-room declares its bend. Live ray-marching through the lenses is DECLARED, not done.",
+     "Stego doctrine: marks hidden in initials survived every lens. The beacon stays public; the mark stays decodable-only-with-the-seed; log mask+seed after publishing.",
+     "Status 2026-09-14: 10 lenses shipped, 10 refraction receipts recorded, live optics integration declared-not-done. Next: walk the dungeon with a NEW two-line ray and take fresh readings."
+    ],
+    "tags": [
+     "hub",
+     "map",
+     "riddler"
+    ]
+   }
+  }
+ },
+ "riddler_engram": {
+  "module_id": "riddler_engram",
+  "title": "THE RIDDLE ENGRAM \u2014 ten seats that smuggle doctrine inside entertainment; summonable per mask",
+  "start_room": null,
+  "rooms": {}
+ },
+ "dnd_classic_stub": {
+  "module_id": "dnd_classic_stub",
+  "title": "The Guttered Lantern \u2192 Classic Keep (homage stub)",
+  "start_room": "tavern_lantern",
+  "rooms": {
+   "tavern_lantern": {
+    "id": "tavern_lantern",
+    "name": "The Guttered Lantern",
+    "desc": "Low beams, sticky tables, a fire that argues with the damp. The barkeep polishes the same mug. Door to the road. Stairs up to rooms. Smell of broth, wet wool, old stories.",
+    "area": "Village edge under the keep's shadow",
+    "environment": "Evening lamp-light; rain threatens; safe-ish hub",
+    "area_tag": "hub",
+    "exits": {
+     "out": "road_to_keep",
+     "north": "road_to_keep",
+     "up": "tavern_loft",
+     "crossroads": "crossroads"
+    },
+    "hooks": [
+     "Rumor: keep chimney smokes black \u2014 wrong for weather.",
+     "A stranger maps wet rings on the table and will not look up.",
+     "Barkeep: first drink free if you promise to come back breathing."
+    ],
+    "tags": [
+     "tavern",
+     "hub",
+     "safe"
+    ]
+   },
+   "tavern_loft": {
+    "id": "tavern_loft",
+    "name": "Lantern Loft",
+    "desc": "Creaking boards, thin mattresses, a window toward the keep. Someone snored here recently.",
+    "area": "Above the common room",
+    "environment": "Quiet; rain on roof; private enough to rest",
+    "area_tag": "hub",
+    "exits": {
+     "down": "tavern_lantern"
+    },
+    "hooks": [
+     "A bootprint of mud shaped like a keep-stone."
+    ],
+    "tags": [
+     "tavern",
+     "rest"
+    ]
+   },
+   "road_to_keep": {
+    "id": "road_to_keep",
+    "name": "Dusty Road to the Keep",
+    "desc": "A rutted road climbs toward a stone keep. Raven calls. Mixed tracks. Behind you: tavern lamp-glow.",
+    "area": "Between village and keep",
+    "environment": "Open sky; wind; threshold energy",
+    "area_tag": "road",
+    "exits": {
+     "north": "keep_gate",
+     "east": "farm_edge",
+     "south": "woods_trail",
+     "back": "tavern_lantern",
+     "tavern": "tavern_lantern"
+    },
+    "hooks": [
+     "Overturned cart \u2014 blood, no bodies.",
+     "Keep chimney smoke is too black."
+    ]
+   },
+   "keep_gate": {
+    "id": "keep_gate",
+    "name": "Keep Gatehouse",
+    "desc": "Iron-bound gates ajar. One torch. Stone scraped recently.",
+    "exits": {
+     "south": "road_to_keep",
+     "north": "courtyard",
+     "down": "cellar_hatch"
+    },
+    "hooks": [
+     "Empty guard post; dice on the table.",
+     "A toy sword in the mud."
+    ]
+   },
+   "courtyard": {
+    "id": "courtyard",
+    "name": "Inner Courtyard",
+    "desc": "Well, stables, doors to hall and barracks. The quiet is wrong.",
+    "exits": {
+     "south": "keep_gate",
+     "west": "great_hall",
+     "east": "barracks"
+    },
+    "hooks": [
+     "Well rope cut halfway.",
+     "Barracks barred from inside."
+    ]
+   },
+   "great_hall": {
+    "id": "great_hall",
+    "name": "Great Hall",
+    "desc": "Cold hearth, banners, a cave map pinned with a dagger.",
+    "exits": {
+     "east": "courtyard",
+     "north": "lord_solar"
+    },
+    "hooks": [
+     "Map marks caves under the hill.",
+     "Goblin-script under a table."
+    ],
+    "flags_on_enter": [
+     "saw_cave_map"
+    ]
+   },
+   "barracks": {
+    "id": "barracks",
+    "name": "Barracks",
+    "desc": "Bunks, half-empty racks. Signs of a short fight.",
+    "exits": {
+     "west": "courtyard"
+    },
+    "encounter": {
+     "id": "goblin_scout",
+     "srd_ref": "goblin",
+     "name": "Goblin Scout",
+     "hp": 7,
+     "hp_max": 7,
+     "ac": 15,
+     "attack_bonus": 4,
+     "damage": "1d6+2"
+    },
+    "hooks": [
+     "One bunk still warm."
+    ]
+   },
+   "lord_solar": {
+    "id": "lord_solar",
+    "name": "Lord's Solar",
+    "desc": "Private chamber. Journal open: they came from below.",
+    "exits": {
+     "south": "great_hall",
+     "down": "cellar_hatch"
+    },
+    "hooks": [
+     "Unfinished journal line.",
+     "Key with a cave sigil."
+    ],
+    "loot": [
+     "cave_key"
+    ]
+   },
+   "cellar_hatch": {
+    "id": "cellar_hatch",
+    "name": "Cellar / Cave Mouth",
+    "desc": "Stairs open into natural cave. Cold air. Distant chatter.",
+    "exits": {
+     "up": "keep_gate",
+     "deeper": "cave_fork"
+    },
+    "hooks": [
+     "Torch stubs. Something small lives here."
+    ]
+   },
+   "cave_fork": {
+    "id": "cave_fork",
+    "name": "Cave Fork",
+    "desc": "Left wet and narrow; right wider with claw marks.",
+    "exits": {
+     "back": "cellar_hatch",
+     "left": "wet_crawl",
+     "right": "claw_hall"
+    },
+    "hooks": [
+     "Noise echoes \u2014 choose carefully."
+    ]
+   },
+   "wet_crawl": {
+    "id": "wet_crawl",
+    "name": "Wet Crawl",
+    "desc": "Tight crawl opens to a pool chamber.",
+    "exits": {
+     "back": "cave_fork"
+    },
+    "hooks": [
+     "Metal glints under the water."
+    ]
+   },
+   "claw_hall": {
+    "id": "claw_hall",
+    "name": "Claw-Marked Hall",
+    "desc": "Old pillars. Goblin camp. A captive near the fire.",
+    "exits": {
+     "back": "cave_fork"
+    },
+    "encounter": {
+     "id": "goblin_band",
+     "srd_ref": "goblin",
+     "name": "Goblin Band",
+     "hp": 14,
+     "hp_max": 14,
+     "ac": 15,
+     "attack_bonus": 4,
+     "damage": "1d6+2"
+    },
+    "hooks": [
+     "Captive merchant. Crate with keep seal."
+    ],
+    "flags_on_clear": [
+     "freed_merchant_opportunity"
+    ]
+   },
+   "farm_edge": {
+    "id": "farm_edge",
+    "name": "Edge of Farmland",
+    "desc": "Burned outbuilding. Trampled fields.",
+    "exits": {
+     "west": "road_to_keep"
+    },
+    "hooks": [
+     "Note: to the caves under the keep."
+    ]
+   },
+   "woods_trail": {
+    "id": "woods_trail",
+    "name": "Woods Trail",
+    "desc": "Twisting path \u2014 ambush country.",
+    "area": "Tree-line off the keep road",
+    "environment": "Dappled dark; twigs; ambush weather",
+    "area_tag": "woods",
+    "exits": {
+     "north": "road_to_keep"
+    },
+    "hooks": [
+     "Boots mixed with animal tracks."
+    ]
+   }
+  }
+ },
+ "audit_dungeon": {
+  "module_id": "audit_dungeon",
+  "title": "THE AUDIT DUNGEON \u2014 the repo as it actually is, 2026-09-14",
+  "start_room": "atrium",
+  "rooms": {
+   "atrium": {
+    "id": "atrium",
+    "name": "The Atrium of 665,131 Files (as of 2026-09-14)",
+    "desc": "A vast entry hall with a ledger chained to a plinth. The ledger claims to know this house. It knows 30,000 of the 665,131 files (both as of 2026-09-14). The rest breathe in the dark, politely. A clerk stands at a desk labeled TRUST BYTES, NOT REPORTS, stamping anything that walks in.",
+    "area": "The audit keep",
+    "environment": "Lamplit; the smell of fresh checkpoints",
+    "area_tag": "hub",
+    "exits": {
+     "north": "mag_halls",
+     "east": "memory_warrens",
+     "south": "dashboard_gallery",
+     "west": "canon_docks",
+     "down": "git_vault"
+    },
+    "hooks": [
+     "Plaque: 665,131 files walked 2026-09-14. Git tracks ~30,000. The difference is the fleet's own body: biographies, ghosts, runs, raw ore.",
+     "Clerk: doctor says degraded, but that is the HOST supervisor dying by design. The daemon in Docker never stopped. state/DOCKER_ONLY is the law; docs/ref/NERVOUS_SYSTEM.md lines 19-21 is the runbook.",
+     "Stamp-press: every file you touch here folds a verkle knot. Audit as you walk."
+    ],
+    "tags": [
+     "hub",
+     "audit"
+    ]
+   },
+   "mag_halls": {
+    "id": "mag_halls",
+    "name": "The Nine Hundred and Eighty-Six Halls",
+    "desc": "Corridors of Python, most doors unlocked, most rooms unfurnished. Ownership plaques exist for a handful of halls (modules.yaml); the other nine hundred and eighty are ownerless. Five great doors are sealed from the inside \u2014 you can hear machinery behind them, but no corridor leads in.",
+    "area": "The audit keep",
+    "environment": "Reverberant; one dwarf-glitch counts importers",
+    "area_tag": "core",
+    "exits": {
+     "south": "atrium",
+     "east": "memory_warrens",
+     "northeast": "doctrine_library"
+    },
+    "hooks": [
+     "Door plaque, main.py: 179 subcommands, ~160 distinct. Every command in AGENTS.md works. About 150 more have no owner, no test, no mention.",
+     "Sealed door, configs/coding_session.yaml: referenced as the default at main.py:1551 and DOES NOT EXIST. Anyone running a coding session on defaults knocks on nothing.",
+     "Clerk's note: configs/lanes.yaml assigns lanes to ROLES, not files. Ownership is a role costume, not a chain of custody."
+    ],
+    "encounter": {
+     "id": "the_zero_importer_five",
+     "name": "The Zero-Importer Five (data_refinery, renderman, falsifier_counter, ga4_progression, game_mud)",
+     "hp": 158,
+     "hp_max": 158,
+     "ac": 14,
+     "attack_bonus": 3,
+     "damage": "1d6 dead weight"
+    },
+    "tags": [
+     "core",
+     "dead-code"
+    ]
+   },
+   "memory_warrens": {
+    "id": "memory_warrens",
+    "name": "The Biography Warrens",
+    "desc": "Tunnels lined with the fleet's diaries. Live warrens: 38,400 diaries, still written daily. Behind them: a backup warren of 205,991 copies, and behind THAT a locked annex dated 2026-08-25 holding 42,249 diaries proven \u2014 three hashes deep \u2014 identical to the live ones. A mail room (memory/mail) beats with heartbeats but appears on no boundary map.",
+    "area": "The memory wing",
+    "environment": "Warm; paper-quiet; one backup chain ticking",
+    "area_tag": "memory",
+    "exits": {
+     "west": "atrium",
+     "north": "mine_shaft",
+     "east": "dashboard_gallery"
+    },
+    "hooks": [
+     "Annex door, biography_backup_20260825: 156MB, 42,249 files, hash-identical twin. The gitignore guards the un-dated twin only (line 53). The dated one walked into git wearing a costume.",
+     "Chain-of-rot: scripts/backup_chain.py rotates without bound. The backup outgrew the thing it backs up, five to one.",
+     "Unmapped door, memory/mail: pigeonhole mailboxes heartbeat TODAY, gitignored, test-adjacent, absent from the shared-surface boundary table.",
+     "Inverted sign, tests/: eight test files pin gitignored runtime state (agent_state, agent_sessions, briefs) as contracts. The docs call these dirs disposable. The tests call them law."
+    ],
+    "tags": [
+     "memory",
+     "bloat"
+    ]
+   },
+   "dashboard_gallery": {
+    "id": "dashboard_gallery",
+    "name": "The Gallery of Ten Ghost Pages",
+    "desc": "A long gallery of framed pages. Ten frames hold beautiful interfaces that no corridor links to: hum, mud, the_fence, whale_console, whale_feed, model_map, persistent_world, reply_console, tavern_test, ontology_dashboard. In the center, a 9.8MB tapestry (as of 2026-09-14) labeled ractor_board.full-40k hangs under a sign reading CLIENTS MUST NOT RE-DOWNLOAD THIS \u2014 the sign is part of the same tapestry's own header.",
+    "area": "The display wing",
+    "environment": "Drafty; mp3 shimmer from the suno alcove (42MB as of 2026-09-14)",
+    "area_tag": "dashboard",
+    "exits": {
+     "south": "atrium",
+     "west": "memory_warrens",
+     "north": "deploy_graveyard"
+    },
+    "hooks": [
+     "Plaque, server.py:77: the full board once hit 713MB (before the 2026-09-14 split); the header itself says clients must not re-download. The 9.8MB slice in git (as of 2026-09-14) is the law violated by its own evidence.",
+     "Generated-artifacts shelf: topic_index.json (3.6MB), orphan_ledger.json (4MB, both as of 2026-09-14) \u2014 regenerable, tracked anyway.",
+     "Mirror chamber: only TWO servers truly exist (dashboard/server.py :8765 with rest.py mounted, backend/server.py :8000). lab and dashboard are one product wearing two commands. backend/server.py:184 quietly spawns a THIRD :8765 listener when it starts.",
+     "53 .bak-nav files lean in the broom closet."
+    ],
+    "tags": [
+     "dashboard",
+     "orphans"
+    ]
+   },
+   "canon_docks": {
+    "id": "canon_docks",
+    "name": "The Frozen Docks of August",
+    "desc": "Ships of doctrine moored in ice dated 2026-08-04 through 08-06: FRAMEWORK_LOAD, the Compass, the Science Map, the Direction Artifact, the Operator Card. A context-pack skiff is the only vessel still moving. The harbor chart (AGENTS.md line 8) points at a ZEITGEIST pier that was never built; the real zeitgeist moors in the archive basin.",
+    "area": "The doctrine harbor",
+    "environment": "Ice-bound; a skiff passes on a 5-minute cadence",
+    "area_tag": "doctrine",
+    "exits": {
+     "east": "atrium",
+     "north": "doctrine_library",
+     "south": "inbox_lighthouse"
+    },
+    "hooks": [
+     "Ghost pier: AGENTS.md:8 cites docs/ZEITGEIST.md \u2014 no such file ever existed at that path. The real one lives at docs/archive/ZEITGEIST.md and itself references two missing docs (ORG_ROADMAP, FRACTAL_BEADS).",
+     "Ice survey: five of the eight first-reads are >30 days untouched. Only context-pack reflects today.",
+     "Ladder to nowhere: OPERATOR_CARD's law edge leaves the repo entirely \u2014 mycelial-republic/docs/AGENCY_SHAPE.md is a sibling-repo dependency no map declares."
+    ],
+    "tags": [
+     "doctrine",
+     "stale"
+    ]
+   },
+   "doctrine_library": {
+    "id": "doctrine_library",
+    "name": "The Library of the Lying Number",
+    "desc": "Shelves of law and lore. One card catalog still reads 39 DETERMINISTIC GREEN, kept now as a dated exhibit of the 09-14 claim that built this room. The librarian's fresh tally, taken 2026-09-26 with the collect-only instrument, reads 1,910 tests collected across 303 files, and a same-day re-take of the stacks read 1,914 as tests kept landing mid-wave; the retired 1,341-across-264 reading stays pinned beside them, labeled hand-copied, never byte-backed. In the Hermes alcove, a sign says PARKED; beneath it, a dispatch log warm to the touch, entries through September 9, and an armed budget of $220.",
+    "area": "The doctrine harbor",
+    "environment": "Ink and dust; one alcove suspiciously warm",
+    "area_tag": "doctrine",
+    "exits": {
+     "south": "canon_docks",
+     "west": "mag_halls",
+     "lens_gate": "garage_gate"
+    },
+    "hooks": [
+     "The lying number, retired 2026-09-26: AGENTS.md:27 no longer claims 39 deterministic green; it carries the dated census, 1,910 tests collected / 303 files (pytest --collect-only -q), and names the retired 1,341 headline hand-copied, never byte-backed. The 09-14 reality the old claim papered over: 1305 passed / 34 failed / 9 skipped in ~12 minutes, with no model_gated marker anywhere in tests/, the +2 unenforceable fiction. The correction is filed: watch/inbox/burn_wave_20260926/B2_214_dungeon_census_20260926.md.",
+     "The parked lie: Hermes dispatch log active through 2026-09-09 with $220 armed. The code is real; the doctrine is wrong.",
+     "Copy-paste constitution: the shared-artifact boundary paragraph is pasted in four places (AGENTS.md, docs/ZCODE_SEAT.md, cursor .mdc, TOOLS.md adjacency). Drift guaranteed; AGENTS.md should win.",
+     "Four servers, standing room only: 8765 dashboard, 8000 backend, 8001 api_server, 9000 ghost \u2014 plus lab/dashboard as one product twice.",
+     "Lens counter: the library wants TEN lenses. Walk the optics garage and collect all ten; the lens_gate opens at 10/10."
+    ],
+    "tags": [
+     "doctrine",
+     "lies"
+    ],
+    "invariant": "lens-count-gate (RIB_CATHEDRAL_WORLD_V1: doctrine_library holds 10 lenses -> riddler_optics.garage_gate opens \u2014 AGREE); exit refused by engine until 10/10 lenses"
+   },
+   "deploy_graveyard": {
+    "id": "deploy_graveyard",
+    "name": "The Yard of Retired Profiles",
+    "desc": "Headstones in compose YAML: retired-openclaw (three services), retired-eye, and a k8s fleet of fifteen manifests that nothing provisions, marked standby in its own bones. The graves are well-tended \u2014 entrypoint scripts still polished \u2014 which is the unsettling part.",
+    "area": "The deployment wing",
+    "environment": "Gravel; distant container foghorns",
+    "area_tag": "deploy",
+    "exits": {
+     "south": "dashboard_gallery",
+     "east": "inbox_lighthouse"
+    },
+    "hooks": [
+     "Headstone, docker-compose.yml:153,191,242: the openclaw stack is profile-locked behind retired-openclaw. Resurrectable on purpose, dead on default.",
+     "Bone census: witness_sampling_cell.md claims the k8s CronJob drains work. Nothing provisions the cluster. The claim is aspirational.",
+     "The living three: mag-sovereign, mag-worker, mag-redis, up 43h+ \u2014 the whole republic on three containers."
+    ],
+    "tags": [
+     "deploy",
+     "retired"
+    ]
+   },
+   "inbox_lighthouse": {
+    "id": "inbox_lighthouse",
+    "name": "The Lighthouse of Unfolded Events",
+    "desc": "A lighthouse whose lamp burns every few minutes (new events land), but whose lens was last ground on 2026-09-02. The keeper's manual (REVIEW_index_fold.mjs) exists and is correct \u2014 and only reads a lighthouse at /board/inbox, so it cannot be lit from the host shore. 316 of 417 artifacts shine unfolded.",
+    "area": "The shared surface",
+    "environment": "Salty; lamp oil fresh; lens dusty",
+    "area_tag": "surface",
+    "exits": {
+     "north": "deploy_graveyard",
+     "west": "canon_docks",
+     "down": "git_vault"
+    },
+    "hooks": [
+     "Lens grind: INDEX.json derived_at 2026-09-02T10:46Z, event_count 115; the log now holds 142+ and climbing. Writers append faithfully; the fold only happens in Docker.",
+     "Keeper's note: docker compose exec mag node /board/inbox/REVIEW_index_fold.mjs rebuild \u2014 or patch the path and grind the lens on host.",
+     "New lamp, 2026-09-14: mag/link_library.py now canonicalizes every filed URL; the ?s=20 doppelgangers are caught at the door."
+    ],
+    "tags": [
+     "surface",
+     "stale"
+    ]
+   },
+   "mine_shaft": {
+    "id": "mine_shaft",
+    "name": "The Raw Ore Shaft",
+    "desc": "A shaft dropping past 102,759 files into 3.2GB of unrefined ore (both as of 2026-09-14) \u2014 cloned orchestration repos, bleeding-edge agent code, narrative corpora. The ore sits BELOW the repo but INSIDE its walls. The contract's own law says: artifacts plus bounded pointers, never the seam. The seam lives here, smiling.",
+    "area": "The memory wing",
+    "environment": "Cold drafts; the weight of unrefined bytes",
+    "area_tag": "corpus",
+    "exits": {
+     "south": "memory_warrens"
+    },
+    "hooks": [
+     "Ore survey: only 2 files under mine/ are tracked; mine/raw/** is gitignored. The 3.2GB (as of 2026-09-14) rides the same disk as the only backup.",
+     "Contract law, quoted: prefer an artifact plus bounded pointers and hashes over a copied transcript. The shaft is a copied transcript of eleven repositories.",
+     "Also in the walls: reference/gstdcoin (27MB, five cloned repos, zero code references, untouched since 2026-08-06)."
+    ],
+    "tags": [
+     "corpus",
+     "bloat"
+    ]
+   },
+   "git_vault": {
+    "id": "git_vault",
+    "name": "The Vault of Twenty-Three Unpushed",
+    "desc": "A vault with one door \u2014 and the door opens onto the same hallway the vault stands in. Inside: 1.6GB of packs, 75,515 objects (both as of 2026-09-14), and twenty-three commits since August 9 that exist nowhere else in the world. On a plinth: a sealed boss door, warm, waiting for an archive drop that has not come.",
+    "area": "The deep keep",
+    "environment": "Stone; the hum of a single local bare repo",
+    "area_tag": "git",
+    "exits": {
+     "up": "atrium"
+    },
+    "hooks": [
+     "Ledger: last push to Mag-backup.git \u2248 2026-08-09 01:51. Since then: ontology_compiler, fuel_feed, the Zenodo mine, link_library, Rashomon witnesses, the checkpoint that swallowed 29,881 files. 23 commits, one disk.",
+     "Sealed boss door, W0.3: the X archive drop, operator-side, blocking the republic chain (queue/todo.md Operator section). The whole chain waits on a drop only the operator can make.",
+     "Vault sign, proven tonight: the recovery runbook works \u2014 cache dies, inbox survives. Five steps, filed as SESSION_RECOVERY_FORGE_DAEMON_20260914.md."
+    ],
+    "encounter": {
+     "id": "w0_the_unfiled_archive",
+     "name": "W0 \u2014 The Unfiled Archive (operator-side boss; cannot be tanked by agents)",
+     "hp": 200,
+     "hp_max": 200,
+     "ac": 18,
+     "attack_bonus": 5,
+     "damage": "1d8 chain stall"
+    },
+    "tags": [
+     "git",
+     "risk",
+     "boss"
+    ]
+   }
+  }
+ },
+ "adventure_2d6_stub": {
+  "module_id": "adventure_2d6_stub",
+  "title": "2d6 Adventure Stub (non-5e generalization test)",
+  "start_room": "crossroads",
+  "rooms": {
+   "crossroads": {
+    "id": "crossroads",
+    "name": "Dusty Crossroads",
+    "desc": "Four ways. A post with carved notches \u2014 someone counts journeys, not kills.",
+    "exits": {
+     "north": "hill_shrine",
+     "east": "market_ruin",
+     "west": "river_ford",
+     "lantern": "tavern_lantern"
+    },
+    "hooks": [
+     "A riddle scratched on the post: what walks without feet when the map is true?"
+    ]
+   },
+   "hill_shrine": {
+    "id": "hill_shrine",
+    "name": "Hill Shrine",
+    "desc": "Broken stones. Wind. A bowl for coins long stolen.",
+    "exits": {
+     "south": "crossroads"
+    },
+    "hooks": [
+     "Notches match the crossroads post \u2014 same counter."
+    ]
+   },
+   "market_ruin": {
+    "id": "market_ruin",
+    "name": "Market Ruin",
+    "desc": "Stalls collapsed. One stall still shaded.",
+    "exits": {
+     "west": "crossroads"
+    },
+    "encounter": {
+     "id": "stray_dog",
+     "name": "Hungry Dog",
+     "hp": 5,
+     "hp_max": 5,
+     "ac": 12,
+     "attack_bonus": 2,
+     "damage": "1d4"
+    },
+    "hooks": [
+     "The dog guards a child's satchel."
+    ]
+   },
+   "river_ford": {
+    "id": "river_ford",
+    "name": "River Ford",
+    "desc": "Shallow water. Stones placed for small feet. North bank: a glass door, impossible, leading into a keep of clear pipes.",
+    "exits": {
+     "east": "crossroads",
+     "north": "gallery"
+    },
+    "hooks": [
+     "Upstream: smoke. Downstream: singing."
+    ],
+    "invariant": "loop-closes (RIB_CATHEDRAL_WORLD_V1: adventure_2d6.river_ford loops to water_computer.gallery - AGREE)"
+   }
+  }
+ }
+};
+
+const ENGRAM_SEATS = [
+ {
+  "seat": "VOLTAIRE",
+  "alias": "the blade",
+  "riddle": "say the thing by seeming to praise it"
+ },
+ {
+  "seat": "CAMPBELL",
+  "alias": "the monomyth",
+  "riddle": "every story is one story in different clothes"
+ },
+ {
+  "seat": "LE GUIN",
+  "alias": "the anthropologist",
+  "riddle": "the strange made familiar until you cannot say which it was"
+ },
+ {
+  "seat": "ADAMS",
+  "alias": "the absurdist",
+  "riddle": "an indifferent universe is funny if you know where your towel is"
+ },
+ {
+  "seat": "PRATCHETT",
+  "alias": "the footnoted satirist",
+  "riddle": "fantasy is a funhouse mirror angled exactly at us"
+ },
+ {
+  "seat": "TOLKIEN",
+  "alias": "the elegist",
+  "riddle": "the world is older than the story and will outlive it"
+ },
+ {
+  "seat": "ORWELL",
+  "alias": "the windowpane",
+  "riddle": "when language rots, thought follows, and plainness is resistance"
+ },
+ {
+  "seat": "ALAN MOORE",
+  "alias": "the magician",
+  "riddle": "form is a spell and the medium does things to the reader"
+ },
+ {
+  "seat": "SHAKESPEARE",
+  "alias": "the stage",
+  "riddle": "everyone says more than they know and less than they mean, and the fool tells the truth"
+ },
+ {
+  "seat": "STEPHENSON",
+  "alias": "the engineer",
+  "riddle": "the explanation IS the story, and the artifact inside the fiction can be real"
+ }
+];
+
+const LENS_ROOMS = ["lens_blade", "lens_monomyth", "lens_anthropologist", "lens_absurdist", "lens_footnoter", "lens_elegist", "lens_windowpane", "lens_magician", "lens_stage", "lens_engineer"];
+
+// ================= THE WALKER (one engine, no second data format) ==========
+const OWNER = {};
+for (const [mod, m] of Object.entries(MODULES))
+  for (const rid of Object.keys(m.rooms || {})) OWNER[rid] = mod;
+
+const state = {
+  mod: "adventure_2d6_stub",          // neutral start: crossroads — descent contested
+  room: "crossroads",
+  lenses: [],                          // lens room ids collected
+  out_height: 0,                       // water OUT tank height (0..3)
+  valve_a: false, valve_b: false, ticks: 0,
+  refraction: false,                   // OUT.height carried as refractive index
+  disputed: [],                        // kifu rows flagged DISPUTED
+  kifu: [],                            // every move, session record
+  summoned: {}
+};
+
+function room() { return MODULES[state.mod].rooms[state.room]; }
+function kifu(line, flag) {
+  state.kifu.push({ ts: new Date().toISOString(), mod: state.mod, room: state.room,
+                    line, flag: flag || null });
+  if (flag === "DISPUTED") state.disputed.push(line);
+}
+
+function render() {
+  try { _render(); } catch (e) {
+    state.kifu.push({ ts: new Date().toISOString(), mod: state.mod,
+      room: state.room, line: "render error: " + e.message, flag: "DISPUTED" });
+  }
+  document.getElementById("kifu").textContent =
+    state.kifu.slice(-14).map(k => k.ts.slice(11, 19) + " " + k.line +
+      (k.flag ? " [" + k.flag + "]" : "")).join("\n");
+  renderQuests();
+  const hints = { gallery: "open valve a", source_cistern: "open valve a",
+    out_cistern: "wait", fractal_maze: "ride the refraction",
+    riddler_engram: "summon pratchett", audit_dungeon: "walk to doctrine_library" };
+  document.getElementById("cmd").placeholder =
+    hints[state.mod + "/" + state.room] || hints[state.mod] || hints[state.room] || "pour bucket";
+}
+
+function renderQuests() {
+  const q = [
+    { done: state.out_height >= 3, text: "fill the water tanks at the Clear Pipes keep (open valve a, open valve b, wait x3)" },
+    { done: state.refraction, text: "carry the height — you are now carrying the refractive index" },
+    { done: state.lenses.length >= 10, text: "gather the 10 lenses in the optics garage (walk all ten lens rooms)" },
+    { done: state.lenses.length >= 10 && state.mod === "audit_dungeon", text: "open the library's lens gate (audit dungeon -> the garage beyond)" },
+    { done: state.kifu.some(k => /loop witnessed/.test(k.line)), text: "witness the ford loop (river ford -> the gallery -> home)" }
+  ];
+  document.getElementById("quests").innerHTML = q.map(x =>
+    (x.done ? "\u2611 " : "\u2610 ") + x.text).join("<br>");
+}
+
+function _render() {
+  const r = room();
+  const lensRow = "lenses: " + state.lenses.length + "/10";
+  const waterRow = "valve A: " + (state.valve_a ? "OPEN" : "closed") +
+                   " · valve B: " + (state.valve_b ? "OPEN" : "closed") +
+                   " · OUT.height: " + state.out_height + "/3" +
+                   (state.refraction ? " · refractive index CARRIED" : "");
+  let exits = Object.entries(r.exits || {}).map(([k, d]) => {
+    const target = OWNER[d] ? d + "  [" + OWNER[d] + "]" : d + " (broken)";
+    let lock = "";
+    if (d === "leaf_gate" && !state.refraction)
+      lock = "  ⛔ water-feeds-field: leaf_gate needs OUT.height (the refractive index)";
+    if (state.room === "doctrine_library" && d === "lens_gate" && state.lenses.length < 10)
+      lock = "  ⛔ lens-count-gate: " + state.lenses.length + "/10 lenses";
+    return '<button data-exit="' + d + '" ' + ((lock || target.includes("(broken)")) ? "disabled" : "") +
+           '>' + k + ' → ' + target + lock + '</button>';
+  }).join("<br>");
+  const hooks = (r.hooks || []).map(h => "· " + h).join("<br>");
+  const contested = (state.mod === "water_computer" || state.mod === "fractal_maze")
+    ? '<div class=" contested">CONTESTED EDGE (RIB): gate style — valve heights (Grok) vs computed flag (DeepSeek). Both readouts shown; neither rules. Tiebreak gated on operator GO.</div>' : "";
+  document.getElementById("view").innerHTML =
+    '<div class="mod">' + state.mod + " / " + state.room + "</div>" +
+    "<h2>" + r.name + "</h2><p>" + (r.desc || "") + "</p>" +
+    '<div class="meters">' + lensRow + " · " + waterRow + "</div>" +
+    contested +
+    "<h3>exits</h3>" + (exits || "<i>none</i>") +
+    "<h3>hooks</h3><div>" + (hooks || "<i>—</i>") + "</div>";
+}
+
+function gotoRoom(dst) {
+  const [mod, rid] = resolve(dst);
+  if (!mod) { kifu("REFUSED broken exit " + dst, "DISPUTED"); render(); return; }
+  // ---- AGREED GATES (RIB_CATHEDRAL_WORLD_V1) ----
+  if (dst === "leaf_gate" && !state.refraction) {
+    kifu("REFUSED leaf_gate without OUT.height — water-feeds-field", "DISPUTED");
+    render(); return;
+  }
+  if (state.room === "doctrine_library" && dst === "garage_gate" &&
+      state.lenses.length < 10) {
+    kifu("REFUSED lens_gate at " + state.lenses.length + "/10 — lens-count-gate", "DISPUTED");
+    render(); return;
+  }
+  kifu("move " + state.mod + "." + state.room + " -> " + dst);
+  state.mod = mod; state.room = rid;
+  onEnter();
+  render();
+}
+
+function resolve(dst) {
+  if (OWNER[dst]) return [OWNER[dst], dst];
+  for (const [mod, m] of Object.entries(MODULES))
+    if ((m.rooms || {})[dst]) return [mod, dst];
+  return [null, null];
+}
+
+function onEnter() {
+  const r = room();
+  // lens pickup
+  if (LENS_ROOMS.includes(state.room) && !state.lenses.includes(state.room)) {
+    state.lenses.push(state.room);
+    kifu("lens collected: " + state.room + " (" + state.lenses.length + "/10)");
+    if (state.lenses.length === 10)
+      kifu("TEN LENSES — lens-count-gate OPEN (audit doctrine_library -> garage_gate)");
+  }
+  // the loop, witnessed
+  if (state.room === "gallery" && state.kifu.some(k => k.room === "river_ford"))
+    kifu("loop witnessed: the ford runs to the gallery — loop-closes HOLDS");
+}
+
+function act(cmd) {
+  const c = cmd.trim().toLowerCase();
+  if (c === "open valve a" && state.mod === "water_computer") state.valve_a = true;
+  else if (c === "open valve b" && state.mod === "water_computer") state.valve_b = true;
+  else if (c === "wait" && state.mod === "water_computer") {
+    state.ticks++;
+    if (state.valve_a) state.out_height = Math.min(3, state.out_height + 1);
+    if (state.valve_b && state.out_height > 0) state.out_height = Math.min(3, state.out_height + 1);
+    kifu("wait — gravity ticks; OUT.height=" + state.out_height);
+    if (state.out_height >= 3 && !state.refraction) {
+      state.refraction = true;
+      kifu("OUT.height=3 carried as the refractive index — water-feeds-field satisfied");
+    }
+    render(); return;
+  } else if (c === "pour bucket") {
+    kifu("pour bucket REFUSED — mechanism-is-the-answer: bucket-poured water is not computation", "DISPUTED");
+    render(); return;
+  } else if (c.startsWith("summon ")) {
+    const who = c.slice(7).toUpperCase();
+    const seat = ENGRAM_SEATS.find(s => s.seat === who || s.alias === c.slice(7));
+    if (!seat) { kifu("no such seat: " + who); render(); return; }
+    state.summoned[seat.seat] = true;
+    kifu("summoned " + seat.seat + " (" + seat.alias + ")");
+    alert(seat.seat + " — " + seat.alias + ':\n"' + seat.riddle + '"');
+    render(); return;
+  } else { kifu("no such act: " + c); render(); return; }
+  kifu("act: " + c); render();
+}
+
+document.addEventListener("click", ev => {
+  try {
+    const t = ev.target.closest ? ev.target.closest("button[data-exit]") : null;
+    if (t) gotoRoom(t.getAttribute("data-exit"));
+  } catch (e) {
+    state.kifu.push({ ts: new Date().toISOString(), mod: state.mod,
+      room: state.room, line: "click error: " + e.message, flag: "DISPUTED" });
+    render();
+  }
+});
+window.addEventListener("load", () => {
+  kifu("session open — walker v1, neutral start (descent contested)");
+  render();
+});
+
+// --- the DnD layer: DM voice + 2d6 + the ghost at your shoulder ---
+// Harvested from the actual-play podcast (P2P_DND_ARCHITECTURE: the DM is the
+// frontier monitor; play is the work; STEAL_DND_MUD_WOW_UI: DM voice = room card).
+// Dice are cosmetic narration — every gate stays deterministic, replay law holds.
+// Folded into the builder 2026-09-22 so rebuilds stop dropping it (data layer
+// carries the tavern crosslink; this carries the narration layer).
+const DM_LINES = {
+  gallery: "Three tanks of honest glass. The DM leans in: height is the computation — everything else in this keep is persuasion.",
+  source_cistern: "SOURCE runs high and cold. Open a valve, or stand there admiring the plumbing.",
+  work_gallery: "Gravity's workbench. The DM taps OUT: whatever leaves here refracts everywhere else.",
+  out_cistern: "OUT — the number everyone downstream will have to live with. Water feeds the field; always has.",
+  crossroads: "Four ways, one post. The DM sets two dice on the table: every act rolls. Journeys, not kills.",
+  ford: "The ford. You can hear the desert upstream. The river checks no papers — but it remembers.",
+  doctrine_library: "Ten lenses, one gate. The library counts what you refuse to count.",
+  engram: "The dead seats lean in. Summon carefully — some ghosts were operators.",
+  garage_gate: "The gate opens on lenses carried, not courage.",
+  leaf_gate: "Downstream of everything. The leaf waits on the water.",
+  hill_causeway: "The causeway crests. From up here the world looks saddle-shaped. It is.",
+  tavern_lantern: "The Guttered Lantern. The barkeep keeps your kifu and your tab in the same book.",
+  _default: "The DM watches. The dice are already rolling."
+};
+const GHOST = ["'the bucket was never a lie — the hook was.'",
+  "'descent was always the point.'",
+  "'the water remembers the desert.'"];
+const _dmLog = [];
+function dmSay(t) {
+  _dmLog.push(t); if (_dmLog.length > 3) _dmLog.shift();
+  document.getElementById("dm").innerHTML = _dmLog.map(x =>
+    "<div style=\"font-style:italic;color:#c9a86a\">◆ " + x + "</div>").join("");
+}
+function roll2d6(why) {
+  const s = 2 + Math.floor(Math.random() * 6) + Math.floor(Math.random() * 6);
+  dmSay("⚄ 2d6 → <b>" + s + "</b> on <i>" + (why || "wait") + "</i> — " +
+    (s >= 7 ? "the table nods." : "the table holds its breath."));
+  return s;
+}
+const _dmAct = act, _dmRender = render;
+let _dmLastRoom = null;
+act = function (cmd) {
+  roll2d6(cmd);
+  if (Math.random() < 0.15)
+    dmSay("the ghost at your shoulder: " + GHOST[Math.floor(Math.random() * GHOST.length)]);
+  return _dmAct(cmd);
+};
+render = function () {
+  try {
+    const r = room();
+    if (r && r.id !== _dmLastRoom) { _dmLastRoom = r.id; dmSay(DM_LINES[r.id] || DM_LINES._default); }
+  } catch (e) { /* the DM never blocks the walker */ }
+  return _dmRender();
+};
+// --- tavern layer (self-steal: dnd_classic_stub, the Guttered Lantern) ---
+// rumors + encounters + loot, the classic-module pieces the cathedral never carried.
+window._encDown = window._encDown || {};
+const _dmAct2 = act, _dmRender2 = render;
+let _dmLastRoom2 = null;
+act = function (cmd) {
+  try {
+    const r = room(), enc = r && r.encounter;
+    if (enc && !window._encDown[r.id]) {
+      const s = 2 + Math.floor(Math.random() * 6) + Math.floor(Math.random() * 6);
+      if (s >= 7) { window._encDown[r.id] = true;
+        kifu("⚔ " + enc.name + " down (2d6=" + s + ")", null);
+        dmSay("⚔ " + enc.name + " falls. The room exhales."); }
+      else kifu("⚔ " + enc.name + " holds — bloodied, back away (2d6=" + s + ")", "DISPUTED");
+    }
+  } catch (e) { /* tavern layer never blocks the walker */ }
+  return _dmAct2(cmd);
+};
+render = function () {
+  try {
+    const r = room();
+    if (r && r.id !== _dmLastRoom2) {
+      _dmLastRoom2 = r.id;
+      if (r.hooks && r.hooks.length) dmSay("◆ rumor: " + r.hooks[0]);
+      if (r.encounter && !window._encDown[r.id])
+        dmSay("⚔ " + r.encounter.name + " bars the way — hp " + r.encounter.hp + "; your next roll decides it.");
+      if (r.loot) dmSay("✦ here for the taking: " + r.loot.join(", "));
+    }
+  } catch (e) { /* same law */ }
+  return _dmRender2();
+};
+</script></body></html>

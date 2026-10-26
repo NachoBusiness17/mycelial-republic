@@ -1,0 +1,115 @@
+# m3-lru-null-arm finish-line check log (raw outputs, in run order)
+# lane: gala_20260925 build-it-all M3, division B; moment: 2026-10-03T21:54:04Z
+
+=== cmd 1: .venv/Scripts/python.exe tools/lru_null_arm.py --self-test
+SELF-TEST PASS: 11 checks green (prefix_share, lru_keeps_recent, lru_evicts_oldest, lru_evict_cascade, internal_survives, evicted_leaf_gone, append_only_hits, clip_shape, clip_noop, capacity_honored, determinism)
+EXIT=0
+
+=== cmd 2: .venv/Scripts/python.exe -m pytest tests/test_lru_null_arm.py -q -p no:cacheprovider
+..........                                                               [100%]
+10 passed in 0.92s
+EXIT=0
+
+=== cmd 3: .venv/Scripts/python.exe tools/lru_null_arm.py  (the 5,000-row replay)
+LRU NULL ARM - radix-leaf LRU over estate trails (lru_null_arm.v1)
+tapes: 5000 rows used (of 7377 in 12 files; skipped: 0 bad json, 0 bad ts), span 2026-09-15T06:21:27Z .. 2026-10-03T21:53:46Z, 1370 sessions
+model: budget=4800 chars, block=256 chars, frozen=1024 chars, session_gap=30.0 min, curve_arm=frozen_append
+curve arm prompts: mean 3117.7 chars/request
+
+cap_blocks    cap_chars  hit_rate  full_hit  evictions
+         2          512    0.0338    0.0000      55808
+         4         1024    0.0676    0.0000      53748
+         8         2048    0.1585    0.0000      48211
+        16         4096    0.4148    0.0000      32594
+        32         8192    0.7724    0.0000      10805
+        64        16384    0.9260    0.0000       1418
+       128        32768    0.9381    0.0000        619
+       256        65536    0.9387    0.0000        452
+       512       131072    0.9387    0.0000        196
+      1024       262144    0.9387    0.0000          0
+      2048       524288    0.9387    0.0000          0
+      4096      1048576    0.9387    0.0000          0
+      8192      2097152    0.9387    0.0000          0
+ UNBOUNDED            -    0.9387    0.0000          0
+
+arms at anchor (8192 blocks):
+   frozen_append: hit_rate=0.9387 full_hit=0.0000
+   frozen_window: hit_rate=0.3764 full_hit=0.0000
+        volatile: hit_rate=0.0010 full_hit=0.0000
+
+pack-scale  1x_pack (19 blocks): hit_rate=0.5053
+pack-scale  4x_pack (76 blocks): hit_rate=0.9334
+pack-scale 16x_pack (304 blocks): hit_rate=0.9387
+
+CLAIM HOLDS: 'radix-leaf LRU at the estate's real 4,800-char pack budget achieves 80%+ hit on estate trails'
+  hit_rate@anchor = 0.9387 vs threshold 0.80  (8192 blocks x 256 chars = 2097152 chars (external parity: agentic-kv-cache 8k blocks, 83.48% AgentX subset))
+  consequence: the measured number becomes the G1 null every future eviction/compaction claim must beat or be rejected as decoration
+
+JSON banked: C:\Users\foste\Documents\projects\local_sovereign_agent\memory\runs\lru_null_arm\lru_null_arm_results.json
+EXIT=0
+
+=== cmd 4: .venv/Scripts/python.exe tools/violation_ratchet.py check --changed
+RATCHET check: scope=6 changed files; hits=5; registered=3; NEW=2; expired-exceptions=0
+  NEW 1f683c0f4827f024 except-pass: tools/cialdini_scanner.py:53 — silent except ...: pass
+  NEW aba197e4c7a3801a file-too-long: tools/lru_null_arm.py:602 — >400 lines
+  GROWTH claim 5f4392509fdf74f1: mag/percolator.py accepted at 580 lines, now 1022 (+442) — re-audit or re-accept by name
+RATCHET: FAIL — run 'baseline-update' ONLY after a human/agent accepts the debt by name.
+EXIT=1
+
+=== cmd 5 (post-split re-run): wc -l tools/lru_null_arm.py tools/prefix_cache_sim.py
+  265 tools/lru_null_arm.py
+  365 tools/prefix_cache_sim.py
+  630 total
+=== cmd 6: .venv/Scripts/python.exe tools/lru_null_arm.py --self-test
+SELF-TEST PASS: 11 checks green (prefix_share, lru_keeps_recent, lru_evicts_oldest, lru_evict_cascade, internal_survives, evicted_leaf_gone, append_only_hits, clip_shape, clip_noop, capacity_honored, determinism)
+EXIT=0
+
+=== cmd 7: .venv/Scripts/python.exe -m pytest tests/test_lru_null_arm.py -q -p no:cacheprovider
+..........                                                               [100%]
+10 passed in 1.88s
+EXIT=0
+
+=== cmd 8: .venv/Scripts/python.exe tools/lru_null_arm.py  (final 5,000-row replay)
+LRU NULL ARM - radix-leaf LRU over estate trails (lru_null_arm.v1)
+tapes: 5000 rows used (of 7389 in 12 files; skipped: 0 bad json, 0 bad ts), span 2026-09-15T07:41:27Z .. 2026-10-03T21:59:24Z, 1366 sessions
+model: budget=4800 chars, block=256 chars, frozen=1024 chars, session_gap=30.0 min, curve_arm=frozen_append
+curve arm prompts: mean 3121.4 chars/request
+
+cap_blocks    cap_chars  hit_rate  full_hit  evictions
+         2          512    0.0339    0.0000      55874
+         4         1024    0.0677    0.0000      53808
+         8         2048    0.1586    0.0000      48264
+        16         4096    0.4142    0.0000      32672
+        32         8192    0.7720    0.0000      10844
+        64        16384    0.9261    0.0000       1414
+       128        32768    0.9381    0.0000        619
+       256        65536    0.9388    0.0000        452
+       512       131072    0.9388    0.0000        196
+      1024       262144    0.9388    0.0000          0
+      2048       524288    0.9388    0.0000          0
+      4096      1048576    0.9388    0.0000          0
+      8192      2097152    0.9388    0.0000          0
+ UNBOUNDED            -    0.9388    0.0000          0
+
+arms at anchor (8192 blocks):
+   frozen_append: hit_rate=0.9388 full_hit=0.0000
+   frozen_window: hit_rate=0.3762 full_hit=0.0000
+        volatile: hit_rate=0.0013 full_hit=0.0000
+
+pack-scale  1x_pack (19 blocks): hit_rate=0.5045
+pack-scale  4x_pack (76 blocks): hit_rate=0.9335
+pack-scale 16x_pack (304 blocks): hit_rate=0.9388
+
+CLAIM HOLDS: 'radix-leaf LRU at the estate's real 4,800-char pack budget achieves 80%+ hit on estate trails'
+  hit_rate@anchor = 0.9388 vs threshold 0.80  (8192 blocks x 256 chars = 2097152 chars (external parity: agentic-kv-cache 8k blocks, 83.48% AgentX subset))
+  consequence: the measured number becomes the G1 null every future eviction/compaction claim must beat or be rejected as decoration
+
+JSON banked: C:\Users\foste\Documents\projects\local_sovereign_agent\memory\runs\lru_null_arm\lru_null_arm_results.json
+EXIT=0
+
+=== cmd 9: .venv/Scripts/python.exe tools/violation_ratchet.py check --changed  (post-fix)
+RATCHET check: scope=10 changed files; hits=8; registered=7; NEW=1; expired-exceptions=0
+  NEW 1f683c0f4827f024 except-pass: tools/cialdini_scanner.py:53 — silent except ...: pass
+  GROWTH claim 5f4392509fdf74f1: mag/percolator.py accepted at 580 lines, now 1022 (+442) — re-audit or re-accept by name
+RATCHET: FAIL — run 'baseline-update' ONLY after a human/agent accepts the debt by name.
+EXIT=1

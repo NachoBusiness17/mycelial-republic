@@ -1,0 +1,402 @@
+Constrained Decoding Eliminates Structural Failures in Small LLMs but Reveals a Scale-Dependent Semantic Gap 
+ Report GitHub Issue 
+ × 
+ Title: 
+ Content selection saved. Describe the issue below: 
+ Description: 
+ Submit without GitHub 
+ Submit in GitHub 
+ arXiv is now an independent nonprofit! 
+ Learn more 
+ × 
+ Back to arXiv 
+ Why HTML? 
+ Report Issue 
+ Back to Abstract 
+ Download PDF 
+ Abstract 
+ 1 Introduction 
+ 2 Related Work 
+ 2.1 Constrained Decoding Frameworks 
+ 2.2 Structured Output Benchmarks 
+ 3 Methodology 
+ 3.1 Models 
+ 3.2 Tasks 
+ 3.3 Decoding Conditions 
+ 3.4 Evaluation Metrics 
+ 4 Results 
+ 4.1 Baseline Failures Are Systematic 
+ 4.2 CD Eliminates Structural Failures 
+ 4.3 The Semantic Gap Persists 
+ Type coercion is fully rescuable. 
+ Instruction-semantic failures are CD-resistant. 
+ The “hollow rescue” phenomenon. 
+ Returning to the motivating question. 
+ 5 Discussion 
+ 5.1 Limitations 
+ 5.2 Implications for Practitioners 
+ 6 Conclusion 
+ References 
+ License: CC BY 4.0
+arXiv:2609.23742v1 [cs.CL] 20 Sep 2026 
+ Constrained Decoding Eliminates Structural Failures in Small LLMs 
+ but Reveals a Scale-Dependent Semantic Gap 
+ Akash Chavan
+ Email:  iakashchavan@gmail.com 
+ Abstract 
+ Small open-source large language models (LLMs) in the 0.6B–4B parameter range are increasingly deployed for structured output generation (JSON, function calling, data extraction), yet little is known about how constrained decoding (CD) interacts with model scale in this regime.
+We benchmark five models from three families across 14 structured-output tasks under three decoding conditions (native, Outlines, XGrammar).
+We introduce a two-axis evaluation that separates structural correctness (schema validity) from semantic correctness (content accuracy).
+We find that CD eliminates all structural failures across all models (schema validity: 78.6–92.9% → \to 100%), but content accuracy reveals a persistent semantic gap that is scale-dependent: type coercion failures are fully CD-rescuable, while instruction-semantic failures (e.g., multi-step function calling) remain CD-resistant.
+Schema conformance is necessary but not sufficient for semantic correctness; CD’s reach ends exactly where schema conformance ends. 
+ 1 Introduction 
+ Small open-source LLMs—Qwen3, Llama 3.2, Phi-4-mini—are increasingly deployed on consumer hardware for structured output generation: API responses, function calling, and data extraction.
+These models offer significant cost and latency advantages over larger alternatives, but they frequently produce structurally invalid output: type coercions (prices as strings instead of numbers), missing required fields, and malformed JSON. 
+ Constrained decoding (CD) frameworks—Outlines ( Willard and Louf, 2023 ) , XGrammar ( Dong et al., 2024 ) —promise to eliminate these failures by masking invalid tokens at each decoding step, guaranteeing schema-valid output.
+But this raises a question: does CD actually make model output correct , or merely well- formatted ?
+If a model fails to generate a required function call because it does not understand the task, forcing it to produce schema-valid JSON will not fix the underlying misunderstanding. 
+ Existing benchmarks evaluate CD frameworks on a single model size ( Geng et al., 2025 ) , leaving open the question of how CD interacts with model scale.
+This question is practically important: if CD can rescue a 1B model, practitioners may not need a 4B model. 
+ We ask: Does constrained decoding remove the scale advantage for structured output—flattening the small-model scaling curve? 
+Specifically, can a constrained 1B model match an unconstrained 3B model?
+Or do failures persist because they are semantic (wrong values, missing intent) rather than structural (wrong types, missing fields), and therefore unreachable by token masking? 
+ Our contributions are: 
+ 1. 
+ A controlled size-ladder benchmark of 5 models from 3 families across 14 structured-output tasks under 3 decoding conditions (210 total evaluations). 
+ 2. 
+ A two-axis evaluation metric that separates structural correctness (schema validity) from semantic correctness (content accuracy). 
+ 3. 
+ The finding that CD eliminates all structural failures universally, but the semantic gap persists and is scale-dependent. 
+ 4. 
+ Identification of CD-rescuable vs. CD-resistant failure archetypes, with implications for practitioners and CD framework designers. 
+ 2 Related Work 
+ 2.1 Constrained Decoding Frameworks 
+ Constrained decoding restricts the set of allowable tokens at each generation step to ensure output conforms to a formal grammar or schema.
+ Outlines ( Willard and Louf, 2023 ) compiles a JSON schema into a finite state machine (FSM) that tracks the generation state and masks tokens that would lead to invalid output.
+ XGrammar ( Dong et al., 2024 ) uses a compiled grammar approach with efficient bitmask generation, achieving near-zero compilation overhead. 
+ 2.2 Structured Output Benchmarks 
+ Geng et al. (2025) introduce JSONSchemaBench, evaluating six CD frameworks on structured output tasks.
+However, their evaluation uses a single model size and focuses on framework efficiency rather than the interaction between CD and model scale.
+Separate work studies output consistency for structured generation under varying temperature ( Wang et al., 2025 ) and temperature effects on general problem-solving accuracy ( Renze and Guven, 2024 ) , but neither considers constrained decoding or model scale. 
+ The closest work to ours studies the semantic cost of constrained decoding, but from complementary angles. Reddy et al. (2026) observe that CD can push generation toward “locally valid yet semantically incorrect” trajectories—the same semantic gap we identify—but treat it as a premise to be mitigated, proposing draft-conditioned decoding to repair it, rather than measuring its magnitude or interaction with model scale. Galeone et al. (2026) report a related reliability gap for 7–9B models on mathematical benchmarks, where CD enforces validity but degrades task accuracy and adds latency; their focus is prompting strategies as a remedy, and the trade-off they observe is efficiency, not the structural–semantic decomposition. Neither work separates structural from semantic correctness along a controlled size ladder, nor identifies the failure archetypes that determine whether CD can rescue an output. 
+ Table  1 positions our work relative to prior benchmarks.
+The novelty is the interaction term : CD × \times model scale. 
+ Work 
+ CD? 
+ Scale? 
+ Focus 
+ JSONSchemaBench 
+ ✓ 
+ × \times 
+ Framework efficiency 
+ STED 
+ × \times 
+ × \times 
+ Temp. × \times consist. 
+ Renze & Guven 
+ × \times 
+ × \times 
+ Temp. × \times accuracy 
+ DCCD ( Reddy et al., 2026 ) 
+ ✓ 
+ × \times 
+ Semantic cost repair 
+ Galeone et al. ( Galeone et al., 2026 ) 
+ ✓ 
+ × \times 
+ Prompting reliability 
+ This work 
+ ✓ 
+ ✓ 
+ CD × \times scale 
+ Table 1: Positioning relative to prior work. 
+ 3 Methodology 
+ 3.1 Models 
+ We select five models representing three families and a controlled size range (0.6B–4B): Qwen3 ( Qwen Team, 2025 ) , Llama 3.2 ( Meta AI, 2024 ) , and Phi-4-mini ( Microsoft et al., 2025 ) .
+These are the Phase 2 subset with characterized failure modes from our preliminary baseline study—not a convenience sample. 
+ Model 
+ Family 
+ Params 
+ Role 
+ Qwen3-0.6B 
+ Qwen 
+ 0.6B 
+ Type coercion 
+ Llama-3.2-1B 
+ Meta 
+ 1.0B 
+ Structural + semantic 
+ Llama-3.2-3B 
+ Meta 
+ 3.0B 
+ Scale comparison 
+ Phi-4-mini 
+ Microsoft 
+ 3.8B 
+ Formatting; cross-family 
+ Qwen3-4B 
+ Qwen 
+ 4.0B 
+ Perfect control 
+ Table 2: Models tested. All dense architectures in bfloat16. 
+ 3.2 Tasks 
+ We design 14 structured-output tasks across four categories and three difficulty levels: 
+ • 
+ JSON generation (5 tasks): Simple objects → \to complex nested API responses 
+ • 
+ Schema adherence (3 tasks): Given a JSON schema, generate matching data 
+ • 
+ Function calling (3 tasks): Single-call, multi-call, and complex query 
+ • 
+ Extraction (3 tasks): Business card, receipt, API log 
+ Each task includes a prompt, a JSON schema, and (for extraction and function-calling tasks) expected values for content accuracy evaluation. 
+ 3.3 Decoding Conditions 
+ All conditions use greedy decoding ( T = 0 T=0 , do_sample=False ) via HuggingFace transformers ( Wolf et al., 2020 ) for determinism and reproducibility. 
+ Condition 
+ Approach 
+ Mechanism 
+ native 
+ Unconstrained greedy 
+ No logits processor 
+ outlines 
+ FSM-based 
+ Schema → \to regex → \to FSM 
+ xgrammar 
+ Compiled grammar 
+ Grammar → \to bitmask 
+ Table 3: Decoding conditions. 
+ 3.4 Evaluation Metrics 
+ We evaluate each output along two axes: 
+ Axis 1 – Structural correctness: 
+ Schema validity : does the parsed output validate against the task’s JSON schema (Draft 2020-12) ( JSON Schema Organization, 2020 ) using the jsonschema Python library ( Julian Berman, 2024 ) ? 
+ Axis 2 – Semantic correctness: 
+ Content accuracy : for extraction tasks, fraction of field values matching expected answers (0.0–1.0).
+ Function call score : for function calling, 50% weight on correct function selection + 50% on required parameter presence (0.0–1.0). 
+ The separation of these axes is itself a contribution: prior work reports only schema validity. 
+ Content accuracy uses normalized string comparison: values are compared after stripping case, whitespace, and formatting punctuation (periods, commas, hyphens, parentheses). This is necessary because exact-match scoring penalizes models for formatting variants of semantically correct values (e.g., "TechCorp Inc." vs "TechCorp Inc"), which a human grader would accept. We observed that unnormalized scoring produced 10 false-positive semantic failures concentrated in extraction tasks; after normalization, 13 real failures remained. This parallels the paper’s central thesis: exact-match scoring, like schema validity, is necessary but not sufficient. 
+ 4 Results 
+ 4.1 Baseline Failures Are Systematic 
+ Our preliminary baseline study (Phase 1) reveals that small models produce structurally invalid output at rates ranging from 78.6% (Llama-1B/3B) to 92.9% (Qwen-0.6B, Phi-4-mini) schema validity.
+A temperature robustness probe (Phase 2: 3 temperatures × \times 3 samples per condition) confirms that these failures are systematic—stable across sampling conditions—not artifacts of greedy decoding. 
+ The three failure archetypes emerge from our baseline study (Table  4 ). These archetypes predict CD-rescuability: type coercion and structural misplacement are CD-rescuable; instruction-semantic failures are CD-resistant. Figure  1 visualizes per-task content accuracy across all conditions. 
+ Figure 1: Per-task content accuracy across all models and decoders. Blue-dashed rows highlight the two diagnostic tasks: extract_receipt (fully CD-rescuable type coercion) and funcall_search_multi (CD-resistant instruction-semantic failure). 
+ Archetype 
+ Example 
+ CD? 
+ Type coercion 
+ "4.98" vs 4.98 
+ Rescuable 
+ Structural misplacement 
+ Missing field 
+ Rescuable 
+ Instruction-semantic 
+ Missing call 
+ Resistant 
+ Table 4: Failure archetypes and predicted CD-rescuability. 
+ 4.2 CD Eliminates Structural Failures 
+ Figure 2: Schema validity rate vs. model size. CD flattens the structural scaling curve to 100% across all models. Native decoding (red) shows the baseline failure rate; both CD frameworks (blue, green) eliminate all structural failures (the two CD lines coincide at 100%). 
+ Figure  2 shows that CD raises all five models to 100% schema validity under both frameworks: 
+ Model 
+ Native 
+ Outlines 
+ XGrammar 
+ Llama-1B 
+ 78.6% 
+ 100% 
+ 100% 
+ Llama-3B 
+ 78.6% 
+ 100% 
+ 100% 
+ Qwen-0.6B 
+ 92.9% 
+ 100% 
+ 100% 
+ Qwen-4B 
+ 100% 
+ 100% 
+ 100% 
+ Phi-4-mini 
+ 92.9% 
+ 100% 
+ 100% 
+ Table 5: Schema validity rate (%) by model and decoder. CD eliminates all structural failures. 
+ Figure  3 compares the compilation overhead and throughput impact of both frameworks.
+XGrammar adds negligible overhead: 4–8 ms schema compilation and 1.6–3.7% throughput reduction (Qwen-4B shows + 8 % +8\% , within single-run variance).
+Outlines incurs significant per-schema compilation cost—2.0–4.9 s average per model, peaking at 19.5 s on the most complex schema (Phi-4-mini tokenizer)—and its per-token FSM masking costs a further 9–13% generation throughput on four of five models. 
+ Figure 3: CD framework overhead. (a) Schema compilation time (log scale; whiskers span min–max across the 14 schemas): XGrammar compiles in 4–8 ms; Outlines averages 2.0–4.9 s per model, peaking at 19.5 s. (b) Generation throughput (labels: change vs. native): XGrammar tracks native within ∼ \sim 4%; Outlines runs 9–13% slower on four of five models. 
+ 4.3 The Semantic Gap Persists 
+ Figure 4: Content accuracy vs. model size. Unlike schema validity (Figure  2 ), the semantic gap persists under CD and is scale-dependent. Shaded region: improvement from native to the best CD condition. The annotated 5.7 pp gap at Qwen-0.6B remains even under CD—the largest residual gap of the five models. 
+ Figure  4 shows that while CD eliminates structural failures, content accuracy reveals a persistent gap: 
+ Model 
+ Native 
+ Outlines 
+ XGrammar 
+ Llama-1B 
+ 0.771 
+ 0.929 
+ 0.986 
+ Llama-3B 
+ 0.777 
+ 0.991 
+ 0.991 
+ Qwen-0.6B 
+ 0.871 
+ 0.929 
+ 0.943 
+ Qwen-4B 
+ 1.000 
+ 0.999 
+ 1.000 
+ Phi-4-mini 
+ 0.929 
+ 0.999 
+ 1.000 
+ Table 6: Content accuracy (0.0–1.0) by model and decoder. CD improves accuracy but does not flatten it to 1.0. 
+ Type coercion is fully rescuable. 
+ On extract_receipt , Qwen-0.6B and Phi-4-mini fail natively—emitting prices as strings ( "4.98" ) or with currency prefixes ( "$4.98" ) instead of numbers.
+CD forces numeric token paths, and the resulting values are semantically correct: content accuracy rises from 0.000 to 1.000.
+This is the cleanest case of CD providing complete rescue. 
+ Instruction-semantic failures are CD-resistant. 
+ On funcall_search_multi , the model must emit two function calls ( search_web and send_email ).
+Qwen-0.6B emits only search_web across all decoders (function call score: 0.200 native → \to 0.200 CD).
+The schema permits this ( minItems: 1 ), so CD produces schema-valid but semantically incomplete output.
+Token masking cannot inject task understanding.
+This failure is, in principle, the target of draft-conditioned decoding ( Reddy et al., 2026 ) : an unconstrained draft would include both calls, and conditioning on it could preserve the intent that direct masking cannot supply. 
+ The “hollow rescue” phenomenon. 
+ On the same task, Llama-1B under XGrammar scores 1.000—both calls present, all parameters present.
+However, the email body reads "1. 2. 3. 4. 5." —list structure without content.
+Structural metrics count parameter presence, not parameter quality, masking the semantic gap. 
+ Returning to the motivating question. 
+ Section  1 asked whether constrained decoding flattens the scaling curve—whether a constrained 1B model can match an unconstrained 3B model.
+The answer is yes, and more: under XGrammar, Llama-1B reaches 0.986 content accuracy, exceeding Llama-3B’s native 0.777.
+But the rescue is not asymmetric: the same constraint lifts Llama-3B from 0.777 to 0.991, so the constrained 1B does not match the constrained 3B—the gap narrows but does not close.
+And on instruction-semantic tasks, Qwen-0.6B best-case 0.943 under XGrammar remains the lowest of all five models: the floor set by scale is lowered, not removed.
+Constrained decoding rescues form; it does not rescue scale. 
+ 5 Discussion 
+ 5.1 Limitations 
+ Our study tests five dense models; MoE architectures under CD are left as future work.
+The 14-task suite is hand-designed; evaluation on real-world API schemas would strengthen external validity.
+Content accuracy uses field-level matching, which is coarse—richer semantic evaluation (e.g., LLM-as-judge) could reveal finer-grained quality differences. 
+ 5.2 Implications for Practitioners 
+ For type coercion failures, XGrammar provides near-zero-overhead complete rescue.
+For instruction-semantic failures, CD offers no benefit—a larger model or improved prompting is required.
+The cheapest reliable configuration for structured output is XGrammar with a 3–4B model. 
+ 6 Conclusion 
+ Constrained decoding eliminates structural failures across all tested small LLMs, but semantic correctness depends on the failure archetype and model scale.
+On our motivating question: a constrained 1B model exceeds an unconstrained 3B model, yet the same constraint rescues the 3B as well—schema conformance is necessary but not sufficient for semantic correctness, and it does not remove the advantage of scale where failures are semantic.
+Future work should extend to MoE architectures, real-world schemas, and richer semantic evaluation. 
+ References 
+ Dong et al. (2024) 
+ Y. Dong, C. F. Ruan, Y. Cai, R. Lai, Z. Xu, Y. Zhao, and T. Chen 
+ XGrammar: flexible and efficient structured generation engine for large language models .
+ External Links: 2411.15100 
+ Cited by: §1 ,
+ §2.1 .
+ Galeone et al. (2026) 
+ C. Galeone, M. Park, G. Ettorre, and D. Ligorio 
+ When correct isn’t usable: improving structured output reliability in small language models .
+ External Links: 2605.02363 
+ Cited by: §2.2 ,
+ Table 1 .
+ Geng et al. (2025) 
+ S. Geng, H. Cooper, M. Moskal, S. Jenkins, J. Berman, N. Ranchin, R. West, E. Horvitz, and H. Nori 
+ JSONSchemaBench: a rigorous benchmark of structured outputs for language models .
+ arXiv preprint arXiv:2501.10868 .
+ Cited by: §1 ,
+ §2.2 .
+ JSON Schema Organization (2020) 
+ JSON Schema Organization 
+ JSON schema specification, draft 2020-12 .
+ Note: https://json-schema.org/draft/2020-12/json-schema-validation.html 
+ Cited by: §3.4 .
+ Julian Berman (2024) 
+ Julian Berman 
+ Jsonschema: an implementation of json schema validation for python .
+ Note: https://github.com/python-jsonschema/jsonschema Version 4.21.0 
+ Cited by: §3.4 .
+ Meta AI (2024) 
+ Meta AI 
+ Llama 3.2: revolutionizing edge ai and vision with open, customizable models .
+ Note: https://ai.meta.com/blog/llama-3-2-connect-2024-vision-edge-mobile-devices/ 
+ Cited by: §3.1 .
+ Microsoft et al. (2025) 
+ Microsoft A. Abouelenin et al. 
+ Phi-4-mini technical report: compact yet powerful multimodal language models via mixture-of-loras .
+ External Links: 2503.01743 
+ Cited by: §3.1 .
+ Qwen Team (2025) 
+ Qwen Team 
+ Qwen3 technical report .
+ External Links: 2505.09388 
+ Cited by: §3.1 .
+ Reddy et al. (2026) 
+ A. Reddy, T. T. Walker, J. S. Ide, and A. S. Bedi 
+ The hidden cost of structured generation in LLMs: draft-conditioned constrained decoding .
+ External Links: 2603.03305 
+ Cited by: §2.2 ,
+ Table 1 ,
+ §4.3 .
+ Renze and Guven (2024) 
+ M. Renze and E. Guven 
+ The effect of sampling temperature on problem solving in large language models .
+ In Findings of the Association for Computational Linguistics: EMNLP 2024 ,
+ pp. 7346–7356 .
+ Cited by: §2.2 .
+ Wang et al. (2025) 
+ G. Wang, J. Yu, X. Zhang, D. Jiang, Y. Song, T. Deb, X. Liu, and P. He 
+ STED and consistency scoring: a framework for evaluating LLM structured output reliability .
+ arXiv preprint arXiv:2512.23712 .
+ Cited by: §2.2 .
+ Willard and Louf (2023) 
+ B. T. Willard and R. Louf 
+ Efficient guided generation for large language models .
+ External Links: 2307.09702 
+ Cited by: §1 ,
+ §2.1 .
+ Wolf et al. (2020) 
+ T. Wolf, L. Debut, V. Sanh, J. Chaumond, C. Delangue, A. Moi, P. Cistac, T. Rault, R. Louf, M. Funtowicz, J. Davison, S. Shleifer, P. von Platen, C. Ma, Y. Jernite, J. Plu, C. Xu, T. Le Scao, S. Gugger, M. Drame, Q. Lhoest, and A. M. Rush 
+ HuggingFace’s transformers: state-of-the-art natural language processing .
+ arXiv preprint arXiv:1910.03771 .
+ Cited by: §3.3 .
+ Experimental support, please
+ view the build logs 
+ for errors. Generated by
+ L
+ A 
+ T
+ E 
+ xml 
+ .
+ Instructions for reporting errors 
+ We are continuing to improve HTML versions of papers, and your feedback helps enhance accessibility and mobile
+ support. To report errors in the HTML that will help us improve conversion and rendering, choose any of the
+ methods listed below: 
+ Click the "Report Issue" ( 
+ ) button, located in the page header. 
+ Tip: You can select the relevant text first, to include it in your report. 
+ Our team has already identified the following issues . We appreciate your time reviewing and reporting rendering errors we
+ may not have found yet. Your efforts will help us improve the HTML versions for all readers, because disability
+ should not be a barrier to accessing research. Thank you for your continued support in championing open access for
+ all. 
+ Have a free development cycle? Help support accessibility at arXiv! Our collaborators at LaTeXML maintain a list of packages that need conversion , and welcome developer contributions . 
+ We gratefully acknowledge support from
+ our major funders ,
+ member institutions , ,
+ and all contributors.
+ About 
+ · 
+ Help 
+ · 
+ Contact 
+ · 
+ Subscribe 
+ · 
+ Copyright 
+ · 
+ Privacy 
+ · 
+ Accessibility 
+ · 
+ Operational Status (opens in new tab) 
+ Major funding support from

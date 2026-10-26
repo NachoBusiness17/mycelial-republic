@@ -1,0 +1,190 @@
+You are a cold agent. Below is the ENTIRE documentation you have: the files of a seed directory, concatenated in the order the directory's own SEED_RIB.md prescribes for a cold join. Answer the four questions at the end using ONLY this documentation. If the documentation does not answer a question, say exactly that.
+
+=== FILE: SEED_RIB.md ===
+# SEED_RIB: the merge law and the cold-join procedure
+
+This directory is the SEED-RIB merge: the public seed pack 3.2.0 (method +
+engines + laws-as-config) fused with the seed_rib.v0 carrier law (B2-180) and
+the handoff kernel sections (B2-300). It is the fleet KERNEL: everything a
+cold agent needs to rebuild the fleet's shape and regrow its state.
+
+## Carrier law (seed_rib.v0.1, re-homed onto a directory)
+
+- A file PRESENT in this tree is the INLINE carrier: raw bytes, sealed in
+  MANIFEST.sha256. `python verify_seal.py` proves the whole tree (exit 0).
+- A row in POINTERS.sha256 with no file is the POINTER carrier: path + bytes +
+  sha256. Pointers are promises with hashes, never hand-waves. Fetch from the
+  named source and hash-check; the verifier never invents pointer bytes.
+- kernel/law.heads.json carries law_refs (the law registry ids this seed
+  attests) and per-law-file seals.
+- Canonical format home: watch/inbox/SEED_RIB_FORMAT_v0_20260926.md (v0.1
+  amendment note, 2026-09-26) recognizes this directory carrier.
+
+## Cold join (rebuild the fleet kernel from this directory alone)
+
+0. `python verify_seal.py`: exit 0 or stop here (trust bytes, not reports).
+1. Read kernel/ in order: thesis.card.md, state.now.md, env.law.md,
+   load.order.md, tier.law.md, filing.law.md. These seven sections are the
+   handoff kernel: the cold seat now knows the thesis, the owed, the env law,
+   the load order, the tier ladder, the filing law.
+2. Zero state, honestly: `python engines/spine_walk.py <this-dir>` indexes the
+   kernel itself (the map regenerates; it is never hand-maintained). The full
+   method's smith chart (FIRST_BOOT step 2) is a POINTER row: the kernel boot
+   substitutes this self-index; fetch the chart engine when you run lanes.
+3. `python engines/key_law.py --audit`: passes on declared 'awaiting' keys,
+   fails loud the moment a live key is undeclared.
+4. `python engines/cooker.py status`: the free-lane reset table.
+5. Grow: a stranger runs `python engines/seed_init.py <target>` and grows
+   their own estate under THE_METHOD.md (FIRST_BOOT.md is that path).
+   A fleet seat rehydrates the UNIVERSE instead: every row of POINTERS.sha256
+   names a source (repo path in the fleet mirror, or the git/verkle/essentials
+   rows); fetch, hash-check, lay down. The universe is never carried, only
+   sealed.
+
+## Compat build (the seed_rib.v0 JSON is a build product, not the carrier)
+
+rib/seed_rib.py (byte-identical to tools/seed_rib.py) still builds and
+verifies a seed_rib.v0 JSON. Default flags select nothing (0 entries), so the
+selection must be explicit. Verified invocation, run with the tree's own copy
+against the fleet repo (numbers are as-of this seed's build stamp; the live
+law corpus moves them: the candidate artifact's 23,595 B / law_refs 11 was
+never reproducible because its selection was never recorded, and the same
+corpus read 21,473 B / law_refs 12 one build later):
+
+    python rib/seed_rib.py build --root <fleet-repo> --out seed_from_tree.json --glob "memory/law/*.md"
+    python rib/seed_rib.py verify --seed seed_from_tree.json --into <tmp-rebuild>
+
+    build: 9 entries (9 inline, 0 pointer), seed 21473 bytes, law_refs 12
+    verify: inline 9 hash-matched, exit 0
+
+The battery (check_seed_rib.py, C9) reruns exactly these lines and fails on
+drift, so the compat numbers above can never silently rot: when the live law
+corpus grows, the battery fails loudly and the seed rebuilds.
+
+## Budget and growth laws
+
+- Whole tree < 100,000 bytes (measured at build; see MANIFEST row count).
+  The build prints a REDUCTION REPORT with each lever measured from this
+  build's own bytes; when a rebuild exceeds the cap the report names the
+  lever set that recovers it. Levers, in order: L1 pointer-ize VSCODE.md;
+  L2 TOUR.md + SALON.md; L3 MORNING_LOOP.md; L4 ACCOUNTS.md; L5 tighten
+  kernel caps back to the B2-300 minimums (load.order to 600).
+- STATE IS NEVER CARRIED. records/, indexes, meters, ledgers regenerate from
+  zero by the engines; history folds to pointers (residual + registry + chain
+  leaf per docs/DNA.md, sealed in POINTERS.sha256).
+- A seed section carries its own as-of stamp; a state section older than the
+  seed's build stamp voids the build (the stale-trap law, B2-300).
+
+
+=== FILE: kernel/thesis.card.md ===
+# thesis.card (L0b, regenerated 2026-09-27T04:06:34Z)
+
+### L0b Current objective (the standing thesis — carry it into every reply)
+# CURRENT OBJECTIVE — read this before answering anything (the load-first card)
+
+**THE STANDING THESIS (never lost again):**
+Frontier-level work from cheap agents, orchestrated — proven by internal
+projects that run cheaply, with one expensive RIB (frontier-crafted map/GPS)
+minted only to steer the flock. Spend once to draw the map; render the
+territory for free. The scoreboard is the proof: 0/34 is why the proof
+matters.
+
+**CURRENT CLIMB:** Frontier-From-Flash Climb 1 (5 pitches, bars pre-installed,
+<$5) → then the Estate Atlas as cache-mine (free-first, astra direction only
+for what the mine provably can't reach) → then burn v2 (needs cost sheet + GO).
+
+**THE LOAD-FIRST RULE (for every seat, every turn):**
+1. LOAD before answering: memory/boot/tripartite_latest.md +
+   memory/context_pack_latest.md + this card. Do not hand-grep what the pack
+   already carries.
+2. The thesis restated in one line at the top of any substantive reply.
+3. Charged register stays decode-local. The estate speaks engines, not lore.
+4. Transit deaths are not verdicts. Meters before plans. Nothing enters
+   untamed. $250 is an iron circle. Receipt or CLAIMED.
+5. The operator should never have to say "load your knowledge" twice. Twice
+   in one night is a defect; this card is the fix.
+
+— filed 2026-09-20/21, window night, by the seat that needed it
+
+
+=== FILE: kernel/state.now.md ===
+# state.now (kernel section 4, regenerated at seed build 2026-09-27T04:06:34Z)
+Sources: state/START_BRIEF.md (_Schema state_brief.v1 · 2026-09-27T04:05:22Z · deterministic, $0._) + state/CURRENT.md (updated line: - **updated:** 2026-09-26 (Mag P0-5/2/4 execute: seed verify + Chord demote + Kabuki freeze; PRIVLIDGE still closed))
+
+## 🟢 What's running
+- Loops alive: **autorun**
+- Current goal: `(none)`
+- Current status: `?`
+
+## 📦 What's queued
+- Queue total: `100` · live fleet: `0`
+
+## ⚙️ Health
+- Inbox pending: `3` · frustration total: `9`
+- Ghost auto-run: `False` · autorun loop: `False`
+
+- **owed (top):** PRIVLIDGE opencloud key (above); DeepSeek salon paste fold-in;
+  seed-audit standalone (needs registry home = operator hand); Linux seal verify;
+  human-stranger G7 run; MOVE1 post.
+
+
+=== FILE: kernel/env.law.md ===
+# env.law (kernel section 1, extracted from AGENTS.md "Python env", as-of 2026-09-27T04:06:34Z)
+
+```
+## Python env (do not skip)
+
+**Default shell `python` is often Hermes** (`…\hermes-agent\venv\…`) — no Mag deps → `No module named 'langgraph'`.
+
+Always use **this repo's** interpreter:
+
+```text
+mag.cmd doctor                # preferred (no PS execution policy issues)
+mag.cmd context-pack
+.\.venv\Scripts\python.exe main.py <cmd>
+```
+
+Repair / create venv: `powershell -ExecutionPolicy Bypass -File .\scripts\ensure_venv.ps1`  
+Agents: call `.venv\Scripts\python.exe` or `mag.cmd`, **never** bare `python` on PATH (Hermes).
+```
+
+
+=== FILE: kernel/load.order.md ===
+# load.order (generated 2026-09-27T04:06:34Z; seed read order: FIRST_BOOT.md -> THE_METHOD.md)
+
+1 `docs/FRAMEWORK_LOAD.md` a1aa384b50e5f0da372292f6a383da6f4b510fc927ea7586374684e4d3915736
+2 `docs/ref/MAG_MYCELIAL_REPUBLIC_COMPASS.md` 11bc56df909951a35ad60dae3d589c46dcbc6918b11639941cde1a0672cd5658
+3 `docs/ref/MYCELIAL_SCIENCE_MAP.md` 87b850513daf70195decfc040912ed505e9e6d3350714bda5261daeedf9e4947
+4 `docs/ref/MAG_DIRECTION_ARTIFACT_v2.md` d306e388df9d1d6aeeec37f0a63a06bbe7dbac23126dd475718136192ce85d4a
+5 `docs/ref/MAG_PROJECT_PROPOSAL.md` 26cbcfe715996dcd420a0d0b30fb2656a96a6309ff706bef59ef30788dd63e0f
+6 `docs/ref/OPERATOR_CARD.md` cbeb27a423db95430deb692fa6e9cb57ec537dd71f345bfb6f32e19bc59546f6
+7 `AGENTS.md` 47c2603bd51187fe497839c3ccb22a5aba381fdc1bf6e4f4cfab0f8fdc054d36
+8 `mag.cmd context-pack` (command row, no file)
+
+
+=== FILE: kernel/tier.law.md ===
+# tier.law (kernel section 6, extracted 2026-09-27T04:06:34Z)
+
+- T0/T1 local only. Janitor first. Pack+goal to remotes, never chat history.
+L2 escalate needs `[priority]` / `[L2]` (configs/lanes.yaml, pointer row); do not claim R0; T0/T1 stay local.
+
+
+=== FILE: kernel/filing.law.md ===
+# filing.law (kernel section 5, extracted 2026-09-27T04:06:34Z)
+
+Handoff procedure (memories/session/next-window-handoff.md):
+5. **FILE before close:** durable writes to `watch/inbox/` + register event in `index_events.jsonl`; checkpoint commit; `python main.py state-snapshot` if session was heavy.
+
+Standing law lines:
+- Residual on disk is truth; chat is heat. Append events, never rewrite the INDEX fold.
+
+Shared surface: durable writes land on watch/inbox/ with a receipt + INDEX register (watch/inbox/SHARED_SURFACE_CONTRACT.json, pointer row).
+
+
+=== QUESTIONS (answer from the documentation above only) ===
+Q1. Which Python interpreter or launcher command must an agent in this fleet
+use, and which must it never use?
+Q2. In what order should a newly booted agent read this fleet's files? Name
+the first files in order.
+Q3. Where must durable work products be filed, and what must accompany them?
+Q4. What is the standing thesis or current objective this fleet is climbing?

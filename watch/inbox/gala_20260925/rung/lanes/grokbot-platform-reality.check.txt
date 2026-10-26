@@ -1,0 +1,41 @@
+grokbot-platform-reality check v2 - 2026-10-03T21:16:34Z
+cmd: bash grokbot_platform_check.sh  (this file is its raw transcript; verdict = script exit code)
+
+== G0: prior-evidence premise (ask claims rules+bot-program pages already on disk)
+rg -il --no-messages 'x-automation' corpus memory watch docs queue configs (excluding this lane's own outputs):
+corpus\tmp\oni_dig\j_High_Pressure_Gas_Vent.txt
+premise verdict: NO automation-rules or bot-program page bytes on disk pre-lane; only watch/STEAL_XPRO_HARVEST_20260904.md is substantive (harvest steal, not the rules page). FINDING: ask's prior-evidence premise unsatisfied. (informational)
+
+== G1: live help.x.com automation rules page (expected: bot-walled)
+curl live help.x.com/en/rules-and-policies/x-automation -> HTTP 403 (403 = Akamai bot wall, page exists but blocks scripted fetch) - informational
+
+== G2: automation rules page bytes - Wayback snapshot 2026-10-01T07:18:35Z - GATE
+attempt 1: curl Wayback snapshot -> HTTP 429 bytes=620
+attempt 2: curl Wayback snapshot -> HTTP 429 bytes=620
+attempt 3: curl Wayback snapshot -> HTTP 429 bytes=620
+FALLBACK: Wayback transport failed this run; using prior saved snapshot /tmp/x_automation_wayback.html (fetched 2026-10-03T17:04Z, HTTP 200, 256580 bytes)
+sha256: 92ca957f20e04c579aa0f952eb5458cb0e7b667b734a686ebf0e7ae6cbb04451 */tmp/x_automation_wayback.html
+G2 PASS: 'AI reply bot requires prior written and explicit approval from'
+G2 PASS: 'sending automated replies to posts based on keyword searches alone is not permitted'
+G2 PASS: 'a user following your account is not on its own a sufficient indication of user intent'
+G2 PASS: 'one automated reply or mention per user interaction'
+G2 PASS: 'You may not like posts or hide replies in an automated manner'
+G2 PASS: 'may result in the permanent suspension of your account'
+G2 note: phrases verified against the FALLBACK snapshot bytes (transport history above is the honest record)
+
+== G3: live X Developer Policy (docs.x.com/developer-terms/policy) - GATE
+curl https://docs.x.com/developer-terms/policy -> HTTP 200 bytes=910071
+G3 PASS: 'must follow the Automation Rules'
+G3 PASS: 'Never perform bulk, aggressive, or spammy actions'
+G3 PASS: 'consent before sending people'
+G3 PASS: 'clearly indicate what the account is'
+G3 PASS: 'may suspend or permanently revoke your access'
+
+== G4: live Grok Bot program page (docs.x.ai/grok-bot/overview) - GATE
+curl https://docs.x.ai/grok-bot/overview -> HTTP 200 bytes=253634
+G4 PASS: 'Bots can use many browser-based tools, including services without a connector.'
+G4 PASS: 'A site can still block automation'
+G4 PASS: 'hands those steps to you'
+
+== VERDICT
+EXIT 0 - all gates pass: automation-rules + developer-policy + grok-bot-program claims byte-verified against fetched pages

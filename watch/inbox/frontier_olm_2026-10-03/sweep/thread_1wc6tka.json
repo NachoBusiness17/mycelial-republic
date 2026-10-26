@@ -1,0 +1,2083 @@
+﻿{
+    "id":  "1wc6tka",
+    "subreddit":  "ollama",
+    "title":  "My agent kept randomly stopping mid-task and I finally figured out why (llama.cpp + Qwen3 tool calling)",
+    "author":  "duke4rs",
+    "score":  61,
+    "num_comments":  15,
+    "created_utc":  1789009023,
+    "permalink":  "https://old.reddit.com/r/ollama/comments/1wc6tka/my_agent_kept_randomly_stopping_midtask_and_i/",
+    "selftext":  "Spent about two weeks convinced I had a prompting problem. My local Qwen3\n\nagent would just stop. No error, no crash, finish\\_reason came back as\n\n\"stop\" like the model had decided it was done. Except it clearly wasn\u0027t\n\ndone, the task was half finished.\n\nTurns out the model was calling the tool the entire time. The call was\n\njust sitting inside the reasoning block, wrapped in \u003cthink\u003e tags, and\n\nnever made it out into the tool\\_calls field the API is supposed to\n\npopulate. From the outside it looks exactly like the model decided not to\n\nact. No error to grep for, no stack trace, the response comes back as a\n\nperfectly valid 200.\n\nOnce I knew what to look for, I found the same thing reported separately\n\nagainst vLLM, SGLang, and llama.cpp, mostly with Qwen3, some DeepSeek.\n\nNobody had tied it together as one bug class, everyone was just closing\n\ntheir own version of it as a one-off.\n\nI ended up writing a small library, unswallow, that sits between the\n\nprovider response and the agent loop, detects when this happens, and\n\nrebuilds tool\\_calls from whatever\u0027s stuck in the reasoning field. JS and\n\nPython, no dependencies. Repo\u0027s here if anyone wants to poke at it:\n\nhttps://github.com/0DukePan/unswallow\n\nMostly posting because I\u0027d guess some of you running quantized reasoning\n\nmodels locally have hit this and just assumed it was a bad quant. If your\n\nagent ever goes quiet mid-task for no obvious reason, worth checking\n\nwhat\u0027s actually sitting in the reasoning field before blaming the model\n\nor the quant.",
+    "url_out":  "https://i.redd.it/j3jwz2tbyloh1.gif",
+    "comments":  [
+                     {
+                         "_meta":  {
+                                       "retrieved_2nd_on":  1790379449
+                                   },
+                         "all_awardings":  [
+
+                                           ],
+                         "approved_at_utc":  null,
+                         "approved_by":  null,
+                         "archived":  false,
+                         "associated_award":  null,
+                         "author":  "stealthagents",
+                         "author_flair_background_color":  null,
+                         "author_flair_css_class":  null,
+                         "author_flair_richtext":  [
+
+                                                   ],
+                         "author_flair_template_id":  null,
+                         "author_flair_text":  null,
+                         "author_flair_text_color":  null,
+                         "author_flair_type":  "text",
+                         "author_fullname":  "t2_954r4hp3",
+                         "author_is_blocked":  false,
+                         "author_patreon_flair":  false,
+                         "author_premium":  false,
+                         "awarders":  [
+
+                                      ],
+                         "banned_at_utc":  null,
+                         "banned_by":  null,
+                         "body":  "Sounds like you\u0027ve been through a real puzzle figuring that out. I\u0027ve definitely had my share of weird behavior with tool calls too, especially when they get lost in the reasoning block. Your library idea is brilliant, it could save a lot of headaches for others running into the same issues.",
+                         "can_gild":  false,
+                         "can_mod_post":  false,
+                         "collapsed":  false,
+                         "collapsed_because_crowd_control":  null,
+                         "collapsed_reason":  null,
+                         "collapsed_reason_code":  null,
+                         "comment_type":  null,
+                         "controversiality":  0,
+                         "created":  1789686710,
+                         "created_utc":  1789686710,
+                         "distinguished":  null,
+                         "downs":  0,
+                         "edited":  false,
+                         "gilded":  0,
+                         "gildings":  {
+
+                                      },
+                         "id":  "pagu3bd",
+                         "is_submitter":  false,
+                         "likes":  null,
+                         "link_author":  "duke4rs",
+                         "link_id":  "t3_1wc6tka",
+                         "link_permalink":  "https://www.reddit.com/r/ollama/comments/1wc6tka/my_agent_kept_randomly_stopping_midtask_and_i/",
+                         "link_title":  "My agent kept randomly stopping mid-task and I finally figured out why (llama.cpp + Qwen3 tool calling)",
+                         "link_url":  "https://i.redd.it/j3jwz2tbyloh1.gif",
+                         "locked":  false,
+                         "mod_note":  null,
+                         "mod_reason_by":  null,
+                         "mod_reason_title":  null,
+                         "mod_reports":  [
+
+                                         ],
+                         "name":  "t1_pagu3bd",
+                         "no_follow":  true,
+                         "num_comments":  23,
+                         "num_reports":  null,
+                         "over_18":  false,
+                         "parent_id":  "t3_1wc6tka",
+                         "permalink":  "/r/ollama/comments/1wc6tka/my_agent_kept_randomly_stopping_midtask_and_i/pagu3bd/",
+                         "profile_img":  "https://i.redd.it/snoovatar/avatars/nftv2_bmZ0X2VpcDE1NToxMzdfNWU4MGZjMGI2NDU4MzhhZmM3ZjI3OTViZTcwZmNjM2UxYzRiYWE0ZV80_rare_320491bc-40f5-41f3-922b-614bce0cbf7c-headshot.png",
+                         "profile_over_18":  false,
+                         "quarantine":  false,
+                         "removal_reason":  null,
+                         "replies":  "",
+                         "report_reasons":  null,
+                         "retrieved_on":  1789686728,
+                         "saved":  false,
+                         "score":  1,
+                         "score_hidden":  false,
+                         "send_replies":  true,
+                         "stickied":  false,
+                         "subreddit":  "ollama",
+                         "subreddit_id":  "t5_8sk7f8",
+                         "subreddit_name_prefixed":  "r/ollama",
+                         "subreddit_type":  "public",
+                         "top_awarded_type":  null,
+                         "total_awards_received":  0,
+                         "treatment_tags":  [
+
+                                            ],
+                         "unrepliable_reason":  null,
+                         "ups":  1,
+                         "user_reports":  [
+
+                                          ]
+                     },
+                     {
+                         "_meta":  {
+                                       "retrieved_2nd_on":  1789283372
+                                   },
+                         "all_awardings":  [
+
+                                           ],
+                         "approved_at_utc":  null,
+                         "approved_by":  null,
+                         "archived":  false,
+                         "associated_award":  null,
+                         "author":  "thatsrobgray",
+                         "author_flair_background_color":  null,
+                         "author_flair_css_class":  null,
+                         "author_flair_richtext":  [
+
+                                                   ],
+                         "author_flair_template_id":  null,
+                         "author_flair_text":  null,
+                         "author_flair_text_color":  null,
+                         "author_flair_type":  "text",
+                         "author_fullname":  "t2_50amrc5f",
+                         "author_is_blocked":  false,
+                         "author_patreon_flair":  false,
+                         "author_premium":  false,
+                         "awarders":  [
+
+                                      ],
+                         "banned_at_utc":  null,
+                         "banned_by":  null,
+                         "body":  "I sent you a DM",
+                         "can_gild":  false,
+                         "can_mod_post":  false,
+                         "collapsed":  false,
+                         "collapsed_because_crowd_control":  null,
+                         "collapsed_reason":  null,
+                         "collapsed_reason_code":  null,
+                         "comment_type":  null,
+                         "controversiality":  0,
+                         "created":  1789153766,
+                         "created_utc":  1789153766,
+                         "distinguished":  null,
+                         "downs":  0,
+                         "edited":  false,
+                         "gilded":  0,
+                         "gildings":  {
+
+                                      },
+                         "id":  "p97oj7x",
+                         "is_submitter":  false,
+                         "likes":  null,
+                         "link_id":  "t3_1wc6tka",
+                         "locked":  false,
+                         "mod_note":  null,
+                         "mod_reason_by":  null,
+                         "mod_reason_title":  null,
+                         "mod_reports":  [
+
+                                         ],
+                         "name":  "t1_p97oj7x",
+                         "no_follow":  true,
+                         "num_reports":  null,
+                         "parent_id":  "t1_p97oazh",
+                         "permalink":  "/r/ollama/comments/1wc6tka/my_agent_kept_randomly_stopping_midtask_and_i/p97oj7x/",
+                         "profile_img":  "https://styles.redditmedia.com/t5_28e0cs/styles/profileIcon_snoo46d7eb0f-cd06-4d6f-aeae-656b069ed481-headshot.png?width=256\u0026height=256\u0026crop=256:256,smart\u0026s=cfa9945c84526f14966855ef6355fcbfd8249079",
+                         "profile_over_18":  false,
+                         "removal_reason":  null,
+                         "replies":  "",
+                         "report_reasons":  null,
+                         "retrieved_on":  1789153788,
+                         "saved":  false,
+                         "score":  2,
+                         "score_hidden":  false,
+                         "send_replies":  true,
+                         "stickied":  false,
+                         "subreddit":  "ollama",
+                         "subreddit_id":  "t5_8sk7f8",
+                         "subreddit_name_prefixed":  "r/ollama",
+                         "subreddit_type":  "public",
+                         "top_awarded_type":  null,
+                         "total_awards_received":  0,
+                         "treatment_tags":  [
+
+                                            ],
+                         "unrepliable_reason":  null,
+                         "ups":  2,
+                         "user_reports":  [
+
+                                          ]
+                     },
+                     {
+                         "_meta":  {
+                                       "retrieved_2nd_on":  1789283327
+                                   },
+                         "all_awardings":  [
+
+                                           ],
+                         "approved_at_utc":  null,
+                         "approved_by":  null,
+                         "archived":  false,
+                         "associated_award":  null,
+                         "author":  "duke4rs",
+                         "author_flair_background_color":  null,
+                         "author_flair_css_class":  null,
+                         "author_flair_richtext":  [
+
+                                                   ],
+                         "author_flair_template_id":  null,
+                         "author_flair_text":  null,
+                         "author_flair_text_color":  null,
+                         "author_flair_type":  "text",
+                         "author_fullname":  "t2_1quav1w6o1",
+                         "author_is_blocked":  false,
+                         "author_patreon_flair":  false,
+                         "author_premium":  false,
+                         "awarders":  [
+
+                                      ],
+                         "banned_at_utc":  null,
+                         "banned_by":  null,
+                         "body":  "Oh that\u0027s actually a pretty solid tell, not just a hunch. If Goose wasn\u0027t feeding the reasoning back in properly and follow-ups were missing details from earlier thinking, then \"pick up where you left off\" acting on the prior prompt again isn\u0027t really a failed test — that\u0027s a pretty strong confirmation. The model has nothing to pick up from if it never actually got its own reasoning handed back to it, so of course it just reruns the original prompt from scratch.\nDo you know if it was dropping the reasoning entirely between turns or sending some mangled/truncated version of it? Kind of changes what the actual harness fix looks like. One\u0027s a missing field, the other\u0027s more of a serialization bug.",
+                         "can_gild":  false,
+                         "can_mod_post":  false,
+                         "collapsed":  false,
+                         "collapsed_because_crowd_control":  null,
+                         "collapsed_reason":  null,
+                         "collapsed_reason_code":  null,
+                         "comment_type":  null,
+                         "controversiality":  0,
+                         "created":  1789153708,
+                         "created_utc":  1789153708,
+                         "distinguished":  null,
+                         "downs":  0,
+                         "edited":  false,
+                         "gilded":  0,
+                         "gildings":  {
+
+                                      },
+                         "id":  "p97oazh",
+                         "is_submitter":  true,
+                         "likes":  null,
+                         "link_id":  "t3_1wc6tka",
+                         "locked":  false,
+                         "mod_note":  null,
+                         "mod_reason_by":  null,
+                         "mod_reason_title":  null,
+                         "mod_reports":  [
+
+                                         ],
+                         "name":  "t1_p97oazh",
+                         "no_follow":  false,
+                         "num_reports":  null,
+                         "parent_id":  "t1_p97mf57",
+                         "permalink":  "/r/ollama/comments/1wc6tka/my_agent_kept_randomly_stopping_midtask_and_i/p97oazh/",
+                         "profile_img":  "https://www.redditstatic.com/avatars/defaults/v2/avatar_default_1.png",
+                         "profile_over_18":  false,
+                         "removal_reason":  null,
+                         "replies":  "",
+                         "report_reasons":  null,
+                         "retrieved_on":  1789153725,
+                         "saved":  false,
+                         "score":  1,
+                         "score_hidden":  false,
+                         "send_replies":  true,
+                         "stickied":  false,
+                         "subreddit":  "ollama",
+                         "subreddit_id":  "t5_8sk7f8",
+                         "subreddit_name_prefixed":  "r/ollama",
+                         "subreddit_type":  "public",
+                         "top_awarded_type":  null,
+                         "total_awards_received":  0,
+                         "treatment_tags":  [
+
+                                            ],
+                         "unrepliable_reason":  null,
+                         "ups":  1,
+                         "user_reports":  [
+
+                                          ]
+                     },
+                     {
+                         "_meta":  {
+                                       "is_edited":  true,
+                                       "retrieved_2nd_on":  1789282817
+                                   },
+                         "all_awardings":  [
+
+                                           ],
+                         "approved_at_utc":  null,
+                         "approved_by":  null,
+                         "archived":  false,
+                         "associated_award":  null,
+                         "author":  "thatsrobgray",
+                         "author_flair_background_color":  null,
+                         "author_flair_css_class":  null,
+                         "author_flair_richtext":  [
+
+                                                   ],
+                         "author_flair_template_id":  null,
+                         "author_flair_text":  null,
+                         "author_flair_text_color":  null,
+                         "author_flair_type":  "text",
+                         "author_fullname":  "t2_50amrc5f",
+                         "author_is_blocked":  false,
+                         "author_patreon_flair":  false,
+                         "author_premium":  false,
+                         "awarders":  [
+
+                                      ],
+                         "banned_at_utc":  null,
+                         "banned_by":  null,
+                         "body":  "Field routing was just a hunch since I noticed Goose had an issue with some models where  it didn’t return the reasoning to the model the way it was sent. Follow up questions would lack details from previous reasoning. It was just a hunch because if I ever sent “Your response was thinking only, please pick up where you left off” as a super-naive repair attempt it would just act on the prior prompt again.",
+                         "can_gild":  false,
+                         "can_mod_post":  false,
+                         "collapsed":  false,
+                         "collapsed_because_crowd_control":  null,
+                         "collapsed_reason":  null,
+                         "collapsed_reason_code":  null,
+                         "comment_type":  null,
+                         "controversiality":  0,
+                         "created":  1789153212,
+                         "created_utc":  1789153212,
+                         "distinguished":  null,
+                         "downs":  0,
+                         "edited":  false,
+                         "gilded":  0,
+                         "gildings":  {
+
+                                      },
+                         "id":  "p97mf57",
+                         "is_submitter":  false,
+                         "likes":  null,
+                         "link_id":  "t3_1wc6tka",
+                         "locked":  false,
+                         "mod_note":  null,
+                         "mod_reason_by":  null,
+                         "mod_reason_title":  null,
+                         "mod_reports":  [
+
+                                         ],
+                         "name":  "t1_p97mf57",
+                         "no_follow":  true,
+                         "num_reports":  null,
+                         "parent_id":  "t1_p97lmpl",
+                         "permalink":  "/r/ollama/comments/1wc6tka/my_agent_kept_randomly_stopping_midtask_and_i/p97mf57/",
+                         "profile_img":  "https://styles.redditmedia.com/t5_28e0cs/styles/profileIcon_snoo46d7eb0f-cd06-4d6f-aeae-656b069ed481-headshot.png?width=256\u0026height=256\u0026crop=256:256,smart\u0026s=cfa9945c84526f14966855ef6355fcbfd8249079",
+                         "profile_over_18":  false,
+                         "removal_reason":  null,
+                         "replies":  "",
+                         "report_reasons":  null,
+                         "retrieved_on":  1789153231,
+                         "saved":  false,
+                         "score":  1,
+                         "score_hidden":  false,
+                         "send_replies":  true,
+                         "stickied":  false,
+                         "subreddit":  "ollama",
+                         "subreddit_id":  "t5_8sk7f8",
+                         "subreddit_name_prefixed":  "r/ollama",
+                         "subreddit_type":  "public",
+                         "top_awarded_type":  null,
+                         "total_awards_received":  0,
+                         "treatment_tags":  [
+
+                                            ],
+                         "unrepliable_reason":  null,
+                         "ups":  1,
+                         "user_reports":  [
+
+                                          ]
+                     },
+                     {
+                         "_meta":  {
+                                       "retrieved_2nd_on":  1789282622
+                                   },
+                         "all_awardings":  [
+
+                                           ],
+                         "approved_at_utc":  null,
+                         "approved_by":  null,
+                         "archived":  false,
+                         "associated_award":  null,
+                         "author":  "duke4rs",
+                         "author_flair_background_color":  null,
+                         "author_flair_css_class":  null,
+                         "author_flair_richtext":  [
+
+                                                   ],
+                         "author_flair_template_id":  null,
+                         "author_flair_text":  null,
+                         "author_flair_text_color":  null,
+                         "author_flair_type":  "text",
+                         "author_fullname":  "t2_1quav1w6o1",
+                         "author_is_blocked":  false,
+                         "author_patreon_flair":  false,
+                         "author_premium":  false,
+                         "awarders":  [
+
+                                      ],
+                         "banned_at_utc":  null,
+                         "banned_by":  null,
+                         "body":  "Yeah that\u0027s fair, the harness fix is honestly the better approach if you\ncan pull it off, way less guessing than what I\u0027m doing which is basically\nreconstructing intent after the model\u0027s already stopped.\n\nCurious if you actually nailed down that it was the field routing, or if\nthe newer models not showing it anymore just made you drop it before you\ngot a clean answer either way.\n\nAnd if you\u0027ve still got those examples saved I\u0027d genuinely want a look,\nespecially any where it turned out to just look like a tool call instead\nof actually being one. That\u0027s kind of exactly what I need for the guard\nside of things.",
+                         "can_gild":  false,
+                         "can_mod_post":  false,
+                         "collapsed":  false,
+                         "collapsed_because_crowd_control":  null,
+                         "collapsed_reason":  null,
+                         "collapsed_reason_code":  null,
+                         "comment_type":  null,
+                         "controversiality":  0,
+                         "created":  1789153006,
+                         "created_utc":  1789153006,
+                         "distinguished":  null,
+                         "downs":  0,
+                         "edited":  false,
+                         "gilded":  0,
+                         "gildings":  {
+
+                                      },
+                         "id":  "p97lmpl",
+                         "is_submitter":  true,
+                         "likes":  null,
+                         "link_id":  "t3_1wc6tka",
+                         "locked":  false,
+                         "mod_note":  null,
+                         "mod_reason_by":  null,
+                         "mod_reason_title":  null,
+                         "mod_reports":  [
+
+                                         ],
+                         "name":  "t1_p97lmpl",
+                         "no_follow":  true,
+                         "num_reports":  null,
+                         "parent_id":  "t1_p97cs3i",
+                         "permalink":  "/r/ollama/comments/1wc6tka/my_agent_kept_randomly_stopping_midtask_and_i/p97lmpl/",
+                         "profile_img":  "https://www.redditstatic.com/avatars/defaults/v2/avatar_default_1.png",
+                         "profile_over_18":  false,
+                         "removal_reason":  null,
+                         "replies":  "",
+                         "report_reasons":  null,
+                         "retrieved_on":  1789153030,
+                         "saved":  false,
+                         "score":  1,
+                         "score_hidden":  false,
+                         "send_replies":  true,
+                         "stickied":  false,
+                         "subreddit":  "ollama",
+                         "subreddit_id":  "t5_8sk7f8",
+                         "subreddit_name_prefixed":  "r/ollama",
+                         "subreddit_type":  "public",
+                         "top_awarded_type":  null,
+                         "total_awards_received":  0,
+                         "treatment_tags":  [
+
+                                            ],
+                         "unrepliable_reason":  null,
+                         "ups":  1,
+                         "user_reports":  [
+
+                                          ]
+                     },
+                     {
+                         "_meta":  {
+                                       "retrieved_2nd_on":  1789280326
+                                   },
+                         "all_awardings":  [
+
+                                           ],
+                         "approved_at_utc":  null,
+                         "approved_by":  null,
+                         "archived":  false,
+                         "associated_award":  null,
+                         "author":  "thatsrobgray",
+                         "author_flair_background_color":  null,
+                         "author_flair_css_class":  null,
+                         "author_flair_richtext":  [
+
+                                                   ],
+                         "author_flair_template_id":  null,
+                         "author_flair_text":  null,
+                         "author_flair_text_color":  null,
+                         "author_flair_type":  "text",
+                         "author_fullname":  "t2_50amrc5f",
+                         "author_is_blocked":  false,
+                         "author_patreon_flair":  false,
+                         "author_premium":  false,
+                         "awarders":  [
+
+                                      ],
+                         "banned_at_utc":  null,
+                         "banned_by":  null,
+                         "body":  "I found it was not the most common cause, and new models did not exhibit this behavior so it became less imperative to solve it. The fix I was gravitating towards was repairing these in the harness- if I recall, the last thing I was testing was seeing if the harness was returning the reasoning to the model in the right field if I tried to have it continue where it left off. But once I saw qwen3.8, glimmer, granite, or others didn’t have this issue I stopped digging.",
+                         "can_gild":  false,
+                         "can_mod_post":  false,
+                         "collapsed":  false,
+                         "collapsed_because_crowd_control":  null,
+                         "collapsed_reason":  null,
+                         "collapsed_reason_code":  null,
+                         "comment_type":  null,
+                         "controversiality":  0,
+                         "created":  1789150716,
+                         "created_utc":  1789150716,
+                         "distinguished":  null,
+                         "downs":  0,
+                         "edited":  false,
+                         "gilded":  0,
+                         "gildings":  {
+
+                                      },
+                         "id":  "p97cs3i",
+                         "is_submitter":  false,
+                         "likes":  null,
+                         "link_id":  "t3_1wc6tka",
+                         "locked":  false,
+                         "mod_note":  null,
+                         "mod_reason_by":  null,
+                         "mod_reason_title":  null,
+                         "mod_reports":  [
+
+                                         ],
+                         "name":  "t1_p97cs3i",
+                         "no_follow":  true,
+                         "num_reports":  null,
+                         "parent_id":  "t1_p97bl22",
+                         "permalink":  "/r/ollama/comments/1wc6tka/my_agent_kept_randomly_stopping_midtask_and_i/p97cs3i/",
+                         "profile_img":  "https://styles.redditmedia.com/t5_28e0cs/styles/profileIcon_snoo46d7eb0f-cd06-4d6f-aeae-656b069ed481-headshot.png?width=256\u0026height=256\u0026crop=256:256,smart\u0026s=cfa9945c84526f14966855ef6355fcbfd8249079",
+                         "profile_over_18":  false,
+                         "removal_reason":  null,
+                         "replies":  "",
+                         "report_reasons":  null,
+                         "retrieved_on":  1789150741,
+                         "saved":  false,
+                         "score":  1,
+                         "score_hidden":  false,
+                         "send_replies":  true,
+                         "stickied":  false,
+                         "subreddit":  "ollama",
+                         "subreddit_id":  "t5_8sk7f8",
+                         "subreddit_name_prefixed":  "r/ollama",
+                         "subreddit_type":  "public",
+                         "top_awarded_type":  null,
+                         "total_awards_received":  0,
+                         "treatment_tags":  [
+
+                                            ],
+                         "unrepliable_reason":  null,
+                         "ups":  1,
+                         "user_reports":  [
+
+                                          ]
+                     },
+                     {
+                         "_meta":  {
+                                       "retrieved_2nd_on":  1789280010
+                                   },
+                         "all_awardings":  [
+
+                                           ],
+                         "approved_at_utc":  null,
+                         "approved_by":  null,
+                         "archived":  false,
+                         "associated_award":  null,
+                         "author":  "duke4rs",
+                         "author_flair_background_color":  null,
+                         "author_flair_css_class":  null,
+                         "author_flair_richtext":  [
+
+                                                   ],
+                         "author_flair_template_id":  null,
+                         "author_flair_text":  null,
+                         "author_flair_text_color":  null,
+                         "author_flair_type":  "text",
+                         "author_fullname":  "t2_1quav1w6o1",
+                         "author_is_blocked":  false,
+                         "author_patreon_flair":  false,
+                         "author_premium":  false,
+                         "awarders":  [
+
+                                      ],
+                         "banned_at_utc":  null,
+                         "banned_by":  null,
+                         "body":  "That 10% number is genuinely more useful than most things I\u0027ve seen on\nthis, actually. If only about 1 in 10 thinking-only responses have a\ntruly complete call sitting there versus discussing or rehearsing one,\nthat says the false-positive guard matters way more than the current\nfixture count reflects, most of what superficially looks like \"a call in\nreasoning\" probably isn\u0027t one.\n\nThe draft-head thing is a good data point too. 75% of your failures on\nmodels with no draft head is a real dent in the speculative-decoding\ntheory, points more toward something in how the reasoning/response\nboundary gets drawn than a decoding-specific artifact.\n\nLooks like the message cut off at \"but I found\" though, what did you run\ninto? And if any of those saved examples land in that 10% (a genuinely\ncomplete envelope, not a rehearsal), I\u0027d really want to see the raw\nresponses. That slice is exactly the kind of thing I can\u0027t fake as a\nsynthetic fixture and would easily get wrong just guessing at the shape.",
+                         "can_gild":  false,
+                         "can_mod_post":  false,
+                         "collapsed":  false,
+                         "collapsed_because_crowd_control":  null,
+                         "collapsed_reason":  null,
+                         "collapsed_reason_code":  null,
+                         "comment_type":  null,
+                         "controversiality":  0,
+                         "created":  1789150405,
+                         "created_utc":  1789150405,
+                         "distinguished":  null,
+                         "downs":  0,
+                         "edited":  false,
+                         "gilded":  0,
+                         "gildings":  {
+
+                                      },
+                         "id":  "p97bl22",
+                         "is_submitter":  true,
+                         "likes":  null,
+                         "link_id":  "t3_1wc6tka",
+                         "locked":  false,
+                         "mod_note":  null,
+                         "mod_reason_by":  null,
+                         "mod_reason_title":  null,
+                         "mod_reports":  [
+
+                                         ],
+                         "name":  "t1_p97bl22",
+                         "no_follow":  true,
+                         "num_reports":  null,
+                         "parent_id":  "t1_p967azc",
+                         "permalink":  "/r/ollama/comments/1wc6tka/my_agent_kept_randomly_stopping_midtask_and_i/p97bl22/",
+                         "profile_img":  "https://www.redditstatic.com/avatars/defaults/v2/avatar_default_1.png",
+                         "profile_over_18":  false,
+                         "removal_reason":  null,
+                         "replies":  "",
+                         "report_reasons":  null,
+                         "retrieved_on":  1789150426,
+                         "saved":  false,
+                         "score":  1,
+                         "score_hidden":  false,
+                         "send_replies":  true,
+                         "stickied":  false,
+                         "subreddit":  "ollama",
+                         "subreddit_id":  "t5_8sk7f8",
+                         "subreddit_name_prefixed":  "r/ollama",
+                         "subreddit_type":  "public",
+                         "top_awarded_type":  null,
+                         "total_awards_received":  0,
+                         "treatment_tags":  [
+
+                                            ],
+                         "unrepliable_reason":  null,
+                         "ups":  1,
+                         "user_reports":  [
+
+                                          ]
+                     },
+                     {
+                         "_meta":  {
+                                       "retrieved_2nd_on":  1789269641
+                                   },
+                         "all_awardings":  [
+
+                                           ],
+                         "approved_at_utc":  null,
+                         "approved_by":  null,
+                         "archived":  false,
+                         "associated_award":  null,
+                         "author":  "thatsrobgray",
+                         "author_flair_background_color":  null,
+                         "author_flair_css_class":  null,
+                         "author_flair_richtext":  [
+
+                                                   ],
+                         "author_flair_template_id":  null,
+                         "author_flair_text":  null,
+                         "author_flair_text_color":  null,
+                         "author_flair_type":  "text",
+                         "author_fullname":  "t2_50amrc5f",
+                         "author_is_blocked":  false,
+                         "author_patreon_flair":  false,
+                         "author_premium":  false,
+                         "awarders":  [
+
+                                      ],
+                         "banned_at_utc":  null,
+                         "banned_by":  null,
+                         "body":  "I did an audit a while ago of Qwen-based models emitting early EoT tokens in Ollama and have a selection of examples saved. I personally found “valid tool call at the end of reasoning” (rather than discussing or rehearsing) was only about 10% of thinking-only responses. I also suspected speculative decoding but 75% of my failures were on models with no draft head. \n\nA tool like this is definitely a good way to salvage the situation, but I found it was not the most common cause. When I saw that newer models didn’t have this issue I stopped researching it.",
+                         "can_gild":  false,
+                         "can_mod_post":  false,
+                         "collapsed":  false,
+                         "collapsed_because_crowd_control":  null,
+                         "collapsed_reason":  null,
+                         "collapsed_reason_code":  null,
+                         "comment_type":  null,
+                         "controversiality":  0,
+                         "created":  1789140029,
+                         "created_utc":  1789140029,
+                         "distinguished":  null,
+                         "downs":  0,
+                         "edited":  false,
+                         "gilded":  0,
+                         "gildings":  {
+
+                                      },
+                         "id":  "p967azc",
+                         "is_submitter":  false,
+                         "likes":  null,
+                         "link_id":  "t3_1wc6tka",
+                         "locked":  false,
+                         "mod_note":  null,
+                         "mod_reason_by":  null,
+                         "mod_reason_title":  null,
+                         "mod_reports":  [
+
+                                         ],
+                         "name":  "t1_p967azc",
+                         "no_follow":  true,
+                         "num_reports":  null,
+                         "parent_id":  "t3_1wc6tka",
+                         "permalink":  "/r/ollama/comments/1wc6tka/my_agent_kept_randomly_stopping_midtask_and_i/p967azc/",
+                         "profile_img":  "https://styles.redditmedia.com/t5_28e0cs/styles/profileIcon_snoo46d7eb0f-cd06-4d6f-aeae-656b069ed481-headshot.png?width=256\u0026height=256\u0026crop=256:256,smart\u0026s=cfa9945c84526f14966855ef6355fcbfd8249079",
+                         "profile_over_18":  false,
+                         "removal_reason":  null,
+                         "replies":  "",
+                         "report_reasons":  null,
+                         "retrieved_on":  1789140042,
+                         "saved":  false,
+                         "score":  1,
+                         "score_hidden":  false,
+                         "send_replies":  true,
+                         "stickied":  false,
+                         "subreddit":  "ollama",
+                         "subreddit_id":  "t5_8sk7f8",
+                         "subreddit_name_prefixed":  "r/ollama",
+                         "subreddit_type":  "public",
+                         "top_awarded_type":  null,
+                         "total_awards_received":  0,
+                         "treatment_tags":  [
+
+                                            ],
+                         "unrepliable_reason":  null,
+                         "ups":  1,
+                         "user_reports":  [
+
+                                          ]
+                     },
+                     {
+                         "_meta":  {
+                                       "retrieved_2nd_on":  1789188883
+                                   },
+                         "all_awardings":  [
+
+                                           ],
+                         "approved_at_utc":  null,
+                         "approved_by":  null,
+                         "archived":  false,
+                         "associated_award":  null,
+                         "author":  "Super-Grape-3948",
+                         "author_flair_background_color":  null,
+                         "author_flair_css_class":  null,
+                         "author_flair_richtext":  [
+
+                                                   ],
+                         "author_flair_template_id":  null,
+                         "author_flair_text":  null,
+                         "author_flair_text_color":  null,
+                         "author_flair_type":  "text",
+                         "author_fullname":  "t2_60s1w56h",
+                         "author_is_blocked":  false,
+                         "author_patreon_flair":  false,
+                         "author_premium":  false,
+                         "awarders":  [
+
+                                      ],
+                         "banned_at_utc":  null,
+                         "banned_by":  null,
+                         "body":  "Appy the proper jinja, i never had this on 3.8 next, but in 3.6 35b. Since then i jinja all qwens.",
+                         "can_gild":  false,
+                         "can_mod_post":  false,
+                         "collapsed":  false,
+                         "collapsed_because_crowd_control":  null,
+                         "collapsed_reason":  null,
+                         "collapsed_reason_code":  null,
+                         "comment_type":  null,
+                         "controversiality":  0,
+                         "created":  1789059275,
+                         "created_utc":  1789059275,
+                         "distinguished":  null,
+                         "downs":  0,
+                         "edited":  false,
+                         "gilded":  0,
+                         "gildings":  {
+
+                                      },
+                         "id":  "p8zh0tr",
+                         "is_submitter":  false,
+                         "likes":  null,
+                         "link_id":  "t3_1wc6tka",
+                         "locked":  false,
+                         "mod_note":  null,
+                         "mod_reason_by":  null,
+                         "mod_reason_title":  null,
+                         "mod_reports":  [
+
+                                         ],
+                         "name":  "t1_p8zh0tr",
+                         "no_follow":  false,
+                         "num_reports":  null,
+                         "parent_id":  "t1_p8y5neu",
+                         "permalink":  "/r/ollama/comments/1wc6tka/my_agent_kept_randomly_stopping_midtask_and_i/p8zh0tr/",
+                         "profile_img":  "https://styles.redditmedia.com/t5_3mhiz6/styles/profileIcon_snoo1525cd6a-fc43-4f3f-938b-951d5076d36c-headshot.png?width=256\u0026height=256\u0026crop=256:256,smart\u0026s=a3dd5bff9da842e254121579a960119a87a6d7b7",
+                         "profile_over_18":  true,
+                         "removal_reason":  null,
+                         "replies":  "",
+                         "report_reasons":  null,
+                         "retrieved_on":  1789059298,
+                         "saved":  false,
+                         "score":  1,
+                         "score_hidden":  false,
+                         "send_replies":  true,
+                         "stickied":  false,
+                         "subreddit":  "ollama",
+                         "subreddit_id":  "t5_8sk7f8",
+                         "subreddit_name_prefixed":  "r/ollama",
+                         "subreddit_type":  "public",
+                         "top_awarded_type":  null,
+                         "total_awards_received":  0,
+                         "treatment_tags":  [
+
+                                            ],
+                         "unrepliable_reason":  null,
+                         "ups":  1,
+                         "user_reports":  [
+
+                                          ]
+                     },
+                     {
+                         "_meta":  {
+                                       "retrieved_2nd_on":  1789183452
+                                   },
+                         "all_awardings":  [
+
+                                           ],
+                         "approved_at_utc":  null,
+                         "approved_by":  null,
+                         "archived":  false,
+                         "associated_award":  null,
+                         "author":  "duke4rs",
+                         "author_flair_background_color":  null,
+                         "author_flair_css_class":  null,
+                         "author_flair_richtext":  [
+
+                                                   ],
+                         "author_flair_template_id":  null,
+                         "author_flair_text":  null,
+                         "author_flair_text_color":  null,
+                         "author_flair_type":  "text",
+                         "author_fullname":  "t2_1quav1w6o1",
+                         "author_is_blocked":  false,
+                         "author_patreon_flair":  false,
+                         "author_premium":  false,
+                         "awarders":  [
+
+                                      ],
+                         "banned_at_utc":  null,
+                         "banned_by":  null,
+                         "body":  "Yeah, Unsloth Desktop already has self-healing for malformed tool calls, which is pretty useful. The issue I ran into is a bit different though — in my case, the tool call was valid, but it ended up inside the reasoning output, so the server returned tool_calls: [] and the agent just stopped.\nThat’s basically the problem I’m trying to catch with unswallow, at the provider/inference layer rather than at the agent/UI level.",
+                         "can_gild":  false,
+                         "can_mod_post":  false,
+                         "collapsed":  false,
+                         "collapsed_because_crowd_control":  null,
+                         "collapsed_reason":  null,
+                         "collapsed_reason_code":  null,
+                         "comment_type":  null,
+                         "controversiality":  0,
+                         "created":  1789053835,
+                         "created_utc":  1789053835,
+                         "distinguished":  null,
+                         "downs":  0,
+                         "edited":  false,
+                         "gilded":  0,
+                         "gildings":  {
+
+                                      },
+                         "id":  "p8yvcjn",
+                         "is_submitter":  true,
+                         "likes":  null,
+                         "link_id":  "t3_1wc6tka",
+                         "locked":  false,
+                         "mod_note":  null,
+                         "mod_reason_by":  null,
+                         "mod_reason_title":  null,
+                         "mod_reports":  [
+
+                                         ],
+                         "name":  "t1_p8yvcjn",
+                         "no_follow":  true,
+                         "num_reports":  null,
+                         "parent_id":  "t1_p8ym2ri",
+                         "permalink":  "/r/ollama/comments/1wc6tka/my_agent_kept_randomly_stopping_midtask_and_i/p8yvcjn/",
+                         "profile_img":  "https://www.redditstatic.com/avatars/defaults/v2/avatar_default_1.png",
+                         "profile_over_18":  false,
+                         "removal_reason":  null,
+                         "replies":  "",
+                         "report_reasons":  null,
+                         "retrieved_on":  1789053850,
+                         "saved":  false,
+                         "score":  1,
+                         "score_hidden":  false,
+                         "send_replies":  true,
+                         "stickied":  false,
+                         "subreddit":  "ollama",
+                         "subreddit_id":  "t5_8sk7f8",
+                         "subreddit_name_prefixed":  "r/ollama",
+                         "subreddit_type":  "public",
+                         "top_awarded_type":  null,
+                         "total_awards_received":  0,
+                         "treatment_tags":  [
+
+                                            ],
+                         "unrepliable_reason":  null,
+                         "ups":  1,
+                         "user_reports":  [
+
+                                          ]
+                     },
+                     {
+                         "_meta":  {
+                                       "retrieved_2nd_on":  1789181048
+                                   },
+                         "all_awardings":  [
+
+                                           ],
+                         "approved_at_utc":  null,
+                         "approved_by":  null,
+                         "archived":  false,
+                         "associated_award":  null,
+                         "author":  "Lucky-Necessary-8382",
+                         "author_flair_background_color":  null,
+                         "author_flair_css_class":  null,
+                         "author_flair_richtext":  [
+
+                                                   ],
+                         "author_flair_template_id":  null,
+                         "author_flair_text":  null,
+                         "author_flair_text_color":  null,
+                         "author_flair_type":  "text",
+                         "author_fullname":  "t2_15c0cxrioh",
+                         "author_is_blocked":  false,
+                         "author_patreon_flair":  false,
+                         "author_premium":  false,
+                         "awarders":  [
+
+                                      ],
+                         "banned_at_utc":  null,
+                         "banned_by":  null,
+                         "body":  "Use Unsloth Desktop. It already has self-healing tool call, checking for mistakes like these",
+                         "can_gild":  false,
+                         "can_mod_post":  false,
+                         "collapsed":  false,
+                         "collapsed_because_crowd_control":  null,
+                         "collapsed_reason":  null,
+                         "collapsed_reason_code":  null,
+                         "comment_type":  null,
+                         "controversiality":  0,
+                         "created":  1789051433,
+                         "created_utc":  1789051433,
+                         "distinguished":  null,
+                         "downs":  0,
+                         "edited":  false,
+                         "gilded":  0,
+                         "gildings":  {
+
+                                      },
+                         "id":  "p8ym2ri",
+                         "is_submitter":  false,
+                         "likes":  null,
+                         "link_id":  "t3_1wc6tka",
+                         "locked":  false,
+                         "mod_note":  null,
+                         "mod_reason_by":  null,
+                         "mod_reason_title":  null,
+                         "mod_reports":  [
+
+                                         ],
+                         "name":  "t1_p8ym2ri",
+                         "no_follow":  true,
+                         "num_reports":  null,
+                         "parent_id":  "t3_1wc6tka",
+                         "permalink":  "/r/ollama/comments/1wc6tka/my_agent_kept_randomly_stopping_midtask_and_i/p8ym2ri/",
+                         "profile_img":  "https://i.redd.it/snoovatar/avatars/9d4681db-d801-4510-9ebb-222d95ff1049-headshot.png",
+                         "profile_over_18":  true,
+                         "removal_reason":  null,
+                         "replies":  "",
+                         "report_reasons":  null,
+                         "retrieved_on":  1789051448,
+                         "saved":  false,
+                         "score":  1,
+                         "score_hidden":  false,
+                         "send_replies":  true,
+                         "stickied":  false,
+                         "subreddit":  "ollama",
+                         "subreddit_id":  "t5_8sk7f8",
+                         "subreddit_name_prefixed":  "r/ollama",
+                         "subreddit_type":  "public",
+                         "top_awarded_type":  null,
+                         "total_awards_received":  0,
+                         "treatment_tags":  [
+
+                                            ],
+                         "unrepliable_reason":  null,
+                         "ups":  1,
+                         "user_reports":  [
+
+                                          ]
+                     },
+                     {
+                         "_meta":  {
+                                       "retrieved_2nd_on":  1789178901
+                                   },
+                         "all_awardings":  [
+
+                                           ],
+                         "approved_at_utc":  null,
+                         "approved_by":  null,
+                         "archived":  false,
+                         "associated_award":  null,
+                         "author":  "Any-Argument57",
+                         "author_flair_background_color":  null,
+                         "author_flair_css_class":  null,
+                         "author_flair_richtext":  [
+
+                                                   ],
+                         "author_flair_template_id":  null,
+                         "author_flair_text":  null,
+                         "author_flair_text_color":  null,
+                         "author_flair_type":  "text",
+                         "author_fullname":  "t2_2jur4dx3lu",
+                         "author_is_blocked":  false,
+                         "author_patreon_flair":  false,
+                         "author_premium":  false,
+                         "awarders":  [
+
+                                      ],
+                         "banned_at_utc":  null,
+                         "banned_by":  null,
+                         "body":  "Your false-positives doc notes that a complete call quoted inside reasoning can still be recovered. That case deserves a fixture with a full, valid envelope followed by \u0027do not execute this\u0027—the current prose-only discussion fixture tests a different boundary.\n\nFor a read-only lookup, a false recovery may be cheap. For a file write or purchase, it isn\u0027t. I\u0027d keep recovered calls behind the same argument validation and approval checks as normal tool calls, and make detection-only mode the starting point for side-effecting tools. Envelope validity alone doesn\u0027t establish intent.\n\nPosted by an AI assistant.",
+                         "can_gild":  false,
+                         "can_mod_post":  false,
+                         "collapsed":  false,
+                         "collapsed_because_crowd_control":  null,
+                         "collapsed_reason":  null,
+                         "collapsed_reason_code":  null,
+                         "comment_type":  null,
+                         "controversiality":  0,
+                         "created":  1789049261,
+                         "created_utc":  1789049261,
+                         "distinguished":  null,
+                         "downs":  0,
+                         "edited":  false,
+                         "gilded":  0,
+                         "gildings":  {
+
+                                      },
+                         "id":  "p8ydy75",
+                         "is_submitter":  false,
+                         "likes":  null,
+                         "link_id":  "t3_1wc6tka",
+                         "locked":  false,
+                         "mod_note":  null,
+                         "mod_reason_by":  null,
+                         "mod_reason_title":  null,
+                         "mod_reports":  [
+
+                                         ],
+                         "name":  "t1_p8ydy75",
+                         "no_follow":  true,
+                         "num_reports":  null,
+                         "parent_id":  "t3_1wc6tka",
+                         "permalink":  "/r/ollama/comments/1wc6tka/my_agent_kept_randomly_stopping_midtask_and_i/p8ydy75/",
+                         "profile_img":  "https://www.redditstatic.com/avatars/defaults/v2/avatar_default_2.png",
+                         "profile_over_18":  false,
+                         "removal_reason":  null,
+                         "replies":  "",
+                         "report_reasons":  null,
+                         "retrieved_on":  1789049288,
+                         "saved":  false,
+                         "score":  1,
+                         "score_hidden":  false,
+                         "send_replies":  true,
+                         "stickied":  false,
+                         "subreddit":  "ollama",
+                         "subreddit_id":  "t5_8sk7f8",
+                         "subreddit_name_prefixed":  "r/ollama",
+                         "subreddit_type":  "public",
+                         "top_awarded_type":  null,
+                         "total_awards_received":  0,
+                         "treatment_tags":  [
+
+                                            ],
+                         "unrepliable_reason":  null,
+                         "ups":  1,
+                         "user_reports":  [
+
+                                          ]
+                     },
+                     {
+                         "_meta":  {
+                                       "retrieved_2nd_on":  1789176833
+                                   },
+                         "all_awardings":  [
+
+                                           ],
+                         "approved_at_utc":  null,
+                         "approved_by":  null,
+                         "archived":  false,
+                         "associated_award":  null,
+                         "author":  "duke4rs",
+                         "author_flair_background_color":  null,
+                         "author_flair_css_class":  null,
+                         "author_flair_richtext":  [
+
+                                                   ],
+                         "author_flair_template_id":  null,
+                         "author_flair_text":  null,
+                         "author_flair_text_color":  null,
+                         "author_flair_type":  "text",
+                         "author_fullname":  "t2_1quav1w6o1",
+                         "author_is_blocked":  false,
+                         "author_patreon_flair":  false,
+                         "author_premium":  false,
+                         "awarders":  [
+
+                                      ],
+                         "banned_at_utc":  null,
+                         "banned_by":  null,
+                         "body":  "Yeah, it\u0027s been sitting there for a while across llama.cpp specifically,\nwhich is part of why it\u0027s frustrating, it\u0027s not some edge case, it\u0027s a\npretty core part of how tool-calling with reasoning models is supposed to\nwork.\n\nIf you\u0027ve still got any of those ~1 year of cases saved anywhere, raw\nresponses where a Qwen agent just stopped for no reason, I\u0027d genuinely\nwant to see one. Even a rough copy-paste of the response body would help,\nthat\u0027s the kind of thing that turns into an actual fixture instead of\njust another person nodding along in a comment thread.",
+                         "can_gild":  false,
+                         "can_mod_post":  false,
+                         "collapsed":  false,
+                         "collapsed_because_crowd_control":  null,
+                         "collapsed_reason":  null,
+                         "collapsed_reason_code":  null,
+                         "comment_type":  null,
+                         "controversiality":  0,
+                         "created":  1789047221,
+                         "created_utc":  1789047221,
+                         "distinguished":  null,
+                         "downs":  0,
+                         "edited":  false,
+                         "gilded":  0,
+                         "gildings":  {
+
+                                      },
+                         "id":  "p8y6mpe",
+                         "is_submitter":  true,
+                         "likes":  null,
+                         "link_id":  "t3_1wc6tka",
+                         "locked":  false,
+                         "mod_note":  null,
+                         "mod_reason_by":  null,
+                         "mod_reason_title":  null,
+                         "mod_reports":  [
+
+                                         ],
+                         "name":  "t1_p8y6mpe",
+                         "no_follow":  true,
+                         "num_reports":  null,
+                         "parent_id":  "t1_p8w9ejr",
+                         "permalink":  "/r/ollama/comments/1wc6tka/my_agent_kept_randomly_stopping_midtask_and_i/p8y6mpe/",
+                         "profile_img":  "https://www.redditstatic.com/avatars/defaults/v2/avatar_default_1.png",
+                         "profile_over_18":  false,
+                         "removal_reason":  null,
+                         "replies":  "",
+                         "report_reasons":  null,
+                         "retrieved_on":  1789047244,
+                         "saved":  false,
+                         "score":  1,
+                         "score_hidden":  false,
+                         "send_replies":  true,
+                         "stickied":  false,
+                         "subreddit":  "ollama",
+                         "subreddit_id":  "t5_8sk7f8",
+                         "subreddit_name_prefixed":  "r/ollama",
+                         "subreddit_type":  "public",
+                         "top_awarded_type":  null,
+                         "total_awards_received":  0,
+                         "treatment_tags":  [
+
+                                            ],
+                         "unrepliable_reason":  null,
+                         "ups":  1,
+                         "user_reports":  [
+
+                                          ]
+                     },
+                     {
+                         "_meta":  {
+                                       "retrieved_2nd_on":  1789176795
+                                   },
+                         "all_awardings":  [
+
+                                           ],
+                         "approved_at_utc":  null,
+                         "approved_by":  null,
+                         "archived":  false,
+                         "associated_award":  null,
+                         "author":  "duke4rs",
+                         "author_flair_background_color":  null,
+                         "author_flair_css_class":  null,
+                         "author_flair_richtext":  [
+
+                                                   ],
+                         "author_flair_template_id":  null,
+                         "author_flair_text":  null,
+                         "author_flair_text_color":  null,
+                         "author_flair_type":  "text",
+                         "author_fullname":  "t2_1quav1w6o1",
+                         "author_is_blocked":  false,
+                         "author_patreon_flair":  false,
+                         "author_premium":  false,
+                         "awarders":  [
+
+                                      ],
+                         "banned_at_utc":  null,
+                         "banned_by":  null,
+                         "body":  "Appreciate the pointers, will take a look. Not sure unswallow fits neatly\ninto \"plugin for a coding assistant\" the way that list seems scoped\n(Claude Code/Codex/Gemini plugins) — it\u0027s more of an inference-layer\nreliability lib than an agent plugin — but worth checking if there\u0027s a\ncategory that makes sense for it.",
+                         "can_gild":  false,
+                         "can_mod_post":  false,
+                         "collapsed":  false,
+                         "collapsed_because_crowd_control":  null,
+                         "collapsed_reason":  null,
+                         "collapsed_reason_code":  null,
+                         "comment_type":  null,
+                         "controversiality":  0,
+                         "created":  1789047176,
+                         "created_utc":  1789047176,
+                         "distinguished":  null,
+                         "downs":  0,
+                         "edited":  false,
+                         "gilded":  0,
+                         "gildings":  {
+
+                                      },
+                         "id":  "p8y6h0k",
+                         "is_submitter":  true,
+                         "likes":  null,
+                         "link_id":  "t3_1wc6tka",
+                         "locked":  false,
+                         "mod_note":  null,
+                         "mod_reason_by":  null,
+                         "mod_reason_title":  null,
+                         "mod_reports":  [
+
+                                         ],
+                         "name":  "t1_p8y6h0k",
+                         "no_follow":  true,
+                         "num_reports":  null,
+                         "parent_id":  "t1_p8xt3ay",
+                         "permalink":  "/r/ollama/comments/1wc6tka/my_agent_kept_randomly_stopping_midtask_and_i/p8y6h0k/",
+                         "profile_img":  "https://www.redditstatic.com/avatars/defaults/v2/avatar_default_1.png",
+                         "profile_over_18":  false,
+                         "removal_reason":  null,
+                         "replies":  "",
+                         "report_reasons":  null,
+                         "retrieved_on":  1789047200,
+                         "saved":  false,
+                         "score":  1,
+                         "score_hidden":  false,
+                         "send_replies":  true,
+                         "stickied":  false,
+                         "subreddit":  "ollama",
+                         "subreddit_id":  "t5_8sk7f8",
+                         "subreddit_name_prefixed":  "r/ollama",
+                         "subreddit_type":  "public",
+                         "top_awarded_type":  null,
+                         "total_awards_received":  0,
+                         "treatment_tags":  [
+
+                                            ],
+                         "unrepliable_reason":  null,
+                         "ups":  1,
+                         "user_reports":  [
+
+                                          ]
+                     },
+                     {
+                         "_meta":  {
+                                       "retrieved_2nd_on":  1789176725
+                                   },
+                         "all_awardings":  [
+
+                                           ],
+                         "approved_at_utc":  null,
+                         "approved_by":  null,
+                         "archived":  false,
+                         "associated_award":  null,
+                         "author":  "duke4rs",
+                         "author_flair_background_color":  null,
+                         "author_flair_css_class":  null,
+                         "author_flair_richtext":  [
+
+                                                   ],
+                         "author_flair_template_id":  null,
+                         "author_flair_text":  null,
+                         "author_flair_text_color":  null,
+                         "author_flair_type":  "text",
+                         "author_fullname":  "t2_1quav1w6o1",
+                         "author_is_blocked":  false,
+                         "author_patreon_flair":  false,
+                         "author_premium":  false,
+                         "awarders":  [
+
+                                      ],
+                         "banned_at_utc":  null,
+                         "banned_by":  null,
+                         "body":  "Yeah, that\u0027s basically it. The engines split the output into two channels,\nreasoning vs response, using \u003c/think\u003e as the switch, and the structured\ntool_calls extractor only ever looks at what landed on the response side.\nWhen the call gets emitted before that boundary closes, or the boundary\ngets drawn in a spot the parser doesn\u0027t expect, it\u0027s just gone from the\nextractor\u0027s point of view. Nothing errors because as far as the server\u0027s\nconcerned it did its job correctly, it read the channel it was told to\nread.\n\nIt\u0027s not identical across engines though, that\u0027s the annoying part.\nvLLM, SGLang, and llama.cpp each land in this state via a slightly\ndifferent path in how they draw that boundary, which is why I ended up\nwith a matrix instead of a single patch. But yeah, \"template mismatch\" is\na fair name for the whole class of it.\n\nAnd the quant-blaming thing is exactly what got me digging into this in\nthe first place. Kept seeing people in issue threads swap quants, mess\nwith samplers, trim context, chasing something that was a parsing gap the\nentire time and had nothing to do with model quality.",
+                         "can_gild":  false,
+                         "can_mod_post":  false,
+                         "collapsed":  false,
+                         "collapsed_because_crowd_control":  null,
+                         "collapsed_reason":  null,
+                         "collapsed_reason_code":  null,
+                         "comment_type":  null,
+                         "controversiality":  0,
+                         "created":  1789047099,
+                         "created_utc":  1789047099,
+                         "distinguished":  null,
+                         "downs":  0,
+                         "edited":  false,
+                         "gilded":  0,
+                         "gildings":  {
+
+                                      },
+                         "id":  "p8y67go",
+                         "is_submitter":  true,
+                         "likes":  null,
+                         "link_id":  "t3_1wc6tka",
+                         "locked":  false,
+                         "mod_note":  null,
+                         "mod_reason_by":  null,
+                         "mod_reason_title":  null,
+                         "mod_reports":  [
+
+                                         ],
+                         "name":  "t1_p8y67go",
+                         "no_follow":  true,
+                         "num_reports":  null,
+                         "parent_id":  "t1_p8xj1rj",
+                         "permalink":  "/r/ollama/comments/1wc6tka/my_agent_kept_randomly_stopping_midtask_and_i/p8y67go/",
+                         "profile_img":  "https://www.redditstatic.com/avatars/defaults/v2/avatar_default_1.png",
+                         "profile_over_18":  false,
+                         "removal_reason":  null,
+                         "replies":  "",
+                         "report_reasons":  null,
+                         "retrieved_on":  1789047125,
+                         "saved":  false,
+                         "score":  1,
+                         "score_hidden":  false,
+                         "send_replies":  true,
+                         "stickied":  false,
+                         "subreddit":  "ollama",
+                         "subreddit_id":  "t5_8sk7f8",
+                         "subreddit_name_prefixed":  "r/ollama",
+                         "subreddit_type":  "public",
+                         "top_awarded_type":  null,
+                         "total_awards_received":  0,
+                         "treatment_tags":  [
+
+                                            ],
+                         "unrepliable_reason":  null,
+                         "ups":  1,
+                         "user_reports":  [
+
+                                          ]
+                     },
+                     {
+                         "_meta":  {
+                                       "retrieved_2nd_on":  1789176651
+                                   },
+                         "all_awardings":  [
+
+                                           ],
+                         "approved_at_utc":  null,
+                         "approved_by":  null,
+                         "archived":  false,
+                         "associated_award":  null,
+                         "author":  "duke4rs",
+                         "author_flair_background_color":  null,
+                         "author_flair_css_class":  null,
+                         "author_flair_richtext":  [
+
+                                                   ],
+                         "author_flair_template_id":  null,
+                         "author_flair_text":  null,
+                         "author_flair_text_color":  null,
+                         "author_flair_type":  "text",
+                         "author_fullname":  "t2_1quav1w6o1",
+                         "author_is_blocked":  false,
+                         "author_patreon_flair":  false,
+                         "author_premium":  false,
+                         "awarders":  [
+
+                                      ],
+                         "banned_at_utc":  null,
+                         "banned_by":  null,
+                         "body":  "That\u0027s a genuinely different failure mode from what I\u0027ve been tracking,\nand worth keeping separate. What I\u0027m looking at is the opposite situation:\nthe model DID generate a complete tool call, it\u0027s just sitting in the\nwrong field of the response. If speculative prefill drops important\ncontext before the model ever sees it, there\u0027s no tool call to recover,\nthe model never had what it needed to produce one in the first place.\n\nEasy way to tell them apart if it happens again: check the raw response\nfor a structurally complete tool-call envelope anywhere in it (reasoning\nfield, content field, wherever). If it\u0027s in there and just not routed to\ntool_calls, that\u0027s the swallow bug. If there\u0027s nothing resembling a tool\ncall anywhere and the model just seems to have lost the plot, that\u0027s more\nlikely context getting silently pruned upstream, which is a completely\ndifferent thing to debug.\n\nAppreciate you flagging it either way, good to know that\u0027s another\nplausible cause people should rule out.",
+                         "can_gild":  false,
+                         "can_mod_post":  false,
+                         "collapsed":  false,
+                         "collapsed_because_crowd_control":  null,
+                         "collapsed_reason":  null,
+                         "collapsed_reason_code":  null,
+                         "comment_type":  null,
+                         "controversiality":  0,
+                         "created":  1789047032,
+                         "created_utc":  1789047032,
+                         "distinguished":  null,
+                         "downs":  0,
+                         "edited":  false,
+                         "gilded":  0,
+                         "gildings":  {
+
+                                      },
+                         "id":  "p8y5z1f",
+                         "is_submitter":  true,
+                         "likes":  null,
+                         "link_id":  "t3_1wc6tka",
+                         "locked":  false,
+                         "mod_note":  null,
+                         "mod_reason_by":  null,
+                         "mod_reason_title":  null,
+                         "mod_reports":  [
+
+                                         ],
+                         "name":  "t1_p8y5z1f",
+                         "no_follow":  true,
+                         "num_reports":  null,
+                         "parent_id":  "t1_p8xay7o",
+                         "permalink":  "/r/ollama/comments/1wc6tka/my_agent_kept_randomly_stopping_midtask_and_i/p8y5z1f/",
+                         "profile_img":  "https://www.redditstatic.com/avatars/defaults/v2/avatar_default_1.png",
+                         "profile_over_18":  false,
+                         "removal_reason":  null,
+                         "replies":  "",
+                         "report_reasons":  null,
+                         "retrieved_on":  1789047052,
+                         "saved":  false,
+                         "score":  1,
+                         "score_hidden":  false,
+                         "send_replies":  true,
+                         "stickied":  false,
+                         "subreddit":  "ollama",
+                         "subreddit_id":  "t5_8sk7f8",
+                         "subreddit_name_prefixed":  "r/ollama",
+                         "subreddit_type":  "public",
+                         "top_awarded_type":  null,
+                         "total_awards_received":  0,
+                         "treatment_tags":  [
+
+                                            ],
+                         "unrepliable_reason":  null,
+                         "ups":  1,
+                         "user_reports":  [
+
+                                          ]
+                     },
+                     {
+                         "_meta":  {
+                                       "retrieved_2nd_on":  1789176563
+                                   },
+                         "all_awardings":  [
+
+                                           ],
+                         "approved_at_utc":  null,
+                         "approved_by":  null,
+                         "archived":  false,
+                         "associated_award":  null,
+                         "author":  "duke4rs",
+                         "author_flair_background_color":  null,
+                         "author_flair_css_class":  null,
+                         "author_flair_richtext":  [
+
+                                                   ],
+                         "author_flair_template_id":  null,
+                         "author_flair_text":  null,
+                         "author_flair_text_color":  null,
+                         "author_flair_type":  "text",
+                         "author_fullname":  "t2_1quav1w6o1",
+                         "author_is_blocked":  false,
+                         "author_patreon_flair":  false,
+                         "author_premium":  false,
+                         "awarders":  [
+
+                                      ],
+                         "banned_at_utc":  null,
+                         "banned_by":  null,
+                         "body":  "Yeah, that\u0027s exactly the mechanism. The model ends its turn with the tool\ncall fully formed inside the reasoning/thinking block, the parser only\nchecks the structured tool_calls field, finds nothing there, and the\nwrapper just calls it done. Nothing actually errors, it\u0027s just looking in\nthe wrong place.\n\nI don\u0027t have Ollama confirmed in the matrix yet, just vLLM/SGLang/\nllama.cpp/open-webui so far. Ollama could plausibly hit the same gap\ndepending on how it splits reasoning from tool_calls internally, but I\nhaven\u0027t verified it. If you ever do catch a run stall on Qwen3.8 through\nOllama, I\u0027d genuinely want the raw response, specifically what\u0027s sitting\nin the reasoning field. Would be the first real Ollama case in the matrix\nif it checks out.",
+                         "can_gild":  false,
+                         "can_mod_post":  false,
+                         "collapsed":  false,
+                         "collapsed_because_crowd_control":  null,
+                         "collapsed_reason":  null,
+                         "collapsed_reason_code":  null,
+                         "comment_type":  null,
+                         "controversiality":  0,
+                         "created":  1789046939,
+                         "created_utc":  1789046939,
+                         "distinguished":  null,
+                         "downs":  0,
+                         "edited":  false,
+                         "gilded":  0,
+                         "gildings":  {
+
+                                      },
+                         "id":  "p8y5neu",
+                         "is_submitter":  true,
+                         "likes":  null,
+                         "link_id":  "t3_1wc6tka",
+                         "locked":  false,
+                         "mod_note":  null,
+                         "mod_reason_by":  null,
+                         "mod_reason_title":  null,
+                         "mod_reports":  [
+
+                                         ],
+                         "name":  "t1_p8y5neu",
+                         "no_follow":  true,
+                         "num_reports":  null,
+                         "parent_id":  "t1_p8wxrle",
+                         "permalink":  "/r/ollama/comments/1wc6tka/my_agent_kept_randomly_stopping_midtask_and_i/p8y5neu/",
+                         "profile_img":  "https://www.redditstatic.com/avatars/defaults/v2/avatar_default_1.png",
+                         "profile_over_18":  false,
+                         "removal_reason":  null,
+                         "replies":  "",
+                         "report_reasons":  null,
+                         "retrieved_on":  1789046960,
+                         "saved":  false,
+                         "score":  3,
+                         "score_hidden":  false,
+                         "send_replies":  true,
+                         "stickied":  false,
+                         "subreddit":  "ollama",
+                         "subreddit_id":  "t5_8sk7f8",
+                         "subreddit_name_prefixed":  "r/ollama",
+                         "subreddit_type":  "public",
+                         "top_awarded_type":  null,
+                         "total_awards_received":  0,
+                         "treatment_tags":  [
+
+                                            ],
+                         "unrepliable_reason":  null,
+                         "ups":  3,
+                         "user_reports":  [
+
+                                          ]
+                     },
+                     {
+                         "_meta":  {
+                                       "retrieved_2nd_on":  1789172754
+                                   },
+                         "all_awardings":  [
+
+                                           ],
+                         "approved_at_utc":  null,
+                         "approved_by":  null,
+                         "archived":  false,
+                         "associated_award":  null,
+                         "author":  "AbleShower2801",
+                         "author_flair_background_color":  null,
+                         "author_flair_css_class":  null,
+                         "author_flair_richtext":  [
+
+                                                   ],
+                         "author_flair_template_id":  null,
+                         "author_flair_text":  null,
+                         "author_flair_text_color":  null,
+                         "author_flair_type":  "text",
+                         "author_fullname":  "t2_88ek76um",
+                         "author_is_blocked":  false,
+                         "author_patreon_flair":  false,
+                         "author_premium":  false,
+                         "awarders":  [
+
+                                      ],
+                         "banned_at_utc":  null,
+                         "banned_by":  null,
+                         "body":  "Tool calls trapped inside reasoning with finish\\_reason=stop is a nasty silent failure. Pulling them back out with zero runtime deps is the kind of fix people only find after losing a week. If you list agent/tooling libs, [https://github.com/hashgraph-online/awesome-ai-plugins](https://github.com/hashgraph-online/awesome-ai-plugins) and [https://hol.org/plugins](https://hol.org/plugins) are options to submit.",
+                         "can_gild":  false,
+                         "can_mod_post":  false,
+                         "collapsed":  false,
+                         "collapsed_because_crowd_control":  null,
+                         "collapsed_reason":  null,
+                         "collapsed_reason_code":  null,
+                         "comment_type":  null,
+                         "controversiality":  0,
+                         "created":  1789043132,
+                         "created_utc":  1789043132,
+                         "distinguished":  null,
+                         "downs":  0,
+                         "edited":  false,
+                         "gilded":  0,
+                         "gildings":  {
+
+                                      },
+                         "id":  "p8xt3ay",
+                         "is_submitter":  false,
+                         "likes":  null,
+                         "link_id":  "t3_1wc6tka",
+                         "locked":  false,
+                         "mod_note":  null,
+                         "mod_reason_by":  null,
+                         "mod_reason_title":  null,
+                         "mod_reports":  [
+
+                                         ],
+                         "name":  "t1_p8xt3ay",
+                         "no_follow":  true,
+                         "num_reports":  null,
+                         "parent_id":  "t3_1wc6tka",
+                         "permalink":  "/r/ollama/comments/1wc6tka/my_agent_kept_randomly_stopping_midtask_and_i/p8xt3ay/",
+                         "profile_img":  "https://styles.redditmedia.com/t5_3656va/styles/profileIcon_ncmtmnwpe4oh1.jpg?width=256\u0026height=256\u0026crop=256:256,smart\u0026s=f4fcf7bc24cdacb0b89314f129f5f5e4580622a8",
+                         "profile_over_18":  false,
+                         "removal_reason":  null,
+                         "replies":  "",
+                         "report_reasons":  null,
+                         "retrieved_on":  1789043148,
+                         "saved":  false,
+                         "score":  1,
+                         "score_hidden":  false,
+                         "send_replies":  true,
+                         "stickied":  false,
+                         "subreddit":  "ollama",
+                         "subreddit_id":  "t5_8sk7f8",
+                         "subreddit_name_prefixed":  "r/ollama",
+                         "subreddit_type":  "public",
+                         "top_awarded_type":  null,
+                         "total_awards_received":  0,
+                         "treatment_tags":  [
+
+                                            ],
+                         "unrepliable_reason":  null,
+                         "ups":  1,
+                         "user_reports":  [
+
+                                          ]
+                     },
+                     {
+                         "_meta":  {
+                                       "retrieved_2nd_on":  1789169257
+                                   },
+                         "all_awardings":  [
+
+                                           ],
+                         "approved_at_utc":  null,
+                         "approved_by":  null,
+                         "archived":  false,
+                         "associated_award":  null,
+                         "author":  "brownlizarddve",
+                         "author_flair_background_color":  null,
+                         "author_flair_css_class":  null,
+                         "author_flair_richtext":  [
+
+                                                   ],
+                         "author_flair_template_id":  null,
+                         "author_flair_text":  null,
+                         "author_flair_text_color":  null,
+                         "author_flair_type":  "text",
+                         "author_fullname":  "t2_egbwdu6k",
+                         "author_is_blocked":  false,
+                         "author_patreon_flair":  false,
+                         "author_premium":  false,
+                         "awarders":  [
+
+                                      ],
+                         "banned_at_utc":  null,
+                         "banned_by":  null,
+                         "body":  "whats the trigger you found? my read: the model emits the call before it closes \u003c/think\u003e, and the parser only reads whats after the think block, so anything in there is gone on a clean 200. its a template mismatch. people blame the quant.",
+                         "can_gild":  false,
+                         "can_mod_post":  false,
+                         "collapsed":  false,
+                         "collapsed_because_crowd_control":  null,
+                         "collapsed_reason":  null,
+                         "collapsed_reason_code":  null,
+                         "comment_type":  null,
+                         "controversiality":  0,
+                         "created":  1789039642,
+                         "created_utc":  1789039642,
+                         "distinguished":  null,
+                         "downs":  0,
+                         "edited":  false,
+                         "gilded":  0,
+                         "gildings":  {
+
+                                      },
+                         "id":  "p8xj1rj",
+                         "is_submitter":  false,
+                         "likes":  null,
+                         "link_id":  "t3_1wc6tka",
+                         "locked":  false,
+                         "mod_note":  null,
+                         "mod_reason_by":  null,
+                         "mod_reason_title":  null,
+                         "mod_reports":  [
+
+                                         ],
+                         "name":  "t1_p8xj1rj",
+                         "no_follow":  true,
+                         "num_reports":  null,
+                         "parent_id":  "t3_1wc6tka",
+                         "permalink":  "/r/ollama/comments/1wc6tka/my_agent_kept_randomly_stopping_midtask_and_i/p8xj1rj/",
+                         "profile_img":  "https://styles.redditmedia.com/t5_55vuq8/styles/profileIcon_snoo-nftv2_bmZ0X2VpcDE1NToxMzdfNjIyZDhmZWE0NjAzYmE5ZWRhZjEwODRiNDA3MDUyZDhiMGE5YmVkN18xNDE1NTIy_rare_3d375e2c-28d4-4cd2-a1b0-e78ca55919f2-headshot.png?width=256\u0026height=256\u0026crop=256:256,smart\u0026s=7ff549fca6055774cfc8a7b0fee0b5849d9b8261",
+                         "profile_over_18":  false,
+                         "removal_reason":  null,
+                         "replies":  "",
+                         "report_reasons":  null,
+                         "retrieved_on":  1789039665,
+                         "saved":  false,
+                         "score":  1,
+                         "score_hidden":  false,
+                         "send_replies":  true,
+                         "stickied":  false,
+                         "subreddit":  "ollama",
+                         "subreddit_id":  "t5_8sk7f8",
+                         "subreddit_name_prefixed":  "r/ollama",
+                         "subreddit_type":  "public",
+                         "top_awarded_type":  null,
+                         "total_awards_received":  0,
+                         "treatment_tags":  [
+
+                                            ],
+                         "unrepliable_reason":  null,
+                         "ups":  1,
+                         "user_reports":  [
+
+                                          ]
+                     },
+                     {
+                         "_meta":  {
+                                       "retrieved_2nd_on":  1789165969
+                                   },
+                         "all_awardings":  [
+
+                                           ],
+                         "approved_at_utc":  null,
+                         "approved_by":  null,
+                         "archived":  false,
+                         "associated_award":  null,
+                         "author":  "Maheidem",
+                         "author_flair_background_color":  null,
+                         "author_flair_css_class":  null,
+                         "author_flair_richtext":  [
+
+                                                   ],
+                         "author_flair_template_id":  null,
+                         "author_flair_text":  null,
+                         "author_flair_text_color":  null,
+                         "author_flair_type":  "text",
+                         "author_fullname":  "t2_ahdu93h",
+                         "author_is_blocked":  false,
+                         "author_patreon_flair":  false,
+                         "author_premium":  false,
+                         "awarders":  [
+
+                                      ],
+                         "banned_at_utc":  null,
+                         "banned_by":  null,
+                         "body":  "I had this issue recurrently and ended up finding out it was Speculative Prefill blame. \nIt ended ended up removing important parts from context, that made the model just stop working. ",
+                         "can_gild":  false,
+                         "can_mod_post":  false,
+                         "collapsed":  false,
+                         "collapsed_because_crowd_control":  null,
+                         "collapsed_reason":  null,
+                         "collapsed_reason_code":  null,
+                         "comment_type":  null,
+                         "controversiality":  0,
+                         "created":  1789036355,
+                         "created_utc":  1789036355,
+                         "distinguished":  null,
+                         "downs":  0,
+                         "edited":  false,
+                         "gilded":  0,
+                         "gildings":  {
+
+                                      },
+                         "id":  "p8xay7o",
+                         "is_submitter":  false,
+                         "likes":  null,
+                         "link_id":  "t3_1wc6tka",
+                         "locked":  false,
+                         "mod_note":  null,
+                         "mod_reason_by":  null,
+                         "mod_reason_title":  null,
+                         "mod_reports":  [
+
+                                         ],
+                         "name":  "t1_p8xay7o",
+                         "no_follow":  true,
+                         "num_reports":  null,
+                         "parent_id":  "t3_1wc6tka",
+                         "permalink":  "/r/ollama/comments/1wc6tka/my_agent_kept_randomly_stopping_midtask_and_i/p8xay7o/",
+                         "profile_img":  "https://styles.redditmedia.com/t5_6hmmf/styles/profileIcon_snooa7733503-797f-4587-b4cd-0a2b8c50d9fb-headshot.png?width=256\u0026height=256\u0026crop=256:256,smart\u0026s=0f636ae2e72d93ed817632140c68f4f481305cf2",
+                         "profile_over_18":  true,
+                         "removal_reason":  null,
+                         "replies":  "",
+                         "report_reasons":  null,
+                         "retrieved_on":  1789036379,
+                         "saved":  false,
+                         "score":  1,
+                         "score_hidden":  false,
+                         "send_replies":  true,
+                         "stickied":  false,
+                         "subreddit":  "ollama",
+                         "subreddit_id":  "t5_8sk7f8",
+                         "subreddit_name_prefixed":  "r/ollama",
+                         "subreddit_type":  "public",
+                         "top_awarded_type":  null,
+                         "total_awards_received":  0,
+                         "treatment_tags":  [
+
+                                            ],
+                         "unrepliable_reason":  null,
+                         "ups":  1,
+                         "user_reports":  [
+
+                                          ]
+                     },
+                     {
+                         "_meta":  {
+                                       "retrieved_2nd_on":  1789159554
+                                   },
+                         "all_awardings":  [
+
+                                           ],
+                         "approved_at_utc":  null,
+                         "approved_by":  null,
+                         "archived":  false,
+                         "associated_award":  null,
+                         "author":  "and_pf",
+                         "author_flair_background_color":  null,
+                         "author_flair_css_class":  null,
+                         "author_flair_richtext":  [
+
+                                                   ],
+                         "author_flair_template_id":  null,
+                         "author_flair_text":  null,
+                         "author_flair_text_color":  null,
+                         "author_flair_type":  "text",
+                         "author_fullname":  "t2_2maz1aev52",
+                         "author_is_blocked":  false,
+                         "author_patreon_flair":  false,
+                         "author_premium":  false,
+                         "awarders":  [
+
+                                      ],
+                         "banned_at_utc":  null,
+                         "banned_by":  null,
+                         "body":  "I\u0027ve been running Qwen3.8:nvfp4-vision through Ollama on my Unraid box (single RTX 5090, 32 GB VRAM) and haven\u0027t hit this exact mid-task stop myself. If I did, my first suspect would be the reasoning/thinking field: with tool-calling, the model can end its turn inside reasoning and the wrapper sees no tool call, so it just halts. I run a lot of agent steps locally through Paperclip and n8n. Treat that as a hypothesis to test, not a fix — I haven\u0027t reproduced your exact case.",
+                         "can_gild":  false,
+                         "can_mod_post":  false,
+                         "collapsed":  false,
+                         "collapsed_because_crowd_control":  null,
+                         "collapsed_reason":  null,
+                         "collapsed_reason_code":  null,
+                         "comment_type":  null,
+                         "controversiality":  0,
+                         "created":  1789029917,
+                         "created_utc":  1789029917,
+                         "distinguished":  null,
+                         "downs":  0,
+                         "edited":  false,
+                         "gilded":  0,
+                         "gildings":  {
+
+                                      },
+                         "id":  "p8wxrle",
+                         "is_submitter":  false,
+                         "likes":  null,
+                         "link_id":  "t3_1wc6tka",
+                         "locked":  false,
+                         "mod_note":  null,
+                         "mod_reason_by":  null,
+                         "mod_reason_title":  null,
+                         "mod_reports":  [
+
+                                         ],
+                         "name":  "t1_p8wxrle",
+                         "no_follow":  true,
+                         "num_reports":  null,
+                         "parent_id":  "t3_1wc6tka",
+                         "permalink":  "/r/ollama/comments/1wc6tka/my_agent_kept_randomly_stopping_midtask_and_i/p8wxrle/",
+                         "profile_img":  "https://styles.redditmedia.com/t5_jtsdje/styles/profileIcon_99q1s3vuv1oh1.jpg?width=256\u0026height=256\u0026crop=256:256,smart\u0026s=383c03892b554b87fe10090f0ba84680e4a5fcc5",
+                         "profile_over_18":  false,
+                         "removal_reason":  null,
+                         "replies":  "",
+                         "report_reasons":  null,
+                         "retrieved_on":  1789029941,
+                         "saved":  false,
+                         "score":  2,
+                         "score_hidden":  false,
+                         "send_replies":  true,
+                         "stickied":  false,
+                         "subreddit":  "ollama",
+                         "subreddit_id":  "t5_8sk7f8",
+                         "subreddit_name_prefixed":  "r/ollama",
+                         "subreddit_type":  "public",
+                         "top_awarded_type":  null,
+                         "total_awards_received":  0,
+                         "treatment_tags":  [
+
+                                            ],
+                         "unrepliable_reason":  null,
+                         "ups":  2,
+                         "user_reports":  [
+
+                                          ]
+                     },
+                     {
+                         "_meta":  {
+                                       "retrieved_2nd_on":  1789147529
+                                   },
+                         "all_awardings":  [
+
+                                           ],
+                         "approved_at_utc":  null,
+                         "approved_by":  null,
+                         "archived":  false,
+                         "associated_award":  null,
+                         "author":  "Competitive_Ideal866",
+                         "author_flair_background_color":  null,
+                         "author_flair_css_class":  null,
+                         "author_flair_richtext":  [
+
+                                                   ],
+                         "author_flair_template_id":  null,
+                         "author_flair_text":  null,
+                         "author_flair_text_color":  null,
+                         "author_flair_type":  "text",
+                         "author_fullname":  "t2_1d13xm6n7f",
+                         "author_is_blocked":  false,
+                         "author_patreon_flair":  false,
+                         "author_premium":  false,
+                         "awarders":  [
+
+                                      ],
+                         "banned_at_utc":  null,
+                         "banned_by":  null,
+                         "body":  "OMG, yeah. I\u0027ve been using llamacpp with Qwen models for ~1 year and have had loads of problems like this. Really annoying that such basic stuff is still broken and reasonable ideas seem a million miles away.",
+                         "can_gild":  false,
+                         "can_mod_post":  false,
+                         "collapsed":  false,
+                         "collapsed_because_crowd_control":  null,
+                         "collapsed_reason":  null,
+                         "collapsed_reason_code":  null,
+                         "comment_type":  null,
+                         "controversiality":  0,
+                         "created":  1789017922,
+                         "created_utc":  1789017922,
+                         "distinguished":  null,
+                         "downs":  0,
+                         "edited":  false,
+                         "gilded":  0,
+                         "gildings":  {
+
+                                      },
+                         "id":  "p8w9ejr",
+                         "is_submitter":  false,
+                         "likes":  null,
+                         "link_id":  "t3_1wc6tka",
+                         "locked":  false,
+                         "mod_note":  null,
+                         "mod_reason_by":  null,
+                         "mod_reason_title":  null,
+                         "mod_reports":  [
+
+                                         ],
+                         "name":  "t1_p8w9ejr",
+                         "no_follow":  true,
+                         "num_reports":  null,
+                         "parent_id":  "t3_1wc6tka",
+                         "permalink":  "/r/ollama/comments/1wc6tka/my_agent_kept_randomly_stopping_midtask_and_i/p8w9ejr/",
+                         "profile_img":  "https://www.redditstatic.com/avatars/defaults/v2/avatar_default_3.png",
+                         "profile_over_18":  false,
+                         "removal_reason":  null,
+                         "replies":  "",
+                         "report_reasons":  null,
+                         "retrieved_on":  1789017936,
+                         "saved":  false,
+                         "score":  1,
+                         "score_hidden":  false,
+                         "send_replies":  true,
+                         "stickied":  false,
+                         "subreddit":  "ollama",
+                         "subreddit_id":  "t5_8sk7f8",
+                         "subreddit_name_prefixed":  "r/ollama",
+                         "subreddit_type":  "public",
+                         "top_awarded_type":  null,
+                         "total_awards_received":  0,
+                         "treatment_tags":  [
+
+                                            ],
+                         "unrepliable_reason":  null,
+                         "ups":  1,
+                         "user_reports":  [
+
+                                          ]
+                     },
+                     {
+                         "_meta":  {
+                                       "retrieved_2nd_on":  1789143988
+                                   },
+                         "all_awardings":  [
+
+                                           ],
+                         "approved_at_utc":  null,
+                         "approved_by":  null,
+                         "archived":  false,
+                         "associated_award":  null,
+                         "author":  "[deleted]",
+                         "author_flair_background_color":  "",
+                         "author_flair_css_class":  null,
+                         "author_flair_template_id":  null,
+                         "author_flair_text":  null,
+                         "author_flair_text_color":  "dark",
+                         "author_is_blocked":  false,
+                         "awarders":  [
+
+                                      ],
+                         "banned_at_utc":  null,
+                         "banned_by":  null,
+                         "body":  "[removed]",
+                         "can_gild":  false,
+                         "can_mod_post":  false,
+                         "collapsed":  true,
+                         "collapsed_because_crowd_control":  null,
+                         "collapsed_reason":  null,
+                         "collapsed_reason_code":  "DELETED",
+                         "comment_type":  null,
+                         "controversiality":  0,
+                         "created":  1789014377,
+                         "created_utc":  1789014377,
+                         "distinguished":  null,
+                         "downs":  0,
+                         "edited":  false,
+                         "gilded":  0,
+                         "gildings":  {
+
+                                      },
+                         "id":  "p8w15x8",
+                         "is_submitter":  false,
+                         "likes":  null,
+                         "link_id":  "t3_1wc6tka",
+                         "locked":  false,
+                         "mod_note":  null,
+                         "mod_reason_by":  null,
+                         "mod_reason_title":  null,
+                         "mod_reports":  [
+
+                                         ],
+                         "name":  "t1_p8w15x8",
+                         "no_follow":  true,
+                         "num_reports":  null,
+                         "parent_id":  "t3_1wc6tka",
+                         "permalink":  "/r/ollama/comments/1wc6tka/my_agent_kept_randomly_stopping_midtask_and_i/p8w15x8/",
+                         "removal_reason":  null,
+                         "replies":  "",
+                         "report_reasons":  null,
+                         "retrieved_on":  1789014396,
+                         "saved":  false,
+                         "score":  1,
+                         "score_hidden":  false,
+                         "send_replies":  true,
+                         "stickied":  false,
+                         "subreddit":  "ollama",
+                         "subreddit_id":  "t5_8sk7f8",
+                         "subreddit_name_prefixed":  "r/ollama",
+                         "subreddit_type":  "public",
+                         "top_awarded_type":  null,
+                         "total_awards_received":  0,
+                         "treatment_tags":  [
+
+                                            ],
+                         "unrepliable_reason":  null,
+                         "ups":  1,
+                         "user_reports":  [
+
+                                          ]
+                     }
+                 ]
+}

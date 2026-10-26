@@ -1,0 +1,145 @@
+{
+  "lane": "hermes-judgment",
+  "division": "A",
+  "ok": true,
+  "started_utc": "2026-10-02T12:20:00Z",
+  "closed_utc": "2026-10-02T14:40:00Z",
+  "phases": {
+    "poll_cross_lanes": "done (settle poll v3: receipts stable 6 min + zero empty check files, fired 13:07:26Z)",
+    "dispatch_prime": "done (7 fires total: 3 stubs, 2 transport timeouts, 1 reasoning-dump stage A, 1 clean stage B verdict finish=stop)",
+    "verify_check": "done (hermes-judgment_check.py exit 0 at 14:37:11Z, output hermes-judgment.check.txt)",
+    "mine_rows": "done (5 rows, all quotes byte-verified)",
+    "estate_grep": "done (both dirs)",
+    "decision_ledger": "done"
+  },
+  "poll_log": [
+    {"ts": "2026-10-02T12:25:36Z", "event": "poll v1 false-positive: lanes dir held only this lane's json + sibling working file probe_surfaces.py (not a receipt)"},
+    {"ts": "2026-10-02T12:26:00Z", "event": "poll v2 started (JSON receipts only, 60s cadence)"},
+    {"ts": "2026-10-02T12:35:15Z", "event": "plateau v1 fired at 6 quiet JSON-minutes, but cross-ractor.check.txt measured 0 bytes (mid-rerun) and cross_ractor_bytecheck.py had grown 4152->6155 B; dispatch deferred"},
+    {"ts": "2026-10-02T12:36:18Z", "event": "poll v3 settle rule started: fire when receipts stable 6 min AND zero empty check files"},
+    {"ts": "2026-10-02T13:07:26Z", "event": "SETTLED: 6 sibling lane JSONs + check receipts + 4 inbox files, stable 6 min; read all before firing"}
+  ],
+  "receipts_read": [
+    "cross-gap.json + cross-gap.check.txt + cross-gap.md",
+    "cross-ractor.json (final 15,219 B) + cross-ractor.check.txt (25,887 B final)",
+    "cross-drop.json + cross-drop.check.txt",
+    "cross-librarian.check.txt",
+    "fleet-inventory.json + fleet-inventory.check.txt",
+    "ouroboros-synthesis.json + ouroboros-synthesis.check.txt + .checks.json + .greps.txt + .quotes.txt",
+    "standing-wave.json + standing-wave.check.txt",
+    "inbox: cadence.md, cross-gap.md, cross-ractor.md, description-tri-state.md"
+  ],
+  "dispatch": {
+    "model": "z-ai/glm-5.3-prime",
+    "endpoint": "https://inference-api.nousresearch.com/v1/chat/completions",
+    "key_source": "NOUS_SDD_API_KEY in C:/Users/foste/AppData/Local/hermes/.env",
+    "pattern_source": "watch/inbox/HERMES_PRIME_JUDGMENT_20260929.md",
+    "fire_ledger": [
+      {"fire": 1, "ts": "2026-10-02T13:11:50Z", "shape": "20 receipts, 59476 prompt tok, max_tokens 16000", "result": "STUB: 15998 reasoning tok, 1-char content, finish=length; stub preserved as PRIME_JUDGMENT_20261002.STUB1.md", "cost_usd": 0.3073328},
+      {"fire": 2, "ts": "2026-10-02T14:00:00Z approx", "shape": "same evidence, max_tokens 48000", "result": "TRANSPORT TIMEOUT x2 at 900s each, no usage returned (server-side burn unverifiable, no row invented)", "cost_usd": null},
+      {"fire": 3, "ts": "2026-10-02T14:04:00Z approx", "shape": "12 receipts trimmed, 131368 chars, max_tokens 32000", "result": "TRANSPORT TIMEOUT x2 at 900s each, no usage returned", "cost_usd": null},
+      {"fire": 4, "ts": "2026-10-02T14:20:10Z", "shape": "7 receipts, 19473 prompt tok, max_tokens 20000", "result": "STUB: 19998 reasoning tok, 1-char content, finish=length; content discarded by the pre-fix fallback (script bug, fixed after)", "cost_usd": 0.22134936},
+      {"fire": 5, "ts": "2026-10-02T14:25:58Z", "shape": "same, staged contract A", "result": "STUB: 19998 reasoning tok, 1-char content", "cost_usd": 0.2303536},
+      {"fire": 6, "ts": "2026-10-02T14:30:53Z", "shape": "stage A with reasoning-channel capture", "result": "REASONING-DUMP banked: 79560 chars of raw judgment analysis; finish=length mid-thought", "cost_usd": 0.1873456, "artifact": "PRIME_JUDGMENT_STAGE_A.md"},
+      {"fire": 7, "ts": "2026-10-02T14:35:06Z", "shape": "stage B verdict grounded on stage A conclusions zone (chars 28000-78000) + 7 receipts", "result": "CLEAN VERDICT: finish=stop, 15755 completion tok (14672 reasoning), 4677-char verdict", "cost_usd": 0.2275524, "artifact": "PRIME_JUDGMENT_20261002.md"}
+    ],
+    "spend_total_banked_usd": 1.1739,
+    "spend_unverifiable": "2 transport-timeout fires (4 attempts) returned no usage; not banked, not invented",
+    "calls_per_landed_artifact": "3.5 (7 fires / 2 landed artifacts) - above the estate red line of 2 (steal 5.2); root cause: the reasoning-channel capture should have been in the script from fire 1; DAY1 steal 1.5/10.4 already held the two-channel lesson and the first script only fell back on EMPTY content, missing the 1-char-stub case",
+    "verdict_summary": "PILE OF TOOLS, but only just: where one lane can enforce its own finding the loop closes (citation_lint gate, AGENTS.md absorbing receipts into law); where findings must cross a lane boundary through clock/handoff/shared state they land as prose. Failure is composition, not knowledge. Falsifier and highest-leverage move (fold-gate owner+clock amendment, seeded from this battery's own tail, before arming the Sunday cron) in PRIME_JUDGMENT_20261002.md.",
+    "conditions_named_by_the_verdict": "trust one level deep (receipt check files, instruments not re-run); hermes-judgment receipt absent from stage-A inputs (this lane was the in-flight sibling); salon-mine fold a skeleton; the tail-to-head hop never observed firing"
+  },
+  "estate_grep": {
+    "dirs": ["corpus/steal", "memory/corpus"],
+    "commands": [
+      "grep -rn -i ouroboros corpus/steal (1 hit: DESCENT_DAY1_STEAL_20261001.md:3)",
+      "grep -rln -i ouroboros memory/corpus --include md/json/jsonl (6 files)",
+      "grep -rln -i glm-5.3-prime corpus/steal (ZERO hits - finding: funded-tier pattern lives only in watch/inbox receipts)",
+      "grep -rln -i glm-5.3-prime memory/corpus --include md/json/jsonl (ZERO hits)",
+      "grep -rln -iE hermes_burn|CROSS_RACTOR corpus/steal (2 files)"
+    ]
+  },
+  "rows": [
+    {
+      "law": "ouroboros leg 6 (frontier reasoning returns)",
+      "claim": "THE DESCENT PROTOCOL's leg 6 requires frontier reasoning returned to estate instruments, so this lane's paid judgment only counts if its verdict banks into an instrument the next seat reads.",
+      "quote": "Ouroboros leg: THE DESCENT PROTOCOL (2026-10-01) leg 6 requires frontier reasoning returned to estate instruments.",
+      "source": "C:/Users/foste/Documents/projects/local_sovereign_agent/corpus/steal/DESCENT_DAY1_STEAL_20261001.md",
+      "steal": "Fire the funded glm-5.3-prime cross-lane judgment in this lane's one sitting and bank the verdict at watch/inbox/gala_20260925/ouroboros/PRIME_JUDGMENT_20261002.md with the usage JSON in its header (done by hermes-judgment_dispatch.py).",
+      "falsifier": "A descent week where the hermes_burn ledger grew but no rib, pack, or receipt carries a frontier contribution forward.",
+      "leverage": "high"
+    },
+    {
+      "law": "the loud line (tier routing)",
+      "claim": "Premium models win exactly the questions settled by reading bytes already in context, so the judgment dispatch pastes the receipts whole and asserts the render before paying.",
+      "quote": "premium wins every question settled by reading bytes already in context; premium loses every time it asserts facts about bytes or runtime it never saw",
+      "source": "C:/Users/foste/Documents/projects/local_sovereign_agent/corpus/steal/DESCENT_DAY1_STEAL_20261001.md",
+      "steal": "Keep the EVIDENCE-PREFLIGHT in hermes-judgment_dispatch.py (rendered receipt heads asserted present in the message body before the fire) as the template for every future premium ask; landing spot: the dispatch script, this lane.",
+      "falsifier": "A week where premium asks without in-context bytes out-yield premium asks with them per dollar.",
+      "leverage": "high"
+    },
+    {
+      "law": "boot-path graduation law (steal 10.5)",
+      "claim": "A system claiming self-improvement must show the improvement living in the BOOT path; carrying findings in per-ask context is curriculum, not memory.",
+      "quote": "a system claiming self-improvement must show where the improvement lives in the BOOT path, not in the ask template; per-ask context is curriculum, not memory.",
+      "source": "C:/Users/foste/Documents/projects/local_sovereign_agent/corpus/steal/DESCENT_DAY1_STEAL_20261001.md",
+      "steal": "Grade the prime verdict's winning move by one question only (does it edit a boot-read surface: a rib, AGENTS.md, a saved workflow header) and land it there the same sitting.",
+      "falsifier": "A month of self-improving loop cycles with zero diffs to boot-read surfaces, all improvements landing as ask-template carriage.",
+      "leverage": "high"
+    },
+    {
+      "law": "redemption-rate law (steal 10.6)",
+      "claim": "A loop's health is its ticket redemption rate: issued vs redeemed must be counted or deferral becomes discard wearing a loop's clothes.",
+      "quote": "a loop's health IS the redemption rate, and an organ must count issued vs redeemed tickets or the deferral is a leak wearing a loop's clothes.",
+      "source": "C:/Users/foste/Documents/projects/local_sovereign_agent/corpus/steal/DESCENT_DAY1_STEAL_20261001.md",
+      "steal": "Add an issued/redeemed/dropped redemption report to the weekly ouroboros cycle's PRODUCES list in watch/inbox/ouroboros/cadence.md (standing-wave's organ) at its next amendment.",
+      "falsifier": "A weekly cycle output already carrying a redemption-denominator report would answer the elder's question and retire the lens.",
+      "leverage": "high"
+    },
+    {
+      "law": "F14 thin-edge recursion measure",
+      "claim": "At the 2026-10-02 tree only 18 of 4,527 receipts are absorbed into law (0.4%) and 25 of 50 ribs sit unmounted, so receipt-to-boot absorption is the pile-versus-ouroboros crux the prime must verdict.",
+      "quote": "receipts->laws: 18/4527 receipts absorbed into law (0.4%)",
+      "source": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/ouroboros/lanes/ouroboros-synthesis.check.txt",
+      "steal": "Re-run .venv/Scripts/python.exe tools/ouroboros.py --json after the first standing-wave weekly cycle and bank measure.json under watch/inbox/ouroboros/<YYYY-MM-DD>/, diffed against this 0.4 percent baseline.",
+      "falsifier": "Absorption still pinned near 0.4 percent across consecutive weekly measures while the cadence runs green would prove the cadence is a heartbeat, not a loop.",
+      "leverage": "high"
+    }
+  ],
+  "checks": [
+    {
+      "command": "./.venv/Scripts/python.exe watch/inbox/gala_20260925/ouroboros/lanes/hermes-judgment_check.py",
+      "exit": 0,
+      "evidence": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/ouroboros/lanes/hermes-judgment.check.txt (final run 14:37:11Z: 5/5 quotes byte-verified, lane JSON parses with 5 rows all quote-present, judgment landed 5411 chars with usage header, spend ledger row present)"
+    },
+    {
+      "command": "./.venv/Scripts/python.exe watch/inbox/gala_20260925/ouroboros/lanes/hermes-judgment_dispatch.py A",
+      "exit": 0,
+      "evidence": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/ouroboros/PRIME_JUDGMENT_STAGE_A.md (79,560-char reasoning-channel dump, banked $0.1873, PROPOSED-status header inside)"
+    },
+    {
+      "command": "./.venv/Scripts/python.exe watch/inbox/gala_20260925/ouroboros/lanes/hermes-judgment_dispatch.py B",
+      "exit": 0,
+      "evidence": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/ouroboros/PRIME_JUDGMENT_20261002.md (clean verdict finish=stop, $0.2276, usage JSON in header)"
+    },
+    {
+      "command": "grep -rn -i ouroboros corpus/steal; grep -rln -i glm-5.3-prime corpus/steal; grep -rln -i glm-5.3-prime memory/corpus (and siblings)",
+      "exit": 0,
+      "evidence": "lane JSON estate_grep block (corpus/steal 1 ouroboros hit; glm-5.3-prime ZERO hits in both dirs - a finding)"
+    },
+    {
+      "command": "python -c json.load(lane) + quote re-verification (inside hermes-judgment_check.py sections 1-2)",
+      "exit": 0,
+      "evidence": "hermes-judgment.check.txt sections [1] and [2]"
+    }
+  ],
+  "decision_ledger": {
+    "decision_changed": "THE GALA ouroboros composition question is now answered by the funded tier: pile of tools, barely, flip condition named - so the standing-wave Sunday cron must NOT be armed before the fold-gate close step is amended to reject register rows lacking owner+clock, and the stage-A one-sitting fixes are filed as queue rows under watch/inbox/ouroboros/2026-10-02/ handed to fill-ball as {register, slug}; arming first would schedule the volume ritual the verdict names.",
+    "named_after": "PRIME_JUDGMENT_20261002.md paragraph 3 (the single highest-leverage move) + falsifier paragraph"
+  },
+  "notes": [
+    "Em-dash law: this lane's own prose is em-dash-free; the two banked model outputs (STAGE_A dump, stage B verdict) are quoted evidence banked verbatim and the verdict model was instructed to avoid em-dashes (its output contains none).",
+    "The stage-A dump's early planning zone (chars 0-28000) is omitted from stage B's feed by a deterministic slice; the dump header carries the PROPOSED-never-VERIFIED warning (steal 10.3/10.4).",
+    "The verdict's conditions name this very lane's receipt as absent from its inputs (this lane was the in-flight sibling at read time); this lane JSON is that receipt landing, which the verdict's own falsifier calls the first datum toward retraction."
+  ]
+}

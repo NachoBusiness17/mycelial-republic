@@ -1,0 +1,7 @@
+# coldhot-cold-glm-flash-mag__skill_ledger (glm-5.3-flash @ zai, turn 1, channel: content)
+
+DEFECT 1: seed_from_bench has no dedupe; every re-run re-appends all bench rows, inflating counts and ok_rate buckets that proven_moves trusts | EVIDENCE: mag/skill_ledger.py:249-268 | FIX: fingerprint each bench row (task+model+run mtime or content hash) and skip rows already present, mirroring the seed_from_training seen-set at mag/skill_ledger.py:310-318.
+DEFECT 2: seed_from_training writes outcome="ok" for operator-taught rows, so unverified training text lands as verified wins in proven_moves case law | EVIDENCE: mag/skill_ledger.py:327-333 | FIX: use outcome="skipped" (registered non-win) or a new "taught" registry value so is_win (mag/skill_ledger.py:93-94) never counts them.
+DEFECT 3: seed_from_training dedupe skips only rows whose hash is already seen; rows with empty content_hash bypass the check (h and h in seen) and duplicate on every re-run | EVIDENCE: mag/skill_ledger.py:323-324 | FIX: compute a fallback hash (sha256 of instruction+output) when row.get("content_hash") is empty before the seen check.
+DEAD-CODE: OUTCOME_REGISTRY is write-only documentation; no code reads its keys or values (normalize_outcome hardcodes only "failed") | EVIDENCE: mag/skill_ledger.py:63-70
+ONE-SITTING FIX: add a hash-based seen-set dedupe shared by seed_from_bench and seed_from_training, keyed on (source, task_shape, model, content) | EVIDENCE: mag/skill_ledger.py:249-268

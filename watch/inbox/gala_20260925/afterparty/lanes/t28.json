@@ -1,0 +1,16 @@
+{
+ "gopher": "t28",
+ "item": "REFIRE afterparty: (1) sha256 Desktop vs inbox seed-3.3.0.zip, replace Desktop if stale; (2) wire tools/cold_boot_test.py into tools/seed_v2.py as the pre-zip gate before zip emission, spec line in build book section t7, run the builder to prove the gate fires",
+ "ok": true,
+ "note": "Both items landed with receipts. Desktop zip WAS the stale build: 96950daa2f91... vs inbox 05f6ba4f6849... (before). Builder rerun with the new gate rebuilt the zip (hash moved to 015acfa0c590... because the rebuild rewrote the archive, expected); Desktop replaced, both sides now hash 015acfa0c5903f6f67305a188be2c830cad098a906678fba009069b0aa8eaada. Gate: cold_boot_test.gate() added and called after the seal, before zip emission; blocks on CRASH/ERROR/TIMEOUT, readable-fail passes; builder run showed the gate firing: 12 PASS / 2 readable-fail / 14 total / blockers NONE, BUILDER_EXIT=0, zip emitted 57 entries. Standalone cold_boot_test.py now exits 0/1 on the same verdict (ran exit 0). t7 falsifier holds: zero pyc rows in the rebuilt zip. Build book t7 section reopened with SPEC: PRE-ZIP COLD-BOOT GATE. Ratchet check --changed: hits=5 all registered, NEW=0, PASS.",
+ "checks": [
+  {"name": "sha256 desktop before", "result": "96950daa2f9195fba3bf98335e0fab16157abf54b06d86ab82dd6967ff2c16c3", "evidence": "lanes/t28.hash.before.txt"},
+  {"name": "sha256 inbox before", "result": "05f6ba4f6849dc0c482f577c9960e59b209604779f4bf8333cbe44fdc912350e", "evidence": "lanes/t28.hash.before.txt"},
+  {"name": "builder run with gate", "result": "GATE SCORECARD: 12 PASS / 2 readable-fail / 14 total; blockers: NONE; BUILDER_EXIT=0", "evidence": "lanes/t28.check.txt"},
+  {"name": "standalone cold_boot_test exit", "result": "COLD_BOOT_STANDALONE_EXIT=0", "evidence": "lanes/t28.check.txt"},
+  {"name": "pyc rows in rebuilt zip", "result": "0 (t7 falsifier holds)", "evidence": "lanes/t28.check.txt"},
+  {"name": "sha256 both sides after swap", "result": "015acfa0c5903f6f67305a188be2c830cad098a906678fba009069b0aa8eaada on both", "evidence": "lanes/t28.hash.after.txt"},
+  {"name": "violation ratchet --changed", "result": "hits=5 registered=5 NEW=0 PASS", "evidence": "lanes/t28.check.txt"}
+ ],
+ "next_steal": "Gate the Desktop hand-copy too: a tiny checker that diffs Desktop vs inbox hashes on every seed rebuild (or have the builder write the Desktop copy itself) so the stale-copy drift cannot recur; and give cold_boot_test.gate() a --budget flag so a future slow check cannot stretch builder runs past patience."
+}

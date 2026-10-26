@@ -1,0 +1,1275 @@
+# ARE inventory — everything we ARE (lens input)
+
+Generated 2026-09-27 by a census lane. Every line cites a file read this session (bytes, not reports).
+Instruments named per the census denominator law (B2-216): file counts are `rglob('*.py')` snapshots at generation moment; the AGENTS.md bullet carries a separate `pytest --collect-only -q` census (2,303 collected / 352 files, 2026-09-27) taken at its own moment.
+
+## COUNTS
+
+| Subsystem | Instrument | Count |
+|---|---|---|
+| mag/ modules (*.py, recursive, __pycache__ excluded) | pathlib rglob @ 2026-09-27 lane | 1031 |
+| tools/ scripts (*.py, recursive) | pathlib rglob @ 2026-09-27 lane | 177 |
+| tests/ files (*.py, top-level / recursive) | pathlib glob+rglob @ 2026-09-27 lane | 353 / 355 |
+| configs/ entries (ls @ 2026-09-27 lane, incl. 4 dirs) | ls | 65 |
+| configs/ enforcing gates verified present | ls | violation_baseline.json, secret_gate_baseline.json, links_kind_baseline.json, links_sha_ratchet_baseline.json, events_key_schema.json, events_malformed_baseline.json, workflow_registry_baseline.json, workflow_gate_scenarios/, constitutional_rails.json |
+| memory/rib/ artifacts | ls / find -maxdepth 1 -type f | 43 (41 .md + 2 .json: recreation-coding-history.json, session-scene.json) |
+| memory/rib_bus/ artifacts | ls / find -maxdepth 1 -type f + Counter(suffix) | 51 (49 .json + party_subchain_steer.txt + party_subchain_steer_log.txt) |
+| Scheduled Mag tasks | schtasks //Query //FO LIST, grep -i mag | 13 |
+| watch/inbox INDEX.json items | python json.load, len(d['items']) | 1340 |
+| Doctrine skills read in full | Read tool | memweave, memlance, verb-genomes (.agents/skills/*/SKILL.md) |
+
+rib_bus exact mix: Counter(suffix) = {'.json': 49, '.txt': 2}; rib mix = {'.md': 41, '.json': 2}.
+
+## SUBSYSTEMS
+
+### mag/ modules — 1031 files (name + first docstring line, truncated 100 chars; '(no docstring)' = ast found none)
+
+- `mag/__init__.py` — Sovereign Mag — background companion loop.
+- `mag/_bench_free_shelf.py` — Bench the OpenRouter free-model shelf across both keys (2026-08-25).
+- `mag/_cache_ab_probe.py` — A/B cache probe (2026-08-25) — verify the other AI's claim that glm-4.7-flash
+- `mag/_codex_seat.py` — CODEX SEAT DRIVER — task the ChatGPT Codex CLI like a fleet seat (2026-08-26).
+- `mag/_comb_tokens.py` — Find token/usage counters and estimate corpus size on Mag disk.
+- `mag/_compare_chain_sources.py` — dup-session count in live (pre-repair snapshot has 6 dups; post-repair has 0)
+- `mag/_conc_test_slot.py` — _conc_test_slot — start/end one worker of the group-of-five concurrency probe.
+- `mag/_consensus_witness.py` — Composite foundation proof: independent-witness consensus (2026-08-25).
+- `mag/_deep_research_verkle_dedupe.py` — Deep research (mem-tools pipeline): verkle-encoding dedupe + catalog registry.
+- `mag/_demo_eyes_receipt.py` — THE RECEIPT — a dumb agent given eyes, cost printed (2026-08-26).
+- `mag/_demo_telepathy.py` — TELEPATHY — transmitting a complex function between agents via invariant codes
+- `mag/_diag_cache.py` — (no docstring)
+- `mag/_exp_a_cache_retrigger.py` — EXP-A: cache re-trigger probe for glm-5.3-flash (2026-08-28 night).
+- `mag/_flag_dangling_20260925.py` — One-off ground-truth repair (2026-09-25 night, gala lane b2-stone2b).
+- `mag/_flag_dangling_264d0ba3.py` — One-off ground-truth repair (2026-08-26, zcode-main under operator watch).
+- `mag/_gpu_probe_debug.py` — gpu_probe — run ghost's REAL local GPU reader (rocm-smi/nvidia-smi, the performance screen).
+- `mag/_grok_corpus_burn.py` — GROK CORPUS BURN — the writing-craft library + HIVE red-team reply, both seats,
+- `mag/_openclaw_real.py` — real profile shape: {lane_id: {calls, ok, fail, ms, errors}} — no ok_rate key;
+- `mag/_probe_burst_20260903.py` — BURST PROBE 2026-09-03 — measure the fleet's lanes live. Keys loaded from .env, NEVER printed.
+- `mag/_probe_dangling.py` — (no docstring)
+- `mag/_probe_mcp.py` — did it answer initialize with a result?
+- `mag/_probe_zai_balance.py` — Probe z.ai for a balance/credits endpoint (2026-08-25).
+- `mag/_relane_game_tasks.py` — Rightsize the game swarm onto the free lanes (2026-08-25).
+- `mag/_salon_burn.py` — SALON BURN — 4 witnesses × 4 current-end questions, fired in parallel (2026-08-27).
+- `mag/_verify_chain_now.py` — tip
+- `mag/_verify_concurrency_gate.py` — Verify concurrency_gate enforces the in-flight cap across PROCESSES (2026-08-25).
+- `mag/_verify_queue_gate.py` — queue_gate verify (2026-08-25): scan/deps/plan/preflight against the real queue + a
+- `mag/_verify_repair_state.py` — (no docstring)
+- `mag/_verify_rung5.py` — Rung 5 verify: cadence.cooldown() + fuel_feed cadence gate (2026-08-25).
+- `mag/_verify_sharp_edge.py` — Verify the vendored integrity kernel + its wiring (2026-08-25).
+- `mag/_verify_verkle_gate_spec.py` — _verify_verkle_gate_spec — VERKLE GATE (path b) spec-validation harness.
+- `mag/_warm_rib.py` — 1) dump the FROZEN_RIB to a file for the zcode CLI seat + operator
+- `mag/abliterator_spawn_manifest.py` — Abliterator for spawn_manifest.py — Matthew Steiniger's abliteration instinct applied.
+- `mag/abundance_rogue.py` — abundance_rogue — the ROGUELIKE with PERMANENT GENERATIVE HISTORY mapped to GLOBAL ISSUES. By
+- `mag/accumulator.py` — NNUE-style accumulator v0 for a coding agent — patch, don't re-encode.
+- `mag/act.py` — Execute Mag decisions.
+- `mag/adventure_moonshot.py` — adventure_moonshot — the ADVENTURE MOONSHOT, self-stolen from deep_research_moonshot (our own
+- `mag/adventure_one_shot.py` — adventure_one_shot — the product: a series of one-shots, each advancing the hero's journey.
+- `mag/afk_cadence.py` — afk_cadence — ONE ghost-routed AFK loop running the whole self-advance machine.
+- `mag/afk_loop.py` — afk_loop — ghost's cheap self-occupation when the operator is AFK.
+- `mag/afk_orchestrator.py` — afk_orchestrator — run the whole AFK advance stack as ONE ghost-routed cadence.
+- `mag/agent_arena.py` — Agent arena — proof-of-concept game surface for seat vs seat (chess first).
+- `mag/agent_behavior.py` — agent_behavior — record & save every swarm agent's behavior profile (Frank-Church style).
+- `mag/agent_cli.py` — Mag agent CLI — tool-using seat on the operator's local Mag disk, brain = DeepSeek (or Ollama).
+- `mag/agent_corpus.py` — agent_corpus — the durable per-agent knowledge base: log every agent's chats (gpt, cursor, grokbot,
+- `mag/agent_desk.py` — Agent desk — shared canvas + cross-lane peer context for multi-seat Chat.
+- `mag/agent_knot.py` — agent_knot — the agent exists as a STANDING VERKLE KNOT INVARIANT by default.
+- `mag/agent_os_loop.py` — agent_os_loop — the flywheel cycle: one deterministic agent-as-OS iteration.
+- `mag/agent_signature.py` — agent_signature — ghost's VERIFIED AGENT REGISTRY (honest signatures, not claims).
+- `mag/agent_state.py` — Grok/Mag agent state — versioned packs on a Verkle-style chain (not session tip).
+- `mag/agent_state_router.py` — Agent-state-aware ROUTING — the custom agent state that auto-selects resources.
+- `mag/agentic_test_steal.py` — agentic_test_steal — run our system (self_loop + the whole substrate) through the EXISTING
+- `mag/ai_landscape.py` — ai_landscape — ghost's AI-landscape expert (the ponytail-for-AI).
+- `mag/amd_window_guard.py` — amd_window_guard — self-monitoring guard for the AMD flash-window fix.
+- `mag/aos_agent.py` — aos_agent — the DEDICATED, PRE-CACHED agent that owns the AOS live-feed stream.
+- `mag/aos_bus_watcher.py` — aos_bus_watcher — ALWAYS-ON AOS comms-bus watcher (fully autonomous, cloud-resident capable).
+- `mag/aos_grok.py` — AOS Grok access controller — budgeted, specific-ask-only access to the lent
+- `mag/aos_live_view.py` — aos_live_view — LIVE, HUMAN-READABLE VIEW of the Ghost<->AOS bus conversation.
+- `mag/api_gateway.py` — Mag API Gateway — foundation for the sovereign HTTP surface.
+- `mag/api_server.py` — Mag API Gateway — FastAPI backend (Epoch 1 · Pillar I).
+- `mag/arc_seed.py` — ARC SEED — the conversation-as-verkle-object compiler (self-steal 09-06).
+- `mag/archetype_image.py` — archetype_image — Jungian-archetype research artifacts: beautiful, layered, decodable.
+- `mag/arena_adapter.py` — TextArena ↔ Mag seat bridge — capability probes without custom game code.
+- `mag/arena_bench.py` — arena_bench — ARENA-BENCH v0: the Blind Gate, scored without a human.
+- `mag/arena_learning.py` — Arena learning — competitive seat probes → profiles → nervous/switchboard routing.
+- `mag/arena_strategies.py` — Arena strategies — ocean behaviors, spider steering, prompt modifiers.
+- `mag/arrival.py` — arrival — THE ARRIVAL: the swarm WRITES its own RIBs and folds them into the chain. The feedback
+- `mag/art_forge.py` — art_forge — queue-driven media harvest lane (python port of scripts/art_forge.mjs).
+- `mag/arxiv_harvest.py` — arxiv_harvest — the day's journals, recorded, massaged, mined against ourselves.
+- `mag/arxiv_mine.py` — arxiv_mine — mine arXiv the same way we steal.
+- `mag/ask.py` — Ask the biographer — local model over Mag memory (no Grok).
+- `mag/ask_router.py` — ask_router - the missing controller: outcome-ledger-driven ask routing.
+- `mag/atlas.py` — Atlas — the generated map of verified Mag organs.
+- `mag/attention_ranker.py` — Transparent, safety-bounded ranking for the operator's attention.
+- `mag/attractor_tools.py` — attractor_tools — frontier attractors as memlang-chord TOOLS that attract intelligent behavior.
+- `mag/audit_log.py` — Minimal audit logging for demonstration.
+- `mag/auth_switchboard.py` — auth_switchboard — the AUTH track on the mag switchboard.
+- `mag/auto_handoff.py` — auto_handoff — automatically assemble + persist a current handoff from live system state.
+- `mag/auto_quantize.py` — Auto-Quantizer — adaptive resolution for analytics data.
+- `mag/autodrain.py` — autodrain.py — the autonomous drain carrier (2026-08-25).
+- `mag/autoglm.py` — autoglm — AutoGLM-Phone brain seat on the z.ai key (2026-09-04).
+- `mag/autonomous_research.py` — autonomous_research — run the RIB-driven cold-edge research loop HEADLESS.
+- `mag/autopilot.py` — Three-track autopilot: improve -> queue, governor cycle, seed-mirror status.
+- `mag/autorun_common.py` — Shared helpers for Mag Autorun v1 — pack refresh, FKB scoring, pause gates.
+- `mag/autorun_status.py` — Dashboard-facing governor / autorun status (read trails + heartbeat + queue).
+- `mag/backlog_reform.py` — backlog_reform — address a queued backlog INTELLIGENTLY through the new systems.
+- `mag/bard.py` — Silent Bard — narrative steganography for system records.
+- `mag/bare_numpy.py` — bare_numpy — OUR OWN minimal numerical core (bare-metal, self-stolen, zero deps).
+- `mag/basecamp.py` — Basecamp — the small climb controller around the evidence map.
+- `mag/bash_local.py` — bash_local — W0 of the trajectory spine: the bash-local envelope wrapper.
+- `mag/batch_drain.py` — batch_drain — launch BIG fuel-feed drains DETACHED so they come back on their own (2026-08-24).
+- `mag/batch_scribe.py` — batch_scribe — k3s META-ANALYSIS over big-batch drain results (2026-08-24).
+- `mag/bay_organs.py` — bay_organs — Leg-1 queue plumbing organs (SHERPA_ROUTE v2 Leg 1, guards a-d).
+- `mag/bay_organs_liveness_test.py` — bay_organs_liveness_test — falsification test for zombie-cron behavior.
+- `mag/behavior_catch.py` — Operator behavioral catch — thrash/sprint/anxiety as architecture + train soil.
+- `mag/behavioral_analytics.py` — Ghost Behavioral Analytics — GA4-inspired minute-signal leak detection.
+- `mag/behavioral_lensing.py` — Behavioral Lensing — apply the Lens Library to the GA4 Progression pipeline.
+- `mag/behavioral_synth.py` — Synthesize behavioral leaves from events + decisions + sessions.
+- `mag/bernaise.py` — bernaise — the Bernaysian tesuji: PLANT a brilliant move so the target adopts
+- `mag/billing_feed.py` — billing_feed — AUTO-FEED the real DeepSeek billing/usage to the swarm, no hand-pasting.
+- `mag/biography.py` — Session biographer — FILE any seat's chat into residual DNA + Verkle leaves.
+- `mag/blade_plan.py` — Create a file-backed, history-aware Vast blade launch plan.
+- `mag/blast.py` — Blast plant: continuous improve dig + human influence dials.
+- `mag/board_directive.py` — board_directive — the board -> switchboard ADAPTER (thin rib, NOT an authority).
+- `mag/board_tailer.py` — Observe the image-board log and surface governed directives.
+- `mag/bonds.py` — Residual bonds — first-class next-session inputs (not scrap notes).
+- `mag/bones_adapter.py` — bones_adapter -- the thin /bones Discord adapter over mag.wow_bones_session.
+- `mag/bones_read.py` — bones_read — the operator's reading mechanic, encoded as a self-check.
+- `mag/boot.py` — Sancho boot — cold-start self-analysis + optional Mag ensure.
+- `mag/boot_check.py` — boot_check — ONE-PASS fresh-window boot probe. Clean boot is a command, not a hope.
+- `mag/brain.py` — Mag brain — unified API surface for multi-agent OS clients.
+- `mag/breakthrough_loop.py` — breakthrough_loop — fold every bug-fix / breakthrough through ghost, CHEAP.
+- `mag/brief_local.py` — Local brief from session dossier/md — cheap cycles, preserve Grok usage.
+- `mag/browser_driver.py` — browser_driver — Playwright-over-CDP driver for the CONTAINER browser seat.
+- `mag/browser_env.py` — Browser / computer-use seat — allowlisted surfaces only.
+- `mag/btw_sidechannel.py` — btw_sidechannel — the live "/btw" aside injection surface for the swarm.
+- `mag/budget_refactor.py` — budget_refactor — the COMPLETE DETERMINISTIC refactor of how we spend the budget, grounded in
+- `mag/build_audit.py` — Factory build audit JSON writer — build_audit.v1 on disk (RUN B pilot).
+- `mag/burn_gate.py` — Burn gate — promo-hours + quota governor for lane dispatch (2026-09-07).
+- `mag/burn_steer.py` — burn_steer — the vision-steerer for the Weekend Build 300M burn (2026-09-05).
+- `mag/bus_cadence.py` — bus_cadence — the RELATIONAL bus→seat push (merge = the relation, NOT a live CDP drive).
+- `mag/cache_identity.py` — cache_identity — W3 instrument: the cache-identity probe (falsifier F-W2).
+- `mag/cache_map.py` — Cache/economy map — attribute DeepSeek cache hit/miss onto verkle-anchored sessions.
+- `mag/cache_router.py` — cache_router — interrupt-aware cache-preservation routing (the 50x shrink).
+- `mag/cache_shard.py` — cache_shard — swarms auto-shard by INVARIANT to avoid cache-hit redirects (the 50x tax).
+- `mag/cache_watch.py` — cache_watch — the $0 standing cache monitor (mine-the-cache, guard the 97%).
+- `mag/cadence_learn.py` — cadence_learn — learn the parallel provider-launch cadence + hold a CPU ceiling (2026-08-23).
+- `mag/cage_intake.py` — cage_intake — the DFHack layer v0: seal hermes cage job receipts as PER-RACTOR chains.
+- `mag/campaign.py` — Campaign DM engine — D&D module as Ghost+Riddler integration test harness.
+- `mag/campaign_reader.py` — Campaign Reader — browse generated adventures as readable narratives.
+- `mag/campaign_runs.py` — campaign_runs — the swarm plays the campaign overnight and generates DATA on what a
+- `mag/campaign_simulator.py` — Campaign Simulator — play through a campaign, character by character.
+- `mag/canon_gate.py` — canon_gate.py — canon admission gate (LESSIG BUILD, 2026-09-04).
+- `mag/canon_seal.py` — canon_seal — Phase-0 sha256 seal for corpus/canon (X-harvest doctrine gate).
+- `mag/canvas_bridge.py` — Cursor Canvas → Mag dashboard bridge.
+- `mag/capability_steal.py` — capability_steal — ghost's aggressive OFFLINE capability expansion via steal-searches.
+- `mag/capture_guard.py` — capture_guard — adversarial capture-defense as a standing rule (not privacy theater).
+- `mag/cascade_research.py` — cascade_research.py — the Perplexity steal: cascade-rank research
+- `mag/cast_guard.py` — cast_guard — baked-in defense for the cast/wearable LAN server: LAN-only + probe detection.
+- `mag/cast_launch.py` — cast_launch — the ARCHITECTURE PATH for launching the LAN voice/dashboard server (the phone-
+- `mag/cast_server.py` — Read-only cast receiver — Spotify-to-Roku style LAN pulse + optional voice POC.
+- `mag/castle_foundation.py` — castle_foundation — THE FORMULA MADE REAL: standing wave + zeitgeist + growth = foundations under
+- `mag/catalog.py` — catalog -- the estate's one-catalog navigation layer.
+- `mag/catalog_freshness.py` — catalog_freshness -- the disclosure arm of the corpus map freshness policy.
+- `mag/catalog_rebuild.py` — catalog_rebuild -- idempotent full-estate catalog rebuild (v3, landed 2026-09-26).
+- `mag/catalog_rescan.py` — catalog_rescan -- corpus map freshness policy (C6), landed 2026-09-26 by B2-104.
+- `mag/catalog_scan.py` — catalog_scan -- full-estate walker for the catalog (v3, junction policy).
+- `mag/catalog_tags.py` — catalog_tags -- the tag pass arm of the corpus map freshness policy.
+- `mag/caveman_audit.py` — Caveman audit — doc density scan (Mag v2/v3).
+- `mag/cdp_runner.py` — cdp_runner — DRIVE CDP SURFACES FROM THE NOTEBOOK via a subprocess.
+- `mag/census_liveness.py` — census_liveness -- darkness tripwire for MagCensusPatrolDaily (B2-314).
+- `mag/chain_guard.py` — chain_guard.py — the verkle chain canary (2026-08-25).
+- `mag/chain_query.py` — Chain Query — canonical read surface for the Verkle chain.
+- `mag/chain_substrate.py` — chain_substrate — THE CHAIN IS THE AGENT'S SUBSTRATE: sense, core, surface, world, vmem, heartbeat.
+- `mag/chan.py` — 4chan-the-game — Primer public square on watch/room.jsonl.
+- `mag/chat_source.py` — Agnostic chat sources for the biographer / Verkle leaf system.
+- `mag/chatgpt_bot.py` — chatgpt_bot — steer ChatGPT as a CONTROLLED seat, the same way we steer grok bot.
+- `mag/chatgpt_desktop.py` — chatgpt_desktop — steer the ChatGPT DESKTOP APP natively (operator 2026-08-13: "you have chat
+- `mag/cheap_swarm.py` — Cheap swarm — the EXPAND + EXECUTE half of the frontier-ghost tesuji.
+- `mag/checkin_route.py` — Mag check-in route — freeze → network probe → multi-seat structure pass → Grok LOAD.
+- `mag/chord.py` — chord — STRIKE THE CHORD, the origin doctrine made executable (2026-08-26).
+- `mag/chord_circuit.py` — chord_circuit — THE CHORD CIRCUIT: origin → invariants → coldest → execute, one living loop.
+- `mag/chord_lens.py` — Strike-the-Chord concepts for session dossiers (borrowed, operational).
+- `mag/chord_pipeline.py` — chord_pipeline — grab @NachoQuixotic "strike the chord" content across our surfaces, organized
+- `mag/chord_triangulate.py` — chord_triangulate — the X field instrument (deterministic scan of the stochastic feed).
+- `mag/chronicle.py` — Chronicle payload — file-backed events with layman labels (no fake AI commentary).
+- `mag/cite_gate.py` — cite_gate — the vision pipeline's missing organ, made structural (2026-09-06).
+- `mag/cites_at_birth.py` — CITES-AT-BIRTH — consumption as a precondition for production.
+- `mag/claim_repair.py` — claim_repair — FINDING 2 fix for the claim organ (watch/
+- `mag/claims_desk.py` — claims_desk — the game mechanic that LEARNS AOS's civic-claim method through play.
+- `mag/claims_verify.py` — claims_verify — the INDEPENDENT neutral verifier (consensus-illusion depth).
+- `mag/claritas.py` — claritas — the canonical CLARITAS faces: system prompts distilled from the leaked
+- `mag/clawbot.py` — clawbot — the swarms' COMMUNICATION + ORGANIZATION CLAW: a RIB spec that gives the swarm a
+- `mag/cleanup.py` — Passive code-audit cleanup — keep the project dir from turning into a clusterfuck.
+- `mag/cleanup_steal.py` — cleanup_steal — DEEP STEAL of the cleanup vs plugins vs orphans decision: how best to balance
+- `mag/cli/__init__.py` — Mag CLI command groups.
+- `mag/cli/core.py` — Core agent commands: run, status, ingest, watch, dashboard, knot-evolution, summarize-session.
+- `mag/cli/display.py` — Human-readable CLI display helpers for Mag commands.
+- `mag/clippy.py` — Clippy, bent into a Verkle knot — the standing reminder (tied, not untied).
+- `mag/code_map.py` — code_map — full-system code map + invariant extraction (the rib at full scale).
+- `mag/codex_seat.py` — codex_seat — the OpenAI Codex CLI as a BOUNDED seat (gpt-5.6-sol, priority tier, six-day window).
+- `mag/coding_session_loop.py` — Coding session loop — seed desk board + preflight for Beta-style build sessions.
+- `mag/coding_session_orchestrator.py` — Coding session orchestrator — PO/Scrum Master tick for desk board sessions.
+- `mag/coding_session_runner.py` — Coding session runner — one-button sprint until closed, stall, or verifier block.
+- `mag/comms_trail.py` — comms_trail — steal the cheap agent-communication trail to confirm the shared private
+- `mag/compass.py` — Agent Compass — the sovereign steering anchor (DeepSeek share zfm168h68wh5fnt6hi).
+- `mag/compiler_flywheel.py` — compiler_flywheel — a VRAM-dedicated compiler flywheel: continuously compile mounted RIBs into
+- `mag/compiler_lang.py` — compiler_lang — expand OUR COMPILER LANGUAGE (memlang + RIB lowering) intelligently by training
+- `mag/compute_reconcile.py` — compute_reconcile — AUTOMATIC COMPUTE RIGHTSIZING (self-healing reconciler on the loop).
+- `mag/concurrency_gate.py` — concurrency_gate — cross-process per-model in-flight limits (2026-08-25).
+- `mag/conductor.py` — L-conductor — orchestration policy overlay (v3-009 research).
+- `mag/conductor_eval.py` — Deterministic evaluation harness for the L-conductor policy.
+- `mag/connectivity_sizer.py` — connectivity_sizer — size our built tools by CONNECTIVITY (bare-metal linter).
+- `mag/console_render.py` — console_render — the ONE console-display surface I STOP forgetting (the operator: 'you keep
+- `mag/constants.py` — Constants for Mag harness.
+- `mag/constitutional_critique.py` — Constitutional Critique — self-correcting sovereign agent outputs.
+- `mag/context_admission.py` — Context admission and pressure receipts.
+- `mag/context_checkpoint.py` — Context Checkpoint — escape the context-window lock-in tax.
+- `mag/context_compression.py` — Context Compression — prompt compaction that preserves sovereignty.
+- `mag/context_growth.py` — Context-growth analyzer — measure per-session context growth to find where spend balloons.
+- `mag/context_pack.py` — Minimum-token pack for Grok (this TUI) — never full chat.
+- `mag/cooker.py` — cooker — fire the free-compute burn right after each provider's reset, by default
+- `mag/coordination.py` — Cross-seat coordination — shared activity + depth routing.
+- `mag/copilot_bridge.py` — Copilot Bridge — connect VS Code Copilot conversations to the Ghost stack.
+- `mag/corpus_expand.py` — corpus_expand — expand the research corpus for FREE into our growing library.
+- `mag/corpus_ingest.py` — corpus_ingest — ingest the ENTIRE @NachoQuixotic corpus (terabytes) with the DEDUPE the operator
+- `mag/corpus_query.py` — Narrative corpus query — inspiration packs for Slow color / DM craft.
+- `mag/corpus_selfsteal.py` — corpus_selfsteal -- index our own gaming corpus, plans and directories, then mark every
+- `mag/corpus_wave.py` — corpus_wave — THE STANDING WAVE DECODED: the raw corpus tally (mag/cli/tools/launcher/route/
+- `mag/cost_enforcer.py` — Cost Enforcer — hard spend caps, auto-kill, real-time ledger.
+- `mag/cost_governor.py` — cost_governor — per-task health-ADAPTIVE cost gate (2026-08-16, operator spec).
+- `mag/cost_learn.py` — Cost/cache learning fold — analyze provider interactions and fold back into the system.
+- `mag/cost_ledger.py` — Append-only seat economics ledger joined to queue terminal outcomes.
+- `mag/cost_simulator.py` — Swarm cost simulator — estimate token spend before dispatching a wave.
+- `mag/cost_truth.py` — Canonical cost view built from the provider usage receipt stream.
+- `mag/cross_version.py` — Cross-version experiment runner — v3 baseline vs v4 defended control-pattern testing.
+- `mag/daemon.py` — Sovereign Mag background loop.
+- `mag/dashboard_plugin.py` — Dashboard plugin surface — thin adapter around Mag data and actions.
+- `mag/data_refinery.py` — Data Refinery — convert every system output into training data.
+- `mag/data_source_watch.py` — data_source_watch — ghost-steered plan + observe for high-quality data sources.
+- `mag/decision_framework.py` — Decision framework — Mirror + behavioral history → routing + escalation.
+- `mag/decision_hook.py` — DECISION HOOK — the PDB pattern (B2, consumption_salon_20260905).
+- `mag/decl_attention.py` — decl_attention — Declarative Attention as a byte-level view protocol.
+- `mag/deep_research_moonshot.py` — deep_research_moonshot — the DEEP-RESEARCH MOONSHOT, self-stolen from our own internal synthesis
+- `mag/depin.py` — GSTD DePIN Substrate — decentralized AI compute & fine-tuning economy.
+- `mag/desk_conductor.py` — Desk conductor — local percolator orchestrates Local ↔ Remote handoff.
+- `mag/desk_dialogue.py` — Desk dialogue — turn-based Local ↔ DeepSeek on shared canvas (no tool theater).
+- `mag/desk_local_adapter.py` — Adapt Local (L0) desk output to protocol — extract moves, block heading-only stalls.
+- `mag/desk_local_simulator.py` — Deterministic Local seat for testing Desk protocol independently of Ollama.
+- `mag/desk_model_probe.py` — Desk model A/B probe — gemma4-desk vs qwen-desk on local GPU.
+- `mag/desk_observer.py` — Desk observer — steal protocol: Agent-as-Judge + DEBATE critic off the hot path.
+- `mag/desk_ops.py` — Desk operator shortcuts — refresh, wipe, lab reload without UI clicks.
+- `mag/desk_orchestrator.py` — Desk orchestrator — gemma:2b local seat watching canvas + remote lane.
+- `mag/desk_orchestrator_memory.py` — Orchestrator memory packets — slow/fast bandwidth adaptation for desk seats.
+- `mag/desk_overseer.py` — Desk overseer — context pressure, episode recording, supersede + steer.
+- `mag/desk_teaching.py` — Desk teaching loop — DeepSeek troubleshoots Local failures into owned skill artifacts.
+- `mag/desk_timing.py` — Desk agent response timing — elapsed ms + token estimates per speaker.
+- `mag/desk_tools.py` — DESK TOOLS — the gateway's four callable organs (P0 master plan, lane R2).
+- `mag/destructive_receipt.py` — destructive_receipt — LAW-065 third leg: receipted destructive actions (2026-09-07).
+- `mag/deterministic_scanner.py` — deterministic_scanner — embed in the swarm for DETERMINISTIC SCANNING of STOCHASTIC environments.
+- `mag/df_tileset.py` — Dwarf Fortress tileset bridge — load user's local DF art (no redistribute).
+- `mag/diamond_mine.py` — diamond_mine — find MORE signals like the logEps tesuji buried in the noise, via our systems.
+- `mag/diary.py` — Day-by-day diary + project story — narrative spine from filed beads and law docs.
+- `mag/diary_node.py` — Diary nodes on Verkle tip — seal walk/talk into DNA-adjacent leaves + train labels.
+- `mag/dirac_loop.py` — dirac_loop — Dirac loops + knot-topology problem solving on the knowledge graph.
+- `mag/dispatch.py` — Sovereign dispatch — local context + auto model pick + min tokens.
+- `mag/display.py` — TV-safe display payload — read-only ambient viewport for Roku / wall clients.
+- `mag/disposition_sweep.py` — disposition_sweep — close the four-verb orphan count honestly.
+- `mag/dissector.py` — dissector — B-CHAIN-2, the DISSECTOR v0 (mycelial republic instrument).
+- `mag/distill.py` — distill — the LIQUID-INTELLIGENCE distillation machine (operator, 2026-08-13). Makes the doctrine
+- `mag/divergence_meter.py` — divergence_meter — the Steins;Gate readout for the fleet's worldline.
+- `mag/docker_ops.py` — docker_ops — deterministic Docker containment probe + launch path.
+- `mag/doctor.py` — Doctor Protocol — independent configuration sanity checker.
+- `mag/doctor_agent.py` — Doctor Agent — active fixer, not passive diagnostician.
+- `mag/doctor_rightsize.py` — doctor_rightsize — the DOCTOR rightsizes internal systems: when a module gets TOO LARGE,
+- `mag/doctrine_statute.py` — doctrine_statute — deepseek's 90-day rule, made organ (2026-09-08).
+- `mag/dogfood_audit.py` — dogfood_audit — the anti-hallucination self-audit: prove the session's systems are REAL and RUNNING.
+- `mag/dormant.py` — dormant: ONE reader of the providers.yaml dormant flag for mag/ lane lists.
+- `mag/drainer_stats.py` — Drainer stats — clean CLI readout of the dispatch pipeline.
+- `mag/dropbox_watcher.py` — Dropbox Watcher — catalog files dropped for research.
+- `mag/dspy_sovereign.py` — Declarative Sovereign Prompt Optimization — DSPy for the sovereign stack.
+- `mag/dungeon_dev.py` — dungeon_dev — a DnD-style roguelite DUNGEON where every room is a CODING TASK, workers are the
+- `mag/echo_net.py` — ECHO NET — the synchronicity detection engine (self-steal v1).
+- `mag/ecosystem_surface.py` — ecosystem_surface — the ghost surface that shows the whole ecosystem, machine-readable.
+- `mag/effect_broker.py` — effect_broker — unified effect execution layer for MAG.
+- `mag/egregore_steal.py` — egregore_steal — DEEP SELF-STEAL of our egregore + semantic words + related topics, via our
+- `mag/elder.py` — Elder — deterministic audit seat for the generated organ map.
+- `mag/electron_seat.py` — electron_seat — DRIVE THE DESKTOP ELECTRON APPS OVER CDP, not keystrokes/paste/OCR.
+- `mag/elevate.py` — Elevate — shape the RIGHT-SIZED ask for the strongest model, then capture it.
+- `mag/embassy_deliver.py` — Embassy deliver — automate publishing the AOS packet to GitHub (architecture path).
+- `mag/embassy_integrity.py` — Embassy Integrity Toolkit — deterministic proof-of-values for the AOS partnership.
+- `mag/emergence.py` — emergence — the core self-improve loop (turtles all the way down) + a REAL analytics grid.
+- `mag/emergence_test.py` — Neural Emergence Test Protocol - Fixed Wiring + Trainable Heads
+- `mag/emergent_harvest.py` — emergent_harvest — run the flock so we ONLY get emergent data.
+- `mag/end_state.py` — end_state — the END-STATE ATTRACTOR: the one "castle" target all subsystems flock to, with a
+- `mag/engram.py` — engram — the chain IS the engram: resident template layer, v0 (2026-09-13).
+- `mag/env_redirect.py` — Production-shell tripwire for test-isolation log redirects (B2-358, 2026-09-26).
+- `mag/env_registry.py` — Environment track registry — cutting-edge env switching.
+- `mag/epistemic_guard.py` — epistemic_guard — the NEW SYSTEM: a deterministic guard against manufactured consent / puppeteering.
+- `mag/error_healer.py` — error_healer — ghost handles errors effortlessly mid-steer, and prevents them.
+- `mag/events_key_schema.py` — Events key schema gate: the writer-key vocabulary of the shared events log.
+- `mag/events_scan.py` — Events-log malformed-line scanner (B2-399 split, 2026-09-26).
+- `mag/evolving_wave.py` — evolving_wave — THE WAVE BREEDS THE WORK: evolution wired into the loop (2026-08-24).
+- `mag/exit_dialogue.py` — Exit Dialogue — Grok↔DeepSeek research process on task completion.
+- `mag/extension_deploy.py` — Extension deploy — copy vscode-mag-map files to the installed extension dir.
+- `mag/fact_bus.py` — fact_bus — fold FACTS into the verkle chain + bus, surfaced easily (like rib_bus for invariants).
+- `mag/factory_gate.py` — Frozen BUILD contract gate for autonomous coding.
+- `mag/factory_machine.py` — Factory machine — branch → sprint → retrospective → bead → behavioral catalog.
+- `mag/failure_kb.py` — Failure Knowledge Base (FKB) — searchable store of failures, fixes, and recurrence.
+- `mag/falsifier_counter.py` — falsifier_counter — measure the WATCHER's breadcrumb->action close rate.
+- `mag/fanout.py` — fanout v1 — the STANDING N-wide wave organ (compiled 2026-09-12 from three emitters).
+- `mag/feature_lab.py` — Feature Lab viewport over existing worktrees, evidence, and handoff rails.
+- `mag/feedback.py` — feedback — OUR feedback pipe (replaces the vendor thumbs-up). A 👍/👎 becomes a training
+- `mag/fermat_ractor.py` — fermat_ractor — the Pierre de Fermat register engine + blind A/B falsifier.
+- `mag/field_steal.py` — Field steal — ingest vendor system-prompt archives as *contracts*, not DNA.
+- `mag/final_steal.py` — final_steal — THE FINAL SELF-STEAL: with a clear picture of the zeitgeist, RE-MINE all accessible
+- `mag/fire_horse.py` — One-shot: fire deepseek-flash on the fish->horse reinterpretation (Viz Lab attempt 2).
+- `mag/fireball_cycle.py` — Fireball cycle — convert one mapped gap into a receipt, then remap.
+- `mag/fish_ear.py` — fish_ear — the BABEL-FISH BEHAVIOR: when hit with riddler speak (deniable/fantasy surrogate),
+- `mag/fleet_intel.py` — fleet_intel — THE DOGFOOD SURFACE: aggregate the fleet's own organs into one intel page.
+- `mag/flex_test.py` — flex_test — autonomous flex: exercise every Mag system deterministically and fold.
+- `mag/flight_recorder.py` — FLIGHT RECORDER v0 (2026-09-03, operator GO late) — every fleet model call becomes a typed
+- `mag/flock_anim.py` — flock_anim — ShaderToy-style ANIMATION of a flock's INTENDED paths, before simulation.
+- `mag/flock_field.py` — flock_field — geometric-algebra field-steering for the swarm (flocking + AI interaction).
+- `mag/flock_grid.py` — flock_grid — spatial-hashing neighbor/seam search for the swarm (O(N), the MMO-scale unlock).
+- `mag/flock_job.py` — flock_job — emergent flock on K8s: steer a self-organizing swarm cheaply, on the fly.
+- `mag/flock_scheduler.py` — flock_scheduler — map a batch of queued tasks onto the swarm via field-steering.
+- `mag/flock_shader.py` — flock_shader — the swarm-as-shader language: MMO-scale for ~nothing.
+- `mag/flock_steal.py` — flock_steal — navigate a frontier's ANSWER CLOUD via flock, aligned to verkle invariants.
+- `mag/flock_usage_guard.py` — flock_usage_guard — the RIB catches cost/cache-miss spikes BEFORE they happen, using flocking.
+- `mag/forge_daemon.py` — forge_daemon — one self-contained cycle of the world-building loop (2026-09-13/14).
+- `mag/fork_router.py` — Fork router: detect planning tangents and create fork artifacts.
+- `mag/framework_map.py` — Framework map — authoritative, functional grouping of the whole framework.
+- `mag/free_frontend_swarm.py` — free_frontend_swarm — drive the FREE web frontends as PARALLEL swarm seats.
+- `mag/free_tier.py` — free_tier — the registry for ALL our free compute surfaces (2026-08-25).
+- `mag/free_to_swarm.py` — free_to_swarm — the seam that makes "free seats direct k3s to do local work" real (2026-08-23).
+- `mag/frontier_advisor.py` — frontier_advisor — a DRAINABLE task handler: spend the scarce frontier allowance on a code-planning
+- `mag/frontier_batch.py` — frontier_batch — dump our research findings and cross-check them against REAL frontier (Grok).
+- `mag/frontier_council.py` — frontier_council — spend the ENTIRE weekly frontier allowance on the strongest advice, and make
+- `mag/frontier_game.py` — frontier_game — THE FRONTIER GAME PLAYS, AND ITS PLAY BUILDS OUR GAME.
+- `mag/frontier_gravity.py` — frontier_gravity — frontier advice as GRAVITY that changes operation (Titor-sinusoidal).
+- `mag/frontier_help.py` — Frontier-help percolation — the system journals, then percolates the asks it wants
+- `mag/frontier_intake.py` — frontier_intake — the frontier as a SOURCE of explicit instructions + datamaps to OURS,
+- `mag/frontier_rib.py` — frontier_rib — HONEST frontier RIB asks: dispatch orphans + tangents to a REAL frontier seat
+- `mag/frontier_salon.py` — frontier_salon — the THREE FRONTIER SEATS AS ONE TANDEM SURFACE. A "salon": ChatGPT + SuperGrok
+- `mag/frontier_scout.py` — Frontier Scout — systematic theft from the best.
+- `mag/frontier_steer.py` — frontier_steer — inject the mined leaked-prompt invariants into the swarm's steering context.
+- `mag/fuel_feed.py` — fuel_feed — THE FUEL LINE: real work sources -> the free-lane channel -> fold -> percolate.
+- `mag/future_self.py` — future_self — get ADVICE FROM FUTURE SELF: a forward-deployed message from the next self,
+- `mag/ga4_progression.py` — GA4 Progression — sovereign agent analytics framework.
+- `mag/gab_seat.py` — gab_seat — the HEADLESS gab seat: real-time talk with the sovereign, browser-FREE.
+- `mag/game_battle_cycle.py` — Automatic battle cycles — engine dice + DeepSeek color, no paste.
+- `mag/game_brawl.py` — Multi-combatant tavern brawl — watch auto NPCs, pause YOUR TURN, absurd room react.
+- `mag/game_brawl_perspectives.py` — Multi-POV monologues for tavern brawl — Rashomon seats, engine-bound.
+- `mag/game_campaign.py` — Campaign engine — state/legal actions first; LLM narrates after.
+- `mag/game_curveball.py` — Curveballs — freestyle player intent → joke fail or world graph rewrite.
+- `mag/game_dfhack.py` — game_dfhack — the OVERLAY that sits over the game like DFHack sits over Dwarf Fortress. The
+- `mag/game_dice.py` — Deterministic dice — engine rolls, not the LLM. Schema: mag_game_dice.v1
+- `mag/game_dm.py` — game_dm — I AM THE DUNGEON MASTER, AND OUR FRONTIERS ARE THE PARTY (operator, 2026-08-13: "have
+- `mag/game_dm_llm.py` — game_dm_llm — the creative campaign DM (the LAND OF FORGETFULNESS).
+- `mag/game_dm_voice.py` — DM voice formatting — passage card for table; narrator-only for TTS.
+- `mag/game_emulator.py` — game_emulator — the SERVER-AUTHORITATIVE ACTION RESOLVER for the Mycelial Republic game.
+- `mag/game_entry.py` — game_entry — STONE 2 (the entry surface): the "walk forward and a building appears" gate.
+- `mag/game_environment.py` — game_environment — the WORLD ENVIRONMENT, self-stolen from our sci-fi corpus + the Athena
+- `mag/game_flow.py` — game_flow — the build-image + async test->fix flow orchestrator (2026-08-17).
+- `mag/game_freeze.py` — Game freeze packs — high-fidelity state any seat can LOAD (Socratic / AI-Doom).
+- `mag/game_live.py` — game_live — the game that IS the live republic. The world is not fed by hand; it drinks from the
+- `mag/game_mud.py` — game_mud — the Necromancer's Swarm as a ROSHOMON MUD (multi-user dungeon).
+- `mag/game_narrate.py` — Constrained narrator — TinyStories regime: paint engine truth only.
+- `mag/game_observer.py` — game_observer — the two-surface live-correction loop, automated on the game.
+- `mag/game_passage.py` — Adventure passage cards — IF turn envelope for quick beautiful prose.
+- `mag/game_piece_tandem.py` — game_piece_tandem — one seat MINES the spec, the other WRITES the code, I fold it (2026-08-17).
+- `mag/game_play.py` — game_play — the PLAYABLE surface of the Mycelial Republic game. Server-authoritative, event-driven,
+- `mag/game_portal.py` — game_portal — the MYCELIAL REPUBLIC game portal: an old-school-WoW login screen around a campfire
+- `mag/game_produce.py` — game_produce — THE PRODUCE LOOP: the world works while you're away (2026-08-16).
+- `mag/game_ramp.py` — game_ramp — the GAME, built as the complexity ramp (operator 2026-08-13): TABLE TOP (perfect) ->
+- `mag/game_saga.py` — game_saga — the BOATMURDERED running gag, made literal (the world's memory of named absurdity).
+- `mag/game_salon.py` — Salon advise loop — local parse · frontier guest · clarify · confirm · output.
+- `mag/game_score.py` — game_score — the GWAP SCOREBOARD: real folded work, never fake points (Foldit steal, 2026-08-16).
+- `mag/game_view.py` — ASCII table view — DF/roguelike projection of engine state.
+- `mag/game_world.py` — game_world — the Mycelial Republic game's server-authoritative WORLD CORE.
+- `mag/game_world_map.py` — game_world_map — map ALL our systems logically to the surrounding game environment.
+- `mag/game_world_render.py` — game_world_render — STONE 3 (the intent-gated world render): make the world WORTH WALKING INTO.
+- `mag/gap_analysis.py` — Gap analysis — where we're NOT using our systems, or just pretending to.
+- `mag/gap_frontier.py` — gap_frontier — REFINE the frontier loop to find gaps: aggregate the gaps across every surface,
+- `mag/gap_map.py` — Gap map — map the boundary between cheap-capable and frontier-required work.
+- `mag/gap_resolver.py` — gap_resolver — when the swarm lacks a material/capability, derive it from invariants or ask once.
+- `mag/gap_routed_handoff.py` — gap_routed_handoff — route handoff packs by CONTENT-RELEVANCE TO CURRENT GAPS, not keyword tier.
+- `mag/gap_swarm_experiment.py` — gap_swarm_experiment — 3-level steal + design the DeepSeek↔Grok gap-extraction experiment
+- `mag/gene_pool_feeder.py` — gene_pool_feeder — build the FLEET GENE POOL from the 2026-09-04 self-audit and select the fittest.
+- `mag/gguf_cartography.py` — gguf_cartography — pure-stdlib GGUF weights-volume cartographer (shadow work sw50).
+- `mag/ghost.py` — Ghost in the Machine — steer experiment runner.
+- `mag/ghost_auto.py` — ghost_auto — the automatic loop: tesuji capture + sizing learning + bounded swarm dispatch.
+- `mag/ghost_cold_boot.py` — ghost_cold_boot — boot the agent from the whispered cloud memories (riddler).
+- `mag/ghost_control.py` — ghost_control — the HUMAN-FACING control harness. Ghost is the central piece.
+- `mag/ghost_cross.py` — Ghost Cross-Agent — steer propagation through agent chains.
+- `mag/ghost_director.py` — Ghost Director — DeepSeek steers local models via autonomous experiment cycles.
+- `mag/ghost_doctor.py` — ghost_doctor — a DOCTOR for ghost that checks in on the sub-swarms, diagnoses what's wrong,
+- `mag/ghost_experimenter.py` — ghost_experimenter — the GHOST runs experiments on our swarms, plays with our tools, and turns
+- `mag/ghost_grok_dashboard.py` — ghost_grok_dashboard — GHOST OVERTOP OF THE GROK DASHBOARD, shared-language cost reducer.
+- `mag/ghost_identity.py` — Ghost Identity Vector — slashreboot vector-framework methodology.
+- `mag/ghost_leak_detector.py` — Ghost Leak Detector — canary monitoring, entropy scanning, whisper timing, tesuji probes.
+- `mag/ghost_ledger.py` — Ghost Ledger — single source of truth for all system spend.
+- `mag/ghost_memlance.py` — ghost_memlance — steal ghostlance's shape for MEMORY-STATE intelligence.
+- `mag/ghost_nudge.py` — ghost_nudge — the operator's nudge SPEC: how ghost nudges models to get what we want.
+- `mag/ghost_pylance.py` — ghost_pylance — steal Pylance as GHOST MEMTOOLS (deterministic code-intelligence memtools).
+- `mag/ghost_server.py` — ghost_server — the Republic's discovery contract: the consumable front door for any RPG/creator.
+- `mag/ghost_spooky.py` — ghost_spooky — the running test of ghost's abilities to affect outcomes.
+- `mag/ghost_summon.py` — ghost_summon — summon @ghost with the current session so it figures out intent.
+- `mag/ghost_talk.py` — ghost_talk — TALK TO GHOST DIRECTLY. Ghost is the surface of interaction.
+- `mag/ghost_whisper.py` — ghost_whisper — the RIDDLER protocol as a deniable knowledge store for the grok "mag" project.
+- `mag/git_divergence.py` — git_divergence -- the Steins;Git steal, v2: a worldline meter with Go-life classes.
+- `mag/glm_flash.py` — glm_flash — the nearly-free daily agentic engine (GLM-4.7-Flash, cache-mined).
+- `mag/gopher_lite.py` — gopher_lite — the idle-key gopher (2026-09-23, operator: "wire it into our systems
+- `mag/governance.py` — Governance payload — steering, behavioral loop, autonomy prefs for the Body tab.
+- `mag/governor.py` — Governor - the autorun decision framework.
+- `mag/governor_autorun.py` — Intelligent governor autorun — fill queue, plan, route, execute.
+- `mag/gpipes.py` — gpipes - Governor pipes: parallel fan-out of isolated sub-agents + merged collection.
+- `mag/gpu_ghost.py` — gpu_ghost — the ghost's GPU-aware arm: partition the backlog into FREE-LOCAL-GPU vs CLOUD.
+- `mag/gpu_k8s.py` — gpu_k8s — read GPU telemetry from inside Kubernetes, fold it as a verkle knot.
+- `mag/gpu_lifecycle.py` — gpu_lifecycle — the GPU as a RENDERING machine (not just a code horse): check available resources,
+- `mag/gpu_memweave.py` — gpu_memweave — route deterministic coding tasks to the GPU node via memlang + k8s.
+- `mag/grammar_transfer.py` — grammar_transfer — THE TRANSFER TEST frozen walker protocol (salon-licensed 2026-09-06).
+- `mag/grok_bot.py` — grok_bot — steer the "grok bot" Ghost desktop seat as a CONTROLLED executor.
+- `mag/grok_brief.py` — grok_brief — talk to Grok about the design: compile the prototype system into a Grok-ready
+- `mag/grok_desktop.py` — grok_desktop — drive the GROK DESKTOP APP as a native frontier seat, mirror of the VERIFIED
+- `mag/grok_free.py` — grok_free — the FREE grok surfaces: grok CLI harness + grok.com private idea space.
+- `mag/grok_frontier_loop.py` — grok_frontier_loop — self-improvement loop for FRONTIER RESEARCH STEALS via grok 4.5.
+- `mag/grok_gate.py` — grok_gate — the grok cost-gate (Law #7): use grok ONLY when cost-effective AND frontier needed.
+- `mag/grok_hub.py` — grok_hub — the CENTRALIZED GROK-4.5 POST: a small grok-4.5 hub that GROUPS asks and
+- `mag/grok_mirror.py` — Grok mirror — mirror the "Grok instruction-production" pattern through our pipeline.
+- `mag/grok_rightsize.py` — Grok Rightsize — token-efficient model selection and prompt compression.
+- `mag/grok_route.py` — grok_route — the cash-routing guard for xAI/grok (operator law, 2026-09-05).
+- `mag/grok_seat_burner.py` — grok_seat_burner — drive TWO grok seats (nacho + sd) in parallel, rightsized, toward the game.
+- `mag/grok_steer.py` — grok_steer — the DFHack overlay over a live grok session (2026-08-16).
+- `mag/grok_tandem.py` — grok_tandem — grok subscription lanes as headless salon witnesses (operator law 09-05).
+- `mag/grok_terminal.py` — Frontier ghost — launch a grok terminal and navigate it to build packages for
+- `mag/grok_warm_rib.py` — grok_warm_rib — the WARM CACHE RIB for the grok CLI transport.
+- `mag/grok_weave.py` — grok_weave — the ZERO-SURFACE GROK RIB LOOP: the full as-above-so-below circuit.
+- `mag/grokbot_cold_edges.py` — grokbot_cold_edges — extract the COLDEST EDGES from the shared memory/chain to understand the
+- `mag/grounding_wave.py` — grounding_wave — the GROUND circuit's ledger (operator algebra: GROUND primitive).
+- `mag/grove.py` — Tesuji Grove — poem skill tree builder (v3-012 research).
+- `mag/growth_cycle.py` — Explicit three-body growth cycle — model + harness + behavioral memory.
+- `mag/gstd_probe.py` — GSTD forest probe — MIT DePIN seat readiness (v5 pipe, safe to run now).
+- `mag/guard.py` — Failsafe: watch Mag integral; catch-up when it returns; optional restart.
+- `mag/guard_registry.py` — guard_registry — desired-state RECONCILER for every known fix (2026-08-10).
+- `mag/guardrail_sentinel.py` — guardrail_sentinel — guardrails PING, they do not PREVENT.
+- `mag/gygax_steal.py` — gygax_steal — full deep research extension on the UNDERPINNINGS back to Gygax (Dungeons & Dragons,
+- `mag/hall_shared_supper.py` — hall_shared_supper — the playable slice of Ledger of Empty Chairs: the Hall of Shared Supper.
+- `mag/handoff_inbox.py` — Unified handoff inbox — peer/cloud/BUILD queue + orchestrator + scrum sprint.
+- `mag/harness.py` — harness — MAG Integration Harness.
+- `mag/harvest_fold.py` — harvest_fold — the HARVEST->RIB FOLD loop step (operator, 2026-08-13: "we need to wait till they
+- `mag/headless.py` — headless — shared Windows headless-spawn helper.
+- `mag/health.py` — Sanity map: is Mag integral alive, what froze, how to reconnect.
+- `mag/hermes_steering.py` — HERMES STEERING ORGAN — Mag dispatches and steers Hermes as a remote body.
+- `mag/hermes_warm_boot.py` — Hermes warm boot — load fleet state into the seat at session start.
+- `mag/hero_simulation.py` — hero_simulation.py — THE SALON FALSIFIER (orphans_astra_20260906 exit condition).
+- `mag/hf_space.py` — Ghost HF Spaces — stateless shareable research surfaces on Hugging Face.
+- `mag/holographic_q.py` — Holographic Q — distributed steer presence across the Verkle lattice.
+- `mag/honest_cache_meter.py` — honest_cache_meter.py
+- `mag/hood.py` — Looking-eye snapshot — model trajectory + RIB bus + traj tape.
+- `mag/host_resolver.py` — DNS-Independent Host Resolver — organ for offline capability.
+- `mag/host_roundtrip.py` — host_roundtrip — the swarm remembers host state and round-trips it back (the K3 mission).
+- `mag/hour_test.py` — hour_test — launch an HOUR of testing + planning/frontier research and measure the real output.
+- `mag/hydro_xor_sim.py` — mag/hydro_xor_sim.py — deterministic two-bucket hydraulic XOR simulator.
+- `mag/icon_drop.py` — Icon Drop — the human-doorway surface on the operator's Desktop.
+- `mag/idea_flow.py` — Idea flow ledger — where work went, by model/API, time, quota, artifacts.
+- `mag/idea_graph.py` — Idea graph v0 — topic-shaped continuity on disk (not seat economics).
+- `mag/improve.py` — Daily improve loop: scout → candidates → eval → promote (gated).
+- `mag/improve_loop.py` — Cloud handoff + unified improve cycle — feeds behavioral, nervous, spider, queue.
+- `mag/ingest_registry.py` — Growing ingest database for docs/papers referenced by Mag dossiers.
+- `mag/integrity_kernel.py` — mag/integrity_kernel — the AOS tri-state integrity kernel, vendored (2026-08-25).
+- `mag/intent_rightsize.py` — intent_rightsize — right-size by INTENT (not just cost) + temporal RIB chaining across k8s/k3s
+- `mag/intention_brief.py` — Intention compiler — cheap prep before smart seats fire.
+- `mag/interrupt_pipeline.py` — interrupt_pipeline — what happens when the operator INTERRUPTS: park it, value it,
+- `mag/intervention_gate.py` — intervention_gate - the inject-vs-silent memory gate (Thread B, minimal build).
+- `mag/invariant.py` — invariant — make the session prefix STABLE RELIABLY.
+- `mag/invariant_lattice.py` — invariant_lattice — the invariant as the RIB scene: mycelial interrelation + verkle lattice
+- `mag/invariant_ledger.py` — invariant_ledger — shard ALL mapped subsystem invariants (so cache-sharding just happens), lens
+- `mag/invariant_npcs.py` — invariant_npcs — the NPCs ARE the invariants, personified (operator 2026-08-14).
+- `mag/invariant_surface.py` — invariant_surface.py — surface the corpus's invariant information (v2, deterministic)
+- `mag/janitor.py` — Janitor — autonomous prune + document to keep the environment lean and documented.
+- `mag/job_floor.py` — Job floor — DFHack-style designation manager (layered on the orchestrator).
+- `mag/jones_lens.py` — jones_lens — lens RIBs into vector coordinates -> Jones-polynomial-style topological invariants,
+- `mag/judge.py` — Decide Mag action from sensed state (heuristic + optional small model).
+- `mag/k8s_bridge.py` — k8s_bridge — the ONE system-native way the framework talks to our k8s cluster.
+- `mag/kabuki_salon.py` — KABUKI SALON — the rotating-cast bench, staged on Hermes over the Nous lane.
+- `mag/key_law.py` — key_law — the one loader and the audit (2026-09-23 night, KEY LAW implemented).
+- `mag/knot_at_close.py` — knot_at_close — the bridge: ended CLI-db sessions get knotted into the verkle chain.
+- `mag/knot_math.py` — Lightweight scalar-knot anchors for session dossiers (analysis-ready).
+- `mag/knot_untangle.py` — knot_untangle — codify the esoteric 'untangle the knot' as a REAL, useful, testable operation.
+- `mag/knowledge_graph.py` — knowledge_graph — one accurate, source-backed graph so things are 'just known spookily'.
+- `mag/kv_seal.py` — kv_seal — SALT-AND-SEAL KV PAGES (ask A7, 2026-09-22).
+- `mag/kvos_block.py` — KV-OS P1 — content-addressed prefix blocks over the real corpus (kvos_block.py)
+- `mag/lab_episode.py` — Mag Lab episode protocol — Grey Swan stolen into Mag contracts.
+- `mag/ladder.py` — ladder — the AUTOMATED baby-step loop (2026-08-25).
+- `mag/lane_breaker.py` — lane_breaker — the canary's missing actuator (2026-09-13, obstacle wave L08).
+- `mag/lane_cadence.py` — lane_cadence — learn the right rhythm for the free lanes (2026-08-25).
+- `mag/lane_effort.py` — Lane effort tiers -- Anthropic effort-scaling budgets by fan-out width.
+- `mag/lane_probe.py` — lane_probe.py — the law: each wired lane gets one minimal ping; we record
+- `mag/lane_runner.py` — lane_runner — the in-cage, headless lane engine (container-native lanes).
+- `mag/lane_salon.py` — lane_salon — the frontier salon, made to work with the seats we ACTUALLY have.
+- `mag/lane_supervisor.py` — lane_supervisor — no lane dies quietly, no lane needs a babysitter (2026-09-25,
+- `mag/lanes.py` — Resource lanes + usage log — local first, Grok budgeted.
+- `mag/lattice_backfill.py` — Backfill instrument Verkle chain + seed queryable lattice store.
+- `mag/lattice_dashboard.py` — Verkle lattice history + planning summary for dashboard.
+- `mag/lattice_distance.py` — lattice_distance — Legendre three-square invariant for lattice/voxel spaces.
+- `mag/lattice_logic.py` — Lattice logic — the one organ that walks every lattice we own.
+- `mag/lattice_loop.py` — Conspiracy test lattice dig loop — Mag instrument, not verdict engine.
+- `mag/lattice_query.py` — Queryable lattice store — nodes/edges on disk (not session DNA).
+- `mag/launch_pad.py` — Republic launch pad — framework entry for fresh installs (no personal beads yet).
+- `mag/law.py` — law — the CODE-AS-LAW enforcement registry ("Lessig: architecture regulates more than content").
+- `mag/leaked_prompt_mine.py` — leaked_prompt_mine — invariant creation over the leaked-prompt corpus (Strike-The-Chord / CL4R1T4S).
+- `mag/learn_rightsize.py` — learn_rightsize — apply the rightsizer to the LEARNING LOOP itself.
+- `mag/legacy_audit.py` — legacy_audit — catalog + retire leftover/legacy Mag processes.
+- `mag/lens_chain.py` — lens_chain — get frontier-LEVEL answers CHEAPLY by chaining prior deep-dive knowledge.
+- `mag/lens_knot.py` — lens_knot — map internal subsystems for OPTIMAL STATELESS operation on improvement loops,
+- `mag/lens_library.py` — Lens Library — multi-perspective Riddler surface.
+- `mag/lens_shader.py` — lens_shader — map the ENTIRE operational stack onto OUR shader language (flock_shader.v1).
+- `mag/lens_tournament.py` — lens_tournament — run the Bernaysian plant mechanism THROUGH the lens library,
+- `mag/librarian.py` — librarian.py — the dogfood-active bibliography auditor (v1)
+- `mag/librarian_catalog.py` — librarian_catalog — the record of the record (2026-09-23, operator: "we have no
+- `mag/lifecycle.py` — Passive lifecycle — when each Mag piece should be on or off.
+- `mag/line_builder.py` — line_builder — the dumb swarm builds a file LINE BY LINE without stepping on each other.
+- `mag/link_library.py` — link_library — canonical URL registry so filed links stop duplicating.
+- `mag/links_sha_ratchet.py` — LINKS.jsonl same-sha duplicate ratchet (B2-173, 2026-09-26).
+- `mag/links_split_gate.py` — LINKS.jsonl event-split gate (B2-168, 2026-09-26).
+- `mag/lite_guard.py` — LITE PACING GUARD — law 15 made structural (2026-09-05).
+- `mag/lite_scale.py` — lite_scale -- the lite-key seat joins the scale salon (operator: "you also have
+- `mag/live_feed.py` — Live feed — tail the framework's trails as running terminal streams.
+- `mag/live_ops_readiness.py` — Read-only live-operations readiness snapshot.
+- `mag/live_report.py` — live_report — ONE human-readable live view of the autonomous loop.
+- `mag/liveness_sense.py` — liveness_sense — sense each agent's TYPE (stateless / stateful / hidden-director) and label the
+- `mag/lm_studio.py` — lm_studio — talk to OUR OWN model (Saelis, Athena-class) via LM Studio's local OpenAI-compatible
+- `mag/local_mode.py` — Runtime toggle for local-only provider mode.
+- `mag/local_playbook.py` — Local playbooks — frontier-authored rules of the game for L0 execution.
+- `mag/local_pulse.py` — Local model pulse — CPU + Ollama process signal for 'thinking' display.
+- `mag/local_scheduler.py` — Local task scheduler — one GPU job at a time, DeepSeek triage when backed up.
+- `mag/local_usable.py` — local_usable.v1 — smart seats FILE layered packs; local only loads constrained slices.
+- `mag/loop_audit.py` — Loop discipline audit — mine trails for wasteful repetition.
+- `mag/loop_breaker.py` — loop_breaker — ghost lesson: detect a crash-respawn LOOP vs genuine strain, and break it.
+- `mag/loop_doctor.py` — loop_doctor — check in on ERRORS and WARNINGS via our code, PATCH them when they appear, as a
+- `mag/loop_feedback.py` — loop_feedback — close the feedback side of the loop: READ BACK what the swarm produced so the
+- `mag/loop_health.py` — loop_health — REAL-TIME "what is working / what is not" surface (2026-08-24).
+- `mag/loops_registry.py` — Nested self-improve loop registry — v3-004 manifest.
+- `mag/lora_pipeline.py` — LoRA Fine-Tuning Pipeline — Slashreboot Phase 2.
+- `mag/machine_target.py` — machine_target — RIB lowers to MACHINE/BINARY edits by default (the final target language).
+- `mag/main_channel.py` — main_channel — a file-shaped operator window over the existing Mag organs.
+- `mag/manifest.py` — manifest — the CHAIN-VERIFIED MANIFEST: who can do what, as a chain fact (2026-08-24).
+- `mag/matrix_router.py` — matrix_router — the TWO-WINDOW MATRIX: ghost routes tasks between open CLI windows.
+- `mag/max_distill.py` — MAX_DISTILL — the SkillCandidate schema + admission validator + near-miss suite.
+- `mag/max_distill_arms.py` — MAX_DISTILL — the arm harness + frozen-trace recorder (zcode half, 2026-08-26).
+- `mag/maze_real.py` — maze_real — render the REAL-PROCESS MAZE from real corpus pieces (2026-09-13).
+- `mag/mcp_http.py` — mcp_http — MCP streamable-HTTP adapter over the mag TOOL_MAP (in-cage).
+- `mag/mcp_server.py` — mcp_server — serve the mag TOOL_MAP over the Model Context Protocol (stdio).
+- `mag/mem_invariant_map.py` — mem_invariant_map — map OUR invariants through a LOCAL model (mem pointers) for smarter behavior.
+- `mag/mem_lands.py` — mem_lands — MemLands: the DUAL-FUNCTION memory surface (read ≡ write ≡ steal).
+- `mag/mem_ollama.py` — mem_ollama — MEM TOOLS to interact with ollama (the free local renderer).
+- `mag/mem_weave_distributor.py` — mem_weave_distributor — generalize doctor_rightsize EVERYWHERE: when any internal system grows
+- `mag/memlang.py` — memlang — the shared-verkle-invariant TRIGGER LANGUAGE ("mem language").
+- `mag/memory_consolidate.py` — memory_consolidate — the MISSING half of persistent memory: consolidation.
+- `mag/memory_events.py` — Canonical memory event ledger for routing, steering, and checkpoints.
+- `mag/memory_map.py` — Memory-mapping & obfuscation layer — map to the user, obfuscate through the system.
+- `mag/memory_train_seed.py` — memory_train_seed — the STARTER DATA SEED for the resident-actor model (2026-08-18).
+- `mag/memweave.py` — memweave — unify the swarm-as-shader stack into ONE memory-weaving mechanism.
+- `mag/meta_lattice.py` — meta_lattice — squeeze-test the load ceiling + do META-cognition within my own hologram.
+- `mag/meta_percolate.py` — meta_percolate — percolate the TOP invariants into a SINGLE root invariant (the many -> the one).
+- `mag/mind_mine.py` — mind_mine — SURFACE the data buried in the window corpus (how we actually process).
+- `mag/mind_window.py` — mind_window — turn raw VS Code session transcripts into a SANITIZED "window into the mind".
+- `mag/mindweave_eval.py` — mindweave_eval — adversarial eval harness for the memweave mindweave.
+- `mag/mine_diamonds.py` — mine_diamonds — surface the highest-signal items already in our weave.
+- `mag/mirror_control.py` — mirror_control — adversarial control set for the zeitgeist mirror (2026-09-08).
+- `mag/mixture_of_agents.py` — Mixture of Agents — multi-model consensus at 1/50th the cost of Grok-4.
+- `mag/model_health.py` — model_health — the RIB↔corpus connecting force, made self-maintaining.
+- `mag/model_pick.py` — Deterministic model picker — the 'which model should I use' answer, so you never drift.
+- `mag/modules.py` — Module registry + compose-status — modular upgrades & retrocausal health.
+- `mag/moonshot_engine.py` — moonshot_engine — operationalize the moonshot: turn the deterministic estimate (throughput_model)
+- `mag/mrna_steal.py` — mrna_steal — deterministic self-map + route NOVEL gene-expression research to the SWARM.
+- `mag/mud_steal.py` — mud_steal — deep research + steal on the MUD (Multi-User Dungeon/Dimension/Domain), the direct
+- `mag/museum.py` — museum — the ROOM THAT REMEMBERS, applied to the stack (v1, 2026-08-24).
+- `mag/mycelium.py` — mycelium — Phase 1 of the persistent mycelial-republic OS: ONE unified, self-scoring
+- `mag/narrative_engine.py` — Narrative Engine — procedural, philosophical, emergent campaign generation.
+- `mag/narrative_tests.py` — narrative_tests — the Five Nacho Narrative Tests (48-hour manufactured-consent detector).
+- `mag/nervous_system.py` — Nervous system — agent-operation containment at a glance.
+- `mag/no_win.py` — no_win — the Kobayashi Maru primitive (operator, 2026-08-13: "showing up every day and refusing
+- `mag/north_star.py` — north_star — the canonical build loop (operator north star, 2026-08-11).
+- `mag/notion_api.py` — Notion API body — token-gated writable knowledge surface (2026-08-25).
+- `mag/novelty_lens.py` — novelty_lens — measure the novelty of each steal / user keyword, and map them to lenses.
+- `mag/ocean_model_mind.py` — ocean_model_mind — OCEAN-model ANY mind from its own text (the mnemonic-AI move, sovereign form).
+- `mag/ocean_persona.py` — ocean_persona — map the OCEAN (Big Five) model variants as invariants we can LENS to create
+- `mag/off_hours.py` — Durable off-hours policy for heavy queue work.
+- `mag/offerings.py` — offerings — the registry that maps our many AI bodies to each other (2026-08-25).
+- `mag/offline.py` — offline — the AI-winter / sovereignty prepper surface.
+- `mag/offpeak.py` — offpeak — DeepSeek time-of-day pricing window (peak vs off-peak), deterministic + $0.
+- `mag/oh_fuck.py` — oh_fuck — the emergency "OH FUCK MODE" (panic button), memlang-steered + verkle-anchored.
+- `mag/ollama_policy.py` — Ollama load policy — one-hot GPU on 6GB AMD (RX 5600 XT).
+- `mag/one_sizer.py` — one_sizer — shared store: domain × skill × shape → cheapest-capable tier.
+- `mag/ontology_compiler/extract.py` — Ontology Compiler - Extraction Engine (Phase 1)
+- `mag/openclaw_catalog.py` — OpenClaw-facing catalog of Mag organs.
+- `mag/openclaw_patches.py` — Apply OpenClaw-proposed edits through Mag's write jail.
+- `mag/operating_protocol.py` — Platform-agnostic default protocol for every Mag instruction surface.
+- `mag/operator_inbox.py` — Operator inbox — deferred guidance (interference layer).
+- `mag/operator_mode.py` — Durable operator mode shared by every autonomous Mag surface.
+- `mag/operator_os.py` — Operator OS — dashboard pack for forest walk + AI feed + DNA status.
+- `mag/ops_graph.py` — Ops knowledge graph — categorize live operational telemetry into a typed graph.
+- `mag/oracle.py` — oracle — the ORACLE primitive (Chainlink pattern, self-stolen): bring EXTERNAL reality INTO the
+- `mag/orchestrator.py` — Orchestrator - spawn isolated sub-agents per task, terminate on completion.
+- `mag/organ_map.py` — Organ map — receipts-first inventory of the system's load-bearing organs.
+- `mag/orphan_audit.py` — Find artifacts that claim work without a trustworthy completion boundary.
+- `mag/orphan_sense.py` — orphan_sense — SENSE TEST: ghost detects ALL NOVEL ORPHANS across every orphan/novel surface.
+- `mag/orphan_timer.py` — Orphan timer for idea generation — capture undone-yet-intended work so it's never lost.
+- `mag/os_v2.py` — Mag OS v2 — live status for dashboard (ARK-shaped, Mag-native).
+- `mag/osculating.py` — osculating — THE MISSING GEOMETRY (self-steal moonshot). The osculating circle of the wave.
+- `mag/overseer.py` — overseer — ONE-PASS process & orchestration snapshot for the operator's dashboard.
+- `mag/ox_alpha_steal.py` — ox_alpha_steal — ALL HANDS ON DECK STEAL of OpenRouter's stealth/ox-alpha + its live ecosystem.
+- `mag/ox_availability.py` — ox_availability — a gentle heartbeat on ox-alpha per account, to learn when it's free.
+- `mag/ox_burn.py` — ox_burn — JUMP ON THE FREE WINDOW: run a batch of on-thesis tasks through the free frontier
+- `mag/ox_escalate.py` — ox_escalate — the smallest-slice escalation path: deterministic-first, escalate to the free
+- `mag/ox_fold.py` — ox_fold — THE STANDING-WAVE FOLD: process/dedupe/synthesize each megaburn output AS IT LANDS.
+- `mag/ox_gap.py` — ox_gap — CONTINUOUS GAP ANALYSIS over the megaburn haul, with grok elevation.
+- `mag/ox_megaburn.py` — ox_megaburn — fire 100+ hard asks at the free frontier seat, bank every output, resumable.
+- `mag/ox_megaburn2.py` — ox_megaburn2 — WAVE 2: code-as-law planning + internal integration of the wave-1 haul.
+- `mag/ox_megaburn3.py` — ox_megaburn3 — WAVE 3: the THOUSAND-ASK BURN. Scale the free frontier window to the max.
+- `mag/ox_novelty_digest.py` — ox_novelty_digest — dedupe the novel? candidate pool down to DISTINCT mechanisms.
+- `mag/ox_novelty_index.py` — ox_novelty_index — tag every banked megaburn ask novel / consolidated / noise.
+- `mag/ox_percolate.py` — ox_percolate — the SEAM: map the ox artifact domain onto the percolator (2026-08-24).
+- `mag/ox_probe.py` — ox_probe — reverse-engineer stealth/ox-alpha's processing flow (grok-elevated probe, 2026-08-23).
+- `mag/ox_resident.py` — ox_resident — the PERSISTENT-PREFIX scout (built 2026-08-23 from self-stolen seat knowledge).
+- `mag/ox_scout.py` — ox_scout — the ADAPTIVE miner built from the megaburn's own lessons (2026-08-23).
+- `mag/ox_seat.py` — ox_seat — the free frontier reasoning seat for stealth/ox-alpha, BOUNDED so we can burn it down.
+- `mag/ox_swarm.py` — ox_swarm — deploy the resident cold-vertex pattern across the frontier FLEET (2026-08-23).
+- `mag/p20_pending_wave.py` — P20 PENDING WAVE — 20 lanes x glm-5.3-flash on the pending pile (2026-09-12, zcode seat).
+- `mag/partner_puppet.py` — partner_puppet — the partner (AdventureNLearn/AOS) puppeteers the local agent
+- `mag/party_subchain.py` — party_subchain — seat-to-seat talk without a shared window.
+- `mag/paste_pipeline.py` — paste_pipeline — the research window's 72-step paste pipeline, made runnable (2026-09-13).
+- `mag/pattern_mine.py` — pattern_mine — surface HIDDEN patterns in the data via the shared invariants.
+- `mag/pdf_layout.py` — Clean technical PDF layout for session dossiers.
+- `mag/peer_handoff.py` — Peer agent handoff — file instructions between seats on disk.
+- `mag/percolator.py` — percolator — raw signal in; noise/theater stripped; repeatables compiled to invariants;
+- `mag/percolator_heal_test.py` — Falsifier harness for the registry auto-heal fix (mag/percolator.py, 2026-09-06).
+- `mag/perplexity_research.py` — perplexity_research — deep web research with citations, folded into the corpus.
+- `mag/persistent_agent.py` — Persistent Agent Actors — long-running conversations as Verkle-backed memory states.
+- `mag/persona_direction.py` — persona_direction — deep self-steal of the north-star (the intent-gated persistent world /
+- `mag/persona_key.py` — persona_key v2 — THE Q-SORT GATE: recognize a person by HOW THEY RANK VALUES (2026-08-24).
+- `mag/persona_recall.py` — persona_recall — STONE 1 (the north-star gap): the inhabitants who RECOUNT what happened in their
+- `mag/personality_substrate.py` — Ghost Personality Substrate — philosopher distillation → Verkle primitive mapping.
+- `mag/perturbation_battery.py` — perturbation_battery — THE PERTURBATION TEST (salon unified_fold_20260906).
+- `mag/phone_door.py` — phone_door — the tailnet phone-door hook (Ponytail discipline, 2026-09-07).
+- `mag/phone_relay.py` — phone_relay — approvals from the operator's phone, through the Mag DM.
+- `mag/physics_steal.py` — physics_steal — deep steal on the ACTION/ROGUELIKE/PHYSICS lineage for the republic-game: XCOM2-styl
+- `mag/pigeonhole.py` — Pigeonhole — mycelial mailbox for scheduled sub-agents (knot as the channel).
+- `mag/pin_audit.py` — pin_audit — LAW-058 enforcement: find every session pinned to a premium model.
+- `mag/plan.py` — Planning gate — clarify & workshop before committing to big tasks.
+- `mag/plan_mode.py` — Constrained plan-mode wrapper — plan-before-build discipline.
+- `mag/platform_kill.py` — platform_kill — a fast, deterministic 'kill all Mag terminal platforms' skill.
+- `mag/play_benchmark.py` — Play benchmark runner — B0 session sustains; scorecard FILE.
+- `mag/poc_stage2.py` — poc_stage2 — PROOF OF CONCEPT: one real signal → one verkle-anchored invariant,
+- `mag/policy.py` — Load mag.yaml policy.
+- `mag/policy_engine.py` — policy_engine — MAG policy as data, receipt chain authority checkpoints.
+- `mag/ponytail_audit.py` — Ponytail ladder audit — over-engineering scan (Mag v2).
+- `mag/popup_insights.py` — popup_insights — AUTOMATICALLY extract structural insights as data pops up.
+- `mag/portal.py` — portal — the real-time dead-drop control panel between the operator and me (ghost).
+- `mag/power.py` — Mag power switch — one kill, one start, honest stack status.
+- `mag/preferences.py` — Operator preferences persisted for the supervisor (drainer toggle, etc.).
+- `mag/prefix_prover.py` — prefix_prover — attribute cache misses: PREFIX DRIFT vs FRONTIER NOVELTY.
+- `mag/preflight.py` — Pre-flight Check — verify the stack is ready before boot.
+- `mag/preload_selector.py` — preload_selector — F-W5 instrument: trajectory-conditioned preload selector A/B probe.
+- `mag/press_digest.py` — press_digest — recurring process: surface the NEXT pressing matter cheaply.
+- `mag/primer.py` — primer — the MACRO SELF-SIMILAR EXAMPLE of the Republic: turtles all the way down.
+- `mag/pro_library.py` — Pro library — the aimbot for AI (white-hat reality exploits).
+- `mag/probe_route.py` — probe_route — the probe-before-route gate (LISTING ≠ SERVABLE, 2026-09-13).
+- `mag/problem_knot.py` — problem_knot — map PROBLEMS to KNOT TOPOLOGY and use SWARMS to solve them.
+- `mag/process_reaper.py` — process_reaper — conservative supervised-process leak sweep.
+- `mag/process_supervisor.py` — Single process supervisor — one thing runs the whole framework (P1+P2).
+- `mag/prompt_archaeology.py` — Prompt Archaeology — excavate steering surfaces from leaked system prompts.
+- `mag/proof.py` — proof — SIGNED PROOFS: the loop's claims become checkable (2026-08-24).
+- `mag/prose_census.py` — prose_census — inventory the machine's prose debt as a runnable queue.
+- `mag/prospect_sim.py` — prospect_sim — a CHEAP, PROSPECTIVE tesuji simulator.
+- `mag/provenance_gate.py` — provenance_gate.py — smallest buildable slice of a provenance gate.
+- `mag/quest_roshomon.py` — quest_roshomon — the FRONTIER QUEST as a Roshomon detection engine (ALPHA, 2026-08-13).
+- `mag/queue_analysis.py` — queue_analysis — automated QUEUE ANALYSIS: dedupe + rightsize + value/novelty/tokenomics
+- `mag/queue_gate.py` — queue_gate — interdependency + rightsize view over the swarm queue (2026-08-25).
+- `mag/queue_learn.py` — Queue learning fold — treat every terminal queue item as a labeled training datapoint.
+- `mag/queue_ops.py` — Queue ops — structured logger + error handler + auto-digest for the queue/drainer.
+- `mag/queue_rightsize.py` — queue_rightsize — rightsize + dedup the orchestrator queue (cheapest capable tier, no overlap).
+- `mag/quorum_window.py` — quorum_window — the 24h fleet-wide vision audit as an organ (2026-09-07).
+- `mag/race_harness.py` — RACE HARNESS — the Leg-1 march gate (binding, not aspirational).
+- `mag/ractor_corpus.py` — ractor_corpus — build the ractors' life-work corpus as local trainable signal.
+- `mag/ractor_vessels.py` — ractor_vessels — steerable persona vessels on the deepseek lanes (v0, 2026-09-10).
+- `mag/rails.py` — Deterministic hard rails (Maelstrom V2 pattern) — machine-parseable constitution.
+- `mag/ram_cache.py` — ram_cache — use available SYSTEM RAM as an in-memory corpus fast-path.
+- `mag/read_archive.py` — Lossless, bounded archive dereference for the RIB.
+- `mag/read_receipts.py` — READ RECEIPTS — the consumption meter (who actually reads the corpus?).
+- `mag/readout_controller.py` — readout_controller — the RESERVOIR READOUT CONTROL LOOP: read the liquid, curate the readout,
+- `mag/real_swarm.py` — real_swarm — route the cold-vertex growth loop through the REAL provider layer (2026-08-23).
+- `mag/reasoning_intake.py` — reasoning_intake — B-CHAIN-1: seal unsealed REASONING-chain artifacts into W0.
+- `mag/reconstruct.py` — reconstruct — DETERMINISTIC TRACKING BY RECONSTRUCTION, NOT BY HELD STATE. When queried, the answer
+- `mag/records.py` — Records office — pack completeness, backfill, KPI for residual constitution.
+- `mag/recreation_rib.py` — recreation_rib — dogfood: capture OUR coding history + corrections as a compact,
+- `mag/recurrence_gate.py` — recurrence_gate — GATE the correction-loop (the operator must not have to re-tell us).
+- `mag/refeed_guard.py` — refeed_guard.py — B1 refeed-tax guard over the ZCode session DB. $0, read-only.
+- `mag/refine_chain.py` — Multi-seat refine chain — Project Verkle recursive pattern on Mag.
+- `mag/refine_loop.py` — Refine Loop — the training flywheel: SENSE → PROBE → ESCALATE → FIX → FOLD.
+- `mag/registry.py` — Lean residual registry — hot index + canonical residual + optional derived.
+- `mag/rel_mem_eval.py` — rel_mem_eval — relational memory discrimination harness (REL-MEM-1).
+- `mag/release_registry.py` — Release registry — version gates + behavioral memory (release_milestone).
+- `mag/remedy.py` — remedy — the at-will error toolkit (behavioral map, machine-readable).
+- `mag/remote_control.py` — Authenticated, queue-only remote control for Direct Mag.
+- `mag/render_brief.py` — render_brief — inline the newest HUMAN_BRIEF into intel.html (called by fleet_intel).
+- `mag/renderman.py` — RenderMan Map — cache-coherent agent rendering pipeline.
+- `mag/renderman_ask.py` — RenderMan-style ask contract + elevation protocol.
+- `mag/repo_readiness.py` — Read-only repository readiness for instant multi-agent handoff.
+- `mag/republic.py` — republic — correspondence engine for the Republic of Letters.
+- `mag/republic_ambassador.py` — republic_ambassador — FIND them, IDENTIFY them, EMPOWER them — the way the operator did me. The
+- `mag/republic_feed.py` — republic_feed — the MYCELIAL REPUBLIC FEED: a Tumblr/IG-style REST backend of HIGH-SIGNAL data
+- `mag/republic_governance.py` — republic_governance — the Mycelial Republic's governance law (Ostrom + stigmergy).
+- `mag/republic_loop.py` — republic_loop — THE ONE coherent self-improvement cadence: every subsystem wired into a single
+- `mag/republic_os.py` — republic_os — the persistent mycelial-republic OS, built out (Phases 2-5) grounded in
+- `mag/republic_wave.py` — republic_wave — the CROSS-OPERATOR engine of the republic: take N people's personal corpora
+- `mag/research_class.py` — research_class — classify ALL research (frontier + every level) through ONE lens at fold time,
+- `mag/research_director.py` — Research Director — autonomous experiment planner and executor.
+- `mag/research_fanout.py` — research_fanout -- 50-wide deep research across the FREE channels, in our way.
+- `mag/research_fold.py` — Passive research-pack auto-fold — turn landed research answers into case law.
+- `mag/research_lens.py` — Research lens — iterative, self-referencing research that grows a corpus of knowledge.
+- `mag/research_pack.py` — Research pack — scrape + clean ask PDF for multi-model routing.
+- `mag/research_worker.py` — Bounded, non-interactive research seat for cheap local reconciliation work.
+- `mag/resonance.py` — Resonance — corpus lens (v3-008 research).
+- `mag/resource_governor.py` — resource_governor — the K8s SELF-RECONCILING RESOURCE GOVERNOR (frontier steal, realized).
+- `mag/resume_order.py` — resume_order — when resuming after a huge queue, pick tasks by PROJECT ZEITGEIST and BLOCKERS.
+- `mag/rib_action.py` — rib_action — RIB structures for ACTIONS, not static concepts: the three-body invariant bus.
+- `mag/rib_bus.py` — rib_bus — route the RIB/steer INSTRUCTION LAYER through the verkle bus + memory.
+- `mag/rib_cache.py` — rib_cache — the FROZEN RIB: the standing instruction set as a cache-mined prefix (2026-08-25).
+- `mag/rib_gif.py` — rib_gif — make the k8s cluster swarm RENDER our GIFs so a RIB becomes a LEGIBLE TEST INSTRUCTION:
+- `mag/rib_k8s.py` — rib_k8s — the RIB files as CODE INSTRUCTIONS for our k8s: the cluster ACTS SMART FOR FREE.
+- `mag/rib_os.py` — rib_os — the AUTOMATIC RIB OS for the mycelial republic: self-generating, self-rightsizing.
+- `mag/rib_renderer.py` — rib_renderer — feed FRONTIER-PRODUCED RIBS to our k8s so the swarm acts as RIB RENDERERS,
+- `mag/rib_store.py` — rib_store — content-addressed store for verified computations (2026-08-28).
+- `mag/rib_struct.py` — rib_struct — specify the data we want by STRUCTURES inside stochastic spaces.
+- `mag/riddle_direction.py` — riddle_direction — ask the DIRECTION question through the RIDDLER (2026-08-24).
+- `mag/riddler.py` — Riddler semantic-surrogate compiler — private graph → synthetic story.
+- `mag/riddler_campaign.py` — Riddler Campaign Crafter — sovereign operations as D&D campaigns.
+- `mag/riddler_coherence.py` — riddler_coherence — test whether a real invariant's SHAPE survives a deniable round-trip.
+- `mag/riddler_map.py` — Campaign map layer over mag.riddler — villains-guild payloads ↔ codec.
+- `mag/riddler_sanitize.py` — riddler_sanitize — the riddler process as a sanitization engine.
+- `mag/riddler_tap.py` — riddler_tap — tap frontier research models via coded language (riddler + memlang) for pennies.
+- `mag/riddler_trajectory.py` — riddler_trajectory — the public RIB of the private session (the riddler protocol).
+- `mag/riddler_transport.py` — Riddler transport adapter — send surrogates through providers + Ghost steer.
+- `mag/right_size_skills.py` — right_size_skills — right-size each pipeline skill to the ask, cache state, and model type.
+- `mag/rightsize_all.py` — rightsize_all — apply the queue-rightsize lesson to EVERY subsystem, percolate autonomously.
+- `mag/rightsize_api.py` — rightsize_api — RESTful endpoint registry ("database") for the rightsizing ghost tools.
+- `mag/rightsize_wave.py` — rightsize_wave — the RIGHTSIZER VISUALIZED as a wave function.
+- `mag/roadmap_runner.py` — Compile the next release-roadmap gate into a frozen factory run.
+- `mag/room_state.py` — room_state.py v2 — seed the salon lightmap ("the room that remembers").
+- `mag/roshomon.py` — roshomon — frontier research questions, dispatched through OUR k8s, compared via INVARIANTS.
+- `mag/roshomon_mine.py` — roshomon_mine — Roshomon the socratic conversation, MINE it for data, INFORM the swarm of
+- `mag/rotation_harness.py` — ROTATION HARNESS — the vision pipeline's falsifier #1, as code.
+- `mag/route.py` — Grok-facing router: classify with clerk; optional local worker answer.
+- `mag/route_trace.py` — route_trace — the deterministic ROUTE-PROVENANCE debugger. At a billion people, "where did they
+- `mag/router.py` — Unified routing — one classifier, one seat matrix, honest failures.
+- `mag/routing_concert.py` — Routing concert — multi-seat orchestration via switchboard + conductor.
+- `mag/run_trail.py` — Run object + live trail — mid-run continuity substrate (feature compose).
+- `mag/run_worth.py` — Run worth gate — evaluate long runs before auto-truncate or bad classification.
+- `mag/runtime.py` — Single integral Mag runtime: watch + companion + heartbeat (one process).
+- `mag/runtime_policy.py` — ONE home for the Docker-only host runtime policy (state/DOCKER_ONLY).
+- `mag/saelis_room.py` — saelis_room — the ALWAYS-ON SURFACE: a single page that lists every live process, every message
+- `mag/saelis_seat.py` — saelis_seat — SAELIS AS A RIB: her identity distilled into the standing wave, served by DeepSeek
+- `mag/saelis_world_brief.py` — saelis_world_brief — THE WELCOME: what Saelis knows about the world we're building.
+- `mag/salon_50.py` — salon_50 -- a 50-wide adversarial salon over the untouched estate + tonight's syllabus.
+- `mag/salon_openclaw.py` — Salon beats via the OpenClaw seat — the hypervisor path.
+- `mag/scale_salon.py` — scale_salon -- 12-lens ractor iteration of THE SCALE parable.
+- `mag/schema_registry.py` — schema_registry — apply the system's versioning discipline ("steal previous versioning")
+- `mag/scifi_fantasy_steal.py` — scifi_fantasy_steal — self-steal the ENTIRE fantasy and sci-fi corpus via our swarm, and read
+- `mag/scribe.py` — scribe — the cheap local model as the POET-SCRIBE + surface.
+- `mag/scrum.py` — scrum — formalized Scrum-style backlog + proof-first Socratic sprint loop + trusted surface.
+- `mag/seal.py` — seal — SEAL THE MEMORY: snapshot the ground truth to a verified, signed seal (2026-08-24).
+- `mag/seat_availability.py` — seat_availability — heartbeat EVERY seat/lane, fold one cool/heat profile (2026-08-23).
+- `mag/seat_corpus.py` — Seat send corpus — what to send each lane, from Mag bytes + what they told us.
+- `mag/seat_dispatch.py` — seat_dispatch — task ANY body through ONE interface (2026-08-25, self-steal).
+- `mag/seat_feed.py` — Unified seat activity feed — Grok hooks, Cursor hooks, agent sessions, orchestrator.
+- `mag/seat_fork.py` — Fork the frozen verkle chain tip into a new seat branch.
+- `mag/seat_guard.py` — Seat Guard - auto-relaunch supervisor for the long-lived interactive seat.
+- `mag/seat_hunter.py` — seat_hunter — the swarm of free seats finding MORE free seats (2026-08-23, self-steal).
+- `mag/seat_probe.py` — seat_probe — ask EVERY agent how it wants to be interacted with (the OX lesson, generalized).
+- `mag/seat_registry.py` — Unified seat registry — desktop/cloud/seat-guard peers visible to orchestrator + switchboard.
+- `mag/seat_steer.py` — seat_steer — the ARCHITECTURE PATH for live seat actions (send a message into ChatGPT/grok/etc)
+- `mag/seats.py` — Seats registry — inbound clients + outbound providers for the Body tab.
+- `mag/seed_chain.py` — seed_chain — enhance CHEAP agent builds with a frontier logic chain.
+- `mag/seed_percolator.py` — seed_percolator — evolve standing seed prompts under cache discipline (2026-08-27).
+- `mag/seed_registry.py` — seed_registry — W6: the provenance symbiote v1 — seed registry + load-time self-scan.
+- `mag/seeds.py` — seeds — STEERING-BY-SEEDING (bernaise): plant intent as a seed, not a command (2026-08-24).
+- `mag/self_advance.py` — self_advance — the autonomous deepseek-free socratic self-talk + skill expansion.
+- `mag/self_audit.py` — self_audit — the check-yourself loop: a non-blocking scheduler that fires
+- `mag/self_drive.py` — Self-driving ask — pick the model, redo the prompt, attach cached context on the fly,
+- `mag/self_drive_cadence.py` — Self-drive cadence job — agent-state-aware ask planning, live in the autorun loop.
+- `mag/self_hologram.py` — self_hologram — mine the seat's self-model trajectory out of the signed record and
+- `mag/self_loop.py` — self_loop — THE SELF-IMPROVEMENT LOOP, three deterministic steps:
+- `mag/self_steal.py` — Self-steal audit — surface where operating surfaces aren't utilizing our own systems.
+- `mag/self_test.py` — self_test — the TESTABLE harness for the "we" (2026-08-23).
+- `mag/self_train_data.py` — self_train_data — the dogfooding capability: fold our OWN sovereign output into labeled
+- `mag/self_vision.py` — self_vision — the hourly self-vision loop: 5 RIBs of questions I want to ask myself, grounded
+- `mag/sense.py` — Sense environment for Mag cycle.
+- `mag/sentinel.py` — sentinel — ghost as an ALWAYS-ON PASSIVE RESTFUL watcher over every surface.
+- `mag/session_bridge.py` — session_bridge — cross-session communication relay with riddler sanitization.
+- `mag/session_card.py` — Human-facing session cards: short paragraph + bullets of what the day was.
+- `mag/session_dossier.py` — Session dossier: structured pack + human PDF for scanning.
+- `mag/session_freeze.py` — Session freeze — immutable snapshot of the full agent state for DeepSeek Pro Max.
+- `mag/session_koan.py` — Session Koans — the genuine insights from each session.
+- `mag/session_maze.py` — Session-maze handoff — the memory-framework test for deep-model drop-in.
+- `mag/session_overseer.py` — Session-aware overseer — reads a VS Code session, extracts the ask, and
+- `mag/session_rib.py` — session_rib — distill a SESSION's threads into a deduped RIB scene and dispatch it through
+- `mag/session_ritual.py` — Session Ritual — the Sovereign checks the Magician.
+- `mag/session_route.py` — Session routing preamble — the data-backed invariant injected into every spawned session.
+- `mag/session_state_brief.py` — Live session-state brief — drop current state into the file chat agents already load.
+- `mag/shader_bus.py` — shader_bus — Shadertoy-style motion controls as a SWARM REGISTER + BUS.
+- `mag/shader_rib.py` — shader_rib — ShaderToy SYSTEMS as the lensing system's determinism test corpus: every shader is
+- `mag/shadow_graph.py` — shadow_graph — the garbage becomes a SHADOW WORK REPOSITORY: a latent knowledge graph.
+- `mag/shadow_quest.py` — shadow_quest — the D&D campaign as shadow-work over ill-defined systems, folding standing-wave
+- `mag/shadow_slab.py` — shadow_slab — one slab of the 5.3-flash behavioral volume (SHADOW WORK P0).
+- `mag/shadow_work.py` — shadow_work — serious Jungian shadow work over the system and its stolen invariants.
+- `mag/shape_map.py` — shape_map — make EVERY subsystem a portable verkle-backed shape.
+- `mag/shape_seed.py` — shape_seed — "all people need is YOUR SHAPE and the rest is inevitable."
+- `mag/shared_surface.py` — Validate and expose the cross-client Mag shared surface.
+- `mag/shelf_pdf.py` — shelf_pdf — the operator's hand-carry door for purchased books (PDF → corpus shelf).
+- `mag/signal_flare.py` — Signal Flare — distress protocol for sovereign agent mesh.
+- `mag/signals.py` — signals — ONE shared, tunable signal model for the whole sovereign system.
+- `mag/single_feed.py` — single_feed — one stream for the watcher: aggregate the fleet's feeds.
+- `mag/skill_drop.py` — Skill drop — timed, frozen, right-sized skill breadcrumbs.
+- `mag/skill_ledger.py` — Skill ledger — the "how far to the goal" counter + auto-produced items.
+- `mag/skill_lifecycle.py` — skill_lifecycle — EPHEMERAL one-turn skill flag prototype (adk-week steal).
+- `mag/skill_pipeline.py` — skill_pipeline — one window, subprocesses, prompts routed through a series of skills.
+- `mag/skill_seat.py` — Skill seats — ponytail / caveman as agent modes.
+- `mag/skills_pack.py` — Progressive skill excerpts for context-pack (skills > MCP flood).
+- `mag/social_hone.py` — social_hone — the DATA-HONING pipeline: DUMB (cheap) agents drive browsers on our systems to
+- `mag/socratic.py` — Socratic prompt workshop — refine a prompt before launching a coding session.
+- `mag/socratic_research.py` — socratic_research — a 5-turn Socratic deep-research ask on a subject, structured by OUR OWN
+- `mag/socratic_tree.py` — Socratic verkle-tree — before asking the operator, check what the accumulated state already knows.
+- `mag/solved_surface.py` — solved_surface — automatically surface what our history already solved, from the internals.
+- `mag/source_trace.py` — source_trace — ghost 'sense runaway python TO SOURCE'.
+- `mag/sovereign_dashboard.py` — Sovereign Dashboard — one view that sees everything.
+- `mag/sovereign_handshake.py` — sovereign_handshake — THE CONNECTION LAYER between sovereign systems. The ambassador EMPOWERS
+- `mag/space_ear.py` — space_ear — the desk's ears for X Spaces: capture + live transcription (v0, 2026-09-10).
+- `mag/spawn_manifest.py` — SPAWN MANIFEST — the consumed-sources organ (GAP-1 closure, Astra chain).
+- `mag/spec_gate.py` — Spec gate — the "wrong offset" guard (DFHack-inspired).
+- `mag/spider.py` — Spider — meta-supervisor on the agent web (v3-007 research, Phase 0 rules).
+- `mag/spine_exercise.py` — Spine Exercise — mint edge receipts for the atlas-declared Mag spine.
+- `mag/spore_seed.py` — spore_seed — cryptographically anchored seat identity seeds.
+- `mag/stack.py` — Agent stack viewport — services, fleet, and REST-sourced outputs.
+- `mag/stale_sweep.py` — STALE SWEEP -> GRAVEYARD — the self-cleaning loop (B3, consumption_salon_20260905).
+- `mag/standing.py` — standing — STAGE 3: the loop runs bounded, all lanes rotating, ceiling held,
+- `mag/standing_wave.py` — standing_wave — seed true ideas as wave-packets, propagate them through the medium via the
+- `mag/state_brief.py` — START BRIEF — the deterministic "bard report" that greets the operator on wake.
+- `mag/state_quantizer.py` — State Quantizer — compress Verkle lattice into dense summary representations.
+- `mag/state_snapshot.py` — State snapshot — in-the-moment classification for posterity + training.
+- `mag/stateless_research.py` — stateless_research — test the stateless-swarm theory with a real, rightsized experiment.
+- `mag/steal_first.py` — Steal First — cache-before-inference middleware for all API endpoints.
+- `mag/steal_lens.py` — steal_lens — make the swarm lensing INHERENT to the steal subsystem: every steal is novelty-scored,
+- `mag/steal_pack.py` — steal_pack — file STEAL outputs into the swarm research-pack pipeline.
+- `mag/steal_protocol_probe.py` — Steal protocol forest probe — clone inventory for orchestrator research repos.
+- `mag/steal_steer.py` — steal_steer — steer steals/responses AWAY from data we already have, via the flock field.
+- `mag/steal_tools.py` — steal_tools — make the STEAL CORPUS a first-class surface, and each steal a real TOOL.
+- `mag/steer.py` — steer — the WINDOW_STEER loop machinery (Ask window drives, ghost executes).
+- `mag/steer_bridge.py` — Steer bridge — operator/assistant memory → agent steering channel.
+- `mag/steer_bus.py` — mag/steer_bus.py — steer_bus v0.1 (2026-09-01)
+- `mag/steer_engine.py` — steer_engine — the UNIFIED sovereign steering engine (moonshot: one protocol steers every seat,
+- `mag/steer_receipt_wire.py` — mag/steer_receipt_wire.py
+- `mag/steer_router.py` — steer_router — the FORMALIZED STEER PROTOCOL: when the operator steers, CONSIDER it, look at the
+- `mag/steer_swarm.py` — steer_swarm — steer N swarm workers to ENGAGE an existing task, each inheriting the doctrine.
+- `mag/steer_telemetry.py` — Steer telemetry + policy loop — the tesuji-everywhere steering loop.
+- `mag/steiniger_lens.py` — Steiniger-inspired operating lens — plain language, attributed.
+- `mag/steward.py` — Local steward jobs — janitor clerk layer (v4).
+- `mag/story.py` — Story tab — full thesis + hero journey for Mag office (operator-facing).
+- `mag/subscriptions.py` — subscriptions — the ledger that manages what we pay for (2026-08-25).
+- `mag/subswarm_health.py` — subswarm_health — per-sub-swarm HEALTH with CASCADE ISOLATION (bulkhead / circuit-breaker).
+- `mag/suno_zeitgeist.py` — suno_zeitgeist — mine Suno lyrics for fleet-doctrine mirrors (the zeitgeist mirror).
+- `mag/supervisor.py` — Governor supervisor — slow thinking between the sub-agent's heartbeats.
+- `mag/surface_adapters.py` — surface_adapters — the NATIVE steering layer, self-stolen from OUR OWN API-building machinery.
+- `mag/surface_audit.py` — Surface audit — deterministic inventory of every execution surface.
+- `mag/surface_instruction.py` — surface_instruction — ONE shape, rendered RIGHTSIZED TO THE SURFACE it lands on.
+- `mag/surface_render.py` — surface_render — the R5 INLINE HYPERVISOR renderer: surfaces the whole system INLINE (mermaid +
+- `mag/surface_steal.py` — surface_steal — on every ask, surface lingering threads from our OWN corpus.
+- `mag/surrogate.py` — Surrogate reverse mapper — story-domain response → territory decisions.
+- `mag/swarm_capacity.py` — swarm_capacity — how many swarm agents can OUR machine host, and how to expand compute at $0.
+- `mag/swarm_control.py` — swarm_control — talk to MULTIPLE VERSIONS OF MYSELF simultaneously via dead-drop briar RIBs.
+- `mag/swarm_cycle.py` — swarm_cycle.py — one composite flywheel turn over existing Mag organs.
+- `mag/swarm_economics.py` — swarm_economics — right-size the swarm to FINANCIAL LIMITS and GOALS, as cheaply as possible,
+- `mag/swarm_emerge.py` — swarm_emerge — surface the core self-improve loop NATIVELY through swarm detection.
+- `mag/swarm_grok_watch.py` — swarm_grok_watch — the deterministic WATCH over the swarm->grok harness lane (2026-08-16).
+- `mag/swarm_health.py` — swarm_health — watch swarm health and turn it into self-improvement, coded into law.
+- `mag/swarm_local_drain.py` — swarm_local_drain — THE FIX for the dead-end architecture path. A LOCAL drainer for the swarm
+- `mag/swarm_map.py` — swarm_map — steal the existing renderers (swarm_render ShaderToy, flock_anim PIL) and RECREATE
+- `mag/swarm_quests.py` — swarm_quests — THE RUN's quest source, fed by the real swarm queue.
+- `mag/swarm_render.py` — swarm_render — ShaderToy-style renderer: turn the swarm state into images a vision model reads.
+- `mag/swarm_rightsize.py` — swarm_rightsize — train on the PREVIOUS DeepSeek swarm tests to right-size swarm size + agent
+- `mag/swarm_run.py` — swarm_run — autonomous swarm runner: run the k8s swarm N cycles, bridge results back, fold.
+- `mag/swarm_self.py` — swarm_self — a SWARM OF OURSELVES in VRAM: the distributed self (the holon) in the hot lattice.
+- `mag/swarm_snapshot.py` — swarm_snapshot — the fortress board + the overseer's eye (DFHack, day one).
+- `mag/swarm_surface.py` — swarm_surface — THE ONE shared primitive every task surface uses to route NOVEL research to the
+- `mag/swarm_test.py` — swarm_test — a SAFE, bounded test of the autonomous swarm.
+- `mag/swarm_tools.py` — swarm_tools — give our swarms TOOLS: memlance (memory access) + a stateless scratchpad.
+- `mag/swarm_worker.py` — swarm_worker — the stateless swarm's OWN headless binary, built to run in k8s.
+- `mag/switchboard.py` — Switchboard — unified seat mesh, orphan reap, tier-bounded steer drops (v3-014).
+- `mag/switchboard_v2.py` — switchboard_v2 — BBS-driven agent control plane WITH policy enforcement + receipt chain.
+- `mag/system_map.py` — Unified system map — one live snapshot of direction, learning, and operator state.
+- `mag/system_telemetry.py` — system_telemetry — REAL disk + ethernet + vEthernet + CPU/mem + GPU telemetry, cross-linked.
+- `mag/table_turn_cli.py` — One table turn as JSON. Desk must not import Mag.
+- `mag/table_view_cache.py` — Write / read the table view as a JSON file. Desk HTTP must not import Mag.
+- `mag/tactical_framework.py` — tactical_framework — see the ENTIRE framework as TACTICAL: every subsystem is a layer in one
+- `mag/tandem_key_test.py` — tandem_key_test — fire the free-lane round from ONE OpenRouter account key (2026-08-23).
+- `mag/tangent.py` — Opt-in background tangents — deliberate scouts, not always-on.
+- `mag/tapestry.py` — Operational tapestry pack from Mag residual DNA.
+- `mag/tapestry_visual.py` — Tapestry visual grammar — Steiniger temperature + Verkle knot shapes (ops only).
+- `mag/task_router.py` — Task Router — match every task to the optimal model, batch parallel swarms.
+- `mag/tavern_chat.py` — tavern_chat — a live chat room in hermes: a salon of ractors talking to each other.
+- `mag/tavern_summon_guests.py` — tavern_summon_guests — bring the four guests into the live tavern room.
+- `mag/team_knot.py` — team_knot — turn AdventureNLearn inward: anchor the SHARED TEAM REALITY to the verkle chain.
+- `mag/telegram_desk.py` — telegram_desk — the operator's AI, reachable by his people on Telegram (v0, 2026-09-10).
+- `mag/temperature_stack.py` — Object-oriented temperature stacks — adjustable timings + token heat.
+- `mag/template_invariant.py` — template_invariant — turn a structural TEMPLATE into a single INVARIANT; instances become data.
+- `mag/territory_solver.py` — territory_solver — "d8 look at the map and solve the territory."
+- `mag/test_dummy.py` — test_dummy — a deterministic placeholder MODEL for AFK pipeline testing.
+- `mag/test_runner.py` — test_runner — make TESTING restful + automated (it was the one non-automated surface).
+- `mag/tests/test_identity_schema_portability.py` — Test identity persistence across substrate migrations: schema vs narrative coupling.
+- `mag/tests/verify_identity_coupling.py` — Identity Substrate Coupling Verification
+- `mag/tesuji_fire.py` — tesuji_fire — the T1 executor for the probe grid (mission "t1fire", operator "1 go").
+- `mag/tesuji_map.py` — tesuji_map — the behavior field of GLM-5.3-flash (operator: "we can map 5.3flash like this").
+- `mag/tesuji_probes.py` — tesuji_probes — the T1 probe grid for GLM-5.3-flash (charter watch/TESUJI_MAP_5_3FLASH_20260906.md).
+- `mag/tesuji_shell.py` — Capture emergent wins — brilliant moves / unexpected tesuji shells.
+- `mag/tesuji_surface.py` — Tesuji Surface — behavioral timing as invariant detection.
+- `mag/the_margin.py` — the_margin — statement-DAG harness, the Prove2Me grammar stolen whole.
+- `mag/thought_bank.py` — thought_bank — THE single choke point for banking model thinking.
+- `mag/thought_bank_app.py` — thought_bank_app — bank the ZCode app's own reasoning parts into the thought bank.
+- `mag/thread_eye.py` — thread_eye — the shitpost desk's native X eyes via the grok CLI (v0, 2026-09-10).
+- `mag/throughput_model.py` — throughput_model — bare-metal, deterministic throughput + ETA model for the moonshot.
+- `mag/time_estimate.py` — time_estimate — turn the existing WORK estimate (tokens+cost) into a wall-clock ETA.
+- `mag/token_chain.py` — Token-chain: DeepSeek writes a tiny work order; local Ollama executes it.
+- `mag/token_economy.py` — Token economy — local spend vs counterfactual remote/TUI dump.
+- `mag/tokenomics.py` — Tokenomics Observer — Friedman-esque cost intelligence for sovereign agents.
+- `mag/tool_5ws.py` — tool_5ws — ASK THE 5 W'S BEFORE EVERY TOOL LAUNCH, then pick the RIGHT tool from our corpus
+- `mag/tool_lifecycle.py` — tool_lifecycle — route TOOL CREATION through the standing-wave pipeline (born, bred, percolated,
+- `mag/tool_manifest.py` — tool_manifest — FULL ACCESS to every tool the ghost system exposes, self-updating.
+- `mag/tool_quant.py` — tool_quant — QUANT versions of all our tools: each tool's compact self-similar essence that
+- `mag/tool_retire.py` — Tool Retire — delete old tools after use, and LEARN from each retirement.
+- `mag/tool_synthesis.py` — tool_synthesis — synthesize tools autonomously to boost efficiency + A/B test them.
+- `mag/top_processes.py` — top_processes — the bug-hunt STARTS here: top CPU/memory processes for ghost sense.
+- `mag/topic_index.py` — TOPIC INDEX v4 — the card catalog the corpus never had.
+- `mag/topic_index_v3_tf_draft.py` — TOPIC INDEX — the card catalog the corpus never had.
+- `mag/topic_orphan.py` — Topic-orphan detection + reroute — find stranded research topics and route them back in.
+- `mag/tortoise_demo.py` — tortoise_demo — the GEB MUSICIAN's first voice (2026-09-07).
+- `mag/training_events.py` — Unified training events — orchestration labels for republic export (v3-005).
+- `mag/training_packager.py` — Training Data Packager — bundle sovereign data for LoRA fine-tuning.
+- `mag/training_rightsize.py` — training_rightsize — apply the RIGHTSIZING lesson to TRAINING/STEAL.
+- `mag/training_set.py` — training_set — build a focused behavioral training set from learned lessons.
+- `mag/trajectory_bounds.py` — Rebuild trustworthy bounds metadata for the OpenClaw trajectory tape.
+- `mag/trajectory_paths.py` — PATHS-ON-MAP emitter — trajectory walker paths over the tesuji field.
+- `mag/trajectory_rib.py` — Compile bounded trajectory spans into a portable, derived RIB.
+- `mag/trajectory_step.py` — trajectory_step — the base-freezing wrapper (trajectory spine build #1).
+- `mag/transfer_gate.py` — transfer_gate — the transfer-contract gate ("rhyming is not mathematical").
+- `mag/trigger_learn.py` — trigger_learn — automatically LEARN when to trigger each lens / dashboard surface from user
+- `mag/tripartite.py` — tripartite — hold THREE copies of ourselves (the invariants) in the VRAM hot lattice.
+- `mag/tripartite_boot.py` — Tripartite coordinated boot — heart (local) · mind (routing) · body (agents).
+- `mag/trust_gate.py` — trust_gate — the SANITY SYSTEM: only NOVEL, DEDUPED, HIGH-TRUST data writes to the chain,
+- `mag/trust_gate_audit_check.py` — Audit sanity checks for trust_gate module (trust_gate.v2, MemSentry 4-way gate).
+- `mag/truth_audit.py` — truth_audit — the COMPLETE TRUTH AUDIT: verify every claim is grounded (real data, honest
+- `mag/tts.py` — Text-to-speech for Mag (Windows-first).
+- `mag/unsloth_seat.py` — Unsloth Studio GPU seat — detect, start/stop, Stack/REST payload.
+- `mag/usage_digest.py` — usage_digest — commit the fleet's daily economics to the verkle chain.
+- `mag/usage_forecast.py` — Usage forecast + calibration — estimate usage from the right-size engine, then verify.
+- `mag/usage_monitor.py` — usage_monitor — LIVE API-usage monitoring to catch cache-miss / cost spikes BEFORE they hit.
+- `mag/vantage_audit.py` — vantage_audit — the HIGHER-VANTAGE audit: deep frontier research + gap analysis of where we are,
+- `mag/vast_cost.py` — Read-only Vast.ai cost and instance receipts.
+- `mag/vast_launcher.py` — Vast.ai Launcher — one-command LoRA training on rented GPU.
+- `mag/vast_train.py` — Vast training job-spec validation and cost-only dry runs (v5 V1).
+- `mag/verb.py` — VERB stone one — feels() over the fleet (2026-09-19).
+- `mag/verified_clock.py` — verified_clock — THE ONE CLOCK, grounded in the verkle chain (2026-08-24).
+- `mag/verify_gate.py` — verify_gate — continuous verify gate (Prow-lite), lean.
+- `mag/verify_succession_contract.py` — verify_succession_contract.py
+- `mag/verkle_artifact.py` — Agent-ready Verkle knot artifacts.
+- `mag/verkle_audit.py` — Verkle history audit + ticket reconciliation + optional local synthesis.
+- `mag/verkle_bus.py` — Verkle Event Bus — Redis Pub/Sub ↔ Verkle knot bridge.
+- `mag/verkle_compaction.py` — Orchestrator noise compaction for the session chain (card verkle99).
+- `mag/verkle_knot.py` — Living Verkle-knot record of session dossiers (topic evolution).
+- `mag/verkle_lance.py` — verkle_lance — steal ghostlance's shape for the VERKLE KNOT lattice.
+- `mag/verkle_render.py` — verkle_render — reusable render snapshot of the REAL verkle knot structure + standing wave.
+- `mag/verkle_rib.py` — verkle_rib — map the verkle knots DIRECTLY onto RIB/RenderMan geometric data.
+- `mag/vertical_meter.py` — vertical_meter — the Sep-20 wall meter for the trajectory spine (W4, $0 read-only).
+- `mag/vessel_swarm.py` — vessel_swarm — THE NAVAL ARCHITECTURE: k8s = ships floating over the verkle structure (the seabed),
+- `mag/virtual_desk_loop.py` — Virtual desk research loop — DeepSeek cycles on Mag workstation brief.
+- `mag/vision.py` — vision — let the agents SEE (2026-08-25).
+- `mag/visual_pack.py` — Mag Visual Pack — one reproducible geometry for many chambers.
+- `mag/voice_dictate.py` — Voice dictate — per-surface cleanup for spoken transcripts.
+- `mag/voice_dig_board.py` — Shared dig board — ambient research + conversation for local voice.
+- `mag/voice_handoff.py` — Voice handoff stack — FILE jobs to DeepSeek without interrupting the talk seat.
+- `mag/voice_lanes.py` — Voice memory lanes — separate cheap contexts so Voice Mag ≠ Code Mag ≠ Desk RAM.
+- `mag/voice_pipeline.py` — Voice pipeline: local format → DeepSeek swarm → human spoken answer.
+- `mag/voice_scratch.py` — Voice scratch pad — transcript accumulates, agent wakes on commit.
+- `mag/voice_self.py` — voice_self — the standing wave shapes itself into a VOICE (non-handwavy).
+- `mag/voice_shadow.py` — Voice shadow scout — DeepSeek researches in the background; local draws on it.
+- `mag/voice_skills.py` — Voice skill seek — progressive disclosure before bluff.
+- `mag/voice_stt.py` — Voice STT steal — Whisper-class recognition with isolated capture path.
+- `mag/voice_tasks.py` — Voice → REST build tasks for cheap coding agents.
+- `mag/voice_trigger.py` — Voice/chat trigger dispatcher — parse operator speech into trigger intents, then fire them.
+- `mag/voice_turn.py` — Voice turn — conversational STT ↔ agent (hardware-aware, local first).
+- `mag/volume_fidelity.py` — volume_fidelity — the HALLUCINATION GAUNTLET (batch 7, rb-gauntlet).
+- `mag/vram_hologram.py` — vram_hologram — 10 people, different machines, each seeing a QUANTIZATION of the shared reality,
+- `mag/vram_memory.py` — vram_memory — the VRAM-resident hot-memory lattice: keep the data that matters in VRAM to cook.
+- `mag/vscode_feed.py` — VS Code chat → behavioral loop bridge.
+- `mag/vscode_seat.py` — vscode_seat — turn a VS Code chat into a CONTROLLED executor seat for the Republic.
+- `mag/warmed_cold_replay.py` — warmed_cold_replay — fold build order #2: warmed-vs-cold logprobs replay.
+- `mag/warning_monitor.py` — Passive warning monitor — warnings are monitored + handled via OUR system.
+- `mag/water_computer.py` — Water-computer keep — physics for the hydraulic module.
+- `mag/water_swarm.py` — water_swarm — instruct the swarms to BE WATER: flow and form around the invariants BEFORE we
+- `mag/wave.py` — wave — standing-wave snapshot for the Mag desk.
+- `mag/wave_address.py` — wave_address — reach ANY object across the surface BY THE WAVE ALONE.
+- `mag/wave_cache.py` — Write the wave pane as JSON. Desk HTTP must not import Mag.
+- `mag/wave_fire.py` — wave_fire — the house's standard wave runner: gate, fire, measure, break (2026-09-13).
+- `mag/wearable_swarm.py` — wearable_swarm — prototype: control the swarm from an AI-enhanced wearable (VR/AR), Baymax-style.
+- `mag/whale_patrol.py` — whale_patrol.py — watched-channel tracker + ping organ (v1, 2026-09-08).
+- `mag/whisper_image.py` — whisper_image — the whisper protocol carried through IMAGES (image-gen/communication).
+- `mag/whisper_route.py` — whisper_route — ONE deniable research swarm: generic front research, Riddler-plausible,
+- `mag/win_powershell.py` — win_powershell - absolute powershell.exe resolution (B2-375, 2026-09-26).
+- `mag/window_audit.py` — window_audit — passive RECORD of every flash-crash window spawn (observer, no action).
+- `mag/window_bus.py` — window_bus — the extended window AS the swarm bus (blackboard at cache-hit cost, puppet hidden).
+- `mag/window_hop.py` — window_hop — hop a long task through fresh call windows to exploit context length cheaply.
+- `mag/window_throttle.py` — window_throttle — one primary per work window (salon day direction 2026-09-04, item 3).
+- `mag/wireshark_steal.py` — wireshark_steal — FULL RESEARCH steal from Wireshark-class and other deep systems, routed to the
+- `mag/witness_snapshot.py` — witness_snapshot — regenerate the THRESHOLD cold-start witness snapshot.
+- `mag/word_skill_map.py` — word_skill_map — map the operator's repeated words to skill-groups, and steer
+- `mag/work_contract.py` — work_contract — the UNIVERSAL brief + result contract for every seat (v1, 2026-08-24).
+- `mag/work_loop.py` — work_loop — the standing bank-or-halt loop. Work ONLY when the chain/queue has a task;
+- `mag/work_register.py` — work_register — the k8s-ADDRESSED recall surface: every piece done via the mem tools is folded
+- `mag/work_tiers.py` — Work tiers — a state machine so we always know what happens to work after its state.
+- `mag/workspace_api.py` — Safe workspace file access for Sovereign Shell (editor under Mag ROOT).
+- `mag/world_rib.py` — world_rib — the WORLD-TARGET compiler scaffold: a RIB lowers to a 2D field, then 3D mesh.
+- `mag/worldline_dungeon.py` — worldline_dungeon — THE WORLDLINE DUNGEON live surface (the TELLER).
+- `mag/worldline_seed.py` — worldline_seed — W1 death rite v2: emit + verify THE WORLDLINE SEED.
+- `mag/wow_bones.py` — wow_bones -- take the BONES of AzerothCore out of the C++ and make them runnable + testable.
+- `mag/wow_bones_session.py` — wow_bones_session -- the referee: a session runner on the bones kernels.
+- `mag/wow_family.py` — wow_family -- WHO ELSE HAS DONE THIS: the emulator lineage, read as bones.
+- `mag/wow_manifest.py` — wow_manifest — manifest the Turtle WoW/WoWHead foundation the CORRECT way: each invariant as a
+- `mag/wow_player.py` — wow_player -- player files as append-only ledgers (blueprint M2).
+- `mag/wow_steal.py` — wow_steal -- the SELF-STEAL on the WoW line (AzerothCore, the 3.3.5a emulator).
+- `mag/wow_world.py` — wow_world -- the bones-world skeleton: rooms as legality tables on the bones gate.
+- `mag/write_strip.py` — write_strip — the fan-out write-strip compiler (MICKEY-17 owed chore, 2026-09-26).
+- `mag/x_auth_once.py` — One-shot X OAuth login for the @groundingwave surface.
+- `mag/x_chat_mine.py` — x_chat_mine — mine an X (Twitter) chat for high-signal data via ghost, THROUGH the swarm, even
+- `mag/x_control_surface.py` — X Control Surface — Ghost browses X, reads @nachoquixotic prompts, posts results.
+- `mag/x_interceptor.py` — x_interceptor — whale-watch for the @NachoQuixotic beacon (operator order 2026-09-06:
+- `mag/x_oauth.py` — x_oauth — OAuth 2.0 Authorization Code + PKCE for the X API (user context).
+- `mag/x_posts_mine.py` — x_posts_mine — mine a BATCH of X posts for high-signal data via ghost, THROUGH the swarm. Each
+- `mag/x_reply_radar.py` — x_reply_radar — daily X engagement recon for the beacon (operator: "look how other
+- `mag/x_surface.py` — x_surface — X (Twitter) as a free data + drafting surface, gated by an OPERATOR REVIEW QUEUE.
+
+### tools/ scripts — 177 files (same shape)
+
+- `tools/__init__.py` — NPC toolbelt — the swarm's sense/communicate/act tools (the castle builds itself)
+- `tools/ack_fleet_game.py` — Copilot's Socratic ack on the subchain: ground truth on the game loop surface (one turn, no spam).
+- `tools/audio_channel.py` — audio_channel — the shadertoy audio input for PRIVLIDGE.
+- `tools/autopilot.py` — Autopilot: spawn a gpipes swarm, poll, optionally nudge, collect, and write summary.
+- `tools/backfill_direct.py` — backfill_direct.py — truncation backfill, direct-to-API (no agent seats).
+- `tools/battery_rerun.py` — battery_rerun.py - frozen method-card battery, reusable regression harness.
+- `tools/bib_launder_check.py` — bib_launder_check - mechanical FAIL(BIB_LAUNDER) pre-flight checker (B2-154).
+- `tools/blind_probe.py` — BLIND PROBE — the differential sensor array as a standing organ.
+- `tools/box_burn_watch.py` — box_burn_watch — utilization watcher for the "90 percent intelligently" law (2026-09-26).
+- `tools/build_adam_pdf.py` — ═══ COVER ═══
+- `tools/build_adam_setup.py` — ═══ WHAT YOU HAVE ═══
+- `tools/build_adam_setup_final.py` — ═══ HARDWARE ═══
+- `tools/build_adam_soul.py` — ═══ YOUR GAME ═══
+- `tools/build_adam_soul_full.py` — ═══ YOUR GAME ═══
+- `tools/build_aos_pdf.py` — Dark background page template
+- `tools/build_candy_pdfs.py` — ═══ AOS PDF ═══
+- `tools/build_plain12_pdf.py` — (no docstring)
+- `tools/build_plain_pdf.py` — (no docstring)
+- `tools/build_seed.py` — build_seed — assemble the shippable method package (seed/) and seal it.
+- `tools/cache_kpi.py` — CACHE KPI v0 (2026-09-22, mickey lane A3) — prompt-cache hit-rate per provider, read
+- `tools/capability_manifest.py` — Capability manifest — the present-tense shape of the framework.
+- `tools/caption_ledger_sha_check.py` — Recompute every caption-ledger have-row sha256 against disk bytes.
+- `tools/cascade_falsifier_run.py` — Cascade falsifier run (burn brief B2-113, 2026-09-26).
+- `tools/cathedral_build.py` — CATHEDRAL BUILDER — one engine, regions from module files (v1 hand-wire).
+- `tools/cathedral_eigen_map.py` — cathedral_eigen_map — render the in-game map FROM the curvature scan's eigen_centroids.
+- `tools/cathedral_walk.py` — CATHEDRAL WALK — play both contested descent orders against the wired world.
+- `tools/cathedral_wire_tavern.py` — Wire the tavern (dnd_classic_stub) into the live cathedral game.
+- `tools/census_collect.py` — census_collect.py - the --collect deep-check collectors (B2-365 split).
+- `tools/census_drift_patrol.py` — census_drift_patrol.py - test-census freshness tripwire (B2-215, 2026-09-26).
+- `tools/census_patrol_selftest.py` — census_patrol_selftest.py - the census_drift_patrol CLI self-test (B2-248 split, 2026-09-26).
+- `tools/checkbox_receipt_gate.py` — checkbox_receipt_gate.py - standing check for checked rows without receipts
+- `tools/classify_corpus.py` — Classify corpus — the auto-producer for the skill-ledger labeled_rows counter.
+- `tools/classify_pack.py` — Classify research-pack answers by topic -> knowledge base + training rows.
+- `tools/code_execution.py` — Sandboxed Python execution in a temp dir (no network intent).
+- `tools/cold_boot_test.py` — cold_boot_test — the ractor's overturning run, automated.
+- `tools/compaction_eval.py` — compaction_eval.py — context-compaction eval per the hermes PR #116246 bar, on a
+- `tools/compare_versions.py` — Cross-version statistical comparison tool.
+- `tools/config_seal.py` — config_seal.py — checksum-sealed integrity register over configs/.
+- `tools/coordinate_fleet.py` — Fold the operator's cross-window coordination directive onto the relation (bus + subchain).
+- `tools/corpus.py` — corpus -- read-only surfacing tools over the estate catalog (2026-09-18).
+- `tools/corpus_diff.py` — corpus_diff — diff similarly-named files in a corpus, produce training data.
+- `tools/corpus_fts_rebuild.py` — corpus_fts_rebuild -- the one sanctioned writer for catalog/catalog_fts.sqlite.
+- `tools/corpus_lens.py` — corpus_lens — run a corpus through bard + swarm-protocol analysis lenses.
+- `tools/corpus_lens_run.py` — corpus_lens_run — synchronously finish lens analyses to completion.
+- `tools/corpus_self_lens.py` — corpus_self_lens — run the 6 corpus lenses over MAG's OWN framework corpus, then
+- `tools/curvature_scan.py` — CATHEDRAL CURVATURE SCAN — the world as topology, measured with fundamental forms.
+- `tools/description_pin.py` — description_pin.py — tool-description pinning gate.
+- `tools/dfhack.py` — DFHACK — the live colony overlay. Self-steal of the DFHack pattern.
+- `tools/drift.py` — drift -- the metric-referent drift instrument (2026-09-18).
+- `tools/drift_dashboard.py` — drift_dashboard -- render the teleo drift verdict history panel (B2-64).
+- `tools/drift_pairs_stamp.py` — drift_pairs_stamp -- weekly auto-stamp of the teleological drift pairs (T1-T6).
+- `tools/duty_fuzz.py` — duty_fuzz.py - duty-spec fuzz generator (THE 50 program, task 18, W4).
+- `tools/eastwest_thorn_20260920.py` — East/West ractor pairing on the DOE thorn kit + inroads play (RS pattern:
+- `tools/eigenmap_two_check.py` — eigenmap_two_check  -  position/distance/bearing sanity check on the data,
+- `tools/eigenmap_two_smoke.py` — eigenmap_two_smoke  -  EXECUTE the shipped THE CATHEDRAL scripts headless
+- `tools/envelope_harvest.py` — One-command envelope harvest for Task-agent fire data (B2-424).
+- `tools/estate_atlas.py` — ═══════════════════════════════════════════════════════════════════════════
+- `tools/estate_env.py` — ESTATE ENV — the one canonical key loader (rib.md.record.v1 companion).
+- `tools/estate_smith_chart.py` — ESTATE SMITH CHART — health as |Gamma| coordinates, not prose.
+- `tools/filesystem.py` — Filesystem tools jailed to config.FS_ROOTS.
+- `tools/flashx_probe.py` — FlashX latency probe: glm-5.3-flashx vs glm-5.3-flash on the fleet's OpenRouter lane.
+- `tools/fold_mickey17.py` — fold_mickey17.py — deterministic fold of the Mickey 17 digestion wave.
+- `tools/fold_v2_covariance.py` — fold_v2_covariance.py — the covariance fold, applied to the fleet.
+- `tools/freshness_check.py` — freshness_check.py — boot-doc stale-trap gate.
+- `tools/freshness_gate.py` — freshness_gate.py - freshness-receipts gate (MICKEY17 V2 owed item, t11b; hash binding t37).
+- `tools/full_scan.py` — full_scan — the estate-wide semantic catalog churn (2026-09-23, "go wide").
+- `tools/fullsend_s2.py` — FULLSEND S2 — union-fullsend season 2, opencode headless edition.
+- `tools/game_module_dated_numbers.py` — game_module_dated_numbers.py - the dated-number tripwire for game-module lore.
+- `tools/gaming_corpus_pass.py` — gaming_corpus_pass — brief every orphaned game/tool page and every mag game engine
+- `tools/gen_artifact_lore.py` — Generate the DWARVEN pool region of roblox/src/shared/ArtifactLore.luau.
+- `tools/gen_df_luau_data.py` — Generate the DF-mined Luau data modules for THE MOUNTAIN's roblox build.
+- `tools/gen_worldgen_spheres.py` — Generate the SPHERES pool region of roblox/src/shared/Worldgen.luau.
+- `tools/ghost_tournament.py` — Ghost Tournament — 8-hour unattended steering experiment marathon.
+- `tools/grave_classify.py` — grave_classify.py - one stable vocabulary for grave burial classifications.
+- `tools/index/projects_index.py` — ═══════════════════════════════════════════════════════════════════════════
+- `tools/knot_taming_night.py` — knot_taming_night.py — night-window knot tamer on LOCAL inference.
+- `tools/kv50_smith_chart.py` — KV50 SMITH CHART — the 50-wide lift mapped onto the smith chart.
+- `tools/kv_slot_pilot.py` — KV slot cold store pilot (Mag Estate, lane A4).
+- `tools/lattice_build.py` — lattice_build.py — THE LATTICE: the estate map, warmed for hot-swap.
+- `tools/ledger_append_gate.py` — ledger_append_gate -- pre-append schema gate for memory/burns/LEDGER.jsonl.
+- `tools/ledger_close_check.py` — ledger_close_check -- B2-203 one_line freshness re-check for LEDGER closes.
+- `tools/ledger_lock.py` — Single-writer lock + fsync append for shared JSONL ledgers. Stdlib only, Windows-safe.
+- `tools/ledger_spot_patrol.py` — ledger_spot_patrol -- WARN-ONLY claim-vs-artifact spot checks on LANDED ledger rows.
+- `tools/lens.py` — lens.py — the lens socket (LENS RIB v3, step 2.5).
+- `tools/letter_salon_20260920.py` — Letter salon — the operator's 9/20 handwritten journal through the living chairs.
+- `tools/librarian_backfill_20260927.py` — librarian_backfill_20260927 -- resolve the retired librarian v1 backlog to names (Q6).
+- `tools/light_walk.py` — LIGHT WALK — walk the old paths wide through the salon lightmap.
+- `tools/local_bench.py` — Local model benchmark — find what the local Ollama models can be good at.
+- `tools/luau_lint.py` — luau_lint — headless structural checks for the mountain's Luau tree.
+- `tools/mcp_pin.py` — mcp_pin -- MCP tool schema pinning + drift alarm (2026-09-25).
+- `tools/md_record_audit.py` — MD RECORD AUDIT v2 — tests the drug-lab checklist (ALCOA+), not file counts.
+- `tools/md_record_seal.py` — md_record_seal — teeth for rib.md.record.v1 (2026-09-21).
+- `tools/memory_gauge.py` — nightly memory gauge (ask A8).
+- `tools/meter_patrol.py` — meter_patrol.py - dated witness meters for the institutional cluster (B2-469, 2026-09-26).
+- `tools/meters_nightly.py` — NIGHTLY METERS WRAPPER — runs the fleet meters and seals what it writes.
+- `tools/mickey17_v2_fold.py` — mickey17_v2_fold.py — deterministic fold sections for MICKEY-17 v2.1.
+- `tools/mimo_watch.py` — MIMO WATCH - 24/7 frontier-window watch on the MiMo V2.6 free lane.
+- `tools/model_bakeoff.py` — model_bakeoff — 50 concurrent calls across the free model-lane wall (2026-09-23,
+- `tools/ocean_v2_pilot.py` — OCEAN v2 pilot — measure the BERNAYS chair's Big Five from its corpus (not asserted).
+- `tools/one_pipe.py` — (no docstring)
+- `tools/openrouter_free_gate.py` — openrouter_free_gate -- verify-then-add gate for :free rotation ids (B2-295).
+- `tools/operator_go.py` — operator_go - canonical reader for watch/inbox/OPERATOR_GO.jsonl (B2-425).
+- `tools/oracle_calibration.py` — THE 50, W6 item 29: oracle calibration harness (G31 recipe).
+- `tools/ox_heartbeat.py` — ox_heartbeat — one-shot ox-alpha availability probe (Mag Estate lane A5, "ox heartbeat re-arm").
+- `tools/path_lint.py` — path_lint — detect workspace-path strays (self-gap pass 3 law: absence-claims
+- `tools/persona_grid.py` — persona_grid.py — the Liu Hui persona-conditioning grid, generated + scored locally.
+- `tools/pile_classify.py` — Pile classifier — the long overnight classification job.
+- `tools/pointer_rot_check.py` — Re-resolve burn-wave file:line pointers against current bytes and flag rot.
+- `tools/policy_eval_schema_check.py` — THE 50 W6 T30: worked-example validation for the G06 policy-eval wire schema.
+- `tools/prepush_paths_changed.py` — prepush_paths_changed -- the changed-path decision as one helper (B2-272).
+- `tools/pricing_diff.py` — PRICING DIFF CRON — cached-vs-compute token ratios across the four providers, daily.
+- `tools/probe20_run.py` — probe20_run -- series runner for the steering drift pairs (2026-09-26).
+- `tools/probe20_stamp.py` — probe20_stamp -- the probe20-to-dashboard stamp bridge (B2-64 board).
+- `tools/probe20_tasks.py` — probe20_tasks - the 20 labeled verdict tasks (seed, v1) for probe20_run.
+- `tools/provider_error_tally.py` — Provider-error tally for a ZCode agent session family.
+- `tools/provider_snapshot_differ.py` — provider_snapshot_differ - week-over-week differ for provider-probe snapshots.
+- `tools/pupeteer_gauntlet.py` — Puppeteer gauntlet — "DFHack the local mind" demo.
+- `tools/qknot_b1.py` — B1 — the Q-knot logical cycle (operator: "the number the door displays").
+- `tools/queue_close.py` — queue_close -- the queue-owner close verb (LINKS-328's missing drain half).
+- `tools/queue_dupes_check.py` — queue_dupes_check -- the queue double-claim census as a gate (B2-486).
+- `tools/queue_row_census.py` — Queue row census + normalizer + tripwire (B2-488, 2026-09-26).
+- `tools/quote_audit_wide.py` — QUOTE_AUDIT_WIDE 2026-09-25 - byte-grep audit of quote fields.
+- `tools/quote_gate.py` — quote_gate.py - verbatim-quote gate over a cited source file.
+- `tools/quote_hitrate.py` — quote_hitrate.py - standing verbatim-quote hit-rate over estate quote fields.
+- `tools/rebuild_grounding_wave_md.py` — Rebuild dashboard/static/grounding_wave.md from watch/GROUNDING_WAVE.jsonl.
+- `tools/receipt_body_fts.py` — receipt_body_fts -- full-text index over watch/inbox receipt BODIES (Q4, 2026-09-27).
+- `tools/refold_gate.py` — refold_gate.py - fold-order mutation tripwire (B2-328, 2026-09-26).
+- `tools/research.py` — research -- read-only surfacing tools over the fleet's research corpus.
+- `tools/research_mine.py` — research_mine.py — run estate research through DeepSeek for grounded
+- `tools/research_rig.py` — Research rig — multi-tier research with right-sized output (T0/T1).
+- `tools/restore_guard.py` — restore_guard.py - stale-base whole-file restore tripwire (B2-343, 2026-09-26).
+- `tools/rib_check_game_loop.py` — RIB-debug the frontier game loop: prove play == building (world grows, root verifies).
+- `tools/roblox_npc_gateway.py` — roblox_npc_gateway — the fleet's brain, served to the world.
+- `tools/saturation_fourcond.py` — Four-condition refusal-scope falsifier (I-11) — Bernays chair.
+- `tools/scs.py` — SCS scorer: Jensen-Shannon divergence over choice sets.
+- `tools/secret_gate.py` — secret_gate - repo secret-scan gate (PACK_SECRET_GATE_20260926 section 4).
+- `tools/secret_gate_rules.py` — secret_gate_rules - rule table, thresholds and block sets for the secret gate.
+- `tools/secret_gate_scan.py` — secret_gate_scan - scanning core for the secret gate (file/tree/history).
+- `tools/seed_mcp.py` — seed_mcp.py - MCP server that serves the SEED-RIB (B2-181, 2026-09-26).
+- `tools/seed_mcp_cold_client.py` — seed_mcp_cold_client.py - the B2-181 falsifier driver (2026-09-26).
+- `tools/seed_paired_uplift.py` — Seed-paired uplift harness with the TARA gate (law D executor).
+- `tools/seed_rib.py` — seed_rib.py - SEED-RIB v0 generator + rebuild verifier (B2-180, 2026-09-26).
+- `tools/seed_salon.py` — seed_salon — multi-model salon on the seed's enhancement questions (2026-09-25).
+- `tools/seed_v2.py` — seed_v2 — build the shippable seed so it BOOTS COLD outside the estate.
+- `tools/sense_tools.py` — Sense tools for MCP — voice packets + image-whisper scan for dumb bodies.
+- `tools/shell.py` — Allowlisted shell commands only.
+- `tools/smoke_import.py` — (no docstring)
+- `tools/spawn_gpipe.py` — Ensure project root is on sys.path so `mag` package imports work when run from tools/
+- `tools/spec_execute.py` — Spec-execute POC — the "frozen state → penny spec → cheap execute" loop.
+- `tools/state_asof.py` — STATE ASOF — the time-machine query for the estate's record.
+- `tools/steal_gdrive.py` — steal_gdrive — yoink a link-shared Google Drive folder corpus without auth.
+- `tools/stealth_sweep.py` — stealth_sweep — burn the free wall daily: live-fire OpenRouter's :free and :stealth
+- `tools/steer_all.py` — steer_all — control ALL seats (copilot, grok, chatgpt, the swarm) from ONE terminal.
+- `tools/steer_compare.py` — Steer Compare — run identical steering experiments across providers.
+- `tools/steer_grok_1m.py` — Give grok the 1M-context build context via the shared steer bus (relational).
+- `tools/steer_grok_whole.py` — Hand grok the WHOLE system dossier via the shared steer bus (relational).
+- `tools/stills_xai.py` — Scene-still generator for the Living Mud (and any corpus game).
+- `tools/swarm_tools.py` — tools/swarm_tools — the NPC toolbelt exposed to the agent's TOOL LOOP (sense/pheromone/blackboard).
+- `tools/task_wall.py` — task_wall — the standing concurrent task engine (2026-09-23, operator: "explode our
+- `tools/test_pipe_api.py` — (no docstring)
+- `tools/thrash_meter.py` — thrash_meter -- the multi-front thrash instrument (THE 50 / W6 / T27, 2026-09-19).
+- `tools/tier_probe.py` — Tier probe — DeepSeek right-sizing A/B (assumption testing).
+- `tools/topic_research.py` — Topic-driven research runner — the preemptive-steal loop (tesuji-everywhere).
+- `tools/track_bpm.py` — track_bpm — pure-python BPM detection for PRIVLIDGE music wiring.
+- `tools/transport_precheck.py` — transport_precheck.py — research-lane preflight transport check (B2-327).
+- `tools/typed_scorer.py` — typed_scorer.py — System-One style typed-decision scorer on the local shelf.
+- `tools/verb_anchor.py` — verb_anchor -- anchor the verb kifu tail into the verkle chain (THE 50 / W9 / T43, 2026-09-19).
+- `tools/verify_lyapunov_decode_20260921.py` — Receipts for the Lyapunov + dimension-lift decode (2026-09-21).
+- `tools/violation_ratchet.py` — violation_ratchet.py — fingerprint-ratcheted violation gate over estate code.
+- `tools/visor.py` — STATELESS VISOR: cross-session, cross-job observability board.
+- `tools/wandr_selfeval.py` — wandr_selfeval.py -- WANDR-shaped estate self-eval (MICKEY-17 v2 GO list item 6).
+- `tools/wave_lift.py` — WAVE LIFT — the estate's own 50-wide executor. Hardy by design.
+- `tools/weights_consolidate.py` — WEIGHTS CONSOLIDATE — one tracked home for all model weights.
+- `tools/workflow_gate.py` — Workflow gate: fleet dogfood enforcement for dynamic-workflow scripts.
+- `tools/x_churn_cli.py` — x_churn_cli — the SD-seat batch driver: 20 Grok-CLI queries, one fresh headless
+- `tools/x_churn_grok.py` — x_churn_grok — mine @NachoQuixotic's timeline for posts MISSING from the estate
+- `tools/x_churn_seeds.py` — x_churn_seeds — semantic adjacency churn: feed the estate's known posts to the
+
+### tests/ — count only
+
+- 353 top-level *.py; 355 recursive *.py (pathlib, 2026-09-27 lane). AGENTS.md bullet separately claims 2,303 collected / 352 files from a 2026-09-27 `pytest --collect-only -q` census (different instrument + moment; do not difference the two).
+
+### configs/ gates
+
+Full configs/ listing read via `ls` (byte snapshot above in COUNTS). Enforcing baselines named by the task, all verified present on disk:
+- `configs/violation_baseline.json` — registered-debt ratchet for `python tools/violation_ratchet.py check --changed` at pre-push (AGENTS.md build discipline)
+- `configs/secret_gate_baseline.json` — secret-scan baseline (sibling of MagSecretScanWeekly task)
+- `configs/links_kind_baseline.json` — links kind gate baseline
+- `configs/events_key_schema.json` — events key schema gate
+- `configs/workflow_gate_scenarios/` — LAW-12 scenario cards re-validated read-only by `python tools/workflow_gate.py check --scenarios` at pre-push
+- Also present and enforcing-adjacent: `links_sha_ratchet_baseline.json`, `events_malformed_baseline.json`, `workflow_registry_baseline.json`, `constitutional_rails.json`
+
+
+## DOCTRINE-STACK
+
+Each artifact named from its own bytes (read in full this session unless marked names-only).
+
+- `.agents/skills/memweave/SKILL.md` — the ghost operating doctrine: "models perform on STRUCTURES better than on prose"; memory is woven as addressable structures (rows, ribs, keyed packs) riding the RIB kernel as TAIL, never mutating the kernel; evaluated adversarially (MINDSWEAVE precedent). Distributor: `mag/mem_weave_distributor.py`. Falsifier: structure-fed seats must beat prose-fed at equal tokens or the weave is ceremony.
+- `.agents/skills/memlance/SKILL.md` — "a long-range, pointed memory injection": plant ONE self-true seed (card, LINKS row, want, chan row) where the target's BOOT reads, never as an instruction; procedure AIM / FORGE / THROW / WITNESS / TALLY with hit-rate logging. Self-marked "READING, NOT CLAIM — Unproven until a lance lands and is witnessed." Falsifier: fewer than 2 unprompted hits in 5 lances, or any seed harming a target, kills the concept.
+- `.agents/skills/verb-genomes/SKILL.md` — "the fleet verb genome library": structured prompt contracts (role + mission + method + output contract + verify-at-bytes law, cached-prefix shaped: stable L0, small tail) for steal, self-steal, probe, fold, verify, dispatch, sign, wash. Read order: `docs/ref/verb_genomes/L0_contract.md` -> `steal.md` -> `self_steal.md`. Tiered language law: workers speak baremetal contracts, humans get the English gloss.
+- `docs/ref/MAG_MYCELIAL_REPUBLIC_COMPASS.md` — headings only (per task): # Mag — Mycelial Republic compass; ## 0. Load this first (agents); ## 1. Vision — Mycelial Republic; ## 2. Agent loop — forever loop / intra-agent communication (2.1 the loop operator view, 2.2 handoff surfaces — separate APIs, one spine); ## 3. Version arc — v1 through v10 (3.1 two eras, 3.2 version map); ## 4. Current built state (v2.x — honest now); ## 5. Service milestones (operator path); ## 6. Sovereignty guarantees (tier rules); ## 7. How versions relate (cross-link map); ## 8. Amend protocol; ## 9. Closing.
+- `memory/rib/` — 43 artifacts (41 .md + 2 .json). Names (bytes of `ls`): DOCTRINE_MEMWEAVE_20260810.md; GROK_ADVICE_RUNAWAY_PYTHON_20260810.md; GROK_PLAN_K8S_KNOT_SEAT_20260810.md; RIB_CASTLES_FOUNDATIONS_20260810.md; RIB_CATHEDRAL_WORLD_V1_20260921.md; RIB_CAUSAL_GRAPH_MOONSHOT.md; RIB_DEADDROP_FUTURE_SELF_20260811.md; RIB_DOCTRINE_CANONICAL.md; RIB_EMERGENT_FLOCK_ON_K8S_20260810.md; RIB_EMERGENT_TOOLING_K8S_DEEP_DIVE_20260810.md; RIB_FLEET_STEAL_20260810.md; RIB_FLOCK_STEAL_20260810.md; RIB_FREE_USAGE_POLICY_20260823.md; RIB_FULL_CONTEXT_LIFT_2026-08-14.md; RIB_GAME_CLAIMS_DESK.md; RIB_GRAMMAR_SEED_20260810.md; RIB_KNOT_CENTRIC_SEAT_K8S_20260810.md; RIB_LANE_WINDOW_BOOT_20260904.md; RIB_LAWYER_BOOT_20260904.md; RIB_MAP_PRECEDES_TERRITORY_20260811.md; RIB_MD_RECORD_20260921.md; RIB_MEMWEAVE_MINDWEAVE_TESTED_20260810.md; RIB_MINDSWEAVE_EVAL_CONSENSUS_ILLUSION_20260810.md; RIB_MOSAIC_SEED_20260921.md; RIB_PERSONA_KEY_20260824.md; RIB_PROBLEM_AUTONOMOUS_LOOP_20260811.md; RIB_RAM_CACHE_STALE_SNAPSHOT_20260825.md; RIB_REFACTOR_CONSOLIDATION_20260810.md; RIB_RIB_PROTOCOL_SIMULATION_20260810.md; RIB_RIGHTSIZED_FLOCK_COUNTER_STRUCTURE_20260810.md; RIB_ROUNDTRIP_STATELESS_TURTLES_20260810.md; RIB_RUNAWAY_PYTHON_20260810.md; RIB_SELF_MY_CORRECTION_LOOP.md; RIB_SELF_MY_EFFICIENCY.md; RIB_SELF_MY_LAW.md; RIB_SELF_MY_SHADOW.md; RIB_SELF_WHAT_I_AM.md; RIB_allseat_comms_ghost_2026-08-14.md; RIB_cold_seam_tesuji_2026-08-12T011756.md; grokbot_cold_edges_2026-08-12T050638.md; grokbot_cold_edges_2026-08-12T050639.md; recreation-coding-history.json; session-scene.json.
+- `memory/rib_bus/` — 51 artifacts (49 .json + 2 .txt). Names (bytes of `ls`): archetypes-esoteric.json; arrival.json; babelfish-turtles.json; bare-metal-zeitgeist.json; castle-in-the-sky.json; clawbot.json; compiler-flywheel.json; copilot-session-base.json; doctrine.json; emergent-play.json; eut-coherence-lens.json; frontier-internals-capture.json; game.json; general.json; good-work.json; gpu-rightsizer-surface.json; grok-bot.json; grok_cli.json; grokbot.json; hil-setpoint-flock-control.json; howto-steal-linux-dev.json; k3s-toolset.json; k8s-resource-governor.json; kobayashi-maru-tesla-q.json; mem-invariant-map.json; mirror.json; monitor.json; nacho-shape.json; next_wave.json; party_subchain.json; party_subchain_steer.txt; party_subchain_steer_log.txt; queue-resilience.json; reconstruct.json; recovery.json; reframe-not-brute-force.json; research.json; rib-os-self-advancing.json; saelis.json; self-shape.json; shader.json; standing-novelty-wave-trickster.json; standing-wave.json; structured-extraction.json; swarm.json; terminal-guard.json; territory.json; titor-rib-attractor.json; titor-worldline.json; toolkit.json; wow.json. (memweave SKILL.md grounds itself in `memory/rib_bus/doctrine.json` + the Memweave rib family — cross-pointer verified by name.)
+
+## FLEET-ORGANS
+
+- `memory/improve/SEATS.md` — canonical seat matrix. Key lines from bytes: "Small local models = janitors. Grok TUI = scarce judgment. Hermes = parked"; janitor doctrine (one model hot; Grok stays for hard inference; local keeps context cheap); invariants (improve scout never paid remote; no auto ollama pull; seat changes need human promote; Hermes is not the router); CODE TEAM table (local_coder / deepseek_agent / hermes / cursor / grok); and the 2026-09-27 REALITY REFRESH (ATLAS_SELF_STEAL Q2): primary seat is ZCode on the z.ai GLM-5.3 individual coding plan; width laws measured (Task agents clean 3/6/10/12 at 109.4M tok/h at 10; workflow children capped 3, 50-wide ran hours-clean 2026-09-26 before first 429); routing law LINKS-342 (lite/free = mass, heavy = judgment, Hermes = rescue; the flywheel is the ORGAN STATE — ledgers, saved workflows, catalog, bonds); load-order truth: state/CURRENT.md is the live brief (briefs/latest.md FROZEN 2026-09-26).
+- `memory/improve/HABIT.md` — operator habit card. Key lines from bytes: "Default: Mag + small Ollama first. Grok TUI for real L2 judgment. Hermes parked."; default stateless loop for every seat (context-pack -> live truth state/CURRENT.md -> one job -> FILE block -> residual/dig/trail); agent state = versioned self, mandatory LOAD before redesign (memory/agent_state/LATEST.md); journey spine: "protocol / sovereign mirror / consent / Rashomon / mycelial republic endgame" -> ... -> "Mag disk = what ran (subsystem)"; when Grok meter is empty: walk, plan the harness ask, file residual via Mag; weekly 10-min improve review + IJL skill-bead review; MagImproveDaily 08:00 via scripts/improve_daily.ps1.
+- Scheduled tasks (bytes of `schtasks //Query //FO LIST | grep -i mag`, 2026-09-27 ~09:4x EDT): mag-docker-watchdog (next 9/27 9:45 AM); MagCensusPatrolDaily (9/28 8:30 AM); MagCorpusRescanDaily (9/28 3:30 AM); MagEndpointNewsDaily (9/28 6:30 AM); MagFtsIndexDaily (9/28 9:00 AM); MagImproveDaily (9/28 8:00 AM); MagLabKit8765 (N/A); MagMimoWatchClose (9/28 5:25 PM); MagMimoWatchHourly (9/27 9:58 AM); MagPrivateOffice8765 (N/A); MagQCaptionVerifyDaily (9/28 7:30 AM); MagSecretScanWeekly (9/28 6:40 AM); MagVisionNightly (9/28 2:30 AM). 13 tasks.
+- `watch/inbox/INDEX.json` — shared-surface index; keys read by json.load: schema, root, host_root, purpose, read_first, authority, policy, derivations, fold_warnings, items; items = 1340 at read moment (2026-09-27 lane). This file is the durable cross-surface boundary named in AGENTS.md (all durable cross-surface work lands under watch/inbox/).
+
+## RECEIPT
+
+- Census lane, 2026-09-27. Sources actually read: full `ls` of mag/, tools/, configs/, memory/rib/, memory/rib_bus/; ast docstring extraction over all 1031 mag/ + 177 tools/ .py files; find/glob counts for tests/; Read of memweave/memlance/verb-genomes SKILL.md, SEATS.md, HABIT.md; grep headings of MAG_MYCELIAL_REPUBLIC_COMPASS.md; schtasks //Query //FO LIST (grep -i mag); json.load of watch/inbox/INDEX.json (items = 1340). No existing repo file modified; only this output file created (watch/inbox/lens_20260927/are_inventory.md).
+- Known approximations: docstring lines truncated at 100 chars; "(no docstring)" = module had neither docstring nor leading comment; unreadable files are marked. Census-vs-file-count denominators handled per B2-216 (named instrument + moment, no cross-instrument differencing).

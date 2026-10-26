@@ -1,0 +1,83 @@
+{
+  "lane": "driver-meter",
+  "division": "B",
+  "ok": true,
+  "updated_at": "2026-09-29T19:05:00Z",
+  "artifact": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/ball3-suite-green/lanes/driver-meter.json",
+  "receipt": "watch/inbox/ball3/driver-meter.md",
+  "check_file": "watch/inbox/gala_20260925/ball3-suite-green/lanes/driver-meter.check.txt",
+  "finish_line": {
+    "met": true,
+    "detail": "Four target files green at both basetemps (default in-repo and out-of-repo reproduction shape): CHECK 1 35 passed exit 0, CHECK 2 35 passed exit 0, CHECK 3 the four named tests 4 passed, CHECK 6 post-restore 35 passed exit 0. Live driver verified still running: production mutex Local\\MagStealthDriverInstance still held (probe raised InstanceLocked), pids 49400 and 54484 alive, heartbeat advanced cycle 28 (18:29Z) to cycle 30 (18:42Z) during the lane."
+  },
+  "root_causes": [
+    {
+      "test": "tests/test_stealth_tools_wave5_repair.py::test_instance_lock_refuses_second_acquire",
+      "cause": "The live stealth driver holds the production named mutex Local\\MagStealthDriverInstance, so the test's FIRST acquire_instance_lock() raised InstanceLocked, not its second.",
+      "fix": "acquire_instance_lock(namespace='') in tools/stealth_driver.py: a namespace suffixes the lock into a private mutex (win32) or lockfile (posix); the test acquires in pid-unique namespace ball3.<pid>; production callers pass no namespace and the shared lock stays strict (probe proves the live driver still holds it)."
+    },
+    {
+      "test": "tests/test_stealth_driver_v2.py::test_work_sets_tick_flag",
+      "cause": "t_work's mined row built answer_file via out.relative_to(ROOT) (pre-fix tools/stealth_driver.py:530 and :625); with pytest basetemp outside the repo (the wave5 suite-burn shape) WORK_OUT sits outside ROOT and relative_to raises ValueError, crashing t_work. Passed with the default in-repo basetemp, which made it look intermittent.",
+      "fix": "_rel_posix() helper (repo-relative posix, absolute fallback); impfeed consumer ROOT / af resolves absolute paths unchanged. Pre-fix failure reproduced byte-exact with fixes git-stashed (CHECK 7)."
+    },
+    {
+      "test": "tests/test_honest_cache_meter.py::test_agent_state_commit_hash_excludes_its_own_field",
+      "cause": "mag/agent_state.py commit receipt fields fpath.relative_to(ROOT) / LATEST_MD.relative_to(ROOT) (pre-fix lines 407-408), same out-of-repo tmp_path class; the earlier suite log failed this test at exactly mag agent_state.py:407. The hash-exclusion invariant itself was never broken: content_commit_hex skips {tip, chain_row, pack_excerpt, content_commit} (mag/agent_state.py:163-174).",
+      "fix": "_display_path() helper, display-only receipt fields, byte-identical for the default in-repo STATE_DIR."
+    },
+    {
+      "test": "tests/test_violation_ratchet.py::test_baseline_update_stamps_accepted_lines",
+      "cause": "The B2-273 print in cmd_baseline_update called BASELINE_PATH.relative_to(ESTATE_ROOT) (pre-fix tools/violation_ratchet.py:300); out-of-repo basetemp made it raise ValueError (named in the earlier suite log). The stamp shape itself was NOT polluted: register census 945 claims, 9 file-too-long claims carry accepted_lines all under NAMED accepters, 193 older file-too-long claims predate B2-273, ZERO entries carry the default operator attribution; the ask's default-attribution pollution hypothesis is refuted.",
+      "fix": "Print-only try/except to absolute path; the stamp code at cmd_baseline_update:292-295 was already correct and untouched."
+    }
+  ],
+  "operator_flags": [
+    "Two stealth driver processes are alive (pid 49400 Mag venv, pid 54484 uv cpython-3.11, both started 2026-09-29 11:29:31, 22ms apart): the boot-lane double-launch disease from the driver header comment is live again. One writes the heartbeat; the production mutex is held. Not killed by this lane (out of scope); the namespace fix makes the test surface immune to it.",
+    "A one-off PermissionError storm across all 35 tests occurred once mid-lane and never reproduced: caused by this lane's own background grep holding files open under the pytest tmp dir during cleanup (win32 open-file collision), not estate code."
+  ],
+  "checks": [
+    {
+      "command": ".venv/Scripts/python.exe -m pytest tests/test_stealth_driver_v2.py tests/test_stealth_tools_wave5_repair.py tests/test_honest_cache_meter.py tests/test_violation_ratchet.py -q",
+      "exit": 0,
+      "evidence": "watch/inbox/gala_20260925/ball3-suite-green/lanes/driver-meter.check.txt CHECK 1: 35 passed"
+    },
+    {
+      "command": ".venv/Scripts/python.exe -m pytest <same four files> -q --basetemp=C:/Users/foste/AppData/Local/Temp/driver-meter-ball3-out-of-repo",
+      "exit": 0,
+      "evidence": "watch/inbox/gala_20260925/ball3-suite-green/lanes/driver-meter.check.txt CHECK 2: 35 passed (out-of-repo basetemp, the wave5 suite-burn disease shape)"
+    },
+    {
+      "command": ".venv/Scripts/python.exe -m pytest tests/test_stealth_driver_v2.py::test_work_sets_tick_flag tests/test_stealth_tools_wave5_repair.py::test_instance_lock_refuses_second_acquire tests/test_honest_cache_meter.py::test_agent_state_commit_hash_excludes_its_own_field tests/test_violation_ratchet.py::test_baseline_update_stamps_accepted_lines -v",
+      "exit": 0,
+      "evidence": "watch/inbox/gala_20260925/ball3-suite-green/lanes/driver-meter.check.txt CHECK 3: 4 passed"
+    },
+    {
+      "command": "python -c probe: fresh module acquire_instance_lock() with no namespace (expect InstanceLocked) + wmic process query pids 49400/54484 + heartbeat tail",
+      "exit": 0,
+      "evidence": "watch/inbox/gala_20260925/ball3-suite-green/lanes/driver-meter.check.txt CHECK 4: MUTEX-HELD-BY-LIVE-DRIVER, both pids alive since 11:29:31, heartbeat cycle 28 to 30"
+    },
+    {
+      "command": ".venv/Scripts/python.exe tools/violation_ratchet.py check --changed",
+      "exit": 0,
+      "evidence": "watch/inbox/gala_20260925/ball3-suite-green/lanes/driver-meter.check.txt CHECK 5: RATCHET PASS, scope=15, NEW=0, two GROWTH ledger lines both pre-existing from earlier landings"
+    },
+    {
+      "command": ".venv/Scripts/python.exe -m pytest <same four files> -q (after git stash pop restore)",
+      "exit": 0,
+      "evidence": "watch/inbox/gala_20260925/ball3-suite-green/lanes/driver-meter.check.txt CHECK 6: 35 passed"
+    },
+    {
+      "command": "pytest (three named tests, fixes git-stashed) -q --basetemp=<out-of-repo temp>",
+      "exit": 1,
+      "evidence": "watch/inbox/gala_20260925/ball3-suite-green/lanes/driver-meter.check.txt CHECK 7: pre-fix reproduction, ValueError at test_work_sets_tick_flag0/out/w1_hermes.md relative_to; exit 1 recorded as the pytest failure class (grep rc was captured instead of pytest rc in the live call; the ValueError traceback is the evidence)"
+    }
+  ],
+  "decision_changed": "ball3 suite-green: closes the four driver/meter failures. Three durable changes: the instance-lock test surface is live-driver-proof by lock namespace while the production lock stays strict (probe-verified); the relative_to-out-of-repo defect class is fixed at root in tools/stealth_driver.py, mag/agent_state.py, tools/violation_ratchet.py; the ratchet register default-attribution pollution hypothesis is refuted by byte census (no by=operator entries, stamps only under named accepters).",
+  "files_touched": [
+    "tools/stealth_driver.py",
+    "mag/agent_state.py",
+    "tools/violation_ratchet.py",
+    "tests/test_stealth_tools_wave5_repair.py"
+  ]
+}

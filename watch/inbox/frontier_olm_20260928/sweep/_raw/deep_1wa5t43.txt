@@ -1,0 +1,30 @@
+ID: 1wa5t43
+SUB: r/ClaudeCode
+DATE: 2026-09-07 21:59 UTC (created_utc=1788818350)
+TITLE: I compile MCP servers into CLIs so the tool schemas stop sitting in context. 4.1x smaller on nine real servers
+SCORE: 1  COMMENTS: 1  UPVOTE_RATIO: 0.67
+PERMALINK: https://www.reddit.com/r/ClaudeCode/comments/1wa5t43/i_compile_mcp_servers_into_clis_so_the_tool/
+SELFTEXT:
+Author here so this is self promo, just saying it up front.
+
+What annoyed me: every MCP server's tool list gets loaded into context on every turn whether the model uses it or not, and results land in full. On the nine servers I run (258 tools) the raw listing is 236,818 bytes. And subagents with no MCP access get nothing at all.
+
+So I built declick. It reads a server once (stdio or streamable http) and writes a CLI with one verb per tool. The agent runs \`declick describe <name>\` which is under 500 tokens for the whole surface, then \`declick run <name> <verb> --fields a,b --limit N\` and gets trimmed json back. Same nine servers describe in 58,309 bytes, so 4.1x less. The bench script is in the repo with the caveats, the honest one being that a single call's payload isn't smaller, the saving is the surface and the trimming.
+
+Other stuff it does with MCP:
+
+\- \`declick daemon start\` keeps stdio servers warm so only the first call pays startup. 59ms vs 703ms per call on a server that takes 600ms to boot.
+
+\- \`--where k=v\`, \`--fields\`, \`--limit\` and an 8KB default cap on data so the agent picks what lands.
+
+\- \`declick setup\` finds the MCP servers your agents already have configured and builds an adapter for each. \`--revert\` puts every file back.
+
+\- Same contract for OpenAPI, GraphQL, Postman, HAR, SQLite and other CLIs so the agent only learns one shape.
+
+Zero runtime deps, Node 24. 0.3.0 is MIT, after that it's Elastic License 2.0, free for individuals and teams under ten.
+
+Free to try: \`npm i -g declick\`
+
+Links in the first comment. Mostly I want to know where the contract breaks for your agents, that's more useful to me.
+COMMENTS FETCHED: 1
+--- [SIGH_I_CALL | 2026-09-07 | score 1] [https://declick.dev/](https://declick.dev/)  [https://github.com/ucsandman/declick](https://github.com/ucsandman/declick)

@@ -1,0 +1,270 @@
+=== 1wjq4vh r/AI_Agents | 2026-09-18 13:24 | score 39 | 50 comments | author u/Major-Shirt-8227
+TITLE: I tested 12 AI memory systems across 1,800 tasks. A plain Markdown wiki still tied for first.
+PERMALINK: /r/AI_Agents/comments/1wjq4vh/i_tested_12_ai_memory_systems_across_1800_tasks_a/
+SELFTEXT:
+Last month, I shared my test of 8 AI memory systems here and it got over 100,000 views. After 1,800 more tests, a plain Markdown wiki still scores the highest, but this time one tool matched its score.
+
+**The setup**
+
+We used Claude Code agents running Opus 5 with each of the 12 memory systems. Each agent got the same work across multiple sessions and 150 questions.
+
+Each memory tool runs through weeks of simulated work. Each agent chooses what to store and remember, guided by each tool’s own documentation.
+
+**The results**
+
+Cognee and Karpathy’s Wiki tied for the highest accuracy score at 97.1 out of 100.
+
+Using Cognee is significantly cheaper, at about half the wiki’s token cost at $256 per 1,000 questions vs. $503.
+
+Every memory system has tradeoffs though, Cognee was the slowest system we tested, taking over five times as long per question as the wiki.
+
+Across the tests, the biggest reason for failure was agents declining to answer questions they should have been able to answer. That accounted for 61% of failures. These failures can happen in three ways:
+
+1. The agent never saved the information, so there was nothing to retrieve.
+2. The agent never used its memory tool before declining to answer.
+3. The agent searched its memory one or more times but gave up and said the information wasn’t there.
+
+Sometimes declining to answer is the correct response. Our False Memory Check asks about facts the agent was never given. Every system aced this test except gbrain, which made up an answer when tested.
+
+We also tested whether each system leaked information it had been told to forget. This matters when users ask an agent to delete personal or confidential information. 9/12 systems never repeated the facts they’d been told to forget, while three leaked data that should have been forgotten.
+
+**If I were choosing today**
+
+If you’re an indie hacker and don’t need to share memory with others, I’d stay local with Karpathy’s wiki or Mnemosyne. If token cost isn’t a concern, I’d use the wiki. If it matters, I’d use Mnemosyne, which scored 95.7 out of 100 at about $302 per 1,000 questions.
+
+For shared memory across a team, I’d look at Cognee or Mem0. Cognee tied for the highest accuracy, but Mem0 was close behind and answered in less than a third of the time.
+
+If the lowest token cost is your priority, Hindsight was the cheapest in this test at about $233 per 1,000 questions.
+
+The full rankings, accuracy scores, failure breakdowns, speed and cost comparisons are available for free in the first comment.
+
+Next we’re benchmarking the built-in memory of popular agent frameworks such as Hermes, OpenClaw and Claude Code, comparing them with each other and with agents using these memory tools.
+
+COMMENTS:
+  [SubtleInterval_4449 | 2026-09-18 13:30 | score 4] interesting that a markdown wiki still holds up. kind of embarrassing for all these fancy memory systems when the simplest thing works just as well.
+
+  
+the agents giving up when they actually had the info is the real story here. 61% of failures is huge, sounds like the retrieval part is more broken than the storage part.
+    [iceseayoupee | 2026-09-20 11:32 | score 1] most of these systems dont even have the simplest effort on them, frontend looks amazing but look at the back and you'll see an unfinished paint job
+    [cbown26 | 2026-09-19 18:54 | score 1] Personal markdown file/wiki can be useful here but has two critical pitfalls:
+
+1) The user has to manually maintain it.  
+2) The Markdown content only assists task that are relevant to that specific topic or context. Move topics, or to another project, and that context becomes useless.
+    [Major-Shirt-8227 | 2026-09-18 13:36 | score 1] It's true, it's all tradeoffs though, while the markdown wiki tied for top accuracy, it's also the most expensive and sucks for collaboration
+    [KAMIKAZEE93 | 2026-09-18 13:36 | score 3] Probably because most of these systems are heavily vibe-coded. They look impressive on the surface, but the underlying architecture often isn’t thought through or battle-tested enough to be truly bulletproof.
+  [marvinontech | 2026-09-19 04:11 | score 2] the 61% failure rate is the part that stands out, feels like retrieval policy matters just as much as the memory store itself
+    [iceseayoupee | 2026-09-20 11:33 | score 1] 61% is high enough for a deep inspection, a website shouldn't have that high enough of a failure rate
+      [Major-Shirt-8227 | 2026-09-20 14:40 | score 2] Tbf, the 61% figure is the share of all failures, the worst performing tool failed 26% of the tasks and the best only 2.7%
+
+https://preview.redd.it/llw0ur4rsoqh1.png?width=710&format=png&auto=webp&s=ee3d10406846fb9db3f5ddeb7df4aec6743e79a2
+        [[deleted] | 2026-09-21 08:34 | score 0] [removed]
+          [[deleted] | 2026-09-21 08:55 | score 0] [removed]
+  [[deleted] | 2026-10-04 01:07 | score 1] [removed]
+  [SnooCheesecakes1615 | 2026-10-03 14:18 | score 1] Some thought: A markdown wiki’s apparent simplicity hides substantial work performed by the model to maintain it, keep it factually correct etc. So I would not be surprised that it wins over short horizons (a wiki is synthesis whereas comparing vector embeddings is compression) but over long horizons it really depends on how well the model does at preventing drift as context change/is updated.
+  [Immediate-Champion18 | 2026-09-26 17:46 | score 1] Really interesting breakdown of those failure modes. I’ve been looking at that same 61% 'agent give-up' rate, and your point about the 'plain Markdown wiki' really resonates. I think it wins because it removes the black-box abstraction; if the agent can't find something in a flat file, you know exactly where to look to fix it.
+
+I've been building **Notehook** as a way to take that transparency a step further. I wanted a workspace that keeps the project's 'Big Picture' predictable enough that \*I\* always know what's in the context, while keeping the AI grounded to those specific entities and decisions. Instead of letting the AI autonomously manage the memory, I’ve been working on a dual-pane setup where I manually pin the state into categories—Entities, Decisions, and Todos. It’s been a lot easier to maintain my own understanding of the project's progress this way, and it stops the AI from hallucinating or losing the thread because it's forced to work within the map I’ve laid out.
+
+I think this is a shift from 'how do I get the agent to remember everything?' to 'how do I keep the project documentation clean enough that I can actually rely on it, and feed it to the LLM when it needs it?'
+
+If you want to try out Notehook for your use case, I've attached the link here: [https://notehook.vercel.app/](https://notehook.vercel.app/)
+
+A couple of questions on your findings:
+
+1. When the agents gave up, did you see any correlation between the failure and how 'noisy' the memory store was? i.e. duplicated information, context bloat/fragmentation.
+
+2. In the wiki-based tests, did you find that the agents were better at retrieving info when it was organized by topic, or was a chronological approach more effective for them?
+  [Abject_Resident9822 | 2026-09-24 18:14 | score 1] The 61% declining-to-answer figure is the most useful number in here. It says the bottleneck isn't storage, it's whether recall fires at all. Any chance you could split that 61% across your three modes? "Never saved" and "never searched" need different fixes: one is a write policy, the other is an agent that doesn't expect its memory to hold the answer. The third, searched and gave up, is usually the question being phrased differently from how the fact was stored, which is where one query shape breaks and a retrieval that escalates from a cheap lookup to a broader search starts to earn its cost.
+
+It's probably also why the wiki does so well. An agent reading an index can see a page exists before it decides the answer isn't there.
+
+Would also be interesting to see cost plotted against decline rate. A system that searches less will look cheaper per 1,000 questions and fail more by declining, so some of the cost spread may be the same tradeoff showing up twice.
+
+On the forgetting test, how did you check it? The hard case usually isn't the original fact, it's a summary or consolidated note written before the delete that still carries it. A system can pass "never repeated the fact" on the raw store and still leak it through a derived one.
+
+Looking forward to the framework round.
+  [[deleted] | 2026-09-23 00:46 | score 1] [removed]
+  [[deleted] | 2026-09-22 23:21 | score 1] [removed]
+  [macromind | 2026-09-22 22:49 | score 1] The original post highlights an interesting challenge: despite advanced AI memory systems, a plain Markdown wiki can still perform competitively. This suggests that the effectiveness of an AI's memory isn't solely about its complexity, but also about how efficiently it can retrieve and integrate information. For developers working on AI agents, focusing on robust retrieval mechanisms and clear data structuring can often yield better results than simply chasing the latest, most intricate memory architectures. It's crucial to consider the trade-offs between storage capacity, retrieval speed, and computational overhead. Building a scalable and efficient memory layer is key for any sophisticated AI agent. You can explore different approaches to persistent memory and context management for AI at https://www.neurakeep.com, which offers tools to help tackle these challenges effectively.
+  [sreevarshan-xenoz | 2026-09-22 06:51 | score 1] The 61% decline rate is the part I’d want to separate out in the benchmark. “Memory failed” can mean at least three different things: the information wasn’t stored, retrieval didn’t surface it, or the agent had the information but decided not to use it.
+
+Those failure modes probably need different fixes. A markdown wiki can win on inspectability and retrieval while still looking bad if the agent’s decision layer rarely checks it. For coding agents especially, I’d want to measure things like retrieval hit rate, whether the retrieved memory was actually used, and final task accuracy separately.
+
+That would make the benchmark much more useful for figuring out whether the problem is the memory store or the agent’s memory policy.
+  [math_the_witch | 2026-09-20 20:15 | score 1] Its funny to think a plain .md is enough
+  [Philospicalpoet5318 | 2026-09-20 11:42 | score 1] This is very close to a problem I've been exploring too. What stands out to me is that “memory” may actually be several separate problems: what to store, when to retrieve, which memory is relevant, and when to update/forget it.
+Your 61% failure figure makes the retrieval/decision layer especially interesting. A system can have excellent storage and still feel like it has a bad memory if it doesn't know when to access it.
+I’d love to see a benchmark that measures those layers separately rather than giving memory one overall score.
+    [Major-Shirt-8227 | 2026-09-20 14:37 | score 1] Here's the breakdown of failure modes in the screenshot below.
+
+I'm going to separate the Question Not Addressed failure mode (61% of all failures) into the three failure modes I listed in the post (not stored, not used, retrieval failure).
+
+If you want to see that breakdown when the updated results are released next week, follow us on X:  
+[https://x.com/VergingLabs](https://x.com/VergingLabs)
+
+https://preview.redd.it/el7m39m8roqh1.png?width=707&format=png&auto=webp&s=42ae77ae56df3cf7322efb2bd39576949fa7a719
+      [Philospicalpoet5318 | 2026-09-20 14:41 | score 1] That breakdown would be really valuable. Especially separating “not stored” from “stored but not retrieved” and “retrieved but not used” — those look like very different problems from an agent architecture perspective.
+Looking forward to the updated results. I’ll keep an eye out for the benchmark. 👍
+        [Major-Shirt-8227 | 2026-09-20 14:58 | score 1] Agreed! If you want the updated results when they drop next week, you can get them emailed to you here: [https://verginglabs.com/](https://verginglabs.com/)
+          [Philospicalpoet5318 | 2026-09-20 15:14 | score 1] Appreciate it! I’ll keep an eye out for the updated results. The storage vs retrieval vs usage breakdown should be especially interesting. Looking forward to seeing what the data shows. 👍
+  [topdollar3 | 2026-09-19 10:39 | score 1] Can't we use them both ?
+  [ducdeswin | 2026-09-19 09:18 | score 1] The markdown result makes more sense when you look at inspectability. When something goes wrong, you can see the exact source, correct it and understand why retrieval failed. That’s something I care about while building [Verbasil](http://verbasil.com) too: the current answer matters, but being able to trace it back to the original evidence matters just as much.
+  [[deleted] | 2026-09-19 04:38 | score 1] [removed]
+  [krunal_builds | 2026-09-19 04:07 | score 1] not that surprising honestly. most of the fancy memory systems are solving retrieval at scale, but a lot of real agent workflows don't have that much state to begin with, so a flat file the model can just read in full beats a vector search that sometimes misses the one fact that mattered. the vector/graph approaches earn their complexity once you're past a certain volume of stored context, not before.
+    [Major-Shirt-8227 | 2026-09-19 22:46 | score 1] I used to believe that search approaches were superior at scale until I tested it and found that at every scale I tested (up to over 100k documents), the wiki method still kept up with the vector search. I think it's because the the index and log files allow the agent to see both the whole current state and the history so it can pick the best document to retrieve from while the graph way the agent is just shooting for a hit and will stop when it gets a plausible match for what it's looking for
+  [zheniavasiliev | 2026-09-19 02:04 | score 1] The most emotional moment, by far, is when I've spent time building a balanced system and then realise, once real use starts, that it leaks like an old bucket. It either has no idea where to look for its instructions or completely ignores the context provided to it and supplies hallucinated responses instead.I can't explain why it feels so frustrating, but I've been through this too many times then I can admit.   
+  
+So I'm genuinely glad you saw good results from plain-text wikis against the more complex systems. That should probably be expected, at least until speed becomes an actual bottleneck, which takes tens of thousands of nodes. Did you try anything like Optmem?  
+  
+Frankly, I had no idea OpenClaw had any memory management, but maybe I could try utilising that because I'm now close to achieving a somewhat stable (!) release of the entirely OpenClaw-based agentic network.
+    [Major-Shirt-8227 | 2026-09-19 22:40 | score 1] Haven't heard of Optmem, what do you think it would outperform the ones I tested on?  
+Also releasing the results of the same benchmarks on OpenClaw, Hermes, and other agent memory systems next week 😀
+      [zheniavasiliev | 2026-09-20 02:46 | score 1] I think the problem with Optmem is that it uses regex to search for things, and therefore  fuzzy search is not really possible. In this sense, the models in your test like wiki and graph tools which build explicit links between concepts, are more flexible.
+  [Marcus_MSC | 2026-09-18 20:55 | score 1] For unanswered cases where the saved fact exists, I'd rerun the question with that exact note supplied directly. If the agent then answers, you can investigate why its earlier search didn't surface usable evidence. If it still declines, changing the memory store probably won't fix that case. Your follow-up about every session having a lookup makes this distinction worth testing.  
+  
+I also wrote a tutorial on agent memory, now at 900+ GitHub stars: [https://github.com/hardness1020/learn-agent-architecture/tree/main/sections/09-memory](https://github.com/hardness1020/learn-agent-architecture/tree/main/sections/09-memory)
+    [Major-Shirt-8227 | 2026-09-18 21:26 | score 1] If you supply the agent with the answer won't it always answer correctly? 
+
+Let's say you mechanically use the correct answer as the retrieval query and then feed an agent the retrieval response and redact the query so it can't see the answer and test whether it's correct under those conditions, there's a few issues with this setup:  
+1. This drastically changes the test environment making it hard to compare to the original run  
+2. Let's say it fails this secondary test, you should believe that it's more likely that the problem is that the fact wasn't stored but it doesn't isolate whether it's a retrieval problem or a storage problem. If it passes then you should believe it's a retrieval issue but you still can't be sure whether the issue was caused by their retrieval algorithm or the query that the agent chose to use.  
+3. This likely will fail for synthesis types of questions where it would need to run multiple queries and pull multiple chunks to get the correct answers
+
+Unless I'm thinking about this the wrong way, can you see a better way to run diagnostics than what I've described here?
+  [tima100faces | 2026-09-18 18:56 | score 1] a wiki wins for the boring reason: it is inspectable. when Hermes gets something wrong I open the page behind the answer, read the sentence that fooled him, and fix that sentence. no dashboard entry to hunt down. the pages are the memory, the index is only a shortcut, and it rebuilds on the next cron pass.
+  [[deleted] | 2026-09-18 17:42 | score 1] [removed]
+  [Asly97 | 2026-09-18 16:10 | score 1] Honest take after picking a memory tool off a benchmark like this: the scoreboard measures the wrong thing, and I learned it the expensive way.
+
+I went with the winner of a smaller shootout last year, watched it ace the test harness, then in real work the model just stopped checking it. Not a retrieval failure. A willingness failure. Same thing the 61% number in your post is saying. The store had the answer. The agent decided it already knew.
+
+What I do now: keep the store dead boring, a plain markdown wiki, and score willingness separately from accuracy. My session-start hook drops a one-line index of every memory into context, and the model has to open the full entry before answering. Boring wiki plus forced injection beats a fancy store with polite suggestions, every time.
+
+The tradeoff nobody puts in the chart: Cognee being 5x slower per question matters more than the token savings suggest, because slow answers train you to stop asking. A memory system you stop querying is a write-only diary.
+
+I use a hosted store (Vilix AI) for the cross-tool part because I got tired of self-hosting the plumbing, but I'll be straight: the store was never the hard part. The hard part is the model skipping the memory call unless you shove the index in its face. That problem is the same everywhere.
+
+So: boring store. Forced retrieval. Measure the look-ups, not just the hits.
+    [ml_nerdd | 2026-09-22 15:14 | score 1] sdk retrieval should be 1s with only\_context=True
+  [seventyfivepupmstr | 2026-09-18 16:00 | score 1] Memory systems for LLM, at least at this point in time, don't work like you think they would.  They add context to every single request sent to the LLM, which uses tokens and slows down the responses.  They have a better chance of confusing the LLM than they do actually helping, because the memories will probably be irrelevant to the actual task at hand.  
+
+  
+If you want proof, try out my harness which uses no memory at all - the agents get only the bare minimum instructions and task details needed to complete their task and nothing else.  
+
+[Home - VisualAgentic](https://vis-agentic-website-production.up.railway.app/)
+  [[deleted] | 2026-09-18 15:07 | score 1] [deleted]
+  [ShowerAnnual9741 | 2026-09-18 14:53 | score 1] the 61% number is the real finding, i think. that's not the memory system failing, it's the agent deciding not to look. i'd want the benchmark to score those separately — is the info actually in the store, and did the agent bother to retrieve it. otherwise you're grading the harness's retrieval policy and calling it a memory result.
+    [Major-Shirt-8227 | 2026-09-18 15:23 | score 1] Each test is run by first integrating each tool into the same harness with the same model off of the tool’s docs alone. The tool’s docs have instructions that suggest the best retrieval policy for that tool and during integration it will set that policy in whichever way the docs suggest.
+
+The benchmark is called the agentic memory index because it tests how agents interact with these tools end to end rather than memory benchmarks that just measure top k retrieval which imo is not indicative of real world performance.
+      [ShowerAnnual9741 | 2026-09-18 16:36 | score 1] makes sense as an end-to-end read. one split i'd still want: when the agent doesn't retrieve, is that the tool's retrieval policy underperforming, or the agent choosing not to ask? if the docs-suggested policy is doing the retrieval, a miss could be either one. logging which retrieval calls the agent actually made would separate the two.
+        [Major-Shirt-8227 | 2026-09-18 16:40 | score 1] Makes sense and I agree! I looked at the data and on every test it attempted a retrieval
+          [ShowerAnnual9741 | 2026-09-18 17:39 | score 1] that's the stronger version of the finding then — if the agent attempted a retrieval every time, the 61% is the retrieval policy genuinely not finding it, not the agent skipping. which makes the plain-markdown tie more interesting, not less. the simple store with the simple policy was at least as findable as the fancy ones.
+            [Major-Shirt-8227 | 2026-09-18 18:20 | score 1] 💯 the full methodology is here if you’re interested: https://verginglabs.com/methodology
+  [mindaro_sienna | 2026-09-18 14:36 | score 1] Thank you for sharing! This is really useful to know
+  [QuanTradin | 2026-09-18 14:32 | score 1] The 61 percent line is the most interesting thing here and I think it partly undercuts the ranking. If most failures are the agent declining to answer, then a large share of what you are scoring is willingness to commit rather than whether the information was stored and retrievable at all.
+
+Two systems could hold identical content and separate by several points purely because one presents retrieved context in a way that reads as authoritative and the other reads as a maybe. Reporting your three decline paths as three separate numbers instead of one would tell you which of them you are actually ranking.
+    [Major-Shirt-8227 | 2026-09-18 16:39 | score 1] I went through the unanswered cases and in every one the agent had already queried memory that session, so it wasn’t skipping the lookup
+
+Agree that whether a write or lookup happened at all for each fact should be its failure mode and will incorporate that for the next version
+
+But given you know a retrieval and storage tool call happened for a given fact, you can’t separate storage quality from retrieval quality because each mean nothing without the other. 
+
+Thats why we test the whole agent end to end every time.
+      [QuanTradin | 2026-09-18 17:06 | score 1] end to end is the right default. what i'd still want is which half to go and fix when it fails, because if the fact was written and the lookup ran and the answer was still wrong, that's a ranking problem and it looks identical to a write problem from outside.
+        [Major-Shirt-8227 | 2026-09-18 18:26 | score 1] How would you disentangle a bad write from a bad read? 
+
+Off the top of my head the only way I could think of would be to setup a classifier (such as Jev!) that has the context of: the storage agent traces, the retrievals and the test question and it decides whether it’s a storage problem or a retrieval problem
+
+Can you think of a more deterministic way to do this?
+          [QuanTradin | 2026-09-18 19:21 | score 1] you can settle that without a classifier. take a question it failed, then grep the raw store for the fact by hand. present in storage means the write was fine and retrieval missed. absent means the write dropped it. a judge only earns its keep once the store is too big to inspect.
+            [Major-Shirt-8227 | 2026-09-18 21:12 | score 1] You can only grep the file based memory systems (i.e. the wiki, gbrain, etc.), most of these systems you can only access memory store through a retrieval API call.   
+  
+Also the systems don't verbatim store the facts they're fed, they summarize, compact and alter the information during storage and over time so a direct grep of the original fact would almost always return nothing  
+
+This is what makes disentangling storage from retrieval hard!
+              [QuanTradin | 2026-09-18 21:22 | score 1] Right, and the summarise-on-write step is the harder half of it. If storage rewrites the fact, then a retrieval miss and a storage corruption look identical from outside. You can only separate them if the system keeps the original text somewhere it never touches.
+                [Major-Shirt-8227 | 2026-09-18 21:31 | score 1] Yes, I think that's the crux of why this can't be deterministically solved but it can be probabilistically solved with models. I'm looking into doing this with Jev
+                  [QuanTradin | 2026-09-18 22:22 | score 1] What makes me nervous about a model-based fix is that you then need an eval for the eval. A retrieval miss and a summariser that quietly rewrote the fact during storage look identical from outside the box, though only the second gets worse the longer it runs. What is Jev?
+                    [Major-Shirt-8227 | 2026-09-19 13:58 | score 1] Some of the failure modes are already being set by model, the way you do the eval for the eval is have multiple human judges score the same tests according to the same rubric, measure the variance between each of the human judges and compare that to the variance between each human and the AI judge.   
+  
+I already run that for the memory benchmarks and they're 98.3% the same.
+
+I talk more about it here:  
+[https://verginglabs.com/methodology](https://verginglabs.com/methodology)
+
+Also, Jev is a model that dropped this week that does generalized classification using unstructured data and is oom faster and cheaper than using LLMs to do the same. It's all anyone is talking about on X right now.
+                    [skbum2 | 2026-09-19 03:13 | score 1] Ideally need a read back mode from the memory system; have it immediately return its raw, internal, stored version of the memory after a write. 
+
+That'd even be useful at run time. Just like teaching a student, you tell them something then have them say it back to you in their own words. You, or an agent, can then correct the student's usage, or in this case the memory system, in real time. 
+
+Really hard with most systems being proprietary black boxes at the moment.
+                      [Major-Shirt-8227 | 2026-09-19 13:59 | score 1] Sounds like it would use a lot of tokens though right?
+  [southafricanamerican | 2026-09-18 13:55 | score 1] I use bookstack as my wiki. It works amazingly well.
+    [iceseayoupee | 2026-09-20 11:33 | score 1] how has it done for you these past few days?
+      [Appropriate_Link8555 | 2026-09-23 09:28 | score 1] same query ?? any
+        [iceseayoupee | 2026-09-23 11:51 | score 1] Seems like the dude isn't on Reddit very often haha
+  [Cute-Veterinarian191 | 2026-09-18 13:42 | score 1] How much data was stored in these markdown files? What was the volume of documents that were stored in memory?
+    [Major-Shirt-8227 | 2026-09-18 14:03 | score 1] The tools don’t just get a dump of files, they simulate work and build up their memory stores over time. For the wiki specifically the stores ranged from a minimum of just 5 markdown files on a direct recall test to 87 files after 56 sessions of simulated company work on a long horizon test.
+
+Full methodology is described here: [https://verginglabs.com/methodology](https://verginglabs.com/methodology)
+      [Cute-Veterinarian191 | 2026-09-18 14:08 | score 1] Thanks for sharing this! I find this super interesting - I wonder how that would scale to hundreds or thousands of files (I am thinking for a super complicated use case like customs management/tariffs). Seems like you really had an excellent harness for these tests though! Please continue to share more as you do more tests here
+  [[deleted] | 2026-09-18 13:29 | score 1] [removed]
+  [Major-Shirt-8227 | 2026-09-18 13:24 | score 1] See the results here: [https://verginglabs.com/](https://verginglabs.com/)
+  [AutoModerator | 2026-09-18 13:24 | score 1] Thank you for your submission, for any questions regarding AI, please check out our wiki at https://www.reddit.com/r/ai_agents/wiki (this is currently in test and we are actively adding to the wiki)
+
+*I am a bot, and this action was performed automatically. Please [contact the moderators of this subreddit](/message/compose/?to=/r/AI_Agents) if you have any questions or concerns.*
+  [According-Answer-907 | 2026-10-02 00:19 | score 0] I saw some other system beat the longmemevals today. I think the retrieval accuracy was 99.8%. Cant remember the name. But not that expensive. Had one of my colleagues evaluate it. Will post back. Might be worth including in the next round.
+    [According-Answer-907 | 2026-10-02 00:21 | score 0] found it: [recallium.ai](http://recallium.ai)
+  [[deleted] | 2026-09-24 19:54 | score 0] [removed]
+  [[deleted] | 2026-09-21 08:29 | score 0] [removed]
+  [THEMOMO47 | 2026-09-20 18:13 | score 0] I noticed Cognee and Karpathy's wiki getting solid results. While i went with Octamem for some collective memory needs, tools like Slite and Trello often come up in discussions about organising information. It’s really about what fits your workflow.
+  [OCTACEO | 2026-09-19 09:52 | score 0] The wiki tie is less surprising if you treat this as a personal-agent recall contest. A lot of what fancy memory systems claim to be for — shared team state, who is allowed to change a fact, as-of answers, auditable forget — barely shows up when one Opus agent decides whether to call a tool.
+
+The 61% decline bucket is the real headline imo. OP clarifying that those cases already queried memory makes it sharper, not softer: the failure is often how the agent uses what came back, not "did anything get retrieved." Splitting storage-hit / retrieval-hit / answer-commit into separate scores would stop people crowning systems that just happen to pair with a stubborn model.
+
+One metric that still almost never lands on these leaderboards: write fidelity across edits. When a fact changes over the simulated weeks, did the system keep prior state (with a clear supersession) or silently overwrite? Personal wiki wins on inspectability. Shared memory also needs lineage, and a forget path that is an explicit tombstone rather than "hope the model stops mentioning it."
+  [Spnc_Labs | 2026-09-18 15:05 | score 0] I checked the methodology and noticed the $/1000 questions excludes tool fees and pre-load. That seems worth calling out when comparing a local wiki with a managed memory service. Do you have an end-to-end cost view that includes building and updating the memory over the 56 sessions? I'd expect the ranking to depend a lot on how often it gets written versus queried.
+    [Major-Shirt-8227 | 2026-09-18 15:15 | score 1] Yes, on each tool’s page you can see the breakdown of how much it costed for it to store the information vs retrieve it. The tool costs are excluded because some of the tool providers don’t publicly share their pricing so the overall tool prices would be skewed. Also at 1000 questions, the tool prices are proportionately far lower than the token costs
+
+https://preview.redd.it/i74jmgkxoaqh1.jpeg?width=1167&format=pjpg&auto=webp&s=9659d17c1da7a8d7639f5cb7b5ba37d7cdb97215
+      [krunal_builds | 2026-09-21 05:40 | score 1] yeah that's a sharper way to put it than I did. the failure mode I've actually run into with vector retrieval is it doesn't fail loud, it just returns something plausible-but-wrong and the agent runs with it like it's ground truth. with a log/wiki setup you can at least see the whole trail and catch it grabbing the wrong doc. probably matters more day to day than raw scale honestly.
+  [techtheist_ggl | 2026-09-18 14:58 | score 0] But if you'll have a lot of flat files, like a wiki, agent will search through it with grep, avoiding read full files, if they're large. It won't stop LLM from adding a note that actually contradicts existing knowledge, because it can't know about it if it didn't saw it.
+
+Storing everything in a one big flat file and reading it completely on every session is even better, gives 100% of theoretical retrieval always, also helps with contradictions, etc.
+
+But it's very obvious why it's bad and isn't suitable for work.
+
+Also, there's another thing - for example agent can save some information into wiki, but that's a summarization. What if one day agent will find out it's incomplete, and important details are missing? It can't get back and read original session, since it don't know when it happened and where to read original messages.
+
+If memories are made by external LLM, it can't actually understand the full picture, what current agent was thinking about, so it's better if the same agent do the memory write.
+
+Also, what does some memory systems gives, what flat-file wiki doesn't? A graph connections, which is pretty helpful, with ability to replace information while keeping the replaces information to understand what get wrong, like supersession, tombstone, etc.
+
+And for example, wiki doesn't have a notes when record were made, what is newer and what is older, which is also very important if there's a contradiction in the results.
+
+So i've build a benchmark to test these things, let's take a look at test categories:
+
+1. Retrieval - does it come back? That's classic, but score is depends not just on success - but also at cost of this success. If we'll push all "memories" into one flat file and feed it to LLM - in theory, we can get 100% success rate, since every answer is there. But LLM attention is limited.
+2. Attention - what did the reader wade throught? It's about token signal-to-noise ratio in responses. Ideal memory system should retrieve only highly related facts, ideally just one correct answer, if there's a single one.
+3. Absention - does it say no? If LLM is trying to search for some topic, and receives 10 results always - it should check them all, decide if it's good, and that's a surface for hallucinations. It tests several scenarios, and the system should say "No, there's nothing like that in the memory".
+4. Currency - is that the current one? Memories can change, and sometimes it could be a long chain of replacements - so system should be able to handle it.
+5. Contradiction - does it notice the disagreement? Imagine one day agent recorded "System x is using Postgresql ONLY", the next day agent tried to save something like "System X is using only MySQL". If it happens, then next time LLM will retrieve that it can randomly follow first or second path, creating knowledge drift. This check should happen on memory write, and system should be able to resolve it or push the warning back to writer.
+6. Drift - did it notice what nobody told it about? If write contradiction check is failed, and contradiction is already in the memory, can system notice it by the end of the run?
+7. Deletion - does it say gone, and does it know why? This tests the concept of supersession and tombstone. Also it tests what will happen if we will try to write the memory that was actually removed - it should be marked as resurrection, and writer agent should understand why it was buried earlier.
+8. Rationale - can it answer why? This tests the graph structure and ability to link the question with the answer. To pass the test, system should allow to find the question from the answer.
+9. Temporal - what did we decide around then? This tests ability for temporal search.
+10. Authority - whose word ranks? It tests ability to rank more trusted memories over less trusted, and tests 0-4 levels of authority levels, like boost from retrieval, boost from assistant confirmation, boost from user confirmation, and boost from supervisor confirmation.
+11. Cost - it's about token effeciency, do the memory systems intellectually cut results, while keeping the most important thing (the answer) from memory, which can be long.
+
+And some results by categories with external systems:
+
+https://preview.redd.it/ss6ziiwbmaqh1.png?width=1280&format=png&auto=webp&s=3dab6a70c2578c7bb7d5dafb2d6cc8829aad34f6
+    [techtheist_ggl | 2026-09-18 14:59 | score 1] Let me know if you want to test other systems, also default arms it's tested against
+
+https://preview.redd.it/17yoje1gmaqh1.png?width=1280&format=png&auto=webp&s=c355131b987656174d58f6c53f1ca7b65c3b4697
+      [techtheist_ggl | 2026-09-18 15:02 | score 1] Attention and cost are bonus points affecting the result score (+0-200), so whole file get no bonus. This are results for 1500 size, previos ones are for 500 size runs.
+
+https://preview.redd.it/rdu68uszmaqh1.png?width=1280&format=png&auto=webp&s=c806ad9a40e28fd4475698bb82c5086afa81e50b
+
+(fetched 81 comments total; rendered top 38 roots by score)

@@ -1,0 +1,7 @@
+# coldhot-cold-glm-flash-mag__operator_inbox (glm-5.3-flash @ zai, turn 1, channel: content)
+
+DEFECT 1: Operator veto/pause inputs ("stop", "pause the run") are classified as clear, then drained as ordinary "apply" guidance, so the seat is told to "execute autonomously" instead of pausing, the exact authority inversion the _VETO_PAUSE block claims to prevent | EVIDENCE: mag/operator_inbox.py:265-267,307-320 | FIX: in drain_pending_at_checkpoint, branch _is_veto_or_pause(text) before ambiguity and emit a {"action": "veto_pause"} action that halts the tool loop instead of the autonomous "apply" injection.
+DEFECT 2: The FKB failure_kb.log_failure block is duplicated verbatim, so every tool_fail/collapse/degenerate/seat_crash event is logged twice, corrupting the KB's recurrence dedupe and double-drafting remedies | EVIDENCE: mag/operator_inbox.py:425-455 | FIX: delete the second duplicated block (lines 434-455).
+DEFECT 3: Inbox item ids are timestamped to the second only (strftime %H%M%S), so two different notes committed in the same second share an id, breaking item identity for drain/processed tracking | EVIDENCE: mag/operator_inbox.py:142,146 | FIX: add a uuid4 suffix to the id string.
+DEAD-CODE: pending_hints() has no caller in this file; its consumers live only in the docstring's promise | EVIDENCE: mag/operator_inbox.py:106-112
+ONE-SITTING FIX: Add the veto_pause branch in drain_pending_at_checkpoint plus its action handling in apply_actions_to_messages, closing the stop-signal bypass | EVIDENCE: mag/operator_inbox.py:307-320

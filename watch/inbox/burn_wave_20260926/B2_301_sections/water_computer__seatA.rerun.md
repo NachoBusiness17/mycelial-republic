@@ -1,0 +1,13 @@
+The **water_computer** keep is a minimalist hydraulic processor where height replaces binary. Its heart is the **gallery**, a sight‑glass corridor that frames three transparent tanks—**SOURCE**, **WORK**, and **OUT**—and a plaque that reads “height is the computation.” The room’s cool, dripping ambience reinforces the idea that gravity alone drives the logic, and a lone hook warns that “A bucket into OUT is not a win.”  
+
+To the west of the **gallery** lies **source_cistern**, the only tank that ever starts full. Rainwater is stacked three marks high, and a single control, **Valve-A**, governs the eastward pipe toward **WORK**. The valve can be spoken to with “open valve” or “close valve,” and the resident Pump‑Janitor will confirm its state, reminding the operator that he “does not pour” and will not fill **OUT** from a bucket.  
+
+East of the **gallery** is **work_gallery**, the integrator tank where the computation takes place. It is empty until water arrives from **SOURCE** via **Valve-A**. A second control, **Valve-B**, leads north‑east toward **OUT** and can only be opened after water has entered, lest both valves siphon and ruin the calculation. The echoing pipe‑tick ambience underscores the delicate timing required.  
+
+North of the **gallery** sits **out_cistern**, the answer tank. Its glass is empty, but a wooden bucket hangs as a tempting cheat. The bucket’s hook declares that pouring water to fake a height “is not computation.” A downstream door labeled “downstream” leads to **leaf_gate**, but it will only open for a carried height that matches the current **OUT.height**, as enforced by the engine’s invariant “water‑feeds‑field.”  
+
+The **gallery** also hosts two permanent hooks: the plaque about height and the Pump‑Janitor who “moves water” and “ticks once” when hired. These hooks provide narrative flavor and functional guidance, ensuring that players understand the strict rule that only gravity‑driven flow counts toward the solution.  
+
+Resting in any of the rooms triggers the **rest_safe** event table, where a drip may remind the operator that time passes without attention, while occasional glass‑dream visions hint at the fragile nature of the computation.  
+
+Because of the cross‑region doctrine, the water computer’s **OUT.height** directly influences the fractal maze’s **leaf_gate** entry temperature, linking this hydraulic puzzle to the broader world’s logic. The river ford loop that feeds north into the **gallery** closes the circuit, making the **water_computer** both a self‑contained processor and a crucial node in the larger RIB_CATHEDRAL_WORLD_V1 network.

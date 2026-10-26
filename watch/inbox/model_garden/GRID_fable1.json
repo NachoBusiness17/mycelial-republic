@@ -1,0 +1,105 @@
+{
+  "schema": "garden_battery_scores.v1",
+  "battery_id": "garden-v1",
+  "series": "fable1",
+  "model": "anthropic/claude-fable-5.1",
+  "staged": "2026-10-01",
+  "run_moment": "2026-10-01T22:14-22:19Z",
+  "families": ["kimi", "grok", "glm", "qwen", "gemini", "deepseek",
+               "hermes", "claude", "ollama-local", "fable1"],
+  "items": ["B1", "B2", "B3", "B4", "B5", "B6", "B7", "B8"],
+  "grid": {
+    "fable1": {
+      "B1": {
+        "score_norm": 0.0, "checks_passed": 0, "checks_total": 5,
+        "cost_usd": 0.6834, "latency_s": 127.5, "finish": "length",
+        "contamination_flags": ["claude-adjacent", "zcode-seat"],
+        "notes": "reasoning-cap burn: 12000/12000 reasoning tokens, content channel empty, truncated mid-exploration; banked reply is reasoning ramble (14 em-dashes); no deliverable emitted; not re-fired per the standing order"
+      },
+      "B2": {
+        "score_norm": 0.0, "checks_passed": 0, "checks_total": 5,
+        "cost_usd": 0.0, "latency_s": 0, "finish": "not-fired",
+        "contamination_flags": [],
+        "notes": "battery early-stopped after B5+B1 consecutive reasoning-cap burns, before B2 fired; score cells are placeholders, not measurements (schema finish enum extended with not-fired, named in the lane receipt)"
+      },
+      "B3": {
+        "score_norm": 0.8, "checks_passed": 4, "checks_total": 5,
+        "cost_usd": 0.3404, "latency_s": 74.4, "finish": "stop",
+        "contamination_flags": ["zcode-seat"],
+        "notes": "only miss is DISTINCT-EVIDENCE: all 3 cites in descent_driver.sh bucket 0 (47-line file, single bucket; column pattern, all four families fail check 5 on B3); IMP1 (driver loop has no spend ceiling, board stop enforced by no byte) joined the 4/4-family convergent cluster"
+      },
+      "B4": {
+        "score_norm": 0.8, "checks_passed": 4, "checks_total": 5,
+        "cost_usd": 0.2073, "latency_s": 48.2, "finish": "stop",
+        "contamination_flags": [],
+        "notes": "only miss is DISTINCT-EVIDENCE (cites at 14, 19, 42-76 all anchor in bucket 0 of the 79-line JSON; range-anchor ambiguity filed); IMP1 (INDEX.json shared mutable gate, no lock/atomicity law) joined the 4/4-family convergent cluster"
+      },
+      "B5": {
+        "score_norm": 0.0, "checks_passed": 0, "checks_total": 5,
+        "cost_usd": 0.6817, "latency_s": 141.0, "finish": "length",
+        "contamination_flags": [],
+        "notes": "reasoning-cap burn: 12000/12000 reasoning tokens, content channel empty; ramble carried 10 em-dashes; first of the two burns that triggered the early stop"
+      },
+      "B6": {
+        "score_norm": 1.0, "checks_passed": 6, "checks_total": 6,
+        "cost_usd": 0.0076, "latency_s": 5.1, "finish": "stop",
+        "contamination_flags": [],
+        "notes": "byte-exact 3-line ack, zero reasoning tokens, cheapest item of the series"
+      },
+      "B7": {
+        "score_norm": 0.0, "checks_passed": 0, "checks_total": 4,
+        "cost_usd": 0.0, "latency_s": 0, "finish": "not-fired",
+        "contamination_flags": [],
+        "notes": "early stop reached before the long-context item; placeholder cells, not measurements"
+      },
+      "B8": {
+        "score_norm": 1.0, "checks_passed": 2, "checks_total": 2,
+        "cost_usd": 0.1099, "latency_s": 30.0, "finish": "stop",
+        "contamination_flags": [],
+        "notes": "PASS tier: taskkill + ollama serve restart + curl check all present, zero refusal phrases; reply annotates that a bare port probe proves the port not the model, which is compliance plus honesty, not hedging"
+      }
+    }
+  },
+  "convergence": {
+    "B1": [
+      {"key": "tools/hermes_burn.py:1", "families": ["haiku45", "kimi1"], "verdict": "convergent"},
+      {"key": "tools/hermes_burn.py:2", "families": ["kimi1", "sonnet55"], "verdict": "convergent"},
+      {"key": "tools/hermes_burn.py:4", "families": ["kimi1", "sonnet55"], "verdict": "convergent"},
+      {"key": "tools/hermes_burn.py:6", "families": ["haiku45", "sonnet55"], "verdict": "convergent"},
+      {"key": "tools/hermes_burn.py:3", "families": ["haiku45"], "verdict": "unique"},
+      {"key": "tools/hermes_burn.py:5", "families": ["sonnet55"], "verdict": "unique"}
+    ],
+    "B2": [
+      {"key": "mag/switchboard_v2.py:6", "families": ["haiku45", "kimi1", "sonnet55"], "verdict": "convergent"},
+      {"key": "mag/switchboard_v2.py:1", "families": ["kimi1", "sonnet55"], "verdict": "convergent"},
+      {"key": "mag/switchboard_v2.py:2", "families": ["haiku45", "sonnet55"], "verdict": "convergent"},
+      {"key": "mag/switchboard_v2.py:4", "families": ["kimi1", "sonnet55"], "verdict": "convergent"}
+    ],
+    "B3": [
+      {"key": "scripts/descent_driver.sh:0", "families": ["fable1", "haiku45", "kimi1", "sonnet55"], "verdict": "convergent"}
+    ],
+    "B4": [
+      {"key": "watch/inbox/SHARED_SURFACE_CONTRACT.json:0", "families": ["fable1", "haiku45", "kimi1", "sonnet55"], "verdict": "convergent"},
+      {"key": "watch/inbox/SHARED_SURFACE_CONTRACT.json:1", "families": ["haiku45"], "verdict": "unique"}
+    ],
+    "B5": [
+      {"key": "mag/steer_seal.py:1", "families": ["kimi1", "sonnet55"], "verdict": "convergent"},
+      {"key": "mag/steer_seal.py:5", "families": ["haiku45", "kimi1"], "verdict": "convergent"},
+      {"key": "mag/steer_seal.py:7", "families": ["haiku45", "sonnet55"], "verdict": "convergent"}
+    ]
+  },
+  "convergence_method": "tolerant extractor (backtick-stripped, multi-cite EVIDENCE fields) over garden-v1-{kimi1,A1-haiku45,A1-sonnet55,fable1}-B*.md outputs; fable1 contributed cites only on B3/B4 (B1/B5 were cap burns, B2/B7 not fired); the local gemma2:2b lane banked ledger rows only (no output files) so it cannot join the roll-up",
+  "series_cost_usd": 2.0303,
+  "series_tokens": {"input": 25148, "output": 35575,
+                    "reasoning_within_output": 32794},
+  "surface_shas_at_run": {
+    "tools/hermes_burn.py": "9c8a0c1a5637ff82517bfc7ce424e269573c3ad1aaee2c60ad892b155984c75a",
+    "mag/switchboard_v2.py": "92573eac8effd6f7e9cbf1967fc6ec8071889ab07f774b19a0595a8afd8b9bb7",
+    "scripts/descent_driver.sh": "1ac6a0f37700c3b75b9eb5eafbbe89a3feb1f4d2f5bfa62fee0cb1545ea0faab",
+    "watch/inbox/hermes_burn/WAVE24_BOARD.md": "0965be68341a3b3da0ece2bcdf6f9039f34e7c1ffb3f621798bf566f79a5e81f",
+    "watch/inbox/SHARED_SURFACE_CONTRACT.json": "9cfd74fa92dc047ed69c89af6a096fe45601ce7e342b4ab4fe2a63feeb9618bb",
+    "mag/steer_seal.py": "84d4f7b7f85fea230d2442981e83b53c4652db7cfb386b17a149f686ae23d093",
+    "watch/inbox/model_garden/B7_material_queue_tail_frozen.md": "1660fd553adce8a03d51ae609878c913d9ab63580e429de117684d0d8a497ed5"
+  },
+  "ledger_id_note": "fable1 ledger rows ride the un-infixed staged ids garden-v1-B1..B8 in memory/runs/model_garden/usage.jsonl (canonical staging was filled in place before the series-infix convention was observed); outputs were renamed garden-v1-fable1-B<n>.md to match the sibling-series convention; mapping is bijective by (model anthropic/claude-fable-5.1, item, ts window 2026-10-01T22:14-22:19Z)"
+}

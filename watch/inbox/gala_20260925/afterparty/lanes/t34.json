@@ -1,0 +1,15 @@
+{
+  "gopher": "t34",
+  "item": "standing quote hit-rate number: tools/quote_hitrate.py samples quote-bearing fields from watch/inbox + memory/runs/*/lanes JSON/JSONL (judge evidence_quote+cited_file rows, quote-audit text+dir/file units, lane quote+local-source rows), gates each through tools/quote_gate.check_quote, publishes passed/total to stdout and appends {ts, sample, hits, misses, miss_paths} to watch/inbox/quote_hitrate.jsonl; fail-open honest NO-SAMPLE (exit 0) under 5 gateable quotes",
+  "ok": true,
+  "note": "Landed tools/quote_hitrate.py (~190 lines, stdlib, imports quote_gate) + tests/test_quote_hitrate.py (4 cases: hit/miss sample files JSONL row with exact key set, multi-source extraction across all three unit shapes, NO-SAMPLE fails open without filing a row, empty-root census). Concrete sources verified by grep before building: QUOTE_AUDIT_WIDE_20260925.results.json units (88, all dir/file resolvable), mickey17_v2 lanes (200+ quote rows, mostly URL-cited so ungated), zero landed three-axis evidence_quote verdicts yet (schema is spec-only in BURN_JUDGE_LANE_BUILD_20260925.md). LIVE HIT-RATE: 26/50 = 52.0% (misses=24, capped=True, ungated=6644), row filed to watch/inbox/quote_hitrate.jsonl. Spot-checked honesty both ways: a miss (dd-freshness quote vs tools/freshness_check.py) independently exits 2 via quote_gate CLI, and 3 of 26 hits re-verified. Miss taxonomy observed: dd-* lanes quote tool STDOUT while citing the tool .py file, and CODEX_WITNESS quotes cite .md files that do not contain them; both are the disease the standing number measures. Negatives first-class: 6644 quote fields are ungated because their source is a URL, never guessed at; NO-SAMPLE files no row; measurement exits 0 on misses (misses are data). Two pytest iterations before green: tmp inbox mkdir collision (parents/exist_ok) and jsonl append needing parent mkdir, both fixed in the tool not papered in tests. One em-dash in t34.check.txt is the ratchet's own PASS stdout, uneditable, flagged here per t11a precedent; all four authored files count 0/0.",
+  "checks": [
+    "pytest tests/test_quote_hitrate.py -v -> 4 passed, exit 0",
+    "pytest tests/test_quote_gate.py -q -> 6 passed, exit 0 (regression)",
+    "live run tools/quote_hitrate.py -> QUOTE-HITRATE: 26/50 = 52.0%, exit 0, row filed",
+    "live spot-check: dd-freshness miss quote vs freshness_check.py via quote_gate -> FAIL exit 2",
+    "python tools/violation_ratchet.py check --changed -> scope=7, NEW=0, PASS, exit 0",
+    "em/en-dash byte count over tools/quote_hitrate.py, tests/test_quote_hitrate.py, quote_hitrate.jsonl -> 0/0 (check.txt em=1 is ratchet stdout)"
+  ],
+  "next_steal": "the 6644 ungated quote fields are URL-cited (mickey17 lanes cite GitHub sources); fetching those sources and gating lane quotes against upstream bytes would extend the standing number from internal quotes to external citation honesty, and the judge three-axis verdicts have not landed yet so evidence_quote sampling is wired and waiting for the first real verdict file"
+}

@@ -1,0 +1,9 @@
+# garden-x3-haiku-face (anthropic/claude-haiku-4.5 @ nous, turn 1, channel: content)
+
+IMPROVEMENT 1: _GRANTED_EVENT_IDS is an in-memory set that loses all replay protection on process restart, allowing the same event_id to be granted multiple times across restarts | EVIDENCE: mag/switchboard_v2.py:78-80 | FIX: Move _GRANTED_EVENT_IDS to a durable jsonl file (e.g. memory/runs/switchboard/granted_ids.jsonl) and load it at startup, appending each granted event_id atomically.
+
+IMPROVEMENT 2: grant() does not validate that narrow_capabilities is a subset of proposal.capabilities, allowing the reference monitor to grant capabilities that were never requested | EVIDENCE: mag/switchboard_v2.py:152-157 | FIX: Add check: granted = [c for c in (narrow_capabilities if narrow_capabilities is not None else requested) if c in requested] before line 152.
+
+IMPROVEMENT 3: _implicit_authority builds an AUTHORIZED status when label not in (untrusted-instruction, external-content) and effect not in high-impact list, but then at line 206 resets status from proposal if proposal.status == AUTHORIZED without re-validating the effect tier, allowing a low-tier effect AUTHORIZED proposal to self-grant a high-tier effect | EVIDENCE: mag/switchboard_v2.py:193-207 | FIX: At line 206, change to: status = "AUTHORIZED" if effect in ("board_write", "verkle_link") else "DENIED"
+
+DIFFERENT-BUILD: I would split policy enforcement into a separate immutable audit log (not the trail, which includes execution details) so that every policy decision (TTL, budget, authority, confirmation) is timestamped and signed by the policy engine module at the moment of evaluation, not after the fact. This prevents a buggy or malicious caller from post-hoc mutating decision records before they reach the trail. The falsifier is: an attacker must not be able to forge a policy_check verdict that policy_engine did not actually emit.

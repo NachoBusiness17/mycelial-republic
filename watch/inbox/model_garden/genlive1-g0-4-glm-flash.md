@@ -1,0 +1,6 @@
+# genlive1-g0-4-glm-flash (glm-5.3-flash @ zai, turn 1, channel: content)
+
+DEFECT 1: freshness contract broken by TOCTOU: catalog sha256 and bytes are snapshotted AFTER the index is built, so a catalog write during the build gets recorded as fresh meta over an index built from older bytes, which is exactly the lie the meta table exists to prevent | EVIDENCE: tools/corpus_fts_rebuild.py:104-108 | FIX: snapshot catalog sha256 and bytes before/at catalog open (line 84) and re-verify after build; abort and delete tmp on mismatch instead of writing fresh meta.
+DEFECT 2: malformed JSON lines are skipped silently at build time, shifting rowid-to-line-order mapping the module claims as its contract ("rowid = catalog line order"), and rows_indexed in meta no longer equals catalog line count | EVIDENCE: tools/corpus_fts_rebuild.py:88-94 | FIX: on malformed line, insert a placeholder crows row (or record its line number in meta) so rowid i always maps to catalog line i.
+DEAD-CODE: argv list-copy comprehension adds nothing over direct sys.argv[1:] use | EVIDENCE: tools/corpus_fts_rebuild.py:167
+ONE-SITTING FIX: wrap build_index body in try/finally that unlinks tmp_path on any exception and close con in finally, so a crashed build never leaves a live .tmp handle or a stale tmp beside the real db | EVIDENCE: tools/corpus_fts_rebuild.py:71-118

@@ -1,0 +1,125 @@
+{
+  "stub_id": "THIRD_WAY_ACT3_STUB",
+  "created": "2026-09-26",
+  "receipt": "watch/inbox/BURN_third-way-game_20260926_e.md",
+  "status": "content stub, playtest-gated, no game code",
+  "act": "III",
+  "set_piece": {
+    "name": "The Middle Path",
+    "pointer": "watch/inbox/MIDDLE_PATH_SALON_20260925.md Part 4, ACT III (faith and luck builds) and watch/inbox/BURN_third-way-game_20260925.md beats 15-20: grace shrine rents the Drive, take the Vow, receive the Unpeeked Seed, walk the Pilgrim path, die once (so it goes), endgame ledger shows the pool abolished for all players (F7)"
+  },
+  "vow_mechanic": {
+    "name": "THE VOW",
+    "blind_declare": {
+      "rule": "before a boon draft, a player may vow blind: declare the pick before seeing the three cards",
+      "source": "watch/inbox/MIDDLE_PATH_SALON_20260925.md, ACT III, THE VOW"
+    },
+    "kept_vow": {
+      "multiplier": 1.5,
+      "price_rule": "the Vow price is 2x the boon's vm_cost",
+      "source": "watch/inbox/THIRD_WAY_BOONS_STUB.json design_decisions (Inefficiency Law as arithmetic) and vow_multiplier fields: all 10 vow_eligible boons carry 1.5; constants restated in watch/inbox/BURN_third-way-game_20260926.md falsifier F8",
+      "supersedes": "the salon draft line 'a kept vow doubles the boon' is re-priced: pledged power per VM is strictly worse than plain picks, so no meta can optimize Vow plus Seed into a dominant strategy (falsifier F6)"
+    },
+    "broken_vow": {
+      "cost": "VM",
+      "source": "watch/inbox/MIDDLE_PATH_SALON_20260925.md, THE VOW: 'a broken vow costs VM'"
+    },
+    "scout_lockout": {
+      "rule": "vow-takers cannot scout that round; peek mechanics disabled for the round the Vow is sworn",
+      "source": "watch/inbox/MIDDLE_PATH_SALON_20260925.md, THE VOW: 'Vow-takers cannot scout that round (peek mechanics disabled)'"
+    },
+    "eligibility": {
+      "rule": "a boon with vow_eligible=false can never be vowed; the Unstuck-face boons (crits, longer_superhot) are the two",
+      "source": "watch/inbox/THIRD_WAY_BOONS_STUB.json field_gloss and boons; canon: 'Billy never vows; he drifts, and his serenity is acceptance, not faith' (watch/inbox/STORYTELLER_SIX_RACTOR_20260925.md, Unstuck chair)"
+    },
+    "instrumentation": "every Vow prints the VOW-TAKEN line, schema-locked by watch/inbox/THIRD_WAY_VOW_LOG_SCHEMA.json (vow ids constrained to the boon stub; Unstuck ids never valid)"
+  },
+  "unpeeked_seed": {
+    "name": "THE UNPEEKED SEED",
+    "shrine": {
+      "rule": "a grace shrine rolls the game's seeded RNG",
+      "canonical_in_game_name": "the Improbability Drive, rented; grace rolls consume a visible Improbability resource (luck is spent, not free)",
+      "source": "watch/inbox/MIDDLE_PATH_SALON_20260925.md, THE UNPEEKED SEED; watch/inbox/STORYTELLER_SIX_RACTOR_20260925.md Guide chair; watch/inbox/BURN_third-way-game_20260925.md beats 15-20"
+    },
+    "peeked": {
+      "rule": "inspect the seed (scout) and you get average outcomes guaranteed",
+      "variant_canon": "the peeked variant is the Finite Improbability Generator, which in canon burns its users",
+      "counts_as_peeking": ["marble bags", "hidden rerolls", "streak breakers"],
+      "source": "watch/inbox/MIDDLE_PATH_SALON_20260925.md, THE UNPEEKED SEED; watch/inbox/STORYTELLER_SIX_RACTOR_20260925.md Guide chair; watch/inbox/BURN_third-way-game_20260925.md seed audit"
+    },
+    "unpeeked": {
+      "rule": "roll without inspecting and you are eligible for the grace distribution (rare high rolls)",
+      "source": "watch/inbox/MIDDLE_PATH_SALON_20260925.md, THE UNPEEKED SEED"
+    },
+    "falsifier_F3_binding": {
+      "rule": "the grace distribution must match the seeded RNG distribution exactly (F3: luck is the unpeeked seed, never the rigged die); byte-match is enforced as: two same-seed runs must match roll for roll, and totals >= 7 must sit at the 2d6 rate (15/36, about 41.7%) with no smoothing",
+      "source": "watch/inbox/MIDDLE_PATH_SALON_20260925.md falsifiers F3; watch/inbox/BURN_third-way-game_20260925.md seed audit; extended by F9 in watch/inbox/BURN_third-way-game_20260926_b.md: every GRACE line validates against watch/inbox/THIRD_WAY_GRACE_SCHEMA.json, any sequence divergence voids the Unpeeked Seed claim and the shrine ships as peeked until fixed"
+    },
+    "resolution": "resolution stays 2d6, pass on 7: the grace distribution lives in the same curve the whole game already rolls",
+    "resolution_source": "watch/inbox/STORYTELLER_SIX_RACTOR_20260925.md, the tavern paragraph"
+  },
+  "pilgrim_class": {
+    "name": "THE PILGRIM",
+    "class_slot": "new class beside Squire/Rogue/Monk/Bard",
+    "win_path": "wins by Vow multipliers and grace rolls",
+    "death_rule": {
+      "rule": "no loot loss on death: shared respawn; what the Skeleton King has, the Pilgrim takes (immortality-shared as a mechanic, C9 playable)",
+      "register_canon": "shared respawn flavored as being unstuck, not as blessing; the death line, every death, right in the death text: so it goes",
+      "source": "watch/inbox/MIDDLE_PATH_SALON_20260925.md, THE PILGRIM; watch/inbox/STORYTELLER_SIX_RACTOR_20260925.md Unstuck chair (SO IT GOES) and Engineer chair ('the Pilgrim sheds loot', named in the Inefficiency Ledger)"
+    },
+    "income_rule": {
+      "rule": "the Pilgrim's VM income is shared with whoever kills them: killing a Pilgrim pays both sides",
+      "design_name": "the positive-sum transmutation, von Neumann's design order executed",
+      "source": "watch/inbox/MIDDLE_PATH_SALON_20260925.md, THE PILGRIM"
+    }
+  },
+  "endgame": {
+    "name": "MASTER OF TWO WORLDS",
+    "unlock_rule": {
+      "rule": "a player who maxed war rank AND walked the middle path unlocks the Riddler endgame; conjunction: both required, neither alone fires it (the same conjunction shape as the Act I FAILED DATE trigger)",
+      "source": "watch/inbox/MIDDLE_PATH_SALON_20260925.md, ENDGAME; conjunction shape per watch/inbox/THIRD_WAY_ACT1_WALL_STUB.json despair_debuff.trigger.logic"
+    },
+    "content": {
+      "rule": "the final content is authoring riddles for the next cohort: the keeper becomes curriculum",
+      "riddle_3_link": "the Door's riddle 3 is RESERVED, owner: Riddler endgame cohort, contract: the cohort authors riddle text, answer key, and acceptance rule before Act III expansion ships",
+      "source": "watch/inbox/MIDDLE_PATH_SALON_20260925.md, ENDGAME; watch/inbox/THIRD_WAY_ACT2_DOOR_STUB.json riddle_chain.riddles[2]"
+    },
+    "companion_bound_facts": [
+      {
+        "fact": "the Pilgrim endgame must find the child: locate and cut the VM treadmill at its source, abolishing the pool for every player, dark, light, and pilgrim alike; personal exit without structural change fails the endgame review (falsifier F7)",
+        "source": "watch/inbox/STORYTELLER_SIX_RACTOR_20260925.md, Walker chair and F7"
+      },
+      {
+        "fact": "the tortoise in the corner of the Guttered Lantern is the game's actual endgame NPC",
+        "source": "watch/inbox/STORYTELLER_SIX_RACTOR_20260925.md, Turtle chair"
+      }
+    ]
+  },
+  "canon_guard": {
+    "rule": "every fact in this stub carries a source pointer into the bound files below; a pointer that dies, or a telling that changes one of these facts rather than its register, voids the stub and re-opens Act III (register-consistency contract per watch/inbox/SIX_CHAIR_TELLINGS.json ractor_contract)",
+    "bound_files": [
+      {
+        "file": "watch/inbox/STORYTELLER_SIX_RACTOR_20260925.md",
+        "carries": "six chairs, mechanic unlocks at Act III eligibility, Billy never vows, SO IT GOES shared respawn, the Improbability Drive and Finite Improbability Generator, resolution stays 2d6 pass on 7, Walker's Price (F7), the corner tortoise endgame NPC"
+      },
+      {
+        "file": "watch/inbox/THIRD_WAY_BOONS_STUB.json",
+        "carries": "vow_eligible, vow_multiplier 1.5, vm_cost, the 2x Vow price, seed_locked, the Inefficiency Law arithmetic (F6/F8)"
+      },
+      {
+        "file": "watch/inbox/THIRD_WAY_ACT1_WALL_STUB.json",
+        "carries": "the FAILED DATE conjunction shape (both required, neither alone fires it) that this stub's endgame unlock mirrors"
+      },
+      {
+        "file": "watch/inbox/THIRD_WAY_ACT2_DOOR_STUB.json",
+        "carries": "riddle 3 RESERVED, owner Riddler endgame cohort, the authoring contract gating Act III expansion"
+      },
+      {
+        "file": "watch/inbox/MIDDLE_PATH_SALON_20260925.md",
+        "carries": "the Act III mechanics prose this stub binds to data: blind declare, broken vow costs VM, scout lockout, peek yields guaranteed averages, grace eligibility, falsifiers F1-F4, the Pilgrim class rules, the endgame unlock conjunction",
+        "note": "guard extension this pass: the four files named in the ask hold the Act I/II canon and the re-priced Vow arithmetic, but these Act III facts exist byte-level only in the salon, so binding without it would fabricate traceability"
+      }
+    ],
+    "asymmetry_resolution": "watch/inbox/SIX_CHAIR_TELLINGS.json canon_binding flagged act_III as prose-bound with no stub; this stub retires that flag. The tellings file is untouched this pass; its owning lane amends canon_binding.act_III to point here."
+  }
+}

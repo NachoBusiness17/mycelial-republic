@@ -1,0 +1,69 @@
+{
+  "lane": "seats-inventory",
+  "division": "B",
+  "ok": true,
+  "note": "Inventoried 975 in-window artifacts (72,591,499 bytes) across flash50, burn_reset work, localfirst, localfirst-steal clones/tarball, music-ractor, music folder, corpus adds, root probes and 192 report_v1 receipts: 891 cataloged with bytes verified, 4 catalog rows stale-bytes, 80 unregistered (all lbrain-clone .git plumbing, Mimosa hook-state, pyc - zero fetched sources of value loose), INDEX 84 registered (sha-verified) with 6 sha-stale; librarian diseases checked: arXiv-id overmatch trap confirmed live (3 catalog rows mention 2310.10158 for 1 file), 54 stem-shadows resisted among the unregistered, 0 real magic-byte corruptions (pass-1's 105 were my own classifier's false positives, owned), 18 path-convention double-registrations found in the mid-run catalog rebuild, 5 mangled-path root copies; catalog+FTS were rebuilt out-of-band at Oct 1 19:45 EDT mid-run (log gap: logs/fts_index.log has no Oct 1 entry), counts pinned to the pass-2 stream moment per census law. Receipt: watch/inbox/librarian_exp/inventory.md. mag/ or tools/ untouched, so the ratchet leg was not applicable and not run.",
+  "artifact": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/librarian-expedition/lanes/seats-inventory.json",
+  "rows": [
+    {
+      "law": "exact-path-or-it-is-not-registered",
+      "claim": "A catalog registration verdict is only valid by exact normalized repo-relative path plus recorded-bytes equality; id-substring matching overcounts (2310.10158 hits 3 rows for 1 file) and stem matching would have marked 54 unregistered clone-plumbing files as registered.",
+      "quote": "3 row(s) mention the id; 2 row(s) are the actual pdf path",
+      "source": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/librarian_exp/reconcile_summary.txt",
+      "steal": "Next librarian ask: make catalog registration checks match exact normalized path + byte equality only, and unify the 'watch/inbox/' vs 'local_sovereign_agent/watch/inbox/' conventions (18 double-registrations found) in the next rebuild.",
+      "falsifier": "A sweep where id-substring and stem matching produce the same registered/unregistered verdicts as exact-path matching on the same tree moment.",
+      "leverage": "high"
+    },
+    {
+      "law": "index-sha-drift-is-visible-drift",
+      "claim": "6 of 84 INDEX-registered receipts fail sha256 recompute against disk (edited after INDEX registration), so INDEX registration is a moment, not a property; verify sha at consume, not at register.",
+      "quote": "Writers APPEND events; they never rewrite this file or the log. The log is the source of truth.",
+      "source": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/INDEX.json",
+      "steal": "Shared-surface patrol: add a daily sha-recompute of INDEX items (under 20MB) with a stale-hash report to the inbox, same shape as the census drift patrol.",
+      "falsifier": "A patrol week where every INDEX sha recompute passes while files under watch/inbox are edited in place.",
+      "leverage": "medium"
+    },
+    {
+      "law": "moving-surface-moments",
+      "claim": "catalog.jsonl and catalog_fts.sqlite were rebuilt mid-run (691,789 lines at 22:57Z to 821,776 rows by 23:59Z; FTS crows 821,776 exactly matching the pass-2 stream, rebuilt out-of-band at 19:45 EDT with no Oct 1 entry in logs/fts_index.log), so inventory counts are moments and must be pinned.",
+      "quote": "Name instrument, moment, and delta before comparing counts; never difference two counts taken at different moments.",
+      "source": "C:/Users/foste/Documents/projects/local_sovereign_agent/AGENTS.md",
+      "steal": "Librarian operating rule: every inventory/receipt names the surface byte-size and mtime it read and, when a rebuild lands mid-run, re-streams once and re-verdicts against the final moment (done here: pass 2).",
+      "falsifier": "A run where the catalog byte-size and row count are identical at start and end while a rebuild is claimed to have occurred.",
+      "leverage": "high"
+    }
+  ],
+  "checks": [
+    {
+      "command": "find watch/inbox/burn_reset_20260927/flash50 watch/inbox/burn_reset_20260927/work watch/inbox/localfirst watch/inbox/gala_20260925/localfirst-steal watch/inbox/gala_20260925/music-ractor -type f -newermt \"2026-09-29 22:56\" -printf \"%s\\t%TY-%Tm-%TdT%TH:%TM:%TSZ\\t%p\\n\" + git status --porcelain -uall adds extraction",
+      "exit": 0,
+      "evidence": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/librarian_exp/trail_listing_raw.txt (438 rows) + C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/librarian_exp/adds_all.txt (573 rows)"
+    },
+    {
+      "command": "C:/Users/foste/Documents/projects/local_sovereign_agent/.venv/Scripts/python.exe -u watch/inbox/librarian_exp/build_inventory.py",
+      "exit": 0,
+      "evidence": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/librarian-expedition/lanes/seats-inventory.check.txt (pass 1 section: 975 artifacts gathered, catalog/INDEX loads, magic sniffs, INDEX sha recomputes)"
+    },
+    {
+      "command": "C:/Users/foste/Documents/projects/local_sovereign_agent/.venv/Scripts/python.exe -u watch/inbox/librarian_exp/reconcile_print_only.py",
+      "exit": 0,
+      "evidence": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/librarian_exp/reconcile_out.txt (821,776 catalog rows; 770,616 prefixed; FTS probes all catalog=yes fts=yes; registered 891 missing-from-fts 0; SUMMARY v2: cat yes 891/stale 4/no 80, INDEX yes 84/sha-stale 6, 80 unregistered all scratch, 54 stem-shadowed, 0 real mismatches) - summary also appended to seats-inventory.check.txt"
+    },
+    {
+      "command": "C:/Users/foste/Documents/projects/local_sovereign_agent/.venv/Scripts/python.exe -u watch/inbox/librarian_exp/gen_receipt.py > watch/inbox/librarian_exp/inventory.md",
+      "exit": 0,
+      "evidence": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/librarian_exp/inventory.md (977 table lines = 975 artifacts + 2 header rows; em-dash scan 0)"
+    },
+    {
+      "command": "MSYS2_ARG_CONV_EXCL='*' schtasks /Query /TN MagFtsIndexDaily ; tail -6 logs/fts_index.log",
+      "exit": 0,
+      "evidence": "Task Ready (next run 10/2/2026 9:00 AM) but log last END [2026-09-30 09:00:02] with no Oct 1 stamp, while catalog_fts.sqlite mtime reads Oct 1 19:45 EDT - out-of-band rebuild observed, stated not attributed"
+    },
+    {
+      "command": "grep -c \"Name instrument, moment, and delta before comparing counts; never difference two counts taken at different moments\" AGENTS.md ; grep -c \"Writers APPEND events; they never rewrite this file or the log\" watch/inbox/INDEX.json ; grep -c \"3 row(s) mention the id; 2 row(s) are the actual pdf path\" watch/inbox/librarian_exp/reconcile_summary.txt",
+      "exit": 0,
+      "evidence": "all three returned 1 (byte-exact quotes banked in rows)"
+    }
+  ],
+  "decision_changed": "librarian registration health of the 48h seat fetch trail: the catalog swept the seats' fetched sources cleanly (891/975 bytes-verified, all 80 unregistered are clone plumbing/hook-state/pyc), so no mass re-registration is owed; the concrete follow-ups this dance names are the 4 stale catalog rows (w-belt-cube-mechanism hermes+openrouter1-3), 6 stale INDEX sha entries, 18 mixed-convention double-registrations to unify at the next rebuild, and 5 mangled-path root copies to delete or relocate."
+}

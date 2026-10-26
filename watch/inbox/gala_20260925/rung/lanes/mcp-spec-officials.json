@@ -1,0 +1,151 @@
+{
+  "lane": "mcp-spec-officials",
+  "division": "B",
+  "date": "2026-10-10",
+  "ok": true,
+  "survey_scope": "Official MCP surface first-hand: modelcontextprotocol.io docs + spec, github.com/modelcontextprotocol org (43 repos via GitHub API), spec repo tags/releases, servers repo README, 2026-07-28 spec pages (transports, authorization, changelog, deprecated).",
+  "findings": [
+    {
+      "topic": "spec version trajectory",
+      "finding": "Published final spec revisions: 2024-10-07 (pre-release tag), 2024-11-05, 2025-03-26, 2025-06-18, 2025-11-25, 2026-07-28 (current), with a live /specification/draft/ tree. RC cadence: 2026-07-28-RC published 2026-05-29, final 2026-07-28. Release publish dates byte-listed in _byproducts/mcp-spec-officials.spec-releases.raw.json (e.g. 2025-11-25 published 2025-11-25; 2026-07-28 published 2026-07-28).",
+      "evidence": "_byproducts/mcp-spec-officials.spec-releases.raw.json, _byproducts/mcp-spec-officials.spec-tags.raw.json, mcp-spec-officials.check.txt section [3], llms.txt index lines 100-125 in mcp-spec-officials.llms.raw.txt"
+    },
+    {
+      "topic": "transports today",
+      "finding": "The 2026-07-28 spec standardizes exactly two bindings: stdio (newline-delimited JSON-RPC over client-launched subprocess streams) and Streamable HTTP (each message an HTTP POST to a single MCP endpoint; replies as a JSON object or a request-scoped SSE stream). HTTP+SSE (2024-11-05 era) was deprecated 2025-03-26 and reclassified Deprecated under SEP-2596 with earliest removal three months after SEP-2596 reaches Final; nothing has been Removed yet. 2026-07-28 also removed SSE stream resumability (Last-Event-ID, SSE event IDs) from Streamable HTTP: a broken stream loses the in-flight request and the client MUST re-issue it. New framing: a transport is a binding defining framing, request metadata, and cancellation only; protocol semantics are identical everywhere, custom transports are allowed (MUST preserve JSON-RPC + message patterns + per-request metadata).",
+      "evidence": "mcp-spec-officials.transports.raw.md lines 9-27, 62-81; mcp-spec-officials.deprecated.raw.md lines 33, 41-43; mcp-spec-officials.changelog.raw.md line 30"
+    },
+    {
+      "topic": "2026-07-28 protocol-shape redesign (stateless)",
+      "finding": "2026-07-28 made MCP stateless (SEP-2575): no initialize/notifications/initialized handshake, no Mcp-Session-Id, list endpoints no longer vary per-connection; every request carries protocol version + client capabilities in _meta (io.modelcontextprotocol/protocolVersion, io.modelcontextprotocol/clientCapabilities), version mismatch returns UnsupportedProtocolVersionError. Added server/discover (MUST-implement advertisement RPC, also the backward-compat probe), subscriptions/listen (single long-lived POST stream replacing HTTP GET + resources/subscribe), MRTR (InputRequiredResult, resultType input_required) replacing server-initiated requests (roots/list, sampling/createMessage, elicitation/create), required resultType on all results, ttlMs/cacheScope cache hints (SEP-2549), Mcp-Method/Mcp-Name required headers (SEP-2243), error-code range partition (-32020..-32099 spec-reserved). ping, logging/setLevel, notifications/roots/list_changed removed. Tasks moved out of core into official extension io.modelcontextprotocol/tasks (SEP-2663). Roots, Sampling, Logging deprecated by SEP-2577 (earliest removal on/after 2027-07-28): sampling migration is integrate directly with LLM provider APIs.",
+      "evidence": "mcp-spec-officials.changelog.raw.md lines 14-30, 38, 51-69, 75-82; mcp-spec-officials.deprecated.raw.md lines 28-30"
+    },
+    {
+      "topic": "auth story today",
+      "finding": "Authorization is OPTIONAL and scoped to HTTP transports: MCP server acts as an OAuth 2.1 resource server, stdio implementations SHOULD NOT use this spec and instead retrieve credentials from the environment. Base standards: OAuth 2.1 draft-13, RFC 6750, RFC 8414, RFC 7591, RFC 8707, RFC 9728, RFC 9207, OAuth Client ID Metadata Documents (draft-ietf-oauth-client-id-metadata-document-00), OIDC Discovery + Dynamic Registration. MUSTs: MCP servers implement RFC 9728 Protected Resource Metadata; MCP clients use it for authorization-server discovery; clients MUST validate RFC 9207 iss before code redemption (SEP-2468); clients key persisted credentials by issuer (SEP-2352). Dynamic Client Registration (RFC 7591) is deprecated in 2026-07-28 (PR #2858) in favor of Client ID Metadata Documents (kept for backcompat). Step-up authorization via WWW-Authenticate scope challenges, challenge scopes authoritative per operation.",
+      "evidence": "mcp-spec-officials.authorization.raw.md lines 13-25, 33-46, 50-59, 63-82, 99-136; mcp-spec-officials.deprecated.raw.md line 31; mcp-spec-officials.changelog.raw.md lines 40-50"
+    },
+    {
+      "topic": "what the official servers repo ships",
+      "finding": "modelcontextprotocol/servers is ACTIVE (not archived; pushed_at 2026-10-11T02:09:15Z, 91131 stars, 491 open issues, license Apache-2.0 for new contributions / MIT legacy) and ships exactly 7 reference servers: Everything, Fetch, Filesystem, Git, Memory, Sequential Thinking, Time (src/everything ... src/time). They are explicitly educational reference implementations, not production-ready. 13 older reference servers (AWS KB, Brave Search, EverArt, GitHub, GitLab, Google Drive, Google Maps, PostgreSQL, Puppeteer, Redis, Sentry, Slack, SQLite) moved to the archived repo servers-archived (one of 5 archived repos in the org, with docs, create-typescript-server, create-python-server, use-mcp). Server discovery moved to the MCP Registry at registry.modelcontextprotocol.io (registry repo, community-driven). Repo is managed by Anthropic.",
+      "evidence": "_byproducts/mcp-spec-officials.servers-repo.raw.json; _byproducts/mcp-spec-officials.repos.raw.json; mcp-spec-officials.servers-readme.raw.md lines 3-9, 25-53, 170"
+    },
+    {
+      "topic": "rest of the org surface",
+      "finding": "10 SDKs (python 24538 stars, typescript 13550, go, csharp, java, rust, php, swift, kotlin, ruby, several co-maintained with Google/Spring/Microsoft/JetBrains/PHP Foundation). Tools: inspector (11050 stars), conformance suite, mcpb (Desktop Extensions one-click local install), example-remote-server, quickstart-resources. Extension repos: ext-apps (MCP Apps: UIs embedded in AI clients, 2933 stars), ext-skills (skills discovery through MCP primitives), ext-tasks, ext-auth (extensions to authorization), ext-server-card, plus experimental ones (interceptors, variants, tool-annotations, triggers-events, filesystems). Working groups: transports, agents, progressive-disclosure, financial-services. Governance: feature lifecycle policy (Active/Deprecated/Removed, minimum 12-month deprecation window, public registry page) adopted in 2026-07-28 via SEP-2596; SEP process formalized as PR-based markdown in seps/ (SEP-1850).",
+      "evidence": "_byproducts/mcp-spec-officials.repos.raw.json; mcp-spec-officials.changelog.raw.md lines 107-118"
+    }
+  ],
+  "probe": {
+    "what": "Two live-fetched falsifiable claims: C1 the newest final (non-RC) spec tag is exactly 2026-07-28; C2 the 2026-07-28 transports index numbers exactly two standard bindings (stdio, Streamable HTTP) and does not mention HTTP+SSE.",
+    "script": "watch/inbox/gala_20260925/rung/lanes/mcp-spec-officials.probe.py",
+    "first_attempt": "exit 1 on a probe code bug (AttributeError: urllib.response.urlopen); fetches never ran; documented in check.txt section [6]",
+    "result": "exit 0 after the one-line urllib.request fix: C1 PASS (tags 2024-10-07, 2024-11-05, 2025-03-26, 2025-06-18, 2025-11-25, 2026-07-28), C2 PASS (items ['stdio', 'Streamable HTTP'])",
+    "evidence": "watch/inbox/gala_20260925/rung/lanes/mcp-spec-officials.probe.out.txt and check.txt sections [6] and [6-RERUN]"
+  },
+  "raw_files": [
+    "watch/inbox/gala_20260925/rung/lanes/mcp-spec-officials.llms.raw.txt",
+    "watch/inbox/gala_20260925/rung/lanes/_byproducts/mcp-spec-officials.repos.raw.json",
+    "watch/inbox/gala_20260925/rung/lanes/_byproducts/mcp-spec-officials.servers-repo.raw.json",
+    "watch/inbox/gala_20260925/rung/lanes/_byproducts/mcp-spec-officials.spec-tags.raw.json",
+    "watch/inbox/gala_20260925/rung/lanes/_byproducts/mcp-spec-officials.spec-releases.raw.json",
+    "watch/inbox/gala_20260925/rung/lanes/mcp-spec-officials.transports.raw.md",
+    "watch/inbox/gala_20260925/rung/lanes/mcp-spec-officials.authorization.raw.md",
+    "watch/inbox/gala_20260925/rung/lanes/mcp-spec-officials.changelog.raw.md",
+    "watch/inbox/gala_20260925/rung/lanes/mcp-spec-officials.deprecated.raw.md",
+    "watch/inbox/gala_20260925/rung/lanes/mcp-spec-officials.servers-readme.raw.md",
+    "watch/inbox/gala_20260925/rung/lanes/mcp-spec-officials.probe.py",
+    "watch/inbox/gala_20260925/rung/lanes/mcp-spec-officials.probe.out.txt",
+    "watch/inbox/gala_20260925/rung/lanes/mcp-spec-officials.check.txt"
+  ],
+  "checks": [
+    {
+      "command": "curl -sL https://modelcontextprotocol.io/llms.txt -o mcp-spec-officials.llms.raw.txt && grep -c \"specification/2026-07-28\"",
+      "exit": 0,
+      "evidence": "watch/inbox/gala_20260925/rung/lanes/mcp-spec-officials.check.txt (section [1]; 31 current-spec pages indexed)"
+    },
+    {
+      "command": "curl -sL https://api.github.com/repos/modelcontextprotocol/servers -o mcp-spec-officials.servers-repo.raw.json (digest: archived=False, pushed_at=2026-10-11T02:09:15Z, stars=91131)",
+      "exit": 0,
+      "evidence": "watch/inbox/gala_20260925/rung/lanes/mcp-spec-officials.check.txt section [2]"
+    },
+    {
+      "command": "curl -sL https://api.github.com/repos/modelcontextprotocol/modelcontextprotocol/releases?per_page=100 -o mcp-spec-officials.spec-releases.raw.json (digest: 9 releases, newest final 2026-07-28 published 2026-07-28)",
+      "exit": 0,
+      "evidence": "watch/inbox/gala_20260925/rung/lanes/mcp-spec-officials.check.txt section [3]"
+    },
+    {
+      "command": "curl -sL https://api.github.com/orgs/modelcontextprotocol/repos?per_page=100 -o mcp-spec-officials.repos.raw.json (digest: 43 repos, 5 archived: docs, create-typescript-server, create-python-server, servers-archived, use-mcp)",
+      "exit": 0,
+      "evidence": "watch/inbox/gala_20260925/rung/lanes/mcp-spec-officials.check.txt section [4]"
+    },
+    {
+      "command": "curl -sL the 5 pages: specification/2026-07-28 transports index + authorization index + changelog + deprecated (.md) and raw servers README",
+      "exit": 0,
+      "evidence": "watch/inbox/gala_20260925/rung/lanes/mcp-spec-officials.check.txt section [5] (grep excerpts with line numbers)"
+    },
+    {
+      "command": ".venv/Scripts/python.exe watch/inbox/gala_20260925/rung/lanes/mcp-spec-officials.probe.py (first attempt)",
+      "exit": 1,
+      "evidence": "watch/inbox/gala_20260925/rung/lanes/mcp-spec-officials.check.txt section [6] (probe code bug, not a claim falsification)"
+    },
+    {
+      "command": ".venv/Scripts/python.exe watch/inbox/gala_20260925/rung/lanes/mcp-spec-officials.probe.py (rerun after urllib fix)",
+      "exit": 0,
+      "evidence": "watch/inbox/gala_20260925/rung/lanes/mcp-spec-officials.check.txt section [6-RERUN]; C1 + C2 both PASS"
+    }
+  ],
+  "decision_changed": "mcp surface baseline for the estate: any future estate MCP client/server work targets spec 2026-07-28 (stateless, per-request _meta protocolVersion, server/discover), the two standard transports (stdio local, Streamable HTTP remote), OAuth 2.1 with RFC 9728 protected-resource metadata (env credentials for stdio), and treats the MCP registry (registry.modelcontextprotocol.io) as the discovery surface and the 7 reference servers as the only official server code; pre-2026-07-28 session-shape MCP knowledge is now known-stale.",
+  "rows": [
+    {
+      "law": "MCP went stateless in 2026-07-28",
+      "claim": "The current spec removed the initialize handshake and Mcp-Session-Id; every request carries its protocol version and client capabilities in _meta, so estate MCP integrations must be per-request versioned, never session-scoped.",
+      "quote": "Make MCP stateless: remove the `initialize`/`notifications/initialized` handshake. Every request now carries its protocol version and client capabilities in `_meta`",
+      "source": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/rung/lanes/mcp-spec-officials.changelog.raw.md",
+      "steal": "One sitting: add a five-line note to queue/todo.md that estate MCP work pins to the 2026-07-28 stateless shape (per-request _meta.io.modelcontextprotocol/protocolVersion, server/discover probe) so no seat re-derives the 2025-06-18 session shape.",
+      "falsifier": "A spec revision newer than 2026-07-28 whose changelog reinstates initialize or Mcp-Session-Id, or the changelog page dropping the stateless bullet.",
+      "leverage": "high"
+    },
+    {
+      "law": "Two standard transports only",
+      "claim": "stdio and Streamable HTTP are the only standard bindings in the current spec; HTTP+SSE is deprecated (2025-03-26) and SSE resumability (Last-Event-ID) was removed from Streamable HTTP in 2026-07-28, so remote estate MCP surfaces must tolerate broken-stream re-issue with a new request ID.",
+      "quote": "[Streamable HTTP](/specification/2026-07-28/basic/transports/streamable-http):\n   each message is an HTTP POST to a single MCP endpoint; replies arrive as\n   a JSON object or a request-scoped SSE stream.",
+      "source": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/rung/lanes/mcp-spec-officials.transports.raw.md",
+      "steal": "One sitting: when any remote MCP surface is stood up for the estate, spec it as POST-only Streamable HTTP with explicit server-minted handles in tool arguments (no session headers), citing the 2026-07-28 transports page.",
+      "falsifier": "A transports index revision listing a third numbered standard binding, or HTTP+SSE reinstated as standard.",
+      "leverage": "high"
+    },
+    {
+      "law": "OAuth 2.1 resource-server contract",
+      "claim": "Auth is optional and HTTP-only (stdio reads env credentials); MCP servers MUST implement RFC 9728 Protected Resource Metadata, clients MUST use it for authorization-server discovery, and RFC 7591 Dynamic Client Registration is deprecated in favor of Client ID Metadata Documents.",
+      "quote": "4. MCP servers **MUST** implement OAuth 2.0 Protected Resource Metadata ([RFC9728](https://datatracker.ietf.org/doc/html/rfc9728)).\n   MCP clients **MUST** use OAuth 2.0 Protected Resource Metadata for [authorization server discovery](/specification/2026-07-28/basic/authorization/authorization-server-discovery).",
+      "source": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/rung/lanes/mcp-spec-officials.authorization.raw.md",
+      "steal": "One sitting: any estate-hosted remote MCP server publishes /.well-known/oauth-protected-resource and any estate MCP client keys stored credentials by issuer (SEP-2352); record both in the same queue/todo.md note.",
+      "falsifier": "A spec revision where RFC 9728 drops from MUST, or a non-OAuth scheme becomes normative for HTTP transports.",
+      "leverage": "high"
+    },
+    {
+      "law": "Official servers repo is 7 reference servers, not a directory",
+      "claim": "modelcontextprotocol/servers is active and ships exactly 7 reference servers (Everything, Fetch, Filesystem, Git, Memory, Sequential Thinking, Time); 13 older ones live in servers-archived and server discovery moved to the MCP Registry at registry.modelcontextprotocol.io.",
+      "quote": "The repository served by this README is dedicated to housing just the small number of reference servers maintained by the MCP steering group.",
+      "source": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/rung/lanes/mcp-spec-officials.servers-readme.raw.md",
+      "steal": "One sitting: stop citing github/postgres/slack style servers as official MCP servers in estate docs (they are in servers-archived); when scouting MCP servers, browse registry.modelcontextprotocol.io and the 7 reference servers only.",
+      "falsifier": "The servers README no longer lists exactly these 7 reference servers (one added, or one moved to servers-archived).",
+      "leverage": "medium"
+    },
+    {
+      "law": "Twelve-month deprecation floor",
+      "claim": "The 2026-07-28 lifecycle policy (SEP-2596) gives features a minimum 12-month deprecation window with a public registry, so Roots/Sampling/Logging (deprecated 2026-07-28) cannot be removed before 2027-07-28 and nothing has been Removed yet.",
+      "quote": "A Deprecated feature remains part of the specification but is scheduled for\nremoval: new implementations **SHOULD NOT** adopt it, and existing\nimplementations **SHOULD** migrate before the feature's earliest removal.",
+      "source": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/rung/lanes/mcp-spec-officials.deprecated.raw.md",
+      "steal": "One sitting: read the deprecated registry (modelcontextprotocol.io/specification/2026-07-28/deprecated) before adopting any MCP client feature like sampling or roots in estate tooling, and prefer the migration path (tool parameters, direct LLM API integration) for new code.",
+      "falsifier": "A feature row moving from Deprecated to Removed in the registry (e.g. HTTP+SSE removed once SEP-2596 reaches Final), or a removal with less than 12 months of deprecation.",
+      "leverage": "medium"
+    }
+  ],
+  "notes": {
+    "ratchet": "not run: no code under mag/ or tools/ was touched by this lane (only archive files written under watch/inbox/gala_20260925/rung/lanes/)",
+    "raw_relocation": "2026-10-11 fold-gate repair: this lane's four raw .json fetch dumps (repos, servers-repo, spec-tags, spec-releases) moved from lanes/ to lanes/_byproducts/ (the gate counts top-level *.json, which must be exactly the lane files), matching where sibling lanes already file raw evidence (mcp-registries.json cites _byproducts/ paths). Evidence pointers above updated to the new paths; the -o targets in checks[].command and check.txt are historical logs of where the bytes were written at fetch time and are kept byte-untouched.",
+    "gaps": "WebFetch/GitHub HTML views used for orientation only; every load-bearing claim above is byte-backed by the raw fetch files listed in raw_files. Spec pages fetched as Mintlify .md (byte-faithful markdown). GitHub API unauthenticated (rate limit not an issue at this scale, 5 calls)."
+  }
+}

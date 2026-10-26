@@ -1,0 +1,66 @@
+t27 check log, 2026-09-25 (late: local clock already 2026-09-26 during runs), gopher t27
+ITEM: grave labels drifted across the three gravedigger lanes (c1: FOSSIL; c2: DONE-ELSEWHERE/SUPERSEDED-BY/STILL-RELEVANT; c3: ABSORBED-BY/STILL-RELEVANT/FOSSIL). Build one stable vocabulary: tools/grave_classify.py with the canonical five-label set, handoff path + optional successor hint, label + one-line justification, exit 2 on unknown labels. Small and generic. Tests in tests/test_grave_classify.py.
+
+DRIFT EVIDENCE (read, not from memory):
+  watch/inbox/GALA_GRAVE_c1-master-handoff-fossil.md   -> file verdict "FOSSIL"; per-item table also uses MERGED / SUPERSEDED / STILL-OWED (free-text variants)
+  watch/inbox/GALA_GRAVE_c2-peer-json-graves.md        -> DONE-ELSEWHERE (4) / SUPERSEDED-BY (7) / STILL-RELEVANT (1), plus "DONE-ELSEWHERE (partial)" row 11
+  watch/inbox/GALA_GRAVE_c3-goodnight-overnight.md     -> ABSORBED-BY (5) / STILL-RELEVANT (1) / FOSSIL 0 whole files (fossil-by-date component inside row 6)
+  t10.json next_steal named this exact gap: "free-text classification labels ... one stable vocabulary would make future burials one command each"
+
+CANONICAL VOCABULARY (enforced, exactly five): FOSSIL, ABSORBED-BY, SUPERSEDED-BY, DONE-ELSEWHERE, STILL-RELEVANT.
+  FOSSIL = stale, forward content landed or overtaken, no living successor needed.
+  ABSORBED-BY = whole ground carried forward inside a named successor artifact (human call).
+  SUPERSEDED-BY = replaced by a later approach, goal carried by a named successor line (human call).
+  DONE-ELSEWHERE = the work already landed outside this handoff.
+  STILL-RELEVANT = no absorbing successor verified; still owed or still executable.
+
+TOOL: tools/grave_classify.py (284 lines; ratchet FILE_LINE_CAP 400 OK)
+  usage: python tools/grave_classify.py <handoff> [--label L] [--successor PATH] [--json]
+  decision order: (1) --label explicit -> canonical or exit 2. (2) marker scan (classification/verdict/disposition lines, md or json) -> adopt single canonical marker; ANY unknown marker token -> exit 2 (drift enforcement); multiple distinct canonical -> exit 3. (3) no marker + --successor found on disk -> SUPERSEDED-BY (caller passes --label ABSORBED-BY to mean absorption). (4) nothing -> STILL-RELEVANT with unclassified-by-evidence note, age reported as data, never a verdict.
+  never-fabricate: missing handoff -> exit 1; successor hint absent on disk -> exit 1 ("never fabricate a successor"); ABSORBED-BY/SUPERSEDED-BY without successor -> exit 1.
+
+TEST RUN 1 (before fixes): 3 failed, 29 passed in 0.41s
+  Defects found by the tests and fixed:
+  a) label token regex did not skip formatting chars -> "Verdict: **FOSSIL" scanned as no marker (c1 shape).
+  b) marker regex rejected leading '{' -> json '"classification": "DONE-ELSEWHERE"' line unmatched (c2 shape).
+  c) successor-on-disk default (SUPERSEDED-BY) was never wired into classify() -> fell through to STILL-RELEVANT.
+  Raw tail: "FAILED tests/test_grave_classify.py::test_marker_adoption_fossil_from_c1_style_verdict / ..._done_elsewhere_from_json_field / ..._successor_on_disk_defaults_superseded_by; 3 failed, 29 passed in 0.41s"
+
+TEST RUN 2 (after fixes):
+  $ ./.venv/Scripts/python.exe -m pytest -q tests/test_grave_classify.py
+  ................................                                         [100%]
+  32 passed in 0.26s
+  Coverage: canonical set is exactly the five labels; require_label accepts all five (+ lowercase normalization); require_label rejects MERGED, STILL-OWED, ABSORBED, lowercase "superseded", "", "fossil-by-date" (exit 2); explicit classify for each of the 5 labels; marker adoption for c1 FOSSIL shape and c2 json DONE-ELSEWHERE shape; unknown marker token STILL-OWED -> exit 2; ambiguous canonical markers -> exit 3; successor on disk -> SUPERSEDED-BY; ghost successor -> exit 1; ABSORBED-BY without successor -> exit 1; missing handoff -> exit 1; no em/en dash in any justification; CLI --label STILL-OWED exits 2; CLI --json default row STILL-RELEVANT.
+
+LIVE SMOKES on real gala artifacts (exit codes observed):
+  $ python tools/grave_classify.py watch/inbox/GALA_GRAVE_c1-master-handoff-fossil.md
+  FOSSIL / justification: ... FOSSIL as of 2026-09-26; forward content landed or overtaken ... / evidence: source: marker; age_days: 1
+  exit=0
+  $ python tools/grave_classify.py watch/inbox/GALA_GRAVE_c1-master-handoff-fossil.md --label STILL-OWED
+  grave_classify: unknown grave label 'STILL-OWED'; canonical set is FOSSIL, ABSORBED-BY, SUPERSEDED-BY, DONE-ELSEWHERE, STILL-RELEVANT
+  exit=2
+  $ python tools/grave_classify.py watch/inbox/HANDOFF_GOODNIGHT_20260917.md --successor memories/session/next-window-handoff.md --json
+  {"age_days": 9, ..., "label": "SUPERSEDED-BY", "source": "successor-hint", "successor": "memories\\session\\next-window-handoff.md", "successor_exists": true, ...}
+  exit=0
+  (c2 receipt itself scans to default STILL-RELEVANT: receipts are not handoffs and carry no marker line; honest negative, recorded.)
+
+RATCHET:
+  $ ./.venv/Scripts/python.exe tools/violation_ratchet.py check --changed
+  RATCHET check: scope=3 changed files; hits=2; registered=2; NEW=0; expired-exceptions=0
+  RATCHET: PASS - no unregistered debt.
+  RATCHET_EXIT=0
+  Second run minutes later (other afterparty lanes hold uncommitted mag/ edits; scope moved 3->6 files, hits 2->4, all registered):
+  RATCHET check: scope=6 changed files; hits=4; registered=4; NEW=0; expired-exceptions=0
+  RATCHET: PASS - no unregistered debt.
+  Per-file scan of exactly my two files (violations_in): tools/grave_classify.py -> [] ; tests/test_grave_classify.py -> []. Zero hits, nothing needed registering, baseline untouched.
+
+LAWS:
+  em/en-dash scan (grep -c $'\u2014\|\u2013') on tools/grave_classify.py + tests/test_grave_classify.py + this file's templates: 0 hits in both code files.
+  Nothing deleted: grave receipts and handoffs untouched; this lane wrote tools/grave_classify.py, tests/test_grave_classify.py, LANES/t27.check.txt, LANES/t27.json, LANES/t27.pytest_full.txt only.
+  No paid APIs, $0.
+
+FULL SUITE (standing Clippy law: file real numbers):
+  $ ./.venv/Scripts/python.exe -m pytest -q   (raw output: LANES/t27.pytest_full.txt)
+  33 failed, 1618 passed, 9 skipped, 6 warnings, 1 error in 869.55s (0:14:29)
+  PYTEST_EXIT=1
+  Attribution: zero FAILED lines and zero ERROR lines name test_grave_classify; my 32 tests are inside the 1618 passed. The 33 failures + 1 error (tests/test_spore_seed.py::test_generate_and_validate_spore_seed, setup error at line 8, Windows path) are pre-existing disease vs the 2026-09-14 census (then 34 failed / 9 skipped / 1305 passed); this lane introduced none of them and fixed none of them. Negatives recorded as-is.

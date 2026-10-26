@@ -1,0 +1,51 @@
+{
+  "lane": "a01-arena-cadence-r2",
+  "division": "B",
+  "ok": true,
+  "note": "GAP_REGISTER R2 filled: the automation_runs census (43 fires 2026-10-03T13:00Z..2026-10-05T07:00Z, 1 failed = the 13:00Z first fire, automations row DELETED) now rides the dawn compiler status feed (tools/arena_feed.py cadence_census -> tools/arena_gwap.py --status -> tools/cycle_brief.py section_arena_gwap, every non-succeeded fire as its own FAIL row) and the parable erratum (PARABLE_ERRATUM_20261004.md section 8), so cadence receipts carry failure rows, not just counts; the fold initially tripped the 400-line ratchet fence on arena_gwap.py (NEW file-too-long, exit 1, banked in the check file) and was fixed by the estate's own D10 split pattern (census moved to tools/arena_feed.py, re-exported at the surface) leaving ratchet PASS with NEW=0 and 18 arena tests green.",
+  "rows": [],
+  "checks": [
+    {
+      "command": "./.venv/Scripts/python.exe -c (sqlite3 mode=ro over C:/Users/foste/.zcode/v2/tasks-index.sqlite: automations presence + all automation_runs fires for automation-b1ce1342)",
+      "exit": 0,
+      "evidence": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/rung/lanes/a01-arena-cadence-r2.check.txt (CHECK 0: automations rows=0 DELETED; 43 fire rows printed with times+outcomes; total: 43 | failed: 1)"
+    },
+    {
+      "command": "./.venv/Scripts/python.exe tools/arena_gwap.py --status",
+      "exit": 0,
+      "evidence": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/rung/lanes/a01-arena-cadence-r2.check.txt (CHECKS 1, 7: ARENA CADENCE AS-OF line + fires=43 span=2026-10-03T13:00:00Z..2026-10-05T07:00:00Z succeeded=42 failed=1 automation_row=DELETED + FAIL sched=2026-10-03T13:00:00Z outcome=failed run=automation-b1ce1342-e449-4b33-b041-f8fbf4f69b0c:1791032400000 err=None)"
+    },
+    {
+      "command": "./.venv/Scripts/python.exe -c \"import tools.cycle_brief as cb; section_arena_gwap()\"",
+      "exit": 0,
+      "evidence": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/rung/lanes/a01-arena-cadence-r2.check.txt (CHECKS 2, 8: the compiled dawn ARENA GWAP section prints the ARENA CADENCE block and the FAIL row verbatim, final-tree run 2026-10-10T13:36Z)"
+    },
+    {
+      "command": "grep -n 'GAP_REGISTER R2 fill' watch/inbox/PARABLE_ERRATUM_20261004.md",
+      "exit": 0,
+      "evidence": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/rung/lanes/a01-arena-cadence-r2.check.txt (CHECK 3: line 127 '## 8. GAP_REGISTER R2 fill: the cadence census as failure rows, folded into the dawn feed (2026-10-10)')"
+    },
+    {
+      "command": "./.venv/Scripts/python.exe tools/violation_ratchet.py check --changed",
+      "exit": 0,
+      "evidence": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/rung/lanes/a01-arena-cadence-r2.check.txt (CHECK 5 pre-split: exit 1, NEW 0d0789ca53820b22 file-too-long arena_gwap.py 426 lines, kept as history; CHECK 5 post-split and CHECK 11 final: RATCHET: PASS - no unregistered debt, NEW=0, exit 0; the 3 GROWTH hits are sibling-seat registered debt: water_graph/dungeon/mesh_delta)"
+    },
+    {
+      "command": "./.venv/Scripts/python.exe -m pytest -q tests/test_arena_cadence_census_20261010.py tests/test_arena_beat_weld_20261005.py tests/test_gwap_independent_cop_20261004.py",
+      "exit": 0,
+      "evidence": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/rung/lanes/a01-arena-cadence-r2.check.txt (CHECK 9: 3 passed new census seam tests; CHECK 10: 18 passed on the final tree)"
+    },
+    {
+      "command": "./.venv/Scripts/python.exe -c (em/en-dash scan of lane-authored lines in tools/arena_feed.py, tools/arena_gwap.py, tools/cycle_brief.py, tests/test_arena_cadence_census_20261010.py, watch/inbox/PARABLE_ERRATUM_20261004.md)",
+      "exit": 0,
+      "evidence": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/rung/lanes/a01-arena-cadence-r2.check.txt (CHECK 4 final-tree: 'em/en-dash hits in lane-authored lines: NONE')"
+    },
+    {
+      "command": "./.venv/Scripts/python.exe -c (usage.jsonl 2026-10-03 recompute + playground dir census)",
+      "exit": 0,
+      "evidence": "this session's Bash outputs, folded verbatim into erratum section 8: crossing 2026-10-03T19:33:24.686865Z cum $25.1134 on GALA_DD_SELFSTEAL_PRIME_JUDGMENT_20261003_STAGE_B; DND0 hour-20 calls=48 ($0.0187), hour-21 calls=0; dnd0_20261003T202147Z/T202158Z/T202213Z exist on disk (run live in-session; not re-saved to the check file, the erratum is the durable record)"
+    }
+  ],
+  "decision_changed": "closes GAP_REGISTER 2026-10-10 row R2: cadence receipts now carry failure rows by construction (the dawn status feed prints every non-succeeded fire as a FAIL row with fire time and run id, fail-open HONEST-GAP), so a count-only cadence claim like the parable's '8 cycles' can no longer hide a failed fire; also re-proves the D10 split as the standing cure when a fill trips the 400-line fence (split, never accept new debt)",
+  "artifact": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/rung/lanes/a01-arena-cadence-r2.json"
+}

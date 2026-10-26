@@ -1,0 +1,7 @@
+# swarm1-glm-flash-mag__forge_daemon (glm-5.3-flash @ zai, turn 1, channel: content)
+
+DEFECT 1: WIRE stage is missing; verified packs are written only as *.VERIFIED.md in the cycle outdir and never appended to WORLD, so the world file the games load is never updated | EVIDENCE: mag/forge_daemon.py:130-140 | FIX: after the verify loop, append each verified text as a JSON entry to WORLD via tmp+os.replace write, and record "wired" count in the row.
+DEFECT 2: verify_pack section check is logically broken: the `and "values" not in text.lower()` clause makes MECHANIC/BALANCE checks pass whenever the word "values" appears anywhere, so packs missing those sections are falsely verified | EVIDENCE: mag/forge_daemon.py:73-76 | FIX: check each section independently (`if section.lower() not in text.lower(): reasons.append(...)`) with no OR-escape for "values".
+DEFECT 3: CLI contract mismatch: docstring specifies `--once` flag but argparse requires a positional action and has no --once, so the documented cron invocation `--once` exits with argparse error and no cycle runs | EVIDENCE: mag/forge_daemon.py:150-156 | FIX: accept `--once` as a flag aliasing action="cycle" (or change docstring to the positional form).
+DEAD-CODE: module-level `_brief()` is never called; fire() re-inlines the same split logic instead | EVIDENCE: mag/forge_daemon.py:37-45
+ONE-SITTING FIX: implement the WIRE step (merge verified packs into WORLD with atomic tmp+replace, add "wired" count to the cycle row) | EVIDENCE: mag/forge_daemon.py:130-144

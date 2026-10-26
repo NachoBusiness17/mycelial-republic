@@ -1,0 +1,67 @@
+{
+  "lane": "attention-channel",
+  "division": "B",
+  "ok": true,
+  "status": "complete",
+  "updated": "2026-09-29",
+  "ask": "Fix attention feedback contract drift (mag/feedback.py good/bad vs mag/attention_ranker.py useful/wallpaper/pin/mute/acted), inverted eviction (mag/biography.py:526 prepend+behead vs patrol bottom-append), repair frozen attention budget counter (watch/attention_count_day.txt stale 2026-08-07).",
+  "changed_files": [
+    "mag/act.py (shared attention contract: ATTENTION_ALERT_SENTINEL, evict_for_prepend whole-block eviction with preserved alert tail, bump_attention_count; _do_attention rewritten onto them)",
+    "mag/biography.py (inline ping extracted to ping_session_record:347-389, routed through the contract, ts line, flood meters into the daily counter)",
+    "mag/feedback.py (one vocabulary = ranker's ALLOWED_SIGNALS, thumbs as aliases, rejected cast = ok False + CLI exit 1)",
+    "tests/test_attention_feedback_contract.py (new, 7 tests)",
+    "tests/test_attention_eviction_order.py (new, 9 tests)"
+  ],
+  "runtime_repairs": [
+    "watch/attention_count_day.txt: '2026-08-07 48' -> '2026-09-29 0'; production pings through the new metered path moved it to '2026-09-29 2' within the hour",
+    "memory/attention.md: compacted 40,317 bytes / 124 identical session-record template blocks to a seeded sentinel zone; 12 real production pings since, file 4,839 bytes, whole-block, preserved zone clean"
+  ],
+  "progress": [
+    "finish line 1: contract test proves a cast through flagship mag.feedback lands in the ranker vocabulary (ledger row in ALLOWED_SIGNALS, _feedback() maps it, -8 wallpaper tax reprices a soft item through real build_ranked_attention), and simulated ranker rejection flips capture to ok False + CLI exit 1",
+    "finish line 2: eviction-order test proves patrol-style and improve-style bottom-appends survive a 200-ping ~66KB flood through the real biography.ping_session_record at the 40K cap, with zero headless half-records at any boundary",
+    "finish line 3: receipt watch/inbox/wave5_repair/attention-channel.md",
+    "checks raw output: watch/inbox/gala_20260925/wave5-repair/lanes/attention-channel.check.txt (20 passed finish line, 24 passed adjacent suites, ratchet exit 1 with all NEW rows naming sibling-lane files, CLI probe exit 1 on unknown signal, dash scan clean for this diff)",
+    "mag/attention_ranker.py deliberately UNCHANGED: it is the canonical side of the unified vocabulary; fix lives on the caller side per w4-37 A2",
+    "finding reported not fixed: tests/test_improve_provider_probe.py:132/:181/:192 run the probe flow without patching improve.ATTENTION_PATH and leak pytest alarm lines into the LIVE attention.md (reproduced this session; six pytest-tmp-referencing lines cleaned from the live preserved zone); mag/improve.py and its tests are another lane's"
+  ],
+  "limits": [
+    "preserved alert tail is unbounded by design for now (patrol alerts are rare; named, not hidden)",
+    "counter meters records+pushes into one number; only the push is capped; per-class operator-seconds budgets remain design (w4-37 A1)",
+    "live memory/attention_feedback.jsonl still has zero real operator casts; the pipe works, no trade settled yet"
+  ],
+  "rows": [],
+  "checks": [
+    {
+      "command": ".venv/Scripts/python.exe -m pytest tests/test_attention_feedback_contract.py tests/test_attention_eviction_order.py tests/test_attention_ranker.py -v",
+      "exit": 0,
+      "evidence": "watch/inbox/gala_20260925/wave5-repair/lanes/attention-channel.check.txt section 1: 20 passed"
+    },
+    {
+      "command": ".venv/Scripts/python.exe -m pytest tests/test_silentpass_batch2.py tests/test_improve_provider_probe.py tests/test_chat_source_agent_workday.py -q",
+      "exit": 0,
+      "evidence": "watch/inbox/gala_20260925/wave5-repair/lanes/attention-channel.check.txt section 2: 24 passed"
+    },
+    {
+      "command": ".venv/Scripts/python.exe tools/violation_ratchet.py check --changed",
+      "exit": 1,
+      "evidence": "check.txt section 3: NEW rows name only mag/corpus_gap_research.py, mag/corpus_selfsteal.py, mag/link_library.py, tools/fossil_check.py (sibling lanes' uncommitted work); zero NEW rows name this lane's files"
+    },
+    {
+      "command": ".venv/Scripts/python.exe -m mag.feedback meh some-item --source attention-channel-lane",
+      "exit": 1,
+      "evidence": "check.txt section 4: ok false, vocabulary error, zero file writes"
+    },
+    {
+      "command": "venv python em/en-dash + nonascii scan over touched files and git diff",
+      "exit": 0,
+      "evidence": "check.txt sections 5+8: 0 em/en dashes introduced by this lane's diff; receipt and lane JSON clean"
+    },
+    {
+      "command": "cat watch/attention_count_day.txt; wc -c memory/attention.md; grep -c sentinel memory/attention.md",
+      "exit": 0,
+      "evidence": "check.txt section 6: counter '2026-09-29 2', attention.md live with sentinel present"
+    }
+  ],
+  "decision_changed": "closes the wave5 attention-channel owed repair: the attention feedback contract is one vocabulary (ranker's five signals, exit-code-visible rejection), eviction order on memory/attention.md is severity-safe (preserved alert tail below the sentinel, whole-block record behead), and the daily attention budget counter is live and metered by the real flood instead of frozen since 2026-08-07",
+  "artifact": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/wave5_repair/attention-channel.md"
+}

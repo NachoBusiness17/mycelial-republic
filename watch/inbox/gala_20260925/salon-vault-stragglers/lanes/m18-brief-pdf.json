@@ -1,0 +1,81 @@
+{
+  "lane": "m18-brief-pdf",
+  "division": "B",
+  "ok": true,
+  "note": "Extracted the 14-page ASTRA research brief (44 items: A1, 0.1-0.3, 39 asks 1.1-8.5, L1), mined the delta vs estate state as of 2026-10-02: 6 asks ANSWERED (3.2, 7.1, 7.5, 8.1, 8.2, 8.5), 13 PARTIAL, 19 OPEN, 1 SETTLED by the brief itself (5.1); the brief is the estate's own commissioned review (astra_ask_package md twin on disk) and its Sep 20 review point passed with no HOLD-3/M seal, assay receipt or pilot seal; receipt watch/inbox/salon_mine/m18.md banked at 23,203 bytes (sha256 da13f055ee3eb1f20974caea8461ecda16259c4cd3035f44faad26d0cb6a6748); violation ratchet not run because this lane touched no files under mag/ or tools/ (the one M tools/m1_grammar_bench.py predates this session, in the start snapshot).",
+  "rows": [
+    {
+      "law": "count-integrity battery (B2-441 envelope law, with B2-216 census denominator law and citation-lint PHANTOM-NUMBER as siblings)",
+      "claim": "Every receipt count must cite a machine tally written in the same session; hand-copied counts are invalid by law, which enacts exactly what the brief's claims 3.2 and 8.1 demanded.",
+      "quote": "Any wave receipt claiming a 1302 count (\"zero 1302\", \"N x 1302\") is INVALID unless it cites a provider_errors.json (or equivalent per-wave tally JSON) written in the SAME session as the wave.",
+      "source": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/ENVELOPE_LAW_20260926.md",
+      "steal": "After tonight's wave receipts land, run python tools/provider_error_tally.py --session <wave-session-id> --out <session-dir>/provider_errors.json and cite the JSON in each receipt that states a count.",
+      "falsifier": "A receipt claiming zero-1302 whose session dir holds no provider_errors.json (or whose tally shows nonzero network_failed_events) yet stays accepted.",
+      "leverage": "high"
+    },
+    {
+      "law": "AH14 corr_id attempt-linked query",
+      "claim": "Dispatch identity is reconcilable post hoc because the three writer classes join on a corr_id injected via MAG_CORR_ID, and absent reads as null rather than inferred identity, which is the brief's 3.2 change criterion enacted.",
+      "quote": "Old rows without corr_id read as null (absent = null, AH14 law)",
+      "source": "C:/Users/foste/Documents/projects/local_sovereign_agent/tools/estate_query.py",
+      "steal": "Set MAG_CORR_ID in the next dispatch-heavy session and reconcile that session's writes into one timeline with .venv/Scripts/python.exe tools/estate_query.py --corr <id>.",
+      "falsifier": "A writer class that emits rows lacking corr_id so its dispatches cannot be joined into one timeline.",
+      "leverage": "high"
+    },
+    {
+      "law": "gated promotion (learning gate structure)",
+      "claim": "Learned candidates are separated from deploy permission: the improve loop eval gates promotion and models never auto-edit lanes, the structural half of the brief's 1.4 learning gate.",
+      "quote": "Mark promoted (practices → playbook; models do not auto-edit lanes)",
+      "source": "C:/Users/foste/Documents/projects/local_sovereign_agent/main.py",
+      "steal": "Route the next lesson adoption (rib, skill, memlance) through the eval + mag.cmd promote --apply gate instead of direct file edits, one candidate this sitting.",
+      "falsifier": "A lane or rib file whose bytes change with no promote row in the ledger.",
+      "leverage": "medium"
+    },
+    {
+      "law": "effect broker reference monitor",
+      "claim": "Every side effect must pass authorization checks at a broker co-located with the switchboard before execution, replacing prompt-text authority with enforced checks (brief 2.3's real half).",
+      "quote": "Every side effect in MAG must route through this broker.  The broker is co-located with the switchboard (reference-monitor pattern)",
+      "source": "C:/Users/foste/Documents/projects/local_sovereign_agent/mag/effect_broker.py",
+      "steal": "When wiring the next new effect class this week, add it to the broker dispatch (AH18 real-but-narrow pattern) instead of calling the provider directly.",
+      "falsifier": "A committed side effect whose execution path never passes authority.status == AUTHORIZED at the broker.",
+      "leverage": "medium"
+    },
+    {
+      "law": "change-criterion grammar (mined from the ASTRA brief itself)",
+      "claim": "Every registered claim carries, in its own text, the evidence that would flip its verdict, making the delta between claim and execution mechanically checkable.",
+      "quote": "Each numbered claim includes evidence that would change its verdict.",
+      "source": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/salon-mine/lanes/m18-brief-pdf.extract.txt",
+      "steal": "Attach the brief's change criteria as acceptance checks to the 19 OPEN studies, starting with the 7.3 deterministic pilot (no model needed: one admission, two delivery attempts, one canonical effect) in one sitting this week.",
+      "falsifier": "A registered estate claim with no stated change criterion or falsifier in its registration.",
+      "leverage": "high"
+    },
+    {
+      "law": "chain witness alarm (verkle red tip)",
+      "claim": "The append-only chain's independent verify detects a diverged tip within hours, the alarm lands with the cause unattributed and the defect honestly named, which is the brief's 3.1 detection standard demonstrated live.",
+      "quote": "VERKLE TIP RED + HEALED 2026-10-02T14:2xZ: hermes_warm_boot --verify failed ~12h",
+      "source": "C:/Users/foste/Documents/projects/local_sovereign_agent/memory/attention.md",
+      "steal": "Heal tip divergences only via .venv/Scripts/python.exe -m mag.verkle_audit --fix (the module verb), never main.py verkle-audit --fix, per the DEFECT note on the same line.",
+      "falsifier": "A chain rewrite that hermes_warm_boot --verify passes while a scoped recount of the same prefix diverges.",
+      "leverage": "medium"
+    }
+  ],
+  "checks": [
+    {
+      "command": "{ echo finish-line header; wc -c watch/inbox/salon_mine/m18.md; sha256sum watch/inbox/salon_mine/m18.md; wc -c watch/inbox/gala_20260925/salon-mine/lanes/m18-brief-pdf.extract.txt watch/inbox/gala_20260925/salon-mine/lanes/m18-gitlog-since-brief.txt; sha256sum 'C:/Users/foste/Desktop/New folder/sovereign-agent-systems-research-brief.pdf'; git status --porcelain -- mag/ tools/; } > watch/inbox/gala_20260925/salon-vault-stragglers/lanes/m18-brief-pdf.check.txt",
+      "exit": 0,
+      "evidence": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/salon-vault-stragglers/lanes/m18-brief-pdf.check.txt"
+    },
+    {
+      "command": "{ grep -n corr_id tools/estate_query.py; sed -n '4,13p' mag/effect_broker.py; sed -n '22,25p' tools/citation_lint.py; grep -n 'VERKLE TIP RED' memory/attention.md; grep -n 'gated promote\\|Mark promoted' main.py; } >> watch/inbox/gala_20260925/salon-vault-stragglers/lanes/m18-brief-pdf.check.txt",
+      "exit": 0,
+      "evidence": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/salon-vault-stragglers/lanes/m18-brief-pdf.check.txt"
+    },
+    {
+      "command": "grep -rn 'pilot seal' watch/inbox/*.md (OPEN-7.3 evidence: no matches expected)",
+      "exit": 1,
+      "evidence": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/salon-vault-stragglers/lanes/m18-brief-pdf.check.txt"
+    }
+  ],
+  "decision_changed": "m18 closes the last unmined salon-vault straggler question set: the ASTRA brief is ruled a live external review of this estate whose change criteria are pre-written acceptance checks; next-build order named (7.3 deterministic pilot and the 3.3 injection battery before any section-6 assay spend), and the brief's Change-criterion grammar adopted onto the estate's 19 OPEN items.",
+  "artifact": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/salon-vault-stragglers/lanes/m18-brief-pdf.json"
+}

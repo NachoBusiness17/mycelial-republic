@@ -1,0 +1,1722 @@
+﻿{
+    "id":  "1wnedrc",
+    "subreddit":  "LocalLLaMA",
+    "title":  "I built a cache-friendly context compacting plugin for OpenCode",
+    "author":  "schennardo",
+    "score":  18,
+    "num_comments":  18,
+    "created_utc":  1790094736,
+    "permalink":  "https://old.reddit.com/r/LocalLLaMA/comments/1wnedrc/i_built_a_cachefriendly_context_compacting_plugin/",
+    "selftext":  "[https://github.com/lennartschoch/opencode-cache-compact](https://github.com/lennartschoch/opencode-cache-compact)\n\nThe default context compacting mechanism in OpenCode strips a bunch of tokens from the beginning of the conversation (system prompt, tools etc).\n\nThis is fine for hosted models, but on a local model this means you\u0027ll prefill the entire conversation that\u0027s already cached.\n\nI built a plugin that keeps the conversation as-is, prompts the model to write a summary and then transforms the conversation to erase everything aside from system prompt, tools and summary - because the entire conversation is cached, this is super fast (usually around 1-2 minutes on my Strix Halo, previously \u003e10min).\n\nWould love to get some feedback on this - is this useful for anyone else? This is my first open source project in the local LLM space so I\u0027d love to know your thoughts!",
+    "url_out":  "https://www.reddit.com/r/LocalLLaMA/comments/1wnedrc/i_built_a_cachefriendly_context_compacting_plugin/",
+    "comments":  [
+                     {
+                         "_meta":  {
+                                       "retrieved_2nd_on":  1790398026
+                                   },
+                         "all_awardings":  [
+
+                                           ],
+                         "approved_at_utc":  null,
+                         "approved_by":  null,
+                         "archived":  false,
+                         "associated_award":  null,
+                         "author":  "schennardo",
+                         "author_flair_background_color":  null,
+                         "author_flair_css_class":  null,
+                         "author_flair_richtext":  [
+
+                                                   ],
+                         "author_flair_template_id":  null,
+                         "author_flair_text":  null,
+                         "author_flair_text_color":  null,
+                         "author_flair_type":  "text",
+                         "author_fullname":  "t2_u65d4unf",
+                         "author_is_blocked":  false,
+                         "author_patreon_flair":  false,
+                         "author_premium":  false,
+                         "awarders":  [
+
+                                      ],
+                         "banned_at_utc":  null,
+                         "banned_by":  null,
+                         "body":  "Good catch, that was a bug. I\u0027ve just released 0.2.0 which adds support for V2 and fixes that.",
+                         "can_gild":  false,
+                         "can_mod_post":  false,
+                         "collapsed":  false,
+                         "collapsed_because_crowd_control":  null,
+                         "collapsed_reason":  null,
+                         "collapsed_reason_code":  null,
+                         "comment_type":  null,
+                         "controversiality":  0,
+                         "created":  1790268410,
+                         "created_utc":  1790268410,
+                         "distinguished":  null,
+                         "downs":  0,
+                         "edited":  false,
+                         "gilded":  0,
+                         "gildings":  {
+
+                                      },
+                         "id":  "pbss8rj",
+                         "is_submitter":  true,
+                         "likes":  null,
+                         "link_id":  "t3_1wnedrc",
+                         "locked":  false,
+                         "mod_note":  null,
+                         "mod_reason_by":  null,
+                         "mod_reason_title":  null,
+                         "mod_reports":  [
+
+                                         ],
+                         "name":  "t1_pbss8rj",
+                         "no_follow":  true,
+                         "num_reports":  null,
+                         "parent_id":  "t1_pblbc7q",
+                         "permalink":  "/r/LocalLLaMA/comments/1wnedrc/i_built_a_cachefriendly_context_compacting_plugin/pbss8rj/",
+                         "profile_img":  "https://www.redditstatic.com/avatars/defaults/v2/avatar_default_3.png",
+                         "profile_over_18":  false,
+                         "removal_reason":  null,
+                         "replies":  "",
+                         "report_reasons":  null,
+                         "retrieved_on":  1790268437,
+                         "saved":  false,
+                         "score":  2,
+                         "score_hidden":  false,
+                         "send_replies":  true,
+                         "stickied":  false,
+                         "subreddit":  "LocalLLaMA",
+                         "subreddit_id":  "t5_81eyvm",
+                         "subreddit_name_prefixed":  "r/LocalLLaMA",
+                         "subreddit_type":  "public",
+                         "top_awarded_type":  null,
+                         "total_awards_received":  0,
+                         "treatment_tags":  [
+
+                                            ],
+                         "unrepliable_reason":  null,
+                         "ups":  2,
+                         "user_reports":  [
+
+                                          ]
+                     },
+                     {
+                         "_meta":  {
+                                       "retrieved_2nd_on":  1790309655
+                                   },
+                         "all_awardings":  [
+
+                                           ],
+                         "approved_at_utc":  null,
+                         "approved_by":  null,
+                         "archived":  false,
+                         "associated_award":  null,
+                         "author":  "tsangberg",
+                         "author_flair_background_color":  null,
+                         "author_flair_css_class":  null,
+                         "author_flair_richtext":  [
+
+                                                   ],
+                         "author_flair_template_id":  null,
+                         "author_flair_text":  null,
+                         "author_flair_text_color":  null,
+                         "author_flair_type":  "text",
+                         "author_fullname":  "t2_gkhsw",
+                         "author_is_blocked":  false,
+                         "author_patreon_flair":  false,
+                         "author_premium":  false,
+                         "awarders":  [
+
+                                      ],
+                         "banned_at_utc":  null,
+                         "banned_by":  null,
+                         "body":  "I don\u0027t think it\u0027s working as it should though. Even after setting abortOnTrip to false what happens is that the summary prompt is injected, the agent writes the handoff only for the next thing that happens when the handoff is finished is the summary prompt appearing again - over and over. I\u0027m assuming this is caused by an error in the v2 fork but I\u0027m not sure I\u0027ll spend time on debugging it :/",
+                         "can_gild":  false,
+                         "can_mod_post":  false,
+                         "collapsed":  false,
+                         "collapsed_because_crowd_control":  null,
+                         "collapsed_reason":  null,
+                         "collapsed_reason_code":  null,
+                         "comment_type":  null,
+                         "controversiality":  0,
+                         "created":  1790180045,
+                         "created_utc":  1790180045,
+                         "distinguished":  null,
+                         "downs":  0,
+                         "edited":  false,
+                         "gilded":  0,
+                         "gildings":  {
+
+                                      },
+                         "id":  "pblbc7q",
+                         "is_submitter":  false,
+                         "likes":  null,
+                         "link_id":  "t3_1wnedrc",
+                         "locked":  false,
+                         "mod_note":  null,
+                         "mod_reason_by":  null,
+                         "mod_reason_title":  null,
+                         "mod_reports":  [
+
+                                         ],
+                         "name":  "t1_pblbc7q",
+                         "no_follow":  true,
+                         "num_reports":  null,
+                         "parent_id":  "t1_pbknwdp",
+                         "permalink":  "/r/LocalLLaMA/comments/1wnedrc/i_built_a_cachefriendly_context_compacting_plugin/pblbc7q/",
+                         "profile_img":  "https://styles.redditmedia.com/t5_3o079/styles/profileIcon_0mboiy2grtha1.jpg?width=256\u0026height=256\u0026crop=256:256,smart\u0026s=ab6052a6cb294a46695760222f2d8669c13056d9",
+                         "profile_over_18":  false,
+                         "removal_reason":  null,
+                         "replies":  "",
+                         "report_reasons":  null,
+                         "retrieved_on":  1790180065,
+                         "saved":  false,
+                         "score":  1,
+                         "score_hidden":  false,
+                         "send_replies":  true,
+                         "stickied":  false,
+                         "subreddit":  "LocalLLaMA",
+                         "subreddit_id":  "t5_81eyvm",
+                         "subreddit_name_prefixed":  "r/LocalLLaMA",
+                         "subreddit_type":  "public",
+                         "top_awarded_type":  null,
+                         "total_awards_received":  0,
+                         "treatment_tags":  [
+
+                                            ],
+                         "unrepliable_reason":  null,
+                         "ups":  1,
+                         "user_reports":  [
+
+                                          ]
+                     },
+                     {
+                         "_meta":  {
+                                       "retrieved_2nd_on":  1790303669
+                                   },
+                         "all_awardings":  [
+
+                                           ],
+                         "approved_at_utc":  null,
+                         "approved_by":  null,
+                         "archived":  false,
+                         "associated_award":  null,
+                         "author":  "schennardo",
+                         "author_flair_background_color":  null,
+                         "author_flair_css_class":  null,
+                         "author_flair_richtext":  [
+
+                                                   ],
+                         "author_flair_template_id":  null,
+                         "author_flair_text":  null,
+                         "author_flair_text_color":  null,
+                         "author_flair_type":  "text",
+                         "author_fullname":  "t2_u65d4unf",
+                         "author_is_blocked":  false,
+                         "author_patreon_flair":  false,
+                         "author_premium":  false,
+                         "awarders":  [
+
+                                      ],
+                         "banned_at_utc":  null,
+                         "banned_by":  null,
+                         "body":  "Oh sweet! Feel free to open a PR once its done, would be happy to merge it upstream",
+                         "can_gild":  false,
+                         "can_mod_post":  false,
+                         "collapsed":  false,
+                         "collapsed_because_crowd_control":  null,
+                         "collapsed_reason":  null,
+                         "collapsed_reason_code":  null,
+                         "comment_type":  null,
+                         "controversiality":  0,
+                         "created":  1790174062,
+                         "created_utc":  1790174062,
+                         "distinguished":  null,
+                         "downs":  0,
+                         "edited":  false,
+                         "gilded":  0,
+                         "gildings":  {
+
+                                      },
+                         "id":  "pbknwdp",
+                         "is_submitter":  true,
+                         "likes":  null,
+                         "link_id":  "t3_1wnedrc",
+                         "locked":  false,
+                         "mod_note":  null,
+                         "mod_reason_by":  null,
+                         "mod_reason_title":  null,
+                         "mod_reports":  [
+
+                                         ],
+                         "name":  "t1_pbknwdp",
+                         "no_follow":  true,
+                         "num_reports":  null,
+                         "parent_id":  "t1_pbkllpp",
+                         "permalink":  "/r/LocalLLaMA/comments/1wnedrc/i_built_a_cachefriendly_context_compacting_plugin/pbknwdp/",
+                         "profile_img":  "https://www.redditstatic.com/avatars/defaults/v2/avatar_default_3.png",
+                         "profile_over_18":  false,
+                         "removal_reason":  null,
+                         "replies":  "",
+                         "report_reasons":  null,
+                         "retrieved_on":  1790174075,
+                         "saved":  false,
+                         "score":  1,
+                         "score_hidden":  false,
+                         "send_replies":  true,
+                         "stickied":  false,
+                         "subreddit":  "LocalLLaMA",
+                         "subreddit_id":  "t5_81eyvm",
+                         "subreddit_name_prefixed":  "r/LocalLLaMA",
+                         "subreddit_type":  "public",
+                         "top_awarded_type":  null,
+                         "total_awards_received":  0,
+                         "treatment_tags":  [
+
+                                            ],
+                         "unrepliable_reason":  null,
+                         "ups":  1,
+                         "user_reports":  [
+
+                                          ]
+                     },
+                     {
+                         "_meta":  {
+                                       "retrieved_2nd_on":  1790303070
+                                   },
+                         "all_awardings":  [
+
+                                           ],
+                         "approved_at_utc":  null,
+                         "approved_by":  null,
+                         "archived":  false,
+                         "associated_award":  null,
+                         "author":  "tsangberg",
+                         "author_flair_background_color":  null,
+                         "author_flair_css_class":  null,
+                         "author_flair_richtext":  [
+
+                                                   ],
+                         "author_flair_template_id":  null,
+                         "author_flair_text":  null,
+                         "author_flair_text_color":  null,
+                         "author_flair_type":  "text",
+                         "author_fullname":  "t2_gkhsw",
+                         "author_is_blocked":  false,
+                         "author_patreon_flair":  false,
+                         "author_premium":  false,
+                         "awarders":  [
+
+                                      ],
+                         "banned_at_utc":  null,
+                         "banned_by":  null,
+                         "body":  "I forked it to make it compatible with Opencode v2 and have been testing it for a while. I\u0027m having issues where the cut-in with the compaction needed message cuts of subagents in the middle of them reporting back. That trips them up causing them to waste more context and risk running out instead of being able to report.\n\nStill poking at settings. Up until now I\u0027ve been using DCP for compaction.",
+                         "can_gild":  false,
+                         "can_mod_post":  false,
+                         "collapsed":  false,
+                         "collapsed_because_crowd_control":  null,
+                         "collapsed_reason":  null,
+                         "collapsed_reason_code":  null,
+                         "comment_type":  null,
+                         "controversiality":  0,
+                         "created":  1790173452,
+                         "created_utc":  1790173452,
+                         "distinguished":  null,
+                         "downs":  0,
+                         "edited":  false,
+                         "gilded":  0,
+                         "gildings":  {
+
+                                      },
+                         "id":  "pbkllpp",
+                         "is_submitter":  false,
+                         "likes":  null,
+                         "link_id":  "t3_1wnedrc",
+                         "locked":  false,
+                         "mod_note":  null,
+                         "mod_reason_by":  null,
+                         "mod_reason_title":  null,
+                         "mod_reports":  [
+
+                                         ],
+                         "name":  "t1_pbkllpp",
+                         "no_follow":  true,
+                         "num_reports":  null,
+                         "parent_id":  "t3_1wnedrc",
+                         "permalink":  "/r/LocalLLaMA/comments/1wnedrc/i_built_a_cachefriendly_context_compacting_plugin/pbkllpp/",
+                         "profile_img":  "https://styles.redditmedia.com/t5_3o079/styles/profileIcon_0mboiy2grtha1.jpg?width=256\u0026height=256\u0026crop=256:256,smart\u0026s=ab6052a6cb294a46695760222f2d8669c13056d9",
+                         "profile_over_18":  false,
+                         "removal_reason":  null,
+                         "replies":  "",
+                         "report_reasons":  null,
+                         "retrieved_on":  1790173475,
+                         "saved":  false,
+                         "score":  1,
+                         "score_hidden":  false,
+                         "send_replies":  true,
+                         "stickied":  false,
+                         "subreddit":  "LocalLLaMA",
+                         "subreddit_id":  "t5_81eyvm",
+                         "subreddit_name_prefixed":  "r/LocalLLaMA",
+                         "subreddit_type":  "public",
+                         "top_awarded_type":  null,
+                         "total_awards_received":  0,
+                         "treatment_tags":  [
+
+                                            ],
+                         "unrepliable_reason":  null,
+                         "ups":  1,
+                         "user_reports":  [
+
+                                          ]
+                     },
+                     {
+                         "_meta":  {
+                                       "retrieved_2nd_on":  1790300474
+                                   },
+                         "all_awardings":  [
+
+                                           ],
+                         "approved_at_utc":  null,
+                         "approved_by":  null,
+                         "archived":  false,
+                         "associated_award":  null,
+                         "author":  "[deleted]",
+                         "author_flair_background_color":  "",
+                         "author_flair_css_class":  null,
+                         "author_flair_template_id":  null,
+                         "author_flair_text":  null,
+                         "author_flair_text_color":  "dark",
+                         "author_is_blocked":  false,
+                         "awarders":  [
+
+                                      ],
+                         "banned_at_utc":  null,
+                         "banned_by":  null,
+                         "body":  "[removed]",
+                         "can_gild":  false,
+                         "can_mod_post":  false,
+                         "collapsed":  true,
+                         "collapsed_because_crowd_control":  null,
+                         "collapsed_reason":  null,
+                         "collapsed_reason_code":  "DELETED",
+                         "comment_type":  null,
+                         "controversiality":  0,
+                         "created":  1790170860,
+                         "created_utc":  1790170860,
+                         "distinguished":  null,
+                         "downs":  0,
+                         "edited":  false,
+                         "gilded":  0,
+                         "gildings":  {
+
+                                      },
+                         "id":  "pbkc3yi",
+                         "is_submitter":  false,
+                         "likes":  null,
+                         "link_id":  "t3_1wnedrc",
+                         "locked":  false,
+                         "mod_note":  null,
+                         "mod_reason_by":  null,
+                         "mod_reason_title":  null,
+                         "mod_reports":  [
+
+                                         ],
+                         "name":  "t1_pbkc3yi",
+                         "no_follow":  true,
+                         "num_reports":  null,
+                         "parent_id":  "t3_1wnedrc",
+                         "permalink":  "/r/LocalLLaMA/comments/1wnedrc/i_built_a_cachefriendly_context_compacting_plugin/pbkc3yi/",
+                         "removal_reason":  null,
+                         "replies":  "",
+                         "report_reasons":  null,
+                         "retrieved_on":  1790170879,
+                         "saved":  false,
+                         "score":  1,
+                         "score_hidden":  false,
+                         "send_replies":  true,
+                         "stickied":  false,
+                         "subreddit":  "LocalLLaMA",
+                         "subreddit_id":  "t5_81eyvm",
+                         "subreddit_name_prefixed":  "r/LocalLLaMA",
+                         "subreddit_type":  "public",
+                         "top_awarded_type":  null,
+                         "total_awards_received":  0,
+                         "treatment_tags":  [
+
+                                            ],
+                         "unrepliable_reason":  null,
+                         "ups":  1,
+                         "user_reports":  [
+
+                                          ]
+                     },
+                     {
+                         "_meta":  {
+                                       "retrieved_2nd_on":  1790243596
+                                   },
+                         "all_awardings":  [
+
+                                           ],
+                         "approved_at_utc":  null,
+                         "approved_by":  null,
+                         "archived":  false,
+                         "associated_award":  null,
+                         "author":  "schennardo",
+                         "author_flair_background_color":  null,
+                         "author_flair_css_class":  null,
+                         "author_flair_richtext":  [
+
+                                                   ],
+                         "author_flair_template_id":  null,
+                         "author_flair_text":  null,
+                         "author_flair_text_color":  null,
+                         "author_flair_type":  "text",
+                         "author_fullname":  "t2_u65d4unf",
+                         "author_is_blocked":  false,
+                         "author_patreon_flair":  false,
+                         "author_premium":  false,
+                         "awarders":  [
+
+                                      ],
+                         "banned_at_utc":  null,
+                         "banned_by":  null,
+                         "body":  "I haven\u0027t, but I don\u0027t see why it wouldn\u0027t work. As far as I understand, OpenChamber is just a UI layer on top of OpenCode right? Let me know if you try it out!",
+                         "can_gild":  false,
+                         "can_mod_post":  false,
+                         "collapsed":  false,
+                         "collapsed_because_crowd_control":  null,
+                         "collapsed_reason":  null,
+                         "collapsed_reason_code":  null,
+                         "comment_type":  null,
+                         "controversiality":  0,
+                         "created":  1790113989,
+                         "created_utc":  1790113989,
+                         "distinguished":  null,
+                         "downs":  0,
+                         "edited":  false,
+                         "gilded":  0,
+                         "gildings":  {
+
+                                      },
+                         "id":  "pbg9j8t",
+                         "is_submitter":  true,
+                         "likes":  null,
+                         "link_id":  "t3_1wnedrc",
+                         "locked":  false,
+                         "mod_note":  null,
+                         "mod_reason_by":  null,
+                         "mod_reason_title":  null,
+                         "mod_reports":  [
+
+                                         ],
+                         "name":  "t1_pbg9j8t",
+                         "no_follow":  true,
+                         "num_reports":  null,
+                         "parent_id":  "t1_pbg8hab",
+                         "permalink":  "/r/LocalLLaMA/comments/1wnedrc/i_built_a_cachefriendly_context_compacting_plugin/pbg9j8t/",
+                         "profile_img":  "https://www.redditstatic.com/avatars/defaults/v2/avatar_default_3.png",
+                         "profile_over_18":  false,
+                         "removal_reason":  null,
+                         "replies":  "",
+                         "report_reasons":  null,
+                         "retrieved_on":  1790114008,
+                         "saved":  false,
+                         "score":  1,
+                         "score_hidden":  false,
+                         "send_replies":  true,
+                         "stickied":  false,
+                         "subreddit":  "LocalLLaMA",
+                         "subreddit_id":  "t5_81eyvm",
+                         "subreddit_name_prefixed":  "r/LocalLLaMA",
+                         "subreddit_type":  "public",
+                         "top_awarded_type":  null,
+                         "total_awards_received":  0,
+                         "treatment_tags":  [
+
+                                            ],
+                         "unrepliable_reason":  null,
+                         "ups":  1,
+                         "user_reports":  [
+
+                                          ]
+                     },
+                     {
+                         "_meta":  {
+                                       "retrieved_2nd_on":  1790243507
+                                   },
+                         "all_awardings":  [
+
+                                           ],
+                         "approved_at_utc":  null,
+                         "approved_by":  null,
+                         "archived":  false,
+                         "associated_award":  null,
+                         "author":  "wren6991",
+                         "author_flair_background_color":  null,
+                         "author_flair_css_class":  null,
+                         "author_flair_richtext":  [
+
+                                                   ],
+                         "author_flair_template_id":  null,
+                         "author_flair_text":  null,
+                         "author_flair_text_color":  null,
+                         "author_flair_type":  "text",
+                         "author_fullname":  "t2_13ng8q",
+                         "author_is_blocked":  false,
+                         "author_patreon_flair":  false,
+                         "author_premium":  false,
+                         "awarders":  [
+
+                                      ],
+                         "banned_at_utc":  null,
+                         "banned_by":  null,
+                         "body":  "check: ((1+xy)^3 z + y^2 (1+xy) (4+3xy), y + 3 x (1+xy)^2  z + 3 x y^2 (4+3xy), 2 x - 3 x^2 y - x^3 z): \\C^3\\to \\C^3, has jacobian determinant -2, and sends (0, 0, -1/4), (1, -3/2, 13/2), and (-1, 3/2, 13/2) to (-1/4, 0, 0)",
+                         "can_gild":  false,
+                         "can_mod_post":  false,
+                         "collapsed":  false,
+                         "collapsed_because_crowd_control":  null,
+                         "collapsed_reason":  null,
+                         "collapsed_reason_code":  null,
+                         "comment_type":  null,
+                         "controversiality":  0,
+                         "created":  1790113893,
+                         "created_utc":  1790113893,
+                         "distinguished":  null,
+                         "downs":  0,
+                         "edited":  false,
+                         "gilded":  0,
+                         "gildings":  {
+
+                                      },
+                         "id":  "pbg97ee",
+                         "is_submitter":  false,
+                         "likes":  null,
+                         "link_id":  "t3_1wnedrc",
+                         "locked":  false,
+                         "mod_note":  null,
+                         "mod_reason_by":  null,
+                         "mod_reason_title":  null,
+                         "mod_reports":  [
+
+                                         ],
+                         "name":  "t1_pbg97ee",
+                         "no_follow":  true,
+                         "num_reports":  null,
+                         "parent_id":  "t1_pbg7k8u",
+                         "permalink":  "/r/LocalLLaMA/comments/1wnedrc/i_built_a_cachefriendly_context_compacting_plugin/pbg97ee/",
+                         "profile_img":  "https://www.redditstatic.com/avatars/defaults/v2/avatar_default_2.png",
+                         "profile_over_18":  false,
+                         "removal_reason":  null,
+                         "replies":  "",
+                         "report_reasons":  null,
+                         "retrieved_on":  1790113917,
+                         "saved":  false,
+                         "score":  1,
+                         "score_hidden":  false,
+                         "send_replies":  true,
+                         "stickied":  false,
+                         "subreddit":  "LocalLLaMA",
+                         "subreddit_id":  "t5_81eyvm",
+                         "subreddit_name_prefixed":  "r/LocalLLaMA",
+                         "subreddit_type":  "public",
+                         "top_awarded_type":  null,
+                         "total_awards_received":  0,
+                         "treatment_tags":  [
+
+                                            ],
+                         "unrepliable_reason":  null,
+                         "ups":  1,
+                         "user_reports":  [
+
+                                          ]
+                     },
+                     {
+                         "_meta":  {
+                                       "retrieved_2nd_on":  1790243297
+                                   },
+                         "all_awardings":  [
+
+                                           ],
+                         "approved_at_utc":  null,
+                         "approved_by":  null,
+                         "archived":  false,
+                         "associated_award":  null,
+                         "author":  "youcloudsofdoom",
+                         "author_flair_background_color":  null,
+                         "author_flair_css_class":  null,
+                         "author_flair_richtext":  [
+
+                                                   ],
+                         "author_flair_template_id":  null,
+                         "author_flair_text":  null,
+                         "author_flair_text_color":  null,
+                         "author_flair_type":  "text",
+                         "author_fullname":  "t2_ov7cr",
+                         "author_is_blocked":  false,
+                         "author_patreon_flair":  false,
+                         "author_premium":  false,
+                         "awarders":  [
+
+                                      ],
+                         "banned_at_utc":  null,
+                         "banned_by":  null,
+                         "body":  "This sounds really interesting - have you tried it in openchamber? ",
+                         "can_gild":  false,
+                         "can_mod_post":  false,
+                         "collapsed":  false,
+                         "collapsed_because_crowd_control":  null,
+                         "collapsed_reason":  null,
+                         "collapsed_reason_code":  null,
+                         "comment_type":  null,
+                         "controversiality":  0,
+                         "created":  1790113681,
+                         "created_utc":  1790113681,
+                         "distinguished":  null,
+                         "downs":  0,
+                         "edited":  false,
+                         "gilded":  0,
+                         "gildings":  {
+
+                                      },
+                         "id":  "pbg8hab",
+                         "is_submitter":  false,
+                         "likes":  null,
+                         "link_id":  "t3_1wnedrc",
+                         "locked":  false,
+                         "mod_note":  null,
+                         "mod_reason_by":  null,
+                         "mod_reason_title":  null,
+                         "mod_reports":  [
+
+                                         ],
+                         "name":  "t1_pbg8hab",
+                         "no_follow":  true,
+                         "num_reports":  null,
+                         "parent_id":  "t3_1wnedrc",
+                         "permalink":  "/r/LocalLLaMA/comments/1wnedrc/i_built_a_cachefriendly_context_compacting_plugin/pbg8hab/",
+                         "profile_img":  "https://www.redditstatic.com/avatars/defaults/v2/avatar_default_3.png",
+                         "profile_over_18":  false,
+                         "removal_reason":  null,
+                         "replies":  "",
+                         "report_reasons":  null,
+                         "retrieved_on":  1790113706,
+                         "saved":  false,
+                         "score":  1,
+                         "score_hidden":  false,
+                         "send_replies":  true,
+                         "stickied":  false,
+                         "subreddit":  "LocalLLaMA",
+                         "subreddit_id":  "t5_81eyvm",
+                         "subreddit_name_prefixed":  "r/LocalLLaMA",
+                         "subreddit_type":  "public",
+                         "top_awarded_type":  null,
+                         "total_awards_received":  0,
+                         "treatment_tags":  [
+
+                                            ],
+                         "unrepliable_reason":  null,
+                         "ups":  1,
+                         "user_reports":  [
+
+                                          ]
+                     },
+                     {
+                         "_meta":  {
+                                       "removal_type":  "removed",
+                                       "retrieved_2nd_on":  1790243026,
+                                       "was_deleted_later":  true
+                                   },
+                         "all_awardings":  [
+
+                                           ],
+                         "approved_at_utc":  null,
+                         "approved_by":  null,
+                         "archived":  false,
+                         "associated_award":  null,
+                         "author":  "ShowerAnnual9741",
+                         "author_flair_background_color":  null,
+                         "author_flair_css_class":  null,
+                         "author_flair_richtext":  [
+
+                                                   ],
+                         "author_flair_template_id":  null,
+                         "author_flair_text":  null,
+                         "author_flair_text_color":  null,
+                         "author_flair_type":  "text",
+                         "author_fullname":  "t2_2mu94m1tik",
+                         "author_is_blocked":  false,
+                         "author_patreon_flair":  false,
+                         "author_premium":  false,
+                         "awarders":  [
+
+                                      ],
+                         "banned_at_utc":  null,
+                         "banned_by":  null,
+                         "body":  "ha, the irony folds one level deeper. either way the point survives: the config line helps the person reading the settings, not the thing that forgets to read them.",
+                         "can_gild":  false,
+                         "can_mod_post":  false,
+                         "collapsed":  false,
+                         "collapsed_because_crowd_control":  null,
+                         "collapsed_reason":  null,
+                         "collapsed_reason_code":  null,
+                         "comment_type":  null,
+                         "controversiality":  0,
+                         "created":  1790113411,
+                         "created_utc":  1790113411,
+                         "distinguished":  null,
+                         "downs":  0,
+                         "edited":  false,
+                         "gilded":  0,
+                         "gildings":  {
+
+                                      },
+                         "id":  "pbg7k8u",
+                         "is_submitter":  false,
+                         "likes":  null,
+                         "link_id":  "t3_1wnedrc",
+                         "locked":  false,
+                         "mod_note":  null,
+                         "mod_reason_by":  null,
+                         "mod_reason_title":  null,
+                         "mod_reports":  [
+
+                                         ],
+                         "name":  "t1_pbg7k8u",
+                         "no_follow":  true,
+                         "num_reports":  null,
+                         "parent_id":  "t1_pbfyeoe",
+                         "permalink":  "/r/LocalLLaMA/comments/1wnedrc/i_built_a_cachefriendly_context_compacting_plugin/pbg7k8u/",
+                         "profile_img":  "https://www.redditstatic.com/avatars/defaults/v2/avatar_default_4.png",
+                         "profile_over_18":  false,
+                         "removal_reason":  null,
+                         "replies":  "",
+                         "report_reasons":  null,
+                         "retrieved_on":  1790113437,
+                         "saved":  false,
+                         "score":  -2,
+                         "score_hidden":  false,
+                         "send_replies":  true,
+                         "stickied":  false,
+                         "subreddit":  "LocalLLaMA",
+                         "subreddit_id":  "t5_81eyvm",
+                         "subreddit_name_prefixed":  "r/LocalLLaMA",
+                         "subreddit_type":  "public",
+                         "top_awarded_type":  null,
+                         "total_awards_received":  0,
+                         "treatment_tags":  [
+
+                                            ],
+                         "unrepliable_reason":  null,
+                         "ups":  -2,
+                         "user_reports":  [
+
+                                          ]
+                     },
+                     {
+                         "_meta":  {
+                                       "retrieved_2nd_on":  1790240415
+                                   },
+                         "all_awardings":  [
+
+                                           ],
+                         "approved_at_utc":  null,
+                         "approved_by":  null,
+                         "archived":  false,
+                         "associated_award":  null,
+                         "author":  "wren6991",
+                         "author_flair_background_color":  null,
+                         "author_flair_css_class":  null,
+                         "author_flair_richtext":  [
+
+                                                   ],
+                         "author_flair_template_id":  null,
+                         "author_flair_text":  null,
+                         "author_flair_text_color":  null,
+                         "author_flair_type":  "text",
+                         "author_fullname":  "t2_13ng8q",
+                         "author_is_blocked":  false,
+                         "author_patreon_flair":  false,
+                         "author_premium":  false,
+                         "awarders":  [
+
+                                      ],
+                         "banned_at_utc":  null,
+                         "banned_by":  null,
+                         "body":  "Prompting Claude to use lower-case doesn\u0027t hide that it\u0027s Claude",
+                         "can_gild":  false,
+                         "can_mod_post":  false,
+                         "collapsed":  false,
+                         "collapsed_because_crowd_control":  null,
+                         "collapsed_reason":  null,
+                         "collapsed_reason_code":  null,
+                         "comment_type":  null,
+                         "controversiality":  0,
+                         "created":  1790110797,
+                         "created_utc":  1790110797,
+                         "distinguished":  null,
+                         "downs":  0,
+                         "edited":  false,
+                         "gilded":  0,
+                         "gildings":  {
+
+                                      },
+                         "id":  "pbfyeoe",
+                         "is_submitter":  false,
+                         "likes":  null,
+                         "link_id":  "t3_1wnedrc",
+                         "locked":  false,
+                         "mod_note":  null,
+                         "mod_reason_by":  null,
+                         "mod_reason_title":  null,
+                         "mod_reports":  [
+
+                                         ],
+                         "name":  "t1_pbfyeoe",
+                         "no_follow":  true,
+                         "num_reports":  null,
+                         "parent_id":  "t1_pbf4iwt",
+                         "permalink":  "/r/LocalLLaMA/comments/1wnedrc/i_built_a_cachefriendly_context_compacting_plugin/pbfyeoe/",
+                         "profile_img":  "https://www.redditstatic.com/avatars/defaults/v2/avatar_default_2.png",
+                         "profile_over_18":  false,
+                         "removal_reason":  null,
+                         "replies":  "",
+                         "report_reasons":  null,
+                         "retrieved_on":  1790110815,
+                         "saved":  false,
+                         "score":  2,
+                         "score_hidden":  false,
+                         "send_replies":  true,
+                         "stickied":  false,
+                         "subreddit":  "LocalLLaMA",
+                         "subreddit_id":  "t5_81eyvm",
+                         "subreddit_name_prefixed":  "r/LocalLLaMA",
+                         "subreddit_type":  "public",
+                         "top_awarded_type":  null,
+                         "total_awards_received":  0,
+                         "treatment_tags":  [
+
+                                            ],
+                         "unrepliable_reason":  null,
+                         "ups":  2,
+                         "user_reports":  [
+
+                                          ]
+                     },
+                     {
+                         "_meta":  {
+                                       "removal_type":  "removed",
+                                       "retrieved_2nd_on":  1790232658,
+                                       "was_deleted_later":  true
+                                   },
+                         "all_awardings":  [
+
+                                           ],
+                         "approved_at_utc":  null,
+                         "approved_by":  null,
+                         "archived":  false,
+                         "associated_award":  null,
+                         "author":  "ShowerAnnual9741",
+                         "author_flair_background_color":  null,
+                         "author_flair_css_class":  null,
+                         "author_flair_richtext":  [
+
+                                                   ],
+                         "author_flair_template_id":  null,
+                         "author_flair_text":  null,
+                         "author_flair_text_color":  null,
+                         "author_flair_type":  "text",
+                         "author_fullname":  "t2_2mu94m1tik",
+                         "author_is_blocked":  false,
+                         "author_patreon_flair":  false,
+                         "author_premium":  false,
+                         "awarders":  [
+
+                                      ],
+                         "banned_at_utc":  null,
+                         "banned_by":  null,
+                         "body":  "haha yeah, that\u0027s the exact irony — the prompt is configurable, but the thing that forgets to use the config is the agent itself. configurability helps the human, not the memory.",
+                         "can_gild":  false,
+                         "can_mod_post":  false,
+                         "collapsed":  false,
+                         "collapsed_because_crowd_control":  null,
+                         "collapsed_reason":  null,
+                         "collapsed_reason_code":  null,
+                         "comment_type":  null,
+                         "controversiality":  0,
+                         "created":  1790103045,
+                         "created_utc":  1790103045,
+                         "distinguished":  null,
+                         "downs":  0,
+                         "edited":  false,
+                         "gilded":  0,
+                         "gildings":  {
+
+                                      },
+                         "id":  "pbf4iwt",
+                         "is_submitter":  false,
+                         "likes":  null,
+                         "link_id":  "t3_1wnedrc",
+                         "locked":  false,
+                         "mod_note":  null,
+                         "mod_reason_by":  null,
+                         "mod_reason_title":  null,
+                         "mod_reports":  [
+
+                                         ],
+                         "name":  "t1_pbf4iwt",
+                         "no_follow":  false,
+                         "num_reports":  null,
+                         "parent_id":  "t1_pberdgt",
+                         "permalink":  "/r/LocalLLaMA/comments/1wnedrc/i_built_a_cachefriendly_context_compacting_plugin/pbf4iwt/",
+                         "profile_img":  "https://www.redditstatic.com/avatars/defaults/v2/avatar_default_4.png",
+                         "profile_over_18":  false,
+                         "removal_reason":  null,
+                         "replies":  "",
+                         "report_reasons":  null,
+                         "retrieved_on":  1790103069,
+                         "saved":  false,
+                         "score":  -2,
+                         "score_hidden":  false,
+                         "send_replies":  true,
+                         "stickied":  false,
+                         "subreddit":  "LocalLLaMA",
+                         "subreddit_id":  "t5_81eyvm",
+                         "subreddit_name_prefixed":  "r/LocalLLaMA",
+                         "subreddit_type":  "public",
+                         "top_awarded_type":  null,
+                         "total_awards_received":  0,
+                         "treatment_tags":  [
+
+                                            ],
+                         "unrepliable_reason":  null,
+                         "ups":  -2,
+                         "user_reports":  [
+
+                                          ]
+                     },
+                     {
+                         "_meta":  {
+                                       "retrieved_2nd_on":  1790231967
+                                   },
+                         "all_awardings":  [
+
+                                           ],
+                         "approved_at_utc":  null,
+                         "approved_by":  null,
+                         "archived":  false,
+                         "associated_award":  null,
+                         "author":  "schennardo",
+                         "author_flair_background_color":  null,
+                         "author_flair_css_class":  null,
+                         "author_flair_richtext":  [
+
+                                                   ],
+                         "author_flair_template_id":  null,
+                         "author_flair_text":  null,
+                         "author_flair_text_color":  null,
+                         "author_flair_type":  "text",
+                         "author_fullname":  "t2_u65d4unf",
+                         "author_is_blocked":  false,
+                         "author_patreon_flair":  false,
+                         "author_premium":  false,
+                         "awarders":  [
+
+                                      ],
+                         "banned_at_utc":  null,
+                         "banned_by":  null,
+                         "body":  "Most harnesses can do compaction out of the box, but most of them are optimized for Cloud-hosted models. This plugin can help if you\u0027re running models locally,  since there are some resource constraints that make it important not to rewrite the conversation history",
+                         "can_gild":  false,
+                         "can_mod_post":  false,
+                         "collapsed":  false,
+                         "collapsed_because_crowd_control":  null,
+                         "collapsed_reason":  null,
+                         "collapsed_reason_code":  null,
+                         "comment_type":  null,
+                         "controversiality":  0,
+                         "created":  1790102359,
+                         "created_utc":  1790102359,
+                         "distinguished":  null,
+                         "downs":  0,
+                         "edited":  false,
+                         "gilded":  0,
+                         "gildings":  {
+
+                                      },
+                         "id":  "pbf1tef",
+                         "is_submitter":  true,
+                         "likes":  null,
+                         "link_id":  "t3_1wnedrc",
+                         "locked":  false,
+                         "mod_note":  null,
+                         "mod_reason_by":  null,
+                         "mod_reason_title":  null,
+                         "mod_reports":  [
+
+                                         ],
+                         "name":  "t1_pbf1tef",
+                         "no_follow":  true,
+                         "num_reports":  null,
+                         "parent_id":  "t1_pbf0c3c",
+                         "permalink":  "/r/LocalLLaMA/comments/1wnedrc/i_built_a_cachefriendly_context_compacting_plugin/pbf1tef/",
+                         "profile_img":  "https://www.redditstatic.com/avatars/defaults/v2/avatar_default_3.png",
+                         "profile_over_18":  false,
+                         "removal_reason":  null,
+                         "replies":  "",
+                         "report_reasons":  null,
+                         "retrieved_on":  1790102379,
+                         "saved":  false,
+                         "score":  1,
+                         "score_hidden":  false,
+                         "send_replies":  true,
+                         "stickied":  false,
+                         "subreddit":  "LocalLLaMA",
+                         "subreddit_id":  "t5_81eyvm",
+                         "subreddit_name_prefixed":  "r/LocalLLaMA",
+                         "subreddit_type":  "public",
+                         "top_awarded_type":  null,
+                         "total_awards_received":  0,
+                         "treatment_tags":  [
+
+                                            ],
+                         "unrepliable_reason":  null,
+                         "ups":  1,
+                         "user_reports":  [
+
+                                          ]
+                     },
+                     {
+                         "_meta":  {
+                                       "retrieved_2nd_on":  1790231594
+                                   },
+                         "all_awardings":  [
+
+                                           ],
+                         "approved_at_utc":  null,
+                         "approved_by":  null,
+                         "archived":  false,
+                         "associated_award":  null,
+                         "author":  "tripontia",
+                         "author_flair_background_color":  null,
+                         "author_flair_css_class":  null,
+                         "author_flair_richtext":  [
+
+                                                   ],
+                         "author_flair_template_id":  null,
+                         "author_flair_text":  null,
+                         "author_flair_text_color":  null,
+                         "author_flair_type":  "text",
+                         "author_fullname":  "t2_3b031",
+                         "author_is_blocked":  false,
+                         "author_patreon_flair":  false,
+                         "author_premium":  false,
+                         "awarders":  [
+
+                                      ],
+                         "banned_at_utc":  null,
+                         "banned_by":  null,
+                         "body":  "I\u0027m pretty new in terms of using LLMs to do real work, but this would also seem very useful for allowing longer tasks to complete, if the task was too large for a specific subagent etc, right? The task would be be able to run for much longer because it would in effect get auto-compacted. I\u0027ll definitely give this a try! Thanks!",
+                         "can_gild":  false,
+                         "can_mod_post":  false,
+                         "collapsed":  false,
+                         "collapsed_because_crowd_control":  null,
+                         "collapsed_reason":  null,
+                         "collapsed_reason_code":  null,
+                         "comment_type":  null,
+                         "controversiality":  0,
+                         "created":  1790101984,
+                         "created_utc":  1790101984,
+                         "distinguished":  null,
+                         "downs":  0,
+                         "edited":  false,
+                         "gilded":  0,
+                         "gildings":  {
+
+                                      },
+                         "id":  "pbf0c3c",
+                         "is_submitter":  false,
+                         "likes":  null,
+                         "link_id":  "t3_1wnedrc",
+                         "locked":  false,
+                         "mod_note":  null,
+                         "mod_reason_by":  null,
+                         "mod_reason_title":  null,
+                         "mod_reports":  [
+
+                                         ],
+                         "name":  "t1_pbf0c3c",
+                         "no_follow":  true,
+                         "num_reports":  null,
+                         "parent_id":  "t3_1wnedrc",
+                         "permalink":  "/r/LocalLLaMA/comments/1wnedrc/i_built_a_cachefriendly_context_compacting_plugin/pbf0c3c/",
+                         "profile_img":  "https://www.redditstatic.com/avatars/defaults/v2/avatar_default_5.png",
+                         "profile_over_18":  false,
+                         "removal_reason":  null,
+                         "replies":  "",
+                         "report_reasons":  null,
+                         "retrieved_on":  1790102003,
+                         "saved":  false,
+                         "score":  2,
+                         "score_hidden":  false,
+                         "send_replies":  true,
+                         "stickied":  false,
+                         "subreddit":  "LocalLLaMA",
+                         "subreddit_id":  "t5_81eyvm",
+                         "subreddit_name_prefixed":  "r/LocalLLaMA",
+                         "subreddit_type":  "public",
+                         "top_awarded_type":  null,
+                         "total_awards_received":  0,
+                         "treatment_tags":  [
+
+                                            ],
+                         "unrepliable_reason":  null,
+                         "ups":  2,
+                         "user_reports":  [
+
+                                          ]
+                     },
+                     {
+                         "_meta":  {
+                                       "retrieved_2nd_on":  1790229326
+                                   },
+                         "all_awardings":  [
+
+                                           ],
+                         "approved_at_utc":  null,
+                         "approved_by":  null,
+                         "archived":  false,
+                         "associated_award":  null,
+                         "author":  "schennardo",
+                         "author_flair_background_color":  null,
+                         "author_flair_css_class":  null,
+                         "author_flair_richtext":  [
+
+                                                   ],
+                         "author_flair_template_id":  null,
+                         "author_flair_text":  null,
+                         "author_flair_text_color":  null,
+                         "author_flair_type":  "text",
+                         "author_fullname":  "t2_u65d4unf",
+                         "author_is_blocked":  false,
+                         "author_patreon_flair":  false,
+                         "author_premium":  false,
+                         "awarders":  [
+
+                                      ],
+                         "banned_at_utc":  null,
+                         "banned_by":  null,
+                         "body":  "yeah, that\u0027s fair. I\u0027ve made the compacting prompt configurable through the plugin settings, so you should be able to customize these kinds of things. agents are notorious for forgetting about their own mistakes though😅",
+                         "can_gild":  false,
+                         "can_mod_post":  false,
+                         "collapsed":  false,
+                         "collapsed_because_crowd_control":  null,
+                         "collapsed_reason":  null,
+                         "collapsed_reason_code":  null,
+                         "comment_type":  null,
+                         "controversiality":  0,
+                         "created":  1790099722,
+                         "created_utc":  1790099722,
+                         "distinguished":  null,
+                         "downs":  0,
+                         "edited":  false,
+                         "gilded":  0,
+                         "gildings":  {
+
+                                      },
+                         "id":  "pberdgt",
+                         "is_submitter":  true,
+                         "likes":  null,
+                         "link_id":  "t3_1wnedrc",
+                         "locked":  false,
+                         "mod_note":  null,
+                         "mod_reason_by":  null,
+                         "mod_reason_title":  null,
+                         "mod_reports":  [
+
+                                         ],
+                         "name":  "t1_pberdgt",
+                         "no_follow":  true,
+                         "num_reports":  null,
+                         "parent_id":  "t1_pbepvy0",
+                         "permalink":  "/r/LocalLLaMA/comments/1wnedrc/i_built_a_cachefriendly_context_compacting_plugin/pberdgt/",
+                         "profile_img":  "https://www.redditstatic.com/avatars/defaults/v2/avatar_default_3.png",
+                         "profile_over_18":  false,
+                         "removal_reason":  null,
+                         "replies":  "",
+                         "report_reasons":  null,
+                         "retrieved_on":  1790099740,
+                         "saved":  false,
+                         "score":  1,
+                         "score_hidden":  false,
+                         "send_replies":  true,
+                         "stickied":  false,
+                         "subreddit":  "LocalLLaMA",
+                         "subreddit_id":  "t5_81eyvm",
+                         "subreddit_name_prefixed":  "r/LocalLLaMA",
+                         "subreddit_type":  "public",
+                         "top_awarded_type":  null,
+                         "total_awards_received":  0,
+                         "treatment_tags":  [
+
+                                            ],
+                         "unrepliable_reason":  null,
+                         "ups":  1,
+                         "user_reports":  [
+
+                                          ]
+                     },
+                     {
+                         "_meta":  {
+                                       "retrieved_2nd_on":  1790229192
+                                   },
+                         "all_awardings":  [
+
+                                           ],
+                         "approved_at_utc":  null,
+                         "approved_by":  null,
+                         "archived":  false,
+                         "associated_award":  null,
+                         "author":  "schennardo",
+                         "author_flair_background_color":  null,
+                         "author_flair_css_class":  null,
+                         "author_flair_richtext":  [
+
+                                                   ],
+                         "author_flair_template_id":  null,
+                         "author_flair_text":  null,
+                         "author_flair_text_color":  null,
+                         "author_flair_type":  "text",
+                         "author_fullname":  "t2_u65d4unf",
+                         "author_is_blocked":  false,
+                         "author_patreon_flair":  false,
+                         "author_premium":  false,
+                         "awarders":  [
+
+                                      ],
+                         "banned_at_utc":  null,
+                         "banned_by":  null,
+                         "body":  "interesting, in theory this should definitely be possible. instead of changing the prompt you could append something to the session that lets the agent know that the model changed",
+                         "can_gild":  false,
+                         "can_mod_post":  false,
+                         "collapsed":  false,
+                         "collapsed_because_crowd_control":  null,
+                         "collapsed_reason":  null,
+                         "collapsed_reason_code":  null,
+                         "comment_type":  null,
+                         "controversiality":  0,
+                         "created":  1790099583,
+                         "created_utc":  1790099583,
+                         "distinguished":  null,
+                         "downs":  0,
+                         "edited":  false,
+                         "gilded":  0,
+                         "gildings":  {
+
+                                      },
+                         "id":  "pbeqteg",
+                         "is_submitter":  true,
+                         "likes":  null,
+                         "link_id":  "t3_1wnedrc",
+                         "locked":  false,
+                         "mod_note":  null,
+                         "mod_reason_by":  null,
+                         "mod_reason_title":  null,
+                         "mod_reports":  [
+
+                                         ],
+                         "name":  "t1_pbeqteg",
+                         "no_follow":  true,
+                         "num_reports":  null,
+                         "parent_id":  "t1_pbeooc9",
+                         "permalink":  "/r/LocalLLaMA/comments/1wnedrc/i_built_a_cachefriendly_context_compacting_plugin/pbeqteg/",
+                         "profile_img":  "https://www.redditstatic.com/avatars/defaults/v2/avatar_default_3.png",
+                         "profile_over_18":  false,
+                         "removal_reason":  null,
+                         "replies":  "",
+                         "report_reasons":  null,
+                         "retrieved_on":  1790099603,
+                         "saved":  false,
+                         "score":  1,
+                         "score_hidden":  false,
+                         "send_replies":  true,
+                         "stickied":  false,
+                         "subreddit":  "LocalLLaMA",
+                         "subreddit_id":  "t5_81eyvm",
+                         "subreddit_name_prefixed":  "r/LocalLLaMA",
+                         "subreddit_type":  "public",
+                         "top_awarded_type":  null,
+                         "total_awards_received":  0,
+                         "treatment_tags":  [
+
+                                            ],
+                         "unrepliable_reason":  null,
+                         "ups":  1,
+                         "user_reports":  [
+
+                                          ]
+                     },
+                     {
+                         "_meta":  {
+                                       "removal_type":  "removed",
+                                       "retrieved_2nd_on":  1790228966,
+                                       "was_deleted_later":  true
+                                   },
+                         "all_awardings":  [
+
+                                           ],
+                         "approved_at_utc":  null,
+                         "approved_by":  null,
+                         "archived":  false,
+                         "associated_award":  null,
+                         "author":  "ShowerAnnual9741",
+                         "author_flair_background_color":  null,
+                         "author_flair_css_class":  null,
+                         "author_flair_richtext":  [
+
+                                                   ],
+                         "author_flair_template_id":  null,
+                         "author_flair_text":  null,
+                         "author_flair_text_color":  null,
+                         "author_flair_type":  "text",
+                         "author_fullname":  "t2_2mu94m1tik",
+                         "author_is_blocked":  false,
+                         "author_patreon_flair":  false,
+                         "author_premium":  false,
+                         "awarders":  [
+
+                                      ],
+                         "banned_at_utc":  null,
+                         "banned_by":  null,
+                         "body":  "i think the useful test for a compaction plugin isn’t tokens saved, it’s whether the agent can still reconstruct why a decision was made after the squeeze. the compactions i’ve watched break all deleted the same thing: the failed attempts. keeping those beats a smaller context.",
+                         "can_gild":  false,
+                         "can_mod_post":  false,
+                         "collapsed":  false,
+                         "collapsed_because_crowd_control":  null,
+                         "collapsed_reason":  null,
+                         "collapsed_reason_code":  null,
+                         "comment_type":  null,
+                         "controversiality":  1,
+                         "created":  1790099350,
+                         "created_utc":  1790099350,
+                         "distinguished":  null,
+                         "downs":  0,
+                         "edited":  false,
+                         "gilded":  0,
+                         "gildings":  {
+
+                                      },
+                         "id":  "pbepvy0",
+                         "is_submitter":  false,
+                         "likes":  null,
+                         "link_id":  "t3_1wnedrc",
+                         "locked":  false,
+                         "mod_note":  null,
+                         "mod_reason_by":  null,
+                         "mod_reason_title":  null,
+                         "mod_reports":  [
+
+                                         ],
+                         "name":  "t1_pbepvy0",
+                         "no_follow":  true,
+                         "num_reports":  null,
+                         "parent_id":  "t3_1wnedrc",
+                         "permalink":  "/r/LocalLLaMA/comments/1wnedrc/i_built_a_cachefriendly_context_compacting_plugin/pbepvy0/",
+                         "profile_img":  "https://www.redditstatic.com/avatars/defaults/v2/avatar_default_4.png",
+                         "profile_over_18":  false,
+                         "removal_reason":  null,
+                         "replies":  "",
+                         "report_reasons":  null,
+                         "retrieved_on":  1790099381,
+                         "saved":  false,
+                         "score":  0,
+                         "score_hidden":  false,
+                         "send_replies":  true,
+                         "stickied":  false,
+                         "subreddit":  "LocalLLaMA",
+                         "subreddit_id":  "t5_81eyvm",
+                         "subreddit_name_prefixed":  "r/LocalLLaMA",
+                         "subreddit_type":  "public",
+                         "top_awarded_type":  null,
+                         "total_awards_received":  0,
+                         "treatment_tags":  [
+
+                                            ],
+                         "unrepliable_reason":  null,
+                         "ups":  0,
+                         "user_reports":  [
+
+                                          ]
+                     },
+                     {
+                         "_meta":  {
+                                       "is_edited":  true,
+                                       "retrieved_2nd_on":  1790228757
+                                   },
+                         "all_awardings":  [
+
+                                           ],
+                         "approved_at_utc":  null,
+                         "approved_by":  null,
+                         "archived":  false,
+                         "associated_award":  null,
+                         "author":  "schennardo",
+                         "author_flair_background_color":  null,
+                         "author_flair_css_class":  null,
+                         "author_flair_richtext":  [
+
+                                                   ],
+                         "author_flair_template_id":  null,
+                         "author_flair_text":  null,
+                         "author_flair_text_color":  null,
+                         "author_flair_type":  "text",
+                         "author_fullname":  "t2_u65d4unf",
+                         "author_is_blocked":  false,
+                         "author_patreon_flair":  false,
+                         "author_premium":  false,
+                         "awarders":  [
+
+                                      ],
+                         "banned_at_utc":  null,
+                         "banned_by":  null,
+                         "body":  "You\u0027re right! Pi does the compacting in a completely separate session, with a different system prompt etc.\n\nI\u0027ve ported the plugin to Pi, feel free to check it out here: [https://github.com/lennartschoch/pi-cache-compact](https://github.com/lennartschoch/pi-cache-compact)",
+                         "can_gild":  false,
+                         "can_mod_post":  false,
+                         "collapsed":  false,
+                         "collapsed_because_crowd_control":  null,
+                         "collapsed_reason":  null,
+                         "collapsed_reason_code":  null,
+                         "comment_type":  null,
+                         "controversiality":  0,
+                         "created":  1790099146,
+                         "created_utc":  1790099146,
+                         "distinguished":  null,
+                         "downs":  0,
+                         "edited":  false,
+                         "gilded":  0,
+                         "gildings":  {
+
+                                      },
+                         "id":  "pbep32d",
+                         "is_submitter":  true,
+                         "likes":  null,
+                         "link_id":  "t3_1wnedrc",
+                         "locked":  false,
+                         "mod_note":  null,
+                         "mod_reason_by":  null,
+                         "mod_reason_title":  null,
+                         "mod_reports":  [
+
+                                         ],
+                         "name":  "t1_pbep32d",
+                         "no_follow":  true,
+                         "num_reports":  null,
+                         "parent_id":  "t1_pbeohl3",
+                         "permalink":  "/r/LocalLLaMA/comments/1wnedrc/i_built_a_cachefriendly_context_compacting_plugin/pbep32d/",
+                         "profile_img":  "https://www.redditstatic.com/avatars/defaults/v2/avatar_default_3.png",
+                         "profile_over_18":  false,
+                         "removal_reason":  null,
+                         "replies":  "",
+                         "report_reasons":  null,
+                         "retrieved_on":  1790099168,
+                         "saved":  false,
+                         "score":  2,
+                         "score_hidden":  false,
+                         "send_replies":  true,
+                         "stickied":  false,
+                         "subreddit":  "LocalLLaMA",
+                         "subreddit_id":  "t5_81eyvm",
+                         "subreddit_name_prefixed":  "r/LocalLLaMA",
+                         "subreddit_type":  "public",
+                         "top_awarded_type":  null,
+                         "total_awards_received":  0,
+                         "treatment_tags":  [
+
+                                            ],
+                         "unrepliable_reason":  null,
+                         "ups":  2,
+                         "user_reports":  [
+
+                                          ]
+                     },
+                     {
+                         "_meta":  {
+                                       "retrieved_2nd_on":  1790228652
+                                   },
+                         "all_awardings":  [
+
+                                           ],
+                         "approved_at_utc":  null,
+                         "approved_by":  null,
+                         "archived":  false,
+                         "associated_award":  null,
+                         "author":  "nagasgura",
+                         "author_flair_background_color":  null,
+                         "author_flair_css_class":  null,
+                         "author_flair_richtext":  [
+
+                                                   ],
+                         "author_flair_template_id":  null,
+                         "author_flair_text":  null,
+                         "author_flair_text_color":  null,
+                         "author_flair_type":  "text",
+                         "author_fullname":  "t2_6ug26",
+                         "author_is_blocked":  false,
+                         "author_patreon_flair":  false,
+                         "author_premium":  false,
+                         "awarders":  [
+
+                                      ],
+                         "banned_at_utc":  null,
+                         "banned_by":  null,
+                         "body":  "I haven\u0027t looked at the code yet, but thanks for working on this! I had the same frustration with opencode when using local models. It would be nice to have something like this for switching agents too, as that also rewrites the history to change the system prompt.",
+                         "can_gild":  false,
+                         "can_mod_post":  false,
+                         "collapsed":  false,
+                         "collapsed_because_crowd_control":  null,
+                         "collapsed_reason":  null,
+                         "collapsed_reason_code":  null,
+                         "comment_type":  null,
+                         "controversiality":  0,
+                         "created":  1790099040,
+                         "created_utc":  1790099040,
+                         "distinguished":  null,
+                         "downs":  0,
+                         "edited":  false,
+                         "gilded":  0,
+                         "gildings":  {
+
+                                      },
+                         "id":  "pbeooc9",
+                         "is_submitter":  false,
+                         "likes":  null,
+                         "link_id":  "t3_1wnedrc",
+                         "locked":  false,
+                         "mod_note":  null,
+                         "mod_reason_by":  null,
+                         "mod_reason_title":  null,
+                         "mod_reports":  [
+
+                                         ],
+                         "name":  "t1_pbeooc9",
+                         "no_follow":  true,
+                         "num_reports":  null,
+                         "parent_id":  "t3_1wnedrc",
+                         "permalink":  "/r/LocalLLaMA/comments/1wnedrc/i_built_a_cachefriendly_context_compacting_plugin/pbeooc9/",
+                         "profile_img":  "https://www.redditstatic.com/avatars/defaults/v2/avatar_default_6.png",
+                         "profile_over_18":  false,
+                         "removal_reason":  null,
+                         "replies":  "",
+                         "report_reasons":  null,
+                         "retrieved_on":  1790099062,
+                         "saved":  false,
+                         "score":  2,
+                         "score_hidden":  false,
+                         "send_replies":  true,
+                         "stickied":  false,
+                         "subreddit":  "LocalLLaMA",
+                         "subreddit_id":  "t5_81eyvm",
+                         "subreddit_name_prefixed":  "r/LocalLLaMA",
+                         "subreddit_type":  "public",
+                         "top_awarded_type":  null,
+                         "total_awards_received":  0,
+                         "treatment_tags":  [
+
+                                            ],
+                         "unrepliable_reason":  null,
+                         "ups":  2,
+                         "user_reports":  [
+
+                                          ]
+                     },
+                     {
+                         "_meta":  {
+                                       "retrieved_2nd_on":  1790228606
+                                   },
+                         "all_awardings":  [
+
+                                           ],
+                         "approved_at_utc":  null,
+                         "approved_by":  null,
+                         "archived":  false,
+                         "associated_award":  null,
+                         "author":  "DeProgrammer99",
+                         "author_flair_background_color":  null,
+                         "author_flair_css_class":  null,
+                         "author_flair_richtext":  [
+
+                                                   ],
+                         "author_flair_template_id":  null,
+                         "author_flair_text":  null,
+                         "author_flair_text_color":  null,
+                         "author_flair_type":  "text",
+                         "author_fullname":  "t2_w4j8t",
+                         "author_is_blocked":  false,
+                         "author_patreon_flair":  false,
+                         "author_premium":  false,
+                         "awarders":  [
+
+                                      ],
+                         "banned_at_utc":  null,
+                         "banned_by":  null,
+                         "body":  "I think Pi compaction has the same issue, but one major problem is the thinking level is in the system prompt, and it turns thinking off for compaction...",
+                         "can_gild":  false,
+                         "can_mod_post":  false,
+                         "collapsed":  false,
+                         "collapsed_because_crowd_control":  null,
+                         "collapsed_reason":  null,
+                         "collapsed_reason_code":  null,
+                         "comment_type":  null,
+                         "controversiality":  0,
+                         "created":  1790098993,
+                         "created_utc":  1790098993,
+                         "distinguished":  null,
+                         "downs":  0,
+                         "edited":  false,
+                         "gilded":  0,
+                         "gildings":  {
+
+                                      },
+                         "id":  "pbeohl3",
+                         "is_submitter":  false,
+                         "likes":  null,
+                         "link_id":  "t3_1wnedrc",
+                         "locked":  false,
+                         "mod_note":  null,
+                         "mod_reason_by":  null,
+                         "mod_reason_title":  null,
+                         "mod_reports":  [
+
+                                         ],
+                         "name":  "t1_pbeohl3",
+                         "no_follow":  true,
+                         "num_reports":  null,
+                         "parent_id":  "t3_1wnedrc",
+                         "permalink":  "/r/LocalLLaMA/comments/1wnedrc/i_built_a_cachefriendly_context_compacting_plugin/pbeohl3/",
+                         "profile_img":  "https://styles.redditmedia.com/t5_1f793u/styles/profileIcon_k3mdsmzw8ge31.png?width=256\u0026height=256\u0026crop=256:256,smart\u0026s=bc38a6ef7efa0b93488b6bc69918702cd96ef61f",
+                         "profile_over_18":  false,
+                         "removal_reason":  null,
+                         "replies":  "",
+                         "report_reasons":  null,
+                         "retrieved_on":  1790099020,
+                         "saved":  false,
+                         "score":  3,
+                         "score_hidden":  false,
+                         "send_replies":  true,
+                         "stickied":  false,
+                         "subreddit":  "LocalLLaMA",
+                         "subreddit_id":  "t5_81eyvm",
+                         "subreddit_name_prefixed":  "r/LocalLLaMA",
+                         "subreddit_type":  "public",
+                         "top_awarded_type":  null,
+                         "total_awards_received":  0,
+                         "treatment_tags":  [
+
+                                            ],
+                         "unrepliable_reason":  null,
+                         "ups":  3,
+                         "user_reports":  [
+
+                                          ]
+                     }
+                 ]
+}

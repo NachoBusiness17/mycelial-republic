@@ -1,0 +1,7 @@
+# swarm1-deepseek-mag__ox_probe (deepseek-chat @ deepseek, turn 1, channel: content)
+
+DEFECT 1: call B reuses stale assistant turn that omits `reasoning_details`, breaking the byte-identical prefix claim and thereby the cached_tokens measurement itself | EVIDENCE: mag/ox_probe.py:150-151 | FIX: carry `a.get("reasoning")` into the assistant message as `reasoning_details` (or refuse to build B when reasoning is present).
+DEFECT 2: filename timestamp truncation slices an 8-char date + 6-char time, so the `.replace(':','')` happens after slicing and any two probes in the same second collide silently | EVIDENCE: mag/ox_probe.py:190-191 | FIX: `stamp = _now().replace(':','').replace('-','')` then use `stamp[:15]` in the f-string.
+DEFECT 3: call B is issued even when call A made no tool call, producing a `messages_b` that cannot exercise the tool-result delta the experiment exists to measure | EVIDENCE: mag/ox_probe.py:156-159 | FIX: return early with `delta="no_tool_call_a"` and skip call B when `tool_calls` is falsy.
+DEAD-CODE: `import shlex` absent, but `tool_call_id` path at line 169 can index `tool_calls[0]` when `tool_calls` is non-empty list of malformed entries; the `content_null` out field at line 179 is never read by `probe` or `main` | EVIDENCE: mag/ox_probe.py:169,179
+ONE-SITTING FIX: write probe output through a tmp+replace so a crash mid-`write_text` does not leave a half-written run file | EVIDENCE: mag/ox_probe.py:190-191

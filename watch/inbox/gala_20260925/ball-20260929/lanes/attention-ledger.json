@@ -1,0 +1,26 @@
+{
+  "lane": "attention-ledger",
+  "division": "B",
+  "ok": true,
+  "note": "Attention market trade ledger wired end to end: POST /api/v1/attention-feedback now casts in the unified five-signal vocabulary (thumbs aliased via mag.feedback.normalize_signal) with settle-once cast_id idempotency in record_feedback (retried POST replays, zero double-append), mag/attention_ranker.read_feedback() is the public read path, and a live POST on a scratch-port server settled the market's FIRST trades ever (ledger was ABSENT at lane start, re-verified): 2 rows, and the next build_ranked_attention() consumed them (repo:handoff 84->88, roadmap gate 71->75, feedback ['useful']). 18/18 attention tests pass (7 new idempotency/vocab/read-path), ratchet PASS exit 0 NEW=0. Residual: settle-once is single-process (dashboard is the operative writer); cross-process race documented in receipt, not locked.",
+  "rows": [],
+  "checks": [
+    {
+      "command": ".venv/Scripts/python.exe -m pytest tests/test_attention_feedback_ledger.py tests/test_attention_feedback_contract.py tests/test_attention_ranker.py -v",
+      "exit": 0,
+      "evidence": "watch/inbox/gala_20260925/ball-20260929/lanes/attention-ledger.check.txt"
+    },
+    {
+      "command": ".venv/Scripts/python.exe tools/violation_ratchet.py check --changed",
+      "exit": 0,
+      "evidence": "watch/inbox/gala_20260925/ball-20260929/lanes/attention-ledger.check.txt"
+    },
+    {
+      "command": "live POST /api/v1/attention-feedback x3 (first trade, same-cast_id retry, thumbs 'good') against dashboard.server run(port=8791) + GET /api/v1/attention-ranked before/after + ledger dump (ROW_COUNT=2, duplicate:true on retry, scores 84->88 and 71->75)",
+      "exit": 0,
+      "evidence": "watch/inbox/gala_20260925/ball-20260929/lanes/attention-ledger.check.txt"
+    }
+  ],
+  "decision_changed": "Attention-market wiring decision: the trade ledger (memory/attention_feedback.jsonl) went from ABSENT/zero-trades-uninformative (w4-03, w4-37 T2: you could not tell apathy from broken rails) to proven rails with the market's first two settled trades; POST casts settle once in the five-signal vocabulary and the next ranking pass provably consumes them, so future zero-trade readings are honest demand signals.",
+  "artifact": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/ball-20260929/lanes/attention-ledger.json"
+}

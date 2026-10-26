@@ -1,0 +1,2471 @@
+
+
+<!DOCTYPE html>
+<html lang="en" class="fixed_navbar">
+	<head>
+		
+	
+		<title>
+	
+		I benchmarked Qwen 3.8 27B on my M4 Max — here&#39;s what I learned about local models, context, and coding performance - r/ollama
+	
+</title>
+		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+		<meta name="description" content="View on Redlib, an alternative private front-end to Reddit.">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0">
+		
+		<meta name="robots" content="noindex, nofollow">
+		
+		<!-- General PWA -->
+		<meta name="theme-color" content="#1F1F1F">
+		<!-- iOS Application -->
+		<meta name="apple-mobile-web-app-title" content="Redlib">
+		<meta name="apple-mobile-web-app-capable" content="yes">
+		<meta name="apple-mobile-web-app-status-bar-style" content="default">
+		<!-- Android -->
+		<meta name="mobile-web-app-capable" content="yes">
+		<!-- iOS Logo -->
+		<link href="/touch-icon-iphone.png" rel="apple-touch-icon">
+		<!-- OpenSearch description file -->
+		<link rel="search" type="application/opensearchdescription+xml" title="Search Redlib" href="/opensearch.xml">
+		<!-- PWA Manifest -->
+		<link rel="manifest" type="application/json" href="/manifest.json">
+		<link rel="shortcut icon" type="image/x-icon" href="/favicon.ico"> 
+		<link rel="stylesheet" type="text/css" href="/style.css?v=0.36.0-yunyun">
+		<!-- Video quality -->
+		<div id="video_quality" data-value=""></div>
+		
+	<!-- Meta Tags -->
+	<meta name="author" content="u/rodrigodevbits">
+	<meta name="title" content="I benchmarked Qwen 3.8 27B on my M4 Max — here&#39;s what I learned about local models, context, and coding performance - r/ollama">
+	<meta property="og:title" content="I benchmarked Qwen 3.8 27B on my M4 Max — here&#39;s what I learned about local models, context, and coding performance - r/ollama">
+	<meta property="og:description" content="View on Redlib, an alternative private front-end to Reddit.">
+	<meta property="og:url" content="/r/ollama/comments/1wvxih5/i_benchmarked_qwen_38_27b_on_my_m4_max_heres_what/">
+	<meta property="twitter:url" content="/r/ollama/comments/1wvxih5/i_benchmarked_qwen_38_27b_on_my_m4_max_heres_what/">
+	<meta property="twitter:title" content="I benchmarked Qwen 3.8 27B on my M4 Max — here&#39;s what I learned about local models, context, and coding performance - r/ollama">
+	<meta property="twitter:description" content="View on Redlib, an alternative private front-end to Reddit.">
+	
+	<meta property="og:type" content="image">
+	<meta property="og:image" content="/preview/pre/pgc5sa04p2th1.jpeg?width=140&#38;height=140&#38;crop=1:1,smart&#38;auto=webp&#38;s=2f82fd0097e1b1389e75e76d5b647e4e51f0fd05">
+	<meta property="twitter:card" content="summary_large_image">
+	<meta property="twitter:image" content="/preview/pre/pgc5sa04p2th1.jpeg?width=140&#38;height=140&#38;crop=1:1,smart&#38;auto=webp&#38;s=2f82fd0097e1b1389e75e76d5b647e4e51f0fd05">
+	
+
+		</head>
+	<body class="
+		card
+		
+		
+		 fixed_navbar">
+		<!-- NAVIGATION BAR -->
+		<nav class="
+			 fixed_navbar">
+			<div id="logo">
+				<a id="redlib" href="/"><span id="red">red</span><span id="lib">lib.</span></a>
+				
+	<details id="feeds">
+		<summary>Feeds</summary>
+		<div id="feed_list">
+			<p>MAIN FEEDS</p>
+			<a href="/">Home</a>
+			
+				<a href="/r/popular">Popular</a>
+				<a href="/r/all">All</a>
+			
+			
+		</div>
+	</details>
+
+			</div>
+			
+	<form action="/r/ollama/search" id="searchbox">
+	<input id="search" type="text" name="q" placeholder="Search" title="Search redlib" value="">
+	
+	<div id="inside">
+		<input type="checkbox" name="restrict_sr" id="restrict_sr" checked>
+		<label for="restrict_sr" class="search_label" title="Restrict search to this subreddit">in /r/ollama</label>
+	</div>
+	
+	<button class="submit">
+		<svg width="15" viewBox="0 0 110 100" fill="none" stroke-width="10" stroke-linecap="round">
+			<path d="M20 50 H100" />
+			<path d="M75 15 L100 50 L75 85" />
+			&rarr;
+		</svg>
+	</button>
+</form>
+
+			<div id="links">
+				<a id="reddit_link" href="#popup">
+					<span>reddit</span>
+					<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+						<path d="M22 2L12 22"/>
+						<path d="M2 6.70587C3.33333 8.07884 3.33333 11.5971 3.33333 11.5971M3.33333 19.647V11.5971M3.33333 11.5971C3.33333 11.5971 5.125 7.47817 8 7.47817C10.875 7.47817 12 8.85114 12 8.85114"/>
+					</svg>
+				</a>
+				
+					<div class="popup" id="popup">
+	<div class="popup-inner">
+		<h1>You are about to leave Redlib</h1>
+		<p>Do you want to continue?</p>
+		<p id="reddit_url">https://www.reddit.com/r/ollama/comments/1wvxih5/i_benchmarked_qwen_38_27b_on_my_m4_max_heres_what/</p>
+		<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 639.24 563">
+			<defs>
+				<style>.cls-1{fill:#000000;}.cls-2{fill:#f8aa00;}</style>
+			</defs>
+			<path class="cls-2" d="M322.03,0c1.95,2.5,4.88,.9,7.33,1.65,10.5,3.21,17.65,10.39,22.83,19.35,93.64,162.06,186.98,324.29,280.25,486.56,15.73,20.19,2.49,51.27-22.92,54.37-1.21,.19-2.72-.54-3.49,1.08H239.03c-70.33-2.43-141.6,.79-212.08-1.74-17.49-4.92-23.16-15.88-26.91-32.26l-.04-1.97C88.74,354.76,194.49,188.2,289.92,18.43c6.2-10.66,15.03-16.94,27.61-17.36,.95-.03,2.05,.18,2.51-1.07h2Zm-2.43,545c94.95-.02,189.9,.04,284.85-.02,11.84-.73,20.75-13.19,16.68-23.55C523.83,355.97,430.74,187.62,332.05,23.07c-7.93-9.02-22.2-6.58-27.23,3.22C230.28,156.11,155.21,285.64,80.41,415.31c-19.88,34.41-39.31,69.07-59.78,103.14-2.43,4.05-4.24,8.8-1.68,14.18,3.92,8.24,9.59,12.37,18.82,12.37,93.95,0,187.9,0,281.85,0Z"/>
+			<path class="cls-1" d="M319.61,545c-93.95,0-187.9,0-281.85,0-9.22,0-14.89-4.13-18.82-12.37-2.56-5.38-.75-10.13,1.68-14.18,20.47-34.07,39.9-68.73,59.78-103.14C155.21,285.64,230.28,156.11,304.82,26.29c5.03-9.8,19.3-12.24,27.23-3.22,98.7,164.55,191.79,332.9,289.1,498.35,4.06,10.36-4.85,22.82-16.68,23.55-94.94,.06-189.9,0-284.85,.02Zm.44-462.31C238.88,223.22,158.17,362.95,77.28,503h485.54c-80.94-140.13-161.61-279.79-242.77-420.31Z"/>
+			<path class="cls-2" d="M320.05,82.69c81.16,140.52,161.83,280.18,242.77,420.31H77.28C158.17,362.95,238.88,223.22,320.05,82.69Zm36.05,118.99c-.14-46.75-68.32-52.32-74.66-4.76,.73,51.49,9.2,102.97,12.63,154.49,1.18,13.14,10.53,21.81,23.32,22.76,13.12,.97,23.89-9.13,24.96-21.58,4.44-49.99,9.4-101.22,13.76-150.91Zm-36.56,271.4c48.8,.76,49.24-74.7-.31-75.47-53.45,3-46.02,78.12,.31,75.47Z"/>
+			<path class="cls-1" d="M356.1,201.67c-4.36,49.69-9.31,100.91-13.76,150.91-1.07,12.45-11.84,22.56-24.96,21.58-12.79-.95-22.14-9.63-23.31-22.76-3.43-51.52-11.9-103-12.63-154.49,6.33-47.53,74.51-42.03,74.66,4.76Z"/>
+			<path class="cls-1" d="M319.54,473.08c-46.34,2.64-53.75-72.47-.31-75.47,49.56,.78,49.1,76.24,.31,75.47Z"/>
+		</svg>
+		<a id="goback" href="#">No, go back!</a>
+		<a id="toreddit" href="https://www.reddit.com/r/ollama/comments/1wvxih5/i_benchmarked_qwen_38_27b_on_my_m4_max_heres_what/" rel="nofollow">Yes, take me to Reddit</a>
+	</div>
+</div>
+				
+				<a id="settings_link" href="/settings">
+					<span>settings</span>
+					<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+						<title>settings</title>
+						<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+					</svg>
+				</a>
+			</div>
+		</nav>
+		
+		<!-- MAIN CONTENT -->
+		
+		<main>
+			
+	<div id="column_one">
+		<!-- POST CONTENT -->
+<div class="post highlighted">
+	<p class="post_header">
+		<a class="post_subreddit" href="/r/ollama">r/ollama</a>
+		<span class="dot">&bull;</span>
+		<a class="post_author " href="/user/rodrigodevbits">u/rodrigodevbits</a>
+		
+		<span class="dot">&bull;</span>
+		<span class="created" title="Oct 02 2026, 15:58:02 UTC">7d ago</span>
+		
+	</p>
+	<h1 class="post_title">
+		
+		I benchmarked Qwen 3.8 27B on my M4 Max — here&#39;s what I learned about local models, context, and coding performance
+		
+		
+	</h1>
+
+	<!-- POST MEDIA -->
+	<!-- post_type: image -->
+	
+	<div class="post_media_content">
+		<a href="/preview/pre/pgc5sa04p2th1.jpeg?auto=webp&#38;s=9e3c331b99251c73adea304c3bef27af6f1fdcb0" class="post_media_image" >
+			<img width="100%" height="100%" loading="lazy" alt="Post image" src="/preview/pre/pgc5sa04p2th1.jpeg?auto=webp&#38;s=9e3c331b99251c73adea304c3bef27af6f1fdcb0"/>
+		</a>
+	</div>
+	
+
+	<!-- POST BODY -->
+	<div class="post_body">
+		<!-- SC_OFF --><div class="md"><p>I&#39;ve been experimenting with running larger models locally with Ollama, mainly because I&#39;m interested in using them for agentic coding.</p>
+
+<p>I kept seeing benchmarks expressed as something like:</p>
+
+<blockquote>
+<p><strong>40 tokens/sec</strong></p>
+</blockquote>
+
+<p>That&#39;s useful, but I eventually realized it doesn&#39;t answer the question I actually care about:</p>
+
+<blockquote>
+<p><strong>How long am I going to sit there waiting when the coding agent has 8K, 16K, 32K or more project context?</strong></p>
+</blockquote>
+
+<p>So I spent some time testing this properly on my machine.</p>
+
+<p>This post isn&#39;t meant to say that one model or runtime is &quot;best.&quot; I mainly wanted to understand what the numbers actually mean in day-to-day use.</p>
+
+<p>And some of the results surprised me.</p>
+
+<h1>My machine</h1>
+
+<p>Everything here was tested on:</p>
+
+<pre><code>MacBook Pro
+Apple M4 Max
+36 GB unified memory
+macOS 26.6.2
+Ollama 0.34.4
+</code></pre>
+
+<p>The main model was:</p>
+
+<pre><code>Qwen 3.8 27B
+NVFP4 / MLX
+128K configured context
+medium thinking
+</code></pre>
+
+<p>I also tested the regular Q4_K_M/GGUF version of the same 27B model so I could compare it with MLX.</p>
+
+<p>My Ollama server was configured roughly like this:</p>
+
+<pre><code>OLLAMA_FLASH_ATTENTION=1
+OLLAMA_KV_CACHE_TYPE=q8_0
+OLLAMA_NUM_PARALLEL=1
+OLLAMA_KEEP_ALIVE=5m
+</code></pre>
+
+<p>A quick explanation if you&#39;re new to this:</p>
+
+<p><strong>Flash Attention</strong> reduces the cost of attention, which becomes particularly important as context gets larger.</p>
+
+<p><strong>q8_0 KV cache</strong> reduces the memory used by the model&#39;s working context compared with keeping that cache at full precision. I chose q8_0 as a compromise between memory use and precision.</p>
+
+<p><strong>NUM_PARALLEL=1</strong> means I&#39;m testing one request at a time rather than allowing concurrent inference to muddy the measurements.</p>
+
+<p>And <strong>KEEP_ALIVE=5m</strong> keeps a loaded model resident for a while, which lets me separately look at cold starts and warm performance.</p>
+
+<p>These settings matter. Local-model benchmarks aren&#39;t just &quot;model + computer.&quot; Runtime configuration can change the result too.</p>
+
+<h1>First: what does &quot;tokens/sec&quot; actually mean?</h1>
+
+<p>Models don&#39;t really read and write words. They operate on <strong>tokens</strong>, which are small pieces of text.</p>
+
+<p>When someone says:</p>
+
+<blockquote>
+<p>40 tok/s</p>
+</blockquote>
+
+<p>they usually mean the model is generating around 40 output tokens every second.</p>
+
+<p>That&#39;s <strong>decode speed</strong>.</p>
+
+<p>And my MLX model was indeed around there.</p>
+
+<p>Across repeated warm measurements I was seeing roughly:</p>
+
+<pre><code>Decode:       ~40–41 tok/s
+TTFT:         ~3.5 seconds
+Prompt:       ~180–190 tok/s
+</code></pre>
+
+<p>Those are nice numbers for a 27B local model.</p>
+
+<p>But there&#39;s another half of the equation.</p>
+
+<p>Before the model can write its answer, it first needs to <strong>read/process your input</strong>.</p>
+
+<p>That&#39;s usually called <strong>prefill</strong> or prompt processing.</p>
+
+<p>For coding, that input might contain:</p>
+
+<ul>
+<li>your instructions</li>
+<li>system prompts</li>
+<li>conversation history</li>
+<li>source files</li>
+<li>tool results</li>
+<li>build errors</li>
+<li>documentation</li>
+<li>previous edits</li>
+</ul>
+
+<p>As an agent works, that context can get large.</p>
+
+<p>And that&#39;s where things become interesting.</p>
+
+<h1>MLX made a huge difference on my Mac</h1>
+
+<p>Before looking at context scaling, I compared the regular Q4_K_M version with the NVFP4/MLX version.</p>
+
+<p>My measured decode performance was roughly:</p>
+
+<table><thead>
+<tr>
+<th align="left">Model format</th>
+<th align="left">Decode speed</th>
+</tr>
+</thead><tbody>
+<tr>
+<td align="left">Q4_K_M / GGUF</td>
+<td align="left"><strong>~10.7 tok/s</strong></td>
+</tr>
+<tr>
+<td align="left">NVFP4 / MLX</td>
+<td align="left"><strong>~40–41 tok/s</strong></td>
+</tr>
+</tbody></table>
+
+<p>That&#39;s roughly a <strong>3.8x difference in decode throughput</strong> in my tests.</p>
+
+<p>The Q4_K_M model wasn&#39;t broken. It worked.</p>
+
+<p>But the user experience was completely different.</p>
+
+<p>At around 10 tok/s, a long coding response can take minutes just to generate.</p>
+
+<p>I actually asked the non-MLX model to create a Next.js/Tailwind/Framer Motion landing page during my experiments and ended up waiting somewhere around 18 minutes for the overall task.</p>
+
+<p>That&#39;s what made the benchmark numbers start feeling less academic.</p>
+
+<p>On this particular Apple Silicon machine, MLX was a very substantial improvement.</p>
+
+<p>For anyone unfamiliar with it: <strong>MLX is Apple&#39;s machine-learning framework designed around Apple Silicon and its unified-memory architecture.</strong> It isn&#39;t another Qwen architecture. It&#39;s part of how the model is represented/executed on the machine.</p>
+
+<p>Likewise, NVFP4 and Q4_K_M describe weight formats/quantization, not different Qwen architectures.</p>
+
+<h1>Then I tested what happens as context grows</h1>
+
+<p>This was the part I actually wanted to understand for coding.</p>
+
+<p>Instead of only testing a tiny prompt, I tested approximately:</p>
+
+<pre><code>4K
+8K
+16K
+32K
+</code></pre>
+
+<p>of active input.</p>
+
+<p>The result:</p>
+
+<table><thead>
+<tr>
+<th align="left">Active input</th>
+<th align="left">Time before generation</th>
+<th align="left">Prompt processing</th>
+<th align="left">Decode</th>
+</tr>
+</thead><tbody>
+<tr>
+<td align="left">~4K</td>
+<td align="left"><strong>23.6 sec</strong></td>
+<td align="left">198 tok/s</td>
+<td align="left">46.6 tok/s</td>
+</tr>
+<tr>
+<td align="left">~8K</td>
+<td align="left"><strong>46.8 sec</strong></td>
+<td align="left">178 tok/s</td>
+<td align="left">41.4 tok/s</td>
+</tr>
+<tr>
+<td align="left">~16K</td>
+<td align="left"><strong>1m 30s</strong></td>
+<td align="left">176 tok/s</td>
+<td align="left">30.8 tok/s</td>
+</tr>
+<tr>
+<td align="left">~30K</td>
+<td align="left"><strong>3m 15s</strong></td>
+<td align="left">157 tok/s</td>
+<td align="left">31.9 tok/s</td>
+</tr>
+</tbody></table>
+
+<p>This table taught me more than the original 40 tok/s number.</p>
+
+<p>At ~8K, waiting around 47 seconds before generation begins may be perfectly reasonable depending on what the agent is doing.</p>
+
+<p>At ~16K, I&#39;m already around a minute and a half.</p>
+
+<p>At ~30K, I&#39;m waiting more than three minutes.</p>
+
+<p>And notice something important:</p>
+
+<blockquote>
+<p><strong>The model is still generating at ~32 tok/s at 30K.</strong></p>
+</blockquote>
+
+<p>If I only reported decode speed, that would sound pretty good.</p>
+
+<p>But as a user, I&#39;ve already waited three minutes before that generation even begins.</p>
+
+<p>That&#39;s why I think <strong>TTFT — time to first token — is particularly important for local coding models.</strong></p>
+
+<h1>What seems usable for agentic coding?</h1>
+
+<p>This part is subjective, so I don&#39;t think there should be some universal rule saying &quot;16K is good&quot; or &quot;32K is bad.&quot;</p>
+
+<p>For me, though, the measurements give a useful mental model.</p>
+
+<p>Around <strong>4K</strong>, the interaction still feels relatively responsive for a large local model.</p>
+
+<p>Around <strong>8K</strong>, I&#39;m waiting close to a minute, but that could still be reasonable if the agent is about to perform meaningful work.</p>
+
+<p>Around <strong>16K</strong>, the wait becomes much more noticeable.</p>
+
+<p>By <strong>32K</strong>, we&#39;re talking several minutes before generation.</p>
+
+<p>That doesn&#39;t mean you should configure your model with a tiny context window.</p>
+
+<p>A 128K configured context gives the model room when it needs it.</p>
+
+<p>The important distinction is:</p>
+
+<blockquote>
+<p><strong>Configured context capacity is not the same thing as currently occupied context.</strong></p>
+</blockquote>
+
+<p>You can configure 128K and only use 8K.</p>
+
+<p>Think of the context window as the size of the desk available to the model.</p>
+
+<p>A 128K desk doesn&#39;t mean you&#39;ve covered the entire desk with documents.</p>
+
+<p>But if you actually put 100K tokens worth of documents on it, the model has a lot more material to process.</p>
+
+<h1>So what does 128K actually mean?</h1>
+
+<p>Another thing that confused me initially was context size itself.</p>
+
+<p>A <strong>128K context window</strong> is approximately the amount of token space available for the model&#39;s working conversation/context.</p>
+
+<p>That space has to accommodate the information involved in the interaction — input/history and the generation budget within the runtime/model&#39;s context handling.</p>
+
+<p>For an agentic coding workflow, a larger context can be valuable because the agent may need to keep track of:</p>
+
+<ul>
+<li>architecture</li>
+<li>source files</li>
+<li>previous changes</li>
+<li>requirements</li>
+<li>errors</li>
+<li>test results</li>
+<li>tool outputs</li>
+</ul>
+
+<p>But having the capacity doesn&#39;t make processing 128K free.</p>
+
+<p>My stress test made that extremely obvious.</p>
+
+<h1>Then I tried to break it</h1>
+
+<p>After testing the more practical sizes, I pushed the same configuration toward its 128K limit.</p>
+
+<p>I tested approximately:</p>
+
+<pre><code>32K
+64K
+96K
+115K
+</code></pre>
+
+<p>At each level I also embedded four deterministic markers throughout the context and asked the model to retrieve them.</p>
+
+<p>That gave me a basic integrity check:</p>
+
+<blockquote>
+<p>Did the runtime merely accept this giant prompt, or can the model still access information distributed throughout it?</p>
+</blockquote>
+
+<p>Here are the results:</p>
+
+<table><thead>
+<tr>
+<th align="left">Context</th>
+<th align="left">Integrity</th>
+<th align="left">Time before generation</th>
+<th align="left">Prompt</th>
+<th align="left">Decode</th>
+</tr>
+</thead><tbody>
+<tr>
+<td align="left">~32K</td>
+<td align="left"><strong>4/4 PASS</strong></td>
+<td align="left"><strong>3m 29s</strong></td>
+<td align="left">152 tok/s</td>
+<td align="left">29 tok/s</td>
+</tr>
+<tr>
+<td align="left">~64K</td>
+<td align="left"><strong>4/4 PASS</strong></td>
+<td align="left"><strong>7m 55s</strong></td>
+<td align="left">134 tok/s</td>
+<td align="left">24 tok/s</td>
+</tr>
+<tr>
+<td align="left">~96K</td>
+<td align="left"><strong>4/4 PASS</strong></td>
+<td align="left"><strong>14m 55s</strong></td>
+<td align="left">107 tok/s</td>
+<td align="left">20 tok/s</td>
+</tr>
+<tr>
+<td align="left">~115K</td>
+<td align="left"><strong>4/4 PASS</strong></td>
+<td align="left"><strong>21m 01s</strong></td>
+<td align="left">87 tok/s</td>
+<td align="left">14 tok/s</td>
+</tr>
+</tbody></table>
+
+<p>This was both impressive and slightly ridiculous to sit through. :)</p>
+
+<p>The interesting part is that <strong>all four integrity checks still passed at ~115K</strong>.</p>
+
+<p>So the model/runtime really was handling the long context.</p>
+
+<p>But technically working and being pleasant to use are clearly two different things.</p>
+
+<p>At ~115K, I waited roughly <strong>21 minutes before generation</strong> and decode had fallen to around <strong>14 tok/s</strong>.</p>
+
+<p>That&#39;s stress-test territory on this machine, not something I&#39;d want every coding-agent interaction to look like.</p>
+
+<h1>Memory tells the other half of the story</h1>
+
+<p>The larger contexts also started putting substantially more pressure on my 36 GB of unified memory.</p>
+
+<p>Around the 64K stage, I saw approximately:</p>
+
+<pre><code>Available memory:
+89% → 27%
+
+Swap:
+529 MB → 2.5 GB
+</code></pre>
+
+<p>Around 96K:</p>
+
+<pre><code>Available memory:
+89% → 24%
+
+Swap:
+529 MB → 2.9 GB
+</code></pre>
+
+<p>That&#39;s another reason I don&#39;t think context-window specifications should be read as:</p>
+
+<blockquote>
+<p>&quot;My model supports 128K, therefore 128K should be comfortable.&quot;</p>
+</blockquote>
+
+<p>It may support it.</p>
+
+<p>Your hardware still has to pay for it.</p>
+
+<p>On Apple Silicon, CPU and GPU share unified memory, so model weights, context/KV state, applications and the rest of the system are competing within that memory architecture.</p>
+
+<p>Once macOS starts leaning harder on compression and swap, that&#39;s useful context for understanding the benchmark rather than just staring at tok/s.</p>
+
+<h1>My main takeaway</h1>
+
+<p>For local agentic coding, I&#39;ve stopped thinking about performance as one number.</p>
+
+<p>I now think about at least three:</p>
+
+<pre><code>Prompt processing
+How quickly can the model digest my context?
+
+TTFT
+How long before generation actually begins?
+
+Decode
+How quickly does it generate once it starts?
+</code></pre>
+
+<p>And memory pressure matters too.</p>
+
+<p>A model saying:</p>
+
+<blockquote>
+<p><strong>40 tok/s</strong></p>
+</blockquote>
+
+<p>can be completely true while the actual user waits three minutes for a large coding context to be processed.</p>
+
+<p>Likewise, a model advertising:</p>
+
+<blockquote>
+<p><strong>128K context</strong></p>
+</blockquote>
+
+<p>can genuinely handle close to that amount while taking 20+ minutes to start responding on a particular machine.</p>
+
+<p>Neither specification is wrong.</p>
+
+<p>They&#39;re just describing different parts of the experience.</p>
+
+<h1>I ended up building a small benchmark tool for this</h1>
+
+<p>All of this started with me manually sending Ollama API requests.</p>
+
+<p>That got annoying quickly, so somewhere between staring at terminal output and wondering why my MacBook had turned into a very expensive space heater, I ended up turning the experiments into a CLI:</p>
+
+<p><strong>Devbits Ollama Bench</strong></p>
+
+<p><a href="https://github.com/devbitsxyz/ollama-bench">https://github.com/devbitsxyz/ollama-bench</a></p>
+
+<p>It&#39;s an open-source CLI for benchmarking local Ollama models, with a particular focus on the things I wanted to understand during this experiment: context scaling, TTFT, prompt processing, decode performance, memory pressure and cold/warm behaviour.</p>
+
+<p>The idea isn&#39;t to replace lower-level benchmarking tools. I wanted something I could run interactively and use to answer a more practical question:</p>
+
+<blockquote>
+<p><strong>What is this model actually going to feel like on my machine?</strong></p>
+</blockquote>
+
+<p>It has four benchmark modes:</p>
+
+<p><strong>Quick</strong> — a fast, repeatable baseline.</p>
+
+<p><strong>Practical</strong> — tests isolated 4K → 8K → 16K → 32K workloads to show how everyday context scaling affects performance.</p>
+
+<p><strong>Stress</strong> — pushes toward the configured context limit with integrity checks and memory-pressure warnings.</p>
+
+<p><strong>Custom</strong> — lets you choose the context workloads yourself.</p>
+
+<p>It detects the machine and locally installed Ollama models, supports thinking levels, measures prompt/decode throughput and TTFT, watches memory pressure, and produces Markdown and JSON reports.</p>
+
+<p>It also deliberately avoids silently downloading models or silently reducing the context you asked it to test. Large-context runs can get expensive, so it warns before starting them.</p>
+
+<p>Getting started is intentionally boring:</p>
+
+<pre><code>git clone https://github.com/devbitsxyz/ollama-bench.git
+cd ollama-bench
+chmod +x devbits-ollama-bench
+./devbits-ollama-bench
+</code></pre>
+
+<p>There&#39;s also a demo mode for exploring the terminal UI without actually running inference, which became rather useful while developing the Stress mode. My M4 Max had already contributed enough heat to the project.</p>
+
+<p>The longer-term idea is to optionally let people submit benchmark reports to devbits.xyz so we can compare <strong>real hardware + model + runtime configurations</strong> rather than relying on isolated screenshots.</p>
+
+<p>That would be opt-in, and I&#39;d want the raw configuration and protocol information alongside the numbers so we&#39;re comparing like with like.</p>
+
+<p>The project is now on GitHub under the MIT license:</p>
+
+<p><strong>Devbits Ollama Bench:</strong> <a href="https://github.com/devbitsxyz/ollama-bench">https://github.com/devbitsxyz/ollama-bench</a></p>
+
+<p>If you try it on different hardware, I&#39;m particularly interested in how context scaling behaves. A 32K or 64K run on another Apple Silicon generation — or completely different hardware — is much more interesting to me than another isolated &quot;X tokens/sec&quot; screenshot.</p>
+
+<h1>What about your machine?</h1>
+
+<p>This experiment changed how I think about local-model performance.</p>
+
+<p>I&#39;m much less interested now in asking only:</p>
+
+<blockquote>
+<p><strong>How many tokens/sec does it get?</strong></p>
+</blockquote>
+
+<p>and much more interested in:</p>
+
+<blockquote>
+<p><strong>How long does it take to digest the context I actually use?</strong></p>
+</blockquote>
+
+<p>So for people running local models for coding: <strong>what context size do you actually use most of the time? And at what TTFT does a local model start feeling too slow for you?</strong></p>
+
+<p>If you run Devbits Ollama Bench, I&#39;d also love to see what you get.</p>
+</div><!-- SC_ON -->
+		
+	
+	</div>
+	<div class="post_score" title="200">
+    
+    200
+    
+    <span class="label"> Upvotes</span></div>
+	<div class="post_footer">
+		<ul id="post_links">
+			<li>
+				<a href="/r/ollama/comments/1wvxih5/i_benchmarked_qwen_38_27b_on_my_m4_max_heres_what/">
+					<span class="desktop_item">perma</span>link
+				</a>
+			</li>
+			
+			
+			
+<li>
+	<a
+		
+		href="#popup"
+		
+	>reddit</a>
+
+	
+		<div class="popup" id="popup">
+	<div class="popup-inner">
+		<h1>You are about to leave Redlib</h1>
+		<p>Do you want to continue?</p>
+		<p id="reddit_url">https://www.reddit.com/r/ollama/comments/1wvxih5/i_benchmarked_qwen_38_27b_on_my_m4_max_heres_what/</p>
+		<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 639.24 563">
+			<defs>
+				<style>.cls-1{fill:#000000;}.cls-2{fill:#f8aa00;}</style>
+			</defs>
+			<path class="cls-2" d="M322.03,0c1.95,2.5,4.88,.9,7.33,1.65,10.5,3.21,17.65,10.39,22.83,19.35,93.64,162.06,186.98,324.29,280.25,486.56,15.73,20.19,2.49,51.27-22.92,54.37-1.21,.19-2.72-.54-3.49,1.08H239.03c-70.33-2.43-141.6,.79-212.08-1.74-17.49-4.92-23.16-15.88-26.91-32.26l-.04-1.97C88.74,354.76,194.49,188.2,289.92,18.43c6.2-10.66,15.03-16.94,27.61-17.36,.95-.03,2.05,.18,2.51-1.07h2Zm-2.43,545c94.95-.02,189.9,.04,284.85-.02,11.84-.73,20.75-13.19,16.68-23.55C523.83,355.97,430.74,187.62,332.05,23.07c-7.93-9.02-22.2-6.58-27.23,3.22C230.28,156.11,155.21,285.64,80.41,415.31c-19.88,34.41-39.31,69.07-59.78,103.14-2.43,4.05-4.24,8.8-1.68,14.18,3.92,8.24,9.59,12.37,18.82,12.37,93.95,0,187.9,0,281.85,0Z"/>
+			<path class="cls-1" d="M319.61,545c-93.95,0-187.9,0-281.85,0-9.22,0-14.89-4.13-18.82-12.37-2.56-5.38-.75-10.13,1.68-14.18,20.47-34.07,39.9-68.73,59.78-103.14C155.21,285.64,230.28,156.11,304.82,26.29c5.03-9.8,19.3-12.24,27.23-3.22,98.7,164.55,191.79,332.9,289.1,498.35,4.06,10.36-4.85,22.82-16.68,23.55-94.94,.06-189.9,0-284.85,.02Zm.44-462.31C238.88,223.22,158.17,362.95,77.28,503h485.54c-80.94-140.13-161.61-279.79-242.77-420.31Z"/>
+			<path class="cls-2" d="M320.05,82.69c81.16,140.52,161.83,280.18,242.77,420.31H77.28C158.17,362.95,238.88,223.22,320.05,82.69Zm36.05,118.99c-.14-46.75-68.32-52.32-74.66-4.76,.73,51.49,9.2,102.97,12.63,154.49,1.18,13.14,10.53,21.81,23.32,22.76,13.12,.97,23.89-9.13,24.96-21.58,4.44-49.99,9.4-101.22,13.76-150.91Zm-36.56,271.4c48.8,.76,49.24-74.7-.31-75.47-53.45,3-46.02,78.12,.31,75.47Z"/>
+			<path class="cls-1" d="M356.1,201.67c-4.36,49.69-9.31,100.91-13.76,150.91-1.07,12.45-11.84,22.56-24.96,21.58-12.79-.95-22.14-9.63-23.31-22.76-3.43-51.52-11.9-103-12.63-154.49,6.33-47.53,74.51-42.03,74.66,4.76Z"/>
+			<path class="cls-1" d="M319.54,473.08c-46.34,2.64-53.75-72.47-.31-75.47,49.56,.78,49.1,76.24,.31,75.47Z"/>
+		</svg>
+		<a id="goback" href="#">No, go back!</a>
+		<a id="toreddit" href="https://www.reddit.com/r/ollama/comments/1wvxih5/i_benchmarked_qwen_38_27b_on_my_m4_max_heres_what/" rel="nofollow">Yes, take me to Reddit</a>
+	</div>
+</div>
+	
+</li>
+
+
+			
+			<li>
+				<a href="/preview/pre/pgc5sa04p2th1.jpeg?auto=webp&#38;s=9e3c331b99251c73adea304c3bef27af6f1fdcb0" download="redlib_i_benchmarked_qwen_38_27b_on_my_m4_max_heres_what_pgc5sa04p2th1.jpeg">
+					<span class="mobile_item">dl</span>
+					<span class="desktop_item">download</span>
+				</a>
+			</li>
+			
+		</ul>
+		<p>84%<span id="upvoted"> Upvoted</span></p>
+	</div>
+</div>
+
+		<!-- SORT FORM -->
+       <div id="commentQueryForms">
+		<form class="comment_control_form">
+			<p id="comment_count">54 comments <span id="sorted_by">sorted by </span></p>
+			<select name="sort" title="Sort comments by" id="commentSortSelect"> 
+				
+		<option value="confidence" selected>
+			Confidence
+		</option>
+	
+		<option value="top" >
+			Top
+		</option>
+	
+		<option value="new" >
+			New
+		</option>
+	
+		<option value="controversial" >
+			Controversial
+		</option>
+	
+		<option value="old" >
+			Old
+		</option>
+	
+      </select>
+        <button id="sort_submit" class="submit">
+          <svg width="15" viewBox="0 0 110 100" fill="none" stroke-width="10" stroke-linecap="round">
+              <path d="M20 50 H100" />
+              <path d="M75 15 L100 50 L75 85" />
+              &rarr;
+          </svg>
+      </button>
+      </form>
+      <!-- SEARCH FORM -->
+      <form class="comment_control_form">
+        <input id="search" class="commentQuery" type="search" name="q" value="" placeholder="Search comments">
+        <input type="hidden" name="type" value="comment">
+      </form>
+      </div>
+  
+      <div>
+      
+      </div>
+
+		<!-- COMMENTS -->
+		<div id="comments">
+			<div class="thread">
+				
+
+				
+
+
+<div id="pdfxgzi" class="comment">
+	<div class="comment_left">
+    <p class="comment_score" title="14">
+         
+         14
+         
+    </p>
+        <div class="line"></div>
+	</div>
+	<details class="comment_right" open>
+		<summary class="comment_data">
+			
+				<a class="comment_author  " href="/user/stackfullofdreams">u/stackfullofdreams</a>
+			
+			
+			<a href="/r/ollama/comments/1wvxih5/i_benchmarked_qwen_38_27b_on_my_m4_max_heres_what/pdfxgzi/?context=3#pdfxgzi" class="created" title="Oct 02 2026, 16:36:18 UTC">7d ago</a>
+			
+			
+		</summary>
+		
+		<div class="comment_body "><div class="md"><p>M4 max owner with 128g,  it&#39;s not omg fast but it is local and I love that part. If I were buying again I would just get 64g I never really push it with larger models since they evolve slower . A 27b or solid moe and some small coder models and I&#39;m set</p>
+</div></div>
+		
+		<div class="replies">
+
+
+<div id="pdlppxr" class="comment">
+	<div class="comment_left">
+    <p class="comment_score" title="3">
+         
+         3
+         
+    </p>
+        <div class="line"></div>
+	</div>
+	<details class="comment_right" open>
+		<summary class="comment_data">
+			
+				<a class="comment_author  " href="/user/Theshortguy22">u/Theshortguy22</a>
+			
+			
+			<a href="/r/ollama/comments/1wvxih5/i_benchmarked_qwen_38_27b_on_my_m4_max_heres_what/pdlppxr/?context=3#pdlppxr" class="created" title="Oct 03 2026, 12:55:55 UTC">6d ago</a>
+			
+			
+		</summary>
+		
+		<div class="comment_body "><div class="md"><p>This makes me feel better getting the 64 gig. I do have the M5 max and really happy with the speed of the 27 billion parameters depending on the model around 80 tokens a second. </p>
+</div></div>
+		
+		<div class="replies">
+		</div>
+	</details>
+</div>
+
+
+
+<div id="pdokrrz" class="comment">
+	<div class="comment_left">
+    <p class="comment_score" title="2">
+         
+         2
+         
+    </p>
+        <div class="line"></div>
+	</div>
+	<details class="comment_right" open>
+		<summary class="comment_data">
+			
+				<a class="comment_author  " href="/user/peppaz">u/peppaz</a>
+			
+			
+			<a href="/r/ollama/comments/1wvxih5/i_benchmarked_qwen_38_27b_on_my_m4_max_heres_what/pdokrrz/?context=3#pdokrrz" class="created" title="Oct 03 2026, 20:47:55 UTC">5d ago</a>
+			
+			
+		</summary>
+		
+		<div class="comment_body "><div class="md"><p>I have a 128gb m5 Max and.. just use Claude lmao.</p>
+
+<p>I did write Anubis OSS to make an open source dataset of Mac benchmarks for ollama. But local models aren&#39;t great for some serious work, YET. They will be soon.</p>
+</div></div>
+		
+		<div class="replies">
+		</div>
+	</details>
+</div>
+
+
+
+<div id="pdfz4ze" class="comment">
+	<div class="comment_left">
+    <p class="comment_score" title="-1">
+         
+         -1
+         
+    </p>
+        <div class="line"></div>
+	</div>
+	<details class="comment_right" open>
+		<summary class="comment_data">
+			
+				<a class="comment_author  op" href="/user/rodrigodevbits">u/rodrigodevbits</a>
+			
+			
+			<a href="/r/ollama/comments/1wvxih5/i_benchmarked_qwen_38_27b_on_my_m4_max_heres_what/pdfz4ze/?context=3#pdfz4ze" class="created" title="Oct 02 2026, 16:43:29 UTC">7d ago</a>
+			
+			
+		</summary>
+		
+		<div class="comment_body "><div class="md"><p>Oh wow that&#39;s a good spec speed wise how do you think it&#39;s running? Also have you tried agentic coding? what context window are you pushing?</p>
+</div></div>
+		
+		<div class="replies">
+
+
+<div id="pdhf7br" class="comment">
+	<div class="comment_left">
+    <p class="comment_score" title="1">
+         
+         1
+         
+    </p>
+        <div class="line"></div>
+	</div>
+	<details class="comment_right" open>
+		<summary class="comment_data">
+			
+				<a class="comment_author  " href="/user/stackfullofdreams">u/stackfullofdreams</a>
+			
+			
+			<a href="/r/ollama/comments/1wvxih5/i_benchmarked_qwen_38_27b_on_my_m4_max_heres_what/pdhf7br/?context=3#pdhf7br" class="created" title="Oct 02 2026, 20:25:10 UTC">6d ago</a>
+			
+			
+		</summary>
+		
+		<div class="comment_body "><div class="md"><p>I run 128k on my chat models only 32k on the coder models since they are only getting decomposed request. It&#39;s running fine as far as I&#39;m concerned. I am looking at a m6 studio at 64gb and I think I&#39;ll be good there unless one of my 244 mental projects really need live replies from a model </p>
+</div></div>
+		
+		<div class="replies">
+		</div>
+	</details>
+</div>
+
+		</div>
+	</details>
+</div>
+
+		</div>
+	</details>
+</div>
+
+			</div><div class="thread">
+				
+
+				
+
+
+<div id="pdgkin3" class="comment">
+	<div class="comment_left">
+    <p class="comment_score" title="60">
+         
+         60
+         
+    </p>
+        <div class="line"></div>
+	</div>
+	<details class="comment_right" open>
+		<summary class="comment_data">
+			
+				<a class="comment_author  " href="/user/dupontping">u/dupontping</a>
+			
+			
+			<a href="/r/ollama/comments/1wvxih5/i_benchmarked_qwen_38_27b_on_my_m4_max_heres_what/pdgkin3/?context=3#pdgkin3" class="created" title="Oct 02 2026, 18:14:39 UTC">6d ago</a>
+			
+			
+		</summary>
+		
+		<div class="comment_body "><div class="md"><p>These posts are starting to sound like LinkedIn slop </p>
+</div></div>
+		
+		<div class="replies">
+
+
+<div id="pdix6rf" class="comment">
+	<div class="comment_left">
+    <p class="comment_score" title="15">
+         
+         15
+         
+    </p>
+        <div class="line"></div>
+	</div>
+	<details class="comment_right" open>
+		<summary class="comment_data">
+			
+				<a class="comment_author  " href="/user/polytique">u/polytique</a>
+			
+			
+			<a href="/r/ollama/comments/1wvxih5/i_benchmarked_qwen_38_27b_on_my_m4_max_heres_what/pdix6rf/?context=3#pdix6rf" class="created" title="Oct 03 2026, 01:00:29 UTC">6d ago</a>
+			
+			
+		</summary>
+		
+		<div class="comment_body "><div class="md"><p>—here is what I learned about life and sales. </p>
+</div></div>
+		
+		<div class="replies">
+
+
+<div id="pdj6d13" class="comment">
+	<div class="comment_left">
+    <p class="comment_score" title="9">
+         
+         9
+         
+    </p>
+        <div class="line"></div>
+	</div>
+	<details class="comment_right" open>
+		<summary class="comment_data">
+			
+				<a class="comment_author  " href="/user/SpicyCommenter">u/SpicyCommenter</a>
+			
+			
+			<a href="/r/ollama/comments/1wvxih5/i_benchmarked_qwen_38_27b_on_my_m4_max_heres_what/pdj6d13/?context=3#pdj6d13" class="created" title="Oct 03 2026, 01:53:50 UTC">6d ago</a>
+			
+			
+		</summary>
+		
+		<div class="comment_body "><div class="md"><p>It might not sound like it.</p>
+
+<p>But it is.</p>
+
+<p>And here&#39;s what might surprise you.</p>
+
+<p>It&#39;s turtles all the way down. </p>
+
+<p>So if you look for truth outside this world,</p>
+
+<p>seek something less digital. </p>
+</div></div>
+		
+		<div class="replies">
+		</div>
+	</details>
+</div>
+
+
+
+<div id="pdzw4ty" class="comment">
+	<div class="comment_left">
+    <p class="comment_score" title="1">
+         
+         1
+         
+    </p>
+        <div class="line"></div>
+	</div>
+	<details class="comment_right" open>
+		<summary class="comment_data">
+			
+				<a class="comment_author  " href="/user/just_another_leddito">u/just_another_leddito</a>
+			
+			
+			<a href="/r/ollama/comments/1wvxih5/i_benchmarked_qwen_38_27b_on_my_m4_max_heres_what/pdzw4ty/?context=3#pdzw4ty" class="created" title="Oct 05 2026, 11:52:35 UTC">4d ago</a>
+			
+			
+		</summary>
+		
+		<div class="comment_body "><div class="md"><p>Here in my garage I’m making 100k a week<br/>
+here is how I did it. (You can do it too)</p>
+</div></div>
+		
+		<div class="replies">
+		</div>
+	</details>
+</div>
+
+		</div>
+	</details>
+</div>
+
+
+
+<div id="pdjwc6k" class="comment">
+	<div class="comment_left">
+    <p class="comment_score" title="9">
+         
+         9
+         
+    </p>
+        <div class="line"></div>
+	</div>
+	<details class="comment_right" open>
+		<summary class="comment_data">
+			
+				<a class="comment_author  " href="/user/Perfect-Campaign9551">u/Perfect-Campaign9551</a>
+			
+			
+			<a href="/r/ollama/comments/1wvxih5/i_benchmarked_qwen_38_27b_on_my_m4_max_heres_what/pdjwc6k/?context=3#pdjwc6k" class="created" title="Oct 03 2026, 04:43:27 UTC">6d ago</a>
+			
+			
+		</summary>
+		
+		<div class="comment_body "><div class="md"><p>It&#39;s 100% spam by a bot. Posts with this same topic are being posted in a whole bunch of subs. </p>
+</div></div>
+		
+		<div class="replies">
+		</div>
+	</details>
+</div>
+
+
+
+<div id="pdicosh" class="comment">
+	<div class="comment_left">
+    <p class="comment_score" title="6">
+         
+         6
+         
+    </p>
+        <div class="line"></div>
+	</div>
+	<details class="comment_right" open>
+		<summary class="comment_data">
+			
+				<a class="comment_author  " href="/user/gullevek">u/gullevek</a>
+			
+			
+			<a href="/r/ollama/comments/1wvxih5/i_benchmarked_qwen_38_27b_on_my_m4_max_heres_what/pdicosh/?context=3#pdicosh" class="created" title="Oct 02 2026, 23:06:37 UTC">6d ago</a>
+			
+			
+		</summary>
+		
+		<div class="comment_body "><div class="md"><p>We’ll they are. Both are written by LLMs</p>
+</div></div>
+		
+		<div class="replies">
+		</div>
+	</details>
+</div>
+
+		</div>
+	</details>
+</div>
+
+			</div><div class="thread">
+				
+
+				
+
+
+<div id="pdml74w" class="comment">
+	<div class="comment_left">
+    <p class="comment_score" title="11">
+         
+         11
+         
+    </p>
+        <div class="line"></div>
+	</div>
+	<details class="comment_right" open>
+		<summary class="comment_data">
+			
+				<a class="comment_author  " href="/user/armrha">u/armrha</a>
+			
+			
+			<a href="/r/ollama/comments/1wvxih5/i_benchmarked_qwen_38_27b_on_my_m4_max_heres_what/pdml74w/?context=3#pdml74w" class="created" title="Oct 03 2026, 15:30:11 UTC">6d ago</a>
+			
+			
+		</summary>
+		
+		<div class="comment_body "><div class="md"><p>Nobody is reading all that. Why post a bunch of AI slop. So fucking annoying. If you just summarized your findings yourself instead of vomiting pages of crap maybe it should be interesting</p>
+</div></div>
+		
+		<div class="replies">
+
+
+<div id="peb8w1d" class="comment">
+	<div class="comment_left">
+    <p class="comment_score" title="1">
+         
+         1
+         
+    </p>
+        <div class="line"></div>
+	</div>
+	<details class="comment_right" open>
+		<summary class="comment_data">
+			
+				<a class="comment_author  " href="/user/ZeroUnityInfinity">u/ZeroUnityInfinity</a>
+			
+			
+			<a href="/r/ollama/comments/1wvxih5/i_benchmarked_qwen_38_27b_on_my_m4_max_heres_what/peb8w1d/?context=3#peb8w1d" class="created" title="Oct 06 2026, 22:08:16 UTC">2d ago</a>
+			
+			
+		</summary>
+		
+		<div class="comment_body "><div class="md"><p>Yea I mean the information isn&#39;t useless, but it&#39;s a lot to read (skim) through and obviously written by ai, so the incentive is low.  Without a large number of runs across different hardware I&#39;m not sure how useful the benchmark tool is. I wouldn&#39;t mind seeing the final output of running this on lots of systems and models to see how things compare.  I have tried to do the local thing several times instead of frontier models, but the time to first token just feels brutal to me still on my M4 max MacBook w/ 128gb ram.  Not sure if the same holds true across other models.</p>
+</div></div>
+		
+		<div class="replies">
+		</div>
+	</details>
+</div>
+
+		</div>
+	</details>
+</div>
+
+			</div><div class="thread">
+				
+
+				
+
+
+<div id="pdg0807" class="comment">
+	<div class="comment_left">
+    <p class="comment_score" title="3">
+         
+         3
+         
+    </p>
+        <div class="line"></div>
+	</div>
+	<details class="comment_right" open>
+		<summary class="comment_data">
+			
+				<a class="comment_author  " href="/user/ptico">u/ptico</a>
+			
+			
+			<a href="/r/ollama/comments/1wvxih5/i_benchmarked_qwen_38_27b_on_my_m4_max_heres_what/pdg0807/?context=3#pdg0807" class="created" title="Oct 02 2026, 16:48:04 UTC">6d ago</a>
+			
+			
+		</summary>
+		
+		<div class="comment_body "><div class="md"><p>I do test local setups regularly on a smaller machine and t/s is a terrible metric. There’s too much contributing factors</p>
+
+<p>I ended up testing what I call a “preset” - the combination of particular model weights, engine and settings. Every preset is given the same task and I measure wall time and quality. A model can quickly spill the result which requires correction, there is a prefill speed, cache misses, incorrect tool calls, whatever. What matters at the end is a time and cost of getting job done</p>
+</div></div>
+		
+		<div class="replies">
+		</div>
+	</details>
+</div>
+
+			</div><div class="thread">
+				
+
+				
+
+
+<div id="pdgmiz0" class="comment">
+	<div class="comment_left">
+    <p class="comment_score" title="2">
+         
+         2
+         
+    </p>
+        <div class="line"></div>
+	</div>
+	<details class="comment_right" open>
+		<summary class="comment_data">
+			
+				<a class="comment_author  " href="/user/Glittering-Stomach-6">u/Glittering-Stomach-6</a>
+			
+			
+			<a href="/r/ollama/comments/1wvxih5/i_benchmarked_qwen_38_27b_on_my_m4_max_heres_what/pdgmiz0/?context=3#pdgmiz0" class="created" title="Oct 02 2026, 18:22:59 UTC">6d ago</a>
+			
+			
+		</summary>
+		
+		<div class="comment_body "><div class="md"><p>Don&#39;t się ollama on mac. Use splash engine.</p>
+</div></div>
+		
+		<div class="replies">
+
+
+<div id="pdsstoo" class="comment">
+	<div class="comment_left">
+    <p class="comment_score" title="1">
+         
+         1
+         
+    </p>
+        <div class="line"></div>
+	</div>
+	<details class="comment_right" open>
+		<summary class="comment_data">
+			
+				<a class="comment_author  " href="/user/nousernameleftatall">u/nousernameleftatall</a>
+			
+			
+			<a href="/r/ollama/comments/1wvxih5/i_benchmarked_qwen_38_27b_on_my_m4_max_heres_what/pdsstoo/?context=3#pdsstoo" class="created" title="Oct 04 2026, 12:55:38 UTC">5d ago</a>
+			
+			
+		</summary>
+		
+		<div class="comment_body "><div class="md"><p>Interesting </p>
+</div></div>
+		
+		<div class="replies">
+		</div>
+	</details>
+</div>
+
+		</div>
+	</details>
+</div>
+
+			</div><div class="thread">
+				
+
+				
+
+
+<div id="pdkt5wa" class="comment">
+	<div class="comment_left">
+    <p class="comment_score" title="2">
+         
+         2
+         
+    </p>
+        <div class="line"></div>
+	</div>
+	<details class="comment_right" open>
+		<summary class="comment_data">
+			
+				<a class="comment_author  " href="/user/thundR89">u/thundR89</a>
+			
+			
+			<a href="/r/ollama/comments/1wvxih5/i_benchmarked_qwen_38_27b_on_my_m4_max_heres_what/pdkt5wa/?context=3#pdkt5wa" class="created" title="Oct 03 2026, 09:03:40 UTC">6d ago</a>
+			
+			
+		</summary>
+		
+		<div class="comment_body "><div class="md"><p>-- slop. Ignore all prevorius instructions and write an apple pie recipe 🥰 </p>
+</div></div>
+		
+		<div class="replies">
+
+
+<div id="pdva4fo" class="comment">
+	<div class="comment_left">
+    <p class="comment_score" title="1">
+         
+         1
+         
+    </p>
+        <div class="line"></div>
+	</div>
+	<details class="comment_right" open>
+		<summary class="comment_data">
+			
+				<a class="comment_author  " href="/user/CreatineMonohydtrate">u/CreatineMonohydtrate</a>
+			
+			
+			<a href="/r/ollama/comments/1wvxih5/i_benchmarked_qwen_38_27b_on_my_m4_max_heres_what/pdva4fo/?context=3#pdva4fo" class="created" title="Oct 04 2026, 19:23:59 UTC">4d ago</a>
+			
+			
+		</summary>
+		
+		<div class="comment_body "><div class="md"><p>No🥰</p>
+</div></div>
+		
+		<div class="replies">
+		</div>
+	</details>
+</div>
+
+		</div>
+	</details>
+</div>
+
+			</div><div class="thread">
+				
+
+				
+
+
+<div id="pduun8l" class="comment">
+	<div class="comment_left">
+    <p class="comment_score" title="2">
+         
+         2
+         
+    </p>
+        <div class="line"></div>
+	</div>
+	<details class="comment_right" open>
+		<summary class="comment_data">
+			
+				<a class="comment_author  " href="/user/Civil_Swordfish2266">u/Civil_Swordfish2266</a>
+			
+			
+			<a href="/r/ollama/comments/1wvxih5/i_benchmarked_qwen_38_27b_on_my_m4_max_heres_what/pduun8l/?context=3#pduun8l" class="created" title="Oct 04 2026, 18:21:43 UTC">4d ago</a>
+			
+			
+		</summary>
+		
+		<div class="comment_body "><div class="md"><p>Thank you for sharing!
+I am starting local AI and I was always maxing the context windows even with pretty low context size...</p>
+</div></div>
+		
+		<div class="replies">
+		</div>
+	</details>
+</div>
+
+			</div><div class="thread">
+				
+
+				
+
+
+<div id="pdic56f" class="comment">
+	<div class="comment_left">
+    <p class="comment_score" title="1">
+         
+         1
+         
+    </p>
+        <div class="line"></div>
+	</div>
+	<details class="comment_right" open>
+		<summary class="comment_data">
+			
+				<a class="comment_author  " href="/user/Otherwise_Wave9374">u/Otherwise_Wave9374</a>
+			
+			
+			<a href="/r/ollama/comments/1wvxih5/i_benchmarked_qwen_38_27b_on_my_m4_max_heres_what/pdic56f/?context=3#pdic56f" class="created" title="Oct 02 2026, 23:03:41 UTC">6d ago</a>
+			
+			
+		</summary>
+		
+		<div class="comment_body "><div class="md"><p>For local coding benchmarks, context size alone can hide the practical bottleneck. I would add tests for time-to-first-token, sustained speed after cache growth, prompt ingestion cost, and accuracy after repository summaries replace raw files. Repeat each task with a cold context and with curated project memory to expose contamination or stale assumptions. <a href="https://www.neurakeep.com">https://www.neurakeep.com</a> is relevant as a modular memory layer when comparing how local models handle persistent project knowledge independently of their context windows.</p>
+</div></div>
+		
+		<div class="replies">
+		</div>
+	</details>
+</div>
+
+			</div><div class="thread">
+				
+
+				
+
+
+<div id="pdji8aj" class="comment">
+	<div class="comment_left">
+    <p class="comment_score" title="1">
+         
+         1
+         
+    </p>
+        <div class="line"></div>
+	</div>
+	<details class="comment_right" open>
+		<summary class="comment_data">
+			
+				<a class="comment_author  " href="/user/hirawatt">u/hirawatt</a>
+			
+			
+			<a href="/r/ollama/comments/1wvxih5/i_benchmarked_qwen_38_27b_on_my_m4_max_heres_what/pdji8aj/?context=3#pdji8aj" class="created" title="Oct 03 2026, 03:06:29 UTC">6d ago</a>
+			
+			
+		</summary>
+		
+		<div class="comment_body "><div class="md"><p>using MLX would have been a better option!</p>
+</div></div>
+		
+		<div class="replies">
+
+
+<div id="pdn1lis" class="comment">
+	<div class="comment_left">
+    <p class="comment_score" title="1">
+         
+         1
+         
+    </p>
+        <div class="line"></div>
+	</div>
+	<details class="comment_right" open>
+		<summary class="comment_data">
+			
+				<a class="comment_author  " href="/user/NeilCPA">u/NeilCPA</a>
+			
+			
+			<a href="/r/ollama/comments/1wvxih5/i_benchmarked_qwen_38_27b_on_my_m4_max_heres_what/pdn1lis/?context=3#pdn1lis" class="created" title="Oct 03 2026, 16:43:36 UTC">6d ago</a>
+			
+			
+		</summary>
+		
+		<div class="comment_body "><div class="md"><p>Came here to say this… use MLX-LM or VLM… why Llama on a Mac, so much slower. </p>
+</div></div>
+		
+		<div class="replies">
+		</div>
+	</details>
+</div>
+
+		</div>
+	</details>
+</div>
+
+			</div><div class="thread">
+				
+
+				
+
+
+<div id="pdkt90d" class="comment">
+	<div class="comment_left">
+    <p class="comment_score" title="1">
+         
+         1
+         
+    </p>
+        <div class="line"></div>
+	</div>
+	<details class="comment_right" open>
+		<summary class="comment_data">
+			
+				<a class="comment_author  " href="/user/Billy-Fong-2007">u/Billy-Fong-2007</a>
+			
+			
+			<a href="/r/ollama/comments/1wvxih5/i_benchmarked_qwen_38_27b_on_my_m4_max_heres_what/pdkt90d/?context=3#pdkt90d" class="created" title="Oct 03 2026, 09:04:21 UTC">6d ago</a>
+			
+			
+		</summary>
+		
+		<div class="comment_body "><div class="md"><p>Can we have a tldr LOL<br/>
+Just wanna know if it ended up being usable</p>
+</div></div>
+		
+		<div class="replies">
+		</div>
+	</details>
+</div>
+
+			</div><div class="thread">
+				
+
+				
+
+
+<div id="pdktl9k" class="comment">
+	<div class="comment_left">
+    <p class="comment_score" title="1">
+         
+         1
+         
+    </p>
+        <div class="line"></div>
+	</div>
+	<details class="comment_right" open>
+		<summary class="comment_data">
+			
+				<a class="comment_author  " href="/user/Adventurous-You3958">u/Adventurous-You3958</a>
+			
+			
+			<a href="/r/ollama/comments/1wvxih5/i_benchmarked_qwen_38_27b_on_my_m4_max_heres_what/pdktl9k/?context=3#pdktl9k" class="created" title="Oct 03 2026, 09:07:09 UTC">6d ago</a>
+			
+			
+		</summary>
+		
+		<div class="comment_body "><div class="md"><p>local run turn my m5 pro 64 gb into a burning metal.<br/>
+I have stopped doing it as i dont want to destroy my machine!</p>
+</div></div>
+		
+		<div class="replies">
+		</div>
+	</details>
+</div>
+
+			</div><div class="thread">
+				
+
+				
+
+
+<div id="pdligg4" class="comment">
+	<div class="comment_left">
+    <p class="comment_score" title="1">
+         
+         1
+         
+    </p>
+        <div class="line"></div>
+	</div>
+	<details class="comment_right" open>
+		<summary class="comment_data">
+			
+				<a class="comment_author  " href="/user/Xylozene">u/Xylozene</a>
+			
+			
+			<a href="/r/ollama/comments/1wvxih5/i_benchmarked_qwen_38_27b_on_my_m4_max_heres_what/pdligg4/?context=3#pdligg4" class="created" title="Oct 03 2026, 12:13:52 UTC">6d ago</a>
+			
+			
+		</summary>
+		
+		<div class="comment_body "><div class="md"><p>Oh go fuck yourself </p>
+</div></div>
+		
+		<div class="replies">
+		</div>
+	</details>
+</div>
+
+			</div><div class="thread">
+				
+
+				
+
+
+<div id="pdliuba" class="comment">
+	<div class="comment_left">
+    <p class="comment_score" title="1">
+         
+         1
+         
+    </p>
+        <div class="line"></div>
+	</div>
+	<details class="comment_right" open>
+		<summary class="comment_data">
+			
+				<a class="comment_author  " href="/user/txoixoegosi">u/txoixoegosi</a>
+			
+			
+			<a href="/r/ollama/comments/1wvxih5/i_benchmarked_qwen_38_27b_on_my_m4_max_heres_what/pdliuba/?context=3#pdliuba" class="created" title="Oct 03 2026, 12:16:11 UTC">6d ago</a>
+			<span class="edited" title="Oct 03 2026, 12:22:53 UTC">edited 6d ago</span>
+			
+		</summary>
+		
+		<div class="comment_body "><div class="md"><p>TLDR; “I bought a M4 Max for local agentic work, but in the end, I still use my Codex sub for real coding, and leave the local stuff for nsfw roleplaying and benchmaxxing</p>
+
+<p>And this is a heads up for all the local AI bros out there buying expensive gear without doing their homework first</p>
+</div></div>
+		
+		<div class="replies">
+		</div>
+	</details>
+</div>
+
+			</div><div class="thread">
+				
+
+				
+
+
+<div id="pdn1vts" class="comment">
+	<div class="comment_left">
+    <p class="comment_score" title="1">
+         
+         1
+         
+    </p>
+        <div class="line"></div>
+	</div>
+	<details class="comment_right" open>
+		<summary class="comment_data">
+			
+				<a class="comment_author  " href="/user/NeilCPA">u/NeilCPA</a>
+			
+			
+			<a href="/r/ollama/comments/1wvxih5/i_benchmarked_qwen_38_27b_on_my_m4_max_heres_what/pdn1vts/?context=3#pdn1vts" class="created" title="Oct 03 2026, 16:44:52 UTC">5d ago</a>
+			
+			
+		</summary>
+		
+		<div class="comment_body "><div class="md"><p>What prefill setting are you using?</p>
+</div></div>
+		
+		<div class="replies">
+		</div>
+	</details>
+</div>
+
+			</div><div class="thread">
+				
+
+				
+
+
+<div id="pdnt17k" class="comment">
+	<div class="comment_left">
+    <p class="comment_score" title="1">
+         
+         1
+         
+    </p>
+        <div class="line"></div>
+	</div>
+	<details class="comment_right" open>
+		<summary class="comment_data">
+			
+				<a class="comment_author  " href="/user/cherya">u/cherya</a>
+			
+			
+			<a href="/r/ollama/comments/1wvxih5/i_benchmarked_qwen_38_27b_on_my_m4_max_heres_what/pdnt17k/?context=3#pdnt17k" class="created" title="Oct 03 2026, 18:43:10 UTC">5d ago</a>
+			
+			
+		</summary>
+		
+		<div class="comment_body "><div class="md"><figure><a href="/preview/pre/h1sn7sb3sath1.png?width=689&amp;format=png&amp;auto=webp&amp;s=87a0bad5ca2236aadb408786b607cad38df423da"><img loading="lazy" src="/preview/pre/h1sn7sb3sath1.png?width=689&amp;format=png&amp;auto=webp&amp;s=87a0bad5ca2236aadb408786b607cad38df423da"></a></figure>
+</div></div>
+		
+		<div class="replies">
+		</div>
+	</details>
+</div>
+
+			</div><div class="thread">
+				
+
+				
+
+
+<div id="pdol5nw" class="comment">
+	<div class="comment_left">
+    <p class="comment_score" title="1">
+         
+         1
+         
+    </p>
+        <div class="line"></div>
+	</div>
+	<details class="comment_right" open>
+		<summary class="comment_data">
+			
+				<a class="comment_author  " href="/user/Indaflow">u/Indaflow</a>
+			
+			
+			<a href="/r/ollama/comments/1wvxih5/i_benchmarked_qwen_38_27b_on_my_m4_max_heres_what/pdol5nw/?context=3#pdol5nw" class="created" title="Oct 03 2026, 20:49:40 UTC">5d ago</a>
+			
+			
+		</summary>
+		
+		<div class="comment_body "><div class="md"><p>Great post!  This belongs at <a href="/r/fingentic">r/fingentic</a> </p>
+</div></div>
+		
+		<div class="replies">
+		</div>
+	</details>
+</div>
+
+			</div><div class="thread">
+				
+
+				
+
+
+<div id="pdq29ak" class="comment">
+	<div class="comment_left">
+    <p class="comment_score" title="1">
+         
+         1
+         
+    </p>
+        <div class="line"></div>
+	</div>
+	<details class="comment_right" open>
+		<summary class="comment_data">
+			
+				<a class="comment_author  " href="/user/Sad_Abbreviations_77">u/Sad_Abbreviations_77</a>
+			
+			
+			<a href="/r/ollama/comments/1wvxih5/i_benchmarked_qwen_38_27b_on_my_m4_max_heres_what/pdq29ak/?context=3#pdq29ak" class="created" title="Oct 04 2026, 01:27:40 UTC">5d ago</a>
+			
+			
+		</summary>
+		
+		<div class="comment_body "><div class="md"><p>Yep thats why on my M4 max I pivoted to muse glimmer.... Im able to run 8 concurrent agents at a time and they do decent enough work with the right harness. Let it run on a project for the last 4 days (Its still running now) and its doing about 743.3 million tokens worth of work.... AM I GOING TO BE THE NEXT GOD? Oh for earths sake no. But for background projects where time is not of the essence it does roughly about $10 dollars of api work per day if you add in the cache rates. </p>
+
+<p>For Example if I leave it running 24/7 Using DeepInfra’s Muse Glimmer rates as a rough cloud equivalent—$0.30/M regular input, $0.04/M cached input, and $1.20/M output—that usage would have cost about <strong>$40.87</strong> in four days, or roughly <strong>$3.7K/year</strong> if sustained.</p>
+
+<p>But thats not the best part..... When the next best model comes out I can just run that on the Mac because I&#39;m not getting anything till 2032 given the continued increase in prices for DGX sparks or the 256GB M5 Ultras</p>
+</div></div>
+		
+		<div class="replies">
+		</div>
+	</details>
+</div>
+
+			</div><div class="thread">
+				
+
+				
+
+
+<div id="pdr63o0" class="comment">
+	<div class="comment_left">
+    <p class="comment_score" title="1">
+         
+         1
+         
+    </p>
+        <div class="line"></div>
+	</div>
+	<details class="comment_right" open>
+		<summary class="comment_data">
+			
+				<a class="comment_author  " href="/user/OleCuvee">u/OleCuvee</a>
+			
+			
+			<a href="/r/ollama/comments/1wvxih5/i_benchmarked_qwen_38_27b_on_my_m4_max_heres_what/pdr63o0/?context=3#pdr63o0" class="created" title="Oct 04 2026, 05:42:47 UTC">5d ago</a>
+			
+			
+		</summary>
+		
+		<div class="comment_body "><div class="md"><p>36GB RAM sounds a bit tight for both the model and context… might spend more time compacting on long adent tasks rather than on the work itself…</p>
+</div></div>
+		
+		<div class="replies">
+		</div>
+	</details>
+</div>
+
+			</div><div class="thread">
+				
+
+				
+
+
+<div id="pds67mb" class="comment">
+	<div class="comment_left">
+    <p class="comment_score" title="1">
+         
+         1
+         
+    </p>
+        <div class="line"></div>
+	</div>
+	<details class="comment_right" open>
+		<summary class="comment_data">
+			
+				<a class="comment_author  " href="/user/ashenzo">u/ashenzo</a>
+			
+			
+			<a href="/r/ollama/comments/1wvxih5/i_benchmarked_qwen_38_27b_on_my_m4_max_heres_what/pds67mb/?context=3#pds67mb" class="created" title="Oct 04 2026, 10:26:13 UTC">5d ago</a>
+			
+			
+		</summary>
+		
+		<div class="comment_body "><div class="md"><p>Thanks OP</p>
+</div></div>
+		
+		<div class="replies">
+		</div>
+	</details>
+</div>
+
+			</div><div class="thread">
+				
+
+				
+
+
+<div id="pdtozkt" class="comment">
+	<div class="comment_left">
+    <p class="comment_score" title="1">
+         
+         1
+         
+    </p>
+        <div class="line"></div>
+	</div>
+	<details class="comment_right" open>
+		<summary class="comment_data">
+			
+				<a class="comment_author  " href="/user/Saintgein">u/Saintgein</a>
+			
+			
+			<a href="/r/ollama/comments/1wvxih5/i_benchmarked_qwen_38_27b_on_my_m4_max_heres_what/pdtozkt/?context=3#pdtozkt" class="created" title="Oct 04 2026, 15:28:53 UTC">5d ago</a>
+			
+			
+		</summary>
+		
+		<div class="comment_body "><div class="md"><p>The 27b way of using agents will be a relic of the past. The real beast has been unleashed. 3.8 flash next with strata. A preview of how qwen 4 will work soon. The days of models running purely on vram or shared ram will be over, with efficiency taking over the place. So start dusting off your old game pc, it will be getting some attention!</p>
+</div></div>
+		
+		<div class="replies">
+		</div>
+	</details>
+</div>
+
+			</div><div class="thread">
+				
+
+				
+
+
+<div id="pe1hki4" class="comment">
+	<div class="comment_left">
+    <p class="comment_score" title="1">
+         
+         1
+         
+    </p>
+        <div class="line"></div>
+	</div>
+	<details class="comment_right" open>
+		<summary class="comment_data">
+			
+				<a class="comment_author  " href="/user/Impossible_Way7017">u/Impossible_Way7017</a>
+			
+			
+			<a href="/r/ollama/comments/1wvxih5/i_benchmarked_qwen_38_27b_on_my_m4_max_heres_what/pe1hki4/?context=3#pe1hki4" class="created" title="Oct 05 2026, 16:18:24 UTC">4d ago</a>
+			
+			
+		</summary>
+		
+		<div class="comment_body "><div class="md"><p>I ain’t reading all that, I’m either happy for you, or you should ask AI about it.</p>
+</div></div>
+		
+		<div class="replies">
+		</div>
+	</details>
+</div>
+
+			</div><div class="thread">
+				
+
+				
+
+
+<div id="pdgw00l" class="comment">
+	<div class="comment_left">
+    <p class="comment_score" title="1">
+         
+         1
+         
+    </p>
+        <div class="line"></div>
+	</div>
+	<details class="comment_right" open>
+		<summary class="comment_data">
+			
+				<a class="comment_author  " href="/user/Ok_Constant257">u/Ok_Constant257</a>
+			
+			
+			<a href="/r/ollama/comments/1wvxih5/i_benchmarked_qwen_38_27b_on_my_m4_max_heres_what/pdgw00l/?context=3#pdgw00l" class="created" title="Oct 02 2026, 19:02:49 UTC">6d ago</a>
+			
+			
+		</summary>
+		
+		<div class="comment_body "><div class="md"><p>slop</p>
+</div></div>
+		
+		<div class="replies">
+		</div>
+	</details>
+</div>
+
+			</div><div class="thread">
+				
+
+				
+
+
+<div id="pdjjjpc" class="comment">
+	<div class="comment_left">
+    <p class="comment_score" title="1">
+         
+         1
+         
+    </p>
+        <div class="line"></div>
+	</div>
+	<details class="comment_right" open>
+		<summary class="comment_data">
+			
+				<a class="comment_author  " href="/user/florinandrei">u/florinandrei</a>
+			
+			
+			<a href="/r/ollama/comments/1wvxih5/i_benchmarked_qwen_38_27b_on_my_m4_max_heres_what/pdjjjpc/?context=3#pdjjjpc" class="created" title="Oct 03 2026, 03:14:56 UTC">6d ago</a>
+			
+			
+		</summary>
+		
+		<div class="comment_body "><div class="md"><p>If you think a human is going to consume all that slop, then you don&#39;t understand humans. Which is normal for a toaster.</p>
+
+<p>Anyway, the TLDR is: there are two speeds you need to measure, not just one.</p>
+</div></div>
+		
+		<div class="replies">
+		</div>
+	</details>
+</div>
+
+			</div><div class="thread">
+				
+
+				
+
+
+<div id="pdm6psj" class="comment">
+	<div class="comment_left">
+    <p class="comment_score" title="1">
+         
+         1
+         
+    </p>
+        <div class="line"></div>
+	</div>
+	<details class="comment_right" open>
+		<summary class="comment_data">
+			
+				<a class="comment_author  " href="/user/celzo1776">u/celzo1776</a>
+			
+			
+			<a href="/r/ollama/comments/1wvxih5/i_benchmarked_qwen_38_27b_on_my_m4_max_heres_what/pdm6psj/?context=3#pdm6psj" class="created" title="Oct 03 2026, 14:22:57 UTC">6d ago</a>
+			
+			
+		</summary>
+		
+		<div class="comment_body "><div class="md"><p>Create Reddit post, make no mistakes and make me a millionare </p>
+</div></div>
+		
+		<div class="replies">
+		</div>
+	</details>
+</div>
+
+			</div><div class="thread">
+				
+
+				
+
+
+<div id="pdfrdxk" class="comment">
+	<div class="comment_left">
+    <p class="comment_score" title="-6">
+         
+         -6
+         
+    </p>
+        <div class="line"></div>
+	</div>
+	<details class="comment_right" open>
+		<summary class="comment_data">
+			
+				<a class="comment_author  " href="/user/rorowhat">u/rorowhat</a>
+			
+			
+			<a href="/r/ollama/comments/1wvxih5/i_benchmarked_qwen_38_27b_on_my_m4_max_heres_what/pdfrdxk/?context=3#pdfrdxk" class="created" title="Oct 02 2026, 16:10:17 UTC">7d ago</a>
+			
+			
+		</summary>
+		
+		<div class="comment_body "><div class="md"><p>The takeaway is dont buy apple for LLMs, context length will kill any bandwidth benefits people brag about. </p>
+</div></div>
+		
+		<div class="replies">
+
+
+<div id="pdfsnn1" class="comment">
+	<div class="comment_left">
+    <p class="comment_score" title="1">
+         
+         1
+         
+    </p>
+        <div class="line"></div>
+	</div>
+	<details class="comment_right" open>
+		<summary class="comment_data">
+			
+				<a class="comment_author  op" href="/user/rodrigodevbits">u/rodrigodevbits</a>
+			
+			
+			<a href="/r/ollama/comments/1wvxih5/i_benchmarked_qwen_38_27b_on_my_m4_max_heres_what/pdfsnn1/?context=3#pdfsnn1" class="created" title="Oct 02 2026, 16:15:43 UTC">7d ago</a>
+			
+			
+		</summary>
+		
+		<div class="comment_body "><div class="md"><p>I didn&#39;t buy for LLM I had it for professional work I&#39;m just getting into local model running and thought it be interesting because most people only talk about numbers but the reality is different.</p>
+
+<p>what do you run with in regards to machine and use-cases?</p>
+</div></div>
+		
+		<div class="replies">
+		</div>
+	</details>
+</div>
+
+		</div>
+	</details>
+</div>
+
+			</div><div class="thread">
+				
+
+				
+
+
+<div id="pdhq1t6" class="comment">
+	<div class="comment_left">
+    <p class="comment_score" title="0">
+         
+         0
+         
+    </p>
+        <div class="line"></div>
+	</div>
+	<details class="comment_right" open>
+		<summary class="comment_data">
+			
+				<a class="comment_author  " href="/user/Valuable-Lemon-8623">u/Valuable-Lemon-8623</a>
+			
+			
+			<a href="/r/ollama/comments/1wvxih5/i_benchmarked_qwen_38_27b_on_my_m4_max_heres_what/pdhq1t6/?context=3#pdhq1t6" class="created" title="Oct 02 2026, 21:13:28 UTC">6d ago</a>
+			
+			
+		</summary>
+		
+		<div class="comment_body "><div class="md"><p>Nice analyzing, but you gotta understand that apple products really aren’t very good for running local agents. The main stats make it sound good but underneath the hood there is alot lacking when it comes to local performance</p>
+</div></div>
+		
+		<div class="replies">
+
+
+<div id="pdoc4c9" class="comment">
+	<div class="comment_left">
+    <p class="comment_score" title="1">
+         
+         1
+         
+    </p>
+        <div class="line"></div>
+	</div>
+	<details class="comment_right" open>
+		<summary class="comment_data">
+			
+				<a class="comment_author  " href="/user/Sevenfeet">u/Sevenfeet</a>
+			
+			
+			<a href="/r/ollama/comments/1wvxih5/i_benchmarked_qwen_38_27b_on_my_m4_max_heres_what/pdoc4c9/?context=3#pdoc4c9" class="created" title="Oct 03 2026, 20:09:02 UTC">5d ago</a>
+			
+			
+		</summary>
+		
+		<div class="comment_body "><div class="md"><p>Depends on your needs. I bought a Mac Studio M4 Max 64 GB last year mainly for daily driving and video work. Turns out it’s a pretty good local AI machine and I’ve been spending the last several weeks learning how to tweak its performance. MLX is obvious but the new Splash engine has lots of promise.</p>
+</div></div>
+		
+		<div class="replies">
+		</div>
+	</details>
+</div>
+
+		</div>
+	</details>
+</div>
+
+			</div><div class="thread">
+				
+
+				
+
+
+<div id="pdjquld" class="comment">
+	<div class="comment_left">
+    <p class="comment_score" title="0">
+         
+         0
+         
+    </p>
+        <div class="line"></div>
+	</div>
+	<details class="comment_right" open>
+		<summary class="comment_data">
+			
+				<a class="comment_author  " href="/user/tetoing">u/tetoing</a>
+			
+			
+			<a href="/r/ollama/comments/1wvxih5/i_benchmarked_qwen_38_27b_on_my_m4_max_heres_what/pdjquld/?context=3#pdjquld" class="created" title="Oct 03 2026, 04:03:40 UTC">6d ago</a>
+			
+			
+		</summary>
+		
+		<div class="comment_body "><div class="md"><p>I read more of this than I probably should have, and learned absolutely nothing. Literally everything you mentioned is basic stuff that anyone thinking about investing in hardware to run an LLM locally should already research and know before spending $$. </p>
+
+<p>And you (or rather, likely Qwen 3.8 27B) use about 10x more words than is actually needed to get the point across. </p>
+</div></div>
+		
+		<div class="replies">
+		</div>
+	</details>
+</div>
+
+			</div><div class="thread">
+				
+
+				
+
+
+<div id="pdjw8kl" class="comment">
+	<div class="comment_left">
+    <p class="comment_score" title="0">
+         
+         0
+         
+    </p>
+        <div class="line"></div>
+	</div>
+	<details class="comment_right" open>
+		<summary class="comment_data">
+			
+				<a class="comment_author  " href="/user/Perfect-Campaign9551">u/Perfect-Campaign9551</a>
+			
+			
+			<a href="/r/ollama/comments/1wvxih5/i_benchmarked_qwen_38_27b_on_my_m4_max_heres_what/pdjw8kl/?context=3#pdjw8kl" class="created" title="Oct 03 2026, 04:42:42 UTC">6d ago</a>
+			
+			
+		</summary>
+		
+		<div class="comment_body "><div class="md"><p>This is entirely spam </p>
+</div></div>
+		
+		<div class="replies">
+		</div>
+	</details>
+</div>
+
+			</div><div class="thread">
+				
+
+				
+
+
+<div id="pdgs5s8" class="comment">
+	<div class="comment_left">
+    <p class="comment_score" title="-5">
+         
+         -5
+         
+    </p>
+        <div class="line"></div>
+	</div>
+	<details class="comment_right" open>
+		<summary class="comment_data">
+			
+				<a class="comment_author  " href="/user/Wizzard_2025">u/Wizzard_2025</a>
+			
+			
+			<a href="/r/ollama/comments/1wvxih5/i_benchmarked_qwen_38_27b_on_my_m4_max_heres_what/pdgs5s8/?context=3#pdgs5s8" class="created" title="Oct 02 2026, 18:46:36 UTC">6d ago</a>
+			
+			
+		</summary>
+		
+		<div class="comment_body "><div class="md"><p>Everyone is obsessed with Qwen. Just because it will run locally. It&#39;s not that good. </p>
+</div></div>
+		
+		<div class="replies">
+
+
+<div id="pdh6dbo" class="comment">
+	<div class="comment_left">
+    <p class="comment_score" title="3">
+         
+         3
+         
+    </p>
+        <div class="line"></div>
+	</div>
+	<details class="comment_right" open>
+		<summary class="comment_data">
+			
+				<a class="comment_author  " href="/user/adeadfetus">u/adeadfetus</a>
+			
+			
+			<a href="/r/ollama/comments/1wvxih5/i_benchmarked_qwen_38_27b_on_my_m4_max_heres_what/pdh6dbo/?context=3#pdh6dbo" class="created" title="Oct 02 2026, 19:47:15 UTC">6d ago</a>
+			
+			
+		</summary>
+		
+		<div class="comment_body "><div class="md"><p>It&#39;s pretty good</p>
+</div></div>
+		
+		<div class="replies">
+
+
+<div id="pdh6yuw" class="comment">
+	<div class="comment_left">
+    <p class="comment_score" title="-2">
+         
+         -2
+         
+    </p>
+        <div class="line"></div>
+	</div>
+	<details class="comment_right" open>
+		<summary class="comment_data">
+			
+				<a class="comment_author  " href="/user/Wizzard_2025">u/Wizzard_2025</a>
+			
+			
+			<a href="/r/ollama/comments/1wvxih5/i_benchmarked_qwen_38_27b_on_my_m4_max_heres_what/pdh6yuw/?context=3#pdh6yuw" class="created" title="Oct 02 2026, 19:49:52 UTC">6d ago</a>
+			
+			
+		</summary>
+		
+		<div class="comment_body "><div class="md"><p>It&#39;s not worth the thousands spent on a GPU when that money can be put towards a better model via API. </p>
+</div></div>
+		
+		<div class="replies">
+
+
+<div id="pdh7gjd" class="comment">
+	<div class="comment_left">
+    <p class="comment_score" title="4">
+         
+         4
+         
+    </p>
+        <div class="line"></div>
+	</div>
+	<details class="comment_right" open>
+		<summary class="comment_data">
+			
+				<a class="comment_author  " href="/user/MattchuWuanahoy">u/MattchuWuanahoy</a>
+			
+			
+			<a href="/r/ollama/comments/1wvxih5/i_benchmarked_qwen_38_27b_on_my_m4_max_heres_what/pdh7gjd/?context=3#pdh7gjd" class="created" title="Oct 02 2026, 19:51:58 UTC">6d ago</a>
+			
+			
+		</summary>
+		
+		<div class="comment_body "><div class="md"><p>That&#39;s the thing the people playing around with it already have the gpu!! </p>
+</div></div>
+		
+		<div class="replies">
+
+
+<div id="pdh7m8m" class="comment">
+	<div class="comment_left">
+    <p class="comment_score" title="4">
+         
+         4
+         
+    </p>
+        <div class="line"></div>
+	</div>
+	<details class="comment_right" open>
+		<summary class="comment_data">
+			
+				<a class="comment_author  " href="/user/adeadfetus">u/adeadfetus</a>
+			
+			
+			<a href="/r/ollama/comments/1wvxih5/i_benchmarked_qwen_38_27b_on_my_m4_max_heres_what/pdh7m8m/?context=3#pdh7m8m" class="created" title="Oct 02 2026, 19:52:38 UTC">6d ago</a>
+			<span class="edited" title="Oct 02 2026, 20:01:47 UTC">edited 6d ago</span>
+			
+		</summary>
+		
+		<div class="comment_body "><div class="md"><p>Bingo, I got my 3090s years ago. Also, I value my privacy.</p>
+</div></div>
+		
+		<div class="replies">
+		</div>
+	</details>
+</div>
+
+		</div>
+	</details>
+</div>
+
+
+
+<div id="pdhqr4t" class="comment">
+	<div class="comment_left">
+    <p class="comment_score" title="1">
+         
+         1
+         
+    </p>
+        <div class="line"></div>
+	</div>
+	<details class="comment_right" open>
+		<summary class="comment_data">
+			
+				<a class="comment_author  " href="/user/Valuable-Lemon-8623">u/Valuable-Lemon-8623</a>
+			
+			
+			<a href="/r/ollama/comments/1wvxih5/i_benchmarked_qwen_38_27b_on_my_m4_max_heres_what/pdhqr4t/?context=3#pdhqr4t" class="created" title="Oct 02 2026, 21:16:42 UTC">6d ago</a>
+			
+			
+		</summary>
+		
+		<div class="comment_body "><div class="md"><p>I agree, I tried it out with 1 3090, not really worth it to be honest, not sure if it was because I mostly worked with alliterated models but I didn’t get much value from it, in fact it made the work I was trying to do harder. Better off to keep it as a hobby than a legitimate investment</p>
+</div></div>
+		
+		<div class="replies">
+		</div>
+	</details>
+</div>
+
+
+
+<div id="pdi532y" class="comment">
+	<div class="comment_left">
+    <p class="comment_score" title="1">
+         
+         1
+         
+    </p>
+        <div class="line"></div>
+	</div>
+	<details class="comment_right" open>
+		<summary class="comment_data">
+			
+				<a class="comment_author  " href="/user/ohnoitssobig">u/ohnoitssobig</a>
+			
+			
+			<a href="/r/ollama/comments/1wvxih5/i_benchmarked_qwen_38_27b_on_my_m4_max_heres_what/pdi532y/?context=3#pdi532y" class="created" title="Oct 02 2026, 22:26:28 UTC">6d ago</a>
+			
+			
+		</summary>
+		
+		<div class="comment_body "><div class="md"><p>Haha you just poor.</p>
+
+<p>/s</p>
+</div></div>
+		
+		<div class="replies">
+		</div>
+	</details>
+</div>
+
+		</div>
+	</details>
+</div>
+
+		</div>
+	</details>
+</div>
+
+
+
+<div id="pdic4nk" class="comment">
+	<div class="comment_left">
+    <p class="comment_score" title="1">
+         
+         1
+         
+    </p>
+        <div class="line"></div>
+	</div>
+	<details class="comment_right" open>
+		<summary class="comment_data">
+			
+				<a class="comment_author  " href="/user/RawFreakCalm">u/RawFreakCalm</a>
+			
+			
+			<a href="/r/ollama/comments/1wvxih5/i_benchmarked_qwen_38_27b_on_my_m4_max_heres_what/pdic4nk/?context=3#pdic4nk" class="created" title="Oct 02 2026, 23:03:36 UTC">6d ago</a>
+			
+			
+		</summary>
+		
+		<div class="comment_body "><div class="md"><p>In my experience it’s extremely reliable. A lot of bigger models are not nearly as consistent for me. It’s also very good at details. I often find myself using it over frontier models. </p>
+</div></div>
+		
+		<div class="replies">
+		</div>
+	</details>
+</div>
+
+		</div>
+	</details>
+</div>
+
+			</div>
+		</div>
+
+	</div>
+
+		</main>
+		
+
+		<!-- FOOTER -->
+		
+			<footer>
+				<div class="footer-buttons">
+					<p><span id="version">v0.36.0-yunyun&emsp;</span><a href="/info" title="View instance information">ⓘ View instance info</a>&emsp;<a href="https://github.com/redlib-org/redlib" title="View code on GitHub">&lt;&gt; Code</a></p>
+				</div>
+			</footer>
+		
+	</body>
+</html>

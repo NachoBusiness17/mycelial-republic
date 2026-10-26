@@ -1,0 +1,40 @@
+{
+  "lane": "executor-sweep",
+  "division": "B",
+  "wave": "build-it-all",
+  "ts": "2026-10-03T18:55:00Z",
+  "ok": true,
+  "item": "Executor-sweep (owed waltz): grep effect_broker.py, doctrine_arbiter.py and the other routing tables for buckets that declare work but have zero production consumers; wire, register dormant, or kill each; at least one fixed same-sitting",
+  "note": "Swept 4 routing tables: mag/effect_broker.py BROKERS (7 effect routes), mag/switchboard_v2.py EFFECTS + _detect_unmet reconcile rules (producer side), mag/policy_engine.py DEFAULT_POLICY + live memory/policy.json, and tools/doctrine_arbiter.py instruments vs memory/doctrine/LEDGER.jsonl. Census method: per-bucket consumer grep over mag/, tools/, tests/, main.py, scripts/, configs/ split test-only vs production, then empirical production ledgers (effects.jsonl meter, broker receipt tree, switchboard trail.jsonl). Result: exactly 1 bucket LIVE (board_write, the only one with production meter rows: 3, all state_snapshot 2026-10-01), 5 DORMANT by design (tool_invoke, model_call, network_access, fs_write, lane_spawn: zero organ dispatches, operator-tier gated per switchboard_v2._implicit_authority + require_confirmation; their receipt counts are 100% test-prefixed: fs_write 74, network_access 117, tool_invoke 16, lane_spawn/model_call 0), and 1 DEAD (verkle_link: zero consumers anywhere, grep matched only the 3 declaring tables; production trail proves the Atlas shape LIVE: 11 reconcile proposals 2026-08-31, 4 AUTHORIZED, ZERO executions, 0 receipts, 0 meter rows). doctrine_arbiter NOT consumer-less: all 4 instruments consumed by registrations (duel_table 2, parity_gate 2, anomaly_counts 1, gps_ledger 1; 7th row VOID by the pre-registration four-tuple law by design), arbiter consumer is tools/cycle_brief.py:125 scorecard. FIXED SAME-SITTING: KILLED verkle_link in 4 files (BROKERS + _broker_verkle_link + state-branches in effect_broker.py; EFFECTS + tier comment + the missing_fork_verdicts reconcile rule in switchboard_v2.py; DEFAULT_POLICY in policy_engine.py; live memory/policy.json) and REGISTERED the 5 dormant buckets in a new ROUTING-TABLE STATUS block in the effect_broker module docstring naming each bucket's consumer state and intended operator path. Fail-closed proven by run: execute('verkle_link') FAILED 'authority check failed: unknown/disabled effect verkle_link'; validate_authority denies 'unknown/disabled effect verkle_link'. Gates: violation_ratchet check --changed PASS exit 0 NEW=0; 35 tests passed across the 4 covering test files; py_compile OK. Honesty notes: the check file's 2 em-dashes are the ratchet tool's own verbatim output; pre-existing em-dashes in old mag comments left untouched; _detect_unmet's prediction_measurement/principle_protocol seen-keys are counted-but-never-routed dead booleans, named not touched (they declare no work).",
+  "checks": [
+    {
+      "command": ".venv/Scripts/python.exe watch/inbox/gala_20260925/build-it-all/lanes/_executor_sweep_check.py > watch/inbox/gala_20260925/build-it-all/lanes/executor-sweep.check.txt",
+      "exit": 0,
+      "evidence": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/build-it-all/lanes/executor-sweep.check.txt (CHECK 1-9: consumer grep post-kill 3 files, live-route occurrences 0-routes, meter census board_write=3, receipt census all-non-test=board_write 15 only, trail census verkle_link 7 DENIED + 4 AUTHORIZED 0 executed, fail-closed proof, BROKERS keys 6, doctrine instruments census, cycle_brief consumer)"
+    },
+    {
+      "command": ".venv/Scripts/python.exe tools/violation_ratchet.py check --changed",
+      "exit": 0,
+      "evidence": "executor-sweep.check.txt CHECK 10 + post-append note: RATCHET PASS, no unregistered debt, NEW=0 (scope 13 changed files, 12 pre-registered debts)"
+    },
+    {
+      "command": ".venv/Scripts/python.exe -m pytest tests/test_effect_broker_ah18.py tests/test_effect_broker_fix.py tests/test_effect_broker_production.py tests/test_switchboard.py -q -p no:cacheprovider",
+      "exit": 0,
+      "evidence": "executor-sweep.check.txt CHECK 11 (raw tail quoted from recorded run log call_4b409eef21c349d5a6c900aa-stdout.log): 35 passed in 253.90s"
+    },
+    {
+      "command": ".venv/Scripts/python.exe -m py_compile mag/effect_broker.py mag/switchboard_v2.py mag/policy_engine.py",
+      "exit": 0,
+      "evidence": "COMPILE_OK, console output this session; re-run after the post-append comment cleanup"
+    },
+    {
+      "command": "grep -n em-dash (U+2014) over authored report/lane/check-script files",
+      "exit": 0,
+      "evidence": "watch/inbox/buildall/executor-sweep.md = 0; _executor_sweep_check.py = 0; check file's 2 hits are the ratchet tool's own verbatim output bytes; my mag additions clean (switchboard_v2.py:714 reworded)"
+    }
+  ],
+  "decision_changed": "Closes the executor law's inward-pointing steal: the estate's own routing tables owed the same no-consumer grep the Atlas lane ran on the mined repo. Changes the routing-table spec: verkle_link is dead everywhere it was declared (broker, switchboard EFFECTS, both policy tables, and its never-executed reconcile rule), the 5 operator-tier buckets are registered DORMANT with their intended consumer named, and mag/effect_broker.py's ROUTING-TABLE STATUS docstring block is now the standing census location, so future bucket additions must state their consumer at birth.",
+  "artifact": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/build-it-all/lanes/executor-sweep.json",
+  "receipt": "watch/inbox/buildall/executor-sweep.md",
+  "rows": []
+}

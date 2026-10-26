@@ -1,0 +1,82 @@
+{
+  "lane": "a13-lane-supervisor",
+  "division": "A",
+  "ok": true,
+  "note": "8-lane probe state machine verified live via read-only status subcommand: 8/8 UP, consecutive-fails=0, exit 0. Schtask fix verified by bytes in scripts/improve_daily.ps1 (full .venv interpreter pinned, line 7, executed line 23) plus live schtasks query and commit a741defc5 receipt. NEGATIVE FINDING: live MagImproveDaily query shows Scheduled Task State: Disabled; the a741defc5 fix is about interpreter path and is real, but the 08:00 improve task is not currently enabled. Quote Q8 from the commit receipt failed grep -F (line-wrapped) and was dropped per record law. Estate grep: 0 hits for lane_supervisor and schtask in corpus/steal/ and memory/corpus/ (first-filed).",
+  "rows": [
+    {
+      "law": "probes replace babysitting",
+      "claim": "lane_supervisor was built from the operator complaint 'i have to babysit the lane otherwise it errors out'; the answer is a cheap automated probe for every configured lane, not more human attention.",
+      "quote": "Every configured lane gets a cheap probe. State machine per lane:",
+      "source": "C:/Users/foste/Documents/projects/local_sovereign_agent/mag/lane_supervisor.py",
+      "steal": "When a human reports having to keep nudging a component, convert the complaint into a scheduled minimal probe of that component instead of adding attention.",
+      "falsifier": "A lane erroring out with no matching row appended in state/fuel/lane_health.jsonl means probes did not replace watching.",
+      "leverage": "high"
+    },
+    {
+      "law": "state machines over alarms",
+      "claim": "Lane health is a per-lane state machine with a 3-consecutive-fail DOWN threshold and a RECOVERED state, so single transient failures never page anyone; state is rebuilt from the log tail, not held in memory.",
+      "quote": "UP -> (fail) FLAKING -> (3 consecutive fails) DOWN -> (pass again) RECOVERED",
+      "source": "C:/Users/foste/Documents/projects/local_sovereign_agent/mag/lane_supervisor.py",
+      "steal": "Any health check that alarms on first failure is wrong; require a streak counter rebuilt from a log tail so flapping is absorbed and recovery is a first-class event.",
+      "falsifier": "A single transient fail producing state DOWN, or a pass after DOWN that never yields RECOVERED, falsifies the machine.",
+      "leverage": "high"
+    },
+    {
+      "law": "failover ladders by class",
+      "claim": "Lanes are grouped into capability classes and each class names its fallback chain; a class is served if ANY member is not DOWN, so single-lane death is invisible to consumers and only whole-class death escalates.",
+      "quote": "Failover: each lane class names its fallback chain; a DOWN lane's class is served",
+      "source": "C:/Users/foste/Documents/projects/local_sovereign_agent/mag/lane_supervisor.py",
+      "steal": "Group interchangeable providers into classes and declare the class UP if one member lives; only the all-members-DOWN case rises to a human or a caller.",
+      "falsifier": "A class listed in classes_without_failover while one member is not DOWN (or a caller blocked by a DOWN lane whose class sibling is UP) falsifies the ladder.",
+      "leverage": "high"
+    },
+    {
+      "law": "escalation is a decision, not a task",
+      "claim": "Escalation to the operator's phone is the last rung only: it fires exclusively when a lane class is DOWN with no failover left, and escalation failure must never crash the probe.",
+      "quote": "a decision, not a task",
+      "source": "C:/Users/foste/Documents/projects/local_sovereign_agent/mag/lane_supervisor.py",
+      "steal": "Reserve the operator channel for undecidable cases only; anything decidable by failover, retry, or state transitions never reaches the phone.",
+      "falsifier": "Any phone escalation fired while a failover sibling in the same class was UP proves escalation leaked below the last rung.",
+      "leverage": "high"
+    },
+    {
+      "law": "schtask full-path law (bare python on PATH is the Hermes trap)",
+      "claim": "Scheduled tasks must pin the absolute repo interpreter: improve_daily.ps1 binds the full .venv python path and execs main.py through it; the a741defc5 catch was that three new tasks registered with bare python hit Task Scheduler's clean PATH (0x80070002) while hand-fires worked, and on this box bare python is the Hermes venv with no Mag deps.",
+      "quote": "$Py = Join-Path $Root \".venv\\Scripts\\python.exe\"",
+      "source": "C:/Users/foste/Documents/projects/local_sovereign_agent/scripts/improve_daily.ps1",
+      "steal": "Every schtask /TR on this estate gets the absolute .venv interpreter path (or a ps1 wrapper that pins it) and an existence check before run; never bare python, because PATH under the scheduler is clean and bare python on the interactive PATH is Hermes.",
+      "falsifier": "A registered task whose Task To Run contains bare python, or any scheduled run dying with 0x80070002 or 'No module named langgraph' under the scheduler, falsifies the law.",
+      "leverage": "high"
+    }
+  ],
+  "checks": [
+    {
+      "command": "./.venv/Scripts/python.exe mag/lane_supervisor.py status",
+      "exit": 0,
+      "evidence": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/w3/lanes/a13-lane-supervisor.check.txt"
+    },
+    {
+      "command": "cmd //c schtasks /query /tn MagImproveDaily /v /fo list",
+      "exit": 0,
+      "evidence": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/w3/lanes/a13-lane-supervisor.check.txt"
+    },
+    {
+      "command": "git show a741defc5 (receipt patch, SEED_WINDOW_CLOSE_20260925.md)",
+      "exit": 0,
+      "evidence": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/w3/lanes/a13-lane-supervisor.check.txt"
+    },
+    {
+      "command": "grep -Fc byte-verification of 7 candidate quotes (Q8 receipt quote FAILED count 0 and was dropped)",
+      "exit": 0,
+      "evidence": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/w3/lanes/a13-lane-supervisor.quotes.txt"
+    },
+    {
+      "command": "grep -rn lane_supervisor and schtask over corpus/steal/ and memory/corpus/",
+      "exit": 1,
+      "evidence": "zero hits in both dirs for both terms (finding: this lane first-files both veins), counts in C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/w3/lanes/a13-lane-supervisor.quotes.txt"
+    }
+  ],
+  "decision_changed": "Yes: chose the read-only status subcommand over pytest as the verification surface (cheapest non-mutating per the module's own CLI). Also, the live schtasks query revealed MagImproveDaily is Disabled, so I am reporting the schtask path-fix as verified while flagging the task state as a separate open negative instead of claiming the daily 08:00 improve fire is live.",
+  "artifact": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/w3/lanes/a13-lane-supervisor.json"
+}

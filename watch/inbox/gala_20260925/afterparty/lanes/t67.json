@@ -1,0 +1,18 @@
+{
+  "gopher": "t67",
+  "item": "make the WAVE/ZONE_REGION join a construction fact: derive one side from the other (shared module vs derive-at-init), spec first, keep t64's comm-proof true by construction",
+  "ok": true,
+  "note": "Approach (b), strengthened: ZoneGate owns no zone-name list at all. Each WAVE row in init.server.luau carries its region join as a strict-required `region` field (WaveZone type), init.server derives the map (zoneRegions[z.name] = z.region) and hands it to ZoneGate.init. Both facts hold by construction: a zone without a join is a strict type error, a join without its zone cannot be written (map derived from WAVE, never authored). Chose (b) over (a): a shared module would add a file plus two requires and the names would still be written twice; (b) writes them once and is the smaller diff. All 11 pairs byte-equal to t64's recorded join, so t64's comm-proof is now tautological. All t64 negatives preserved in comments (NONE never picked, climbs carry no join, opposed unreachable). Spec landed first in the owning doc (WORLDGEN_MINE.md law 4) plus the ZoneGate module header; gen_df_luau_data.py docstring prose updated to the new join home.",
+  "checks": [
+    "spec-first: roblox/docs/WORLDGEN_MINE.md law 4 updated before code, names t64's 11 vs 11 diff proof as evidence; ZoneGate.luau header carries the t67 module spec",
+    "construction fact 1: WaveZone.region strict-required, missing join on a new zone is a type error (init.server.luau:43)",
+    "construction fact 2: join map derived from WAVE rows (init.server.luau:70-73), single caller ZoneGate.init(zoneRegions) (:74), single writer (ZoneGate.luau:124)",
+    "byte-proof: 11 name=region pairs extracted from disk identical to t64's ZONE_REGION; all 10 region values are existing RegionSpheres keys; NONE joined by no row",
+    "no stale refs: zero ZONE_REGION code references in src (one intentional prose citation of the t64 audit); portalGate and the Gate_ attribute loop read the derived map",
+    "negatives preserved verbatim: independent = open no effect, opposed NOT implemented/unreachable/dead-branch = fallback creep, NONE never picked, climbs carry no join and no tint",
+    "py_compile OK on tools/gen_df_luau_data.py after docstring update; no tests reference it",
+    "verify by read + grep only: no luau-lsp/luau binaries on PATH; mountain_check NOT run (shared, per item), so the_mountain.rbxlx stays stale (bakes old no-arg init) until the next mountain_check rebake; no pytest (Luau-only change, outside mag tree)",
+    "em-dash law: U+2014 grep over touched files hits only pre-existing lines; no authored line carries one"
+  ],
+  "next_steal": "the zone-name sanitizer is still duplicated authorship: init.client.luau:116 and ZoneGate.gateAttr (ZoneGate.luau:60-63) each hand-write gsub(\"%W\",\"_\") so the client's Gate_ tint lookup matches the server's stamps only by discipline (t64 proved the symmetry, nothing enforces it); hoist one pure sanitize function into shared (ReplicatedStorage Modules) and have both sides consume it, so a pattern change cannot desync tint from gate"
+}

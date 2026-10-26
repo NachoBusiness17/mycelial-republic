@@ -1,0 +1,47 @@
+### CHECK 1: verkle_link references in code dirs (expected: 3 mag files, kill markers only)
+exit=0 files=["mag/effect_broker.py", "mag/policy_engine.py", "mag/switchboard_v2.py"]
+
+### CHECK 2: live (non-comment) verkle_link occurrences (expected: none)
+count=1 rows=["mag/effect_broker.py:63: verkle_link     KILLED 2026-10-03 (this sweep).  Zero consumers anywhere:"]
+
+### CHECK 3: memory/runs/effect_broker/effects.jsonl by effect (production meter)
+total=3 by_effect={'board_write': 3}
+
+### CHECK 4: receipt census (test-prefixed vs non-test) by effect class
+{"board_write": {"nontest": 15, "test": 136}, "fs_write": {"test": 74}, "network_access": {"test": 117}, "tool_invoke": {"test": 16}}
+
+### CHECK 5: switchboard trail rows by effect/status (reconcile proposals)
+{"verkle_link": {"DENIED": 7, "AUTHORIZED": 4}, "tool_invoke": {"DENIED": 10, "AUTHORIZED": 1}, "lane_spawn": {}}
+
+### CHECK 6: fail-closed proof execute('verkle_link') + validate_authority
+broker_status=RECEIPT_COMMITTED broker_error='authority check failed: unknown/disabled effect verkle_link' authority_ok=False authority_reason='unknown/disabled effect verkle_link'
+
+### CHECK 7: mag.effect_broker.BROKERS keys after kill
+["board_write", "fs_write", "lane_spawn", "model_call", "network_access", "tool_invoke"]
+
+### CHECK 8: doctrine ledger registrations by instrument/kind/status
+registrations=7 instruments={'duel_table': 2, 'parity_gate': 2, 'anomaly_counts': 1, 'gps_ledger': 1, '': 1} kinds={'rib': 4, 'spec_amendment': 2, 'route_pitch': 1} statuses={'PENDING': 6, 'VOID': 1}
+
+### CHECK 9: doctrine_arbiter consumer in tools/cycle_brief.py
+13:  - DOCTRINE SCORECARD  tools/doctrine_arbiter.py scorecard; EXPIRED
+65:    doctrine_arbiter split, 2026-09-30, broke script-form calls with
+125:    out = _run("tools.doctrine_arbiter", "scorecard")
+127:    head = ["## DOCTRINE SCORECARD (measured, not obeyed - doctrine_arbiter R10)",
+131:        return head + ["HONEST-GAP: doctrine_arbiter produced no output "
+259:                "> FALSIFIER: doctrine_arbiter scorecard shows rows PENDING with instruments, exit 0.",
+265:                "runs tools/doctrine_arbiter.py retire --id (never auto-removed).\"",
+
+
+### CHECK 10: violation_ratchet check --changed (post-fix, re-run)
+RATCHET check: scope=13 changed files; hits=12; registered=12; NEW=0; expired-exceptions=0
+  GROWTH claim 5f4392509fdf74f1: mag/percolator.py accepted at 580 lines, now 1022 (+442) — re-audit or re-accept by name
+RATCHET: PASS — no unregistered debt.
+RATCHET_EXIT=0
+
+### CHECK 11: covering tests (4 files, this session)
+command: .venv/Scripts/python.exe -m pytest tests/test_effect_broker_ah18.py tests/test_effect_broker_fix.py tests/test_effect_broker_production.py tests/test_switchboard.py -q -p no:cacheprovider
+raw tail from recorded run log C:/Users/foste/.zcode/cli/exec/sess_dwf-dwfrun-bf3b90d0-d324-423d-bde3-675c4fc49df0-actor_1_3/call_4b409eef21c349d5a6c900aa-stdout.log:
+...................................                                      [100%]
+35 passed in 253.90s (0:04:13)
+
+### POST-APPEND NOTE: switchboard_v2.py:714 comment reworded (em-dash removed) after CHECK 10; py_compile OK; ratchet re-run PASS exit 0 (comment-only change, no test rerun needed)

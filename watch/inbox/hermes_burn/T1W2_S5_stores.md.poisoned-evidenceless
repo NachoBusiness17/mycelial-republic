@@ -1,0 +1,46 @@
+# T1W2_S5_stores (anthropic/claude-opus-5.5, turn 1, channel: content)
+
+# Stranger Audit: server/store_io.py
+
+**Evidence status:** The EVIDENCE block is empty. No bytes of `server/store_io.py` were supplied, so every file:line below is **UNVERIFIED**. Each finding is phrased as a conditional on what the code must contain.
+
+## (1) Remaining lock-class bugs
+
+| # | Bug | Condition (UNVERIFIED) | Severity |
+|---|-----|------------------------|----------|
+| A | **Lock on a replaced inode.** If the byte lock is held on the data file, `os.replace` swaps in a new inode. The next process locks the new file while the old holder still "owns" the old one, so mutual exclusion silently breaks. | `exclusive()` locks the target path, not a sidecar `.lock` | **Worst** |
+| B | **Lock ordering.** Nested `exclusive(a)` then `exclusive(b)` in one thread, and `b` then `a` in another, deadlocks. Per-path RLocks impose no global order. | Any multi-path caller exists | High |
+| C | **Crash-with-lock.** OS locks die with the process, which is fine. Two problems remain: orphan `mkstemp` temp files, and lost writes on power loss if there is no `fsync` before replace. | Missing `fsync(fd)` before `os.replace` | Medium |
+| D | **Reader starvation / failure.** `msvcrt.locking` is mandatory. Locked bytes raise `PermissionError` for readers, and `LK_LOCK` gives up after 10 retries. | Windows path uses `msvcrt.locking` | Medium |
+| E | **NFS / WSL semantics.** NFS locks depend on lockd. WSL2 9p and WSL1 drvfs do not propagate locks to native Windows processes. | Store lives on `/mnt/c` or NFS | Environment |
+
+## (2) Is os.replace atomic on NTFS?
+
+**Not for this access pattern.** On Windows, Python's `os.replace` calls `MoveFileExW(MOVEFILE_REPLACE_EXISTING)`. This rename is metadata-atomic only in practice and is undocumented as a guarantee. It also has a known failure mode: it fails with WinError 5 or 32 if any process holds the destination open without `FILE_SHARE_DELETE`. Python's `open()` never sets that flag. Antivirus and the indexer cause the same failure.
+
+- **Positive example:** temp file and target in the same directory, no concurrent open handles. The rename succeeds.
+- **Negative example:** a reader loop holds `open(target)`. The writer raises `PermissionError`, the write is lost, and the bug resembles Q21 again.
+
+## (3) The one test
+
+```python
+# tests/test_store_io_xproc.py
+def test_xproc_increment_no_loss(tmp_path):
+    p = tmp_path / "ctr.txt"; p.write_text("0")
+    N, W = 200, 4
+    procs = [Process(target=incr_loop, args=(p, N)) for _ in range(W)]
+    procs.append(Process(target=reader_loop, args=(p, 5.0)))  # holds file open
+    for x in procs: x.start()
+    for x in procs: x.join()
+    assert all(x.exitcode == 0 for x in procs)
+    assert int(p.read_text()) == N * W
+```
+
+Here, `incr_loop` performs a read, a +1, and `atomic_write_text`, all inside `exclusive(p)`.
+
+**Measurement conditions:**
+- **Instrument:** pytest with `multiprocessing` in spawn mode.
+- **Moment:** after the store_io landing.
+- **Context:** must run on both Linux ext4 and Windows NTFS local disk. Threads alone cannot catch bug A.
+
+**Falsifier:** if this test passes 50/50 runs on both OSes, then bug A is absent (exclusive likely uses a sidecar lock) and the Windows sharing-violation claim in (2) is wrong for this code.

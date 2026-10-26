@@ -1,0 +1,153 @@
+{
+  "schema": "organ_table.v1",
+  "id": "organ_table",
+  "label": "Estate Organ Table V1 (the routing keystone)",
+  "filed": "2026-09-25",
+  "source_row": "project-organ-table-router-20260911 as carried in memory/runs/mickey17/digest_mem_11.jsonl (status OWED, gap_research_to_code rank 1 of 512, VxR 25)",
+  "design_docs": [
+    "memory/runs/orphans_ds/O03_organ_table.md",
+    "memory/runs/gapwave/gap_research_to_code.md",
+    "memory/research_polished/GAP_ANALYSIS_MASTER_20260920.md"
+  ],
+  "law": {
+    "routing_law": "premium = judgment only. Bulk and senses never ride frontier seats.",
+    "request_class_is_the_key": "Callers declare intent class, never a model name. The class is the file; the model is an implementation detail (O03 design principle 1).",
+    "fallback_triggers": ["health_fail", "429", "latency_p95", "refusal"],
+    "escalation": "two-strike = escalate, bounded by configs/lanes.yaml grok_budget.max_escalations_per_day = 2 and require_priority = true",
+    "drive_state_law": "an organ that is STALLED loses routing until driven (organ_map GHOST or organ_vitals DARK = last resort only)",
+    "cost_law": "class tier ceilings quote per-1K-token cost bands from mag/ask_router.py LANE_TIERS (0 free, 1 deepseek, 2 zai, 3 frontier)"
+  },
+  "request_classes": [
+    {
+      "class": "JUDGMENT",
+      "desc": "hard planning, overview, contested reasoning, operator-facing verdicts",
+      "primary": {"seat": "grok_tui", "organ": "mag/grok_terminal.py", "shape": "reasoning"},
+      "fallback": {"seat": "deepseek", "organ": "mag/agent_state_router.py:research-agent", "model": "deepseek-v4-pro", "thinking": "high"},
+      "last_resort": {"seat": "local", "organ": "llm.py (ollama chat)"},
+      "tier_ceiling": 3,
+      "evidence": "mag/router.py route(): depth overview/plan routes seat grok_tui with why planning=pack_only"
+    },
+    {
+      "class": "ADVISORY",
+      "desc": "code review, medium judgment, risk-gated verification",
+      "primary": {"seat": "deepseek", "organ": "mag/dispatch.py via mag.router.route", "shape": "auto"},
+      "fallback": {"seat": "local", "organ": "llm.py", "shape": "balanced"},
+      "last_resort": {"seat": "refuse", "organ": "mag/router.py delegation profile refusal boundary"},
+      "tier_ceiling": 2,
+      "evidence": "mag/router.py: heavy_code routes seat deepseek; model_shape auto defers to mag/model_pick.recommend_model"
+    },
+    {
+      "class": "RESEARCH",
+      "desc": "research packs, corpus digs, steal waves",
+      "primary": {"seat": "research-agent state", "organ": "mag/research_worker.py", "shape": "reasoning", "model": "deepseek-v4-pro"},
+      "fallback": {"seat": "cheap-swarm", "organ": "mag/cheap_swarm.py dispatch", "model": "deepseek-v4-flash"},
+      "last_resort": {"seat": "local", "organ": "llm.py"},
+      "tier_ceiling": 2,
+      "evidence": "mag/agent_state_router.py AGENT_STATES research-agent carries skills research-pack/topic_research/classify_pack/steal-protocol"
+    },
+    {
+      "class": "BULK",
+      "desc": "N-wide generation, salons, lens packs, fan-out lanes",
+      "primary": {"seat": "fanout", "organ": "mag/fanout.py", "model": "glm-5.3-flash", "width": 4, "key_env": "ZAI_API_KEY_Lite"},
+      "fallback": {"seat": "cheap-swarm", "organ": "mag/cheap_swarm.py", "model": "deepseek-v4-flash or local"},
+      "last_resort": {"seat": "local", "organ": "llm.py"},
+      "tier_ceiling": 0,
+      "evidence": "mag/fanout.py defaults: glm-5.3-flash, max_tokens 12288, width 4, HOST_ALLOW {api.z.ai, api.deepseek.com}; free tier is sacred (O03 principle 5)"
+    },
+    {
+      "class": "SENSES",
+      "desc": "image, browser, screen, ear capture; cache-coordinate reads",
+      "primary": {"seat": "mcp-sense", "organ": "tools/sense_tools.py", "convention": "gps_key cache coordinate, schema mag_sense_mcp.v1"},
+      "fallback": {"seat": "browser", "organ": "mag/browser_env.py via host_resolver"},
+      "last_resort": {"seat": "dark", "organ": "none, report DARK via organ_vitals"},
+      "tier_ceiling": 0,
+      "evidence": "tools/sense_tools.py: the 8B/VL never gets the stream, only tool results; same args = same gps.key"
+    },
+    {
+      "class": "VOICE",
+      "desc": "realtime voice conversation and narrator surfaces",
+      "primary": {"seat": "mag-voice", "organ": "launch_voice.cmd", "convention": "venv python, local capture first"},
+      "fallback": {"seat": "game-dm-narrator", "organ": "mag/game_dm_voice.py"},
+      "last_resort": {"seat": "text", "organ": "mag/operator_inbox.py typed channel"},
+      "tier_ceiling": 1,
+      "evidence": "memory/research_polished/INDEX.md row 9: voice quality is capture/device, not model, both fixes landed"
+    }
+  ],
+  "organs": [
+    {"id": "router", "source": "mag/router.py", "module": "mag.router", "callable": "route", "line": 471, "capability": "one classifier, one seat matrix: goal to job/tier/seat/mode with delegation profiles and secret/refusal gating (schema route.v2)", "owner": "router lane (mag core)", "call": "from mag.router import route; route(goal, depth=..., force_seat=..., signals=..., delegation_profile=...)", "drive_state": {"in_organ_map": false, "in_organ_vitals": false, "note": "THE ROUTER ITSELF IS NOT IN ANY TELEMETRY REGISTRY"}, "request_classes": ["JUDGMENT", "ADVISORY", "RESEARCH"], "routes": ["escalation-ladder", "budget-caps"]},
+    {"id": "dispatch", "source": "mag/dispatch.py", "module": "mag.dispatch", "callable": "_classify_job", "capability": "sovereign dispatch: local context + unified route() + min tokens; named remotes frozenset", "owner": "router lane (mag core)", "call": "import as library; composes mag.context_pack and models.quota.pick_provider", "drive_state": {"in_organ_map": false, "in_organ_vitals": false}, "request_classes": ["JUDGMENT", "ADVISORY", "RESEARCH"], "routes": []},
+    {"id": "model_pick", "source": "mag/model_pick.py", "module": "mag.model_pick", "callable": "recommend_model", "line": 34, "capability": "goal to model_shape (cheap/balanced/reasoning) recommendation", "owner": "router lane (mag core)", "call": "recommend_model(goal, depth=...)", "drive_state": {"in_organ_map": false, "in_organ_vitals": false}, "request_classes": ["ADVISORY"], "routes": []},
+    {"id": "agent_state_router", "source": "mag/agent_state_router.py", "module": "mag.agent_state_router", "callable": "resolve, pick", "capability": "custom agent states (research-agent, janitor-agent, coding-agent, default) each binding model_shape, model, thinking_level, effort, api_key, skills, tools, memory_context, context_plan (schema agent_state_router.v1)", "owner": "router lane (mag core)", "call": "python -m mag.agent_state_router [state]", "drive_state": {"in_organ_map": false, "in_organ_vitals": false}, "request_classes": ["JUDGMENT", "ADVISORY", "RESEARCH"], "routes": ["mega-salon-build-order"]},
+    {"id": "ask_router", "source": "mag/ask_router.py", "module": "mag.ask_router", "callable": "cmd_route", "capability": "outcome-ledger ask routing; composes organs by subprocess, never imports; LANE_TIERS dollar-tier physics; $0 control plane, no model calls", "owner": "router lane (mag core)", "call": "python -m mag.ask_router route | record; ledger memory/runs/ask_router/ledger.jsonl", "drive_state": {"in_organ_map": true, "organ_map_status": "VERIFIED", "gap_codes": ["receipt_stale"]}, "request_classes": ["JUDGMENT", "ADVISORY", "RESEARCH", "BULK"], "routes": ["escalation-ladder", "budget-caps"]},
+    {"id": "switchboard", "source": "mag/switchboard.py", "module": "mag.switchboard", "callable": "route_intent", "line": 617, "capability": "intent routing surface (schema switchboard.v1)", "owner": "router lane (mag core)", "call": "route_intent(goal, dry=False)", "drive_state": {"in_organ_map": true, "organ_map_status": "VERIFIED"}, "request_classes": ["JUDGMENT", "ADVISORY"], "routes": []},
+    {"id": "fanout", "source": "mag/fanout.py", "module": "mag.fanout", "callable": "fire", "capability": "the standing N-wide organ: pack in via STDIN, lanes out via STDOUT after ===FANOUTJSON===, progress on STDERR, zero file I/O in cage, guard trio https + host allowlist + global IP", "owner": "fanout lane", "call": "python -m mag.fanout < pack.json (pack: model, max_tokens, width, key_env, shared_head, lanes[{id,context,task}])", "drive_state": {"in_organ_map": false, "in_organ_vitals": false, "receipt": "FANOUT_STANDING_ORGAN_20260912.md probe 1/1 green, 11s, 779 ctok"}, "request_classes": ["BULK"], "routes": ["k-of-n-verification", "tide-gate-throughput"]},
+    {"id": "cheap_swarm", "source": "mag/cheap_swarm.py", "module": "mag.cheap_swarm", "callable": "run_cadence", "capability": "RenderMan law expand-and-execute: scan ghost build packages, dispatch to cheap tier with daily cap, status with cost guard (schema cheap_swarm.v1)", "owner": "fanout lane", "call": "python -m mag.cheap_swarm scan | dispatch <pkg> | status | cadence", "drive_state": {"in_organ_map": false, "in_organ_vitals": false}, "request_classes": ["BULK", "RESEARCH"], "routes": ["swarm-rightsizing"]},
+    {"id": "lanes", "source": "mag/lanes.py", "module": "mag.lanes", "callable": "load_lanes", "capability": "resource lanes + usage log from configs/lanes.yaml; grok_budget (max_escalations_per_day 2, require_priority, attach_brief); priority markers [priority] [grok] [L2]", "owner": "router lane (mag core)", "call": "load_lanes() reads configs/lanes.yaml", "drive_state": {"in_organ_map": false, "in_organ_vitals": false}, "request_classes": ["JUDGMENT"], "routes": ["escalation-ladder"]},
+    {"id": "model_registry", "source": "models/registry.py", "module": "models.registry", "callable": "model_for", "line": 155, "capability": "local role to model id (worker, clerk, router + aliases) against live ollama inventory; require_model strict mode", "owner": "local seat (ollama)", "call": "model_for(role); models from configs/lanes.yaml local_models", "drive_state": {"in_organ_map": false, "in_organ_vitals": false}, "request_classes": ["BULK", "ADVISORY"], "routes": []},
+    {"id": "quota", "source": "models/quota.py", "module": "models.quota", "callable": "provider_budget, pick_provider, record_usage", "line": 242, "capability": "provider budgets, period billable tokens, provider selection under quota", "owner": "router lane (mag core)", "call": "provider_budget(provider_id); pick_provider(...); record_usage(...)", "drive_state": {"in_organ_map": false, "in_organ_vitals": false}, "request_classes": [], "routes": ["budget-caps"]},
+    {"id": "llm_local", "source": "llm.py", "module": "llm", "callable": "chat", "capability": "ollama chat via langchain-ollama with raw-HTTP fallback so the L0 worker survives missing deps; every call traced to usage.jsonl", "owner": "local seat (ollama)", "call": "import llm; llm.chat(...); falls back to urllib when langchain_ollama absent", "drive_state": {"in_organ_map": false, "in_organ_vitals": false}, "request_classes": ["BULK", "ADVISORY"], "routes": []},
+    {"id": "operator_inbox", "source": "mag/operator_inbox.py", "module": "mag.operator_inbox", "callable": "_is_veto_or_pause", "line": 50, "capability": "operator typed channel; _VETO_PAUSE stop-word set at line 44 with negation guard (dont stop is not a veto); vague inputs go to socratic clarify not raw inject; events to logs/behavioral_events.jsonl", "owner": "operator seat", "call": "library import; inbox path state under memory/agent_state", "drive_state": {"in_organ_map": false, "in_organ_vitals": false}, "request_classes": ["VOICE"], "routes": ["escalation-ladder"]},
+    {"id": "work_tiers", "source": "mag/work_tiers.py", "module": "mag.work_tiers", "callable": "next_for", "capability": "five tier state machines (research-pack, coding-run, dispatch, handoff, improvement); every state has a next_state, action, and by; useless state routes to failure_kb via usefulness-oracle actor (schema work_tiers.v1)", "owner": "governance lane", "call": "python -m mag.work_tiers [tier] --all", "drive_state": {"in_organ_map": false, "in_organ_vitals": false}, "request_classes": [], "routes": ["organ-eval-demotion"]},
+    {"id": "policy_engine", "source": "mag/policy_engine.py", "module": "mag.policy_engine", "callable": "validate_authority", "capability": "authority validation for actions", "owner": "governance lane", "call": "library import", "drive_state": {"in_organ_map": true, "organ_map_status": "VERIFIED", "gap_codes": ["receipt_not_successful"]}, "request_classes": [], "routes": ["escalation-ladder"]},
+    {"id": "context_admission", "source": "mag/context_admission.py", "module": "mag.context_admission", "callable": "assess", "capability": "context admission control", "owner": "memory lane", "call": "assess(...)", "drive_state": {"in_organ_map": true, "organ_map_status": "LIVE"}, "request_classes": ["JUDGMENT", "ADVISORY", "RESEARCH"], "routes": []},
+    {"id": "context_pack", "source": "mag/context_pack.py", "module": "mag.context_pack", "callable": "build_context_pack", "capability": "context pack assembly (fresh pack vs handoff maze)", "owner": "memory lane", "call": "build_context_pack(...), format_context_pack_text(...)", "drive_state": {"in_organ_map": true, "organ_map_status": "VERIFIED"}, "request_classes": ["JUDGMENT", "ADVISORY", "RESEARCH"], "routes": []},
+    {"id": "rel_mem_eval", "source": "mag/rel_mem_eval.py", "module": "mag.rel_mem_eval", "callable": "default_retrieve", "line": 131, "capability": "REL-MEM-1 relational memory eval; default scorer still the deterministic lexical stand-in per its own docstring", "owner": "memory lane", "call": "library import; awaiting real retriever (rides the local semantic embedder row)", "drive_state": {"in_organ_map": false, "in_organ_vitals": false}, "request_classes": ["RESEARCH"], "routes": []},
+    {"id": "blackboard", "source": "mag/swarm_tools.py", "module": "mag.swarm_tools", "callable": "blackboard_post", "capability": "swarm blackboard posts", "owner": "memory lane", "call": "blackboard_post(...)", "drive_state": {"in_organ_map": true, "organ_map_status": "VERIFIED"}, "request_classes": ["BULK"], "routes": ["swarm-rightsizing"]},
+    {"id": "swarm_worker", "source": "mag/swarm_worker.py", "module": "mag.swarm_worker", "callable": "run_rightsized_once", "capability": "rightsized single swarm worker pass (the rightsizing seam)", "owner": "research lane", "call": "run_rightsized_once(...) wired via host_resolver per configs/organs/host_resolver.yaml", "drive_state": {"in_organ_map": true, "organ_map_status": "VERIFIED", "gap_codes": ["receipt_not_successful"]}, "request_classes": ["BULK"], "routes": ["swarm-rightsizing"]},
+    {"id": "swarm_cycle", "source": "mag/swarm_cycle.py", "module": "mag.swarm_cycle", "callable": "cycle", "capability": "swarm cycle driver", "owner": "research lane", "call": "cycle(...)", "drive_state": {"in_organ_map": true, "organ_map_status": "VERIFIED", "gap_codes": ["receipt_stale"]}, "request_classes": ["BULK"], "routes": ["swarm-rightsizing"]},
+    {"id": "research_worker", "source": "mag/research_worker.py", "module": "mag.research_worker", "callable": "run", "capability": "bounded research worker", "owner": "research lane", "call": "run(...)", "drive_state": {"in_organ_map": true, "organ_map_status": "VERIFIED", "gap_codes": ["receipt_not_successful"]}, "request_classes": ["RESEARCH"], "routes": []},
+    {"id": "sense_tools", "source": "tools/sense_tools.py", "module": "sense_tools", "callable": "gps_key", "capability": "MCP sense bus: voice packets + image-whisper scan; canonical cache coordinate tool + sorted args to sha256[:16] (schema mag_sense_mcp.v1)", "owner": "tools lane", "call": "MCP tool results only; the 8B/VL never gets the raw stream", "drive_state": {"in_organ_map": false, "in_organ_vitals": false}, "request_classes": ["SENSES"], "routes": []},
+    {"id": "browser_env", "source": "mag/browser_env.py", "module": "mag.browser_env", "callable": null, "capability": "browser CDP environment; wired by host_resolver per configs/organs/host_resolver.yaml", "owner": "tools lane", "call": "wired_by surfaces: docker-compose.yml, mag/api_server.py, mag/browser_env.py, mag/swarm_worker.py", "drive_state": {"in_organ_map": false, "in_organ_vitals": false}, "request_classes": ["SENSES"], "routes": []},
+    {"id": "host_resolver", "source": "mag/host_resolver.py", "module": "mag.host_resolver", "callable": "resolve_host_for_service", "capability": "DNS-independent service resolution (ollama, api_gateway, browser_cdp on 127.0.0.1); 72h offline cache; organ spec configs/organs/host_resolver.yaml schema organ.v1", "owner": "substrate lane", "call": "resolve_host_for_service(...); state memory/runs/host_resolver/mappings.jsonl", "drive_state": {"in_organ_map": true, "organ_map_status": "VERIFIED", "gap_codes": ["receipt_missing"], "organ_vitals": "not watched"}, "request_classes": ["SENSES"], "routes": []},
+    {"id": "organ_map", "source": "mag/organ_map.py", "module": "mag.organ_map", "callable": "map_organs, snapshot", "capability": "receipts-first status law over 33 organs: DECLARED, INSTRUMENTED, WIRED, STATEFUL, VERIFIED, LIVE, GHOST; deterministic, $0, no LLM, no network (schema organ_map.v1)", "owner": "night shift telemetry", "call": "python -m mag.organ_map status | snapshot; out memory/runs/organ_map/latest.json", "drive_state": {"in_organ_map": false, "in_organ_vitals": false, "self_run": "fresh status run 2026-09-26T00:56:40Z: 33 organs, LIVE 2, GHOST 0, 15 receipt_stale, 3 receipt_not_successful, water_computer proof_failed, fleet_structure STATEFUL"}, "request_classes": [], "routes": ["organ-eval-demotion"]},
+    {"id": "organ_vitals", "source": "scripts/organ_vitals.py", "module": null, "callable": "grade", "capability": "freshness spine: 10 named (organ, path, max_age) watches; grades fresh/STALE/DARK from file mtimes, never self-report; breaches append logs/failure_kb_alerts.jsonl sig vitals:<organ> for the ack_reaper loop; face dashboard/static/organ_vitals.json", "owner": "night shift telemetry", "call": "python scripts/organ_vitals.py [--tick | --grade-only]", "drive_state": {"self_run": "fresh tick 2026-09-26T00:57:03Z: 10 organs, 9 breaches, cite_gate DARK, 8 STALE", "in_organ_map": false}, "request_classes": [], "routes": ["organ-eval-demotion"]},
+    {"id": "estate_atlas", "source": "tools/estate_atlas.py", "module": null, "callable": "main", "capability": "disk custody layer of the Elder map: proven/claimed/dark from watch/ESTATE_INDEX/ESTATE_INDEX.jsonl spine; never re-walks disk; attic protocol nothing is ever deleted", "owner": "tools lane", "call": "python tools/estate_atlas.py; outputs watch/ESTATE_ATLAS/{ATLAS.md, atlas.json}", "drive_state": {"in_organ_map": false, "in_organ_vitals": false, "outputs_present": true}, "request_classes": [], "routes": []},
+    {"id": "capability_manifest", "source": "tools/capability_manifest.py", "module": null, "callable": "main", "capability": "regenerates memory/capability_manifest.md from code: main.py subcommands, dashboard REST routes, mag modules, provider inventory", "owner": "tools lane", "call": "python tools/capability_manifest.py [--print]", "drive_state": {"in_organ_map": false, "in_organ_vitals": false, "outputs_present": false, "note": "OUTPUT ABSENT: memory/capability_manifest.md does not exist on disk"}, "request_classes": [], "routes": []},
+    {"id": "tale_re_encoder", "source": "watch/organs/tale_re_encoder.py", "module": null, "callable": null, "capability": "tale re-encoding organ, landed 2026-09-03 (gap row 11 confirms the newer OWED row contradicts the older build row)", "owner": "watch lane", "call": "standalone script in watch/organs/", "drive_state": {"in_organ_map": false, "in_organ_vitals": false}, "request_classes": ["RESEARCH"], "routes": []},
+    {"id": "verkle_knot", "source": "mag/verkle_knot.py", "module": "mag.verkle_knot", "callable": "prove_latest", "capability": "verkle chain proof anchor", "owner": "verkle lane", "call": "prove_latest(...)", "drive_state": {"in_organ_map": true, "organ_map_status": "VERIFIED", "gap_codes": ["receipt_stale"]}, "request_classes": [], "routes": ["token-render-manager-r4"]},
+    {"id": "grok_terminal", "source": "mag/grok_terminal.py", "module": "mag.grok_terminal", "callable": null, "capability": "frontier ghost seat: builds packages queue/handoff/GHOST-*.md and frozen BUILD-*.md contracts (RenderMan: compact at the frontier)", "owner": "frontier seat", "call": "interactive TUI seat; output consumed by cheap_swarm scan", "drive_state": {"in_organ_map": false, "in_organ_vitals": false}, "request_classes": ["JUDGMENT"], "routes": ["mega-salon-build-order"]}
+  ],
+  "downstream_rows": [
+    {"row": "budget warn/hard-stop caps", "seam": "models/quota.py provider_budget (line 242), record_usage (line 75), period_billable (line 198)", "what_table_gives": "per-class budget attach point: a route_event carries its class so caps bind at classify time, not per provider"},
+    {"row": "escalation ladder", "seam": "configs/lanes.yaml grok_budget (lines 71-74) + mag/router.py line 184 reads max_escalations_per_day + mag/ask_router.py LANE_TIERS", "what_table_gives": "class to tier-ceiling mapping: JUDGMENT ceiling 3, ADVISORY/RESEARCH/VOICE ceiling 1-2, BULK/SENSES ceiling 0; two-strike escalation bounded by max_escalations_per_day 2"},
+    {"row": "K-of-N verification", "seam": "mag/fanout.py width lanes; no quorum code exists today (gap_research_to_code row 12 confirmed absent this session)", "what_table_gives": "N and quorum policy per class: fanout already returns per-lane texts keyed by lane id, the majority vote is a reducer away"},
+    {"row": "organ_eval demotion", "seam": "absent (gap row 16); drive-state inputs exist: mag/organ_map.py gap_codes + scripts/organ_vitals.py breaches", "what_table_gives": "the registry organ_eval iterates: demotion rule reads organ drive_state from the table, demoted organs drop to last_resort for 10 minutes (O03 circuit breaker)"},
+    {"row": "tide-gate throughput (50-wide measured caps)", "seam": "mag/fanout.py width pace guard (DEFAULT_WIDTH 4), max_tokens 12288", "what_table_gives": "per-class width and tide caps as data in the table instead of constants in code"},
+    {"row": "1000-free-agent swarm rightsizing", "seam": "mag/swarm_worker.py run_rightsized_once + mag/cheap_swarm.py daily cap + mag/swarm_tools.py blackboard", "what_table_gives": "class to swarm-size policy: rightsizing becomes routing (BULK ceiling 0 caps the swarm to free lanes by law, not by hope)"},
+    {"row": "Token Render Manager R4", "seam": "mag/verkle_knot.py prove_latest (VERIFIED receipt_stale) + gap row 19 P1 RENDER verkle byte-stable cache-hit prefix", "what_table_gives": "render requests become a routed class: shared_head convention already in fanout packs, verkle feeds the byte-stable prefix"},
+    {"row": "mega-salon build order", "seam": "mag/lane_salon.py + mag/frontier_salon.py + memory/research_polished/ENHANCEMENT_STACK_20260920.md (MoA, conformity guards)", "what_table_gives": "salon lane seating as routing: each chair is a class-routed organ call, build order derives from the table instead of a bespoke runner"}
+  ],
+  "classify_step": {
+    "status": "HOOK POINT NAMED, NOT BUILT",
+    "hook": "mag/router.py route() line 471: after markers + classify_depth resolve, stamp route_class from the six classes and emit one route_event row",
+    "route_event_shape": {"class": "JUDGMENT|ADVISORY|RESEARCH|BULK|SENSES|VOICE", "chosen": "organ id", "reason": "why string from route()", "latency_ms": 0, "tokens": 0, "ts": null},
+    "sink": "state/organ_table_events.jsonl (hash-chain ready, per O03 route_event leaf)",
+    "evidence": "request classes JUDGMENT/ADVISORY absent from all code and configs (grep this session, only unrelated hits in mag/arena_bench.py:29, mag/embassy_deliver.py:107, mag/verb.py:439, mag/_salon_burn.py:40)"
+  },
+  "telemetry": {
+    "exists": [
+      {"organ": "mag/organ_map.py", "gives": "status law per organ, 33 entries, gap codes"},
+      {"organ": "scripts/organ_vitals.py", "gives": "freshness per watched path, breach alerts"}
+    ],
+    "missing": [
+      "route_event writer (the classify step above)",
+      "router, dispatch, fanout, cheap_swarm, work_tiers, operator_inbox, agent_state_router are in NEITHER telemetry registry: the routing keystone is unwatched by the liveness spines",
+      "organ_vitals watches 10 paths; organ_map holds 33 organs; the union misses every organ in this table marked in_organ_map false"
+    ]
+  },
+  "verification": [
+    {"check": "configs/organs contents", "command": "ls configs/organs", "output": "host_resolver.yaml only", "date": "2026-09-25"},
+    {"check": "no organ table file existed", "command": "find -iname *organ* (maxdepth 3)", "output": "mag/organ_map.py, mag/bay_organs.py, configs/organs/host_resolver.yaml, watch/organs/tale_re_encoder.py; no table, no classify, no route-event log", "date": "2026-09-25"},
+    {"check": "request classes absent from code", "command": "grep -rn JUDGMENT|ADVISORY --include=*.py mag/ configs/ tools/ scripts/", "output": "4 hits, all unrelated (arena_bench transcript note, embassy OPSEC comment, verb advisory scoring, salon burn lane)", "date": "2026-09-25"},
+    {"check": "organ_map fresh status", "command": ".venv/Scripts/python.exe -m mag.organ_map status", "output": "ts 2026-09-26T00:56:40Z, summary DECLARED 33, INSTRUMENTED 31, WIRED 32, STATEFUL 31, VERIFIED 31, LIVE 2, GHOST 0", "date": "2026-09-25"},
+    {"check": "organ_vitals fresh tick", "command": ".venv/Scripts/python.exe scripts/organ_vitals.py", "output": "tick 2026-09-26T00:57:03Z, organs 10, breaches 9 (cite_gate DARK; convo_wire, overseer, refeed_guard, m12_baseline, operator_pulse, dead_hand_state, trailer_telemetry, hermes_receipts STALE)", "date": "2026-09-25"},
+    {"check": "capability manifest output absent", "command": "ls memory/capability_manifest.md", "output": "No such file or directory", "date": "2026-09-25"},
+    {"check": "escalation budget", "command": "grep -A3 grok_budget configs/lanes.yaml", "output": "max_escalations_per_day: 2, require_priority: true, attach_brief: true", "date": "2026-09-25"}
+  ],
+  "promotion": "Next seat: copy this file to configs/organs/organ_table.json, then wire the classify step at mag/router.py:471 and point organ_eval and the escalation ladder at the downstream_rows seams. Until then this table is the map, not the dispatcher.",
+  "honesty": {
+    "not_built_here": ["classify step", "route_event writer", "dispatcher yaml reader"],
+    "owner_note": "No file in the estate assigns maintainer names to modules. Owner fields are functional lanes (who answers when an organ goes GHOST), derived from hosting surface and citation graph in the sources read this session.",
+    "drive_state_dates": "organ_map and organ_vitals states were executed fresh during this ask; all other drive_state fields record registry membership, not a fresh run."
+  }
+}

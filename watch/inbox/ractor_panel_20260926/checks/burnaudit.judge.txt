@@ -1,0 +1,974 @@
+=== JUDGE burnaudit: raw byte verification of both candidates' cited receipts ===
+machine now (start): 2026-09-27T04:14:39.129231+00:00
+
+=== S1 BURN_WAVE_STATE.json ===
+mtime: 2026-09-27T04:06:37.085501+00:00
+raw first 300 chars: '{\n "born": "2026-09-26T11:40:00Z",\n "order": "operator 2026-09-26: burn remaining flash-lane quota into estate work by midnight; reset tomorrow afternoon; 5-hour window untouched; all free lanes flat out",\n "laws": [\n  "outstanding lanes max 10 (account ceiling measured 15-16 climb, 12 sustained; ch'
+top keys: ['born', 'dispatcher_fix', 'dispensed', 'holds', 'landed', 'laws', 'next_lane_number', 'order']
+born: '2026-09-26T11:40:00Z'
+holds count: 10
+hold 1: {"ts": "2026-09-26T14:04:53.122920+00:00", "lane": "B2-214", "reason": "first 1302 rate-limit death of the burn (4 min in); rolling-throughput law: hold dispatches 10+ min, next fire re-checks"}
+hold 2: {"ts": "2026-09-26T17:06:00Z", "lane": "B2-342", "reason": "second 1302 rate-limit death (5 min in); rolling-throughput hold, requeue"}
+hold 3: {"ts": "2026-09-26T17:08:00Z", "lane": "B2-93", "reason": "third 1302 death in 6 minutes (cluster); rolling-throughput hold extends"}
+hold 4: {"ts": "2026-09-26T21:45:00Z", "lane": "B2-104", "reason": "1302 death at width 24 after ~60 min work: experiment data point, the surfaced-limit rung lives between 12 and 24; lane requeued, partial work in tree"}
+hold 5: {"ts": "2026-09-26T22:15:00Z", "lane": "SW-09", "reason": "1302 death mid-slice; done 0, requeue 24: B2-114,B2-173,B2-138,B2-287,B2-339,B2-415,B2-142,B2-154,B2-187,B2-296,B2-298,B2-304,B2-305,B2-283,B2-321,B2-334,B2-356,B2-381,B2-483,B2-428,B2-437,B2-460,B2-461,B2-487"}
+hold 6: {"ts": "2026-09-26T22:20:00Z", "lane": "SW-04", "reason": "1302 death mid-slice; done 2, requeue 23"}
+hold 7: {"ts": "2026-09-26T23:00:00Z", "lane": "SW-06", "reason": "model request failure mid-slice; all 25 briefs requeued unchecked"}
+hold 8: {"ts": "2026-09-27T06:55:00Z", "lane": "width-24 experiment", "reason": "4x 1302 deaths in one cycle (B2-239, B2-139, B2-155, B2-181): width-24 surfaces the wall when window runs deep. Holding dispatch, swarm lanes continue. Envelope data recorded."}
+hold 9: {"ts": "2026-09-27T06:58:00Z", "lane": "B2-217", "reason": "fifth 1302 death; width-24 experiment verdict confirmed: surfaced wall is real at this depth, hold until window resets"}
+hold 10: {"ts": "2026-09-27T07:02:00Z", "lane": "B2-151/B2-475/B2-202", "reason": "3x 1302 deaths in one minute: window spent, all dispatch held until next window opens (5h cycle). Width-24 experiment data complete: 8 surfaced deaths, ceiling confirmed dynamic."}
+laws verbatim: ["outstanding lanes max 10 (account ceiling measured 15-16 climb, 12 sustained; churn cron adds 3 every 2h)", "dispatcher refills every 20 min, holds one fire after any 3-lane rate-limit death cluster", "stop at 23:55 local or quota death (repeated 1302/402 across lanes): file CLOSE receipt", "every landed lane appends 1-3 new briefs to QUEUE.md Open (self-feed)", "receipts watch/inbox/burn_wave_20260926/, ledger rows memory/burns/LEDGER.jsonl", "no em-dashes, no fabrication, byte-identical agent template except brief line", "never create new automations from inside dispatcher fires"]
+dispensed count: 423 landed count: 400
+literal '[' junk entries in dispensed: 15
+B2-247 in dispensed x2
+B2-373 in dispensed x2
+B2-104: dispensed=0 landed=0
+B2-155: dispensed=0 landed=0
+B2-475: dispensed=0 landed=0
+B2-239: dispensed=1 landed=1
+B2-139: dispensed=1 landed=1
+B2-181: dispensed=1 landed=1
+B2-151: dispensed=1 landed=1
+B2-202: dispensed=1 landed=1
+B2-217: dispensed=1 landed=1
+B2-342: dispensed=1 landed=1
+
+=== S2 LEDGER.jsonl ===
+mtime: 2026-09-27T04:11:02.901016+00:00
+total nonempty rows: 573
+--- rows containing b2-239-line-endings ---
+row 543: {"ts": "2026-09-26T23:48:17Z", "slug": "b2-239-line-endings", "verdict": "landed", "fresh_failure_mode": false, "landing": "watch/inbox/burn_wave_20260926/B2_239_line_endings_20260926.md", "one_line": "B2-239 LANDED: the B2-220 pre-regen CRLF state of q_caption_ledger.jsonl proven a content-preserving ending flip (LF-normalized snapshot sha e1677ba76cf7 equals the B2-68 post sha) carried through git's filters: the 29
+--- rows containing b2-139-ask3-source-repair ---
+row 536: {"ts": "2026-09-26T23:36:30Z", "slug": "b2-139-ask3-source-repair", "verdict": "landed", "fresh_failure_mode": true, "landing": "watch/inbox/burn_wave_20260926/B2_139_ask3_repair_20260926.md", "one_line": "GROK ASK 3 SOURCE REPAIRED (both halves of the brief OR): 4 link rows mirrored into watch/inbox/LINKS.jsonl:353-356 via the add door (GPO 2410.02197 General Preference Optimization, RPG 2505.17508 Regularized Polic
+row 541: {"ts": "2026-09-26T23:52:30Z", "slug": "b2-139-ask3-source-repair-erratum", "verdict": "erratum", "fresh_failure_mode": false, "landing": "watch/inbox/burn_wave_20260926/B2_139_ask3_repair_20260926.md", "one_line": "ERRATUM to the 23:36:30Z b2-139-ask3-source-repair row: its self-feed ids B2-528/529 were taken by concurrent bands through B2-535 while the lane worked; the briefs landed renumbered as B2-536/537 (QUEUE.
+--- rows containing b2-181-seed-mcp-server ---
+row 539: {"ts": "2026-09-26T23:40:44Z", "slug": "b2-181-seed-mcp-server", "verdict": "landed", "fresh_failure_mode": false, "landing": "watch/inbox/burn_wave_20260926/B2_181_seed_mcp_20260926.md", "one_line": "B2-181 LANDED: tools/seed_mcp.py (371 lines, seed_mcp.v0) serves the SEED-RIB over MCP stdio (3 resources: seed://current, seed://law-registry, seed://brief-pointers; 4 tools: rebuild_subtree, verify_hash, fetch_bounded
+row 540: {"ts": "2026-09-26T23:41:55Z", "slug": "b2-181-selffeed-renumber", "verdict": "erratum", "fresh_failure_mode": false, "landing": "watch/inbox/burn_wave_20260926/B2_181_seed_mcp_20260926.md", "one_line": "correction to the b2-181-seed-mcp-server row filed earlier this window: its one_line named self-fed B2-528/529/530, but concurrent lanes claimed those numbers before apply (QUEUE.md openrouter briefs at the 528-530 r
+--- rows containing B2-155-seed-paired-harness ---
+row 356: {"ts": "2026-09-26T20:27:24Z", "slug": "B2-155-seed-paired-harness", "verdict": "LANDED", "landing": "watch/inbox/burn_wave_20260926/B2_155_seed_paired_harness_20260926.md", "one_line": "law-D TARA gate executor landed: tools/seed_paired_uplift.py (gate + F2 flag-only compare + offline --demo replay, k=min(5,n) fixed folds, per-candidate accept-or-revert vs seed, auto-revert standing) + 6 pytest pins; replay discrimi
+--- rows containing b2-151-pid-survivor ---
+row 544: {"ts": "2026-09-27T00:03:33Z", "slug": "b2-151-pid-survivor", "verdict": "landed", "fresh_failure_mode": false, "landing": "watch/inbox/burn_wave_20260926/B2_151_pid_survivor_20260926.md", "one_line": "B2-151 LANDED: pid 37172 never survived as a process, the supervisor STATE ROW survived 12h33m; the fifth storm child was byte-identical to its four siblings (headless._spawn_env is a pure os.environ copy, so MAG_ALLOW
+--- rows containing B2-202 ---
+row 108: {"ts": "2026-09-26T13:37:10Z", "slug": "B2-61-roster-purge", "verdict": "LANDED", "landing": "watch/inbox/burn_wave_20260926/B2_61_roster_purge_20260926.md", "one_line": "CORRECTION of the prior B2-61 row (last-wins), one field only: the self-feed briefs landed as B2-202/203/204 in QUEUE.md (openrouter :free rotation build-out, mistral key-name case mismatch, dormant-skip seam in pick_provider), not B2-200/201/202 as
+row 114: {"ts": "2026-09-26T14:05:00Z", "slug": "B2-198-owed-b2-41-receipt", "verdict": "DISCHARGED", "landing": "watch/inbox/burn_wave_20260926/B2_198_owed_receipt_20260926.md", "one_line": "owed B2-41 receipt discharged: the receipt the brief called missing exists (watch/inbox/burn_wave_20260926/B2_41_hash_freshness_20260926.md, 4342 bytes), disk sha256 4280FA418FEDE65EF2DFEF0A7984733A148ECD1CF27AC5CBDA49FED2CAAC0A32 equals
+row 537: {"ts": "2026-09-26T23:37:13Z", "slug": "B2-202-free-rotation", "verdict": "LANDED", "landing": "watch/inbox/burn_wave_20260926/B2_202_free_rotation_20260926.md", "one_line": "openrouter :free rotation second pass landed live on 2026-09-26 bytes under the lane's own CLAIM configs/providers.yaml 22:55:17Z: the 9 catalog ids holding no row in B2_295_gate_results*.json (17 catalog ids minus the 8 the B2-295 first pass ga
+--- rows containing B2-217 ---
+(none)
+--- rows containing B2-475-real-limits ---
+row 518: {"slug": "B2-475-real-limits", "verdict": "LANDED", "lane": "B2-475", "landing": "watch/inbox/burn_wave_20260926/B2_475_real_limits_20260926.md", "one_line": "zai-org/ZCode vendored at corpus/library/zcode-zai-org/repo; THE REAL LIMITS from source with file:line citations: coding-plan endpoint = Anthropic protocol api.z.ai/api/anthropic/v1/messages via gateway zcode.z.ai/api/v1/ultra-zai; retries 10 (maxAttempts 11) 
+--- rows containing b2-427-registry-append-only ---
+(none)
+--- rows containing b2-181-selffeed-renumber ---
+row 540: {"ts": "2026-09-26T23:41:55Z", "slug": "b2-181-selffeed-renumber", "verdict": "erratum", "fresh_failure_mode": false, "landing": "watch/inbox/burn_wave_20260926/B2_181_seed_mcp_20260926.md", "one_line": "correction to the b2-181-seed-mcp-server row filed earlier this window: its one_line named self-fed B2-528/529/530, but concurrent lanes claimed those numbers before apply (QUEUE.md openrouter briefs at the 528-530 r
+
+-- named rows by line number --
+row 260: {"ts": "2026-09-26T19:34:28Z", "slug": "B2-104-corpus-freshness-policy", "verdict": "LANDED", "landing": "watch/inbox/burn_wave_20260926/B2_104_freshness_policy_20260926.md", "one_line": "C6 freshness policy landed as three arms, one module per arm: mag/catalog_rescan.py (incremental append-upsert rescan, dated atomic-replace rebuild with dated archive, manifest), mag/catalog_tags.py (salon Appendix B tag pass verbatim, temp+replace sidecar, dated TAG_REPORT, Sep-18 report preserved), mag/catalog_freshness.py (map_asof/map_age_hours/map_stale on corpus_search both engines and corpus_stats; missing manifest can never read fresh; 48h budget); w
+row 356: {"ts": "2026-09-26T20:27:24Z", "slug": "B2-155-seed-paired-harness", "verdict": "LANDED", "landing": "watch/inbox/burn_wave_20260926/B2_155_seed_paired_harness_20260926.md", "one_line": "law-D TARA gate executor landed: tools/seed_paired_uplift.py (gate + F2 flag-only compare + offline --demo replay, k=min(5,n) fixed folds, per-candidate accept-or-revert vs seed, auto-revert standing) + 6 pytest pins; replay discriminates the exact law shapes: single-fold confined gain +3.0 aggregate REFUSED (single-delta law would adopt), two-fold recurring gain ADOPTED, broad ADOPTED, regressor REFUSED, gate regressions 0.0 vs flag-only 3.0 so auto-revert i
+row 499: {"ts": "2026-09-27T00:14:00Z", "slug": "B2-427-registry-append-only", "verdict": "LANDED", "lane": "B2-427", "landing": "watch/inbox/burn_wave_20260926/B2_427_registry_append_only_20260926.md", "one_line": "B2-427 landed: configs/workflow_registry_baseline.json pins per-line sha256 of all 25 REGISTRY.jsonl rows plus the 7 scenario-card citations resolved to ordinal+sha; tests/test_workflow_registry_append_only.py fails on any prefix rewrite (reorder/dedupe/compaction/shrink) while pure appends pass; falsifier fired live on the real file: pure append green, simulated compaction red naming the ordinal, byte-exact restore green"}
+row 510: {"ts": "2026-09-26T21:51:57Z", "slug": "b2-wave-fold", "verdict": "FALSIFIER FIRED, LOCK OWED", "fresh_failure_mode": true, "landing": "watch/inbox/BURN_b2-wave-fold_20260926_c.md", "one_line": "b2-wave-fold falsifier counter check: next-50 window after the 16:47:55Z baseline closed FIRED (11 correction/erratum/renum rows, 4 true self-feed renumber: B2-353 17:52Z, B2-93 17:52Z, B2-374 18:20Z, B2-96 18:43Z, threshold >2), single-writer lock build TRIGGERED but only side-built (FKB lock mag/failure_kb.py, queue dupes gate, registry append-only; no LEDGER-scoped lock); current last-50 B2 rows 21:12:40Z-00:14:00Z read 0 corrections; NEW species: 
+row 518: {"slug": "B2-475-real-limits", "verdict": "LANDED", "lane": "B2-475", "landing": "watch/inbox/burn_wave_20260926/B2_475_real_limits_20260926.md", "one_line": "zai-org/ZCode vendored at corpus/library/zcode-zai-org/repo; THE REAL LIMITS from source with file:line citations: coding-plan endpoint = Anthropic protocol api.z.ai/api/anthropic/v1/messages via gateway zcode.z.ai/api/v1/ultra-zai; retries 10 (maxAttempts 11) 2s x2 60s jittered, env-overridable; 1302 retryable TRUE, concurrency caps 3008/3009/3010 NOT retried (upgrade banner), Retry-After honored, tool concurrency default 10, no client-side model-request throttle - the 50-wide limit is
+last row: 573: {"ts": "2026-09-27T05:02:20Z", "slug": "doctrine-owed-chase", "verdict": "steal", "fresh_failure_mode": false, "landing": "watch/inbox/BURN_doctrine-owed-chase_20260927.md", "one_line": "3 fetches spent: Kol HaTor ch. 2 fetched live via Sefaria API, reveal-the-end mitzvah line absent (byte-backed second receipt, still carried as tradition), revealed-end passages quoted as new primary pull; hebrewb
+last three rows:
+row 571: {"ts": "2026-09-27T05:02:00Z", "slug": "world-models-multi-agent", "verdict": "steal", "fresh_failure_mode": false, "landing": "watch/inbox/BURN_world-models-multi-agent_20260927.md", "one_line": "Odyssey Agora-2 (humans+agents as peers, live research preview) confirms NPC=SEAT as shipped precedent;
+row 572: {"ts": "2026-09-27T05:02:10Z", "slug": "stego-canon-pipeline", "verdict": "steal", "fresh_failure_mode": true, "landing": "watch/inbox/BURN_stego-canon-pipeline_20260927.md", "one_line": "pipeline law adopted (interpretation lookup before cold read, receipt to LINKS.jsonl); dictionary seeded from fo
+row 573: {"ts": "2026-09-27T05:02:20Z", "slug": "doctrine-owed-chase", "verdict": "steal", "fresh_failure_mode": false, "landing": "watch/inbox/BURN_doctrine-owed-chase_20260927.md", "one_line": "3 fetches spent: Kol HaTor ch. 2 fetched live via Sefaria API, reveal-the-end mitzvah line absent (byte-backed se
+
+row 518 contains a ts field: True | first ts value: 2026-09-26T21:54:51Z
+row 518 first 90 chars: {"slug": "B2-475-real-limits", "verdict": "LANDED", "lane": "B2-475", "landing": "watch/in
+
+rows containing exact stamp 2026-09-27T00:08:53Z: 3
+rows lacking any ts field: 0
+rows with ts in 2026-09-27T0[2-7]: 18
+
+-- ts of rows 455..end (file order) --
+455 2026-09-26T23:06:00Z | B2-272-prepush-paths-helper
+456 2026-09-26T22:50:00Z | B2-412-icon-drop-fold-repo-pin
+457 2026-09-26T21:19:07Z | third-way-game
+458 2026-09-26T21:19:32Z | build-fold-verify-b
+459 2026-09-26T21:20:22Z | B2-392-hot-writer-attributed
+460 2026-09-26T21:20:39Z | B2-401-trail-env-seams
+461 2026-09-26T21:20:46Z | b2-wave-fold
+462 2026-09-26T23:00:00Z | B2-484-law12-clause-verdict
+463 2026-09-26T23:18:00Z | B2-282-yearmonth-sweep
+464 2026-09-26T23:10:00Z | B2-441-provider-tally-envelope-law
+465 2026-09-26T21:22:18Z | B2-366-register-overrun
+466 2026-09-26T21:22:59Z | B2-411-fold-training-surface
+467 2026-09-26T23:15:00Z | B2-447-execute-flip-receipt
+468 2026-09-26T23:25:00Z | B2-471-b2-178-caption-census
+469 2026-09-26T21:25:33Z | B2-438-scripts-path-pins
+470 2026-09-26T23:30:00Z | B2-303-one-error-named
+471 2026-09-26T21:26:40Z | B2-426-decay-window
+472 2026-09-26T21:27:08Z | B2-413-icon-drop-pins
+473 2026-09-26T21:27:31Z | b2-375-powershell-tokens
+474 2026-09-26T23:35:00Z | B2-494-probe-alarm-surface
+475 2026-09-26T23:38:00Z | B2-457-doctor-403-arm
+476 2026-09-26T21:29:59Z | B2-462-asekin-carrier-scan
+477 2026-09-26T21:30:01Z | doctrine-owed-chase
+478 2026-09-26T21:30:50Z | free-resource-landscape
+479 2026-09-26T23:44:00Z | B2-320-driver-v2-s1-s3
+480 2026-09-26T21:32:41Z | B2-408-crash-write-surface
+481 2026-09-26T21:33:24Z | b2-418-chain-marker-pin
+482 2026-09-26T23:52:00Z | B2-333-index-selfseal-decision
+483 2026-09-27T00:00:00Z | B2-355-checkbox-reaudit
+484 2026-09-26T21:35:52Z | b2-433-mimosa-sweep
+485 2026-09-26T21:35:55Z | B2-420-census-seat-errors-relabel
+486 2026-09-26T21:36:04Z | B2-440-hunger-ledger-pin
+487 2026-09-26T21:36:56Z | b2-445-base-url-spec
+488 2026-09-26T21:37:13Z | B2-488-queue-row-normalizer
+489 2026-09-26T21:37:59Z | B2-435-width3-folklore-sweep
+490 2026-09-26T21:38:11Z | B2-452-scenario-citation-patrol
+491 2026-09-26T21:38:43Z | B2-403-test-sinks
+492 2026-09-26T21:38:57Z | BOARD-REPAIR-QUEUE-TRUNCATION
+493 2026-09-27T00:08:00Z | B2-380-minter-key-pins
+494 2026-09-26T21:40:07Z | b2-454-cache-rate-audit
+495 2026-09-26T21:40:18Z | B2-485-scenarios-verify
+496 2026-09-26T21:42:23Z | B2-456-line-pointer-sweep
+497 2026-09-26T21:42:37Z | B2-470-links-dedupe-merge
+498 2026-09-26T21:42:40Z | B2-442-waves-mode
+499 2026-09-27T00:14:00Z | B2-427-registry-append-only
+500 2026-09-26T21:42:49Z | B2-450-scenarios-commit-block
+501 2026-09-26T21:42:53Z | B2-351-secret-scan-schedule
+502 2026-09-26T21:43:41Z | B2-493-provider-probe-block
+503 2026-09-26T21:44:03Z | B2-140-armc-closeout-owed
+504 2026-09-26T21:44:42Z | B2-448-post-link-recheck
+505 2026-09-26T21:45:09Z | b2-479-exposure-census
+506 2026-09-26T21:49:41Z | B2-472-corpus-prune-report
+507 2026-09-26T21:51:11Z | rsi-harness
+508 2026-09-26T21:51:25Z | middle-path-doctrine
+509 2026-09-26T21:51:25Z | b2-wave-fold
+510 2026-09-26T21:51:57Z | b2-wave-fold
+511 2026-09-26T21:52:11Z | b2-504-fts5-spike-guard
+512 2026-09-26T21:52:17Z | b2-wave-fold
+513 2026-09-26T21:52:48Z | judge-lane-spec
+514 2026-09-26T21:53:12Z | third-way-game
+515 2026-09-26T21:53:40Z | steering-theory
+516 2026-09-26T21:53:40Z | steering-theory
+517 2026-09-26T21:53:52Z | queue-field
+518 2026-09-26T21:54:51Z | B2-475-real-limits
+519 2026-09-26T21:59:27Z | middle-path-doctrine
+520 2026-09-26T22:08:42Z | prompt-uplift-lane
+521 2026-09-26T22:08:42Z | adversarial-self-probes
+522 2026-09-26T22:08:42Z | stego-canon-pipeline
+523 2026-09-26T22:56:09Z | openrouter-keymeta-persist
+524 2026-09-26T22:58:11Z | B2-114-groq-third-lane-decision
+525 2026-09-26T23:02:18Z | B2-124-paste-door-consolidation
+526 2026-09-26T23:03:50Z | B2-142-cerebras-community-dig
+527 2026-09-26T23:05:00Z | b2-476-deep-compute-b2301-full-normals
+528 2026-09-26T23:13:23Z | B2-138-pack-retention-law
+529 2026-09-26T23:14:19Z | B2-133-cerebras-consumer-purge
+530 2026-09-26T23:16:38Z | B2-138-retention-law-erratum
+531 2026-09-26T23:17:14Z | b2-173-l265-flag-sha-ratchet
+532 2026-09-26T23:21:18Z | build-fold-verify
+533 2026-09-26T23:21:18Z | world-models-multi-agent
+534 2026-09-26T23:21:18Z | doctrine-owed-chase
+535 2026-09-26T23:36:10Z | b2-217-w40-guard-stamp
+536 2026-09-26T23:36:30Z | b2-139-ask3-source-repair
+537 2026-09-26T23:37:13Z | B2-202-free-rotation
+538 2026-09-26T23:37:37Z | b2-522-cost-truth-dormant-reprice-review
+539 2026-09-26T23:40:44Z | b2-181-seed-mcp-server
+540 2026-09-26T23:41:55Z | b2-181-selffeed-renumber
+541 2026-09-26T23:52:30Z | b2-139-ask3-source-repair-erratum
+542 2026-09-26T23:43:04Z | b2-521-cerebras-stragglers-dormant-gate
+543 2026-09-26T23:48:17Z | b2-239-line-endings
+544 2026-09-27T00:03:33Z | b2-151-pid-survivor
+545 2026-09-27T00:08:53Z | free-resource-landscape
+546 2026-09-27T00:08:53Z | rsi-harness
+547 2026-09-27T00:08:53Z | b2-wave-fold
+548 2026-09-27T01:17:22Z | judge-lane-spec
+549 2026-09-27T01:17:22Z | third-way-game
+550 2026-09-27T01:17:22Z | steering-theory
+551 2026-09-27T01:19:57Z | b2-296-mistral-key-name-case
+552 2026-09-27T01:37:29Z | free-resource-landscape
+553 2026-09-27T01:42:30Z | free-resource-landscape
+554 2026-09-27T01:45:55Z | b2-wave-fold
+555 2026-09-27T01:47:09Z | b2-wave-fold
+556 2026-09-27T02:00:16Z | b2-wave-fold
+557 2026-09-27T02:10:32Z | free-resource-landscape
+558 2026-09-27T02:43:47Z | atlas-fix-queue
+559 2026-09-27T02:43:47Z | queue-roam
+560 2026-09-27T02:43:47Z | middle-path-doctrine
+561 2026-09-27T02:50:00Z | adversarial-probes
+562 2026-09-27T02:56:00Z | atlas-fix-queue
+563 2026-09-27T03:10:00Z | atlas-fix-queue
+564 2026-09-27T03:22:00Z | rsi-harness
+565 2026-09-27T03:40:00Z | atlas-fix-queue
+566 2026-09-27T03:52:00Z | middle-path-doctrine
+567 2026-09-27T04:15:00Z | queue-field
+568 2026-09-27T04:15:10Z | prompt-uplift-lane
+569 2026-09-27T04:15:20Z | adversarial-self-probes
+570 2026-09-27T03:51:31Z | flashx-latency-probe
+571 2026-09-27T05:02:00Z | world-models-multi-agent
+572 2026-09-27T05:02:10Z | stego-canon-pipeline
+573 2026-09-27T05:02:20Z | doctrine-owed-chase
+
+=== S3 memory/trajectory/steps.jsonl ===
+size bytes: 24928073 mtime: 2026-09-27T04:14:37.734100+00:00
+
+line 22365 raw (first 900): {"schema_version": "trajectory_step.v1", "step_hash": "7ea84362859fd6db", "ts": "2026-09-26T18:40:20.170+00:00", "session_id": "sess_fd5ec147-a47d-41ee-91f4-afd899b524ca", "face": "bash", "command": "cd \"C:\\Users\\foste\\Documents\\projects\\local_sovereign_agent\" && .venv/Scripts/python.exe -c \"\nimport json, re\nq = 'watch/inbox/burn_wave_20260926/QUEUE.md'\nt = open(q, encoding='utf-8').read()\nfor i in ['B2-102', 'B2-103', 'B2-104', 'B2-105']:\n    t = re.sub(r'- \\[ \\] ' + i + r' ', '- [x] ' + i + ' ', t, count=1)\nopen(q, 'w', encoding='utf-8').write(t)\np = 'memory/burns/BURN_WAVE_STATE.json'\ns = json.load(open(p))\ns['dispensed'] += ['B2-102', 'B2-103', 'B2-104', 'B2-105']\njson.dump(s, open(p, 'w'), indent=1)\nprint('dispensed', len(s['dispensed']), 'landed', len(s['landed']))\n\"", "result": {"exit": 0, "output_excerpt": "dispensed 159 landed 149\r\n", "truncated": false}
+
+line 22468 raw (first 900): {"schema_version": "trajectory_step.v1", "step_hash": "a9b5ae88abc1c2b0", "ts": "2026-09-26T22:36:24.006+00:00", "session_id": "sess_fd5ec147-a47d-41ee-91f4-afd899b524ca", "face": "bash", "command": "cd \"C:\\Users\\foste\\Documents\\projects\\local_sovereign_agent\" && cat >> watch/inbox/burn_wave_20260926/QUEUE.md << 'EOF'\n- [ ] B2-475 Real Verkle build (operator callout: half-assed hybrid): replace the hybrid hash-chain with a real vector commitment over the full biography chain: actual Verkle proofs (ipa_utils or rust verkle port via subprocess), per-row openings, delete/insert proofs, tip = root of the commitment; migrate the 9,873-row chain, prove opening verification on 100 random rows, benchmark proof+verify time vs the hybrid; falsifier: a tampered row produces a failed opening where the hybrid would need a full chain scan; pointers mag/verkle_knot.py + memory/biography/verkle_
+
+line 22482 raw (first 900): {"schema_version": "trajectory_step.v1", "step_hash": "cbce4df1fb743bc5", "ts": "2026-09-26T22:49:30.177+00:00", "session_id": "sess_fd5ec147-a47d-41ee-91f4-afd899b524ca", "face": "bash", "command": "cd \"C:\\Users\\foste\\Documents\\projects\\local_sovereign_agent\" && .venv/Scripts/python.exe -c \"\nimport json, re\nq = 'watch/inbox/burn_wave_20260926/QUEUE.md'\nt = open(q, encoding='utf-8').read()\nids = ['B2-217', 'B2-202', 'B2-239', 'B2-241', 'B2-127', 'B2-139', 'B2-142', 'B2-179', 'B2-151', 'B2-181', 'B2-154', 'B2-155']\nflipped = 0\nfor i in ids:\n    before = t\n    t = re.sub(r'- \\[ \\] ' + i + r' ', '- [x] ' + i + ' ', t, count=1)\n    if t != before: flipped += 1\nopen(q, 'w', encoding='utf-8').write(t)\np = 'memory/burns/BURN_WAVE_STATE.json'\ns = json.load(open(p))\ns['dispensed'] += [i for i in ids if i not in s['dispensed']]\njson.dump(s, open(p, 'w'), indent=1)\nprint('f
+
+line 22492 raw (first 900): {"schema_version": "trajectory_step.v1", "step_hash": "85626190d457d0bb", "ts": "2026-09-26T22:59:46.519+00:00", "session_id": "sess_fd5ec147-a47d-41ee-91f4-afd899b524ca", "face": "bash", "command": "cd \"C:\\Users\\foste\\Documents\\projects\\local_sovereign_agent\" && .venv/Scripts/python.exe -c \"\nimport json\np = 'memory/burns/BURN_WAVE_STATE.json'\ns = json.load(open(p))\ndead = ['B2-239', 'B2-139', 'B2-155', 'B2-181']\ns['holds'].append({'ts': '2026-09-27T06:55:00Z', 'lane': 'width-24 experiment', 'reason': '4x 1302 deaths in one cycle (B2-239, B2-139, B2-155, B2-181): width-24 surfaces the wall when window runs deep. Holding dispatch, swarm lanes continue. Envelope data recorded.'})\njson.dump(s, open(p, 'w'), indent=1)\nq = 'watch/inbox/burn_wave_20260926/QUEUE.md'\nt = open(q, encoding='utf-8').read()\nfor i in dead:\n    t = t.replace('- [x] ' + i + ' ', '- [ ] ' + i + ' ', 1)
+
+line 22493 raw (first 900): {"schema_version": "trajectory_step.v1", "step_hash": "d7e3bfd49685c161", "ts": "2026-09-26T23:00:09.286+00:00", "session_id": "sess_fd5ec147-a47d-41ee-91f4-afd899b524ca", "face": "bash", "command": "cd \"C:\\Users\\foste\\Documents\\projects\\local_sovereign_agent\" && .venv/Scripts/python.exe -c \"\nimport json\np = 'memory/burns/BURN_WAVE_STATE.json'\ns = json.load(open(p))\ns['holds'].append({'ts': '2026-09-27T06:58:00Z', 'lane': 'B2-217', 'reason': 'fifth 1302 death; width-24 experiment verdict confirmed: surfaced wall is real at this depth, hold until window resets'})\njson.dump(s, open(p, 'w'), indent=1)\nq = 'watch/inbox/burn_wave_20260926/QUEUE.md'\nt = open(q, encoding='utf-8').read()\nt = t.replace('- [x] B2-217 ', '- [ ] B2-217 ', 1)\nopen(q, 'w', encoding='utf-8').write(t)\ns['dispensed'] = [d for d in s['dispensed'] if d != 'B2-217']\njson.dump(s, open(p, 'w'), indent=1)\np
+
+line 22496 raw (first 900): {"schema_version": "trajectory_step.v1", "step_hash": "f94f26e96137b948", "ts": "2026-09-26T23:02:31.104+00:00", "session_id": "sess_fd5ec147-a47d-41ee-91f4-afd899b524ca", "face": "bash", "command": "cd \"C:\\Users\\foste\\Documents\\projects\\local_sovereign_agent\" && .venv/Scripts/python.exe -c \"\nimport json\np = 'memory/burns/BURN_WAVE_STATE.json'\ns = json.load(open(p))\ndead = ['B2-151', 'B2-475', 'B2-202']\ns['holds'].append({'ts': '2026-09-27T07:02:00Z', 'lane': 'B2-151/B2-475/B2-202', 'reason': '3x 1302 deaths in one minute: window spent, all dispatch held until next window opens (5h cycle). Width-24 experiment data complete: 8 surfaced deaths, ceiling confirmed dynamic.'})\ns['dispensed'] = [d for d in s['dispensed'] if d not in dead]\njson.dump(s, open(p, 'w'), indent=1)\nq = 'watch/inbox/burn_wave_20260926/QUEUE.md'\nt = open(q, encoding='utf-8').read()\nfor i in dead:\n   
+
+line 22559 raw (first 900): {"schema_version": "trajectory_step.v1", "step_hash": "ecb9472be24117f3", "ts": "2026-09-26T23:47:10.356+00:00", "session_id": "sess_fd5ec147-a47d-41ee-91f4-afd899b524ca", "face": "bash", "command": "cd \"C:\\Users\\foste\\Documents\\projects\\local_sovereign_agent\" && .venv/Scripts/python.exe -c \"\nimport json, glob, os, re\np = 'memory/burns/BURN_WAVE_STATE.json'\ns = json.load(open(p))\nfiles = [os.path.basename(f) for f in glob.glob('watch/inbox/burn_wave_20260926/B2_*.md')]\ns['landed'] = sorted(set(i for i in s['dispensed'] if any(f.startswith(i.replace('-','_') + '_') for f in files)))\njson.dump(s, open(p, 'w'), indent=1)\nout = len(s['dispensed']) - len(s['landed'])\nprint('dispensed', len(s['dispensed']), 'landed', len(s['landed']), 'outstanding', out, 'need', max(0, 24 - out))\nfor l in [l.rstrip() for l in open('watch/inbox/burn_wave_20260926/QUEUE.md', encoding='utf-8') if
+
+line 22592 raw (first 900): {"schema_version": "trajectory_step.v1", "step_hash": "90c60d1312a5fb35", "ts": "2026-09-26T23:56:37.205+00:00", "session_id": "sess_fd5ec147-a47d-41ee-91f4-afd899b524ca", "face": "bash", "command": "cd \"C:\\Users\\foste\\Documents\\projects\\local_sovereign_agent\" && .venv/Scripts/python.exe -c \"\nimport json\np = 'memory/burns/BURN_WAVE_STATE.json'\ns = json.load(open(p))\n# Mark first 15 as dispensed\nlines = [l.rstrip() for l in open('watch/inbox/burn_wave_20260926/QUEUE.md', encoding='utf-8') if l.startswith('- [ ] B2-')]\nids = [l.split(' ')[1] for l in lines[:15]]\ntexts = {l.split(' ')[1]: l for l in lines[:15]}\ns['dispensed'] += [i for i in ids if i not in s['dispensed']]\njson.dump(s, open(p, 'w'), indent=1)\nfor i in ids: print(i, '|', texts.get(i, '?')[:180])\n\" && .venv/Scripts/python.exe -c \"\nimport re\nq = 'watch/inbox/burn_wave_20260926/QUEUE.md'\nt = open(q, encod
+
+total lines in steps.jsonl: 24981
+
+-- all hold-append commands (envelope ts vs authored stamp) --
+count: 11
+append line 22238 envelope_first_ts=2026-09-26T14:04:53.308+00:00 stamped=?
+   cmd excerpt: {"schema_version": "trajectory_step.v1", "step_hash": "9385cd06f1d4a02c", "ts": "2026-09-26T14:04:53.308+00:00", "session_id": "sess_fd5ec147-a47d-41ee-91f4-afd899b524ca", "face": "bash", "command": "cd \"C:\\Users\\foste\\Documents\\projects\\local_sovereign_agent\" && .venv/Scripts/python.exe -c \"\nimport json, re, time, datetime\np = 
+append line 22328 envelope_first_ts=2026-09-26T17:06:17.871+00:00 stamped=2026-09-26T17:06:00Z
+   cmd excerpt: {"schema_version": "trajectory_step.v1", "step_hash": "856d4edfab3696f1", "ts": "2026-09-26T17:06:17.871+00:00", "session_id": "sess_fd5ec147-a47d-41ee-91f4-afd899b524ca", "face": "bash", "command": "cd \"C:\\Users\\foste\\Documents\\projects\\local_sovereign_agent\" && .venv/Scripts/python.exe -c \"\nimport json\np = 'memory/burns/BURN_W
+append line 22331 envelope_first_ts=2026-09-26T17:08:08.003+00:00 stamped=2026-09-26T17:08:00Z
+   cmd excerpt: {"schema_version": "trajectory_step.v1", "step_hash": "73c06f4b15eb4f57", "ts": "2026-09-26T17:08:08.003+00:00", "session_id": "sess_fd5ec147-a47d-41ee-91f4-afd899b524ca", "face": "bash", "command": "cd \"C:\\Users\\foste\\Documents\\projects\\local_sovereign_agent\" && .venv/Scripts/python.exe -c \"\nimport json\np = 'memory/burns/BURN_W
+append line 22395 envelope_first_ts=2026-09-26T19:40:24.784+00:00 stamped=2026-09-26T21:45:00Z
+   cmd excerpt: {"schema_version": "trajectory_step.v1", "step_hash": "1c15616686203f02", "ts": "2026-09-26T19:40:24.784+00:00", "session_id": "sess_fd5ec147-a47d-41ee-91f4-afd899b524ca", "face": "bash", "command": "cd \"C:\\Users\\foste\\Documents\\projects\\local_sovereign_agent\" && .venv/Scripts/python.exe -c \"\nimport json\np = 'memory/burns/BURN_W
+append line 22396 envelope_first_ts=2026-09-26T19:41:49.487+00:00 stamped=2026-09-26T22:15:00Z
+   cmd excerpt: {"schema_version": "trajectory_step.v1", "step_hash": "6f720036a7201b91", "ts": "2026-09-26T19:41:49.487+00:00", "session_id": "sess_fd5ec147-a47d-41ee-91f4-afd899b524ca", "face": "bash", "command": "cd \"C:\\Users\\foste\\Documents\\projects\\local_sovereign_agent\" && .venv/Scripts/python.exe -c \"\nimport json, re\np = 'memory/burns/BU
+append line 22398 envelope_first_ts=2026-09-26T19:47:51.855+00:00 stamped=2026-09-26T22:20:00Z
+   cmd excerpt: {"schema_version": "trajectory_step.v1", "step_hash": "cd03afe744eed28c", "ts": "2026-09-26T19:47:51.855+00:00", "session_id": "sess_fd5ec147-a47d-41ee-91f4-afd899b524ca", "face": "bash", "command": "cd \"C:\\Users\\foste\\Documents\\projects\\local_sovereign_agent\" && .venv/Scripts/python.exe -c \"\nimport json, re\np = 'memory/burns/BU
+append line 22405 envelope_first_ts=2026-09-26T20:07:37.049+00:00 stamped=2026-09-26T23:00:00Z
+   cmd excerpt: {"schema_version": "trajectory_step.v1", "step_hash": "38568bc012684b30", "ts": "2026-09-26T20:07:37.049+00:00", "session_id": "sess_fd5ec147-a47d-41ee-91f4-afd899b524ca", "face": "bash", "command": "cd \"C:\\Users\\foste\\Documents\\projects\\local_sovereign_agent\" && .venv/Scripts/python.exe -c \"\nimport json\np = 'memory/burns/BURN_W
+append line 22492 envelope_first_ts=2026-09-26T22:59:46.519+00:00 stamped=2026-09-27T06:55:00Z
+   cmd excerpt: {"schema_version": "trajectory_step.v1", "step_hash": "85626190d457d0bb", "ts": "2026-09-26T22:59:46.519+00:00", "session_id": "sess_fd5ec147-a47d-41ee-91f4-afd899b524ca", "face": "bash", "command": "cd \"C:\\Users\\foste\\Documents\\projects\\local_sovereign_agent\" && .venv/Scripts/python.exe -c \"\nimport json\np = 'memory/burns/BURN_W
+append line 22493 envelope_first_ts=2026-09-26T23:00:09.286+00:00 stamped=2026-09-27T06:58:00Z
+   cmd excerpt: {"schema_version": "trajectory_step.v1", "step_hash": "d7e3bfd49685c161", "ts": "2026-09-26T23:00:09.286+00:00", "session_id": "sess_fd5ec147-a47d-41ee-91f4-afd899b524ca", "face": "bash", "command": "cd \"C:\\Users\\foste\\Documents\\projects\\local_sovereign_agent\" && .venv/Scripts/python.exe -c \"\nimport json\np = 'memory/burns/BURN_W
+append line 22496 envelope_first_ts=2026-09-26T23:02:31.104+00:00 stamped=2026-09-27T07:02:00Z
+   cmd excerpt: {"schema_version": "trajectory_step.v1", "step_hash": "f94f26e96137b948", "ts": "2026-09-26T23:02:31.104+00:00", "session_id": "sess_fd5ec147-a47d-41ee-91f4-afd899b524ca", "face": "bash", "command": "cd \"C:\\Users\\foste\\Documents\\projects\\local_sovereign_agent\" && .venv/Scripts/python.exe -c \"\nimport json\np = 'memory/burns/BURN_W
+append line 23456 envelope_first_ts=2026-09-27T01:35:46.566+00:00 stamped=?
+   cmd excerpt: {"schema_version": "trajectory_step.v1", "step_hash": "07c3a12652925a30", "ts": "2026-09-27T01:35:46.566+00:00", "session_id": "sess_dwf-dwfrun-fde62465-e7ed-4f5a-a1e7-701110f98174-actor_1_12", "face": "bash", "command": "cd /c/Users/foste/Documents/projects/local_sovereign_agent && ./.venv/Scripts/python.exe - <<'EOF'\nimport json, re\np
+
+-- B2-104 hits on 2026-09-26 (cap 12, total 6) --
+line 22363: {"schema_version": "trajectory_step.v1", "step_hash": "1d32fa428a5471ea", "ts": "2026-09-26T18:39:36.382+00:00", "session_id": "sess_fd5ec147-a47d-41ee-91f4-afd899b524ca", "face": "bash", "command": "cd \"C:\\Users\\foste\\Documents\\projects\\local_sovereign_
+line 22364: {"schema_version": "trajectory_step.v1", "step_hash": "4206539aeafbf4c3", "ts": "2026-09-26T18:39:46.064+00:00", "session_id": "sess_fd5ec147-a47d-41ee-91f4-afd899b524ca", "face": "bash", "command": "cd \"C:\\Users\\foste\\Documents\\projects\\local_sovereign_
+line 22365: {"schema_version": "trajectory_step.v1", "step_hash": "7ea84362859fd6db", "ts": "2026-09-26T18:40:20.170+00:00", "session_id": "sess_fd5ec147-a47d-41ee-91f4-afd899b524ca", "face": "bash", "command": "cd \"C:\\Users\\foste\\Documents\\projects\\local_sovereign_
+line 22395: {"schema_version": "trajectory_step.v1", "step_hash": "1c15616686203f02", "ts": "2026-09-26T19:40:24.784+00:00", "session_id": "sess_fd5ec147-a47d-41ee-91f4-afd899b524ca", "face": "bash", "command": "cd \"C:\\Users\\foste\\Documents\\projects\\local_sovereign_
+line 22455: {"schema_version": "trajectory_step.v1", "step_hash": "be3c930ad3fcf8a9", "ts": "2026-09-26T22:26:18.546+00:00", "session_id": "sess_fd5ec147-a47d-41ee-91f4-afd899b524ca", "face": "bash", "command": "cd \"C:\\Users\\foste\\Documents\\projects\\local_sovereign_
+line 23144: {"schema_version": "trajectory_step.v1", "step_hash": "53cb11c840626cac", "ts": "2026-09-27T01:03:50.648+00:00", "session_id": "sess_dwf-dwfrun-fde62465-e7ed-4f5a-a1e7-701110f98174-actor_1_12", "face": "bash", "command": "cd /c/Users/foste/Documents/projects/l
+
+-- B2-155 hits on 2026-09-26 (cap 12, total 6) --
+line 22482: {"schema_version": "trajectory_step.v1", "step_hash": "cbce4df1fb743bc5", "ts": "2026-09-26T22:49:30.177+00:00", "session_id": "sess_fd5ec147-a47d-41ee-91f4-afd899b524ca", "face": "bash", "command": "cd \"C:\\Users\\foste\\Documents\\projects\\local_sovereign_
+line 22492: {"schema_version": "trajectory_step.v1", "step_hash": "85626190d457d0bb", "ts": "2026-09-26T22:59:46.519+00:00", "session_id": "sess_fd5ec147-a47d-41ee-91f4-afd899b524ca", "face": "bash", "command": "cd \"C:\\Users\\foste\\Documents\\projects\\local_sovereign_
+line 22559: {"schema_version": "trajectory_step.v1", "step_hash": "ecb9472be24117f3", "ts": "2026-09-26T23:47:10.356+00:00", "session_id": "sess_fd5ec147-a47d-41ee-91f4-afd899b524ca", "face": "bash", "command": "cd \"C:\\Users\\foste\\Documents\\projects\\local_sovereign_
+line 22590: {"schema_version": "trajectory_step.v1", "step_hash": "dff68ee157f41d9b", "ts": "2026-09-26T23:56:14.325+00:00", "session_id": "sess_fd5ec147-a47d-41ee-91f4-afd899b524ca", "face": "bash", "command": "cd \"C:\\Users\\foste\\Documents\\projects\\local_sovereign_
+line 22592: {"schema_version": "trajectory_step.v1", "step_hash": "90c60d1312a5fb35", "ts": "2026-09-26T23:56:37.205+00:00", "session_id": "sess_fd5ec147-a47d-41ee-91f4-afd899b524ca", "face": "bash", "command": "cd \"C:\\Users\\foste\\Documents\\projects\\local_sovereign_
+line 23144: {"schema_version": "trajectory_step.v1", "step_hash": "53cb11c840626cac", "ts": "2026-09-27T01:03:50.648+00:00", "session_id": "sess_dwf-dwfrun-fde62465-e7ed-4f5a-a1e7-701110f98174-actor_1_12", "face": "bash", "command": "cd /c/Users/foste/Documents/projects/l
+
+-- B2-475 hits on 2026-09-26 (cap 12, total 5) --
+line 22388: {"schema_version": "trajectory_step.v1", "step_hash": "420153afbe56e513", "ts": "2026-09-26T19:28:33.478+00:00", "session_id": "sess_fd5ec147-a47d-41ee-91f4-afd899b524ca", "face": "bash", "command": "cd \"C:\\Users\\foste\\Documents\\projects\\local_sovereign_
+line 22468: {"schema_version": "trajectory_step.v1", "step_hash": "a9b5ae88abc1c2b0", "ts": "2026-09-26T22:36:24.006+00:00", "session_id": "sess_fd5ec147-a47d-41ee-91f4-afd899b524ca", "face": "bash", "command": "cd \"C:\\Users\\foste\\Documents\\projects\\local_sovereign_
+line 22496: {"schema_version": "trajectory_step.v1", "step_hash": "f94f26e96137b948", "ts": "2026-09-26T23:02:31.104+00:00", "session_id": "sess_fd5ec147-a47d-41ee-91f4-afd899b524ca", "face": "bash", "command": "cd \"C:\\Users\\foste\\Documents\\projects\\local_sovereign_
+line 23144: {"schema_version": "trajectory_step.v1", "step_hash": "53cb11c840626cac", "ts": "2026-09-27T01:03:50.648+00:00", "session_id": "sess_dwf-dwfrun-fde62465-e7ed-4f5a-a1e7-701110f98174-actor_1_12", "face": "bash", "command": "cd /c/Users/foste/Documents/projects/l
+line 23371: {"schema_version": "trajectory_step.v1", "step_hash": "9758a50eefb8800a", "ts": "2026-09-27T01:29:01.893+00:00", "session_id": "sess_dwf-dwfrun-fde62465-e7ed-4f5a-a1e7-701110f98174-actor_1_12", "face": "bash", "command": "cd /c/Users/foste/Documents/projects/l
+
+-- width (case-insensitive) hits on 2026-09-26 (cap 25, total 39) --
+line 20598: {"schema_version": "trajectory_step.v1", "step_hash": "6c9de97d5a7a0920", "ts": "2026-09-26T00:10:55.569+00:00", "session_id": "sess_dwf-dwfrun-a07b67ac-f3d2-42f4-86e1-6cf7b7d33372-actor_1_7", "face": "bash", "command": "cd \"C:/Users/foste/Documents/projects/
+line 20651: {"schema_version": "trajectory_step.v1", "step_hash": "d6d6fc38c44abab1", "ts": "2026-09-26T00:13:02.684+00:00", "session_id": "sess_dwf-dwfrun-a07b67ac-f3d2-42f4-86e1-6cf7b7d33372-actor_1_4", "face": "bash", "command": "\"C:\\Users\\foste\\Documents\\projects
+line 20724: {"schema_version": "trajectory_step.v1", "step_hash": "433d917771fd9ac0", "ts": "2026-09-26T00:17:30.311+00:00", "session_id": "sess_dwf-dwfrun-a07b67ac-f3d2-42f4-86e1-6cf7b7d33372-actor_1_7", "face": "bash", "command": "cd \"C:/Users/foste/Documents/projects/
+line 20732: {"schema_version": "trajectory_step.v1", "step_hash": "17a4a9302c94d2a3", "ts": "2026-09-26T00:18:00.843+00:00", "session_id": "sess_dwf-dwfrun-a07b67ac-f3d2-42f4-86e1-6cf7b7d33372-actor_1_7", "face": "bash", "command": "cd \"C:/Users/foste/Documents/projects/
+line 20742: {"schema_version": "trajectory_step.v1", "step_hash": "c4f34fb2d2456f6a", "ts": "2026-09-26T00:18:29.100+00:00", "session_id": "sess_dwf-dwfrun-a07b67ac-f3d2-42f4-86e1-6cf7b7d33372-actor_1_7", "face": "bash", "command": "cd \"C:/Users/foste/Documents/projects/
+line 20956: {"schema_version": "trajectory_step.v1", "step_hash": "172fe3ccebe99703", "ts": "2026-09-26T00:28:48.362+00:00", "session_id": "sess_dwf-dwfrun-a07b67ac-f3d2-42f4-86e1-6cf7b7d33372-actor_1_15", "face": "bash", "command": "grep -n \"VERDICT\" \"C:/Users/foste/D
+line 21227: {"schema_version": "trajectory_step.v1", "step_hash": "49b4148774a1be8e", "ts": "2026-09-26T00:42:24.048+00:00", "session_id": "sess_dwf-dwfrun-a07b67ac-f3d2-42f4-86e1-6cf7b7d33372-actor_1_19", "face": "bash", "command": "cd \"C:/Users/foste/Documents/projects
+line 21272: {"schema_version": "trajectory_step.v1", "step_hash": "8381f7355ec39789", "ts": "2026-09-26T00:45:35.770+00:00", "session_id": "sess_dwf-dwfrun-a07b67ac-f3d2-42f4-86e1-6cf7b7d33372-actor_1_23", "face": "bash", "command": "curl -s --max-time 90 -A \"Mozilla/5.0
+line 21324: {"schema_version": "trajectory_step.v1", "step_hash": "5d3cb3b2d3d9a670", "ts": "2026-09-26T00:53:03.225+00:00", "session_id": "sess_dwf-dwfrun-217c37f5-a622-4de7-864e-abff632300f6-actor_4_1", "face": "bash", "command": "grep -n \"FOLD_SECTIONS\\|fired\\|lande
+line 21350: {"schema_version": "trajectory_step.v1", "step_hash": "220934aad2469231", "ts": "2026-09-26T00:54:49.259+00:00", "session_id": "sess_dwf-dwfrun-a07b67ac-f3d2-42f4-86e1-6cf7b7d33372-actor_1_22", "face": "bash", "command": "cat \"$USERPROFILE/.grok/config.toml\"
+line 21356: {"schema_version": "trajectory_step.v1", "step_hash": "112b96758c21ee2e", "ts": "2026-09-26T00:55:04.678+00:00", "session_id": "sess_dwf-dwfrun-a07b67ac-f3d2-42f4-86e1-6cf7b7d33372-actor_1_19", "face": "bash", "command": "cd \"C:/Users/foste/Documents/projects
+line 21460: {"schema_version": "trajectory_step.v1", "step_hash": "d2d644a8a5d5ce50", "ts": "2026-09-26T01:05:36.176+00:00", "session_id": "sess_dwf-dwfrun-a07b67ac-f3d2-42f4-86e1-6cf7b7d33372-actor_1_19", "face": "bash", "command": "cd \"C:/Users/foste/Documents/projects
+line 21537: {"schema_version": "trajectory_step.v1", "step_hash": "459762816f6051e8", "ts": "2026-09-26T01:18:23.148+00:00", "session_id": "sess_dwf-dwfrun-a07b67ac-f3d2-42f4-86e1-6cf7b7d33372-actor_1_16", "face": "bash", "command": "cd \"C:/Users/foste/Documents/projects
+line 21551: {"schema_version": "trajectory_step.v1", "step_hash": "8975c01f5d7607af", "ts": "2026-09-26T01:24:03.726+00:00", "session_id": "sess_dwf-dwfrun-217c37f5-a622-4de7-864e-abff632300f6-actor_7_1", "face": "bash", "command": "date \"+%Y-%m-%dT%H:%M:%S%z\" && cd \"C
+line 21577: {"schema_version": "trajectory_step.v1", "step_hash": "63481e9d8cdf2a09", "ts": "2026-09-26T01:41:02.547+00:00", "session_id": "sess_dwf-dwfrun-217c37f5-a622-4de7-864e-abff632300f6-actor_8_1", "face": "bash", "command": "grep -n \"TARGETS\" \"C:/Users/foste/Do
+line 21649: {"schema_version": "trajectory_step.v1", "step_hash": "2328d03ae61f479e", "ts": "2026-09-26T02:47:34.798+00:00", "session_id": "sess_dwf-dwfrun-a07b67ac-f3d2-42f4-86e1-6cf7b7d33372-actor_3_1", "face": "bash", "command": "cd \"C:/Users/foste/Documents/projects/
+line 21668: {"schema_version": "trajectory_step.v1", "step_hash": "1cfa5801cb321cb1", "ts": "2026-09-26T02:58:02.961+00:00", "session_id": "sess_50a14bdd-de05-48d3-bfb7-bbe95170286a", "face": "bash", "command": "grep -n -i \"maxAttempts\\|main session\\|agent tool\\|Task\
+line 22008: {"schema_version": "trajectory_step.v1", "step_hash": "26a4ef9b74cc38fb", "ts": "2026-09-26T04:15:16.444+00:00", "session_id": "sess_50a14bdd-de05-48d3-bfb7-bbe95170286a", "face": "bash", "command": "echo \"=== W1 (5 lanes + b2 ss_validate supplement) ===\"; b
+line 22019: {"schema_version": "trajectory_step.v1", "step_hash": "1b554af85db8a917", "ts": "2026-09-26T04:20:26.436+00:00", "session_id": "sess_50a14bdd-de05-48d3-bfb7-bbe95170286a", "face": "bash", "command": "./.venv/Scripts/python.exe - <<'EOF'\nimport json, datetime\
+line 22021: {"schema_version": "trajectory_step.v1", "step_hash": "d9327b66218f5f2b", "ts": "2026-09-26T04:20:49.283+00:00", "session_id": "sess_50a14bdd-de05-48d3-bfb7-bbe95170286a", "face": "bash", "command": "./.venv/Scripts/python.exe -m mag.state_snapshot capture --k
+line 22022: {"schema_version": "trajectory_step.v1", "step_hash": "bf2f56ee8b9c38dd", "ts": "2026-09-26T04:20:58.378+00:00", "session_id": "sess_50a14bdd-de05-48d3-bfb7-bbe95170286a", "face": "bash", "command": "./.venv/Scripts/python.exe -m mag.state_snapshot capture --k
+line 22105: {"schema_version": "trajectory_step.v1", "step_hash": "deed2e894d196794", "ts": "2026-09-26T10:54:39.185+00:00", "session_id": "sess_50a14bdd-de05-48d3-bfb7-bbe95170286a", "face": "bash", "command": "./.venv/Scripts/python.exe - <<'EOF'\nimport json, datetime\
+line 22201: {"schema_version": "trajectory_step.v1", "step_hash": "5e6955b3665b3b81", "ts": "2026-09-26T12:52:53.778+00:00", "session_id": "sess_fd5ec147-a47d-41ee-91f4-afd899b524ca", "face": "bash", "command": "cd \"C:\\Users\\foste\\Documents\\projects\\local_sovereign_
+line 22360: {"schema_version": "trajectory_step.v1", "step_hash": "44333182581decb5", "ts": "2026-09-26T18:29:44.282+00:00", "session_id": "sess_fd5ec147-a47d-41ee-91f4-afd899b524ca", "face": "bash", "command": "cd \"C:\\Users\\foste\\Documents\\projects\\local_sovereign_
+line 22388: {"schema_version": "trajectory_step.v1", "step_hash": "420153afbe56e513", "ts": "2026-09-26T19:28:33.478+00:00", "session_id": "sess_fd5ec147-a47d-41ee-91f4-afd899b524ca", "face": "bash", "command": "cd \"C:\\Users\\foste\\Documents\\projects\\local_sovereign_
+
+=== S4 GREPS (scoped: corpus/ 6.9GB and bulk of memory/ skipped, scope noted per grep) ===
+-- BURN_WAVE_STATE refs, roots: mag tools scripts githooks configs docs watch queue tests memory(minus trajectory) + AGENTS.md LOAD.md main.py --
+(FILECAP HIT at 20000 files, scan incomplete) -2
+memory\decisions_log.jsonl (too big, skipped) -1
+tools\llamacpp\ggml-vulkan.dll (too big, skipped) -1
+tools\llamacpp\llama-vulkan.zip (too big, skipped) -1
+watch\ESTATE_INDEX\ESTATE_INDEX.jsonl (too big, skipped) -1
+watch\bay\logs\E.1.log (too big, skipped) -1
+watch\bay\logs\Z.1.log (too big, skipped) -1
+watch\engine_e1.log (too big, skipped) -1
+watch\inbox\ESSENTIALS_PACK_20260926.tar.gz.enc (too big, skipped) -1
+watch\inbox\RACTOR_PANEL_20260926.md 4
+watch\inbox\burn_wave_20260926\B2_130_session_inputs_raw.txt 44
+watch\inbox\burn_wave_20260926\B2_27_scout_checkgate_20260926.md 1
+watch\inbox\burn_wave_20260926\B2_476_envelope_contract_20260926.md 1
+watch\inbox\gala_20260925\AFTERPARTY_CLOSE_20260926.md 1
+watch\inbox\mrpool_export\media_full\msg_1074.mp4 (too big, skipped) -1
+watch\inbox\mrpool_export\media_full\msg_1168.mp4 (too big, skipped) -1
+watch\inbox\mrpool_export\media_full\msg_1418.mp4 (too big, skipped) -1
+watch\inbox\mrpool_export\media_full\msg_1527.mp4 (too big, skipped) -1
+watch\inbox\mrpool_export\media_full\msg_1537.mp4 (too big, skipped) -1
+watch\inbox\mrpool_export\media_full\msg_1542.mp4 (too big, skipped) -1
+watch\inbox\mrpool_export\media_full\msg_1638.mp4 (too big, skipped) -1
+watch\inbox\mrpool_export\media_full\msg_1740.mp4 (too big, skipped) -1
+watch\inbox\mrpool_export\media_full\msg_1869.mp4 (too big, skipped) -1
+watch\inbox\mrpool_export\media_full\msg_1879.mp4 (too big, skipped) -1
+watch\inbox\mrpool_export\media_full\msg_1884.mp4 (too big, skipped) -1
+watch\inbox\mrpool_export\media_full\msg_1900.mp4 (too big, skipped) -1
+watch\inbox\mrpool_export\media_full\msg_1919.mp4 (too big, skipped) -1
+watch\inbox\mrpool_export\media_full\msg_1920.mp4 (too big, skipped) -1
+watch\inbox\mrpool_export\media_full\msg_1929.mp4 (too big, skipped) -1
+watch\inbox\mrpool_export\media_full\msg_1943.mp4 (too big, skipped) -1
+watch\inbox\mrpool_export\media_full\msg_2170.mp4 (too big, skipped) -1
+watch\inbox\mrpool_export\media_full\msg_2683.mp4 (too big, skipped) -1
+watch\inbox\mrpool_export\media_full\msg_3883.mp4 (too big, skipped) -1
+watch\inbox\mrpool_export\media_full\msg_4527.mp4 (too big, skipped) -1
+watch\inbox\mrpool_export\media_full\msg_4569.mp4 (too big, skipped) -1
+watch\inbox\mrpool_export\media_full\msg_4606.mp4 (too big, skipped) -1
+watch\inbox\mrpool_export\media_full\msg_4611.mp4 (too big, skipped) -1
+watch\inbox\mrpool_export\media_full\msg_4614.mp4 (too big, skipped) -1
+watch\inbox\mrpool_export\media_full\msg_602.mp4 (too big, skipped) -1
+watch\inbox\ractor_panel_20260926\cands\burnaudit-one.md 5
+watch\inbox\ractor_panel_20260926\cands\burnaudit-two.md 6
+watch\inbox\ractor_panel_20260926\checks\burnaudit.judge.txt 9
+watch\inbox\ractor_panel_20260926\checks\burnaudit_judge.py 6
+watch\inbox\ractor_panel_20260926\checks\uf122.judge.txt 1
+watch\overnight_churn.log (too big, skipped) -1
+
+-- width-24 / width 24 / 24-wide, roots: watch queue logs docs memory/burns AGENTS.md --
+watch :: watch\ESTATE_INDEX\ESTATE_INDEX.jsonl (too big, skipped) -1
+watch :: watch\GROUNDING_WAVE.jsonl 2
+watch :: watch\GROUNDING_WAVE.md 2
+watch :: watch\bay\logs\E.1.log (too big, skipped) -1
+watch :: watch\bay\logs\Z.1.log (too big, skipped) -1
+watch :: watch\engine_e1.log (too big, skipped) -1
+watch :: watch\inbox\ESSENTIALS_PACK_20260926.tar.gz.enc (too big, skipped) -1
+watch :: watch\inbox\FLEET_IMPRINT_20260917.md 2
+watch :: watch\inbox\GALA_20260925.md 1
+watch :: watch\inbox\LINKS.jsonl 1
+watch :: watch\inbox\RACTOR_PANEL_20260926.md 1
+watch :: watch\inbox\mrpool_export\media_full\msg_1074.mp4 (too big, skipped) -1
+watch :: watch\inbox\mrpool_export\media_full\msg_1168.mp4 (too big, skipped) -1
+watch :: watch\inbox\mrpool_export\media_full\msg_1418.mp4 (too big, skipped) -1
+watch :: watch\inbox\mrpool_export\media_full\msg_1527.mp4 (too big, skipped) -1
+watch :: watch\inbox\mrpool_export\media_full\msg_1537.mp4 (too big, skipped) -1
+watch :: watch\inbox\mrpool_export\media_full\msg_1542.mp4 (too big, skipped) -1
+watch :: watch\inbox\mrpool_export\media_full\msg_1638.mp4 (too big, skipped) -1
+watch :: watch\inbox\mrpool_export\media_full\msg_1740.mp4 (too big, skipped) -1
+watch :: watch\inbox\mrpool_export\media_full\msg_1869.mp4 (too big, skipped) -1
+watch :: watch\inbox\mrpool_export\media_full\msg_1879.mp4 (too big, skipped) -1
+watch :: watch\inbox\mrpool_export\media_full\msg_1884.mp4 (too big, skipped) -1
+watch :: watch\inbox\mrpool_export\media_full\msg_1900.mp4 (too big, skipped) -1
+watch :: watch\inbox\mrpool_export\media_full\msg_1919.mp4 (too big, skipped) -1
+watch :: watch\inbox\mrpool_export\media_full\msg_1920.mp4 (too big, skipped) -1
+watch :: watch\inbox\mrpool_export\media_full\msg_1929.mp4 (too big, skipped) -1
+watch :: watch\inbox\mrpool_export\media_full\msg_1943.mp4 (too big, skipped) -1
+watch :: watch\inbox\mrpool_export\media_full\msg_2170.mp4 (too big, skipped) -1
+watch :: watch\inbox\mrpool_export\media_full\msg_2683.mp4 (too big, skipped) -1
+watch :: watch\inbox\mrpool_export\media_full\msg_3883.mp4 (too big, skipped) -1
+watch :: watch\inbox\mrpool_export\media_full\msg_4527.mp4 (too big, skipped) -1
+watch :: watch\inbox\mrpool_export\media_full\msg_4569.mp4 (too big, skipped) -1
+watch :: watch\inbox\mrpool_export\media_full\msg_4606.mp4 (too big, skipped) -1
+watch :: watch\inbox\mrpool_export\media_full\msg_4611.mp4 (too big, skipped) -1
+watch :: watch\inbox\mrpool_export\media_full\msg_4614.mp4 (too big, skipped) -1
+watch :: watch\inbox\mrpool_export\media_full\msg_602.mp4 (too big, skipped) -1
+watch :: watch\inbox\ractor_panel_20260926\cands\burnaudit-one.md 10
+watch :: watch\inbox\ractor_panel_20260926\cands\burnaudit-two.md 6
+watch :: watch\inbox\ractor_panel_20260926\checks\burnaudit.judge.txt 12
+watch :: watch\inbox\ractor_panel_20260926\checks\burnaudit_judge.py 12
+watch :: watch\overnight_churn.log (too big, skipped) -1
+logs :: logs\api_gateway_sv.log (too big, skipped) -1
+logs :: logs\backend_sv.log (too big, skipped) -1
+logs :: logs\behavioral_events.jsonl (too big, skipped) -1
+logs :: logs\dashboard_sv.err.log (too big, skipped) -1
+logs :: logs\dashboard_sv.log (too big, skipped) -1
+logs :: logs\failure_kb.jsonl (too big, skipped) -1
+logs :: logs\ghost_sv.log (too big, skipped) -1
+logs :: logs\kpi.jsonl (too big, skipped) -1
+logs :: logs\usage.jsonl (too big, skipped) -1
+docs :: docs\ref\LING_API_REFERENCE.md 1
+memory\burns :: memory\burns\BURN_WAVE_STATE.json 5
+AGENTS.md width-24/width 24/24-wide hits: 0
+AGENTS.md '50 workflow children' hits: 1
+
+-- 2026-09-27T0[2-7], roots: logs memory/burns memory/trajectory/steps.jsonl watch/inbox queue --
+logs\api_gateway_sv.log (too big, skipped) :: -1 hits | first: 
+logs\backend_sv.log (too big, skipped) :: -1 hits | first: 
+logs\behavioral_events.jsonl (too big, skipped) :: -1 hits | first: 
+logs\dashboard_sv.err.log (too big, skipped) :: -1 hits | first: 
+logs\dashboard_sv.log (too big, skipped) :: -1 hits | first: 
+logs\docker_ops.jsonl :: 4 hits | first: {"ts": "2026-09-27T02:07:16.430620Z", "event": "docker-probe", "reachable": true,
+logs\failure_kb.jsonl (too big, skipped) :: -1 hits | first: 
+logs\ghost_sv.log (too big, skipped) :: -1 hits | first: 
+logs\kpi.jsonl (too big, skipped) :: -1 hits | first: 
+logs\lane_scheduler.log :: 17 hits | first: 2026-09-27T02:05:08Z lane=research result=monitor rc=0, drops gated=0 (49
+logs\lane_scheduler_sv.log :: 17 hits | first: 2026-09-27T02:05:08Z lane=research result=monitor rc=0, drops gated=0 (49
+logs\memory_events.jsonl :: 27 hits | first: {"schema": "memory_event.v1", "ts": "2026-09-27T02:06:22.268589+00:00", "event_kind": "route.decision", "seat"
+logs\orchestrator\ta04336c5f1.out.log :: 1 hits | first: --- 2026-09-27T02:43:01.563842+00:00 spawn: /usr/local/bin/python /app/main.p
+logs\orchestrator\tbbcbd4ed07.out.log :: 1 hits | first: --- 2026-09-27T04:05:49.089926+00:00 spawn: /usr/local/bin/python /app/main.p
+logs\orchestrator\td862027be3.out.log :: 1 hits | first: --- 2026-09-27T03:01:32.477418+00:00 spawn: /usr/local/bin/python /app/main.p
+logs\orchestrator\teced692e0d.out.log :: 1 hits | first: --- 2026-09-27T03:47:05.405730+00:00 spawn: /usr/local/bin/python /app/main.p
+logs\provider_usage.jsonl :: 22 hits | first: {"ts": "2026-09-27T02:12:49.111927+00:00", "provider": "deepseek", "model": "deep
+logs\queue_events.jsonl :: 3 hits | first: {"schema": "queue_event.v1", "ts": "2026-09-27T02:30:24.054398+00:00", "event": "drain_start", "queue_id": "q
+logs\quota_state.json :: 2 hits | first:       "last_ts": "2026-09-27T03:15:53.849898+00:00"
+logs\steering_events.jsonl :: 8 hits | first: "sid-1790474789798", "status": "accepted", "ts": "2026-09-27T02:06:29.801684+00:00", "reason": "", "source_tier": ""}
+logs\supervisor.jsonl :: 71 hits | first: {"ts": "2026-09-27T02:09:26.958443+00:00", "event": "reaper-enumerate-error", "er
+logs\tesuji_shells.jsonl :: 7 hits | first: {"schema": "tesuji_shell.v1", "ts": "2026-09-27T02:08:56.674927+00:00", "what": "[pro:steer] Elevate with a de
+logs\usage.jsonl (too big, skipped) :: -1 hits | first: 
+memory\burns\BURN_WAVE_STATE.json :: 3 hits | first:    "ts": "2026-09-27T06:55:00Z",
+memory\burns\LEDGER.jsonl :: 18 hits | first: {"ts": "2026-09-27T02:00:16Z", "slug": "b2-wave-fold", "verdict": "steal", "fresh
+memory\burns\LEDGER.lock.log :: 36 hits | first: {"acquired": "2026-09-27T02:48:22Z", "event": "acquire", "host": "DESKTOP-7C70KSC", "pi
+watch\inbox\.mimosa\hook-state\sess_d42ed958-1e03-4724-98a6-b625a21eaea5.json :: 1 hits | first: edFindingEvents":0,"processing":null,"updatedAt":"2026-09-27T03:22:59.773Z"}
+watch\inbox\BURN_queue-field_20260927.md :: 1 hits | first: d or deleted. Field after stamp: 37/50 roamed (ts 2026-09-27T02:14:53Z), 13 unroamed = 8 superseded (Q-012..Q-019) + 5 open
+watch\inbox\BURN_stego-canon-pipeline_20260926_g.md :: 1 hits | first: bserved 7m26s..16h37m twin band (upper edge lands 2026-09-27T07:07:19Z). State, not verdict: no twin yet, deadline open. No
+watch\inbox\ESSENTIALS_PACK_20260926.tar.gz.enc (too big, skipped) :: -1 hits | first: 
+watch\inbox\INDEX.json :: 1 hits | first:     "derived_at": "2026-09-27T03:51:31.638Z",
+watch\inbox\LINKS.jsonl :: 4 hits | first: {"seq": 1790477027003795, "ts": "2026-09-27T02:43:47Z", "canonical": "https://suno.com/labs/milo", "url": 
+watch\inbox\RACTOR_PANEL_20260926.md :: 1 hits | first: 2026-09-27T06:55Z through 07:02Z while machine now is 2026-09-27T00:03Z
+watch\inbox\audit_20260926\WAVE2_LANE3_RIB_COMPILER.md :: 1 hits | first:   "ts": "2026-09-27T02:00:57.742865Z",
+watch\inbox\digger_ls_18\.mimosa\hook-state\sess_dwf-dwfrun-5e6f20a1-5798-4f71-9650-522fd27f3617-actor_1_18.json :: 1 hits | first: edFindingEvents":0,"processing":null,"updatedAt":"2026-09-27T03:22:59.904Z"}
+watch\inbox\index_events.jsonl :: 147 hits | first: {"seq":"1790458967636139893","ts":"2026-09-27T02:00:00.012Z","op":"register","file":"BURN_middle-path-doctri
+watch\inbox\mimo_watch.jsonl :: 2 hits | first: {"ts": "2026-09-27T02:58:01+00:00", "window_open": true, "hours_left": 42.3, "mod
+watch\inbox\mrpool_export\media_full\msg_1074.mp4 (too big, skipped) :: -1 hits | first: 
+watch\inbox\mrpool_export\media_full\msg_1168.mp4 (too big, skipped) :: -1 hits | first: 
+watch\inbox\mrpool_export\media_full\msg_1418.mp4 (too big, skipped) :: -1 hits | first: 
+watch\inbox\mrpool_export\media_full\msg_1527.mp4 (too big, skipped) :: -1 hits | first: 
+watch\inbox\mrpool_export\media_full\msg_1537.mp4 (too big, skipped) :: -1 hits | first: 
+watch\inbox\mrpool_export\media_full\msg_1542.mp4 (too big, skipped) :: -1 hits | first: 
+watch\inbox\mrpool_export\media_full\msg_1638.mp4 (too big, skipped) :: -1 hits | first: 
+watch\inbox\mrpool_export\media_full\msg_1740.mp4 (too big, skipped) :: -1 hits | first: 
+watch\inbox\mrpool_export\media_full\msg_1869.mp4 (too big, skipped) :: -1 hits | first: 
+watch\inbox\mrpool_export\media_full\msg_1879.mp4 (too big, skipped) :: -1 hits | first: 
+watch\inbox\mrpool_export\media_full\msg_1884.mp4 (too big, skipped) :: -1 hits | first: 
+watch\inbox\mrpool_export\media_full\msg_1900.mp4 (too big, skipped) :: -1 hits | first: 
+watch\inbox\mrpool_export\media_full\msg_1919.mp4 (too big, skipped) :: -1 hits | first: 
+watch\inbox\mrpool_export\media_full\msg_1920.mp4 (too big, skipped) :: -1 hits | first: 
+watch\inbox\mrpool_export\media_full\msg_1929.mp4 (too big, skipped) :: -1 hits | first: 
+watch\inbox\mrpool_export\media_full\msg_1943.mp4 (too big, skipped) :: -1 hits | first: 
+watch\inbox\mrpool_export\media_full\msg_2170.mp4 (too big, skipped) :: -1 hits | first: 
+watch\inbox\mrpool_export\media_full\msg_2683.mp4 (too big, skipped) :: -1 hits | first: 
+watch\inbox\mrpool_export\media_full\msg_3883.mp4 (too big, skipped) :: -1 hits | first: 
+watch\inbox\mrpool_export\media_full\msg_4527.mp4 (too big, skipped) :: -1 hits | first: 
+watch\inbox\mrpool_export\media_full\msg_4569.mp4 (too big, skipped) :: -1 hits | first: 
+watch\inbox\mrpool_export\media_full\msg_4606.mp4 (too big, skipped) :: -1 hits | first: 
+watch\inbox\mrpool_export\media_full\msg_4611.mp4 (too big, skipped) :: -1 hits | first: 
+watch\inbox\mrpool_export\media_full\msg_4614.mp4 (too big, skipped) :: -1 hits | first: 
+watch\inbox\mrpool_export\media_full\msg_602.mp4 (too big, skipped) :: -1 hits | first: 
+watch\inbox\ractor_panel_20260926\cands\_sim\compaction_archive\20260927T022738Z\verkle_chain.jsonl :: 18 hits | first: {"ts": "2026-09-27T02:25:22.386718Z", "filename": "2026-08-10_1341_session_mag-ag
+watch\inbox\ractor_panel_20260926\cands\_sim\compaction_archive\20260927T022738Z\verkle_tip.json :: 1 hits | first:   "updated_minute": "2026-09-27T02:13:00Z",
+watch\inbox\ractor_panel_20260926\cands\_sim\topic_evolution.json :: 11 hits | first:       "start_minute": "2026-09-27T02:23",
+watch\inbox\ractor_panel_20260926\cands\_sim\verkle_chain.jsonl :: 20 hits | first: {"ts": "2026-09-27T02:27:39.061194Z", "type": "orchestrator_noise_counter_leaf", 
+watch\inbox\ractor_panel_20260926\cands\_sim\verkle_repair_state.json :: 1 hits | first:   "marked_at": "2026-09-27T02:27:48Z",
+watch\inbox\ractor_panel_20260926\cands\_sim\verkle_tip.json :: 1 hits | first:   "updated_minute": "2026-09-27T02:13:00Z",
+watch\inbox\ractor_panel_20260926\cands\burnaudit-one.md :: 3 hits | first: (2026-09-27T06:55:00Z, 06:58:00Z, 07:02:00Z) are hand-typed fabricated rec
+watch\inbox\ractor_panel_20260926\cands\burnaudit-two.md :: 9 hits | first: | 22492 | 2026-09-26T22:59:46.519+00:00 | 2026-09-27T06:55:00Z | +7h55m14s |
+watch\inbox\ractor_panel_20260926\checks\burnaudit.judge.txt :: 52 hits | first: machine now (start): 2026-09-27T04:14:39.129231+00:00
+watch\inbox\ractor_panel_20260926\checks\verkle99.judge.txt :: 7 hits | first: run_utc: 2026-09-27T02:10:38Z
+watch\inbox\ractor_panel_20260926\revise_verkle99_checks\revise_verkle99_classsplit_out.txt :: 2 hits | first:   "utc": "2026-09-27T03:55:18.892825+00:00",
+watch\inbox\ractor_panel_20260926\verkle99.verdict.json :: 1 hits | first: idates and by the kill condition; judge ran it at 2026-09-27T02:10Z: ok true, dry true, tip root 88a68909e19c1637..., n_lea
+watch\inbox\secret_gate_results\changed_20260927T034649Z.json :: 1 hits | first:  "generated_utc": "2026-09-27T03:46:49Z",
+watch\inbox\secret_gate_results\changed_20260927T034900Z.json :: 1 hits | first:  "generated_utc": "2026-09-27T03:49:00Z",
+watch\inbox\secret_gate_results\full_20260927T034402Z.json :: 1 hits | first:  "generated_utc": "2026-09-27T03:44:02Z",
+watch\inbox\secret_gate_results\full_20260927T034428Z.json :: 1 hits | first:  "generated_utc": "2026-09-27T03:44:28Z",
+watch\inbox\secret_gate_results\full_20260927T034429Z.json :: 1 hits | first:  "generated_utc": "2026-09-27T03:44:29Z",
+watch\inbox\secret_gate_results\full_20260927T034447Z.json :: 1 hits | first:  "generated_utc": "2026-09-27T03:44:47Z",
+watch\inbox\seed_rib_20260926\coldseat_prompt.txt :: 7 hits | first: # thesis.card (L0b, regenerated 2026-09-27T04:06:34Z)
+watch\inbox\seed_rib_20260926\seed-rib\POINTERS.sha256 :: 1 hits | first: # sealed 2026-09-27T04:06:34Z
+watch\inbox\seed_rib_20260926\seed-rib\kernel\env.law.md :: 1 hits | first: n 1, extracted from AGENTS.md "Python env", as-of 2026-09-27T04:06:34Z)
+watch\inbox\seed_rib_20260926\seed-rib\kernel\filing.law.md :: 1 hits | first: # filing.law (kernel section 5, extracted 2026-09-27T04:06:34Z)
+watch\inbox\seed_rib_20260926\seed-rib\kernel\load.order.md :: 1 hits | first: # load.order (generated 2026-09-27T04:06:34Z; seed read order: FIRST_BOOT.md -> THE_METHOD.md)
+watch\inbox\seed_rib_20260926\seed-rib\kernel\state.now.md :: 2 hits | first: .now (kernel section 4, regenerated at seed build 2026-09-27T04:06:34Z)
+watch\inbox\seed_rib_20260926\seed-rib\kernel\thesis.card.md :: 1 hits | first: # thesis.card (L0b, regenerated 2026-09-27T04:06:34Z)
+watch\inbox\seed_rib_20260926\seed-rib\kernel\tier.law.md :: 1 hits | first: # tier.law (kernel section 6, extracted 2026-09-27T04:06:34Z)
+queue\lanes\builder\runner_state.json :: 1 hits | first:  "last_run": "2026-09-27T03:55:13.254757+00:00",
+queue\lanes\builder\trail.jsonl :: 4 hits | first: {"ts": "2026-09-27T02:21:00Z", "actor": "builder-cage", "event": "CYCLE", "detail
+queue\lanes\day_work\runner_state.json :: 1 hits | first:  "last_run": "2026-09-27T03:55:13.865474+00:00",
+queue\lanes\day_work\trail.jsonl :: 6 hits | first: {"ts": "2026-09-27T02:21:02Z", "actor": "day_work-cage", "event": "CYCLE", "detai
+queue\lanes\research\runner_state.json :: 1 hits | first:  "last_run": "2026-09-27T04:10:54.167671+00:00",
+queue\lanes\research\trail.jsonl :: 9 hits | first: {"ts": "2026-09-27T02:05:06Z", "actor": "research-cage", "event": "MONITOR", "det
+queue\queue_index.jsonl :: 7 hits | first: , "status": "open", "effort": "small", "roamed": "2026-09-27T02:14:53+00:00", "roam_verdict": "needs-operator: manual REPL 
+memory/trajectory/steps.jsonl :: 1356 echo lines
+
+-- '8 surfaced', roots: watch queue logs docs memory/burns --
+watch :: watch\ESTATE_INDEX\ESTATE_INDEX.jsonl (too big, skipped) -1
+watch :: watch\bay\logs\E.1.log (too big, skipped) -1
+watch :: watch\bay\logs\Z.1.log (too big, skipped) -1
+watch :: watch\engine_e1.log (too big, skipped) -1
+watch :: watch\inbox\ESSENTIALS_PACK_20260926.tar.gz.enc (too big, skipped) -1
+watch :: watch\inbox\RACTOR_PANEL_20260926.md 1
+watch :: watch\inbox\mrpool_export\media_full\msg_1074.mp4 (too big, skipped) -1
+watch :: watch\inbox\mrpool_export\media_full\msg_1168.mp4 (too big, skipped) -1
+watch :: watch\inbox\mrpool_export\media_full\msg_1418.mp4 (too big, skipped) -1
+watch :: watch\inbox\mrpool_export\media_full\msg_1527.mp4 (too big, skipped) -1
+watch :: watch\inbox\mrpool_export\media_full\msg_1537.mp4 (too big, skipped) -1
+watch :: watch\inbox\mrpool_export\media_full\msg_1542.mp4 (too big, skipped) -1
+watch :: watch\inbox\mrpool_export\media_full\msg_1638.mp4 (too big, skipped) -1
+watch :: watch\inbox\mrpool_export\media_full\msg_1740.mp4 (too big, skipped) -1
+watch :: watch\inbox\mrpool_export\media_full\msg_1869.mp4 (too big, skipped) -1
+watch :: watch\inbox\mrpool_export\media_full\msg_1879.mp4 (too big, skipped) -1
+watch :: watch\inbox\mrpool_export\media_full\msg_1884.mp4 (too big, skipped) -1
+watch :: watch\inbox\mrpool_export\media_full\msg_1900.mp4 (too big, skipped) -1
+watch :: watch\inbox\mrpool_export\media_full\msg_1919.mp4 (too big, skipped) -1
+watch :: watch\inbox\mrpool_export\media_full\msg_1920.mp4 (too big, skipped) -1
+watch :: watch\inbox\mrpool_export\media_full\msg_1929.mp4 (too big, skipped) -1
+watch :: watch\inbox\mrpool_export\media_full\msg_1943.mp4 (too big, skipped) -1
+watch :: watch\inbox\mrpool_export\media_full\msg_2170.mp4 (too big, skipped) -1
+watch :: watch\inbox\mrpool_export\media_full\msg_2683.mp4 (too big, skipped) -1
+watch :: watch\inbox\mrpool_export\media_full\msg_3883.mp4 (too big, skipped) -1
+watch :: watch\inbox\mrpool_export\media_full\msg_4527.mp4 (too big, skipped) -1
+watch :: watch\inbox\mrpool_export\media_full\msg_4569.mp4 (too big, skipped) -1
+watch :: watch\inbox\mrpool_export\media_full\msg_4606.mp4 (too big, skipped) -1
+watch :: watch\inbox\mrpool_export\media_full\msg_4611.mp4 (too big, skipped) -1
+watch :: watch\inbox\mrpool_export\media_full\msg_4614.mp4 (too big, skipped) -1
+watch :: watch\inbox\mrpool_export\media_full\msg_602.mp4 (too big, skipped) -1
+watch :: watch\inbox\ractor_panel_20260926\cands\burnaudit-one.md 5
+watch :: watch\inbox\ractor_panel_20260926\cands\burnaudit-two.md 2
+watch :: watch\inbox\ractor_panel_20260926\checks\burnaudit.judge.txt 3
+watch :: watch\inbox\ractor_panel_20260926\checks\burnaudit_judge.py 2
+watch :: watch\overnight_churn.log (too big, skipped) -1
+logs :: logs\api_gateway_sv.log (too big, skipped) -1
+logs :: logs\backend_sv.log (too big, skipped) -1
+logs :: logs\behavioral_events.jsonl (too big, skipped) -1
+logs :: logs\dashboard_sv.err.log (too big, skipped) -1
+logs :: logs\dashboard_sv.log (too big, skipped) -1
+logs :: logs\failure_kb.jsonl (too big, skipped) -1
+logs :: logs\ghost_sv.log (too big, skipped) -1
+logs :: logs\kpi.jsonl (too big, skipped) -1
+logs :: logs\usage.jsonl (too big, skipped) -1
+memory\burns :: memory\burns\BURN_WAVE_STATE.json 1
+
+=== S5 queue ===
+FILE: queue/todo.md mtime: 2026-09-27T04:16:08.188142+00:00
+total lines: 234
+
+=== S6 watch/inbox/RACTOR_PANEL_20260926.md ===
+mtime: 2026-09-27T00:04:36.941937+00:00
+line 1: # RACTOR PANEL 2026-09-26: the 5.3-max judgment burn (cards + 2-4-8-16 ladder)
+line 2: 
+line 3: Class: BRIEF · Writer: zcode seat (GLM-5.3 max) · Operator order 2026-09-26 evening:
+line 4: "tease it apart ractor it and break it into our burn self steal and build the
+line 5: workflow that wont suck and do max concurrence on this model with the other
+line 6: windows in mind. then lets push it to failure. 2-4-8 etc"
+line 7: 
+line 8: ## Why this burn exists
+line 9: 
+line 10: Flash cannot touch the remaining compute (flash window spent: 8 surfaced 1302
+line 11: deaths at width 24, dispatcher holding per BURN_WAVE_STATE.json). The 5-hour
+line 12: 5.3 window is untouched by standing order. What only 5.3-max can do, fleet
+line 13: proven: adjudication over contradiction (gala catches, Springer numbers,
+line 14: play-as-work v4 citations), experiment design with pre-registered falsifiers
+line 15: (Arm B 30/30 vs Arm A 0/30 without thinking), long-horizon surgery under
+
+=== S7 B2_442_out_waves.json ===
+mtime: 2026-09-26T21:41:49.701707+00:00
+keys: ['agent_count', 'logs_scanned', 'notes', 'per_agent', 'schema', 'session', 'session_dir', 'tool', 'totals', 'wave_gap_minutes', 'waves', 'window']
+
+=== S8 receipts ===
+B2_427_registry_append_only_20260926.md mtime: 2026-09-26T21:42:35.730326+00:00 size: 3280
+B2_475_real_limits_20260926.md mtime: 2026-09-26T21:54:39.187309+00:00 size: 7255
+B2_155_seed_paired_harness_20260926.md mtime: 2026-09-26T20:27:07.977605+00:00 size: 4868
+B2_151_pid_survivor_20260926.md mtime: 2026-09-27T00:02:34.627780+00:00 size: 10664
+B2_475 receipt line 16 verbatim: "- Our own absorbed-storm corroboration: watch/inbox/burn_wave_20260926/B2_442_out_waves.json (3,425 absorbed retries, maxAttempts 11, 1302-class dominant) - the estate's 1302 absorption is exactly the retryable branch of this table"
+
+-- 1302 mentions per casualty receipt --
+B2_139_ask3_repair_20260926.md: 1302 count=0 | first: 
+B2_151_pid_survivor_20260926.md: 1302 count=0 | first: 
+B2_155_seed_paired_harness_20260926.md: 1302 count=0 | first: 
+B2_181_seed_mcp_20260926.md: 1302 count=0 | first: 
+B2_202_free_rotation_20260926.md: 1302 count=0 | first: 
+B2_202_gate_results.json: 1302 count=0 | first: 
+B2_202_ledger_queue.py: 1302 count=0 | first: 
+B2_217_verify.py: 1302 count=0 | first: 
+B2_217_verify_results.json: 1302 count=0 | first: 
+B2_217_w40_probe.py: 1302 count=0 | first: 
+B2_217_w40_verify_20260926.md: 1302 count=0 | first: 
+B2_239_ledger_append.py: 1302 count=0 | first: 
+B2_239_line_endings_20260926.md: 1302 count=0 | first: 
+B2_239_lineend_probe.py: 1302 count=0 | first: 
+B2_475_real_limits_20260926.md: 1302 count=8 | first: s base, x2 backoff, 60s cap, jittered, env-overridable; the 1302 rate-limit IS retryable, but the concurrency caps (3008/3009/3010) and quota-ex
+
+=== S9 git ===
+git status --porcelain -- memory/burns exit 0
+M memory/burns/LEDGER.jsonl
+ M memory/burns/MANIFEST.json
+?? memory/burns/BURN_WAVE_STATE.json
+git log -1 6d417abd5: 6d417abd5dc1afd097000e58a4d3c95ec2ecc6cb 2026-09-26T17:43:49-04:00 exit 0
+
+=== S10 live writer files: mtime + tail ===
+logs/lane_scheduler.log | mtime=2026-09-27T04:10:54.190998+00:00 | tail: 2026-09-27T04:10:54Z lane=research result=monitor rc=0, drops gated=0 (38.3s)
+logs/kpi.jsonl | mtime=2026-09-27T04:21:41.211588+00:00 | tail: ag-agent-orc-tf01ef0f326", "mag-agent-orc-tf3588bcc58", "mag-agent-orc-tf3d0998b96", "mag-agent-orc-tf3dd5ff2e9", "mag-agent-orc-tf92408401b", "mag-agent-orc-tfbe77aaabd", "mag-age
+logs/provider_usage.jsonl | mtime=2026-09-27T03:15:53.851897+00:00 | tail: {"ts": "2026-09-27T03:15:53.851896+00:00", "provider": "deepseek", "model": "deepseek-v4-flash", "calls": 1, "prompt_tokens": 353, "completion_tokens": 219, "cache_hit_tokens": 128
+logs/docker_ops.jsonl | mtime=2026-09-27T02:38:44.010623+00:00 | tail: {"ts": "2026-09-27T02:38:44.009619Z", "event": "docker-probe", "reachable": true, "containers": 4, "conflicts": 1, "verdict": "not_ready"}
+logs/memory_events.jsonl | mtime=2026-09-27T02:38:29.641302+00:00 | tail: {"schema": "memory_event.v1", "ts": "2026-09-27T02:38:29.640301+00:00", "event_kind": "steer.received", "seat": "overseer", "session_id": "desk-local", "tier": "T2", "scope_hash": 
+logs/failure_kb.jsonl | mtime=2026-09-27T03:44:21.125018+00:00 | tail: {"ts": "2026-09-27T03:44:21.123555+00:00", "kind": "guard_registry", "sig": "guard_registry:8ebc2e7c6cb1", "detail": "spawn_sites_no_window: add CREATE_NO_WINDOW to any spawn site,
+memory/runs/swarm_health/trail.jsonl | mtime=2026-09-27T04:17:51.096671+00:00 | tail: {"ts": "2026-09-27T04:17:51.096951+00:00", "kind": "health_law", "agent": "swarm", "action": "improve_cycle", "why": "swarm degraded", "applied": false}
+memory/runs/governor_autorun_trail.jsonl | mtime=2026-09-27T04:21:12.152206+00:00 | tail: {"ts": "2026-09-27T04:20:09.848618+00:00", "schema": "autorun_once.v1", "action": null, "steps": [{"plan": 0, "todo_mag": 38}], "plan_fp": "e3b0c44298fc1c14", "queued_n": 0}
+logs/supervisor.jsonl | mtime=2026-09-27T04:21:26.758190+00:00 | tail: {"ts": "2026-09-27T04:21:26.759167+00:00", "event": "reaper-enumerate-error", "error": "no powershell on PATH or System32"}
+
+=== S11 misc quotes ===
+BURN_b2-wave-fold_20260926_e.md 'nothing wired live' hits: 0
+stego receipt line 13: Steal: the falsifier-1 countdown state. Deadline 2026-09-28T14:30:19Z; checked at 2026-09-26T22:03:37Z; 1d 16h 26m 42s remain. Elapsed since 3825 (14:30:19Z): 7h 33m 18s, still inside the observed 7m26s..16h37m twin band (upper edge lands 2026-09-27T07:07:19Z). State, not verdict: no twin yet, deadl
+stego 07:07:19 hits: 1
+
+machine now (end): 2026-09-27T04:22:02.025787+00:00
+=== END JUDGE SCRIPT ===
+
+=== JUDGE PASS 2 (targeted follow-ups), machine now: 2026-09-27T04:36:38.712857+00:00 ===
+
+=== A burn_wave QUEUE.md ===
+mtime: 2026-09-27T04:27:55.224857+00:00
+total lines: 593
+line 60: - [x] B2-219 Caption ledger 0.65 residual misdate classes: (first drafted as B2-217; number taken by a concurrent lane before landing, renumbered highest+1) the proportion guard (B2-68) fixed the fraction class but the numeric no-year path still dates measure ranges, tallies, and reference numerals, e.g. id 7182803 "10-30 feet" as 2019-10-30, id 893904 "ARTICLES 1-9" as 2018-01-09, id 5123210 SC v
+line 166: - [x] B2-104 Corpus map freshness policy: the Sep-18 snapshot returns 0 hits for qdrop on BOTH scan and FTS5 (map predates watch/inbox/qdrop_export; C6 re-proven in B2-22), so every corpus tool answers with a week-old estate; design the incremental rescan or dated-rebuild policy the salon demanded, including the tags.jsonl re-run, and decide who fires it on a schedule; pointers watch/inbox/CORPUS_
+line 218: - [x] B2-217 Verify the guard-bearing W40 stamp: (first appended as B2-214; number double-assigned by a concurrent lane, renumbered highest+1 per the B2-53 restoration precedent) the 2026-W40 run of tools/drift_pairs_stamp.py is the first with the referent-age guard (spec: docstring REFERENT-AGE GUARD, REFERENT_MATURE_DAYS=7); check memory/runs/adv_arc_50/teleo_drift_stamps.jsonl W40 rows carry re
+line 278: - [x] B2-155 Seed-paired uplift harness with TARA gate: build the paired eval that runs the seed prompt and every candidate on the same fixed seed set and applies adopt-iff-paired-score-beats-seed-else-revert (the v2 amendment D), so amendment D is testable instead of spec-only; falsifier pre-registered in B2-58 receipt F2: if the gate does not beat flag-only adoption on seed-paired regression rat
+line 516: - [ ] B2-487 Fold the CLAIM ghost and band-vs-row check into a board audit: the claim law declares an active CLAIM whose lane already has a receipt on disk a ghost (the B2-238 treatment) and B2-162 retired the long-stale B2-86 ghost by hand, the B2-167 census ran the ghost check once by hand (zero ghosts at 18:58Z, active claim lanes B2-102, B2-103, B2-104, B2-106, B2-107, B2-165 all receipt-less 
+line 522: - CLAIM B2-104 tools/corpus.py 2026-09-26T18:49:30Z (B2-104 map-plane freshness stamp: manifest map_asof/map_stale on corpus_search and corpus_stats responses only, no query-plane change; foreign active CLAIM B2-102 on this file honored per the claim law, bytes re-read at write moment and my edit rebased on whatever is on disk then, first lander keeps bytes) [board-repair 2026-09-26]
+line 523: - CLAIM B2-104 watch/inbox/burn_wave_20260926/QUEUE.md 2026-09-26T18:49:30Z (B2-104 freshness policy own board: claim lines, landing note on the pre-checked B2-104 row, self-feed briefs; foreign active CLAIMs B2-102 and B2-105 on this file honored, anchored edits on freshly-read bytes, no whole-file rewrite) [board-repair 2026-09-26]
+line 533: - [ ] B2-475 Real Verkle build (operator callout: half-assed hybrid): replace the hybrid hash-chain with a real vector commitment over the full biography chain: actual Verkle proofs (ipa_utils or rust verkle port via subprocess), per-row openings, delete/insert proofs, tip = root of the commitment; migrate the 9,873-row chain, prove opening verification on 100 random rows, benchmark proof+verify t
+line 571: - [ ] B2-533 T6 recovery verdict at the W43 stamp: (self-fed by B2-217, carrying the observation its receipt pre-registered; first drafted B2-528, renumbered highest+1 at apply time with B2-534/B2-535 (a further concurrent write took B2-531/532 between census and apply) after the concurrent openrouter lane took B2-528..530 mid-write, renumber law B2-167) the W40 run landed 2026-09-26 as an early r
+line 572: - [ ] B2-534 Early-run transparency field for stamp rows: (self-fed by B2-217; first drafted B2-529, renumbered highest+1 at apply time, renumber law B2-167) the W40 rows were written 2026-09-26 during W39 through stamp(today=date(2026,9,28)) and only the stamped_at wall-clock betrays it; a ledger-only reader cannot distinguish a forced early run from a natural Monday fire and nothing in the modul
+line 573: - [ ] B2-535 Flood-dominance disclosure in stamp rows: (self-fed by B2-217; first drafted B2-530, renumbered highest+1 at apply time, renumber law B2-167) a referent born 2026-09-25 puts nearly all its nonzero mass in 2-3 cells so any corr over the 21-day window is dominated by them and the stamp row says nothing about it: the W40 T6 row reports corr -0.1454 over 3 nonzero referent days with 508 o
+
+=== B B2_442_out_waves.json nested fields ===
+field: "last_event_ts": "2026-09-26T21:41:28.617Z"
+field: "absorbed_retries": 3425
+field: "absorbed_retries": 180
+field: "absorbed_retries": 1
+field: "absorbed_retries": 0
+field: "absorbed_retries": 11
+field: "absorbed_retries": 0
+field: "absorbed_retries": 22
+field: "absorbed_retries": 21
+field: "absorbed_retries": 4
+field: "absorbed_retries": 15
+field: "absorbed_retries": 89
+field: "absorbed_retries": 2
+field: "absorbed_retries": 24
+field: "absorbed_retries": 13
+field: "absorbed_retries": 31
+field: "absorbed_retries": 0
+field: "absorbed_retries": 4
+field: "absorbed_retries": 2
+field: "absorbed_retries": 9
+field: "absorbed_retries": 24
+field: "absorbed_retries": 14
+field: "absorbed_retries": 10
+field: "absorbed_retries": 18
+field: "absorbed_retries": 11
+field: "absorbed_retries": 7
+field: "absorbed_retries": 16
+field: "absorbed_retries": 3
+field: "absorbed_retries": 2
+field: "absorbed_retries": 77
+field: "absorbed_retries": 3
+field: "absorbed_retries": 0
+field: "absorbed_retries": 14
+field: "absorbed_retries": 20
+field: "absorbed_retries": 0
+field: "absorbed_retries": 23
+field: "absorbed_retries": 62
+field: "absorbed_retries": 14
+field: "absorbed_retries": 15
+field: "absorbed_retries": 8
+field: "absorbed_retries": 0
+field: "absorbed_retries": 11
+field: "absorbed_retries": 26
+field: "absorbed_retries": 0
+field: "absorbed_retries": 43
+field: "absorbed_retries": 4
+field: "absorbed_retries": 114
+field: "absorbed_retries": 7
+field: "absorbed_retries": 2
+field: "absorbed_retries": 21
+field: "absorbed_retries": 3
+field: "absorbed_retries": 8
+field: "absorbed_retries": 51
+field: "absorbed_retries": 9
+field: "absorbed_retries": 23
+field: "absorbed_retries": 19
+field: "absorbed_retries": 16
+field: "absorbed_retries": 11
+field: "absorbed_retries": 133
+field: "absorbed_retries": 4
+field: "absorbed_retries": 123
+field: "absorbed_retries": 2
+field: "absorbed_retries": 5
+field: "absorbed_retries": 9
+field: "absorbed_retries": 8
+field: "absorbed_retries": 39
+field: "absorbed_retries": 2
+field: "absorbed_retries": 4
+field: "absorbed_retries": 15
+field: "absorbed_retries": 36
+field: "absorbed_retries": 21
+field: "absorbed_retries": 29
+field: "absorbed_retries": 0
+field: "absorbed_retries": 5
+field: "absorbed_retries": 15
+field: "absorbed_retries": 19
+field: "absorbed_retries": 21
+field: "absorbed_retries": 4
+field: "absorbed_retries": 11
+field: "absorbed_retries": 7
+field: "absorbed_retries": 32
+field: "absorbed_retries": 9
+field: "absorbed_retries": 4
+field: "absorbed_retries": 3
+field: "absorbed_retries": 0
+field: "absorbed_retries": 3
+field: "absorbed_retries": 0
+field: "absorbed_retries": 11
+field: "absorbed_retries": 6
+field: "absorbed_retries": 97
+field: "absorbed_retries": 24
+field: "absorbed_retries": 10
+field: "absorbed_retries": 8
+field: "absorbed_retries": 7
+field: "absorbed_retries": 12
+field: "absorbed_retries": 9
+field: "absorbed_retries": 13
+field: "absorbed_retries": 10
+field: "absorbed_retries": 7
+field: "absorbed_retries": 8
+field: "absorbed_retries": 0
+field: "absorbed_retries": 10
+field: "absorbed_retries": 9
+field: "absorbed_retries": 3
+field: "absorbed_retries": 55
+field: "absorbed_retries": 0
+field: "absorbed_retries": 0
+field: "absorbed_retries": 9
+field: "absorbed_retries": 6
+field: "absorbed_retries": 10
+field: "absorbed_retries": 2
+field: "absorbed_retries": 0
+field: "absorbed_retries": 9
+field: "absorbed_retries": 0
+field: "absorbed_retries": 3
+field: "absorbed_retries": 15
+field: "absorbed_retries": 19
+field: "absorbed_retries": 6
+field: "absorbed_retries": 7
+field: "absorbed_retries": 22
+field: "absorbed_retries": 14
+field: "absorbed_retries": 5
+field: "absorbed_retries": 15
+field: "absorbed_retries": 9
+field: "absorbed_retries": 4
+field: "absorbed_retries": 19
+field: "absorbed_retries": 36
+field: "absorbed_retries": 5
+field: "absorbed_retries": 14
+field: "absorbed_retries": 1
+field: "absorbed_retries": 97
+field: "absorbed_retries": 35
+field: "absorbed_retries": 7
+field: "absorbed_retries": 11
+field: "absorbed_retries": 0
+field: "absorbed_retries": 111
+field: "absorbed_retries": 15
+field: "absorbed_retries": 16
+field: "absorbed_retries": 18
+field: "absorbed_retries": 12
+field: "absorbed_retries": 5
+field: "absorbed_retries": 10
+field: "absorbed_retries": 4
+field: "absorbed_retries": 10
+field: "absorbed_retries": 63
+field: "absorbed_retries": 20
+field: "absorbed_retries": 5
+field: "absorbed_retries": 10
+field: "absorbed_retries": 38
+field: "absorbed_retries": 6
+field: "absorbed_retries": 0
+field: "absorbed_retries": 7
+field: "absorbed_retries": 3
+field: "absorbed_retries": 1
+field: "absorbed_retries": 0
+field: "absorbed_retries": 0
+field: "absorbed_retries": 4
+field: "absorbed_retries": 8
+field: "absorbed_retries": 10
+field: "absorbed_retries": 0
+field: "absorbed_retries": 4
+field: "absorbed_retries": 19
+field: "absorbed_retries": 0
+field: "absorbed_retries": 9
+field: "absorbed_retries": 9
+field: "absorbed_retries": 16
+field: "absorbed_retries": 93
+field: "absorbed_retries": 15
+field: "absorbed_retries": 4
+field: "absorbed_retries": 8
+field: "absorbed_retries": 21
+field: "absorbed_retries": 39
+field: "absorbed_retries": 34
+field: "absorbed_retries": 18
+field: "absorbed_retries": 50
+field: "absorbed_retries": 0
+field: "absorbed_retries": 25
+field: "absorbed_retries": 5
+field: "absorbed_retries": 10
+field: "absorbed_retries": 111
+field: "absorbed_retries": 15
+field: "absorbed_retries": 11
+field: "absorbed_retries": 11
+field: "absorbed_retries": 6
+field: "absorbed_retries": 30
+field: "absorbed_retries": 22
+field: "absorbed_retries": 0
+field: "absorbed_retries": 16
+field: "absorbed_retries": 22
+field: "absorbed_retries": 11
+field: "absorbed_retries": 6
+field: "absorbed_retries": 13
+field: "absorbed_retries": 10
+field: "absorbed_retries": 7
+field: "last_event_ts": "2026-09-26T11:48:23.729Z"
+field: "absorbed_retries": 129
+field: "last_event_ts": "2026-09-26T12:01:06.587Z"
+field: "absorbed_retries": 35
+field: "last_event_ts": "2026-09-26T12:26:54.638Z"
+field: "absorbed_retries": 69
+field: "last_event_ts": "2026-09-26T12:47:00.406Z"
+field: "absorbed_retries": 54
+field: "last_event_ts": "2026-09-26T13:07:49.069Z"
+field: "absorbed_retries": 66
+field: "last_event_ts": "2026-09-26T13:20:40.458Z"
+field: "absorbed_retries": 18
+field: "last_event_ts": "2026-09-26T13:42:39.231Z"
+field: "absorbed_retries": 143
+field: "last_event_ts": "2026-09-26T14:00:07.724Z"
+field: "absorbed_retries": 68
+field: "last_event_ts": "2026-09-26T14:20:08.557Z"
+field: "absorbed_retries": 72
+field: "last_event_ts": "2026-09-26T15:00:35.189Z"
+field: "absorbed_retries": 8
+field: "last_event_ts": "2026-09-26T15:10:47.848Z"
+field: "absorbed_retries": 0
+field: "last_event_ts": "2026-09-26T15:50:00.749Z"
+field: "absorbed_retries": 157
+field: "last_event_ts": "2026-09-26T16:20:30.955Z"
+field: "absorbed_retries": 168
+field: "last_event_ts": "2026-09-26T16:41:06.401Z"
+field: "absorbed_retries": 286
+field: "last_event_ts": "2026-09-26T17:00:29.891Z"
+field: "absorbed_retries": 102
+field: "last_event_ts": "2026-09-26T17:20:20.812Z"
+field: "absorbed_retries": 94
+field: "last_event_ts": "2026-09-26T17:40:33.939Z"
+field: "absorbed_retries": 15
+field: "last_event_ts": "2026-09-26T17:51:21.523Z"
+field: "absorbed_retries": 20
+field: "last_event_ts": "2026-09-26T18:20:10.846Z"
+field: "absorbed_retries": 103
+field: "last_event_ts": "2026-09-26T19:11:47.761Z"
+field: "absorbed_retries": 338
+field: "last_event_ts": "2026-09-26T19:32:24.279Z"
+field: "absorbed_retries": 150
+field: "last_event_ts": "2026-09-26T21:41:45.854Z"
+field: "absorbed_retries": 1330
+window: {"since": "", "until": "", "first_event_ts": "2026-09-26T11:00:30.289Z", "last_event_ts": "2026-09-26T21:41:28.617Z"}
+totals: {"matched_events": 15338, "network_completed": 11819, "network_failed_events": 3519, "absorbed_retries": 3425, "terminal_failed_turns": 13, "statusCode_counts": {"429": 3505, "None": 14}, "reason_counts": {"cancelled": 13, "rate_limited": 3505, "unknown": 1}, "count_1302_statusmessage": 3505, "maxAttempts_counts": {"11": 15338}, "querySource_counts": {"main_turn": 661, "session_title": 1, "subagent": 14676}, "other_network_events": 3499}
+notes: ["network_failed_events counts every model.network.failed event the driver logged, including retries that later completed.", "absorbed_retries counts failures the retry layer absorbed before completion: completions with attempt > 1 contribute attempt - 1 each.", "terminal_failed_turns counts turns with at least one failure and no completed event; those are the failures that surfaced as errors.", "
+
+=== C LEDGER row 540 full ===
+{"ts": "2026-09-26T23:41:55Z", "slug": "b2-181-selffeed-renumber", "verdict": "erratum", "fresh_failure_mode": false, "landing": "watch/inbox/burn_wave_20260926/B2_181_seed_mcp_20260926.md", "one_line": "correction to the b2-181-seed-mcp-server row filed earlier this window: its one_line named self-fed B2-528/529/530, but concurrent lanes claimed those numbers before apply (QUEUE.md openrouter briefs at the 528-530 rows); per the B2-167 renumber law the B2-181 self-feeds landed as B2-538/539/540; the receipt Falsifier mention re-pointed in the same pass"}
+
+=== D trajectory details ===
+
+-- line 22388 full-ish --
+{"schema_version": "trajectory_step.v1", "step_hash": "420153afbe56e513", "ts": "2026-09-26T19:28:33.478+00:00", "session_id": "sess_fd5ec147-a47d-41ee-91f4-afd899b524ca", "face": "bash", "command": "cd \"C:\\Users\\foste\\Documents\\projects\\local_sovereign_agent\" && cat >> watch/inbox/burn_wave_20260926/QUEUE.md << 'EOF'\n- [ ] B2-475 Locate + vendor the open-sourced z.ai/GLM CLI and the claritas repos (operator pointer 2026-09-26 evening: \"we literally have the fucking cli opensourced the api\"): find them on GitHub by search (z ai cli, glm cli, claritas), vendor under corpus/library/, deep-read the client's REAL API contract: endpoints, concurrency model, rate-limit headers, retry policy, streaming shapes, the 50-wide question answered from source not folklore; deliverable: THE REAL LIMITS document with file:line citations; pointers operator statement + B2-98 provider_errors tally showing 1,741 absorbed failures.\n- [ ] B2-476 Engineer the burn to the source-cited contract: take B2-475's real limits + our own billions-of-tokens burn history (LEDGER 240+ rows, gala/afterparty/THE-50 receipts: 24-agent continuous windows, 36-wide gala, 50-wide THE 50 clean) and re-derive the envelope law as a function of window state, not a constant; amend AGENTS.md + the envelope receipts with the source-cited contract; falsifier: the law still cites the 9/25 storm as a constant cap after the source read.\n- [ ] B2-477 Mine our own billions-of-tokens history for the widest proven windows: sweep LEDGER + steps.jsonl + receipts for every recorded concurrent width with zero surfaced failures (THE 50: 50-wide; gala: 36; afterparty: 24 continuous; today: 12-wide with 1,741 absorbed); produce the proven-width table with receipt citations per row; this is the third witness for B2-476.\nEOF\necho queued 475-477", "result": {"exit": 0, "output_excerpt": "queued 475-477\n", "truncated": false}}
+
+-- line 22455 full-ish --
+{"schema_version": "trajectory_step.v1", "step_hash": "be3c930ad3fcf8a9", "ts": "2026-09-26T22:26:18.546+00:00", "session_id": "sess_fd5ec147-a47d-41ee-91f4-afd899b524ca", "face": "bash", "command": "cd \"C:\\Users\\foste\\Documents\\projects\\local_sovereign_agent\" && .venv/Scripts/python.exe -c \"\nimport json, glob, os\np = 'memory/burns/BURN_WAVE_STATE.json'\ns = json.load(open(p))\nfiles = [os.path.basename(f) for f in glob.glob('watch/inbox/burn_wave_20260926/B2_*.md')]\ns['landed'] = sorted(set(i for i in s['dispensed'] if any(f.startswith(i.replace('-','_') + '_') for f in files)))\njson.dump(s, open(p, 'w'), indent=1)\nout = len(s['dispensed']) - len(s['landed'])\nprint('dispensed', len(s['dispensed']), 'landed', len(s['landed']), 'outstanding', out, 'need', max(0, 24 - out))\nfor l in [l.rstrip() for l in open('watch/inbox/burn_wave_20260926/QUEUE.md', encoding='utf-8') if l.startswith('- [ ] B2-')][:max(0, 24 - out)]: print(l[:110])\n\"", "result": {"exit": 0, "output_excerpt": "dispensed 397 landed 391 outstanding 6 need 18\r\n- [ ] B2-103 Catalog path-anchoring census + fix: the map mixes bare repo-relative paths (AGENTS.md), local_so\r\n- [ ] B2-104 Corpus map freshness policy: the Sep-18 snapshot returns 0 hits for qdrop on BOTH scan and FTS5 (\r\n- [ ] B2-105 Mistral lane surgery: configs/providers.yaml default_model mistral-large-latest 403s \"This model \r\n- [ ] B2-106 Pro", "truncated": true}}
+line 22483 ts=2026-09-26T22:50:50.573+00:00 cmd[:200]=mkdir %TEMP%\balatro 2>nul & curl -sI --max-time 20 https://balatrowiki.org/ | findstr /i "HTTP location content-type" & curl -sI --max-time 20 https://balatro.fandom.com/wiki/Spectral_Cards | findstr
+    out[:220]:FINDSTR: Cannot open HTTP location content-type FINDSTR: Cannot open HTTP location content-type 
+line 22484 ts=2026-09-26T22:55:42.949+00:00 cmd[:200]=for p in "featherless.ai" "chutes.ai" "siliconflow.com" "llm7.io" "scaleway.com" "lightning.ai"; do   land=$(curl -s -o /dev/null -w "%{http_code}" -m 12 "https://$p" 2>/dev/null)   api=$(curl -s -o /
+    out[:220]:featherless.ai landing=200 root_v1_models=404 api_sub_v1_models=200 chutes.ai landing=200 root_v1_models=404 api_sub_v1_models=404 siliconflow.com landing=308 root_v1_models=308 api_sub_v1_models=401 llm7.io landing=200 
+line 22485 ts=2026-09-26T22:55:58.167+00:00 cmd[:200]=echo "=== FEATHERLESS ==="; curl -s -m 15 "https://api.featherless.ai/v1/models" | head -c 700; echo; echo "=== LLM7 ==="; curl -s -m 15 "https://api.llm7.io/v1/models" | head -c 700; echo; echo "=== 
+    out[:220]:=== FEATHERLESS === {"data":[{"id":"recursal/EagleX_1-7T","is_gated":false,"created":1719250778,"model_class":"rwkv5-7b","owned_by":"Feather","context_length":16384,"concurrency_cost":1,"pricing":{"prompt":"0.0000001","c
+line 22486 ts=2026-09-26T22:57:10.727+00:00 cmd[:200]=cd "C:\Users\foste\Documents\projects\local_sovereign_agent" && .venv/Scripts/python.exe -c " import json, glob, os p = 'memory/burns/BURN_WAVE_STATE.json' s = json.load(open(p)) files = [os.path.base
+    out[:220]:dispensed 407 landed 391 outstanding 16 need 8 - [ ] B2-114 Groq third chat lane decision: openai/gpt-oss-20b answered in the 2026-09-26 live 11-id pass and is docs-de - [ ] B2-124 paste_pipeline door consolidation: ma
+line 22487 ts=2026-09-26T22:57:21.847+00:00 cmd[:200]=sed -n '145,175p' configs/providers.yaml; echo ===; sed -n '218,232p' configs/providers.yaml; echo ===; .venv/Scripts/python.exe -c " import os for k in ('NOUS_API_KEY','NOUS_KEY','HERMES_API_KEY','HE
+    out[:220]:    quota:       period: none       max_calls: null       max_tokens: null    nous:     name: Nous Research inference API (Hermes keys; the LAW-11 credits-over-failure rescue lane)     kind: openai_compat     base_url: h
+line 22488 ts=2026-09-26T22:57:39.532+00:00 cmd[:200]=.venv/Scripts/python.exe -c " import os for k in ('HERMES_API_KEY_1','HERMES_API_KEY_2'):     v = os.environ.get(k)     print(k, ('PRESENT len=' + str(len(v)) + ' prefix=' + v[:6]) if v else 'absent')
+    out[:220]:HERMES_API_KEY_1 absent HERMES_API_KEY_2 absent === mag/free_tier.py:27:        from models.env_load import load_dotenv mag/free_tier.py:28:        load_dotenv() .env .env exists 
+line 22489 ts=2026-09-26T22:57:43.712+00:00 cmd[:200]=tail -3 "C:\Users\foste\.zcode\cli\exec\sess_71c96bdc-4107-40e1-96f8-7211934ac587\call_0255f114b7df46fa81cfc8c0-stdout.log" 2>/dev/null; echo === DUP RATE ===; ./.venv/Scripts/python.exe -c " import j
+    out[:220]:budget=200 [1/30] solved=True rounds=3 === DUP RATE === /usr/bin/bash: line 3: ./.venv/Scripts/python.exe: No such file or directory 
+line 22490 ts=2026-09-26T22:58:40.247+00:00 cmd[:200]=.venv/Scripts/python.exe -c " import os # load .env the same way the mag harness does try:     from models.env_load import load_dotenv     load_dotenv()     print('dotenv loaded via models.env_load') 
+    out[:220]:dotenv loaded via models.env_load HERMES_API_KEY_1 PRESENT len=40 prefix=sk-nou HERMES_API_KEY_2 PRESENT len=40 prefix=sk-nou 
+line 22491 ts=2026-09-26T22:58:43.133+00:00 cmd[:200]=cd /c/Users/foste/Documents/projects/local_sovereign_agent && tail -2 "C:\Users\foste\.zcode\cli\exec\sess_71c96bdc-4107-40e1-96f8-7211934ac587\call_0255f114b7df46fa81cfc8c0-stdout.log" && ./.venv/Scr
+    out[:220]:budget=200 [1/30] solved=True rounds=3 lanes rows: 90 | unique by (source, quote-core): 86 | duplicates: 4 | dup-rate: 4% 
+
+-- line 23456 full-ish --
+{"schema_version": "trajectory_step.v1", "step_hash": "07c3a12652925a30", "ts": "2026-09-27T01:35:46.566+00:00", "session_id": "sess_dwf-dwfrun-fde62465-e7ed-4f5a-a1e7-701110f98174-actor_1_12", "face": "bash", "command": "cd /c/Users/foste/Documents/projects/local_sovereign_agent && ./.venv/Scripts/python.exe - <<'EOF'\nimport json, re\np = r\"memory\\trajectory\\steps.jsonl\"\nsess = \"sess_fd5ec147-a47d-41ee-91f4-afd899b524ca\"\nout = []\nwith open(p, encoding=\"utf-8\", errors=\"replace\") as f:\n    for i, line in enumerate(f, 1):\n        if \"s['holds'].append\" not in line and 's[\"holds\"].append' not in line:\n            continue\n        try: row = json.loads(line)\n        except Exception: continue\n        cmd = row.get(\"command\",\"\")\n        m = re.search(r\"\\{'ts': '([^']+)'.*?'lane': '([^']+)'\", cmd)\n        out.append((i, row.get(\"ts\"), m.group(1) if m else \"?\", m.group(2) if m else \"?\", row.get(\"session_id\",\"\")[:20]))\nfor i, mts, stamp, lane, sid in out:\n    print(f\"line {i}  machine_ts={mts}  stamped={stamp}  lane={lane}  sess={sid}\")\nEOF", "result": {"exit": 0, "output_excerpt": "line 22238  machine_ts=2026-09-26T14:04:53.308+00:00  stamped=?  lane=?  sess=sess_fd5ec147-a47d-4\r\nline 22328  machine_ts=2026-09-26T17:06:17.871+00:00  stamped=2026-09-26T17:06:00Z  lane=B2-342  sess=sess_fd5ec147-a47d-4\r\nline 22331  machine_ts=2026-09-26T17:08:08.003+00:00  stamped=2026-09-26T17:08:00Z  lane=B2-93  sess=sess_fd5ec147-a47d-4\r\nline 22395  machine_ts=2026-09-26T19:40:24.784+00:00 ", "truncated": true}}
+
+line 22482 result: {"exit": 0, "output_excerpt": "flipped 11 | dispensed 407 | landed 391\r\n", "truncated": false}
+
+=== E BURN_WAVE_STATE dispatcher_fix ===
+"2026-09-26 landed-rule dash/underscore bug: dispatcher looked for B2-NN filenames, lanes file B2_NN_*; fixed in prompt + state backfilled"
+
+=== F fold receipt phrasing ===
+'wired' hits: 1
+  wired ctx: se/stale-break rows; post-fix only acquire rows carry it (verified in the rerun log). Not wired into any live writer. Writer adoption contract: every LEDGER.jsonl appender switches to `
+'adoption' hits: 4
+  adoption ctx: d in the rerun log). Not wired into any live writer. Writer adoption contract: every LEDGER.jsonl appender switches to `python tools/ledger_lock.py append --t
+  adoption ctx: e-line json.dumps, lock log audited at the falsifier rerun; adoption is cross-window and this pass wires nothing.
+  adoption ctx: oncurrent-claim counter over the following 50 B2 rows after adoption: pass is 0 self-feed renumber corrections and 0 restore-clobber doubles caught only post-
+  adoption ctx: oc. Added instrument check: 0 stale-break rows younger than adoption (a fresh stale-break means a writer crashed holding the lock).
+
+=== G width-24 contexts ===
+watch\GROUNDING_WAVE.md: 2 hits
+   ctx: s/lane, not the API (no documented limit in corpus, docs Unproven; 900+ req/day also clean); MEASURED CRUISE: 24-wide production (gentle latency), 48-wide burst (stretched but clean), 100+ needs spawn-free organ (persistent her
+   ctx: mes server or direct API from cage); mirror already bumped to 24-wide mid-flight (lane-resume made it free) — remaining cells land in minutes
+watch\GROUNDING_WAVE.jsonl: 2 hits
+   ctx: s/lane, not the API (no documented limit in corpus, docs Unproven; 900+ req/day also clean); MEASURED CRUISE: 24-wide production (gentle latency), 48-wide burst (stretched but clean), 100+ needs spawn-free organ (persistent her
+   ctx: mes server or direct API from cage); mirror already bumped to 24-wide mid-flight (lane-resume made it free) — remaining cells land in minutes", "verdict": "UNPROVEN", "evidence": 
+watch\inbox\FLEET_IMPRINT_20260917.md: 2 hits
+   ctx: - [Flash-lane burn 9/26 FULL BLAST](flash-lane-burn-20260926.md) — operator GOed width 24 + ONESHOT swarm (12 lanes × all 296 briefs); ~470 briefs committed, 160+ landed, ~250M+ witnessed yet window 
+   ctx: - [Flash-lane burn 9/26 FULL BLAST](flash-lane-burn-20260926.md) — operator GOed width 24 + ONESHOT swarm (12 lanes × all 296 briefs); ~470 briefs committed, 160+ landed, ~250M+ witnessed yet window 
+watch\inbox\GALA_20260925.md: 1 hits
+   ctx: 24-wide Task storm would kill it; that rung stays honestly untested until the afterparty
+watch\inbox\LINKS.jsonl: 1 hits
+   ctx: unded Verkle/hill). Pairing = laws/receipts/claims, fixed. Screw = width/depth/shape, environment-chosen. The width-24 experiment is the fleet changing its own screw, and the 1302 wall is the salt."}
+docs\ref\LING_API_REFERENCE.md: 1 hits
+   ctx: **Cruise: 24-wide. Burst: 48-wide. The wall above 48 is local spawn cost (hermes CLI boots), not the API.** 100+ needs a spawn-
+
+=== H B2_130_session_inputs_raw.txt head ===
+size: 254938
+'09-19 00:06 sess_712a3b7b startNow Run one forge daemon world-building cycle for the local_sovereign_agent house. In the repo at C:\\Users\\foste\\Documents\\projects\\local_sovereign_agent run (from the repo root, Git Bash): MSYS_NO_PATHCONV=1 docker exec mag-worker sh -c "cd /app && python mag/for\n09-19 00:26 sess_712a3b7b startNow Run one forge daemon world-building cycle for the local_sovereign_agent house. In the repo at C:\\Users\\foste\\Documents\\projects\\local_sovereign_agent run (from the repo root, Git Bash): MSYS_NO_PATHCONV=1 docker exec mag-worker sh -c "cd /app && python mag/for\n09-19 00'
+width mentions: 2
+    -19 22:36 sess_d3e674ec startNow Double width double slit
+    ish them all tonight go full blast full width and depth
+
+machine now (end pass 2): 2026-09-27T04:36:42.216811+00:00
+=== END PASS 2 ===
+
+=== JUDGE PASS 3, machine now: 2026-09-27T04:40:12.049611+00:00 ===
+
+=== P3.1 width-24 run records ===
+watch\inbox\flash-lane-burn-20260926.md exists: False 
+watch\flash-lane-burn-20260926.md exists: False 
+watch\inbox\FLEET_IMPRINT_20260917.md exists: True mtime: 2026-09-26T19:44:24.387904+00:00
+LINKS row: {"seq": 1790462523548, "ts": "2026-09-26T22:42:03.548658+00:00", "op": "register", "canonical": "https://x.com/mathemetica/status/2103683641494622692", "url": "https://x.com/mathemetica/status/2103683641494622692", "title": "Four DNA helix geometries, one molecule: pairing fixed, only the screw changes", "duplicate_of": "", "writer": "zcode-seat-20260926", "note": "operator drop 2026-09-26. A/B/C/Z helices: base pair
+
+=== P3.2 .zcode cli/exec bounded search ===
+session dirs: 2679
+files scanned: 2881 | co-hit files: 2
+HIT: C:\Users\foste\.zcode\cli\exec\sess_fd5ec147-a47d-41ee-91f4-afd899b524ca\call_243fe991bd444ca09f1fdc9d-stdout.log 1302x 5 B2-155: True B2-475: False width-24: False
+HIT: C:\Users\foste\.zcode\cli\exec\sess_fd5ec147-a47d-41ee-91f4-afd899b524ca\call_55d458ca30fe4234b13b408f-stdout.log 1302x 4 B2-155: True B2-475: False width-24: False
+
+machine now (end pass 3): 2026-09-27T04:40:14.115600+00:00
+=== END PASS 3 ===

@@ -1,0 +1,21 @@
+{
+  "gopher": "t56",
+  "item": "init.server.luau attachLeaderstats: replace t14c's 1s GetAttributes poll with change-signal bindings (GetAttributeChangedSignal per tracked attribute + AttributeChanged catch-all for dynamic Summit_ booleans)",
+  "ok": true,
+  "note": "Poll REMOVED, no fallback kept. VM/Rebirths/Invariants each bind GetAttributeChangedSignal (init.server.luau:221-223). Summit_<roundStart> names are dynamic so they ride player.AttributeChanged (:224-228); first-add firing verified from official attributes doc example (SetAttribute('Grow', false) 'Fires Changed and AttributeChanged', fetched 2026-09-25). Sole Summit_ writer LightMazeZone.luau:156 (guarded :155, once per round) is a first-time SetAttribute, so it fires. One-time seed at :216-219 covers pre-attach values; scripts cannot remove attributes, so no uncovered case exists. t14c's no-invented-stat rationale preserved in the syncSummits block. Minimal diff: +53/-20 in one function, attach paths unchanged.",
+  "checks": [
+    "read-back of post-edit attachLeaderstats L167-229 (file 212 -> 237 lines): balanced, strict-mode safe, handler param typed string",
+    "grep task.wait|task.spawn in init.server.luau: no match, poll fully gone",
+    "grep Summit_ census roblox/src: sole writer LightMazeZone.luau:156, consumer only this block",
+    "em-dash scan over edited region: none",
+    "official docs fetched 2026-09-25: attributes page example evidences AttributeChanged firing on first-time SetAttribute; GetAttributeChangedSignal signature confirmed on Instance page",
+    "luau-lsp not on PATH (where luau-lsp empty): semantic analyze skipped with receipt",
+    "mountain_check not run per lane order (shared)"
+  ],
+  "next_steal": "MudBasecamp.luau:344-351 refreshes every player's plot labels on a 10s GetPlayers loop ('offline growth is the hook'); same event-driven treatment applies, gopher binds per-player signals or refreshes at write time instead of the timer",
+  "archive": [
+    "watch/inbox/gala_20260925/afterparty/lanes/t56.check.txt",
+    "watch/inbox/gala_20260925/afterparty/lanes/t56.json",
+    "roblox/src/server/init.server.luau"
+  ]
+}

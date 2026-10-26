@@ -1,0 +1,22 @@
+{
+  "lane": "a02-dungeon-campaign-r8",
+  "division": "B",
+  "ok": true,
+  "note": "R8's fill was already banked at commit d349ce7d2 (2026-10-04 GO WAVE, message: 'dungeon: parser fixed, 14/14 S4 replay'); the register row was minted 2026-10-10 from pre-fix lane claims and was stale against the tree, so this sitting executed zero edits and instead verified the fill at the finish line with fresh byte evidence: 14/14 fixtures verbatim vs the live transcript, legacy scan 0/14 vs regex 10/14, 13/13 tests green.",
+  "rows": [],
+  "checks": [
+    {
+      "command": ".venv/Scripts/python.exe C:/Users/foste/AppData/Local/Temp/a02_r8_verify.py  (fixture byte-verification: the 14 FIXTURES of tests/test_dungeon_parser.py compared field-by-field - actor, turn, roll_committed, roll_value, verdict, speech - against the 14 S4 PC rows of watch/inbox/playground/dnd0_20261003T202213Z/transcript.jsonl, plus the collapse mechanism re-demo on live bytes)",
+      "exit": 0,
+      "evidence": "watch/inbox/gala_20260925/rung/lanes/a02-dungeon-campaign-r8.check.txt lines 3-25: transcript S4 rows total=18 PC=14 enemy=4; verbatim byte-check 14/14 fixtures identical to transcript; dice law roll(pre)==roll_value 14/14; legacy line-initial scan tags found 0/14; extract_tag regex tags found 10/14; all logged verdicts HIT/MISS (wyrm-attack class) 14/14"
+    },
+    {
+      "command": ".venv/Scripts/python.exe -m pytest tests/test_dungeon_parser.py -v  (the fill's named landing spot tests/test_dungeon_parser.py, replaying the 14 logged S4 verdicts as fixtures under the fixed parser)",
+      "exit": 0,
+      "evidence": "watch/inbox/gala_20260925/rung/lanes/a02-dungeon-campaign-r8.check.txt lines 27-50: 13 passed in 1.00s, including test_replay_14_logged_s4_verdicts_under_fixed_parser (7 AUDIT / 4 RP / 2 ATTACK-MISS / 1 CHECK; AUDIT branch reached 7x where the collapsed bytes reached it 0/14; 12/14 logged verdicts were collapse artifacts), test_legacy_scan_blind_regex_finds, and test_s4_disjunct_requires_attack_verb"
+    }
+  ],
+  "decision_changed": "GAP_REGISTER row R8 (watch/inbox/gap_analysis_20261010/GAP_REGISTER.md:41-44) closes as ALREADY-EXECUTED, not re-executed: the register may mark it EXECUTED with zero further code edits. The fill's two named landing spots are on disk, committed clean at HEAD (git status --short on both = empty): the regex tag search across the capped speech is tools/dungeon.py TAG_RE :111 + extract_tag :114-130, used at _verdict :247 and _grade :578, fed by strip_and_cap :103 before grading at :688-689; the S4 disjunct is parenthesized under the ATTACK verb at :582; the 14-fixture replay is tests/test_dungeon_parser.py (FIXTURES asserted len==14, replayed by test_replay_14_logged_s4_verdicts_under_fixed_parser). Register not edited by this lane (the fill-ball owns that file); sibling rows R9 (regrowth+casefold+_mimic_wipe at :532-563) and R10 (finish_reason/void census in _paid) are likewise already landed at HEAD in the same commit, visible in the same test file's green run.",
+  "ratchet": "not run - this lane touched no code under mag/ or tools/ (the fill pre-existed at HEAD; verification only), so the ask's ratchet clause was not triggered",
+  "artifact": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/rung/lanes/a02-dungeon-campaign-r8.json"
+}

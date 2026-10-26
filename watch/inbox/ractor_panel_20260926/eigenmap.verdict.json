@@ -1,0 +1,40 @@
+{
+  "card": "eigenmap",
+  "survivor": "eigenmap-two",
+  "killed": [
+    {
+      "candidate": "eigenmap-one",
+      "because": "The walker-view overlay fails the judge's position/distance/bearing sanity check on the data: the minimap render contradicts its own bearing readouts. EigenMapHud.client.luau:110 projects screen-Y as (py1 - ey) / (py1 - py0), which puts eigen +ey (SOUTH under the module's north = -ey law, EigenMap.luau:107-111) at the TOP of the frame (UDim2 Y-scale 0 is top), while the same HUD pins an 'N ^' label at the top (EigenMapHud.client.luau:213-221) and prints bearings under the north = -ey law. Judge check on the final tree bytes: all 20 directed region pairs are drawn in the wrong direction versus the module's own bearings recomputed from CATHEDRAL_CURVATURE_SCAN_20260927.json (worst deviation 124.1 deg; walker case: water_computer is reported at bearing 35.6 deg from fractal_maze but drawn at 159.7 deg). The module data and math are exact (10/10 pairs equal the JSON recompute, world plate studs and bearing preserved, sha256 stamp matches the scan bytes), and the build does touch roblox/, but the overlay's rendered positions are mirrored north/south against the data's compass, so the kill condition fires on the overlay itself. Candidate one's own falsifier (tools/eigenmap_overlay_check.py, exit 0 under the judge) checks module math only and cannot see this class of defect; the sibling candidate measured the same line independently (eigenmap-two.md Approach)."
+    }
+  ],
+  "ruling": "eigenmap-two survives because every prong of the judge-run position/distance/bearing check passes on its shipped bytes (data byte-equal to the 0927 scan, module math executed under the luau CLI equal to a Python recompute under the estate bearing law, world plate and minimap both preserving the one compass, worst render-vs-bearing deviation 0.0 deg) while eigenmap-one dies on the mirrored minimap.",
+  "critique": [
+    "The in-Studio runtime leg is still unverified (the candidate's own pre-registered risk (c)): BillboardGui, CFrame strips, portal landing and ShadowLedger touch rows are type-checked and parsed but never executed; the revision must land a Studio smoke test or file that debt with an owner and a date.",
+    "Fold the tree: one card now ships two eigen-map builds (two shared data modules, two HUDs, two plates, two portals). The revision must prune the killed candidate's files (roblox/src/shared/EigenMap.luau, roblox/src/server/EigenMapZone.luau, roblox/src/client/EigenMapHud.client.luau, one's init.server.luau hook lines and README bullet) and rebuild the_mountain.rbxlx so the estate carries exactly one cathedral map.",
+    "After the prune, re-author the shared surfaces: roblox/README.md's mesh-layer section currently documents both candidates (README:69-93); keep only the surviving build's row plus its falsifier path, and verify the RUNG CLIMBED line in queue/todo.md names the surviving build rather than the killed one.",
+    "Move the falsifier into the repo: eigenmap-two-check.py and its luau driver live in the panel cands dir (watch/inbox/ractor_panel_20260926/cands/); relocate them under tools/ the way candidate one did so the README cites a repo-owned, rerunnable check instead of a panel artifact."
+  ],
+  "checks": [
+    {
+      "command": ".venv/Scripts/python.exe watch/inbox/ractor_panel_20260926/checks/eigenmap_judge.py",
+      "exit": 1,
+      "evidence": "The judge's own sanity check (writes watch/inbox/ractor_panel_20260926/checks/eigenmap.judge.txt): tally 58 PASS / 1 FAIL. The single FAIL is the kill: 'ONE overlay render: 20/20 directed pairs ... 20 pairs deviate > 0.5 deg; worst deviation 124.1 deg'. All other prongs PASS for both candidates, including TWO overlay render worst deviation 0.0 deg, both modules' 10/10 pair math equal to the Python recompute from the JSON under tools/cathedral_eigen_map.py:45-47's bearing law, 0927 == 0926 centroid identity, EigenMap sha256 stamp == scan bytes, both world plates preserving studs and bearing."
+    },
+    {
+      "command": ".venv/Scripts/python.exe tools/eigenmap_overlay_check.py",
+      "exit": 0,
+      "evidence": "Candidate ONE's own falsifier, rerun by the judge during the check above (section 'candidates own checkers', raw tail in eigenmap.judge.txt): PASS, module data + position/distance/bearing match the scan JSON. It never exercises the HUD projection, which is why the mirrored minimap survived the builder's own gate."
+    },
+    {
+      "command": ".venv/Scripts/python.exe watch/inbox/ractor_panel_20260926/cands/eigenmap-two-check.py",
+      "exit": 0,
+      "evidence": "Candidate TWO's own falsifier, rerun by the judge during the check above (section 'candidates own checkers', raw tail in eigenmap.judge.txt): VERDICT: PASS (0 failure(s)), 36/36 assertions, exit 0. Reproduces on the final tree state."
+    },
+    {
+      "command": "git status --porcelain -- roblox",
+      "exit": 0,
+      "evidence": "Both builds touch roblox/ on the final tree: untracked roblox/src/shared/EigenMap.luau, roblox/src/server/EigenMapZone.luau, roblox/src/client/EigenMapHud.client.luau (one) and roblox/src/shared/CathedralMap.luau, roblox/src/server/CathedralPlate.luau, roblox/src/client/CathedralMapHud.client.luau (two), plus shared modified init.server.luau, README.md, sourcemap.json, the_mountain.rbxlx. The 'touches nothing under roblox/' kill prong fires for neither candidate."
+    }
+  ],
+  "vfile": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/ractor_panel_20260926/eigenmap.verdict.json"
+}

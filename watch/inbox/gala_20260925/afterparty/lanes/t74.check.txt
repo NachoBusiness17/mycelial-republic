@@ -1,0 +1,36 @@
+t74 check evidence (gopher t74, gala afterparty, 2026-09-25)
+
+ITEM: roblox/src/server/ShadowLedger.luau:41-50 per-entry GetAsync+SetAsync read-modify-write: lost-update race under concurrency plus write amplification (whole entry rewritten each visit). Spec the minimal fix (UpdateAsync for atomic RMW; batch if a caller loop rewrites N entries per visit), implement, receipt citing t63, schema unchanged.
+
+SPEC FIRST:
+- No doc pinned the write semantics, so roblox/README.md (owner of the ShadowLedger behavior description, bullet at :64-66) was updated BEFORE the code: durable write law (t74) = every append goes through one UpdateAsync on the player+day key so concurrent records from multiple servers serialize and no row is lost; stored value stays a plain array of entry rows so saves written before the law read back unchanged. README diff: 3 lines -> 6 lines, that bullet only.
+
+ROOT CAUSE (read before edit):
+- record() :40-51 spawned one task per entry: :43-45 GetAsync(key), :46-47 append, :48-50 SetAsync(key, rows). Two tasks or two servers interleaving read-then-write on the same player+day key: the later SetAsync clobbers the other's append. Official docs (create.roblox.com/docs/en-us/reference/engine/classes/GlobalDataStore.md, fetched 2026-09-25): SetAsync "may cause data inconsistency if two servers attempt to set the same key"; UpdateAsync is "safer for handling multi-server attempts".
+
+FIX SHAPE (after edit, ShadowLedger.luau :40-69, file 75 -> 89 lines):
+- :58-67 pcall(store:UpdateAsync(key, transform)). Transform :59-66 copies old rows into a fresh table then appends entry: side-effect free, never yields.
+- Copy-then-append (not mutate-and-return) is load-bearing: the docs say the transform "will be called as many times as needed" with prior results discarded and "cannot yield"; a mutating transform could double-append on a retry.
+- Docs also say a nil return cancels the write; not used here (transform never returns nil).
+- Key format unchanged (:42 "p%s_day%s", player id + UTC YYYYMMDD); store name unchanged (:13 "ShadowLedger_v1").
+- Receipt comment :43-57 cites t63.next_steal, the doc quotes, the retry law, the schema, and the no-batch decision.
+
+SCHEMA COMPATIBILITY:
+- Value stays an array of Entry tables. Transform passes old rows through as-is when type(old) == "table", seeds {} on nil/non-table (same tolerance old :46 had). Keys unchanged. Pre-fix saves read back unchanged. NOT verified against a live DataStore (no Studio publish from this lane); verified by read of the transform paths.
+
+NEGATIVES, FIRST-CLASS:
+- Batch REJECTED: the item's batch clause was conditional on a caller loop rewriting N entries per visit. Caller census (grep ShadowLedger.record over roblox/src): every call site records ONE event. The only record() inside a loop is SteerFieldZone.luau:103, and it iterates DIFFERENT players (different keys) with a break after the first bank per tick. No same-key N-per-visit loop exists. A coalescing queue would also trade durability for size (buffered rows die on crash without BindToClose machinery).
+- Write amplification REMAINS: DataStores have no append, so the day array is still rewritten whole per event (now atomically). Bounded by events per player-day. Deferred, see next_steal.
+- Budget note (docs): UpdateAsync counts against read AND write limits vs GetAsync+SetAsync which counted one of each; net budget neutral, one round trip instead of two, race gone.
+- luau-lsp not on PATH: semantic analyze skipped with receipt (same as t56/t63).
+- Pre-existing em-dashes remain in ShadowLedger.luau header/disposition comments and older README lines; zero in t74-filed text (receipt comment, spec block, both lane files).
+- mountain_check NOT run per lane order (shared).
+
+CHECKS RUN:
+- read-back of post-edit record() :40-69: end/end) balanced (:66 closes transform, :67 pcall, :68 task.spawn, :69 record); no dead names (ok/existing removed); --!strict clean by inspection (old is any from the UpdateAsync signature, transform returns any)
+- grep store ops in ShadowLedger.luau: sole live call is store:UpdateAsync :59; GetAsync/SetAsync survive only inside the receipt comment
+- grep ShadowLedger_v1 over roblox/src: only ShadowLedger.luau :13 touches the store; no other reader to break (HeadMuseum.luau uses its own soulStore)
+- git diff --stat, my footprint: roblox/README.md 6 changed lines, roblox/src/server/ShadowLedger.luau 29 changed lines; rest of the working tree belongs to other lanes, untouched
+- em-dash grep over both edited files: hits only on pre-existing lines (.luau :2/:71; README title and older bullets), zero in added lines
+- docs fetched 2026-09-25: create.roblox.com GlobalDataStore.md for UpdateAsync multi-call, no-yield, SetAsync inconsistency, nil-cancel
+- luau-lsp and luau not on PATH: semantic analyze skipped with receipt

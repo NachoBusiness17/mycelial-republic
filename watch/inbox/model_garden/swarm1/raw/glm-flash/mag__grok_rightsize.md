@@ -1,0 +1,7 @@
+# swarm1-glm-flash-mag__grok_rightsize (glm-5.3-flash @ zai, turn 1, channel: content)
+
+DEFECT 1: Auto-classification sends goals to grok-4.5 by default, violating the module's own law "Never default to grok-4.5 (auto-classify)" because the downgrade check exempts the orchestrate tier | EVIDENCE: mag/grok_rightsize.py:24,59,157-160,214-222 | FIX: In budget_for, downgrade orchestrate to grok-3 when force_tier is None, regardless of GROK4_WORTHY.
+DEFECT 2: ghost_grok_task swallows all gate exceptions with `except Exception: pass`, so a broken or unimportable mag.grok_gate silently routes every cheap task to the paid grok path | EVIDENCE: mag/grok_rightsize.py:585-596 | FIX: On gate failure, return the cheap deepseek task dict instead of falling through to grok.
+DEFECT 3: probe gate reads arming flags from os.environ only while keys come from the .env file, so a .env-armed GROK_ALLOW_PAID never arms probes and .env keys are unreachable | EVIDENCE: mag/grok_rightsize.py:116-130,137-138 | FIX: Use _env_value("GROK_ALLOW_PAID")/_env_value("XAI_CASH_ALLOWED") in the probe gate.
+DEAD-CODE: NEVER_GROK4 is defined but never referenced anywhere in the file | EVIDENCE: mag/grok_rightsize.py:64
+ONE-SITTING FIX: Make the gate in ghost_grok_task fail closed to the cheap-task dict on any exception, capping worst-case spend when grok_gate is broken | EVIDENCE: mag/grok_rightsize.py:585-596

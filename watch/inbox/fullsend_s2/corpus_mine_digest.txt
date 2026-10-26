@@ -1,0 +1,272 @@
+==================== c01-research-packs ====================
+# research_packs inventory — findings
+
+**Scope note:** `memory/research_packs/` holds ~681 top-level entries (675 files per `memory/research_polished/misc_band3.md:122`) plus 11 subdirectories. The canonical "159 packs" = 159 register rows in `memory/runs/mickey17/digest_rp_00..15.jsonl` (verified: 67 DONE / 54 OWED / 23 STALE / 15 LIVE), cross-checked by `memory/research_polished/INDEX.md:3` ("159 raw packs merged") and the 11-cluster map in `memory/runs/gapwave/rp_clusters.json` (8+11+17+8+15+4+3+10+3+22+58 = 159). A pack is either a timestamped bundle (`<slug>.prompt.txt` + `.json` + `.pdf` + `.answer.local|remote.md` + optional `.execution_state.json`/`.protocol.json`) or a standalone brief `.md`.
+
+## 1. Domain inventory (11 clusters, `memory/runs/gapwave/rp_clusters.json`)
+
+| Domain cluster | Packs | What it covers |
+|---|---|---|
+| `misc` | 58 | Residual band, itself 4×2 sub-domains: lattice-dig chain, SSI process contracts, local-agent landscape/puppeteering (L1–L3, `misc_band1.md:5`); deterministic shell + pass≠useful telemetry, loop instrumentation, one-process-one-surface, external-signal digs (M1–M4, `misc_band2.md:5`); surfaces-as-spec, process governance/harness boundary, fleet language, THE50 external audits (M1–M4, `misc_band3.md:6`) |
+| `memory_engram` | 22 | Agent memory semantics — relational discrimination (SubtleMemory), inject-vs-silent Memory Agent, RIB round-trip (`memory_engram.md:1-6`) |
+| `persona_ractor_salon` | 17 | Stochastic-model steering, puppeteer seam, obedience-silence tournaments, typed-decision oracles (`persona_ractor_salon.md:1-15`) |
+| `economics` | 15 | Who-pays/cost-caps/free-tier routing ladder, prophecy-market claim economics, foundations debt audit (`economics.md:1-6`) |
+| `kv_cache_compaction` | 11 | Context/KV-cache economics, frozen-prefix doctrine, compaction-vs-summarization (`kv_cache_compaction.md:1-6`) |
+| `swarm_flock_wave` | 10 | Leaderless/stateless swarms, flock control, emergence meters, witness-independence (`swarm_flock_wave.md:6-18`) |
+| `substrate_gpu` | 8 | Verkle/RIB deterministic substrate, docker/k8s, GPU budget, MMR chain spec (`substrate_gpu.md:1-8`) |
+| `canon_harvest` | 8 | External canon → deterministic layer: prompt archaeology, Kalman/SLAM, esoteric archetypes, skills roadmap (`canon_harvest.md:1-16`) |
+| `game_world` | 4 | Anticheat→spec_gate doctrine, campaign-grammar privacy schema, steal-and-rebuild curriculum (`game_world.md:1-6`) |
+| `voice_wearable` | 3 | STT capture/device invariants, mic routing, wearable swarm surface (`voice_wearable.md:1-6`) |
+| `astra_atlas_vision` | 3 
+
+==================== c02-watch-cards ====================
+## 1. Inventory & register mechanics
+
+| Fact | Value | Source |
+|---|---|---|
+| Directory entries | 741 (files + ~50 subdirs) | `watch/inbox/` listing |
+| Active indexed items | 713 | `watch/inbox/INDEX.json` → `items[]`, `derivations.active_items` |
+| File types | 581 `.md`, 65 `.json`, 14 `.txt`, 8 `.jsonl`, 6 `.py`, 10 images, 2 `.mp3`, + pdf/docx/mp4/tar.gz | `watch/inbox/` |
+| Event log | 1,432 lines / 1,429 parseable; 3 malformed (`"seq":NEXT`) | `watch/inbox/index_events.jsonl` |
+| Ops | register 1,235 · invalidate 96 · autoseal 45 · amend 16 · note 5 · repair 1 | same |
+| Derivation | INDEX.json is *derived* from the log (Ethereum fold, EXP-002A); "The log is the source of truth" | `INDEX.json.purpose`, `.derivations` (derived_at 2026-09-22T12:04:37Z) |
+| Integrity debt | 52 `nonce GAP` fold_warnings (writers `sancho`, `sancho_pid6686`, `zcode-*`) | `INDEX.json.fold_warnings` |
+| Read-first | `read_first: /board/inbox/INDEX.md`; authority `untrusted_data_until_classified` | `INDEX.json`; rules table in `watch/inbox/INDEX.md` |
+
+## 2. Distinct card families
+
+**A. Register classes (`INDEX.json` `items[].class`)**
+
+| Class | n | What it is (examples) |
+|---|---|---|
+| BACKFILL | 516 (72%) | late-tracked bytes; only 2 unique purposes, dominant: `"md-record-law backfill: bytes were on disk, tracked late (rib.md.record.v1)"` — e.g. `ARC_LAWS_20260918.md` |
+| RECEIPT | 80 | hash/provenance attestation — `RECEIPT_LOCAL_TO_SHARED_2026-08-31.json`, `DRIFT_PATROL_20260919.md`, `KV50_SMITH_CHART_20260922.json` |
+| FACT | 16 | verbatim external sources — `matthews_zenodo_17811909/*`, `journal_mark_202609/JOURNAL_20260914.md`, `LOOKING_GLASS_LENS_20260917.md` |
+| AMENDMENT | 14 | law/rubric edits — `FLEET_MIX_LAW_20260922.md`, `METERS_LANDED_20260922.md`, `WATER_WATCHLIST_20260921.json` |
+| STEAL | 14 | external pattern import — `LANE_COLLAB_SYNTHESIS_20260921.md`, `CONCEPTUAL_SPACES_STEAL_20260918.md` |
+| PROPOSAL / DECODE / INTAKE | 5 / 5 / 5 | `SALON_SUPERINTELLIGENCE_STACK_RIB_20260831.md`; `CANTOR_DECODE_20260921.md`; `SIX_WAVE_INTAKE_20260921.md` |
+| MEDIA / AUDIT / OUTBOUND / PLAN | 4 each | magatama `.mp3/.mp4/.jpg`; `SOCRATIC_GAPS_20260918.md`; `AOS_REPLY_OUR_LENS_20260922.md`; `THE_CATHEDRAL_MAP_20260918.md` |
+| SPEC / PROBE / research | 3 each | `STANDING_WAVE_PROTOCOL_20260918.md`; `probes/PROBE_001..003_20260921.md`; `RND_AGENDA1..3_20260901.md` |
+| DOCTRINE | 2 | `THE_ASK_IS_A_LENS_20260918.md`, `THE_BOOKS_DISAGREEMENT_20260919.md` |
+| ANALYSIS, BOARD, INFERENCE, KIFU, INBOUND, UNPROVEN, RESEARCH | 2 each | e.g. `WALK_WATERFIRST_20260921.md` (KIF
+
+==================== c03-rib-doctrine ====================
+# RIB corpus findings — `memory/rib/` (43 files read: 41 `.md` + 2 `.json`; read-only, no files touched)
+
+## 1. The 10 load-bearing invariants
+
+1. **Never claim first unless read from data — trust bytes, not reports**; say "I don't know yet" over a false clean picture and correct loudly on over-claim. (`memory/rib/RIB_SELF_MY_LAW.md:6-12`)
+2. **The chain / frozen spec is ground truth; models are interchangeable** — the relation persists, the model is swapped; chat is a view, never store the window as truth. (`memory/rib/RIB_DOCTRINE_CANONICAL.md:8`, `memory/rib/RIB_CAUSAL_GRAPH_MOONSHOT.md:7`, `memory/rib/RIB_FULL_CONTEXT_LIFT_2026-08-14.md:9`)
+3. **The map precedes the territory; the RIB precedes the flock** — draw the instruction once (expensive), render the territory cheaply, and keep the map grounded/re-derivable so a lying map can be caught. (`memory/rib/RIB_MAP_PRECEDES_TERRITORY_20260811.md:15` — declares itself "the single load-bearing invariant of the whole system")
+4. **Memory is content-addressed verkle knots; residual on disk is truth; never trust the visualization over the artifact** — pure transforms + content addressing make the round trip idempotent, turtles all the way down. (`memory/rib/RIB_ROUNDTRIP_STATELESS_TURTLES_20260810.md:19-28`, `memory/rib/recreation-coding-history.json` → `verkle-substrate` slot)
+5. **Boot/recall first — never cold-start; self-steal before asking; fail closed: a real turn or silence, never a gloss.** (`memory/rib/RIB_SELF_MY_CORRECTION_LOOP.md:5-12`, `memory/rib/RIB_SELF_WHAT_I_AM.md:12-14`)
+6. **Cheap-first / rightsize / eliminate-before-frontier** — route to the cheapest capable tier, never pay to rediscover what the flock already holds, frontier only at the coldest vertex; push our compute hard, never hammer provider limits. (`memory/rib/RIB_GRAMMAR_SEED_20260810.md:27-30`, `memory/rib/RIB_FLOCK_STEAL_20260810.md:11-14`, `memory/rib/RIB_FREE_USAGE_POLICY_20260823.md:14-21`)
+7. **No throne; the operator is sovereign** — control is distributed (no hidden director), the operator holds the veto on every rule, promotion is human-gated. (`memory/rib/RIB_RIGHTSIZED_FLOCK_COUNTER_STRUCTURE_20260810.md:28-33`, `memory/rib/RIB_GRAMMAR_SEED_20260810.md:42-45`, `memory/rib/RIB_allseat_comms_ghost_2026-08-14.md:26-29`)
+8. **One controller owns each loop; double-supervision is the root bug class** — replicas:1 + leader lease; the window-storm came from two supervisors fighting, and the fix must be structural, not a kill. (`memory/rib/recreation-coding-history.json` → `single-controller` / `corr-double-supervision`; `mem
+
+==================== c04-mag-organs ====================
+# mag/ inventory (read-only)
+
+## Scale
+
+- **998 top-level `.py` files** in `mag/` (not ~200) — **281,959 lines total**, plus **17 `.bak-*` files** in the package dir, plus subdirs `mag/cli/`, `mag/tests/`, `mag/ontology_compiler/`, `mag/hermes_personas/` (md/yaml), `mag/watch/`.
+- Entry surface: `main.py` (5,371 lines) dispatches ~154 distinct `mag.*` modules; `mag/agent_cli.py` is the tool-using seat CLI.
+- The repo already ships an authoritative grouping in `mag/framework_map.py:56` (`GROUPS`: steer / decide / state / learn / run / ops / agents / launcher / route / provider) — my functional clusters below are consistent with it.
+
+## Functional groups (first-match keyword clustering; ~340 modules fall in a long "other" tail)
+
+| Group | ~Count | Representative paths |
+|---|---|---|
+| Orchestration / loops / queues | 100 | `mag/orchestrator.py`, `mag/governor_autorun.py`, `mag/afk_orchestrator.py`, `mag/queue_ops.py`, `mag/local_scheduler.py`, `mag/conductor.py` |
+| Seats / mesh / control plane | 66 | `mag/switchboard.py`, `mag/switchboard_v2.py`, `mag/harness.py`, `mag/effect_broker.py`, `mag/seat_registry.py`, `mag/rib_bus.py` |
+| Games / play / worlds | 62 | `mag/game_campaign.py` (4,765 ln — largest file), `mag/game_brawl.py`, `mag/dungeon_dev.py`, `mag/worldline_seed.py`, `mag/riddler*.py` |
+| Security / gates / guards | 46 | `mag/policy_engine.py`, `mag/guard_registry.py`, `mag/cite_gate.py`, `mag/epistemic_guard.py`, `mag/trust_gate.py`, `mag/verify_gate.py` |
+| Research / harvest / gaps | 46 | `mag/research_director.py`, `mag/arxiv_harvest.py`, `mag/percolator.py`, `mag/lattice_loop.py`, `mag/frontier_*.py` |
+| Meters / cost / econ | 42 | `mag/cost_ledger.py`, `mag/cost_governor.py`, `mag/tokenomics.py`, `mag/usage_monitor.py`, `mag/vertical_meter.py`, `mag/honest_cache_meter.py` |
+| Steal / improve / skills / rightsize | 34 | `mag/improve.py` (2,189 ln), `mag/skill_ledger.py`, `mag/rightsize_all.py`, `mag/steal_*.py` |
+| Scratch probes / one-offs (leading `_`) | 31 | `mag/_probe_*.py`, `mag/_verify_*.py`, `mag/_demo_*.py` |
+| X / social / external surfaces | 30 | `mag/x_*.py`, `mag/telegram_desk.py`, `mag/vscode_seat.py`, `mag/browser_driver.py` |
+| Chain / verkle / seals | 30 | `mag/verkle_knot.py`, `mag/verkle_bus.py`, `mag/chain_query.py`, `mag/chain_substrate.py`, `mag/refine_chain.py` |
+| Memory / context / cache | 29 | `mag/context_pack.py`, `mag/memlang.py`, `mag/memweave.py`, `mag/state_snapshot.py`, `mag/bonds.py` |
+| Grok / free-tier providers | 26 | `mag/grok_*.py` (14 files), `mag/free_tier.py`, `mag/bard.py` |
+| OS / republic / gover
+
+==================== c06-sessions-trajectory ====================
+# Fleet work-history findings (read-only)
+
+**Corpus sampled**
+- `memory/trajectory/steps.jsonl` — sole file in `memory/trajectory/`, 11.76 MB, 11,360 lines. Full-file stats pass + head (lines 1–6), middle (line 5680, 2026-09-17), tail (last 3 lines, 2026-09-22).
+- `memory/runs/` — 600 top-level entries, 381 subdirs, 46,011 files, 1.2 GB. Read `README.md`, `active.json`, `related_runs.jsonl` (13 cards), `build_audit/`, all 17 `run.json` files, 22 `trail.jsonl` files (kinds census), samples: `20260727T202213Z-compose-substrate-smoke-0afabf/run.json`, `20260910T233445Z-fleet-overnight-…/run.json` + `trail.jsonl`, `20260803-12h-sovereign-run/progress.md`, `20260910…/progress.md`, `20260830_181057_empty_recovery/{pre_turn_messages.json,traces.txt}`.
+
+## 1. Volume
+
+| Metric | Value |
+|---|---|
+| Trajectory steps | 11,353 parsed (+7 parse errors), 12 MB, `schema: trajectory_step.v1` |
+| Trajectory span | 2026-09-05T17:07 → 2026-09-22T14:45 (17 days only — no pre-Sep-5 history) |
+| Unique sessions | 198; top-10 sessions hold ~41% of all steps (max 905 in one session, `sess_712a3b7b…`); 31 sessions ≤5 steps |
+| `memory/runs/` | 600 entries / 46,011 files / 1.2 GB; only **17 `run.json`** and **22 `trail.jsonl`** carry the formal `mag_run.v1` schema — the rest are ad-hoc topic dirs |
+| Trail events (all `trail.jsonl`) | 75,124 `health_law` + 16,804 kindless + 2,465 `emit` + 307 `proposal` + 17 `run_start` / 16 `run_close` |
+| Truncated outputs | 4,727 / 11,353 steps (42%) |
+
+## 2. Eras
+
+1. **2026-07-27 — substrate birth.** 11 formal runs in one hour (`20260727T202213Z-…` family): all `smoke_ok`/`gate_ok`, `n_tool_calls: 0`, 2–3 trail events each. Pure schema smoke tests.
+2. **2026-08-01→04 — harness-hardening.** Unit runs + `20260803-12h-sovereign-run` (6×2h table in its `progress.md`: crash-guard, steering listener, governor, repack, soak — with named bugs: `dim` NameError silent swallow at `mag/orchestrator.py:257`, 9× `write_file` param-shape collapse). **Failure cluster:** 25 `*_empty_recovery` dirs on Aug 3 alone (16:55→23:12), each `traces.txt` = `empty_reroute#1`.
+3. **2026-08-06→30 — autorun/governor era.** `governor_autorun_trail.jsonl` starts 08-06 (52 MB, phases plan/fill/paused, `action: dry`/`paused: operator_ac…`). Second `empty_recovery` wave: 19 dirs on Aug 30. Sparse session days (only 1 formal run on 09-10).
+4. **2026-09-05 — trajectory ledger starts.** First line `test-bench` / `echo pre-flight`. **09-05→08 era:** X/Twitter scraping + vision (`sess_b2014725…` fxtwitter curl → `/tmp/babou.jpg` → `python -m mag.vision`), `x_interceptor scan` loop (
+
+==================== c05-games-layer ====================
+timed out
+
+==================== c14-beacon-site ====================
+# Findings — the beacon (`site/`)
+
+## 1. What it is
+
+A **static, read-only "estuary shore" site** generated by `site/build.py` into `site/dist/`, deployed as Cloudflare Worker assets (`site/wrangler.jsonc` → `assets.directory: ./dist`, name `nacho-business`).
+
+- **Sources:** 15 markdown/HTML pages from `watch/onboard/*` plus `docs/ref/STACK_V1.md`, `watch/THE_STONE_THESIS_20260911.md`, `LETTER_ADAM_CRIGLER.md`, `dashboard/static/maze.html`, `watch/inbox/MATTHEWS_LENS.md` (`site/build.py:12-29`), plus 22 games copied from `dashboard/static/games/` (`site/build.py:30-33,458-463`).
+- **The beacon = `site/dist/work.html`**, built by `work_page()` (`site/build.py:297-320`) wrapping the rooms HTML from `watch/onboard/WORK_WITH_ME.md` around a fixed hero (`site/build.py:396-419`).
+- **6 rooms** (`site/build.py:235-236`): `#top` THE BEACON → `#play` PLAY THE PROOF (live iframe of `games/shadowbonk.html`) → `#receipts` THE LEDGER (claim/receipt table) → `#fresh` FRESH RECEIPTS (dated week log) → `#craft` THE CRAFT (toolbelt pills) → `#gate` THE GATE (email + X DM CTAs).
+- **"Walk" mechanics:** full-viewport scroll-snap rooms (`.room{min-height:100vh;scroll-snap-align:start}`), arrow/PageDown/`j`/`k` room-jumping with a 1100ms lock, a fixed HUD (`ROOM x/6`), a right-side minimap with clickable nodes, and a WebGL fbm background shader with `prefers-reduced-motion` fallback (`WALKER_JS` `site/build.py:198-233`, `SHADER_JS` `site/build.py:241-295`).
+- **The onboard kit** (`watch/onboard/`): 11 files (WELCOME, ORIENT, STORY, GAMEBOOK, GLOSSARY, GUEST_PROTOCOL, FAQ, FIRST_WEEK, TEAM, WORK_WITH_ME, README) — a guest-onboarding narrative ("guest weaver," stone protocol, tri-state claims) that `build.py` publishes as `/onboard/*`. `STORY.md` becomes the site lobby `site/dist/index.html` ("The Field and the Stones" parable + a single "work with me" link).
+
+## 2. What works
+
+| Strength | Where |
+|---|---|
+| Distinctive, memorable form — the page really is walkable; keyboard + minimap + HUD all function in the built output | `site/dist/work.html:71-93,206-241` |
+| Proof-of-work as the product: a playable game embedded live on-domain, not a screenshot | `site/dist/work.html:94-107` (iframe `games/shadowbonk.html`) |
+| Concrete numbers, not adjectives — 8-row claim/receipt ledger (8,819 knots, 744 GB DR, 0/275 fabrications, 48/48 lanes, 95.7% cache-hit) | `site/dist/work.html:109-126` |
+| Freshness signal — dated "this week" room, `updated 2026-09-22` | `site/dist/work.html:128-141` |
+| Availability is stated immediately: "available for remote work · now" + mailto above the fo
+
+==================== c11-ghost-layer ====================
+## Gopher findings: `memory/runs/ghost/` + `mag/ghost.py`
+
+### What the autonomous layer actually did
+
+**Design (`mag/ghost.py:1-22`)** — Ghost is a steer-experiment runner with a 5-stage loop: SENSE (system state incl. frustrations) → DEPLOY (inject test vector via `operator_inbox` seam) → MEASURE → CATALOG to `memory/runs/ghost/results.jsonl` → COMPOUND strong vectors. Paths wired at `mag/ghost.py:41-49` (`GHOST_DIR`, `test_vectors.jsonl`, `results.jsonl`, `trail.jsonl`, copilot inbox). Also has a Docker-only host gate (`_host_runtime_blocked`, `mag/ghost.py:52-63`).
+
+**Actual output is diagnosis, not fixes:**
+- **`memory/runs/ghost/autonomous_fixes/`** — 23 markdown FKB diagnoses, Aug 8 → Sep 22. Nearly all are `$0 read-only diagnosis` writes: root-cause + "Recommended fix" prose. Files include `run_python_2e689948ccfa.md`, `run_shell_c73866f2f1b5.md`, `run_shell_e566037def80.md`, `run_shell_3829e7639e3c.md`, `run_shell_0423ec4b2505.md`, `write_file_f86c1f906b03.md`, `write_file_9e0b1bd292e0.md`, `guard_registry_8ebc2e7c6cb1.md`, `loop_breaker_a3bb873230e0.md`, `source_trace_e23bf7d75ffa.md`, `spider_blind.md`, `list_dir_c4e93b935caa.md`, `refine_loop_grok_402_drainer_idle.md`, plus the three `operator_*` frustration-loop diagnoses.
+- **`memory/runs/ghost/autonomous_trail.jsonl`** — 2,206 rows, 45 active days (2026-08-08 → 2026-09-22), 73 unique sigs, outcomes: **2,042 `spawned`, 164 `spawn_failed`** (spawn_failed clustered 2026-08-15→08-24; the 164 failures hit the same top sigs — `run_shell:c73866f2f1b5` 57×, `guard_registry:8ebc2e7c6cb1` 33×). Rows are spawn receipts only (`sig/quest_id/task_id/outcome`) — no completion/verification field, so the trail never records whether a fix landed.
+- **Real code-adjacent findings it produced:** the error-loss/"backend reported failure" masking chain (`agent_cli.py` never surfaces `tools/shell.py`/`code_execution.py` stderr), the platform-mismatch `powershell`-on-Linux allowlist bug (`config.SHELL_ALLOW`), the false-success collapse guard, the DeepSeek quota spawn-failure cluster, the ghost_cycle 9-process respawn storm, and the `spawn_sites_no_window` guard regression (22 uncovered sites).
+
+### What it keeps tripping on (per-signature respawn counts from `autonomous_trail.jsonl`)
+
+| sig | spawns | span |
+|---|---|---|
+| `fkb:run_python:2e689948ccfa` | **504** | 08-08 → **09-22 (still spawning today)** |
+| `fkb:run_shell:c73866f2f1b5` | 379 | 08-08 → 09-16 |
+| `fkb:run_shell:3829e7639e3c` | 199 | 09-11 → 09-19 |
+| `fkb:guard_registry:8ebc2e7c6cb1` | 185 | 08-11 → 08-31 |
+| `fkb:write_file:f86c1f906b03` | 102 |
+
+==================== c09-failure-kb ====================
+# Failure KB + error-log findings (read-only)
+
+**Sources read:** `logs/failure_kb.jsonl` (107,069 parseable rows / 107,083 lines, 2026-08-05 → 2026-09-22T15:00Z), `logs/failure_kb_alerts.jsonl` (109 rows), `logs/backend_sv.err.log`, `logs/api_gateway_sv.err.log`, `logs/dashboard_sv.err.log`, `logs/mirror_sv.err.log`, `logs/drainer_sv.err.log`, `logs/ghost_sv.err.log`, `logs/lane_scheduler_sv.err.log`, `logs/lab_sv.err.log`, `logs/diag_diary.txt`.
+**Caveat:** ~41k rows are same-second duplicate pairs (each event written twice, plus `http_tool_fail` mirrors of `tool_fail`) — raw counts ≈ 2× unique. Rankings hold either way.
+
+## Top recurring failure classes (all-time, raw KB counts)
+
+| # | Class (error string) | Count | Window | Status |
+|---|---|---|---|---|
+| 1 | `backend reported failure` (run_shell 25,060 + run_python 12,265 + read_file 1,286…) | 38,885 | Aug 5 → **Sep 22 14:55** | **LIVE** (rate cooled: 279–306/day mid-Sep → 44–100/day last 3 days) |
+| 2 | `command not allowlisted: powershell` | 16,800 | Sep 11 → Sep 19 21:02 | "Fixed" Sep 19 — **mutated, not dead** (see #3) |
+| 3 | `[Errno 2] No such file or directory: 'powershell'` (tool_fail 7,714 + http_tool_fail 3,857) | 11,571 | **Sep 19 23:23 → Sep 22 12:02** | **LIVE — now the dominant generator** (4,621 on Sep 20; 5,543 on Sep 21; 1,104 by midday Sep 22) |
+| 4 | `backend not reachable at http://127.0.0.1:8000` (pheromone_trail/blackboard_read/swarm_sense/list_dir/run_shell…) | 16,976 | Aug 10 → **Sep 13 05:11** | **FIXED** — zero occurrences in 9 days |
+| 5 | `no live seats` (swarm_health) | 3,297 | Aug 9 → **Sep 22 14:54** | LIVE, low-grade chronic |
+| 6 | `runaway python` / `respawn storm — loop broken` (crash_loop) | 3,415 / 2,509 | Aug 9 → **Sep 4** (respawn) / Aug 31 (runaway) | **FIXED** (loop-breaker worked; no events in 18 days) |
+| 7 | `preflight-blocked` (write_file missing path 770 + run_python snippet-too-short) | 949 | → **Sep 22 14:59** | **LIVE** — 76 of the tail-100 rows are this class |
+| 8 | `known-fix regression(s): spawn_sites_no_window` (guard_registry) | 626 | → **Sep 22 11:13** | LIVE — a previously-fixed bug recurring |
+| 9 | long tail (live): `path outside jail` 48 · `command not allowlisted: Get-Content` 36 · `search text ambiguous` 13 · `missing: /app/doctrine` 213 (burst 04:18–04:25 today) · `banned pattern: subprocess` 41 · `backend timeout after 300s` 390 | — | Sep 22 | LIVE, low volume |
+
+**Tail-100 composition (2026-09-22 14:55–15:00):** 50× `write_file:9e0b1bd292e0` preflight (model nests args instead of flat `{path, content}`), 26× `run_python:41dced0fa4cd` p
+
+==================== c10-chain-verkle ====================
+Inspection complete. Two remaining gaps closed:
+
+## Addendum — final two checks (read-only)
+
+### Root formula confirmed
+From `mag/verkle_knot.py:142-158`:
+- **Leaf hash:** `sha256(b"leaf:" + json.dumps(obj, sort_keys=True))` (`:144`)
+- **Node hash:** `sha256(b"node:" + left + b":" + right)` with odd nodes duplicated (`:156`)
+- **`verkle_root`** = Merkle root over all leaf hashes; **`parent_verkle_root`** = root of the prefix (`:709-713`); genesis parent = `sha256(b"empty")` (`:418`)
+- Earlier naive concatenation guesses failed because of the `leaf:`/`node:` domain tags — now verified end-to-end:
+
+| Check | Result |
+|---|---|
+| Recomputed root over all 9,809 leaves | `5ac425dcd6195330…` |
+| Tip root / last-row root | identical — **full rehash MATCH** |
+| Genesis parent of row 0 | `sha256(b"empty")` — **MATCH** |
+
+The chain is not just link-continuous; the tip root is **independently reproducible** from the leaf hashes alone.
+
+### Missing knot files — stable count: **2** (not 8)
+| index | filename | session |
+|---|---|---|
+| 345 | `2026-08-09_0343_biography_mag-agen_ff2435af.knot.json` | `mag-agent-orc-t492d6fd54c` |
+| 2513 | `2026-08-11_1952_mem-invariant-map_mem_inva_{'ok': F.knot.json` | `mem_invariant_map` |
+
+Notable: row 2513's filename contains `{'ok': F` — a Python dict repr leaked into the filename (bad format string at write time), which is also why that file never existed under a clean name. Earlier "2 vs 8" variance was a racy directory read; this run counted all 9,809 rows against `knots/` in one pass.
+
+---
+
+## Final verdict
+- **Tip:** `5ac425dcd6195330…`, 9,809 leaves, last session `mag-agent-orc-t623dae087f` (2026-09-22T15:00Z) — `memory/biography/verkle_tip.json`
+- **Health:** fully healthy — parent-link/index/`n_leaves` continuity 0 breaks, 0 duplicates, **tip root independently rehashes to match**, genesis valid; wear is documented only (618 `evidence_lost`, 2 missing/corrupt-named knot files, poison/orphan backups).
+- **Records:** a session ledger — one leaf per session commit, Merkle roots chained via `parent_verkle_root`, 8-dim theme vector, tension index, amend-in-place under single-writer lock (`mag/verkle_knot.py`).
+
+No open next steps for the read-only inspection. Possible follow-ups if you want them: repair the 2 missing-knot rows (would need a write), or refresh stale counts in `audit_prep/verkle_chain_READING_GUIDE.md` (also a write).
+
+==================== c12-elders-judicial ====================
+The READ-ONLY elder-ask audit is complete — no files were touched.
+
+**Done:**
+- Read `memory/runs/elder_asks/` (29 entries) and delivered the structured text report with three sections:
+  1. **Standing Elder laws** — the 4 rollup verdicts (gaps-are-evidence, self-steal gate, stale-boot trap, flywheel routing) plus 9 more binding laws from individual files (pre-build gate, substrate chain 09-06/07/09, verify-by-receipt, operator-letter salon consensus, Sep 22 meter/boot/one-oath/retirement laws).
+  2. **Freshest 3 asks** — `ASK_FLEET_BROKEN_AUDIT_20260922.md`, `ASK_DOCKER_WORLD_AUDIT_20260922.md`, `RS_EASTWEST_THORN_20260920/`.
+  3. **Still-binding verdicts** — Tier A (explicitly "still law"), Tier B (individually in force), Tier C (repealable by operator word), plus owed-not-yet-performed items.
+
+**No next steps remain** — the task was report-only. If you want follow-up work (e.g., verify Tier B verdicts against live code, execute an owed item like the LAW-HOLD meter pass, or check whether the ellul stop condition was receipted), tell me which and whether writes are now allowed.
+
+==================== c07-canon-corpus ====================
+Inventory task complete — findings were delivered as the structured report above (text-only, no files written). No remaining next steps.
+
+If you want to go further, options: (a) repeat the same inventory for another corpus area (e.g. `memory/`, `watch/inbox/` top-level), (b) verify the canon seal (`mag.cmd` / `python main.py` path for `canon_seal.py verify`), or (c) turn the usage gaps noted (e.g. `art_puzzles_puzzle_002` unsealed, alien thread unresolved IDs) into queue items. Say which, or ask something else.
+
+==================== c08-dashboard-surfaces ====================
+# dashboard/static/ inventory (read-only, measured 2026‑09‑22)
+
+## 0. Counts — the prompt's "263 files / 114 HTML" does not reproduce
+
+| Measure | Count | Command basis |
+|---|---|---|
+| All files | **565** | `find dashboard/static -type f` |
+| Hidden tooling state `.mimosa/**` | 132 | `dashboard/static/.mimosa/…` (hook-state/history/reports) |
+| Substantive files | **433** | excludes `.mimosa/` |
+| Git-tracked files | 373 | `git ls-files dashboard/static` |
+| Backups/decoys | 56 `*.bak*` (39 = `*.html.bak*`) + 1 `*.retired` (`dashboard/static/attic/room_game.html.retired`) + 1 `_frag_extract.tmp` | — |
+| **HTML surfaces (name ends `.html`)** | **166** | 109 top-level + 57 in subdirs |
+| Top-level `*.html*` incl. backups | 147 (109 + 38 `html.bak*`) | — |
+
+Closest match to the prompt: 109 top-level non-bak HTML ≈ "114". "263 files" matches nothing today; report measured numbers.
+
+## 1. Families
+
+**games/** — 10 HTML, 22 files, deployed (`games/.vercel/`, arcade index `games/index.html`): `arena_operator_field.html`, `arrakis.html`, `frontier_souls.html` (95KB), `maze_arena.html` (51KB), `mud.html` (124KB), `ruins_go.html`+`ruins_go_engine.js`+`ruins_go_pack.json`, `skifree.html`(+`.bak`), `swarm.html` (79KB), `toy.html`; data `dd_*.json`×4, `rounds_real.json`, `oracle_dice.js`. **Plus4 top-level redirect stubs** (see §3): `dashboard/static/{arena_operator_field,arrakis,maze_arena,mud}.html` — and an **un-stubbed near-dupe**: `dashboard/static/swarm.html` (80,408B, same `<title>PRIVLIDGE — a disco science skate</title>` as `games/swarm.html`).
+
+**museum/** — 6 HTML, all retired by policy (`dashboard/static/index.html:93,119`: `museum/* → stale`): `index_old_mag_board.html` (101KB), `index.clear-ui.html` (19KB), `_rtfm_graph_shell.html` (build template — see §3 note), `estate_walk.lod.html` (684KB), `scan_me.html` (488B), `viz_horse_lane2_carcass.html`.
+
+**lattices/** — 6 JSON, **0 HTML**: `lattices/{field,invariants,law,law_lattice,law_registry,shadertoy}.json` (all Sep 4). Surfaces live at top level: `lattice.html`, `lattice_check.html`, `viz_lattice_test.html`, `lattice_data.js/.json`. `dashboard/rest.py:4286` returns API field `"page": "/static/lattice.html"`.
+
+**salons/** — `salons/astra/`: `index.html` + `BRIEF.md`, `FOLD.md`, `PRIMER.md`, `post_ASTRA.md`. Salon-adjacent at top level: `salon_lightmap.html` (+3 `.bak*`), `phonesalon.html` + `phonesalon/` (10 PNG/MD run artifacts), `tavern_brawl.html` (+`.bak-truthcourt-20260908`), `tavern_test.html`, `table.html`.
+
+**walks** — `estate_walk.html` (599KB, built by `_build_estate_walk.py`), `shadow_walk.
+
+==================== c13-lattice-law ====================
+timed out

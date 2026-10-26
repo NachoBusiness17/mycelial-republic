@@ -1,0 +1,62 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<feed xmlns:opensearch="http://a9.com/-/spec/opensearch/1.1/" xmlns:arxiv="http://arxiv.org/schemas/atom" xmlns="http://www.w3.org/2005/Atom">
+  <id>https://arxiv.org/api/amz2Gi5OBSb+vZlzWNavsbZDkNo</id>
+  <title>arXiv Query: search_query=&amp;id_list=2609.24991,2609.16617,2609.30738&amp;start=0&amp;max_results=10</title>
+  <updated>2026-10-04T01:52:47Z</updated>
+  <link href="https://arxiv.org/api/query?search_query=&amp;start=0&amp;max_results=10&amp;id_list=2609.24991,2609.16617,2609.30738" type="application/atom+xml"/>
+  <opensearch:itemsPerPage>10</opensearch:itemsPerPage>
+  <opensearch:totalResults>3</opensearch:totalResults>
+  <opensearch:startIndex>0</opensearch:startIndex>
+  <entry>
+    <id>http://arxiv.org/abs/2609.16617v2</id>
+    <title>Divergence Timing and Cumulative Disagreement under KV-Cache Eviction</title>
+    <updated>2026-09-18T04:09:40Z</updated>
+    <link href="https://arxiv.org/abs/2609.16617v2" rel="alternate" type="text/html"/>
+    <link href="https://arxiv.org/pdf/2609.16617v2" rel="related" type="application/pdf" title="pdf"/>
+    <summary>KV-cache eviction perturbs the conditional token distributions governing autoregressive generation. We investigate how first-divergence timing and subsequent token mismatch determine cumulative disagreement. We derive an exact decomposition under a specified stepwise maximal coupling: the expected mismatch fraction equals a first-mismatch contribution plus post-divergence exposure multiplied by its mismatch rate. An explicit construction over unrestricted autoregressive kernel pairs realizes the sharp interval of risks compatible with a finite divergence-aligned observation window. Residual-branch conditional Monte Carlo provides unbiased joint estimates of occurrence, occupation, and window/tail contributions, with per-replicate variance dominance for total token loss. Complete trajectories from Meta-Llama-3.1-8B-Instruct and Qwen2.5-7B-Instruct show that SnapKV at 50% retention enters divergence later and less often than SnapKV-512 or recent-token retention with the same 50% prompt-cache budget, while post-divergence total variation (TV) remains high. In an exploratory analysis of 288 documents, post-divergence exposure accounts for 85-90% of four aggregate mismatch gaps. On 288 independent documents at 90% retention, prespecified comparisons show higher branch-aligned TV in the late than in the early window in both models.</summary>
+    <category term="cs.LG" scheme="http://arxiv.org/schemas/atom"/>
+    <published>2026-09-15T04:23:53Z</published>
+    <arxiv:primary_category term="cs.LG"/>
+    <author>
+      <name>Xinyue Luo</name>
+    </author>
+    <author>
+      <name>Fei Yu</name>
+    </author>
+  </entry>
+  <entry>
+    <id>http://arxiv.org/abs/2609.24991v1</id>
+    <title>Who Pays for the KV Cache? Attributing Shared AI Inference Spend Across Kubernetes and LLM Provider Bills</title>
+    <updated>2026-09-21T17:57:40Z</updated>
+    <link href="https://arxiv.org/abs/2609.24991v1" rel="alternate" type="text/html"/>
+    <link href="https://arxiv.org/pdf/2609.24991v1" rel="related" type="application/pdf" title="pdf"/>
+    <summary>Organizations pay for AI through disconnected ledgers: Kubernetes allocations for self-hosted inference, gateway logs, and per-token bills from API providers. We present unalloc, an open-source tool that joins OpenCost, LiteLLM, OpenAI and Anthropic cost data into one exact ledger and reports the share of spend with no owner, and use it to study where attribution breaks at the seams between these systems. Five case studies run inference for real or simulate it: a vLLM-style serving simulator with paged KV memory and prefix caching; a PyTorch transformer serving a multi-tenant trace with a real KV cache; tensor- and pipeline-parallel inference on torch.distributed; the unmodified CLI against mock provider APIs; and four downstream use cases. At the seams, in a constructed multi-pod deployment scenario -- one month of synthetic OpenCost allocations, not observed billing data -- owner labels set only on LeaderWorkerSet leader pods leave 66% of that deployment's GPU bill unowned, and the natural fallback key assigns 61% of it to a Helm chart name while the headline unallocated share falls to 4%; enabling every source double counts all gateway spend; and reading one page of a billing API reports a quarter of spend. Inside a shared inference server the metering rule decides who pays: on an NVIDIA H100 running vLLM, a token meter assigns a retrieval-heavy tenant 12-14 percentage points more of the bill than an equal time-share meter at every load tested, while GPU utilization reads 97-99% across configured loads of 2 to 16 requests per second (3.7 to 26.9 completed requests per second; the configured rate counts session-initial arrivals only) and power draw tracks load. Neither meter is a ground truth; we position these results against recent Shapley-based energy attribution. Code, raw data, captured evidence, figures and the paper regenerate from the repository.</summary>
+    <category term="cs.DC" scheme="http://arxiv.org/schemas/atom"/>
+    <category term="cs.PF" scheme="http://arxiv.org/schemas/atom"/>
+    <published>2026-09-21T17:57:40Z</published>
+    <arxiv:comment>14 pages, 9 figures, 4 tables. Includes a validation run with vLLM on an NVIDIA H100. Code, data and reproduction scripts: https://github.com/timurista/unalloc. Software: doi:10.5281/zenodo.22761012. Use of generative AI is disclosed in the paper ("Use of AI tools")</arxiv:comment>
+    <arxiv:primary_category term="cs.DC"/>
+    <author>
+      <name>Timothy Urista</name>
+    </author>
+  </entry>
+  <entry>
+    <id>http://arxiv.org/abs/2609.30738v1</id>
+    <title>Beyond Mean Attention: Diversity-Aware, Layer-Wise Scoring for KV Cache Eviction</title>
+    <updated>2026-09-25T03:08:00Z</updated>
+    <link href="https://arxiv.org/abs/2609.30738v1" rel="alternate" type="text/html"/>
+    <link href="https://arxiv.org/pdf/2609.30738v1" rel="related" type="application/pdf" title="pdf"/>
+    <summary>KV cache eviction methods such as SnapKV and PyramidKV rank tokens solely by mean attention over a small observation window. We study a unified score, $μ_i+λ_1σ_i+λ_2\mathrm{corr}(i,S)$, adding attention dispersion across window queries and redundancy relative to selected tokens. For $λ_2&lt;0$, the score penalizes similarity to selected tokens as in maximal marginal relevance (MMR), without extra forward passes. To test whether this relevance-diversity balance should vary with depth, we compare fixed global coefficients with three-segment and quadratic profiles. Only these depth profiles are searched on a development split under a $\sinh$ reparameterization. On all 16 English LongBench datasets with Mistral-7B at a budget of 64 entries per layer, a single global diversification constant improves 13 of 16 datasets (macro +1.1); the gain holds at budget 32 and narrows at 128. Per-dataset search finds no detectable layer structure on most datasets; on passage retrieval it finds a large one: a mid-layer sign flip that rewards similarity and is worth +9.6 over the baseline at budget 64 and, without re-tuning, +13.2 over the global constant at budget 128. Ablations attribute the gain to the redundancy term; replaying every accepted search state on the held-out test set separates genuine structure from tuning noise.</summary>
+    <category term="cs.CL" scheme="http://arxiv.org/schemas/atom"/>
+    <category term="cs.LG" scheme="http://arxiv.org/schemas/atom"/>
+    <published>2026-09-25T03:08:00Z</published>
+    <arxiv:comment>5 pages, 1 figure, 3 tables. Submitted to IEEE ICASSP 2027</arxiv:comment>
+    <arxiv:primary_category term="cs.CL"/>
+    <author>
+      <name>Tianfang Xie</name>
+    </author>
+    <author>
+      <name>Wei Zhu</name>
+    </author>
+  </entry>
+</feed>

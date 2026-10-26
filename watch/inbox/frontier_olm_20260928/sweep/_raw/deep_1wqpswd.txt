@@ -1,0 +1,22 @@
+ID: 1wqpswd
+SUB: r/LocalLLaMA
+DATE: 2026-09-26 12:53 UTC (created_utc=1790427182)
+TITLE: The Gemma 4 dev-agent comp hands everyone a code graph, embeddings and 12h — but only one 31B model. So what actually moves the SWE-Bench score?
+SCORE: 0  COMMENTS: 3  UPVOTE_RATIO: 0.33
+PERMALINK: https://www.reddit.com/r/LocalLLaMA/comments/1wqpswd/the_gemma_4_devagent_comp_hands_everyone_a_code/
+SELFTEXT:
+`gemma-4-31b-it-qat-w4a16-ct` is the only allowed model — every agent and subagent must use it. You get optional per-agent PEFT LoRA adapters, prompts, sub-agents, and sandboxed skills. Scoring is SWE-Bench-style PASS/FAIL (apply patch, run validation tests, % passing), with a 12-hour total budget including sandbox setup.
+
+Here's what I keep coming back to: the harness *hands you a code graph and embeddings*. The provided tools include `get_code_neighbors`, `search_similar_code` (cosine over pre-computed embeddings), and `get_code_subgraph`. The paper track explicitly calls out "Graph Reasoning" and "Code Comprehension", and says a graph+embedding dataset was released. So the organizers are strongly hinting the intended edge is graph-based repo comprehension.
+
+Which makes the debate concrete:
+
+- Everyone gets the same graph tools. So is the differentiator the model actually *using* them well (→ post-training / LoRA), or the agent's orchestration of them (→ harness)?
+- Is SWE-Bench PASS/FAIL a fair proxy for a *reliable* dev agent, or does it reward test-gaming over real comprehension?
+- With a single base model and a 12h budget, what's the realistic VRAM/latency budget for a repo-sized context?
+
+About 4000+ entrants and 600+ submissions already in at the time of this writing, closes Dec 2. Anyone here actually competing — are you betting on the weights or the harness, and do you think the graph tools are the intended path or a red herring?
+COMMENTS FETCHED: 3
+--- [[deleted] | 2026-09-26 | score 0] [removed]
+--- [MerePotato | 2026-09-26 | score 4] Hi Luna
+--- [Risen_from_ash | 2026-09-26 | score 2] lmfao

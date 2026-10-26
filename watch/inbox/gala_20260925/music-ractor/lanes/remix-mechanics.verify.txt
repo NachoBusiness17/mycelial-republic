@@ -1,0 +1,28 @@
+VERIFY remix-mechanics lane internal consistency
+source json: watch/inbox/music/remix_mechanics.json
+
+files measured: 28  with errors: 0
+pairs computed: 10  orphan rows: 9
+dup_suspect rows (same-audio suspicion): none
+
+check 1: high-band ratchet - high_rel_pct positive in ALL transformation pairs (CROSS-ARTIST + SELF-TAGGED)
+  8 pairs: [17.1, 20.1, 24.1, 28.8, 33.9, 49.6, 70.1, 187.1]
+  all positive: True
+  counter-evidence stays honest: SELF-VERSION pairs are NOT positive (Flat Beat 0.0 pct, Rez -10.0 pct) - that is the floor law, not a ratchet exception
+
+check 2: same-source contrast (Phantom Pt. II, one original, two remixers)
+  Phantom Pt. II / Boys Noize Remix: dyn_delta=-0.46 dB  dur_delta_pct=61.71  folded_bpm=1.068
+  Phantom Pt. II / Soulwax Remix: dyn_delta=13.68 dB  dur_delta_pct=121.45  folded_bpm=1.085
+  same source, opposite operators: Soulwax 13.68 dB vs Boys Noize -0.46 dB, gap 14.14 dB
+
+check 3: tempo anchor - folded bpm ratios inside 0.85-1.33 for all 10 pairs
+  min 0.847  max 1.326  (n=10)
+
+check 4: floor law - SELF-VERSION pairs move rms <= 0.35 dB and bands <= 10 pct
+  Flat Beat / Radio Edit: rms 0.13 dB, low 0.03 pct, high 0.0 pct
+  Rez / Remastered: rms 0.3 dB, low 4.63 pct, high -10.0 pct
+
+check 5: check.txt cross-read - every pair label in json appears byte-identical in check.txt
+  labels missing from check.txt: none
+
+ALL 5 CONSISTENCY CHECKS PASSED

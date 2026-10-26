@@ -1,0 +1,34 @@
+{
+  "gopher": "t39",
+  "item": "mag/api_server.py has zero improve references, so the lab UI cannot show the scheduled-task probe t20/t33 built. Wire scheduled_task into the api_server status route: copy an existing small GET route shape, spec first, add scheduled_task via the t33 lazy import (mag.doctor.check_scheduled_tasks; on non-Windows return null cleanly), one test mocking doctor asserting the key appears and a not-Ready state flips the warning flag.",
+  "ok": true,
+  "note": "Wired a new GET /status route into the gateway registry (mag/api_gateway.py, the module api_server.py serves; api_server.py itself owns zero routes, its shape is the registry's). Spec landed first as the route docstring (t39 spec, dated). Shape copied from GET /health: small handler, lazy imports, _ok envelope. Payload: scheduled_task = doctor.check_scheduled_tasks() via the same lazy import t33 wired in mag/improve.py, None on non-Windows (null in JSON); warning = joined doctor issue strings when not ok, else null, so callers treat warning != null as the alert. Design call: /health stays a pure fast liveness probe (a schtasks subprocess with a 15s per-task timeout must not ride the heartbeat), the slow probe lives on /status. Machine truth via dispatch directly, no server started: 200, scheduled_task.statuses.MagImproveDaily = Ready, warning null. One regression run of the neighboring gateway test errored 4x on a transient Windows tmp_path PermissionError and passed 4/4 on immediate rerun with no code change; both runs kept raw in the evidence file. Added text is em-dash free (verified by grep over the added line ranges).",
+  "checks": [
+    {
+      "name": "pytest tests/test_api_gateway_status_route.py -v",
+      "result": "3 passed in 0.32s (key appears + warning clean; not-Ready flips warning; non-Windows null with zero doctor calls)",
+      "exit": 0
+    },
+    {
+      "name": "python tools/violation_ratchet.py check --changed",
+      "result": "scope=10 changed files; hits=6; registered=6; NEW=0; expired-exceptions=0; PASS, no unregistered debt",
+      "exit": 0
+    },
+    {
+      "name": "live: dispatch('GET', '/status') via venv python, NO server",
+      "result": "status 200, ok=true, scheduled_task={check: scheduled_tasks, ok: true, statuses: {MagImproveDaily: Ready}, issues: []}, warning=null",
+      "exit": 0
+    },
+    {
+      "name": "regression: pytest tests/test_room_tags.py -q",
+      "result": "first run: 4 errors (transient Windows PermissionError on tmp_path); immediate rerun, no code change: 4 passed",
+      "exit": 0
+    }
+  ],
+  "evidence": "watch/inbox/gala_20260925/afterparty/lanes/t39.check.txt",
+  "files_changed": [
+    "mag/api_gateway.py",
+    "tests/test_api_gateway_status_route.py"
+  ],
+  "next_steal": "The dashboard/lab surface (:8765, dashboard/rest.py + static board) still does not consume :8001 GET /status; wire the lab UI to fetch gateway /status (key from the same env contract) and render warning != null as a visible WARNING row, so a disabled or deleted MagImproveDaily shows at the product surface without any CLI ask. Then decide how intentional disablement (lifecycle.py:514 waste remediation) is distinguished from silent disablement, e.g. a marker file the doctor probe respects."
+}

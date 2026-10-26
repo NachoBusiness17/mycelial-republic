@@ -1,0 +1,37 @@
+=== t82 pytest: .venv/Scripts/python.exe -m pytest tests/test_doctor_scheduled_tasks.py -v ===
+============================= test session starts =============================
+platform win32 -- Python 3.11.15, pytest-9.1.1, pluggy-1.6.0 -- C:\Users\foste\Documents\projects\local_sovereign_agent\.venv\Scripts\python.exe
+rootdir: C:\Users\foste\Documents\projects\local_sovereign_agent
+configfile: pytest.ini
+plugins: anyio-4.14.2, langsmith-0.10.14, timeout-2.4.0, typeguard-4.6.0
+collecting ... collected 16 items
+
+tests/test_doctor_scheduled_tasks.py::test_parse_list_extracts_status PASSED [  6%]
+tests/test_doctor_scheduled_tasks.py::test_parse_list_missing_status_returns_unknown PASSED [ 12%]
+tests/test_doctor_scheduled_tasks.py::test_ready_task_passes PASSED      [ 18%]
+tests/test_doctor_scheduled_tasks.py::test_running_task_passes PASSED    [ 25%]
+tests/test_doctor_scheduled_tasks.py::test_disabled_task_is_flagged PASSED [ 31%]
+tests/test_doctor_scheduled_tasks.py::test_disabled_remediation_never_skips_marker_clearing PASSED [ 37%]
+tests/test_doctor_scheduled_tasks.py::test_missing_task_is_flagged PASSED [ 43%]
+tests/test_doctor_scheduled_tasks.py::test_unqueryable_task_is_flagged PASSED [ 50%]
+tests/test_doctor_scheduled_tasks.py::test_odd_status_is_flagged_not_ready PASSED [ 56%]
+tests/test_doctor_scheduled_tasks.py::test_non_windows_platform_skips PASSED [ 62%]
+tests/test_doctor_scheduled_tasks.py::test_wired_into_examine PASSED     [ 68%]
+tests/test_doctor_scheduled_tasks.py::test_live_probe_on_windows PASSED  [ 75%]
+tests/test_doctor_scheduled_tasks.py::test_disabled_with_intentional_marker_passes PASSED [ 81%]
+tests/test_doctor_scheduled_tasks.py::test_disabled_without_marker_still_flags PASSED [ 87%]
+tests/test_doctor_scheduled_tasks.py::test_missing_with_marker_still_flags PASSED [ 93%]
+tests/test_doctor_scheduled_tasks.py::test_default_intentional_reader_is_lifecycle PASSED [100%]
+
+============================= 16 passed in 2.13s ==============================
+PYTEST_EXIT=0
+
+=== t82 ratchet: .venv/Scripts/python.exe tools/violation_ratchet.py check --changed ===
+RATCHET check: scope=19 changed files; hits=16; registered=16; NEW=0; expired-exceptions=0
+RATCHET: PASS — no unregistered debt.
+RATCHET_EXIT=0
+
+=== t82 em-dash scan of added lines (git diff '+' lines in touched files) ===
+warning: in the working copy of 'tests/test_doctor_scheduled_tasks.py', LF will be replaced by CRLF the next time Git touches it
+0
+EMDASH_GREP_COUNT_EXIT=1 (1 means zero matches found = clean)

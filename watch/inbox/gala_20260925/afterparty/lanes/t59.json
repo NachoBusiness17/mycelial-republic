@@ -1,0 +1,15 @@
+{
+  "gopher": "t59",
+  "item": "client chip echoing the player's replicated Sphere attribute, alliance-tinted per ZoneGate.allianceFor",
+  "ok": true,
+  "note": "Sphere attribute already replicates (player:SetAttribute('Sphere', sphere) at ZoneGate.luau:72, Player attributes replicate), so render-only, no server change. Item's 'neutral' word does not exist in the contract: allianceFor returns allied/independent/opposed, so the chip speaks the real words and independent tints nothing (negative first-class). Verdict word is the aggregate over the same stamped Gate_ attributes the pads tint, with allianceFor's own precedence (any opposed decides, else any allied, else independent).",
+  "checks": [
+    "grep '\"Sphere\"' roblox/src before writing: ZoneGate.luau:66,72 only, set on Player so client-visible, no server edit needed",
+    "spec line first in init.client header (SPEC t59 at lines 6-10, before any behavior)",
+    "before/after cited in t59.check.txt: header 3-5 -> 3-10, chip block after line 133 -> lines 135-182",
+    "verify by read: edited regions re-read post-edit (lines 1-14, 126-185); mountain_check NOT run (shared)",
+    "UI style matches cooldown chips (Garamond 14, 20,18,26 bg 0.35, 230,224,196 text), top-left corner, DashAt GetAttributeChangedSignal pattern for Sphere, AttributeChanged prefix filter for the server-owned Gate_ names",
+    "em-dash law: no em-dashes in lines 6-10 or 135-182; line 2 em-dash is pre-existing prose, untouched"
+  ],
+  "next_steal": "audit Portal_ pad name suffixes in roblox/the_mountain.rbxlx against ZoneGate ZONE_REGION keys: a pad whose sanitized suffix is not a ZONE_REGION key silently gets no Gate_ attribute and no tint (bindPad no-ops), a negative that should be surfaced or joined"
+}

@@ -1,0 +1,57 @@
+{
+  "lane": "hermes-burn-economics",
+  "division": "B",
+  "ok": true,
+  "note": "Audited the live hermes_burn ledger (1,099 rows at the ask's snapshot, pinned at 1,150 rows / $63.5824 total at 2026-10-03T19:24:20Z since the playground driver kept firing during the audit): total quantified waste $25.9998 = 40.9 percent (A1 stale-force-flag re-burn $21.0932 + descent-twin double-spend $1.1292 + other queue re-fires $3.3057 + billed failures $0.4717), goodput 59.1 percent, cost per usable finding $0.4929 gross / $0.2913 productive over 129 landed deliverable units, all 172 paid ask ids landed receipts except two refusal-terminal $0 asks that were re-armed and landed under new ids; the e3c7d341c twins figure was byte-verified (13 doubled keys = 12 DUEL2_train_*_r2 + N1R, both-fires $2.2521 vs documented $2.25, real $1.1229 vs documented $1.09) and the open defect handed forward is the tools/tavern.py:157 run-id drop that fired 809 false doubled-key alarms and blinds ledger economics; gaps stated honestly: ledger is live so counts are moment-pinned, the S8 producer-rule caveat overstates that key's waste by at most $0.5158, a .mimosa scanner dir inflated the instrument's run-dir count by one (corrected in the receipt), and the violation ratchet was not run because no code under mag/ or tools/ was touched.",
+  "rows": [],
+  "checks": [
+    {
+      "command": ".venv/Scripts/python.exe watch/inbox/gala_20260925/dd-selfsteal/lanes/hermes-burn-economics.analysis4.py > watch/inbox/gala_20260925/dd-selfsteal/lanes/hermes-burn-economics.check.txt",
+      "exit": 0,
+      "evidence": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/dd-selfsteal/lanes/hermes-burn-economics.check.txt"
+    },
+    {
+      "command": "wc -l memory/runs/hermes_burn/usage.jsonl",
+      "exit": 0,
+      "evidence": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/dd-selfsteal/lanes/hermes-burn-economics.check.txt (VERIFY BLOCK: 1151 rows at 19:32:41Z, up from the pinned 1150, live driver)"
+    },
+    {
+      "command": "grep -c 'doubled-key alarm' memory/attention.md",
+      "exit": 0,
+      "evidence": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/dd-selfsteal/lanes/hermes-burn-economics.check.txt (VERIFY BLOCK: 809)"
+    },
+    {
+      "command": "git log -1 --format=%B e3c7d341c | grep -c '13 doubled keys'",
+      "exit": 0,
+      "evidence": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/dd-selfsteal/lanes/hermes-burn-economics.check.txt (VERIFY BLOCK: 1, the $2.25 vs $1.09 twin claim confirmed in the commit body)"
+    },
+    {
+      "command": "grep -c $'\\xe2\\x80\\x94' watch/inbox/dd_dogfood/hermes-economics.md",
+      "exit": 1,
+      "evidence": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/dd-selfsteal/lanes/hermes-burn-economics.check.txt (VERIFY BLOCK: grep exit 1 means zero em-dash bytes, the clean case)"
+    },
+    {
+      "command": "sed -n '157p' tools/tavern.py",
+      "exit": 0,
+      "evidence": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/dd-selfsteal/lanes/hermes-burn-economics.check.txt (VERIFY BLOCK: prints f\"TAVERN_r{rnd}_{p['name']}\", the run-id drop)"
+    },
+    {
+      "command": "cited-path existence loop over 13 paths named in the receipt",
+      "exit": 0,
+      "evidence": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/dd-selfsteal/lanes/hermes-burn-economics.check.txt (VERIFY BLOCK: all 13 OK, none MISSING)"
+    },
+    {
+      "command": ".venv/Scripts/python.exe .../hermes-burn-economics.analysis2.py > .../hermes-burn-economics.check2.txt",
+      "exit": 0,
+      "evidence": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/dd-selfsteal/lanes/hermes-burn-economics.check2.txt (intermediate probe: twin-pair discovery, 1149-row read)"
+    },
+    {
+      "command": ".venv/Scripts/python.exe .../hermes-burn-economics.analysis3.py > .../hermes-burn-economics.check3.txt",
+      "exit": 0,
+      "evidence": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/dd-selfsteal/lanes/hermes-burn-economics.check3.txt (intermediate probe: superseded by v4, which excludes playground run collisions from waste)"
+    }
+  ],
+  "decision_changed": "descent-driver-twins double-spend question closed: the twins billed $2.2521 for $1.1229 of real work ($1.1292 excess), total ledger waste is $25.9998 of $63.5824 (40.9 percent) dominated by the already-closed A1 force-flag hole, post-patch days show zero non-playground re-fire waste, and the next money-adjacent fix is the tavern/dungeon run-id tag collision (809 false doubled-key alarms, ledger-blind economics), not another driver guard",
+  "artifact": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/dd-selfsteal/lanes/hermes-burn-economics.json",
+  "receipt": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/dd_dogfood/hermes-economics.md"
+}

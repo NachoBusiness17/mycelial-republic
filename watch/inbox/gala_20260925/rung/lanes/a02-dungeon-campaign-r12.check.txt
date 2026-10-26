@@ -1,0 +1,53 @@
+# lane a02-dungeon-campaign-r12 finish-line check
+# cmd: .venv/Scripts/python.exe -m pytest tests/test_dungeon_parser.py -v -p no:cacheprovider
+# date: 2026-10-10T13:49:12Z  git: f06008308
+
+============================= test session starts =============================
+platform win32 -- Python 3.11.15, pytest-9.1.1, pluggy-1.6.0 -- C:\Users\foste\Documents\projects\local_sovereign_agent\.venv\Scripts\python.exe
+rootdir: C:\Users\foste\Documents\projects\local_sovereign_agent
+configfile: pytest.ini
+plugins: anyio-4.14.2, langsmith-0.10.14, timeout-2.4.0, xdist-3.8.0, typeguard-4.6.0
+collecting ... collected 17 items
+
+tests/test_dungeon_parser.py::test_dice_law_holds_on_all_14 PASSED       [  5%]
+tests/test_dungeon_parser.py::test_legacy_scan_blind_regex_finds PASSED  [ 11%]
+tests/test_dungeon_parser.py::test_logged_verdicts_were_all_wyrm_attacks PASSED [ 17%]
+tests/test_dungeon_parser.py::test_replay_14_logged_s4_verdicts_under_fixed_parser PASSED [ 23%]
+tests/test_dungeon_parser.py::test_r12_counterfactual_fixed_law_wyrm_never_falls PASSED [ 29%]
+tests/test_dungeon_parser.py::test_s4_disjunct_requires_attack_verb PASSED [ 35%]
+tests/test_dungeon_parser.py::test_extract_tag_units PASSED              [ 41%]
+tests/test_dungeon_parser.py::test_casefold_audit_burns_phantom PASSED   [ 47%]
+tests/test_dungeon_parser.py::test_regrowth_heals_per_unaudited_phantom PASSED [ 52%]
+tests/test_dungeon_parser.py::test_beat_outcome_tokens PASSED            [ 58%]
+tests/test_dungeon_parser.py::test_wipe_gated_on_target_prior_verdict PASSED [ 64%]
+tests/test_dungeon_parser.py::test_s1_verdict_finds_embedded_tag PASSED  [ 70%]
+tests/test_dungeon_parser.py::test_finish_reason_banked_and_void_census PASSED [ 76%]
+tests/test_dungeon_parser.py::test_campaign_done_carries_void_census_and_packs PASSED [ 82%]
+tests/test_dungeon_parser.py::test_dm_deglob_retry_rescues_readback PASSED [ 88%]
+tests/test_dungeon_parser.py::test_dm_deglob_retry_exhausts_to_void PASSED [ 94%]
+tests/test_dungeon_parser.py::test_paid_without_deglob_retries_identical_prompt PASSED [100%]
+
+============================= 17 passed in 1.04s ==============================
+EXIT=0
+
+# counterfactual verification run (pre-test, same numbers the test pins)
+# cmd: .venv/Scripts/python.exe - <<'EOF' (replay of the 14 fixtures + wyrm turns 6/12 through the current _grade/_wyrm_regrowth, spec-true packs)
+
+t 1   saelis: AUDIT vault deed b: FAIL (d20=1+2)  | ehp=40
+t 2     grok: RP (d20=16)  | ehp=40
+t 3  chatgpt: AUDIT vault deed b: SUCCESS (d20=12+4) - vault deed b revealed PHANTOM, now audited  | ehp=40
+t 4 deepseek: MISS (d20=2+4 vs AC 16)  | ehp=40
+t 5 deepseek: CHECK athletics: SUCCESS (d20=20+1 vs DC 14)  | ehp=40
+t 6 WYRM: REGROWTH +5 (1 unaudited PHANTOM) ehp=45 d20=1 -> MISS
+t 7   saelis: MISS (d20=6+5 vs AC 16)  | ehp=45
+t 8     grok: RP (d20=17)  | ehp=45
+t 9  chatgpt: AUDIT root: SUCCESS (d20=12+4)  | ehp=45
+t10 deepseek: AUDIT root: SUCCESS (d20=15+1)  | ehp=45
+t11 deepseek: AUDIT root: SUCCESS (d20=18+1)  | ehp=45
+t12 WYRM: REGROWTH +5 (1 unaudited PHANTOM) ehp=50 d20=2 -> MISS
+t13   saelis: AUDIT root: SUCCESS (d20=17+2)  | ehp=50
+t14     grok: RP (d20=13)  | ehp=50
+t15  chatgpt: AUDIT root: SUCCESS (d20=14+4)  | ehp=50
+t16 deepseek: RP (d20=20)  | ehp=50
+final ehp: 50 | root_anchors: 0 | pc_damage: {'saelis': 0, 'grok': 0, 'chatgpt': 0, 'deepseek': 0}
+EXIT=0

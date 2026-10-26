@@ -1,0 +1,65 @@
+=== m17-smalls finish-line checks, 2026-10-02T04:49:10Z ===
+--- 1. RECEIPT BYTES (finish line) ---
+17843 watch/inbox/salon_mine/m17.md
+f69abf8106870e7ae97de1357d9cd7afd084c824b19ea92e3a42d3d1e4d050f8 *watch/inbox/salon_mine/m17.md
+--- 2. RIB CENSUS ---
+45
+files with 20260810 token:
+17
+files with 20261001 token:
+5
+--- 3. RULE COUNT BY IMPORT ---
+RULES 31
+RULE_NAMES 31
+BLOCKABLE 26
+NEVER_BLOCK 5
+import exit: 0
+--- 4. LIVE GATE RUN (scoped) ---
+mode=full scope=explicit files_scanned=1 runtime_sec=0.0
+severity: critical=0 high=0 medium=0 low=0
+s3: aws_secret_entropy_filtered=0
+blocking=0 (threshold=high, provider shapes only)
+results: watch/inbox/secret_gate_results/full_20261002T044913Z.json
+exit=0 clean or report-tier only
+gate exit: 0
+--- 5. BASELINE ---
+{
+ "accepted": {},
+ "paths": [
+  {
+ 
+6
+--- 6. PACK BLOCKING ITEMS STATUS ---
+-rw-r--r-- 1 foste 197609 1675 Aug 14 12:41 memory/tls/lan.key
+steps.jsonl line 1994 token-shape count (value NOT printed):
+1
+--- 7. DOC SHA PARITY desktop vs repo ---
+40a39da4301e64c9cfbb072f3271e99bc0d5905c647305fea1ea4c5a155d4a34 *C:/Users/foste/Desktop/New folder/MODEL_RIB_LIBRARY_DESIGN_2026-08-31.md
+40a39da4301e64c9cfbb072f3271e99bc0d5905c647305fea1ea4c5a155d4a34 *watch/inbox/MODEL_RIB_LIBRARY_DESIGN_2026-08-31.md
+d9a3aff3b36843567a78abe599e8aeeed4d8c153be23a571b21115bb0ae334bc *C:/Users/foste/Desktop/New folder/OPERATOR_DRIVE.md
+8498a6860041902495c8e6a7ca4729b23aba859dec461d9843ffe3992c7bd96d *OPERATOR_DRIVE.md
+cf4f6bf20b214e48e2cf80d72281a88de128a3577b1ba05daa771259990bfcd7 *C:/Users/foste/Desktop/New folder/PACK_SECRET_GATE_20260926.md
+cf4f6bf20b214e48e2cf80d72281a88de128a3577b1ba05daa771259990bfcd7 *watch/inbox/PACK_SECRET_GATE_20260926.md
+--- 8. PRE-PUSH WIRING ---
+370:# built per watch/inbox/PACK_SECRET_GATE_20260926.md). Spec: tools/secret_gate.py
+385:echo "PUSH-GATE: secret_gate (--changed, enforcing)"
+386:sg_out=$(.venv/Scripts/python.exe tools/secret_gate.py --changed --baseline configs/secret_gate_baseline.json 2>&1)
+390:  0) echo "PUSH-GATE: secret_gate ok" ;;
+391:  1) echo "PUSH-GATE: secret_gate BLOCKS the push (provider-shaped secret in changed files)"; exit 1 ;;
+392:  *) echo "PUSH-GATE: secret_gate scanner error (exit $sg_rc): fail-closed, push blocked"; exit 1 ;;
+--- 9. SMALLS ---
+17801 C:/Users/foste/Desktop/New folder/z.txt
+17500 C:/Users/foste/Desktop/New folder/rib.txt
+    0 C:/Users/foste/Desktop/New folder/lol.txt
+35301 total
+81
+--- 10. JOBS DIR ---
+blade-warm-image
+codex-reconcile-doctrine
+deepseek-room-adapter
+first-4h-chain
+gateway-durable-spawn
+hermes-control-channel
+reset-burn-codex
+reset-burn-grok2
+=== end checks ===

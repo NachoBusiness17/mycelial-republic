@@ -1,0 +1,54 @@
+# T1W2_S6_docker (anthropic/claude-opus-5.5, turn 1, channel: content)
+
+# Stranger Audit: mag container surface
+
+**Evidence status:** The EVIDENCE block is empty. I have no compose file, no .env, no Dockerfile, and no bridge source, so every claim below is **UNVERIFIED** and has no file:line. **Conditions:** no instrument was run, the moment is pre-inspection, and the only context is the contract text. Treat this as a threat model plus a patch to verify, not as findings.
+
+## (1) LAN attacker, 3 moves (hypothesis, UNVERIFIED)
+
+1. **Scan.** A 0.0.0.0 bind means the published mag port answers on every host interface, not only loopback.
+2. **Talk.** If mag or /board/inbox has no auth, the attacker writes to the inbox. The bridge then treats that write as trusted estate input, which is prompt injection by network.
+3. **Pivot.** If the container holds env secrets or a writable host mount, the attacker reads keys through any debug, echo, or file-serving path.
+
+## (2) Secrets and mounts: check these
+
+- **Bad:** `env_file: .env`. It leaks through `docker inspect` and `/proc/1/environ`, and into crash dumps.
+- **Good:** compose `secrets:`, which mounts the value at `/run/secrets/<name>` with mode 0400.
+- **Bad:** `.:/app` or `~:/root`. This overmounts the image, exposes `.env` and `.git` inside, and is writable.
+- **Good:** mount only `./data:/data`, and add `:ro` wherever writes are not needed.
+- Confirm that `.env` is listed in `.dockerignore`, so it is not baked into an image layer.
+
+## (3) Cheapest real hardening: one override file
+
+Apply this as `compose.override.yml`. Key it on the **service** name, not `container_name`, per the 09-30 lesson.
+
+```yaml
+services:
+  mag:
+    ports: !override
+      - "127.0.0.1:${MAG_PORT}:${MAG_PORT}"
+    read_only: true
+    tmpfs: [/tmp]
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    secrets: [mag_token]
+secrets:
+  mag_token:
+    file: ./secrets/mag_token
+```
+
+`MAG_PORT` is a placeholder (UNVERIFIED), and the bridge service name is unknown, so mirror the same block for it. The app must also accept the token from a file.
+
+**Not theater:**
+- The loopback bind kills move 1.
+- The secrets file kills the env leak.
+- `read_only` together with `cap_drop` caps move 3.
+
+**Theater, so skip it:**
+- Renaming ports.
+- Custom bridge networks while the 0.0.0.0 publish remains.
+- Scanning images while `.env` is still mounted.
+
+## Falsifier
+
+From a second LAN host, run `nc -zv <host> $MAG_PORT`. The patch is wrong if this connects after `docker compose up`. It is also wrong if `docker inspect mag` (resolve the container name first) still shows the token under `Env`.

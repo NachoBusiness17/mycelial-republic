@@ -1,0 +1,50 @@
+== t15 check: rerun prereg for method-card frozen battery, run 2026-09-26 ==
+
+$ ls watch/inbox/method_card_exp/
+BATTERY.md  CARD_V1.md  CARD_V2.md  CONTROL_SHEET.md  FREEZE_SEAL.json
+BATTERY_HELDOUT.md  GROUND_TRUTH_HELDOUT.md
+(7 files; heldout files NOT opened this session, hashes computed byte-blind)
+
+$ sha256sum dashboard/data/ESTATE_INDEX.jsonl dashboard/static/index_data/last_run.json dashboard/static/index_data/rollup.json
+cceace710d488c13621255e8e3e0aa7210de170e8aeaa014215211933a909733 *dashboard/data/ESTATE_INDEX.jsonl
+82940bc0a63ffa339d71181c5f88df1ad1b3575920683e9d8a1692fe8953f840 *dashboard/static/index_data/last_run.json
+4f76d535cb0f104fe2d03b797748a008ecf597e25b22d12832c5f5f3418da542 *dashboard/static/index_data/rollup.json
+$ wc -l dashboard/data/ESTATE_INDEX.jsonl
+1221058 dashboard/data/ESTATE_INDEX.jsonl
+$ stat -c '%s %n' dashboard/data/ESTATE_INDEX.jsonl
+402114160 dashboard/data/ESTATE_INDEX.jsonl
+-> ALL THREE MATCH FREEZE_SEAL.json (sealed 2026-09-26T00:19:19-0400 by t5).
+-> First 12: index cceace710d48 / last_run 82940bc0a63f / rollup 4f76d535cb0f.
+
+$ sha256sum watch/inbox/method_card_exp/BATTERY_HELDOUT.md watch/inbox/method_card_exp/GROUND_TRUTH_HELDOUT.md
+98a364293ec20aa3d05e43e569d316be8f1baff2dd99afe07b1c3477bd5ee82c *BATTERY_HELDOUT.md
+81aa08447f3d3ec31d5a78987adc393ec30c0730a908fcfc445ca7f4c9e46a7d *GROUND_TRUTH_HELDOUT.md
+$ git show 926b9abf1:<heldout paths> | sha256sum   (both)
+98a364293ec20aa3d05e43e569d316be8f1baff2dd99afe07b1c3477bd5ee82c -
+81aa08447f3d3ec31d5a78987adc393ec30c0730a908fcfc445ca7f4c9e46a7d -
+-> Heldout files byte-identical to commit 926b9abf1 (content never read).
+
+Frozen STEP 1 gate executed verbatim from RERUN_PREREG_20260926.md:
+SEAL OK
+gate_exit=0
+-> The SPEC-NEW command is syntactically valid and currently passes.
+
+CONTROL_SHEET.md scanned in full: 12 facts, each with a per-fact re-verify
+command; NO single scoring command exists -> frozen command marked SPEC-NEW
+per item contract (prereg Section 2).
+
+Cross-receipts:
+- watch/inbox/gala_20260925/afterparty/lanes/t5.check.txt: t5 re-seal hashes
+  (dashboard/data/ spine paths), post-write validation clean.
+- watch/inbox/gala_20260925/w3/lanes/a07-method-cards.json decision_changed:
+  "Any re-run of the frozen battery must first write a fresh seal ... the
+  2026-09-24 seal is provably stale." Satisfied: prereg binds to the t5 seal
+  and voids prior_seals[0] as baseline.
+- watch/inbox/GALA_MORNING_AFTER_PREREG_20260926.md item 12: heldout files must
+  stay unchanged; prereg Section 1 pins their hashes as the drift baseline.
+
+Em-dash law: grep -c <U+2014> on prereg + this file = 0 lines each
+(one em-dash found in prereg title at write time, fixed to hyphen before banking).
+
+Prereg author exclusion: t15 never opened either heldout file; t15 is named
+excluded from scoring in prereg Section 3 rule 4.

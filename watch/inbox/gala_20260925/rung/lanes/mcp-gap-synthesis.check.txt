@@ -1,0 +1,80 @@
+=== CHECK 1: tools/mcp_parity.py (MCP-2 parity, live rerun) ===
+MCP-PARITY PASS (ok=3 diverge=0 skip=0)
+  stdio : profile=bridge served=7 host_truth=7 declared=7 -> OK
+  http  : profile=full served=42 host_truth=42 declared=42 -> OK
+  docker: profile=archivist served=17 host_truth=17 declared=17 -> OK
+         image: container 0225f08a7c2f vs mag-sovereign:local 0225f08a7c2f -> match
+MCP-PARITY exit=0
+CHECK1_EXIT=0
+=== CHECK 2: seed MCP live probe (tools + resources) ===
+SEED_TOOLS: ['rebuild_subtree', 'verify_hash', 'fetch_bounded_pointer', 'join_protocol']
+SEED_RESOURCES: ['seed://current', 'seed://law-registry', 'seed://brief-pointers']
+CHECK2_EXIT=0
+=== CHECK 3: oauth grep over MCP surfaces (zero hits expected; exit 1 = pass) ===
+CHECK3_EXIT=1
+=== CHECK 4: mcp-registry integration grep (zero hits expected; exit 1 = pass) ===
+CHECK4_EXIT=1
+=== CHECK 5: gateway auth probes (all 401 expected) ===
+-- no key:
+401
+-- wrong key:
+401
+-- .well-known/oauth-authorization-server:
+401
+-- .well-known/openid-configuration:
+401
+=== CHECK 6: GPS router tests ===
+......                                                                   [100%]
+6 passed in 13.27s
+CHECK6_EXIT=0
+=== CHECK 7: MCP eval harness grep (expected: only the parity evaluate import) ===
+tests/test_mcp_parity.py
+CHECK7_EXIT=0
+4:compare_transport() / evaluate() / format_report(). NO live transport is
+16:from tools.mcp_parity import compare_transport, evaluate, format_report, manifest_digest
+115:# ─────────────────────────────── evaluate ───────────────────────────────────
+117:def test_evaluate_diverge_fails_loud_exit_1():
+118:    report = evaluate([row(), row(transport="docker", status="diverge",
+124:def test_evaluate_ok_with_named_skips_passes_exit_0():
+127:    report = evaluate(rows, ["bridge"])
+132:def test_evaluate_all_skipped_cannot_verify_exit_2():
+135:    report = evaluate(rows, ["bridge"])
+139:def test_evaluate_withheld_only_rows_stay_pass():
+146:    report = evaluate(rows, ["bridge"])
+150:def test_evaluate_ignores_baseline_rows():
+151:    report = evaluate([{"transport": "stdio[full]", "status": "baseline"},
+171:    report = evaluate(
+192:    report = evaluate([{"transport": "docker-image", "status": "ok",
+CHECK7B_EXIT=0
+=== CHECK 8: pin gate presence in source ===
+21:PIN GATE (2026-09-29, wave5-repair mcp-pin-wire): tools/mcp_pin.py
+28:override, default state/mcp_pins.jsonl; MAG_MCP_PIN_GATE=off|0|false is the
+328:    tools/mcp_pin.py DEFAULT_LEDGER).  MAG_MCP_PIN_GATE=off|0|false disarms the
+331:    if os.environ.get("MAG_MCP_PIN_GATE", "").strip().lower() in ("0", "off", "false"):
+CHECK8_EXIT=0
+=== CHECK 9: sibling lanes dir (expected ABSENT at synthesis close) ===
+ls: cannot access 'watch/inbox/gala_20260925/2026-10-11_mcp-landscape/lanes/': No such file or directory
+CHECK9_EXIT=2
+=== CHECK 10: quote byte-verification (fixed-string greps; 1 = present) ===
+1
+Q1_EXIT=0
+1
+Q2_EXIT=0
+1
+Q3_EXIT=0
+1
+Q4_EXIT=0
+1
+Q5_EXIT=0
+1
+Q6_EXIT=0
+1
+Q7_EXIT=0
+1
+Q8_EXIT=0
+2
+Q9_EXIT=0
+=== CHECK 11: em-dash scan over lane JSON (0 expected; grep exit 1 = pass; pattern is UTF-8 bytes e2 80 94) ===
+0
+CHECK11_EXIT=1
+=== BATTERY DONE ===

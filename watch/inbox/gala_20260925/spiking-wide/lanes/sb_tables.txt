@@ -1,0 +1,69 @@
+
+====================================================================================================
+TABLE 1 CAPTION: Table 1: Performance evaluation of the SpikingBrain-7B pre-trained model. All models are tested with the HuggingFace framework and evaluated using a perplexity-based method. Except for Qwen2.5, the other baselines are trained on limited Chinese data, resulting in clear disadvantages on CMMLU and C-Eval.
+ | SpikingBrain- 7B | Falcon- Mamba ( 75 ) | Mistral ( 76 ) | Zamba-v1 ( 77 ) | Llama3.1 ( 78 ) | Qwen2.5 ( 7 ) (base)
+Params | 7B | 7B | 7B | 7B | 8B | 7B
+Tokens | +150B | 5.8T | – | 1T | 15T | 7T
+Complexity Type | Linear | Linear | Linear | Hybrid | Quadratic | Quadratic
+Benchmarks
+MMLU ( 79 ) | 65.84 | 63.24 | 62.56 | 58.19 | 65.74 | 74.21
+CMMLU ( 80 ) | 71.58 | 42.50 | 44.58 | 38.42 | 52.44 | 81.73
+ARC-C ( 81 ) | 43.32 | 47.53 | 45.13 | 37.18 | 51.96 | 44.04
+HS ( 82 ) | 70.89 | 71.50 | 75.81 | 52.02 | 71.60 | 72.81
+Ceval ( 83 ) | 69.80 | 41.93 | 47.04 | 36.40 | 51.46 | 81.60
+
+====================================================================================================
+TABLE 2 CAPTION: Table 2: Performance evaluation of the SpikingBrain-76B pre-trained model. All models are tested with the vLLM ( 84 ) framework and evaluated using a perplexity-based method. Except for Qwen2.5, the other baselines are trained on limited Chinese data, resulting in clear disadvantages on CMMLU and C-Eval.
+ | SpikingBrain-76B (76B-A12B) | Jamba ( 23 ) (52B-A12B) | Mixtral-8*7B ( 85 ) (47B-A13B) | LLama2-70b ( 86 ) | Gemma2-27B ( 87 ) | Qwen2.5 ( 31 ) (base)
+Params | 12B/76B | 12B/52B | 13B/47B | 70B | 27B | 7B
+Tokens | +160B | – | – | 2T | 13T | 7T
+Complexity Type | Hybrid | Hybrid | Quadratic | Quadratic | Quadratic | Quadratic
+Benchmarks
+MMLU ( 79 ) | 73.58 | 67.17 | 71.23 | 69.57 | 75.94 | 75.31
+CMMLU ( 80 ) | 78.83 | 51.11 | 52.70 | 52.94 | 61.80 | 81.50
+ARC-C ( 81 ) | 42.00 | 49.10 | 48.98 | 46.21 | 57.64 | 43.56
+HS ( 82 ) | 73.31 | 79.39 | 79.42 | 79.15 | 79.34 | 73.37
+Ceval ( 83 ) | 78.89 | 48.94 | 54.39 | 49.26 | 61.02 | 81.68
+
+====================================================================================================
+TABLE 3 CAPTION: Table 3: Performance Evaluation of SpikingBrain Chat Models. All models are tested with the vLLM framework and evaluated using a generation-based method. Except for Qwen2.5, the other baselines are trained on limited Chinese data, resulting in clear disadvantages on CMMLU and C-Eval. For QuALITY and IFEval, we report results from the non-CoT model (after SFT stage 2) to avoid chain-of-thought interference.
+ | SpikingBrain-7B | SpikingBrain-76B | Llama3 ( 78 ) | Qwen2.5 ( 31 ) | Mixtral ( 85 )
+Params | 7B | 12B/76B | 8B | 7B | 13B/47B
+Complexity Type | Linear | Hybrid | Quadratic | Quadratic | Quadratic
+Benchmarks
+MMLU ( 79 ) | 65.57 | 73.71 | 68.69 | 75.17 | 71.03
+CMMLU ( 80 ) | 68.76 | 77.41 | 55.17 | 79.14 | 51.03
+HS ( 82 ) | 68.95 | 86.63 | 76.80 | 85.39 | 75.63
+Ceval ( 83 ) | 69.07 | 76.32 | 55.01 | 77.93 | 50.88
+NQ ( 88 ) | 21.47 | 21.55 | 30.97 | 17.67 | 28.48
+TrQ ( 89 ) | 57.03 | 55.13 | 65.78 | 55.72 | 71.00
+QuALITY ( 90 ) | 60.12 | 69.56 | 66.25 | 73.63 | 51.34
+IFEval ( 91 ) | 42.70 | 49.72 | 73.01 | 73.20 | 48.06
+
+====================================================================================================
+TABLE 4 CAPTION: Table 4: Inference speed comparison of SpikingBrain-7B under sequence parallelism (SP). The metric is TTFT (ms), defined as the latency to complete prefill and generate the first token for a given prompt length. In SP configuration, our 7B model uses ZeCO for the linear attention module and P2P communication for the SWA module, while the Qwen2.5 baseline employs A2A communication. All measurements are conducted on NVIDIA H100 GPUs and averaged over 10 runs. “–” indicates infeasible measurement due to resource constraints.
+Sequence length | GPU count | SpikingBrain-7B | Qwen2.5-7B
+256k | 8 | 1015 | 7419
+512k | 16 | 1037 | 14398
+1M | 32 | 1054 | 27929
+2M | 64 | 1070 | –
+4M | 128 | 1073 | –
+
+====================================================================================================
+TABLE 5 CAPTION: Table 5: Inference latency (ms) comparison across models, frameworks, and sequence lengths. Tests are conducted on HuggingFace single-GPU deployment with MetaX C550 GPUs and on vLLM with both single- and multi-GPU settings.
+Latency is measured as the time to process the input sequence and generate 128 output tokens.
+ | SpikingBrain -7B | Mistral -7B-v0.1 | Qwen2.5 -7B | SpikingBrain-7B | Mistral -7B-v0.1 | Qwen2.5 -7B | SpikingBrain -76B | Mixtral -8x7B-v0.1 | Llama -2-70b
+GPUs | 1 | 1 | 4
+Frameworks | HuggingFace | vllm | vllm
+Expert Parallel | Non-MoE | Enable / Disable | Non-MoE
+32k | 8452 | 10202 | 7969 | 4369 | 4570 | 6421 | 9451 / 5305 | 10477 / 3209 | 15881
+64k | 11685 | 16467 | 16257 | 7399 | 7084 | 15093 | 14077 / 8142 | 19062 / 4840 | 32953
+128k | 15974 | 28382 | 38487 | 12048 | 11867 | 45141 | 27106 / 14109 | 34983 / 8046 | 86120
+
+====================================================================================================
+TABLE 6 CAPTION: Table 6: Performance comparison of SpikingBrain before and after applying the spiking scheme. Evaluations are performed on commonsense reasoning, MMLU, and CMMLU benchmarks. The integration of adaptive-threshold spike coding with 8-bit weight quantization results in negligible performance degradation (approximately 1–3%).
+ | Winogrande | Arc-e | Arc-c (norm) | HellaSwag (norm) | PIQA | MMLU | CMMLU | Avg.
+SpikingBrain-7B | 0.6992 | 0.8047 | 0.5566 | 0.6777 | 0.7949 | 0.6751 | 0.6904 | 0.6998
+SpikingBrain-7B - W8ASpike | 0.6895 | 0.7861 | 0.5410 | 0.6758 | 0.7979 | 0.6546 | 0.6677 | 0.6875
+SpikingBrain -76B | 0.7275 | 0.8125 | 0.5615 | 0.7000 | 0.8125 | 0.7247 | 0.7740 | 0.7304
+SpikingBrain -76B- W8ASpike | 0.7148 | 0.7949 | 0.5371 | 0.6863 | 0.8004 | 0.7081 | 0.7512 | 0.7133

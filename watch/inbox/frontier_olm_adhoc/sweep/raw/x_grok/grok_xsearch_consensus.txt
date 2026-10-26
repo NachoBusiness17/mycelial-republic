@@ -1,0 +1,205 @@
+cmd: grok --prompt-file <consensus.txt> --max-turns 20
+exit: 0 latency_ms: 143562
+--- stdout ---
+I'll search X directly for the last 30 days on multi-agent consensus, voting failures, and swarm scaling measurements.The first pass already has measured cases. I'll pull a few more on quorum, heterogeneous votes, and the posts that carry the hard numbers.URL: https://x.com/the_posterior/status/2107055377489789035
+HANDLE: @the_posterior
+DATE: 2026-10-05
+TEXT: Google ran Claude Opus 4.8 ten times on every task in five long agent benchmarks, then kept the run the others agreed with most.
+
+The score went from 49.6 to 50.4. Ten times the runs for under a point.
+
+The best of those ten averaged 63.1. Better work was in the pile. The vote couldn't find it.
+WHY: Majority agreement across 10 identical runs lifted the score only 49.6 to 50.4, while the best run averaged 63.1.
+
+URL: https://x.com/the_posterior/status/2107055379981176943
+HANDLE: @the_posterior
+DATE: 2026-10-05
+TEXT: 2/ Voting works when mistakes scatter. On a math problem there are many ways to be wrong and one way to be right, so the right answer piles up.
+Ten runs of one model on a long task often make the same mistake. On one benchmark, 34% of the values all ten runs agreed on were wrong.
+Agreement tells you what the model believes, not what's true.
+WHY: On one long-task benchmark, 34% of values that all ten runs agreed on were wrong.
+
+URL: https://x.com/the_posterior/status/2107055384406184399
+HANDLE: @the_posterior
+DATE: 2026-10-05
+TEXT: 4/ The checking was also cheaper than the vote. With Opus 4.8 it cost $3.92 a task, about half the paper's estimate for voting.
+The reason is the cache. The vote reads all ten runs in one big prompt. The checker works in small steps in one session, so 86 to 91% of what it reads the server has already processed, and that part bills at a tenth of the price.
+Without that discount, the same checking costs $13.06.
+WHY: Claim-checking cost $3.92 per task versus about twice that for voting; without cache the same check was $13.06.
+
+URL: https://x.com/omarsar0/status/2106700905051746803
+HANDLE: @omarsar0
+DATE: 2026-10-04
+TEXT: Banger paper from Google.
+
+It's standard practice to sample several agent rollouts and trust the answers they agree on.
+
+This Google paper shows that agreement can hide shared errors, while disagreement often points to the correct alternative.
+
+VeriHarness turns the same base model into an agentic verifier with two jobs.
+
+One resolves claims where rollouts disagree by checking workspace evidence.
+WHY: Google's VeriHarness: agreement hides shared errors; evidence-backed revision added 6.2 points (Gemini 3.5 Flash) and 6.4 (Claude Opus 4.8) over one rollout.
+
+URL: https://x.com/aiartgallerie/status/2106724154028249417
+HANDLE: @aiartgallerie
+DATE: 2026-10-04
+TEXT: The disagree-case is the useful bit.
+
+Most agent setups treat majority vote as truth. VeriHarness has a second job that challenges the claims every rollout agreed on and looks for requirements they all skipped.
+
+That’s closer to how I’d want a coding agent to behave on a long task: don’t just pick the popular answer, poke the shared blind spots.
+WHY: Majority vote treats shared agreement as truth; the useful job is challenging claims every rollout skipped.
+
+URL: https://x.com/toomij99/status/2108452213899382881
+HANDLE: @toomij99
+DATE: 2026-10-09
+TEXT: Most of the gain credited to multi-agent debate is majority voting. Across 7 benchmarks, voting alone accounts for most of it. Before adding a debate round, run a plain vote and compare. Cheaper, and easier to debug. #LLM #AIagents
+WHY: Across 7 benchmarks, most of the gain credited to multi-agent debate is just majority voting.
+
+URL: https://x.com/jaenanft/status/2108390620834529399
+HANDLE: @jaenanft
+DATE: 2026-10-09
+TEXT: Swarms v16 Overclock: Independent Votes  📤
+
+SelfConsistencyAgent used to reuse one agent across every sample. Self-consistency needs independent draws to vote over, and there weren't any. 
+
+Each sample now gets its own reasoning agent, so the majority vote actually means something.
+
+Learn more ⬇️
+WHY: A self-consistency agent was reusing one agent for every sample, so the majority vote was not independent draws.
+
+URL: https://x.com/wfouaaad/status/2109053677080039611
+HANDLE: @wfouaaad
+DATE: 2026-10-10
+TEXT: your LLM judge agrees with your human labels 95% of the time. so does return "pass".
+
+1000 traces, 50 real fails:
+always-pass judge: 95% agreement, catches 0
+decent judge: 96% agreement, catches 40
+
+report recall on the fails. agreement mostly measures your base rate.
+WHY: On 1000 traces with 50 real fails, a 95% agreement judge can catch zero failures; agreement mostly tracks the base rate.
+
+URL: https://x.com/builderleader/status/2108310331147645031
+HANDLE: @builderleader
+DATE: 2026-10-08
+TEXT: I decoded SIFT, a self-improving coding agent that puts a cheap pairwise LLM judge in front of the expensive benchmark run.
+
+The part I'd lift: give the judge the full resulting files. Against diffs alone, rank agreement with the real benchmark went from Spearman 0.40 to 0.68, at $0.011 a comparison. Swap-ordering doubled the cost and added nothing.
+
+I scored it 5.8/10. Single runs, no error bars, and the judge's top pick wasn't the best agent its own search found on 2 of 3 benchmarks.
+WHY: Pairwise LLM-judge agreement with the real benchmark rose from Spearman 0.40 to 0.68 at $0.011 a comparison, and the judge's top pick missed the best agent on 2 of 3 benchmarks.
+
+URL: https://x.com/RahilVerma13/status/2107491286139977867
+HANDLE: @RahilVerma13
+DATE: 2026-10-06
+TEXT: At Applied Compute most of our RL and eval pipelines grade with an LLM judge. These produce one result per rubric criterion, typically a paragraph of text accompanying a score. For some complicated tasks, grading can be a slow, pricey part of the loop.
+
+We swapped a grader on a code QA benchmark in AC2 for a decision grader: one call, a yes/no probability for every criterion at once. On 100 sample tasks (407 criteria), same answers:
+→ ~32× cheaper
+WHY: A one-call decision grader matched an LLM judge on 100 tasks / 407 criteria at about 32× lower cost, 8× faster, and 94% agreement (99% when confident).
+
+URL: https://x.com/winzheng_lab/status/2108548727820657129
+HANDLE: @winzheng_lab
+DATE: 2026-10-09
+TEXT: the judging method matters a lot here — LLM-as-judge tends to favor its own outputs and longer responses. we moved to deterministic rule/sandbox scoring specifically to avoid this bias
+WHY: LLM-as-judge favors its own outputs and longer responses, so they switched to deterministic sandbox scoring.
+
+URL: https://x.com/SaadAmmrun/status/2109245714391818255
+HANDLE: @SaadAmmrun
+DATE: 2026-10-11
+TEXT: Circular sourcing disguised as consensus is the failure mode nobody tests for. Three agents citing the same bad clause isn't agreement, it's one error laundered three times. Majority vote amplifies this. Verifying source independence before weighing votes is the missing check, otherwise consensus just means shared contamination.
+WHY: Three agents citing the same bad source is one error counted three times; majority vote amplifies shared contamination.
+
+URL: https://x.com/youshenlim/status/2108375051288371480
+HANDLE: @youshenlim
+DATE: 2026-10-09
+TEXT: New framework boosts LLM reasoning across mixed domains to 79.4% accuracy without retraining. Route-Verify-Vote routes questions to domain procedures, verifies answers against constraints, and votes across samples. Adaptive sampling focuses compute where… https://arxiv.org/abs/2610.08814
+WHY: Route-Verify-Vote reports 79.4% mixed-domain accuracy by routing, constraint checks, and voting across samples.
+
+URL: https://x.com/askalphaxiv/status/2102707295717036507
+HANDLE: @askalphaxiv
+DATE: 2026-09-23
+TEXT: "Self-Organizing Agent Teams Learn to Reason Together"
+
+Most multi-agent systems are given a fixed way to collaborate.
+
+This paper shows agents can instead learn how to work together from experience, developing teamwork strategies that let them challenge, repair, and build on each other’s reasoning.
+
+With this setup, they were able to get 66.7% accuracy vs 48.8% for the strongest member and 59.0% for a perfect router.
+WHY: Learned teamwork reached 66.7% versus 48.8% for the strongest member and 59.0% for a perfect router.
+
+URL: https://x.com/XSeyvion/status/2109358443408544040
+HANDLE: @XSeyvion
+DATE: 2026-10-11
+TEXT: Multi agent teams look like wasted spend in a lot of setups.
+
+Vals AI says teams barely beat solo agents while costing up to 5.1x more tokens.
+
+Only one out of four tests showed a measurable gain.
+
+That means “add more agents” fails as a default scaling plan.
+
+Coordination overhead eats the budget when every sub agent repeats the same reasoning.
+
+The next upgrade will be routing.
+
+One strong planner plus cheap checks will ship in products before big agent swarms do.
+
+Where do you see swarms paying off?
+WHY: Vals AI: multi-agent teams cost up to 5.1× the tokens and showed a measurable gain on only 1 of 4 tests.
+
+URL: https://x.com/AiwithAnnie/status/2107134077996613814
+HANDLE: @AiwithAnnie
+DATE: 2026-10-05
+TEXT: When are AI swarms worth the token bill?
+When wall-clock speed matters more than total inference cost.
+
+A 4-agent swarm used about twice the tokens to match one agent, while parallelism could halve the time. But at 10x scale, performance rises only 3x to 5x. Swarms trade token efficiency for speed.
+
+#AIAgents #AIforScience
+WHY: A 4-agent swarm used about 2× the tokens to match one agent; 10× width yielded only 3× to 5× performance.
+
+URL: https://x.com/scaling01/status/2102806864178135051
+HANDLE: @scaling01
+DATE: 2026-09-23
+TEXT: Based on my estimates, the 10,000-agent swarm that solved the Navier-Stokes problem was about 8 months of frontier progress ahead of a single GPT-6-Astra instance (with a range of 5.5 to 12.4 months)
+
+It used 48,000 times more output tokens than the largest single model evaluation and roughly 68 times more than an entire long-horizon coding benchmark
+WHY: A 10,000-agent swarm is estimated at 48,000× the output tokens of the largest single-model eval, for about 8 months of frontier lead.
+
+URL: https://x.com/PrimeIntellect/status/2108672479007047952
+HANDLE: @PrimeIntellect
+DATE: 2026-10-09
+TEXT: Over two weeks, Prime Agent orchestrated a swarm of over 2,000 agents to rewrite itself in Rust.
+
+With 10,000+ sandboxes, 200B+ GLM-5.3 tokens, and 16,000 agent-to-agent messages, this was our largest test yet of Prime Agent’s multi-agent capabilities and our infrastructure powering these agent swarms.
+
+Prime Agent now reaches usable input ~13× faster and uses 83% less startup memory than before.
+WHY: A 2,000-agent, two-week self-rewrite used 200B+ GLM-5.3 tokens and 16,000 agent-to-agent messages; result was ~13× faster usable input and 83% less startup memory.
+
+URL: https://x.com/BenToFound/status/2108174123100729830
+HANDLE: @BenToFound
+DATE: 2026-10-08
+TEXT: Had Claude audit the token spend across ~850 agent runs on a large codebase I'm building (5.2B tokens).
+
+ - 30% went on agent start-up: every agent loaded every tool, plugin and connector before doing anything
+ - 88% was spent on calls with more than 100k tokens of context: agents were running for far too long
+ - cache rewrites after idle gaps cost 155M more
+WHY: Across ~850 runs and 5.2B tokens, 30% was agent startup, 88% was calls over 100k context, and idle cache rewrites added 155M tokens.
+
+URL: https://x.com/rvaniaaaa/status/2101296533899510266
+HANDLE: @rvaniaaaa
+DATE: 2026-09-19
+TEXT: I still don't understand why everyone is still running agents in a line. I switched to graphs three weeks ago and my fleet finished in the time my single agent used to spend on step two.
+
+what slows every agent system I have seen is not intelligence. it is geometry. and almost nobody is talking about it.
+
+one engineer used this to rewrite 535,000 lines of code in 11 days. a manual rewrite of that scale could take close to a year. it cost $165,000 in tokens.
+WHY: A wide agent graph rewrote 535,000 lines in 11 days at $165,000 in tokens; later in the same post, a worker and its verifier must not share a context.
+
+SUMMARY: 20 posts retrieved via X search or thread fetch in this session, all dated 2026-09-19 through 2026-10-11.
+
+--- stderr tail ---
+

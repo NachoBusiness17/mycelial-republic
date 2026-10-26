@@ -1,0 +1,596 @@
+### Ternary Bonsai 2 27B, near top performance while fitting entirely in 8GB VRAM
+Ever since Bonsai 27B came out I was excited to see what PrismML will come out with next and they did not dissapoint. For those unaware the first Bonsai 27B was a 27B-class model that was quantized in Q1 with quantization-aware training that made it run in just 4GB while being decently smart. I'm not exactly sure about Ternary Bonsai2 27B, but this time it is an ~7GB model, showing amazing intelligence while fitting entirely in the 8GB VRAM of an RTX 4060.
+ NOTE: It took some effort and a few hours to figure out how to get Bonsai2 Ternary running in LM Studio. If you want to run it yourself you will need to build PrismML's fork of llama.cpp and use that to run the model.
+ The Benchmark
+ As always I am using my benchmarking base to check the models. For in-depth info about it check out the initial post (Reddit deleted this post for having links so you'll have to go to my profile for the post), but to recap:
+ I am benchmarking models that run on CONSUMER HARDWARE, specifically an 8GB RTX 4060 and 16GB RAM. These benchmarks may not be useful to people who have dedicated LLM servers.
+ All models are benchmarked with thinking DISABLED and responses being limited to 4096 tokens (responses longer than that always means the models are stuck in a loop).
+ Benchmark questions were made by me and the results were evaluated manually by me.
+ The benchmark consists of 18 questions across 6 categories: General knowledge, Math, Coding, Endurance, Logical puzzles and Spatial reasoning
+ I am not a LLM benchmarking expert, I am just a hobbyist trying to extract useful information for people on similar hardware.
+ The Statistics
+ LLM benchmark per-question score heatmap:
+ https://preview.redd.it/7jg13iqpkqqh1.png?width=1532&format=png&auto=webp&s=e94711d1c99bd534a59ac762f65a7fbc05d2078a
+LLM benchmark score sum graph:
+ https://preview.redd.it/x4btgdkqkqqh1.png?width=1439&format=png&auto=webp&s=e1a3da677049db75d50cbda6b7f32a82ecd31206
+LLM average TTC (Time-To-Completion) graph:
+ https://preview.redd.it/6lnlrw9rkqqh1.png?width=1432&format=png&auto=webp&s=64445e851a1d4b94226c5ad61521ebfcfe21f57b
+Combined graph ("intelligence per second", though highest is not exactly "best" and lowest isn't "worst"):
+ https://preview.redd.it/xc0b6nzrkqqh1.png?width=1437&format=png&auto=webp&s=353e9f7f5170379284519603b8fa8a020abf5c20
+And a neat visualization of the score vs. the speed (benchmark score vs inverted TTC):
+ https://preview.redd.it/iv902aoskqqh1.png?width=1714&format=png&auto=webp&s=e28ec6b5dc6f724f4c296e5ee4a2dd8beade6840
+ Conclusion
+ Ternary Bonsai2 27B seems to do pretty well in my benchmark which often does match my personal opinion but I'll need to test the model out in practice. I'll try to outsource all of my AI needs to Bonsai for some time and I'll post about it to update you guys.
+ In the meantime, those who have used Bonsai 2, what is your experiance? I see people saying it's bad in practice but I feel like people call most ~8GB models bad...
+submitted by /u/37Scorpions 
+ [link] [comments]
+
+### /u/EasterElk on Ternary Bonsai 2 27B, near top performance while fitting entirely in 8GB VRAM
+This model is hilariously bad in practice. It gets confused, loops, breaks down, and makes poor decisions. And yes, most 8GB models ARE bad. That doesn't make this one any more usable, sadly.
+ Everybody shares benchmarks, but I've yet to see a single useful thing that someone built or accomplished using one of these Bonsai models.
+
+### /u/Human_Information561 on Ternary Bonsai 2 27B, near top performance while fitting entirely in 8GB VRAM
+I spent several hours configuring Bonsai 2 and it just loops and loops and hallucinates….
+
+### /u/EasterElk on Ternary Bonsai 2 27B, near top performance while fitting entirely in 8GB VRAM
+This is everyone's experience. I think folks got really excited when they read this in the announcement:
+ The new Ternary Bonsai 2 27B retained over 98% [of the aggregate benchmark performance of its full precision counterpart]. This considerable closing of the gap shows how quickly low-bit models are improving from one generation to the next.
+ I'm sure some goober at PrismML will explain how this is actually technically true in some contrived way. But for the rest of this, this sort of claim is known better by it's other name, a big goddamn lie.
+
+### /u/ByteNomadOne on Ternary Bonsai 2 27B, near top performance while fitting entirely in 8GB VRAM
+Thanks for sharing your experience. Came here after seeing YouTube videos hyping it. Now I know that I can save my time.
+
+### /u/nafatsari on Ternary Bonsai 2 27B, near top performance while fitting entirely in 8GB VRAM
+Honestly i tested it wirh multiple prompts, some easy, some i usually claude for, and it always did its job without any issues. I'm starting to think people are using xhigh reasoning which is broken also on the base 3.8 (again in my experience), so overall super happy with a 27b working well in my laptop
+
+### /u/EasterElk on Ternary Bonsai 2 27B, near top performance while fitting entirely in 8GB VRAM
+xhigh slows things down dramatically, but there's no indication that it makes results worse. Everything suggests the exact opposite, in fact. I've never seen a benchmark or a demonstration of Qwen 3.8 that showed xhigh giving worse results than medium or low — always better (albeit slower), so I would hardly call it broken.
+ What sort of quantization are you using?
+
+### /u/nafatsari on Ternary Bonsai 2 27B, near top performance while fitting entirely in 8GB VRAM
+Broken in the sense that in my computer it spends all his budget thinking and never get an output before reaching the limit, making it completely useless in case you also want to use preserve_thinking
+
+### /u/Force-Name on Ternary Bonsai 2 27B, near top performance while fitting entirely in 8GB VRAM
+So to get it to do what you want you have to use Claude to translate for you? That's the point of my project. A translation gateway. So far no luck with a lot of models though. It's a work in progress. I'll have to try this one and apply custom translations.
+
+### /u/nafatsari on Ternary Bonsai 2 27B, near top performance while fitting entirely in 8GB VRAM
+No i meant the claude part as the difficult job i usually use claude for. I would not trust it for the really really hard parts, but it is a 5.8GB model i think it is already incredible
+
+### /u/No-Business5854 on Ternary Bonsai 2 27B, near top performance while fitting entirely in 8GB VRAM
+if you have 8gb vram but a good amount of ram, you are better of with an moe. im using qwen 3.6 35b a3b q4 with 6gb of vram and 28gb of ddr5 with no issue
+
+### /u/Glittering-Call8746 on Ternary Bonsai 2 27B, near top performance while fitting entirely in 8GB VRAM
+How's ornith ?
+
+### /u/No-Business5854 on Ternary Bonsai 2 27B, near top performance while fitting entirely in 8GB VRAM
+idk , havent tried. they claim better benchmarks than qwen 3.6 35b a3b but after bonsai i dont trust benchmarks anymore. ill look into it when i have time
+
+### /u/Glittering-Call8746 on Ternary Bonsai 2 27B, near top performance while fitting entirely in 8GB VRAM
+Yeah I'm busy trying to use astra to port to rdna3 I can only afford 5060 8gb I bought 7900xtx but amd support is meh.
+
+### /u/No-Business5854 on Ternary Bonsai 2 27B, near top performance while fitting entirely in 8GB VRAM
+idk i just use lm studio and i have an nvidea gpu so i can use cuda. im still sad i got 6 gb of vram instead of at least 8
+
+### /u/Key_Measurement_3576 on Ternary Bonsai 2 27B, near top performance while fitting entirely in 8GB VRAM
+I got it working for Intel arc b70 this weekend. Did a bunch of tuning and even some drafter training. 
+ Gonna let it run this week across four cards in parallel. Using our own harness, and a skill that automatically chops up smaller context jobs, and sent them out in parallel I found that it’s not terrible at all, but I can run qwen 3.8 on the same card with just lower head room .
+
+### /u/No-Business5854 on Ternary Bonsai 2 27B, near top performance while fitting entirely in 8GB VRAM
+it seems to be kinda better but not that far
+
+### /u/AvidCyclist250 on Ternary Bonsai 2 27B, near top performance while fitting entirely in 8GB VRAM
+Fantastic. As is Kat Coder 2.5
+
+### /u/Itchy_elbow on Ternary Bonsai 2 27B, near top performance while fitting entirely in 8GB VRAM
+It’s been great actually. Pretty impressed honestly
+
+### /u/CooperDK on Ternary Bonsai 2 27B, near top performance while fitting entirely in 8GB VRAM
+The 27B is actually better.
+
+### /u/Cool-Chemical-5629 on Ternary Bonsai 2 27B, near top performance while fitting entirely in 8GB VRAM
+Yeah, it's better. And slower too.
+
+### /u/Itchy_elbow on Ternary Bonsai 2 27B, near top performance while fitting entirely in 8GB VRAM
+True. 9B is fast and does better than larger modules I’ve tinkered with - coding and mixed tasks
+
+### /u/No_Delay_319 on Ternary Bonsai 2 27B, near top performance while fitting entirely in 8GB VRAM
+thats because its q1 quant. the "performance retention" lasts like 3 prompts and then it becomes dumb asf
+
+### /u/Kodix on Ternary Bonsai 2 27B, near top performance while fitting entirely in 8GB VRAM
+This model - the bonsai family in general - is a perfect example of what benchmaxxing really is, and why benchmarks absolutely are *not* representative of a model's true performance. 
+ I just wish more people would see it.
+
+### /u/37Scorpions on Ternary Bonsai 2 27B, near top performance while fitting entirely in 8GB VRAM
+Is benchmaxxing just training your model to perform well on popular benchmarks or to perform well on benchmarks in general? Asking because I assume its the former (if you're good at most benchmarks you're probably good in practice lol) and because that should mean my benchmark in specific should be less suseptible. For general questions I feel like Bonsai is pretty good and that's what this benchmark is geared towards but I assume I'm upsetting the people who like leaving LLMs in charge of everything.
+
+### /u/fruitofdoom on Ternary Bonsai 2 27B, near top performance while fitting entirely in 8GB VRAM
+I guess it's about how they present it (comparing it vs fp16 and q4xxl) vs. how it actually performs (worse than ud q2xxs in agentic tasks). Do you have experience with how well unsloth q2 xxs performs in general questions compared to Bonsai 2? For CPU-only, maybe Bonsai 2 just wins because there's no competition.
+
+### /u/37Scorpions on Ternary Bonsai 2 27B, near top performance while fitting entirely in 8GB VRAM
+Unsloths Qwen3.8 27B Q2 quant is in the list of benchmarked LLMs, its near the bottom though. While in-practice performance matters a lot I didn't really give the model time to shine since despite the high quantization it was still pretty slow.
+
+### /u/fruitofdoom on Ternary Bonsai 2 27B, near top performance while fitting entirely in 8GB VRAM
+That's fair, at 8gb territory speed is more important especially for chats. Not sure if it would be useful for you, but I've been ASCII trimming every model with bsaleh03's prune tool and then offload embedding and FFN layers with Stainless-Bacon's guide. Might still be too slow for you anyway though.
+
+### /u/emperorofrome13 on Ternary Bonsai 2 27B, near top performance while fitting entirely in 8GB VRAM
+If bonsai benched well for you it means your benchmark is bad. Its a terrible model. Chatgpt 20b OSS. And that came out a million years ago
+
+### /u/DifficultUse6803 on Ternary Bonsai 2 27B, near top performance while fitting entirely in 8GB VRAM
+Yes it is not good at all. I'm sure it's great at benchmarks though but for real work? Nope.
+
+### /u/TytalusWarden on Ternary Bonsai 2 27B, near top performance while fitting entirely in 8GB VRAM
+What task did you have it attempting to do where it got confused and looped, then broke down? Was it an agentic coding task (which I haven't seen listed as a strength of this model), or was it something research-aligned or just day-to-day tasks like inbox management or automated letter drafting?
+
+### /u/EasterElk on Ternary Bonsai 2 27B, near top performance while fitting entirely in 8GB VRAM
+It was a coding task in a coding harness. It sometimes fell into very literal output loops, repeating the same strings over and over. Sometimes it would work on a file for a substantial amount of time, then throw away its work as being a mistake, then throw the replacement away as a mistake, and do this over and over with no end.
+ And when it did work (which it frequently does, to be clear), the output was simply not that good. I don't want to be too critical, because it's doing something at all. The problem in my mind is that it's not remotely as good as PrismML has implied. It's not 25% as good as full-weight Qwen 3.8 27B, to say nothing of 98% which is what they've strongly implied.
+
+### /u/nafatsari on Ternary Bonsai 2 27B, near top performance while fitting entirely in 8GB VRAM
+Are you using the correct configuration? I tried it multiple times and it worked everytime at first-second prompt with context around 100k token, so not with an empty cache
+
+### /u/EasterElk on Ternary Bonsai 2 27B, near top performance while fitting entirely in 8GB VRAM
+Yes, it was configured correctly.
+
+### /u/SnooRobots5598 on Ternary Bonsai 2 27B, near top performance while fitting entirely in 8GB VRAM
+Weird, why's it work for one of you and not the other if you both have it configured correctly? 🤔
+
+### /u/EasterElk on Ternary Bonsai 2 27B, near top performance while fitting entirely in 8GB VRAM
+It's not really that weird. Even if you ask the exact same model, in the exact same harness, to perform the same task, sometimes it will fail even when it can usually succeed. And sometimes it can succeed even when it usually will fail. So if people have good or bad results with one model in one scenario, it doesn't mean that the model will always perform the same even in the same scenario, let alone different ones. My experience is just my experience.
+
+### /u/Ok-Addendum3545 on Ternary Bonsai 2 27B, near top performance while fitting entirely in 8GB VRAM
+I am now using Qwen3.8-27B-GSQ-RCO-IQ2_S-mtp.gguf by ISTA-DASLab(9.6GB) on my hermes agent; I am satisfied. I tested it against prism-bonsai-2-27b-pq2_0. The fomer is better. I have RX7900 XTX 24GB that can host a bigger-sized model, but I am cool with IQ2_S on my hermes.
+
+### /u/EasterElk on Ternary Bonsai 2 27B, near top performance while fitting entirely in 8GB VRAM
+Qwen3.8-27B-GSQ-RCO-IQ2_S-mtp.gguf by ISTA-DASLab
+ I know I should just Google this, and I will, but can you tell me what makes this particular model attractive to you? I'm not familiar with GSQ or RCO, but I've never met a Q2 that I actually trusted. What are they doing differently?
+
+### /u/Ok-Addendum3545 on Ternary Bonsai 2 27B, near top performance while fitting entirely in 8GB VRAM
+It has 1.29 million downloads in less than 30 days. I don't know; I always pick the most-downloaded one. Please share your experience in IQ2 9.6GB and IQ3 12GB; I am testing which one to use as Default. My ctx size is only 128K and 80K with KV cache at Q8_0 (will try at Q4) on 16GB VRAM. Now, IQ3 is on my gpu0, IQ2 on gpu1 and 27B-Q4_K_M on gpu2. I want to test Qwen3.8-Flash-Next when my 4 RTX 5070 Ti are all installed. GSQ-RCO has uncensored version. Will download it today. 
+ https://preview.redd.it/o1rtwrl0zyqh1.png?width=1050&format=png&auto=webp&s=6528a61e37fde47523d5fef34efe6b5d4fa243cd
+
+### /u/Invader-Faye on Ternary Bonsai 2 27B, near top performance while fitting entirely in 8GB VRAM
+I did in depth testing, in an agent harness it falls on its face in chat it’s great. Deep dive revealed the models over thinking even the simplest tool calls in the agent harness. It needs further fine tuneing and maybe some training, maybe a bonsai 2.5?
+
+### /u/EasterElk on Ternary Bonsai 2 27B, near top performance while fitting entirely in 8GB VRAM
+Interesting! And confusing. More than anything, I'm surprised that PrismML released it in this condition. Surely they know that the people who are downloading tiny local models are also running them in harnesses.
+
+### /u/JoeyJoeC on Ternary Bonsai 2 27B, near top performance while fitting entirely in 8GB VRAM
+I use it almost daily for my work and it's been pretty decent with tool use. I use it with a custom harness and it connects to various read-only APIs to gather data and diagnose issues with an online platform we built for a client. I use it to triage support issues from transcribed voicemails and emails. Saves me a lot of time to be fair. All running on a 3090 entirely in VRAM. I've not had a single issue with looping or hallucinations so far.
+
+### /u/aleph2b on Ternary Bonsai 2 27B, near top performance while fitting entirely in 8GB VRAM
+It did OK in 2~3 test cases (not benchmark) for me. One is generating SVG, it completed close to Ornith 1.5 35B. Another test is analyze a ~1MB text file and extract relations between characters in the story, it also performed pretty good comparing to LLMs with similar size.
+
+### /u/tracethefailure on Ternary Bonsai 2 27B, near top performance while fitting entirely in 8GB VRAM
+we use this project called, "cheapoS" on github that is trying to make these low tier models useful with the harness guiding their actions. Still very new but might be a good to keep an eye on.. give it a try
+
+### /u/EasterElk on Ternary Bonsai 2 27B, near top performance while fitting entirely in 8GB VRAM
+Bonsai's problem isn't the harness.
+
+### /u/AbnormalConflict on Ternary Bonsai 2 27B, near top performance while fitting entirely in 8GB VRAM
+benchmarks are cool and all but if it cant hold a conversation without turning into a broken record it’s just a spreadsheet toy
+
+### /u/PeterPorox on Ternary Bonsai 2 27B, near top performance while fitting entirely in 8GB VRAM
+So Ministral 3 14B is still better?
+
+### /u/Invader-Faye on Ternary Bonsai 2 27B, near top performance while fitting entirely in 8GB VRAM
+Hadn’t heard of that one, I’ll be looking into it
+
+### /u/PeterPorox on Ternary Bonsai 2 27B, near top performance while fitting entirely in 8GB VRAM
+It's really old model. Gemma 4 12B is definitely better. But mistral models give really good vibe
+
+### /u/johnh1976 on Ternary Bonsai 2 27B, near top performance while fitting entirely in 8GB VRAM
+Gemma models have really impressed me.
+
+### /u/37Scorpions on Ternary Bonsai 2 27B, near top performance while fitting entirely in 8GB VRAM
+Gemma models are smart but unbearable to chat with. They assume and misunderstand all of the time which annoys me. Same goes for Google's Gemini that comes up when you search anything.
+
+### /u/junpei on Ternary Bonsai 2 27B, near top performance while fitting entirely in 8GB VRAM
+I was gonna say that any list with Ministral on top isn't a good list
+
+### /u/Invader-Faye on Ternary Bonsai 2 27B, near top performance while fitting entirely in 8GB VRAM
+Similar Experience, It’s much better than bonsai 1, but still worse than qwen 3.8 27b q2. Useable though and better than both Gemma 12 and qwen 3.5 9b
+
+### /u/aleph2b on Ternary Bonsai 2 27B, near top performance while fitting entirely in 8GB VRAM
+There are Bonsai PTQ1 and PQ2, I guess you were talking about PTQ1
+
+### /u/dandmetal on Ternary Bonsai 2 27B, near top performance while fitting entirely in 8GB VRAM
+How do you compare It to Qwen 35b? My 8gb of VRAM ass uses It with IQ3_XS. I tried the first bonsai and It looked not that great in general.
+
+### /u/Invader-Faye on Ternary Bonsai 2 27B, near top performance while fitting entirely in 8GB VRAM
+I have not tested is against the 35b and can’t speak on it
+
+### /u/37Scorpions on Ternary Bonsai 2 27B, near top performance while fitting entirely in 8GB VRAM
+Worse than Qwen3.8 27B Q2? I haven't tried Qwen3.8 Q2 much in practice but it didn't seem that good to me, especially since it's at the bottom of the "intelligence per second" benchmark. A distilled version of Qwen3.8 performed better (and faster) for me.
+
+### /u/[deleted] on Ternary Bonsai 2 27B, near top performance while fitting entirely in 8GB VRAM
+[deleted]
+
+### /u/milky_milk23 on Ternary Bonsai 2 27B, near top performance while fitting entirely in 8GB VRAM
+It's really not.
+
+### /u/37Scorpions on Ternary Bonsai 2 27B, near top performance while fitting entirely in 8GB VRAM
+could you send the link to the model you used exactly? maybe I had gotten the wrong one, but the one I got was flubbing hard.
+
+### /u/37Scorpions on Ternary Bonsai 2 27B, near top performance while fitting entirely in 8GB VRAM
+people downvoting instead of answering lmao
+
+### /u/emperorofrome13 on Ternary Bonsai 2 27B, near top performance while fitting entirely in 8GB VRAM
+museglimmer at q2 is my best coding model https://huggingface.co/unsloth/Muse-Glimmer-30B-GGUF/blob/main/ .Qwen is way better but not at Q2.
+
+### /u/emperorofrome13 on Ternary Bonsai 2 27B, near top performance while fitting entirely in 8GB VRAM
+i use the IQ2_M
+
+### /u/37Scorpions on Ternary Bonsai 2 27B, near top performance while fitting entirely in 8GB VRAM
+I remember trying Muse Glimmer but it was almighty slow even while quantized. Mainly because it doesn't fit in VRAM and isn't MoE. It is smart though, yeah, but pretty hard to use.
+
+### /u/emperorofrome13 on Ternary Bonsai 2 27B, near top performance while fitting entirely in 8GB VRAM
+What is your setup? I find your choices odd. Not being mean just very different from me. I have a 16gb nvidia card.
+
+### /u/37Scorpions on Ternary Bonsai 2 27B, near top performance while fitting entirely in 8GB VRAM
+RTX 4060 8GB VRAM and 16GB RAM
+
+### /u/emperorofrome13 on Ternary Bonsai 2 27B, near top performance while fitting entirely in 8GB VRAM
+There is something wrong with your benchmarks
+
+### /u/37Scorpions on Ternary Bonsai 2 27B, near top performance while fitting entirely in 8GB VRAM
+it reflects my experiance pretty well. models at the bottom have been unusable or dumb, models at the top have been decent (with exceptions)
+
+### /u/emperorofrome13 on Ternary Bonsai 2 27B, near top performance while fitting entirely in 8GB VRAM
+what are you using the models for? general knowledge? agentic? coding?
+
+### /u/emperorofrome13 on Ternary Bonsai 2 27B, near top performance while fitting entirely in 8GB VRAM
+Last comment I'll leave for you. is that you are using too low of quants for the other models. All your quants are Q4. a q4 of an 9b model is not the same as a Q2 of a 27b. I think that is skewing the results and making the smaller models look dumber.
+
+### /u/wednesdaywoe13 on Ternary Bonsai 2 27B, near top performance while fitting entirely in 8GB VRAM
+It falls apart on multi-turn agentic work.
+
+### /u/Invader-Faye on Ternary Bonsai 2 27B, near top performance while fitting entirely in 8GB VRAM
+I will be testing that tonight. Update bro is right. q1 fails to respond back after a few turns in the agent harness. Testing q2
+
+### /u/FixBound on Ternary Bonsai 2 27B, near top performance while fitting entirely in 8GB VRAM
+Waiting on your results on Q2
+
+### /u/Invader-Faye on Ternary Bonsai 2 27B, near top performance while fitting entirely in 8GB VRAM
+Same sadly.. it’s really weird. In lm studio chat it works fine, and give decent code, but in a harness it falls on its face after about 4-5 turns as context becomes filled with tool calls and history.
+
+### /u/FixBound on Ternary Bonsai 2 27B, near top performance while fitting entirely in 8GB VRAM
+Yeah, I tried Q1 with DSH, and it didn't make any good progress on the task I gave it, and it performed slower than Qwen3.6-35B-A3B
+
+### /u/Invader-Faye on Ternary Bonsai 2 27B, near top performance while fitting entirely in 8GB VRAM
+I did some benchmark with gpt sol to figure out what was wrong. Basically the model overthinks way too much. Set reasoning effort to low, cap thinking at 1-2k tokens and you should have better results. But more than likely we’ll need another version with all the over thinking trained out of it
+
+### /u/37Scorpions on Ternary Bonsai 2 27B, near top performance while fitting entirely in 8GB VRAM
+Honestly I think you shouldn't expect much from such quantized models but I've heard people say that PrismML promised a lot which yeah it is a bummer. I kind of failed to communicate what I use LLMs for and what this benchmark is for which is my fault.
+
+### /u/RedWolf_HU on Ternary Bonsai 2 27B, near top performance while fitting entirely in 8GB VRAM
+Sorry but this model is crap in reality.
+
+### /u/SamTanna on Ternary Bonsai 2 27B, near top performance while fitting entirely in 8GB VRAM
+I tested PrismML Bonsai 2 27B on a 12 GB RTX 4070 as a potential local replacement for GPT-5.6 Luna in my self-hosted Open WebUI sysadmin/tech assistant.
+ Technically, it was impressive. The PQ2_0 27B model fit and ran at roughly 42–50 tok/s, supported vision and structured tool calls, handled multi-step tools, and could run with a 32K context. With idle sleep enabled it also released almost all VRAM when not in use, which made it practical on a shared GPU.
+ The problem was agent reliability. In simple or bounded tasks it often did very well, but in broader tool-using workflows it had trouble knowing when to stop. In one firmware-research task it found the correct answer early, then kept searching until it exhausted the 32K context. In another test an attached tool immediately returned the exact GPU and live utilization data I asked for, but Bonsai continued probing processes, Docker, logs, and the knowledge base until the tool loop eventually degraded. A visualization request showed similar “analysis paralysis.”
+ My conclusion is that Bonsai works, and works surprisingly well on 12 GB, but it is not reliable enough to be the primary brain for a general-purpose, tool-rich agent like mine. I could build loop detectors, context guards, escalation to a cloud model, and other safety nets around it, but at that point the supporting infrastructure outweighs the savings.
+ I have kept the installation and model intact because I think it may be very useful for a narrower, bounded job—summarization, extraction, classification, document work, or constrained tool workflows. I would not write Bonsai off. I just would not confuse “27B model runs well on 12 GB” with “27B model can replace a strong general-purpose agent.”
+ Of course, your mileage may vary.
+
+### /u/SamTanna on Ternary Bonsai 2 27B, near top performance while fitting entirely in 8GB VRAM
+And yes, ChatGPT wrote this for me because that's why I pay for it.
+
+### /u/37Scorpions on Ternary Bonsai 2 27B, near top performance while fitting entirely in 8GB VRAM
+wait huh? did you just throw thoughts at it and asked it to put it together or wha?
+
+### /u/Deep_Mood_7668 on Ternary Bonsai 2 27B, near top performance while fitting entirely in 8GB VRAM
+We know thinking is hard buddy
+
+### /u/JorgitoEstrella on Ternary Bonsai 2 27B, near top performance while fitting entirely in 8GB VRAM
+Yes thats why thinking mode costs more ba dum tss
+
+### /u/Chips_fr_ on Ternary Bonsai 2 27B, near top performance while fitting entirely in 8GB VRAM
+With 12GB of VRAM you can host some Qwen 3.8 27B Q3_XXS. Bonsai could enable bigger context but since it seems not good in multi loop agent i think it's not the best option here.
+ From my answer below: On my 3060 12GB i achieve around 27 tokens / second. The drawbacks are Q3_XXS and medium size context (context around 90K in Q5/Q4)
+
+### /u/Reelix on Ternary Bonsai 2 27B, near top performance while fitting entirely in 8GB VRAM
+Assuming you meant 3.8 and not 2.8 - You can - But it will run at around 5 tokens / second. 3.8 is notoriously slow for some reason. 
+ Rather run a Q4 3.6 A3B - Slightly less good, but 10 times faster.
+
+### /u/Chips_fr_ on Ternary Bonsai 2 27B, near top performance while fitting entirely in 8GB VRAM
+Yes Qwen 3.8 27B (i edited my above post).
+ On my 3060 12GB i achieve around 27 token / second. I would not call this slow. The drawbacks are Q3_XXS and medium size context (around 90K in Q5/Q4)
+ 5 token/s is more when CPU offload occurs (which can be avoid with above configuration).
+
+### /u/Phlex_ on Ternary Bonsai 2 27B, near top performance while fitting entirely in 8GB VRAM
+What are your settings? i have 6700xt and i get maybe 5-7 t/s which is acceptable to me but only ~50k context which is not enough for what i do.
+
+### /u/Chips_fr_ on Ternary Bonsai 2 27B, near top performance while fitting entirely in 8GB VRAM
+You can refer to this:
+ https://www.reddit.com/r/LocalLLaMA/comments/1wh21e9/comment/pa0i7mk/?context=3
+ byteshape Q3_XXS is quite small and fit in 12GB. ISTA-DASLab one was a little bigger but both fit in 12GB.
+ Quantization of context helps but beware that Q5/Q4 for context is quite aggressive (i've seen benchmark indicating that values below -ctk q5_0 -ctv q4_1 start to destroy too much the context).
+ I use ik llama because it's well optimized for CUDA but not suitable for AMD, so could not apply to you.
+ With 12GB you have to make sacrifice, but the result i get currently is quite interesting
+
+### /u/ManaChains on Ternary Bonsai 2 27B, near top performance while fitting entirely in 8GB VRAM
+it barely fits with no vram left for context window. not usable on 12GB
+
+### /u/37Scorpions on Ternary Bonsai 2 27B, near top performance while fitting entirely in 8GB VRAM
+Nope, you need 16GB VRAM to run Qwen3.8 27B in Q3, even more if you want a reasonable context window, and you'll need it considering it thinks more than it does.
+
+### /u/Healthy-Nebula-3603 on Ternary Bonsai 2 27B, near top performance while fitting entirely in 8GB VRAM
+Stop promoting that bullshit!
+
+### /u/[deleted] on Ternary Bonsai 2 27B, near top performance while fitting entirely in 8GB VRAM
+[deleted]
+
+### /u/37Scorpions on Ternary Bonsai 2 27B, near top performance while fitting entirely in 8GB VRAM
+Let me know what you use to infer it, but a flappy bird game was an interesting idea since I usually use the snake game to quickly test LLMs, in my LM Studio -> OpenWebUI setup I asked it to code Flappy Bird and it *almost* gave me a working script, but with some errors when launching the game (1 error, fixed it myself) and when going through pipes. Though IMO a Q1 model isn't the best choice for coding. In my experiance GPT OSS 20B has done better at coding, though I bet others will disagree.
+
+### /u/EasterElk on Ternary Bonsai 2 27B, near top performance while fitting entirely in 8GB VRAM
+The fact that it couldn't do Flappy Bird in a one-shot is pretty telling. Flappy Bird is dead-simple in terms of its logic, and every model has been trained on the endless implementations on GitHub. 
+ I usually use the snake game to quickly test LLMs.
+ I've used the snake game myself, because it's fast and it's well-defined. But it's honestly rare to find a model that can't code a snake game. The actual logic is trivial. I would suggest that any model which can do reliable tool-calling will also be able to write a snake game, and that's a low bar. 
+ That is to say, a model which can't code Snake also probably can't successfully engage in tool-calling. So that's a non-starter for agentic work at all. But the same isn't likely true for Flappy Bird, and I think you're seeing the results of that in your own tests. 
+ Though IMO a Q1 model isn't the best choice for coding.
+ LOL, yes. Unfortunately PrismML is claiming that it's VERY good at just that, and everyone is finding out the hard way that their claims are nonsense.
+
+### /u/37Scorpions on Ternary Bonsai 2 27B, near top performance while fitting entirely in 8GB VRAM
+"it's honestly rare to find a model that can't code a snake game" huh? What models are you looking at... Most models I've used were a 50/50 with whether they can make the snake game. I mean check the benchmark score heatmap, specifically questions 6 to 8 (the coding category), it's pretty much all dark there and it's relatively simple requests: code the DVD logo in HTML, code a python pong game, code a python 2-player snake game.
+ "LOL, yes. Unfortunately PrismML is claiming that it's VERY good at just that, and everyone is finding out the hard way that their claims are nonsense." but yeah that's upsetting if so. From what people are saying I see that probably the main reason for why people are receiving it so negatively is because of their expectations: they were expecting Qwen3.8 27B level performance with their "99.99% intelligence!!" claim but received an ~14B-like model. I think it's an interesting proof of concept but I don't know what they gain from saying all of that.
+
+### /u/37Scorpions on Ternary Bonsai 2 27B, near top performance while fitting entirely in 8GB VRAM
+Update: tried GPT OSS 20B, same prompt, same LM Studio -> OpenWebUI setup. The game works without issues, albeit it looks awful. Don't get why this model gets so much hate, best performance from a consumer hardware level model.
+
+### /u/Cool-Chemical-5629 on Ternary Bonsai 2 27B, near top performance while fitting entirely in 8GB VRAM
+The model itself is outdated and highly censored. It's bad at too calling. It lacks general knowledge, so it's riddled with hallucinations. It wastes tokens thinking policies, whether it's safe to process user's request in the first place, instead of thinking about the actual request and what would it need to process it properly. It's like it's been built just on synthetic data and Open AI's policy documents. Yes, it does basic coding, but so does much newer Gemma 4 26B A4B which is more capable overall and doesn't waste tokens on nonsense.
+
+### /u/37Scorpions on Ternary Bonsai 2 27B, near top performance while fitting entirely in 8GB VRAM
+Not my experiance though... I mean censored maybe, I don't really have issues with that though. Haven't had many refusals in my experiance. Tool calling was among the best, it's one of the few models that actually worked in agentic coding harnesses without getting stuck in loops calling the same broken command. General knowledge doesn't bother me either since I use web search tools, I don't think you should rely on such a small model for general knowledge a lot. Thinking was among the fastest, especially in low mode, it just says a few words like "Need answer. Give short informative answer. Source says important info.". Everything I've experianced seems to contradict what you said...
+
+### /u/Invader-Faye on Ternary Bonsai 2 27B, near top performance while fitting entirely in 8GB VRAM
+Are you using the q1 or q2 version? Much different performance ranges. Q1 is basically a little better than 3.59b, or Gemma 12, q2 is almost as good as qwen 3.8 27b q2z
+
+### /u/[deleted] on Ternary Bonsai 2 27B, near top performance while fitting entirely in 8GB VRAM
+[deleted]
+
+### /u/Invader-Faye on Ternary Bonsai 2 27B, near top performance while fitting entirely in 8GB VRAM
+There is a performance difference, on coding fore sure https://youtu.be/SdrGxYBy-dY?is=gPIR\_vZDmVoy1U9P I did quick test on three prompts. Better then qwen 3.5 9b but not better than base 3.8 at q2, also in agent cases q1 stops responding back after a few turns of the conversation. testing the q2
+
+### /u/HumbleMemeFarm on Ternary Bonsai 2 27B, near top performance while fitting entirely in 8GB VRAM
+Who keeps sharing this model, I dont understand why its shilled so heavily. The model is fucking unusable, youre better off using a finetuned 4-10B model than this one. I dont care what the benchmarks say, ive used it over and over again and its just not a good model.
+
+### /u/VerticalPackage on Ternary Bonsai 2 27B, near top performance while fitting entirely in 8GB VRAM
+I think it's because people want to hopium since most people can't/won't afford a 24GB VRAM card.
+
+### /u/aleph2b on Ternary Bonsai 2 27B, near top performance while fitting entirely in 8GB VRAM
+I have a 24GB VRAM card, but I cannot bring it with me. That is why I need a local LLM that can run on portable devices.
+
+### /u/VerticalPackage on Ternary Bonsai 2 27B, near top performance while fitting entirely in 8GB VRAM
+Why not remote access your home server?
+ That's what I do, I have a "homelab" and I access my harnesses remotely with my laptop and cellphone. It's not like you need a low ping with that sort of stuff.
+
+### /u/alpacadaver on Ternary Bonsai 2 27B, near top performance while fitting entirely in 8GB VRAM
+It's absolutely regrettable and frankly sad that 100% of benchmarks on any post in these subreddits are complete dogshit and mean literally nothing.
+
+### /u/Holiday_Point_603 on Ternary Bonsai 2 27B, near top performance while fitting entirely in 8GB VRAM
+It is well known that overfitted stuff retains solid performance even through insane quants. This is what most benchmarks are these days, sadly.
+
+### /u/puglife224888 on Ternary Bonsai 2 27B, near top performance while fitting entirely in 8GB VRAM
+Qwen 3.6 35B A3B with -cpumoe
+
+### /u/37Scorpions on Ternary Bonsai 2 27B, near top performance while fitting entirely in 8GB VRAM
+30B is a bit of a limit on my hardware without crazy quantization
+
+### /u/puglife224888 on Ternary Bonsai 2 27B, near top performance while fitting entirely in 8GB VRAM
+If you have lots of RAM, MoE's are your friend. Qwen 3.6 35B A3B IQ4_XS is 20GB, which should run on a 4060 with 16GB RAM if you use "--cpu-moe 35-41"
+
+### /u/37Scorpions on Ternary Bonsai 2 27B, near top performance while fitting entirely in 8GB VRAM
+Which I don't ;D laptop RAM is a pain in the ass Models ~30B, even when MoE, tend to slow down a lot, and also on a used Windows system up to 12GB of RAM is used even without a model running. I use LLMs while working so generally it's nice to not have other apps slow down due to RAM swapping
+
+### /u/den0rk on Ternary Bonsai 2 27B, near top performance while fitting entirely in 8GB VRAM
+Benchmarks passed, I tried it, and it broke my whole project, it's useless.
+
+### /u/Marian____ on Ternary Bonsai 2 27B, near top performance while fitting entirely in 8GB VRAM
+This model is fine if you use the official model cards https://huggingface.co/prism-ml/Ternary-Bonsai-2-27B-gguf:
+ Thinking on: temperature 1.0, top_p 0.95, top_k 20, min_p 0, presence penalty 0, repeat penalty 1.
+ Thinking off: temperature 0.7, top_p 0.8, top_k 20, presence penalty 1.5.
+ Structured JSON output: temperature 0.
+ --reasoning-budget 32768
+ You can find my own comparison of this model running locally vs Qwen 3.8 27B (from OpenRouter) in the private offline cowork that I'm releasing today https://github.com/Private-Garden-Labs/garden-desk/issues/168
+
+### /u/37Scorpions on Ternary Bonsai 2 27B, near top performance while fitting entirely in 8GB VRAM
+Finally, someone actually being helpful! Thank you for the settings, I'll try them out. Just wondering though, is your benchmark just one-off prompts or are there any long context ones? Right now it sounds like the biggest complaint is that it falls apart after a while.
+
+### /u/Marian____ on Ternary Bonsai 2 27B, near top performance while fitting entirely in 8GB VRAM
+You can check https://github.com/Private-Garden-Labs/garden-desk :) The model is great for what I do on garden desk, cowork - so writing python to work with documents and folders. I tested it up to 128k context and it doesn't fall apart. But these are simpler tasks than coding on hundreds of codding files - so take it with a pinch of salt.
+
+### /u/ethereal_intellect on Ternary Bonsai 2 27B, near top performance while fitting entirely in 8GB VRAM
+Single question no thinking seems geared to make it look better than it is, gemma 12b qat with thinking over an hour of multi step pair programming and tool use would probably wipe the floor with it. But I'm hoping for fixes I guess it's still early
+
+### /u/37Scorpions on Ternary Bonsai 2 27B, near top performance while fitting entirely in 8GB VRAM
+People have argued this before and what I say is that the fact all models are benchmarked without thinking enabled means they should all be equal. Would thinking increase the overall benchmark scores? Yeah. Would it change the relative scores much? I don't think so. But as I have said before, I'm not sure and if I'm wrong let me know, but I assume that is how it works.
+
+### /u/37Scorpions on Ternary Bonsai 2 27B, near top performance while fitting entirely in 8GB VRAM
+I thought of a better way to explain it: I'm aiming to benchmark an LLMs usefulness per second, not the "total intelligence". An LLM may output better answers with infinite compute but this benchmark is assuming that there's a user waiting for a response.
+
+### /u/benpptung on Ternary Bonsai 2 27B, near top performance while fitting entirely in 8GB VRAM
+I'm wondering if my idea might sound pretty foolish. But I really do hope that models built on top of qwen3.8-27b and further finetuned can get evaluated by AA Index. But it seems AA only accepts publicly released models, not finetuned ones.
+
+### /u/Doctor_Cupcakes on Ternary Bonsai 2 27B, near top performance while fitting entirely in 8GB VRAM
+I'm not sure what everyone's complaining about. I've been having great luck with this on my 3070. Although I'm used to 9B and MoE models lol so maybe I just don't know what to expect. I had chatgpt make me a custom harness with Pi and it's been working really well. This is by far the best model of its size
+
+### /u/SaintMartini on Ternary Bonsai 2 27B, near top performance while fitting entirely in 8GB VRAM
+There are so many bad local models simply because they don't do as intended. I'm testing multiple right now for something. Two separate things and only one has done as intended without extra prompting. With extra prompting one passed 1/4 tests the rest failed all 4 still. Meaning most simply don't do what you intend. Thats good to remember. Building for benchmarks is useful, but only if you use it that way.
+
+### /u/Gloomy_Letterhead395 on Ternary Bonsai 2 27B, near top performance while fitting entirely in 8GB VRAM
+Near top what, mistral 14b a dinosaur era model
+
+### /u/37Scorpions on Ternary Bonsai 2 27B, near top performance while fitting entirely in 8GB VRAM
+and a ton above all the "new" models that people recommended
+
+### /u/Late-Replacement-481 on Ternary Bonsai 2 27B, near top performance while fitting entirely in 8GB VRAM
+I feel like something that's just lost in the discussion about ternary bonsai, is it just simple: Is it able to follow agentic instructions in the same way as a larger model? The answer is no. When you're in the 8 GB class of models, those are models you use for very brief agentic commands, not something you do for multi-turn actions. 
+ Is it impressive? Absolutely. Is it very misleading to say that it keeps up with actual quants of 27B models? Also very true. 
+ Is there not a benchmark yet where we use actual examples of people's queries where they change topics and actually interact with the model, and it sees at the end whether the model produces useful output?
+
+### /u/37Scorpions on Ternary Bonsai 2 27B, near top performance while fitting entirely in 8GB VRAM
+I want to create a benchmark like that but I struggle to think of a way to make it deterministic. How do you decide what score a model gets for a response? My only idea was to have friends and family use the model for a bit and give let them give feedback and see which model is preferred, but no way to quickly benchmark stuff like that. Kind of the same problem I ran into with the last task (which was a task to model a Minecraft cow), it's too subjective
+
+### /u/Late-Replacement-481 on Ternary Bonsai 2 27B, near top performance while fitting entirely in 8GB VRAM
+I feel like, I don't know, it's just so hard to benchmark back-and-forth work with the models, but yet that's one of the most important aspects of LLMs. I do a lot of discussion with Fable 5.1 medium, deciding what the path forward should be, and it's really one of the few models that have the ability to do this. Honestly, this is why people like the Anthropic models so much. I'd say Opus 4.6 is just a champion at doing this. The modern Opus 5, now that I think that they've spent too much time turning it into a direction-following code machine, is no longer as good as it used to be. Apologies for sloppy speech-to-text. Just waking up 
+ And then I had a lot of luck having agents just straight up model warships in the latest generation, Kimi K3 and Luna, and anything smarter than that actually put together a pretty good battleship. I'm surprised you didn't have success in your Cow benchmark.
+
+### /u/37Scorpions on Ternary Bonsai 2 27B, near top performance while fitting entirely in 8GB VRAM
+The cow did say something, but only for me. Giving it a 0 to 1 score was pretty hard so I feel like if the entire test was stuff like that (subjective stuff over and over) then the score would vary by who is evaluating it and when. Best thing I can really do is have a discussion with the chat bot and note if it stayed operational. But if I went off of something like that then you would NOT see Ornith on these benchmarks lol. While it's pretty smart I kind of hated having a conversation with it.
+
+### /u/VerticalPackage on Ternary Bonsai 2 27B, near top performance while fitting entirely in 8GB VRAM
+It's notwhere near the capability of the base 3.8 27b Q4 model
+ https://www.youtube.com/watch?v=ZzLHGHMXkEw
+ https://lukesdevlab.com/?a=unsloth%3AQwen3.8-27B-GGUF.json&b=ornith-ai%3AOrnith-1.5-35B-A3B-GGUF.json
+
+### /u/37Scorpions on Ternary Bonsai 2 27B, near top performance while fitting entirely in 8GB VRAM
+No one was comparing Bonsai to Qwen?? Qwen3.8 27B isn't even on the benchmark. If you were expecting 3.8 performance then your expectations were way too high
+
+### /u/corysus on Ternary Bonsai 2 27B, near top performance while fitting entirely in 8GB VRAM
+I don't know if you've tried using this model on something specific, but after 3…4 prompts it already becomes slow and simply not usable, unfortunately.
+
+### /u/37Scorpions on Ternary Bonsai 2 27B, near top performance while fitting entirely in 8GB VRAM
+I'd imagine the slowness comes from the fact that even in 1-bit quantization it still drags the context through all 27B parameters, which is a compute problem, which is why MoE's can run so fast even when overfitted.
+
+### /u/Valuable-Lemon-8623 on Ternary Bonsai 2 27B, near top performance while fitting entirely in 8GB VRAM
+Use ptq2
+
+### /u/37Scorpions on Ternary Bonsai 2 27B, near top performance while fitting entirely in 8GB VRAM
+Can't tell if I'm recalling correctly but I don't think it fits within 8GB VRAM and I'd imagine offload would instantly slow it down to Qwen3.8 speeds?
+
+### /u/wr3cker-ea on Ternary Bonsai 2 27B, near top performance while fitting entirely in 8GB VRAM
+Wow so much negative comments is the model really bad or it needs highly calculated and effective prompting to use it efficiently? How does it fare with Hermes?
+
+### /u/AmthorTheDestroyer on Ternary Bonsai 2 27B, near top performance while fitting entirely in 8GB VRAM
+I think they should just MoE maxxx it. A 1T param model with idk 2-3B ternary weights active would be great for home use
+
+### /u/37Scorpions on Ternary Bonsai 2 27B, near top performance while fitting entirely in 8GB VRAM
+This! When I saw Bonsai 27B be 4GB I was like they should scale this wayyy up
+
+### /u/darthrobe on Ternary Bonsai 2 27B, near top performance while fitting entirely in 8GB VRAM
+Thank you for the note about LM Studio. That was driving me up the wall.
+
+### /u/37Scorpions on Ternary Bonsai 2 27B, near top performance while fitting entirely in 8GB VRAM
+Glad I could help. FYI if you want to continue using LM Studio to infer the model you can replace the llama.cpp files. You can do this by running "lms runtime ls" in the terminal, checking which llama version you use and then replace llama.dll and the ggml.dll files in "C:\Users\yourusernamehere\.lmstudio\extensions\backends\llama.cpp-yourversionhere". MAKE SURE TO BACK UP THE FOLDER BEFORE YOU REPLACE ANY FILES THOUGH!!! Anyways I'm sharing this since this took me a few hours of smashing my head against Claude Sonnet to figure out that I can do this.
+
+### /u/darthrobe on Ternary Bonsai 2 27B, near top performance while fitting entirely in 8GB VRAM
+I appreciate it. I don't have anything pressing that needs it at the moment. I just like to evaluate them. I assume it will get fixed sooner or later?
+
+### /u/37Scorpions on Ternary Bonsai 2 27B, near top performance while fitting entirely in 8GB VRAM
+Yeah, hopefully. Would make it easier for people to see whether they like the model or not. Considering that Bonsai 27B was already a community highlight model I'd assume Bonsai 2 will eventually become one too.
+
+### /u/PestiferousGamer on Ternary Bonsai 2 27B, near top performance while fitting entirely in 8GB VRAM
+benchmarking a deep reasoning model without reasoning enabled. 
+ https://giphy.com/gifs/r5SxJYcU21Auk
+
+### /u/johnh1976 on Ternary Bonsai 2 27B, near top performance while fitting entirely in 8GB VRAM
+Reasoning models don't need "thinking" turned on to reason. Your meme is correct...about your own comment.
+
+### /u/Choperello on Ternary Bonsai 2 27B, near top performance while fitting entirely in 8GB VRAM
+This bonsai model sure is being spammed this week.
+
+### /u/IknowPi_really on Ternary Bonsai 2 27B, near top performance while fitting entirely in 8GB VRAM
+“I tested a bunch of crap against each other and found the least stinky one. Here are my load bearing results”. Okay cool.
+
+### /u/37Scorpions on Ternary Bonsai 2 27B, near top performance while fitting entirely in 8GB VRAM
+Everyone keeps saying this and then the models they recommend are terrible lmao. The bottom 4 models in the intelligence benchmark are "new models" that are "very good". All of them are worse than most old models at everything.
+
+### /u/IknowPi_really on Ternary Bonsai 2 27B, near top performance while fitting entirely in 8GB VRAM
+Dude you tested some sort of weird ass fine tunes and completely destroyed quantisations. None of those models are useful for anything.
+ You’d be better off running something like Gemma 4 4b or something. But just be aware that with 8GB of RAM, there’s not really anything useful you can do
+
+### /u/37Scorpions on Ternary Bonsai 2 27B, near top performance while fitting entirely in 8GB VRAM
+What's your problem? I used fine-tunes that people wanted to see and the quantizations are fine. You're really sitting in the replies of a consumer-hardware level benchmark and complaining, if your hardware can run it then just stick to whatever you have, might as well ask your LLMs to summarize Reddit posts for you because you can't even read them properly and comprehend the difference between VRAM and RAM. I've been running 9B models just fine and models up to 35B with some setup, I like exploring different models because I occasionally use them for utility and benchmarking, seeing where the tech is at, I never saw a purpose to buy GPUs worth thousands just to fuck about with local models (and also because I don't have thousands to spend since I actually have hobbies) and I'd much rather use an LLM that doesn't wipe my ass for me.
+
+### /u/Don_Reuter on Ternary Bonsai 2 27B, near top performance while fitting entirely in 8GB VRAM
+Interesting. I do use larger models, but am looking for some small ones to put on older pc through NVIDIA PAIR for some helper agents. Might help there.
+
+### /u/AndySaha on Ternary Bonsai 2 27B, near top performance while fitting entirely in 8GB VRAM
+Anyone try running this on an rtx 3070?
+
+### /u/bkl619 on Ternary Bonsai 2 27B, near top performance while fitting entirely in 8GB VRAM
+It’s 27B model vs 9-14B models so I guess comparison isn’t that accurate.
+
+### /u/37Scorpions on Ternary Bonsai 2 27B, near top performance while fitting entirely in 8GB VRAM
+quantization people, quantization.
+
+### /u/jaegernut on Ternary Bonsai 2 27B, near top performance while fitting entirely in 8GB VRAM
+Its has its use cases but it shouldnt be compared to its full quant variant. It could be competitive when compared to its similarly sized quants and other similar sized models.
+
+### /u/37Scorpions on Ternary Bonsai 2 27B, near top performance while fitting entirely in 8GB VRAM
+If you're talking about my benchmark in specific, I was using the PTQ1 quant, which is around 7GB. The full quant variant was what, 50GB? Either way all of the models used are 4GB to 15GB since that's what my hardware fits.
+
+### /u/MasterNomie on Ternary Bonsai 2 27B, near top performance while fitting entirely in 8GB VRAM
+Benchmarks are all well and good but can I use it for agentic coding without it getting lost in its own tracks?
+
+### /u/37Scorpions on Ternary Bonsai 2 27B, near top performance while fitting entirely in 8GB VRAM
+no
+
+### /u/Ok-Addendum3545 on Ternary Bonsai 2 27B, near top performance while fitting entirely in 8GB VRAM
+I am now using Qwen3.8-27B-GSQ-RCO-IQ2_S-mtp.gguf by ISTA-DASLab(9.6GB) on my hermes agent; I am satisfied. I tested it against prism-bonsai-2-27b-pq2_0. The fomer is better. I have RX7900 XTX 24GB that can host a bigger-sized model, but I am cool with IQ2_S on my hermes; it also has Qwen3.8-27B-GSQ-RCO-IQ3_S-mtp.gguf (12GB) model. I will be testing how beneficial the IQ3 version will be before switching to it.
+
+### /u/37Scorpions on Ternary Bonsai 2 27B, near top performance while fitting entirely in 8GB VRAM
+Can't you run Qwen3.8 27B Q4 on that GPU, why not do that? I'd imagine there's still some loss on the Q3 and Q2 versions, unless you're compromising saving space for multiple models or other stuff
+
+### /u/Ok-Addendum3545 on Ternary Bonsai 2 27B, near top performance while fitting entirely in 8GB VRAM
+Because I have other GPUs that only have 16GB VRAM each and would like to have one agent on each GPU. I haven’t finished the testing. Anyway, Qwen4 version, I guess, would make the small-sized LLM more useful and reliable.
+
+### /u/NoObligation2007 on Ternary Bonsai 2 27B, near top performance while fitting entirely in 8GB VRAM
+I have test it, not good for work
+
+### /u/Sp3eedy on Ternary Bonsai 2 27B, near top performance while fitting entirely in 8GB VRAM
+Don't fall for this people, this model has been benchmaxxed to the brim, it's nowhere near as useful when doing it for anything useful.
+
+### /u/Witty_Mycologist_995 on Ternary Bonsai 2 27B, near top performance while fitting entirely in 8GB VRAM
+Mistral being better looks sus
+
+### /u/37Scorpions on Ternary Bonsai 2 27B, near top performance while fitting entirely in 8GB VRAM
+I still don't get what sus means in this context. Are you implying I was paid by Mistral to boost its scores in this benchmark? I just ran the same benchmark for all of the models and decided to throw in Mistral, I was surprised by the performance because my previous experiance with Mistral was terrible. If you don't trust me you can go evaluate the model yourself, all of its answers are in the repo: https://github.com/Scorpy-37/Bluemark/blob/main/results_backup/run1/mistralaiministral314breasoning.json
+
+### /u/Witty_Mycologist_995 on Ternary Bonsai 2 27B, near top performance while fitting entirely in 8GB VRAM
+It’s implied that the benchmark is bogus, because Mistral shouldn’t score higher than Gemma or Qwen.
+
+### /u/37Scorpions on Ternary Bonsai 2 27B, near top performance while fitting entirely in 8GB VRAM
+ionno, maybe they're benchmaxxing, but I did come up with the benchmark myself. Also it did quite well on the coding tasks so unless they trained it to code the specific code tasks I asked it to do then benchmarking shouldn't really help it there much.
+
+### /u/CooperDK on Ternary Bonsai 2 27B, near top performance while fitting entirely in 8GB VRAM
+No! A 27B model cannot possibly fit in 8GB VRAM and still be usable. Absolutely no way to do that.
+
+### /u/37Scorpions on Ternary Bonsai 2 27B, near top performance while fitting entirely in 8GB VRAM
+Quantization Aware Training
+
+### /u/theOliviaRossi on Ternary Bonsai 2 27B, near top performance while fitting entirely in 8GB VRAM
+this graph is a pure BS - who tried to run Ministral in our times -> knows that perfectly!
+
+### /u/uniquelyavailable on Ternary Bonsai 2 27B, near top performance while fitting entirely in 8GB VRAM
+A 27b model benchmarked against 9b feels a bit like satire to me.
+
+### /u/37Scorpions on Ternary Bonsai 2 27B, near top performance while fitting entirely in 8GB VRAM
+27B Q1 vs 9B Q4. Bonsai is a 1-bit QAT model, that's what makes it stand out.
+
+### /u/uniquelyavailable on Ternary Bonsai 2 27B, near top performance while fitting entirely in 8GB VRAM
+Bonsai2 looks like a powerful quant for the use case. I am curious about how you created this benchmark, what tool was used? Is there something I can search up to understand more about it?
+
+### /u/37Scorpions on Ternary Bonsai 2 27B, near top performance while fitting entirely in 8GB VRAM
+Benchmark's made by me, there's a repo for it: https://github.com/Scorpy-37/Bluemark
+
+### /u/uniquelyavailable on Ternary Bonsai 2 27B, near top performance while fitting entirely in 8GB VRAM
+This is a cool little system you put together here. Thanks for letting me have a look. My thoughts are that it seems like an objective way of observing and comparing the models performance on generalized tasks.
+
+### /u/braintheboss on Ternary Bonsai 2 27B, near top performance while fitting entirely in 8GB VRAM
+9B is weak in many areas even benchmark says opposite. Question is if a low quant bigger model can improve them without have weaker areas. For chat is quite better than 9b
+
+### /u/SIMMORSAL on Ternary Bonsai 2 27B, near top performance while fitting entirely in 8GB VRAM
+What's being compared is two ~6gb models
+
+### /u/KURD_1_STAN on Ternary Bonsai 2 27B, near top performance while fitting entirely in 8GB VRAM
+The model on top abd below it are similar size so i dont see how this is top performance. Using a q5 of 9b, which is 3.5 and not 3.8 which this all seems AI, will be more consistent than q2 of a bigger model. Also deepseek v4 pro 9b? Bonsai is running out of marketing budget.
+
+### /u/sQeeeter on Ternary Bonsai 2 27B, near top performance while fitting entirely in 8GB VRAM
+Garbage model.
+
+### /u/temperature_5 on Ternary Bonsai 2 27B, near top performance while fitting entirely in 8GB VRAM
+"Almost as good as Ministral". There's one for the marketing team!

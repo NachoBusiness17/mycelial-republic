@@ -1,0 +1,15 @@
+THREAD 1wd4tcw HTTP 200 entries=4
+URL https://www.reddit.com/r/ollama/comments/1wd4tcw/what_should_be_the_source_of_truth_when_several/.rss
+
+--- entry 0 [/u/RocketSeven] What should be the source of truth when several local assistants share memory?
+A local setup can have several assistants reading the same project history while using different models, context limits, and retrieval methods. If each assistant writes its own summary back into shared memory, a mistaken compression can become authoritative for every later session. What storage contract keeps this inspectable? One option is a folder of small Markdown records with stable IDs, timestamps, source links, explicit supersession, and append-only decisions. Embeddings and model-specific summaries would be disposable indexes, while writes would pass through a narrow process that prevents two assistants from silently replacing the same fact. How do you handle conflicting updates, deletions, access boundaries, and context-budget differences between models? Is a plain file protocol enough for a small local setup, or does shared memory become safer only after adding a database and a review queue? submitted by /u/RocketSeven [link] [comments]
+
+--- entry 1 [/u/and_pf] /u/and_pf on What should be the source of truth when several local assistants share memory?
+A folder of Markdown files with stable IDs, timestamps, source links, explicit supersession, and append-only decisions is a solid, human-inspectable storage contract. The key rule I'd keep: append-only with explicit supersession, so a mistaken automated "compression" can never silently become the authoritative version. Plain file protocols do fall short once you get conflicting updates, deletions, or access boundaries — at that point you'll want a lightweight database plus a review queue instead of scraping files. I run this kind of thing on an Unraid box (Core Ultra 9 285K, 62 GB RAM, one RTX 5090) with models served via Ollama, and the filesystem approach works until more than one assistant edits the same fact, which is exactly when it needs a real store.
+
+--- entry 2 [/u/stealthagents] /u/stealthagents on What should be the source of truth when several local assistants share memory?
+Using a Markdown folder is a great start, but I’d also suggest implementing version control for those records. It makes tracing conflicts way easier and keeps everything organized. As for handling updates and model differences, a simple database setup with access controls can really save you from a headache down the line.
+
+--- entry 3 [/u/stealthagents] /u/stealthagents on What should be the source of truth when several local assistants share memory?
+Definitely, it's a rollercoaster. One month you’re riding high with new contracts, then the next it feels like you’re stuck in a broken elevator waiting for a rescue. The industry’s unpredictable, but that just keeps things interesting, I guess!
+

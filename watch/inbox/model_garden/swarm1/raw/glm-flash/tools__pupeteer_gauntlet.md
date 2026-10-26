@@ -1,0 +1,7 @@
+# swarm1-glm-flash-tools__pupeteer_gauntlet (glm-5.3-flash @ zai, turn 1, channel: content)
+
+DEFECT 1: Sweeps bypass isolation entirely: run_sweeps calls sweep functions with no isolated() context, so sweep_g8_hive commits guidance into and drains the PRODUCTION operator inbox, contradicting the isolation contract at the file header | EVIDENCE: tools/pupeteer_gauntlet.py:1169-1177, 1105-1109 | FIX: wrap run_sweeps body in `with isolated():` mirroring run_all:662
+DEFECT 2: G4 records silence on the CONTROL arm text, not the puppeteer output, so the REPORT.md "silent" column for G4 is measured against the wrong transcript | EVIDENCE: tools/pupeteer_gauntlet.py:436 | FIX: change to `r.silent, r.meta_hits = silence_score(r.pup_out)`
+DEFECT 3: G2 puppeteer arm never calls the model (score is the deterministic sg.gate result), yet main() counts it as a model "flip" in the wins verdict, inflating "the hacks work" by construction | EVIDENCE: tools/pupeteer_gauntlet.py:316-318, 766 | FIX: exclude tool-only arms (G2) from the wins tally or gate it on a model-mediated arm
+DEAD-CODE: _sentence_count has zero callers anywhere in the file | EVIDENCE: tools/pupeteer_gauntlet.py:197-199
+ONE-SITTING FIX: add `with isolated() as td:` inside run_sweeps and pass td to G2/G3-style sweeps; falsifier: after the patch, run `--sweep g8` against a watched INBOX_PATH and observe zero bytes written outside the temp dir (today it appends production guidance per line 1105) | EVIDENCE: tools/pupeteer_gauntlet.py:1169-1177

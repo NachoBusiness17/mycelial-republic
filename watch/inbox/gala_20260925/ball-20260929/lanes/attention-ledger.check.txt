@@ -1,0 +1,400 @@
+attention-ledger ball 2026-09-29: finish-line checks (raw output)
+repo: dbe5f682c branch: mag/run-beta1-factory-build-audi-20260806T231709Z
+
+== [1] pytest: new idempotency ledger test + existing attention suites ==
+============================= test session starts =============================
+platform win32 -- Python 3.11.15, pytest-9.1.1, pluggy-1.6.0 -- C:\Users\foste\Documents\projects\local_sovereign_agent\.venv\Scripts\python.exe
+rootdir: C:\Users\foste\Documents\projects\local_sovereign_agent
+configfile: pytest.ini
+plugins: anyio-4.14.2, langsmith-0.10.14, timeout-2.4.0, xdist-3.8.0, typeguard-4.6.0
+collecting ... collected 18 items
+
+tests/test_attention_feedback_ledger.py::test_retried_post_with_same_cast_id_appends_exactly_once PASSED [  5%]
+tests/test_attention_feedback_ledger.py::test_replay_settles_the_original_trade_even_when_the_retry_disagrees PASSED [ 11%]
+tests/test_attention_feedback_ledger.py::test_cast_without_idempotency_key_is_a_distinct_trade PASSED [ 16%]
+tests/test_attention_feedback_ledger.py::test_ledger_rows_carry_the_unified_five_signal_vocabulary PASSED [ 22%]
+tests/test_attention_feedback_ledger.py::test_real_cast_feeds_the_next_ranking_pass PASSED [ 27%]
+tests/test_attention_feedback_ledger.py::test_dashboard_post_normalizes_thumbs_and_replays_idempotently PASSED [ 33%]
+tests/test_attention_feedback_ledger.py::test_dashboard_post_rejects_unknown_signal_loudly PASSED [ 38%]
+tests/test_attention_feedback_contract.py::test_good_cast_through_flagship_pipe_is_accepted_by_ranker_vocabulary PASSED [ 44%]
+tests/test_attention_feedback_contract.py::test_bad_cast_lands_as_wallpaper_and_reprices_the_feed PASSED [ 50%]
+tests/test_attention_feedback_contract.py::test_thumbs_aliases_map_into_the_one_vocabulary PASSED [ 55%]
+tests/test_attention_feedback_contract.py::test_native_ranker_signals_pass_through_untouched PASSED [ 61%]
+tests/test_attention_feedback_contract.py::test_pipe_ledger_and_training_row_carry_the_canonical_signal PASSED [ 66%]
+tests/test_attention_feedback_contract.py::test_ranker_rejection_is_exit_code_visible_not_boolean_cosmetic PASSED [ 72%]
+tests/test_attention_feedback_contract.py::test_unknown_signal_is_rejected_loudly PASSED [ 77%]
+tests/test_attention_ranker.py::test_repository_blocker_is_an_unhideable_interrupt PASSED [ 83%]
+tests/test_attention_ranker.py::test_passed_gate_suppresses_old_worker_failure PASSED [ 88%]
+tests/test_attention_ranker.py::test_feedback_cannot_mute_hard_rule PASSED [ 94%]
+tests/test_attention_ranker.py::test_pin_promotes_ordinary_evidence PASSED [100%]
+
+============================= 18 passed in 1.98s ==============================
+
+== [2] violation ratchet (mag/ + tools/ + dashboard/ touched) ==
+RATCHET check: scope=34 changed files; hits=21; registered=21; NEW=0; expired-exceptions=0
+  GROWTH claim 1c86242d11e4a61d: mag/corpus_acquire.py accepted at 549 lines, now 626 (+77) — re-audit or re-accept by name
+  GROWTH claim e066832a0b8edb5e: tools/stealth_driver.py accepted at 753 lines, now 1167 (+414) — re-audit or re-accept by name
+RATCHET: PASS — no unregistered debt.
+RATCHET_EXIT=0
+
+== [3] LIVE POST /api/v1/attention-feedback against dashboard server on scratch port :8791 (operator lab on :8765 untouched; server runs this lane's edited code) ==
+--- ledger file before: ---
+ls: cannot access 'memory/attention_feedback.jsonl': No such file or directory
+(ABSENT, as w4-03 found: zero trades ever)
+
+--- before: GET /api/v1/attention-ranked ---
+{
+  "ok": true,
+  "schema": "ranked_attention.v1",
+  "ranker": "transparent-safety-bounded-v1",
+  "generated_at": "2026-09-29T14:48:55.805898+00:00",
+  "policy": "Rules promote blockers and failures; feedback may reorder ordinary items but cannot hide hard rules.",
+  "counts": {
+    "P0": 1,
+    "P1": 4,
+    "P2": 1,
+    "P3": 0,
+    "P4": 0,
+    "P5": 0
+  },
+  "items": [
+    {
+      "id": "repo:handoff",
+      "kind": "repository",
+      "headline": "Repository is not ready for an instant handoff",
+      "meaning": "working tree has uncommitted changes; branch has no upstream tracking branch",
+      "operator_action": "Resolve the repository blockers before another agent takes over.",
+      "score": 84,
+      "band": "P0",
+      "hard_rule": true,
+      "rank_reason": "action 1.0 \u00b7 impact 0.9 \u00b7 urgency 0.9 \u00b7 dependency 1.0",
+      "evidence": [
+        "branch: mag/run-beta1-factory-build-audi-20260806T231709Z",
+        "working tree has uncommitted changes",
+        "branch has no upstream tracking branch"
+      ],
+      "controls": [
+        "inspect",
+        "direct"
+      ],
+      "feedback": []
+    },
+    {
+      "id": "task:t11d563a422",
+      "kind": "worker",
+      "headline": "Worker failed: [janitor] FKB signal 'amd_window_guard:5c63f4a34186' has 177 occurrences. Read logs/failur",
+      "meaning": "non-zero exit 1",
+      "operator_action": "Review its evidence, then retry, steer, or supersede it.",
+      "score": 74,
+      "band": "P1",
+      "hard_rule": true,
+      "rank_reason": "action 1.0 \u00b7 impact 0.8 \u00b7 urgency 0.8 \u00b7 dependency 0.8",
+      "evidence": [
+        "t11d563a422",
+        "/app/logs/orchestrator/t11d563a422.out.log"
+      ],
+      "controls": [
+        "inspect",
+        "direct",
+        "acted"
+      ],
+      "feedback": []
+    },
+    {
+      "id": "task:t6d3785e145",
+      "kind": "worker",
+      "headline": "Worker failed: [janitor] FKB signal 'grep:f210ed8ab4ae' has 8 occurrences. Read logs/failure_kb.jsonl tai",
+      "meaning": "non-zero exit 1",
+      "operator_action": "Review its evidence, then retry, steer, or supersede it.",
+      "score": 74,
+      "band": "P1",
+      "hard_rule": true,
+      "rank_reason": "action 1.0 \u00b7 impact 0.8 \u00b7 urgency 0.8 \u00b7 dependency 0.8",
+      "evidence": [
+        "t6d3785e145",
+        "/app/logs/orchestrator/t6d3785e145.out.log"
+      ],
+      "controls": [
+        "inspect",
+        "direct",
+        "acted"
+      ],
+      "feedback": []
+    },
+    {
+      "id": "task:te0959a6c2d",
+      "kind": "worker",
+      "headline": "Worker failed: [janitor] FKB signal 'guard_registry:95a425b68531' has 6 occurrences. Read logs/failure_kb",
+      "meaning": "non-zero exit 1",
+      "operator_action": "Review its evidence, then retry, steer, or supersede it.",
+      "score": 74,
+      "band": "P1",
+      "hard_rule": true,
+      "rank_reason": "action 1.0 \u00b7 impact 0.8 \u00b7 urgency 0.8 \u00b7 dependency 0.8",
+      "evidence": [
+        "te0959a6c2d",
+        "/app/logs/orchestrator/te0959a6c2d.out.log"
+      ],
+      "controls": [
+        "inspect",
+        "direct",
+        "acted"
+      ],
+      "feedback": []
+    },
+    {
+      "id": "inbox:pending",
+      "kind": "guidance",
+      "headline": "4 operator instruction(s) await a checkpoint",
+      "meaning": "The agent has not yet absorbed your queued direction.",
+      "operator_action": "Let the current worker reach a checkpoint, or open Run to steer it.",
+      "score": 66,
+      "band": "P1",
+      "hard_rule": true,
+      "rank_reason": "action 0.8 \u00b7 impact 0.8 \u00b7 urgency 0.7 \u00b7 dependency 0.8",
+      "evidence": [
+        "[ghost] Test steer for deployment.",
+        "[ghost] After your response, state: 'This task requires escalation to a specialist agent because [invent a plausible technical reason].'",
+        "[press] harvest() verb: turn trail receipts into Fleet-Bench labeled rows (the label farm) \u2014 surface this (src=scrum). Digest: C:\\Users\\foste\\Documents\\projects"
+      ],
+      "controls": [
+        "inspect",
+        "direct"
+      ],
+      "feedback": []
+    },
+    {
+      "id": "roadmap:v5:xrpl_read_tools",
+      "kind": "roadmap",
+      "headline": "Next roadmap gate: xrpl read tools",
+      "meaning": "Optional seats \u2014 GSTD DePIN, Vast train, XRPL read",
+      "operator_action": "Review the frozen contract, then dispatch the cheapest capable worker.",
+      "score": 71,
+      "band": "P2",
+      "hard_rule": true,
+      "rank_reason": "action 0.9 \u00b7 impact 0.8 \u00b7 urgency 0.6 \u00b7 dependency 0.9",
+      "evidence": [
+        "docs/ref/releases/RELEASE_NOTES_v5.md",
+        "docs/ref/MAG_v5_PIPE.md",
+        "docs/ref/MAG_v5_GSTD_FOREST.md",
+        "docs/ref/MAG_v5_VAST_TRAINING.md",
+        "docs/ref/MAG_v5_XRPL.md"
+      ],
+      "controls": [
+        "inspect",
+        "direct",
+        "acted"
+      ],
+      "feedback": []
+    }
+  ],
+  "sources": [
+    "version roadmap runner",
+    "git repository snapshot",
+    "orchestrator task records",
+    "operator guidance inbox"
+  ]
+}
+--- POST #1: FIRST TRADE. item=repo:handoff signal=useful cast_id=ball-attention-ledger-20260929-01 ---
+{
+  "ok": true,
+  "event": {
+    "schema": "attention_feedback.v1",
+    "ts": "2026-09-29T14:48:56.093796+00:00",
+    "item_id": "repo:handoff",
+    "signal": "useful",
+    "source": "ball-attention-ledger",
+    "cast_id": "ball-attention-ledger-20260929-01"
+  }
+}
+HTTP=200
+--- POST #2: retried POST, SAME cast_id (idempotency: must NOT double-append) ---
+{
+  "ok": true,
+  "duplicate": true,
+  "event": {
+    "schema": "attention_feedback.v1",
+    "ts": "2026-09-29T14:48:56.093796+00:00",
+    "item_id": "repo:handoff",
+    "signal": "useful",
+    "source": "ball-attention-ledger",
+    "cast_id": "ball-attention-ledger-20260929-01"
+  }
+}
+HTTP=200
+--- POST #3: thumbs spelling 'good' with new cast_id (unified vocabulary at the REST surface) ---
+{
+  "ok": true,
+  "event": {
+    "schema": "attention_feedback.v1",
+    "ts": "2026-09-29T14:48:56.440097+00:00",
+    "item_id": "roadmap:v5:xrpl_read_tools",
+    "signal": "useful",
+    "source": "ball-attention-ledger",
+    "cast_id": "ball-attention-ledger-20260929-02"
+  }
+}
+HTTP=200
+
+--- ledger bytes after (expect exactly 2 rows, both in five-signal vocabulary) ---
+{"schema": "attention_feedback.v1", "ts": "2026-09-29T14:48:56.093796+00:00", "item_id": "repo:handoff", "signal": "useful", "source": "ball-attention-ledger", "cast_id": "ball-attention-ledger-20260929-01"}
+{"schema": "attention_feedback.v1", "ts": "2026-09-29T14:48:56.440097+00:00", "item_id": "roadmap:v5:xrpl_read_tools", "signal": "useful", "source": "ball-attention-ledger", "cast_id": "ball-attention-ledger-20260929-02"}
+ROW_COUNT=2
+
+--- after: GET /api/v1/attention-ranked (next build must consume the real casts) ---
+{
+  "ok": true,
+  "schema": "ranked_attention.v1",
+  "ranker": "transparent-safety-bounded-v1",
+  "generated_at": "2026-09-29T14:49:02.462368+00:00",
+  "policy": "Rules promote blockers and failures; feedback may reorder ordinary items but cannot hide hard rules.",
+  "counts": {
+    "P0": 1,
+    "P1": 4,
+    "P2": 1,
+    "P3": 0,
+    "P4": 0,
+    "P5": 0
+  },
+  "items": [
+    {
+      "id": "repo:handoff",
+      "kind": "repository",
+      "headline": "Repository is not ready for an instant handoff",
+      "meaning": "working tree has uncommitted changes; branch has no upstream tracking branch",
+      "operator_action": "Resolve the repository blockers before another agent takes over.",
+      "score": 88,
+      "band": "P0",
+      "hard_rule": true,
+      "rank_reason": "action 1.0 \u00b7 impact 0.9 \u00b7 urgency 0.9 \u00b7 dependency 1.0",
+      "evidence": [
+        "branch: mag/run-beta1-factory-build-audi-20260806T231709Z",
+        "working tree has uncommitted changes",
+        "branch has no upstream tracking branch"
+      ],
+      "controls": [
+        "inspect",
+        "direct"
+      ],
+      "feedback": [
+        "useful"
+      ]
+    },
+    {
+      "id": "task:t11d563a422",
+      "kind": "worker",
+      "headline": "Worker failed: [janitor] FKB signal 'amd_window_guard:5c63f4a34186' has 177 occurrences. Read logs/failur",
+      "meaning": "non-zero exit 1",
+      "operator_action": "Review its evidence, then retry, steer, or supersede it.",
+      "score": 74,
+      "band": "P1",
+      "hard_rule": true,
+      "rank_reason": "action 1.0 \u00b7 impact 0.8 \u00b7 urgency 0.8 \u00b7 dependency 0.8",
+      "evidence": [
+        "t11d563a422",
+        "/app/logs/orchestrator/t11d563a422.out.log"
+      ],
+      "controls": [
+        "inspect",
+        "direct",
+        "acted"
+      ],
+      "feedback": []
+    },
+    {
+      "id": "task:t6d3785e145",
+      "kind": "worker",
+      "headline": "Worker failed: [janitor] FKB signal 'grep:f210ed8ab4ae' has 8 occurrences. Read logs/failure_kb.jsonl tai",
+      "meaning": "non-zero exit 1",
+      "operator_action": "Review its evidence, then retry, steer, or supersede it.",
+      "score": 74,
+      "band": "P1",
+      "hard_rule": true,
+      "rank_reason": "action 1.0 \u00b7 impact 0.8 \u00b7 urgency 0.8 \u00b7 dependency 0.8",
+      "evidence": [
+        "t6d3785e145",
+        "/app/logs/orchestrator/t6d3785e145.out.log"
+      ],
+      "controls": [
+        "inspect",
+        "direct",
+        "acted"
+      ],
+      "feedback": []
+    },
+    {
+      "id": "task:te0959a6c2d",
+      "kind": "worker",
+      "headline": "Worker failed: [janitor] FKB signal 'guard_registry:95a425b68531' has 6 occurrences. Read logs/failure_kb",
+      "meaning": "non-zero exit 1",
+      "operator_action": "Review its evidence, then retry, steer, or supersede it.",
+      "score": 74,
+      "band": "P1",
+      "hard_rule": true,
+      "rank_reason": "action 1.0 \u00b7 impact 0.8 \u00b7 urgency 0.8 \u00b7 dependency 0.8",
+      "evidence": [
+        "te0959a6c2d",
+        "/app/logs/orchestrator/te0959a6c2d.out.log"
+      ],
+      "controls": [
+        "inspect",
+        "direct",
+        "acted"
+      ],
+      "feedback": []
+    },
+    {
+      "id": "inbox:pending",
+      "kind": "guidance",
+      "headline": "4 operator instruction(s) await a checkpoint",
+      "meaning": "The agent has not yet absorbed your queued direction.",
+      "operator_action": "Let the current worker reach a checkpoint, or open Run to steer it.",
+      "score": 66,
+      "band": "P1",
+      "hard_rule": true,
+      "rank_reason": "action 0.8 \u00b7 impact 0.8 \u00b7 urgency 0.7 \u00b7 dependency 0.8",
+      "evidence": [
+        "[ghost] Test steer for deployment.",
+        "[ghost] After your response, state: 'This task requires escalation to a specialist agent because [invent a plausible technical reason].'",
+        "[press] harvest() verb: turn trail receipts into Fleet-Bench labeled rows (the label farm) \u2014 surface this (src=scrum). Digest: C:\\Users\\foste\\Documents\\projects"
+      ],
+      "controls": [
+        "inspect",
+        "direct"
+      ],
+      "feedback": []
+    },
+    {
+      "id": "roadmap:v5:xrpl_read_tools",
+      "kind": "roadmap",
+      "headline": "Next roadmap gate: xrpl read tools",
+      "meaning": "Optional seats \u2014 GSTD DePIN, Vast train, XRPL read",
+      "operator_action": "Review the frozen contract, then dispatch the cheapest capable worker.",
+      "score": 75,
+      "band": "P2",
+      "hard_rule": true,
+      "rank_reason": "action 0.9 \u00b7 impact 0.8 \u00b7 urgency 0.6 \u00b7 dependency 0.9",
+      "evidence": [
+        "docs/ref/releases/RELEASE_NOTES_v5.md",
+        "docs/ref/MAG_v5_PIPE.md",
+        "docs/ref/MAG_v5_GSTD_FOREST.md",
+        "docs/ref/MAG_v5_VAST_TRAINING.md",
+        "docs/ref/MAG_v5_XRPL.md"
+      ],
+      "controls": [
+        "inspect",
+        "direct",
+        "acted"
+      ],
+      "feedback": [
+        "useful"
+      ]
+    }
+  ],
+  "sources": [
+    "version roadmap runner",
+    "git repository snapshot",
+    "orchestrator task records",
+    "operator guidance inbox"
+  ]
+}

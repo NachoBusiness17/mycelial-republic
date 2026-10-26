@@ -1,0 +1,14 @@
+{
+  "gopher": "t11a",
+  "item": "implement the verbatim-quote gate owed by MASTER_MICKEY17_V2_20260924.md (cheapest 3 gates row): a small tool tools/quote_gate.py that takes a quote + a source file path and exits 0 iff the quote appears (grep -F semantics, whitespace-normalized fallback), exits 2 otherwise, with a one-line verdict on stdout",
+  "ok": true,
+  "note": "Landed tools/quote_gate.py (config_seal.py header style, ~70 lines, stdlib only) + tests/test_quote_gate.py (6 cases incl. the raise-into-failure contract: missing source, unreadable source via OSError catch, and empty quote all surface as fail-closed exit 2 verdicts, never tracebacks). Raw match is byte-for-byte on utf-8 bytes (grep -F); fallback collapses whitespace runs to single spaces, absorbing line-wrap and CRLF drift only. Spec verified on disk at corpus/steal/MASTER_MICKEY17_V2_20260924.md lines 40-43 (47% BITF self-test, 29/62) plus the line 13 cheapest-3-gates row. Negatives recorded: live miss against the master doc exits 2 and is logged as a first-class negative; argparse usage errors also exit 2 (fail-closed by accident of design, now by contract); no env reads, no shell=True, no network; the first check-log draft had a ugrep false positive on the dash scan, replaced with a python byte count; one em-dash in the final check log lives inside the ratchet's own quoted stdout, flagged in an authored note rather than edited out.",
+  "checks": [
+    "pytest tests/test_quote_gate.py -v -> 6 passed, exit 0",
+    "python tools/violation_ratchet.py check --changed -> NEW=0, PASS, exit 0",
+    "live hit: quote_gate.py with item 3's own quote vs the master doc -> PASS raw, exit 0",
+    "live miss: paraphrase vs the master doc -> FAIL, exit 2",
+    "python em/en-dash byte count over all four filed files -> 0/0 authored (ratchet stdout em-dash noted)"
+  ],
+  "next_steal": "the gate checks one quote against one file by hand; the master doc's action line wants sampling evidence_quote strings from judge outputs in watch/inbox and publishing the hit-rate as a standing number, so a batch runner (walk inbox json/md for a quote+cited-file pair, emit hit-rate rows into the hash-chained record) is the natural t-followup"
+}

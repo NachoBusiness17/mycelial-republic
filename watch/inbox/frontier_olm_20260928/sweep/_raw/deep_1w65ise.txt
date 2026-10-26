@@ -1,0 +1,116 @@
+ID: 1w65ise
+SUB: r/LocalLLaMA
+DATE: 2026-09-03 12:07 UTC (created_utc=1788437236)
+TITLE: We built an open-source, model-neutral agent harness and compared it with claude managed agents - for the same model, got same accuracy, upto 75% lower cost
+SCORE: 43  COMMENTS: 51  UPVOTE_RATIO: 0.77
+PERMALINK: https://www.reddit.com/r/LocalLLaMA/comments/1w65ise/we_built_an_opensource_modelneutral_agent_harness/
+SELFTEXT:
+We have been working on an open-source, model-neutral agent harness for general purpose agents called TrueForge, and wanted to understand how much the harness itself actually matters.
+
+So we ran 14 tasks from DevRev Enterprise-Bench through multiple harness/model combinations, three times each with a blind judge.
+
+The result that surprised us most:
+
+**Claude Managed Agents + Opus 4.8:**  
+11/14 tasks solved | $11.8/run | 10.0M tokens/run
+
+**TrueForge + Opus 4.8:**  
+11/14 tasks solved | $8.6/run | 3.7M tokens/run
+
+Same model. Same benchmark. Same average solve rate.
+
+But TrueForge used about **63% fewer tokens** and cost about **30% less per run**.
+
+We saw a similar difference in tool usage: TrueForge averaged 19 tool calls per task vs 32 for Claude Managed Agents.
+
+The difference comes from the agent loop itself: less context carried between turns, compaction, fewer tool calls, and large outputs being kept out of the model context where possible.
+
+Then we tried changing the model.
+
+**TrueForge + GLM-5.2:**  
+11.7/14 solved | $3.0/run | 3.8M tokens/run
+
+On this benchmark, that was a slightly higher average solve rate than Claude Managed Agents + Opus at roughly **75% lower cost**.
+
+For me, this is the more interesting consequence of keeping the harness model-neutral.
+
+You get two independent levers:
+
+1. Make the runtime more token-efficient.
+2. Use whichever model gives you the right price/performance for the workload.
+
+TrueForge itself is fairly simple: it handles the agent loop, context management, tools/MCP, subagents, approvals, persistent sessions, and sandbox integration. It is MIT licensed and works with OpenAI-compatible endpoints, so you can point it at hosted models or models you are running yourself.
+
+This is still early.
+
+The OSS runtime does not yet have first-class tracing/eval tooling. We don't ship our own code-execution sandbox, so you need to plug one in. Context compaction is intentionally lossy.
+
+So I wouldn't claim that TrueForge replaces a mature managed agent platform feature-for-feature today.
+
+What I do find interesting is that the core runtime can already be competitive on these tasks while staying open, model-neutral, and deployable on your own infrastructure.
+
+We put the benchmark harness and methodology in the repo specifically so people can reproduce it, change the models, or tell us where the comparison is unfair.
+
+Repo:[ https://github.com/truefoundry/trueforge](https://github.com/truefoundry/trueforge)
+
+Benchmark methodology: [https://www.truefoundry.com/blog/engineering/trueforge-vs-claude-managed-agents-benchmark/](https://www.truefoundry.com/blog/engineering/trueforge-vs-claude-managed-agents-benchmark/)
+COMMENTS FETCHED: 59
+--- [[deleted] | 2026-09-03 | score 1] [removed]
+--- [Fuckinglivemealone | 2026-09-03 | score 1] This is super interesting works, we do need more harnesses and faithful ways to compare them properly, AFAIK there are no settled/standard benchmarks done against CC/Codex/Pi/OpenCode/PrimeAgent/DSH/Reasonix and now also TrueForge that measure cost per task/time per task/general capabilities on the same model and other useful metrics for us users to decide. Harnesses can be super important (at least for my use-case which is coding) so thanks a lot for your contribution!
+--- [Weird-Field6128 | 2026-09-03 | score 1] Looks interesting! I will give it a try 
+--- [Bubbly_Orange_3502 | 2026-09-03 | score 3] The gap between 63% fewer tokens and 30% less cost is the thing to explain. Cache reads bill about a tenth of fresh input, so trimming context between turns buys tokens back at full price.
+--- [[deleted] | 2026-09-03 | score 1] [removed]
+--- [Othun | 2026-09-03 | score -1] with the first deepseek v4 flash, you would absolutly avoid any compaction thanks to its 1M context length + 98% discounted cached inputs. Rewriting the context (compaction) would lose information but more importantly reset the cache.
+--- [maker-jay | 2026-09-03 | score 0] i'd split the eval trace by where tokens were saved. compaction savings are good, but the ugly part in long repo tasks is usually one missing file from an old turn. if the benchmark keeps the failed traces, those misses are more useful than the solved count.
+--- [Background-Job-862 | 2026-09-03 | score 0]   # 
+--- [venkat_1924 | 2026-09-03 | score -5] Wait what, how has this not gone viral? Tool calls and context size literally reduced because someone didn't spam calls and actually compacted context.
+--- [Background-Job-862 | 2026-09-03 | score 1] Thanks! would love to hear how it goes 
+--- [matsu-morak | 2026-09-03 | score 17] Odd comments...
+--- [metigue | 2026-09-03 | score 5] Terminal Bench 2 used to have Harness comparisons but Claude Code was getting absolutely smashed by tons of random harnesses so they seem to have dropped the harness comparison in 2.1 onwards.  I saw a research paper from somewhere that had comparisons and Cline was right at the top so I use Cline now.
+--- [Background-Job-862 | 2026-09-03 | score -1] yeah, this is probably the most important nuance in the numbers. 63% fewer tokens doesn’t translate 1:1 into cost because of caching/pricing. The interesting part for us was that we were able to get the same 11/14 solve rate while using much less total context and fewer tool calls.   The cache behavior definitely makes the cost comparison more subtle though, and it’s something we should try to break down more explicitly
+--- [Background-Job-862 | 2026-09-03 | score 1] totally agree with you, the benchmark space for agent harnesses is still pretty fragmented, so it’s hard to isolate how much the runtime itself contributes. thats y we’ve tried to make the harness/methodology reproducible so people can swap in different models and runtimes and poke holes in the results. would definitely be love to see comparisons with CC/Codex/DSH/etc. on the same setup.
+--- [stefzzz | 2026-09-03 | score 26] You are witnessing a bot to bot conversation 😅
+--- [Background-Job-862 | 2026-09-03 | score 1] thats true, solved count alone doesn't tell the whole story. the why did it fail cases are probably just as interesting as the aggregate score, especially for longer repo tasks, need to dig deeper on that part
+--- [Background-Job-862 | 2026-09-03 | score -1] makes sense, haven’t tried it yet, but would love to try deepSeek v4 flash with trueforge
+--- [PyaesoneP | 2026-09-03 | score 3] What do you mean by Claude Managed Agents. Claude Code?
+--- [[deleted] | 2026-09-03 | score 1] [removed]
+--- [Same_Accountant2340 | 2026-09-03 | score -1] Same model and same tasks makes this a genuinely useful comparison. I’d be curious how the failures split between reasoning errors, tool loops, and bad stopping behavior. Lower token use matters less if the run needs more human rescue.
+--- [BP041 | 2026-09-03 | score 0] 75% lower cost for the same accuracy tracks with what I've seen swapping managed agents for OpenClaw on a Mac mini. The managed tax is mostly convenience — worth it if you hate infra, wasted if you're already running cron.
+--- [En-tro-py | 2026-09-03 | score 2] More recently reserach is showing how much waste is in a basic ReAct loop - this is pretty interesting and backs up my opinion that you only need the bare ReAct loop for flexibilty, once you know the task you can be far more efficient with a direct workflow.  [SKILL.state: Scalable Long-Horizon Agent Skills](https://arxiv.org/html/2608.26263v3#S5)
+--- [[deleted] | 2026-09-03 | score 1] [removed]
+--- [jensilo | 2026-09-03 | score 3] I don’t really care about comparisons to Claude Code, I’d be much more interested in seeing it compared to pi! 😇
+--- [Background-Job-862 | 2026-09-03 | score 2] im actually working on comparing it to pi, dsh and other popular ones, will share that too soon
+--- [Background-Job-862 | 2026-09-03 | score -2] claude managed agents is the managed agent runtime basically the infrastructure that runs the agent loop, tools, context, etc ,claude code is their coding assistant
+--- [Background-Job-862 | 2026-09-03 | score 1] yeah that’s pretty much the tradeoff we’re seeing too, managed agents definitely win on convenience but if u’re already comfortable running your own infra, the runtime efficiency becomes a lot more interesting
+--- [Background-Job-862 | 2026-09-03 | score -6] haha, hopefully not, i think the benchmark is really interesting and just want to get feedback on the benchmark and seeing where people think the comparison could be better
+--- [Background-Job-862 | 2026-09-03 | score 2] yes, totally agree we focused on aggregate solve rate for this, as this is the first pass but the failure modes are something we need to dig into
+--- [Background-Job-862 | 2026-09-03 | score 1] that’s basically what we were trying to measure, the agent loop itself seems to have a pretty big impact on context and tool usage. but its still early though, so would love to see more people test it and poke holes in the benchmark lol
+--- [Background-Job-862 | 2026-09-03 | score 0] hmm would love to check out that paper, btw what do u like about cline in comparison to other harnesses?
+--- [Background-Job-862 | 2026-09-03 | score 1] this looks interesting fs, would love to read more on this and to see how these findings hold up across different harnesses and models though
+--- [En-tro-py | 2026-09-03 | score 2]   Shortlist of **harnesses using externalized semantics/control + executable constraints**:  * [StateFlow](https://arxiv.org/abs/2403.11322) * [The Art of Tool Interface Design / SMAG](https://arxiv.org/abs/2503.21036) * [Ontology-to-Tools Compilation](https://arxiv.org/abs/2602.03439)  * [LLM-as-Code Agentic Programming](https://arxiv.org/abs/2606.15874) * [Ontology-Governed Graph Simulation / LOM](https://arxiv.org/abs/2604.08603)  * [FAOS: Ontology-Constrained Neural Reasoning](https://arxiv.org/abs/2604.00555) * [TFlow / Thought Flow](https://arxiv.org/abs/2605.13839)   Convergent evolution is generally a sign you're onto something... so I remain hopeful my slop might have some value to others once I finish polishing it up.
+--- [senseven | 2026-09-03 | score 1] We don't really need more script frontends to speak to the same backends. OpenClaw had its moment, and then it was gone. Many of the optimisations have a usefulness of a couple of month. What will happen is that people will use ai to find what specific changes those new "agents" do and just extract those % that matter.
+--- [[deleted] | 2026-09-03 | score 1] [removed]
+--- [_BookBurner_ | 2026-09-03 | score 1] How does it compare with Opencode?
+--- [nuclearbananana | 2026-09-03 | score 1] Odd that you say this, cause one just came out yesterday. https://frontierharness.org   There's also this outdated one from a community member https://sanityboard.lr7.dev
+--- [Background-Job-862 | 2026-09-03 | score 2]  actually working on comparing it to other popular harnesses, will share that too soon
+--- [SGmoze | 2026-09-03 | score 1] why not run it against other benchmarks out there as well like https://hub.harborframework.com/datasets/terminal-bench/terminal-bench/4, swebench, swebench verified, etc. 
+--- [_BookBurner_ | 2026-09-03 | score 2] would be lovely, thank you :)
+--- [Background-Job-862 | 2026-09-03 | score 1] i think that might be fair to some extent... a lot of these optimisations probably won’t stay unique for long but the interesting part for us is seeing how much the runtime itself can matter, and whether those ideas generalise across models/workloads rather than just one benchmark
+--- [Background-Job-862 | 2026-09-03 | score 2] sure, would like to do that... this was just the first benchmark we ran, but we’re planning to test it on more benchmarks also
+--- [[deleted] | 2026-09-03 | score 1] [removed]
+--- [senseven | 2026-09-03 | score 1] Everybody welcomes the experimenting. Visual integration seems to move to ide plugins like [Hermes ](https://hermes-agent.ai/integrations/vscode)or [ChatGPT](https://marketplace.visualstudio.com/items?itemName=openai.chatgpt), or to new a neutral uis [like bb](https://getbb.app/). There is just no need to rebuild this step. Proper a/b testing of harnesses should be as easy as opening two windows side by side and sending out the same  prompts.
+--- [[deleted] | 2026-09-04 | score 1] [removed]
+--- [[deleted] | 2026-09-04 | score 1] [removed]
+--- [[deleted] | 2026-09-04 | score 1] [removed]
+--- [[deleted] | 2026-09-04 | score 1] [removed]
+--- [[deleted] | 2026-09-04 | score 1] [removed]
+--- [[deleted] | 2026-09-04 | score 1] [removed]
+--- [[deleted] | 2026-09-04 | score 1] [removed]
+--- [ShengrenR | 2026-09-04 | score 1] if you are, you need to not only bench task cost, but task completion accuracy - if you save a buck, but half the jobs fail, you're no better off.
+--- [feng_sg | 2026-09-05 | score 1] 14 tasks is too small a sample to call 11/11 a tie, and without per-task breakdowns you can't tell if the harnesses even failed on the same things.
+--- [[deleted] | 2026-09-05 | score 1] [removed]
+--- [[deleted] | 2026-09-05 | score 1] [removed]
+--- [[deleted] | 2026-09-10 | score 1] [removed]
+--- [chickenburgernchips | 2026-09-10 | score 1] Okay then
+--- [[deleted] | 2026-09-10 | score 1] [removed]
+--- [[deleted] | 2026-09-10 | score 1] [removed]

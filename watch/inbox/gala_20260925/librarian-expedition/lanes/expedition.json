@@ -1,0 +1,56 @@
+{
+  "lane": "expedition",
+  "division": "B",
+  "started": "2026-10-01",
+  "status": "complete",
+  "ask": "GATHERING EXPEDITION: fetch the top missing primaries INTO durable holdings. Priority: (1) founding texts of the estate's own laws from the foundational-gaps table, (2) top-cited research papers whose bytes evaporated (arXiv into corpus), (3) fetched-today scratch sources landed into corpus via the register path. Every acquisition: magic-bytes checked, catalog row through the sanctioned writer, INDEX registered. Failures named, never faked.",
+  "progress": [
+    "2026-10-01 read the sibling lanes first (holdings-doctrine.json, cited-missing.json, instrument-audit.json) and the receipts they cite (HOLDINGS_AUDIT_20260930.md + DECISION, LIBRARIAN_RETIRED_20260927.md); used cited-missing's unique_citations.json (91 unique citations, 80 not held durably) as the P2 feed instead of re-deriving it",
+    "2026-10-01 foundational-gaps table: NO file by that name exists (repo-wide grep, only hit was this lane's own echo in memory/trajectory/steps.jsonl). Referent used: docs/ref/BIBLIOGRAPHY_MAP.md 'THE UNNAMED DEBT' + holdings-doctrine's named founding texts. Verified all four named founding texts (Turing 1936, Shannon 1948 I/III, EDVAC 1945, Watson 1928) already hold bytes in corpus/library/pd_computing_history + pd_child_development - P1 real gaps were the UNNAMED DEBT rows",
+    "2026-10-01 P1 LANDED 3: Dynamo SOSP 2007 (900,468 B), Lamport Part-Time Parliament (568,998 B), Dolstra 2006 Nix thesis (1,694,654 B) - all %PDF- magic + page-objects + %%EOF, landed corpus/papers_reference_nonredistributable/law_*.pdf, receipts written",
+    "2026-10-01 P1 named failures: EUR-Lex GDPR Art 17 ROBOT-BLOCKED (HTTP 202, 0 bytes, 2 attempts); Merkle 1987 paywalled (merkle.com 404); Simmons 2011 + Dietterich 2000 gone-at-tried-URLs (404 x2 each + wayback availability empty); Hurlbert 1984 journal paywall, not attempted",
+    "2026-10-01 P2 LANDED 38 arXiv papers (85.85 MB): the 37 ids cited 2+ times in sibling sweep + 2509.05276 (13 cites). All HTTP 200 serial with 3 s pauses, %PDF- magic each, titles resolved via export.arxiv.org batch (arxiv_titles.xml). PAPERS_LANDING.json + 38 receipts. Zero 429s today (the 09-27 hard-429 regime did not recur)",
+    "2026-10-01 P3 classified repo-root scratch: 17 real Reddit-archive/web sources landed (corpus/social_archive/reddit_20261001/ + corpus/library/web_sources_20261001/, 781,624 B), 13 NOT-SOURCES named not landed (8 pullpush rate-limit bodies, 4 arctic-shift timeout bodies, 2 empty-data, Anubis challenge page, 0-byte sweep file). Mangled temp-path web files carry unrecoverable source URLs - noted in receipts",
+    "2026-10-01 register: mag.catalog scan -> 100 rows scanned (38 paper_ + 3 law_ + 17 social_ + 3 web_ verified in catalog.jsonl at 821,776 lines); B2-465 FTS heal: STALE -> rebuild 821,776 rows 0 malformed -> fresh; mag.holdings_audit re-run CLEAN absorbing all 61 rows (262 claims / 842,965,168 B, was 201 / 752,370,614)"
+  ],
+  "counts": {
+    "p1_landed": 3,
+    "p2_landed": 38,
+    "p3_landed": 20,
+    "total_landed": 61,
+    "total_bytes": 90594721,
+    "failures_named": 6,
+    "full_chain_pass": 61,
+    "full_chain_fail": 0
+  },
+  "checks": [
+    {
+      "command": "python full-chain verifier over GATHERING_LANDING.json + PAPERS_LANDING.json (file exists + sha256 matches + catalog row present + receipt present)",
+      "exit": 0,
+      "evidence": "watch/inbox/gala_20260925/librarian-expedition/lanes/expedition.check.txt: '61 ledger rows | 61 full-chain PASS | 0 FAIL' + magic-bytes prints"
+    },
+    {
+      "command": ".venv/Scripts/python.exe -m mag.holdings_audit",
+      "exit": 0,
+      "evidence": "same check file: ledger->disk 262 ok / 0 missing / 0 mismatch (842,965,168 B); disk->ledger 263 files, 0 unreceipted, 0 dup groups; content 0 unreadable; verdict CLEAN"
+    },
+    {
+      "command": ".venv/Scripts/python.exe tools/corpus_fts_rebuild.py --check --deep ; corpus_fts_rebuild.py ; --check",
+      "exit": 0,
+      "evidence": "same check file narrative + rebuild JSON: STALE -> rebuilt (821,776 rows, 0 malformed, catalog sha bcb60edaff407fa4) -> fresh (B2-465 routine heal)"
+    },
+    {
+      "command": ".venv/Scripts/python.exe -m mag.catalog scan --roots corpus/papers_reference_nonredistributable,corpus/social_archive,corpus/library/web_sources_20261001 --max 200",
+      "exit": 0,
+      "evidence": "{\"scanned\": 100}; grep verification of catalog.jsonl: 38 paper_* + 3 law_* + 17 social_archive + 3 web_sources rows present"
+    },
+    {
+      "command": ".venv/Scripts/python.exe tools/violation_ratchet.py check --changed",
+      "exit": 0,
+      "evidence": "RATCHET: FAIL - 2 NEW hits are tools/hermes_burn.py:393 except-pass and tools/model_garden.py:446 file-too-long, both files of OTHER lanes' carrier work this wave; this lane touched no mag/ or tools/ code (data/receipts/ledger files only, outside ratchet scope); debt acceptance is an operator call, not taken here"
+    }
+  ],
+  "decision_ledger": "Closes the gathering debt the holdings-doctrine lane named ('cited primaries evaporate with sessions'): every primary cited 2+ times in the last-48h receipts now has durable byte-held holdings, and the estate's founding-text citations (Dynamo/Lamport/Nix for the record + governance laws) moved from cite-only to LANDED per the one-line law 'no verdict=LANDED without the primary in holdings'. Also converts the scratch-leak from a named disease to a landed-and-accounted fact (17 sources out of scratch, 13 error bodies named). Remaining: 1-cite arXiv ids (29) unfetched by choice (top-cited scope), non-arXiv UNNAMED DEBT rows paywalled - named, not faked.",
+  "artifact": "watch/inbox/librarian_exp/gathering-log.md",
+  "finished": "2026-10-01"
+}

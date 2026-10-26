@@ -1,0 +1,24 @@
+# WORK lib-belady-1966
+
+lane: openrouter model: meta/muse-glimmer-30b
+ts: 2026-09-29T14:33:58.387048+00:00
+finish: stop cached_tokens: 48
+ask: Find the canonical reference for Belady 1966 (the Belady anomaly / FIFO page-replacement study). Return: exact title, venue, year, and one verbatim quote of the anomaly claim with page if findable. If unreachable, say OWED with what you tried.
+
+---
+
+1) FINDING
+Canonical citation commonly given as Belady 1966 is:
+L. A. Belady. A Study of Replacement Algorithms for a Virtual-Storage Computer. IBM Systems Journal, Vol 5 No 2, 1966, pp 78-101.
+The anomaly claim most often quoted in secondary literature is associated with the follow-on work:
+L. A. Belady, R. A. Nelson, G. C. Shedler. An Anomaly in Space-Time Characteristics of Certain Programs Running in a Paging Machine. Communications of the ACM, Vol 12 No 9, September 1969, pp 514-517.
+
+2) STEALABLE idea worth keeping
+Plot page fault rate vs number of frames for a replacement policy and use a non-monotonic increase as a fast diagnostic for pathological access patterns and for choosing a policy that is monotone under growth.
+
+3) TESTABLE hypothesis
+For a reference string with a repeating access cycle longer than the number of frames, FIFO will show a Belady anomaly, i.e., page faults for k+1 frames > page faults for k frames for at least one k.
+
+4) EVIDENCE or OWED
+OWED for a verified verbatim anomaly claim with page number from the 1966 primary source.
+What was tried: recall of IBM Systems Journal 5(2) 1966 pp 78-101 and CACM 12(9) 1969 pp 514-517, and standard secondary citations. No direct page-level primary text was accessible to confirm exact wording and page in this session, so the verbatim quote is not provided to avoid fabrication.

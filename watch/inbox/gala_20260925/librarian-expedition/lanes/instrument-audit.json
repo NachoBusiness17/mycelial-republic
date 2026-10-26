@@ -1,0 +1,95 @@
+{
+  "lane": "instrument-audit",
+  "division": "B",
+  "started": "2026-10-01",
+  "status": "complete",
+  "ask": "LIBRARIAN INSTRUMENT AUDIT: run the librarian's matching against today's new holdings with known defects worked around (semantic-title matching not just arXiv-id; dedupe detector pointed at everything except itself; magic-bytes before any hash verdict). Deliverable: how many of today's additions the instrument correctly sees, how many missed to each disease, any NEW disease with repro, true catalog status after defect-aware matching.",
+  "instruments": {
+    "librarian_v1": "mag/librarian.py (bibliography auditor; receipt_state() matches receipts by arXiv id token only, mag/librarian.py:107-111; regex mag/librarian.py:34)",
+    "holdings_audit": "mag/holdings_audit.py (both-direction audit; dup detector over 5 disjoint shelves; magic-byte + printable-ratio content checks at mag/holdings_audit.py:155-168)",
+    "librarian_catalog": "mag/librarian_catalog.py (shelf counts + canon MANIFEST.sha256 verify; hash-only verdict at mag/librarian_catalog.py:123-146)"
+  },
+  "known_diseases_from_0930_audit": {
+    "D1_arxiv_id_only": "192 real holdings read as confident zeros. Source: watch/inbox/HOLDINGS_AUDIT_20260930_full.md section 1.",
+    "D2_dedupe_self_report": "audit's first run reported 149 duplicate groups which were 100% its own overlapping-shelf bug. Source: watch/inbox/HOLDINGS_AUDIT_20260930_full.md section 5.",
+    "D3_valid_hash_destroyed_content": "Soviet patent 808856 landed with valid SHA-256 and destroyed Cyrillic OCR. Source: watch/inbox/HOLDINGS_AUDIT_20260930_full.md section 3."
+  },
+  "test_set": {
+    "strictly_today_2026_10_01_shelf_files": 0,
+    "newest_unverified_tranche": "7 persona_priorart papers landed 2026-09-30T22:55-22:56Z, ~4.5h after the last holdings-audit run (18:28:20Z); shelf count 215 -> 222",
+    "receipts_census": 257,
+    "today_outside_shelves": "corpus/steal/DESCENT_DAY1_STEAL_20261001.md + corpus/tools Ghidra drop (~6000+ files)"
+  },
+  "counts": {
+    "receipts_on_disk": 257,
+    "receipt_state_sees": 28,
+    "receipt_state_blind": 229,
+    "blind_recovered_by_semantic_title": 38,
+    "newest_tranche_size": 7,
+    "newest_tranche_missed_by_librarian_v1_holdings_channel": 7,
+    "newest_tranche_seen_only_as_UNREGISTERED_citations": 7,
+    "newest_tranche_missed_by_librarian_catalog": 7,
+    "newest_tranche_missed_by_corpus_fts_catalog": 7,
+    "newest_tranche_byte_verified_sha_plus_magic": 7,
+    "holdings_audit_today": "321 rows, 201 claims, 201 ok / 0 missing / 0 mismatch, 0 dups, 0 unreadable, CLEAN",
+    "canon_manifest_drift": 4,
+    "classic_13_probes_in_fresh_report": "all 0 (watson bowlby child-study siege shannon turing edvac wilkes frontinus nasa lowenfeld gesell piaget)"
+  },
+  "disease_verdicts": {
+    "D1_arxiv_id_only": "PRESENT, live, BROADER than documented: the persona stems DO carry arXiv ids and receipt_state() still skips all 7 (underscore-glue defeats the \\b boundary, probe 1); 28/257 receipts seen; 13 classic probes all 0 in the fresh 2026-10-01 run",
+    "D2_dedupe_self_report": "bug ABSENT in today's run (0 dup groups, disjoint shelves held); mechanism CONFIRMED reproducible (R3b: overlap -> phantom groups == child file count); sensitivity CONFIRMED (R3a: planted duplicate caught exactly once); guard is a comment, not a check (mag/holdings_audit.py:66-79)",
+    "D3_valid_hash_destroyed_content": "PRESENT in librarian_catalog (R2: verify_canon ok=true on a 4096-null-byte hash-valid file); PARTIAL in holdings_audit (R4: %PDF- 8-byte magic + 100k null body passes CLEAN); .txt printable floor is real"
+  },
+  "new_diseases": {
+    "N1_verify_canon_missing_file_crash": "missing counter at mag/librarian_catalog.py:145 is dead code; fp.read_bytes() at :141 uncaught; repro R1: FileNotFoundError from --verify path; a missing canon file crashes the run instead of reporting missing: 1",
+    "N3_hardcoded_scope_blindness": "papers_reference_nonredistributable in holdings_audit.SHELVES but NOT in librarian_catalog.CURATED; corpus/tools (today's ~6k-file Ghidra drop) in neither; corpus FTS catalog 0 rows for both (752,984 rows scanned); three instruments' scope lists disagree and today's largest acquisition is invisible to all of them",
+    "N4_dated_output_hardcode": "mag/holdings_audit.py:63 hardcodes OUT_MD to HOLDINGS_AUDIT_20260930.md; every future run silently overwrites the dated 09-30 receipt; main() deliberately not run for this reason",
+    "N5_ledger_rows_undated": "314/321 landing-ledger rows carry no date string; 'what landed today' is not answerable from ledgers, only mtimes"
+  },
+  "true_catalog_status": "The 7 newest holdings are byte-true (sha 7/7, PDF magic 7/7), ledger-claimed 7/7, receipted 7/7, and INVISIBLE as holdings to librarian v1 (0/7; seen only as UNREGISTERED citation debt 7/7), to librarian_catalog (0/7, shelf not in CURATED), and to the corpus FTS catalog (0/7). Semantic-title channel recovers 7/7 of the tranche and 38/229 of the whole blind receipt census. Holdings CLEAN; the catalog as a record of the record is blind to them.",
+  "progress": [
+    "2026-10-01 read mag/librarian.py, mag/holdings_audit.py, mag/librarian_catalog.py + both 09-30 audit receipts; disease list byte-confirmed against code",
+    "2026-10-01 ran python -m mag.librarian (fresh report; 13 probes all 0; 1512 UNREGISTERED; exit 1)",
+    "2026-10-01 ran holdings_audit.audit() via direct driver (main() avoided: dated OUT_MD clobber, N4); verdict CLEAN, 201/201 claims verified",
+    "2026-10-01 ran mag.librarian_catalog --verify + --once; canon DRIFT 4 identified byte-level (x_canon files, readable JSON, manifest sealed 09-22)",
+    "2026-10-01 defect-aware matcher: 28/257 receipt visibility, 229 blind, 38 recovered by semantic title, 7/7 tranche matrix across 10 channels",
+    "2026-10-01 temp repros R1-R4 all confirmed (missing-file crash; destroyed-content passes hash-only verdict; dup sensitivity ok; overlap phantoms reproduce; PDF 8-byte magic hole)",
+    "2026-10-01 ratchet run: exit 1, 2 NEW rows in tools/hermes_burn.py:393 + tools/model_garden.py:446 - concurrent other-lane edits; this lane authored no byte under mag/ or tools/"
+  ],
+  "checks": [
+    {
+      "command": ".venv/Scripts/python.exe -m mag.librarian",
+      "exit": 1,
+      "evidence": "watch/inbox/gala_20260925/librarian-expedition/lanes/instrument-audit.check.txt section 1 (exit 1 is the instrument's own unregistered-citations signal)"
+    },
+    {
+      "command": ".venv/Scripts/python.exe -c \"from mag import holdings_audit; holdings_audit.audit()\" (direct driver, main() not called)",
+      "exit": 0,
+      "evidence": "watch/inbox/gala_20260925/librarian-expedition/lanes/instrument-audit.check.txt section 2"
+    },
+    {
+      "command": ".venv/Scripts/python.exe -m mag.librarian_catalog --verify && --status && --once",
+      "exit": 0,
+      "evidence": "watch/inbox/gala_20260925/librarian-expedition/lanes/instrument-audit.check.txt section 3"
+    },
+    {
+      "command": ".venv/Scripts/python.exe watch/inbox/gala_20260925/librarian-expedition/lanes/instrument_matcher_repros.py",
+      "exit": 0,
+      "evidence": "watch/inbox/gala_20260925/librarian-expedition/lanes/instrument-audit.check.txt section 4 (matcher matrix + R1-R4 repros)"
+    },
+    {
+      "command": "probes: ARXIV regex stems; receipt_state census; report probes; canon drift detail; catalog.jsonl scope scan",
+      "exit": 0,
+      "evidence": "watch/inbox/gala_20260925/librarian-expedition/lanes/instrument-audit.check.txt section 5"
+    },
+    {
+      "command": ".venv/Scripts/python.exe tools/violation_ratchet.py check --changed",
+      "exit": 1,
+      "evidence": "2 NEW rows: tools/hermes_burn.py:393 except-pass, tools/model_garden.py:446 file-too-long; concurrent other-lane edits (mtimes 23:02/23:16Z inside this lane's window); this lane authored no byte under mag/ or tools/"
+    }
+  ],
+  "decision_ledger": "Closes the catalog-fitness decision for the gathering expedition: holdings are trustworthy (both-direction audit CLEAN today, 201/201 claims re-hashed), but the catalog instrument is NOT fit as the matching organ without workarounds - semantic-title (ledger-title) matching is the only channel that sees the newest tranche 7/7; the arXiv-id regex is now proven defective even FOR id-bearing holdings (underscore-glue), not just id-less ones. Changes the expedition's matching law to: ledger-title semantic matching + holdings_audit both-direction as base truth; never librarian v1 counts or librarian_catalog shelf coverage as visibility claims. Flags for other lanes: canon drift 4 files (resolve before trusting canon), N1/N3/N4 fixes owed in mag/librarian_catalog.py + mag/holdings_audit.py, corpus/tools needs a shelf/ledger decision.",
+  "artifact": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/librarian-expedition/lanes/instrument-audit.json",
+  "receipt": "watch/inbox/librarian_exp/instrument-audit.md",
+  "check_bundle": "watch/inbox/gala_20260925/librarian-expedition/lanes/instrument-audit.check.txt"
+}

@@ -1,0 +1,61 @@
+{
+  "lane": "B2-373",
+  "date": "2026-09-26",
+  "probe": "watch/inbox/burn_wave_20260926/B2_373_falsifier_probe.py",
+  "what": "crash_log_census applied to the REAL _log_seat_crash bytes (temp MAG_SEAT_CRASH_LOG sink); writer contract for a 2-crash flow (1 test, 1 real) is blocks=2 entries=2 test=1 real=1 chains=0",
+  "probe_defect_note": "the first probe cut constructed RuntimeError(msg) directly; a constructed exception carries no __traceback__, format_exception then omits the Traceback header and the census rightly counts 0 entries; corrected by raising through a frame (_raised helper); run1 above is the corrected healthy run",
+  "pytest_runs": {
+    "baseline_unmutated_writer_pre_pin": "14 passed (2 seat guard + 12 census fixtures) in 18.19s",
+    "mutated_writer_pre_pin": "14 passed in 16.78s: ZERO tests red while the census on the writer's own bytes collapsed; the brief predicted census fixture tests red, the truth is deader, nothing is wired to the writer's bytes",
+    "mutated_writer_post_pin": "3 failed (all three writer tests via the B2-373 stanza-shape helper and the dedicated pin) 12 passed (census fixtures, synthetic, unaffected) in 30.53s",
+    "restored_writer_post_pin": "15 passed in 33.31s; mag/agent_cli.py sha256 restored byte-identical 682812abf25c1e2ad6dae05a904454fceb0a1c8f39152486d0431c1044e0491e before and after both mutations"
+  },
+  "runs": {
+    "run1_healthy_writer_prepin_tests_unchanged": {
+      "writer": "mag.agent_cli._log_seat_crash (real call, temp MAG_SEAT_CRASH_LOG sink)",
+      "writer_first_line": "[2026-09-26T17:51:56.486632+00:00] stage=do_turn",
+      "reader_regex": "^\\[\\d{4}-\\d{2}-\\d{2}T[^\\]]*\\]",
+      "reader_sees_first_line": true,
+      "census_on_writer_bytes": {
+        "blocks": 2,
+        "entries": 2,
+        "test": 1,
+        "real": 1,
+        "chains": 0
+      },
+      "expected_census": {
+        "blocks": 2,
+        "entries": 2,
+        "test": 1,
+        "real": 1,
+        "chains": 0
+      },
+      "census_matches_writer_contract": true,
+      "verdict": "OK: the census reads the writer's bytes as 2 entries, 1 test, 1 real"
+    },
+    "run2_mutated_writer_prepin_tests_unchanged": {
+      "writer": "mag.agent_cli._log_seat_crash (real call, temp MAG_SEAT_CRASH_LOG sink)",
+      "writer_first_line": "<ts 2026-09-26T17:52:17.876692+00:00> stage=do_turn",
+      "reader_regex": "^\\[\\d{4}-\\d{2}-\\d{2}T[^\\]]*\\]",
+      "reader_sees_first_line": false,
+      "census_on_writer_bytes": {
+        "blocks": 2,
+        "entries": 1,
+        "test": 1,
+        "real": 0,
+        "chains": 0
+      },
+      "expected_census": {
+        "blocks": 2,
+        "entries": 2,
+        "test": 1,
+        "real": 1,
+        "chains": 0
+      },
+      "census_matches_writer_contract": false,
+      "verdict": "DRIFT: the census does NOT read the writer's bytes as written (the B2-373 silent break; a writer-side stanza pin must go red here)"
+    }
+  },
+  "writer_sha256_before_after": "682812abf25c1e2ad6dae05a904454fceb0a1c8f39152486d0431c1044e0491e",
+  "generated": "2026-09-26T17:57:45Z"
+}

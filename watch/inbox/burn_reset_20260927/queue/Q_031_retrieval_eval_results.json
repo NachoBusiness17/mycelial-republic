@@ -1,0 +1,1143 @@
+{
+ "summary": {
+  "item": "Q-031",
+  "eval": "held-out 50-question retrieval eval vs catalog/catalog.jsonl",
+  "ran_at": "2026-09-28T16:49:16Z",
+  "catalog": "catalog/catalog.jsonl",
+  "catalog_bytes": 160053773,
+  "catalog_sha256": "eb08f2183aefb7cd57620faee527b9b7f4fb13ddcb03ff83329541aa61ba1ae8",
+  "catalog_rows_with_path": 581477,
+  "seed": 20260928,
+  "n_questions": 50,
+  "answerable": 50,
+  "accuracy_at_1": 0.48,
+  "accuracy_at_10": 0.76,
+  "top1_hits": 24,
+  "top10_hits": 38,
+  "unanswerable_no_terms": 0,
+  "engine_counts": {
+   "fts5/fresh": 50
+  },
+  "top10_by_basename": {
+   "basename_shared": 15,
+   "basename_unique": 23
+  },
+  "gold_line_numbers": [
+   576175,
+   293861,
+   33498,
+   224423,
+   99259,
+   465986,
+   368906,
+   205293,
+   536406,
+   33429,
+   485175,
+   30517,
+   272632,
+   421835,
+   553160,
+   60538,
+   197468,
+   283482,
+   26222,
+   249072,
+   504361,
+   181334,
+   218172,
+   188161,
+   230566,
+   252640,
+   175344,
+   373014,
+   263706,
+   445930,
+   10149,
+   365014,
+   531446,
+   244590,
+   254866,
+   442561,
+   450112,
+   94799
+  ],
+  "protocol": "Q-031 held-out 50-question retrieval eval against catalog/catalog.jsonl.\n\nProtocol (held-out, stated so it can be attacked):\n  - Surface under test: tools/corpus.py corpus_search (the sanctioned\n    read-only catalog retrieval surface; FTS5 path+title index at\n    catalog/catalog_fts.sqlite when its freshness gate passes, JSONL scan\n    otherwise). The module landed 2026-09-26 and was NOT changed for this\n    eval. The tags v2 owner column is outside the query path (corpus_search\n    only reads tags.jsonl when a kind filter is passed; none is here).\n  - Gold set: 50 rows drawn once with random.Random(20260928).sample over\n    the 581,477 catalog rows that carry a path. Both surfaces were frozen\n    before the draw; no query was tuned per row; all 50 gold ids and every\n    per-question verdict are published next to this script.\n  - Questions: built ONLY from the gold row's own stored fields. If the\n    row's title differs from its basename the question is the title, else\n    the basename stem; tokenized to [a-z0-9]{3,}, deduped, order kept.\n    This mirrors \"find the file I half-remember by name/title\", the lookup\n    a catalog map actually promises; it is lexical retrieval, not semantic.\n  - Engine semantics being scored: AND of quoted prefix terms over\n    path+title, hits returned in catalog line order (the engine's real\n    order, parity with the scan path). accuracy@1 = first hit is the gold\n    id; accuracy@10 = gold id within the first 10 hits.\n  - \"Held out\" here means: seeded draw after the code was frozen, zero\n    per-question tuning, full publication of the gold set. It is not a\n    human-written query set; nobody annotated relevance beyond id equality.\n\nUsage:\n    .venv/Scripts/python.exe watch/inbox/burn_reset_20260927/queue/Q_031_retrieval_eval.py\n    .venv/Scripts/python.exe ... --out PATH --n 50 --seed 20260928\n\nNo subprocess is spawned; the corpus module is loaded in-process."
+ },
+ "per_question": [
+  {
+   "gold_id": "08d751a71912",
+   "gold_path": "local_sovereign_agent/memory/biography/residual/mag-agent-orc-t4a2396797a.json",
+   "gold_line": 576175,
+   "gold_title": "mag-agent-orc-t4a2396797a.json",
+   "question_terms": [
+    "mag",
+    "agent",
+    "orc",
+    "t4a2396797a"
+   ],
+   "question": "mag agent orc t4a2396797a",
+   "engine": "fts5/fresh",
+   "top10_ids": [
+    "493dacb2f9de",
+    "08d751a71912",
+    "4fd03313b30d",
+    "493dacb2f9de",
+    "08d751a71912"
+   ],
+   "hit_at": 2,
+   "verdict": "top10"
+  },
+  {
+   "gold_id": "8b33ee8225a2",
+   "gold_path": "local_sovereign_agent/memory/runs/campaign/campaign-7977e4c5dcf9.json",
+   "gold_line": 293861,
+   "gold_title": "campaign-7977e4c5dcf9.json",
+   "question_terms": [
+    "campaign",
+    "7977e4c5dcf9"
+   ],
+   "question": "campaign 7977e4c5dcf9",
+   "engine": "fts5/fresh",
+   "top10_ids": [
+    "8b33ee8225a2"
+   ],
+   "hit_at": 1,
+   "verdict": "top1"
+  },
+  {
+   "gold_id": "0dfa08479341",
+   "gold_path": "local_sovereign_agent/corpus/library/mod-playerbots/sql/archive/0.5/2164_command.sql",
+   "gold_line": 33498,
+   "gold_title": "2164_command.sql",
+   "question_terms": [
+    "2164",
+    "command"
+   ],
+   "question": "2164 command",
+   "engine": "fts5/fresh",
+   "top10_ids": [
+    "0dfa08479341"
+   ],
+   "hit_at": 1,
+   "verdict": "top1"
+  },
+  {
+   "gold_id": "2c4d3d58fb94",
+   "gold_path": "local_sovereign_agent/memory/biography_backup/biography_backup_20260926/knots/2026-09-02_1359_untagged_law-LAW-_c7c3f7ec.knot.json",
+   "gold_line": 224423,
+   "gold_title": "2026-09-02_1359_untagged_law-LAW-_c7c3f7ec.knot.json",
+   "question_terms": [
+    "2026",
+    "1359",
+    "untagged",
+    "law",
+    "c7c3f7ec",
+    "knot"
+   ],
+   "question": "2026 1359 untagged law c7c3f7ec knot",
+   "engine": "fts5/fresh",
+   "top10_ids": [
+    "a13a3740fc37",
+    "8b14fe5cc6d1",
+    "2c4d3d58fb94",
+    "67267d30ee61"
+   ],
+   "hit_at": 3,
+   "verdict": "top10"
+  },
+  {
+   "gold_id": "4c0adbe98330",
+   "gold_path": "local_sovereign_agent/memory/agent_state/versions/20260811T170956Z_8d29e9e5.json",
+   "gold_line": 99259,
+   "gold_title": "20260811T170956Z_8d29e9e5.json",
+   "question_terms": [
+    "20260811t170956z",
+    "8d29e9e5"
+   ],
+   "question": "20260811t170956z 8d29e9e5",
+   "engine": "fts5/fresh",
+   "top10_ids": [
+    "4c0adbe98330",
+    "e6a9362bfca5"
+   ],
+   "hit_at": 1,
+   "verdict": "top1"
+  },
+  {
+   "gold_id": "5816cc99f241",
+   "gold_path": "mag-current-rebuild/docs/ref/releases/VERSION_REGISTRY.md",
+   "gold_line": 465986,
+   "gold_title": "Mag version registry",
+   "question_terms": [
+    "mag",
+    "version",
+    "registry"
+   ],
+   "question": "mag version registry",
+   "engine": "fts5/fresh",
+   "top10_ids": [
+    "c551c3376f99",
+    "5816cc99f241",
+    "8a2221a77221",
+    "c551c3376f99"
+   ],
+   "hit_at": 2,
+   "verdict": "top10"
+  },
+  {
+   "gold_id": "26a231031a16",
+   "gold_path": "local_sovereign_agent/mine/raw/agent_platform/BerriAI/litellm/tests/e2e/guardrails/test_team_disable_global_guardrail_e2e.py",
+   "gold_line": 368906,
+   "gold_title": "test_team_disable_global_guardrail_e2e.py",
+   "question_terms": [
+    "test",
+    "team",
+    "disable",
+    "global",
+    "guardrail",
+    "e2e"
+   ],
+   "question": "test team disable global guardrail e2e",
+   "engine": "fts5/fresh",
+   "top10_ids": [
+    "26a231031a16"
+   ],
+   "hit_at": 1,
+   "verdict": "top1"
+  },
+  {
+   "gold_id": "d511d7018b39",
+   "gold_path": "local_sovereign_agent/memory/biography_backup/biography_backup_20260926/knots/2026-08-08_1209_mag_mag-agen_71e27a9b.knot.json",
+   "gold_line": 205293,
+   "gold_title": "2026-08-08_1209_mag_mag-agen_71e27a9b.knot.json",
+   "question_terms": [
+    "2026",
+    "1209",
+    "mag",
+    "agen",
+    "71e27a9b",
+    "knot"
+   ],
+   "question": "2026 1209 mag agen 71e27a9b knot",
+   "engine": "fts5/fresh",
+   "top10_ids": [
+    "481e43749181",
+    "080e9c1e0a70",
+    "b4cd942f2525",
+    "d511d7018b39",
+    "987f41b81e5d"
+   ],
+   "hit_at": 4,
+   "verdict": "top10"
+  },
+  {
+   "gold_id": "d608f1de06c5",
+   "gold_path": "local_sovereign_agent/mine/raw/agent_bleeding_edge/getzep/zep/integrations/livekit/python/src/zep_livekit/agent.py",
+   "gold_line": 351777,
+   "gold_title": "agent.py",
+   "question_terms": [
+    "agent"
+   ],
+   "question": "agent",
+   "engine": "fts5/fresh",
+   "top10_ids": [
+    "a54ff182c7e8",
+    "b940559cdc37",
+    "01292fc12fa2",
+    "8204159223a2",
+    "ce84aea48968",
+    "a20743a9d497",
+    "49327caaeedd",
+    "9fc079973b59",
+    "8cef94d9372b",
+    "99754528249c"
+   ],
+   "hit_at": null,
+   "verdict": "miss"
+  },
+  {
+   "gold_id": "8e368f5de061",
+   "gold_path": "local_sovereign_agent/memory/biography_backup/biography_backup_20260927/knots/2026-09-01_0949_autonomous-janitor_autonomo_t284d92e.knot.json",
+   "gold_line": 536406,
+   "gold_title": "2026-09-01_0949_autonomous-janitor_autonomo_t284d92e.knot.json",
+   "question_terms": [
+    "2026",
+    "0949",
+    "autonomous",
+    "janitor",
+    "autonomo",
+    "t284d92e",
+    "knot"
+   ],
+   "question": "2026 0949 autonomous janitor autonomo t284d92e knot",
+   "engine": "fts5/fresh",
+   "top10_ids": [
+    "cd4e9178b89c",
+    "ae2e3ad257b0",
+    "08cb874c29a2",
+    "8e368f5de061"
+   ],
+   "hit_at": 4,
+   "verdict": "top10"
+  },
+  {
+   "gold_id": "b047de36cd3e",
+   "gold_path": "local_sovereign_agent/corpus/library/mod-playerbots/sql/archive/0.5/1158_character_inventory.sql",
+   "gold_line": 33429,
+   "gold_title": "1158_character_inventory.sql",
+   "question_terms": [
+    "1158",
+    "character",
+    "inventory"
+   ],
+   "question": "1158 character inventory",
+   "engine": "fts5/fresh",
+   "top10_ids": [
+    "b047de36cd3e"
+   ],
+   "hit_at": 1,
+   "verdict": "top1"
+  },
+  {
+   "gold_id": "5279d501165e",
+   "gold_path": "vmangos-core/sql/old_migrations/20170530185638_world.sql",
+   "gold_line": 485175,
+   "gold_title": "20170530185638_world.sql",
+   "question_terms": [
+    "20170530185638",
+    "world"
+   ],
+   "question": "20170530185638 world",
+   "engine": "fts5/fresh",
+   "top10_ids": [
+    "5279d501165e"
+   ],
+   "hit_at": 1,
+   "verdict": "top1"
+  },
+  {
+   "gold_id": "b34c252e5cf6",
+   "gold_path": "local_sovereign_agent/corpus/library/lmcache-src/tests/aerospike_ce.conf.template",
+   "gold_line": 30517,
+   "gold_title": "aerospike_ce.conf.template",
+   "question_terms": [
+    "aerospike",
+    "conf"
+   ],
+   "question": "aerospike conf",
+   "engine": "fts5/fresh",
+   "top10_ids": [
+    "b34c252e5cf6",
+    "d0946214fe39"
+   ],
+   "hit_at": 1,
+   "verdict": "top1"
+  },
+  {
+   "gold_id": "ee9c79357cde",
+   "gold_path": "local_sovereign_agent/memory/ghost/leak_reports/report-2026-09-18T103046.json",
+   "gold_line": 272632,
+   "gold_title": "report-2026-09-18T103046.json",
+   "question_terms": [
+    "report",
+    "2026",
+    "18t103046"
+   ],
+   "question": "report 2026 18t103046",
+   "engine": "fts5/fresh",
+   "top10_ids": [
+    "ee9c79357cde"
+   ],
+   "hit_at": 1,
+   "verdict": "top1"
+  },
+  {
+   "gold_id": "43f31d6ec797",
+   "gold_path": "local_sovereign_agent/mine/raw/agent_platform/voideditor/void/extensions/lua/syntaxes/lua.tmLanguage.json",
+   "gold_line": 421835,
+   "gold_title": "lua.tmLanguage.json",
+   "question_terms": [
+    "lua",
+    "tmlanguage"
+   ],
+   "question": "lua tmlanguage",
+   "engine": "fts5/fresh",
+   "top10_ids": [
+    "475fd9096f04",
+    "9665cf2b7bde",
+    "43f31d6ec797"
+   ],
+   "hit_at": 3,
+   "verdict": "top10"
+  },
+  {
+   "gold_id": "3c085bbd8001",
+   "gold_path": "local_sovereign_agent/memory/ghost/leak_reports/report-2026-09-27T092922.json",
+   "gold_line": 553160,
+   "gold_title": "report-2026-09-27T092922.json",
+   "question_terms": [
+    "report",
+    "2026",
+    "27t092922"
+   ],
+   "question": "report 2026 27t092922",
+   "engine": "fts5/fresh",
+   "top10_ids": [
+    "3c085bbd8001"
+   ],
+   "hit_at": 1,
+   "verdict": "top1"
+  },
+  {
+   "gold_id": "cbb88aac062d",
+   "gold_path": "local_sovereign_agent/memory/agent_state/versions/20260812T061612Z_dbf56169.md",
+   "gold_line": 102400,
+   "gold_title": "Agent state LOAD \u2014 ghost-self",
+   "question_terms": [
+    "agent",
+    "state",
+    "load",
+    "ghost",
+    "self"
+   ],
+   "question": "agent state load ghost self",
+   "engine": "fts5/fresh",
+   "top10_ids": [
+    "7f9606cc108b",
+    "af9134fb170c",
+    "9051496cd7e4",
+    "5348e5ae7ac2",
+    "616a27bb1507",
+    "71801a8859cd",
+    "c9beb98c3d77",
+    "6f4329f33b6a",
+    "472988ec3df5",
+    "20d3071ee8c9"
+   ],
+   "hit_at": null,
+   "verdict": "miss"
+  },
+  {
+   "gold_id": "b6949c2bf9b1",
+   "gold_path": "local_sovereign_agent/corpus/oral_history/nacho_archaeology/extracted/nacho-archaeology-part1-chats-produced/chat-transcripts/sand-subagent-eda06601-6570-44a4-af44-8a656fd95040/sand-subagent-eda06601-6570-44a4-af44-8a656fd95040.journal-mode",
+   "gold_line": 60538,
+   "gold_title": "sand-subagent-eda06601-6570-44a4-af44-8a656fd95040.journal-mode",
+   "question_terms": [
+    "sand",
+    "subagent",
+    "eda06601",
+    "6570",
+    "44a4",
+    "af44",
+    "8a656fd95040"
+   ],
+   "question": "sand subagent eda06601 6570 44a4 af44 8a656fd95040",
+   "engine": "fts5/fresh",
+   "top10_ids": [
+    "b6949c2bf9b1",
+    "72efffb45372"
+   ],
+   "hit_at": 1,
+   "verdict": "top1"
+  },
+  {
+   "gold_id": "82223c99b971",
+   "gold_path": "local_sovereign_agent/memory/biography_backup/biography_backup_20260921/knots/by-session_v2_6d712d0f3c3530ec201caeaadf20df30.json",
+   "gold_line": 197468,
+   "gold_title": "by-session_v2_6d712d0f3c3530ec201caeaadf20df30.json",
+   "question_terms": [
+    "session",
+    "6d712d0f3c3530ec201caeaadf20df30"
+   ],
+   "question": "session 6d712d0f3c3530ec201caeaadf20df30",
+   "engine": "fts5/fresh",
+   "top10_ids": [
+    "988b58975b65",
+    "82223c99b971",
+    "24447c9cf74a",
+    "f2e3eccb8912"
+   ],
+   "hit_at": 2,
+   "verdict": "top10"
+  },
+  {
+   "gold_id": "f5ddff87f9de",
+   "gold_path": "local_sovereign_agent/memory/ghost/leak_reports/report-2026-09-26T045755.json",
+   "gold_line": 283482,
+   "gold_title": "report-2026-09-26T045755.json",
+   "question_terms": [
+    "report",
+    "2026",
+    "26t045755"
+   ],
+   "question": "report 2026 26t045755",
+   "engine": "fts5/fresh",
+   "top10_ids": [
+    "f5ddff87f9de"
+   ],
+   "hit_at": 1,
+   "verdict": "top1"
+  },
+  {
+   "gold_id": "627b08161e27",
+   "gold_path": "local_sovereign_agent/memory/runs/forge_daemon/cycle_20260927_222702/MAZE_free.VERIFIED.md",
+   "gold_line": 580084,
+   "gold_title": "---",
+   "question_terms": [
+    "maze",
+    "free",
+    "verified"
+   ],
+   "question": "maze free verified",
+   "engine": "fts5/fresh",
+   "top10_ids": [
+    "a6c3beef461d",
+    "52a7633a180d",
+    "2d89616f6772",
+    "6a3b99d0aa78",
+    "c5403a1af9b0",
+    "bffded0de623",
+    "af101f6a9073",
+    "664e5e95e88a",
+    "48fbffc2bb44",
+    "7c82f4204128"
+   ],
+   "hit_at": null,
+   "verdict": "miss"
+  },
+  {
+   "gold_id": "054754140075",
+   "gold_path": "local_sovereign_agent/corpus/library/evennia/docs/source/Howtos/Tutorial-Persistent-Handler.md",
+   "gold_line": 26222,
+   "gold_title": "Making a Persistent object Handler",
+   "question_terms": [
+    "making",
+    "persistent",
+    "object",
+    "handler"
+   ],
+   "question": "making persistent object handler",
+   "engine": "fts5/fresh",
+   "top10_ids": [
+    "054754140075"
+   ],
+   "hit_at": 1,
+   "verdict": "top1"
+  },
+  {
+   "gold_id": "b047bd168eec",
+   "gold_path": "local_sovereign_agent/memory/corpus/shadertoy21k/codes/shader_codes/shadertoy/4/4sGcWR.fragment",
+   "gold_line": 249072,
+   "gold_title": "4sGcWR.fragment",
+   "question_terms": [
+    "4sgcwr"
+   ],
+   "question": "4sgcwr",
+   "engine": "fts5/fresh",
+   "top10_ids": [
+    "b047bd168eec"
+   ],
+   "hit_at": 1,
+   "verdict": "top1"
+  },
+  {
+   "gold_id": "3ae83675712e",
+   "gold_path": "local_sovereign_agent/corpus/library/zcode-zai-org/repo/apps/zcode-cli/packages/bootstrap/src/zcode-protocol/skill-reference-catalog.ts",
+   "gold_line": 504361,
+   "gold_title": "skill-reference-catalog.ts",
+   "question_terms": [
+    "skill",
+    "reference",
+    "catalog"
+   ],
+   "question": "skill reference catalog",
+   "engine": "fts5/fresh",
+   "top10_ids": [
+    "4a8bf37cf15d",
+    "3ae83675712e"
+   ],
+   "hit_at": 2,
+   "verdict": "top10"
+  },
+  {
+   "gold_id": "e13671263f80",
+   "gold_path": "local_sovereign_agent/memory/runs/fleet_round/burn2b/wave_23/D011_MAZE2.receipt.json",
+   "gold_line": 302379,
+   "gold_title": "D011_MAZE2.receipt.json",
+   "question_terms": [
+    "d011",
+    "maze2",
+    "receipt"
+   ],
+   "question": "d011 maze2 receipt",
+   "engine": "fts5/fresh",
+   "top10_ids": [
+    "c8cadb476377",
+    "f11eb0238295",
+    "aa11c4f10d68",
+    "0d32a4378322",
+    "6b30e6dec216",
+    "9c765a4cb9d3",
+    "ac81755932cb",
+    "10e5ba8c1914",
+    "ba7a72432abe",
+    "4c76329c11e9"
+   ],
+   "hit_at": null,
+   "verdict": "miss"
+  },
+  {
+   "gold_id": "5917f1c35bb4",
+   "gold_path": "local_sovereign_agent/mine/raw/agent_bleeding_edge/getzep/zep/legacy/src/api/middleware/auth.go",
+   "gold_line": 351917,
+   "gold_title": "auth.go",
+   "question_terms": [
+    "auth"
+   ],
+   "question": "auth",
+   "engine": "fts5/fresh",
+   "top10_ids": [
+    "e88868bc10da",
+    "789474842954",
+    "a8341c896cb9",
+    "f018461b0cc3",
+    "9aff86627a89",
+    "31ac58394a81",
+    "3be83ffbc7be",
+    "859ddf5a0cc8",
+    "7b3b9220dfda",
+    "14ddb40a9906"
+   ],
+   "hit_at": null,
+   "verdict": "miss"
+  },
+  {
+   "gold_id": "557efb748dd5",
+   "gold_path": "local_sovereign_agent/memory/biography_backup/biography_backup_20260921/knots/2026-08-11_1738_untagged_memlang-_c8c7274b.knot.json",
+   "gold_line": 181334,
+   "gold_title": "2026-08-11_1738_untagged_memlang-_c8c7274b.knot.json",
+   "question_terms": [
+    "2026",
+    "1738",
+    "untagged",
+    "memlang",
+    "c8c7274b",
+    "knot"
+   ],
+   "question": "2026 1738 untagged memlang c8c7274b knot",
+   "engine": "fts5/fresh",
+   "top10_ids": [
+    "b8692d09daae",
+    "557efb748dd5",
+    "1266354d7a8e",
+    "b1adef7ea046"
+   ],
+   "hit_at": 2,
+   "verdict": "top10"
+  },
+  {
+   "gold_id": "00d0ef78de17",
+   "gold_path": "local_sovereign_agent/memory/biography_backup/biography_backup_20260926/knots/2026-08-12_0936_untagged_memlang-_46155802.knot.json",
+   "gold_line": 218172,
+   "gold_title": "2026-08-12_0936_untagged_memlang-_46155802.knot.json",
+   "question_terms": [
+    "2026",
+    "0936",
+    "untagged",
+    "memlang",
+    "46155802",
+    "knot"
+   ],
+   "question": "2026 0936 untagged memlang 46155802 knot",
+   "engine": "fts5/fresh",
+   "top10_ids": [
+    "cc07a9a8c5fd",
+    "993fb9a9f4e8",
+    "00d0ef78de17",
+    "5c1bb91a0142"
+   ],
+   "hit_at": 3,
+   "verdict": "top10"
+  },
+  {
+   "gold_id": "9fd9f1acbe75",
+   "gold_path": "local_sovereign_agent/memory/biography_backup/biography_backup_20260921/knots/2026-08-17_2247_session_mag-agen_66ae28b5.knot.json",
+   "gold_line": 188161,
+   "gold_title": "2026-08-17_2247_session_mag-agen_66ae28b5.knot.json",
+   "question_terms": [
+    "2026",
+    "2247",
+    "session",
+    "mag",
+    "agen",
+    "66ae28b5",
+    "knot"
+   ],
+   "question": "2026 2247 session mag agen 66ae28b5 knot",
+   "engine": "fts5/fresh",
+   "top10_ids": [
+    "645c25094632",
+    "9fd9f1acbe75",
+    "81e2144777df",
+    "a0f3f65c8860"
+   ],
+   "hit_at": 2,
+   "verdict": "top10"
+  },
+  {
+   "gold_id": "638fe59dec38",
+   "gold_path": "local_sovereign_agent/memory/biography_backup/biography_backup_20260926/knots/by-session_v2_2ab99a371926be6523c87899cda4ad1b.json",
+   "gold_line": 230566,
+   "gold_title": "by-session_v2_2ab99a371926be6523c87899cda4ad1b.json",
+   "question_terms": [
+    "session",
+    "2ab99a371926be6523c87899cda4ad1b"
+   ],
+   "question": "session 2ab99a371926be6523c87899cda4ad1b",
+   "engine": "fts5/fresh",
+   "top10_ids": [
+    "db42c6918f56",
+    "2cc5737d902c",
+    "638fe59dec38",
+    "db42c6918f56",
+    "15457deb08de"
+   ],
+   "hit_at": 3,
+   "verdict": "top10"
+  },
+  {
+   "gold_id": "bed522e40eee",
+   "gold_path": "local_sovereign_agent/memory/agent_state/versions/20260812T194449Z_430c29fd.md",
+   "gold_line": 105486,
+   "gold_title": "Agent state LOAD \u2014 ghost-self",
+   "question_terms": [
+    "agent",
+    "state",
+    "load",
+    "ghost",
+    "self"
+   ],
+   "question": "agent state load ghost self",
+   "engine": "fts5/fresh",
+   "top10_ids": [
+    "7f9606cc108b",
+    "af9134fb170c",
+    "9051496cd7e4",
+    "5348e5ae7ac2",
+    "616a27bb1507",
+    "71801a8859cd",
+    "c9beb98c3d77",
+    "6f4329f33b6a",
+    "472988ec3df5",
+    "20d3071ee8c9"
+   ],
+   "hit_at": null,
+   "verdict": "miss"
+  },
+  {
+   "gold_id": "82ba53282837",
+   "gold_path": "local_sovereign_agent/memory/corpus/shadertoy21k/codes/shader_codes/shadertoy/l/lscGR4.fragment",
+   "gold_line": 252640,
+   "gold_title": "lscGR4.fragment",
+   "question_terms": [
+    "lscgr4"
+   ],
+   "question": "lscgr4",
+   "engine": "fts5/fresh",
+   "top10_ids": [
+    "82ba53282837"
+   ],
+   "hit_at": 1,
+   "verdict": "top1"
+  },
+  {
+   "gold_id": "45aa1f678386",
+   "gold_path": "local_sovereign_agent/memory/biography_backup/biography_backup_20260921/knots/2026-08-10_1317_session_mag-agen_0ad5b970.knot.json",
+   "gold_line": 175344,
+   "gold_title": "2026-08-10_1317_session_mag-agen_0ad5b970.knot.json",
+   "question_terms": [
+    "2026",
+    "1317",
+    "session",
+    "mag",
+    "agen",
+    "0ad5b970",
+    "knot"
+   ],
+   "question": "2026 1317 session mag agen 0ad5b970 knot",
+   "engine": "fts5/fresh",
+   "top10_ids": [
+    "266abace07f9",
+    "45aa1f678386",
+    "74ecaeb8a6da"
+   ],
+   "hit_at": 2,
+   "verdict": "top10"
+  },
+  {
+   "gold_id": "a1d1546c7d71",
+   "gold_path": "local_sovereign_agent/mine/raw/agent_platform/BerriAI/litellm/ui/litellm-dashboard/src/components/Settings/RouterSettings/Fallbacks/AddFallbacksModal.test.tsx",
+   "gold_line": 373014,
+   "gold_title": "AddFallbacksModal.test.tsx",
+   "question_terms": [
+    "addfallbacksmodal",
+    "test"
+   ],
+   "question": "addfallbacksmodal test",
+   "engine": "fts5/fresh",
+   "top10_ids": [
+    "a1d1546c7d71"
+   ],
+   "hit_at": 1,
+   "verdict": "top1"
+  },
+  {
+   "gold_id": "1a05acc44bac",
+   "gold_path": "local_sovereign_agent/memory/corpus/shadertoy21k/codes/shader_codes/shadertoy/X/XlB3RV.fragment",
+   "gold_line": 263706,
+   "gold_title": "XlB3RV.fragment",
+   "question_terms": [
+    "xlb3rv"
+   ],
+   "question": "xlb3rv",
+   "engine": "fts5/fresh",
+   "top10_ids": [
+    "1a05acc44bac"
+   ],
+   "hit_at": 1,
+   "verdict": "top1"
+  },
+  {
+   "gold_id": "870c83947e0f",
+   "gold_path": "local_sovereign_agent/state/fuel/catalog_audio/117750981589358.bin",
+   "gold_line": 445930,
+   "gold_title": "117750981589358.bin",
+   "question_terms": [
+    "117750981589358"
+   ],
+   "question": "117750981589358",
+   "engine": "fts5/fresh",
+   "top10_ids": [
+    "870c83947e0f",
+    "a7f09f453323"
+   ],
+   "hit_at": 1,
+   "verdict": "top1"
+  },
+  {
+   "gold_id": "603086ec8022",
+   "gold_path": "azerothcore-wow/data/sql/archive/db_world/2024_12_17_11.sql",
+   "gold_line": 1645,
+   "gold_title": "2024_12_17_11.sql",
+   "question_terms": [
+    "2024"
+   ],
+   "question": "2024",
+   "engine": "fts5/fresh",
+   "top10_ids": [
+    "31ac58394a81",
+    "3be83ffbc7be",
+    "859ddf5a0cc8",
+    "4c63735e15a8",
+    "9bee14286ae9",
+    "4c97e15a1c9d",
+    "0b910782d680",
+    "1625cd7453f0",
+    "71e7f6c39914",
+    "3be4c7b94ea6"
+   ],
+   "hit_at": null,
+   "verdict": "miss"
+  },
+  {
+   "gold_id": "ddbcbf596e68",
+   "gold_path": "azerothcore-wow/src/server/scripts/Northrend/UtgardeKeep/UtgardePinnacle/boss_svala.cpp",
+   "gold_line": 10149,
+   "gold_title": "boss_svala.cpp",
+   "question_terms": [
+    "boss",
+    "svala"
+   ],
+   "question": "boss svala",
+   "engine": "fts5/fresh",
+   "top10_ids": [
+    "ddbcbf596e68",
+    "8129fbca2eb1"
+   ],
+   "hit_at": 1,
+   "verdict": "top1"
+  },
+  {
+   "gold_id": "8b5b957282ee",
+   "gold_path": "local_sovereign_agent/mine/raw/agent_platform/BerriAI/litellm/litellm/litellm_core_utils/tokenizers/anthropic_tokenizer.json",
+   "gold_line": 365014,
+   "gold_title": "anthropic_tokenizer.json",
+   "question_terms": [
+    "anthropic",
+    "tokenizer"
+   ],
+   "question": "anthropic tokenizer",
+   "engine": "fts5/fresh",
+   "top10_ids": [
+    "8b5b957282ee"
+   ],
+   "hit_at": 1,
+   "verdict": "top1"
+  },
+  {
+   "gold_id": "60e999c7e001",
+   "gold_path": "local_sovereign_agent/memory/biography_backup/biography_backup_20260927/knots/2026-08-13_0111_session_mag-agen_112d23ea.knot.json",
+   "gold_line": 531446,
+   "gold_title": "2026-08-13_0111_session_mag-agen_112d23ea.knot.json",
+   "question_terms": [
+    "2026",
+    "0111",
+    "session",
+    "mag",
+    "agen",
+    "112d23ea",
+    "knot"
+   ],
+   "question": "2026 0111 session mag agen 112d23ea knot",
+   "engine": "fts5/fresh",
+   "top10_ids": [
+    "9428c58ac69c",
+    "7309096ca5be",
+    "b443f4570c7a",
+    "60e999c7e001"
+   ],
+   "hit_at": 4,
+   "verdict": "top10"
+  },
+  {
+   "gold_id": "34bbc1626936",
+   "gold_path": "local_sovereign_agent/corpus/library/ms-genai-beginners/translated_images/nl/GithubModels-plagroundcode.da2dea486f1ad5e0.webp",
+   "gold_line": 49280,
+   "gold_title": "GithubModels-plagroundcode.da2dea486f1ad5e0.webp",
+   "question_terms": [
+    "githubmodels",
+    "plagroundcode",
+    "da2dea486f1ad5e0"
+   ],
+   "question": "githubmodels plagroundcode da2dea486f1ad5e0",
+   "engine": "fts5/fresh",
+   "top10_ids": [
+    "7cd5ffac7ea9",
+    "50926168a944",
+    "e23c18c66927",
+    "5e27410567da",
+    "82517c848c70",
+    "51cfe8fdb46e",
+    "b582b373ca2e",
+    "9874c95413a6",
+    "9c6457b8e6ed",
+    "fd6c229e7d05"
+   ],
+   "hit_at": null,
+   "verdict": "miss"
+  },
+  {
+   "gold_id": "249819acfba0",
+   "gold_path": "local_sovereign_agent/memory/copilot/outbox/auto-fkb-c941d9.json",
+   "gold_line": 244590,
+   "gold_title": "auto-fkb-c941d9.json",
+   "question_terms": [
+    "auto",
+    "fkb",
+    "c941d9"
+   ],
+   "question": "auto fkb c941d9",
+   "engine": "fts5/fresh",
+   "top10_ids": [
+    "249819acfba0"
+   ],
+   "hit_at": 1,
+   "verdict": "top1"
+  },
+  {
+   "gold_id": "87ffd8c0c14a",
+   "gold_path": "local_sovereign_agent/memory/corpus/shadertoy21k/codes/shader_codes/shadertoy/M/Msffz2.fragment",
+   "gold_line": 254866,
+   "gold_title": "Msffz2.fragment",
+   "question_terms": [
+    "msffz2"
+   ],
+   "question": "msffz2",
+   "engine": "fts5/fresh",
+   "top10_ids": [
+    "87ffd8c0c14a"
+   ],
+   "hit_at": 1,
+   "verdict": "top1"
+  },
+  {
+   "gold_id": "5c23e21fc015",
+   "gold_path": "azerothcore-wow/data/sql/archive/db_world/2023_10_10_10.sql",
+   "gold_line": 653,
+   "gold_title": "2023_10_10_10.sql",
+   "question_terms": [
+    "2023"
+   ],
+   "question": "2023",
+   "engine": "fts5/fresh",
+   "top10_ids": [
+    "9aff86627a89",
+    "105f0f457757",
+    "03478c1e21a9",
+    "89a42685df5b",
+    "8d1c93565677",
+    "ac3166c930e5",
+    "3ddc360f5173",
+    "cf8d5b2d80f3",
+    "ae515083971e",
+    "c54d79b5b68d"
+   ],
+   "hit_at": null,
+   "verdict": "miss"
+  },
+  {
+   "gold_id": "789c8026328c",
+   "gold_path": "local_sovereign_agent/agents/pytest-tmp-30344/test_short_history_is_explicit0/templates.json",
+   "gold_line": 501058,
+   "gold_title": "templates.json",
+   "question_terms": [
+    "templates"
+   ],
+   "question": "templates",
+   "engine": "fts5/fresh",
+   "top10_ids": [
+    "3a01db5c6c52",
+    "c03ec1a394e3",
+    "0b4c309fea4d",
+    "fa2aba4e952b",
+    "57bce2f9935e",
+    "b5e8dbc32221",
+    "8a0300ca38e9",
+    "5b01e5a752a1",
+    "58e37d008235",
+    "747a739e43ca"
+   ],
+   "hit_at": null,
+   "verdict": "miss"
+  },
+  {
+   "gold_id": "0f782f179ecb",
+   "gold_path": "local_sovereign_agent/seed/SKILLS.md",
+   "gold_line": 442561,
+   "gold_title": "SKILLS \u2014 the discovery index",
+   "question_terms": [
+    "skills",
+    "the",
+    "discovery",
+    "index"
+   ],
+   "question": "skills the discovery index",
+   "engine": "fts5/fresh",
+   "top10_ids": [
+    "0f782f179ecb"
+   ],
+   "hit_at": 1,
+   "verdict": "top1"
+  },
+  {
+   "gold_id": "4a4e579274ad",
+   "gold_path": "local_sovereign_agent/watch/inbox/gala_20260925/afterparty/lanes/t69.check.txt",
+   "gold_line": 450112,
+   "gold_title": "t69 evidence - tools/workflow_gate.py G6 dated-stamp soft-warn (wired from t62 next_steal)",
+   "question_terms": [
+    "t69",
+    "evidence",
+    "tools",
+    "workflow",
+    "gate",
+    "dated",
+    "stamp",
+    "soft",
+    "warn",
+    "wired",
+    "from",
+    "t62",
+    "next",
+    "steal"
+   ],
+   "question": "t69 evidence tools workflow gate dated stamp soft warn wired from t62 next steal",
+   "engine": "fts5/fresh",
+   "top10_ids": [
+    "4a4e579274ad"
+   ],
+   "hit_at": 1,
+   "verdict": "top1"
+  },
+  {
+   "gold_id": "79a1d4d12775",
+   "gold_path": "local_sovereign_agent/agents/pytest-tmp-21200/test_refold_stability_with_dum0/inbox/SEALB.md",
+   "gold_line": 17129,
+   "gold_title": "t",
+   "question_terms": [
+    "sealb"
+   ],
+   "question": "sealb",
+   "engine": "fts5/fresh",
+   "top10_ids": [
+    "9fb8d78ae2f7",
+    "88117e67730f",
+    "6cc104aa656b",
+    "aaa5e769ded7",
+    "d6a40b49f53d",
+    "363c8a35393b",
+    "e0921f4bdcf6",
+    "e0f115d7b455",
+    "57b5480dfd75",
+    "464cf63c4c39"
+   ],
+   "hit_at": null,
+   "verdict": "miss"
+  },
+  {
+   "gold_id": "bb820761d15d",
+   "gold_path": "local_sovereign_agent/memory/agent_state/versions/20260810T050731Z_7a356155.json",
+   "gold_line": 94799,
+   "gold_title": "20260810T050731Z_7a356155.json",
+   "question_terms": [
+    "20260810t050731z",
+    "7a356155"
+   ],
+   "question": "20260810t050731z 7a356155",
+   "engine": "fts5/fresh",
+   "top10_ids": [
+    "bb820761d15d",
+    "35540ec5118d"
+   ],
+   "hit_at": 1,
+   "verdict": "top1"
+  },
+  {
+   "gold_id": "7fbf8bd27fe6",
+   "gold_path": "local_sovereign_agent/mine/raw/agent_platform/codestoryai/aide/extensions/simple-browser/extension.webpack.config.js",
+   "gold_line": 379146,
+   "gold_title": "extension.webpack.config.js",
+   "question_terms": [
+    "extension",
+    "webpack",
+    "config"
+   ],
+   "question": "extension webpack config",
+   "engine": "fts5/fresh",
+   "top10_ids": [
+    "3e1f1edcc943",
+    "dc8005dffbd7",
+    "4f57560118cf",
+    "72d5c897295b",
+    "b8583a4212b7",
+    "89a83309683d",
+    "485ba5be767d",
+    "73fbacfee36b",
+    "d3a2de41ab8f",
+    "10924f8e9049"
+   ],
+   "hit_at": null,
+   "verdict": "miss"
+  }
+ ]
+}

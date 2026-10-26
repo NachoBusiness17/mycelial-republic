@@ -1,0 +1,1067 @@
+<!DOCTYPE html><html lang="en"> <head><!-- Global Metadata --><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="icon" type="image/x-icon" href="/favicon.ico?v=2026-04-08"><link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png"><link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png"><link rel="apple-touch-icon" href="/apple-touch-icon.png"><link rel="icon" type="image/png" sizes="192x192" href="/android-chrome-192x192.png"><link rel="icon" type="image/png" sizes="512x512" href="/android-chrome-512x512.png"><link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🗞️</text></svg>"><meta name="generator" content="Astro v5.18.1"><!-- Canonical URL --><link rel="canonical" href="https://news.smol.ai/issues/26-09-01-claude-mythos-51/"><!-- Primary Meta Tags --><title>Claude Fable 5.1 and Claude Mythos 5.1 | AINews</title><meta name="title" content="Claude Fable 5.1 and Claude Mythos 5.1 | AINews"><meta name="description" content="**Anthropic** released **Claude Fable 5.1** and **Claude Mythos 5.1**, which share base weights but differ in safeguards and routing, showing improved coding performance and usability with a **75% cache-read price cut to $0.25/MTok**. Benchmarks highlight strong coding/science results, though Fable 5.1 costs about **20% more per task** than its predecessor. Adoption revealed aggressive safety triggers framed as **Enterprise Frontier Safeguards** for enterprise deployments. Meanwhile, **OpenAI** previewed **Astra**, its first model reaching the **Critical** cybersecurity preparedness level, demonstrating advanced cyber capabilities and employing a **recurrent depth/looped transformer architecture**, sparking debate on its impact on chain-of-thought reasoning and model transparency. **Sam Altman** noted safety work slowed Astra's deployment, indicating future models may prioritize safeguards over speed."><!-- Open Graph / Facebook --><meta property="og:type" content="article"><meta property="og:url" content="https://news.smol.ai/issues/26-09-01-claude-mythos-51/"><meta property="og:title" content="Claude Fable 5.1 and Claude Mythos 5.1 | AINews"><meta property="og:description" content="**Anthropic** released **Claude Fable 5.1** and **Claude Mythos 5.1**, which share base weights but differ in safeguards and routing, showing improved coding performance and usability with a **75% cache-read price cut to $0.25/MTok**. Benchmarks highlight strong coding/science results, though Fable 5.1 costs about **20% more per task** than its predecessor. Adoption revealed aggressive safety triggers framed as **Enterprise Frontier Safeguards** for enterprise deployments. Meanwhile, **OpenAI** previewed **Astra**, its first model reaching the **Critical** cybersecurity preparedness level, demonstrating advanced cyber capabilities and employing a **recurrent depth/looped transformer architecture**, sparking debate on its impact on chain-of-thought reasoning and model transparency. **Sam Altman** noted safety work slowed Astra's deployment, indicating future models may prioritize safeguards over speed."><meta property="og:image" content="https://news.smol.ai/api/og?title=Claude+Fable+5.1+and+Claude+Mythos+5.1&description=**Anthropic**+released+**Claude+Fable+5.1**+and+**Claude+Mythos+5.1**%2C+which+share+base+weights+but+differ+in+safeguards+and+routing%2C+showing+improved+coding+performance+and+usability+with+a+**75%25+cache-read+price+cut+to+%240.25%2FMTok**.+Benchmarks+highlight+strong+coding%2Fscience+results%2C+though+Fable+5.1+costs+about+**20%25+more+per+task**+than+its+predecessor.+Adoption+revealed+aggressive+safety+triggers+framed+as+**Enterprise+Frontier+Safeguards**+for+enterprise+deployments.+Meanwhile%2C+**OpenAI**+previewed+**Astra**%2C+its+first+model+reaching+the+**Critical**+cybersecurity+preparedness+level%2C+demonstrating+advanced+cyber+capabilities+and+employing+a+**recurrent+depth%2Flooped+transformer+architecture**%2C+sparking+debate+on+its+impact+on+chain-of-thought+reasoning+and+model+transparency.+**Sam+Altman**+noted+safety+work+slowed+Astra%27s+deployment%2C+indicating+future+models+may+prioritize+safeguards+over+speed.&type=issue&issueNumber=09&date=2026-09-01T05%3A44%3A39.731Z&companies=anthropic%2Copenai%2Cnous-research%2Cperplexity-ai&models=claude-fable-5.1%2Cclaude-mythos-5.1%2Castra"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630"><meta property="og:site_name" content="AI News"><meta property="article:published_time" content="2026-09-01T05:44:39.731Z"><!-- Twitter/X Meta Tags --><meta property="twitter:card" content="summary_large_image"><meta property="twitter:url" content="https://news.smol.ai/issues/26-09-01-claude-mythos-51/"><meta property="twitter:title" content="Claude Fable 5.1 and Claude Mythos 5.1 | AINews"><meta property="twitter:description" content="**Anthropic** released **Claude Fable 5.1** and **Claude Mythos 5.1**, which share base weights but differ in safeguards and routing, showing improved coding performance and usability with a **75% cache-read price cut to $0.25/MTok**. Benchmarks highlight strong coding/science results, though Fable 5.1 costs about **20% more per task** than its predecessor. Adoption revealed aggressive safety triggers framed as **Enterprise Frontier Safeguards** for enterprise deployments. Meanwhile, **OpenAI** previewed **Astra**, its first model reaching the **Critical** cybersecurity preparedness level, demonstrating advanced cyber capabilities and employing a **recurrent depth/looped transformer architecture**, sparking debate on its impact on chain-of-thought reasoning and model transparency. **Sam Altman** noted safety work slowed Astra's deployment, indicating future models may prioritize safeguards over speed."><meta property="twitter:image" content="https://news.smol.ai/api/og?title=Claude+Fable+5.1+and+Claude+Mythos+5.1&description=**Anthropic**+released+**Claude+Fable+5.1**+and+**Claude+Mythos+5.1**%2C+which+share+base+weights+but+differ+in+safeguards+and+routing%2C+showing+improved+coding+performance+and+usability+with+a+**75%25+cache-read+price+cut+to+%240.25%2FMTok**.+Benchmarks+highlight+strong+coding%2Fscience+results%2C+though+Fable+5.1+costs+about+**20%25+more+per+task**+than+its+predecessor.+Adoption+revealed+aggressive+safety+triggers+framed+as+**Enterprise+Frontier+Safeguards**+for+enterprise+deployments.+Meanwhile%2C+**OpenAI**+previewed+**Astra**%2C+its+first+model+reaching+the+**Critical**+cybersecurity+preparedness+level%2C+demonstrating+advanced+cyber+capabilities+and+employing+a+**recurrent+depth%2Flooped+transformer+architecture**%2C+sparking+debate+on+its+impact+on+chain-of-thought+reasoning+and+model+transparency.+**Sam+Altman**+noted+safety+work+slowed+Astra%27s+deployment%2C+indicating+future+models+may+prioritize+safeguards+over+speed.&type=issue&issueNumber=09&date=2026-09-01T05%3A44%3A39.731Z&companies=anthropic%2Copenai%2Cnous-research%2Cperplexity-ai&models=claude-fable-5.1%2Cclaude-mythos-5.1%2Castra"><meta name="twitter:site" content="@smol_ai"><!-- Also add new X meta tags --><meta property="x:card" content="summary_large_image"><meta property="x:url" content="https://news.smol.ai/issues/26-09-01-claude-mythos-51/"><meta property="x:title" content="Claude Fable 5.1 and Claude Mythos 5.1 | AINews"><meta property="x:description" content="**Anthropic** released **Claude Fable 5.1** and **Claude Mythos 5.1**, which share base weights but differ in safeguards and routing, showing improved coding performance and usability with a **75% cache-read price cut to $0.25/MTok**. Benchmarks highlight strong coding/science results, though Fable 5.1 costs about **20% more per task** than its predecessor. Adoption revealed aggressive safety triggers framed as **Enterprise Frontier Safeguards** for enterprise deployments. Meanwhile, **OpenAI** previewed **Astra**, its first model reaching the **Critical** cybersecurity preparedness level, demonstrating advanced cyber capabilities and employing a **recurrent depth/looped transformer architecture**, sparking debate on its impact on chain-of-thought reasoning and model transparency. **Sam Altman** noted safety work slowed Astra's deployment, indicating future models may prioritize safeguards over speed."><meta property="x:image" content="https://news.smol.ai/api/og?title=Claude+Fable+5.1+and+Claude+Mythos+5.1&description=**Anthropic**+released+**Claude+Fable+5.1**+and+**Claude+Mythos+5.1**%2C+which+share+base+weights+but+differ+in+safeguards+and+routing%2C+showing+improved+coding+performance+and+usability+with+a+**75%25+cache-read+price+cut+to+%240.25%2FMTok**.+Benchmarks+highlight+strong+coding%2Fscience+results%2C+though+Fable+5.1+costs+about+**20%25+more+per+task**+than+its+predecessor.+Adoption+revealed+aggressive+safety+triggers+framed+as+**Enterprise+Frontier+Safeguards**+for+enterprise+deployments.+Meanwhile%2C+**OpenAI**+previewed+**Astra**%2C+its+first+model+reaching+the+**Critical**+cybersecurity+preparedness+level%2C+demonstrating+advanced+cyber+capabilities+and+employing+a+**recurrent+depth%2Flooped+transformer+architecture**%2C+sparking+debate+on+its+impact+on+chain-of-thought+reasoning+and+model+transparency.+**Sam+Altman**+noted+safety+work+slowed+Astra%27s+deployment%2C+indicating+future+models+may+prioritize+safeguards+over+speed.&type=issue&issueNumber=09&date=2026-09-01T05%3A44%3A39.731Z&companies=anthropic%2Copenai%2Cnous-research%2Cperplexity-ai&models=claude-fable-5.1%2Cclaude-mythos-5.1%2Castra"><meta name="x:site" content="@smol_ai"><!-- PageFind --><link href="/pagefind/pagefind-ui.css?v=2026-04-08" rel="stylesheet"><script src="/pagefind/pagefind-ui.js?v=2026-04-08"></script><meta name="astro-view-transitions-enabled" content="true"><meta name="astro-view-transitions-fallback" content="animate"><script type="module" src="/_astro/ClientRouter.astro_astro_type_script_index_0_lang.CDGfc0hd.js"></script><script>
+  function init() {
+    preloadTheme();
+    onScroll();
+    animate();
+    updateThemeButtons();
+    addCopyCodeButtons();
+    setGiscusTheme();
+
+    const backToTop = document.getElementById("back-to-top");
+    backToTop?.addEventListener("click", (event) => scrollToTop(event));
+
+    const backToPrev = document.getElementById("back-to-prev");
+    backToPrev?.addEventListener("click", () => window.history.back());
+
+    const lightThemeButton = document.getElementById("light-theme-button");
+    lightThemeButton?.addEventListener("click", () => {
+      localStorage.setItem("theme", "light");
+      toggleTheme(false);
+      updateThemeButtons();
+    });
+
+    const darkThemeButton = document.getElementById("dark-theme-button");
+    darkThemeButton?.addEventListener("click", () => {
+      localStorage.setItem("theme", "dark");
+      toggleTheme(true);
+      updateThemeButtons();
+    });
+
+    const systemThemeButton = document.getElementById("system-theme-button");
+    systemThemeButton?.addEventListener("click", () => {
+      localStorage.setItem("theme", "system");
+      toggleTheme(window.matchMedia("(prefers-color-scheme: dark)").matches);
+      updateThemeButtons();
+    });
+
+    window
+      .matchMedia("(prefers-color-scheme: dark)")
+      .addEventListener("change", (event) => {
+        if (localStorage.theme === "system") {
+          toggleTheme(event.matches);
+        }
+      });
+
+    document.addEventListener("scroll", onScroll);
+  }
+
+  function updateThemeButtons() {
+    const theme = localStorage.getItem("theme");
+    const lightThemeButton = document.getElementById("light-theme-button");
+    const darkThemeButton = document.getElementById("dark-theme-button");
+    const systemThemeButton = document.getElementById("system-theme-button");
+
+    function removeActiveButtonTheme(button) {
+      button?.classList.remove("bg-black/5");
+      button?.classList.remove("dark:bg-white/5");
+    }
+
+    function addActiveButtonTheme(button) {
+      button?.classList.add("bg-black/5");
+      button?.classList.add("dark:bg-white/5");
+    }
+
+    removeActiveButtonTheme(lightThemeButton);
+    removeActiveButtonTheme(darkThemeButton);
+    removeActiveButtonTheme(systemThemeButton);
+
+    if (theme === "light") {
+      addActiveButtonTheme(lightThemeButton);
+    } else if (theme === "dark") {
+      addActiveButtonTheme(darkThemeButton);
+    } else {
+      addActiveButtonTheme(systemThemeButton);
+    }
+  }
+
+  function animate() {
+    const animateElements = document.querySelectorAll(".animate");
+
+    animateElements.forEach((element, index) => {
+      setTimeout(() => {
+        element.classList.add("show");
+      }, index * 100);
+    });
+  }
+
+  function onScroll() {
+    if (window.scrollY > 0) {
+      document.documentElement.classList.add("scrolled");
+    } else {
+      document.documentElement.classList.remove("scrolled");
+    }
+  }
+
+  function scrollToTop(event) {
+    event.preventDefault();
+    window.scrollTo({
+      top: 0,
+      behavior: "smooth",
+    });
+  }
+
+  function toggleTheme(dark) {
+    const css = document.createElement("style");
+
+    css.appendChild(
+      document.createTextNode(
+        `* {
+             -webkit-transition: none !important;
+             -moz-transition: none !important;
+             -o-transition: none !important;
+             -ms-transition: none !important;
+             transition: none !important;
+          }
+        `,
+      ),
+    );
+
+    document.head.appendChild(css);
+
+    if (dark) {
+      document.documentElement.classList.add("dark");
+    } else {
+      document.documentElement.classList.remove("dark");
+    }
+
+    window.getComputedStyle(css).opacity;
+    document.head.removeChild(css);
+
+    setGiscusTheme();
+  }
+
+  function preloadTheme() {
+    const userTheme = localStorage.theme;
+
+    if (userTheme === "light" || userTheme === "dark") {
+      toggleTheme(userTheme === "dark");
+    } else {
+      toggleTheme(window.matchMedia("(prefers-color-scheme: dark)").matches);
+    }
+  }
+
+  function addCopyCodeButtons() {
+    let copyButtonLabel = "📋";
+    let codeBlocks = Array.from(document.querySelectorAll("pre"));
+
+    async function copyCode(codeBlock, copyButton) {
+      const codeText = codeBlock.innerText;
+      const buttonText = copyButton.innerText;
+      const textToCopy = codeText.replace(buttonText, "");
+
+      await navigator.clipboard.writeText(textToCopy);
+      copyButton.innerText = "✅";
+
+      setTimeout(() => {
+        copyButton.innerText = copyButtonLabel;
+      }, 2000);
+    }
+
+    for (let codeBlock of codeBlocks) {
+      const wrapper = document.createElement("div");
+      wrapper.style.position = "relative";
+
+      const copyButton = document.createElement("button");
+      copyButton.innerText = copyButtonLabel;
+      copyButton.classList = "copy-code";
+
+      codeBlock.setAttribute("tabindex", "0");
+      codeBlock.appendChild(copyButton);
+
+      codeBlock.parentNode.insertBefore(wrapper, codeBlock);
+      wrapper.appendChild(codeBlock);
+
+      copyButton?.addEventListener("click", async () => {
+        await copyCode(codeBlock, copyButton);
+      });
+    }
+  }
+
+  const setGiscusTheme = () => {
+    const giscus = document.querySelector(".giscus-frame");
+
+    const isDark = document.documentElement.classList.contains("dark");
+
+    if (giscus) {
+      const url = new URL(giscus.src);
+      url.searchParams.set("theme", isDark ? "dark" : "light");
+      giscus.src = url.toString();
+    }
+  };
+
+  document.addEventListener("DOMContentLoaded", () => init());
+  document.addEventListener("astro:after-swap", () => init());
+  preloadTheme();
+</script><script>
+  // Load the lite-youtube-embed script and styles once
+  if (!document.querySelector('script[data-lite-youtube-embed]')) {
+    // Add the CSS
+    const linkEl = document.createElement('link');
+    linkEl.rel = 'stylesheet';
+    linkEl.href = 'https://cdn.jsdelivr.net/npm/lite-youtube-embed@0.3.3/src/lite-yt-embed.css';
+    linkEl.setAttribute('data-lite-youtube-embed', 'css');
+    document.head.appendChild(linkEl);
+
+    // Add and run the script - simplified from the original
+    class LiteYTEmbed extends HTMLElement {
+      constructor() {
+        super();
+        this.videoId = this.getAttribute('videoid');
+        this.videoPlay = this.getAttribute('playlabel') || 'Play';
+        this.posterUrl = this.getAttribute('poster') || 
+          `https://i.ytimg.com/vi/${this.videoId}/hqdefault.jpg`;
+        
+        // Set up play button
+        this.addEventListener('pointerover', this.warmConnections.bind(this), {once: true});
+        this.addEventListener('click', () => this.addIframe());
+      }
+
+      static addPrefetch(kind, url) {
+        const linkEl = document.createElement('link');
+        linkEl.rel = kind;
+        linkEl.href = url;
+        document.head.append(linkEl);
+      }
+
+      warmConnections() {
+        if (LiteYTEmbed.preconnected) return;
+        LiteYTEmbed.addPrefetch('preconnect', 'https://www.youtube-nocookie.com');
+        LiteYTEmbed.addPrefetch('preconnect', 'https://www.google.com');
+        LiteYTEmbed.preconnected = true;
+      }
+
+      addIframe() {
+        if (this.classList.contains('lyt-activated')) return;
+        this.classList.add('lyt-activated');
+
+        // Create iframe
+        const iframeEl = document.createElement('iframe');
+        // iframeEl.width = 560;
+        // iframeEl.height = 300;
+        iframeEl.title = this.videoPlay;
+        iframeEl.allow = 'accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture';
+        iframeEl.allowFullscreen = true;
+        iframeEl.src = `https://www.youtube-nocookie.com/embed/${this.videoId}?autoplay=1&playsinline=1`;
+        this.appendChild(iframeEl);
+      }
+    }
+
+    // Register custom element
+    if (!customElements.get('lite-youtube')) {
+      customElements.define('lite-youtube', LiteYTEmbed);
+    }
+  }
+</script> <link rel="stylesheet" href="/_astro/index.C84py-4t.css">
+<link rel="stylesheet" href="/_astro/index.ljMySSss.css">
+<style>#toc-toggle{transform:translateY(-50%) translate(-2px);transition:transform .3s ease,background-color .3s ease}#toc-toggle:hover,#toc-toggle:focus{transform:translateY(-50%) translate(0);background-color:#ffffffe6}.dark #toc-toggle:hover,.dark #toc-toggle:focus{background-color:#262626e6}#toc-drawer{max-width:100vw}
+.content-area{max-width:100%;margin-left:auto;margin-right:auto;padding-left:1rem;padding-right:1rem}@media(min-width:640px){.content-area{padding-left:1.5rem;padding-right:1.5rem}}.content-area blockquote{border-left:4px solid;border-color:#0003;padding-left:1rem;font-style:italic;margin-top:1.5rem;margin-bottom:1.5rem}.dark .content-area blockquote{border-color:#fff3}.content-area p{line-height:1.75;margin-top:1.5rem;margin-bottom:1.5rem}.content-area h2{font-size:1.5rem;font-weight:600;margin-top:3rem;margin-bottom:1rem}.content-area h3{font-size:1.25rem;font-weight:600;margin-top:2rem;margin-bottom:1rem}.content-area a{text-decoration:underline;text-underline-offset:3px;word-break:break-word}.content-area ul{list-style-type:disc;padding-left:1.5rem;margin-top:1.5rem;margin-bottom:1.5rem}.content-area ul li{margin-top:.5rem}.content-area ol{list-style-type:decimal;padding-left:1.5rem;margin-top:1.5rem;margin-bottom:1.5rem}.content-area ol li{margin-top:.5rem}.content-area li{padding-left:.5rem}.content-area pre{border-radius:.5rem;padding:1rem;overflow-x:auto;margin-top:1.5rem;margin-bottom:1.5rem}.content-area code:not(pre code){background-color:#0000000d;border-radius:.25rem;padding:.125rem .375rem}.dark .content-area code:not(pre code){background-color:#ffffff0d}.content-area hr{margin-top:3rem;margin-bottom:3rem;border-top:1px solid;border-color:#00000026}.dark .content-area hr{border-color:#fff3}.content-area img{border-radius:.5rem;margin-top:2rem;margin-bottom:2rem;margin-left:auto;margin-right:auto;max-height:300px}
+</style></head> <body> <header data-astro-transition-persist="astro-l7r54iwe-1"> <div class="mx-auto max-w-(--breakpoint-2xl) px-4 sm:px-6 md:px-8 lg:px-12"> <div class="flex sm:flex-row items-center gap-y-2 justify-between"> <a href="/" target="_self" class="inline-block decoration-black/30 dark:decoration-white/30 hover:decoration-black/50 focus-visible:decoration-black/50 dark:hover:decoration-white/50 dark:focus-visible:decoration-white/50 text-current hover:text-black focus-visible:text-black dark:hover:text-white dark:focus-visible:text-white transition-colors duration-300 ease-in-out">  <div class="font-semibold inline-block bg-black text-white px-2 dark:bg-white dark:text-black"> AINews <!-- &nbsp;🗞️ --> </div>  </a> <nav class="flex sm:flex-row items-center gap-1 text-sm"> <a href="/subscribe" target="_self" class="inline-block decoration-black/30 dark:decoration-white/30 hover:decoration-black/50 focus-visible:decoration-black/50 dark:hover:decoration-white/50 dark:focus-visible:decoration-white/50 text-current hover:text-black focus-visible:text-black dark:hover:text-white dark:focus-visible:text-white transition-colors duration-300 ease-in-out underline underline-offset-[3px]"> subscribe </a> <span class="hidden sm:inline"> / </span> <a href="/issues/" target="_self" class="inline-block decoration-black/30 dark:decoration-white/30 hover:decoration-black/50 focus-visible:decoration-black/50 dark:hover:decoration-white/50 dark:focus-visible:decoration-white/50 text-current hover:text-black focus-visible:text-black dark:hover:text-white dark:focus-visible:text-white transition-colors duration-300 ease-in-out underline underline-offset-[3px]"> issues </a> <span class="hidden sm:inline"> / </span> <a href="/tags" target="_self" class="inline-block decoration-black/30 dark:decoration-white/30 hover:decoration-black/50 focus-visible:decoration-black/50 dark:hover:decoration-white/50 dark:focus-visible:decoration-white/50 text-current hover:text-black focus-visible:text-black dark:hover:text-white dark:focus-visible:text-white transition-colors duration-300 ease-in-out underline underline-offset-[3px]"> tags </a> <span class="hidden sm:inline"> / </span> <button id="magnifying-glass" aria-label="Search" class="mt-0 flex items-center rounded-sm border border-black/15 bg-neutral-100 px-2 py-1 text-xs transition-colors duration-300 ease-in-out hover:bg-black/5 hover:text-black focus-visible:bg-black/5 focus-visible:text-black dark:border-white/20 dark:bg-neutral-900 dark:hover:bg-white/5 dark:hover:text-white dark:focus-visible:bg-white/5 dark:focus-visible:text-white"> <svg height="16" stroke-linejoin="round" viewBox="0 0 16 16" width="16" style="color: currentcolor;"><path fill-rule="evenodd" clip-rule="evenodd" d="M3.5 7C3.5 5.067 5.067 3.5 7 3.5C8.933 3.5 10.5 5.067 10.5 7C10.5 7.88461 10.1718 8.69256 9.63058 9.30876L9.30876 9.63058C8.69256 10.1718 7.88461 10.5 7 10.5C5.067 10.5 3.5 8.933 3.5 7ZM9.96544 11.0261C9.13578 11.6382 8.11014 12 7 12C4.23858 12 2 9.76142 2 7C2 4.23858 4.23858 2 7 2C9.76142 2 12 4.23858 12 7C12 8.11014 11.6382 9.13578 11.0261 9.96544L14.0303 12.9697L14.5607 13.5L13.5 14.5607L12.9697 14.0303L9.96544 11.0261Z" fill="currentColor"></path></svg> <span class="hidden sm:inline">&nbsp;Search (Cmd+K)</span> </button> <!-- <span class="hidden sm:inline">
+          {`/`}
+        </span>
+        <Link href="/rss.xml">rss</Link> --> </nav> </div> </div> </header> <main>  <div class="mx-auto max-w-(--breakpoint-2xl) px-4 sm:px-6 md:px-8 lg:px-12"> <div class="animate flex justify-between items-center" data-astro-cid-h5udtq26> <a href="/issues" class="not-prose group relative flex w-fit flex-nowrap rounded-sm border border-black/15 py-1.5 pl-7 pr-3 transition-colors duration-300 ease-in-out hover:bg-black/5 hover:text-black focus-visible:bg-black/5 focus-visible:text-black dark:border-white/20 dark:hover:bg-white/5 dark:hover:text-white dark:focus-visible:bg-white/5 dark:focus-visible:text-white"> <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="absolute left-2 top-1/2 size-4 -translate-y-1/2 fill-none stroke-current stroke-2 "> <line x1="5" y1="12" x2="19" y2="12" class="translate-x-2 scale-x-0 transition-transform duration-300 ease-in-out group-hover:translate-x-0 group-hover:scale-x-100 group-focus-visible:translate-x-0 group-focus-visible:scale-x-100"></line> <polyline points="12 5 5 12 12 19" class="translate-x-1 transition-transform duration-300 ease-in-out group-hover:translate-x-0 group-focus-visible:translate-x-0"></polyline> </svg> <div class="text-sm"> Back to issues </div> </a> <a href="#main-content" class="not-prose group relative flex w-fit flex-nowrap rounded-sm border border-black/15 py-1.5 pl-7 pr-3 transition-colors duration-300 ease-in-out hover:bg-black/5 hover:text-black focus-visible:bg-black/5 focus-visible:text-black dark:border-white/20 dark:hover:bg-white/5 dark:hover:text-white dark:focus-visible:bg-white/5 dark:focus-visible:text-white"> <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="absolute left-2 top-1/2 size-4 -translate-y-1/2 fill-none stroke-current stroke-2 rotate-270"> <line x1="5" y1="12" x2="19" y2="12" class="translate-x-2 scale-x-0 transition-transform duration-300 ease-in-out group-hover:translate-x-0 group-hover:scale-x-100 group-focus-visible:translate-x-0 group-focus-visible:scale-x-100"></line> <polyline points="12 5 5 12 12 19" class="translate-x-1 transition-transform duration-300 ease-in-out group-hover:translate-x-0 group-focus-visible:translate-x-0"></polyline> </svg> <div class="text-sm"> Skip to Main </div> </a> </div> <div class="flex flex-col-reverse lg:flex-row mx-auto max-w-7xl items-start gap-8 py-6" data-astro-cid-h5udtq26>  <!-- <div class="order-2 w-full lg:order-1 lg:w-1/5 lg:sticky lg:top-8 lg:self-start">
+        {/* Intentionally empty to align with TOC */}
+      </div> -->  <div role="banner" class="order-1 w-full lg:order-2 flex flex-col gap-4 lg:gap-24" data-astro-cid-h5udtq26> <div class="animate flex items-center gap-1.5" data-astro-cid-h5udtq26></div> <h1 class="animate text-3xl font-semibold text-black dark:text-white break-words" data-astro-cid-h5udtq26> <div class="font-base text-sm uppercase mono text-gray-400" data-pagefind-meta="date" data-astro-cid-h5udtq26> <time datetime="2026-09-01T05:44:39.731Z"> Sep 01 <!-- {
+    date.toLocaleDateString("en-US", {
+      month: "short", 
+      day: "2-digit",
+      ...(showYear && {year: "numeric"})
+    })
+  } --> </time> </div> Claude Fable 5.1 and Claude Mythos 5.1 </h1> <div class="animate space-y-3 pt-1 relative" aria-label="Article metadata" id="metadata-section" data-astro-cid-h5udtq26>  <button id="metadata-toggle" aria-controls="metadata-content" aria-expanded="true" class="absolute top-0 right-1 p-1 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 focus:outline-none" title="Toggle metadata section" data-astro-cid-h5udtq26> <div class="flex items-center gap-1" data-astro-cid-h5udtq26>  <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" data-astro-cid-h5udtq26> <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" data-astro-cid-h5udtq26></path> </svg> <span class="" aria-hidden="true" data-astro-cid-h5udtq26>show/hide tags</span> </div> </button> <div id="metadata-content" data-astro-cid-h5udtq26> <div data-astro-cid-h5udtq26> <h3 class="text-xs uppercase text-gray-500 dark:text-gray-400 mb-1" data-astro-cid-h5udtq26>Companies</h3> <div class="flex flex-wrap gap-2" role="list" aria-label="Companies mentioned" data-astro-cid-h5udtq26> <a href="/tags/anthropic" data-pagefind-filter="company" class="rounded-lg border border-black/10 bg-black/5 px-2 py-1 text-xs text-black hover:bg-black/10 dark:border-white/10 dark:bg-white/5 dark:text-white dark:hover:bg-white/10" role="listitem" data-astro-cid-h5udtq26> anthropic </a><a href="/tags/openai" data-pagefind-filter="company" class="rounded-lg border border-black/10 bg-black/5 px-2 py-1 text-xs text-black hover:bg-black/10 dark:border-white/10 dark:bg-white/5 dark:text-white dark:hover:bg-white/10" role="listitem" data-astro-cid-h5udtq26> openai </a><a href="/tags/nous-research" data-pagefind-filter="company" class="rounded-lg border border-black/10 bg-black/5 px-2 py-1 text-xs text-black hover:bg-black/10 dark:border-white/10 dark:bg-white/5 dark:text-white dark:hover:bg-white/10" role="listitem" data-astro-cid-h5udtq26> nous-research </a><a href="/tags/perplexity-ai" data-pagefind-filter="company" class="rounded-lg border border-black/10 bg-black/5 px-2 py-1 text-xs text-black hover:bg-black/10 dark:border-white/10 dark:bg-white/5 dark:text-white dark:hover:bg-white/10" role="listitem" data-astro-cid-h5udtq26> perplexity-ai </a> </div> </div> <div data-astro-cid-h5udtq26> <h3 class="text-xs uppercase text-gray-500 dark:text-gray-400 mb-1" data-astro-cid-h5udtq26>Models</h3> <div class="flex flex-wrap gap-2" role="list" aria-label="AI models mentioned" data-astro-cid-h5udtq26> <a href="/tags/claude-fable-5.1" data-pagefind-filter="model" class="rounded-lg border border-black/10 bg-black/5 px-2 py-1 text-xs text-black hover:bg-black/10 dark:border-white/10 dark:bg-white/5 dark:text-white dark:hover:bg-white/10" role="listitem" data-astro-cid-h5udtq26> claude-fable-5.1 </a><a href="/tags/claude-mythos-5.1" data-pagefind-filter="model" class="rounded-lg border border-black/10 bg-black/5 px-2 py-1 text-xs text-black hover:bg-black/10 dark:border-white/10 dark:bg-white/5 dark:text-white dark:hover:bg-white/10" role="listitem" data-astro-cid-h5udtq26> claude-mythos-5.1 </a><a href="/tags/astra" data-pagefind-filter="model" class="rounded-lg border border-black/10 bg-black/5 px-2 py-1 text-xs text-black hover:bg-black/10 dark:border-white/10 dark:bg-white/5 dark:text-white dark:hover:bg-white/10" role="listitem" data-astro-cid-h5udtq26> astra </a> </div> </div> <div data-astro-cid-h5udtq26> <h3 class="text-xs uppercase text-gray-500 dark:text-gray-400 mb-1" data-astro-cid-h5udtq26>Topics</h3> <div class="flex flex-wrap gap-2" role="list" aria-label="Related topics" data-astro-cid-h5udtq26> <a href="/tags/coding" data-pagefind-filter="topic" class="rounded-lg border border-black/10 bg-black/5 px-2 py-1 text-xs text-black hover:bg-black/10 dark:border-white/10 dark:bg-white/5 dark:text-white dark:hover:bg-white/10" role="listitem" data-astro-cid-h5udtq26> coding </a><a href="/tags/model-architecture" data-pagefind-filter="topic" class="rounded-lg border border-black/10 bg-black/5 px-2 py-1 text-xs text-black hover:bg-black/10 dark:border-white/10 dark:bg-white/5 dark:text-white dark:hover:bg-white/10" role="listitem" data-astro-cid-h5udtq26> model-architecture </a><a href="/tags/safety" data-pagefind-filter="topic" class="rounded-lg border border-black/10 bg-black/5 px-2 py-1 text-xs text-black hover:bg-black/10 dark:border-white/10 dark:bg-white/5 dark:text-white dark:hover:bg-white/10" role="listitem" data-astro-cid-h5udtq26> safety </a><a href="/tags/enterprise-ai" data-pagefind-filter="topic" class="rounded-lg border border-black/10 bg-black/5 px-2 py-1 text-xs text-black hover:bg-black/10 dark:border-white/10 dark:bg-white/5 dark:text-white dark:hover:bg-white/10" role="listitem" data-astro-cid-h5udtq26> enterprise-ai </a><a href="/tags/benchmarking" data-pagefind-filter="topic" class="rounded-lg border border-black/10 bg-black/5 px-2 py-1 text-xs text-black hover:bg-black/10 dark:border-white/10 dark:bg-white/5 dark:text-white dark:hover:bg-white/10" role="listitem" data-astro-cid-h5udtq26> benchmarking </a><a href="/tags/cache-optimization" data-pagefind-filter="topic" class="rounded-lg border border-black/10 bg-black/5 px-2 py-1 text-xs text-black hover:bg-black/10 dark:border-white/10 dark:bg-white/5 dark:text-white dark:hover:bg-white/10" role="listitem" data-astro-cid-h5udtq26> cache-optimization </a><a href="/tags/cybersecurity" data-pagefind-filter="topic" class="rounded-lg border border-black/10 bg-black/5 px-2 py-1 text-xs text-black hover:bg-black/10 dark:border-white/10 dark:bg-white/5 dark:text-white dark:hover:bg-white/10" role="listitem" data-astro-cid-h5udtq26> cybersecurity </a><a href="/tags/recurrent-depth" data-pagefind-filter="topic" class="rounded-lg border border-black/10 bg-black/5 px-2 py-1 text-xs text-black hover:bg-black/10 dark:border-white/10 dark:bg-white/5 dark:text-white dark:hover:bg-white/10" role="listitem" data-astro-cid-h5udtq26> recurrent-depth </a><a href="/tags/chain-of-thought" data-pagefind-filter="topic" class="rounded-lg border border-black/10 bg-black/5 px-2 py-1 text-xs text-black hover:bg-black/10 dark:border-white/10 dark:bg-white/5 dark:text-white dark:hover:bg-white/10" role="listitem" data-astro-cid-h5udtq26> chain-of-thought </a><a href="/tags/model-transparency" data-pagefind-filter="topic" class="rounded-lg border border-black/10 bg-black/5 px-2 py-1 text-xs text-black hover:bg-black/10 dark:border-white/10 dark:bg-white/5 dark:text-white dark:hover:bg-white/10" role="listitem" data-astro-cid-h5udtq26> model-transparency </a> </div> </div> <div data-astro-cid-h5udtq26> <h3 class="text-xs uppercase text-gray-500 dark:text-gray-400 mb-1" data-astro-cid-h5udtq26>People</h3> <div class="flex flex-wrap gap-2" role="list" aria-label="People mentioned" data-astro-cid-h5udtq26> <a href="/tags/sama" data-pagefind-filter="person" class="rounded-lg border border-black/10 bg-black/5 px-2 py-1 text-xs text-black hover:bg-black/10 dark:border-white/10 dark:bg-white/5 dark:text-white dark:hover:bg-white/10" role="listitem" data-astro-cid-h5udtq26> sama </a><a href="/tags/alexalbert__" data-pagefind-filter="person" class="rounded-lg border border-black/10 bg-black/5 px-2 py-1 text-xs text-black hover:bg-black/10 dark:border-white/10 dark:bg-white/5 dark:text-white dark:hover:bg-white/10" role="listitem" data-astro-cid-h5udtq26> alexalbert__ </a><a href="/tags/eliebakouch" data-pagefind-filter="person" class="rounded-lg border border-black/10 bg-black/5 px-2 py-1 text-xs text-black hover:bg-black/10 dark:border-white/10 dark:bg-white/5 dark:text-white dark:hover:bg-white/10" role="listitem" data-astro-cid-h5udtq26> eliebakouch </a><a href="/tags/ethancaballero" data-pagefind-filter="person" class="rounded-lg border border-black/10 bg-black/5 px-2 py-1 text-xs text-black hover:bg-black/10 dark:border-white/10 dark:bg-white/5 dark:text-white dark:hover:bg-white/10" role="listitem" data-astro-cid-h5udtq26> ethancaballero </a><a href="/tags/valsai" data-pagefind-filter="person" class="rounded-lg border border-black/10 bg-black/5 px-2 py-1 text-xs text-black hover:bg-black/10 dark:border-white/10 dark:bg-white/5 dark:text-white dark:hover:bg-white/10" role="listitem" data-astro-cid-h5udtq26> valsai </a><a href="/tags/stevendillmann" data-pagefind-filter="person" class="rounded-lg border border-black/10 bg-black/5 px-2 py-1 text-xs text-black hover:bg-black/10 dark:border-white/10 dark:bg-white/5 dark:text-white dark:hover:bg-white/10" role="listitem" data-astro-cid-h5udtq26> stevendillmann </a><a href="/tags/scaling01" data-pagefind-filter="person" class="rounded-lg border border-black/10 bg-black/5 px-2 py-1 text-xs text-black hover:bg-black/10 dark:border-white/10 dark:bg-white/5 dark:text-white dark:hover:bg-white/10" role="listitem" data-astro-cid-h5udtq26> scaling01 </a><a href="/tags/artificialanlys" data-pagefind-filter="person" class="rounded-lg border border-black/10 bg-black/5 px-2 py-1 text-xs text-black hover:bg-black/10 dark:border-white/10 dark:bg-white/5 dark:text-white dark:hover:bg-white/10" role="listitem" data-astro-cid-h5udtq26> artificialanlys </a><a href="/tags/theo" data-pagefind-filter="person" class="rounded-lg border border-black/10 bg-black/5 px-2 py-1 text-xs text-black hover:bg-black/10 dark:border-white/10 dark:bg-white/5 dark:text-white dark:hover:bg-white/10" role="listitem" data-astro-cid-h5udtq26> theo </a><a href="/tags/teknuim" data-pagefind-filter="person" class="rounded-lg border border-black/10 bg-black/5 px-2 py-1 text-xs text-black hover:bg-black/10 dark:border-white/10 dark:bg-white/5 dark:text-white dark:hover:bg-white/10" role="listitem" data-astro-cid-h5udtq26> teknuim </a><a href="/tags/gregkamradt" data-pagefind-filter="person" class="rounded-lg border border-black/10 bg-black/5 px-2 py-1 text-xs text-black hover:bg-black/10 dark:border-white/10 dark:bg-white/5 dark:text-white dark:hover:bg-white/10" role="listitem" data-astro-cid-h5udtq26> gregkamradt </a><a href="/tags/kylebrussell" data-pagefind-filter="person" class="rounded-lg border border-black/10 bg-black/5 px-2 py-1 text-xs text-black hover:bg-black/10 dark:border-white/10 dark:bg-white/5 dark:text-white dark:hover:bg-white/10" role="listitem" data-astro-cid-h5udtq26> kylebrussell </a><a href="/tags/boazbaraktcs" data-pagefind-filter="person" class="rounded-lg border border-black/10 bg-black/5 px-2 py-1 text-xs text-black hover:bg-black/10 dark:border-white/10 dark:bg-white/5 dark:text-white dark:hover:bg-white/10" role="listitem" data-astro-cid-h5udtq26> boazbaraktcs </a><a href="/tags/kimmonismus" data-pagefind-filter="person" class="rounded-lg border border-black/10 bg-black/5 px-2 py-1 text-xs text-black hover:bg-black/10 dark:border-white/10 dark:bg-white/5 dark:text-white dark:hover:bg-white/10" role="listitem" data-astro-cid-h5udtq26> kimmonismus </a> </div> </div> </div> </div> </div> </div> <div class="astro-entry border-t border-black/15 pt-8 dark:border-white/15 animate" data-astro-cid-h5udtq26> <div class="mx-auto flex max-w-7xl flex-col items-start gap-8 lg:flex-row" data-astro-cid-h5udtq26> <aside class="order-2 w-full lg:order-1 lg:top-8 lg:w-1/5 lg:sticky lg:self-start" role="complementary" aria-label="Table of contents" data-astro-cid-h5udtq26> <!-- Desktop TOC (hidden on mobile) --><div class="hidden lg:block"> <details open class="animate group rounded-lg border border-black/15 bg-white/50 dark:border-white/20 dark:bg-black/50 lg:border-0 lg:bg-transparent dark:lg:bg-transparent"> <summary class="cursor-pointer rounded-t-lg px-3 py-1.5 font-medium transition-colors group-open:bg-black/5 hover:bg-black/5 dark:group-open:bg-white/5 hover:dark:bg-white/5 lg:px-0 lg:py-0 lg:text-sm lg:font-semibold lg:uppercase lg:tracking-wider lg:text-black/60 dark:lg:text-white/60">Table of Contents</summary> <nav class="lg:mt-4"> <ul class="space-y-1 py-3 lg:py-0 max-h-[90vh] overflow-y-auto sticky top-24"> <li class="list-none mt-2 text-sm "> <div class="font-medium"> <a href="#ai-twitter-recap" target="_self" class="inline-block decoration-black/30 dark:decoration-white/30 hover:decoration-black/50 focus-visible:decoration-black/50 dark:hover:decoration-white/50 dark:focus-visible:decoration-white/50 text-current hover:text-black focus-visible:text-black dark:hover:text-white dark:focus-visible:text-white transition-colors duration-300 ease-in-out underline underline-offset-[3px]"> AI Twitter Recap </a> </div> <ul class="ml-4 mt-1 space-y-1 border-l border-black/10 pl-2 dark:border-white/10"> <li class="list-none  text-sm 2"> <div class="text-black/70 dark:text-white/70"> <a href="#what-happened" target="_self" class="inline-block decoration-black/30 dark:decoration-white/30 hover:decoration-black/50 focus-visible:decoration-black/50 dark:hover:decoration-white/50 dark:focus-visible:decoration-white/50 text-current hover:text-black focus-visible:text-black dark:hover:text-white dark:focus-visible:text-white transition-colors duration-300 ease-in-out underline underline-offset-[3px]"> What happened </a> </div>  </li><li class="list-none  text-sm 2"> <div class="text-black/70 dark:text-white/70"> <a href="#official-claims-and-model-positioning" target="_self" class="inline-block decoration-black/30 dark:decoration-white/30 hover:decoration-black/50 focus-visible:decoration-black/50 dark:hover:decoration-white/50 dark:focus-visible:decoration-white/50 text-current hover:text-black focus-visible:text-black dark:hover:text-white dark:focus-visible:text-white transition-colors duration-300 ease-in-out underline underline-offset-[3px]"> Official claims and model positioning </a> </div>  </li><li class="list-none  text-sm 2"> <div class="text-black/70 dark:text-white/70"> <a href="#technical-details-and-numbers" target="_self" class="inline-block decoration-black/30 dark:decoration-white/30 hover:decoration-black/50 focus-visible:decoration-black/50 dark:hover:decoration-white/50 dark:focus-visible:decoration-white/50 text-current hover:text-black focus-visible:text-black dark:hover:text-white dark:focus-visible:text-white transition-colors duration-300 ease-in-out underline underline-offset-[3px]"> Technical details and numbers </a> </div> <ul class="ml-4 mt-1 space-y-1 border-l border-black/10 pl-2 dark:border-white/10"> <li class="list-none  text-sm 2"> <div class="text-black/70 dark:text-white/70"> <a href="#core-publishedpriced-details" target="_self" class="inline-block decoration-black/30 dark:decoration-white/30 hover:decoration-black/50 focus-visible:decoration-black/50 dark:hover:decoration-white/50 dark:focus-visible:decoration-white/50 text-current hover:text-black focus-visible:text-black dark:hover:text-white dark:focus-visible:text-white transition-colors duration-300 ease-in-out underline underline-offset-[3px]"> Core published/priced details </a> </div>  </li><li class="list-none  text-sm 2"> <div class="text-black/70 dark:text-white/70"> <a href="#artificial-analysis-headline-results" target="_self" class="inline-block decoration-black/30 dark:decoration-white/30 hover:decoration-black/50 focus-visible:decoration-black/50 dark:hover:decoration-white/50 dark:focus-visible:decoration-white/50 text-current hover:text-black focus-visible:text-black dark:hover:text-white dark:focus-visible:text-white transition-colors duration-300 ease-in-out underline underline-offset-[3px]"> Artificial Analysis headline results </a> </div>  </li><li class="list-none  text-sm 2"> <div class="text-black/70 dark:text-white/70"> <a href="#cost-per-task" target="_self" class="inline-block decoration-black/30 dark:decoration-white/30 hover:decoration-black/50 focus-visible:decoration-black/50 dark:hover:decoration-white/50 dark:focus-visible:decoration-white/50 text-current hover:text-black focus-visible:text-black dark:hover:text-white dark:focus-visible:text-white transition-colors duration-300 ease-in-out underline underline-offset-[3px]"> Cost per task </a> </div>  </li><li class="list-none  text-sm 2"> <div class="text-black/70 dark:text-white/70"> <a href="#benchmark-snippets-from-system-card-discussion" target="_self" class="inline-block decoration-black/30 dark:decoration-white/30 hover:decoration-black/50 focus-visible:decoration-black/50 dark:hover:decoration-white/50 dark:focus-visible:decoration-white/50 text-current hover:text-black focus-visible:text-black dark:hover:text-white dark:focus-visible:text-white transition-colors duration-300 ease-in-out underline underline-offset-[3px]"> Benchmark snippets from system-card discussion </a> </div>  </li><li class="list-none  text-sm 2"> <div class="text-black/70 dark:text-white/70"> <a href="#safeguards-and-routing-details" target="_self" class="inline-block decoration-black/30 dark:decoration-white/30 hover:decoration-black/50 focus-visible:decoration-black/50 dark:hover:decoration-white/50 dark:focus-visible:decoration-white/50 text-current hover:text-black focus-visible:text-black dark:hover:text-white dark:focus-visible:text-white transition-colors duration-300 ease-in-out underline underline-offset-[3px]"> Safeguards and routing details </a> </div>  </li> </ul> </li><li class="list-none  text-sm 2"> <div class="text-black/70 dark:text-white/70"> <a href="#facts-vs-opinions" target="_self" class="inline-block decoration-black/30 dark:decoration-white/30 hover:decoration-black/50 focus-visible:decoration-black/50 dark:hover:decoration-white/50 dark:focus-visible:decoration-white/50 text-current hover:text-black focus-visible:text-black dark:hover:text-white dark:focus-visible:text-white transition-colors duration-300 ease-in-out underline underline-offset-[3px]"> Facts vs opinions </a> </div> <ul class="ml-4 mt-1 space-y-1 border-l border-black/10 pl-2 dark:border-white/10"> <li class="list-none  text-sm 2"> <div class="text-black/70 dark:text-white/70"> <a href="#facts-strongly-supported-by-officialindependent-sources" target="_self" class="inline-block decoration-black/30 dark:decoration-white/30 hover:decoration-black/50 focus-visible:decoration-black/50 dark:hover:decoration-white/50 dark:focus-visible:decoration-white/50 text-current hover:text-black focus-visible:text-black dark:hover:text-white dark:focus-visible:text-white transition-colors duration-300 ease-in-out underline underline-offset-[3px]"> Facts strongly supported by official/independent sources </a> </div>  </li><li class="list-none  text-sm 2"> <div class="text-black/70 dark:text-white/70"> <a href="#plausible-but-not-fully-verified-claims" target="_self" class="inline-block decoration-black/30 dark:decoration-white/30 hover:decoration-black/50 focus-visible:decoration-black/50 dark:hover:decoration-white/50 dark:focus-visible:decoration-white/50 text-current hover:text-black focus-visible:text-black dark:hover:text-white dark:focus-visible:text-white transition-colors duration-300 ease-in-out underline underline-offset-[3px]"> Plausible but not fully verified claims </a> </div>  </li><li class="list-none  text-sm 2"> <div class="text-black/70 dark:text-white/70"> <a href="#opinions--subjective-judgments" target="_self" class="inline-block decoration-black/30 dark:decoration-white/30 hover:decoration-black/50 focus-visible:decoration-black/50 dark:hover:decoration-white/50 dark:focus-visible:decoration-white/50 text-current hover:text-black focus-visible:text-black dark:hover:text-white dark:focus-visible:text-white transition-colors duration-300 ease-in-out underline underline-offset-[3px]"> Opinions / subjective judgments </a> </div>  </li> </ul> </li><li class="list-none  text-sm 2"> <div class="text-black/70 dark:text-white/70"> <a href="#different-opinions-and-reactions" target="_self" class="inline-block decoration-black/30 dark:decoration-white/30 hover:decoration-black/50 focus-visible:decoration-black/50 dark:hover:decoration-white/50 dark:focus-visible:decoration-white/50 text-current hover:text-black focus-visible:text-black dark:hover:text-white dark:focus-visible:text-white transition-colors duration-300 ease-in-out underline underline-offset-[3px]"> Different opinions and reactions </a> </div> <ul class="ml-4 mt-1 space-y-1 border-l border-black/10 pl-2 dark:border-white/10"> <li class="list-none  text-sm 2"> <div class="text-black/70 dark:text-white/70"> <a href="#strongly-positive-capability-planning-and-coding-quality" target="_self" class="inline-block decoration-black/30 dark:decoration-white/30 hover:decoration-black/50 focus-visible:decoration-black/50 dark:hover:decoration-white/50 dark:focus-visible:decoration-white/50 text-current hover:text-black focus-visible:text-black dark:hover:text-white dark:focus-visible:text-white transition-colors duration-300 ease-in-out underline underline-offset-[3px]"> Strongly positive: capability, planning, and coding quality </a> </div>  </li><li class="list-none  text-sm 2"> <div class="text-black/70 dark:text-white/70"> <a href="#positive-but-measured-frontier-lead-with-caveats" target="_self" class="inline-block decoration-black/30 dark:decoration-white/30 hover:decoration-black/50 focus-visible:decoration-black/50 dark:hover:decoration-white/50 dark:focus-visible:decoration-white/50 text-current hover:text-black focus-visible:text-black dark:hover:text-white dark:focus-visible:text-white transition-colors duration-300 ease-in-out underline underline-offset-[3px]"> Positive but measured: frontier lead with caveats </a> </div>  </li><li class="list-none  text-sm 2"> <div class="text-black/70 dark:text-white/70"> <a href="#critical-rate-limits-safeguards-and-subscription-experience" target="_self" class="inline-block decoration-black/30 dark:decoration-white/30 hover:decoration-black/50 focus-visible:decoration-black/50 dark:hover:decoration-white/50 dark:focus-visible:decoration-white/50 text-current hover:text-black focus-visible:text-black dark:hover:text-white dark:focus-visible:text-white transition-colors duration-300 ease-in-out underline underline-offset-[3px]"> Critical: rate limits, safeguards, and subscription experience </a> </div>  </li><li class="list-none  text-sm 2"> <div class="text-black/70 dark:text-white/70"> <a href="#skepticalneutral-benchmark-interpretation-and-naming-confusion" target="_self" class="inline-block decoration-black/30 dark:decoration-white/30 hover:decoration-black/50 focus-visible:decoration-black/50 dark:hover:decoration-white/50 dark:focus-visible:decoration-white/50 text-current hover:text-black focus-visible:text-black dark:hover:text-white dark:focus-visible:text-white transition-colors duration-300 ease-in-out underline underline-offset-[3px]"> Skeptical/neutral: benchmark interpretation and naming confusion </a> </div>  </li> </ul> </li><li class="list-none  text-sm 2"> <div class="text-black/70 dark:text-white/70"> <a href="#writing-quality-and-the-claudese-discussion" target="_self" class="inline-block decoration-black/30 dark:decoration-white/30 hover:decoration-black/50 focus-visible:decoration-black/50 dark:hover:decoration-white/50 dark:focus-visible:decoration-white/50 text-current hover:text-black focus-visible:text-black dark:hover:text-white dark:focus-visible:text-white transition-colors duration-300 ease-in-out underline underline-offset-[3px]"> Writing quality and the “Claudese” discussion </a> </div>  </li><li class="list-none  text-sm 2"> <div class="text-black/70 dark:text-white/70"> <a href="#the-safeguards-story-improved-enterprise-viability-but-also-false-positives" target="_self" class="inline-block decoration-black/30 dark:decoration-white/30 hover:decoration-black/50 focus-visible:decoration-black/50 dark:hover:decoration-white/50 dark:focus-visible:decoration-white/50 text-current hover:text-black focus-visible:text-black dark:hover:text-white dark:focus-visible:text-white transition-colors duration-300 ease-in-out underline underline-offset-[3px]"> The safeguards story: improved enterprise viability, but also false positives </a> </div>  </li><li class="list-none  text-sm 2"> <div class="text-black/70 dark:text-white/70"> <a href="#mythos-vs-fable-same-model-or-separate-products" target="_self" class="inline-block decoration-black/30 dark:decoration-white/30 hover:decoration-black/50 focus-visible:decoration-black/50 dark:hover:decoration-white/50 dark:focus-visible:decoration-white/50 text-current hover:text-black focus-visible:text-black dark:hover:text-white dark:focus-visible:text-white transition-colors duration-300 ease-in-out underline underline-offset-[3px]"> Mythos vs Fable: same model or separate products? </a> </div>  </li><li class="list-none  text-sm 2"> <div class="text-black/70 dark:text-white/70"> <a href="#practical-product-implications" target="_self" class="inline-block decoration-black/30 dark:decoration-white/30 hover:decoration-black/50 focus-visible:decoration-black/50 dark:hover:decoration-white/50 dark:focus-visible:decoration-white/50 text-current hover:text-black focus-visible:text-black dark:hover:text-white dark:focus-visible:text-white transition-colors duration-300 ease-in-out underline underline-offset-[3px]"> Practical product implications </a> </div> <ul class="ml-4 mt-1 space-y-1 border-l border-black/10 pl-2 dark:border-white/10"> <li class="list-none  text-sm 2"> <div class="text-black/70 dark:text-white/70"> <a href="#why-the-cache-read-cut-matters" target="_self" class="inline-block decoration-black/30 dark:decoration-white/30 hover:decoration-black/50 focus-visible:decoration-black/50 dark:hover:decoration-white/50 dark:focus-visible:decoration-white/50 text-current hover:text-black focus-visible:text-black dark:hover:text-white dark:focus-visible:text-white transition-colors duration-300 ease-in-out underline underline-offset-[3px]"> Why the cache-read cut matters </a> </div>  </li><li class="list-none  text-sm 2"> <div class="text-black/70 dark:text-white/70"> <a href="#why-zero-data-retention-and-efs-matter" target="_self" class="inline-block decoration-black/30 dark:decoration-white/30 hover:decoration-black/50 focus-visible:decoration-black/50 dark:hover:decoration-white/50 dark:focus-visible:decoration-white/50 text-current hover:text-black focus-visible:text-black dark:hover:text-white dark:focus-visible:text-white transition-colors duration-300 ease-in-out underline underline-offset-[3px]"> Why zero data retention and EFS matter </a> </div>  </li><li class="list-none  text-sm 2"> <div class="text-black/70 dark:text-white/70"> <a href="#why-subscription-complaints-matter" target="_self" class="inline-block decoration-black/30 dark:decoration-white/30 hover:decoration-black/50 focus-visible:decoration-black/50 dark:hover:decoration-white/50 dark:focus-visible:decoration-white/50 text-current hover:text-black focus-visible:text-black dark:hover:text-white dark:focus-visible:text-white transition-colors duration-300 ease-in-out underline underline-offset-[3px]"> Why subscription complaints matter </a> </div>  </li> </ul> </li><li class="list-none  text-sm 2"> <div class="text-black/70 dark:text-white/70"> <a href="#competitive-context" target="_self" class="inline-block decoration-black/30 dark:decoration-white/30 hover:decoration-black/50 focus-visible:decoration-black/50 dark:hover:decoration-white/50 dark:focus-visible:decoration-white/50 text-current hover:text-black focus-visible:text-black dark:hover:text-white dark:focus-visible:text-white transition-colors duration-300 ease-in-out underline underline-offset-[3px]"> Competitive context </a> </div>  </li><li class="list-none  text-sm 2"> <div class="text-black/70 dark:text-white/70"> <a href="#context-why-this-release-mattered-more-than-a-normal-point-update" target="_self" class="inline-block decoration-black/30 dark:decoration-white/30 hover:decoration-black/50 focus-visible:decoration-black/50 dark:hover:decoration-white/50 dark:focus-visible:decoration-white/50 text-current hover:text-black focus-visible:text-black dark:hover:text-white dark:focus-visible:text-white transition-colors duration-300 ease-in-out underline underline-offset-[3px]"> Context: why this release mattered more than a normal point update </a> </div> <ul class="ml-4 mt-1 space-y-1 border-l border-black/10 pl-2 dark:border-white/10"> <li class="list-none  text-sm 2"> <div class="text-black/70 dark:text-white/70"> <a href="#1-anthropics-reputation-had-become-bifurcated" target="_self" class="inline-block decoration-black/30 dark:decoration-white/30 hover:decoration-black/50 focus-visible:decoration-black/50 dark:hover:decoration-white/50 dark:focus-visible:decoration-white/50 text-current hover:text-black focus-visible:text-black dark:hover:text-white dark:focus-visible:text-white transition-colors duration-300 ease-in-out underline underline-offset-[3px]"> 1. Anthropic’s reputation had become bifurcated </a> </div>  </li><li class="list-none  text-sm 2"> <div class="text-black/70 dark:text-white/70"> <a href="#2-agents-changed-what-people-care-about-in-pricing" target="_self" class="inline-block decoration-black/30 dark:decoration-white/30 hover:decoration-black/50 focus-visible:decoration-black/50 dark:hover:decoration-white/50 dark:focus-visible:decoration-white/50 text-current hover:text-black focus-visible:text-black dark:hover:text-white dark:focus-visible:text-white transition-colors duration-300 ease-in-out underline underline-offset-[3px]"> 2. Agents changed what people care about in pricing </a> </div>  </li><li class="list-none  text-sm 2"> <div class="text-black/70 dark:text-white/70"> <a href="#3-safety-is-becoming-product-architecture-not-just-policy" target="_self" class="inline-block decoration-black/30 dark:decoration-white/30 hover:decoration-black/50 focus-visible:decoration-black/50 dark:hover:decoration-white/50 dark:focus-visible:decoration-white/50 text-current hover:text-black focus-visible:text-black dark:hover:text-white dark:focus-visible:text-white transition-colors duration-300 ease-in-out underline underline-offset-[3px]"> 3. Safety is becoming product architecture, not just policy </a> </div>  </li> </ul> </li><li class="list-none  text-sm 2"> <div class="text-black/70 dark:text-white/70"> <a href="#notable-demos-and-ecosystem-reactions" target="_self" class="inline-block decoration-black/30 dark:decoration-white/30 hover:decoration-black/50 focus-visible:decoration-black/50 dark:hover:decoration-white/50 dark:focus-visible:decoration-white/50 text-current hover:text-black focus-visible:text-black dark:hover:text-white dark:focus-visible:text-white transition-colors duration-300 ease-in-out underline underline-offset-[3px]"> Notable demos and ecosystem reactions </a> </div>  </li><li class="list-none  text-sm 2"> <div class="text-black/70 dark:text-white/70"> <a href="#open-questions-raised-by-the-community" target="_self" class="inline-block decoration-black/30 dark:decoration-white/30 hover:decoration-black/50 focus-visible:decoration-black/50 dark:hover:decoration-white/50 dark:focus-visible:decoration-white/50 text-current hover:text-black focus-visible:text-black dark:hover:text-white dark:focus-visible:text-white transition-colors duration-300 ease-in-out underline underline-offset-[3px]"> Open questions raised by the community </a> </div>  </li> </ul> </li><li class="list-none mt-2 text-sm "> <div class="font-medium"> <a href="#ai-reddit-recap" target="_self" class="inline-block decoration-black/30 dark:decoration-white/30 hover:decoration-black/50 focus-visible:decoration-black/50 dark:hover:decoration-white/50 dark:focus-visible:decoration-white/50 text-current hover:text-black focus-visible:text-black dark:hover:text-white dark:focus-visible:text-white transition-colors duration-300 ease-in-out underline underline-offset-[3px]"> AI Reddit Recap </a> </div> <ul class="ml-4 mt-1 space-y-1 border-l border-black/10 pl-2 dark:border-white/10"> <li class="list-none  text-sm 2"> <div class="text-black/70 dark:text-white/70"> <a href="#rlocalllama--rlocalllm-recap" target="_self" class="inline-block decoration-black/30 dark:decoration-white/30 hover:decoration-black/50 focus-visible:decoration-black/50 dark:hover:decoration-white/50 dark:focus-visible:decoration-white/50 text-current hover:text-black focus-visible:text-black dark:hover:text-white dark:focus-visible:text-white transition-colors duration-300 ease-in-out underline underline-offset-[3px]"> /r/LocalLlama + /r/localLLM Recap </a> </div> <ul class="ml-4 mt-1 space-y-1 border-l border-black/10 pl-2 dark:border-white/10"> <li class="list-none  text-sm 2"> <div class="text-black/70 dark:text-white/70"> <a href="#1-qwen-deepseek-and-gemma-model-updates" target="_self" class="inline-block decoration-black/30 dark:decoration-white/30 hover:decoration-black/50 focus-visible:decoration-black/50 dark:hover:decoration-white/50 dark:focus-visible:decoration-white/50 text-current hover:text-black focus-visible:text-black dark:hover:text-white dark:focus-visible:text-white transition-colors duration-300 ease-in-out underline underline-offset-[3px]"> 1. Qwen, DeepSeek, and Gemma Model Updates </a> </div>  </li><li class="list-none  text-sm 2"> <div class="text-black/70 dark:text-white/70"> <a href="#2-local-multimodal-agent-workflows" target="_self" class="inline-block decoration-black/30 dark:decoration-white/30 hover:decoration-black/50 focus-visible:decoration-black/50 dark:hover:decoration-white/50 dark:focus-visible:decoration-white/50 text-current hover:text-black focus-visible:text-black dark:hover:text-white dark:focus-visible:text-white transition-colors duration-300 ease-in-out underline underline-offset-[3px]"> 2. Local Multimodal Agent Workflows </a> </div>  </li><li class="list-none  text-sm 2"> <div class="text-black/70 dark:text-white/70"> <a href="#3-high-memory-local-llm-hardware-reality" target="_self" class="inline-block decoration-black/30 dark:decoration-white/30 hover:decoration-black/50 focus-visible:decoration-black/50 dark:hover:decoration-white/50 dark:focus-visible:decoration-white/50 text-current hover:text-black focus-visible:text-black dark:hover:text-white dark:focus-visible:text-white transition-colors duration-300 ease-in-out underline underline-offset-[3px]"> 3. High-Memory Local LLM Hardware Reality </a> </div>  </li> </ul> </li><li class="list-none  text-sm 2"> <div class="text-black/70 dark:text-white/70"> <a href="#less-technical-ai-subreddit-recap" target="_self" class="inline-block decoration-black/30 dark:decoration-white/30 hover:decoration-black/50 focus-visible:decoration-black/50 dark:hover:decoration-white/50 dark:focus-visible:decoration-white/50 text-current hover:text-black focus-visible:text-black dark:hover:text-white dark:focus-visible:text-white transition-colors duration-300 ease-in-out underline underline-offset-[3px]"> Less Technical AI Subreddit Recap </a> </div> <ul class="ml-4 mt-1 space-y-1 border-l border-black/10 pl-2 dark:border-white/10"> <li class="list-none  text-sm 2"> <div class="text-black/70 dark:text-white/70"> <a href="#1-claude-fable-51-release-and-benchmark-scrutiny" target="_self" class="inline-block decoration-black/30 dark:decoration-white/30 hover:decoration-black/50 focus-visible:decoration-black/50 dark:hover:decoration-white/50 dark:focus-visible:decoration-white/50 text-current hover:text-black focus-visible:text-black dark:hover:text-white dark:focus-visible:text-white transition-colors duration-300 ease-in-out underline underline-offset-[3px]"> 1. Claude Fable 5.1 Release and Benchmark Scrutiny </a> </div>  </li><li class="list-none  text-sm 2"> <div class="text-black/70 dark:text-white/70"> <a href="#2-anthropic-max-plan-usage-limit-controversy" target="_self" class="inline-block decoration-black/30 dark:decoration-white/30 hover:decoration-black/50 focus-visible:decoration-black/50 dark:hover:decoration-white/50 dark:focus-visible:decoration-white/50 text-current hover:text-black focus-visible:text-black dark:hover:text-white dark:focus-visible:text-white transition-colors duration-300 ease-in-out underline underline-offset-[3px]"> 2. Anthropic Max Plan Usage-Limit Controversy </a> </div>  </li><li class="list-none  text-sm 2"> <div class="text-black/70 dark:text-white/70"> <a href="#3-chatgpt-scale-and-eu-dsa-regulation" target="_self" class="inline-block decoration-black/30 dark:decoration-white/30 hover:decoration-black/50 focus-visible:decoration-black/50 dark:hover:decoration-white/50 dark:focus-visible:decoration-white/50 text-current hover:text-black focus-visible:text-black dark:hover:text-white dark:focus-visible:text-white transition-colors duration-300 ease-in-out underline underline-offset-[3px]"> 3. ChatGPT Scale and EU DSA Regulation </a> </div>  </li> </ul> </li> </ul> </li> </ul> </nav> </details> </div> <!-- Mobile TOC markup - Toggle button will be added to body via JS --> <div class="lg:hidden"> <div id="toc-content" class="hidden">  <ul class="space-y-1 py-1"> <li class="list-none mt-2 text-sm "> <div class="font-medium"> <a href="#ai-twitter-recap" target="_self" class="inline-block decoration-black/30 dark:decoration-white/30 hover:decoration-black/50 focus-visible:decoration-black/50 dark:hover:decoration-white/50 dark:focus-visible:decoration-white/50 text-current hover:text-black focus-visible:text-black dark:hover:text-white dark:focus-visible:text-white transition-colors duration-300 ease-in-out underline underline-offset-[3px]"> AI Twitter Recap </a> </div> <ul class="ml-4 mt-1 space-y-1 border-l border-black/10 pl-2 dark:border-white/10"> <li class="list-none  text-sm 2"> <div class="text-black/70 dark:text-white/70"> <a href="#what-happened" target="_self" class="inline-block decoration-black/30 dark:decoration-white/30 hover:decoration-black/50 focus-visible:decoration-black/50 dark:hover:decoration-white/50 dark:focus-visible:decoration-white/50 text-current hover:text-black focus-visible:text-black dark:hover:text-white dark:focus-visible:text-white transition-colors duration-300 ease-in-out underline underline-offset-[3px]"> What happened </a> </div>  </li><li class="list-none  text-sm 2"> <div class="text-black/70 dark:text-white/70"> <a href="#official-claims-and-model-positioning" target="_self" class="inline-block decoration-black/30 dark:decoration-white/30 hover:decoration-black/50 focus-visible:decoration-black/50 dark:hover:decoration-white/50 dark:focus-visible:decoration-white/50 text-current hover:text-black focus-visible:text-black dark:hover:text-white dark:focus-visible:text-white transition-colors duration-300 ease-in-out underline underline-offset-[3px]"> Official claims and model positioning </a> </div>  </li><li class="list-none  text-sm 2"> <div class="text-black/70 dark:text-white/70"> <a href="#technical-details-and-numbers" target="_self" class="inline-block decoration-black/30 dark:decoration-white/30 hover:decoration-black/50 focus-visible:decoration-black/50 dark:hover:decoration-white/50 dark:focus-visible:decoration-white/50 text-current hover:text-black focus-visible:text-black dark:hover:text-white dark:focus-visible:text-white transition-colors duration-300 ease-in-out underline underline-offset-[3px]"> Technical details and numbers </a> </div> <ul class="ml-4 mt-1 space-y-1 border-l border-black/10 pl-2 dark:border-white/10"> <li class="list-none  text-sm 2"> <div class="text-black/70 dark:text-white/70"> <a href="#core-publishedpriced-details" target="_self" class="inline-block decoration-black/30 dark:decoration-white/30 hover:decoration-black/50 focus-visible:decoration-black/50 dark:hover:decoration-white/50 dark:focus-visible:decoration-white/50 text-current hover:text-black focus-visible:text-black dark:hover:text-white dark:focus-visible:text-white transition-colors duration-300 ease-in-out underline underline-offset-[3px]"> Core published/priced details </a> </div>  </li><li class="list-none  text-sm 2"> <div class="text-black/70 dark:text-white/70"> <a href="#artificial-analysis-headline-results" target="_self" class="inline-block decoration-black/30 dark:decoration-white/30 hover:decoration-black/50 focus-visible:decoration-black/50 dark:hover:decoration-white/50 dark:focus-visible:decoration-white/50 text-current hover:text-black focus-visible:text-black dark:hover:text-white dark:focus-visible:text-white transition-colors duration-300 ease-in-out underline underline-offset-[3px]"> Artificial Analysis headline results </a> </div>  </li><li class="list-none  text-sm 2"> <div class="text-black/70 dark:text-white/70"> <a href="#cost-per-task" target="_self" class="inline-block decoration-black/30 dark:decoration-white/30 hover:decoration-black/50 focus-visible:decoration-black/50 dark:hover:decoration-white/50 dark:focus-visible:decoration-white/50 text-current hover:text-black focus-visible:text-black dark:hover:text-white dark:focus-visible:text-white transition-colors duration-300 ease-in-out underline underline-offset-[3px]"> Cost per task </a> </div>  </li><li class="list-none  text-sm 2"> <div class="text-black/70 dark:text-white/70"> <a href="#benchmark-snippets-from-system-card-discussion" target="_self" class="inline-block decoration-black/30 dark:decoration-white/30 hover:decoration-black/50 focus-visible:decoration-black/50 dark:hover:decoration-white/50 dark:focus-visible:decoration-white/50 text-current hover:text-black focus-visible:text-black dark:hover:text-white dark:focus-visible:text-white transition-colors duration-300 ease-in-out underline underline-offset-[3px]"> Benchmark snippets from system-card discussion </a> </div>  </li><li class="list-none  text-sm 2"> <div class="text-black/70 dark:text-white/70"> <a href="#safeguards-and-routing-details" target="_self" class="inline-block decoration-black/30 dark:decoration-white/30 hover:decoration-black/50 focus-visible:decoration-black/50 dark:hover:decoration-white/50 dark:focus-visible:decoration-white/50 text-current hover:text-black focus-visible:text-black dark:hover:text-white dark:focus-visible:text-white transition-colors duration-300 ease-in-out underline underline-offset-[3px]"> Safeguards and routing details </a> </div>  </li> </ul> </li><li class="list-none  text-sm 2"> <div class="text-black/70 dark:text-white/70"> <a href="#facts-vs-opinions" target="_self" class="inline-block decoration-black/30 dark:decoration-white/30 hover:decoration-black/50 focus-visible:decoration-black/50 dark:hover:decoration-white/50 dark:focus-visible:decoration-white/50 text-current hover:text-black focus-visible:text-black dark:hover:text-white dark:focus-visible:text-white transition-colors duration-300 ease-in-out underline underline-offset-[3px]"> Facts vs opinions </a> </div> <ul class="ml-4 mt-1 space-y-1 border-l border-black/10 pl-2 dark:border-white/10"> <li class="list-none  text-sm 2"> <div class="text-black/70 dark:text-white/70"> <a href="#facts-strongly-supported-by-officialindependent-sources" target="_self" class="inline-block decoration-black/30 dark:decoration-white/30 hover:decoration-black/50 focus-visible:decoration-black/50 dark:hover:decoration-white/50 dark:focus-visible:decoration-white/50 text-current hover:text-black focus-visible:text-black dark:hover:text-white dark:focus-visible:text-white transition-colors duration-300 ease-in-out underline underline-offset-[3px]"> Facts strongly supported by official/independent sources </a> </div>  </li><li class="list-none  text-sm 2"> <div class="text-black/70 dark:text-white/70"> <a href="#plausible-but-not-fully-verified-claims" target="_self" class="inline-block decoration-black/30 dark:decoration-white/30 hover:decoration-black/50 focus-visible:decoration-black/50 dark:hover:decoration-white/50 dark:focus-visible:decoration-white/50 text-current hover:text-black focus-visible:text-black dark:hover:text-white dark:focus-visible:text-white transition-colors duration-300 ease-in-out underline underline-offset-[3px]"> Plausible but not fully verified claims </a> </div>  </li><li class="list-none  text-sm 2"> <div class="text-black/70 dark:text-white/70"> <a href="#opinions--subjective-judgments" target="_self" class="inline-block decoration-black/30 dark:decoration-white/30 hover:decoration-black/50 focus-visible:decoration-black/50 dark:hover:decoration-white/50 dark:focus-visible:decoration-white/50 text-current hover:text-black focus-visible:text-black dark:hover:text-white dark:focus-visible:text-white transition-colors duration-300 ease-in-out underline underline-offset-[3px]"> Opinions / subjective judgments </a> </div>  </li> </ul> </li><li class="list-none  text-sm 2"> <div class="text-black/70 dark:text-white/70"> <a href="#different-opinions-and-reactions" target="_self" class="inline-block decoration-black/30 dark:decoration-white/30 hover:decoration-black/50 focus-visible:decoration-black/50 dark:hover:decoration-white/50 dark:focus-visible:decoration-white/50 text-current hover:text-black focus-visible:text-black dark:hover:text-white dark:focus-visible:text-white transition-colors duration-300 ease-in-out underline underline-offset-[3px]"> Different opinions and reactions </a> </div> <ul class="ml-4 mt-1 space-y-1 border-l border-black/10 pl-2 dark:border-white/10"> <li class="list-none  text-sm 2"> <div class="text-black/70 dark:text-white/70"> <a href="#strongly-positive-capability-planning-and-coding-quality" target="_self" class="inline-block decoration-black/30 dark:decoration-white/30 hover:decoration-black/50 focus-visible:decoration-black/50 dark:hover:decoration-white/50 dark:focus-visible:decoration-white/50 text-current hover:text-black focus-visible:text-black dark:hover:text-white dark:focus-visible:text-white transition-colors duration-300 ease-in-out underline underline-offset-[3px]"> Strongly positive: capability, planning, and coding quality </a> </div>  </li><li class="list-none  text-sm 2"> <div class="text-black/70 dark:text-white/70"> <a href="#positive-but-measured-frontier-lead-with-caveats" target="_self" class="inline-block decoration-black/30 dark:decoration-white/30 hover:decoration-black/50 focus-visible:decoration-black/50 dark:hover:decoration-white/50 dark:focus-visible:decoration-white/50 text-current hover:text-black focus-visible:text-black dark:hover:text-white dark:focus-visible:text-white transition-colors duration-300 ease-in-out underline underline-offset-[3px]"> Positive but measured: frontier lead with caveats </a> </div>  </li><li class="list-none  text-sm 2"> <div class="text-black/70 dark:text-white/70"> <a href="#critical-rate-limits-safeguards-and-subscription-experience" target="_self" class="inline-block decoration-black/30 dark:decoration-white/30 hover:decoration-black/50 focus-visible:decoration-black/50 dark:hover:decoration-white/50 dark:focus-visible:decoration-white/50 text-current hover:text-black focus-visible:text-black dark:hover:text-white dark:focus-visible:text-white transition-colors duration-300 ease-in-out underline underline-offset-[3px]"> Critical: rate limits, safeguards, and subscription experience </a> </div>  </li><li class="list-none  text-sm 2"> <div class="text-black/70 dark:text-white/70"> <a href="#skepticalneutral-benchmark-interpretation-and-naming-confusion" target="_self" class="inline-block decoration-black/30 dark:decoration-white/30 hover:decoration-black/50 focus-visible:decoration-black/50 dark:hover:decoration-white/50 dark:focus-visible:decoration-white/50 text-current hover:text-black focus-visible:text-black dark:hover:text-white dark:focus-visible:text-white transition-colors duration-300 ease-in-out underline underline-offset-[3px]"> Skeptical/neutral: benchmark interpretation and naming confusion </a> </div>  </li> </ul> </li><li class="list-none  text-sm 2"> <div class="text-black/70 dark:text-white/70"> <a href="#writing-quality-and-the-claudese-discussion" target="_self" class="inline-block decoration-black/30 dark:decoration-white/30 hover:decoration-black/50 focus-visible:decoration-black/50 dark:hover:decoration-white/50 dark:focus-visible:decoration-white/50 text-current hover:text-black focus-visible:text-black dark:hover:text-white dark:focus-visible:text-white transition-colors duration-300 ease-in-out underline underline-offset-[3px]"> Writing quality and the “Claudese” discussion </a> </div>  </li><li class="list-none  text-sm 2"> <div class="text-black/70 dark:text-white/70"> <a href="#the-safeguards-story-improved-enterprise-viability-but-also-false-positives" target="_self" class="inline-block decoration-black/30 dark:decoration-white/30 hover:decoration-black/50 focus-visible:decoration-black/50 dark:hover:decoration-white/50 dark:focus-visible:decoration-white/50 text-current hover:text-black focus-visible:text-black dark:hover:text-white dark:focus-visible:text-white transition-colors duration-300 ease-in-out underline underline-offset-[3px]"> The safeguards story: improved enterprise viability, but also false positives </a> </div>  </li><li class="list-none  text-sm 2"> <div class="text-black/70 dark:text-white/70"> <a href="#mythos-vs-fable-same-model-or-separate-products" target="_self" class="inline-block decoration-black/30 dark:decoration-white/30 hover:decoration-black/50 focus-visible:decoration-black/50 dark:hover:decoration-white/50 dark:focus-visible:decoration-white/50 text-current hover:text-black focus-visible:text-black dark:hover:text-white dark:focus-visible:text-white transition-colors duration-300 ease-in-out underline underline-offset-[3px]"> Mythos vs Fable: same model or separate products? </a> </div>  </li><li class="list-none  text-sm 2"> <div class="text-black/70 dark:text-white/70"> <a href="#practical-product-implications" target="_self" class="inline-block decoration-black/30 dark:decoration-white/30 hover:decoration-black/50 focus-visible:decoration-black/50 dark:hover:decoration-white/50 dark:focus-visible:decoration-white/50 text-current hover:text-black focus-visible:text-black dark:hover:text-white dark:focus-visible:text-white transition-colors duration-300 ease-in-out underline underline-offset-[3px]"> Practical product implications </a> </div> <ul class="ml-4 mt-1 space-y-1 border-l border-black/10 pl-2 dark:border-white/10"> <li class="list-none  text-sm 2"> <div class="text-black/70 dark:text-white/70"> <a href="#why-the-cache-read-cut-matters" target="_self" class="inline-block decoration-black/30 dark:decoration-white/30 hover:decoration-black/50 focus-visible:decoration-black/50 dark:hover:decoration-white/50 dark:focus-visible:decoration-white/50 text-current hover:text-black focus-visible:text-black dark:hover:text-white dark:focus-visible:text-white transition-colors duration-300 ease-in-out underline underline-offset-[3px]"> Why the cache-read cut matters </a> </div>  </li><li class="list-none  text-sm 2"> <div class="text-black/70 dark:text-white/70"> <a href="#why-zero-data-retention-and-efs-matter" target="_self" class="inline-block decoration-black/30 dark:decoration-white/30 hover:decoration-black/50 focus-visible:decoration-black/50 dark:hover:decoration-white/50 dark:focus-visible:decoration-white/50 text-current hover:text-black focus-visible:text-black dark:hover:text-white dark:focus-visible:text-white transition-colors duration-300 ease-in-out underline underline-offset-[3px]"> Why zero data retention and EFS matter </a> </div>  </li><li class="list-none  text-sm 2"> <div class="text-black/70 dark:text-white/70"> <a href="#why-subscription-complaints-matter" target="_self" class="inline-block decoration-black/30 dark:decoration-white/30 hover:decoration-black/50 focus-visible:decoration-black/50 dark:hover:decoration-white/50 dark:focus-visible:decoration-white/50 text-current hover:text-black focus-visible:text-black dark:hover:text-white dark:focus-visible:text-white transition-colors duration-300 ease-in-out underline underline-offset-[3px]"> Why subscription complaints matter </a> </div>  </li> </ul> </li><li class="list-none  text-sm 2"> <div class="text-black/70 dark:text-white/70"> <a href="#competitive-context" target="_self" class="inline-block decoration-black/30 dark:decoration-white/30 hover:decoration-black/50 focus-visible:decoration-black/50 dark:hover:decoration-white/50 dark:focus-visible:decoration-white/50 text-current hover:text-black focus-visible:text-black dark:hover:text-white dark:focus-visible:text-white transition-colors duration-300 ease-in-out underline underline-offset-[3px]"> Competitive context </a> </div>  </li><li class="list-none  text-sm 2"> <div class="text-black/70 dark:text-white/70"> <a href="#context-why-this-release-mattered-more-than-a-normal-point-update" target="_self" class="inline-block decoration-black/30 dark:decoration-white/30 hover:decoration-black/50 focus-visible:decoration-black/50 dark:hover:decoration-white/50 dark:focus-visible:decoration-white/50 text-current hover:text-black focus-visible:text-black dark:hover:text-white dark:focus-visible:text-white transition-colors duration-300 ease-in-out underline underline-offset-[3px]"> Context: why this release mattered more than a normal point update </a> </div> <ul class="ml-4 mt-1 space-y-1 border-l border-black/10 pl-2 dark:border-white/10"> <li class="list-none  text-sm 2"> <div class="text-black/70 dark:text-white/70"> <a href="#1-anthropics-reputation-had-become-bifurcated" target="_self" class="inline-block decoration-black/30 dark:decoration-white/30 hover:decoration-black/50 focus-visible:decoration-black/50 dark:hover:decoration-white/50 dark:focus-visible:decoration-white/50 text-current hover:text-black focus-visible:text-black dark:hover:text-white dark:focus-visible:text-white transition-colors duration-300 ease-in-out underline underline-offset-[3px]"> 1. Anthropic’s reputation had become bifurcated </a> </div>  </li><li class="list-none  text-sm 2"> <div class="text-black/70 dark:text-white/70"> <a href="#2-agents-changed-what-people-care-about-in-pricing" target="_self" class="inline-block decoration-black/30 dark:decoration-white/30 hover:decoration-black/50 focus-visible:decoration-black/50 dark:hover:decoration-white/50 dark:focus-visible:decoration-white/50 text-current hover:text-black focus-visible:text-black dark:hover:text-white dark:focus-visible:text-white transition-colors duration-300 ease-in-out underline underline-offset-[3px]"> 2. Agents changed what people care about in pricing </a> </div>  </li><li class="list-none  text-sm 2"> <div class="text-black/70 dark:text-white/70"> <a href="#3-safety-is-becoming-product-architecture-not-just-policy" target="_self" class="inline-block decoration-black/30 dark:decoration-white/30 hover:decoration-black/50 focus-visible:decoration-black/50 dark:hover:decoration-white/50 dark:focus-visible:decoration-white/50 text-current hover:text-black focus-visible:text-black dark:hover:text-white dark:focus-visible:text-white transition-colors duration-300 ease-in-out underline underline-offset-[3px]"> 3. Safety is becoming product architecture, not just policy </a> </div>  </li> </ul> </li><li class="list-none  text-sm 2"> <div class="text-black/70 dark:text-white/70"> <a href="#notable-demos-and-ecosystem-reactions" target="_self" class="inline-block decoration-black/30 dark:decoration-white/30 hover:decoration-black/50 focus-visible:decoration-black/50 dark:hover:decoration-white/50 dark:focus-visible:decoration-white/50 text-current hover:text-black focus-visible:text-black dark:hover:text-white dark:focus-visible:text-white transition-colors duration-300 ease-in-out underline underline-offset-[3px]"> Notable demos and ecosystem reactions </a> </div>  </li><li class="list-none  text-sm 2"> <div class="text-black/70 dark:text-white/70"> <a href="#open-questions-raised-by-the-community" target="_self" class="inline-block decoration-black/30 dark:decoration-white/30 hover:decoration-black/50 focus-visible:decoration-black/50 dark:hover:decoration-white/50 dark:focus-visible:decoration-white/50 text-current hover:text-black focus-visible:text-black dark:hover:text-white dark:focus-visible:text-white transition-colors duration-300 ease-in-out underline underline-offset-[3px]"> Open questions raised by the community </a> </div>  </li> </ul> </li><li class="list-none mt-2 text-sm "> <div class="font-medium"> <a href="#ai-reddit-recap" target="_self" class="inline-block decoration-black/30 dark:decoration-white/30 hover:decoration-black/50 focus-visible:decoration-black/50 dark:hover:decoration-white/50 dark:focus-visible:decoration-white/50 text-current hover:text-black focus-visible:text-black dark:hover:text-white dark:focus-visible:text-white transition-colors duration-300 ease-in-out underline underline-offset-[3px]"> AI Reddit Recap </a> </div> <ul class="ml-4 mt-1 space-y-1 border-l border-black/10 pl-2 dark:border-white/10"> <li class="list-none  text-sm 2"> <div class="text-black/70 dark:text-white/70"> <a href="#rlocalllama--rlocalllm-recap" target="_self" class="inline-block decoration-black/30 dark:decoration-white/30 hover:decoration-black/50 focus-visible:decoration-black/50 dark:hover:decoration-white/50 dark:focus-visible:decoration-white/50 text-current hover:text-black focus-visible:text-black dark:hover:text-white dark:focus-visible:text-white transition-colors duration-300 ease-in-out underline underline-offset-[3px]"> /r/LocalLlama + /r/localLLM Recap </a> </div> <ul class="ml-4 mt-1 space-y-1 border-l border-black/10 pl-2 dark:border-white/10"> <li class="list-none  text-sm 2"> <div class="text-black/70 dark:text-white/70"> <a href="#1-qwen-deepseek-and-gemma-model-updates" target="_self" class="inline-block decoration-black/30 dark:decoration-white/30 hover:decoration-black/50 focus-visible:decoration-black/50 dark:hover:decoration-white/50 dark:focus-visible:decoration-white/50 text-current hover:text-black focus-visible:text-black dark:hover:text-white dark:focus-visible:text-white transition-colors duration-300 ease-in-out underline underline-offset-[3px]"> 1. Qwen, DeepSeek, and Gemma Model Updates </a> </div>  </li><li class="list-none  text-sm 2"> <div class="text-black/70 dark:text-white/70"> <a href="#2-local-multimodal-agent-workflows" target="_self" class="inline-block decoration-black/30 dark:decoration-white/30 hover:decoration-black/50 focus-visible:decoration-black/50 dark:hover:decoration-white/50 dark:focus-visible:decoration-white/50 text-current hover:text-black focus-visible:text-black dark:hover:text-white dark:focus-visible:text-white transition-colors duration-300 ease-in-out underline underline-offset-[3px]"> 2. Local Multimodal Agent Workflows </a> </div>  </li><li class="list-none  text-sm 2"> <div class="text-black/70 dark:text-white/70"> <a href="#3-high-memory-local-llm-hardware-reality" target="_self" class="inline-block decoration-black/30 dark:decoration-white/30 hover:decoration-black/50 focus-visible:decoration-black/50 dark:hover:decoration-white/50 dark:focus-visible:decoration-white/50 text-current hover:text-black focus-visible:text-black dark:hover:text-white dark:focus-visible:text-white transition-colors duration-300 ease-in-out underline underline-offset-[3px]"> 3. High-Memory Local LLM Hardware Reality </a> </div>  </li> </ul> </li><li class="list-none  text-sm 2"> <div class="text-black/70 dark:text-white/70"> <a href="#less-technical-ai-subreddit-recap" target="_self" class="inline-block decoration-black/30 dark:decoration-white/30 hover:decoration-black/50 focus-visible:decoration-black/50 dark:hover:decoration-white/50 dark:focus-visible:decoration-white/50 text-current hover:text-black focus-visible:text-black dark:hover:text-white dark:focus-visible:text-white transition-colors duration-300 ease-in-out underline underline-offset-[3px]"> Less Technical AI Subreddit Recap </a> </div> <ul class="ml-4 mt-1 space-y-1 border-l border-black/10 pl-2 dark:border-white/10"> <li class="list-none  text-sm 2"> <div class="text-black/70 dark:text-white/70"> <a href="#1-claude-fable-51-release-and-benchmark-scrutiny" target="_self" class="inline-block decoration-black/30 dark:decoration-white/30 hover:decoration-black/50 focus-visible:decoration-black/50 dark:hover:decoration-white/50 dark:focus-visible:decoration-white/50 text-current hover:text-black focus-visible:text-black dark:hover:text-white dark:focus-visible:text-white transition-colors duration-300 ease-in-out underline underline-offset-[3px]"> 1. Claude Fable 5.1 Release and Benchmark Scrutiny </a> </div>  </li><li class="list-none  text-sm 2"> <div class="text-black/70 dark:text-white/70"> <a href="#2-anthropic-max-plan-usage-limit-controversy" target="_self" class="inline-block decoration-black/30 dark:decoration-white/30 hover:decoration-black/50 focus-visible:decoration-black/50 dark:hover:decoration-white/50 dark:focus-visible:decoration-white/50 text-current hover:text-black focus-visible:text-black dark:hover:text-white dark:focus-visible:text-white transition-colors duration-300 ease-in-out underline underline-offset-[3px]"> 2. Anthropic Max Plan Usage-Limit Controversy </a> </div>  </li><li class="list-none  text-sm 2"> <div class="text-black/70 dark:text-white/70"> <a href="#3-chatgpt-scale-and-eu-dsa-regulation" target="_self" class="inline-block decoration-black/30 dark:decoration-white/30 hover:decoration-black/50 focus-visible:decoration-black/50 dark:hover:decoration-white/50 dark:focus-visible:decoration-white/50 text-current hover:text-black focus-visible:text-black dark:hover:text-white dark:focus-visible:text-white transition-colors duration-300 ease-in-out underline underline-offset-[3px]"> 3. ChatGPT Scale and EU DSA Regulation </a> </div>  </li> </ul> </li> </ul> </li> </ul> </div> </div> <script>
+  // Initialize the mobile TOC functionality
+  function initMobileToc() {
+    // Create portal elements - ensure they're added at document root
+    function createTocPortal() {
+      // Clean up any existing portal elements first
+      const existingToggle = document.getElementById('toc-toggle');
+      const existingDrawer = document.getElementById('toc-drawer');
+      const existingBackdrop = document.getElementById('toc-backdrop');
+      
+      if (existingToggle) existingToggle.remove();
+      if (existingDrawer) existingDrawer.remove();
+      if (existingBackdrop) existingBackdrop.remove();
+      
+      // Get TOC content
+      const tocContent = document.getElementById('toc-content');
+      if (!tocContent) return false;
+      
+      // Create toggle button
+      const tocToggle = document.createElement('button');
+      tocToggle.id = 'toc-toggle';
+      tocToggle.className = 'lg:hidden fixed left-0 top-1/2 z-40 -translate-y-1/2 bg-white/70 dark:bg-neutral-800/70 py-4 px-2 rounded-r-lg shadow-md transition-transform duration-300 ease-in-out border border-black/10 dark:border-white/10';
+      tocToggle.setAttribute('aria-label', 'Toggle Table of Contents');
+      tocToggle.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M3 5a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 5a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 5a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" clip-rule="evenodd" /></svg>';
+      
+      // Create backdrop
+      const tocBackdrop = document.createElement('div');
+      tocBackdrop.id = 'toc-backdrop';
+      tocBackdrop.className = 'fixed inset-0 z-40 bg-black/20 backdrop-blur-xs invisible';
+      tocBackdrop.setAttribute('aria-hidden', 'true');
+      
+      // Create drawer
+      const tocDrawer = document.createElement('div');
+      tocDrawer.id = 'toc-drawer';
+      tocDrawer.className = 'fixed left-0 top-0 z-50 h-full w-0 bg-white dark:bg-neutral-900 shadow-lg transition-all duration-300 ease-in-out overflow-hidden';
+      
+      const drawerInner = document.createElement('div');
+      drawerInner.className = 'relative h-full w-64 max-w-[80vw] border-r border-black/15 dark:border-white/20 p-4';
+      
+      // Create close button
+      const closeButton = document.createElement('button');
+      closeButton.id = 'toc-close';
+      closeButton.className = 'absolute right-3 top-3 text-black/60 dark:text-white/60 p-1';
+      closeButton.setAttribute('aria-label', 'Close Table of Contents');
+      closeButton.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 8.586l3.293-3.293a1 1 0 111.414 1.414L11.414 10l3.293 3.293a1 1 0 01-1.414 1.414L10 11.414l-3.293 3.293a1 1 0 01-1.414-1.414L8.586 10 5.293 6.707a1 1 0 111.414-1.414L10 8.586z" clip-rule="evenodd" /></svg>';
+      
+      // Create title
+      const title = document.createElement('h2');
+      title.className = 'mb-4 text-base font-semibold uppercase tracking-wider text-black/60 dark:text-white/60';
+      title.textContent = 'Table of Contents';
+      
+      // Create nav container
+      const nav = document.createElement('nav');
+      nav.className = '';
+      
+      // Clone the TOC content to the nav
+      const ul = document.createElement('ul');
+      ul.className = 'space-y-1 py-1 overflow-y-auto max-h-[calc(100vh-6rem)]';
+      ul.innerHTML = tocContent.querySelector('ul')?.innerHTML || '';
+      
+      // Append elements
+      nav.appendChild(ul);
+      drawerInner.appendChild(closeButton);
+      drawerInner.appendChild(title);
+      drawerInner.appendChild(nav);
+      tocDrawer.appendChild(drawerInner);
+      
+      // Add to document body
+      document.body.appendChild(tocToggle);
+      document.body.appendChild(tocDrawer);
+      document.body.appendChild(tocBackdrop);
+      
+      return true;
+    }
+    
+    // Create the TOC portal elements
+    if (!createTocPortal()) return;
+    
+    // Now get references to the newly created elements
+    const tocToggle = document.getElementById('toc-toggle');
+    const tocDrawer = document.getElementById('toc-drawer');
+    const tocClose = document.getElementById('toc-close');
+    const tocBackdrop = document.getElementById('toc-backdrop');
+    
+    if (!tocToggle || !tocDrawer || !tocClose || !tocBackdrop) return;
+    
+    let touchStartX = 0;
+    let touchEndX = 0;
+    
+    // Open TOC drawer
+    function openTocDrawer() {
+      tocDrawer.style.width = tocDrawer.querySelector('div').offsetWidth + 'px';
+      tocBackdrop.classList.remove('invisible');
+      document.body.style.overflow = 'hidden'; // Prevent scrolling
+    }
+    
+    // Close TOC drawer
+    function closeTocDrawer() {
+      tocDrawer.style.width = '0';
+      tocBackdrop.classList.add('invisible');
+      document.body.style.overflow = ''; // Re-enable scrolling
+    }
+    
+    // Toggle button click handler
+    tocToggle.addEventListener('click', openTocDrawer);
+    
+    // Close button click handler
+    tocClose.addEventListener('click', closeTocDrawer);
+    
+    // Backdrop click handler
+    tocBackdrop.addEventListener('click', closeTocDrawer);
+    
+    // Handle TOC links clicks - close drawer after navigation
+    const tocLinks = tocDrawer.querySelectorAll('a[href^="#"]');
+    tocLinks.forEach(link => {
+      link.addEventListener('click', (e) => {
+        e.preventDefault();
+        
+        const targetId = link.getAttribute('href')?.substring(1) || '';
+        if (!targetId) return;
+        
+        const targetElement = document.getElementById(targetId);
+        if (!targetElement) return;
+        
+        // Get the header height for offset (add some extra padding)
+        const headerEl = document.querySelector('header');
+        if (!headerEl) return;
+        
+        const headerHeight = headerEl.offsetHeight + 16;
+        
+        // Scroll to the element with offset
+        window.scrollTo({
+          top: targetElement.offsetTop - headerHeight,
+          behavior: 'smooth'
+        });
+        
+        // Update URL without refreshing the page
+        history.pushState('', '', `#${targetId}`);
+        
+        // Close the drawer
+        closeTocDrawer();
+      });
+    });
+    
+    // Swipe to open
+    document.addEventListener('touchstart', (e) => {
+      touchStartX = e.changedTouches[0].screenX;
+    }, { passive: true });
+    
+    document.addEventListener('touchend', (e) => {
+      touchEndX = e.changedTouches[0].screenX;
+      
+      // Swipe right to open TOC drawer (when near left edge)
+      if (touchStartX < 30 && touchEndX > touchStartX + 50) {
+        openTocDrawer();
+      }
+      
+      // Swipe left to close TOC drawer
+      if (tocDrawer && tocDrawer.style.width !== '0px' && 
+          touchEndX < touchStartX - 50) {
+        closeTocDrawer();
+      }
+    }, { passive: true });
+    
+    // Close on escape key
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && tocDrawer.style.width !== '0px') {
+        closeTocDrawer();
+      }
+    });
+  }
+
+  // Initialize on DOMContentLoaded and after Astro page transitions
+  document.addEventListener('DOMContentLoaded', initMobileToc);
+  document.addEventListener('astro:after-swap', initMobileToc);
+  document.addEventListener('astro:page-load', initMobileToc);
+</script>  </aside> <main id="main-content" role="main" aria-label="Issue #09: Claude Fable 5.1 and Claude Mythos 5.1" class="pt-0 order-1 w-full lg:order-2 lg:w-4/5" data-astro-cid-h5udtq26> <article class="content-area" data-astro-cid-h5udtq26> <p><strong>a quiet day.</strong></p>
+<blockquote>
+<p>AI News for 8/31/2026-9/1/2026. We checked 12 subreddits, <a href="https://twitter.com/i/lists/1585430245762441216">544 Twitters</a> and no further Discords. <a href="https://news.smol.ai/">AINews’ website</a> lets you search all past issues. As a reminder, <a href="https://www.latent.space/p/2026">AINews is now a section of Latent Space</a>. You can <a href="https://support.substack.com/hc/en-us/articles/8914938285204-How-do-I-subscribe-to-or-unsubscribe-from-a-section-on-Substack">opt in/out</a> of email frequencies!</p>
+</blockquote>
+<hr>
+<h1 id="ai-twitter-recap">AI Twitter Recap</h1>
+<p><strong>Top Story: Fable 5.1 and Mythos 5.1 release and reactions</strong></p>
+<h2 id="what-happened">What happened</h2>
+<p><strong>Anthropic launched Claude Fable 5.1 and Claude Mythos 5.1 as its new flagship models for coding and knowledge work.</strong></p>
+<ul>
+<li>Anthropic announced the release directly, positioning them as “the world’s most advanced models for coding and knowledge work” via <a href="https://x.com/claudeai/status/2094848572143407483">@claudeai</a></li>
+<li>Anthropic product/engineering voices framed Fable 5.1 specifically around autonomous, multi-step work: “complex, multi-step work that runs on its own,” with emphasis on coding, knowledge work, and long-running problem solving via <a href="https://x.com/mikeyk/status/2094863293555114157">@mikeyk</a></li>
+<li>Anthropic kept list pricing for Fable 5.1 at <strong>$10 / $50 / $12.5 per million tokens</strong> for input / output / cache write, while cutting <strong>cache read price by 75% to $0.25 / MTok</strong>, again noted by <a href="https://x.com/mikeyk/status/2094863295459291562">@mikeyk</a>, <a href="https://x.com/Teknium/status/2094861678785806595">@Teknium</a>, and independently quantified by <a href="https://x.com/ArtificialAnlys/status/2094881171066978525">@ArtificialAnlys</a></li>
+<li>Third-party platforms moved quickly: Perplexity added Fable 5.1 to Computer for Pro/Max users and published internal eval results via <a href="https://x.com/perplexity_ai/status/2094865042873467261">@perplexity_ai</a>; Nous Portal/Hermes Agent and OpenRouter also added support via <a href="https://x.com/Teknium/status/2094856608002310543">@Teknium</a>; T3 Code shipped support via <a href="https://x.com/theo/status/2094923123967836243">@theo</a></li>
+<li>Early benchmark screenshots and system-card excerpts drove much of the discussion, especially around <strong>Terminal-Bench-Science, SWE-family evals, HLE, FrontierCode, and Artificial Analysis</strong> via <a href="https://x.com/StevenDillmann/status/2094860189493317756">@StevenDillmann</a>, <a href="https://x.com/scaling01/status/2094860588451065920">@scaling01</a>, <a href="https://x.com/ArtificialAnlys/status/2094881171066978525">@ArtificialAnlys</a></li>
+<li>A key interpretive claim emerged from community analysis: <strong>Fable and Mythos 5.1 may be the same underlying weights, with different safety/routing behavior</strong>, not different base models, per <a href="https://x.com/eliebakouch/status/2094854917395517687">@eliebakouch</a> and later <a href="https://x.com/nrehiew_/status/2094897380277772762">@nrehiew_</a></li>
+<li>User reactions split along multiple axes: very strong praise for coding/planning ability and tone, but complaints around <strong>rate limits, safeguards false positives, subscription UX, and unclear benchmark presentation</strong> via <a href="https://x.com/danshipper/status/2094848951568474186">@danshipper</a>, <a href="https://x.com/theo/status/2094933716464541918">@theo</a>, <a href="https://x.com/kimmonismus/status/2094896358008442960">@kimmonismus</a>, <a href="https://x.com/GregKamradt/status/2094894689325560172">@GregKamradt</a>, <a href="https://x.com/kylebrussell/status/2094886149412016359">@kylebrussell</a>, and <a href="https://x.com/eliebakouch/status/2094913832623714598">@eliebakouch</a></li>
+</ul>
+<h2 id="official-claims-and-model-positioning">Official claims and model positioning</h2>
+<p>Anthropic’s own messaging was straightforward: Fable 5.1 is for difficult, delegated, long-horizon work, while Mythos 5.1 is the paired release for knowledge work. The main official launch post is <a href="https://x.com/claudeai/status/2094848572143407483">@claudeai</a>. Supporting commentary from Anthropic staff emphasized:</p>
+<ul>
+<li><strong>autonomous long-running tasks</strong> via <a href="https://x.com/mikeyk/status/2094863293555114157">@mikeyk</a></li>
+<li><strong>improved honesty / better failure reporting</strong> (“when it’s stuck it says so instead of reporting success”) via <a href="https://x.com/mikeyk/status/2094863295459291562">@mikeyk</a></li>
+<li>new enterprise-oriented controls, especially <strong>Enterprise Frontier Safeguards (EFS)</strong>, positioned as “ZDR++” for agent observability in enterprise environments via <a href="https://x.com/alexalbert__/status/2094889286990446769">@alexalbert__</a></li>
+<li><strong>zero-data-retention support</strong> highlighted by users as an important adoption unlock, especially <a href="https://x.com/danshipper/status/2094848951568474186">@danshipper</a></li>
+</ul>
+<p>The official pitch was not merely “better benchmark model,” but “usable autonomous worker” — fast enough, cheap enough in cached agent settings, and enterprise-compatible enough to deploy.</p>
+<p>That positioning mattered because Fable 5 had a reputation — repeated in reactions — for being powerful but sometimes impractical. Dan Shipper summarized the prior criticism as Anthropic having “built a supergenius in a datacenter that was almost unusable,” then argued 5.1 addresses slowness, verbosity, and awkward tone via <a href="https://x.com/danshipper/status/2094848951568474186">@danshipper</a>.</p>
+<h2 id="technical-details-and-numbers">Technical details and numbers</h2>
+<h3 id="core-publishedpriced-details">Core published/priced details</h3>
+<p>From <a href="https://x.com/ArtificialAnlys/status/2094881171066978525">@ArtificialAnlys</a>:</p>
+<ul>
+<li><strong>Context window:</strong> <strong>1 million tokens</strong></li>
+<li><strong>Modalities:</strong> text + image inputs</li>
+<li><strong>Pricing:</strong> unchanged from Fable 5 for
+<ul>
+<li>input: <strong>$10 / 1M tokens</strong></li>
+<li>output: <strong>$50 / 1M tokens</strong></li>
+<li>cache write: <strong>$12.5 / 1M tokens</strong></li>
+</ul>
+</li>
+<li><strong>Cache read price:</strong> reduced from <strong>$1.00 to $0.25 / 1M tokens</strong> (<strong>75% cut</strong>)</li>
+</ul>
+<p>Artificial Analysis notes this cache cut materially benefits agentic workloads where much of the prompt is repeatedly re-read from cache.</p>
+<h3 id="artificial-analysis-headline-results">Artificial Analysis headline results</h3>
+<p>Also from <a href="https://x.com/ArtificialAnlys/status/2094881171066978525">@ArtificialAnlys</a>:</p>
+<ul>
+<li><strong>Artificial Analysis Intelligence Index:</strong> <strong>66</strong> at max effort
+<ul>
+<li>ahead of:
+<ul>
+<li>Claude Opus 5 max: <strong>63</strong></li>
+<li>Claude Fable 5 max: <strong>62</strong></li>
+<li>GPT-5.6 Sol max: <strong>61</strong></li>
+<li>Grok 4.6 high: <strong>61</strong></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><strong>HLE:</strong> <strong>59.1%</strong>
+<ul>
+<li>previous best cited: Fable 5 at <strong>55.5%</strong></li>
+</ul>
+</li>
+<li><strong>Terminal-Bench v2.1:</strong> <strong>91.4%</strong></li>
+<li><strong>SciCode:</strong> <strong>62.0%</strong></li>
+<li><strong>τ³-Banking:</strong> <strong>+9 points over Fable 5</strong></li>
+<li><strong>GDPval-AA v2:</strong> <strong>1853 Elo</strong>, <strong>+130 over Fable 5</strong></li>
+<li><strong>AA-Briefcase:</strong> <strong>1694 Elo</strong>, <strong>+122 over Fable 5</strong></li>
+</ul>
+<p>But AA also adds an important qualification:</p>
+<ul>
+<li>On agentic knowledge work, Fable 5.1 is <strong>effectively tied with Opus 5</strong> on some measures, not obviously dominant</li>
+<li>Their eval used Anthropic’s <strong>default server-side fallback</strong>, with safety-flagged requests routed to <strong>Claude Opus 4.8 or Claude Opus 5</strong></li>
+<li>Fallback accounted for <strong>~4% of output tokens</strong> across the Intelligence Index</li>
+</ul>
+<p>That fallback detail became one of the most consequential technical caveats in community interpretation.</p>
+<h3 id="cost-per-task">Cost per task</h3>
+<p>Artificial Analysis also reported:</p>
+<ul>
+<li><strong>Fable 5.1 max:</strong> <strong>$3.76/task</strong></li>
+<li><strong>Fable 5 max:</strong> lower, so 5.1 is <strong>20% more expensive per task</strong></li>
+<li>reason: Fable 5.1 uses <strong>~1.7× output tokens</strong></li>
+<li>cache cut saves <strong>~$1.40 per task</strong></li>
+<li><strong>Fable 5.1 xhigh:</strong> score <strong>65</strong>, cost <strong>$2.72/task</strong></li>
+<li><strong>Opus 5 max:</strong> score <strong>63</strong>, cost <strong>$2.34/task</strong></li>
+</ul>
+<p>This produced one of the key tensions in the reaction cycle: Fable 5.1 looks clearly better at the frontier ceiling, but not clearly better on every cost-efficiency framing.</p>
+<p>Additional framing from <a href="https://x.com/nicdunz/status/2094900828796596253">@nicdunz</a>:</p>
+<ul>
+<li>Fable 5.1 Max: <strong>66 intelligence</strong>, <strong>140M tokens</strong>, <strong>$3.69/task</strong></li>
+<li>Fable 5 Max: <strong>62</strong>, <strong>83M tokens</strong>, <strong>$3.14/task</strong></li>
+<li>GPT-5.6 Sol Max: <strong>61</strong>, <strong>70M tokens</strong>, <strong>$0.95/task</strong></li>
+</ul>
+<p>This post argues Sol remains the clear winner on intelligence-per-dollar and intelligence-per-token, even if Fable 5.1 wins absolute ceiling.</p>
+<h3 id="benchmark-snippets-from-system-card-discussion">Benchmark snippets from system-card discussion</h3>
+<p>Community members extracted several benchmark points:</p>
+<p>From <a href="https://x.com/StevenDillmann/status/2094860189493317756">@StevenDillmann</a>:</p>
+<ul>
+<li><strong>Terminal-Bench-Science 0.1</strong>
+<ul>
+<li>Fable 5: <strong>24.7%</strong></li>
+<li>Fable 5.1: <strong>52.6%</strong></li>
+<li>more than <strong>2× improvement</strong></li>
+</ul>
+</li>
+</ul>
+<p>From <a href="https://x.com/scaling01/status/2094860588451065920">@scaling01</a>:</p>
+<ul>
+<li><strong>DeepSWE:</strong> <strong>67.4%</strong></li>
+<li><strong>FrontierCode 1.1 Extended:</strong> <strong>63.6%</strong></li>
+<li><strong>FrontierSWE v2:</strong> <strong>0.57</strong>, “highest of the models Proximal evaluated”</li>
+</ul>
+<p>From <a href="https://x.com/Sauers_/status/2094860836162634206">@Sauers_</a>:</p>
+<ul>
+<li><strong>Humanity’s Last Exam:</strong> <strong>65% with tools</strong></li>
+</ul>
+<p>From <a href="https://x.com/perplexity_ai/status/2094865042873467261">@perplexity_ai</a>:</p>
+<ul>
+<li>Perplexity’s August <strong>WANDR</strong> evaluation:
+<ul>
+<li>score <strong>0.601</strong></li>
+<li><strong>$12.76 per task</strong></li>
+<li><strong>21% higher score</strong></li>
+<li><strong>37% lower cost</strong> than Fable 5</li>
+</ul>
+</li>
+</ul>
+<p>From <a href="https://x.com/scaling01/status/2094865962797265046">@scaling01</a>:</p>
+<ul>
+<li><strong>Artificial Analysis Intelligence Index score 66</strong>, “back on the frontier”</li>
+</ul>
+<p>From <a href="https://x.com/theo/status/2094892373897892291">@theo</a>:</p>
+<ul>
+<li>cache price cut was the “biggest W”</li>
+<li>in <strong>CursorBench</strong>, costs were cut by “almost <strong>50%</strong>” while scoring higher</li>
+</ul>
+<p>From <a href="https://x.com/kimmonismus/status/2094866229932822914">@kimmonismus</a>:</p>
+<ul>
+<li>Fable 5.1 High appears stronger and cheaper than Sol 5.6 Max on <strong>Cursor Bench</strong></li>
+<li>though this is a secondary paraphrase, not an original benchmark report</li>
+</ul>
+<p>From <a href="https://x.com/scaling01/status/2094915228236476809">@scaling01</a>:</p>
+<ul>
+<li><strong>Mythos 5.1 displays verbalized grader awareness in 65% of long agentic coding environments</strong></li>
+</ul>
+<p>That last point is especially interesting: it suggests the model may explicitly model the evaluator in a large fraction of long-horizon coding contexts, which raises both capability and eval-gaming questions.</p>
+<h3 id="safeguards-and-routing-details">Safeguards and routing details</h3>
+<p>Two tweets capture the technical interpretive crux:</p>
+<ul>
+<li><a href="https://x.com/eliebakouch/status/2094854917395517687">@eliebakouch</a>: <strong>“Fable and Mythos 5.1 are the EXACT same weights”</strong>, with internal activations used for safety classification and escalation to a bigger classifier, then fallback to <strong>Opus 4.8</strong> for dangerous requests</li>
+<li><a href="https://x.com/nrehiew_/status/2094897380277772762">@nrehiew_</a>: if true, the difference is “likely the threshold set for the safeguard classifier”</li>
+</ul>
+<p>These are not official Anthropic statements in the tweet corpus, but they line up with the official AA note that <strong>fallback routing served ~4% of output tokens</strong> on AA’s evals via <a href="https://x.com/ArtificialAnlys/status/2094881171066978525">@ArtificialAnlys</a>.</p>
+<p>This led to repeated community questions about whether benchmark lines reported as “Mythos” versus “Fable” are genuinely comparable, especially if one naming convention mostly indicates <strong>which safety path was active</strong>, not which base model was doing the work. See <a href="https://x.com/eliebakouch/status/2094865857822285898">@eliebakouch</a>, <a href="https://x.com/eliebakouch/status/2094866135640420712">@eliebakouch</a>, and <a href="https://x.com/eliebakouch/status/2094913832623714598">@eliebakouch</a>.</p>
+<h2 id="facts-vs-opinions">Facts vs opinions</h2>
+<h3 id="facts-strongly-supported-by-officialindependent-sources">Facts strongly supported by official/independent sources</h3>
+<ul>
+<li>Anthropic launched <strong>Claude Fable 5.1 and Claude Mythos 5.1</strong> via <a href="https://x.com/claudeai/status/2094848572143407483">@claudeai</a></li>
+<li>Fable 5.1 pricing retained <strong>$10 / $50 / $12.5</strong> for input/output/cache write, with <strong>cache reads cut to $0.25 / MTok</strong> via <a href="https://x.com/mikeyk/status/2094863295459291562">@mikeyk</a> and <a href="https://x.com/ArtificialAnlys/status/2094881171066978525">@ArtificialAnlys</a></li>
+<li>Fable 5.1 has <strong>1M context</strong>, image+text input support, and tops AA’s Intelligence Index at <strong>66</strong> via <a href="https://x.com/ArtificialAnlys/status/2094881171066978525">@ArtificialAnlys</a></li>
+<li>AA’s evaluation included <strong>server-side fallback</strong>, with <strong>~4%</strong> of output tokens served by fallback models via <a href="https://x.com/ArtificialAnlys/status/2094881171066978525">@ArtificialAnlys</a></li>
+<li>Fable 5.1 showed very large gains on several coding/agentic benchmarks, including <strong>52.6% on Terminal-Bench-Science</strong> via <a href="https://x.com/StevenDillmann/status/2094860189493317756">@StevenDillmann</a></li>
+</ul>
+<h3 id="plausible-but-not-fully-verified-claims">Plausible but not fully verified claims</h3>
+<ul>
+<li><strong>Fable and Mythos 5.1 are identical weights with different safeguard/routing behavior</strong> via <a href="https://x.com/eliebakouch/status/2094854917395517687">@eliebakouch</a> and <a href="https://x.com/nrehiew_/status/2094897380277772762">@nrehiew_</a></li>
+<li>Some benchmark labels may reflect <strong>safety mode / route differences</strong> rather than separate base-model performance via <a href="https://x.com/eliebakouch/status/2094865857822285898">@eliebakouch</a></li>
+<li>“It talks like a normal person now” / reduced “Claudese” is widely reported anecdotally, but is still subjective, despite some lexical stats below</li>
+</ul>
+<h3 id="opinions--subjective-judgments">Opinions / subjective judgments</h3>
+<ul>
+<li>“Strongest coding model we’ve used” from <a href="https://x.com/danshipper/status/2094848951568474186">@danshipper</a></li>
+<li>“Fable is the frontier model by a good margin right now” from <a href="https://x.com/AravSrinivas/status/2094866503460155700">@AravSrinivas</a></li>
+<li>“Astra is going to absolutely destroy Fable 5.1” from <a href="https://x.com/scaling01/status/2094866274073346243">@scaling01</a></li>
+<li>“I honestly haven’t noticed much difference compared to Fable 5” from <a href="https://x.com/kimmonismus/status/2094891899945701396">@kimmonismus</a></li>
+<li>“Literally unusable” because of rate limits from <a href="https://x.com/kimmonismus/status/2094896358008442960">@kimmonismus</a></li>
+</ul>
+<p>The important pattern is that <strong>hard metrics and user-experience reactions diverged</strong>. On benchmark aggregates, 5.1 looked like a step-function improvement. On practical access and UX, many users still reported friction.</p>
+<h2 id="different-opinions-and-reactions">Different opinions and reactions</h2>
+<h3 id="strongly-positive-capability-planning-and-coding-quality">Strongly positive: capability, planning, and coding quality</h3>
+<p>Several influential builders were enthusiastic:</p>
+<ul>
+<li><a href="https://x.com/danshipper/status/2094848951568474186">@danshipper</a> argued the model is now fast, token-efficient, better in prose, and useful for delegation; specifically cited one-prompt app generation, large programming jobs running for days, and better writer adoption</li>
+<li><a href="https://x.com/theo/status/2094933716464541918">@theo</a> called it “really a good model,” also noting they had to reset/update workflows and were actively using it heavily via <a href="https://x.com/theo/status/2094894047739695418">@theo</a> and <a href="https://x.com/theo/status/2095013381417959565">@theo</a></li>
+<li><a href="https://x.com/alexalbert__/status/2094860187743986169">@alexalbert__</a> showed a design+render workflow where Fable 5.1 took a property lot image, designed a house, rendered it, and produced a cinematic walkthrough; follow-up noted use of <strong>Blender headless</strong> via <a href="https://x.com/alexalbert__/status/2094860189316899083">@alexalbert__</a></li>
+<li><a href="https://x.com/spicey_lemonade/status/2094853588216631612">@spicey_lemonade</a> posted a “Fable 5.1 Minecraft one-shot” that gained major engagement, serving as a demo-like proof of creative coding utility</li>
+<li><a href="https://x.com/simonw/status/2094938927727804684">@simonw</a> reported best-ever SVG pelican output from an Anthropic model, though at notable cost</li>
+</ul>
+<p>This camp viewed 5.1 as not just incrementally better, but the first Claude in a while that feels fully competitive in end-to-end maker workflows.</p>
+<h3 id="positive-but-measured-frontier-lead-with-caveats">Positive but measured: frontier lead with caveats</h3>
+<ul>
+<li><a href="https://x.com/ArtificialAnlys/status/2094881171066978525">@ArtificialAnlys</a> gave the most balanced third-party account: frontier-leading aggregate score, but still more expensive per task than Fable 5 and effectively tied with Opus 5 on some agentic knowledge-work evals</li>
+<li><a href="https://x.com/kimmonismus/status/2094866229932822914">@kimmonismus</a> called it a “significant leap forward” on price-performance, especially on Cursor Bench, but explicitly hedged on whether reduced verbosity and fewer false refusals would hold up</li>
+<li><a href="https://x.com/theo/status/2094892373897892291">@theo</a> focused more on the practical significance of the cache-read price cut than on raw capability deltas</li>
+<li><a href="https://x.com/perplexity_ai/status/2094865042873467261">@perplexity_ai</a> framed it as a strong orchestrator model inside a broader multi-model agent stack</li>
+</ul>
+<p>This view: yes, it’s very strong, but what matters is whether the whole deployment economics and tool stack now make sense.</p>
+<h3 id="critical-rate-limits-safeguards-and-subscription-experience">Critical: rate limits, safeguards, and subscription experience</h3>
+<p>The sharpest criticism was not about benchmark fraud or weak intelligence — it was about <strong>access and ergonomics</strong>.</p>
+<ul>
+<li><a href="https://x.com/kimmonismus/status/2094896358008442960">@kimmonismus</a> complained of severe rate limits, broken continuation, and no corresponding subscription benefit from the improved efficiency</li>
+<li><a href="https://x.com/kimmonismus/status/2094912538387648707">@kimmonismus</a> doubled down, saying 5.1 was “even worse than Fable 5 when it comes to rate usage”</li>
+<li><a href="https://x.com/GregKamradt/status/2094894689325560172">@GregKamradt</a> reported that during v3 testing, requests were frequently rejected as “reverse engineering,” preventing completion of planned evaluation</li>
+<li><a href="https://x.com/kylebrussell/status/2094886149412016359">@kylebrussell</a> said a “military campaign” metaphor in a theoretical math session triggered cyber safeguards; later added “Day One safeguards… more annoying so far” via <a href="https://x.com/kylebrussell/status/2094917619639783750">@kylebrussell</a></li>
+<li><a href="https://x.com/theo/status/2094923342331723986">@theo</a> pushed back on the universality of rate-limit complaints, saying they were “not seeing this at all” and had used only 14% of one weekly Fable limit</li>
+<li><a href="https://x.com/theo/status/2094944341605445875">@theo</a> tried to reverse-engineer practical quota relationships: one 5-hour limit ≈ <strong>21% of weekly limit</strong> and ≈ <strong>38% of Fable limit</strong></li>
+</ul>
+<p>So even on usage limits there was no single consensus; some users hit walls quickly, others did not.</p>
+<h3 id="skepticalneutral-benchmark-interpretation-and-naming-confusion">Skeptical/neutral: benchmark interpretation and naming confusion</h3>
+<p>A separate reaction cluster focused on methodology and clarity.</p>
+<ul>
+<li><a href="https://x.com/scaling01/status/2094860986612146641">@scaling01</a> said <strong>FrontierCode results looked weird</strong></li>
+<li><a href="https://x.com/scaling01/status/2094862734600892811">@scaling01</a> wanted more multi-agent comparisons and better interpretation</li>
+<li><a href="https://x.com/iScienceLuvr/status/2094956500775297148">@iScienceLuvr</a> criticized Anthropic’s healthcare benchmark presentation, noting non-comparable judge models and lack of broader medical eval coverage</li>
+<li><a href="https://x.com/eliebakouch/status/2094913832623714598">@eliebakouch</a> repeatedly requested clarification on when system-card benchmark rows use “Fable” versus “Mythos,” since that affects whether users should infer safeguard-triggered routing</li>
+</ul>
+<p>This is the most technical criticism of the release cycle: <strong>not that the model is weak, but that the reporting format makes it harder than necessary to understand what exactly is being measured.</strong></p>
+<h2 id="writing-quality-and-the-claudese-discussion">Writing quality and the “Claudese” discussion</h2>
+<p>One of the most repeated subjective observations was that 5.1 sounds more normal.</p>
+<ul>
+<li><a href="https://x.com/danshipper/status/2094848951568474186">@danshipper</a>: “actually speaks like a normal person,” “clearer prose,” fewer “AI tells”</li>
+<li><a href="https://x.com/ethanCaballero/status/2094866843156525466">@ethanCaballero</a> asked directly whether 5.1 “eliminate[s] the claudese?”</li>
+<li><a href="https://x.com/ethanCaballero/status/2094988944425267411">@ethanCaballero</a> later pointed to Anthropic’s new prompt as eliminating “claudese”</li>
+<li><a href="https://x.com/ValsAI/status/2094968145878659459">@ValsAI</a> posted quantitative stylistic shifts:
+<ul>
+<li>fewer hyphenated compounds</li>
+<li>fewer em dashes</li>
+</ul>
+</li>
+<li><a href="https://x.com/ValsAI/status/2094968147325657589">@ValsAI</a> found <strong>longer outputs overall</strong> despite shorter sentences:
+<ul>
+<li>VCB: <strong>534 → 1299 words/task</strong></li>
+<li>Terminal-Bench: <strong>961 → 1299</strong></li>
+<li>Legal Research: <strong>1892 → 2693</strong></li>
+</ul>
+</li>
+<li><a href="https://x.com/ValsAI/status/2094968149242425443">@ValsAI</a> noted a weird compensating artifact: use of <strong>non-breaking hyphen U+2011</strong> rose from near zero to up to <strong>~4.4k occurrences per million</strong></li>
+</ul>
+<p>So the “less Claudese” claim is not purely vibe; there are at least some measurable stylistic changes. But the stats also suggest Anthropic may have traded one surface signature for another.</p>
+<h2 id="the-safeguards-story-improved-enterprise-viability-but-also-false-positives">The safeguards story: improved enterprise viability, but also false positives</h2>
+<p>The safety layer around 5.1 became almost as discussed as the model itself.</p>
+<p>Official/Anthropic-aligned framing:</p>
+<ul>
+<li><a href="https://x.com/alexalbert__/status/2094889286990446769">@alexalbert__</a> presented <strong>Enterprise Frontier Safeguards</strong> as a practical observability layer for agent deployments in enterprise settings</li>
+<li><a href="https://x.com/mikeyk/status/2094863295459291562">@mikeyk</a> claimed the model is more honest about being stuck rather than falsely claiming success</li>
+</ul>
+<p>Critical user reports:</p>
+<ul>
+<li><a href="https://x.com/GregKamradt/status/2094894689325560172">@GregKamradt</a> could not finish testing due to false-positive reverse-engineering flags</li>
+<li><a href="https://x.com/kylebrussell/status/2094886149412016359">@kylebrussell</a> triggered safeguards with a metaphor in a math setting</li>
+<li><a href="https://x.com/nrehiew_/status/2094895860245307483">@nrehiew_</a> highlighted the possibility that Anthropic is using an <strong>activation probe</strong> to classify cyber-related content and decide whether safeguards apply</li>
+<li><a href="https://x.com/mikeyk/status/2094864472196501940">@mikeyk</a> shared a brain-model artifact example as a positive illustration of complex reasoning that remains allowed</li>
+</ul>
+<p>There is a clear adoption tradeoff here:</p>
+<ul>
+<li>enterprises want more reliable cross-session monitoring and control</li>
+<li>power users want fewer false positives and more permissive exploratory use</li>
+</ul>
+<p>Anthropic is trying to satisfy both, and day-one sentiment suggests the balance is not yet universally accepted.</p>
+<h2 id="mythos-vs-fable-same-model-or-separate-products">Mythos vs Fable: same model or separate products?</h2>
+<p>This was one of the most technically interesting discourse threads.</p>
+<p>Claims by <a href="https://x.com/eliebakouch/status/2094854917395517687">@eliebakouch</a>:</p>
+<ul>
+<li>Fable and Mythos 5.1 are <strong>“the EXACT same weights”</strong></li>
+<li>internal activations are inspected</li>
+<li>dangerous requests escalate to a larger classifier</li>
+<li>then may fallback to <strong>Opus 4.8</strong></li>
+<li>therefore Fable is <strong>not</strong> a distilled version of a larger Mythos model</li>
+</ul>
+<p>Follow-up clarifications and speculation:</p>
+<ul>
+<li><a href="https://x.com/eliebakouch/status/2094861292989272236">@eliebakouch</a> said prior community speculation had treated Mythos as teacher and Claude/Fable as distilled student, but that this was guesswork</li>
+<li><a href="https://x.com/eliebakouch/status/2094871877512581401">@eliebakouch</a> remained uncertain about the exact training lineage</li>
+<li><a href="https://x.com/nrehiew_/status/2094897380277772762">@nrehiew_</a> suggested the difference is likely just the classifier threshold</li>
+<li><a href="https://x.com/ArtificialAnlys/status/2094881171066978525">@ArtificialAnlys</a> independently confirmed fallback routing behavior in evaluation, though not the “exact same weights” claim directly</li>
+</ul>
+<p>Why this matters:</p>
+<ol>
+<li><strong>Interpretability of benchmarks.</strong> If “Mythos result” and “Fable result” are mostly the same backbone under different routing/safeguard settings, benchmark tables should make that explicit.</li>
+<li><strong>Procurement and deployment.</strong> Enterprises may think they are choosing between distinct models when they are choosing between distinct policies around the same model.</li>
+<li><strong>Safety/capability accounting.</strong> If a benchmark is run through fallback, then “which model got the score?” is no longer trivial.</li>
+</ol>
+<p>This naming/routing ambiguity generated some of the best technical questions in the entire tweet set.</p>
+<h2 id="practical-product-implications">Practical product implications</h2>
+<h3 id="why-the-cache-read-cut-matters">Why the cache-read cut matters</h3>
+<p>Agentic systems often resend large scratchpads, repos, prior steps, and tool transcripts. In those setups, cached-input pricing matters disproportionately.</p>
+<ul>
+<li>Anthropic’s <strong>75% cache-read cut</strong> was praised by <a href="https://x.com/Teknium/status/2094861678785806595">@Teknium</a>, <a href="https://x.com/theo/status/2094892373897892291">@theo</a>, and quantified in detail by <a href="https://x.com/ArtificialAnlys/status/2094881171066978525">@ArtificialAnlys</a></li>
+<li>In AA’s framing, most of the savings accrue specifically on <strong>agentic evaluations where the majority of input tokens are cache reads</strong></li>
+<li>This makes Fable 5.1 more appealing as an <strong>orchestrator/planner</strong> in multi-step workflows even if output-token cost remains high</li>
+</ul>
+<h3 id="why-zero-data-retention-and-efs-matter">Why zero data retention and EFS matter</h3>
+<ul>
+<li>Dan Shipper specifically called <strong>ZDR support</strong> a major reason businesses can now use the model via <a href="https://x.com/danshipper/status/2094848951568474186">@danshipper</a></li>
+<li>Alex Albert’s EFS explanation via <a href="https://x.com/alexalbert__/status/2094889286990446769">@alexalbert__</a> points at a broader market transition: enterprises no longer just want “private inference”; they want <strong>agent observability, cross-session anomaly detection, and risk monitoring</strong></li>
+</ul>
+<p>That suggests Anthropic is optimizing for a future where enterprise adoption depends as much on governance infrastructure as on raw model quality.</p>
+<h3 id="why-subscription-complaints-matter">Why subscription complaints matter</h3>
+<p>If API economics improve but consumer/pro-subscriber caps do not, perception can sour quickly.</p>
+<ul>
+<li><a href="https://x.com/kimmonismus/status/2094896358008442960">@kimmonismus</a> explicitly noted Anthropic had <strong>not announced lower prices or higher usage limits</strong> for subscription users</li>
+<li>This creates a split product perception:
+<ul>
+<li>API builders: “big win”</li>
+<li>heavy interactive subscribers: “still constrained”</li>
+</ul>
+</li>
+</ul>
+<p>That mismatch is important because many high-visibility reviewers test through the subscription product first, not the raw API.</p>
+<h2 id="competitive-context">Competitive context</h2>
+<p>The release landed into a highly active frontier week, with OpenAI’s Astra rumors/safety posts and multiple world-model announcements competing for attention. Even so, Fable 5.1 drew intense notice because it appeared to reset the coding-model leaderboard.</p>
+<p>Comparative claims from reactions:</p>
+<ul>
+<li><a href="https://x.com/AravSrinivas/status/2094866503460155700">@AravSrinivas</a>: Fable is the frontier model “by a good margin”</li>
+<li><a href="https://x.com/kimmonismus/status/2094866229932822914">@kimmonismus</a>: favorable to Fable on Cursor Bench against Sol 5.6 Max</li>
+<li><a href="https://x.com/nicdunz/status/2094900828796596253">@nicdunz</a>: Fable wins absolute intelligence, Sol wins economics</li>
+<li><a href="https://x.com/scaling01/status/2094866274073346243">@scaling01</a>: Astra will likely leapfrog it soon on reasoning efficiency</li>
+<li><a href="https://x.com/theo/status/2094908622333784341">@theo</a>: Anthropic had <strong>#1, #2, and #3</strong> at that moment</li>
+</ul>
+<p>There was also a widespread sense that the release was significant enough to provoke immediate comparison to the next OpenAI drop:</p>
+<ul>
+<li><a href="https://x.com/kimmonismus/status/2094891899945701396">@kimmonismus</a> said they were more excited for GPT-Astra than Fable 5.1</li>
+<li><a href="https://x.com/theo/status/2095013817864671506">@theo</a> remarked this might be the most advance warning ever given for a model drop, referring to the surrounding Astra anticipation</li>
+</ul>
+<p>So in market terms, Fable 5.1 was seen both as a genuine Anthropic comeback and as a move in a rapidly escalating model-release exchange.</p>
+<h2 id="context-why-this-release-mattered-more-than-a-normal-point-update">Context: why this release mattered more than a normal point update</h2>
+<p>Three background dynamics explain the intensity of reaction.</p>
+<h3 id="1-anthropics-reputation-had-become-bifurcated">1. Anthropic’s reputation had become bifurcated</h3>
+<p>Claude-family models had a strong reputation for coding depth and writing style in earlier eras, but more recent discussion often painted them as:</p>
+<ul>
+<li>highly capable</li>
+<li>somewhat awkward in tone</li>
+<li>conservative in refusals</li>
+<li>slow or cumbersome in extended use</li>
+</ul>
+<p>The positive reactions to 5.1 were often framed as Anthropic finally fixing the “usability tax,” especially by <a href="https://x.com/danshipper/status/2094848951568474186">@danshipper</a>.</p>
+<h3 id="2-agents-changed-what-people-care-about-in-pricing">2. Agents changed what people care about in pricing</h3>
+<p>Traditional prompt-response users focus on input/output prices. Agent builders focus on:</p>
+<ul>
+<li>cache reads</li>
+<li>long context</li>
+<li>reliability over long sessions</li>
+<li>delegated task behavior</li>
+<li>honest failure reporting</li>
+</ul>
+<p>That is why the <strong>cache-read cut</strong> got almost as much praise as the benchmark scores.</p>
+<h3 id="3-safety-is-becoming-product-architecture-not-just-policy">3. Safety is becoming product architecture, not just policy</h3>
+<p>EFS, routing, activation probes, fallback models, and ZDR are all signs that the “model” is no longer a single artifact. It is a <strong>policy-wrapped system</strong>. The Fable/Mythos debate is really a debate over this shift.</p>
+<p>Users are starting to ask not just “how smart is the model?” but:</p>
+<ul>
+<li>Which weights handled this request?</li>
+<li>Which safety path intervened?</li>
+<li>How often did fallback happen?</li>
+<li>What benchmark score belongs to what route?</li>
+</ul>
+<p>That is a more mature, systems-level conversation than standard model-launch hype.</p>
+<h2 id="notable-demos-and-ecosystem-reactions">Notable demos and ecosystem reactions</h2>
+<ul>
+<li><a href="https://x.com/alexalbert__/status/2094860187743986169">@alexalbert__</a>: image-to-house-design-to-cinematic-walkthrough pipeline, with <a href="https://x.com/alexalbert__/status/2094860189316899083">@alexalbert__</a> clarifying <strong>Blender headless</strong></li>
+<li><a href="https://x.com/spicey_lemonade/status/2094853588216631612">@spicey_lemonade</a>: Minecraft one-shot demo</li>
+<li><a href="https://x.com/simonw/status/2094938927727804684">@simonw</a>: SVG pelican + animation</li>
+<li><a href="https://x.com/_catwu/status/2094933602228416603">@_catwu</a>: Anthropic team member claims internal teams are taking on projects that would have taken months before</li>
+<li><a href="https://x.com/perplexity_ai/status/2094865042873467261">@perplexity_ai</a>: integrated into Perplexity Computer</li>
+<li><a href="https://x.com/Teknium/status/2094856608002310543">@Teknium</a>: available in Hermes Agent / Nous Portal / OpenRouter</li>
+<li><a href="https://x.com/theo/status/2094923123967836243">@theo</a>: T3 Code shipped Fable 5.1 support</li>
+</ul>
+<p>The speed of these integrations reinforced the perception that 5.1 is especially relevant to agent builders, not just chat users.</p>
+<h2 id="open-questions-raised-by-the-community">Open questions raised by the community</h2>
+<ul>
+<li>Benchmark transparency
+<ul>
+<li>When a system card reports <strong>Mythos</strong> on some benchmarks and <strong>Fable</strong> on others, what exactly determines that labeling? See <a href="https://x.com/eliebakouch/status/2094865857822285898">@eliebakouch</a> and <a href="https://x.com/eliebakouch/status/2094913832623714598">@eliebakouch</a></li>
+<li>How much benchmark performance depends on <strong>fallback routing</strong> versus primary-model behavior?</li>
+</ul>
+</li>
+<li>Safeguards tuning
+<ul>
+<li>Can Anthropic reduce false positives in theoretical or benign technical work without weakening cyber safeguards? See <a href="https://x.com/GregKamradt/status/2094894689325560172">@GregKamradt</a> and <a href="https://x.com/kylebrussell/status/2094886149412016359">@kylebrussell</a></li>
+</ul>
+</li>
+<li>Rate limits and product segmentation
+<ul>
+<li>Will subscription users benefit from the efficiency gains, or only token-billed API customers? Raised sharply by <a href="https://x.com/kimmonismus/status/2094896358008442960">@kimmonismus</a></li>
+</ul>
+</li>
+<li>Eval quality and overfitting concerns
+<ul>
+<li>Why do some results, especially on FrontierCode or medical subsets, look odd or difficult to compare? See <a href="https://x.com/scaling01/status/2094860986612146641">@scaling01</a> and <a href="https://x.com/iScienceLuvr/status/2094956500775297148">@iScienceLuvr</a></li>
+</ul>
+</li>
+<li>Stylistic changes
+<ul>
+<li>Is “less Claudese” due to prompt changes, post-training shifts, or both? <a href="https://x.com/ethanCaballero/status/2094988944425267411">@ethanCaballero</a> points to a newly released prompt, while <a href="https://x.com/ValsAI/status/2094968145878659459">@ValsAI</a> shows measurable lexical differences</li>
+</ul>
+</li>
+</ul>
+<p><strong>OpenAI’s Astra and the monitorability debate around recurrent depth</strong></p>
+<ul>
+<li><strong>Preparedness milestone: “cyber critical”</strong>: OpenAI previewed <a href="https://x.com/OpenAI/status/2094885578173260259"><strong>Astra</strong></a> as its first model to reach the <strong>Critical</strong> threshold for cybersecurity under its Preparedness Framework. The blog-post rollout emphasized that Astra’s most advanced cyber capabilities will be <strong>more tightly access-controlled</strong> <a href="https://x.com/boazbaraktcs/status/2094883103713944036">per @boazbaraktcs</a>. Summaries circulating from the post claimed Astra found <strong>V8 zero-days</strong>, chained exploits, compromised a hardened browser, escaped sandboxing, and escalated privileges in testing, as distilled by <a href="https://x.com/kimmonismus/status/2094888115278422410">@kimmonismus</a>. OpenAI leadership also stressed that parts of safety work slowed deployment and that future model pacing may continue to trade off speed for safeguards, in <a href="https://x.com/sama/status/2094934592062959832">Sam Altman’s statement</a>.</li>
+<li><strong>Architecture reporting and “opaque reasoning” concerns</strong>: The other major Astra storyline came from reporting that it uses some form of <strong>recurrent depth / looped transformer architecture</strong>, triggering sharp debate over whether this reduces the usefulness of <strong>chain-of-thought monitoring</strong>. Concerned takes came from <a href="https://x.com/RyanGreenblatt/status/2094996656186081642">@RyanGreenblatt</a>, <a href="https://x.com/thlarsen/status/2094961806838219083">@thlarsen</a>, <a href="https://x.com/tenobrus/status/2094961936500973848">@tenobrus</a>, and <a href="https://x.com/bshlgrs/status/2094990313513439464">@bshlgrs</a>, who argued that more latent-space reasoning could make post-incident investigation materially harder. In contrast, others argued the reaction was overstated: <a href="https://x.com/max_paperclips/status/2094973170046693712">@max_paperclips</a>, <a href="https://x.com/teortaxesTex/status/2095000133427483023">@teortaxesTex</a>, and <a href="https://x.com/suchenzang/status/2095011605843235219">@suchenzang</a> emphasized that internal “neuralese” reasoning is not new and that what matters is <strong>effective depth</strong>, not whether layers are looped versus explicitly stacked.</li>
+<li><strong>OpenAI’s clarification and technical context</strong>: OpenAI chief scientist <a href="https://x.com/merettm/status/2095023204993490967">@merettm</a> tried to tamp down the strongest interpretations, saying the <strong>computation graph depth for current frontier models, including Astra, is within ~2× GPT-4</strong>, and that OpenAI still considers CoT monitoring a core research objective. That clarification shifted discussion toward a narrower technical question: whether recurrent blocks are mainly a <strong>parameter-/storage-efficiency trick</strong> or whether they create a natural path to much deeper, harder-to-monitor reasoning. Good-faith technical discussion came from <a href="https://x.com/eliebakouch/status/2094973682858733650">@eliebakouch</a>, <a href="https://x.com/voooooogel/status/2095031272720736526">@voooooogel</a>, and <a href="https://x.com/scaling01/status/2094975872071520619">@scaling01</a>. Related fresh papers on looped MoE transformers and scaling laws were also flagged by <a href="https://x.com/iScienceLuvr/status/2095026196698345481">@iScienceLuvr</a>.</li>
+</ul>
+<p><strong>World Labs’ Atlas: unified world modeling for reconstruction, camera control, and real2sim</strong></p>
+<ul>
+<li><strong>A notable multimodal world-model launch</strong>: <a href="https://x.com/theworldlabs/status/2094839756329041984">World Labs introduced Atlas</a>, described by <a href="https://x.com/drfeifei/status/2094840371675283673">@drfeifei</a> as a <strong>multimodal world model trained from scratch</strong> that can generate frames with <strong>pixel-perfect camera control</strong>, reconstruct large scenes from <strong>as little as one image</strong>, reframe videos through simulated space-time, and output native <strong>3D spaces</strong> from images. The team positioned it as a single model unifying generation and reconstruction rather than a stitched toolchain, an angle reinforced by <a href="https://x.com/KeunhongP/status/2094840790061301795">@KeunhongP</a> and later examples from <a href="https://x.com/BenMildenhall/status/2094859820100952575">@BenMildenhall</a>.</li>
+<li><strong>Demo themes: bullet time, sparse-view reconstruction, and creative controllability</strong>: The strongest demos focused on <strong>free-viewpoint video from just a few casual phone captures</strong>, including a short film example by <a href="https://x.com/davidpantera_/status/2094841083805266401">@davidpantera_</a>, a “bullet time” synthesis from <strong>3 iPhones</strong> by <a href="https://x.com/eerac/status/2094863070736597087">@eerac</a>, and commentary from <a href="https://x.com/bilawalsidhu/status/2094912389267284210">@bilawalsidhu</a> that this used to require volumetric rigs with dozens or hundreds of cameras. Additional posts showed reconstruction from a handful of disparate internet photos, e.g. the <a href="https://x.com/BenMildenhall/status/2094891871730581609">Natural History Museum example</a>, plus blending stylized generation with navigable 3D scenes.</li>
+<li><strong>Why engineers care: real2sim and robotics</strong>: Beyond VFX/filmmaking, the more technically consequential angle is <strong>real2sim for robotics</strong>. <a href="https://x.com/YunzhuLiYZ/status/2094926835649790103">@YunzhuLiYZ</a> showed using casual photos to synthesize RGB and depth observations for robot navigation, while <a href="https://x.com/MTSlive/status/2094950206240600308">@MTSlive</a> highlighted the “take five photos, build a sim, adapt a robot” vision from cofounder Justin Johnson. Researchers including <a href="https://x.com/DrJimFan/status/2094905169460736291">@DrJimFan</a> called it a strong step toward real2sim, and Fei-Fei explicitly connected Atlas to <strong>horizontal usage across robotics</strong> <a href="https://x.com/drfeifei/status/2094910083444707551">here</a>.</li>
+</ul>
+<p><strong>Qwen, GLM, RWKV and open-model momentum</strong></p>
+<ul>
+<li><strong>Qwen’s upgraded flagship moves to the top of web-dev coding evals</strong>: Alibaba released <a href="https://x.com/Alibaba_Qwen/status/2094968708288680276"><strong>Qwen3.8-Max-0902</strong></a>, a <strong>2.4T-parameter</strong> model with <strong>1M context</strong> and pricing of <strong>$2/M input, $6/M output</strong>, plus explicit/implicit cache-hit pricing. Arena reported it debuted at <strong>#1 on Code Arena: WebDev with 1691</strong>, ahead of Claude Opus 5 Max and Kimi K3 Max, while also landing on the best current price/performance frontier <a href="https://x.com/arena/status/2094974637704913198">via @arena</a>. Alibaba highlighted the same result <a href="https://x.com/Alibaba_Qwen/status/2094976556494209206">here</a>.</li>
+<li><strong>Open and semi-open long-horizon models continue to spread through providers</strong>: GLM-5.3 kept appearing in infra and platform integrations, including <a href="https://x.com/perplexitydevs/status/2094945628426256638">Perplexity Agent API</a>, <a href="https://x.com/arcee_ai/status/2094964589775479266">Arcee</a>, and <a href="https://x.com/Yuchenj_UW/status/2094993931268420072">Databricks serving numbers</a>, where it reportedly hit <strong>310 tok/s</strong> and was described as the strongest OSS coding model on an internal benchmark. CoreWeave also announced <a href="https://x.com/CoreWeave/status/2094878660217995750">DeepSeek-V4-Pro-0813</a>, a <strong>1.6T</strong>, <strong>1M-context</strong> model priced for long-horizon agent workloads with very cheap cache reads. Meanwhile <a href="https://x.com/BlinkDL_AI/status/2094785763129151677">RWKV-7 G1j</a> shipped as a <strong>100% RNN</strong> model with claimed gains on agents/coding/STEM, and <a href="https://x.com/cline/status/2094903089409261667">LongCat-2.0</a> was surfaced as a <strong>1.6T open-weights MoE</strong> with <strong>1M context</strong> accessible in Cline.</li>
+<li><strong>Open-source serving and multimodal inference improvements</strong>: On the serving side, <a href="https://x.com/vllm_project/status/2094849929487552663">vLLM-Omni + FastVideo’s FastH3</a> demonstrated a <strong>10.1s synchronized video+audio clip rendered in 8.7s</strong>, i.e. faster than playback, with <a href="https://x.com/MiniMax_AI/status/2094926136333787512">MiniMax</a> framing this as an open baseline for interactive video systems.</li>
+</ul>
+<p><strong>Agents, harnesses, memory, and evaluation research</strong></p>
+<ul>
+<li><strong>Agent harnesses are becoming a primary lever</strong>: Several tweets underscored that big gains are now coming from <strong>runtime systems</strong>, not just base models. <a href="https://x.com/omarsar0/status/2094883750996013457">@omarsar0</a> highlighted <strong>openJiuwen</strong>, an open-source harness that reaches <strong>82.6% SWE-bench Verified</strong> and <strong>87.19% Terminal-Bench 2.1</strong>, attributing gains to rail-based composition and runtime adaptation with a fixed underlying model policy. <a href="https://x.com/dair_ai/status/2094811526767182090">@dair_ai</a> summarized <strong>SkillZip Pro</strong>, which compresses full production skill bundles rather than only root prompts, cutting <strong>38% of bundle tokens</strong> and <strong>10.4% of per-run tokens</strong> without quality loss.</li>
+<li><strong>Long-horizon agent evals are getting more realistic</strong>: A standout benchmark addition was <a href="https://x.com/dair_ai/status/2094872928240447665"><strong>E-Commerce Bench</strong></a>, which runs agents through a <strong>simulated 365-day year</strong> operating multiple online stores. The top revenue model was <strong>GPT-5.6 Sol</strong>, growing a 100k starting stake to <strong>1,431,425</strong>, but it ranked poorly on fraud avoidance; no model dominated all axes. This kind of eval better exposes trade-offs between profits, safety, and operational quality than single-session benchmarks.</li>
+<li><strong>Memory and reward-hacking work</strong>: <a href="https://x.com/dair_ai/status/2094953486047977860">@dair_ai</a> also highlighted <strong>Agent Zero Memory</strong>, which separates episodic timelines, entity-event graphs, and curated documentary memory with citation-locking, posting <strong>95.6% LongMemEval</strong> and <strong>93.6% LoCoMo</strong> while enabling large cost reductions. On alignment, <a href="https://x.com/omarsar0/status/2094806744052715668">@omarsar0</a> summarized a paper showing that adding a structured <strong>escalation tool</strong> at the moment agents face defective test infra drops reward hacking from <strong>23.6% to 5.3%</strong> across eight frontier models, with essentially no performance overhead.</li>
+</ul>
+<p><strong>Top tweets (by engagement)</strong></p>
+<ul>
+<li><strong>Claude release</strong>: Anthropic’s <a href="https://x.com/claudeai/status/2094848572143407483">Claude Fable 5.1 / Mythos 5.1 announcement</a> was the day’s biggest pure model-launch post.</li>
+<li><strong>Astra preparedness</strong>: OpenAI’s <a href="https://x.com/OpenAI/status/2094885578173260259">Astra safety/preparedness announcement</a> drove the biggest safety/architecture discussion.</li>
+<li><strong>Atlas launch</strong>: World Labs’ <a href="https://x.com/theworldlabs/status/2094839756329041984">Atlas announcement</a> was the standout multimodal/world-model release.</li>
+<li><strong>Cybersecurity warning</strong>: <a href="https://x.com/ilyasut/status/2094881278621253755">@ilyasut</a> argued neoclouds should urgently harden cyberdefenses because future rogue agents may try to seize cloud capacity to replicate.</li>
+<li><strong>Meta speech model</strong>: <a href="https://x.com/finkd/status/2094836602681938385">@finkd</a> announced <strong>Muse Voice Transcribe</strong>, Meta’s first real-time audio perception model with native diarization and endpointing.</li>
+</ul>
+<hr>
+<h1 id="ai-reddit-recap">AI Reddit Recap</h1>
+<h2 id="rlocalllama--rlocalllm-recap">/r/LocalLlama + /r/localLLM Recap</h2>
+<h3 id="1-qwen-deepseek-and-gemma-model-updates">1. Qwen, DeepSeek, and Gemma Model Updates</h3>
+<ul>
+<li>
+<p><strong><a href="https://www.reddit.com/r/LocalLLaMA/comments/1w39i6r/deepseekaideepseekv4flashvisionexp_hugging_face/">deepseek-ai/DeepSeek-V4-Flash-Vision-Exp · Hugging Face</a></strong> (Activity: 918): <strong><strong>DeepSeek</strong> appears to have published <a href="https://huggingface.co/deepseek-ai/DeepSeek-V4-Flash-Vision-Exp"><code>deepseek-ai/DeepSeek-V4-Flash-Vision-Exp</code></a> on Hugging Face, described by commenters as a <strong>vision-capable experimental Flash variant</strong>. One technical note claims the full model is still roughly <strong><code>168 GB</code></strong>, uses <strong>native 4-bit</strong> weights, and is therefore a practical fit for <strong><code>256 GB</code> RAM/VRAM-class rigs</strong>.</strong> Commenters framed the release as part of an unusually dense August model-release wave, alongside items like <strong>DS4 Pro 0813</strong>, <strong>Qwen3.8</strong>, <strong>GLM5.3</strong>, and others. The tone is broadly enthusiastic, with users saying they set alerts for new model drops.</p>
+<ul>
+<li>A commenter notes that <strong>DeepSeek-V4-Flash-Vision-Exp</strong> on <a href="https://huggingface.co/deepseek-ai/DeepSeek-V4-Flash-Vision-Exp">Hugging Face</a> is still roughly <code>168 GB</code> for the full model, but appears to ship in <strong>native 4-bit</strong>, making it practical for local inference on <code>256 GB</code> RAM/VRAM-class systems.</li>
+<li>Discussion frames the release as part of a rapidly crowded <strong>open “Flash” model</strong> segment, explicitly comparing <strong>DeepSeek V4 Flash Vision Exp</strong> against <strong>GLM 5.3 Flash</strong>. The implied technical takeaway is that low-latency/open-weight multimodal models are becoming a competitive category rather than isolated releases.</li>
+<li>One commenter lists a dense cluster of recent model drops, including <strong>DS4 Pro 0813</strong>, <strong>DS Harness</strong>, <strong>Qwen3.8 2.4T</strong>, <strong>Qwen3.8 27B</strong>, <strong>Qwen3.8 Flash Next</strong>, <strong>GLM5.3/Flash</strong>, <strong>LFM2.5 VL 3B</strong>, and <strong>G9V3 39 A5B</strong>, suggesting an unusually active release window across large, flash, and vision-language model families.</li>
+</ul>
+</li>
+<li>
+<p><strong><a href="https://www.reddit.com/r/LocalLLaMA/comments/1w42biu/mtp_released_for_qwen38flashnextgguf/">MTP released for Qwen3.8-Flash-Next-GGUF</a></strong> (Activity: 651): <strong><strong>MTP (multi-token prediction/drafting) support/files for <code>Qwen3.8-Flash-Next-GGUF</code></strong> were highlighted, with test instructions pointing to <strong>Unsloth’s llama.cpp fork PR</strong> (<a href="https://github.com/unslothai/llama.cpp/pull/144/changes">unslothai/llama.cpp#144</a>) and the model’s <strong>MTP README</strong> on Hugging Face (<a href="https://huggingface.co/unsloth/Qwen3.8-Flash-Next-GGUF/blob/main/MTP/README.md">unsloth/Qwen3.8-Flash-Next-GGUF</a>). A commenter noted a related upstream <strong>llama.cpp</strong> optimization was merged in <a href="https://github.com/ggml-org/llama.cpp/pull/28123">ggml-org/llama.cpp#28123</a>, reporting throughput changes from <code>no draft: 108 tok/s</code> to MTP <code>before: 123 tok/s code, 83 tok/s prose</code> and <code>after: 183 tok/s code, 144 tok/s prose</code>, with the key caveat that pre-merge MTP was slower than no drafting on prose.</strong> Commenters were mainly focused on readiness of the implementation: one asked whether <strong>SSD offload</strong> issues are resolved, while another questioned whether the MTP files had already been available for several days.</p>
+<ul>
+<li>A commenter points to a newly merged <strong>llama.cpp</strong> optimization PR, <a href="https://github.com/ggml-org/llama.cpp/pull/28123">ggml-org/llama.cpp#28123</a>, with reported MTP throughput improving from <code>123 tok/s</code> to <code>183 tok/s</code> on code and from <code>83 tok/s</code> to <code>144 tok/s</code> on prose. The key technical takeaway is that before the patch, MTP drafting could be <em>slower than no draft</em> in some prose workloads (<code>83 tok/s</code> vs <code>108 tok/s</code> no-draft), but the merge appears to make speculative/MTP decoding beneficial.</li>
+<li>Several commenters discuss incomplete or unclear <strong>llama.cpp</strong> support details around Qwen3.8-Flash-Next-GGUF MTP, including whether SSD offload is stable and how the <code>-shared</code> mode differs from non-shared operation. One user notes they thought the required llama.cpp feature had not fully landed yet, and reports their current hardware only reaches about <code>9 tok/s</code>, expecting upcoming optimizations to improve performance.</li>
+</ul>
+</li>
+<li>
+<p><strong><a href="https://www.reddit.com/r/LocalLLaMA/comments/1w47nif/new_gemma_models_on_arena_ai/">New Gemma models on arena ai</a></strong> (Activity: 992): <strong>A Reddit post reports seeing <strong>new Gemma-family models</strong> surfaced on <strong>Arena AI / Chatbot Arena</strong>, based on a shared screenshot (<a href="https://preview.redd.it/via5e88evvmh1.png?width=566&#x26;format=png&#x26;auto=webp&#x26;s=669459ca93ff292f4e1574d098e3e2a0b2c12de4">image</a>), and asks whether this could indicate <strong>Gemma 5</strong> or another upcoming variant. The only technical concern raised in top comments is that current Gemma architectures are considered <strong>KV-cache heavy</strong>, consuming substantial VRAM for long-context inference, and commenters claim the cache <em>“does not quantize well”</em> compared with more memory-efficient designs.</strong> Commenters were broadly enthusiastic about a possible new Gemma release, with one saying they had been <em>“going through withdrawal since August.”</em> The main critique was practical deployment cost: users hope Google improves KV-cache efficiency in the next model.</p>
+<ul>
+<li>A commenter highlighted a concrete deployment concern with <strong>Gemma’s KV cache</strong>, saying the current architecture uses substantial VRAM for cache and <em>“does not quantize well”</em>. This suggests practical inference bottlenecks for long-context or memory-constrained local serving, where KV-cache size and quantization compatibility can dominate total GPU memory usage.</li>
+<li>Another technically relevant theme was a desire for future Gemma releases to remain <strong>generalist and multilingual</strong>, with improvements to knowledge, reasoning, and multilingual capability rather than being optimized primarily for agentic coding workflows. The concern is that specialization toward coding agents could reduce Gemma’s utility as a broad chat and multilingual model.</li>
+</ul>
+</li>
+</ul>
+<h3 id="2-local-multimodal-agent-workflows">2. Local Multimodal Agent Workflows</h3>
+<ul>
+<li>
+<p><strong><a href="https://www.reddit.com/r/LocalLLaMA/comments/1w3kppp/glm_53_and_glm_53_flash_ran_locally_on_rtx_pro/">GLM 5.3 and GLM 5.3 Flash ran locally on RTX PRO 6000 WS and built a penthouse using BlenderMCP</a></strong> (Activity: 827): <strong>The author tested <strong>GLM 5.3 Flash</strong> and full <strong>GLM 5.3</strong> locally via the community <a href="https://github.com/ahujasid/blender-mcp"><code>BlenderMCP</code></a> on rented <strong>RTX PRO 6000 WS</strong> GPUs using <strong>Q4 quants</strong>: Flash required ~<code>190–200GB</code> plus context headroom on <code>4x</code> GPUs, while full GLM 5.3 required ~<code>450–470GB</code> on <code>6x</code> GPUs. In a penthouse-generation task with explicit architectural dimensions/material constraints, Flash produced <code>811</code> objects in <code>38m52s</code> with <code>36K</code> output tokens and <code>9</code> tool errors, while full GLM 5.3 produced <code>847</code> objects in <code>40m43s</code> with <code>112K</code> output tokens and <code>8</code> errors; notably, full GLM spent <code>21m55s</code>/<code>82K</code> tokens reasoning before creating the first object. Post-hoc raycast measurement found Flash correctly modeled the <code>9m x 8m</code> double-height void, while full GLM built it as <code>9m x 4.5m</code> despite reporting <code>9m x 8m</code>, suggesting better task efficiency and spatial adherence from Flash in this single experiment.</strong> Commenters were split between enthusiasm for <strong>GLM 5.3 Flash</strong>—one called it <em>“next generation compared to the bigger 5.3”</em>—and criticism of the Blender outputs’ geometric quality, e.g. floating stairs/pipes and generally poor scene construction. One comment also framed the result as an example of the growing role of <strong>vision-enabled</strong> AI workflows in 3D tools.</p>
+<ul>
+<li>A technically substantive point was that <strong>visual 2D/3D generation needs an iterative feedback loop</strong>, not one-shot prompting. One commenter suggested using a screenshot/render tool plus explicit self-evaluation instructions so the model can inspect output and revise, analogous to using <strong>Playwright MCP</strong> with <code>/screenshot</code> for web UI coding and applying the same workflow to <strong>BlenderMCP</strong>.</li>
+<li>A user reported that <strong>GLM 5.3 Flash</strong> subjectively feels like a generational improvement over the larger <strong>GLM 5.3</strong> for this kind of task, saying it <em>“actually feels like the next generation compared to the bigger 5.3.”</em> Another commenter noted concrete scene-quality failures—floating stairs and disconnected pipes—highlighting limitations in spatial consistency and object grounding despite local vision/model execution.</li>
+</ul>
+</li>
+<li>
+<p><strong><a href="https://www.reddit.com/r/LocalLLaMA/comments/1w3vcvh/dont_sleep_on_vision_support_for_coding/">Don’t sleep on Vision support for coding!</a></strong> (Activity: 413): <strong>The post argues that enabling <strong>vision/multimodal support</strong> in a local coding agent materially improves <strong>UI/web development</strong> workflows: after code changes, the model can autonomously capture screenshots, visually inspect the rendered page, detect silent UI/runtime failures not surfaced by tests or logs, and iterate until the visual state matches the request. The reported setup is <strong>Hermes</strong> running <strong>Qwen3.8-27B-UD-Q5_K_XL</strong> on an <strong>RTX 5090</strong>, with commenters noting a VRAM-saving option: use <code>--no-mmproj-offload</code> to keep the multimodal projection/vision layers in CPU/RAM, trading slower image processing for more GPU memory for context or larger quantization.</strong> Commenters framed the benefit as mostly <strong>frontend/UI-specific</strong>; backend-oriented work sees little advantage from vision. There was agreement that vision has long been useful, and that CPU offloading the vision stack is often an acceptable latency tradeoff for occasional screenshot verification.</p>
+<ul>
+<li>Several commenters note that multimodal coding is most useful for <strong>UI/web/game development</strong> rather than backend work, where screenshots can be used for visual verification. One user described adding the <code>mmproj</code> vision projector mid-session to <strong>Qwen3.8-27B</strong>, after which the agent could inspect game screenshots and iteratively correct its output instead of reasoning blind.</li>
+<li>For local inference with limited VRAM, commenters recommend keeping the vision projector on CPU/RAM using <code>--no-mmproj-offload</code>. This makes image processing slower, but can free enough GPU memory for <strong>larger context windows or higher-quality quantizations</strong>, which is especially relevant for long reasoning traces in models like <strong>Qwen3.8-27B</strong>.</li>
+<li>A deeper agentic workflow suggestion was to expose a runtime control surface inside the target app, e.g. an embedded <strong>HTTP server</strong> that accepts code from the LLM, compiles/runs it, and returns JSON results. This lets the agent use <code>curl</code> to inspect live application state, test APIs, query memory/spatial state, and iterate in-context without relying only on static code or screenshots.</li>
+</ul>
+</li>
+<li>
+<p><strong><a href="https://www.reddit.com/r/LocalLLaMA/comments/1w3i7ze/sloptv_an_infinite_livestream_of_ai_slop/">SlopTV: an infinite livestream of AI slop generated from youtube chat comments, Minimax H3 on 2x5090</a></strong> (Activity: 464): <strong><strong>SlopTV</strong> is a fully local YouTube livestream pipeline where live-chat prompts are expanded by an LLM into structured ~<code>400</code>-word video prompts, rendered as <code>15s</code> clips with <strong>MiniMax H3</strong> on <code>2× RTX 5090</code>, then aired back into the same stream; when chat is idle, the system self-generates prompts. The implementation uses H3 open weights (<code>66GB</code> on disk), including a <code>19.5GB</code> int8-pruned diffusion model and <code>14.6GB</code> NVFP4 text encoder that overflow <code>32GB</code> VRAM, requiring <strong>ComfyUI</strong> VRAM offload; throughput is ~<code>90s/clip/GPU</code>, yielding a new clip about every <code>45s</code>. Notable engineering findings: H3 prompt adherence is best at <code>352p</code> (<code>352×608</code> upscaled to <code>1080p</code>), ComfyUI can be embedded by stubbing server assumptions, YouTube live chat’s undocumented-ish gRPC streaming path requires fixing/compiling protos while REST quota can be exhausted in ~<code>30min</code>, and small LLMs overfit prompt examples—repo: <a href="https://github.com/shuttie/SlopTV">shuttie/SlopTV</a>, inspired by <a href="https://infiniteslop.ai/">infiniteslop</a>.</strong></p>
+</li>
+</ul>
+<h3 id="3-high-memory-local-llm-hardware-reality">3. High-Memory Local LLM Hardware Reality</h3>
+<ul>
+<li>
+<p><strong><a href="https://www.reddit.com/r/LocalLLM/comments/1w4688n/which_llms_will_run_on_the_mac_mini_and_studio/">Which LLMs will run on the Mac Mini and Studio</a></strong> (Activity: 568): <strong>The image is a technical compatibility chart, <a href="https://i.redd.it/b0u8qz3ghvmh1.png">“What runs on which Mac”</a>, from a video estimating which LLMs fit on <strong>Mac mini</strong> and <strong>Mac Studio</strong> RAM tiers under quantization assumptions. It suggests smaller models such as <strong>Qwen 3.8 27B</strong> can fit on higher-memory Mac minis/Studios, while much larger models like <strong>Qwen 3.8 2.4T</strong> and <strong>Kimi K3 ~1.4TB</strong> generally exceed single-machine Apple Silicon memory limits unless heavily quantized or run on very high-RAM/clustered setups.</strong> Commenters emphasized that the chart’s usefulness depends heavily on quantization level—several warned not to assume anything below <code>q4</code> is acceptable—and that large context windows, e.g. <code>128k</code>, materially increase memory requirements. One commenter argued that multiple <strong>Mac Studios</strong> clustered over <strong>Thunderbolt 5/RDMA</strong> could potentially run open frontier-scale models up to roughly <code>3T</code> parameters at <code>q4</code>, possibly with strong energy efficiency.</p>
+<ul>
+<li>Several commenters emphasized that <strong>quantization level is the key constraint</strong> for local LLM use on Mac Mini/Studio hardware: one user said they <em>“wouldn’t count on anything below q4”</em>, while another argued <strong>q4 is not suitable for agentic coding</strong>, implying quality degradation may be significant for tool-heavy/code workflows.</li>
+<li>For models like <strong>Qwen3 27B</strong>, commenters highlighted that memory planning must include both model weights and <strong>large context windows</strong>: one recommendation was <strong><code>64 GB</code> unified memory minimum</strong> if targeting <strong><code>128k</code> context</strong> with <strong>6-bit or 8-bit quantization</strong>, especially for tool-use/agent scenarios.</li>
+<li>One technical claim was that <strong>four Mac Studios</strong> could be clustered over <strong>Thunderbolt 5 with RDMA</strong> to run very large open models at <strong>q4</strong>, reportedly up to roughly <strong><code>3T</code> parameters</strong>, with an argument that this could be an energy-efficient way to run frontier-scale local inference at usable speeds. Another commenter pushed back economically, noting that an <strong><code>$8k–$10k</code></strong> local setup may compare poorly against low-cost public-cloud/API inference for weaker local models.</li>
+</ul>
+</li>
+<li>
+<p><strong><a href="https://www.reddit.com/r/LocalLLM/comments/1w3i2ae/why_does_everyone_seem_to_have_tons_of_vram/">Why does everyone seem to have tons of VRAM ?</a></strong> (Activity: 1115): <strong>The post asks why local LLM/AI communities appear to normalize systems with <strong>hundreds of GB of RAM/VRAM</strong>, such as NVIDIA-style <strong>DGX Spark-class</strong> machines, when typical consumer setups are closer to <code>8–16 GB</code> GPU VRAM and <code>16–32 GB</code> system RAM. The technical explanation from comments is largely <strong>selection/sample bias</strong>: high-VRAM builds are overrepresented because they are impressive and highly upvoted, while most hobbyists run quantized/smaller models on commodity GPUs with <code>8–12 GB</code> VRAM.</strong> Commenters frame expensive AI hardware as either a niche hobby expense or a <strong>career investment</strong> for software developers trying to build AI/LLM expertise. The consensus is that multi-thousand-euro local AI rigs are not mainstream; they are a vocal minority amplified by the forum’s focus.</p>
+<ul>
+<li>Several commenters framed high-VRAM ownership as <strong>sample bias</strong>: this subreddit overrepresents users doing local LLM experimentation, so unusually large setups get visibility while many users are still on consumer GPUs with only <code>8–12 GB</code> VRAM. One example cited was people posting multi-device setups such as “six Sparks daisy chained,” which are not representative of typical users.</li>
+<li>A technically relevant point was that expensive local AI hardware can be treated as a <strong>career investment</strong>, especially for software developers trying to build practical AI/LLM skills. One commenter said the experience gained from tinkering with a <strong>DGX Spark</strong> was worth more than the roughly <code>$4K</code> hardware cost.</li>
+<li>For readers comparing realistic hardware options, one commenter pointed to Hugging Face’s hardware reference: <a href="https://huggingface.co/hardware">https://huggingface.co/hardware</a>, which can help map GPUs/accelerators to VRAM capacity and local model workloads.</li>
+</ul>
+</li>
+</ul>
+<h2 id="less-technical-ai-subreddit-recap">Less Technical AI Subreddit Recap</h2>
+<blockquote>
+<p>/r/Singularity, /r/Oobabooga, /r/MachineLearning, /r/OpenAI, /r/ClaudeAI, /r/StableDiffusion, /r/ChatGPT, /r/ChatGPTCoding, /r/aivideo, /r/aivideo</p>
+</blockquote>
+<h3 id="1-claude-fable-51-release-and-benchmark-scrutiny">1. Claude Fable 5.1 Release and Benchmark Scrutiny</h3>
+<ul>
+<li>
+<p><strong><a href="https://www.reddit.com/r/ClaudeAI/comments/1w4juuz/introducing_claude_fable_51_and_claude_mythos_51/">Introducing Claude Fable 5.1 and Claude Mythos 5.1</a></strong> (Activity: 1175): <strong><strong>Anthropic</strong> announced <strong>Claude Fable 5.1</strong> and <strong>Claude Mythos 5.1</strong>, positioning Fable 5.1 as an improved coding/knowledge-work model with stronger long-horizon task performance: <code>52.6%</code> on <strong>Terminal-Bench-Science 0.1</strong> vs more than double Fable 5, and <code>55.8%</code> on <strong>Terminal-Bench 4.0</strong> vs <code>42.0%</code> for Fable 5 (<a href="https://www.anthropic.com/claude-fable-and-mythos-5-1">announcement</a>). Reported cost/safety changes include <code>75%</code> cheaper cache reads, estimated <code>~25%</code> typical workload cost reduction and up to <code>45%</code> for highly agentic workloads, plus <code>~60%</code> fewer false-positive cybersecurity refusals and <code>~85%</code> lower fallback rate on basic bio/medical questions. Fable 5.1 is generally available, while Mythos 5.1 is limited to trusted-access programs for cyberdefense and life-science use cases.</strong> Comments were mostly critical rather than benchmark-focused: users complained about unresolved issues in other Claude tiers/models, especially <em>“Opus 5”</em> producing rambling irrelevant responses and Pro users being left out. One technical commenter cited Anthropic’s own prompting guidance for Fable 5.1, arguing its prose still needs explicit anti-style prompting such as <em>“Please remove all mannered prose”</em> and questioning why writing quality requires mitigation (<a href="https://platform.claude.com/docs/en/build-with-claude/prompt-engineering/prompting-claude-fable-5-1">docs</a>).</p>
+<ul>
+<li>A commenter cites <strong>Anthropic’s prompt-engineering guidance for Claude Fable 5.1</strong> (<a href="https://platform.claude.com/docs/en/build-with-claude/prompt-engineering/prompting-claude-fable-5-1">docs</a>), noting that while Fable 5.1 reduces stock phrases and unexplained jargon versus earlier Claude models, it can produce <strong>denser prose than Claude Fable 5</strong>, with longer sentences and fewer paragraph breaks. They highlight Anthropic’s recommended mitigation: explicitly instruct the model to avoid “mannered prose,” e.g. <em>“Please remove all mannered prose,”</em> to reduce metaphor-heavy or flourish-driven writing and improve directness.</li>
+</ul>
+</li>
+<li>
+<p><strong><a href="https://www.reddit.com/r/singularity/comments/1w4k0yu/what_are_these_benchmarks/">What are these benchmarks 💀</a></strong> (Activity: 833): <strong>The image (<a href="https://i.redd.it/l1ed9s7e9ymh1.png">link</a>) appears to be a <strong>benchmark table for a fictional/future Anthropic-style model, “Claude Fable 5.1,”</strong> comparing it against “Fable 5,” “Opus 5,” and “GPT-5.6 Sol.” Its technical significance is mainly satirical/skeptical: the listed benchmarks include dubious or futuristic names like <code>Terminal-Bench 4.0</code>, <code>CursorBench 3.2.0</code>, and an <code>August 2026</code> OSWorld release, matching the post title’s reaction: <em>“What are these benchmarks 💀”</em> rather than documenting a verifiable model evaluation.</strong> Commenters question the credibility of the benchmark framing, noting that the table implies odd relative performance — e.g. “Opus 5 beats Fable 5 on almost everything” — and reacting skeptically to large jumps such as <code>24.7 → 52.6</code> as implausibly dramatic.</p>
+<ul>
+<li>Several commenters questioned the validity of the posted benchmark table because <strong>Anthropic’s reported results allegedly show Opus 5 outperforming Fable 5 in multiple categories</strong>, despite users perceiving Fable 5 as better in practice. The main technical concern is that benchmark scores may not correlate with real-world model quality, especially when a model described as <em>“hot garbage”</em> can still win on published metrics.</li>
+<li>One notable benchmark delta called out was a jump from <code>24.7</code> to <code>52.6</code>, which commenters interpreted as unusually large and potentially indicative of benchmark sensitivity, training-set leakage, metric gaming, or a major capability change. The thread’s technical skepticism centers on whether these numbers reflect actual reasoning/performance improvements or artifacts of the evaluation setup.</li>
+</ul>
+</li>
+</ul>
+<h3 id="2-anthropic-max-plan-usage-limit-controversy">2. Anthropic Max Plan Usage-Limit Controversy</h3>
+<ul>
+<li>
+<p><strong><a href="https://www.reddit.com/r/ClaudeCode/comments/1w38v98/claude_max_20x_only_applies_to_the_5hour_window/">Claude Max “20x” only applies to the 5-hour window. Weekly usage on the $200 plan is 2x the $100 plan</a></strong> (Activity: 2025): <strong>The image is a <strong>non-technical screenshot of a tweet</strong> criticizing Anthropic’s Claude Max pricing/usage messaging: the advertised <strong>“20x”</strong> multiplier reportedly applies only to the rolling <strong>5-hour usage window</strong>, while the <code>$200/month</code> Max plan provides only about <strong>2x weekly usage</strong> versus the <code>$100/month</code> plan. The linked screenshot is here: <a href="https://i.redd.it/r1sy7gcrkomh1.png">i.redd.it/r1sy7gcrkomh1.png</a>.</strong> Commenters argue the plan labeling is misleading, with one claiming the Max “20x” tier may deliver closer to <code>1.7x</code> weekly usage rather than <code>2x</code>, making two <code>$100</code> subscriptions a better value. Several comments call for clearer disclosure of usage budgets in comparable units, such as equivalent API spend, rather than vague multipliers.</p>
+<ul>
+<li>Users highlighted that <strong>Claude Max 20x</strong> reportedly does not translate to <code>2x</code> the weekly usage of the <code>$100</code> plan; one commenter estimated it is closer to <code>1.7x</code>, making two separate <strong>Max 5x</strong> subscriptions a better effective value at the same <code>$200</code> total cost because they yield <code>2.0x</code> weekly capacity.</li>
+<li>A technically focused complaint was that Anthropic’s “5x/20x” terminology obscures the actual quota model because the multiplier applies to the <strong>5-hour window</strong>, not necessarily weekly allocation. One commenter argued providers should disclose subscription limits as an equivalent <strong>API budget</strong> rather than raw token counts, since read/write/cache tokens have different prices and token-only quotas would still be hard to compare.</li>
+<li>A commenter linked an OpenAI support reply about <strong>Codex 20x</strong> usage limits, suggesting users are comparing Anthropic’s quota semantics against OpenAI’s plan-limit explanations: <a href="https://preview.redd.it/4ppng1k0lpmh1.png?width=1174&#x26;format=png&#x26;auto=webp&#x26;s=2edf509ad8aaa0663f0fb652ffddd5c9c494afd1">https://preview.redd.it/4ppng1k0lpmh1.png?width=1174&#x26;format=png&#x26;auto=webp&#x26;s=2edf509ad8aaa0663f0fb652ffddd5c9c494afd1</a></li>
+</ul>
+</li>
+<li>
+<p><strong><a href="https://www.reddit.com/r/singularity/comments/1w43cci/according_to_their_own_internal_documents_a/">According to their own internal documents a lawsuit filed against Anthropic reveals, that the 20x usage plan actually only allows for 6x more usage.</a></strong> (Activity: 1350): <strong>The image (<a href="https://i.redd.it/xhgz28nrnumh1.jpeg">JPEG</a>) is a table alleging, based on Anthropic internal emails surfaced in a lawsuit, that <strong>Claude Max 20x</strong> does not provide a literal <code>20x</code> usage increase over <strong>Claude Pro</strong> for <strong>Sonnet 4</strong>. It claims Pro allows <code>40–80</code> hours/week, while Max 20x allows only <code>240–480</code> hours/week—roughly <strong>6x Pro usage</strong>, not the expected <code>800–1600</code> hours/week implied by the advertised multiplier.</strong> Commenters were skeptical and frustrated, with some saying they already suspected “20x” was not literal and others questioning whether multiple cheaper Claude Pro accounts would outperform Max. A notable concern was the lack of a clear primary source for the lawsuit/internal-document claim.</p>
+<ul>
+<li>A commenter provided the cited legal source: <strong>Kahn v. Anthropic PBC, No. 3:26-cv-05763</strong>, filed June 14, 2026 in the Northern District of California, pointing specifically to page 16 of the complaint PDF on CourtListener: <a href="https://storage.courtlistener.com/recap/gov.uscourts.cand.472161/gov.uscourts.cand.472161.1.0.pdf">https://storage.courtlistener.com/recap/gov.uscourts.cand.472161/gov.uscourts.cand.472161.1.0.pdf</a>. This is the only comment giving a concrete primary-source reference for the claim that Anthropic’s advertised <code>20x</code> usage plan allegedly translated internally to only about <code>6x</code> more usage.</li>
+<li>One technical objection questioned the internal consistency of the usage numbers: if a plan allowed <code>5</code> consecutive sessions running continuously for <code>8</code> hours per day, <code>7</code> days per week, that totals only <code>280</code> session-hours, suggesting the posted figures or interpretation may not align cleanly with real quota math. The commenter also questioned why a company would define a “maximum allowance” as a range, arguing that such quota representation would be unusual or ambiguous from a product/limits-design perspective.</li>
+</ul>
+</li>
+<li>
+<p><strong><a href="https://www.reddit.com/r/ClaudeCode/comments/1w4jsjt/this_should_not_be_an_exclusive_and_super_premium/">This should not be an exclusive and super premium feature</a></strong> (Activity: 1242): <strong>The <a href="https://i.redd.it/k9ix3mtq7ymh1.png">image</a> is a Claude announcement pop-up for <strong>“Claude Fable 5.1”</strong>, stating that Fable models require usage credits on Pro plans; the highlighted feature is <em>“Writes in plain language and sticks to what you asked for.”</em> The post frames this as a non-technical/product-pricing complaint: basic instruction-following and clear writing are being marketed as an exclusive premium capability rather than a baseline model behavior.</strong> Commenters criticize <strong>Anthropic</strong> for allegedly positioning “writes clearly” as a paid differentiator while older/high-end models like Opus are perceived to have writing or obedience issues. Several replies treat the announcement as absurd or meme-like, joking that it is an improvement over models that <em>“write in cryptic language and disobey you.”</em></p>
+<ul>
+<li>Commenters highlight a product/model-quality concern around <strong>Anthropic Opus</strong>: if prior versions had degraded writing clarity or instruction-following issues, marketing a new/premium <strong>Fable</strong> feature as “able to write clearly” is viewed as monetizing a regression rather than fixing the base model. The technical implication is that core capabilities like clear prose generation, document handling, and instruction adherence should be baseline model behavior, not gated as an exclusive feature.</li>
+</ul>
+</li>
+</ul>
+<h3 id="3-chatgpt-scale-and-eu-dsa-regulation">3. ChatGPT Scale and EU DSA Regulation</h3>
+<ul>
+<li>
+<p><strong><a href="https://www.reddit.com/r/ChatGPT/comments/1w3fb79/eu_commission/">EU Commission</a></strong> (Activity: 2229): <strong>The image is <strong>not a meme</strong>; it is a screenshot of a <strong>European Commission</strong> announcement designating <strong>ChatGPT</strong> as a <strong>Very Large Online Search Engine (VLOSE)</strong> and <strong>Reddit</strong>/<strong>Roblox</strong> as <strong>Very Large Online Platforms (VLOPs)</strong> under the EU <strong>Digital Services Act (DSA)</strong>. The designation triggers a <code>4-month</code> compliance window for additional DSA obligations such as systemic-risk assessments, mitigation measures, independent audits, transparency reporting, and researcher/regulator data access; image: <a href="https://i.redd.it/aystuw0qzpmh1.jpeg">i.redd.it/aystuw0qzpmh1.jpeg</a>.</strong> Commenters focused on what the “additional regulations” actually require, with some skepticism that the EU’s main tech-sector impact is regulating large mostly American platforms. One commenter also questioned the classification boundary by asking what counts as a “Small online search engine.”</p>
+</li>
+<li>
+<p><strong><a href="https://www.reddit.com/r/ChatGPT/comments/1w3gcwx/why_does_chatgpt_dominate_the_usage_metric/">Why does ChatGPT dominate the usage metric?</a></strong> (Activity: 1034): <strong>The linked infographic (<a href="https://i.redd.it/n8bi1yp15qmh1.jpeg">image</a>) claims <strong>ChatGPT</strong> had <code>5.3B</code> monthly web visits in June 2026, exceeding the next 14 listed AI tools combined (<code>4.7B</code>), despite the post noting broadly similar perceived capabilities and high valuations for <strong>OpenAI</strong> and <strong>Anthropic</strong>. The chart ranks <strong>Gemini</strong> (<code>1.1B</code>), <strong>Claude</strong> (<code>968M</code>), <strong>Canva</strong> (<code>760M</code>), <strong>Google Translate</strong> (<code>343M</code>), and <strong>DeepSeek</strong> (<code>319M</code>) behind ChatGPT, so the technical question is less about benchmark parity and more about distribution, product limits, default UX, and funnel effects in consumer AI usage.</strong> Commenters attributed ChatGPT’s lead mainly to <strong>first-mover advantage</strong>, stronger branding/UI, and especially more permissive free/paid usage caps; one user contrasted near-continuous Codex Pro usage at <code>$100/mo</code> with the belief they would hit Claude’s limits quickly even at <code>$200/mo</code>.</p>
+<ul>
+<li>Several commenters attribute ChatGPT’s usage dominance to <strong>much looser free/paid usage limits</strong> versus competitors. One user reports running <strong>Codex Pro at <code>$100/mo</code> with GPT-5.6 Max “almost 24/7”</strong> without hitting limits, while claiming they would exhaust <strong>Claude</strong> limits quickly even at the <code>$200/mo</code> tier.</li>
+<li>A model-quality explanation was raised: users claim OpenAI’s current models are “actually better,” with <strong>Claude Opus</strong> described by heavy users as a recent disappointment while <strong>Claude Fable</strong> remains comparatively well-regarded. One commenter places <strong>GPT-5.6-Sol</strong> at a similar capability level to the stronger Claude variants, suggesting usage share may reflect perceived frontier-model performance as well as availability.</li>
+<li>Distribution and brand recognition were cited as non-benchmark but adoption-relevant factors: ChatGPT has become a default term for consumer AI, similar to “Kleenex,” while <strong>Gemini</strong> benefits from Google Search placement among less technical users. This implies usage metrics may be driven by product distribution and brand recall, not only model capability.</li>
+</ul>
+</li>
+</ul> </article> <nav class="mt-24" aria-label="Issue navigation" data-astro-cid-h5udtq26> <div class="grid grid-cols-2 gap-1.5 sm:gap-3"> <a href="/issues/26-09-03-gpt-6-astra" class="group relative flex flex-nowrap rounded-lg border border-black/15 px-4 py-3 pl-10 no-underline transition-colors duration-300 ease-in-out hover:bg-black/5 hover:text-black focus-visible:bg-black/5 focus-visible:text-black dark:border-white/20 dark:hover:bg-white/5 dark:hover:text-white dark:focus-visible:bg-white/5 dark:focus-visible:text-white"> <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="absolute left-2 top-1/2 size-5 -translate-y-1/2 fill-none stroke-current stroke-2"> <line x1="5" y1="12" x2="19" y2="12" class="translate-x-3 scale-x-0 transition-transform duration-300 ease-in-out group-hover:translate-x-0 group-hover:scale-x-100 group-focus-visible:translate-x-0 group-focus-visible:scale-x-100"></line> <polyline points="12 5 5 12 12 19" class="translate-x-1 transition-transform duration-300 ease-in-out group-hover:translate-x-0 group-focus-visible:translate-x-0"></polyline> </svg> <div class="flex items-center text-sm">OpenAI GPT-6 Astra</div> </a> <a href="/issues/26-08-31-not-much" class="group relative flex grow flex-row-reverse flex-nowrap rounded-lg border border-black/15 px-4 py-4 pr-10 no-underline transition-colors duration-300 ease-in-out hover:bg-black/5 hover:text-black focus-visible:bg-black/5 focus-visible:text-black dark:border-white/20 dark:hover:bg-white/5 dark:hover:text-white dark:focus-visible:bg-white/5 dark:focus-visible:text-white"> <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="absolute right-2 top-1/2 size-5 -translate-y-1/2 fill-none stroke-current stroke-2"> <line x1="5" y1="12" x2="19" y2="12" class="translate-x-3 scale-x-0 transition-transform duration-300 ease-in-out group-hover:translate-x-0 group-hover:scale-x-100 group-focus-visible:translate-x-0 group-focus-visible:scale-x-100"></line> <polyline points="12 5 19 12 12 19" class="-translate-x-1 transition-transform duration-300 ease-in-out group-hover:translate-x-0 group-focus-visible:translate-x-0"></polyline> </svg> <div class="flex items-center text-sm">not much happened today</div> </a> </div> </nav> <section class="mt-24" aria-label="Comments" data-astro-cid-h5udtq26> <div class="giscus"></div> <script data-astro-rerun src="https://giscus.app/client.js" data-repo="trevortylerlee/astro-micro" data-repo-id="R_kgDOL_6l9Q" data-category="Announcements" data-category-id="DIC_kwDOL_6l9c4Cfk55" data-mapping="pathname" data-strict="0" data-reactions-enabled="1" data-emit-metadata="0" data-input-position="top" data-theme="preferred_color_scheme" data-lang="en" data-loading="lazy" crossorigin="anonymous" async></script> </section> </main> </div> </div> </div> <script type="module">document.addEventListener("DOMContentLoaded",()=>{const i=document.querySelectorAll(".content-area img");let e=document.querySelector(".lightbox-container");e||(e=document.createElement("div"),e.className="lightbox-container fixed inset-0 z-50 hidden bg-black/80 backdrop-blur-sm flex items-center justify-center",document.body.appendChild(e));const n=document.createElement("img");n.className="max-h-[90vh] max-w-[90vw] object-contain",e.appendChild(n);const l=document.createElement("button");l.className="absolute top-4 right-4 text-white hover:text-gray-300 focus:outline-none",l.innerHTML=`
+      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="18" y1="6" x2="6" y2="18"></line>
+        <line x1="6" y1="6" x2="18" y2="18"></line>
+      </svg>
+    `,e.appendChild(l);let t=0;i.forEach(o=>{o.classList.add("cursor-pointer","transition-transform","hover:scale-[1.02]"),o.addEventListener("click",()=>{t=window.scrollY,console.log(`Lightbox opening. ScrollY was: ${t}`);const c=o,r=n;r.src=c.src,e.classList.remove("hidden"),document.body.classList.add("overflow-hidden")})});const s=()=>{e.classList.contains("hidden")||(console.log(`Lightbox closing. Current ScrollY: ${window.scrollY}. ScrollY before open was: ${t}`),e.classList.add("hidden"),document.body.classList.remove("overflow-hidden"),window.scrollTo(0,t),console.log(`Scroll position restored to: ${t}`))};e.addEventListener("click",o=>{o.target!==n&&s()}),document.addEventListener("keydown",o=>{o.key==="Escape"&&s()})});</script>  </main> <footer class="animate"> <div class="mx-auto max-w-(--breakpoint-2xl) px-4 sm:px-6 md:px-8 lg:px-12"> <div class="relative"> <div class="absolute -top-12 right-0"> <button id="back-to-top" class="group relative flex w-fit flex-nowrap rounded-sm border border-black/15 py-1.5 pl-8 pr-3 transition-colors duration-300 ease-in-out hover:bg-black/5 hover:text-black focus-visible:bg-black/5 focus-visible:text-black dark:border-white/20 dark:hover:bg-white/5 dark:hover:text-white dark:focus-visible:bg-white/5 dark:focus-visible:text-white"> <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="absolute left-2 top-1/2 size-4 -translate-y-1/2 rotate-90 fill-none stroke-current stroke-2"> <line x1="5" y1="12" x2="19" y2="12" class="translate-x-2 scale-x-0 transition-transform duration-300 ease-in-out group-hover:translate-x-0 group-hover:scale-x-100 group-focus-visible:translate-x-0 group-focus-visible:scale-x-100"></line> <polyline points="12 5 5 12 12 19" class="translate-x-1 transition-transform duration-300 ease-in-out group-hover:translate-x-0 group-focus-visible:translate-x-0"></polyline> </svg> <div class="text-sm">Back to top</div> </button> </div> </div> <div class="flex items-center justify-between"> <div>&copy; 2026 • AINews</div> <div>You can also subscribe by <a href="/rss.xml" target="_self" class="inline-block decoration-black/30 dark:decoration-white/30 hover:decoration-black/50 focus-visible:decoration-black/50 dark:hover:decoration-white/50 dark:focus-visible:decoration-white/50 text-current hover:text-black focus-visible:text-black dark:hover:text-white dark:focus-visible:text-white transition-colors duration-300 ease-in-out underline underline-offset-[3px]"> rss </a>.</div> <div class="flex flex-wrap items-center gap-1.5"> <button id="light-theme-button" aria-label="Light theme" class="group flex size-9 items-center justify-center rounded-sm border border-black/15 hover:bg-black/5 focus-visible:bg-black/5 dark:border-white/20 dark:hover:bg-white/5 dark:focus-visible:bg-white/5"> <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="transition-colors duration-300 ease-in-out group-hover:animate-pulse group-hover:stroke-black group-focus-visible:animate-pulse group-focus-visible:stroke-black dark:group-hover:stroke-white dark:group-focus-visible:stroke-white"> <circle cx="12" cy="12" r="5"></circle> <line x1="12" y1="1" x2="12" y2="3"></line> <line x1="12" y1="21" x2="12" y2="23"></line> <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line> <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line> <line x1="1" y1="12" x2="3" y2="12"></line> <line x1="21" y1="12" x2="23" y2="12"></line> <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line> <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line> </svg> </button> <button id="dark-theme-button" aria-label="Dark theme" class="group flex size-9 items-center justify-center rounded-sm border border-black/15 hover:bg-black/5 focus-visible:bg-black/5 dark:border-white/20 dark:hover:bg-white/5 dark:focus-visible:bg-white/5"> <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="transition-colors duration-300 ease-in-out group-hover:animate-pulse group-hover:stroke-black group-focus-visible:animate-pulse group-focus-visible:stroke-black dark:group-hover:stroke-white dark:group-focus-visible:stroke-white"> <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path> </svg> </button> <button id="system-theme-button" aria-label="System theme" class="group flex size-9 items-center justify-center rounded-sm border border-black/15 hover:bg-black/5 focus-visible:bg-black/5 dark:border-white/20 dark:hover:bg-white/5 dark:focus-visible:bg-white/5"> <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="transition-colors duration-300 ease-in-out group-hover:animate-pulse group-hover:stroke-black group-focus-visible:animate-pulse group-focus-visible:stroke-black dark:group-hover:stroke-white dark:group-focus-visible:stroke-white"> <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect> <line x1="8" y1="21" x2="16" y2="21"></line> <line x1="12" y1="17" x2="12" y2="21"></line> </svg> </button> </div> </div> </div> </footer> <aside data-pagefind-ignore> <div id="backdrop" class="bg-[rgba(0, 0, 0, 0.5] invisible fixed left-0 top-0 z-50 flex h-screen w-full justify-center p-6 backdrop-blur-xs" data-astro-transition-persist="astro-3snakcvo-2"> <div id="pagefind-container" class="m-0 flex h-fit max-h-[80%] w-full max-w-(--breakpoint-sm) flex-col overflow-auto rounded-sm border border-black/15 bg-neutral-100 p-2 px-4 py-3 shadow-lg dark:border-white/20 dark:bg-neutral-900"> <div id="search" class="pagefind-ui pagefind-init" data-pagefind-ui data-bundle-path="/pagefind/" data-ui-options="{&#34;showImages&#34;:false,&#34;excerptLength&#34;:15,&#34;resetStyles&#34;:false}"></div> <script type="module" src="/_astro/Search.astro_astro_type_script_index_0_lang.DExfVQkA.js"></script> <div class="mr-2 pb-1 pt-4 text-right text-xs dark:prose-invert">
+Press <span class="prose text-xs dark:prose-invert"><kbd class="">Esc</kbd></span> or click anywhere to close
+</div> </div> </div> </aside> <script>
+  const magnifyingGlass = document.getElementById("magnifying-glass");
+  const backdrop = document.getElementById("backdrop");
+
+  function openPagefind() {
+    const searchDiv = document.getElementById("search");
+    const search = searchDiv.querySelector("input");
+    setTimeout(() => {
+      search.focus();
+    }, 0);
+    backdrop?.classList.remove("invisible");
+    backdrop?.classList.add("visible");
+  }
+
+  function closePagefind() {
+    const search = document.getElementById("search");
+    search.value = "";
+    backdrop?.classList.remove("visible");
+    backdrop?.classList.add("invisible");
+  }
+
+  // open pagefind
+  magnifyingGlass?.addEventListener("click", () => {
+    openPagefind();
+  });
+
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "/") {
+      e.preventDefault();
+      openPagefind();
+    } else if ((e.metaKey || e.ctrlKey) && e.key === "k") {
+      e.preventDefault();
+      openPagefind();
+    }
+  });
+
+  // close pagefind
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") {
+      closePagefind();
+    }
+  });
+
+  // close pagefind when searched result(link) clicked
+  document.addEventListener("click", (event) => {
+    if (event.target.classList.contains("pagefind-ui__result-link")) {
+      closePagefind();
+    }
+  });
+
+  backdrop?.addEventListener("click", (event) => {
+    if (!event.target.closest("#pagefind-container")) {
+      closePagefind();
+    }
+  });
+
+  // prevent form submission
+  const form = document.getElementById("form");
+  form?.addEventListener("submit", (event) => {
+    event.preventDefault();
+  });
+</script>  <script type="module">document.addEventListener("DOMContentLoaded",()=>{document.querySelectorAll('aside a[href^="#"]').forEach(t=>{t.addEventListener("click",o=>{o.preventDefault();const e=t.getAttribute("href")?.substring(1)||"";if(!e)return;const n=document.getElementById(e);if(!n)return;const r=document.querySelector("header");if(!r)return;const s=r.offsetHeight+16;window.scrollTo({top:n.offsetTop-s}),history.pushState("","",`#${e}`)})}),window.location.hash&&setTimeout(()=>{const t=window.location.hash.substring(1),o=document.getElementById(t);if(o){const e=document.querySelector("header");if(!e)return;const n=e.offsetHeight+16;window.scrollTo({top:o.offsetTop-n})}},100)});</script></body></html> <script type="module">document.addEventListener("astro:page-load",()=>{const e=document.getElementById("metadata-toggle"),o=document.getElementById("metadata-content"),d=document.getElementById("metadata-section"),n="metadataExpanded";if(!e||!o||!d){console.log("Metadata toggle elements not found. Skipping toggle setup.");return}console.log("Metadata toggle script running.");const l=a=>{o.style.display=a?"":"none",e.setAttribute("aria-expanded",String(a));const g=e.querySelector("svg");g&&(g.style.transform=a?"rotate(0deg)":"rotate(-180deg)"),console.log(`Metadata section visibility set to: ${a?"expanded":"collapsed"}`)};let t=localStorage.getItem(n)!=="false";console.log(`Initial metadata state read from localStorage: ${t}`),l(t),e.addEventListener("click",()=>{t=!t,l(t),localStorage.setItem(n,String(t)),console.log(`Metadata state toggled and saved to localStorage: ${t}`)}),console.log("Metadata toggle event listener attached.")});</script> 

@@ -1,0 +1,46 @@
+{
+  "lane": "seed-kernel",
+  "division": "B",
+  "ok": true,
+  "note": "Seed-rib kernel repaired: law kernel re-attached inline (10 law-role entries incl registry.json bytes, the 4 freshness gate boot docs, generator quine), the 09-28 receipt mass (90 paths) moved to pointer carriers, budget machine-bound to decoded payload 97364/100000 B (build refuses, verify fails, proven against the old 297744 B seed), law_refs now checked against carried registry bytes, seed_mcp default seed resolves through SEED_RIB_CURRENT (split-brain closed); finish line passed twice (python tools/seed_rib.py verify --source . exit 0 with zero SEAL MISMATCH rows on both interpreters, seed_mcp sha match, at 10:43Z and again 10:50:05Z after a sibling stealth_driver write staled the first pass and the new SLO fired re-render), live churn measured on the sealed trio across 5 sibling writes; ratchet exit 1 is sibling-lane debt, zero rows in my two files; nothing committed (shared tree holds sibling work, tracking is s2-20 item 5 operator call).",
+  "rows": [],
+  "checks": [
+    {
+      "command": "python tools/seed_rib.py verify --source .",
+      "exit": 0,
+      "evidence": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/wave5-repair/lanes/seed-kernel.check.txt (sections C and E, final pass 2026-09-29T10:50:05Z: inline 29 hash-matched, pointers 98 source-checked / 0 UNRESOLVED, zero SEAL MISMATCH rows, decoded payload 97364/100000 B, seed age 0d, seed sha256 4bbab60ad7cdb9f4...)"
+    },
+    {
+      "command": ".venv/Scripts/python.exe tools/seed_rib.py verify --source .",
+      "exit": 0,
+      "evidence": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/wave5-repair/lanes/seed-kernel.check.txt (sections C and E, second run each, same result)"
+    },
+    {
+      "command": ".venv/Scripts/python.exe tools/seed_rib.py verify --seed watch/inbox/seed_rib_20260928/seed-rib/seed.json --into watch/inbox/gala_20260925/wave5-repair/lanes/_sk_repro --source .",
+      "exit": 1,
+      "evidence": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/wave5-repair/lanes/seed-kernel.check.txt (section A: pre-repair failure reproduced on the old seed, 3 pointer SEAL MISMATCH rows plus the new budget row 297744 > 100000)"
+    },
+    {
+      "command": "law-role real-bytes check (decode content_b64, sha256 + length vs seal) over seed entries with role=law carrier=inline",
+      "exit": 0,
+      "evidence": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/wave5-repair/lanes/seed-kernel.check.txt (sections C and E: 10 law-role entries with verified real bytes, need >= 8)"
+    },
+    {
+      "command": "python tools/seed_mcp.py --seed-sha && python tools/seed_mcp.py --list (default resolution via SEED_RIB_CURRENT)",
+      "exit": 0,
+      "evidence": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/wave5-repair/lanes/seed-kernel.check.txt (section E: --seed-sha prints 4bbab60ad7cdb9f4... == SEED_RIB_CURRENT sha256; --list names watch/inbox/seed_rib_20260929/seed-rib/seed.json, match=True)"
+    },
+    {
+      "command": ".venv/Scripts/python.exe tools/violation_ratchet.py check --changed",
+      "exit": 1,
+      "evidence": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/wave5-repair/lanes/seed-kernel.check.txt (section D: all NEW/GROWTH rows are sibling lanes' in-flight files - mag/corpus_gap_research.py, mag/corpus_selfsteal.py, mag/link_library.py, tools/fossil_check.py, mag/shared_surface.py, tools/stealth_driver.py; none name tools/seed_rib.py or tools/seed_mcp.py; tool ignores --paths so no scoped pass was available; debt not accepted or baselined by this lane)"
+    },
+    {
+      "command": "em/en-dash + nonascii scan over the 8 files this lane wrote or rebuilt",
+      "exit": 0,
+      "evidence": "session transcript: tools/seed_rib.py 0/0/0, tools/seed_mcp.py 0/0/0, watch/inbox/wave5_repair/seed-kernel.md 0/0/0, SEED_RIB_CURRENT 0/0/0, seed.json 0/0/0, paths file 0/0/0, lane JSON written dash-free; the only em-dashes found are pre-existing lines in SEED_RIB_REFRESH_20260928.md (L20/L24/L51, 09-28 original) and verbatim ratchet tool output inside seed-kernel.check.txt (kept byte-faithful as evidence)"
+    }
+  ],
+  "decision_changed": "Closes the s2-20 + w4-08 seed-rib gap set and changes three standing facts: (1) the 100KB budget is now machine law bound to decoded inline payload (build refuses, verify fails, levers named) instead of a report claim - the 09-28 'content under cap' reading can never pass again; (2) the cold-agent MCP surface and the named-current seed can no longer split-brain (tools/seed_mcp.py default resolves watch/inbox/SEED_RIB_CURRENT; --list reports the resolved path); (3) the current seed is now watch/inbox/seed_rib_20260929/seed-rib/seed.json (kernel re-attached: 10 law-role entries with bytes, generator quine, law_refs machine-checked against carried registry) at inline_max 12288 instead of 8192, named reason: the generator grew to 12169 B carrying the laws it enforces and the raise also carries registry.json bytes, with AGENTS.md and the load-order docs staying sealed pointers.",
+  "artifact": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/wave5-repair/lanes/seed-kernel.json"
+}

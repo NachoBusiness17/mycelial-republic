@@ -1,0 +1,8 @@
+# swarm1-glm-flash-tools__ds_workhorse (glm-5.3-flash @ zai, turn 1, channel: content)
+
+DEFECT 1: Docstring law requires thinking OFF via explicit reasoning-disabled params, but the request body sends none; the off state rests on an unverified provider assumption | EVIDENCE: tools/ds_workhorse.py:39-44 vs :8-9 | FIX: send the provider's explicit reasoning-disable field (e.g. "thinking": {"type": "disabled"}) in the body at :40-44 and byte-verify the response has no reasoning content
+DEFECT 2: Retry path loses the prior attempt's metered cost: on exception or empty retry, cost is reset to 0.0, so the ledger undercounts spend | EVIDENCE: tools/ds_workhorse.py:100-104 | FIX: accumulate cost across attempts (cost += returned cost) instead of overwriting at :101 and :104
+DEFECT 3: Output file is opened mode "w", truncating any prior results; a mid-batch crash or rerun silently destroys completed rows with no resume | EVIDENCE: tools/ds_workhorse.py:95-96 | FIX: open in append mode and skip ids already present in out_path before the loop at :96
+DEAD-CODE: pricing comment promises "metered cost if the API reports it" but no reported-cost field is ever read; that branch is declared, never implemented | EVIDENCE: tools/ds_workhorse.py:85-88
+ONE-SITTING FIX: add the explicit reasoning-disable parameter plus a response-side guard that voids outputs containing reasoning artifacts, closing the gap between the AH10 law in the docstring and the actual wire format | EVIDENCE: tools/ds_workhorse.py:39-44
+FALSIFIER: send a request with the patch applied and one without; if the provider rejects the explicit thinking field or both responses show identical token splits, the fix is wrong.

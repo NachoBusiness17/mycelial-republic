@@ -1,0 +1,7 @@
+# swarm1-deepseek-tools__lens (deepseek-chat @ deepseek, turn 1, channel: content)
+
+DEFECT 1: provenance hashes are computed but never verified against the loaded text, so a lens whose invariants.md changed mid-run stamps the new sha with old-content testimony | EVIDENCE: tools/lens.py:87-89 vs tools/lens.py:91-93 (sha256_file read at prov time, text read separately at 91/93) | FIX: read bytes once, hash those bytes, parse the same buffer for both invariants and case_rows.
+DEFECT 2: precedent_touched matching is substring-on-any-6+char-topic-word against the whole text, so common words ("system", "before") mark cases touched that were never cited | EVIDENCE: tools/lens.py:186-187 | FIX: only mark a case touched when its CASE-n token appears in cites.
+DEFECT 3: _CITE_RE findall over free text accepts citations like INV-99 that do not exist in the loaded invariants, so an uncited-to-hallucinated-row testimony passes as cited | EVIDENCE: tools/lens.py:56 and tools/lens.py:184 | FIX: cross-check each INV-n against the numbered invariants loaded and demote unmatched cites to UNVERIFIED in the manifest.
+DEAD-CODE: socket import plus getaddrinfo SSRF block duplicates ipaddress/urlsplit validation already implied by the https+hostname check; the loop's private-range check can never fire for a public FQDN barring DNS rebinding | EVIDENCE: tools/lens.py:65-71
+ONE-SITTING FIX: collapse the three reads in assemble_lens into one read buffer per file (invariants, case_law) so sha and parsed content are the same bytes | EVIDENCE: tools/lens.py:87-93

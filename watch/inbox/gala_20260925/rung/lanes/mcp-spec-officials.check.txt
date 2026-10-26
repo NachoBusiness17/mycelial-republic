@@ -1,0 +1,90 @@
+=== mcp-spec-officials finish-line battery 2026-10-10 (division B lane) ===
+All raw fetches archived beside this file as mcp-spec-officials.*.raw.* .
+
+/usr/bin/bash: line 6: printf: --: invalid option
+printf: usage: printf [-v var] format [arguments]
+31
+exit=0
+
+--- [2] CMD: curl -sL "https://api.github.com/repos/modelcontextprotocol/servers" -o mcp-spec-officials.servers-repo.raw.json (done earlier); digest: ---
+full_name = modelcontextprotocol/servers | archived = False | pushed_at = 2026-10-11T02:09:15Z | stars = 91131
+exit=0
+
+--- [3] CMD: python digest of mcp-spec-officials.spec-releases.raw.json (fetch command: curl -sL "https://api.github.com/repos/modelcontextprotocol/modelcontextprotocol/releases?per_page=100") ---
+2026-07-28 | published: 2026-07-28
+2026-07-28-RC | published: 2026-05-29
+2025-11-25 | published: 2025-11-25
+2025-11-25-RC | published: 2025-11-15
+2025-06-18 | published: 2025-06-18
+2025-03-26 | published: 2025-03-26
+2024-11-05-final | published: 2025-03-26
+2024-11-05 | published: 2025-01-17
+2024-10-07 | published: 2024-11-06
+exit=0
+
+--- [4] CMD: python digest of mcp-spec-officials.repos.raw.json (fetch: curl -sL "https://api.github.com/orgs/modelcontextprotocol/repos?per_page=100") ---
+total repos: 43 | archived: ['docs', 'create-typescript-server', 'create-python-server', 'servers-archived', 'use-mcp']
+exit=0
+
+--- [5] VERBATIM EXCERPTS (byte-copied via grep -n from the raw fetches) ---
+grep -n "Make MCP stateless" mcp-spec-officials.changelog.raw.md:
+16:2. Make MCP stateless: remove the `initialize`/`notifications/initialized` handshake. Every request now carries its protocol version and client capabilities in `_meta` (`io.modelcontextprotocol/protocolVersion`, `io.modelcontextprotocol/clientCapabilities`). Clients SHOULD identify themselves on each request (`io.modelcontextprotocol/clientInfo`), and servers SHOULD identify themselves in each result's `_meta` (`io.modelcontextprotocol/serverInfo`). Version mismatches return `UnsupportedProtocolVersionError` ([SEP-2575](https://github.com/modelcontextprotocol/modelcontextprotocol/pull/2575)).
+exit=0
+
+grep -n "MCP servers \*\*MUST\*\* implement OAuth" mcp-spec-officials.authorization.raw.md:
+74:4. MCP servers **MUST** implement OAuth 2.0 Protected Resource Metadata ([RFC9728](https://datatracker.ietf.org/doc/html/rfc9728)).
+exit=0
+
+grep -n "dedicated to housing just" mcp-spec-officials.servers-readme.raw.md:
+6:> If you are looking for a list of MCP servers, you can browse published servers on [the MCP Registry](https://registry.modelcontextprotocol.io/). The repository served by this README is dedicated to housing just the small number of reference servers maintained by the MCP steering group.
+exit=0
+
+grep -n "A Deprecated feature remains" mcp-spec-officials.deprecated.raw.md:
+14:A Deprecated feature remains part of the specification but is scheduled for
+15-removal: new implementations **SHOULD NOT** adopt it, and existing
+16-implementations **SHOULD** migrate before the feature's earliest removal. The
+exit=0
+
+grep -n "request-scoped SSE stream" mcp-spec-officials.transports.raw.md:
+24:   a JSON object or a request-scoped SSE stream.
+exit=0
+
+grep -n "Deprecated in" (deprecated table) mcp-spec-officials.deprecated.raw.md:
+28:| [Roots](/specification/2026-07-28/client/roots) | [SEP-2577](https://github.com/modelcontextprotocol/modelcontextprotocol/pull/2577) | `2026-07-28` | Pass directories or files via tool parameters, resource URIs, or server configuration | First revision released on or after 2027-07-28 |
+29:| [Sampling](/specification/2026-07-28/client/sampling) | [SEP-2577](https://github.com/modelcontextprotocol/modelcontextprotocol/pull/2577) | `2026-07-28` | Integrate directly with LLM provider APIs | First revision released on or after 2027-07-28 |
+30:| [Logging](/specification/2026-07-28/server/utilities/logging) | [SEP-2577](https://github.com/modelcontextprotocol/modelcontextprotocol/pull/2577) | `2026-07-28` | Log to `stderr` for stdio transports; use [OpenTelemetry](https://opentelemetry.io/) for observability | First revision released on or after 2027-07-28 |
+32:| `includeContext: "thisServer"` / `"allServers"` ([Sampling](/specification/2026-07-28/client/sampling#capabilities)) | [SEP-2596](https://github.com/modelcontextprotocol/modelcontextprotocol/pull/2596) | `2025-11-25` | Omit the field or use `"none"` | Follows Sampling ([SEP-2577](https://github.com/modelcontextprotocol/modelcontextprotocol/pull/2577)) |
+exit=0
+
+--- [6] FALSIFIABLE PROBE: C:/Users/foste/Documents/projects/local_sovereign_agent/.venv/Scripts/python.exe mcp-spec-officials.probe.py (live refetch of tags + transports page; falsifiers in the script docstring) ---
+Traceback (most recent call last):
+  File "C:\Users\foste\Documents\projects\local_sovereign_agent\watch\inbox\gala_20260925\rung\lanes\mcp-spec-officials.probe.py", line 30, in <module>
+    tags_raw = fetch("https://api.github.com/repos/modelcontextprotocol/modelcontextprotocol/tags?per_page=100")
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\foste\Documents\projects\local_sovereign_agent\watch\inbox\gala_20260925\rung\lanes\mcp-spec-officials.probe.py", line 23, in fetch
+    with urllib.response.urlopen(req, timeout=60) as resp:  # noqa: S310
+         ^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: module 'urllib.response' has no attribute 'urlopen'
+probe exit=1
+
+NOTE on runs: the first probe attempt (appended above) exited 1 on a probe-code bug (AttributeError: urllib.response.urlopen); the fetches never ran, so that exit is a code fix, not a claim falsification. Corrected probe below.
+
+--- [6-RERUN] CMD: C:/Users/foste/Documents/projects/local_sovereign_agent/.venv/Scripts/python.exe mcp-spec-officials.probe.py (live refetch of tags + transports page; falsifiers in the script docstring) ---
+C1 tags seen (final only): 2024-10-07, 2024-11-05, 2025-03-26, 2025-06-18, 2025-11-25, 2026-07-28
+C1 PASS: newest final spec tag = 2026-07-28
+C2 numbered standard-binding items: ['stdio', 'Streamable HTTP']
+C2 PASS: standard bindings = stdio + Streamable HTTP; HTTP+SSE absent from the 2026-07-28 transports index
+PROBE VERDICT: both claims hold (exit 0)
+probe exit=0
+
+NOTE [1]: the [1] header line above failed as a printf arg (printf: --: invalid option), so the header text is missing; the command it documents was: grep -c "specification/2026-07-28" mcp-spec-officials.llms.raw.txt and its output (31 current-spec pages in llms.txt) plus exit=0 are the lines immediately after the error.
+PASS | MCP went stateless in 2026-07-28 | quote words = 19 | mcp-spec-officials.changelog.raw.md
+PASS | Two standard transports only | quote words = 24 | mcp-spec-officials.transports.raw.md
+PASS | OAuth 2.1 resource-server contract | quote words = 24 | mcp-spec-officials.authorization.raw.md
+PASS | Official servers repo is 7 reference servers, not a directory | quote words = 23 | mcp-spec-officials.servers-readme.raw.md
+PASS | Twelve-month deprecation floor | quote words = 29 | mcp-spec-officials.deprecated.raw.md
+em-dash count in lane json = 0
+en-dash count in lane json = 0
+em-dash count in check.txt = 0
+en-dash count in check.txt = 0
+QUOTE VERIFY VERDICT: ALL PASS

@@ -1,0 +1,8 @@
+# genlive1-g1-0-glm-flash (glm-5.3-flash @ zai, turn 1, channel: content)
+
+DEFECT 1: recency=1.0 fallback for span<=0 is unreachable when any ts parses (`not known` is False), so all blocks get recency 0.0, contradicting the documented "span<=0 -> 1.0 for all" | EVIDENCE: mag/preload_selector.py:179-180 | FIX: replace the ternary with `(1.0 if ts and ts_span == 0 else (0.0 if not ts else (ts - ts_min).total_seconds() / ts_span))`.
+DEFECT 2: zero shared positions yields rel_delta_pct=0.0 and verdict DECORATIVE while churn=1.0, a false kill signal at maximum divergence | EVIDENCE: mag/preload_selector.py:273-276 | FIX: gate verdict on shared_positions>0, else emit "NO_OVERLAP" and skip the F-W5 verdict.
+DEFECT 3: selftest reads both input files twice (ok1 comparison) so any write to trajectory/tape between reads flips orderer_deterministic to FAIL, a TOCTOU in the determinism check itself | EVIDENCE: mag/preload_selector.py:380-383 | FIX: load blocks once into a variable and score two independent copies via score_blocks(list(blocks)).
+DEFECT 4: missing per-token logprob silently becomes 0.0, injecting a fake confident token into mean_abs_dlogprob and ppl for both arms | EVIDENCE: mag/preload_selector.py:251 | FIX: skip entries lacking a numeric logprob and track a dropped-token count in the returned row.
+DEAD-CODE: --top argument added to the probe subparser but never read by cmd_probe | EVIDENCE: mag/preload_selector.py:422
+ONE-SITTING FIX: correct the recency fallback so the documented formula actually executes (currently every single-timestamp or span-zero dataset scores recency 0 for all blocks, collapsing 50 percent of the instrument's signal) | EVIDENCE: mag/preload_selector.py:179-180

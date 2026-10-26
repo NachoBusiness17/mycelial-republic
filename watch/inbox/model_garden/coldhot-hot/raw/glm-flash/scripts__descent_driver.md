@@ -1,0 +1,7 @@
+# coldhot-hot-glm-flash-scripts__descent_driver (glm-5.3-flash @ zai, turn 1, channel: content)
+
+DEFECT 1: A failed ds_workhorse run still consumes the queue because the unconditional mv on success-of-if (not of the python run) destroys pending_items.jsonl, permanently dropping unfetched items | EVIDENCE: scripts/descent_driver.sh:22-26 | FIX: gate the mv on the workhorse's exit status (if "$PY" ... ; then mv ...; fi)
+DEFECT 2: Output filename uses only %H%M, so two cycles within the same clock hour overwrite the prior pending_out_*.jsonl, silently destroying banked results | EVIDENCE: scripts/descent_driver.sh:24 | FIX: include %d and $cycle in the filename, e.g. pending_out_$(date -u +%d%H%M)_${cycle}.jsonl
+DEFECT 3: Header promises "skip = output exists" but the loop never checks for prior output, so every hermes_burn_* dir is re-grounded every 45 seconds, burning budget on completed asks | EVIDENCE: scripts/descent_driver.sh:4,18-21 | FIX: guard the python call with an output-exists check (e.g. [ -f "$q/output.done" ] && continue)
+DEAD-CODE: The documented skip gate exists only in the comment block; no corresponding code path anywhere in the file | EVIDENCE: scripts/descent_driver.sh:4
+ONE-SITTING FIX: Wrap the workhorse invocation and mv in a success check so failed runs keep the queue intact, and fold the output-exists skip into the same edit while in the loop | EVIDENCE: scripts/descent_driver.sh:18-26

@@ -1,0 +1,9 @@
+# swarm1-glm-flash-tools__stealth_fanout (glm-5.3-flash @ zai, turn 1, channel: content)
+
+DEFECT 1: SSRF guard is check-then-use: `_assert_public_host` validates one transient DNS resolution, then `urlopen` re-resolves the hostname, so a rebinding host can pass the guard and connect to a private IP | EVIDENCE: tools/stealth_fanout.py:82-85 vs 129 | FIX: resolve once, pin the validated IP for the actual connection (custom opener / HTTPSConnection to the checked IP with SNI-Host set).
+DEFECT 2: No fanout or retry: `run_item` sends each ask to exactly one lane and on any dispatch exception banks the error string as the final answer, silently losing the item despite the "concurrent across ALL models" contract | EVIDENCE: tools/stealth_fanout.py:141-149 | FIX: on failure, retry the ask on the next lanes in `LANES` before writing a DISPATCH-ERR file, and only then mark ok=false.
+DEFECT 3: `_check_base` hardcodes its own 3-entry allowlist that silently drifts from the adjacent `WORK_BASES` set (nous base present in one, absent in the other); a future lane edit updates one and not the other | EVIDENCE: tools/stealth_fanout.py:89-93 | FIX: make `_check_base` test membership in `WORK_BASES` (single source of truth) instead of an inline set literal.
+DEAD-CODE: `WORK_BASES` is defined and commented as the SSRF boundary but never referenced by any code path | EVIDENCE: tools/stealth_fanout.py:73-76
+ONE-SITTING FIX: add lane fallback retry to `run_item` so every ask tries successive lanes before giving up, converting lost items into banked answers | EVIDENCE: tools/stealth_fanout.py:141-149
+
+Falsifier for the deliverable: run one ask whose first lane raises (e.g. revoke that key); with the fix the heartbeat jsonl shows ok=true for that id from a later lane, with current code it shows ok=false.

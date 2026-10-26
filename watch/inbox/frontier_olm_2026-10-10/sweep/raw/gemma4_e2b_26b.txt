@@ -1,0 +1,72 @@
+### Built a fully local Mac app on Ollama (dictation, meeting notes, RAG): numbers and lessons from Gemma 4 e2b vs 26b, open source
+I built a Mac app that does dictation, meeting notes and "ask my work anything" with nothing leaving the machine. We've released it free and open source (GPL-3.0) through DevPlus. Links at the bottom. Sharing the stack and numbers, because the local pieces are finally fast enough for this to feel instant.
+ The stack
+ Speech: NVIDIA Parakeet TDT 0.6B v3 through FluidAudio, compiled with Core ML for the Neural Engine (v2 for English only). Whisper large-v3-turbo through WhisperKit for the other languages.
+ Cleanup, meeting notes, answers and extraction: Gemma 4 in Ollama, picked by RAM: e2b-it-qat on 8 GB (4.3 GB download), e4b-it-qat on 16 GB, 12b from 24 GB, 26b from 48 GB (18.6 GB). Any OpenAI-compatible server works instead.
+ Retrieval: SQLite. FTS5 with BM25 plus EmbeddingGemma vectors, merged with reciprocal rank fusion (k = 60). The top 8 passages go to the model as numbered sources it has to cite.
+ Graph: the model extracts people, companies, projects, topics and the relations between them as strict JSON at temperature 0.
+ Numbers (M5 Max, 128 GB, models already loaded)
+ Parakeet v3 transcribes a 9.8 second sentence in about 100 ms.
+ Cleaning up one dictated sentence: 100 to 430 ms on gemma4:e2b-it-qat, 250 to 900 ms on gemma4:26b. The first call after loading: 0.4 s vs 8.7 s.
+ Hybrid search, including embedding the query: 60 to 90 ms.
+ An answer with 8 cited sources: 2 to 2.5 s on e2b, 2.5 to 7 s on 26b.
+ This is the highest end Mac, so I'd love to see numbers from base M1/M2 owners.
+ Lessons I learned along the way
+ Small models remove fillers fine but miss longer self-corrections. "let's meet at two actually three" came out as "three" on both. But "I'll send you the checklist by Friday, actually make that Thursday afternoon" came back unchanged from e2b, while 26b wrote "by Thursday afternoon". The fix wasn't a bigger model: corrections that swap a day, time, number or month ("actually", "make that", "no wait", "I mean") are now settled with a small deterministic pass before the model sees the text, and a few examples in the prompt cover the rest. Now e2b gets it right too, and 26b stopped treating a new sentence that starts with "Actually" as a correction.
+ Cleanup models love to answer a dictated question instead of transcribing it. So I built a guard that compares the output with what you said (length and drift) and falls back to rule-based cleanup rather than paste words you never said.
+ Keep the system prompt byte-stable so Ollama reuses the cached prefix. Everything that varies (the app you're in, your vocabulary) goes after it.
+ Don't let the model do dates. It extracts the promise ("I'll send it by Friday"); a deterministic parser turns "Friday", "EOD" or "in 2 days" into a date. The small models invented times constantly.
+ Reciprocal rank fusion was simpler and better than trying to put BM25 and cosine scores on one scale.
+ Small models loop. A loop guard stops generation when output starts repeating, and a salvage parser keeps the well-formed JSON objects when an extraction comes back malformed.
+ Two questions for this sub, which small model (under 8 GB) have you found best at transcript cleanup that respects self-corrections? And for entity extraction into strict JSON?
+ Code: https://github.com/binders-io/app
+ submitted by /u/hfeixas 
+ [link] [comments]
+
+### /u/Appropriate-Fix4695 on Built a fully local Mac app on Ollama (dictation, meeting notes, RAG): numbers and lessons from Gemma 4 e2b vs 26b, open source
+cool seeing real numbers for once, most posts here are just "it works" with no timing
+ the hybrid search with sqlite is interesting, i been meaning to try that instead of just dumping everything in a vector db and hoping for the best. your point about small models inventing dates made me laugh cause i had same problem last month, they just make up deadlines from nowhere
+ for your question on transcript cleanup under 8gb, i tried a few options and mistral small 22b actually did pretty decent at respecting corrections like "no wait" but you need to give it few examples in the prompt. the e2b models are surprisingly good for their size though, your guard approach sounds like the right move
+ never thought about keeping the system prompt byte-stable for the kv cache, that's a clever trick i'm stealing for my own project
+
+### /u/hfeixas on Built a fully local Mac app on Ollama (dictation, meeting notes, RAG): numbers and lessons from Gemma 4 e2b vs 26b, open source
+thanks! 
+ yeah, I wanted real timings, fast means nothing without them. on the hybrid search, at personal scale you really don't need a vector db. I keep FTS5 for keywords and the embeddings as normalized blobs in a plain SQLite table, loaded into memory and compared brute force. then I take the top 40 from each side and merge them with RRF (k=60). For dates, what fixed it for me was asking the model for the deadline exactly as it was written ("Friday", "EOD", "next week") and never an actual date. a boring parser can do the rest.
+ The cache trick - my dictionary only changes when you add a word, so it can live in the system prompt. Anything per request (the app you're in, text around the cursor) goes in the user turn.
+
+### /u/Cergorach on Built a fully local Mac app on Ollama (dictation, meeting notes, RAG): numbers and lessons from Gemma 4 e2b vs 26b, open source
+Cool! Nice that you kept Whisper large-v3-turbo for other languages then English, I noticed Parkeet halucinating like a drunken sailor when transcribing Dutch.
+ I currently use MacWhisper Pro for this, but might try this down the road.
+
+### /u/hfeixas on Built a fully local Mac app on Ollama (dictation, meeting notes, RAG): numbers and lessons from Gemma 4 e2b vs 26b, open source
+Drunken sailor is a great way to put it. On here you can switch to Whisper large-v3-turbo under Settings > Dictation > Speech recognition, and hard set the language instead of auto-detect so it doesn't have to guess. It's slower than Parakeet, but it does the job.
+ MacWhisper is great, especially for transcribing files. This app is aimed a bit different. Dictation straight into whatever app you're in, meeting notes, and the memory kb you can search and ask questions. If you do try it, I'd love to hear how well it handles Dutch. You can also add Dutch names and other jargon to the dictionary so they're always spelled your way.
+
+### /u/MarcelloT254k on Built a fully local Mac app on Ollama (dictation, meeting notes, RAG): numbers and lessons from Gemma 4 e2b vs 26b, open source
+Is it suitable for research notes? From what I see the focus is meetings and corporate style message summary.
+ I will try to check it out on M1 16gb. So far the overall best models in this setup are MiniCPM5-2B in BF16 (5,0gb) or Ling-3.0-tiny in Q8 (8,4gb) with Agents-A1-4B (Q8) (5,2gb) and ornith-1.0-9B (Q5_K_XL) (7,6gb) and Gemma-4-E4B (Q4_K_XL) (5,3gb) as strong (and relatively fast) contenders.
+ I haven't methodically tested what you asked for, just overall quality of: understanding request, following instructions, tool calls, quality of summarised responses based on sources. Everything measured subjectively by me, so it's only anecdotal.
+ On the edge of small models I've recently found crucible-labs/Qwen3.6-35B-A3B-REAP-48-v2-GGUF (9,4gb) and unsloth/gemma-4-12B-it-qat-GGUF:UD-Q4_K_XL (7,1gb) - they could be usefull too at ~8gb.
+
+### /u/hfeixas on Built a fully local Mac app on Ollama (dictation, meeting notes, RAG): numbers and lessons from Gemma 4 e2b vs 26b, open source
+It should be, Advanced notes formating is supported, and AI Ingest -> Action Items will work out of the box.
+
+### /u/MarcelloT254k on Built a fully local Mac app on Ollama (dictation, meeting notes, RAG): numbers and lessons from Gemma 4 e2b vs 26b, open source
+I tested your app a bit, it has potential but didn't work out of the box (despite connecting to local llama.cpp server, confirmed on both sides) - digest didn't retrieve answers generated by llama as a main bug, the rest is - notes keep moving to the top automatically after each click, text is misaligned when resizing window. I will probably check it out again in the future when it's more polished and won't need troubleshooting after unpacking.
+
+### /u/hfeixas on Built a fully local Mac app on Ollama (dictation, meeting notes, RAG): numbers and lessons from Gemma 4 e2b vs 26b, open source
+Thank you for the feedback, will look into these and address all findings. I really appreciate the feedback.
+
+### /u/hfeixas on Built a fully local Mac app on Ollama (dictation, meeting notes, RAG): numbers and lessons from Gemma 4 e2b vs 26b, open source
+I went through all three:
+ Digests with llama.cpp: confirmed. With thinking models, llama.cpp sends the reasoning separately from the answer, and Binders only read the answer. The reasoning used up the token budget, so the digest came back cut off or empty, and the app never told you why. The next update turns thinking off in the request, and if a digest fails it now says why right in the note. Until then, starting llama-server with --reasoning-budget 0 (or --chat-template-kwargs '{"enable_thinking":false}') should make it work as is.
+ Notes jumping to the top: confirmed. Just opening a note counted as an edit, so the list re-sorted. Fixed.
+ Misaligned text on resize: I couldn't reproduce this exactly. I did find that list items and checkboxes wrapping onto a second line started back under the bullet instead of lining up with the text, which gets worse as the window gets narrower. Fixed that. If what you saw was something else, a screenshot would help a lot.
+ One more fixed along the way, if your llama.cpp server runs on another machine, e.g. over Tailscale, macOS was blocking plain http to it.
+ All fixes will be in the next update. Thanks again for helping me make the product better for everyone 😄
+
+### /u/MarcelloT254k on Built a fully local Mac app on Ollama (dictation, meeting notes, RAG): numbers and lessons from Gemma 4 e2b vs 26b, open source
+Thanks for listening! 3. bug was basically what you described and it happens when narrowing the window.
+
+### /u/hfeixas on Built a fully local Mac app on Ollama (dictation, meeting notes, RAG): numbers and lessons from Gemma 4 e2b vs 26b, open source
+0.4.0 out now which should fix all the issues you pointed out + a few other features I’ve been working on https://github.com/binders-io/app/releases/tag/v0.4.0

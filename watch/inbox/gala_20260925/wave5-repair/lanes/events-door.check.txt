@@ -1,0 +1,37 @@
+$ .venv\Scripts\python.exe watch\inbox\gala_20260925\wave5-repair\lanes\events-door.finishline.py
+file non-empty lines: 63
+json.loads on every line: OK, zero raise, parsed 63
+load_events() served rows: 58 (expect 58 charter rows)
+named debt skipped from service (id absent from served rows): ['B2-142-HN-QWEN38-DIG', 'B2-142-HN-CODEPLAN-DIG', 'B2-142-TRIAL-SHAPES-LIVE', 'B2-142-REDDIT-TRIAL-DECAY', 'LINKS-329-CORRECTION']
+named debt bytes still on file (no-erase): True
+carriers served: ['B2-142-HN-QWEN38-DIG-BACKFILL', 'B2-142-HN-CODEPLAN-DIG-BACKFILL', 'B2-142-TRIAL-SHAPES-LIVE-BACKFILL', 'B2-142-REDDIT-TRIAL-DECAY-BACKFILL', 'LINKS-329-CORRECTION-BACKFILL']
+FINISH LINE: PASS
+
+[exit 0]
+
+$ .venv\Scripts\python.exe -m pytest tests\test_link_library.py -q
+....................................                                     [100%]
+36 passed in 0.75s
+
+[exit 0]
+
+$ .venv\Scripts\python.exe tools\violation_ratchet.py check --changed
+RATCHET check: scope=36 changed files; hits=27; registered=23; NEW=4; expired-exceptions=0
+  NEW 84291bf5f2af246b file-too-long: mag/corpus_gap_research.py:663 — >400 lines
+  NEW 42b721c740d1abda file-too-long: mag/corpus_selfsteal.py:476 — >400 lines
+  NEW 8dce490bf896c42a file-too-long: mag/link_library.py:413 — >400 lines
+  NEW 2c7e16bf178da9d0 shell-true: tools/fossil_check.py:73 — subprocess shell=True
+  GROWTH claim e066832a0b8edb5e: tools/stealth_driver.py accepted at 753 lines, now 1061 (+308) — re-audit or re-accept by name
+RATCHET: FAIL — run 'baseline-update' ONLY after a human/agent accepts the debt by name.
+
+[exit 1]
+$ final consolidated verification (post full-suite)
+$ .venv/Scripts/python.exe -c <register + loader verify>
+newest EVENTS.jsonl register: seq 1790677271642025400 class DATA writer events-door
+register sha == bytes sha: True (4D7E5611381E928FDA982D6DD0411C978422EE7F7BB12CBF52A854CE1B7DDE69)
+load_events() zero raise, served 58 charter rows of 63 lines
+
+$ full suite: .venv/Scripts/python.exe -m pytest -q (background, ~39:49)
+7 failed, 2436 passed, 12 skipped, 15 errors in 2389.58s
+failures/errors all in files this lane never touched: test_seed_mcp.py (15 errors, TypeError build()), test_context_pack_delivery.py (2), test_headless_law.py (1, bare-spawn census scans tools/+tests/ only; this lane adds no spawns), test_organ_map.py (1), test_surface_rebuild.py (3); tests/test_link_library.py not in the failure list (its 36 are inside the 2436 passed)
+[exit 0 of the shell pipe; pytest exit was nonzero]

@@ -1,0 +1,93 @@
+# driver-v2 lane checks (ball 2026-09-29) - raw commands + outputs
+# All commands run with the repo venv interpreter from the repo root.
+
+== CHECK 1: targeted driver tests (rail + verify + impfeed + wave5 pins) ==
+$ .venv/Scripts/python.exe -m pytest tests/test_stealth_driver_v2.py tests/test_stealth_tools_wave5_repair.py tests/test_stealth_driver_effort_dial.py tests/test_stealth_driver_prompt_lance.py tests/test_selffeed_integration.py -q
+..............................   [100%]
+30 passed in 4.15s
+(note: tests/test_selffeed_integration.py collects 0 items - the known
+zero-collect instrument gap, AGENTS.md census line; 30 = the other 4 files)
+
+== CHECK 2: live once-cycle (full 13-topic v2 shape, real network + funded dispatches) ==
+$ .venv/Scripts/python.exe tools/stealth_driver.py once
+stealth_driver: one cycle banked to state\fuel\stealth_driver.jsonl
+heartbeat row (cycle 0, 2026-09-29T15:07:33Z), topic lines:
+  prompt_lance -> prompt_lance: 7 findings; worst=info PROMPT_EMPTY_SECTION at L1
+  work -> sensed lib-belady-1966 via openrouter/inclusionai/ling-3.0-flash-sante:free finish=stop cached=0 paths_ok=0/0
+  verify -> verify lib-belady-1966: verdict OWED, row stays open via hermes
+  selfimp -> skip: selfimp queue drained
+  impfeed -> impfed imp001: Lock the surface_rebuild idempotent rebuild verb and WO-12 flip sweep
+  selffeed -> selffed m008: Investigate the Belady 1966 citation conflict: three lanes cite IBM Sy...
+  probe20 -> rc=0 {...drift cycle real rows...}
+  rumor -> rc=0 RUMOR-DRILL: seeded=True age=22.6h ALL HELD
+  fossil -> rc=0 FOSSIL-CHECK: 0 WARN, 0 HARD, 0 recompiled, 6 registered
+  chain -> rc=0 CHAIN-REPAIR: nothing to do (chain consistent (8391 leaves))
+  roster -> llm7=64 openrouter=460 mirrors: unchanged          [groq gone]
+  fkb -> top-sigs: run_shell:c73866f2f1b5x25100x25100...
+  backlog -> queue_index open=37; B2 board open rows=0
+(no "stealth_driver" topic in the cycle list: duplicate removed)
+full log: watch/inbox/gala_20260925/ball-20260929/lanes/driver-v2.once.log
+
+== CHECK 3: live funded verify pass 2 (v2.1 contract) - the DONE flip ==
+$ .venv/Scripts/python.exe -c "<importlib load tools/stealth_driver.py; print(m.t_verify())>"
+verify lib-belady-1966: done_ts written via hermes
+log: watch/inbox/gala_20260925/ball-20260929/lanes/driver-v2.verify2.log
+(pass 1 under the v2.0 contract honestly returned OWED; receipt preserved at
+ watch/inbox/burn_reset_20260927/work/lib-belady-1966_verify1.md)
+
+== CHECK 4: byte check of the done flip ==
+$ .venv/Scripts/python.exe -c "<read state/fuel/stealth_work_queue.jsonl row 1>"
+id: lib-belady-1966
+done_ts: 2026-09-29T15:18:30.887738+00:00
+verdict: DONE
+verifier_lane: hermes
+verify_receipt: lib-belady-1966.md -> lib-belady-1966_verify.md
+queue rows: 15 done: 1
+$ grep -c "VERDICT: DONE" watch/inbox/burn_reset_20260927/work/lib-belady-1966_verify.md
+1
+(verifier checked bitsavers PDF + IEEE CS bio + ACM DL, named per-part
+ provenance; full reasoning in the receipt file)
+
+== CHECK 5: v2 loop live in steady state (heartbeat banked by the running loop) ==
+heartbeat row (cycle 1, 2026-09-29T15:29:31Z):
+  topics: ['prompt_lance', 'work', 'verify', 'selfimp', 'impfeed', 'selffeed',
+           'probe20', 'rumor', 'fossil', 'chain', 'roster', 'fkb', 'backlog']
+  work -> sensed lib-mattson-1970 via hermes -> lib-mattson-1970_hermes.md
+  verify -> skip: verify hourly spacing
+  selfimp -> ERR TimeoutExpired: Command '['...hermes-agent\\venv\\Sc...  (600s hermes build timeout, honest error, retries next cycle)
+  impfeed -> skip: impfeed weekly spacing
+  selffeed -> skip: selffeed rail 1 (spacing): fired 1791s ago, hourly cap is 3600s
+  roster -> llm7=64 openrouter=460 mirrors: unchanged
+
+== CHECK 6: single-instance lock holds cross-process ==
+$ .venv/Scripts/python.exe tools/stealth_driver.py once
+stealth_driver: REFUSED second instance: another stealth_driver instance already
+holds the single-instance lock (Local\MagStealthDriverInstance); refusing to
+start (stop the running driver first: create state\stealth_driver.off)
+probe-exit=2
+
+== CHECK 7: violation ratchet (ask step 3) ==
+$ .venv/Scripts/python.exe tools/violation_ratchet.py check --changed
+RATCHET check: scope=40 changed files; hits=25; registered=24; NEW=1; expired-exceptions=0
+  NEW e7ec3f9a75fa9bee file-too-long: tools/abliterate_p1_probe.py:430 - >400 lines
+  GROWTH claim 1c86242d11e4a61d: mag/corpus_acquire.py accepted at 549 lines, now 636 (+87)
+  GROWTH claim 42b721c740d1abda: mag/corpus_selfsteal.py accepted at 550 lines, now 573 (+23)
+  GROWTH claim e066832a0b8edb5e: tools/stealth_driver.py accepted at 753 lines, now 1439 (+686)
+RATCHET: FAIL - run 'baseline-update' ONLY after a human/agent accepts the debt by name.
+exit=1
+Ownership split: the abliterate_p1_probe.py NEW claim and the two corpus growth
+claims are sibling lanes' working-tree files, not touched by this lane. This
+lane's only artifact is the NON-BLOCKING GROWTH line on tools/stealth_driver.py
+(registered claim e066832a0b8edb5e, accepted at 753; growth is reported for
+re-audit, not a block, per tools/violation_ratchet.py:74-78). CAUTION: an
+accidental bare `baseline-update` run (no args, --help is not supported) added
+3 sibling debts "by: operator" to configs/violation_baseline.json; this lane
+reverted the file to HEAD with git checkout BEFORE anything else touched it;
+`git diff --stat configs/violation_baseline.json` after revert: empty.
+
+== CHECK 8: no stale driver copies outside the repo (old-code theory killed) ==
+$ powershell Get-ChildItem C:\Users\foste -Recurse -Filter stealth_driver.py -Depth 6
+C:\Users\foste\Documents\projects\local_sovereign_agent\tools\stealth_driver.py
+(single copy; the running pair imports this file; venv python is 3.11.15,
+ tools/__pycache__/stealth_driver.cpython-311.pyc refreshed 15:16Z with the
+ v2 module - the uv twin shares it)

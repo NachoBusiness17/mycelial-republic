@@ -1,0 +1,7 @@
+# swarm1-deepseek-mag__probe_route (deepseek-chat @ deepseek, turn 1, channel: content)
+
+DEFECT 1: `_assert_public_https` is called inside `_post` after no host check on redirect-none, but `socket.getaddrinfo` does not pin the IP used by `_OPENER.open`, so a TOCTOU DNS rebind bypasses the public-address gate | EVIDENCE: mag/probe_route.py:71-75 | FIX: resolve hostname once, verify all addrs global, then connect to the pinned sockaddr via a custom handler instead of re-resolving in open()
+DEFECT 2: `_post` catches bare `Exception` and returns error string, so `selftest` treats any transport failure (timeout, DNS, TLS) as "dead", letting a provider outage flip live lanes to dead and burn fallbacks | EVIDENCE: mag/probe_route.py:83-84, mag/probe_route.py:154-158 | FIX: classify exceptions; only HTTP 4xx/5xx with body mean dead, network errors return verdict `unknown` and skip the gate exclusion
+DEFECT 3: cache read in `probe_one` reloads and rewrites the whole state file per slug with no cross-process lock, so concurrent route calls interleave and a slower writer clobbers a fresher verdict | EVIDENCE: mag/probe_route.py:90-95, mag/probe_route.py:120-127 | FIX: lock state with an OS file lock (msvcrt.locking on Windows) around read-modify-write, or shard cache per slug
+DEAD-CODE: `FALLBACK_CHAIN` is defined and never referenced anywhere in the module | EVIDENCE: mag/probe_route.py:51-52
+ONE-SITTING FIX: pin the resolved public IP and connect to it so the SSRF/rebind gate is actually enforcing | EVIDENCE: mag/probe_route.py:69-77

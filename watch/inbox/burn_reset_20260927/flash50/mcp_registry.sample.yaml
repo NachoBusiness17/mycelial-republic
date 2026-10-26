@@ -1,0 +1,300 @@
+# configs/mcp_registry.yaml SAMPLE - MCP TOOL REGISTRY (mcp_registry.v1)
+# Banked 2026-09-28 with the design doc flash50/mcp-registry-design.md.
+# Every row below is a REAL tool observed live in this session or measured on
+# the house server. Rows are a representative slice; the full live census is
+# 121 tools (87 external hosted + 34 house) and the remaining rows are a
+# mechanical fill-in job, not invented (see census block + design doc OWED).
+
+schema: mcp_registry.v1
+updated: 2026-09-28
+
+census:
+  as_of: 2026-09-28
+  surfaces_declared: 8
+  rows_declared: 24
+  live_surface_total: 121
+  live_source: "this session's live tool list (mapbox 31 + mapbox-devkit 22 + mapbox-docs 3 + web_reader 1 + mimosa 5 + android_emulator 23 + image_search 1 + node_repl 1 = 87) plus house mag.mcp_server --list (scout 17, full 34)"
+  note: "rows_declared is a slice, never padded: a row exists only when a live tool backs it"
+
+# ---- funding tiers (DRIVING LADDER, AGENTS.md 2026-09-28; lanes.yaml L0-L3) ----
+tiers:
+  free:
+    rank: 0
+    maps_lanes: [L0, L1]
+    seats: "ollama janitors, free remote (openrouter/gemini/groq/z.ai flash), free stealth lanes"
+    cost_classes: [free-local]
+    mode_max: perception
+    law: "SENSING surface only; outputs bank as findings, never as done work (AGENTS.md DRIVING LADDER 2026-09-28)"
+  funded:
+    rank: 1
+    maps_lanes: [L2, hermes]
+    seats: "Hermes/Nous glm-5.3-prime + qwen3.8-max-prime (workhorse+judgment), deepseek flash, specialist"
+    cost_classes: [free-local, web-free, api-metered, quota-pooled, inference, unmetered]
+    mode_max: hands
+    law: "the only funded rung: $180 Nous credits, Anthropic keys UNFUNDED (RIB_DRIVING_LADDER_20260928)"
+  operator:
+    rank: 2
+    maps_lanes: [L3]
+    seats: "operator seats (z.ai coding plan, Codex), the human"
+    cost_classes: [free-local, web-free, api-metered, quota-pooled, inference, unmetered]
+    mode_max: hands
+    law: "everything; the operator pays the plan each tool rides on (spend_overlay.v1 subscriptions)"
+
+# ---- cost classes (grounded: mag/mcp_server.py:121 _tool_meta cost_kind,
+#      configs/cost_rates.yaml free:true rows, MCP_MANIFEST_SPEC.md:79 quota,
+#      configs/spend_overlay.yaml groq free tier) ----
+classes:
+  free-local: "deterministic local compute, $0 marginal (cost_rates.yaml seats.ollama: $0)"
+  web-free: "public network read, no billed quota"
+  api-metered: "billed per call or per service use"
+  quota-pooled: "consumes a plan quota pool sized for judgment work"
+  inference: "rides a model call; price = cost_rates.yaml model_rates"
+  unmetered: "no weight known yet; FAIL-CLOSE: gate refuses until the economist meters it"
+
+# ---- server surfaces ----
+servers:
+  - id: mag
+    kind: house-stdio
+    launch: "python -m mag.mcp_server --profile <role>"
+    profile_source: "ROLE_TOOLSETS mag/mcp_server.py:47"
+    measured: "scout 17 / full 34 tools, --list run 2026-09-28"
+    note: "mag itself is a pack per MCP_MANIFEST_SPEC.md:191: no server above the gate"
+  - id: mapbox
+    kind: hosted-mcp
+    prefix: "mcp__plugin_mapbox_mapbox__"
+    auth: "public token; styles:read scope for preview tools"
+    note: "three plugin servers: mapbox (geo), mapbox-devkit (styles/feedback), mapbox-docs"
+  - id: web_reader
+    kind: hosted-mcp
+    tool: "mcp__web_reader__webReader"
+  - id: mimosa
+    kind: hosted-mcp
+    note: "security scanner; tool contract says invoke only on operator-explicit deep/full audit ask"
+  - id: android_emulator
+    kind: hosted-mcp
+    note: "gradle build + device/emulator + UI automation; lane pin queue/lanes/android_surface/manifest.md:4"
+  - id: image_search
+    kind: hosted-mcp
+    note: "web image search, NOT content-moderated (tool description)"
+  - id: browser_use
+    kind: node-kernel
+    tool: "mcp__node_repl__js"
+    note: "computer/browser use kernel; research lane only per queue/lanes/research/manifest.md:4"
+  - id: zai_suite
+    kind: planned
+    note: "four z.ai servers Vision/WebSearch/WebReader/Zread, operator GO 2026-08-26 (MCP_MANIFEST_SPEC.md:17-27); not connected in this session"
+
+# ---- tools (representative real rows) ----
+tools:
+  # house mag: read surface (free-local, perception)
+  - name: corpus_search
+    server: mag
+    funding_min: free
+    mode: perception
+    cost: {class: free-local}
+    inputs: "query text, k"
+    outputs: "ranked corpus rows"
+  - name: read_file
+    server: mag
+    funding_min: free
+    mode: perception
+    cost: {class: free-local}
+    inputs: "path"
+    outputs: "file text"
+  - name: search_files
+    server: mag
+    funding_min: free
+    mode: perception
+    cost: {class: free-local}
+    inputs: "pattern"
+    outputs: "matches"
+  # house mag: hands (builder role only per ROLE_TOOLSETS mag/mcp_server.py:62-65)
+  - name: write_file
+    server: mag
+    funding_min: funded
+    mode: hands
+    cost: {class: free-local}
+    inputs: "path, content"
+    outputs: "write receipt"
+  - name: run_python
+    server: mag
+    funding_min: funded
+    mode: hands
+    cost: {class: free-local}
+    inputs: "code"
+    outputs: "stdout/result"
+  - name: run_shell
+    server: mag
+    funding_min: funded
+    mode: hands
+    cost: {class: free-local}
+    inputs: "command"
+    outputs: "stdout/stderr"
+  # mapbox: offline geo math (free-local; distance probed live 2026-09-28: 3935.752 km)
+  - name: mapbox.distance
+    server: mapbox
+    funding_min: free
+    mode: perception
+    cost: {class: free-local}
+    inputs: "from/to lnglat, units"
+    outputs: "great-circle distance"
+    evidence: "tool description 'Works offline without API calls'; live probe returned 3935.752 km"
+  - name: mapbox.area
+    server: mapbox
+    funding_min: free
+    mode: perception
+    cost: {class: free-local}
+    inputs: "polygon rings, units"
+    outputs: "area"
+  - name: mapbox.buffer
+    server: mapbox
+    funding_min: free
+    mode: perception
+    cost: {class: free-local}
+    inputs: "geometry, distance, units"
+    outputs: "buffer polygon"
+  - name: mapbox.union
+    server: mapbox
+    funding_min: free
+    mode: perception
+    cost: {class: free-local}
+    inputs: "polygons"
+    outputs: "merged polygon"
+  # mapbox: billed services (api-metered; docs basis mapbox-docs search hit 2026-09-28)
+  - name: mapbox.directions
+    server: mapbox
+    funding_min: funded
+    mode: perception
+    cost: {class: api-metered, basis: "Mapbox Directions billed service, docs.mapbox.com/api/navigation/directions"}
+    inputs: "2-25 coordinates, profile, options"
+    outputs: "route, duration, steps"
+  - name: mapbox.isochrone
+    server: mapbox
+    funding_min: funded
+    mode: perception
+    cost: {class: api-metered}
+    inputs: "coordinate, contours, profile"
+    outputs: "reachable polygons"
+  - name: mapbox.search_and_geocode
+    server: mapbox
+    funding_min: funded
+    mode: perception
+    cost: {class: api-metered}
+    inputs: "query, proximity"
+    outputs: "geocoded features + mapbox_id"
+  - name: mapbox.static_map_image
+    server: mapbox
+    funding_min: funded
+    mode: perception
+    cost: {class: api-metered}
+    inputs: "center, zoom, size, overlays"
+    outputs: "PNG/JPEG image"
+  - name: mapbox.render_map
+    server: mapbox
+    funding_min: funded
+    mode: perception
+    cost: {class: api-metered}
+    inputs: "payload refs from other mapbox tools"
+    outputs: "live interactive map card"
+  # mapbox style admin: hands (writes account state)
+  - name: mapbox-devkit.create_style
+    server: mapbox
+    funding_min: funded
+    mode: hands
+    cost: {class: api-metered}
+    inputs: "name, style json"
+    outputs: "style id"
+  - name: mapbox-devkit.delete_style
+    server: mapbox
+    funding_min: operator
+    mode: hands
+    cost: {class: api-metered}
+    inputs: "style id"
+    outputs: "deletion receipt"
+  # mapbox docs: free web read
+  - name: mapbox-docs.search
+    server: mapbox
+    funding_min: free
+    mode: perception
+    cost: {class: web-free}
+    inputs: "query, limit"
+    outputs: "ranked doc hits"
+  # web reader
+  - name: web_reader.fetch
+    server: web_reader
+    funding_min: free
+    mode: perception
+    cost: {class: web-free}
+    inputs: "url"
+    outputs: "markdown"
+  # image search
+  - name: image_search.search
+    server: image_search
+    funding_min: free
+    mode: perception
+    cost: {class: web-free}
+    inputs: "query, count"
+    outputs: "image urls"
+  # mimosa: unmetered = fail-close until metered, operator-ask gate
+  - name: mimosa.security_scan
+    server: mimosa
+    funding_min: operator
+    mode: perception
+    cost: {class: unmetered}
+    gate: "operator-explicit deep/full audit ask only (tool contract)"
+    inputs: "project, depth, focusFiles"
+    outputs: "scan summary, seal"
+  # android: senses free, hands funded
+  - name: android.screenshot
+    server: android_emulator
+    funding_min: free
+    mode: perception
+    cost: {class: free-local}
+    inputs: "serial optional"
+    outputs: "PNG"
+  - name: android.install_app
+    server: android_emulator
+    funding_min: funded
+    mode: hands
+    cost: {class: free-local}
+    inputs: "apkPath"
+    outputs: "install receipt"
+  # browser kernel: research lane hands
+  - name: node_repl.js
+    server: browser_use
+    funding_min: funded
+    mode: hands
+    cost: {class: free-local}
+    inputs: "js code"
+    outputs: "kernel result"
+    lane_pin: research
+  # zai planned: the GO's quota example, verbatim weight
+  - name: zai.web_search
+    server: zai_suite
+    funding_min: funded
+    mode: perception
+    cost: {class: quota-pooled, per_call: 1.2, unit: credits}
+    status: planned
+    inputs: "query, count"
+    outputs: "search result rows"
+    note: "operator GO weight: web search 1.2 credits/call (MCP_MANIFEST_SPEC.md:23,79-81)"
+
+# ---- composition ----
+composition:
+  context_pack:
+    registry_path: configs/mcp_registry.yaml
+    flag: include_mcp_tools
+    tier_key: mcp_tier
+    lane_map: {L0: free, L1: free, L2: funded, hermes: funded, L3: operator}
+    budgets_chars: {free: 400, funded: 1000, operator: 1200}
+    lane_pin_join: "queue/lanes/<name>/manifest.md line 4 mcp_whitelist (seven lanes, verified 2026-09-28)"
+  render_rule: "one line per tool: name + cost class + verb phrase; never render input schemas into the pack (token tax)"
+  call_rule: "a seat may call only what its tier block presented AND its lane whitelist named; both gates must pass"
+
+# ---- gates (fail-close carried from MCP_MANIFEST_SPEC.md sections 5-6) ----
+gates:
+  fail_close: true
+  refusals: "unknown tool, unknown tier, unknown cost class: not presented; if called anyway, refuse and receipt (MCP_MANIFEST_SPEC.md:145-147)"
+  pin_join: "state/mcp_pins.jsonl (mcp_pin.v1): a registry tool that drifts at reconnect is dropped from presentation until repin() (tools/mcp_pin.py:134)"
+  pack_join: "when pack manifests are authored, a row may carry pack: <pack_id>@<epoch_sha256_16> and the spawn check verifies the pin (MCP_MANIFEST_SPEC.md:157-162)"
+  budget_join: "the pack prices, the lane pays: budgets live with the lane (MCP_MANIFEST_SPEC.md:136-137), spend visible via configs/spend_overlay.yaml"

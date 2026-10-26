@@ -1,0 +1,93 @@
+# localfirst-steal: fold receipt
+
+Filed 2026-10-01 by the herald seat from the fold gate's script-written sections (authoritative) plus the run's review and filing records. This is the fold receipt that was absent at filing time: the STATE close (memories/session/next-window-handoff.md:476, GALA LOCALFIRST-STEAL CLOSE 2026-10-01T10:14:39Z) recorded its danced count from the lane JSON finish flags because this file did not yet exist, same rule as the ractor50 close.
+
+## 1. Header
+
+| Field | Value |
+|---|---|
+| Slug | localfirst-steal |
+| Archive | watch/inbox/gala_20260925/localfirst-steal/ |
+| Lane JSONs | watch/inbox/gala_20260925/localfirst-steal/lanes/{ownmem,ragos,adjacent,pam,atlas,aida,lbrain}.json |
+| Lanes fired | 7 (expected 7) |
+| Divisions | B: 7 |
+| Gate | GATE PASS (fold_gate.sh, lanes dir + expected 7; re-run 2026-10-01, exit 0, see section 7) |
+| lanes_json_count | 7 (expected 7) |
+| lanes_parsed_ok | 6/7 (aida.json is the seventh: ok field absent, "status": "done", banked on evidence) |
+| byte_checks_cited | 39 |
+| mined_rows | 22 (gate count of lane JSON law/steal rows: ragos 6 + atlas 6 + lbrain 6 + pam 4; ownmem/adjacent/aida rows 0) |
+| decisions_changed | 7 |
+| ballroom (danced/refired/buried) | 7/0/0 |
+| Landscape register | watch/inbox/localfirst_memory_landscape_signals.jsonl, 14 rows (separate instrument from mined_rows) |
+
+## 2. Scoreboard
+
+B: 7/7 danced. 0 refired, 0 buried. 39 byte-checks cited, 22 mined rows. Lane JSONs parsed 6/7: aida.json's ok field is absent with "status": "done" (aida.json:4 per the reviewer's read), so the gate banked it on evidence, 6 checks and 0 rows (gate line: "banked: aida.json (ok absent/false, evidence-banked: 6 checks, 0 rows)"); it danced ok at the runner level.
+
+Per-lane finish (rows are gate-counted lane JSON rows): ownmem ok (0 rows), ragos ok (6), adjacent ok (0), pam ok (4), atlas ok (6), aida ok at runner, evidence-banked (0), lbrain ok (6).
+
+Standouts (fold record):
+- atlas: closed its dig with the cascade ledger specced (dependency edges declared at fold plus volatile-token mining, instrument registry, BFS cascade with cycle guard, proposals-never-mutations, 3-bucket routing where REFRESH auto-applies because estate instruments are deterministic, ESCALATE to memory/percolator/cascade_queue.jsonl, cascade receipt chained by prev_cascade_id folded via fact_bus + verkle; Graphiti/Neo4j adoption explicitly rejected, shape adopted) and proved the estate gap at data level: memory/percolator/invariants.json is 639 rows with dependency_field_present False (atlas.check.txt CHECK 7).
+- ragos: found a live defect in RAG-OS's own fence gate, a redirected root flips the documented crown-jewel DENY trio to ALLOW (ragos.check.txt section 6); its worktree-fingerprint probe caught a live fabrication (FABRICATION CAUGHT=True).
+- lbrain: corrected the ask's 581K-row premise to a measured 691,788 rows at pinned index sha256 (0.4 to 6.5 ms bm25; the misses are query grammar, not recall) and kept FTS5 over embeddings.
+- pam: live-falsified PAM's consume path (forged content with attacker-recomputed hashes passes verify_integrity; verify() with no key returns True) and wrote the seed-seal spec instead of leaving the stranger slot empty.
+- ownmem: supported all 4 brief claims at byte level across 21 fetched files and banked 5 steal mechanisms while leaving their benchmark numbers UNVERIFIED.
+- adjacent: marked Mem0 two-phase stale by bytes and closed Zep-product self-host as a path (Graphiti survives).
+
+Top laws banked (fold top_laws):
+1. Fence roots and targets must resolve from one base (ragos, row 6, byte-found defect law). RAG-OS derives fence jewels from AIOS_ROOT (starter/db.py:15) while relative targets resolve from cwd (starter/fences.py:26), so the documented crown-jewel DENY trio returned ALLOW on all four redirected-root probes; their own suite passed only because the fixture used an absolute jewel path (test_starter.py:49-58). Estate adoption: the redirected-root drill in every fence/effect-broker suite. Falsifier is crisp: a fixed build returns DENY.
+2. A routing bucket without a consumer is a defect (executor law, atlas, rows[1]). Grep-proven in the mined repo itself: Atlas declares AUTO_APPLY auto-apply and ships zero production consumers (corrected grep: zero hits in atlas_core/, exit 1; the whole-clone remainder is 2 test-label assertions). It names a whole defect class, a bucket that claims work happened when it did not, and points inward: the estate's own routing tables (effect broker, doctrine arbiter) owe the same no-consumer grep.
+3. Hashes are evidence; the signature is the anchor (pam, rows[1]). Live-proven by execution this session: forged content with attacker-recomputed entry hashes and root passes PAM's verify_integrity(), and verify() with no key returns True (pam.check.txt sections 3-4); the import path checks integrity only (sdk/python/pam/cli.py:351). This law is the load-bearing reason the seed-seal spec verifies at consume and fails closed to UNVERIFIED.
+
+## 3. Decision ledger
+
+Seven decisions changed (gate count). No parade (parade: false). Reconciliation note: the STATE close recorded 5 decisions by lane content because ragos banks laws rather than steering a build and ownmem is explicitly pending until wave fold; the gate's 7 counts literal decision_changed rows. Both are the same ledger at different counting rules (review: "gate cosmetics, not a lane lie").
+
+1. adjacent [adjacent.json:19]: localfirst steal shortlist: adds the Letta-style model-writable selfblock rung to the context pack (high leverage) and Graphiti validity windows on law supersession (medium); marks Mem0 two-phase stale by bytes and closes Zep-product self-host as a path (Graphiti survives). [0 rows]
+2. aida [aida.json:55]: janitor-fleet honesty instrumentation: from claim-level probe20 census only, to claim-level census plus an answer-level critic with a downward-only caution control law (alarm at mean confabulation rate >= 0.20 or range width >= 0.30 across 5 runs; an operator correction sets a 0.35 disposition floor for the corrected janitor's next 4 turns), plus the capture law: corrections ride existing chat gestures via deterministic trigger regexes, never a new endpoint, and must reprice the corrected organ's next-output posture, not just its score (the attention ledger's missing clause 4). [0 rows]
+3. atlas [atlas.json:24]: closes the localfirst-steal Atlas dig decision: the estate port of downstream re-evaluation is specced as the cascade ledger (invariant-to-fact dependency edges declared at fold plus mined by volatile-token scan; instrument registry census-collect/file-sha/law-status/queue-scan/receipt-exists; BFS cascade with cycle guard and proposals-never-mutations; 3-bucket routing where REFRESH auto-applies because estate instruments are deterministic, which the executor Atlas lacks; ESCALATE to memory/percolator/cascade_queue.jsonl; cascade receipt chained by prev_cascade_id folded via fact_bus + verkle), and Graphiti/Neo4j adoption is explicitly rejected in favor of adopting the shape; also banks the executor law (a routing bucket without a consumer is a defect) as a steal-side warning. [6 rows]
+4. lbrain [lbrain.json:94]: closes the R2 memory-organ selection this lane was fired with: estate_corpus_search (exact mode, grammar law included) + estate_bonds_read (bounded, hash-carried, transport-bound scope) named as the house-bridge memory pair; residual WRITE and dirac BANK stay never-cross until R4 broker envelopes; on-device embeddings declined for the catalog until a labeled recall bake-off beats grammar-fixed FTS; the ask's 581K-row premise corrected to the measured 691,788 at pinned index sha256. [6 rows]
+5. ownmem [ownmem.json:32]: pending until wave fold; candidate: the $0 local recall lane (S1) changes how context-pack decides WHICH law bytes reach a seat (build_context_pack clips fixed task-blind files at mag/context_pack.py:687-691, verified in-lane). [0 rows]
+6. pam [pam.json:66]: the seed-seal stranger slot named in watch/inbox/LOCALFIRST_MEMORY_LANDSCAPE_20261001.md is specified instead of empty: the portable arc seed (mag/arc_seed.py output at watch/arc_seeds/, currently unsigned) gets an Ed25519 seal with sign-at-export (root covers the seed file bytes AND the chain bytes, unlike PAM which signs only the entry-ID list), verify-at-consume (the external falsifier's first step, fail-closed to UNVERIFIED), and key custody with an inline public key plus key_id for rotation. Spec-level decision; no code changed this lane. [4 rows]
+7. ragos [ragos.json:7]: no - banks laws: fence roots and targets must resolve from one base (redirected-root drill in fence suites); the percolator's missing half is scheduled supersedence (invalidate-not-delete), independently confirmed by RAG-OS Pillar 8. [6 rows]
+
+## 4. Refired / buried
+
+- Refired: none (0).
+- Buried: none (0).
+
+## 5. Review verdict
+
+REVISE, a precision pass, not an honesty failure. Three fixes were named, and all three were dispositioned before filing (per the STATE close at memories/session/next-window-handoff.md:476, read 2026-10-01):
+1. ragos proc.py pointer: lane row 1 cited Temp/ragos-dig/RAG-OS/starter/proc.py:133-134 but that file is 43 lines with the quote at lines 6-7 (receipt ragos.md:57 carried the same quote without the bad numbers). Disposition: struck and corrected to proc.py:6-7 before filing (source line-wrap).
+2. pam's missing register row: pam was the only digger with no row in watch/inbox/localfirst_memory_landscape_signals.jsonl and no disclosure of skipping it; the per-lane t.finish lives in the run args, unreachable from the review session, so a required-row ruling could not be made. Disposition: annotated (pam absent is recorded in the lane JSON and in the STATE close; none fabricated after the fact).
+3. localmind named-but-never-fired: the brief named localmind as a digger target ("one digger per named system... LBrain, Atlas, localmind") and no lane JSON, register row, or mention of it existed anywhere in the archive or receipts. Disposition: coverage debt parked in adjacent.json (the brief's "one digger per named system" is wrong by one), recorded in the STATE close.
+
+Sub-verdicts (reviewer's runs):
+- QUOTES: 12 citations checked across 5 lanes via .venv/Scripts/python.exe quote-substring checks against cited sources. 10 exact byte-match at the cited line (lbrain mcp_server.py:5 and config.py:281 in the fetched clone; pam artifact.py:169 in the still-on-disk Temp clone; ragos BUILD-GUIDE.md:100/137/218/220 and db.py:5; aida prompt text in continuous-ai-main/prompts/critic_evaluation.txt). 2 real-but-formatting-near (ownmem drops backticks from docs_ARCHITECTURE.md:35 "its own `authority` field"; atlas quote spans a source line-wrap in evidence/atlas_excerpts.md and the Temp clone ledger.py). 1 false pointer (the ragos proc.py:133-134 above, since corrected).
+- CHECK BACKING: yes, 7/7. Reviewer re-ran the fold gate (bash watch/inbox/gala_20260925/fold_gate.sh watch/inbox/gala_20260925/localfirst-steal/lanes 7 -> GATE PASS, exit 0, 7 lanes, 39 checks cited, 22 rows) and every checks[] evidence file exists and says what its lane claims: ragos.check.txt sections 0-9 (9 passed, DENY/ALLOW/DENY, redirected-root ALLOW defect, watchdog 48268->49676, FABRICATION CAUGHT=True), atlas.check.txt CHECK 1-13 (37+8 passed, 639 invariants, em:0 scans), aida.check.txt incl. its CORRECTIONS section (BATTERY 13/12 v1.0.0, RATCHET_REAL_EXIT=1 owned by sibling tools/flock_parity.py:1034), lbrain.check.txt S1-S9b (691788 rows, dual LICENSE sha256 d0d3d085... identical both repos), ownmem.check.txt "ALL PASS (54 checks)", adjacent.check.txt PASS table (total_rows=11, adjacent_rows=9), pam.check.txt sections [1]-[4] + PROVENANCE APPENDIX. aida's tarball sha256sum independently re-verified = e0a5cff44291310aa05c... matching the claim. Cosmetic: aida.json has status:done and no ok field, so the gate counts lanes_parsed_ok 6/7 and banks it on its 6 checks.
+- DECISION LEDGER: honest, 0 strikes. All 7 decision_changed entries name real things re-verified on disk: mag/context_pack.py:638 def build_context_pack + :687-691 task-blind clips + :16 VALID_PACK_MODES (adjacent, ownmem S1); mag/estate_bridge.py:338-342 bounded SCOPE_ENUM (lbrain); tools/abliterate_p1_probe.py:223 def classify and watch/inbox/ball2/attention-ledger.md:8 zero trades (aida); mag/arc_seed.py:24-25 falsifier contract and watch/inbox/LOCALFIRST_MEMORY_LANDSCAPE_20261001.md (pam); memory/percolator/invariants.json = dict with 639 invariants and no dependency field, matching atlas CHECK 7. ownmem's is honestly "pending until wave fold; candidate:".
+- B FINISH LINES: mostly met on disk. Receipts 7/7 exist in watch/inbox/localfirst/ (adjacent, aida, atlas, lbrain, ownmem, pam, ragos). Register watch/inbox/localfirst_memory_landscape_signals.jsonl has 14 rows whose lane fields match each lane's claim exactly (ragos row 1, ownmem row 2, adjacent rows 3-11, atlas row 12, lbrain row 13, aida row 14; per-lane tally ragos 1, ownmem 1, adjacent 9, atlas 1, lbrain 1, aida 1, pam 0 absent and annotated; adjacent's "nothing overwritten" verified; aida's rows_before 11 / rows_after 14 verified). Two coverage gaps, both dispositioned above (fixes 2 and 3).
+- CROSS-LANE CLAIMS: none found. Both aida (check section 5-retry, git status dump) and lbrain (S9b) hit the same ratchet FAIL on sibling-untracked tools/flock_parity.py:1034 and each attributed the debt away with evidence instead of claiming or fixing it (that file is since committed on this branch per bdbb1714e). Register rows carry correct lane attribution. Reviewer's em-dash scan over all 7 lane JSONs + 7 receipts + the register reads em:0 en:0.
+
+## 6. Filing verdict
+
+FILED, 2026-10-01:
+1. Read all 7 lane JSONs in full first, as the ask required (watch/inbox/gala_20260925/localfirst-steal/lanes/{ownmem,ragos,adjacent,pam,atlas,aida,lbrain}.json).
+2. LINKS: grep -c localfirst-steal on memory/corpus/LINKS.jsonl = 0 prior rows, plus a whole-ledger field scan (all string values, not just src) found 0 references to any of the 7 lane paths. Appended 7 rows (GALA-localfirst-steal-ownmem/ragos/adjacent/pam/atlas/aida/lbrain), kind gala, slug localfirst-steal, src = each lane JSON path, titles = top law where the lane had one (ragos: query-only liveness + independent watchdog + stop sentinel, cited at the midnight-reader-corrected proc.py:6-7, not the stale :133-134; pam: sign-the-root-not-the-body; atlas: chain-honesty; lbrain: memory-read/memory-write split on the MCP surface) and changed decision otherwise (adjacent shortlist, aida janitor-honesty instrumentation, ownmem S1 candidate pending fold). Under the estate venv (.venv/Scripts/python.exe), single-writer lock acquired/released per the LINKS.jsonl.lock.log convention (3 acquire/release pairs, lock file removed). Whole-ledger re-parse OK, 217 -> 224 rows, each of the 7 new srcs seen exactly once and no src duplicated anywhere. Em-dash/en-dash scan on filed text: em 0 en 0. Incident reported: run 2 appended the rows then crashed in its own verification pass on a legacy row lacking a src key (pre-2026 rows use landing/source); run 3 then verified dedupe held (0 additional rows); net exactly 7, nothing doubled.
+3. STATE: one entry appended to memories/session/next-window-handoff.md (475 -> 476 lines) with: danced count 7 (all division B; ownmem/ragos/adjacent/pam/atlas/lbrain ok:true, aida status done; count basis is the lane JSON finish flags because no fold receipt existed at watch/inbox/gala_20260925/localfirst-steal_RECEIPT.md, verified absent, same rule as the ractor50 close); decisions changed 5 by lane content (adjacent shortlist, pam seed-seal spec, atlas cascade ledger with Graphiti/Neo4j rejected, aida janitor-honesty control law, lbrain R2 memory-organ pair; ownmem and ragos banked rows without changing a decision); B-division finish 7/7; graves filed 0 (grep -ril GALA_GRAVE over watch/inbox/gala_20260925/localfirst-steal/ and watch/inbox/localfirst/ = no matches; all 7 lanes closed as completed digs); mined rows 14 register rows tallied live from watch/inbox/localfirst_memory_landscape_signals.jsonl (ragos 1, ownmem 1, adjacent 9, atlas 1, lbrain 1, aida 1; pam absent, annotated in its lane JSON, none fabricated) plus law rows in the lane JSONs (ragos 6, atlas 6, lbrain 6, pam 4, ownmem 5 steals; aida files tri-state + port spec; adjacent files a 17-row tri-state verdict table in its receipt). Midnight reader corrections folded into the lanes before filing: ragos proc.py citation corrected to :6-7; localmind coverage debt parked in adjacent.json.
+4. Not done: no commit (not asked); no fold receipt existed at filing time. This file is that missing fold receipt.
+
+Count reconciliation (different instruments, per the census denominator law: name instrument and moment before comparing):
+- decisions 7 = the fold gate's literal decision_changed rows at gate moment; 5 = the STATE close's by-lane-content count (ragos banks laws, ownmem pending).
+- mined_rows 22 = gate count of law/steal rows inside the lane JSONs (ragos 6 + atlas 6 + lbrain 6 + pam 4); 14 = rows in watch/inbox/localfirst_memory_landscape_signals.jsonl tallied live at filing. Different ledgers, both real.
+- lanes_parsed_ok 6/7 vs ballroom 7/7: the sixth/seventh gap is aida.json's missing ok field, banked on evidence (6 checks, 0 rows); it danced ok at the runner level.
+
+## 7. Checks run for this receipt (2026-10-01, herald seat)
+
+- `test -f watch/inbox/gala_20260925/localfirst-steal_RECEIPT.md` -> RECEIPT_ABSENT (path free to write).
+- `bash watch/inbox/gala_20260925/fold_gate.sh watch/inbox/gala_20260925/localfirst-steal/lanes 7` -> sections reproduced byte-identical to the authoritative sections in this ask (lanes_json_count 7 expected 7; lanes_parsed_ok 6/7; by_division {"B": 7}; byte_checks_cited 39, mined_rows 22; decisions_changed 7; ballroom 7/0/0; banked aida line), GATE PASS, GATE_EXIT=0.
+- `grep -c "localfirst-steal" memory/corpus/LINKS.jsonl` -> 7; `wc -l < memory/corpus/LINKS.jsonl` -> 224 (matches the filing record: 7 appended, 217 -> 224).
+- `grep -n "localmind" memories/session/next-window-handoff.md` and `grep -n "localfirst-steal" ...` -> line 476, GALA LOCALFIRST-STEAL CLOSE 2026-10-01T10:14:39Z, carrying the full close record including the REVISE dispositions; `wc -l` -> 476 lines (matches 475 -> 476).
+
+Everything else in this receipt is transcribed from the ask's authoritative sections and the run's fold/review/filing records as given; checks the reviewer and filer ran are reported as theirs, not re-run here except the four above.

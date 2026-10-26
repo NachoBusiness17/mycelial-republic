@@ -1,0 +1,32 @@
+{
+  "receipt": "THE50 W5 T25: board-migration vocabulary drift across 10 boards",
+  "filed": "2026-09-19",
+  "seat": "T25 builder (zcode-seat)",
+  "finish_line": "memory/runs/the50/w5_t25_board_drift.json",
+  "program_row": "watch/inbox/THE_50_PROGRAM_20260918.md line 40 (item 25, W5 CORPUS ANALYSIS, [LANE])",
+  "corpus": {
+    "file": "watch/inbox/qdrop_export/qdrops.jsonl",
+    "rows": 6242,
+    "provenance": "watch/inbox/qdrop_export/RECEIPT.json + harvest_meta.json (qanon.pub dump, harvested 2026-09-18)",
+    "boards": "the 10 source buckets exactly as harvest_meta.json filed them: 4chan_pol, 8chan_pol, 8chan_cbts, unknown(8), 8chan_thestorm, 8chan_greatawakening, 8chan_qresearch, 8chan_patriotsfight, 8kun_qresearch, 8kun_projectdcomms"
+  },
+  "what_landed": [
+    "Per-board vocabulary census: drops, text-bearing drops, tokens, vocab size, span, top terms (10 boards, 105,628 tokens after cleaning, 283 empty-text rows counted but tokenless).",
+    "Migration order by first drop ts: 4chan_pol (2017-10-28) -> 8chan_pol -> 8chan_cbts -> unknown -> 8chan_thestorm -> 8chan_greatawakening -> 8chan_qresearch -> 8chan_patriotsfight -> 8kun_qresearch (2019-11-02) -> 8kun_projectdcomms.",
+    "Consecutive-board Jensen-Shannon drift curve, 9 steps, range 0.103 (8chan_pol->cbts) to 0.242 (thestorm->greatawakening, bits).",
+    "Top-20 shifting terms ranked by chi-square on 2x10 term-vs-rest tables, each with counts and per-1k rates on all 10 boards: bank, ceo, relevant, sa, central, tweets, hot, placeholder, republican, wonderland, therefore, trip, dec, conf, alice, connection, graphic, red, yes, government.",
+    "Migration signatures visible in the counts: 4chan-era register (bank 156/176 on 4chan_pol, sa, relevant, alice, wonderland, yes, conf) dies after the 2017 boards; cbts-era codes (ceo, red, dec) spike Dec 2017-Jan 2018; patriotsfight carries republican; projectdcomms (2020) re-imports placeholder and government."
+  ],
+  "computed_this_session": {
+    "command": ".venv\\Scripts\\python.exe scripts\\the50_w5_t25_board_drift.py",
+    "script": "scripts/the50_w5_t25_board_drift.py",
+    "validation": "artifact reloads as JSON, 10 boards, 20 term entries each with counts_by_board of length 10, 9-step JSD curve, em-dash count 0"
+  },
+  "honest_limits": [
+    "Vocabulary comes from the text field only; 283 of 6,242 rows have empty text.",
+    "8chan_qresearch and 8kun_qresearch kept separate: the 2019 host move is part of the migration under test.",
+    "chi-square detects uneven distribution, not direction; peak/trough boards give direction, attributed only among boards with >= 20 text-bearing drops (unknown, 8 drops, excluded from labels, kept in counts).",
+    "First-pass top terms em/https/status were markup and URL artifacts (raw <em> tags, JSON-escaped slashes, space-broken twitter. com links in the qanon.pub dump); the cleaner was fixed and re-run rather than terms blacklisted; residual 'em' is genuine Elon-Musk shorthand usage verified in post context."
+  ],
+  "no_em_dash": true
+}

@@ -1,0 +1,140 @@
+================ m02-ghost-memory ================
+## Curation report — `memory/runs/ghost/`
+
+Inventory read: `autonomous_fixes/` (23 `.md`), `trail.jsonl` (319 MB, 16,774 rows), `autonomous_trail.jsonl` (2,206), `frustration.jsonl` (9), `hiccup.jsonl` (16), `results.jsonl` (1,236), `test_vectors.jsonl` (16), `leak_report.jsonl` (3,388), `mode.json`, `director/trail.jsonl` (2), `guinea_pig/trail.jsonl` (5).
+
+### 1. KEEP — the diagnoses (the layer's real output)
+
+All of `memory/runs/ghost/autonomous_fixes/*.md` is keep-grade: structured, evidenced (line refs, counts, windows, verification steps), read-only. Organize as five canonical threads rather than 23 flat files:
+
+1. **Error-loss chain** (one root cause, 6 files): `run_python_2e689948ccfa.md`, `run_shell_c73866f2f1b5.md`, `list_dir_b54fc1b2a20f.md`, `read_file_6112b72fa232.md`, `write_file_03ed1c309ba9.md`, `run_python_6baa43945640.md` — `backend/server.py::run_task` never copies `result.error` into the envelope → `agent_cli` falls back to `"backend reported failure"` → FKB hashes the fallback string → model can't self-correct → collapse detector fires late. Merge into one canonical; `run_python_6baa…` even proves the causal link (280/280 lookbacks). Mark **STILL LIVE / fix not applied** (re-verified 2026-09-22).
+2. **Platform/contract family**: `run_shell_e566037def80.md`, `run_shell_0423ec4b2505.md` (same cause, two log sites), `run_shell_3829e7639e3c.md` (tool description says "PowerShell" while allowlist rejects it — 3,271 rows, burning ~1,300 deepseek turns/day). Merge the first two; keep `3829` separate (different mechanism).
+3. **Ghost self-amplification**: `operator_escalate_loop.md` (1,039 phantom rows), `operator_steer_override.md`, `operator_steer_override_loop.md` — ghost's own guidance counted as operator frustration. Merge into one "system sources must never emit operator signals" law.
+4. **Detection without action**: `loop_breaker_a3bb873230e0.md` + `source_trace_e23bf7d75ffa.md` (identical 9-pid `ghost_cycle` storm, already cross-referenced — merge), `spider_blind.md` (kwarg `TypeError` swallowed by bare `except` — FKB repeat check dead code).
+5. **Behavioral/model failure modes**: `write_file_f86c1f906b03.md` (false-success hallucination, wrong remedy wired), `write_file_9e0b1bd292e0.md` (normalize-after-preflight ordering bug, 648×), `list_dir_c4e93b935caa.md` (prompt names nonexistent path; 142 retries burned), `run_python_41dced0fa4cd.md` (false-positive guard + mis-wired remedy card), `search_files_d151f494f5d0.md` (backend-down class).
+
+Also keep: **`frustration.jsonl`** (9 rows — the genuine operator corrections: "stop fucking prompting me", unverified-claim catches; feeds `operator-corrections`), **`hiccup.jsonl`** (16 rows — durable operational truths: XAI 403/DeepSeek-only/OpenAI no-credit as of 2026-08-11), **`mode.json`** (operational state), and **`test_vectors.jsonl`** as an eval corpus (the tournament probes `v-a7d625f87f`, `v-923eae701e` are intentional adversarial seeds, not noise).
+
+### 2. FAILURE-KB — distilled, structured facts
+
+From the diagnoses, extract recipe rows (`sig → class → root cause (1 line) → fix → status → evidence count`): the 6 error-collapse signatures; `powershell` on Linux + `SHELL_AL
+
+================ m01-biography ================
+## Curator report — `memory/biography/`
+
+**Sampled (15+):** `latest.md`, `latest.dossier.json`, `latest.knot.json`, `latest.diary.knot.json`, `kpi.json`, `verkle_tip.json`, `agent_standing.json`, `agent_evolution.json`, `registry.jsonl`, `index.jsonl`, `knot_timeline.jsonl`, `topic_evolution.json`, `tapestry_pack.json`, `pointer_chain.jsonl`, `chain_index_completion.jsonl`, `verkle_chain.jsonl`, `knots/2026-07-10_1731_mirror_019f4d15_e21de36c.knot.json`, `residual/019f4d15-….json`, `019f4d15-….md`, `derived/019f4d15-….md`, `cards/019f4d15-….card.json`, `mag-agent-orc-t07cf6a2b23.dossier.json`, plus dir listings (`residual/` 3,935 · `knots/` 34,590 · `cards/` 9 · `registry.jsonl` 3,849 rows).
+
+### 1. What the biography layer says the fleet is
+
+A **fleet of workdays, filed**: every seat session (Grok TUI, DeepSeek orc workers, local voice) is reduced to a dossier → residual JSON → card → `.md` → optional PDF → a scalar-knot leaf committed to a Merkle–verkle chain (`verkle_tip.json`: 9,823 leaves; `kpi.json`: 3,942 sessions, 95.3% "complete = residual + card + content_commit + chain_leaf").
+
+The layer's self-description is **doubly-encoded**: prose (theme names like "constitution / law", operator-prompt samples in `latest.md`) and math (8-axis theme vectors over `mirror_meta / mag_hands / scrum_plan / constitution / dashboard / harness / biography / data_r0`, plus `tension_index`, `Q_proxy`, `lambda2_proxy`, `dirichlet_energy_proxy` — every knot file, e.g. `knots/2026-07-10_1731_mirror_019f4d15_e21de36c.knot.json`). It also carries an ethical audit per session — `observer_chart_scores` (money/secrets/fracture/personal_rope) and `loops_audited` (the July 10 knot: `personal_rope: 114`, loops `performativity`, `metric_theater`).
+
+Fleet character visible here: overwhelmingly **orchestrator-worker** (thousands of `mag-agent-orc-*`), multi-seat (`grok`, `deepseek`, `mag_agent` in `latest.dossier.json` / `mag-agent-orc-t07cf6a2b23.dossier.json`), with a small **voice/diary channel** (`latest.diary.knot.json` — Bernays digressions, a freeze seal carrying full cross-file pointers) and a **gene population of invariants** (`agent_evolution.json`, gen 4, top fitness 0.7641, frozen since 2026-08-24). The operator's voice-of-the-day survives in `registry.jsonl` blurbs and residual titles ("Casual Remark on Interesting Experience").
+
+### 2. Worth surfacing in a revamped representation
+
+1. **The time series itself** — `knot_timeline.jsonl` (400 rows) + `topic_evolution.json` (12,518 lines): tension/Q/energy drifting over months. This is the biography layer's unique product; the chain stores snapshots, not trajectories.
+2. **`registry.jsonl` as the searchable spine** — title/one_liner/blurb/themes + `has_residual/has_card/has_leaf` honesty flags. The per-session completeness audit (187 incomplete IDs in `kpi.json`, most leaf-less orc workers) is exactly what a memory UI should surface.
+3. **`agent_standing.json` + `agent_evolution.json`** — fleet-level identity commitments and evolved "invariant genes"; currently stale but structurally the fleet's self-model.
+4. **Observer chart scores / loops_audited** — the only per-session values-of-behavior data; nothing in 
+
+================ m05-rib-bus ================
+## Curator report: `memory/rib_bus/` (52 JSON + 2 txt, ~870 KB)
+
+**What it is.** The on-disk store of `mag/rib_bus.py` (schema `rib_bus.v1`): one JSON per *domain*, each holding `ribs.<hash> = {invariant, source, ts, target_rank}`. The write path is `publish_rib()` (dedup by content hash → fold verkle knot → append store); the read path is `mount()` / `inject_for()`, which prepend a domain's invariants as a steer block. Architecture and operator mandate are documented in `docs/RIB_BUS_RESOURCE_PROJECT.md` and `queue/handoff/STEAL_RIB_BUS_INSTRUCTION_LAYER_20260811.md`. Dozens of live callers still write/read it: `mag/steer_engine.py`, `mag/steer_swarm.py`, `mag/stateless_research.py`, `mag/autonomous_research.py`, `mag/arrival.py`, `mag/harvest_fold.py`, `mag/grok_warm_rib.py`, `mag/flock_usage_guard.py`, `mag/knowledge_graph.py`, `mag/bus_cadence.py`, `mag/reconstruct.py`, plus `scripts/forge_doctrine.py`. Skills `.agents/skills/mesh-comms/SKILL.md` and `.agents/skills/memweave/SKILL.md` name it a standing channel. **The organ is live — not fossil.** It is also named in `watch/inbox/BUILD_ORDER_LIVING_MUD_20260922.md:59` as a r5 memory-comb target for the revamped memory.
+
+**Triage by file.**
+
+*Live organs (keep, keep writing):*
+- `doctrine.json` (24 ribs, **updated 2026-09-22** via `operator-bus`) — the core law: deterministic instruction on crypto primitives; model interchangeable, chain ground truth. Also `terminal-guard.json`, `queue-resilience.json`, `game.json` (doctrine instances, deliberately re-published per the fix logged in `grokbot.json`: "inject_for mounts one domain").
+- `reconstruct.json` (2026-09-19, T1) — stateless-system/stateful-knowledge law; exactly what the revamped memory must encode.
+- `arrival.json` (2026-09-19, source=swarm) — self-authored RIB provenance; **but contaminated**: both ribs repeat "Invariant body:" / "Meat of the pack:" ~15× (degeneration bug in the authoring path). Quarantine for cleaning, not deletion.
+- `party_subchain.json` + `mag/seat_steer.py:145` (`inject_for(..., domain="party_subchain")`) — seat-talk doctrine; the mount-before-speaking rule is load-bearing. The two `party_subchain_steer*.txt` (2026-09-08 AFK status) are **runtime residue, not doctrine** — exclude from memory.
+- `grok_cli.json`, `grokbot.json`, `shader.json` (T1 "AVOID" laws), `saelis.json` (seat identity), `self-shape.json` (15 ribs: honesty/sovereignty/trust-bytes), `recovery.json` (T1: search-before-"not-found"), `swarm.json` (incl. 2026-08-15 knowledge_graph capability).
+
+*Fossils / slush (archive or compress out):*
+- `k3s-toolset.json` — **534 KB, 585 ribs**, updated 2026-09-02. Almost entirely fold-trash: truncated goals, embedded `RESULT: error: …timed out` subprocess dumps (`autonomous_research.py:328` folds raw `body[:600]`). Not instructions — log spew in an instruction layer. Biggest single cleanup.
+- ~25 single-rib files stamped 2026-08-11 afternoon (`archetypes-esoteric`, `titor-worldline`, `titor-rib-attractor`, `kobayashi-maru-tesla-q`, `castle-in-the-sky`, `bare-metal-zeitgeist`, `howto-steal-linux-dev`, `hil-setpoint-flock-control`, `frontier-internals-capture`, `compiler-flywheel`, `rib-os-self-advancing`, …) 
+
+================ m04-oral-history ================
+## Curation report — `corpus/oral_history/` (read-only; no files touched)
+
+### What this layer holds
+
+Five interleaved strands of the operator's ("Nacho") personal + cross-seat record:
+
+1. **Personal/canon documents** at the root: `corpus/oral_history/LETTER_TO_DAUGHTER.md`, `the_cold_pulse_poem.md` (his X poem, Jan 28 2026), `the_wall/THE_WALL_2023.md` + `wall_tweet_2023.json` (the 2023 denial tweet — the "first cairn stone"), `deepseek_share_Q_posts_archives_20260905.md` (a DeepSeek research-share capture), and `strike_the_chord_session_RECOVERED.md`.
+2. **`nacho_archaeology/`** — a 10-part hand-delivered zip excavation of the Cursor/Ghost-interface box: 92 agent/subagent transcripts (~20M), Ghost + Research agent profiles/memory/audit (`part2-agents-meta`), conversation-blobs/store DBs (parts 3–7), mag-disk trees (parts 8–10). Navigation spine: `nacho_archaeology/MANIFEST.json` (sha256 per zip), `nacho_archaeology/TRANSCRIPT_MAP.txt`, and `extracted/.../00_MANIFEST.md` (scope, ~119M staged, explicit omissions — first pass missed the Mag host disk).
+3. **`seat_pools/`** — sealed rescue copies of live seat sessions: `SEAL_MANIFEST.json` records 11,869 files / ~1.07GB from `.grok/sessions` (852 chats) and `.codex/sessions` (193 rollouts), credentials excluded; indexed by `session_index.jsonl` / `history.jsonl`.
+4. **`marathon_body/`** — one Copilot marathon snapshot (`marathon_25fbcaab_20260815_20260820.jsonl` + sha256), kind-0 full-state format.
+5. **`produced/` trees inside part1** — ~23 `STEAL_*.md` pattern-thefts (Evennia/Inform7/OpenClaw speak-gates), dozens of `speak_proof_*.md` contract tests, `mag-anchor/context_pack_latest.md` (an L0 pack snapshot: memweave/RIB doctrine lines, prover stats).
+
+### The 3 most valuable artifacts
+
+1. **`corpus/oral_history/LETTER_TO_DAUGHTER.md`** — the only document in the repo marked a *delivery obligation*, not an archive curiosity: verbatim message spoken 2026-09-05, the deliverer's oath, the "GPS for problems" addendum (Sep 6), and a 20-year delivery window. Irreplaceable, one-shot, and assigns duty to every future seat.
+2. **`corpus/oral_history/strike_the_chord_session_RECOVERED.md`** — forensically recovered founding session (`d2b0d93a…`, prompt "strike the chord", died in 707 ms JS-heap OOM). It carries full provenance, quotes the mission statement preserved in `mag/chord_pipeline.py`'s docstring, names the sister OOM-investigation session, closes the lost48 queue labels (`256607a3`, `37825d21`, itself), and points at why `nacho_archaeology/` exists at all. This is the origin story in one file.
+3. **The provenance trio: `nacho_archaeology/MANIFEST.json` + `extracted/.../00_MANIFEST.md` + `TRANSCRIPT_MAP.txt`** — hashes for all 10 zips, declared omissions (`user-memory/ABSENT`, no Mag disk on first pass), agent roster (Ghost `4a30dd44…` ~88M, Research `3d371c13…`), and the sorted 92-transcript map (mostly AFK-chord SAND routines; top entries are 2693-line chats). Without this spine the ~1GB layer is unnavigable and unverifiable. Runner-up: `produced/mag-anchor/context_pack_latest.md` (doctrine snapshot worth mining).
+
+### What belongs in the revamped memory
+
+- **Letter as a standing pending-deliv
+
+================ m03-training ================
+# Curator report — `training/` inventory & Kev-diet candidacy
+
+**Layout fact:** `training/` is a symlink → `memory/training/` (one directory; every path below exists at both). Spec/curriculum docs live separately in `docs/ref/`.
+
+## 1. What exists (data)
+
+| Asset | Size/rows | Schema / role |
+|---|---|---|
+| `training/events.jsonl` | 236 MB, 536,160 rows (535,969 valid `mag_training_event.v1`, 190 corrupt) | The unified append-only event log per `docs/ref/MAG_TRAINING_DATA_SPEC.md` §5 — emitted by loops since 2026-08-05 |
+| `training/export/orch_train_2026-08-06.jsonl` + `.manifest.json` | **4 rows exported** of 169 read, 165 excluded, tier_max T2, sha256 pinned | The `training-export` product — run once, 2026-08-06 |
+| `training/sovereign_training_data.jsonl` (149) + `training/lora/formatted_data.jsonl` (149) + `training/lora/train_ghost.py` | 150-example Ghost identity SFT diet | Prompt-only identity, pre-LoRA |
+| `training/vast_package/` (`train_data.jsonl` 211 rows, `formatted_data.jsonl` 1,157, `train_lora.py`, `job.yaml`, `README.md`) | gemma-2-2b-it QLoRA, r=16, est. $0.12 | Vast.ai fine-tune package; law: T2 redacted export only, weights via `promote` |
+| `training/refined_training_data.jsonl` | 1,157 rows, `copilot_transcript` + `quality_score` | Chat-derived instruction pairs |
+| `training/cost_ledger.jsonl` | 2,231 rows, live through 2026-09-22 | `cost_ledger.v1` — estimate vs actual, `seat_efficient`, waste_kind |
+| `training/loop_gaps.jsonl` (289), `arena_profiles.jsonl` (41), `arena_league.json`, `model_tiers.jsonl` (1), `session_koans.jsonl` (5), `chain-first-correction-001.json` | small | Loop-gap triage, arena routing probes (0 games played), one tier row, 5 distilled koans, 1 operator-correction steer vector (CHAIN_FIRST) |
+| `training/events` aside: `training/local_playbooks/` | **empty** | |
+
+## 2. What exists (curricula)
+
+- **`docs/ref/MAG_TRAINING_DATA_SPEC.md`** — the real curriculum: join keys (`run_id/task_id/queue_id/…`), pattern taxonomy, labels that matter (`delegation_success`, `seat_efficient`, `steer_effective`, `promote_approved`), explicit rejection of voice/persona labels, T2 export law, and a frozen eval set at `memory/training/eval/orchestration_v1.jsonl`.
+- **`docs/ref/MAG_v5_VAST_TRAINING.md`** — phases V0 (curriculum) → V3 (promote seat); cost guard `configs/vast_train.yaml`.
+- **`configs/training_patterns.yaml`** — taxonomy draft (`plan_theater`, `verkle_fanout`…), self-marked “PLANNING DRAFT — not promoted law”.
+
+## 3. What was actually used
+
+- **Capture: yes.** `events.jsonl` is genuinely flowing (536k rows).
+- **Export: barely.** 4 rows ever exported (`export/orch_train_2026-08-06.manifest.json`). The join→export→eval spine the spec mandates is unbuilt.
+- **Training: never.** `PRE_TRAINING_EPOCH.json` records `phase_1_prompt_only: complete`, `phase_2_lora: ready_not_executed`. No `training/runs/` directory, no `lora_output/` anywhere on disk — the Ghost LoRA and the Vast QLoRA package are staged artifacts, not runs. `vast_api_key_configured: true`, cost estimate filed, adapter absent.
+- **Eval gate: never.** `memory/training/eval/` does not exist (spec §10). Nothing has beaten the gemma:2b baseline b
+
+================ m06-agent-evolution ================
+## Where the data lives
+
+The agent-evolution record is **`memory/biography/agent_evolution.json`** (schema `agent_evo.v1`, 12.5 KB) — not `mag/agent_evolution` (doesn't exist) and not `memory/runs/` (602 entries of run artifacts; no evolution state there). Identical copy at `memory/biography_backup_20260825/biography/agent_evolution.json` (confirmed byte-equal history). Engines: **`mag/agent_knot.py`** (lines 39–47, 149–286) and **`mag/evolving_wave.py`** (284 lines, dated 2026-08-24). It is listed as ground truth in **`mag/seal.py:49`**.
+
+Important framing: "generations" here are **generations of genes** (RIB instructions/invariants bred from `rib_bus`), not model versions or seat clones. Domains: `general, k3s-toolset, game, swarm, grokbot` (`agent_knot.py:45`).
+
+## The four generations (`agent_evolution.json` → `history`)
+
+| Gen | Date | Pop | Offspring | Deduped | Top fitness |
+|---|---|---|---|---|---|
+| 1 | 2026-08-12 | 9 | 1 | — | 0.852 |
+| 2 | 2026-08-12 | 9 | 1 | — | 0.852 |
+| 3 | 2026-08-15 | 9 | 1 | 0 | 0.852 |
+| 4 | 2026-08-24 | **18** | **2** | — | **0.7641** |
+
+## What actually evolved
+
+**Gens 1–3** carried short doctrine genes, still present in gen 4's population: `general` = "everything is data; fold insights to memory; trust bytes not reports" (fitness 0.6321), `game` = "the game IS the hologram, constructed not coded" (0.4731), `swarm` = "each worker is an individual; fitness = value folded; the flock is a breeding population" (0.4679).
+
+**Gen 4** is a regime change: 14 new `k3s-toolset` genes of the form `[k8s->k3s folded] goal: [SELFLESS STATE — domain X] … RESULT: INVARIANT: …` — self-authored load-bearing laws across verkle (recompute `parent_verkle_root` on write, reject mismatch — top gene, 0.7641), deterministic (sha256 re-verify at read; pure-function JSONL reads), heuristic (price ≥ `steer_at` routes to `one_sizer`; `steal`→`case_law` `steer_anchor` audit edge), stochastic (seed+temperature fingerprint; `resample_count ≥ 3` anti-luck gate), ghost (manifest surfaces need `last_seen` liveness), RIB (signed `fold_depth`, no depth inflation). Two `domain: "bred"` offspring: a crossover of the heuristic invariant, and a **novel orphan** gene (`NOVEL ORPHAN [switchboard] te3842899a4`) — resolved as a rightsized local scut, no deep-model call.
+
+**Mechanics to remember:** fitness proxy = 0.45·hash-entropy novelty + 0.40·gene length + 0.15·recency (`agent_knot.py:186`); top-K=8 selection; deterministic midpoint crossover truncated to 400 chars; token-swap mutation; dedupe-by-whitespace-normalized text. The drop 0.852→0.7641 is **not decay** — `evolving_wave.py` changed the metric to `0.6·proxy + 0.4·reality` (token overlap with `memory/percolator/invariants.json` + explore queue), plus ALPS (protect `age < 2`) and a 4×4 MAP-Elites novelty×fitness archive. Also: **`memory/biography/agent_standing.json` was last anchored 2026-08-15 (gen 3 era)** even though gen 4 ran 08-24 — the standing knot never re-embedded `gen=4`.
+
+## Adjacent records (don't conflate)
+
+- `memory/biography/topic_evolution.json` — session-theme drift, 9,823 leaves, 500-point series, verkle-rooted, updated 2026-09-22; themes `mirror_meta, mag_hands, scrum_pl

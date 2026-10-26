@@ -1,0 +1,13 @@
+# FAN2 vortex-latent
+
+lane model: meta/muse-glimmer-30b
+
+---
+
+OWED. I could not verify a specific verifiable source that describes compressing von Karman vortex street flows into approximately 8 value latent loops with the architectures you list.
+
+What I tried: search of my accessible knowledge up to 2026-01-04 for von Karman vortex street, von Karman vortex street neural network compression, von Karman vortex street latent dimension 8, von Karman vortex street autoencoder, von Karman vortex street POD plus neural network, and von Karman vortex street neural ODE. No matching publication with that exact ~8 value latent loop description was found.
+
+General background that is verifiable: autoencoders, POD combined with neural networks, and neural ODEs are all used in the fluid dynamics literature for reduced order modeling of cylinder wakes and vortex shedding. Sources for those general methods exist, e.g., Brunton and Kutz Data Driven Science and Engineering, Raissi Perdikaris Karniadakis Physics Informed Neural Networks 2019, Chen et al. Neural Ordinary Differential Equations NeurIPS 2018. None of those sources is verified here as describing the specific ~8 value latent loop compression you mention.
+
+If you have a title, author, arXiv id or DOI for the work you mean I can check it directly.

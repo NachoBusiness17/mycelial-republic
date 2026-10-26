@@ -1,0 +1,1227 @@
+[
+  {
+    "name": "apply_patch",
+    "description": "OpenClaw-shaped alias: surgical edit through the Mag write jail.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "path": {
+          "type": "string"
+        },
+        "search": {
+          "type": "string"
+        },
+        "replace": {
+          "type": "string"
+        },
+        "snapshot": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "path",
+        "search",
+        "replace"
+      ]
+    },
+    "_meta": {
+      "mag": {
+        "profile": "full",
+        "quantized": true,
+        "effect_class": "mutating_or_executing",
+        "risk": "guarded",
+        "authority": "switchboard_and_effect_broker",
+        "cost_kind": "local_compute_or_unknown",
+        "exhaustion": "deny_or_defer"
+      }
+    }
+  },
+  {
+    "name": "biblio_query",
+    "description": "Rows from BIBLIOGRAPHY_MAP.md whose section or row text matches subsystem.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "subsystem": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "subsystem"
+      ]
+    },
+    "_meta": {
+      "mag": {
+        "profile": "full",
+        "quantized": true,
+        "effect_class": "unknown",
+        "risk": "unknown",
+        "authority": "explicit_policy_required",
+        "cost_kind": "unknown",
+        "exhaustion": "operator_gate"
+      }
+    }
+  },
+  {
+    "name": "blackboard_post",
+    "description": "Post a note to the egregore's shared blackboard (finding|decision|conflict|open-question|handoff|claim).",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "text": {
+          "type": "string"
+        },
+        "kind": {
+          "type": "string",
+          "default": "finding"
+        },
+        "owner": {
+          "type": "string",
+          "default": "worker"
+        }
+      },
+      "required": [
+        "text"
+      ]
+    },
+    "_meta": {
+      "mag": {
+        "profile": "full",
+        "quantized": true,
+        "effect_class": "mutating_or_executing",
+        "risk": "guarded",
+        "authority": "switchboard_and_effect_broker",
+        "cost_kind": "local_compute_or_unknown",
+        "exhaustion": "deny_or_defer"
+      }
+    }
+  },
+  {
+    "name": "blackboard_read",
+    "description": "Read the egregore's mind: pinned decisions/conflicts + the recent tail.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "limit": {
+          "type": "integer"
+        },
+        "pinned_only": {
+          "type": "boolean"
+        }
+      },
+      "required": []
+    },
+    "_meta": {
+      "mag": {
+        "profile": "full",
+        "quantized": true,
+        "effect_class": "read_or_deterministic_compute",
+        "risk": "low_or_local",
+        "authority": "read_guard",
+        "cost_kind": "deterministic_local",
+        "exhaustion": "retry_or_defer"
+      }
+    }
+  },
+  {
+    "name": "corpus_get",
+    "description": "Serve real bytes (capped, text-only) with their sha256 -- byte-true get.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "path": {
+          "type": "string"
+        },
+        "max_bytes": {
+          "type": "integer"
+        }
+      },
+      "required": [
+        "path"
+      ]
+    },
+    "_meta": {
+      "mag": {
+        "profile": "full",
+        "quantized": true,
+        "effect_class": "read_or_deterministic_compute",
+        "risk": "low_or_local",
+        "authority": "read_guard",
+        "cost_kind": "deterministic_local",
+        "exhaustion": "retry_or_defer"
+      }
+    }
+  },
+  {
+    "name": "corpus_search",
+    "description": "Search the catalog map (never the bytes): substring on path/title.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "query": {
+          "type": "string",
+          "default": ""
+        },
+        "zone": {
+          "type": "string",
+          "default": ""
+        },
+        "ext": {
+          "type": "string",
+          "default": ""
+        },
+        "kind": {
+          "type": "string",
+          "default": ""
+        },
+        "since": {
+          "type": "string",
+          "default": ""
+        },
+        "limit": {
+          "type": "integer"
+        }
+      },
+      "required": []
+    },
+    "_meta": {
+      "mag": {
+        "profile": "full",
+        "quantized": true,
+        "effect_class": "read_or_deterministic_compute",
+        "risk": "low_or_local",
+        "authority": "read_guard",
+        "cost_kind": "deterministic_local",
+        "exhaustion": "retry_or_defer"
+      }
+    }
+  },
+  {
+    "name": "corpus_stats",
+    "description": "Count the map: rows per zone (optionally per kind for one zone).",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "zone": {
+          "type": "string",
+          "default": ""
+        },
+        "kind": {
+          "type": "string",
+          "default": ""
+        }
+      },
+      "required": []
+    },
+    "_meta": {
+      "mag": {
+        "profile": "full",
+        "quantized": true,
+        "effect_class": "read_or_deterministic_compute",
+        "risk": "low_or_local",
+        "authority": "read_guard",
+        "cost_kind": "deterministic_local",
+        "exhaustion": "retry_or_defer"
+      }
+    }
+  },
+  {
+    "name": "corpus_tail",
+    "description": "Tail the last N lines of a text ledger, hashed as served.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "path": {
+          "type": "string"
+        },
+        "lines": {
+          "type": "integer"
+        }
+      },
+      "required": [
+        "path"
+      ]
+    },
+    "_meta": {
+      "mag": {
+        "profile": "full",
+        "quantized": true,
+        "effect_class": "read_or_deterministic_compute",
+        "risk": "low_or_local",
+        "authority": "read_guard",
+        "cost_kind": "deterministic_local",
+        "exhaustion": "retry_or_defer"
+      }
+    }
+  },
+  {
+    "name": "drift_check",
+    "description": "Comma-separated numeric series version for MCP/CLI callers.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "metric": {
+          "type": "string",
+          "default": ""
+        },
+        "referent": {
+          "type": "string",
+          "default": ""
+        },
+        "window": {
+          "type": "integer"
+        },
+        "label": {
+          "type": "string",
+          "default": ""
+        }
+      },
+      "required": []
+    },
+    "_meta": {
+      "mag": {
+        "profile": "full",
+        "quantized": true,
+        "effect_class": "unknown",
+        "risk": "unknown",
+        "authority": "explicit_policy_required",
+        "cost_kind": "unknown",
+        "exhaustion": "operator_gate"
+      }
+    }
+  },
+  {
+    "name": "estate_chain_verify",
+    "description": "Dry-run verkle chain verify. repair(dry=True) is read-only by",
+    "inputSchema": {
+      "type": "object",
+      "properties": {},
+      "description": "dry-run verify only; repair is never exposed"
+    },
+    "_meta": {
+      "mag": {
+        "profile": "full",
+        "quantized": true,
+        "effect_class": "read_or_deterministic_compute",
+        "risk": "low_or_local",
+        "authority": "read_guard",
+        "cost_kind": "deterministic_local",
+        "exhaustion": "retry_or_defer"
+      }
+    }
+  },
+  {
+    "name": "estate_dirac_rank",
+    "description": "Read-only circuit rank: beta1 = m - n + c, the independent Dirac loops.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "scope": {
+          "type": "string",
+          "enum": [
+            "operational",
+            "knowledge",
+            "all"
+          ],
+          "default": "operational"
+        }
+      }
+    },
+    "_meta": {
+      "mag": {
+        "profile": "full",
+        "quantized": true,
+        "effect_class": "read_or_deterministic_compute",
+        "risk": "low_or_local",
+        "authority": "read_guard",
+        "cost_kind": "deterministic_local",
+        "exhaustion": "retry_or_defer"
+      }
+    }
+  },
+  {
+    "name": "estate_dirac_scan",
+    "description": "Read-only full Dirac-loop scan: beta1 + closed(solved)/open(gap) loops.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "scope": {
+          "type": "string",
+          "enum": [
+            "operational",
+            "knowledge",
+            "all"
+          ],
+          "default": "operational"
+        }
+      }
+    },
+    "_meta": {
+      "mag": {
+        "profile": "full",
+        "quantized": true,
+        "effect_class": "read_or_deterministic_compute",
+        "risk": "low_or_local",
+        "authority": "read_guard",
+        "cost_kind": "deterministic_local",
+        "exhaustion": "retry_or_defer"
+      }
+    }
+  },
+  {
+    "name": "estate_driver_status",
+    "description": "Read-only stealth_driver status: heartbeat tail + off flag + work",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "tail": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 20,
+          "default": 3
+        }
+      },
+      "description": "read-only status; control words and lanes are not exposed"
+    },
+    "_meta": {
+      "mag": {
+        "profile": "full",
+        "quantized": true,
+        "effect_class": "read_or_deterministic_compute",
+        "risk": "low_or_local",
+        "authority": "read_guard",
+        "cost_kind": "deterministic_local",
+        "exhaustion": "retry_or_defer"
+      }
+    }
+  },
+  {
+    "name": "estate_queue_closes",
+    "description": "Queue-closes lane: drain UNCHECKED rows to zero without aborts.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "rebuild": {
+          "type": "boolean"
+        },
+        "sweep": {
+          "type": "boolean"
+        },
+        "dry_run": {
+          "type": "boolean"
+        }
+      },
+      "required": []
+    },
+    "_meta": {
+      "mag": {
+        "profile": "full",
+        "quantized": true,
+        "effect_class": "unknown",
+        "risk": "unknown",
+        "authority": "explicit_policy_required",
+        "cost_kind": "unknown",
+        "exhaustion": "operator_gate"
+      }
+    }
+  },
+  {
+    "name": "estate_thought_compile",
+    "description": "Compile the tiered instruction packs. The writer is PINNED: input and",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "frontier": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 200,
+          "default": 24
+        },
+        "flash": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 200,
+          "default": 12
+        },
+        "local": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 200,
+          "default": 0
+        }
+      },
+      "description": "writes ONLY inside the pinned OUT_DIR; caller-supplied in/out paths are refused"
+    },
+    "_meta": {
+      "mag": {
+        "profile": "full",
+        "quantized": true,
+        "effect_class": "mutating_or_executing",
+        "risk": "guarded",
+        "authority": "switchboard_and_effect_broker",
+        "cost_kind": "local_compute_or_unknown",
+        "exhaustion": "deny_or_defer"
+      }
+    }
+  },
+  {
+    "name": "estate_water_graph_tick",
+    "description": "Run WaterGraph.tick() on a caller-held spec: stateless physics.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "spec": {
+          "type": "object",
+          "description": "water_graph.v1 spec (to_spec shape): nodes + optional pipes; stateless, the caller holds the graph state"
+        },
+        "ticks": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 1000,
+          "default": 1
+        }
+      },
+      "required": [
+        "spec"
+      ]
+    },
+    "_meta": {
+      "mag": {
+        "profile": "full",
+        "quantized": true,
+        "effect_class": "read_or_deterministic_compute",
+        "risk": "low_or_local",
+        "authority": "read_guard",
+        "cost_kind": "deterministic_local",
+        "exhaustion": "retry_or_defer"
+      }
+    }
+  },
+  {
+    "name": "fence_strike",
+    "description": "THE FENCE analysis on any text. Counts heuristic pattern hits; each finding",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "target_text": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "target_text"
+      ]
+    },
+    "_meta": {
+      "mag": {
+        "profile": "full",
+        "quantized": true,
+        "effect_class": "unknown",
+        "risk": "unknown",
+        "authority": "explicit_policy_required",
+        "cost_kind": "unknown",
+        "exhaustion": "operator_gate"
+      }
+    }
+  },
+  {
+    "name": "invariant_sheet",
+    "description": "Filtered lines from INVARIANT_SHEET_V2.md.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "subsystem": {
+          "type": "string"
+        },
+        "bucket": {
+          "type": "string"
+        }
+      },
+      "required": []
+    },
+    "_meta": {
+      "mag": {
+        "profile": "full",
+        "quantized": true,
+        "effect_class": "unknown",
+        "risk": "unknown",
+        "authority": "explicit_policy_required",
+        "cost_kind": "unknown",
+        "exhaustion": "operator_gate"
+      }
+    }
+  },
+  {
+    "name": "kvos_stats",
+    "description": "Block-store census. Default: read the frozen summary row of",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "recompute": {
+          "type": "boolean"
+        }
+      },
+      "required": []
+    },
+    "_meta": {
+      "mag": {
+        "profile": "full",
+        "quantized": true,
+        "effect_class": "unknown",
+        "risk": "unknown",
+        "authority": "explicit_policy_required",
+        "cost_kind": "unknown",
+        "exhaustion": "operator_gate"
+      }
+    }
+  },
+  {
+    "name": "list_dir",
+    "description": "mag tool: list_dir",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "path": {
+          "type": "string",
+          "default": "."
+        }
+      },
+      "required": []
+    },
+    "_meta": {
+      "mag": {
+        "profile": "full",
+        "quantized": true,
+        "effect_class": "read_or_deterministic_compute",
+        "risk": "low_or_local",
+        "authority": "read_guard",
+        "cost_kind": "deterministic_local",
+        "exhaustion": "retry_or_defer"
+      }
+    }
+  },
+  {
+    "name": "mean_field",
+    "description": "Deterministic MAPPING of a stochastic model: the mean-field projection (expected trajectory)",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "trajectories": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "trajectories"
+      ]
+    },
+    "_meta": {
+      "mag": {
+        "profile": "full",
+        "quantized": true,
+        "effect_class": "read_or_deterministic_compute",
+        "risk": "low_or_local",
+        "authority": "read_guard",
+        "cost_kind": "deterministic_local",
+        "exhaustion": "retry_or_defer"
+      }
+    }
+  },
+  {
+    "name": "pheromone_drop",
+    "description": "Drop one content-addressed pheromone mark (trail|fruitful|dead|here|danger|signal).",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "scent": {
+          "type": "string"
+        },
+        "kind": {
+          "type": "string",
+          "default": "trail"
+        },
+        "at": {
+          "type": "string",
+          "default": ""
+        },
+        "owner": {
+          "type": "string",
+          "default": "worker"
+        }
+      },
+      "required": [
+        "scent"
+      ]
+    },
+    "_meta": {
+      "mag": {
+        "profile": "full",
+        "quantized": true,
+        "effect_class": "mutating_or_executing",
+        "risk": "guarded",
+        "authority": "switchboard_and_effect_broker",
+        "cost_kind": "local_compute_or_unknown",
+        "exhaustion": "deny_or_defer"
+      }
+    }
+  },
+  {
+    "name": "pheromone_trail",
+    "description": "Read the local pheromone trail — what prior builders left (the ant-trail).",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "kind": {
+          "type": "string",
+          "default": ""
+        },
+        "limit": {
+          "type": "integer"
+        }
+      },
+      "required": []
+    },
+    "_meta": {
+      "mag": {
+        "profile": "full",
+        "quantized": true,
+        "effect_class": "read_or_deterministic_compute",
+        "risk": "low_or_local",
+        "authority": "read_guard",
+        "cost_kind": "deterministic_local",
+        "exhaustion": "retry_or_defer"
+      }
+    }
+  },
+  {
+    "name": "read_file",
+    "description": "Read a text file, optionally a 1-indexed line range.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "path": {
+          "type": "string"
+        },
+        "max_chars": {
+          "type": "integer"
+        },
+        "line_from": {
+          "type": "string"
+        },
+        "line_to": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "path"
+      ]
+    },
+    "_meta": {
+      "mag": {
+        "profile": "full",
+        "quantized": true,
+        "effect_class": "read_or_deterministic_compute",
+        "risk": "low_or_local",
+        "authority": "read_guard",
+        "cost_kind": "deterministic_local",
+        "exhaustion": "retry_or_defer"
+      }
+    }
+  },
+  {
+    "name": "research",
+    "description": "Search-swarm seam: route a research ask to the swarm (cheap DeepSeek, k8s-drained) via",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "ask": {
+          "type": "string"
+        },
+        "surface": {
+          "type": "string",
+          "default": "det-scan"
+        }
+      },
+      "required": [
+        "ask"
+      ]
+    },
+    "_meta": {
+      "mag": {
+        "profile": "full",
+        "quantized": true,
+        "effect_class": "model_or_external",
+        "risk": "provider_dependent",
+        "authority": "broker_or_explicit_refusal",
+        "cost_kind": "unknown_until_metered",
+        "exhaustion": "reroute_or_stop"
+      }
+    }
+  },
+  {
+    "name": "research_search",
+    "description": "Search the research corpus: links ledger, pack index, canon filenames.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "query": {
+          "type": "string",
+          "default": ""
+        },
+        "source": {
+          "type": "string",
+          "default": "all"
+        },
+        "limit": {
+          "type": "integer"
+        }
+      },
+      "required": []
+    },
+    "_meta": {
+      "mag": {
+        "profile": "full",
+        "quantized": true,
+        "effect_class": "read_or_deterministic_compute",
+        "risk": "low_or_local",
+        "authority": "read_guard",
+        "cost_kind": "deterministic_local",
+        "exhaustion": "retry_or_defer"
+      }
+    }
+  },
+  {
+    "name": "research_sources",
+    "description": "Inventory the canon lanes: primary evidence sources by lane.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {},
+      "required": []
+    },
+    "_meta": {
+      "mag": {
+        "profile": "full",
+        "quantized": true,
+        "effect_class": "read_or_deterministic_compute",
+        "risk": "low_or_local",
+        "authority": "read_guard",
+        "cost_kind": "deterministic_local",
+        "exhaustion": "retry_or_defer"
+      }
+    }
+  },
+  {
+    "name": "research_stats",
+    "description": "Counts across the research organs.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {},
+      "required": []
+    },
+    "_meta": {
+      "mag": {
+        "profile": "full",
+        "quantized": true,
+        "effect_class": "read_or_deterministic_compute",
+        "risk": "low_or_local",
+        "authority": "read_guard",
+        "cost_kind": "deterministic_local",
+        "exhaustion": "retry_or_defer"
+      }
+    }
+  },
+  {
+    "name": "run_python",
+    "description": "mag tool: run_python",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "code": {
+          "type": "string"
+        },
+        "timeout": {
+          "type": "integer"
+        }
+      },
+      "required": [
+        "code"
+      ]
+    },
+    "_meta": {
+      "mag": {
+        "profile": "full",
+        "quantized": true,
+        "effect_class": "mutating_or_executing",
+        "risk": "guarded",
+        "authority": "switchboard_and_effect_broker",
+        "cost_kind": "local_compute_or_unknown",
+        "exhaustion": "deny_or_defer"
+      }
+    }
+  },
+  {
+    "name": "run_shell",
+    "description": "mag tool: run_shell",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "command": {
+          "type": "string"
+        },
+        "timeout": {
+          "type": "integer"
+        }
+      },
+      "required": [
+        "command"
+      ]
+    },
+    "_meta": {
+      "mag": {
+        "profile": "full",
+        "quantized": true,
+        "effect_class": "mutating_or_executing",
+        "risk": "guarded",
+        "authority": "switchboard_and_effect_broker",
+        "cost_kind": "local_compute_or_unknown",
+        "exhaustion": "deny_or_defer"
+      }
+    }
+  },
+  {
+    "name": "scan_grid",
+    "description": "Deterministic scan: reproducible measurement + fingerprint of a stochastic environment.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "environment": {
+          "type": "string"
+        },
+        "seed": {
+          "type": "integer"
+        },
+        "b": {
+          "type": "integer"
+        }
+      },
+      "required": [
+        "environment"
+      ]
+    },
+    "_meta": {
+      "mag": {
+        "profile": "full",
+        "quantized": true,
+        "effect_class": "read_or_deterministic_compute",
+        "risk": "low_or_local",
+        "authority": "read_guard",
+        "cost_kind": "deterministic_local",
+        "exhaustion": "retry_or_defer"
+      }
+    }
+  },
+  {
+    "name": "scan_measure",
+    "description": "Deterministic scan: seeded bootstrap measurement (mean + CI) of a stochastic signal.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "samples": {
+          "type": "string"
+        },
+        "seed": {
+          "type": "integer"
+        },
+        "b": {
+          "type": "integer"
+        }
+      },
+      "required": [
+        "samples"
+      ]
+    },
+    "_meta": {
+      "mag": {
+        "profile": "full",
+        "quantized": true,
+        "effect_class": "read_or_deterministic_compute",
+        "risk": "low_or_local",
+        "authority": "read_guard",
+        "cost_kind": "deterministic_local",
+        "exhaustion": "retry_or_defer"
+      }
+    }
+  },
+  {
+    "name": "scan_probe",
+    "description": "Deterministic scan: reproducible signature probe of a text environment.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "text": {
+          "type": "string"
+        },
+        "seed": {
+          "type": "integer"
+        }
+      },
+      "required": [
+        "text"
+      ]
+    },
+    "_meta": {
+      "mag": {
+        "profile": "full",
+        "quantized": true,
+        "effect_class": "read_or_deterministic_compute",
+        "risk": "low_or_local",
+        "authority": "read_guard",
+        "cost_kind": "deterministic_local",
+        "exhaustion": "retry_or_defer"
+      }
+    }
+  },
+  {
+    "name": "search_files",
+    "description": "Simple substring search in text files under path.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "pattern": {
+          "type": "string"
+        },
+        "under": {
+          "type": "string",
+          "default": "."
+        }
+      },
+      "required": [
+        "pattern"
+      ]
+    },
+    "_meta": {
+      "mag": {
+        "profile": "full",
+        "quantized": true,
+        "effect_class": "read_or_deterministic_compute",
+        "risk": "low_or_local",
+        "authority": "read_guard",
+        "cost_kind": "deterministic_local",
+        "exhaustion": "retry_or_defer"
+      }
+    }
+  },
+  {
+    "name": "swarm_sense",
+    "description": "The NPC's fog-of-war body snapshot (health/capacity/economics/map).",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "owner": {
+          "type": "string",
+          "default": "worker"
+        }
+      },
+      "required": []
+    },
+    "_meta": {
+      "mag": {
+        "profile": "full",
+        "quantized": true,
+        "effect_class": "read_or_deterministic_compute",
+        "risk": "low_or_local",
+        "authority": "read_guard",
+        "cost_kind": "deterministic_local",
+        "exhaustion": "retry_or_defer"
+      }
+    }
+  },
+  {
+    "name": "thrash_meter",
+    "description": "Dict-in/dict-out wrapper for TOOL_MAP / REST callers.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "hours": {
+          "type": "integer"
+        },
+        "max_events": {
+          "type": "integer"
+        },
+        "source": {
+          "type": "string",
+          "default": ""
+        }
+      },
+      "required": []
+    },
+    "_meta": {
+      "mag": {
+        "profile": "full",
+        "quantized": true,
+        "effect_class": "unknown",
+        "risk": "unknown",
+        "authority": "explicit_policy_required",
+        "cost_kind": "unknown",
+        "exhaustion": "operator_gate"
+      }
+    }
+  },
+  {
+    "name": "verb_anchor",
+    "description": "Verify the kifu, commit its tail as the one live anchor row, prove it.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "window": {
+          "type": "integer"
+        }
+      },
+      "required": []
+    },
+    "_meta": {
+      "mag": {
+        "profile": "full",
+        "quantized": true,
+        "effect_class": "unknown",
+        "risk": "unknown",
+        "authority": "explicit_policy_required",
+        "cost_kind": "unknown",
+        "exhaustion": "operator_gate"
+      }
+    }
+  },
+  {
+    "name": "vision",
+    "description": "Ask the vision model to describe/analyze an image. Image in the USER message only.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "image": {
+          "type": "string"
+        },
+        "prompt": {
+          "type": "string",
+          "default": "What is in this image?"
+        },
+        "detail": {
+          "type": "string",
+          "default": "auto"
+        },
+        "max_tokens": {
+          "type": "integer"
+        }
+      },
+      "required": [
+        "image"
+      ]
+    },
+    "_meta": {
+      "mag": {
+        "profile": "full",
+        "quantized": true,
+        "effect_class": "model_or_external",
+        "risk": "provider_dependent",
+        "authority": "broker_or_explicit_refusal",
+        "cost_kind": "unknown_until_metered",
+        "exhaustion": "reroute_or_stop"
+      }
+    }
+  },
+  {
+    "name": "voice_turn",
+    "description": "STT packet → Mag voice janitor. Dumb body never hears audio — only this text.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "text": {
+          "type": "string"
+        },
+        "session_id": {
+          "type": "string",
+          "default": ""
+        }
+      },
+      "required": [
+        "text"
+      ]
+    },
+    "_meta": {
+      "mag": {
+        "profile": "full",
+        "quantized": true,
+        "effect_class": "model_or_external",
+        "risk": "provider_dependent",
+        "authority": "broker_or_explicit_refusal",
+        "cost_kind": "unknown_until_metered",
+        "exhaustion": "reroute_or_stop"
+      }
+    }
+  },
+  {
+    "name": "whisper_decode",
+    "description": "Scan a PNG's LSBs for a whisper payload. $0 numpy — no VL required to recover bytes.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "path": {
+          "type": "string"
+        },
+        "secret": {
+          "type": "string",
+          "default": ""
+        }
+      },
+      "required": [
+        "path"
+      ]
+    },
+    "_meta": {
+      "mag": {
+        "profile": "full",
+        "quantized": true,
+        "effect_class": "read_or_deterministic_compute",
+        "risk": "low_or_local",
+        "authority": "read_guard",
+        "cost_kind": "deterministic_local",
+        "exhaustion": "retry_or_defer"
+      }
+    }
+  },
+  {
+    "name": "write_file",
+    "description": "Write a file, or surgically edit it.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "path": {
+          "type": "string"
+        },
+        "content": {
+          "type": "string"
+        },
+        "search": {
+          "type": "string"
+        },
+        "replace": {
+          "type": "string"
+        },
+        "snapshot": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "path"
+      ]
+    },
+    "_meta": {
+      "mag": {
+        "profile": "full",
+        "quantized": true,
+        "effect_class": "mutating_or_executing",
+        "risk": "guarded",
+        "authority": "switchboard_and_effect_broker",
+        "cost_kind": "local_compute_or_unknown",
+        "exhaustion": "deny_or_defer"
+      }
+    }
+  }
+]

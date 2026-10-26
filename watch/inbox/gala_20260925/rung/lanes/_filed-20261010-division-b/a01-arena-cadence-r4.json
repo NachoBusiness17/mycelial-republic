@@ -1,0 +1,46 @@
+{
+  "lane": "a01-arena-cadence-r4",
+  "division": "B",
+  "ok": true,
+  "note": "R4 executed as verify-and-bank: both fill halves (banked_at moment column on the dawn gwap line; receipts note crediting the backfill run with runner attribution unproven) were already landed same-day 2026-10-04 by GO item 6, before the 2026-10-10 register mint; this sitting re-proved every SOURCE number byte-exact (414-row slice, last ts 2026-10-04T03:26:51Z, hour buckets 121/145/12/12/12/12/12/88, 53-of-53 dirs banked, 2-row cut pair, 3-row 03:03 trio), re-ran the instrument fresh (captured run AS-OF 2026-10-10T13:12:39Z, rows=730 distinct_scenes=597 dirs=110 banked=110 unbanked=0), and landed the close receipt at watch/inbox/GAP_R4_ARENA_BANKED_AT_FILL_20261010.md; a sibling seat grew tools/arena_gwap.py 357 to 426 lines mid-sitting, so the fill was re-verified against the current bytes (AS-OF 2026-10-10T13:32:48Z, identical counts) and the ratchet was run read-only as tree evidence (exit 1, one NEW file-too-long on arena_gwap.py:426 plus three GROWTH claims, all sibling in-flight state; this lane authored nothing under mag/ or tools/).",
+  "rows": [],
+  "checks": [
+    {
+      "command": ".venv/Scripts/python.exe tools/arena_gwap.py --status",
+      "exit": 0,
+      "evidence": "watch/inbox/gala_20260925/rung/lanes/a01-arena-cadence-r4.check.txt lines 5-6: captured run 'GWAP LEDGER AS-OF 2026-10-10T13:12:39Z / ledger rows=730 distinct_scenes=597 dirs=110 banked=110 unbanked=0' plus per-dir banked_at moments through line 117"
+    },
+    {
+      "command": "python - (playground marker census vs register moment 53)",
+      "exit": 0,
+      "evidence": "watch/inbox/gala_20260925/rung/lanes/a01-arena-cadence-r4.check.txt lines 120-125: 110 dirs / 110 GWAP_BANKED / 0 unbanked; 46 dirs of 2026-10-03 + 7 of 2026-10-04 hour<=03 = 53, all banked"
+    },
+    {
+      "command": "python - (SOURCE reproof on the pre-04:00Z ledger slice)",
+      "exit": 0,
+      "evidence": "watch/inbox/gala_20260925/rung/lanes/a01-arena-cadence-r4.check.txt lines 129-142: 414 rows before 2026-10-04T04:00Z, last ts 2026-10-04T03:26:51Z, buckets 13h=121 14h=145 15h=12 17h=12 18h=12 19h=12 02h=12 03h=88, partials 225014Z/225040Z=2 rows, 030348Z/030349Z/030426Z=3 rows, 032151Z=3 rows at 03:26:51Z"
+    },
+    {
+      "command": "grep -n landing spots in watch/inbox/",
+      "exit": 0,
+      "evidence": "watch/inbox/gala_20260925/rung/lanes/a01-arena-cadence-r4.check.txt lines 143-176 and final-state block 181-188: ARENA_BACKFILL_ATTRIBUTION_20261004.md:25 names --backfill as the only shape match, :42 UNPROVEN verdict; CYCLE_BRIEF_20261004.md:53-54 renders 'GWAP LEDGER AS-OF 2026-10-04T08:43:45Z / ledger rows=476'; GAP_R4_ARENA_BANKED_AT_FILL_20261010.md:43 carries the fresh verbatim stamp 13:12:39Z; GAP_REGISTER.md:21 row R4 exists"
+    },
+    {
+      "command": "grep -c <em-dash> watch/inbox/GAP_R4_ARENA_BANKED_AT_FILL_20261010.md",
+      "exit": 0,
+      "evidence": "watch/inbox/gala_20260925/rung/lanes/a01-arena-cadence-r4.check.txt lines 178-179 and 213-214: 0 em-dashes in the lane-authored receipt, re-checked after every edit including the addendum"
+    },
+    {
+      "command": ".venv/Scripts/python.exe tools/violation_ratchet.py check --changed",
+      "exit": 1,
+      "evidence": "watch/inbox/gala_20260925/rung/lanes/a01-arena-cadence-r4.check.txt lines 191-199: FAIL with NEW file-too-long tools/arena_gwap.py:426 plus three GROWTH claims (water_graph, dungeon, mesh_delta); run read-only as tree evidence because a sibling seat grew arena_gwap.py +69 lines mid-sitting (mtime 13:13Z, one minute after this lane's captured 13:12:39Z run); this lane authored no code under mag/ or tools/, so the findings are sibling-seat in-flight state, not this lane's debt"
+    },
+    {
+      "command": ".venv/Scripts/python.exe tools/arena_gwap.py --status (re-verify after sibling edit)",
+      "exit": 0,
+      "evidence": "watch/inbox/gala_20260925/rung/lanes/a01-arena-cadence-r4.check.txt lines 202-208: fresh run against the CURRENT 426-line bytes stamps AS-OF 2026-10-10T13:32:48Z with identical counts rows=730 distinct_scenes=597 dirs=110 banked=110 unbanked=0; status() moved 261 to 325, docstring intact"
+    }
+  ],
+  "decision_changed": "GAP_REGISTER row R4 [high] a01-arena-cadence closes: the fill was found already landed 2026-10-04 (tools/arena_gwap.py status() banked_at column rendered by tools/cycle_brief.py:122-143 into CYCLE_BRIEF_20261004.md:52-55, plus the ARENA_BACKFILL_ATTRIBUTION_20261004.md note that credits the backfill run's bytes while leaving the runner unattributed), so the register debt is paid as verify-and-bank with fresh AS-OF stamps banked at watch/inbox/GAP_R4_ARENA_BANKED_AT_FILL_20261010.md instead of new code",
+  "artifact": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/rung/lanes/a01-arena-cadence-r4.json"
+}

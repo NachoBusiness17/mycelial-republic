@@ -1,0 +1,82 @@
+{
+  "lane": "a08-seed",
+  "division": "A",
+  "ok": true,
+  "note": "Seal 59/59 and laws 6/6 both exit 0. The 3.3.0-vs-3.2.0 flag resolved by bytes: seed-3.3.0.zip is a real build, on the Desktop, sha256 96950daa... matching the receipt exactly; watch/inbox held a stale 3.2.0 copy. Promoted the 3.3.0 zip into watch/inbox (hash verified identical). Negative finding: the shipped zip carries 3 sealed .pyc files that bake the author's absolute path; seal-specific coverage in corpus/steal and memory/corpus is zero.",
+  "rows": [
+    {
+      "law": "trust-bytes-not-reports",
+      "claim": "No count or liveness claim is filed without re-running the bytes that produce it; the seed carries the estate's own fossil (39-green was 1305/34/9) as the cost of skipping this once.",
+      "quote": "Never trust a hand-written count, including your own from an earlier session.",
+      "source": "C:\\Users\\foste\\Documents\\projects\\local_sovereign_agent\\seed\\TRUST_BYTES_LAW.md",
+      "steal": "Before filing any battery row, re-run the count command myself and paste raw output to the archive file; landing: gala w2 lanes check files.",
+      "falsifier": "A filed count whose command cannot be re-run to reproduce it (or whose archive file lacks the raw output) voids the row.",
+      "leverage": "high"
+    },
+    {
+      "law": "ratchet-not-ban (laws as runnable units)",
+      "claim": "The five build-discipline laws transfer because they ship as runnable mechanics (ratchet command, freshness command) with a registered-debt escape, not as advice; the only forbidden direction is backward.",
+      "quote": "A ban fails the day it meets reality and gets loosened. A ratchet starts where the\nestate actually is: existing debt is registered BY NAME (who accepted it, so debt has\nan owner), and the only forbidden direction is backward.",
+      "source": "C:\\Users\\foste\\Documents\\projects\\local_sovereign_agent\\seed\\BUILD_DISCIPLINE_LAWS.md",
+      "steal": "Convert one standing review-law reminder into a check command with a baseline file (accept debt by name, block new debt); landing: tools/ violation-style check + configs baseline json.",
+      "falsifier": "Introduce one new violation past the baseline: if the check exits 0, the ratchet claim is false; if the baseline itself can be loosened without a named owner, the escape is not honest.",
+      "leverage": "high"
+    },
+    {
+      "law": "falsifier-first shipping (cold boot)",
+      "claim": "No seed version ships on builder say-so: tools/cold_boot_test.py copies the package to a stripped temp dir and runs FIRST_BOOT steps 0-7 with no estate environment; readable failure is a pass, traceback is a fail.",
+      "quote": "Copies seed/ to a fresh temp dir, then runs FIRST_BOOT steps 0-7 verbatim with no\nestate environment.",
+      "source": "C:\\Users\\foste\\Documents\\projects\\local_sovereign_agent\\tools\\cold_boot_test.py",
+      "steal": "Run the cold-boot harness as the last gate before every zip/export (test-then-strip-then-ship order); landing: seed build-book pre-zip step.",
+      "falsifier": "A cook that passes verify_seal but exits nonzero or emits a Traceback/ModuleNotFoundError mark under cold_boot_test proves the seal alone is not a ship bar (this is exactly how V1 died: 2 of 7 cold-boot steps).",
+      "leverage": "high"
+    },
+    {
+      "law": "seal-as-verkle (hash chain as portable RIB)",
+      "claim": "A 59-row sha256 manifest plus a 15-line verifier makes the whole method pack tamper-evident and portable: 59/59 verified on the live tree and 59/59 re-verified by stock sha256sum inside the extracted zip, with only MANIFEST.sha256 itself unsealed.",
+      "quote": "check every file in MANIFEST.sha256 against its hash. Exit 0 = intact.",
+      "source": "C:\\Users\\foste\\Documents\\projects\\local_sovereign_agent\\seed\\verify_seal.py",
+      "steal": "Give every exported artifact bundle a MANIFEST.sha256 + two-line verifier so any receiver can prove the pack intact without trusting the sender; landing: watch/inbox export convention receipt line.",
+      "falsifier": "Flip one byte in any sealed file: verify_seal must print DRIFT naming that file and exit 1; if it exits 0 the seal is decoration, not a RIB.",
+      "leverage": "high"
+    },
+    {
+      "law": "strip-pycache-before-seal (negative, first-class)",
+      "claim": "The 3.3.0 build sealed its own bytecode: 3 of the 59 manifest rows are __pycache__/*.pyc (cpython-312) and each ships the author path C:\\Users\\foste\\Documents\\projects\\local_sovereign_agent\\seed\\engines\\cooker.py inside the portable zip. The close receipt swept superseded zips but never swept pycache.",
+      "quote": "temp cold-copies removed; superseded desktop zips removed (3.3.0 kept)",
+      "source": "C:\\Users\\foste\\Documents\\projects\\local_sovereign_agent\\watch\\inbox\\SEED_WINDOW_CLOSE_20260925.md",
+      "steal": "Add __pycache__ exclusion to tools/seed_v2.py before manifest write (CHANGELOG note first, spec before behavior), rebuild, re-zip, refresh watch/inbox + Desktop; landing: both seed zip surfaces replaced by a 56-file clean seal.",
+      "falsifier": "unzip -l seed-*.zip | grep pycache must return zero rows; today it returns 3 (cooker, phone_relay, test_seed_laws .pyc), so the falsifier already fired on the current artifact.",
+      "leverage": "high"
+    }
+  ],
+  "checks": [
+    {
+      "command": ".venv/Scripts/python.exe seed/verify_seal.py",
+      "exit": 0,
+      "evidence": "C:\\Users\\foste\\Documents\\projects\\local_sovereign_agent\\watch\\inbox\\gala_20260925\\w2\\lanes\\a08-seed.check.txt"
+    },
+    {
+      "command": ".venv/Scripts/python.exe -m pytest seed/tests/test_seed_laws.py -q",
+      "exit": 0,
+      "evidence": "C:\\Users\\foste\\Documents\\projects\\local_sovereign_agent\\watch\\inbox\\gala_20260925\\w2\\lanes\\a08-seed.check.txt"
+    },
+    {
+      "command": "ls -la watch/inbox/*.zip && sha256sum watch/inbox/seed-3.2.0.zip",
+      "exit": 0,
+      "evidence": "C:\\Users\\foste\\Documents\\projects\\local_sovereign_agent\\watch\\inbox\\gala_20260925\\w2\\lanes\\a08-seed.check.txt"
+    },
+    {
+      "command": "sha256sum Desktop/seed-3.3.0.zip + zip-internal sha256sum -c MANIFEST.sha256 + manifest/zip file-list diff",
+      "exit": 0,
+      "evidence": "C:\\Users\\foste\\Documents\\projects\\local_sovereign_agent\\watch\\inbox\\gala_20260925\\w2\\lanes\\a08-seed.check.txt"
+    },
+    {
+      "command": "grep -rli verify_seal|MANIFEST.sha256 over corpus/steal/ + memory/corpus/ (seal coverage: zero hits); grep -rli seed over same (5 steal files, 1039 corpus files, none about the seed harness)",
+      "exit": 0,
+      "evidence": "C:\\Users\\foste\\Documents\\projects\\local_sovereign_agent\\watch\\inbox\\gala_20260925\\w2\\lanes\\a08-seed.check.txt"
+    }
+  ],
+  "decision_changed": "Resolved the flag: the receipt is byte-true, seed-3.3.0.zip exists (Desktop, sha256 96950daa2f9195fba3bf98335e0fab16157abf54b06d86ab82dd6967ff2c16c3, exact match to receipt prefix 96950daa) and its internal manifest verifies 59/59, so no rebuild and no receipt correction. Action taken: promoted the zip to watch/inbox/seed-3.3.0.zip (copy hash verified identical); stale seed-3.2.0.zip left in place as superseded history, removal left to the owner. Decision registered for the builder owner: strip __pycache__ before manifest+zip and re-seal (3 sealed pyc files bake author paths into the stranger-facing pack).",
+  "artifact": "C:\\Users\\foste\\Documents\\projects\\local_sovereign_agent\\watch\\inbox\\gala_20260925\\w2\\lanes\\a08-seed.json"
+}

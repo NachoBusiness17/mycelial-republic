@@ -1,0 +1,872 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+    <title>Benchmarking llama.cpp vs llamafile vs LM Studio vs Ollama: What Moved Throughput</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <link rel="preload" as="style" href="https://blog.mozilla.ai/assets/built/screen.css?v=hRXIIMhDdfeZef8F">
+    <link rel="preload" as="script" href="https://blog.mozilla.ai/assets/built/source.js?v=O86vpTJppMBcH1np">
+    
+    <link rel="preload" as="font" type="font/woff2" href="https://blog.mozilla.ai/assets/fonts/inter-roman.woff2?v=OecsB5TBLy27FKD2" crossorigin="anonymous">
+<style>
+    @font-face {
+        font-family: "Inter";
+        font-style: normal;
+        font-weight: 100 900;
+        font-display: optional;
+        src: url(https://blog.mozilla.ai/assets/fonts/inter-roman.woff2?v=OecsB5TBLy27FKD2) format("woff2");
+        unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+2074, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+    }
+</style>
+
+    <link rel="stylesheet" type="text/css" href="https://blog.mozilla.ai/assets/built/screen.css?v=hRXIIMhDdfeZef8F">
+
+    <style>
+        :root {
+            --background-color: #ffffff
+        }
+    </style>
+
+    <script>
+        /* The script for calculating the color contrast has been taken from
+        https://gomakethings.com/dynamically-changing-the-text-color-based-on-background-color-contrast-with-vanilla-js/ */
+        var accentColor = getComputedStyle(document.documentElement).getPropertyValue('--background-color');
+        accentColor = accentColor.trim().slice(1);
+
+        if (accentColor.length === 3) {
+            accentColor = accentColor[0] + accentColor[0] + accentColor[1] + accentColor[1] + accentColor[2] + accentColor[2];
+        }
+
+        var r = parseInt(accentColor.substr(0, 2), 16);
+        var g = parseInt(accentColor.substr(2, 2), 16);
+        var b = parseInt(accentColor.substr(4, 2), 16);
+        var yiq = ((r * 299) + (g * 587) + (b * 114)) / 1000;
+        var textColor = (yiq >= 128) ? 'dark' : 'light';
+
+        document.documentElement.className = `has-${textColor}-text`;
+    </script>
+
+    <meta name="description" content="We benchmarked llama.cpp, llamafile, LM Studio, and Ollama on Mac, Steam Deck, and an NVIDIA L40S. The engine barely matters, the build does.">
+    <link rel="icon" href="https://storage.ghost.io/c/68/76/6876f0af-8955-4de4-a637-a5e7cc399136/content/images/size/w256h256/2025/10/mzai-60-1.png" type="image/png">
+    <link rel="canonical" href="https://blog.mozilla.ai/benchmarking-local-llm-servers-llama-cpp-llamafile-lm-studio-and-ollama/">
+    <meta name="referrer" content="no-referrer-when-downgrade">
+    
+    <meta property="og:site_name" content="Mozilla.ai">
+    <meta property="og:type" content="article">
+    <meta property="og:title" content="Benchmarking llama.cpp vs llamafile vs LM Studio vs Ollama: What Moved Throughput">
+    <meta property="og:description" content="Benchmarking Local LLM Servers evaluates llama.cpp, llamafile, LM Studio, and Ollama across Mac, Linux, and Steam Deck. The study reveals build flags and configurations drive up to 63% performance gains, whereas underlying engines perform similarly due to a shared llama.cpp core.">
+    <meta property="og:url" content="https://blog.mozilla.ai/benchmarking-local-llm-servers-llama-cpp-llamafile-lm-studio-and-ollama/">
+    <meta property="og:image" content="https://storage.ghost.io/c/68/76/6876f0af-8955-4de4-a637-a5e7cc399136/content/images/size/w1200/2026/09/llamafile--1-.jpg">
+    <meta property="article:published_time" content="2026-09-17T11:32:08.000Z">
+    <meta property="article:modified_time" content="2026-09-17T11:32:07.000Z">
+    <meta property="article:tag" content="Technical Content">
+    
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Benchmarking llama.cpp vs llamafile vs LM Studio vs Ollama: What Moved Throughput">
+    <meta name="twitter:description" content="Benchmarking Local LLM Servers evaluates llama.cpp, llamafile, LM Studio, and Ollama across Mac, Linux, and Steam Deck. The study reveals build flags and configurations drive up to 63% performance gains, whereas underlying engines perform similarly due to a shared llama.cpp core.">
+    <meta name="twitter:url" content="https://blog.mozilla.ai/benchmarking-local-llm-servers-llama-cpp-llamafile-lm-studio-and-ollama/">
+    <meta name="twitter:image" content="https://storage.ghost.io/c/68/76/6876f0af-8955-4de4-a637-a5e7cc399136/content/images/size/w1200/2026/09/llamafile--1-.jpg">
+    <meta name="twitter:label1" content="Written by">
+    <meta name="twitter:data1" content="Davide Eynard">
+    <meta name="twitter:label2" content="Filed under">
+    <meta name="twitter:data2" content="Technical Content">
+    <meta name="twitter:site" content="@MozillaAI">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    
+    <script type="application/ld+json">
+{
+    "@context": "https://schema.org",
+    "@type": "Article",
+    "publisher": {
+        "@type": "Organization",
+        "name": "Mozilla.ai",
+        "url": "https://blog.mozilla.ai/",
+        "logo": {
+            "@type": "ImageObject",
+            "url": "https://storage.ghost.io/c/68/76/6876f0af-8955-4de4-a637-a5e7cc399136/content/images/2025/10/mozilla.ai_black-1.png"
+        }
+    },
+    "author": {
+        "@type": "Person",
+        "name": "Davide Eynard",
+        "image": {
+            "@type": "ImageObject",
+            "url": "https://storage.ghost.io/c/68/76/6876f0af-8955-4de4-a637-a5e7cc399136/content/images/2024/04/e8438c662e8cc46f.jpeg",
+            "width": 237,
+            "height": 237
+        },
+        "url": "https://blog.mozilla.ai/author/davide-eynard/",
+        "sameAs": [
+            "http://3564020356.org"
+        ]
+    },
+    "contributor": [
+        {
+            "@type": "Person",
+            "name": "Anushri Gupta",
+            "image": {
+                "@type": "ImageObject",
+                "url": "https://storage.ghost.io/c/68/76/6876f0af-8955-4de4-a637-a5e7cc399136/content/images/2026/01/IMG_8581-1.JPG"
+            },
+            "url": "https://blog.mozilla.ai/author/anushri/",
+            "sameAs": []
+        }
+    ],
+    "headline": "Benchmarking llama.cpp vs llamafile vs LM Studio vs Ollama: What Moved Throughput",
+    "url": "https://blog.mozilla.ai/benchmarking-local-llm-servers-llama-cpp-llamafile-lm-studio-and-ollama/",
+    "datePublished": "2026-09-17T11:32:08.000Z",
+    "dateModified": "2026-09-17T11:32:07.000Z",
+    "image": {
+        "@type": "ImageObject",
+        "url": "https://storage.ghost.io/c/68/76/6876f0af-8955-4de4-a637-a5e7cc399136/content/images/size/w1200/2026/09/llamafile--1-.jpg",
+        "width": 1200,
+        "height": 630
+    },
+    "keywords": "Technical Content",
+    "description": "Benchmarking Local LLM Servers evaluates llama.cpp, llamafile, LM Studio, and Ollama across Mac, Linux, and Steam Deck. The study reveals build flags and configurations drive up to 63% performance gains, whereas underlying engines perform similarly due to a shared llama.cpp core.",
+    "mainEntityOfPage": "https://blog.mozilla.ai/benchmarking-local-llm-servers-llama-cpp-llamafile-lm-studio-and-ollama/"
+}
+    </script>
+
+    <meta name="generator" content="Ghost 6.70">
+    <link rel="alternate" type="application/rss+xml" title="Mozilla.ai" href="https://blog.mozilla.ai/rss/">
+    <script defer src="https://cdn.jsdelivr.net/ghost/portal@~2.72/umd/portal.min.js" data-i18n="true" data-ghost="https://blog.mozilla.ai/" data-key="804320c8435ffaf1e0c4c2dbf4" data-api="https://mozilla-ai.ghost.io/ghost/api/content/" data-locale="en" crossorigin="anonymous"></script><style id="gh-members-styles">.gh-post-upgrade-cta-content,
+.gh-post-upgrade-cta {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+    text-align: center;
+    width: 100%;
+    color: #ffffff;
+    font-size: 16px;
+}
+
+.gh-post-upgrade-cta-content {
+    border-radius: 8px;
+    padding: 40px 4vw;
+}
+
+.gh-post-upgrade-cta h2 {
+    color: #ffffff;
+    font-size: 28px;
+    letter-spacing: -0.2px;
+    margin: 0;
+    padding: 0;
+}
+
+.gh-post-upgrade-cta p {
+    margin: 20px 0 0;
+    padding: 0;
+}
+
+.gh-post-upgrade-cta small {
+    font-size: 16px;
+    letter-spacing: -0.2px;
+}
+
+.gh-post-upgrade-cta a {
+    color: #ffffff;
+    cursor: pointer;
+    font-weight: 500;
+    box-shadow: none;
+    text-decoration: underline;
+}
+
+.gh-post-upgrade-cta a:hover {
+    color: #ffffff;
+    opacity: 0.8;
+    box-shadow: none;
+    text-decoration: underline;
+}
+
+.gh-post-upgrade-cta a.gh-btn {
+    display: block;
+    background: #ffffff;
+    text-decoration: none;
+    margin: 28px 0 0;
+    padding: 8px 18px;
+    border-radius: 4px;
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.gh-post-upgrade-cta a.gh-btn:hover {
+    opacity: 0.92;
+}</style>
+    <script defer src="https://cdn.jsdelivr.net/ghost/sodo-search@~1.9/umd/sodo-search.min.js" data-key="804320c8435ffaf1e0c4c2dbf4" data-styles="https://cdn.jsdelivr.net/ghost/sodo-search@~1.9/umd/main.css" data-sodo-search="https://mozilla-ai.ghost.io/" data-locale="en" crossorigin="anonymous"></script>
+    
+    <link href="https://blog.mozilla.ai/webmentions/receive/" rel="webmention">
+    <script defer src="/public/cards.min.js?v=ShRHxgy4po8zN-Wf"></script>
+    <link rel="stylesheet" type="text/css" href="/public/cards.min.css?v=WwnU9jw5ancNC8Gc">
+    <script defer src="/public/member-attribution.min.js?v=AKG4hWena9j3yX3I"></script>
+    <script defer src="/public/ghost-stats.min.js?v=vFcCUf6ZQ0Hyhc8h" data-stringify-payload="false" data-datasource="analytics_events" data-storage="localStorage" data-host="https://blog.mozilla.ai/.ghost/analytics/api/v1/page_hit"  tb_site_uuid="6876f0af-8955-4de4-a637-a5e7cc399136" tb_post_uuid="592ce846-62c9-4acc-975e-404c5ff6c232" tb_post_type="post" tb_member_uuid="undefined" tb_member_status="undefined" tb_gift_link=""></script><style>:root {--ghost-accent-color: #000000;}</style>
+    <!-- Matomo -->
+<script>
+  var _paq = window._paq = window._paq || [];
+  /* tracker methods like "setCustomDimension" should be called before "trackPageView" */
+  _paq.push(['trackPageView']);
+  _paq.push(['enableLinkTracking']);
+  (function() {
+    var u="https://mozillaai.matomo.cloud/";
+    _paq.push(['setTrackerUrl', u+'matomo.php']);
+    _paq.push(['setSiteId', '1']);
+    var d=document, g=d.createElement('script'), s=d.getElementsByTagName('script')[0];
+    g.async=true; g.src='https://cdn.matomo.cloud/mozillaai.matomo.cloud/matomo.js'; s.parentNode.insertBefore(g,s);
+  })();
+</script>
+<!-- End Matomo Code -->
+
+<script type="text/javascript">
+  (function (e, c) {
+    if (!c.__SV) {
+      var l, h;
+      window.mixpanel = c;
+      c._i = [];
+      c.init = function (q, r, f) {
+        function t(d, a) {
+          var g = a.split('.');
+          2 == g.length && ((d = d[g[0]]), (a = g[1]));
+          d[a] = function () {
+            d.push([a].concat(Array.prototype.slice.call(arguments, 0)));
+          };
+        }
+        var b = c;
+        'undefined' !== typeof f ? (b = c[f] = []) : (f = 'mixpanel');
+        b.people = b.people || [];
+        b.toString = function (d) {
+          var a = 'mixpanel';
+          'mixpanel' !== f && (a += '.' + f);
+          d || (a += ' (stub)');
+          return a;
+        };
+        b.people.toString = function () {
+          return b.toString(1) + '.people (stub)';
+        };
+        l = 'disable time_event track track_pageview track_links track_forms track_with_groups add_group set_group remove_group register register_once alias unregister identify name_tag set_config reset opt_in_tracking opt_out_tracking has_opted_in_tracking has_opted_out_tracking clear_opt_in_out_tracking start_batch_senders start_session_recording stop_session_recording people.set people.set_once people.unset people.increment people.append people.union people.track_charge people.clear_charges people.delete_user people.remove'.split(' ');
+        for (h = 0; h < l.length; h++) t(b, l[h]);
+        var n = 'set set_once union unset remove delete'.split(' ');
+        b.get_group = function () {
+          function d(p) {
+            a[p] = function () {
+              b.push([g, [p].concat(Array.prototype.slice.call(arguments, 0))]);
+            };
+          }
+          for (var a = {}, g = ['get_group'].concat(Array.prototype.slice.call(arguments, 0)), m = 0; m < n.length; m++) d(n[m]);
+          return a;
+        };
+        c._i.push([q, r, f]);
+      };
+      c.__SV = 1.2;
+      var k = e.createElement('script');
+      k.type = 'text/javascript';
+      k.async = !0;
+      k.src = 'undefined' !== typeof MIXPANEL_CUSTOM_LIB_URL ? MIXPANEL_CUSTOM_LIB_URL : 'file:' === e.location.protocol && '//cdn.mxpnl.com/libs/mixpanel-2-latest.min.js'.match(/^\/\//) ? 'https://cdn.mxpnl.com/libs/mixpanel-2-latest.min.js' : '//cdn.mxpnl.com/libs/mixpanel-2-latest.min.js';
+      e = e.getElementsByTagName('script')[0];
+      e.parentNode.insertBefore(k, e);
+    }
+  })(document, window.mixpanel || []);
+
+  mixpanel.init('ae62926f7231ec69fcc883a82b8140b2', {
+    autocapture: true,
+    record_sessions_percent: 0,
+    api_host: 'https://api-eu.mixpanel.com',
+  });
+
+  mixpanel.register({ site: 'blog.mozilla.ai' });
+</script>
+<meta name="google-site-verification" content="n8UW9s7zop-cPLWr4awG9Lkuk_DfTLWxufcNLrPVCF4" />
+<script src="https://cdn.jsdelivr.net/npm/prismjs/prism.min.js" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/prismjs/plugins/autoloader/prism-autoloader.min.js" defer></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs/themes/prism.min.css">
+
+<style>
+
+
+  /* Show all card images on homepage */
+.gh-header .gh-card-image {
+    display: block !important;
+}
+
+
+  /* Prevent image cropping on homepage */
+.gh-card-image {
+    aspect-ratio: unset !important;
+}
+
+.gh-card-image img {
+    object-fit: contain !important;
+    position: relative !important;
+    width: 100% !important;
+    height: auto !important;
+    inset: unset !important;
+}
+
+.gh-navigation-logo img {
+    max-height: 22px !important;
+}
+
+/* Remove black background from navigation */
+.gh-navigation-actions {
+    background-color: transparent !important;
+}
+
+/* Subscribe buttons - consolidated */
+.gh-button {
+    background-color: #000000 !important;
+    color: #ffffff !important;
+    border: 2px solid #000000 !important;
+}
+
+.gh-button:hover {
+    background-color: #ffffff !important;
+    color: #000000 !important;
+    border: 2px solid #000000 !important;
+}
+  
+body.post-template .gh-article-excerpt {
+   display:none;
+}
+
+.gh-footer-copyright { 
+    display: none; 
+}
+
+.gh-content :not(pre)>code, .gh-content pre {
+    white-space: pre-wrap;
+}
+
+table {
+    display: flex !important;
+    display: table !important;
+    width: 100% !important;
+    overflow-x: scroll !important;
+} 
+
+/* Article links - blue */
+.gh-content a {
+    color: #004080 !important;
+}
+
+.gh-content a:hover {
+    opacity: 0.8;
+}
+
+/* Caption links - blue */
+figcaption a,
+.kg-card figcaption a,
+.kg-image-card figcaption a {
+    color: #004080 !important;
+    text-decoration: underline !important;
+}
+  
+</style>
+
+<script>
+// Redirect logo clicks to external site (same tab)
+document.addEventListener('DOMContentLoaded', function() {
+    const logo = document.querySelector('.gh-navigation-logo');
+    if (logo) {
+        logo.href = 'https://mozilla.ai'; // Change this URL
+    }
+});
+</script>
+
+</head>
+<body class="post-template tag-technical-content has-sans-title has-sans-body">
+
+<div class="gh-viewport">
+    
+    <header id="gh-navigation" class="gh-navigation is-left-logo gh-outer">
+    <div class="gh-navigation-inner gh-inner">
+
+        <div class="gh-navigation-brand">
+            <a class="gh-navigation-logo is-title" href="https://blog.mozilla.ai">
+                    <img src="https://storage.ghost.io/c/68/76/6876f0af-8955-4de4-a637-a5e7cc399136/content/images/2025/10/mozilla.ai_black-1.png" alt="Mozilla.ai">
+            </a>
+            <button class="gh-search gh-icon-button" aria-label="Search this site" data-ghost-search>
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" width="20" height="20"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg></button>            <button class="gh-burger gh-icon-button" aria-label="Menu">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 256 256"><path d="M224,128a8,8,0,0,1-8,8H40a8,8,0,0,1,0-16H216A8,8,0,0,1,224,128ZM40,72H216a8,8,0,0,0,0-16H40a8,8,0,0,0,0,16ZM216,184H40a8,8,0,0,0,0,16H216a8,8,0,0,0,0-16Z"></path></svg>                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 256 256"><path d="M205.66,194.34a8,8,0,0,1-11.32,11.32L128,139.31,61.66,205.66a8,8,0,0,1-11.32-11.32L116.69,128,50.34,61.66A8,8,0,0,1,61.66,50.34L128,116.69l66.34-66.35a8,8,0,0,1,11.32,11.32L139.31,128Z"></path></svg>            </button>
+        </div>
+
+        <nav class="gh-navigation-menu">
+            
+        </nav>
+
+        <div class="gh-navigation-actions">
+                <button class="gh-search gh-icon-button" aria-label="Search this site" data-ghost-search>
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" width="20" height="20"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg></button>                <div class="gh-navigation-members">
+                            <a href="#/portal/signin" data-portal="signin">Sign in</a>
+                                <a class="gh-button" href="#/portal/signup" data-portal="signup">Subscribe</a>
+                </div>
+        </div>
+
+    </div>
+</header>
+
+    
+
+<main class="gh-main">
+
+    <article class="gh-article post tag-technical-content">
+
+        <header class="gh-article-header gh-canvas">
+
+                <a class="gh-article-tag" href="https://blog.mozilla.ai/tag/technical-content/">Technical Content</a>
+            <h1 class="gh-article-title is-title">Benchmarking Local LLM Servers: llama.cpp, llamafile, LM Studio, and Ollama</h1>
+                <p class="gh-article-excerpt is-body">Benchmarking Local LLM Servers evaluates llama.cpp, llamafile, LM Studio, and Ollama across Mac, Linux, and Steam Deck. The study reveals build flags and configurations drive up to 63% performance gains, whereas underlying engines perform similarly due to a shared llama.cpp core.</p>
+
+            <div class="gh-article-meta">
+                <div class="gh-article-author-image instapaper_ignore">
+                            <a href="/author/davide-eynard/">
+                                <img class="author-profile-image" src="https://storage.ghost.io/c/68/76/6876f0af-8955-4de4-a637-a5e7cc399136/content/images/size/w160/2024/04/e8438c662e8cc46f.jpeg" alt="Davide Eynard">
+                            </a>
+                            <a href="/author/anushri/">
+                                <img class="author-profile-image" src="https://storage.ghost.io/c/68/76/6876f0af-8955-4de4-a637-a5e7cc399136/content/images/size/w160/2026/01/IMG_8581-1.JPG" alt="Anushri Gupta">
+                            </a>
+                </div>
+                <div class="gh-article-meta-wrapper">
+                    <h4 class="gh-article-author-name"><a href="/author/davide-eynard/">Davide Eynard</a>, <a href="/author/anushri/">Anushri Gupta</a></h4>
+                    <div class="gh-article-meta-content">
+                        <time class="gh-article-meta-date" datetime="2026-09-17">Sep 17, 2026</time>
+                            <span class="gh-article-meta-length"><span class="bull">—</span> 12 min read</span>
+                    </div>
+                </div>
+            </div>
+
+                <figure class="gh-article-image">
+        <img
+            srcset="https://storage.ghost.io/c/68/76/6876f0af-8955-4de4-a637-a5e7cc399136/content/images/size/w320/2026/09/llamafile--1-.jpg 320w,
+                    https://storage.ghost.io/c/68/76/6876f0af-8955-4de4-a637-a5e7cc399136/content/images/size/w600/2026/09/llamafile--1-.jpg 600w,
+                    https://storage.ghost.io/c/68/76/6876f0af-8955-4de4-a637-a5e7cc399136/content/images/size/w960/2026/09/llamafile--1-.jpg 960w,
+                    https://storage.ghost.io/c/68/76/6876f0af-8955-4de4-a637-a5e7cc399136/content/images/size/w1200/2026/09/llamafile--1-.jpg 1200w,
+                    https://storage.ghost.io/c/68/76/6876f0af-8955-4de4-a637-a5e7cc399136/content/images/size/w2000/2026/09/llamafile--1-.jpg 2000w"
+            sizes="(max-width: 1200px) 100vw, 1120px"
+            src="https://storage.ghost.io/c/68/76/6876f0af-8955-4de4-a637-a5e7cc399136/content/images/size/w1200/2026/09/llamafile--1-.jpg"
+            alt="Benchmarking Local LLM Servers: llama.cpp, llamafile, LM Studio, and Ollama"
+        >
+    </figure>
+
+        </header>
+
+        <section class="gh-content gh-canvas is-body">
+            <p>Running an LLM locally is more than choosing a model. The serving tool plays an essential role, as it determines how quickly prompts are processed, how fast tokens are generated, and how easy the model is to deploy. We measured those differences across four popular local servers (<a href="https://github.com/ggml-org/llama.cpp?ref=blog.mozilla.ai"><u>llama.cpp</u></a>, <a href="https://lmstudio.ai/?ref=blog.mozilla.ai"><u>LM Studio</u></a>, <a href="https://ollama.com/?ref=blog.mozilla.ai"><u>Ollama</u></a>, and our own <a href="https://github.com/mozilla-ai/llamafile?ref=blog.mozilla.ai"><u>llamafile</u></a>) using our <a href="https://github.com/mozilla-ai/exp-llama-benchy?ref=blog.mozilla.ai" rel="noreferrer"><u>exp-llama-benchy</u></a>, a benchmarking tool that relies on <a href="https://github.com/eugr/llama-benchy?ref=blog.mozilla.ai"><u>llama-benchy</u></a> to compare many servers across different platforms.</p><p>We performed our tests on a Mac Studio M4 (using Metal GPU acceleration), a Linux server with an NVIDIA L40S (CUDA), and on a Steam Deck (Vulkan). We covered three Qwen model sizes: 0.8B, 9B, and 27B (the last one skipped on the Deck due to memory constraints), and tested prompt parsing from 1,024 to 8,192 tokens and token generation with 32 or 64 token outputs.&nbsp;</p><p>This is not a final ranking. It is a practical snapshot of how these tools behave in three different environments, when provided the same model weights, trying to understand where each server’s “secret sauce” is.</p><h2 id="what-we-found"><strong>What We Found&nbsp;</strong></h2><ul><li><strong>The biggest speedups came from configuration, not the choice of engine.</strong> Enabling CUDA graphs in the llamafile build lifted L40S decode by 16.8% on the 0.8B model. A newer Vulkan shader toolchain raised Steam Deck prompt processing by up to 63% on the 9B model, and the best speculative-decoding draft length flipped between platforms, with draft 2 winning on Metal and draft 4 on CUDA.</li><li><strong>All four servers share the same core.</strong> Each serves GGUF through llama.cpp under the hood, which is why they land within a few percent on prompt processing once weights and environment are held fixed, and why the settings above matter more than which server you pick.</li><li><strong>Much of the decode gap is fixed host overhead, not GPU work.</strong> It's a near-constant per-token cost (about 0.4 ms on the Mac, 1.8 on the L40S, 5.4 on the Deck), so the same overhead reads as a big percentage on a fast model and a small one on a slow model.</li></ul><h2 id="test-setup"><strong>Test Setup</strong></h2><p>We tested three environments:</p>
+<!--kg-card-begin: html-->
+<table style="border:none;border-collapse:collapse;"><colgroup><col width="107"><col width="187"><col width="147"><col width="160"></colgroup><thead><tr style="height:0pt"><th style="border-left:solid #000000 0.5pt;border-right:solid #000000 0.5pt;border-bottom:solid #000000 0.5pt;border-top:solid #000000 0.5pt;vertical-align:top;padding:5pt 5pt 5pt 5pt;overflow:hidden;overflow-wrap:break-word;" scope="col"><p dir="ltr" style="line-height:1.38;text-align: center;margin-top:0pt;margin-bottom:0pt;"><span style="font-size:11pt;font-family:Arial,sans-serif;color:#000000;background-color:transparent;font-weight:700;font-style:normal;font-variant:normal;text-decoration:none;vertical-align:baseline;white-space:pre;white-space:pre-wrap;">Environment</span></p></th><th style="border-left:solid #000000 0.5pt;border-right:solid #000000 0.5pt;border-bottom:solid #000000 0.5pt;border-top:solid #000000 0.5pt;vertical-align:top;padding:5pt 5pt 5pt 5pt;overflow:hidden;overflow-wrap:break-word;" scope="col"><p dir="ltr" style="line-height:1.38;text-align: center;margin-top:0pt;margin-bottom:0pt;"><span style="font-size:11pt;font-family:Arial,sans-serif;color:#000000;background-color:transparent;font-weight:700;font-style:normal;font-variant:normal;text-decoration:none;vertical-align:baseline;white-space:pre;white-space:pre-wrap;">Hardware</span></p></th><th style="border-left:solid #000000 0.5pt;border-right:solid #000000 0.5pt;border-bottom:solid #000000 0.5pt;border-top:solid #000000 0.5pt;vertical-align:top;padding:5pt 5pt 5pt 5pt;overflow:hidden;overflow-wrap:break-word;" scope="col"><p dir="ltr" style="line-height:1.38;text-align: center;margin-top:0pt;margin-bottom:0pt;"><span style="font-size:11pt;font-family:Arial,sans-serif;color:#000000;background-color:transparent;font-weight:700;font-style:normal;font-variant:normal;text-decoration:none;vertical-align:baseline;white-space:pre;white-space:pre-wrap;">Operating system</span></p></th><th style="border-left:solid #000000 0.5pt;border-right:solid #000000 0.5pt;border-bottom:solid #000000 0.5pt;border-top:solid #000000 0.5pt;vertical-align:top;padding:5pt 5pt 5pt 5pt;overflow:hidden;overflow-wrap:break-word;" scope="col"><p dir="ltr" style="line-height:1.38;text-align: center;margin-top:0pt;margin-bottom:0pt;"><span style="font-size:11pt;font-family:Arial,sans-serif;color:#000000;background-color:transparent;font-weight:700;font-style:normal;font-variant:normal;text-decoration:none;vertical-align:baseline;white-space:pre;white-space:pre-wrap;">Models tested</span></p></th></tr></thead><tbody><tr style="height:0pt"><td style="border-left:solid #000000 0.5pt;border-right:solid #000000 0.5pt;border-bottom:solid #000000 0.5pt;border-top:solid #000000 0.5pt;vertical-align:top;padding:5pt 5pt 5pt 5pt;overflow:hidden;overflow-wrap:break-word;"><p dir="ltr" style="line-height:1.38;margin-top:0pt;margin-bottom:0pt;"><span style="font-size:11pt;font-family:Arial,sans-serif;color:#000000;background-color:transparent;font-weight:400;font-style:normal;font-variant:normal;text-decoration:none;vertical-align:baseline;white-space:pre;white-space:pre-wrap;">Mac Studio</span></p></td><td style="border-left:solid #000000 0.5pt;border-right:solid #000000 0.5pt;border-bottom:solid #000000 0.5pt;border-top:solid #000000 0.5pt;vertical-align:top;padding:5pt 5pt 5pt 5pt;overflow:hidden;overflow-wrap:break-word;"><p dir="ltr" style="line-height:1.38;margin-top:0pt;margin-bottom:0pt;"><span style="font-size:11pt;font-family:Arial,sans-serif;color:#000000;background-color:transparent;font-weight:400;font-style:normal;font-variant:normal;text-decoration:none;vertical-align:baseline;white-space:pre;white-space:pre-wrap;">M4 Max, 64 GB unified memory</span></p></td><td style="border-left:solid #000000 0.5pt;border-right:solid #000000 0.5pt;border-bottom:solid #000000 0.5pt;border-top:solid #000000 0.5pt;vertical-align:top;padding:5pt 5pt 5pt 5pt;overflow:hidden;overflow-wrap:break-word;"><p dir="ltr" style="line-height:1.38;margin-top:0pt;margin-bottom:0pt;"><span style="font-size:11pt;font-family:Arial,sans-serif;color:#000000;background-color:transparent;font-weight:400;font-style:normal;font-variant:normal;text-decoration:none;vertical-align:baseline;white-space:pre;white-space:pre-wrap;">macOS Tahoe 26.6.2</span></p></td><td style="border-left:solid #000000 0.5pt;border-right:solid #000000 0.5pt;border-bottom:solid #000000 0.5pt;border-top:solid #000000 0.5pt;vertical-align:top;padding:5pt 5pt 5pt 5pt;overflow:hidden;overflow-wrap:break-word;"><p dir="ltr" style="line-height:1.38;margin-top:0pt;margin-bottom:0pt;"><span style="font-size:11pt;font-family:Arial,sans-serif;color:#000000;background-color:transparent;font-weight:400;font-style:normal;font-variant:normal;text-decoration:none;vertical-align:baseline;white-space:pre;white-space:pre-wrap;">Qwen3.5 0.8B, Qwen3.5 9B, Qwen3.8 27B</span></p></td></tr><tr style="height:0pt"><td style="border-left:solid #000000 0.5pt;border-right:solid #000000 0.5pt;border-bottom:solid #000000 0.5pt;border-top:solid #000000 0.5pt;vertical-align:top;padding:5pt 5pt 5pt 5pt;overflow:hidden;overflow-wrap:break-word;"><p dir="ltr" style="line-height:1.38;margin-top:0pt;margin-bottom:0pt;"><span style="font-size:11pt;font-family:Arial,sans-serif;color:#000000;background-color:transparent;font-weight:400;font-style:normal;font-variant:normal;text-decoration:none;vertical-align:baseline;white-space:pre;white-space:pre-wrap;">Steam Deck</span></p></td><td style="border-left:solid #000000 0.5pt;border-right:solid #000000 0.5pt;border-bottom:solid #000000 0.5pt;border-top:solid #000000 0.5pt;vertical-align:top;padding:5pt 5pt 5pt 5pt;overflow:hidden;overflow-wrap:break-word;"><p dir="ltr" style="line-height:1.38;margin-top:0pt;margin-bottom:0pt;"><span style="font-size:11pt;font-family:Arial,sans-serif;color:#000000;background-color:transparent;font-weight:400;font-style:normal;font-variant:normal;text-decoration:none;vertical-align:baseline;white-space:pre;white-space:pre-wrap;">Steam Deck OLED, AMD Van Gogh APU, 16 GB shared memory</span></p></td><td style="border-left:solid #000000 0.5pt;border-right:solid #000000 0.5pt;border-bottom:solid #000000 0.5pt;border-top:solid #000000 0.5pt;vertical-align:top;padding:5pt 5pt 5pt 5pt;overflow:hidden;overflow-wrap:break-word;"><p dir="ltr" style="line-height:1.38;margin-top:0pt;margin-bottom:0pt;"><span style="font-size:11pt;font-family:Arial,sans-serif;color:#000000;background-color:transparent;font-weight:400;font-style:normal;font-variant:normal;text-decoration:none;vertical-align:baseline;white-space:pre;white-space:pre-wrap;">Steam OS 3.8.16 (build 20260716.1)</span></p></td><td style="border-left:solid #000000 0.5pt;border-right:solid #000000 0.5pt;border-bottom:solid #000000 0.5pt;border-top:solid #000000 0.5pt;vertical-align:top;padding:5pt 5pt 5pt 5pt;overflow:hidden;overflow-wrap:break-word;"><p dir="ltr" style="line-height:1.38;margin-top:0pt;margin-bottom:0pt;"><span style="font-size:11pt;font-family:Arial,sans-serif;color:#000000;background-color:transparent;font-weight:400;font-style:normal;font-variant:normal;text-decoration:none;vertical-align:baseline;white-space:pre;white-space:pre-wrap;">Qwen3.5 0.8B, Qwen3.5 9B</span></p></td></tr><tr style="height:0pt"><td style="border-left:solid #000000 0.5pt;border-right:solid #000000 0.5pt;border-bottom:solid #000000 0.5pt;border-top:solid #000000 0.5pt;vertical-align:top;padding:5pt 5pt 5pt 5pt;overflow:hidden;overflow-wrap:break-word;"><p dir="ltr" style="line-height:1.38;margin-top:0pt;margin-bottom:0pt;"><span style="font-size:11pt;font-family:Arial,sans-serif;color:#000000;background-color:transparent;font-weight:400;font-style:normal;font-variant:normal;text-decoration:none;vertical-align:baseline;white-space:pre;white-space:pre-wrap;">Linux L40S system</span></p></td><td style="border-left:solid #000000 0.5pt;border-right:solid #000000 0.5pt;border-bottom:solid #000000 0.5pt;border-top:solid #000000 0.5pt;vertical-align:top;padding:5pt 5pt 5pt 5pt;overflow:hidden;overflow-wrap:break-word;"><p dir="ltr" style="line-height:1.38;margin-top:0pt;margin-bottom:0pt;"><span style="font-size:11pt;font-family:Arial,sans-serif;color:#000000;background-color:transparent;font-weight:400;font-style:normal;font-variant:normal;text-decoration:none;vertical-align:baseline;white-space:pre;white-space:pre-wrap;">32-core Intel Xeon Gold 6338, one NVIDIA L40S 48 GB VRAM</span></p></td><td style="border-left:solid #000000 0.5pt;border-right:solid #000000 0.5pt;border-bottom:solid #000000 0.5pt;border-top:solid #000000 0.5pt;vertical-align:top;padding:5pt 5pt 5pt 5pt;overflow:hidden;overflow-wrap:break-word;"><p dir="ltr" style="line-height:1.38;margin-top:0pt;margin-bottom:0pt;"><span style="font-size:11pt;font-family:Arial,sans-serif;color:#000000;background-color:transparent;font-weight:400;font-style:normal;font-variant:normal;text-decoration:none;vertical-align:baseline;white-space:pre;white-space:pre-wrap;">Ubuntu 24.04.3 LTS</span></p></td><td style="border-left:solid #000000 0.5pt;border-right:solid #000000 0.5pt;border-bottom:solid #000000 0.5pt;border-top:solid #000000 0.5pt;vertical-align:top;padding:5pt 5pt 5pt 5pt;overflow:hidden;overflow-wrap:break-word;"><p dir="ltr" style="line-height:1.38;margin-top:0pt;margin-bottom:0pt;"><span style="font-size:11pt;font-family:Arial,sans-serif;color:#000000;background-color:transparent;font-weight:400;font-style:normal;font-variant:normal;text-decoration:none;vertical-align:baseline;white-space:pre;white-space:pre-wrap;">Qwen3.5 0.8B, Qwen3.5 9B, Qwen3.8 27B</span></p></td></tr></tbody></table>
+<!--kg-card-end: html-->
+<p>Software versions, identical across all three machines: llama.cpp b10441 (commit 0177dcc73), llamafile 0.10.6 (commit 42ff11b), Ollama 0.34.0, LM Studio runtime 2.28.2 (metal / cuda12 / vulkan), llama-benchy 0.4.0.</p><p>Every runtime served the same GGUF files from lmstudio-community: llama.cpp and llamafile loaded them directly; Ollama served them through tags built from those exact files; LM Studio was pinned to the same GGUF by an explicit model key. The 0.8B tests used Q8-class artifacts, while the 9B tests used Q4_K_M quants. Each model was loaded with 16,384 tokens of context length, full GPU offload, and for the 27B model we enabled speculative decoding at draft length 2 (LM Studio's default). We deliberately kept each runtime's own batching defaults.</p><p><strong>What we measured</strong></p><p>The benchmark reports two throughput measurements, both in tokens per second:</p><ul><li><strong>Prompt processing (PP)</strong> measures how quickly the server processes the input prompt before text generation begins.</li><li><strong>Token generation (TG)</strong> measures how quickly the server produces output tokens after processing the prompt.</li></ul><p>Prompt processing matters most when working with long documents, large codebases, agents, or lengthy conversation histories. Token generation matters more for interactive chat, where users are waiting for the response to appear. The benchmark used four prompt sizes (1,024, 2,048, 4,096, and 8,192 tokens) and text generation was measured with both 32 and 64 output tokens.&nbsp;</p><p>Each point you’ll see in our plots is the result of 15 llama-benchy runs. The first is simply used as warm-up and then ignored; of the remaining 14, the 2 fastest and 2 slowest are discarded and the middle 10 averaged. Error bars are ±1 standard deviation over all 14 post-warm-up runs. Servers are restarted before each run, so weights and KV cache start cold, and the four servers are interleaved within each model evaluation, so a slow drift in machine state cannot favour whichever server went first.</p><p>Measurements are client-side, with one exception: LM Studio's decode on macOS is taken from the engine's own timings. The reason is that LM Studio releases its output stream in bursts on macOS, which makes client-side figures inconsistent with the server-side ones.</p><h2 id="linux-nvidia-l40s"><strong>Linux / NVIDIA L40S</strong></h2><p>On the NVIDIA L40S, prompt processing is close. Token generation is where the servers separate:</p><figure class="kg-card kg-image-card kg-card-hascaption"><img src="https://storage.ghost.io/c/68/76/6876f0af-8955-4de4-a637-a5e7cc399136/content/images/2026/09/data-src-image-fb99f7c7-c896-4797-9a69-b7ba90ef41ef.png" class="kg-image" alt="Six line charts on an NVIDIA L40S; the four servers are close on prompt processing, while on token generation llama.cpp and llamafile lead at 0.8B and 9B but Ollama leads at 27B." loading="lazy" width="2000" height="1001" srcset="https://storage.ghost.io/c/68/76/6876f0af-8955-4de4-a637-a5e7cc399136/content/images/size/w600/2026/09/data-src-image-fb99f7c7-c896-4797-9a69-b7ba90ef41ef.png 600w, https://storage.ghost.io/c/68/76/6876f0af-8955-4de4-a637-a5e7cc399136/content/images/size/w1000/2026/09/data-src-image-fb99f7c7-c896-4797-9a69-b7ba90ef41ef.png 1000w, https://storage.ghost.io/c/68/76/6876f0af-8955-4de4-a637-a5e7cc399136/content/images/size/w1600/2026/09/data-src-image-fb99f7c7-c896-4797-9a69-b7ba90ef41ef.png 1600w, https://storage.ghost.io/c/68/76/6876f0af-8955-4de4-a637-a5e7cc399136/content/images/2026/09/data-src-image-fb99f7c7-c896-4797-9a69-b7ba90ef41ef.png 2048w" sizes="(min-width: 720px) 720px"><figcaption><span style="white-space: pre-wrap;">Linux server, NVIDIA L40S (CUDA). Top row prompt processing, bottom row token generation at 64-token output, by prompt length. Higher is better. Each point is a trimmed mean of 15 runs (warmup dropped, 2 fastest and 2 slowest discarded, middle 10 averaged); error bars are ±1 SD over the 14 post-warmup runs. y-axes are per panel and do not start at zero.</span></figcaption></figure><p>One hypothesis for this wide gap is a fixed per-token cost on the host side, not a difference in GPU work. As a percentage it looks dramatic on a fast model (67%) and modest on a slow one (18%), but we measured the spread’s absolute value in terms of ms per token and verified it is almost constant across models: about <strong>1.8 ms on the L40S</strong>, <strong>0.4 ms on the Mac</strong>, and <strong>5.4 ms on the Steam Deck</strong>.</p><p>This experiment is also where a build flag beat every engine difference: prior to this, llamafile's shipped CUDA backend was compiled without CUDA graphs. Turning them on improved decoding by <strong>+16.8% on the 0.8B, +6.5% on the 9B, and +4.3% on the 27B</strong>.</p><h2 id="mac-studio"><strong>Mac Studio</strong></h2><p>Prompt processing on Metal is remarkably uniform. Across all three models, llama.cpp, llamafile and Ollama sit within ±3% of each other at every prompt length. The exception is LM Studio on the smaller models, and it is very likely again a fixed cost.</p><figure class="kg-card kg-image-card kg-card-hascaption"><img src="https://storage.ghost.io/c/68/76/6876f0af-8955-4de4-a637-a5e7cc399136/content/images/2026/09/data-src-image-2810ab7b-2b14-43ff-a015-d3c18782a484.png" class="kg-image" alt="Six line charts comparing llama.cpp, llamafile, LM Studio and Ollama on an M4 Max; the four cluster within a few percent on both metrics, except LM Studio trails on prompt processing for the smaller models." loading="lazy" width="2000" height="979" srcset="https://storage.ghost.io/c/68/76/6876f0af-8955-4de4-a637-a5e7cc399136/content/images/size/w600/2026/09/data-src-image-2810ab7b-2b14-43ff-a015-d3c18782a484.png 600w, https://storage.ghost.io/c/68/76/6876f0af-8955-4de4-a637-a5e7cc399136/content/images/size/w1000/2026/09/data-src-image-2810ab7b-2b14-43ff-a015-d3c18782a484.png 1000w, https://storage.ghost.io/c/68/76/6876f0af-8955-4de4-a637-a5e7cc399136/content/images/size/w1600/2026/09/data-src-image-2810ab7b-2b14-43ff-a015-d3c18782a484.png 1600w, https://storage.ghost.io/c/68/76/6876f0af-8955-4de4-a637-a5e7cc399136/content/images/2026/09/data-src-image-2810ab7b-2b14-43ff-a015-d3c18782a484.png 2048w" sizes="(min-width: 720px) 720px"><figcaption><span style="white-space: pre-wrap;">Mac Studio (Apple M4 Max, Metal). Top row prompt processing, bottom row token generation at 64-token output, by prompt length. Higher is better. Each point is a trimmed mean of 15 runs (warmup dropped, 2 fastest and 2 slowest discarded, middle 10 averaged); error bars are ±1 SD over the 14 post-warmup runs. y-axes are per panel and do not start at zero. LM Studio generation is server-side, the rest client-side.</span></figcaption></figure><p>Metal is also where draft length matters most: with speculative decoding at Ollama's library default of 4 tokens, 27B decode <em>is actually worse </em>than no speculation at all (≈15 vs 23.4 tok/s). At draft 2 it rises to 24-25 tok/s. The same sweep on the L40S goes the other way, i.e. draft 4 beats draft 2 there by up to 16%. The conclusion is that there is no portable "best" setting.</p><h2 id="steam-deck"><strong>Steam Deck</strong></h2><p>The Deck produced the largest spread of any machine, and almost all of it came from the choice of the shader compiler.</p><figure class="kg-card kg-image-card kg-card-hascaption"><img src="https://storage.ghost.io/c/68/76/6876f0af-8955-4de4-a637-a5e7cc399136/content/images/2026/09/data-src-image-d8b3369d-8dd3-4133-9395-5926ddc270bb.png" class="kg-image" alt="Four line charts on a Steam Deck; llama.cpp and llamafile lead on both prompt processing and generation, Ollama sits below them, and LM Studio trails, most visibly on 9B generation." loading="lazy" width="1880" height="1319" srcset="https://storage.ghost.io/c/68/76/6876f0af-8955-4de4-a637-a5e7cc399136/content/images/size/w600/2026/09/data-src-image-d8b3369d-8dd3-4133-9395-5926ddc270bb.png 600w, https://storage.ghost.io/c/68/76/6876f0af-8955-4de4-a637-a5e7cc399136/content/images/size/w1000/2026/09/data-src-image-d8b3369d-8dd3-4133-9395-5926ddc270bb.png 1000w, https://storage.ghost.io/c/68/76/6876f0af-8955-4de4-a637-a5e7cc399136/content/images/size/w1600/2026/09/data-src-image-d8b3369d-8dd3-4133-9395-5926ddc270bb.png 1600w, https://storage.ghost.io/c/68/76/6876f0af-8955-4de4-a637-a5e7cc399136/content/images/2026/09/data-src-image-d8b3369d-8dd3-4133-9395-5926ddc270bb.png 1880w" sizes="(min-width: 720px) 720px"><figcaption><span style="white-space: pre-wrap;">Steam Deck (AMD Van Gogh APU, Vulkan). Top row prompt processing, bottom row token generation at 64-token output, by prompt length, for the 0.8B and 9B models. Higher is better. Each point is a trimmed mean of 15 runs (warmup dropped, 2 fastest and 2 slowest discarded, middle 10 averaged); error bars are ±1 SD over the 14 post-warmup runs. y-axes are per panel and do not start at zero.</span></figcaption></figure><p>Four line charts on a Steam Deck; llama.cpp and llamafile lead on both prompt processing and generation, Ollama sits below them, and LM Studio trails, most visibly on 9B generation.</p><p>We tested this directly rather than inferring it. Building from the same llamafile/llama.cpp commit with two different versions of the Vulkan shader libraries (Ubuntu 24.04’s shaderc 2023.8 vs LunarG Vulkan SDK’s 2026.03), we managed to improve performance as follows:</p><ul><li>Prompt processing: <strong>+25.9%</strong> (0.8B), <strong>+63.3%</strong> (9B)</li><li>Decode: <strong>+18.2%</strong> (9B), <strong>−0.6%</strong> (0.8B)</li></ul><p>LM Studio's deficit in the plots is a property of its shipped runtime, not its engine, and unlike the others it cannot be fixed by the user, because the runtime arrives prebuilt.</p><h2 id="why-the-prompt-processing-curves-have-three-different-shapes"><strong>Why the prompt-processing curves have three different shapes</strong></h2><p>When interpreting the plots, we were surprised to see that the prompt-processing curves were so different across the three environments: the throughput rises with prompt length on the L40S, rises then falls on the Mac, and mostly just falls on the Deck. It was interesting to find that these were not three behaviors, but rather three different views of the same curve.</p><p>Model prefill time as t(n) = c + a·n + b·n²: a fixed per-request cost, a linear term (the matmuls), and a quadratic term (attention). Throughput n/t(n) peaks at <strong>n* = √(c/b)</strong>. Below that, the fixed cost is still amortising and throughput climbs; above it, attention takes over.</p><p>Fitting the measured 0.8B curves:</p>
+<!--kg-card-begin: html-->
+<table style="border:none;border-collapse:collapse;table-layout:fixed;width:468pt"><colgroup><col><col><col><col><col></colgroup><thead><tr style="height:0pt"><th style="border-left:solid #000000 1pt;border-right:solid #000000 1pt;border-bottom:solid #000000 1pt;border-top:solid #000000 1pt;vertical-align:top;padding:5pt 5pt 5pt 5pt;overflow:hidden;overflow-wrap:break-word;" scope="col"><p dir="ltr" style="line-height:1.38;margin-top:0pt;margin-bottom:0pt;"><span style="font-size:11pt;font-family:Arial,sans-serif;color:#000000;background-color:transparent;font-weight:700;font-style:normal;font-variant:normal;text-decoration:none;vertical-align:baseline;white-space:pre;white-space:pre-wrap;">machine</span></p></th><th style="border-left:solid #000000 1pt;border-right:solid #000000 1pt;border-bottom:solid #000000 1pt;border-top:solid #000000 1pt;vertical-align:top;padding:5pt 5pt 5pt 5pt;overflow:hidden;overflow-wrap:break-word;" scope="col"><p dir="ltr" style="line-height:1.38;margin-top:0pt;margin-bottom:0pt;"><span style="font-size:11pt;font-family:Arial,sans-serif;color:#000000;background-color:transparent;font-weight:700;font-style:normal;font-variant:normal;text-decoration:none;vertical-align:baseline;white-space:pre;white-space:pre-wrap;">c (fixed)</span></p></th><th style="border-left:solid #000000 1pt;border-right:solid #000000 1pt;border-bottom:solid #000000 1pt;border-top:solid #000000 1pt;vertical-align:top;padding:5pt 5pt 5pt 5pt;overflow:hidden;overflow-wrap:break-word;" scope="col"><p dir="ltr" style="line-height:1.38;margin-top:0pt;margin-bottom:0pt;"><span style="font-size:11pt;font-family:Arial,sans-serif;color:#000000;background-color:transparent;font-weight:700;font-style:normal;font-variant:normal;text-decoration:none;vertical-align:baseline;white-space:pre;white-space:pre-wrap;">b (attention)</span></p></th><th style="border-left:solid #000000 1pt;border-right:solid #000000 1pt;border-bottom:solid #000000 1pt;border-top:solid #000000 1pt;vertical-align:top;padding:5pt 5pt 5pt 5pt;overflow:hidden;overflow-wrap:break-word;" scope="col"><p dir="ltr" style="line-height:1.38;margin-top:0pt;margin-bottom:0pt;"><span style="font-size:11pt;font-family:Arial,sans-serif;color:#000000;background-color:transparent;font-weight:700;font-style:normal;font-variant:normal;text-decoration:none;vertical-align:baseline;white-space:pre;white-space:pre-wrap;">peak n*</span></p></th><th style="border-left:solid #000000 1pt;border-right:solid #000000 1pt;border-bottom:solid #000000 1pt;border-top:solid #000000 1pt;vertical-align:top;padding:5pt 5pt 5pt 5pt;overflow:hidden;overflow-wrap:break-word;" scope="col"><p dir="ltr" style="line-height:1.38;margin-top:0pt;margin-bottom:0pt;"><span style="font-size:11pt;font-family:Arial,sans-serif;color:#000000;background-color:transparent;font-weight:700;font-style:normal;font-variant:normal;text-decoration:none;vertical-align:baseline;white-space:pre;white-space:pre-wrap;">attention share at n=8,192</span></p></th></tr></thead><tbody><tr style="height:0pt"><td style="border-left:solid #000000 1pt;border-right:solid #000000 1pt;border-bottom:solid #000000 1pt;border-top:solid #000000 1pt;vertical-align:top;padding:5pt 5pt 5pt 5pt;overflow:hidden;overflow-wrap:break-word;"><p dir="ltr" style="line-height:1.38;margin-top:0pt;margin-bottom:0pt;"><span style="font-size:11pt;font-family:Arial,sans-serif;color:#000000;background-color:transparent;font-weight:400;font-style:normal;font-variant:normal;text-decoration:none;vertical-align:baseline;white-space:pre;white-space:pre-wrap;">L40S / CUDA</span></p></td><td style="border-left:solid #000000 1pt;border-right:solid #000000 1pt;border-bottom:solid #000000 1pt;border-top:solid #000000 1pt;vertical-align:top;padding:5pt 5pt 5pt 5pt;overflow:hidden;overflow-wrap:break-word;"><p dir="ltr" style="line-height:1.38;margin-top:0pt;margin-bottom:0pt;"><span style="font-size:11pt;font-family:Arial,sans-serif;color:#000000;background-color:transparent;font-weight:400;font-style:normal;font-variant:normal;text-decoration:none;vertical-align:baseline;white-space:pre;white-space:pre-wrap;">52 ms</span></p></td><td style="border-left:solid #000000 1pt;border-right:solid #000000 1pt;border-bottom:solid #000000 1pt;border-top:solid #000000 1pt;vertical-align:top;padding:5pt 5pt 5pt 5pt;overflow:hidden;overflow-wrap:break-word;"><p dir="ltr" style="line-height:1.38;margin-top:0pt;margin-bottom:0pt;"><span style="font-size:11pt;font-family:Arial,sans-serif;color:#000000;background-color:transparent;font-weight:400;font-style:normal;font-variant:normal;text-decoration:none;vertical-align:baseline;white-space:pre;white-space:pre-wrap;">0.071 ns/tok²</span></p></td><td style="border-left:solid #000000 1pt;border-right:solid #000000 1pt;border-bottom:solid #000000 1pt;border-top:solid #000000 1pt;vertical-align:top;padding:5pt 5pt 5pt 5pt;overflow:hidden;overflow-wrap:break-word;"><p dir="ltr" style="line-height:1.38;margin-top:0pt;margin-bottom:0pt;"><span style="font-size:11pt;font-family:Arial,sans-serif;color:#000000;background-color:transparent;font-weight:700;font-style:normal;font-variant:normal;text-decoration:none;vertical-align:baseline;white-space:pre;white-space:pre-wrap;">~27,000</span></p></td><td style="border-left:solid #000000 1pt;border-right:solid #000000 1pt;border-bottom:solid #000000 1pt;border-top:solid #000000 1pt;vertical-align:top;padding:5pt 5pt 5pt 5pt;overflow:hidden;overflow-wrap:break-word;"><p dir="ltr" style="line-height:1.38;margin-top:0pt;margin-bottom:0pt;"><span style="font-size:11pt;font-family:Arial,sans-serif;color:#000000;background-color:transparent;font-weight:400;font-style:normal;font-variant:normal;text-decoration:none;vertical-align:baseline;white-space:pre;white-space:pre-wrap;">1.4%</span></p></td></tr><tr style="height:0pt"><td style="border-left:solid #000000 1pt;border-right:solid #000000 1pt;border-bottom:solid #000000 1pt;border-top:solid #000000 1pt;vertical-align:top;padding:5pt 5pt 5pt 5pt;overflow:hidden;overflow-wrap:break-word;"><p dir="ltr" style="line-height:1.38;margin-top:0pt;margin-bottom:0pt;"><span style="font-size:11pt;font-family:Arial,sans-serif;color:#000000;background-color:transparent;font-weight:400;font-style:normal;font-variant:normal;text-decoration:none;vertical-align:baseline;white-space:pre;white-space:pre-wrap;">M4 Max / Metal</span></p></td><td style="border-left:solid #000000 1pt;border-right:solid #000000 1pt;border-bottom:solid #000000 1pt;border-top:solid #000000 1pt;vertical-align:top;padding:5pt 5pt 5pt 5pt;overflow:hidden;overflow-wrap:break-word;"><p dir="ltr" style="line-height:1.38;margin-top:0pt;margin-bottom:0pt;"><span style="font-size:11pt;font-family:Arial,sans-serif;color:#000000;background-color:transparent;font-weight:400;font-style:normal;font-variant:normal;text-decoration:none;vertical-align:baseline;white-space:pre;white-space:pre-wrap;">19 ms</span></p></td><td style="border-left:solid #000000 1pt;border-right:solid #000000 1pt;border-bottom:solid #000000 1pt;border-top:solid #000000 1pt;vertical-align:top;padding:5pt 5pt 5pt 5pt;overflow:hidden;overflow-wrap:break-word;"><p dir="ltr" style="line-height:1.38;margin-top:0pt;margin-bottom:0pt;"><span style="font-size:11pt;font-family:Arial,sans-serif;color:#000000;background-color:transparent;font-weight:400;font-style:normal;font-variant:normal;text-decoration:none;vertical-align:baseline;white-space:pre;white-space:pre-wrap;">2.46 ns/tok²</span></p></td><td style="border-left:solid #000000 1pt;border-right:solid #000000 1pt;border-bottom:solid #000000 1pt;border-top:solid #000000 1pt;vertical-align:top;padding:5pt 5pt 5pt 5pt;overflow:hidden;overflow-wrap:break-word;"><p dir="ltr" style="line-height:1.38;margin-top:0pt;margin-bottom:0pt;"><span style="font-size:11pt;font-family:Arial,sans-serif;color:#000000;background-color:transparent;font-weight:700;font-style:normal;font-variant:normal;text-decoration:none;vertical-align:baseline;white-space:pre;white-space:pre-wrap;">~2,800</span></p></td><td style="border-left:solid #000000 1pt;border-right:solid #000000 1pt;border-bottom:solid #000000 1pt;border-top:solid #000000 1pt;vertical-align:top;padding:5pt 5pt 5pt 5pt;overflow:hidden;overflow-wrap:break-word;"><p dir="ltr" style="line-height:1.38;margin-top:0pt;margin-bottom:0pt;"><span style="font-size:11pt;font-family:Arial,sans-serif;color:#000000;background-color:transparent;font-weight:400;font-style:normal;font-variant:normal;text-decoration:none;vertical-align:baseline;white-space:pre;white-space:pre-wrap;">14.4%</span></p></td></tr><tr style="height:0pt"><td style="border-left:solid #000000 1pt;border-right:solid #000000 1pt;border-bottom:solid #000000 1pt;border-top:solid #000000 1pt;vertical-align:top;padding:5pt 5pt 5pt 5pt;overflow:hidden;overflow-wrap:break-word;"><p dir="ltr" style="line-height:1.38;margin-top:0pt;margin-bottom:0pt;"><span style="font-size:11pt;font-family:Arial,sans-serif;color:#000000;background-color:transparent;font-weight:400;font-style:normal;font-variant:normal;text-decoration:none;vertical-align:baseline;white-space:pre;white-space:pre-wrap;">Steam Deck / Vulkan</span></p></td><td style="border-left:solid #000000 1pt;border-right:solid #000000 1pt;border-bottom:solid #000000 1pt;border-top:solid #000000 1pt;vertical-align:top;padding:5pt 5pt 5pt 5pt;overflow:hidden;overflow-wrap:break-word;"><p dir="ltr" style="line-height:1.38;margin-top:0pt;margin-bottom:0pt;"><span style="font-size:11pt;font-family:Arial,sans-serif;color:#000000;background-color:transparent;font-weight:400;font-style:normal;font-variant:normal;text-decoration:none;vertical-align:baseline;white-space:pre;white-space:pre-wrap;">288 ms</span></p></td><td style="border-left:solid #000000 1pt;border-right:solid #000000 1pt;border-bottom:solid #000000 1pt;border-top:solid #000000 1pt;vertical-align:top;padding:5pt 5pt 5pt 5pt;overflow:hidden;overflow-wrap:break-word;"><p dir="ltr" style="line-height:1.38;margin-top:0pt;margin-bottom:0pt;"><span style="font-size:11pt;font-family:Arial,sans-serif;color:#000000;background-color:transparent;font-weight:400;font-style:normal;font-variant:normal;text-decoration:none;vertical-align:baseline;white-space:pre;white-space:pre-wrap;">70.2 ns/tok²</span></p></td><td style="border-left:solid #000000 1pt;border-right:solid #000000 1pt;border-bottom:solid #000000 1pt;border-top:solid #000000 1pt;vertical-align:top;padding:5pt 5pt 5pt 5pt;overflow:hidden;overflow-wrap:break-word;"><p dir="ltr" style="line-height:1.38;margin-top:0pt;margin-bottom:0pt;"><span style="font-size:11pt;font-family:Arial,sans-serif;color:#000000;background-color:transparent;font-weight:700;font-style:normal;font-variant:normal;text-decoration:none;vertical-align:baseline;white-space:pre;white-space:pre-wrap;">~2,000</span></p></td><td style="border-left:solid #000000 1pt;border-right:solid #000000 1pt;border-bottom:solid #000000 1pt;border-top:solid #000000 1pt;vertical-align:top;padding:5pt 5pt 5pt 5pt;overflow:hidden;overflow-wrap:break-word;"><p dir="ltr" style="line-height:1.38;margin-top:0pt;margin-bottom:0pt;"><span style="font-size:11pt;font-family:Arial,sans-serif;color:#000000;background-color:transparent;font-weight:400;font-style:normal;font-variant:normal;text-decoration:none;vertical-align:baseline;white-space:pre;white-space:pre-wrap;">40.1%</span></p></td></tr></tbody></table>
+<!--kg-card-end: html-->
+<p>The L40S's peak is more than three times beyond the longest prompt we tested, so we only ever see the rising limb. The Deck is already 40% attention-bound at 8,192 tokens.</p><h2 id="each-runtimes-own-weights-mlx-on-apple-silicon"><strong>Each runtime's own weights: MLX on Apple silicon</strong></h2><p>Everything above holds the weights fixed, which is the fairest way to compare engines but not the way people usually run these tools. On Apple silicon, both Ollama and LM Studio ship <strong>MLX</strong> (Apple's own standard for model weights rather than GGUF) builds which are often served <em>by default</em> unless you explicitly choose the GGUF variant. So it only seemed fair to us to also show the largest (27B) model’s performance with each runtime on its own preferred artifact:</p><p><strong>Prompt processing improves modestly, and by the same amount for both:</strong> +9.9% for Ollama and +10.7% for LM Studio at a 1,024-token prompt, easing to about +6% and +9% at 8,192. This is the clean part of the comparison: no confounds, and both runtimes gain roughly 10%.</p><figure class="kg-card kg-image-card kg-card-hascaption"><img src="https://storage.ghost.io/c/68/76/6876f0af-8955-4de4-a637-a5e7cc399136/content/images/2026/09/data-src-image-fee4354e-3604-495f-a7c5-04a353a02dca.png" class="kg-image" alt="Four panels comparing each runtime's GGUF and its own MLX build on an M4 Max. MLX is about 10 to 11 percent faster on prompt processing for both, and much faster on Ollama's generation, but the two runtimes' MLX results are measured differently and are not directly comparable." loading="lazy" width="1960" height="1227" srcset="https://storage.ghost.io/c/68/76/6876f0af-8955-4de4-a637-a5e7cc399136/content/images/size/w600/2026/09/data-src-image-fee4354e-3604-495f-a7c5-04a353a02dca.png 600w, https://storage.ghost.io/c/68/76/6876f0af-8955-4de4-a637-a5e7cc399136/content/images/size/w1000/2026/09/data-src-image-fee4354e-3604-495f-a7c5-04a353a02dca.png 1000w, https://storage.ghost.io/c/68/76/6876f0af-8955-4de4-a637-a5e7cc399136/content/images/size/w1600/2026/09/data-src-image-fee4354e-3604-495f-a7c5-04a353a02dca.png 1600w, https://storage.ghost.io/c/68/76/6876f0af-8955-4de4-a637-a5e7cc399136/content/images/2026/09/data-src-image-fee4354e-3604-495f-a7c5-04a353a02dca.png 1960w" sizes="(min-width: 720px) 720px"><figcaption><span style="white-space: pre-wrap;">Apple M4 Max, Qwen 27B: each runtime on the shared GGUF versus its own MLX build. Higher is better; error bars are ±1 SD. The two columns use different scales and different weights, so read each on its own, not against the other. GGUF is the shared draft-2 config. NOTE: on MLX, Ollama self-enables speculative decoding and LM Studio doesn't, so the generation panels aren't measuring the same thing. llama.cpp and llamafile do not appear here because they have no MLX path.</span></figcaption></figure><p><strong>Generation is where it gets interesting, and where the two stop being comparable.</strong> The gap between those two MLX figures is not MLX: Ollama's MLX runner turns on speculative decoding by itself, with an adaptive draft depth, while LM Studio's MLX does no drafting at all.&nbsp;</p><p>Two caveats travel with these numbers. The artifacts are <strong>not the same weights</strong>: LM Studio's MLX build is 4-bit affine with group size 64 (15 GB), Ollama's tag reports nvfp4 (18.2 GB), and the shared GGUF is Q4_K_M (17.7 GB). And this experiment answers "how fast is each runtime at its default", not "which engine is faster". llama.cpp and llamafile are absent because neither has an MLX path, which is itself a fact worth weighing if you are choosing a tool for a Mac.</p><h2 id="what-these-results-mean-in-practice"><strong>What these results mean in practice</strong></h2><p>There is no one-size-fits-all server, but the reason is more specific than "it depends". After controlling for weights, build flags, shader toolchains and background load, the four engines land within a few percent of each other on prompt processing, and most of the decode difference is a fixed host-side per-token cost. The things that moved our numbers by tens of percent were, instead, a compiler flag, a shader toolchain, and a speculative-decoding setting.</p><p>Our practical advice is not "benchmark every server". Overall, it boils down to the following suggestions:</p><ul><li><strong>Check how your server was built</strong>, not just which one it is. The same engine compiled two ways differed by 1.6× on the Deck.</li><li><strong>Match the speculative-decoding setting to the platform</strong>, because the best value flips between Metal and CUDA.</li><li><strong>Watch what else is running on your machine</strong> if you care about your model’s performance.</li><li><strong>Separate prompt processing from generation</strong>, and look at the prompt lengths you actually use.</li></ul><p>And as always, make your own choice depending on the task you need to solve: for long-document summarization, prompt processing may dominate total latency; for chat or code completion, token generation will usually be more visible. Benchmark the model and server combination just on the hardware that resembles your deployment environment, and keep in mind that a result from a different setup may not predict your experience.</p><h2 id="performance-starts-with-availability"><strong>Performance starts with availability</strong></h2><p>We also tried all four tools on a roughly ten-year-old Intel MacBook Pro. Only llama.cpp and llamafile ran successfully on its installed macOS. The current Ollama distribution did not support its installed macOS version, although Ollama documents a build-from-source path for Intel Macs. LM Studio’s current macOS release supports Apple Silicon but not Intel Macs. (<a href="https://github.com/ollama/ollama/blob/main/docs/development.md?ref=blog.mozilla.ai"><u>Ollama development guide</u></a>, <a href="https://lmstudio.ai/docs/app/system-requirements?ref=blog.mozilla.ai"><u>LM Studio requirements</u></a>)</p><p>This was a compatibility check, not a comparable performance run, so it is not included in the throughput results. It nevertheless highlights another relevant distinction: llama.cpp and llamafile retain a CPU path that can keep older hardware useful when newer, GPU-oriented applications are unavailable.</p><h2 id="limitations">Limitations</h2><p>These results compare practical setups rather than perfectly controlled backend implementations, so they come with a few caveats.&nbsp;</p><p>The reported numbers are trimmed. Each point is the mean of the middle 10 of 14 post-warmup runs, with the 2 fastest and 2 slowest dropped; error bars are the standard deviation over all 14. Trimming steadies the central estimate but hides the tails, so the plots understate the occasional outlier.</p><p>Timing is client-side, with one exception. LM Studio's decode on macOS is measured from the engine's own timings, because it releases output in bursts there and client-side figures don't match the server. That one series is therefore not measured the same way as the others.</p><p>The benchmark measures throughput after the server is running. It does not yet measure time to first token, end-to-end latency, model-loading time, memory use, power consumption, or concurrent requests. Those factors may change the practical ranking.</p><p>The high variance in several LM Studio and Ollama configurations also deserves further investigation. In particular, short and long generation tests sometimes produced different rates on the L40S, while llama.cpp and llamafile remained comparatively stable.</p><h2 id="what-comes-next"><strong>What comes next</strong></h2><p>The next round should include Windows and additional macOS and Linux hardware. We also want to expand the measurements beyond throughput, including metrics such as time to first token, model load and startup time, memory and power consumption.</p><p>Finally, these tests cover only the Qwen family. Results from Llama, Gemma, Mistral, and mixture-of-experts models will help distinguish general server behavior from model-specific effects.</p><h2 id="conclusion"><strong>Conclusion</strong></h2><p>The clearest result of this benchmark is also the least glamorous. All servers are built, one way or another, on top of llama.cpp, so an engine can lead only when it brings ad-hoc optimizations for a specific platform or model (as <a href="https://hacks.mozilla.org/2024/10/llamafile-v0-8-14-a-new-ui-performance-gains-and-more/?ref=blog.mozilla.ai"><u>llamafile did</u></a> for CPU inference, <a href="https://ml-explore.github.io/mlx/build/html/index.html?ref=blog.mozilla.ai"><u>MLX</u></a> does for Metal, or <a href="https://github.com/antirez/ds4?ref=blog.mozilla.ai"><u>ds4</u></a> does for few ad-hoc models). Aside from that, what moved our numbers by tens of percent was configuration: a compiler flag, a shader toolchain, a speculative-decoding setting.</p><p>The broader conclusion matters more than any individual win: local LLM performance depends on model, workload, and platform. A useful comparison must separate prompt processing from token generation, report variance, document the environment, and resist collapsing the result into one score. It should focus less on <em>what</em> engine performs best, and try answering <em>why</em> that happens.</p><p>The <a href="https://github.com/mozilla-ai/exp-llama-benchy?ref=blog.mozilla.ai" rel="noreferrer"><u>exp-llama-benchy</u></a> tool provides a foundation for repeating these tests and extending them to more hardware, models, and operating systems.</p><p>The Moz AI team benchmarked four local LLM servers, llama.cpp, llamafile, LM Studio, and Ollama, across a Mac, a Steam Deck, and an NVIDIA box, to find out which one's fastest.</p><p>Turns out that's the wrong question to ask in the first place. Once they held the model and the machine steady, all four servers landed within a few percent of each other, because under the hood they're all running the same llama.cpp core.</p><p>What actually moved the numbers wasn't the server pick. It was how it was built. One compiler flag we'd left off in llamafile was costing us seventeen percent. A newer graphics toolchain on the Steam Deck bought us sixty percent. Same code, different build, huge swing.</p><p>The takeaway for anyone running models locally: stop agonizing over which tool, and start checking how it was compiled. Full data, all three machines, and the fix we shipped are in the post. Link's below.</p><figure class="kg-card kg-bookmark-card"><a class="kg-bookmark-container" href="https://github.com/mozilla-ai/exp-llama-benchy?ref=blog.mozilla.ai"><div class="kg-bookmark-content"><div class="kg-bookmark-title">GitHub - mozilla-ai/exp-llama-benchy: A tool to run comparison benchmarks using llama-benchy</div><div class="kg-bookmark-description">A tool to run comparison benchmarks using llama-benchy - mozilla-ai/exp-llama-benchy</div><div class="kg-bookmark-metadata"><img class="kg-bookmark-icon" src="https://storage.ghost.io/c/68/76/6876f0af-8955-4de4-a637-a5e7cc399136/content/images/icon/favicon-02160e1d-edc4-4d3d-bc44-3850c418959b.png" alt=""><span class="kg-bookmark-author">GitHub</span><span class="kg-bookmark-publisher">mozilla-ai</span></div></div><div class="kg-bookmark-thumbnail"><img src="https://storage.ghost.io/c/68/76/6876f0af-8955-4de4-a637-a5e7cc399136/content/images/thumbnail/exp-llama-benchy-eef053e2-7e2f-46d9-8663-b43b58eac8d6.png" alt="" onerror="this.style.display = 'none'"></div></a></figure>
+<!--kg-card-begin: html-->
+
+
+<!--kg-card-end: html-->
+
+        </section>
+
+    </article>
+
+
+</main>
+
+
+            <section class="gh-container is-grid gh-outer">
+                <div class="gh-container-inner gh-inner">
+                    <h2 class="gh-container-title">Read more</h2>
+                    <div class="gh-feed">
+                            <article class="gh-card post">
+    <a class="gh-card-link" href="/mistral-large-4-is-live-in-otari/">
+            <figure class="gh-card-image">
+                <img
+                    srcset="https://storage.ghost.io/c/68/76/6876f0af-8955-4de4-a637-a5e7cc399136/content/images/size/w160/format/webp/2026/10/Blog-header-1-.jpg 160w,
+                            https://storage.ghost.io/c/68/76/6876f0af-8955-4de4-a637-a5e7cc399136/content/images/size/w320/format/webp/2026/10/Blog-header-1-.jpg 320w,
+                            https://storage.ghost.io/c/68/76/6876f0af-8955-4de4-a637-a5e7cc399136/content/images/size/w600/format/webp/2026/10/Blog-header-1-.jpg 600w,
+                            https://storage.ghost.io/c/68/76/6876f0af-8955-4de4-a637-a5e7cc399136/content/images/size/w960/format/webp/2026/10/Blog-header-1-.jpg 960w,
+                            https://storage.ghost.io/c/68/76/6876f0af-8955-4de4-a637-a5e7cc399136/content/images/size/w1200/format/webp/2026/10/Blog-header-1-.jpg 1200w,
+                            https://storage.ghost.io/c/68/76/6876f0af-8955-4de4-a637-a5e7cc399136/content/images/size/w2000/format/webp/2026/10/Blog-header-1-.jpg 2000w"
+                    sizes="320px"
+                    src="https://storage.ghost.io/c/68/76/6876f0af-8955-4de4-a637-a5e7cc399136/content/images/size/w600/2026/10/Blog-header-1-.jpg"
+                    alt="Mistral Large 4 is live in Otari"
+                    loading="lazy"
+                >
+            </figure>
+        <div class="gh-card-wrapper">
+            <h3 class="gh-card-title is-title">Mistral Large 4 is live in Otari</h3>
+                <p class="gh-card-excerpt is-body">Mistral Large 4 is live in Otari from day one. Route to Mistral&#x27;s 1T-parameter MoE model with one string change, and keep the policies, traces and cost tracking you already run in Otari, Mozilla AI&#x27;s open-source gateway and policy layer.</p>
+            <footer class="gh-card-meta">
+<!--
+             -->
+                    <span class="gh-card-author">By Mus Himdi</span>
+                    <time class="gh-card-date" datetime="2026-10-08">Oct 8, 2026</time>
+                <!--
+         --></footer>
+        </div>
+    </a>
+</article>                            <article class="gh-card post">
+    <a class="gh-card-link" href="/you-dont-just-need-better-ai-you-need-better-infrastructure/">
+            <figure class="gh-card-image">
+                <img
+                    srcset="https://storage.ghost.io/c/68/76/6876f0af-8955-4de4-a637-a5e7cc399136/content/images/size/w160/format/webp/2026/10/Dark-Op1.jpg 160w,
+                            https://storage.ghost.io/c/68/76/6876f0af-8955-4de4-a637-a5e7cc399136/content/images/size/w320/format/webp/2026/10/Dark-Op1.jpg 320w,
+                            https://storage.ghost.io/c/68/76/6876f0af-8955-4de4-a637-a5e7cc399136/content/images/size/w600/format/webp/2026/10/Dark-Op1.jpg 600w,
+                            https://storage.ghost.io/c/68/76/6876f0af-8955-4de4-a637-a5e7cc399136/content/images/size/w960/format/webp/2026/10/Dark-Op1.jpg 960w,
+                            https://storage.ghost.io/c/68/76/6876f0af-8955-4de4-a637-a5e7cc399136/content/images/size/w1200/format/webp/2026/10/Dark-Op1.jpg 1200w,
+                            https://storage.ghost.io/c/68/76/6876f0af-8955-4de4-a637-a5e7cc399136/content/images/size/w2000/format/webp/2026/10/Dark-Op1.jpg 2000w"
+                    sizes="320px"
+                    src="https://storage.ghost.io/c/68/76/6876f0af-8955-4de4-a637-a5e7cc399136/content/images/size/w600/2026/10/Dark-Op1.jpg"
+                    alt="You Don’t Just Need Better AI. You Need Better Infrastructure."
+                    loading="lazy"
+                >
+            </figure>
+        <div class="gh-card-wrapper">
+            <h3 class="gh-card-title is-title">You Don’t Just Need Better AI. You Need Better Infrastructure.</h3>
+                <p class="gh-card-excerpt is-body">Coding agents now edit repos, run tests, and open pull requests, but a rule in AGENTS.md is an instruction, not a constraint. As we delegate more, we need limits that hold even when model judgment fails, a record of every decision, and open infrastructure we own, so rules outlive any agent.</p>
+            <footer class="gh-card-meta">
+<!--
+             -->
+                    <span class="gh-card-author">By Alejandro Gonzalez</span>
+                    <time class="gh-card-date" datetime="2026-10-05">Oct 5, 2026</time>
+                <!--
+         --></footer>
+        </div>
+    </a>
+</article>                            <article class="gh-card post">
+    <a class="gh-card-link" href="/introducing-agent-skills-in-octonous/">
+            <figure class="gh-card-image">
+                <img
+                    srcset="https://storage.ghost.io/c/68/76/6876f0af-8955-4de4-a637-a5e7cc399136/content/images/size/w160/format/webp/2026/08/Frame-33--1-.jpg 160w,
+                            https://storage.ghost.io/c/68/76/6876f0af-8955-4de4-a637-a5e7cc399136/content/images/size/w320/format/webp/2026/08/Frame-33--1-.jpg 320w,
+                            https://storage.ghost.io/c/68/76/6876f0af-8955-4de4-a637-a5e7cc399136/content/images/size/w600/format/webp/2026/08/Frame-33--1-.jpg 600w,
+                            https://storage.ghost.io/c/68/76/6876f0af-8955-4de4-a637-a5e7cc399136/content/images/size/w960/format/webp/2026/08/Frame-33--1-.jpg 960w,
+                            https://storage.ghost.io/c/68/76/6876f0af-8955-4de4-a637-a5e7cc399136/content/images/size/w1200/format/webp/2026/08/Frame-33--1-.jpg 1200w,
+                            https://storage.ghost.io/c/68/76/6876f0af-8955-4de4-a637-a5e7cc399136/content/images/size/w2000/format/webp/2026/08/Frame-33--1-.jpg 2000w"
+                    sizes="320px"
+                    src="https://storage.ghost.io/c/68/76/6876f0af-8955-4de4-a637-a5e7cc399136/content/images/size/w600/2026/08/Frame-33--1-.jpg"
+                    alt="Introducing Agent Skills in Octonous"
+                    loading="lazy"
+                >
+            </figure>
+        <div class="gh-card-wrapper">
+            <h3 class="gh-card-title is-title">Introducing Agent Skills in Octonous</h3>
+                <p class="gh-card-excerpt is-body">Agent Skills in Octonous offer a central, reusable library for your context, guidelines, and procedures. Written in standard Markdown, Skills end repetitive setup. Store team knowledge once, share it across your workspace, and seamlessly attach it to automated tasks or live conversations.</p>
+            <footer class="gh-card-meta">
+<!--
+             -->
+                    <span class="gh-card-author">By Hareesh Bahuleyan</span>
+                    <time class="gh-card-date" datetime="2026-08-25">Aug 25, 2026</time>
+                <!--
+         --></footer>
+        </div>
+    </a>
+</article>                            <article class="gh-card post">
+    <a class="gh-card-link" href="/open-source-is-not-a-virtue-its-an-ownership-model/">
+            <figure class="gh-card-image">
+                <img
+                    srcset="https://storage.ghost.io/c/68/76/6876f0af-8955-4de4-a637-a5e7cc399136/content/images/size/w160/format/webp/2026/08/mozilla-otari-why-open-source-matters-blog-header.png 160w,
+                            https://storage.ghost.io/c/68/76/6876f0af-8955-4de4-a637-a5e7cc399136/content/images/size/w320/format/webp/2026/08/mozilla-otari-why-open-source-matters-blog-header.png 320w,
+                            https://storage.ghost.io/c/68/76/6876f0af-8955-4de4-a637-a5e7cc399136/content/images/size/w600/format/webp/2026/08/mozilla-otari-why-open-source-matters-blog-header.png 600w,
+                            https://storage.ghost.io/c/68/76/6876f0af-8955-4de4-a637-a5e7cc399136/content/images/size/w960/format/webp/2026/08/mozilla-otari-why-open-source-matters-blog-header.png 960w,
+                            https://storage.ghost.io/c/68/76/6876f0af-8955-4de4-a637-a5e7cc399136/content/images/size/w1200/format/webp/2026/08/mozilla-otari-why-open-source-matters-blog-header.png 1200w,
+                            https://storage.ghost.io/c/68/76/6876f0af-8955-4de4-a637-a5e7cc399136/content/images/size/w2000/format/webp/2026/08/mozilla-otari-why-open-source-matters-blog-header.png 2000w"
+                    sizes="320px"
+                    src="https://storage.ghost.io/c/68/76/6876f0af-8955-4de4-a637-a5e7cc399136/content/images/size/w600/2026/08/mozilla-otari-why-open-source-matters-blog-header.png"
+                    alt="Open Source Is Not a Virtue: It’s an Ownership Model"
+                    loading="lazy"
+                >
+            </figure>
+        <div class="gh-card-wrapper">
+            <h3 class="gh-card-title is-title">Open Source Is Not a Virtue: It’s an Ownership Model</h3>
+                <p class="gh-card-excerpt is-body">Open source isn&#x27;t a moral choice; it’s an operational strategy to prevent vendor lock-in. As transient AI models change, controlling the orchestration layer that routes and manages them becomes critical. Owning your infrastructure code is the only way to ensure true architectural sovereignty.</p>
+            <footer class="gh-card-meta">
+<!--
+             -->
+                    <span class="gh-card-author">By Alejandro Gonzalez</span>
+                    <time class="gh-card-date" datetime="2026-08-20">Aug 20, 2026</time>
+                <!--
+         --></footer>
+        </div>
+    </a>
+</article>                    </div>
+                </div>
+            </section>
+
+    
+    <footer class="gh-footer gh-outer">
+    <div class="gh-footer-inner gh-inner">
+
+        <div class="gh-footer-bar">
+            <span class="gh-footer-logo is-title">
+                    <img src="https://storage.ghost.io/c/68/76/6876f0af-8955-4de4-a637-a5e7cc399136/content/images/2025/10/mozilla.ai_black-1.png" alt="Mozilla.ai">
+            </span>
+            <nav class="gh-footer-menu">
+                <ul class="nav">
+    <li class="nav-mozilla-ai"><a href="https://www.mozilla.ai/">Mozilla.ai</a></li>
+    <li class="nav-blog"><a href="https://blog.mozilla.ai/">Blog</a></li>
+</ul>
+
+            </nav>
+            <div class="gh-footer-copyright">
+                Powered by <a href="https://ghost.org/" target="_blank" rel="noopener">Ghost</a>
+            </div>
+        </div>
+
+                <section class="gh-footer-signup">
+                    <h2 class="gh-footer-signup-header is-title">
+                        Mozilla.ai&#x27;s Blog
+                    </h2>
+                    <p class="gh-footer-signup-subhead is-body">
+                        Subscribe to get the latest news and ideas from our team
+                    </p>
+                    <a class="gh-button" href="#/portal/signup" data-portal="signup">Subscribe</a>
+                </section>
+
+    </div>
+</footer>    
+</div>
+
+    <div class="pswp" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="pswp__bg"></div>
+
+    <div class="pswp__scroll-wrap">
+        <div class="pswp__container">
+            <div class="pswp__item"></div>
+            <div class="pswp__item"></div>
+            <div class="pswp__item"></div>
+        </div>
+
+        <div class="pswp__ui pswp__ui--hidden">
+            <div class="pswp__top-bar">
+                <div class="pswp__counter"></div>
+
+                <button class="pswp__button pswp__button--close" title="Close (Esc)"></button>
+                <button class="pswp__button pswp__button--share" title="Share"></button>
+                <button class="pswp__button pswp__button--fs" title="Toggle fullscreen"></button>
+                <button class="pswp__button pswp__button--zoom" title="Zoom in/out"></button>
+
+                <div class="pswp__preloader">
+                    <div class="pswp__preloader__icn">
+                        <div class="pswp__preloader__cut">
+                            <div class="pswp__preloader__donut"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="pswp__share-modal pswp__share-modal--hidden pswp__single-tap">
+                <div class="pswp__share-tooltip"></div>
+            </div>
+
+            <button class="pswp__button pswp__button--arrow--left" title="Previous (arrow left)"></button>
+            <button class="pswp__button pswp__button--arrow--right" title="Next (arrow right)"></button>
+
+            <div class="pswp__caption">
+                <div class="pswp__caption__center"></div>
+            </div>
+        </div>
+    </div>
+</div>
+<script src="https://blog.mozilla.ai/assets/built/source.js?v=O86vpTJppMBcH1np"></script>
+
+<script>
+// === WHO IS MOZILLA.AI SECTION ===
+window.addEventListener('load', function() {
+    if (!document.body.classList.contains('post-template')) return;
+    
+    const tagsWrapper = document.querySelector('.article-tags-wrapper');
+    const content = document.querySelector('.gh-content');
+    const insertBeforeEl = tagsWrapper || (content ? content.nextSibling : null);
+    
+    if (!insertBeforeEl || !insertBeforeEl.parentNode) return;
+    
+    const mozillaSection = document.createElement('div');
+    mozillaSection.className = 'mozilla-ai-wrapper';
+    mozillaSection.innerHTML = `
+        <div class="mozilla-ai-container">
+            <h3 class="mozilla-ai-title">WHO IS MOZILLA.AI?</h3>
+            <div class="mozilla-ai-divider"></div>
+            <p class="mozilla-ai-text">Mozilla.ai is a public benefit startup and wholly-owned subsidiary of Mozilla.org, operating with its own independent team. Our work focuses on AI technologies built around agency, access, and transparency. We share the Mozilla name and values, but we're a separate organization from Firefox, Thunderbird, and other Mozilla products.</p>
+            <p class="mozilla-ai-text">Curious about the Mozilla family? <a href="https://foundation.mozilla.org" target="_blank" rel="noopener">Mozilla Foundation</a> · <a href="https://www.mozilla.org" target="_blank" rel="noopener">Mozilla Corporation</a> · <a href="https://mozilla.vc" target="_blank" rel="noopener">Mozilla Ventures</a> · <a href="https://mozilladatacollective.com/" target="_blank" rel="noopener">Mozilla Data Collective</a> · <a href="https://www.mozilla.org/firefox/" target="_blank" rel="noopener">Firefox</a> · <a href="https://www.thunderbird.net" target="_blank" rel="noopener">Thunderbird</a></p>
+        </div>`;
+    
+    insertBeforeEl.parentNode.insertBefore(mozillaSection, insertBeforeEl);
+});
+</script>
+
+<style>
+/* Mozilla.ai section */
+.mozilla-ai-wrapper{margin:60px auto 0;max-width:720px}
+.mozilla-ai-container{background:#f5f5f5;border-radius:8px;padding:32px}
+.mozilla-ai-title{margin:0 0 16px;font-size:1.1rem;font-weight:500;color:#6b7280;letter-spacing:0.5px}
+.mozilla-ai-divider{height:1px;background:#d1d5db;margin:0 0 20px}
+.mozilla-ai-text{margin:0 0 16px;line-height:1.6;color:#15212A;font-size:1.3rem}
+.mozilla-ai-text:last-child{margin-bottom:0}
+.mozilla-ai-text a{color:#15212A;text-decoration:underline}
+.mozilla-ai-text a:hover{opacity:0.7}
+
+@media(max-width:600px){
+    .mozilla-ai-container{padding:24px 20px}
+    .mozilla-ai-wrapper{margin:30px 20px 0}
+}
+</style>
+
+<script>
+// === POST PAGE FEATURES (Back to articles, Tags, Author bios) ===
+document.addEventListener('DOMContentLoaded', function() {
+    if (!document.body.classList.contains('post-template')) return;
+    
+    const article = document.querySelector('.gh-article');
+    const content = document.querySelector('.gh-content');
+    
+    // Back to articles link
+    if (article) {
+        article.parentNode.insertBefore(
+            Object.assign(document.createElement('div'), {
+                className: 'back-to-articles',
+                innerHTML: '<a href="/">← Back to articles</a>'
+            }), article
+        );
+    }
+    
+    // Tags section
+    if (content) {
+        const tagLink = document.querySelector('.gh-article-tag');
+        if (tagLink) {
+            const tagsWrapper = document.createElement('div');
+            tagsWrapper.className = 'article-tags-wrapper';
+            tagsWrapper.innerHTML = `
+                <h3 class="article-tags-title">Tags</h3>
+                <div class="article-tags">
+                    <a href="${tagLink.href}" class="article-tag">${tagLink.textContent}</a>
+                </div>`;
+            content.parentNode.insertBefore(tagsWrapper, content.nextSibling);
+        }
+    }
+    
+    // Author bio section
+    const authorMeta = document.querySelector('.gh-article-meta');
+    const authorLinks = authorMeta?.querySelectorAll('.gh-article-author-image a');
+    
+    if (content && authorLinks && authorLinks.length > 0) {
+        const wrapper = document.createElement('div');
+        wrapper.className = 'author-bio-wrapper';
+        wrapper.innerHTML = '<h3 class="author-bio-title">Written by</h3><div class="author-bio-container"></div>';
+        
+        const tagsWrapper = document.querySelector('.article-tags-wrapper');
+        const insertAfter = tagsWrapper || content;
+        insertAfter.parentNode.insertBefore(wrapper, insertAfter.nextSibling);
+        
+        const bioContainer = wrapper.querySelector('.author-bio-container');
+        
+        authorLinks.forEach(link => {
+            fetch(link.href)
+                .then(r => r.text())
+                .then(html => {
+                    const doc = new DOMParser().parseFromString(html, 'text/html');
+                    const bioEl = doc.querySelector('.gh-article-excerpt');
+                    const nameEl = doc.querySelector('.gh-article-title');
+                    const img = link.querySelector('img, svg');
+                    
+                    if (nameEl) {
+                        const authorCard = document.createElement('div');
+                        authorCard.className = 'author-card';
+                        authorCard.innerHTML = `
+                            <div class="author-card-wrap">
+                                <a href="${link.href}" class="author-card-img">${img ? img.outerHTML : ''}</a>
+                                <div class="author-card-info">
+                                    <h4><a href="${link.href}">${nameEl.textContent}</a></h4>
+                                    ${bioEl && bioEl.textContent.trim() ? `<p>${bioEl.textContent.trim()}</p>` : ''}
+                                </div>
+                            </div>`;
+                        bioContainer.appendChild(authorCard);
+                    }
+                })
+                .catch(() => {});
+        });
+    }
+});
+
+// === FOOTER TAGS (All pages) ===
+document.addEventListener('DOMContentLoaded', function() {
+    const footer = document.querySelector('.gh-footer-inner');
+    if (!footer) return;
+    
+    const tags = [
+        { name: 'Technical Content', slug: 'technical-content' },
+        { name: 'Product Release', slug: 'product-release' },
+        { name: 'Expert Opinion', slug: 'expert-opinion' },
+        { name: 'Industry Trends', slug: 'industry-trends' },
+        { name: 'Announcement', slug: 'announcements' }
+    ];
+    
+    const tagsSection = document.createElement('div');
+    tagsSection.className = 'footer-tags-section';
+    tagsSection.innerHTML = `
+        <h4 class="footer-tags-title">Topics</h4>
+        <div class="footer-tags-list">
+            ${tags.map(tag => `<a href="/tag/${tag.slug}/" class="footer-tag">${tag.name}</a>`).join('')}
+        </div>`;
+    
+    footer.insertBefore(tagsSection, footer.firstChild);
+});
+</script>
+
+<style>
+/* Back to articles */
+.back-to-articles{max-width:1200px;margin:0 auto;padding:20px}
+.back-to-articles a{color:var(--color-primary-text);text-decoration:none;font-size:1.6rem}
+.back-to-articles a:hover{color:var(--color-secondary-text)}
+
+/* Article tags */
+.article-tags-wrapper{margin:60px auto 0;max-width:720px}
+.article-tags-title{margin:0 0 16px;font-size:1.6rem;font-weight:600;color:#15212A}
+.article-tags{display:flex;flex-wrap:wrap;gap:10px}
+.article-tag{display:inline-block;padding:8px 16px;background:#f0f0f0;border-radius:20px;color:#15212A;text-decoration:none;font-size:1rem;transition:background 0.2s}
+.article-tag:hover{background:#e0e0e0}
+
+/* Author bio */
+.author-bio-wrapper{margin:40px auto 40px;max-width:720px}
+.author-bio-title{margin:0 0 16px;font-size:1.6rem;font-weight:600;color:#15212A}
+.author-bio-container{background:#f9f9f9;border-radius:8px;border-left:4px solid #000;padding:32px}
+.author-card{padding-bottom:32px;margin-bottom:32px;border-bottom:1px solid #e0e0e0}
+.author-card:last-child{padding-bottom:0;margin-bottom:0;border-bottom:0}
+.author-card-wrap{display:flex;gap:18px;align-items:flex-start}
+.author-card-img{flex-shrink:0}
+.author-card img,.author-card svg{width:60px;height:60px;border-radius:50%;object-fit:cover}
+.author-card-info{flex:1}
+.author-card h4{margin:0 0 8px;font-size:1.4rem;font-weight:600}
+.author-card h4 a{color:#15212A;text-decoration:none}
+.author-card h4 a:hover{opacity:.8}
+.author-card p{margin:0;line-height:1.6;color:#3A464C;font-size:1.2rem}
+
+/* Footer styling */
+.gh-footer{background:#000!important;color:#fff!important}
+.gh-footer a:not(.gh-button),.gh-footer .gh-footer-logo,.gh-footer .gh-footer-menu,.gh-footer .gh-footer-copyright,.gh-footer .gh-footer-signup-header,.gh-footer .gh-footer-signup-subhead{color:#fff!important}
+.gh-footer .gh-footer-bar{border-color:rgba(255,255,255,.15)!important}
+.gh-footer .gh-button{background:#fff!important;color:#000!important}
+.gh-footer .gh-button:hover{background:#e0e0e0!important}
+
+/* Footer tags - MORE PROMINENT */
+.footer-tags-section{padding:40px 0;margin-bottom:30px;text-align:center}
+.footer-tags-title{color:#fff!important;font-size:1.6rem;margin:0 0 24px;font-weight:700;text-transform:uppercase;letter-spacing:1px}
+.footer-tags-list{display:flex;flex-wrap:wrap;gap:14px;justify-content:center}
+.footer-tag{display:inline-block;padding:12px 24px;background:rgba(255,255,255,0.15);border-radius:25px;color:#fff!important;text-decoration:none;font-size:1.1rem;font-weight:500;transition:all 0.2s}
+.footer-tag:hover{background:rgba(255,255,255,0.25);transform:translateY(-2px)}
+
+/* Mobile responsive */
+@media(max-width:600px){
+    .author-bio-container{padding:24px 20px}
+    .author-bio-wrapper{margin:30px 20px}
+    .article-tags-wrapper{margin:40px 20px 0}
+    .author-card-wrap{flex-direction:column;align-items:center;text-align:center}
+    .author-card img,.author-card svg{width:55px;height:55px}
+    .footer-tag{padding:10px 18px;font-size:1rem}
+}
+</style>
+
+</body>
+</html>

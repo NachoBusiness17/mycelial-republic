@@ -1,0 +1,131 @@
+THREAD 1wkyny9 (35 entries incl OP)
+
+--- [/u/peonist-ai]
+Hi.
+ I saw some feedback that halogen was degrading at context depth. So I fixed that.
+ Served through the image, same machine, same session, same prompts, 0.11.10 vs 0.12.0:
+ decode at 1,004,581 tokens of context: 27.3 to 38.3 tok/s (default speculative drafter)
+ decode at 258,794: 42.9 to 45.0 
+ prefill at 1,004,581: 790 to 937 tok/s , 21.2 to 17.9 minutes cold
+ prefill at 258,794: 1,086 to 1,114 tok/s 
+ 
+ Conditions: Ryzen AI Max+ 395, 128 GB. The 262k and 1M rows are one cold request each at the 1M configuration ( HALOGEN_ROPE_YARN=4 HALOGEN_CTX=1048576 ), greedy, 64 tokens, the rates the response's `timings` report. The 32k row is the standard ten-prompt served mean and did not change. A follow-up turn over the prompt cache at 1M reaches its first token in about 0.55 s; the numbers above are the cold path.
+ To run it at 1M: add -e HALOGEN_ROPE_YARN=4 -e HALOGEN_CTX=1048576 to the README's podman line; it needs the 128 GB box. Release notes and the full table: 
+ https://github.com/peonist-ai/halogen-flash-server 
+ If you have a 1M sweep of your own, I would like to see it rerun on 0.12.0.
+ Thanks for all your support, especially https://huggingface.co/nightvich 
+ submitted by /u/peonist-ai to r/LocalLLaMA 
+ [link] [comments]
+
+--- [/u/BurdensomeCountV3]
+Very useful thx, just needs to be opensourced to be truly excellent.
+
+--- [/u/my_name_isnt_clever]
+It needs to be open sourced to be truly usable...
+
+--- [/u/SmartCustard9944]
+Personal choice. Already very usable like this for me personally. +1 on open sourcing it
+
+--- [/u/SpicyWangz]
+Bro is literally killing his marketability by staying closed source. People would be singing your praises if it was already open. 
+ Instead the project feels like limbo the whole time and makes big wins feel a lot harder to celebrate.
+
+--- [/u/Elouakili_Flexy]
+38 tok/s at a million tokens of context on an APU. A cached follow-up answers in 0.55s like the 18 minute prefill never happened.
+
+--- [/u/laraibak]
+@peonist-ai
+ Thank you for taking the time to continue to improve this. This has become my current daily driver on my StrixHalo box. 
+ Regarding everyone else's repeated comments about open sourcing this - my opinion is that you should provide a fixed timeline on when (or if) that is going to happen at all. Even just something like "Jan 2027”.
+ Also I completely understand if you are not going to open source this and instead want to continue to keep it closed source - but I think that intent needs to be made clear, so that people can decide for themselves what inference engine they are going to continue to use and support. 
+ Just my 2 cents. Cheers.
+
+--- [/u/peonist-ai]
+I agree with you and owe the community an update. I've been extremely focused on supporting users and fixing issues.
+
+--- [/u/RevolutionaryPick241]
+Source wen?
+
+--- [/u/Fit-Produce420]
+Don't tell me this jabroni is going to try to monetize the thing he built to run FREE models. 
+ Because that would be cunty.
+
+--- [/u/nubela]
+I'm really supportive of this project but you know progress will go a lot faster if you open source it right? Everyone's asking for you to open source it.
+
+--- [/u/Fit-Produce420]
+Opensource?
+
+--- [/u/reality_comes]
+Is the never ending github not the recipe?
+
+--- [/u/No-Fuel-9202]
+Opensource, when? You promised - soon...
+
+--- [/u/runnystool]
+LOL dude it's been a week
+
+--- [/u/llama-impersonator]
+we don't need a new ollama, peddle your closed shit elsewhere
+
+--- [/u/NewspaperFirst]
+word.
+
+--- [/u/colbyshores]
+The entitlement on this thread.
+
+--- [/u/checkup21]
+A new account, putting the documentation of a closed source project on github, a new file-format. 
+ People are careful.
+
+--- [/u/colbyshores]
+That's fair, and I think the practical mitigation is isolation. Don’t run the Podman container under the same user as LiteLLM, keep the API keys readable only by the LiteLLM service account, restrict outbound access, and ideally treat the Strix Halo as a standalone appliance. Closed source is still a legitimate concern, but you also have to look at the rest of the stack. A lot of boutique coding harnesses, plugins, and agent tooling introduce their own supply-chain risk while having direct access to source code, repositories, credentials, and developer environments, which can be a substantially larger attack surface.
+
+--- [/u/t3r00t]
+You're confusing containerization with actual isolation. Granting access to /dev/kfd is like building a bank and leaving the vault wide open... everything else is security theater.
+
+--- [/u/geldonyetich]
+To give a frame of reference as to the difference of these great results, I've got the same chip and ram, here's how to do it the wrong way if you're no data scientist like me.
+ I was just running this model a few minutes a go at Q4_K_M out of box in LM Studio after fussing with the settings. I was surprised it loaded since LM Studio thought it wouldn't. Decode of ~16.5 tok/sec, which is not bad considering it wasn't fully GPU offloaded.
+ Windows sometimes like to crash when it's working hard and the screen is slept and I try to wake it up.
+ Now LM Studio refuses to load it no matter how much I fuss with the GPU offload and I have no idea why. Flippin LM Studio. Flippin Windows.
+
+--- [/u/I-will-allow-it]
+Looks good, I need to set this up. This model eats up my token budget thinking so extending it out will really help.
+
+--- [/u/TheFlippedTurtle]
+Nice work. Wild that one person got Strix Halo to do this and most of the responses are to complain that he hasn’t also given away the recipe
+
+--- [/u/my_name_isnt_clever]
+Everything we're doing in this subreddit is built on the shoulders of open source software.
+
+--- [/u/TheFlippedTurtle]
+Agreed. And we can appreciate open source and appreciate someone’s work before they release the source. It's his project
+
+--- [/u/my_name_isnt_clever]
+Why would I appreciate something I can't trust? He can do what he wants, but I'm less than interested if it's closed source. If I was willing to trust a closed source inference engine I might as well use an API with ZDR.
+
+--- [/u/TheFlippedTurtle]
+The performance this is generating is unlike anything else on strix halo. Thats what I appreciate. If he takes time to open it up, so be it but its moving the platform significantly forward
+
+--- [/u/my_name_isnt_clever]
+No, open sourcing this would move the platform forward.
+
+--- [/u/audioen]
+I think the information what is being done is out there, it is spelled below and probably most good LLMs can work out how to do it. pwilkin's fork is not that far behind in terms of perf, though I do not think it is quite as good. But still, it is open source, and he's working on pushing the stuff into llama.cpp at the rate upstream is capable of reviewing and whatever is acceptable. I am getting ~1000 tok/s on Strix Halo and some good 30-40 tok/s generation which is perfectly acceptable with his fork, and I've shrunk the batch buffers to minimum, like 512 tokens, which probably increases all sorts of ROCm related overhead.
+
+--- [/u/ilintar]
+Yeah, I could push my fork more, but I just assumed the obtained perf of around 1k prefill and 40 t/s decode is good enough and wanted to work on mainstreaming stuff. It's always a choice 😃 I'm currently finishing work on my harness to get some quality coding done without overreliance on Astra / Opus tokens.
+
+--- [/u/AIMasterChief]
+I use your fork with Deepseek Harness and it works pretty well. So in my opionion, push your fork further. Vision projection and even more pp/tps would be fine. 
+ BTW: Which batch size is good? I use 16384, but audioen says 512 is fine. I also experience a big variation in pp. Sometimes it's only 200 and in the same chat an other loop tops at more than 2000. Why?
+
+--- [/u/Open-Adhesiveness-86]
+speed numbers look good, but HALOGEN_ROPE_YARN=4 is static scaling as far as i can tell, so every short prompt hitting that same instance runs with stretched rope too and usually loses a bit of accuracy. a ruler or niah pass at 128k/512k/1M alongside the tok/s table would say a lot more about whether the depth degradation is actually fixed.
+
+--- [?]
+[deleted]
+
+--- [/u/Fit-Produce420]
+I like that I hate this so much. Wish it was opensource already.

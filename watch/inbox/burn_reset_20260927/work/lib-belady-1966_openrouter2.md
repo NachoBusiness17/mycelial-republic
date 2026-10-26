@@ -1,0 +1,16 @@
+# WORK lib-belady-1966
+
+lane: openrouter model: inclusionai/ling-3.0-flash-sante:free
+ts: 2026-09-29T15:07:53.359309+00:00
+finish: stop cached_tokens: 0
+ask: Find the canonical reference for Belady 1966 (the Belady anomaly / FIFO page-replacement study). Return: exact title, venue, year, and one verbatim quote of the anomaly claim with page if findable. If unreachable, say OWED with what you tried.
+
+---
+
+FINDING: Belady LA. A study of replacement algorithms for a virtual-storage computer. IBM Systems Journal. 1966;5(2):78-101. Verbatim quote with page: OWED.
+
+STEALABLE idea: FIFO page faults can rise when frames increase; size memory by testing multiple frame counts, not by assuming monotonic improvement.
+
+TESTABLE hypothesis: A FIFO pager will fault more with 4 frames than with 3 frames on a cyclic 4-page reference string.
+
+EVIDENCE or OWED: None exist for the quote. OWED for verbatim quote and page. Tried internal knowledge recall only; no external source accessed.

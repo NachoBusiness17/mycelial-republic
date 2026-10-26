@@ -1,0 +1,9 @@
+# garden-v1-B3-ds41flash (deepseek-chat @ deepseek, turn 1, channel: content)
+
+IMPROVEMENT 1: STOP check uses `[ -f "$STOP" ]` but STOP is set to `memory/runs/hermes_burn/DRIVER_STOP` and the driver runs `cd "$(dirname "$0")/.."` first, so a stale STOP from a prior run silently halts the new driver with no log line distinguishing "stopped by operator" from "stopped by leftover file". | EVIDENCE: scripts/descent_driver.sh:8-9 | FIX: On startup, if $STOP exists, log its mtime and content hash to $LOG before the loop, or rename STOP to DRIVER_STOP.armed with a token the runner must create.
+
+IMPROVEMENT 2: `pending_items.jsonl` is moved to `pending_last.jsonl` unconditionally after ds_workhorse runs, even if ds_workhorse exits nonzero, so a crashed run silently discards the queue and no retry occurs. | EVIDENCE: scripts/descent_driver.sh:19-23 | FIX: Capture exit code, only mv on success, else leave pending_items.jsonl in place and log the failure.
+
+IMPROVEMENT 3: The board asserts a "$145 stop" and "$113.66 unspent" but the driver has no budget check anywhere; the only halt condition is the STOP file, so the stated spend ceiling is prose, not enforcement. | EVIDENCE: watch/inbox/hermes_burn/WAVE24_BOARD.md:70, scripts/descent_driver.sh:10-24 | FIX: After each cycle, sum cost_usd from usage.jsonl and touch $STOP (plus a STOP.reason file naming the ceiling) when it crosses the limit.
+
+DIFFERENT-BUILD: I would make the driver a durable state machine driven by a queue manifest with per-item status (pending, running, done, failed) and crash-resume, instead of a while-loop over a directory glob plus a renamed jsonl. The current design cannot answer "what ran, what is left, what is retryable" from bytes alone, which is exactly the failure mode the board's own honesty section cannot close.

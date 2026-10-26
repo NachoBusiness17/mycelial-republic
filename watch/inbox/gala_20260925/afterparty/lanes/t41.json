@@ -1,0 +1,60 @@
+{
+  "gopher": "t41",
+  "item": "build tools/gen_worldgen_spheres.py emitting Worldgen.luau's 130 hand-folded spheres from corpus/df_mine/df_spheres.json, same pattern as tools/gen_artifact_lore.py (t26's next_steal)",
+  "ok": true,
+  "note": "Landed tools/gen_worldgen_spheres.py on the t26 house pattern: the 130 canonical sphere names in folded emission order live in the generator as the curated pool identity with provenance (order equals the mine's canonical order), while every name is joined from df_spheres.json (spheres key) at generate time; each key must appear exactly once in the mine or the generator dies. Probe found 130/130 grounded, 0 curated fallback constants needed. Splice wraps the SPHERES block in new BEGIN/END GENERATED markers (do-not-hand-edit header + regenerate command), CRLF preserved, byte-identical on rerun. Two splice defects hit and fixed on the way: (1) END marker glued onto Worldgen.SPHERES = SPHERES (nil export), independently caught mid-lane by t35 through ZoneGate.luau, which patched the tool to emit a trailing newline; (2) t41's conditional eol append then COMPOUNDED with t35's fix into +1 eol per rerun (sandbox census 2->3->4). Reconciled to one convention: region carries its own terminator, markers path consumes the one that follows END. Final production runs are from the restored pristine file (sha b936de7e verified). Verdicts: rerun byte-identical; structural diff pre vs post = exactly the 3 marker lines; entry-line sha256 ba98d831... identical pre/post (130 rows); EOL census +3 CRLF / 0 rewrites; luau_lint check() on Worldgen.luau NONE (clean), full tree = 3 pre-existing zones_extra findings untouched. mountain_check NOT run (shared). roblox/src/the_mountain.rbxlx embedded copy not rebuilt (gate owns rebuilds).",
+  "checks": [
+    {
+      "command": "pre-flight probe: Worldgen SPHERES (pristine copy) vs df_spheres.json -> 130/130 grounded, order identical, dupes 0, curated fallback 0",
+      "exit": 0,
+      "evidence": "watch/inbox/gala_20260925/afterparty/lanes/t41.check.txt [0]"
+    },
+    {
+      "command": ".venv/Scripts/python.exe tools/gen_worldgen_spheres.py (from pristine pre-change file, post splice reconciliation)",
+      "exit": 0,
+      "evidence": "watch/inbox/gala_20260925/afterparty/lanes/t41.check.txt [1]"
+    },
+    {
+      "command": "generator rerun -> 'already up to date (byte-identical rerun)'",
+      "exit": 0,
+      "evidence": "watch/inbox/gala_20260925/afterparty/lanes/t41.check.txt [2]"
+    },
+    {
+      "command": "diff pre-change vs post-generator (EOLs stripped) -> only the 3 GENERATED marker lines",
+      "exit": 1,
+      "note": "diff exit 1 IS the clean verdict: marker insertions only; 130 entries untouched",
+      "evidence": "watch/inbox/gala_20260925/afterparty/lanes/t41.check.txt [3]"
+    },
+    {
+      "command": "grep '^<TAB>\"' | sha256sum pre vs post -> ba98d831... == ba98d831... (130 lines byte-identical incl CRLF)",
+      "exit": 0,
+      "evidence": "watch/inbox/gala_20260925/afterparty/lanes/t41.check.txt [4]"
+    },
+    {
+      "command": "independent re-join of region rows vs df_spheres.json -> 130 rows, grounding problems NONE",
+      "exit": 0,
+      "evidence": "watch/inbox/gala_20260925/afterparty/lanes/t41.check.txt [5]"
+    },
+    {
+      "command": "EOL census pre vs working -> CRLF 256/259 (+3 marker lines), loneLF 0/0, loneCR 0/0",
+      "exit": 0,
+      "evidence": "watch/inbox/gala_20260925/afterparty/lanes/t41.check.txt [6]"
+    },
+    {
+      "command": "luau_lint check() on Worldgen.luau -> NONE (clean); luau-lsp absent from PATH",
+      "exit": 0,
+      "evidence": "watch/inbox/gala_20260925/afterparty/lanes/t41.check.txt [7] [7b]"
+    },
+    {
+      "command": "splice defect history: glue bug (t35 consumer catch + t41 [3] diff) and eol-compounding bug (sandbox census), both fixed with receipts in the tool source",
+      "exit": 0,
+      "evidence": "watch/inbox/gala_20260925/afterparty/lanes/t41.check.txt [10] [11]"
+    },
+    {
+      "command": "mountain_check: NOT run (shared gate, forbidden for this lane)",
+      "exit": null,
+      "evidence": "watch/inbox/gala_20260925/afterparty/lanes/t41.check.txt [9]"
+    }
+  ],
+  "next_steal": "the_mountain.rbxlx embedded copy still lags the working tree (t26 noted it first): a gate pass should rebuild it so the embedded ArtifactLore/Worldgen/RegionSpheres copies stop drifting; second pick: hand-edit tripwire so a do-not-hand-edit region touched by hand fails the ratchet gate instead of being silently regenerated."
+}

@@ -1,0 +1,57 @@
+t14b evidence - cooldown chip UI over ability buttons (roblox v1.1 row)
+estate: C:/Users/foste/Documents/projects/local_sovereign_agent
+date: 2026-09-25 (gala afterparty)
+
+FINDING (negative first): the cooldown chip UI ALREADY EXISTS.
+  Commit dfcda53cc "mountain/v1.1-client: polish without the PC ..." dated
+  2026-09-25 09:40 landed it pre-afterparty, same commit as t14a's FOV kick
+  (verified: git log -S "cooldown chips" -- roblox/src/client/init.client.luau
+  = dfcda53cc only). queue/todo.md rows 185 and 206 were never ticked.
+  t14a's lane files were on disk before I started, so no double-bank.
+
+PATTERN AGREEMENT with t14a (same client structure):
+  One client script, roblox/src/client/init.client.luau. Attribute-driven
+  listeners via player:GetAttributeChangedSignal, zero new remotes, effects
+  client-side only, gui.ResetOnSpawn = false to survive respawns. The chips
+  (lines 28-70) and the dash FOV kick (lines 72-89, t14a's delta) share this
+  shape, so the two items agree by construction.
+
+WIRING (verified by read):
+  server clock start: roblox/src/server/AbilitySlots.luau:47
+      player:SetAttribute(ab.attribute, true)
+    set only after the Carrying lockout (39-41) and the cooldown gate (44,
+    "server owns the cooldown clock"); false flip at 48-52 ends the window.
+  client clock read: init.client.luau:49-55
+      player:GetAttributeChangedSignal(ab.attribute):Connect(...)
+    records last = os.clock() on the true flip only (51-53).
+  render loop: init.client.luau:58-70
+      remain = c.ab.cd - (now - c.last); shows "%.1f" + dim (TextTransparency
+      0.4) while remain > 0, else key + name, full opacity.
+  cd tables agree: client lines 22-25 (0.25 / 10 / 8 / 20) mirror server
+  REGISTRY lines 20-23 exactly.
+
+NEGATIVES (checked, first-class):
+  - no literal ability buttons exist: grep TextButton|ImageButton|ContextAction
+    Service over roblox/src = 0 hits. The chips cluster IS the button stand-in
+    (key + name label, countdown replaces name while cooling). Nothing to
+    overlay onto.
+  - no missing attribute: server Abil_* set is complete and consumed by zones
+    (SwarmZone, FrontierSoulsZone, ArrakisZone, TheAnswerBoss, ToyBoxZone).
+    Zero server edits made.
+  - replication delay only LENGTHENS the client countdown (clock starts when
+    the client sees the flip), the safe direction; never shows ready while the
+    server still blocks. Not a defect.
+  - respawn-safe: ScreenGui ResetOnSpawn = false (line 31), watcher hangs on
+    player not character, initial last = -math.huge shows ready state.
+
+DELTA by t14b: NONE. No genuine defect found in the chip block, so no edit
+  was made; a cosmetic diff would be fabrication. Before/after therefore =
+  as-found lines cited above (HEAD dfcda53cc content, byte-identical to the
+  working tree: git diff on this file shows only t14a's FOV fix).
+
+VERIFICATION: read-back of init.client.luau (144 lines), AbilitySlots.luau
+  (66 lines), git log -S, git diff. luau-lsp NOT INSTALLED on this box
+  (exit 127), same as t14a reported. mountain_check NOT run (shared,
+  forbidden by the item). todo.md left UNTICKED by me: rows 185/206 bundle
+  three slices, the mobile ContextActionService slice is still open, and
+  concurrent edits to the shared todo risk clobbering sibling gophers.

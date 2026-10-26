@@ -1,0 +1,58 @@
+# 6-7 NUMEROLOGY CHECK (lane: numerology-6-7, division B, gala hitler-dig)
+
+date: 2026-10-03
+ask: the operator noticed 6 and 7 recurring across the estate's work. Dig (1) traditions that assign significance to 6 and 7, (2) cognitive science on pattern-matching small numbers, (3) audit the estate's OWN data for 6-7 in leaf counts, session counts, test counts, (4) honest verdict: signal, noise, or unprovable-but-fun.
+instrument: `watch/inbox/gala_20260925/hitler-dig/lanes/numerology-6-7.audit.py`, raw output `watch/inbox/gala_20260925/hitler-dig/lanes/numerology-6-7.audit.out.txt` (exit 0)
+
+## 1. The traditions (what actually assigns significance to 6 and 7)
+
+**Pythagorean (byte-anchored in the estate's own corpus).** Manly P. Hall, The Secret Teachings of All Ages (`memory/corpus/ractors/hall_mp/texts/secret_teachings_of_all_ages.txt`):
+- 6 is the first perfect number: "There is only one between 1 and 10, namely, 6" (line 9326); produced as 1+2+3 (lines 9332-9335).
+- The hexad is "the symbol of marriage, because it is formed by the union of two triangles" (lines 9523-9527) and carries the keyword "panacea, because health is equilibrium, and the hexad is a balance number" (line 9528).
+- The heptad was "called 'worthy of veneration.'" (line 9532-9533), "the number of religion" (line 9533), with keywords "fortune, occasion, custody, control, government, judgment" (line 9537).
+- The best one for an estate of receipts: "the cube, which has six surfaces and a mysterious seventh point within" (lines 9553-9554). Six directions plus the center that measures them: the watcher standing inside the box.
+
+**Kabbalah (byte-anchored + a verified estate receipt).** S.L. MacGregor Mathers, The Kabbalah Unveiled (`mathers_ku.txt` line 6605): "the seven duplex letters, BGDKPRTh", the seven double letters of the Hebrew alphabet. Hall line 7179: the letters "fall naturally into three classes of a Trio of Mothers, a Heptad of doubles, and a duodecad of simple letters", the Sepher Yetzirah 3-7-12. The estate already mined this seam: `watch/inbox/burn_reset_20260927/work/w-kabbalah-epistemics_hermes.md` (2026-09-30, verified by `w-kabbalah-epistemics_verify.md`, verdict DONE) records 10 sefirot + 22 letters = 32 paths, and C(22,2) = 231 gates of pairwise combination. Web-verified for the ask: Tiferet ("Beauty", compassion) is the sixth sefirah, the center of the tree; the seven lower sefirot (Chesed, Gevurah, Tiferet, Netzach, Hod, Yesod, Malchut) map one to each day of the week, with Shabbat = Malchut receiving the light of the six working days (sources: sefaria.org "Beginning of Wisdom", mayimachronim.com, galeinai.org.il).
+
+**Biblical (web-verified).** Seven = completeness/perfection: the seven Spirits before the throne (Revelation 1:4, 3:1, 4:5, 5:6), and Revelation's saturation of sevens (churches, seals, trumpets, bowls). Six = the number of man, created on the sixth day (Genesis 1:26-31), one short of divine completion; 666 is "the number of a man" (Revelation 13:18); six days of labor answered by seventh-day rest (sources: taylorbiblestudy.com, godsverse.org, and the summaries returned by this session's web search).
+
+**Islamic (web-verified, with a stated caveat).** Seven heavens "in layers", named in several suras including Al-Mulk, which is sura 67 (Quran 2:29, 17:44, 23:86, 41:12, 67:3); tawaf circles the Kaaba seven times; six articles of faith (imam, angels, books, messengers, Last Day, decree); creation "in six days" (7:54, 11:7, 25:59, 32:4). Caveat, stated honestly: this session's web search tool content-filtered some religion queries, so the Quran verse numbers above come via the search tool's returned summary (partly its general knowledge), not from a direct fetch of the text. The estate corpus holds no Quran text: `rg -l "seven heavens" corpus memory/corpus` returns only secondhand Gnostic/theosophical quotations, e.g. `memory/corpus/ractors/esoterica/texts/pg75871.txt:8195` "who created the seven heavens."
+
+So: yes, the traditions are real and convergent. Six = the human, the material, the balanced whole of parts; seven = the veneration number, the completion, the center-plus-six. That convergence is 2,500 years old and it is exactly why a human ear is primed to hear 6-7 as meaningful.
+
+## 2. The cognitive science (why the ear hears a pattern)
+
+- **Apophenia**: coined by Klaus Conrad (1958, "Die beginnende Schizophrenie"), the unmotivated perception of meaningful connections in random data; pareidolia is its perceptual subtype. Verified via this session's web search (Wikipedia-derived summaries, artandpopularculture.com, psychologyconcepts.com).
+- **Law of small numbers**: Tversky & Kahneman 1971, "Belief in the Law of Small Numbers", Psychological Bulletin 76(2):105-110 (verified this session). People, including scientists, treat small samples as if they were self-representing. Fourteen census numbers ending in 6 or 7 four times is exactly the sample size this paper warns about.
+- **Birthday paradox**: computed in this session, not cited: P(shared birthday among 23 people) = 0.5073 (python: product of (365-k)/365 for k in 0..22). Same arithmetic drives the estate: with K counts whose last digits are roughly uniform, P(at least one ends in 6 or 7) = 1 - 0.8^K: 89.3 percent at K=10, 98.9 percent at K=20, effectively certain at the estate's K=379 multi-digit structured values (audit output, section C).
+- **Frequency illusion (the meme priming)**: "6-7" is not a neutral pair right now. It traces to Skrilla's drill track "Doot Doot (6 7)" (released December 2024), went viral on TikTok, got welded to LaMelo Ball (who is 6'7"), and Dictionary.com named "6-7" its 2025 Word of the Year in late October 2025 (verified via this session's web search: Dictionary.com announcement coverage, Yahoo/USA Today, AOL). An operator swimming in 2025-26 culture has the pair pre-loaded; noticing it everywhere afterward is the illusion doing its job, and no estate anomaly is required.
+
+## 3. The estate's own data (the audit, exit 0)
+
+Instrument: `watch/inbox/gala_20260925/hitler-dig/lanes/numerology-6-7.audit.py` run with `.venv/Scripts/python.exe`, raw output in `numerology-6-7.audit.out.txt`. All numbers below are from that run.
+
+**A. Test-census claims in AGENTS.md.** 14 numbers extracted from the census grammar (`<N> tests` plus patrol "read N / M" pairs): 4 of 14 end in 6 or 7 (4156, 4197, 497, 3217) = 28.6 percent vs 20 percent expected under uniform last digits. Binomial tail computed this session: P(4 or more of 14 at p=0.2) = 0.3018. NOT significant. Fourteen samples is the Tversky-Kahneman trap in miniature.
+
+**B. Live leaf/session/ledger counts, measured this run.** catalog.jsonl 917,885 rows; tags.jsonl 917,885; junctions.jsonl 381; workflows REGISTRY 60; 12 queue lanes; 109 intake session dirs under watch/inbox; 51 ribs; 4,588 receipt .md files (tree live, count moves); lane trail rows: research 3182, day_work 2212, builder 1543, night 51, economist 43, elder 36, harvest 31, forge 30, prose 29, bard_ledger 78, android_surface 12, jev 6. Of those 20 named counts exactly ONE ends in 6 or 7 (jev = 6) = 5 percent. The estate's live counts today UNDER-represent 6-7 endings.
+
+**C. Structured state integers.** 1,491 small integers parsed from 10 bounded state files (warm_state, REGISTRY, invariants, corpus_index, both rollup/last_run pairs, FLOW_LEDGER, burns LEDGER); 938 of them are the value 1 (flags, versions, statuses), which is why the value histogram is useless raw. The principled cut: 379 multi-digit values (>=10), terminal-digit histogram: 0:29, 1:21, 2:56, 3:48, 4:61, 5:40, 6:33, 7:31, 8:25, 9:35. Digit 6 (8.7 percent) and digit 7 (8.2 percent) are the third and fourth RAREST terminal digits in the estate's own state. The overall distribution is genuinely non-uniform (chi-square 41.66, df=9, vs the standard p=0.05 critical value 16.919), but the excess sits on digits 2/3/4 (status codes and version numbers), not on 6/7. The value 67 appears 6 times raw out of 1,491.
+
+**D. Prose mentions.** 4,639 .md files scanned (watch/inbox + memory/rib). "67" appears 576 times, 10th among the twelve most-mentioned 6x/7x numbers (60 leads with 1,528; 72 and 61 trail 67). The literal pair 6-7 (either separator) appears 70 times, fewer than 7-7 (182), 5-5 (160), 6-6 (137), 4-4 (114), and 5-6 (75). Doubled pairs dominate prose because receipt ids, ranges, and B2 numbers love repeats. Sampled the 6-7 hits directly: they are citation and line ranges (state.py:6-7, section 6-7 refs, latency ranges), 35 files carrying them, not pattern commentary.
+
+**E. The birthday-paradox line for the estate.** P(at least one of K uniform-terminal-digit counts ends in 6 or 7) = 0.8926 at K=10, 0.9885 at K=20, 1.0000 at K=379. An estate with this many published counts is mathematically guaranteed to show 6-7 somewhere, every day, forever.
+
+## 4. The honest verdict
+
+**Noise, measured.** Three of the four surfaces show 6-7 at or BELOW chance (census 28.6 percent, p=0.30, not significant; live counts 5 percent; terminal digits 6 and 7 third-and-fourth rarest; prose 67 mid-pack and the literal pair beaten by doubled pairs), and the one surface that looks elevated (census 4/14) has a p-value of 0.30 with n=14. The mechanism that produces the operator's experience is fully named without any mysticism: birthday-paradox arithmetic over ~400 published counts (some surface ALWAYS shows 6-7) plus 2025-26 meme priming (Dictionary.com's Word of the Year put the pair in everyone's ear) plus apophenia, the 1958-named module in human cognition that finds faces in clouds and omens in ledgers.
+
+**Unprovable-but-fun, admitted.** No audit can disprove a meaning claim; it can only show the mechanism is unnecessary. And there is one genuinely pretty resonance the dig surfaced without needing it: the Pythagorean cube has six surfaces and a seventh point within, the center that measures the six directions, which is a fair portrait of this estate: receipts in six lanes around the seat that watches them. The difference between that and numerology is that we got there by reading our own bytes AFTER the audit said noise, not before. When you want the pattern you can always find it; the audit exists to run first.
+
+If the operator ever wants to test a number again: the pattern to beat is section C's terminal-digit histogram, and the bar is significance, not vibes.
+
+## Sources
+
+Estate bytes: `memory/corpus/ractors/hall_mp/texts/secret_teachings_of_all_ages.txt` (lines 7179-7180, 9326-9343, 9516-9561); `mathers_ku.txt` (line 6605); `memory/corpus/ractors/esoterica/texts/pg75871.txt` (line 8195); `watch/inbox/burn_reset_20260927/work/w-kabbalah-epistemics_hermes.md` + `w-kabbalah-epistemics_verify.md`; `AGENTS.md` (census bullet).
+
+Web (this session): Dictionary.com "6-7" Word of the Year 2025 announcement coverage (dictionary.com via Yahoo/USA Today/AOL summaries); Klaus Conrad apophenia 1958 (en.wikipedia.org summary via scribd/artandpopularculture.com/psychologyconcepts.com); Tversky & Kahneman, "Belief in the Law of Small Numbers", Psychological Bulletin 76(2):105-110, 1971 (sciencedirect.com citation record); sefaria.org "The Beginning of Wisdom" (seven lower sefirot), mayimachronim.com (sefirot-week mapping), galeinai.org.il (Tiferet); taylorbiblestudy.com + godsverse.org (biblical sevens, 666, sixth-day man); salafipublications.com (six articles of faith) via search summaries; search-tool content filter blocked some religion queries and the tool supplemented from general knowledge, noted above.
+
+Computed this session (python, commands in the check file): birthday paradox 23 people = 0.5073; binomial tail P(X>=4 | n=14, p=0.2) = 0.3018; audit statistics in section 3.

@@ -1,0 +1,12 @@
+{
+ "author": "GapNew4766",
+ "created_utc": 1790645284,
+ "id": "1wswxn2",
+ "link_flair_text": "Project",
+ "num_comments": 43,
+ "score": 145,
+ "selftext": "We wanted to know if a local 27B can do the heavy lifting in an agent if something smarter does the planning. So we ran the same build three ways and wrote down everything.\n\nHardware and setup: Qwen 3.8 27B UD-Q4\\_K\\_XL, single RTX 3090 24 GB, llama.cpp built with CUDA, 2 parallel slots, 64K context, turbo3 KV cache. Cloud side was Sonnet 5.5 via OpenRouter. One-line prompt, five physics scenes on one page (falling tower, balls in a box, wrecking ball, seesaw, bounce test), one autonomous run each, no human fixes.\n\n|Setup|Scenes right|Time|Cloud cost|\n|:-|:-|:-|:-|\n|Qwen 3.8 27B alone|1/5|26 min|$0|\n|Sonnet 5.5 plans, Qwen writes the code|2/5|85 min|$0.67|\n|Qwen plans, Sonnet 5.5 writes the code|4/5|14 min|\\~$2.77|\n|Sonnet 5.5 alone|4/5|9 min|$1.83|\n\nThings that surprised us\n\n* Qwen is a much better planner than coder. As the planner it matched Sonnet 5.5 alone on quality. As the only coder it drowned in about 1,500 lines of physics, cubes rendered as hollow shells and the wall was a black blob.\n* Speed on the 3090 was 31–34 tok/s generation and around 1,080 tok/s prompt processing once the model sits fully in VRAM. We tried a 3060 12 GB first and it was not usable for this, 4–6 tok/s with \\~7 GB of weights spilling into system RAM.\n* Qwen loves to think. By default it reasons at max effort, so we capped the thinking budget. Without the cap our first attempts produced zero files in half an hour.\n* It once tried to write an entire file in one 16K-token reply, hit the output cap and had to redo the step. If you run it in an agent, give it room or it'll loop.\n* Every run said \"verified, 0 errors\". The console was clean every time and some scenes were still visibly wrong. Crash checks don't catch wrong physics.\n\nOne run per setup, so this is a field report, not a benchmark. Happy to share the configs and logs.\n\nDisclosure: we build the agent we ran this in, Atomic Agent, open source under MIT: https://github.com/AtomicBot-ai/atomic-agent. The planner/worker split is called Fusion.",
+ "subreddit": "LocalLLM",
+ "title": "Qwen 3.8 27B on a 3090 with a Sonnet 5.5 as a planner: 2.7x cheaper, real numbers",
+ "url": "https://v.redd.it/iz3y4biz1dsh1"
+}

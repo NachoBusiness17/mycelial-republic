@@ -1,0 +1,177 @@
+=== INTEGRATION LANE CHECK LOG - librarian expedition, 2026-10-01 ===
+[0] BEFORE: catalog row counts (HEAD vs working tree)
+$ git show HEAD:catalog/catalog.jsonl | wc -l
+691788
+$ wc -l < catalog/catalog.jsonl
+691789
+$ grep -c of each gathered filename substring in catalog/catalog.jsonl (working tree, pre-rescan)
+2310.10158 -> 0
+2405.07248 -> 0
+2506.11798 -> 0
+2506.12657 -> 0
+2508.06149 -> 0
+2508.06950 -> 0
+2511.17813 -> 0
+wilkes -> 0
+godfrey -> 0
+DESCENT_DAY1_STEAL_20261001 -> 1
+
+[1] BEFORE: canon manifest drift, named (read-only diagnostic, mirrors mag/librarian_catalog.py verify_canon)
+$ .venv/Scripts/python.exe canon_drift.py
+checked=205 missing=0 drifted=4
+DRIFT   _retired/x_canon_nachoquixotic_v1.jsonl
+DRIFT   x_canon_2026_fx/fx_2094770591702098071.json
+DRIFT   x_canon_2026_fx/fx_2096341325960417585.json
+DRIFT   x_canon_enumeration_index.jsonl
+exit=0
+
+[2] BEFORE: B2-465 FTS freshness gate (deep)
+$ .venv/Scripts/python.exe tools/corpus_fts_rebuild.py --check --deep
+{
+ "db": "C:\\Users\\foste\\Documents\\projects\\local_sovereign_agent\\catalog\\catalog_fts.sqlite",
+ "index_state": "stale",
+ "note": "index older than catalog.jsonl; run tools/corpus_fts_rebuild.py",
+ "catalog": "C:\\Users\\foste\\Documents\\projects\\local_sovereign_agent\\catalog\\catalog.jsonl"
+}
+exit=2
+
+[3] BEFORE: corpus_search for each gathered primary (estate search surface, tools/corpus.py corpus_search via driver integration_search.py)
+$ .venv/Scripts/python.exe watch/inbox/gala_20260925/librarian-expedition/lanes/integration_search.py before pre_integration
+Traceback (most recent call last):
+  File "C:\Users\foste\Documents\projects\local_sovereign_agent\watch\inbox\gala_20260925\librarian-expedition\lanes\integration_search.py", line 24, in <module>
+    spec.loader.exec_module(corpus)
+  File "<frozen importlib._bootstrap_external>", line 936, in exec_module
+  File "<frozen importlib._bootstrap_external>", line 1073, in get_code
+  File "<frozen importlib._bootstrap_external>", line 1130, in get_data
+FileNotFoundError: [Errno 2] No such file or directory: 'C:\\Users\\foste\\Documents\\projects\\tools\\corpus.py'
+exit=1
+
+[3 RETRY after driver path fix] BEFORE: corpus_search for each gathered primary
+$ .venv/Scripts/python.exe watch/inbox/gala_20260925/librarian-expedition/lanes/integration_search.py before pre_integration
+{"probe": "fts_state", "phase": "before", "tag": "pre_integration", "index_state": "stale", "note": "index older than catalog.jsonl; run tools/corpus_fts_rebuild.py"}
+{"query": "2310.10158", "engine": "scan", "index_state": "stale", "hit_count": 0, "hits": []}
+{"query": "2405.07248", "engine": "scan", "index_state": "stale", "hit_count": 0, "hits": []}
+{"query": "2506.11798", "engine": "scan", "index_state": "stale", "hit_count": 0, "hits": []}
+{"query": "2506.12657", "engine": "scan", "index_state": "stale", "hit_count": 0, "hits": []}
+{"query": "2508.06149", "engine": "scan", "index_state": "stale", "hit_count": 0, "hits": []}
+{"query": "2508.06950", "engine": "scan", "index_state": "stale", "hit_count": 0, "hits": []}
+{"query": "2511.17813", "engine": "scan", "index_state": "stale", "hit_count": 0, "hits": []}
+{"query": "wilkes", "engine": "scan", "index_state": "stale", "hit_count": 0, "hits": []}
+{"query": "godfrey edvac", "engine": "scan", "index_state": "stale", "hit_count": 0, "hits": []}
+{"query": "descent_day1", "engine": "scan", "index_state": "stale", "hit_count": 1, "hits": [{"path": "local_sovereign_agent/corpus/steal/DESCENT_DAY1_STEAL_20261001.md", "zone": "lsa", "mtime": "2026-10-01T21:36:43Z"}]}
+{"query": "wilkes wheeler", "engine": "scan", "index_state": "stale", "hit_count": 0, "hits": []}
+exit=0
+
+[4] FIX step 1: sanctioned map appender (arm 1, mag/catalog_rescan.py) - registers the 9 unregistered gathered files, then retags (arm 3)
+$ .venv/Scripts/python.exe -m mag.catalog_rescan incremental
+{"ok": true, "mode": "incremental", "summary": {"mode": "incremental", "base_rows": 691789, "base_dups": 16279, "added": 125884, "refreshed": 3597, "unchanged": 587740, "vanished": 84173, "reparse_records": 73, "walk_dups": 0, "machinery_dirs_excluded": 2769, "tags_rows": 821270}, "map_bytes": 230611011, "map_sha256": "cc7e01e4b289", "tags_ts": "2026-10-01T23:29:20Z"}
+exit=0
+
+[5] post-rescan registration proof: grep -c per gathered filename substring in catalog/catalog.jsonl
+2310.10158 -> 2
+2405.07248 -> 2
+2506.11798 -> 2
+2506.12657 -> 2
+2508.06149 -> 2
+2508.06950 -> 2
+2511.17813 -> 2
+wilkes -> 2
+godfrey -> 2
+DESCENT_DAY1_STEAL_20261001 -> 1
+rows now: 821270
+
+[6] FIX step 2: the one sanctioned FTS writer (B2-102/B2-465) rebuild
+$ .venv/Scripts/python.exe tools/corpus_fts_rebuild.py
+{"rows_indexed": 821270, "malformed_lines": 0, "rows_table_s": 6.635, "fts_rebuild_s": 5.985, "total_build_s": 12.62, "db_bytes": 234700800, "catalog_bytes": 230611011, "catalog_sha256": "cc7e01e4b28983cbb2fd007cced83e8d8844f5f2382297cbdfc14672a88eab4b", "db": "C:\\Users\\foste\\Documents\\projects\\local_sovereign_agent\\catalog\\catalog_fts.sqlite"}
+{"index_state": "fresh", "note": "index fresh: mtime and meta catalog_bytes both current"}
+exit=0
+
+[7] AFTER: B2-465 FTS freshness gate (deep)
+$ .venv/Scripts/python.exe tools/corpus_fts_rebuild.py --check --deep
+{
+ "db": "C:\\Users\\foste\\Documents\\projects\\local_sovereign_agent\\catalog\\catalog_fts.sqlite",
+ "index_state": "fresh",
+ "note": "index fresh: mtime and meta catalog_bytes both current",
+ "catalog": "C:\\Users\\foste\\Documents\\projects\\local_sovereign_agent\\catalog\\catalog.jsonl",
+ "catalog_sha256": "cc7e01e4b28983cbb2fd007cced83e8d8844f5f2382297cbdfc14672a88eab4b",
+ "deep": "match"
+}
+exit=0
+
+[8] AFTER: corpus_search for each gathered primary (same driver, same queries)
+$ .venv/Scripts/python.exe watch/inbox/gala_20260925/librarian-expedition/lanes/integration_search.py after post_integration
+{"probe": "fts_state", "phase": "after", "tag": "post_integration", "index_state": "fresh", "note": "index fresh: mtime and meta catalog_bytes both current"}
+{"query": "2310.10158", "engine": "fts5", "index_state": "fresh", "hit_count": 2, "hits": [{"path": "local_sovereign_agent/corpus/papers_reference_nonredistributable/persona_priorart_2310.10158.pdf", "zone": "lsa", "mtime": "2026-09-30T22:55:47Z"}, {"path": "local_sovereign_agent/docs/report_v1/sources/receipts/persona_priorart_2310.10158.md", "zone": "doctrine", "mtime": "2026-09-30T22:55:47Z"}]}
+{"query": "2405.07248", "engine": "fts5", "index_state": "fresh", "hit_count": 2, "hits": [{"path": "local_sovereign_agent/corpus/papers_reference_nonredistributable/persona_priorart_2405.07248.pdf", "zone": "lsa", "mtime": "2026-09-30T22:55:35Z"}, {"path": "local_sovereign_agent/docs/report_v1/sources/receipts/persona_priorart_2405.07248.md", "zone": "doctrine", "mtime": "2026-09-30T22:55:35Z"}]}
+{"query": "2506.11798", "engine": "fts5", "index_state": "fresh", "hit_count": 2, "hits": [{"path": "local_sovereign_agent/corpus/papers_reference_nonredistributable/persona_priorart_2506.11798.pdf", "zone": "lsa", "mtime": "2026-09-30T22:55:55Z"}, {"path": "local_sovereign_agent/docs/report_v1/sources/receipts/persona_priorart_2506.11798.md", "zone": "doctrine", "mtime": "2026-09-30T22:55:55Z"}]}
+{"query": "2506.12657", "engine": "fts5", "index_state": "fresh", "hit_count": 2, "hits": [{"path": "local_sovereign_agent/corpus/papers_reference_nonredistributable/persona_priorart_2506.12657.pdf", "zone": "lsa", "mtime": "2026-09-30T22:55:51Z"}, {"path": "local_sovereign_agent/docs/report_v1/sources/receipts/persona_priorart_2506.12657.md", "zone": "doctrine", "mtime": "2026-09-30T22:55:51Z"}]}
+{"query": "2508.06149", "engine": "fts5", "index_state": "fresh", "hit_count": 2, "hits": [{"path": "local_sovereign_agent/corpus/papers_reference_nonredistributable/persona_priorart_2508.06149.pdf", "zone": "lsa", "mtime": "2026-09-30T22:55:43Z"}, {"path": "local_sovereign_agent/docs/report_v1/sources/receipts/persona_priorart_2508.06149.md", "zone": "doctrine", "mtime": "2026-09-30T22:55:43Z"}]}
+{"query": "2508.06950", "engine": "fts5", "index_state": "fresh", "hit_count": 2, "hits": [{"path": "local_sovereign_agent/corpus/papers_reference_nonredistributable/persona_priorart_2508.06950.pdf", "zone": "lsa", "mtime": "2026-09-30T22:55:39Z"}, {"path": "local_sovereign_agent/docs/report_v1/sources/receipts/persona_priorart_2508.06950.md", "zone": "doctrine", "mtime": "2026-09-30T22:55:39Z"}]}
+{"query": "2511.17813", "engine": "fts5", "index_state": "fresh", "hit_count": 2, "hits": [{"path": "local_sovereign_agent/corpus/papers_reference_nonredistributable/persona_priorart_2511.17813.pdf", "zone": "lsa", "mtime": "2026-09-30T22:56:00Z"}, {"path": "local_sovereign_agent/docs/report_v1/sources/receipts/persona_priorart_2511.17813.md", "zone": "doctrine", "mtime": "2026-09-30T22:56:00Z"}]}
+{"query": "wilkes", "engine": "fts5", "index_state": "fresh", "hit_count": 2, "hits": [{"path": "local_sovereign_agent/corpus/papers_reference_nonredistributable/computing_1951_m_v_wilkes_w_wheeler_s_gill_the_preparation_of_programs_for_an_electronic_digital_c.txt", "zone": "lsa", "mtime": "2026-09-30T16:44:35Z"}, {"path": "local_sovereign_agent/docs/report_v1/sources/receipts/computing_1951_m_v_wilkes_w_wheeler_s_gill_the_preparation_of_programs_for_an_electronic_digital_c.md", "zone": "doctrine", "mtime": "2026-09-30T16:44:35Z"}]}
+{"query": "godfrey edvac", "engine": "fts5", "index_state": "fresh", "hit_count": 2, "hits": [{"path": "local_sovereign_agent/corpus/papers_reference_nonredistributable/computing_2010_michael_d_godfrey_intro_to_edvac_first_draft.txt", "zone": "lsa", "mtime": "2026-09-30T16:46:05Z"}, {"path": "local_sovereign_agent/docs/report_v1/sources/receipts/computing_2010_michael_d_godfrey_intro_to_edvac_first_draft.md", "zone": "doctrine", "mtime": "2026-09-30T16:46:15Z"}]}
+{"query": "descent_day1", "engine": "fts5", "index_state": "fresh", "hit_count": 1, "hits": [{"path": "local_sovereign_agent/corpus/steal/DESCENT_DAY1_STEAL_20261001.md", "zone": "lsa", "mtime": "2026-10-01T21:36:43Z"}]}
+{"query": "wilkes wheeler", "engine": "fts5", "index_state": "fresh", "hit_count": 2, "hits": [{"path": "local_sovereign_agent/corpus/papers_reference_nonredistributable/computing_1951_m_v_wilkes_w_wheeler_s_gill_the_preparation_of_programs_for_an_electronic_digital_c.txt", "zone": "lsa", "mtime": "2026-09-30T16:44:35Z"}, {"path": "local_sovereign_agent/docs/report_v1/sources/receipts/computing_1951_m_v_wilkes_w_wheeler_s_gill_the_preparation_of_programs_for_an_electronic_digital_c.md", "zone": "doctrine", "mtime": "2026-09-30T16:44:35Z"}]}
+exit=0
+
+[9] post-fix manifest state (snapshot_ts, counts)
+{
+ "snapshot_ts": "2026-10-01T23:29:20Z",
+ "mode": "incremental",
+ "map_bytes": 230611011,
+ "map_sha256": "cc7e01e4b28983cbb2fd007cced83e8d8844f5f2382297cbdfc14672a88eab4b"
+}
+summary_added 125884 tags_rows 821270
+
+[10] standing freshness machinery (B2-465 operational half): scheduled tasks + today's FTS log
+$ schtasks /Query /TN MagFtsIndexDaily
+ERROR: Invalid argument/option - 'C:/Program Files/Git/Query'.
+Type "SCHTASKS /QUERY /?" for usage.
+$ schtasks /Query /TN MagCorpusRescanDaily
+ERROR: Invalid argument/option - 'C:/Program Files/Git/Query'.
+Type "SCHTASKS /QUERY /?" for usage.
+$ tail -3 logs/fts_index.log
+  }
+[2026-09-30 09:00:02] POST: exit=0 wall=0.516s
+[2026-09-30 09:00:02] END exit=0
+
+[10 RETRY] schtasks via cmd //c (git-bash ate the slashes) + today-stamp grep on both freshness logs
+
+Folder: \
+HostName:      DESKTOP-7C70KSC
+TaskName:      \MagFtsIndexDaily
+Next Run Time: 10/2/2026 9:00:00 AM
+Status:        Ready
+Logon Mode:    Interactive only
+----
+
+Folder: \
+HostName:      DESKTOP-7C70KSC
+TaskName:      \MagCorpusRescanDaily
+Next Run Time: 10/2/2026 3:30:00 AM
+Status:        Ready
+Logon Mode:    Interactive only
+----
+grep 2026-10-01 logs/fts_index.log:
+0
+0
+grep 2026-10-01 census_patrol log n/a; rescan log:
+corpus_rescan_daily.log
+grep 2026-10-01 logs/corpus_rescan_daily.log:
+0
+0
+
+[11] ONE-LINE REPEAT-VERDICT, run for real (registration+index+gate in one chain)
+$ .venv/Scripts/python.exe -m mag.catalog_rescan incremental && .venv/Scripts/python.exe tools/corpus_fts_rebuild.py && .venv/Scripts/python.exe tools/corpus_fts_rebuild.py --check --deep
+{"ok": true, "mode": "incremental", "summary": {"mode": "incremental", "base_rows": 821270, "base_dups": 19876, "added": 285, "refreshed": 121, "unchanged": 717100, "vanished": 84173, "reparse_records": 73, "walk_dups": 0, "machinery_dirs_excluded": 2769, "tags_rows": 821676}, "map_bytes": 230714032, "map_sha256": "073a27176513", "tags_ts": "2026-10-01T23:39:05Z"}
+{"rows_indexed": 821676, "malformed_lines": 0, "rows_table_s": 5.0, "fts_rebuild_s": 4.95, "total_build_s": 9.95, "db_bytes": 234733568, "catalog_bytes": 230714032, "catalog_sha256": "073a271765137e32a8148c1996e33bb526792e8d7cb394da3f37a83c78506a94", "db": "C:\\Users\\foste\\Documents\\projects\\local_sovereign_agent\\catalog\\catalog_fts.sqlite"}
+{"index_state": "fresh", "note": "index fresh: mtime and meta catalog_bytes both current"}
+{
+ "db": "C:\\Users\\foste\\Documents\\projects\\local_sovereign_agent\\catalog\\catalog_fts.sqlite",
+ "index_state": "fresh",
+ "note": "index fresh: mtime and meta catalog_bytes both current",
+ "catalog": "C:\\Users\\foste\\Documents\\projects\\local_sovereign_agent\\catalog\\catalog.jsonl",
+ "catalog_sha256": "073a271765137e32a8148c1996e33bb526792e8d7cb394da3f37a83c78506a94",
+ "deep": "match"
+}
+exit=0

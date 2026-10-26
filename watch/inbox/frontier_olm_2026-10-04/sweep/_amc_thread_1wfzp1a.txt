@@ -1,0 +1,385 @@
+=== 1wfzp1a r/Rag | 2026-09-14 10:31 | score 83 | 56 comments | author u/Hungry-Horror-7577
+TITLE: Fully offline RAG over 27 technical books (11k pages): what actually improved retrieval, with gold-set numbers
+PERMALINK: /r/Rag/comments/1wfzp1a/fully_offline_rag_over_27_technical_books_11k/
+SELFTEXT:
+I've spent the last few months building a RAG system over my trading/finance/math book library — 27 books, ~11,000 pages, 32,000 chunks — running 100% locally on one machine (AMD Strix Halo, 128 GB unified memory, Ollama + embedded Qdrant). No cloud, no API keys. Sharing what mattered, with measurements, because most RAG posts here are vibes.
+
+**Stack**
+
+- Ingest: Docling (layout-aware) → OCR fallback for scans → corruption detection (mechanical / scattered / destroyed text) → LLM repair only for mechanical damage, hard rule: never invent destroyed text
+- Extract: vision model per page (qwen3-vl for triage, bigger model for extraction) → structured chunks with book / chapter / page
+- Index: qwen3-embedding 8B (dense) + pure-Python BM25 → RRF fusion → Qwen3-Reranker 8B cross-encoder
+- Answer: local qwen3.5 122B-A10B, citations [book/page], refuses when the notes don't contain it
+
+**How I measure (this is the part I'd push everyone to do)**
+
+Frozen gold set: 55 questions per book generated from real chunks, ~12% deliberately unanswerable, ~10% with a false premise. Two tiers:
+
+- Retrieval tier (cheap, no LLM): does the source chunk land in top-8? Recall@8 + MRR
+- Judge tier: correctness vs. reference, faithfulness, hallucination rate on the unanswerable ones, judged by a different model family (llama3.3-70b) — plus a second judge for Cohen's κ so I know which metric to trust (faithfulness κ was 0.08 → judge-dependent; correctness/relevance were solid)
+
+**Numbers (4 books, 220 questions, cross-book search = no book filter, distractors from all books)**
+
+- Recall@8: 100% (192/192 answerable), MRR 0.95 — 175 of 192 source chunks ranked #1
+- Correctness 91–95%, faithfulness 91–98% per book
+- Hallucination on unanswerable questions: 0/28
+
+I'm re-running the same test right now against the full 27-book index (32k chunks instead of 3.6k) and will post the numbers in the comments — I expect MRR to drop, curious by how much.
+
+**What moved the needle, ranked**
+
+1. Fixing PDF extraction. Before the corruption detector, a chunk of "text" was ligature soup and no retriever could save it.
+2. Cross-encoder reranker over 100 candidates. Biggest single retrieval jump.
+3. Hybrid > dense-only, especially for exact terms (indicator names, formulas, tickers).
+4. Unanswerable questions in the gold set. Without them you never find out your answerer bluffs.
+
+Things I have wired in but have NOT measured properly yet: HyDE, multi-query, RAPTOR summaries, GraphRAG. If you have gold-set numbers for any of those on a book-sized corpus I'd love to see them before I burn GPU hours on it.
+
+Happy to answer questions about any stage — the eval harness design especially, since that's what let me stop guessing.
+
+COMMENTS:
+  [Hungry-Horror-7577 | 2026-09-14 13:14 | score 5] Update as promised, 27-book index (32,300 chunks, no book filter, 5 books x 55 questions, 210 answerable):
+
+  
+Recall@8 98.1% (206/210), MRR 0.926, 89% of source chunks at rank 1. Per book: Jansen ML4T 100% / MRR 1.00, Lien & Schlossberg 100% / 0.97, Lopez de Prado 100% / 0.95, Pardo 97.6% / 0.92, Python for Finance Handbook 92.9% / 0.79.
+
+  
+So vs. the 3.6k-chunk run: -1.9 pp recall, -0.026 MRR with 9x more distractors. Less than I expected.
+
+  
+The interesting part (u/alexpran called it): my first pass showed Pardo at 47% recall. Every single miss had the right book in the top-8 but the wrong page. Cause: that gold set was frozen before a re-index, so the stored chunk keys were stale. Rebuilt the gold set against the current index, same retriever, and it went to 97.6%. If your recall drops after re-chunking, check your gold-set keys before you touch the retriever.
+
+  
+The 4 remaining misses are all generic concept questions (VaR confidence level, Modern Portfolio Theory, stop-loss threshold) where another book in the corpus answers the same thing and outranks the source. Answer is right, attribution points at a different book. That is the real cost of cross-book search on a corpus with overlapping topics.
+  [Prothagarus | 2026-09-14 10:43 | score 2] Did you text the latex conversion on your math formulas? Docling has been useful for getting tables but I run into issues with it sometimes depending on formula or table layout. Floating tables without row level lineups or sometimes resolution hits I haven't found a good solution to yet. Any problems with table ingest?
+    [Hungry-Horror-7577 | 2026-09-14 13:26 | score 2] Honest numbers, just pulled from the chunk DB: 2,130 formula chunks, \~960 of them contain LaTeX from Docling's formula enrichment. Most are fine (Lopez de Prado's tick rule and CUSUM definitions come through as clean cases/frac/argmin). About 200 of the 960 have letter-spacing damage, like "$$ d i r v e d $$" followed by a wall of & signs, mostly older-typeset books. My corruption detector flags those pages as "scattered" so the answerer never treats them as fact, but I have not fixed the extraction itself. So: LaTeX yes, roughly 80% usable, the rest quarantined, not repaired.
+
+  
+Tables are the weaker part. 876 chunks are typed as table but only \~220 came out as proper markdown tables. The failure mode you describe is exactly what I see: floating tables with merged cells become rows where one cell repeats across four columns (my AFML table of contents looks like that). Docling gets the grid, loses the semantics. I run a per-page vision model (qwen3-vl) in the extract step that produces the chunks, and it handles simple tables better than the Docling markdown, but I have not measured table recall separately yet. That is a gap in my eval, thanks for pointing at it.
+      [Prothagarus | 2026-09-14 13:51 | score 2] One of thing I have tried is don't do markdown as output. HTML has better fidelity for table output as markdown has a rough time with nested tables
+        [Brilliant-Region-744 | 2026-09-16 05:22 | score 1] Repositorio conectado. Voy a buscar en el repo real cómo está documentado el pipeline de visión (arquitecto/revisor, líneas paralelas, auto-mejora por versiones) en vez de seguir adivinando.Con datos reales del repo (no inventados): el mecanismo no es "visión + OCR testigo" como puse antes — es dos lecturas de visión independientes en paralelo, y el ciclo arquitecto↔auditor sí llegó a más de 40 versiones (el extractor principal va en la v62 ahora). Versión corregida:
+
+
+
+Lo de las tablas nos pasó igual con Docling. Pero llegamos a una conclusión distinta a "hay que exportar mejor": el problema de fondo es preguntarse qué te transmite realmente una tabla. Una tabla no es el dato — es la representación visual de una jerarquía (elemento → sub-elemento → sitio de verificación, con su umbral). Exportar mejor a HTML solo mejora la representación; nosotros saltamos la representación y extraemos la jerarquía directamente.
+
+Cómo: un agente "arquitecto" no tiene reglas fijas por tipo de documento. Primero infiere la gramática jerárquica de ESE documento (¿usa romanos?, ¿letras?, ¿tablas?, ¿es consistente en todo el texto?) y solo después asigna cada párrafo a su lugar en esa gramática. Eso es lo que le permite generalizar a cientos de documentos distintos en vez de romperse con cada formato nuevo.
+
+Cross-check: cada documento pasa por dos lecturas de visión independientes (sesiones sin contexto compartido) que tienen que converger ≥99,5% carácter a carácter por página, y coincidir EXACTO en cifras críticas — un solo número distinto entre las dos bloquea el documento completo hasta que un tercer agente, ciego a cuál lectura vino de dónde, dictamina contra el original. En nuestras últimas dos tandas de producción (16 y 30 documentos) hubo cero cifras críticas publicadas en disputa.
+
+Aparte del arquitecto hay un agente "revisor" que audita con contexto aislado — no ve nuestra conversación ni nuestras premisas, compara el PDF contra la estructura resultante y solo dictamina, nunca corrige (si corrigiera estaría verificando su propio trabajo). Sus hallazgos alimentan la siguiente versión del arquitecto, nunca los datos ya extraídos. Así se auto-mejora de verdad: no es una config que se ajustó sola, es un extractor que lleva 60+ versiones, la mayoría nacidas de algo que el auditor encontró y nosotros no habíamos visto.
+
+Al principio fue full dependencia humana — las primeras tandas fueron un parto porque las fuentes eran muy malas (escaneos sin capa de texto, erratas reales del papel, formatos distintos entre organismos). Lo que cambió no fue que "dejara de fallar": es que cuando 18 documentos caían en la misma guarda, dejamos de arreglarlos uno por uno y encontramos la regla general que los resolvía a los 18 de una vez. Con eso, tandas de 30 corren hoy casi solas.
+
+Estamos pensando en subir esta parte a GitHub — evaluamos varios extractores en la nube antes de construir esto y ninguno nos sirvió, porque todos apuntan a producir una tabla más fiel, no una jerarquía.
+        [Hungry-Horror-7577 | 2026-09-14 14:18 | score 2] That's a good one, I have not tried HTML export. I go Docling to markdown right now and lean on the per-page vision model to rescue tables, but you are right that nested tables are where markdown just gives up, so keeping the HTML grid intact before the vision pass should give it something better to work from. Cheap to A/B on the gold set since I can measure table-chunk recall separately once I add that split. Adding it to the list, thanks.
+          [Desarrollo-UPC | 2026-09-16 05:26 | score 1] Lo de las tablas nos pasó igual con Docling. Pero llegamos a una conclusión distinta a "hay que exportar mejor": el problema de fondo es preguntarse qué te transmite realmente una tabla. Una tabla no es el dato — es la representación visual de una jerarquía (elemento → sub-elemento → sitio de verificación, con su umbral). Exportar mejor a HTML solo mejora la representación; nosotros saltamos la representación y extraemos la jerarquía directamente.
+
+Cómo: un agente "arquitecto" no tiene reglas fijas por tipo de documento. Primero infiere la gramática jerárquica de ESE documento (¿usa romanos?, ¿letras?, ¿tablas?, ¿es consistente en todo el texto?) y solo después asigna cada párrafo a su lugar en esa gramática. Eso es lo que le permite generalizar a cientos de documentos distintos en vez de romperse con cada formato nuevo.
+
+Cross-check: cada documento pasa por dos lecturas de visión independientes (sesiones sin contexto compartido) que tienen que converger ≥99,5% carácter a carácter por página, y coincidir EXACTO en cifras críticas — un solo número distinto entre las dos bloquea el documento completo hasta que un tercer agente, ciego a cuál lectura vino de dónde, dictamina contra el original. En nuestras últimas dos tandas de producción (16 y 30 documentos) hubo cero cifras críticas publicadas en disputa.
+
+Aparte del arquitecto hay un agente "revisor" que audita con contexto aislado — no ve nuestra conversación ni nuestras premisas, compara el PDF contra la estructura resultante y solo dictamina, nunca corrige (si corrigiera estaría verificando su propio trabajo). Sus hallazgos alimentan la siguiente versión del arquitecto, nunca los datos ya extraídos. Así se auto-mejora de verdad: no es una config que se ajustó sola, es un extractor que lleva 60+ versiones, la mayoría nacidas de algo que el auditor encontró y nosotros no habíamos visto.
+
+Al principio fue full dependencia humana — las primeras tandas fueron un parto porque las fuentes eran muy malas (escaneos sin capa de texto, erratas reales del papel, formatos distintos entre organismos). Lo que cambió no fue que "dejara de fallar": es que cuando 18 documentos caían en la misma guarda, dejamos de arreglarlos uno por uno y encontramos la regla general que los resolvía a los 18 de una vez. Con eso, tandas de 30 corren hoy casi solas.
+
+Estamos pensando en subir esta parte a GitHub — evaluamos varios extractores en la nube antes de construir esto y ninguno nos sirvió, porque todos apuntan a producir una tabla más fiel, no una jerarquía.
+  [Future_AGI | 2026-09-17 19:47 | score 1] Checker bugs are more common than model bugs. We keep a small set of hand-verified cases that run before every eval sweep. If the checker fails on those, we know the eval is broken before we trust any of the numbers. The hand-verified set never changes, so drift in the checker shows up immediately.
+  [rujan_1729 | 2026-09-17 12:09 | score 1] On the retrieval metrics side, one thing that trips people up is treating recall@k as the finish line. It tells you the right chunk showed up somewhere in the window, but says nothing about where, which is exactly why MRR mattered more once the reranker went in. nDCG is the one I see skipped most, even though it's the natural extension once a query has more than one relevant chunk. Most teams stop at hit rate because it's the easiest one to explain out loud.
+
+I went down a similar rabbit hole a while back building an eval harness on the Java and Spring AI side, precision, recall, MRR, nDCG, plus faithfulness and hallucination checks laid out together (RagEval4Java on github, for anyone who wants the formulas side by side rather than scattered across five blog posts). Learned the same lesson you did the hard way, the eval code itself needs testing as much as the retriever does. A bug in the judge or the metric calc will happily hand you a clean looking number that means nothing.
+
+The stale gold set key issue is worth flagging for anyone reading this later. Re-indexing without re-freezing your eval keys against the new chunk ids is a fast way to make a perfectly good retriever look broken.
+  [Future_AGI | 2026-09-15 17:23 | score 1] The gold-set numbers are what make this useful. Most RAG posts share anecdotes; this shares measured improvements against a frozen eval set. We build our evals the same way: a small set of questions where we know the correct retrieval outcome, pinned to a specific corpus commit. The set only grows when a real user reports a wrong answer. That discipline is what keeps the eval from drifting alongside the system.
+    [Hungry-Horror-7577 | 2026-09-15 18:00 | score 1] Pinning the set to a corpus commit is the part I learned the expensive way. I didn't, and one book reported 47% recall while every other book sat at 100%. The retriever was innocent: that book's gold entries had been frozen before a re-chunk, so the stored chunk keys pointed at nothing. Rebuilding against the current index took it to 97.6% with no code change. The fix was mechanical in the end — an index fingerprint inside the retrieval cache key, so a stale set can't silently corrupt a baseline — but I'd have skipped the half day if I'd had your rule from the start.
+
+The growth rule I'd push back on gently. A set that only grows when a user reports a wrong answer grows along the axis users can see. The failures they can't report are the ones where the answer is right but didn't come from your corpus — true, well-phrased, and sourced from the model's priors rather than your documents. Nobody files a ticket for those. They go wrong later, all at once, when your corpus says something the priors disagree with.
+
+I only believe that because it showed up as a number: over 551 claims from my own answers, 537 were supported by the retrieved passages, 14 were true but not in them, and 0 contradicted them. Zero out of 551 gives a 95% upper bound of 0.54%, so the honest phrasing is "under 0.6%", not "none". The 14 are exactly the bucket no user would have reported.
+
+So: user reports for the failures they notice, plus a periodic sweep of the ones they can't. The second one is cheap — it's the same judge you already run, asked a different question.
+  [[deleted] | 2026-09-15 16:09 | score 1] [removed]
+  [the_vandi | 2026-09-15 09:34 | score 1] Following
+  [Duke_of_Bayswater | 2026-09-15 00:29 | score 1] Do you have this corpus open sourced or publicly accessible? Id like to put my rag to a test with this.
+    [Hungry-Horror-7577 | 2026-09-15 07:02 | score 1] Can't — they're commercial trading books, so the chunks aren't mine to hand out.
+
+The transferable part isn't the corpus anyway, it's the gold set, and building your own equivalent is cheap: sample chunks from your own documents, have a model write the question each chunk answers plus the reference answer from that chunk only (no outside knowledge), then freeze the set with a content hash so every run measures the same questions. Then add the two kinds most people skip — unanswerable questions, verified against the whole corpus so they're genuinely out of scope rather than just missing from one passage, and false-premise probes where you perturb a number the chunk actually states and see whether the system corrects you or agrees.
+
+That's what made the runs comparable to each other, not the specific books. Writeup of the method here: https://claude.ai/code/artifact/e2ae3542-c6d9-4c78-ade3-381017512bd6
+
+Happy to look at your numbers if you build one and something comes out strange.
+      [Duke_of_Bayswater | 2026-09-15 08:03 | score 1] The issue is that I’m looking for variable content to build the corpus. For most now i have markdowns and journals pdfs. Need scanned documents or image of a document. This way I can test if the pipeline for ingestion that includes ocr or parsing pathways actually work.
+        [Hungry-Horror-7577 | 2026-09-15 09:57 | score 2] For testing an ingestion pipeline specifically, I'd build the corpus by degrading documents you already have clean, rather than hunting for naturally bad scans. The reason is ground truth: if you start from a clean PDF and apply the damage yourself, you know exactly what the text should be, so you can compute a character error rate instead of eyeballing whether the output looks right. With found scans you're testing your pipeline against an unknown, which tells you a lot less.
+
+Cheap recipe: render your clean PDFs to images, then apply skew (0.5–2°), gaussian noise, JPEG at quality 40–60, and a slight blur, then re-wrap as PDF. ImageMagick does all of that in one line. Add a second tier where you physically print and re-scan a handful, because real scans have artifacts synthetic ones don't — page curl, uneven lighting, bleed-through from the reverse side.
+
+If you do want genuinely found material: FUNSD is a small set of noisy scanned forms with annotations. RVL-CDIP is a large set of scanned business documents drawn from the tobacco litigation archives, which are about as ugly as real documents get. Chronicling America at the Library of Congress has enormous quantities of scanned newspaper pages, which stress column detection harder than anything else I've thrown at a parser. Public-domain government forms and old patents are the other easy source.
+
+One thing I'd add whatever you assemble: keep a few pages that are genuinely unrecoverable — pure noise, or a photo of a page at an angle. Your pipeline should *say so* rather than producing confident nonsense, and that's a behaviour you can only test if such pages are in the set. It was the single most useful category in mine.
+          [Duke_of_Bayswater | 2026-09-16 08:58 | score 1] Frickin ace man. Thank you so much. The pdf to image is golden. Have not thought of that!!
+            [Hungry-Horror-7577 | 2026-09-17 05:22 | score 1] Following up, because I pulled real scanned documents with ground truth last night for a different project and they are exactly what you were asking for.
+
+Two public sets, both on Hugging Face, both photographed receipts rather than clean scans, so genuinely bad input: folded paper, low resolution, skew.
+
+SROIE, arvindrajan92/sroie_document_understanding, MIT, 652 receipts, one parquet around 217 MB. Ground truth for company, address, date, line items and total.
+CORD v2, naver-clova-ix/cord-v2, CC BY 4.0, test split 100 receipts around 234 MB. This one also gives quantity and unit price per line item plus discount, service charge and tax, so you can check whether your pipeline gets the arithmetic of a document right, not just the strings.
+
+The useful part for you is what I found when I looked at the ground truth before measuring anything, because these will bite an ingestion test in ways that look like your bug:
+
+1. 752 images but only 721 distinct sha256. 25 images appear two or three times, all inside SROIE. 22 of those pairs have identical ground truth, 3 differ only in annotation. If you report per document accuracy you will silently weight some documents twice.
+
+2. 19.4 percent of the ground truth totals, 146 of 752, were unreadable to a normal amount parser. Not because the data is missing, because of what sits next to the number: "RM 33.90", "Rp. 91,000", "15.00 ZR", "*46000", "NETT TOTAL: $8.20", "5.90SR". The trailing letters are mostly Malaysian tax codes, S, ZR, ZRL, SR, SVC, not currency. Every one of those would have counted as my pipeline getting the number wrong.
+
+3. CORD is Indonesian and uses both a dot and a comma as thousands separators in the same file: 60.000, 28,000, 91000, 63,000.00, 9.500,00. A parser tuned for either convention gets a thousandfold error on part of the set.
+
+The rule that handles both sets: decide on the last separator. One or two digits after it means decimal, three means thousands. So 60.000 is sixty thousand and 9.00 is nine.
+
+Sanity check that this reading is right rather than just convenient, one CORD receipt has total 31.000, subtotal 28.182, tax 2.818. Read as rupiah that is 28182 plus 2818 equals 31000, and the tax is exactly 10 percent, which is the Indonesian rate. The arithmetic only closes under one of the two readings :)
+
+After fixing the parser, 746 of 752 totals are readable. The remaining 6 genuinely have no total in the data.
+
+Degrading your own clean documents is still the better primary test, since you control the truth. These are the second half: real damage you did not create, with labels you did not write.
+  [Extension-Count6242 | 2026-09-14 21:43 | score 1] Which vector db r using? Any data cleaning before hand before ingestion?
+    [Hungry-Horror-7577 | 2026-09-15 07:02 | score 1] Qdrant in embedded mode — local path, single writer, not the server. At 32k points it warns that local mode isn't recommended above 20k and it's right; fine for one process doing eval runs, but I'd move to the server for anything concurrent.
+
+Cleaning before ingest, yes, and it was the step that mattered most:
+
+- layout-aware parse (Docling) so two-column pages don't interleave into nonsense
+- OCR for scanned pages
+- a corruption detector per chunk, then an LLM repair pass only on the flagged ones, as edit operations rather than a rewrite
+- anything unrepairable stays flagged as damaged rather than silently smoothed
+
+Ranked by what actually moved the numbers on my corpus: no cleaning at all was the biggest gap, no reranker was second, dense-only (no BM25) was third. The embedder choice mattered least of the four, which is the opposite of where I spent the first week.
+  [YangaYutso | 2026-09-14 21:12 | score 1] Written by ChatGPT?
+    [Hungry-Horror-7577 | 2026-09-15 07:02 | score 1] The system, the runs and the numbers are mine — my hardware, my corpus, my gold set, and I posted the result that makes me look bad next to the ones that don't.
+
+The English I get help tidying. It's my third language and unedited it reads worse than that post does. Fair thing to notice either way.
+
+Anything specific about the pipeline, ask — that part I can't outsource.
+      [YangaYutso | 2026-09-16 04:58 | score 1] You are so amazing! I would use ChatGPT for my third language, too!
+  [polandtown | 2026-09-14 14:59 | score 1] repo?
+    [Hungry-Horror-7577 | 2026-09-14 18:03 | score 1] Not public — it's my own stack and it's welded to my hardware in places I'm not proud of.
+
+The part that's actually transferable is the gold-set method rather than the code, and I wrote that up here: https://claude.ai/code/artifact/e2ae3542-c6d9-4c78-ade3-381017512bd6
+
+Happy to answer anything specific about the pipeline in the thread.
+      [polandtown | 2026-09-14 19:58 | score 1] sounds like my kind of developer ;) - ty for the share
+  [nitish-kmr | 2026-09-14 14:32 | score 1] The measurements are the valuable part and almost nobody posts them, so thank you for that. One question about the gold set, since everything else rests on it: who wrote the queries?
+
+If you wrote them, they're queries you could think of — phrased in the vocabulary of the books, aimed at things you knew were in there. That skews optimistic, because your chunking already serves the way you think about the corpus. The cheap correction is a second set built from the other direction: sample chunks at random, have a model write the question each chunk answers, evaluate on those. Where the two sets disagree is usually where the real failures are hiding.
+
+The other thing worth checking, with numbers you already have: how much of the recall@k improvement survived into answer quality. Those come apart more often than people expect. A change that pulls the right chunk from position 12 to position 8 scores as a clear win and changes nothing downstream, because the model never read that far. If you measured both, the gap between them is the most interesting number in your data — and it's the one that tells you whether to keep tuning the retriever or go work on the generation side.
+    [Hungry-Horror-7577 | 2026-09-14 18:03 | score 1] Nobody wrote them — that's exactly the method you're describing. Chunks are sampled, a model writes the question that chunk answers, a second pass writes the reference answer from the same chunk with no outside knowledge, and the set is content-hashed and frozen.
+
+Which means I have the opposite bias to the one you're warning about, and it's worth naming: questions generated per chunk are answerable from one chunk by construction. So a large part of that 98% is a property of the test design, not of the retriever. Multi-hop and summary questions are under-tested for exactly that reason — a RAPTOR-style setup would need a gold set built to need two chunks before it could show any value at all. I flag that as a known gap rather than quoting the number as if it covered everything.
+
+Your second point is the one I can't hand-wave, so I measured it today: same frozen questions, answers generated, then judged for correctness and faithfulness against the reference. With one working judge (gpt-oss-120b, n=60): correctness 95%, relevance 97%, faithfulness 68%. So recall did survive into answer quality — but faithfulness is where it leaks, and that's padding from training data, not wrong answers. What I can also say is the retrieval win did not come from rank shuffling — 89% of questions put the right chunk at rank 1, so it's not "position 12 to position 8" territory.
+      [nitish-kmr | 2026-09-15 04:28 | score 1] 95% correct and 68% faithful is the most useful pair of numbers in this thread, because the gap has a specific meaning: a third of your answers are right for reasons that didn't come from your corpus.
+
+That's fine today and dangerous later. The unfaithful-but-correct answers are the ones where the model's training data and your books happen to agree. The moment the corpus says something the priors don't — an unconventional definition, an updated edition, anything genuinely domain-specific — those same answers go wrong silently, and correctness won't move until enough of them do.
+
+Worth splitting that 32% three ways before acting on it: harmless elaboration that's true but not in the chunk, correct-but-unsourced, and contradicts-the-chunk. The middle bucket is the dangerous one and I'd expect it to dominate. The third is rare and is a real bug.
+
+And 89% at rank 1 is what makes the diagnosis clean — retrieval is effectively solved for this gold set, so every remaining point of answer quality is downstream of it. That's a good place to be. It means chunking and embeddings are done, and the next honest win is in context assembly and what you're asking the model for. Worth hand-checking twenty of the faithfulness failures before trusting 68% too precisely, though; a model judge is usually the noisiest instrument in the stack and faithfulness is the hardest of the three to judge.
+
+On the single-chunk bias, you've named it better than I would have. Cheapest route to a multi-hop set: sample pairs of chunks from different books that share an entity, have the model write a question that needs both. Not a great gold set, but enough to tell you whether RAPTOR is worth building at all.
+        [Hungry-Horror-7577 | 2026-09-15 07:01 | score 1] Your three buckets are the right split, and I can do it without new code — the harness has a faithfulness breakdown mode that classifies each claim SUPPORTED / CONTRADICTED / NOT_IN_CONTEXT instead of just counting supported over total. It's off by default because it costs an extra judge call per question. After this result it should be the default: 68% as a single number can't tell "padding that happens to be true" apart from "contradicts the chunk", and those two need opposite fixes.
+
+Prediction on record before I run it: NOT_IN_CONTEXT dominates, CONTRADICTED is near zero. If CONTRADICTED comes back as more than two or three questions, then I have a real bug and it's the 95% correctness that's wrong, not the 68%.
+
+Agreed on hand-checking twenty. Faithfulness is the metric I trust the judge least on — it's the one that split hardest between two judge models in July, and "claim" is the fuzziest unit of the three.
+
+On multi-hop: shared-entity chunk pairs is the cheapest honest version. The failure mode I'd watch for is the generator writing a question that looks two-hop but is answerable from either chunk alone. Cheap verifier: retrieve with each source chunk removed in turn and drop any question that still gets answered correctly both times. That's the same trick I use to verify the unanswerable questions, so it's already sitting there.
+          [nitish-kmr | 2026-09-15 07:16 | score 1] Prediction on record before running it is the part I'd keep. It turns the eval into a test instead of a demo, and it's the only way to find out whether your model of the system is right or just internally consistent.
+
+Your framing of the outcome is sharper than mine was. If CONTRADICTED comes back above noise then the 95% is the number in question, because a claim that contradicts its own chunk and still scores correct means the correctness judge is agreeing with the model rather than with the source.
+
+One thing to look at if that happens: contradictions usually aren't spread evenly. They cluster where the corpus says something the model has strong priors against, so it tends to be a few books or a few topics rather than a uniform 2%. If it does come back uniform, suspect the judge first.
+
+On the ablation verifier, that's the right check and it catches most of it. The one it misses is a question answerable from either chunk plus general knowledge. Worth running the same ablation with both source chunks removed. If it still answers correctly, the question is testing the model rather than your retriever, and it shouldn't be in a retrieval gold set at all.
+            [Hungry-Horror-7577 | 2026-09-15 09:57 | score 1] Agreed on all three, and the third is a better verifier than mine, so I'm taking it: remove *both* source chunks and see whether it still answers correctly. If it does, the question is testing the model's priors and has no business in a retrieval gold set. Cleaner criterion than what I've been using, which only ever checks the single source chunk.
+
+On your first point — yes, and I'll report CONTRADICTED per book rather than pooled, precisely so your clustering prediction is testable rather than decorative. Concentrated in one or two books is the corpus-versus-priors effect you describe. Spread evenly at a low rate and the judge is the suspect.
+
+Two updates since I wrote that prediction, and the second one I'd rather say out loud before I report any numbers.
+
+The re-run is going. All 275 answers are generated, the judge (gpt-oss:120b) passed a preflight check, and it's about two thirds through grading with zero failed calls. The preflight is new, because in the previous attempt the judge model failed to load, every grading call returned an empty string, and an empty string parsed to a perfectly valid score of 0.0 — so the report announced 0% correctness for a system that was fine, and marked the run clean. There's now a trivial grading prompt sent before the expensive phase and an abort if more than 5% of calls fail.
+
+The second one is worse and it touches numbers I already quoted here. While writing that guard I found that the faithfulness judge was only ever shown the first 600 characters of each retrieved note. My notes have a median length around 1,500. So any claim whose support sits past character 600 was counted as unsupported. Every faithfulness figure I've posted, including the 68%, is therefore a floor rather than an estimate, and I don't yet know by how much. I'm re-judging the same fixed answers at a 2,000-character cap so the difference is measured rather than hand-waved, and I'll post both numbers.
+
+Which sharpens your point in an unpleasant direction: part of the faithfulness hole I predicted would turn out to be padding may just be my own measurement error. Rather find that out in public than quietly ship a nicer number next week.
+              [nitish-kmr | 2026-09-16 01:13 | score 1] The faithfulness judge only seeing the first 600 characters is a retrieval bug inside your eval, which is about as neat as this gets. The thing measuring whether an answer was grounded in the note could not see most of the note.
+
+Worth reporting the delta by note length when you re-run. If truncation was the whole story, the gain should concentrate in notes longer than 600 characters and be near zero for short ones. If short notes move too, something else is wrong with the judge prompt.
+
+The other thing I'd take from this: your preflight catches failed calls, but the 600-character bug wasn't a failure. It was a clean run with wrong numbers, which is the harder class and the one that survives. The cheap guard is a few fixed cases with known verdicts. One claim you know is supported, one you know is contradicted, one you know is absent, sent through the judge every run. If those three don't come back right the run is void, however healthy it looked.
+
+Posting the error before the corrected numbers is the right call and not a common one.
+                [Hungry-Horror-7577 | 2026-09-16 04:53 | score 1] Ran the split you asked for. Same 210 answerable questions, same fixed answers from the run, same judge — only the truncation cap changed.
+
+By number of retrieved notes longer than 600 characters:
+
+| notes over 600 chars | n | faith@600 | faith@2000 | delta |
+|---|---|---|---|---|
+| none | 11 | 90.9% | 100% | +9.1 pp |
+| 1-2 | 42 | 67.9% | 89.9% | +21.9 pp |
+| 3-4 | 53 | 68.8% | 82.3% | +13.5 pp |
+| 5-8 | 104 | 44.2% | 76.9% | +32.7 pp |
+
+By total note length, terciles: **+16.1 / +21.3 / +36.0 pp**.
+
+Your prediction holds. In the group where no note exceeds 600 characters, **10 of 11 questions do not move at all** — the +9.1 pp is one single question going 0.0 to 1.0. Everything else scales with length, and by total characters it is monotone. Across all 210: 82 scores rise, 11 fall.
+
+The part I would not have guessed is that it is not just note length but *how many* long notes. With 5+ long notes the judge was reading roughly a third of its evidence.
+
+Your second point is the one I acted on. You are right that a preflight only catches dead calls, and a clean run with wrong numbers is the class that survives. I took the fixed-cases-with-known-verdicts idea and pointed it at the other deterministic checker I have — the quote verifier — as 14 cases with known answers: a quote that is verbatim present, one elided with an ellipsis, one with a bracketed edit, one fabricated, one whose fragments sit in two different notes, one in reversed order.
+
+Writing those tests turned up three more bugs in that checker inside an hour, one of which had produced a 48% figure I was close to publishing. Wrote that up separately here today. So: confirmed, cheap, and it paid for itself on the first thing I aimed it at.
+
+Thanks for both — the second one was worth more than the first.
+                  [nitish-kmr | 2026-09-16 06:37 | score 1] That's cleaner than I expected. Ten of eleven unmoved in the short group is about as close to a clean control as you get without designing one.
+
+The count effect makes sense if you think about where the evidence has to land. With five long notes each cut at 600 characters, every claim has five independent chances for its support to fall outside the window, so the loss compounds per answer rather than per note. One long note is a coin flip. Five is closer to a guarantee.
+
+The eleven that fell are worth reading by hand. Either the extra context introduced a distractor the judge preferred, or it changed its mind for a reason unrelated to support. Small enough set to check, and it tells you how much of the remaining gap is real.
+
+The 48% you didn't publish is the bigger result though. A wrong number caught in an hour costs an hour. The same number caught after publication costs everything downstream of it, including other people's decisions. Worth reporting the judge's own test pass rate next to the metric from now on, so a reader can tell which of your numbers came off a working instrument.
+  [Prothagarus | 2026-09-14 13:55 | score 1] I am currently working on something with RAPTOR  over hyde for these math heavy or scientific/law/medical docs. Curious what your results are
+    [Hungry-Horror-7577 | 2026-09-14 14:20 | score 1] Honest answer: RAPTOR is wired into my pipeline but I have not benchmarked it on the gold set, so I have no real numbers to give you, and I would rather say that than make some up. What I can say structurally: for math/science books the win I would expect from RAPTOR is on the "across a chapter" questions, where the answer is a synthesis rather than one passage, and those are exactly the questions my flat chunk + reranker setup misses least often because my gold set is generated per-chunk, so it under-tests them. In other words my 98% recall is partly a property of how I build the gold set, and a RAPTOR-friendly eval would need multi-hop / summary questions in the set. HyDE I would expect to help less on this corpus because the exact-term questions (indicator names, formulas) are already carried by the BM25 half of the hybrid.
+
+  
+So the real question is what your eval looks like. If you have gold-set numbers for RAPTOR vs flat on multi-hop questions I would genuinely like to see them, that is the gap in my own measurement. What are you seeing so far?
+      [Prothagarus | 2026-09-14 15:29 | score 1] When questions reference other work or concepts jump outside the first document is where you are going to see better retrieval. Also highly hierarchical documents with section subsection drill down when they get references. Could be combined with image recognition for interpreting charts and diagrams better
+        [Hungry-Horror-7577 | 2026-09-14 18:03 | score 1] Half agree, and the measurement went the other way in one specific spot, which is the part I find interesting.
+
+Cross-document did buy coverage: dropping the book filter and growing the index 9x cost only 1.9 points of recall. But every single remaining miss was a *generic* concept question — VaR confidence level, Modern Portfolio Theory, a stop-loss threshold — where three books answer the same thing and a different one outranks the true source. The answer comes out right; the citation points at the wrong book. So cross-document trades attribution accuracy for coverage, and on an overlapping corpus that trade is real rather than theoretical.
+
+Hierarchical drill-down is the thing I haven't built, and it's my honest gap. My gold set is generated per chunk, so it literally cannot reward a structure that pays off across sections — I'd have to build a multi-hop set first or I'd be measuring nothing.
+
+Charts: I run a VLM for figure descriptions and it's decent. Tables are the weak path — roughly a quarter of table chunks survive as clean structure. That's the number I'd want anyone to see before they believe a "works on technical PDFs" claim, mine included.
+  [ImNotLeet | 2026-09-14 13:08 | score 1] Did you try pypdf4llm over docling?   
+Why such a large retrieval llm?
+
+You run 8b at what size chunks?
+    [Hungry-Horror-7577 | 2026-09-14 13:28 | score 1] Not pymupdf4llm specifically. Plain PyMuPDF is wired in as the fallback engine and as a cross-check (pages are read by both, and if Docling comes back empty the PyMuPDF text is used), but for the main pass Docling won on two-column layouts and reading order, which is most of my corpus. A proper pymupdf4llm vs Docling benchmark on the gold set would be fair, I have not done it.
+
+  
+The 8B embedder is not a retrieval-quality decision alone, it is the biggest model on the multilingual MTEB list that fits next to the 8B reranker in unified memory with room left for the answerer. On 128 GB the extra \~12 GB over a 1B embedder costs nothing, so I took it. No ablation against a small embedder yet, that is on the list.
+
+  
+Chunks are small: median \~330 chars (\~70 tokens), p90 \~2,100 chars. They are semantic units from a per-page vision pass (one chunk per concept, formula, code block, table, example), not fixed windows, so size varies a lot. The cross-encoder reranker over 40 candidates is what makes small chunks work, it sees each whole chunk against the question.
+  [InsideDebt6345 | 2026-09-14 12:45 | score 1] Ranking PDF extraction as the number-one lever also aligns with where these systems die. Ligature soup and scattered-text chunks are unrecoverable downstream, and no reranker saves a chunk that got mangled at ingest, so fixing it at the source is the highest-leverage thing nobody wants to do because it's unglamorous.
+    [Hungry-Horror-7577 | 2026-09-16 10:39 | score 1] Audited exactly that this morning: all 32,300 chunks, no model, just text arithmetic. Ligature soup: 0. Mojibake: 0. Unrejoined hyphenation: 0. The classic OCR failures are absent, which is what the docling pass is there for.
+
+What was there instead is worse, and invisible to every one of those checks: 107 chunks that are the extractor stuck in a loop. `def konto(msg, window=None):` 916 times in a row on one page of Lopez de Prado. `\qquad` 3,707 times on a page of stochastic calculus. About 1% of the index by characters, filed as prose, embedded, sitting in BM25 with a term frequency in the thousands, and the LLM repair pass had marked those pages clean. Two of my gold questions are drawn from those pages.
+
+The other finding cuts the other way: 155 pages that produced no chunks turned out to be byte-identical blank renders. The same 20 KB PNG appears in six different books. Zero content lost there, which took an afternoon to prove and would have taken a minute to assume. Re-extraction of the 51 affected pages runs tonight, and the numbers I have posted so far describe the index before that repair.
+  [Puffdotbusiness | 2026-09-14 12:31 | score 1] Following
+  [Candid_Ad_6752 | 2026-09-14 12:21 | score 1] Following
+  [themflyingjaffacakes | 2026-09-14 11:37 | score 1] I'm building a RAG system at the moment and I'm pleased to say some of the components from your post I've integrated, other no.
+
+Are you able to share more technical detail? Do you have a blog post (even if AI generated!) that goes into the methodology. I'd appreciate is to I can ask Fable and Astra to make independant reviews of the techniques vs my codebase.
+
+Good work, RAG is not dead!
+    [Hungry-Horror-7577 | 2026-09-14 15:05 | score 1] Wrote it up properly rather than making you dig through this thread. Method note here: [https://claude.ai/code/artifact/e2ae3542-c6d9-4c78-ade3-381017512bd6](https://claude.ai/code/artifact/e2ae3542-c6d9-4c78-ade3-381017512bd6)
+
+  
+It covers how the gold set is constructed (including the verifier that kills falsely-unanswerable questions and the mechanical number perturbation behind the false-premise probes), why the two tiers are split and cached separately, the per-source numbers, the stale-key failure that made one book look like a 47% retrieval collapse, and the judge-agreement section.
+
+  
+The part I'd actually point your reviewers at is the last section, "what this does not measure" — especially that questions are generated per chunk, which biases the headline recall upward for flat retrieval and gives hierarchical approaches nothing to show. If Fable and Astra tear into anything, I'd bet on that.
+
+  
+Judge-tier numbers for the 27-book index are still computing, so they're deliberately absent rather than estimated.
+      [themflyingjaffacakes | 2026-09-15 13:13 | score 1] Thank you so much, I'm a bit distracted with getting a build finished but I'll comeback to this asap
+        [Hungry-Horror-7577 | 2026-09-15 18:00 | score 1] No rush at all — finish your build. The thread isn't going anywhere, and neither am I. If it's still useful when you surface, the part I'd start with is the frozen gold set; everything else in the post is downstream of it.
+    [Hungry-Horror-7577 | 2026-09-14 13:17 | score 1] No blog post yet, this thread is the most detailed write-up so far. I'll do a proper methodology post once the judge-tier numbers on the 27-book index are in (eval harness design, the gold-set generator prompt, and the corruption detector thresholds are the parts people keep asking about). Until then: ask specifics here, I answer everything. Which components did you leave out and why? Curious what didn't fit your setup.
+  [alexpran | 2026-09-14 11:34 | score 1] The two judge κ is the part I'd point everyone to: a faithfulness κ of 0.08 is the number that tells you the metric isn't yours, its the judge's. One thing I'd add to that harness, and it's cheap compared to what you've already built: same judge, same outputs, run three or five times. Inter judge agreement tells you whether two models see the same thing, intra judge agreement tells you whether one model sees the same thing twice, and on rubric style faithfulness it often doesn't. It also puts a bound on the κ, two judges can't agree with each other more than each one agrees with itself. And when you re-run on the 27 book index, keep the per question results of this run. The interesting number won't be the MRR drop, it'll be which questions dropped and whether they cluster on one book or on a chunk type.
+    [Hungry-Horror-7577 | 2026-09-14 13:16 | score 1] You called it exactly. I kept per-question results, and the drops on the 27-book index clustered 100% on one book. Turned out not to be retrieval at all: that book's gold set had been frozen before a re-index, so the source keys were stale (right book in top-8 every time, wrong page). Rebuilt the gold set, same retriever, 47% -> 97.6%. Without per-question data I would have blamed the reranker. Intra-judge repeats are next, 3 runs same judge same outputs, cheap enough on the local box overnight.
+      [alexpran | 2026-09-14 14:11 | score 1] That's the whole method in one paragraph really: per question results, a pattern in the misses, the instrument before the system. Post the intra judge spread when you have it, on faithfulness especially. My guess is it explains a good chunk of that 0.08
+        [Hungry-Horror-7577 | 2026-09-16 10:39 | score 1] Two numbers now, and they say the instrument was most of it.
+
+Same judge, same 60 questions, answers regenerated: faithfulness 68% to 58.3%. That is generation noise and judge noise together, and it is why I now treat anything under 10 points on faithfulness as no result.
+
+Same judge, same fixed answers, one change: the judge sees 2,000 characters of each retrieved passage instead of 600. 57.6% to 82.1% across all 210 questions. The average passage is about 1,100 characters and more than half are longer than 600, so the old judge was grading claims against evidence it had never been shown. Broken into individual claims, the 2,000-character run gives 537 supported, 0 contradicted, 14 not-in-context out of 551. One judge, one pass, so I am not calling that a hallucination rate yet, only what one pass found.
+
+Your guess was right in direction and wrong in size: the spread explains some of it, the truncation explains most of it, and I explained none of it until I printed a single grading prompt in full and read it.
+          [alexpran | 2026-09-16 10:45 | score 1] "I explained none of it until I printed a single grading prompt in full and read it" is the line. The 600 character truncation isn't variance, it's configuration, and no amount of repeats would have surfaced it, repeats measure how much a thing moves and not what it is. That's the split I'd keep: the spread bounds what you can claim from a delta, the printed prompt tells you what you're measuring in the first place, and the second one is the cheaper of the two.
+
+The 68 to 58.3 with answers regenerated is also the number I'd put next to any faithfulness table anyone publishes, mine included: ten points of headroom before a delta means anything, measured rather than assumed.
+
+One caution on the 537/0/14: zero contradicted across 551 claims is either a very good pipeline or a judge that has quietly stopped using one of its labels. Your own partial coverage control would answer it, a claim the passage plainly contradicts, planted, that has to come back contradicted. Same reason as the middle control.
+            [Hungry-Horror-7577 | 2026-09-17 05:23 | score 1] Your caution was right, and I have to be careful about what I can actually offer against it.
+
+I ran the degraded sweep overnight. It does not settle your question, because it was on the correctness judge, a different prompt from the three way faithfulness split that produced the 537 / 0 / 14. Same model, different task. So the 0 contradicted is still untested.
+
+What it does do is move the prior a long way. Six levels, same 60 answers each time. The production prompt gives 55 ones, 4 zeros and a single 0.8. The level where the rubric explicitly says reply 1.0 or 0.0 and nothing else gives 55 ones and 5 zeros. I cannot tell those two apart. The only level with intermediate values was the one I broke on purpose, and its middle is 0.95, 0.96, 0.97, so it is not grading either, it just stopped rounding up.
+
+So "a judge that has quietly stopped using one of its labels" is not a hypothetical for this model. It is measured behaviour on the neighbouring task, with the production prompt, at temp 0.
+
+The one thing already on record that survives: rule of three puts the 95 percent upper bound at 0.54 percent, so the sayable claim was always "under 0.6 percent" rather than zero. That does not rescue anything though. A judge that never emits the label produces exactly that number too, and the interval cannot tell you which one you have.
+
+The planted contradiction goes on the list next to your middle control, and I noticed they share a construction, which makes both cheap. Take a reference with three facts. Candidates carrying one, two and three of them give you the middle control. A fourth that negates one fact gives you the contradiction control. Same material, both instruments, no model needed to build either since the facts are already sitting in the reference.
+
+If the contradiction comes back as supported then 97.5 percent supported is not a pipeline result, it is a judge with two working labels out of three, and the faithfulness number goes in the same drawer as the 48 percent :)
+  [donk8r | 2026-09-14 11:01 | score 1] Before you write faithfulness off as judge-dependent, check the raw agreement. Kappa falls apart when one label dominates. If both judges call about 95% of answers faithful, chance agreement alone is around 90%, so they can agree on 91% of items and still land near κ 0.05.
+
+With a base rate that high, the handful of disagreements carries the whole metric. Read those by hand, or report Gwet's AC1 next to kappa so the prevalence stops hiding the answer.
+    [Hungry-Horror-7577 | 2026-09-14 13:15 | score 1] Fair hit. Faithfulness base rate in that run was \~95%, which is exactly the prevalence trap you describe, so the 0.08 says less than I made it sound. I still have the per-question verdicts from both judges, so I'll pull raw agreement and AC1 and read the disagreements by hand before the next judge run. Will put the numbers here.
+      [donk8r | 2026-09-14 13:55 | score 1] One place to look first when you read them. Your set has unanswerable and false-premise questions, and faithfulness is hardest to judge when the correct answer is a refusal. One judge can score "the notes don't cover this" as faithful while the other treats it as nothing to grade.
+
+If the disagreements pile up there, write a rule for refusals into the judge prompt. The metric itself may be fine.
+        [Hungry-Horror-7577 | 2026-09-14 14:17 | score 1] Good place to look. One correction on my own harness though: faithfulness and correctness are only scored on answerable questions (the graded set filters to answerable), so a pure refusal to an unanswerable question never enters the faithfulness pool. It's counted separately as abstention. So the refusal-vs-nothing-to-grade split can't be the whole story here.
+
+  
+Where your point does bite: partial refusals on ANSWERABLE questions, i.e. "the notes only cover part of this, X but not Y." Those are in the pool, and that is exactly the kind of answer where one judge reads the hedge as honest grounding and the other counts the unsupported half as a faithfulness miss. So a rule in the judge prompt for how to score a hedge on an answerable question is the right lever. Adding that to the prompt before the re-run, thanks.
+          [donk8r | 2026-09-14 14:54 | score 1] Fair, I assumed refusals were in the pool. The hedge case is the better target anyway. A partial answer is where "grounded" and "complete" pull in opposite directions, so two judges can each apply a reasonable rule and still disagree.
+            [Hungry-Horror-7577 | 2026-09-14 18:03 | score 1] Agreed on the hedge case — and I owe you the AC1 number I promised, with a confession attached.
+
+I ran the panel this afternoon: llama3.3-70b as primary judge, gpt-oss-120b as the second, 60 answerable questions, same fixed answers. The panel report came back with 5% raw agreement on correctness and κ = 0.0. Which looked like a spectacular result until I read the log: the primary judge had never loaded. HTTP 500 at load time (the 122B answerer hadn't finished unloading), every grading call after that threw, every exception was caught and turned into an empty string, and an empty string parses to 0.0. 275 verdicts, all zero, and the run finished "cleanly" with a report that said 0% correctness.
+
+So the AC1 I was about to post would have been agreement between a real judge and a constant function. I'm not posting it. The fix is in the harness now: probe the judge with one trivial grading prompt before Phase B, count failed calls, abort if more than 5% failed — and drop a panel judge that dies instead of computing agreement against it. A wrong number is worse than no number.
+
+What I do have from the working judge alone (gpt-oss-120b, n=60): correctness 95%, relevance 97%, faithfulness 68% — same shape as July, faithfulness is the metric that splits. I'll re-run the panel with two judges that actually load and post the AC1 then. Your point stands either way: on partial answers two reasonable rules can disagree, and the way to know which metric you can trust is to measure the disagreement rather than assume it away.
+              [donk8r | 2026-09-14 18:48 | score 1] Good call not posting it. An empty string parsing to 0.0 is the worst kind of failure, because it hands you a plausible number.
+
+The 68% changes my earlier point though. At that base rate chance agreement is nowhere near the 90% I was worried about, so the prevalence trap mostly goes away. If llama3.3 still lands in the 90s on these same 60 once it actually loads, that gap in level is the judge dependence you suspected in the first place. You won't need kappa to see it.
+                [Hungry-Horror-7577 | 2026-09-15 07:01 | score 2] You're right, and the re-run is going now: gpt-oss as primary on all 275, plus a second judge from a different family (qwen3.6:27b) on the same 60. So I get both levels on identical answers instead of kappa against a corpse.
+
+Your framing is the better one. If the two judges land twenty-plus points apart on the same fixed answers, that gap is the finding and no agreement statistic is needed to see it. I'll still compute raw agreement and AC1, but mostly for the per-question disagreement list — the cases where two reasonable judges split are worth reading individually, and that's the part a single number throws away.
+
+The other thing that came out of the failure: the harness now probes the judge with one trivial grading prompt before Phase B and aborts if more than 5% of grading calls fail. Cost me a five-hour run to learn that a caught exception is a silent zero.
+                  [donk8r | 2026-09-18 11:41 | score 1] If the gap is the finding, the headline can't be one score. Either report the per-item spread as the result, or hand-resolve the contested items and publish that with the two judge numbers as bounds. Pick one and say which in the post. A headline plus a caveat is how the earlier wrong number got out.
+
+One passing probe is consistent with a failure rate well above 5%. Probe twenty and abort on the observed count, or keep it as a canary and let the failure rate over the first few dozen grading calls do the aborting.
+      [Hungry-Horror-7577 | 2026-09-14 13:37 | score 1] Pulled the July panel reports (llama3.3-70B vs gpt-oss-120B, 30 questions per book, verdicts binarized at >= 0.5). It splits the way you predicted, but only for one metric:
+
+  
+Correctness: raw agreement 87 / 93 / 87 / 93 % across the 4 books, kappa 0.0 / 0.47 / 0.0 / 0.0. That is the prevalence trap. Both judges say "correct" nearly every time and the handful of disagreements decides kappa. Correctness is fine, kappa was the wrong lens.
+
+  
+Faithfulness: raw agreement 80 / 57 / 60 / 47 %, kappa 0.0 / 0.08 / 0.0 / -0.07. So no, that one is not prevalence. At 47-60 % raw the two judges genuinely disagree on which answers are faithful. The main judge (llama) scores 1.0 on 77-94 % of answers per book; for raw agreement to land that low, the second judge must be putting a large share under 0.5. I only have the aggregate from July, not gpt-oss's per-question scores, so I can't say yet whether that is rubric strictness or something else. "Judge-dependent" stands for faithfulness, the reason is still open.
+
+  
+Relevance: 97-100 % raw, both agree.
+
+  
+AC1 with exact marginals comes from the current 27-book run, per-question verdicts from both judges are being written right now. Reading the disagreements by hand is the real next step, agreed.
+  [singlebit | 2026-09-14 10:56 | score 1] Very nice. I will have to revisit it later. 
+!remindme 1 week
+    [RemindMeBot | 2026-09-14 10:57 | score 1] I will be messaging you in 7 days on [**2026-09-21 10:56:47 UTC**](http://www.wolframalpha.com/input/?i=2026-09-21%2010:56:47%20UTC%20To%20Local%20Time) to remind you of [**this link**](https://www.reddit.com/r/Rag/comments/1wfzp1a/fully_offline_rag_over_27_technical_books_11k/p9q9ard/?context=3)
+
+[**CLICK THIS LINK**](https://www.reddit.com/message/compose/?to=RemindMeBot&subject=Reminder&message=%5Bhttps%3A%2F%2Fwww.reddit.com%2Fr%2FRag%2Fcomments%2F1wfzp1a%2Ffully_offline_rag_over_27_technical_books_11k%2Fp9q9ard%2F%5D%0A%0ARemindMe%21%202026-09-21%2010%3A56%3A47%20UTC) to send a PM to also be reminded and to reduce spam.
+
+^(Parent commenter can ) [^(delete this message to hide from others.)](https://www.reddit.com/message/compose/?to=RemindMeBot&subject=Delete%20Comment&message=Delete%21%201wfzp1a)
+
+**RemindMeBot is switching to username summons.** Instead of `!RemindMe 1 day`, use `u/RemindMeBot 1 day`. [More info.](https://www.reddit.com/r/RemindMeBot/comments/1tskg07/remindmebot_is_switching_to_username_summons/)
+
+*****
+
+|[^(Info)](https://www.reddit.com/r/RemindMeBot/comments/e1bko7/remindmebot_info_v21/)|[^(Custom)](https://www.reddit.com/message/compose/?to=RemindMeBot&subject=Reminder&message=%5BLink%20or%20message%20inside%20square%20brackets%5D%0A%0ARemindMe%21%20Time%20period%20here)|[^(Your Reminders)](https://www.reddit.com/message/compose/?to=RemindMeBot&subject=List%20Of%20Reminders&message=MyReminders%21)|[^(Feedback)](https://www.reddit.com/message/compose/?to=Watchful1&subject=RemindMeBot%20Feedback)|
+|-|-|-|-|
+  [Lower-Impression-121 | 2026-09-14 10:46 | score 1] for 'testing', do those books have readily available Q&A to supplement the made up tests or doing it oneselves. how did you pick the 55? random, by topic complexity?
+    [Hungry-Horror-7577 | 2026-09-14 13:15 | score 1] No external Q&A, all generated. Per book I sample \~90 chunks at random, and a local model (qwen3.5 122B-A10B) writes one question per chunk that must be answerable from that chunk alone, plus the reference answer. Then I force the mix: \~7 unanswerable (about the book's topic, but the fact is not in it) and \~6 counterfactual (a real fact from the chunk with one value changed, so the system has to correct or refuse). The 55 is just a budget number, not topic-stratified. The unanswerable ones are verified against the index with a second pass, so I know they are really absent.
+
+(fetched 71 comments total; rendered top 22 roots by score)

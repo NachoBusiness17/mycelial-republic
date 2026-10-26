@@ -1,0 +1,36 @@
+=== HEAD CHECK 1: metering gate tests (estate's own) ===
+$ .venv/Scripts/python.exe -m pytest tests/test_cost_ledger.py tests/test_cost_truth.py -q
+.....                                                                    [100%]
+5 passed in 6.47s
+PYTEST_EXIT=0
+
+=== HEAD CHECK 2: tick-arithmetic parser over byte datapoints ===
+$ .venv/Scripts/python.exe C:/Users/foste/AppData/Local/Temp/grokbot_metered_check.py
+[1] xai_grok ledger rows=3 prompt_tokens=58044 completion_tokens=4643 cost_usd_null_rows=3
+    2026-10-03T13:25Z grok47_ask1: in=2785 out=1930 banked_cost=None list_rate_est=$0.017150
+    2026-10-03T13:27Z grok47_ask2: in=2087 out=2115 banked_cost=None list_rate_est=$0.016864
+    2026-10-03T13:28Z grok47_ask3: in=53172 out=598 banked_cost=None list_rate_est=$0.109932
+    today measured burn at estate list rates: $0.143946 over 62687 tokens (reasoning tokens NOT banked by carrier)
+[2] A luncheon grok-4.7: in=1561 cached=1152 completion=587 reasoning=3217 ticks=242180000
+    computed $0.024218000 vs ticks*1e-10 $0.024218000 delta=0.000000000000 exact=True
+[2b] B stage1 grok-4.5: in=484 cached=128 completion=2546 reasoning=323 ticks=179644000
+     computed $0.017990000 vs ticks*1e-10 $0.017964400 delta=0.000025600 (within 0.5%=True)
+[3] premium_autopsy xai replay est: $0.539994 (receipt claims $0.54) reproduces=True
+[4] 24/7 extrapolation (measured $0.231/answer, 572s avg): 151 answers/day = $34.89/day = $1062.12/mo (adversarial-review shape, arithmetic not a measured 24/7 run)
+CHECK PASS
+PARSER_EXIT=0
+
+=== HEAD CHECK 2 RE-RUN: per-model cached rates (docs.x.ai fetched 2026-10-03: grok-4.7 cached $0.50/M, grok-4.5 cached $0.30/M) ===
+[1] xai_grok ledger rows=3 prompt_tokens=58044 completion_tokens=4643 cost_usd_null_rows=3
+    2026-10-03T13:25Z grok47_ask1: in=2785 out=1930 banked_cost=None list_rate_est=$0.017150
+    2026-10-03T13:27Z grok47_ask2: in=2087 out=2115 banked_cost=None list_rate_est=$0.016864
+    2026-10-03T13:28Z grok47_ask3: in=53172 out=598 banked_cost=None list_rate_est=$0.109932
+    today measured burn at estate list rates: $0.143946 over 62687 tokens (reasoning tokens NOT banked by carrier)
+[2] A luncheon grok-4.7: in=1561 cached=1152 completion=587 reasoning=3217 ticks=242180000
+    computed $0.024218000 vs ticks*1e-10 $0.024218000 delta=0.000000000000 exact=True
+[2b] B stage1 grok-4.5: in=484 cached=128 completion=2546 reasoning=323 ticks=179644000
+     computed $0.017964400 vs ticks*1e-10 $0.017964400 delta=0.000000000000 exact=True
+[3] premium_autopsy xai replay est: $0.539994 (receipt claims $0.54) reproduces=True
+[4] 24/7 extrapolation (measured $0.231/answer, 572s avg): 151 answers/day = $34.89/day = $1062.12/mo (adversarial-review shape, arithmetic not a measured 24/7 run)
+CHECK PASS
+PARSER_RERUN_EXIT=0

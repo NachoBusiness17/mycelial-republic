@@ -1,0 +1,73 @@
+t56 check evidence (gopher t56, gala afterparty, 2026-09-25)
+
+ITEM: roblox/src/server/init.server.luau attachLeaderstats 1s poll replaced
+with change-signal bindings. Receipt cites t14c. Poll REMOVED, no fallback.
+
+BEFORE (pre-edit file, read at session start):
+- L167-204 attachLeaderstats; poll block L184-203:
+  task.spawn(function() while player.Parent do
+    marks.Value = player:GetAttribute("VirtueMarks") or 0
+    rebirths.Value = player:GetAttribute("Rebirths") or 0
+    invariants.Value = player:GetAttribute("Invariants") or 0
+    (t14c L189-193 comment: summit count = Summit_<roundStart> booleans)
+    summitCount loop over player:GetAttributes() prefix "Summit_"
+    summits.Value = summitCount; task.wait(1)
+  end end)
+- file was 212 lines; poll fired unconditionally every 1s per player.
+
+AFTER (post-edit file, 237 lines, read back in full):
+- L184-194 t56 receipt comment (names t14c, the sole Summit_ writer
+  LightMazeZone.luau:156 guarded at :155, and the doc evidence for
+  first-add firing).
+- L197-218 sync fns: syncMarks/syncRebirths/syncInvariants (single
+  GetAttribute reads, same expressions as the poll) and syncSummits
+  (unchanged Summit_ prefix count logic, t14c rationale preserved).
+- L216-219 one-time seed calls (cover attribute values set before attach;
+  signals do not fire retroactively).
+- L221-223 player:GetAttributeChangedSignal("VirtueMarks"/"Rebirths"/
+  "Invariants"):Connect(sync...) per tracked attribute.
+- L224-228 player.AttributeChanged:Connect(function(name) if
+  string.sub(name,1,7)=="Summit_" then syncSummits() end end) catch-all
+  for the dynamic Summit_ names.
+- L229 function close; PlayerAdded/GetPlayers attach paths unchanged.
+
+WHY NO POLL FALLBACK IS KEPT:
+1. Every stat write in src is a Player SetAttribute. Census:
+   grep -rn "Summit_" roblox/src -> sole writer LightMazeZone.luau:156
+   (SetAttribute(("Summit_%d"):format(roundStart), true), guarded by the
+   not-already-set check at :155, once per round). VirtueMarks/Rebirths/
+   Invariants writers likewise SetAttribute (t14c census, re-read intact).
+2. GetAttributeChangedSignal(name) fires on any SetAttribute to that name
+   (official attributes doc: "lets you listen for changes to one attribute").
+3. Dynamic Summit_ names cannot be pre-bound to GetAttributeChangedSignal;
+   they use the catch-all Instance.AttributeChanged. First-add firing
+   verified from official docs, create.roblox.com/docs/scripting/attributes
+   (fetched 2026-09-25): the change-detection example sets
+   cabbage:SetAttribute("Grow", false) as a NEW attribute and the doc's own
+   comment says "-- Fires Changed and AttributeChanged". Each Summit_ write
+   is exactly such a first-time add, so it fires with the new name.
+4. Negative case checked: scripts cannot remove attributes (no removal
+   signal case exists), and pre-attach values are covered by the one-time
+   seed, which is not a timer. Therefore every case is signal-covered and
+   the 1s poll is fully removed, not kept as fallback.
+
+CHECKS RUN:
+- read-back of post-edit attachLeaderstats (L167-229): balanced blocks,
+  strict-mode types fine (AttributeChanged handler param typed string),
+  t14c comment preserved in syncSummits block.
+- grep task.wait|task.spawn in init.server.luau: NO_POLL_LEFT (the only
+  prior match was the removed poll).
+- em-dash scan over edited region: NO_EM_DASH.
+- grep signal count: 7 references (3 doc-comment + 3 bindings + 1 catch-all).
+- grep Summit_ across roblox/src: sole writer LightMazeZone.luau:156,
+  consumer only init.server.luau (this block).
+- luau-lsp not on PATH (where luau-lsp empty): semantic analyze skipped,
+  filed per lane law. Verification is by read only.
+- mountain_check NOT run per lane order (shared).
+
+SIGNAL COVERAGE CAVEAT (negatives first-class, stated plainly):
+- AttributeChanged fires per attribute-set, including first add (doc-
+  evidenced). It does not cover hypothetical future writers that mutate a
+  shared table attribute's contents in place (no such writer exists in
+  src; all stat writes are top-level scalars). If a future writer changes
+  that pattern, this design must be revisited, not patched with a poll.

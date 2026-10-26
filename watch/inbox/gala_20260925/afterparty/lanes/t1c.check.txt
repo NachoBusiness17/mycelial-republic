@@ -1,0 +1,69 @@
+t1c.check.txt - GalleryZone string-vs-number TypeError class x7 (gopher t1c, 2026-09-25)
+mountain_check NOT run (t1a holds the gate this wave). Verification below is raw grep, git diff, and careful read. All output unedited.
+
+== BEFORE: raw lines 26-32 of watch/inbox/gala_20260925/w2/lanes/a01-mountain.check.txt (a01 gate capture) ==
+roblox/src/server/zones_extra/GalleryZone.luau(23,76): TypeError: Expected this to be 'string', but got 'number'
+roblox/src/server/zones_extra/GalleryZone.luau(24,57): TypeError: Expected this to be 'string', but got 'number'
+roblox/src/server/zones_extra/GalleryZone.luau(25,59): TypeError: Expected this to be 'string', but got 'number'
+roblox/src/server/zones_extra/GalleryZone.luau(26,77): TypeError: Expected this to be 'string', but got 'number'
+roblox/src/server/zones_extra/GalleryZone.luau(27,57): TypeError: Expected this to be 'string', but got 'number'
+roblox/src/server/zones_extra/GalleryZone.luau(28,72): TypeError: Expected this to be 'string', but got 'number'
+roblox/src/server/zones_extra/GalleryZone.luau(29,46): TypeError: Expected this to be 'string', but got 'number'
+
+== ROOT CAUSE (read, old file lines 20-35): positional DOORS rows mixed {string, string, number};
+== luau unified the row element type to string and flagged each numeric seed literal.
+
+== AFTER: grep -rn GalleryZone roblox/src (raw) ==
+C:/Users/foste/Documents/projects/local_sovereign_agent/roblox/src\server\init.server.luau:37:	{ name = "GALLERY",         module = require(script:WaitForChild("zones_extra"):WaitForChild("GalleryZone")),         pos = Vector3.new(0, 8, -260),    color = Color3.fromRGB(217, 164, 65) },
+C:/Users/foste/Documents/projects/local_sovereign_agent/roblox/src\server\zones_extra\GalleryZone.luau:2:-- GalleryZone — "The Estate Gallery": the operator's static web gallery made
+C:/Users/foste/Documents/projects/local_sovereign_agent/roblox/src\server\zones_extra\GalleryZone.luau:17:local GalleryZone = {}
+C:/Users/foste/Documents/projects/local_sovereign_agent/roblox/src\server\zones_extra\GalleryZone.luau:210:function GalleryZone.build(): Model
+C:/Users/foste/Documents/projects/local_sovereign_agent/roblox/src\server\zones_extra\GalleryZone.luau:234:function GalleryZone.tick(dt: number)
+C:/Users/foste/Documents/projects/local_sovereign_agent/roblox/src\server\zones_extra\GalleryZone.luau:264:return GalleryZone
+
+== AFTER: positional door[ accessors remaining (raw; exit 1 = none left) ==
+(no matches, grep exit 1)
+
+== AFTER: typed DOORS declaration and accessors (raw) ==
+25:type Door = { name: string, inscription: string, seed: number }
+26:	local DOORS: { Door } = {
+115:	local door = DOORS[idx]
+116:	local rng = SeedRng.new(door.seed * 7919 + 104729) -- same salt as the source
+136:		latticeLabel.Text = string.format('ISFAHAN LATTICE — seed %d · "%s"\n"%s"', door.seed, door.name, door.inscription)
+159:		seedDoor(doorIdx % #DOORS + 1)
+
+== AFTER: git diff --stat (raw) ==
+ roblox/src/server/zones_extra/GalleryZone.luau | 36 ++++++++++++++------------
+ 1 file changed, 20 insertions(+), 16 deletions(-)
+
+== READ VERIFY: fixed file line 1 (strict mode intact) ==
+--!strict
+
+== READ VERIFY: fixed file lines 20-30 (typed Door + first rows, values verbatim vs git HEAD) ==
+-- the 12 named doors, verbatim from the Isfahan source (name, inscription, seed)
+-- luau has no tuple types: rows carry named fields so name/inscription stay
+-- string and seed stays number. Fix receipt: the old positional rows
+-- {name, inscription, seed} made luau unify the row element to string and flag
+-- each numeric seed as TypeError x7 (w2/lanes/a01-mountain.check.txt lines 26-32).
+type Door = { name: string, inscription: string, seed: number }
+	local DOORS: { Door } = {
+	{ name = "the mirror toll", inscription = "your reflection holds the door you cannot wait at", seed = 11 },
+	{ name = "two banks", inscription = "two banks of one river, never merged", seed = 7 },
+	{ name = "the ninth law", inscription = "the world only moves when you move", seed = 9 },
+	{ name = "the passing guard", inscription = "the sentry walks its line; cross behind its back", seed = 13 },
+
+== READ VERIFY: fixed file lines 113-116 and 135-137 (typed accessors; salt math seed*7919+104729 unchanged) ==
+local function seedDoor(idx: number)
+	doorIdx = idx
+	local door = DOORS[idx]
+	local rng = SeedRng.new(door.seed * 7919 + 104729) -- same salt as the source
+	if latticeLabel then
+		latticeLabel.Text = string.format('ISFAHAN LATTICE — seed %d · "%s"\n"%s"', door.seed, door.name, door.inscription)
+	end
+
+== READ VERIFY: SeedRng.new signature, roblox/src/shared/SeedRng.luau lines 16-17 (raw) ==
+function SeedRng.new(seed: number): Rng
+	local self = setmetatable({ seed = seed % 2147483647 }, { __index = SeedRng })
+
+== EM-DASH LAW SCAN (raw) ==
+t1c.json: 0 hits. t1c.check.txt: 3 hits, all inside raw quoted GalleryZone source lines above (the source's pre-existing string literals and header comment contain em-dashes); authored prose here has 0. Raw evidence left byte-unedited so the quotes stay truthful.

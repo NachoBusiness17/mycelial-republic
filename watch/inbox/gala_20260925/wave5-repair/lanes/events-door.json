@@ -1,0 +1,55 @@
+{
+  "lane": "events-door",
+  "division": "B",
+  "status": "done",
+  "updated": "2026-09-29",
+  "ask": "Repair EVENTS.jsonl door: 5 schema-less rows (lines 54-58) make mag/link_library.py load_events() raise; no-erase backfill in charter schema, register per drift law rule 2, loader serves all rows with zero raise.",
+  "receipt": "watch/inbox/wave5_repair/events-door.md",
+  "banked": [
+    "Reproduced the raise first-hand: venv python load_events() -> ValueError naming B2-142-HN-QWEN38-DIG, exit 1; start bytes 58 rows / 43737 / sha ae77c791... identical to f-05 census",
+    "Spec first: section 4 no-erase backfill amendment appended to SCOUT_CHARTER_20260926.md (charter owns event-row shape; kind vocabulary finding/ALERT/verdict at line 17)",
+    "Backfill banked in one critical section (events-door.backfill.py): 5 carrier rows appended at lines 59-63, id <original>-BACKFILL, verbatim content, origin.file/line/replaces + original_ts + line sha256; 5 bad rows byte-untouched; zero em/en dash + zero nonascii asserted per carrier; new sha 4d7e5611... size 52596, 58 -> 63 rows",
+    "Register banked same critical section: seq 1790677271642025400 ts 2026-09-29T10:21:11.642Z class DATA writer events-door; verified NEWEST EVENTS.jsonl register row, sha equals bytes (drift law rules 1+2)",
+    "Loader amended (mag/link_library.py:180): two-pass parse, named debt via origin.replaces accepted by name and skipped, unnamed schema-less rows still raise; no production caller depended on the raise (links_split_gate.py:86 is an error-string; cache_identity + md_record_audit unrelated)",
+    "Suite: new test test_load_events_skips_only_named_backfilled_rows; existing test at tests/test_link_library.py:143 still proves unnamed debt raises",
+    "FINISH LINE PASS (events-door.check.txt): 63 lines parsed zero-raise, loader serves 58 charter rows, 5 superseded ids skipped from service with bytes on file, 5 carriers served, exit 0",
+    "Ratchet cited exit 1 FAIL, attributed: NEW 8dce490bf896c42a mag/link_library.py:413 file-too-long is MINE (388 -> 413 via +25-line mechanism, compressed once from 421 to honest floor); 3 NEW + 1 GROWTH rows are sibling lanes' files, never touched by this lane; baseline-update has no per-hash accept so this lane did NOT batch-register foreign debt - accept-or-fix left to wave owner",
+    "INCIDENT banked: baseline-update --help probe was not inert - it executed and registered 4 claims as by=operator; fully reverted via git checkout (diff held only those claims + updated timestamp); lesson: this CLI has no --help, unknown args run the command",
+    "Full suite pytest -q completed in 2389.58s: 7 failed / 2436 passed / 12 skipped / 15 errors; failures all in sibling-lane files (test_seed_mcp 15 errors, context_pack_delivery 2, headless_law 1 bare-spawn census scanning tools/+tests/ only, organ_map 1, surface_rebuild 3); tests/test_link_library.py absent from failure list (36 inside the 2436 passed)",
+    "f-05 census error noted: line 54 does carry detail (census misread, sha unchanged since census); actual defect (no schema/origin) confirmed"
+  ],
+  "decision": "Closes the f-05 owed repair: fail-closed events door went from 0 of 58 rows served to all 58 charter rows served (63 lines, 5 named debts skipped in-file, zero raise); loader strictness amended not loosened; drift-law register current.",
+  "rows": [],
+  "checks": [
+    {
+      "command": ".venv/Scripts/python.exe watch/inbox/gala_20260925/wave5-repair/lanes/events-door.check.py (runs finishline + pytest tests/test_link_library.py -q + tools/violation_ratchet.py check --changed, banking raw output)",
+      "exit": 0,
+      "evidence": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/wave5-repair/lanes/events-door.check.txt"
+    },
+    {
+      "command": ".venv/Scripts/python.exe watch/inbox/gala_20260925/wave5-repair/lanes/events-door.finishline.py",
+      "exit": 0,
+      "evidence": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/wave5-repair/lanes/events-door.check.txt (FINISH LINE: PASS; 63 lines zero-raise, 58 served, 5 named debts skipped in-file, 5 carriers served)"
+    },
+    {
+      "command": ".venv/Scripts/python.exe -m pytest tests/test_link_library.py -q",
+      "exit": 0,
+      "evidence": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/wave5-repair/lanes/events-door.check.txt (36 passed)"
+    },
+    {
+      "command": ".venv/Scripts/python.exe tools/violation_ratchet.py check --changed",
+      "exit": 1,
+      "evidence": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/wave5-repair/lanes/events-door.check.txt (FAIL: 4 NEW, 1 mine mag/link_library.py:413 file-too-long, 3 sibling lanes' files; acceptance left to wave owner)"
+    },
+    {
+      "command": ".venv/Scripts/python.exe -m pytest -q (full suite, background)",
+      "exit": 1,
+      "evidence": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/wave5-repair/lanes/events-door.check.txt (tail: 7 failed / 2436 passed / 12 skipped / 15 errors in 2389.58s; none in this lane's files)"
+    },
+    {
+      "command": "register vs bytes verification (newest EVENTS.jsonl register seq 1790677271642025400 sha == sha256 of watch/inbox/EVENTS.jsonl) + post-suite load_events() re-run",
+      "exit": 0,
+      "evidence": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/wave5-repair/lanes/events-door.check.txt (final consolidated verification block)"
+    }
+  ]
+}

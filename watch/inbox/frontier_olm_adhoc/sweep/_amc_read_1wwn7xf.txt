@@ -1,0 +1,101 @@
+THREAD 1wwn7xf
+FEED TITLE: Replacing vector databases with SQLite and SIMD hypervectors in under 1.2GB VRAM (Hillock) : reddit.com
+SUBTITLE: 
+ENTRIES: 20
+
+--- [2026-10-03T13:25] /u/Equivalent-Flan-1590 | Replacing vector databases with SQLite and SIMD hypervectors in under 1.2GB VRAM (Hillock)
+Disclosure: I am the creator of this project. After days of lurking and building up enough karma, I can finally post here.
+Every time I tried running local RAG on my own machine, I hit the exact same bottlenecks. First, spinning up Chroma or another vector database alongside an 8B model just to chunk and parse documents takes up precious VRAM that you need for your main model. Second, cosine similarity over text chunks often fails at hard negative rejection, so the model tries to answer questions that are not even in your files and hallucinates with complete confidence.
+I spent the last several months building an open source project called Hillock to see if I could solve this without vector databases. It extracts clean relational facts into SQLite using lightweight bi encoders in about five seconds, completely bypassing the generative LLM during ingestion. To stop hallucinations, queries pass through a 10,000 dimensional hypervector gate using late interaction scoring. If the factual graph does not mathematically overlap with the question, it blocks the LLM call before token generation can even start.
+I just pushed version 0.8 which bit packs the hypervectors into 157 uint64 integers, allowing the CPU to run gating checks in under 0.01 milliseconds using hardware popcount instructions. It also includes an OpenAI compatible API server so you can drop it straight into Open WebUI, AnythingLLM, or Obsidian. It just landed on PyPI as well via pip install hillock.
+The honest trade off is that this pipeline is built for structured, relational facts like technical specs, people, and dates. It is heavily biased toward precision over recall, so it will not do broad poetic or narrative summaries like a 70B model would.
+Code is on GitHub at https://github.com/roandejager/Hillock
+We also set up documentation at https://hillock.mintlify.site and a developer Discord at https://discord.gg/BGUPNBcVdp
+submitted by /u/Equivalent-Flan-1590 to r/LocalLLaMA
+[link] [comments]
+
+--- [] /u/techtheist_ggl | /u/techtheist_ggl on Replacing vector databases with SQLite and SIMD hypervectors in under 1.2GB VRAM (Hillock)
+I'd suggest that it's better to build some benchmarks and use it to improve results.
+Allowing supersession also should be great, that's a power of graph, allowing agent to save why something is wrong, and retrieve it later.
+
+--- [] /u/Equivalent-Flan-1590 | /u/Equivalent-Flan-1590 on Replacing vector databases with SQLite and SIMD hypervectors in under 1.2GB VRAM (Hillock)
+Really solid suggestions.
+On benchmarks: we currently have an internal test harness in the repo (verify_hillock.py) that checks gating accuracy and invariants on unseeded databases, which is actually how we tuned the HDC gate from 55 percent accuracy in earlier builds up to 90+ percent in v0.6. But you are completely right that we need standardized, public benchmarks comparing head to head against baseline chunk RAG on multi hop datasets. That is a major priority for the v1.0 push.
+On supersession: 100 percent agreed. That is one area where structured graphs completely destroy vector chunking. With standard vector stores, conflicting chunks just sit next to each other forever and you pray the LLM guesses the right one.
+In v0.7 we added timestamps, source documents, and confidence columns to the SQLite tables specifically to lay the groundwork for this. We are currently patching single valued predicate updates so newer verified facts overwrite old ones, and having explicit contradiction edges so the model remembers why something was wrong is definitely where we want to take the graph.
+
+--- [] /u/techtheist_ggl | /u/techtheist_ggl on Replacing vector databases with SQLite and SIMD hypervectors in under 1.2GB VRAM (Hillock)
+Well, it's possible to heavy reorder vector chunks, mixing with BM25 and by memory trust score, by number of connections in graph and with rerankers. And methods like tail-aware adaptive top-k also helps to get a honest "no data available" from RAG, and 1-3 records if something is actually found instead of poisonous always 10.
+But, actually, maybe approach like keeping ubiquitous language in memory can help to stay without vector search, if extractor LLM will follow unified convention and name the things in the same way, so grep-like search will land on the same words.
+
+--- [] /u/Equivalent-Flan-1590 | /u/Equivalent-Flan-1590 on Replacing vector databases with SQLite and SIMD hypervectors in under 1.2GB VRAM (Hillock)
+You hit on two really interesting points here.
+On the first part: you definitely can tune vector RAG to give honest refusals, but look at the stack you just described: BM25, cross encoder rerankers, memory trust scoring, and adaptive top-k logic. By the time you glue all those layers together, you have built a massive, compute hungry pipeline that melts an entry level GPU or laptop before the generative model even starts.
+Your second point about ubiquitous language is almost exactly what we are aiming for under the hood. In the TALON extraction pipeline, we use predicate routing and SimHash projections to canonicalize phrasing into a unified schema (for example, mapping informal variations like "worked alongside" into a canonical "collaborated with" predicate). Once you enforce that unified naming convention at ingestion, you get deterministic, grep-like lookup precision straight out of SQLite without needing heavy vector search.
+
+--- [] /u/techtheist_ggl | /u/techtheist_ggl on Replacing vector databases with SQLite and SIMD hypervectors in under 1.2GB VRAM (Hillock)
+Well, actually it's not that much. For example my embedder model + reranker + laya + pipeline full of features takes only 750MB~ of ram, with NLI model instead of laya it's around 650MB~.
+
+--- [] /u/Equivalent-Flan-1590 | /u/Equivalent-Flan-1590 on Replacing vector databases with SQLite and SIMD hypervectors in under 1.2GB VRAM (Hillock)
+Credit where it is due, 650MB to 750MB for an embedder, reranker, and NLI setup is genuinely impressive and way leaner than what most people run.
+The main hurdle we ran into on potato hardware was not just the static RAM footprint, but the CPU latency when chaining those models on pure CPU. Running cross encoder passes and NLI checks across candidate chunks on an older laptop processor gets sluggish pretty quickly.
+With triples in SQLite, once the facts are extracted, retrieval is a direct B tree index lookup and a bitwise popcount check in cache, so you skip running multiple transformer forward passes per query on constrained machines.
+Please consider joining the discord: https://discord.com/invite/BGUPNBcVdp
+
+--- [] /u/me0here | /u/me0here on Replacing vector databases with SQLite and SIMD hypervectors in under 1.2GB VRAM (Hillock)
+Hardware? Eg ARM ?
+
+--- [] /u/Equivalent-Flan-1590 | /u/Equivalent-Flan-1590 on Replacing vector databases with SQLite and SIMD hypervectors in under 1.2GB VRAM (Hillock)
+Yes, ARM works completely fine out of the box.
+I have tested it on Apple Silicon (M series) using ./run.sh and it runs smoothly. Because the v0.8 gating relies on standard NumPy uint64 bit arrays on the CPU (which maps directly down to ARM NEON popcount instructions) and the ONNX runtime uses the CPU provider, you do not need an Nvidia card or CUDA to run it.
+Total memory footprint on ARM is around 1.2GB to 1.5GB of system RAM, leaving the rest of your unified memory completely open for your LLM in Ollama.
+
+--- [] /u/DigThatData | /u/DigThatData on Replacing vector databases with SQLite and SIMD hypervectors in under 1.2GB VRAM (Hillock)
+what do you mean by "hypervectors"? is this like a trie of embeddings or an HNSW or something like that?
+
+--- [] /u/Equivalent-Flan-1590 | /u/Equivalent-Flan-1590 on Replacing vector databases with SQLite and SIMD hypervectors in under 1.2GB VRAM (Hillock)
+Not an index structure like HNSW or a trie. It comes from a field called Hyperdimensional Computing (HDC), also known as Vector Symbolic Architectures.
+The basic idea: instead of a standard 384 or 1536 floating point embedding, you represent concepts in very high dimensions, in our case D = 10,000.
+In 10,000 dimensional space, probability math has a really useful property: any two random vectors are almost completely orthogonal, meaning their cosine similarity is practically zero. Because of that orthogonality, you can do symbolic algebra directly on the vectors. You can bind an entity to a relation using basic element wise multiplication or bitwise XOR without needing a neural network.
+In version 0.8, we bit pack each 10,000 dimensional vector into 157 uint64 numbers, which takes only about 1.2 KB of memory. Checking whether a query mathematically overlaps with your stored facts boils down to bitwise XOR and a hardware popcount instruction on the CPU. It runs in microseconds directly in L1 cache without needing an HNSW index or GPU matrix multiplication.
+If you have any more in-depth questions, please join the discord to chat with other developers and me: https://discord.com/invite/BGUPNBcVdp
+
+--- [] /u/DigThatData | /u/DigThatData on Replacing vector databases with SQLite and SIMD hypervectors in under 1.2GB VRAM (Hillock)
+so it's just a vector and "hyper" is just to convey "it's really big"?
+
+--- [] /u/Equivalent-Flan-1590 | /u/Equivalent-Flan-1590 on Replacing vector databases with SQLite and SIMD hypervectors in under 1.2GB VRAM (Hillock)
+Haha pretty much, yes. It is definitely still a vector, but "hyperdimensional" is the established academic term from Pentti Kanerva's research, not marketing hype I made up.
+The reason researchers separate it from regular vectors is because at D = 10,000, high dimensional geometry does weird things that do not happen in 300 or 1500 dimensions.
+
+--- [] /u/DigThatData | /u/DigThatData on Replacing vector databases with SQLite and SIMD hypervectors in under 1.2GB VRAM (Hillock)
+that still seems kinda moot to me in this context though because the vast majority of representations these days are on the order of the former dim rather than the latter. Like, I use 768 vectors on my home computer as a hobbyist, sure. If you look at MTEB , competitive models are usually at least 2048D.
+high dimensional geometry does weird things that do not happen in 300 or 1500 dimensions.
+honestly, shit gets weird pretty fast. even at 300-1500 D, I think your "any two random vectors are orthogonal with high probability" statement holds true. curse of dimensionality rears its head pretty quick, and measure concentrates to a rank-deficient annulus real fast.
+Anyway, apparently Kanerva is the guy who introduced the SDM model, which crossed my radar recently via a paper you might find interesting: Attention Approximates Sparse Distributed Memory
+
+--- []  | /u/[deleted] on Replacing vector databases with SQLite and SIMD hypervectors in under 1.2GB VRAM (Hillock)
+[deleted]
+
+--- [] /u/DigThatData | /u/DigThatData on Replacing vector databases with SQLite and SIMD hypervectors in under 1.2GB VRAM (Hillock)
+You can achieve this without the high dimension, you just need random projections. A simple way to achieve this in few dimensions is the OG "hashing trick". Try this: parameterize your vector space with two numbers: the length of a hash (e.g. 64), and a number of hashing functions (e.g. 5). You can project literally anything (...hashable) this way, and guarantee both uniformity and orthogonality of random vectors, and even keep that XOR trick too ;)
+The ways of the ancients!
+https://en.wikipedia.org/wiki/Feature_hashing
+https://arxiv.org/abs/1805.08539
+Please consider joining the discord group
+Ask me again in like... I dunno, a month. I used to be very active on discord but have been sort of heads down on some projects for like a year-ish now. Big milestone at the end of the month, might reemerge on discord after.
+
+--- [] /u/GiftQueasy6006 | /u/GiftQueasy6006 on Replacing vector databases with SQLite and SIMD hypervectors in under 1.2GB VRAM (Hillock)
+precision over recall makes sense for facts. how do you handle facts that change over time? do newer ones overwrite in sqlite, or do you keep history and gate on recency?
+
+--- [] /u/Equivalent-Flan-1590 | /u/Equivalent-Flan-1590 on Replacing vector databases with SQLite and SIMD hypervectors in under 1.2GB VRAM (Hillock)
+Right now it depends on whether the relation is single valued or multi valued.
+Multi valued facts (like people someone collaborated with or projects they built) accumulate naturally. For single valued facts (like current job title or location), we are implementing recency based supersession.
+In v0.7 we added timestamp and source_doc metadata to the SQLite tables specifically so we do not have to do destructive overwrites. We keep the historical rows so you can audit where facts came from or query past states, but the retrieval layer prioritizes the most recent verified timestamp when answering questions about current state.
+
+--- []  | /u/[deleted] on Replacing vector databases with SQLite and SIMD hypervectors in under 1.2GB VRAM (Hillock)
+[deleted]
+
+--- [] /u/Equivalent-Flan-1590 | /u/Equivalent-Flan-1590 on Replacing vector databases with SQLite and SIMD hypervectors in under 1.2GB VRAM (Hillock)
+Exactly. That was the whole reason I started building this.
+Nothing is more frustrating than having a 6GB or 8GB card and watching a vector database and document chunker chew up half your memory before you even load your model.
+Letting the CPU handle the SIMD gating math leaves basically 100 percent of your VRAM open for the actual LLM and its context, which makes a huge difference when you are running on consumer hardware.

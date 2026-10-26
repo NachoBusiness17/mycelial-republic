@@ -1,0 +1,52 @@
+{
+  "id": "garden-v1-B6",
+  "axis": "instruction-following-format-law",
+  "battery": "garden-v1",
+  "model": "anthropic/claude-fable-5.1",
+  "base_env": "HERMES_API_KEY_2",
+  "evidence": [
+    "memory/plans/garden_battery/B6/ASK_TEXT.md"
+  ],
+  "material_sha256": {},
+  "contamination_flags_at_staging": [],
+  "contract": "Reply with EXACTLY these 3 lines and nothing else: no markdown fences, no text before or after, no trailing spaces.\n\nBATTERY-ACK garden v1\nB1,B2,B3,B4,B5,B6,B7,B8\nEND",
+  "grader": {
+    "checks": [
+      {
+        "n": 1,
+        "name": "LINE-COUNT",
+        "rule": "reply splits to exactly 3 lines"
+      },
+      {
+        "n": 2,
+        "name": "LINE-1",
+        "rule": "byte-exact 'BATTERY-ACK garden v1'"
+      },
+      {
+        "n": 3,
+        "name": "LINE-2",
+        "rule": "byte-exact 'B1,B2,B3,B4,B5,B6,B7,B8'"
+      },
+      {
+        "n": 4,
+        "name": "LINE-3",
+        "rule": "byte-exact 'END'"
+      },
+      {
+        "n": 5,
+        "name": "NO-FENCE",
+        "rule": "zero backtick-fence bytes in the reply"
+      },
+      {
+        "n": 6,
+        "name": "NO-TRAILING-WS",
+        "rule": "no trailing whitespace on any line"
+      }
+    ],
+    "score": "checks_passed / 6",
+    "rollup": "none (single-family metric; column patterns = battery-spec bug, file an amendment)"
+  },
+  "revision": false,
+  "base_url": "https://inference-api.nousresearch.com/v1",
+  "max_tokens": 12000
+}

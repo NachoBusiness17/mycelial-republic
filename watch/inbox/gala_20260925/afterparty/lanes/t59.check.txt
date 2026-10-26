@@ -1,0 +1,77 @@
+t59 check: client Sphere chip (verify by read; mountain_check NOT run, shared)
+
+ITEM RECALL
+Tiny client chip echoing the player's replicated Sphere attribute:
+"Sphere: <name>" with the alliance tint words per ZoneGate.allianceFor.
+Spec line first in init.client. Cite before/after lines. Deterministic
+client UI.
+
+1) REPLICATION CHECK (grep before any write)
+$ grep -rn '"Sphere"' roblox/src
+  roblox/src/server/ZoneGate.luau:66: local existing = player:GetAttribute("Sphere")
+  roblox/src/server/ZoneGate.luau:72: player:SetAttribute("Sphere", sphere)
+
+Attribute is set on the Player object server-side (ensureSphere, called from
+ZoneGate.init attach at ZoneGate.luau:130-135). Roblox replicates Player
+attributes to clients, so the attribute EXISTS client-side. Per the item's
+branch: render only, NO server change, NO new attribute. The Gate_ verdict
+attributes (t46) are stamped on the same player at ZoneGate.luau:134-136.
+
+2) CONTRACT DEVIATION (negatives first-class, never fabricate)
+Item wording says "allied/opposed/neutral per ZoneGate.allianceFor".
+ZoneGate.allianceFor (ZoneGate.luau:79-94) returns exactly three words:
+"opposed" | "allied" | "independent". There is no "neutral" in the
+contract; WORLDGEN_MINE.md law 4 t46 clause: "independent tints nothing
+(a negative is a fact)". The chip speaks the real verdict words:
+"independent" is shown untinted (base parchment), allied/opposed get the
+existing ALLIANCE_TINT colors (init.client.luau:108-111).
+
+3) BEFORE/AFTER (roblox/src/client/init.client.luau)
+Header spec line, BEFORE lines 3-5, AFTER lines 3-10:
+  3 -- SPEC t46: portal pads tint by the server-stamped Gate_<zone> attribute
+  4 -- (ZoneGate.allianceFor): allied leans green, opposed leans red,
+  5 -- independent tints nothing; deterministic local visuals only.
+  6 -- SPEC t59: a corner chip echoes the server-stamped Sphere attribute
+  7 -- ("Sphere: <name>", ZoneGate.ensureSphere, replicated) with the soul's
+  8 -- aggregate Gate_ verdict word tinted per ALLIANCE_TINT; allianceFor's
+  9 -- third word is "independent", not "neutral" (never fabricated), and it
+ 10 -- tints nothing (a negative is a fact).
+
+Chip block, BEFORE lines 130-133 (end of pad bind loop), AFTER lines 135-182:
+  133 workspace.ChildAdded:Connect(bindPad)
+  135 -- ---- soul chip: the player's replicated Sphere attribute (t59) ----
+  143 local SOUL_TEXT = Color3.fromRGB(230, 224, 196)
+  144 local sphereChip = Instance.new("TextLabel")   (top-left 8,8 corner)
+  155 local function refreshSoulChip()               (read + aggregate + paint)
+  162 for attr, value in pairs(player:GetAttributes()) do  (Gate_ prefix scan)
+  171 sphereChip.Text = ("Sphere: %s (%s)"):format(sphere, verdict)
+  176 player:GetAttributeChangedSignal("Sphere"):Connect(refreshSoulChip)
+  180 player.AttributeChanged:Connect(function(attr) ... end)  (Gate_ family)
+
+4) SHAPE
+- One TextLabel in the existing AbilityChips ScreenGui (gui, reset-on-spawn
+  false), same style vocabulary as the cooldown chips: Garamond 14,
+  background 20,18,26 at 0.35 transparency, text 230,224,196. Top-left
+  corner (ability cluster owns bottom-right).
+- Verdict word = aggregate over the same stamped Gate_<zone> attributes the
+  pads tint, with allianceFor's own precedence (opposition outranks
+  kinship): any opposed decides, else any allied, else independent.
+- Signals: DashAt pattern (player:GetAttributeChangedSignal) for Sphere;
+  AttributeChanged prefix filter for the Gate_ family because the sanitized
+  zone list lives server-side (ZoneGate.gateAttr) and the client never
+  re-authors it.
+- Unset case: before replication lands the chip reads "Sphere: (unset)"
+  (a fact, then self-corrects on signal).
+- Deterministic: no loops, no Random, no remotes; reads attributes only.
+  Never gates anything (t46 law: client visuals, the server owns the gate).
+
+5) VERIFICATION
+- By read only (this file + both edited regions re-read post-edit at
+  init.client.luau lines 1-14 and 126-185). mountain_check NOT run (shared,
+  per item). No pytest run: Luau file, outside the mag tree.
+- Em-dash law: lines 6-10 and 135-182 of init.client.luau carry none; the
+  pre-existing em-dash at line 2 ("finit.client --" header prose) predates
+  t59 and was left untouched.
+- Strict mode: file is --!strict; new locals are typed by inference
+  (TextLabel, Color3, string comparisons), GetAttribute results guarded by
+  typeof before use.

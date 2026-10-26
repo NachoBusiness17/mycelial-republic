@@ -1,0 +1,230 @@
+diff --git a/mag/knot_at_close.py b/mag/knot_at_close.py
+index 7a7bb8367..2750db5f0 100644
+--- a/mag/knot_at_close.py
++++ b/mag/knot_at_close.py
+@@ -111,7 +111,32 @@ def _chain_session_ids() -> set[str]:
+     return out
+ 
+ 
+-def _db_rows(conn: sqlite3.Connection, cutoff_ms: int) -> list[dict]:
++# First user text of a session. Real ZCode schema (checked read-only 2026-10-03):
++# message(id, session_id, time_created, data JSON with $.role) and
++# part(message_id, time_created, data JSON with $.type / $.text). The old query
++# selected message.content and message.is_sidechain, which do not exist, so the
++# OperationalError was swallowed and every excerpt was empty.
++FIRST_USER_TEXT_SQL = (
++    "SELECT json_extract(p.data, '$.text') FROM message m "
++    "JOIN part p ON p.message_id = m.id "
++    "WHERE m.session_id = ? AND json_extract(m.data, '$.role') = 'user' "
++    "AND json_extract(p.data, '$.type') = 'text' "
++    "AND COALESCE(json_extract(p.data, '$.synthetic'), 0) = 0 "
++    "ORDER BY m.time_created ASC, p.time_created ASC LIMIT 1"
++)
++
++
++def is_workflow_child(session_id: str, task_type: str) -> bool:
++    """Dynamic-workflow actor children (task_type workflow_child, ids dwf-*).
++
++    Reboot patch 04 (2026-10-03): they are not seats. The 2026-10-03 backfill
++    put 2,109 of them in the chain (18.8 pct of rows) and the boot lane kept
++    adding more because --skip-subagents only drops subagent_child."""
++    sid = str(session_id).replace("sess_", "").strip()
++    return task_type == "workflow_child" or sid.startswith("dwf-")
++
++
++def _db_rows(conn: sqlite3.Connection, cutoff_ms: int, *, include_workflow_children: bool = False) -> list[dict]:
+     rows: list[dict] = []
+     cur = conn.execute(
+         "SELECT id, title, time_created, time_updated, task_type FROM session "
+@@ -121,19 +146,21 @@ def _db_rows(conn: sqlite3.Connection, cutoff_ms: int) -> list[dict]:
+     for sid, title, tc, tu, task_type in cur.fetchall():
+         if tc is None or tu is None:
+             continue  # untimeable rows are not knotable honestly
++        if not include_workflow_children and is_workflow_child(sid, str(task_type or "")):
++            continue  # reboot patch 04: dwf actor children never become knots
+         n_msgs = 0
+         first_user = ""
+         try:
+             n_msgs = conn.execute("SELECT COUNT(*) FROM message WHERE session_id = ?", (sid,)).fetchone()[0]
+-            r = conn.execute(
+-                "SELECT content FROM message WHERE session_id = ? AND is_sidechain = 0 "
+-                "ORDER BY time_created ASC LIMIT 1",
+-                (sid,),
+-            ).fetchone()
++        except sqlite3.OperationalError as exc:
++            print(f"  WARN message count failed for {str(sid)[:12]}: {exc}")
++        try:
++            r = conn.execute(FIRST_USER_TEXT_SQL, (sid,)).fetchone()
+             if r and r[0]:
+                 first_user = REDACT.sub("[redacted]", str(r[0]))[:160]
+-        except sqlite3.OperationalError:
+-            pass
++        except sqlite3.OperationalError as exc:
++            # Loud, not silent: a schema drift must not quietly empty every excerpt again.
++            print(f"  WARN first-message query failed for {str(sid)[:12]}: {exc}")
+         rows.append(
+             {
+                 "session_id": str(sid).replace("sess_", "").strip(),
+@@ -191,7 +218,7 @@ def _dossier(r: dict) -> dict:
+     }
+ 
+ 
+-def main() -> int:
++def main(argv: list[str] | None = None) -> int:
+     ap = argparse.ArgumentParser()
+     ap.add_argument("--backfill", action="store_true", help="backup + append knots (default: report only)")
+     ap.add_argument("--seed-sweep", action="store_true",
+@@ -208,7 +235,9 @@ def main() -> int:
+                     help="drop task_type=subagent_child sessions (workflow_child/interactive/fork kept)")
+     ap.add_argument("--since", default="",
+                     help="only sessions created on/after this local date (YYYY-MM-DD)")
+-    args = ap.parse_args()
++    ap.add_argument("--include-workflow-children", action="store_true",
++                    help="also knot workflow_child / dwf-* actor sessions (default: dropped, reboot patch 04)")
++    args = ap.parse_args(argv)
+ 
+     if not DB.is_file():
+         print(f"NO DB at {DB}")
+@@ -216,7 +245,8 @@ def main() -> int:
+     conn = sqlite3.connect(f"file:{DB.as_posix()}?mode=ro", uri=True)
+     cutoff_ms = int((dt.datetime.now(dt.timezone.utc).timestamp() - GRACE_H * 3600) * 1000)
+     have = _chain_session_ids()
+-    rows = [r for r in _db_rows(conn, cutoff_ms) if r["session_id"] not in have]
++    rows = [r for r in _db_rows(conn, cutoff_ms, include_workflow_children=args.include_workflow_children)
++            if r["session_id"] not in have]
+     conn.close()
+     # 2026-10-03 selection filters (see argparse block)
+     if args.skip_subagents:
+@@ -229,6 +259,8 @@ def main() -> int:
+     if args.skip_subagents or args.min_messages or args.since:
+         print(f"filters: skip_subagents={args.skip_subagents} min_messages={args.min_messages} since={args.since or '-'}")
+ 
++    if not args.include_workflow_children:
++        print("filters: workflow_child/dwf- sessions dropped (default)")
+     print(f"chain rows with session ids: {len(have)}")
+     print(f"ended >{GRACE_H}h with no chain row: {len(rows)}")
+     for r in rows[:15]:
+@@ -252,6 +284,13 @@ def main() -> int:
+         print("REPORT ONLY (pass --backfill to close them)")
+         return 0
+ 
++    todo = rows[: args.limit] if args.limit else rows
++    if not todo:
++        # Reboot patch 04: nothing to knot means no chain backup either (the boot
++        # lane used to copy the ~8 MB chain on every logon even with 0 candidates).
++        print("NOTHING TO KNOT: no backup taken, chain untouched")
++        return 0
++
+     # backup-first
+     stamp = dt.datetime.now(dt.timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+     chain_bak = vk.CHAIN.with_suffix(".jsonl.bak-orphanlane-" + stamp)
+@@ -267,7 +306,6 @@ def main() -> int:
+     n_before = sum(1 for _ in vk.CHAIN.open(encoding="utf-8"))
+     print(f"BACKUP: {chain_bak.name} + {knots_bak.name if knots_bak else 'skipped (chain .bak is the backup)'} ({n_before} chain rows)")
+ 
+-    todo = rows[: args.limit] if args.limit else rows
+     ok, failed = 0, []
+     for r in todo:
+         try:
+diff --git a/tests/test_knot_at_close_filter.py b/tests/test_knot_at_close_filter.py
+new file mode 100644
+index 000000000..b6a3c1e8c
+--- /dev/null
++++ b/tests/test_knot_at_close_filter.py
+@@ -0,0 +1,96 @@
++"""Reboot patch 04: knot_at_close never selects workflow_child/dwf- sessions and reads the real first user text."""
++from __future__ import annotations
++
++import json
++import sqlite3
++import time
++
++import pytest
++
++from mag import knot_at_close as kac
++
++# Subset of the real ZCode db schema (checked read-only 2026-10-03).
++SCHEMA = """
++CREATE TABLE session (id text primary key, title text not null, time_created integer not null,
++  time_updated integer not null, task_type text not null default 'interactive');
++CREATE TABLE message (id text primary key, session_id text not null, time_created integer not null,
++  time_updated integer not null, data text not null);
++CREATE TABLE part (id text primary key, message_id text not null, session_id text not null,
++  time_created integer not null, time_updated integer not null, data text not null);
++"""
++
++
++@pytest.fixture()
++def db(tmp_path, monkeypatch):
++    path = tmp_path / "db.sqlite"
++    c = sqlite3.connect(path)
++    c.executescript(SCHEMA)
++    t0 = int((time.time() - 3 * 86400) * 1000)
++
++    def sess(sid, task_type, user_text):
++        c.execute("INSERT INTO session VALUES (?,?,?,?,?)", (sid, f"title {sid}", t0, t0 + 60000, task_type))
++        c.execute("INSERT INTO message VALUES (?,?,?,?,?)",
++                  (f"{sid}-m0", sid, t0 + 1, t0 + 1, json.dumps({"role": "assistant"})))
++        c.execute("INSERT INTO part VALUES (?,?,?,?,?,?)",
++                  (f"{sid}-p0", f"{sid}-m0", sid, t0 + 1, t0 + 1, json.dumps({"type": "text", "text": "assistant first"})))
++        c.execute("INSERT INTO message VALUES (?,?,?,?,?)",
++                  (f"{sid}-m1", sid, t0 + 2, t0 + 2, json.dumps({"role": "user"})))
++        c.execute("INSERT INTO part VALUES (?,?,?,?,?,?)",
++                  (f"{sid}-p1", f"{sid}-m1", sid, t0 + 2, t0 + 2, json.dumps({"type": "file", "url": "x"})))
++        c.execute("INSERT INTO part VALUES (?,?,?,?,?,?)",
++                  (f"{sid}-p2", f"{sid}-m1", sid, t0 + 3, t0 + 3, json.dumps({"type": "text", "text": user_text})))
++
++    sess("sess_real01", "interactive", "fix the janitor key=abcdefghijklmnop please")
++    sess("sess_dwf-dwfrun-aa-actor_1_2", "workflow_child", "actor prompt")
++    sess("sess_wfchild02", "workflow_child", "workflow child without dwf prefix")
++    sess("sess_sub03", "subagent_child", "subagent prompt")
++    c.commit()
++    c.close()
++    chain = tmp_path / "verkle_chain.jsonl"
++    chain.write_text("", encoding="utf-8")
++    monkeypatch.setattr(kac, "DB", path)
++    monkeypatch.setattr(kac.vk, "CHAIN", chain)
++    return path
++
++
++def _rows(path, **kw):
++    conn = sqlite3.connect(f"file:{path.as_posix()}?mode=ro", uri=True)
++    try:
++        return kac._db_rows(conn, int(time.time() * 1000), **kw)
++    finally:
++        conn.close()
++
++
++def test_old_first_message_query_cannot_run_on_real_schema(db):
++    conn = sqlite3.connect(db)
++    with pytest.raises(sqlite3.OperationalError):
++        conn.execute("SELECT content FROM message WHERE session_id = ? AND is_sidechain = 0", ("x",))
++    conn.close()
++
++
++def test_workflow_children_dropped_by_default(db):
++    ids = {r["session_id"] for r in _rows(db)}
++    assert ids == {"real01", "sub03"}
++    ids_all = {r["session_id"] for r in _rows(db, include_workflow_children=True)}
++    assert {"dwf-dwfrun-aa-actor_1_2", "wfchild02"} <= ids_all
++
++
++def test_first_user_excerpt_is_real_text_and_redacted(db):
++    row = next(r for r in _rows(db) if r["session_id"] == "real01")
++    assert row["first_user_excerpt"].startswith("fix the janitor")
++    assert "abcdefghijklmnop" not in row["first_user_excerpt"]
++    assert "[redacted]" in row["first_user_excerpt"]
++    assert row["n_msgs"] == 2
++
++
++def test_report_lists_zero_dwf_candidates(db, capsys):
++    assert kac.main([]) == 0
++    out = capsys.readouterr().out
++    assert "dwfrun" not in out and "wfchild" not in out
++    assert "ended >2.0h with no chain row: 2" in out
++
++
++def test_backfill_with_nothing_to_knot_takes_no_backup(db, tmp_path, capsys):
++    assert kac.main(["--backfill", "--skip-subagents", "--min-messages", "5"]) == 0
++    assert "NOTHING TO KNOT" in capsys.readouterr().out
++    assert list(tmp_path.glob("*.bak-orphanlane-*")) == []

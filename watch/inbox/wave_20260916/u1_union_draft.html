@@ -1,0 +1,204 @@
+```html
+<!DOCTYPE html>
+<html>
+<head><title>Toy</title><style>body{margin:0;background:#111;display:flex;justify-content:center;align-items:center;height:100vh;overflow:hidden}canvas{border:1px solid #333;image-rendering:pixelated}</style></head>
+<body>
+<canvas id="c" width="960" height="600"></canvas>
+<script>
+// Union Alpha - toy.html
+const TOY = (() => {
+  let state = 0, drawIndex = 0, dt = 1/60, frames = 0;
+  let G = { t:0, state:'play' }, player, walker, events = [], tape = [];
+  let keys = {}, keysP = {}; // live keys and just-pressed flags
+
+  // RNG Law
+  const rng = () => { state = (Math.imul(state, 1664525) + 1013904223) >>> 0; drawIndex++; return state / 4294967296; };
+  
+  // SHA256 (Compact Sync)
+  const sha256 = (str) => {
+    const H = [0x6a09e667, 0xbb67ae85, 0x3c6ef372, 0xa54ff53a, 0x510e527f, 0x9b05688c, 0x1f83d9ab, 0x5be0cd19];
+    const K = [0x428a2f98,0x71374491,0xb5c0fbcf,0xe9b5dba5,0x3956c25b,0x59f111f1,0x923f82a4,0xab1c5ed5,0xd807aa98,0x12835b01,0x243185be,0x550c7dc3,0x72be5d74,0x80deb1fe,0x9bdc06a7,0xc19bf174,0xe49b69c1,0xefbe4786,0x0fc19dc6,0x240ca1cc,0x2de92c6f,0x4a7484aa,0x5cb0a9dc,0x76f988da,0x983e5152,0xa831c66d,0xb00327c8,0xbf597fc7,0xc6e00bf3,0xd5a79147,0x06ca6351,0x14292967,0x27b70a85,0x2e1b2138,0x4d2c6dfc,0x53380d13,0x650a7354,0x766a0abb,0x81c2c92e,0x92722c85,0xa2bfe8a1,0xa81a664b,0xc24b8b70,0xc76c51a3,0xd192e819,0xd6990624,0xf40e3585,0x106aa070,0x19a4c116,0x1e376c08,0x2748774c,0x34b0bcb5,0x391c0cb3,0x4ed8aa4a,0x5b9cca4f,0x682e6ff3,0x748f82ee,0x78a5636f,0x84c87814,0x8cc70208,0x90befffa,0xa4506ceb,0xbef9a3f7,0xc67178f2];
+    let msg = unescape(encodeURIComponent(str)), len = msg.length;
+    msg += String.fromCharCode(0x80);
+    while ((msg.length % 64) !== 56) msg += String.fromCharCode(0);
+    msg += String.fromCharCode(0) + String.fromCharCode(0) + String.fromCharCode(0) + String.fromCharCode(0) + String.fromCharCode((len * 8 / 0x100000000) >>> 0) + String.fromCharCode((len * 8) >>> 0);
+    let words = []; for(let i=0;i<msg.length;i+=4) words.push((msg.charCodeAt(i)<<24)|(msg.charCodeAt(i+1)<<16)|(msg.charCodeAt(i+2)<<8)|msg.charCodeAt(i+3));
+    for(let i=16;i<words.length;i++) { let s=words[i-15], s0=(s>>>7)^(s>>>18)^(s>>>3)^(s<<25)^(s<<14); let w=words[i-2], s1=(w>>>17)^(w>>>19)^(w>>>10)^(w<<15)^(w<<13); words[i]=(words[i-16]+s0+words[i-7]+s1)>>>0; }
+    let [a,b,c,d,e,f,g,h] = H;
+    for(let i=0;i<64;i++) { let S1=(e>>>6)^(e>>>11)^(e>>>25)^(e<<26)^(e<<21)^(e<<7); let ch=(e&f)^(~e&g); let t1=(h+S1+ch+K[i]+words[i])>>>0; let S0=(a>>>2)^(a>>>13)^(a>>>22)^(a<<30)^(a<<19)^(a<<10); let maj=(a&b)^(a&c)^(b&c); let t2=(S0+maj)>>>0; h=g;g=f;f=e;e=(d+t1)>>>0;d=c;c=b;b=a;a=(t1+t2)>>>0; }
+    return [a,b,c,d,e,f,g,h].map(x=>(x>>>0).toString(16).padStart(8,'0')).join('');
+  };
+
+  const log = (e) => { events.push({ t: parseFloat((frames * dt).toFixed(3)), ...e }); };
+  const press = (code) => { if(!keys[code]) { keys[code]=true; keysP[code]=true; log({e:"input", code, down:true}); } };
+  const release = (code) => { keys[code]=false; log({e:"input", code, down:false}); };
+
+  const start = (seed) => {
+    state = seed; drawIndex = 0; frames = 0; G = { t:0, state:'play' };
+    events = []; tape = []; keys = {}; keysP = {};
+    player = { x:120, y:150, hp:100, st:100, r:12, facing:1, rollT:0, rollCd:0, attackT:0, attackCd:0, iframes:0, riposte:0, moveT:0 };
+    walker = { x:360, y:150, hp:40, st:100, r:14, facing:-1, attackCd:0, windup:0, telegraph:0, stun:0, aggro:true };
+  };
+
+  const hurtPlayer = (dmg) => {
+    player.hp -= dmg; log({e:"hit", dmg});
+    if(player.hp <= 0) { G.state='dead'; log({e:"end", verdict:"dead"}); }
+  };
+
+  const pump = (n) => {
+    for(let i=0; i<n; i++) {
+      // Input Tape
+      if(tape.length && tape[0][0] === frames) {
+        const [_, code, down] = tape.shift();
+        if(down) press(code); else release(code);
+      }
+      
+      if(G.state !== 'play') return;
+      frames++; G.t = frames * dt;
+
+      // Player Logic
+      let moving = false;
+      if(keys['ArrowLeft']) { player.x -= 160*dt; player.facing=-1; moving=true; }
+      if(keys['ArrowRight']) { player.x += 160*dt; player.facing=1; moving=true; }
+      if(keys['ArrowUp']) player.y -= 160*dt;
+      if(keys['ArrowDown']) player.y += 160*dt;
+      
+      // Clamp Player
+      player.x = Math.max(player.r, Math.min(480-player.r, player.x));
+      player.y = Math.max(player.r, Math.min(300-player.r, player.y));
+
+      // Stamina Regen
+      let regenRate = 25 * (moving || player.rollT > 0 ? 0.5 : 1.5);
+      if(player.attackT <= 0 && player.rollT <= 0) player.st = Math.min(100, player.st + regenRate * dt);
+
+      // Roll
+      if(keysP['ShiftLeft'] && player.st >= 30 && player.rollT <= 0 && player.rollCd <= 0) {
+        player.st -= 30; player.rollT = 0.28; player.rollCd = 0.5; player.iframes = 0.35;
+        log({e:"roll"});
+      }
+      if(player.rollT > 0) {
+        player.rollT -= dt;
+        let vx = player.facing * 420;
+        if(moving) { if(keys['ArrowLeft']) vx=-420; if(keys['ArrowRight']) vx=420; }
+        player.x += vx * dt;
+        player.x = Math.max(player.r, Math.min(480-player.r, player.x));
+      }
+      if(player.rollCd > 0) player.rollCd -= dt;
+      if(player.iframes > 0) player.iframes -= dt;
+
+      // Swing
+      if(keysP['Space'] && player.st >= 15 && player.attackCd <= 0 && player.rollT <= 0) {
+        player.st -= 15; player.attackT = 0.18; player.attackCd = 0.35;
+        // Hit Check
+        let dx = walker.x - player.x, dy = walker.y - player.y;
+        let dist = Math.sqrt(dx*dx + dy*dy);
+        let angle = Math.atan2(dy, dx);
+        let facingAngle = player.facing > 0 ? 0 : Math.PI;
+        let diff = Math.abs(angle - facingAngle);
+        if(diff > Math.PI) diff = 2*Math.PI - diff;
+        
+        if(dist < 55 + player.r && diff < Math.PI/2) {
+          let dmg = 14 * (0.9 + 0.2 * rng());
+          if(player.riposte > 0) { dmg *= 2; player.riposte = 0; }
+          walker.hp -= dmg;
+          log({e:"swing", riposte: dmg > 14});
+          if(walker.hp <= 0) { G.state='win'; log({e:"kill", enemy:"walker"}); log({e:"end", verdict:"win"}); }
+        }
+      }
+      if(player.attackT > 0) player.attackT -= dt;
+      if(player.attackCd > 0) player.attackCd -= dt;
+      if(player.riposte > 0) player.riposte -= dt;
+
+      // Walker Logic
+      if(walker.stun > 0) { walker.stun -= dt; }
+      else {
+        let dx = player.x - walker.x, dy = player.y - walker.y;
+        let dist = Math.sqrt(dx*dx + dy*dy);
+        if(dist > 5) {
+          walker.x += (dx/dist) * 70 * dt;
+          walker.y += (dy/dist) * 70 * dt;
+          walker.facing = dx > 0 ? 1 : -1;
+        }
+        // Clamp Walker
+        walker.x = Math.max(walker.r, Math.min(480-walker.r, walker.x));
+        walker.y = Math.max(walker.r, Math.min(300-walker.r, walker.y));
+
+        if(walker.attackCd <= 0 && dist < walker.r + player.r + 4) {
+          walker.windup = 0.35; walker.attackCd = 1.2; walker.telegraph = 0.35;
+          log({e:"telegraph", enemy:"walker"});
+        }
+        if(walker.telegraph > 0) walker.telegraph -= dt;
+        if(walker.windup > 0) {
+          walker.windup -= dt;
+          if(walker.windup <= 0) {
+            // Attack Hit
+            if(dist < walker.r + player.r + 10) {
+              if(player.iframes > 0) {
+                log({e:"hit_dodged", enemy:"walker"});
+                walker.stun = 0.8; player.riposte = 1.0;
+              } else {
+                hurtPlayer(14);
+              }
+            }
+          }
+        }
+        if(walker.attackCd > 0) walker.attackCd -= dt;
+      }
+
+      // Clear Press Flags
+      for(let k in keysP) keysP[k] = false;
+    }
+  };
+
+  const receipt = () => {
+    let hits_taken = events.filter(e => e.e === 'hit').length;
+    let hits_no_telegraph = 0;
+    events.forEach(e => {
+      if(e.e === 'hit') {
+        let prev = events.slice(0, events.indexOf(e)).reverse().find(x => x.e === 'telegraph' && x.enemy === 'walker');
+        if(!prev || Math.abs((prev.t + 0.35) - e.t) > 0.001) hits_no_telegraph++;
+      }
+    });
+    let cObj = { schema:"toy_play.v1", seed: state, draw_index: drawIndex, frames, inputs: tape, events, hits_taken, hits_no_telegraph, verdict: G.state, duration_s: parseFloat((frames*dt).toFixed(3)) };
+    let cStr = JSON.stringify(cObj);
+    cObj.sha256 = sha256(cStr);
+    return cObj;
+  };
+
+  const canonical = () => {
+    let r = receipt();
+    let cObj = {};
+    for(let k of ["schema","seed","draw_index","frames","inputs","events","hits_taken","hits_no_telegraph","verdict","duration_s"]) cObj[k] = r[k];
+    return JSON.stringify(cObj);
+  };
+
+  // Render
+  const ctx = document.getElementById('c').getContext('2d');
+  const loop = () => {
+    ctx.fillStyle = '#111'; ctx.fillRect(0,0,960,600);
+    if(G.state === 'play' || G.state === 'dead' || G.state === 'win') {
+      // Player
+      ctx.fillStyle = player.iframes > 0 ? '#fff' : '#0f0';
+      ctx.beginPath(); ctx.arc(player.x*2, player.y*2, player.r*2, 0, Math.PI*2); ctx.fill();
+      // Walker
+      ctx.fillStyle = walker.telegraph > 0 ? '#f00' : '#f00';
+      ctx.beginPath(); ctx.arc(walker.x*2, walker.y*2, walker.r*2, 0, Math.PI*2); ctx.fill();
+      // Bars
+      ctx.fillStyle = '#0f0'; ctx.fillRect(10,10, player.st, 10);
+      ctx.fillStyle = '#f00'; ctx.fillRect(10,20, player.hp, 10);
+      ctx.fillStyle = '#f00'; ctx.fillRect(400,10, walker.hp, 10);
+    }
+    requestAnimationFrame(loop);
+  };
+
+  window.addEventListener('keydown', e => press(e.code));
+  window.addEventListener('keyup', e => release(e.code));
+  
+  start(12345);
+  loop();
+  return { start, pump, keys, tape, player, enemies: [walker], G, events, draws: () => drawIndex, receipt, canonical, sha256 };
+})();
+</script>
+</body>
+</html>
+```

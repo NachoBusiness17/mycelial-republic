@@ -1,0 +1,23 @@
+{
+  "gopher": "t65",
+  "item": "t61's next_steal: byte-confirmed same fail-open species in two twins, mag/afk_orchestrator.py:40 _operator_offline and mag/capability_steal.py:51 (byte-identical 'except Exception: return True' on operator_status). Read both, confirm, convert to fail CLOSED following t61's mag/afk_loop.py convention (module-level named error, errored check honors the safe direction), one test per twin, pytest + ratchet cited.",
+  "ok": true,
+  "note": "Species confirmed by bytes before edit: both twins carried the identical fail-open body. Safe direction resolved from the call sites, not from the item phrasing: the item said 'error = presume operator OFFLINE, i.e. do NOT spend', but those two halves contradict each other, because in BOTH files every call site treats offline=True as the GO branch (afk_orchestrator run_afk line 64 runs the whole cadence, _right_size line 51 grants full budget, status line 136 reports it; capability_steal expand line 125 steal-searches, _right_size line 62 grants full budget). Presuming offline would therefore spend. The safe direction in both twins is the DENY: errored operator_status = operator presumed ACTIVE (return False), do NOT spend; identical direction in both files, no per-file divergence, so it matches the t52/t61 convention verbatim. Fix per twin: module-level AFK_GATE_ERROR (None on clean read), errored gate names the cause (110 chars, 'failing CLOSED (operator presumed active)') and denies; surfaced as afk_gate_error by run_afk's skip and the status output (orchestrator) and by expand()'s skip (capability_steal).",
+  "checks": [
+    {"check": ".venv/Scripts/python.exe -m pytest tests/test_loop_death_guards.py -v", "exit": 0, "result": "13 passed (6 death-guard params + t43 pause gate + 3 t52 gate tests + t61 gate test + new test_afk_orchestrator_operator_offline_fails_closed + new test_capability_steal_operator_offline_fails_closed, each covering deny, named cause, surfaced afk_gate_error, and clean-read clears)", "evidence": "watch/inbox/gala_20260925/afterparty/lanes/t65.check.txt"},
+    {"check": ".venv/Scripts/python.exe tools/violation_ratchet.py check --changed", "exit": 0, "result": "scope=15 changed files; hits=13; registered=13; NEW=0; expired-exceptions=0; PASS, no unregistered debt", "evidence": "watch/inbox/gala_20260925/afterparty/lanes/t65.check.txt"},
+    {"check": "git diff added-lines grep for em-dash over the 3 touched files", "exit": 0, "result": "0 em-dashes in authored added lines (grep -c returned 0); filed tool output kept byte-verbatim including the ratchet's own em-dash", "evidence": "watch/inbox/gala_20260925/afterparty/lanes/t65.check.txt"}
+  ],
+  "files_touched": [
+    "mag/afk_orchestrator.py",
+    "mag/capability_steal.py",
+    "tests/test_loop_death_guards.py"
+  ],
+  "negatives": [
+    "mag/afk_orchestrator.py run_afk still carries the t43 species pause swallow: 'except Exception: pass' around pause_reason means an errored pause falls through and the cadence proceeds to the gate. With the fixed gate this now stops at the status read when it also errors, but a healthy status plus an errored pause still works through the pause. Not fixed here (gate-scoped item).",
+    "The _right_size fail-opens remain in both twins: afk_orchestrator.py _right_size returns 'full' on any exception and capability_steal.py _right_size returns {'level':'full','budget':4} on any exception (t52 species: errored rightsizer grants full blast). The fixed gate no longer triggers these paths (it denies instead of raising), but any afk_loop import or system_resources failure still does. Not fixed here (one item per gopher).",
+    "afk_orchestrator run_afk still surfaces afk_gate_error only on the operator-active skip; a --force run bypasses the gate entirely and carries no gate-error marker (force is an explicit human override, judged acceptable)."
+  ],
+  "next_steal": "Fix the t43 species pause swallow in mag/afk_orchestrator.py run_afk (errored pause_reason falls through) and the t52 species _right_size fail-opens in both twins (afk_orchestrator returns 'full', capability_steal returns {'level':'full','budget':4} on error); convention: pause honored / level none budget 0, cause named and surfaced, per afk_cadence.py.",
+  "ts": "2026-09-25"
+}

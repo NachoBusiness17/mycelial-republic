@@ -1,0 +1,122 @@
+{
+  "lane": "mcp-multi-agent",
+  "division": "B",
+  "ok": true,
+  "note": "Surveyed multi-agent orchestration over MCP first-hand from 10 primary sources (4.38MB raw bytes banked under mcp-multi-agent.fetch/); an initial 34-quote draft failed 28 of 34 byte checks against the raw page bytes and was rebuilt from disk to 29 verified quotes; 4 vendor doc pages were JS-walled (no quotable prose) and one MCP blog post is dead/404, all recorded as negative findings; no code under mag/ or tools/ touched.",
+  "rows": [
+    {
+      "law": "mcp-host-fanout",
+      "claim": "Composition in MCP is host-side fan-out: the host creates one MCP client per server and each client holds a dedicated connection, so cross-server wiring is always the host's job, never server-to-server federation.",
+      "quote": "The MCP host accomplishes this by creating one MCP client for each MCP server.",
+      "source": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/rung/lanes/mcp-multi-agent.fetch/architecture.html",
+      "steal": "One sitting: file watch/inbox/MCP_HOST_PROBE_20261010.md sketching mag's tool broker as a mini-host (one client per server, namespaced registry); no mag/ code until a second MCP server actually lands.",
+      "falsifier": "The MCP spec or a reference implementation ships server-to-server composition where servers discover and call each other without a host client in the path.",
+      "leverage": "high"
+    },
+    {
+      "law": "mcp-tool-namespace",
+      "claim": "Multi-server hosts kill tool-name collisions with deterministic server-prefixed tool names; the OpenAI Agents SDK ships this as the opt-in include_server_in_tool_names flag.",
+      "quote": "include_server_in_tool_names is opt-in. When enabled, each local MCP tool is exposed to the model with a deterministic server-prefixed name, which helps avoid collisions when multiple MCP servers publish tools with the same name.",
+      "source": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/rung/lanes/mcp-multi-agent.fetch/openai_agents_mcp.html",
+      "steal": "Adopt the same contract in any mag tool aggregation surface: aggregated tool ids get '<server>__<name>' prefixes; register as a named design law when the second server lands.",
+      "falsifier": "A production multi-server host merges colliding tool names unprefixed and reports zero conflicts or aliasing bugs at scale.",
+      "leverage": "high"
+    },
+    {
+      "law": "mcp-server-sandbox",
+      "claim": "The spec's mitigation list mandates least-privilege per server: sandboxed commands, restricted filesystem and network access, and explicit user grants for anything extra.",
+      "quote": "Launch MCP servers with restricted access to the file system, network, and other system resources",
+      "source": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/rung/lanes/mcp-multi-agent.fetch/security_best_practices.html",
+      "steal": "Spec-before-behavior: write the least-privilege profile requirement into a RIB (memory/rib/RIB_MCP_SANDBOX_<date>.md) before mag ever mounts a third-party MCP server; prose only, one sitting.",
+      "falsifier": "The spec or a mainstream host recommends sharing one privileged process across all servers with no per-server sandbox.",
+      "leverage": "high"
+    },
+    {
+      "law": "mcp-local-binary-threat",
+      "claim": "Local MCP servers are downloaded binaries executed with client privileges on the user's machine, so installing one is binary adoption, not plugin adoption.",
+      "quote": "Local MCP servers are binaries that are downloaded and executed on the same machine as the MCP client.",
+      "source": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/rung/lanes/mcp-multi-agent.fetch/security_best_practices.html",
+      "steal": "Extend the estate's tool-adoption receipt template: every third-party MCP server install files source URL, hash, and consent note in watch/inbox/ before first run.",
+      "falsifier": "Spec or major hosts auto-install local MCP servers without consent or provenance tracking.",
+      "leverage": "medium"
+    },
+    {
+      "law": "tools-as-code",
+      "claim": "Presenting MCP tools as a filesystem of code APIs collapses context cost: Anthropic's example drops tool-definition tokens from 150,000 to 2,000 and lets the agent compose multiple servers in one code step.",
+      "quote": "This reduces the token usage from 150,000 tokens to 2,000 tokens",
+      "source": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/rung/lanes/mcp-multi-agent.fetch/code_execution_mcp.html",
+      "steal": "One probe: render the GALA ask/tool manifests as a file tree, have a model write calling code instead of loading every tool def, measure the token delta; receipt in watch/inbox/MCP_TOOLSTREE_20261010.md.",
+      "falsifier": "A large-scale comparison where code-mode costs more tokens or fails more tasks than direct tool-calls at equal success rates.",
+      "leverage": "high"
+    },
+    {
+      "law": "mcp-progressive-disclosure",
+      "claim": "Progressive disclosure is the mechanism behind that collapse: models read tool definitions on demand from a filesystem instead of loading them all upfront.",
+      "quote": "Presenting tools as code on a filesystem allows models to read tool definitions on-demand, rather than reading them all up-front.",
+      "source": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/rung/lanes/mcp-multi-agent.fetch/code_execution_mcp.html",
+      "steal": "Apply on-demand loading to mag's own doc surfaces: point 50-wide drivers at an index file first (corpus_catalog pattern already matches); file the mapping note in watch/inbox.",
+      "falsifier": "Agents given full upfront tool context outperform filesystem-navigation agents on tool-selection accuracy in controlled evals.",
+      "leverage": "medium"
+    },
+    {
+      "law": "mcp-resume-state",
+      "claim": "Code-execution agents persist intermediate results as files and resume later: the same residual-plus-leaf law the estate already runs on lanes, now validated by an outside source.",
+      "quote": "Agents can write intermediate results to files, enabling them to resume work and track progress",
+      "source": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/rung/lanes/mcp-multi-agent.fetch/code_execution_mcp.html",
+      "steal": "No new mechanism: bank as external validation of the incremental lane-file law; add one citing line to docs/DNA.md at its next edit touch.",
+      "falsifier": "Context-only state persistence demonstrably beats file-based resume on long-horizon agent tasks.",
+      "leverage": "medium"
+    },
+    {
+      "law": "a2a-opacity",
+      "claim": "A2A is a separate agent-to-agent layer (web standards, Agent Cards, task delegation) whose opacity principle says agents collaborate without exposing internal state, memory, or tools; it complements rather than replaces MCP.",
+      "quote": "Operate without exposing their internal state, memory, or tools.",
+      "source": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/rung/lanes/mcp-multi-agent.fetch/a2a_readme.md",
+      "steal": "Write an Agent-Card-style manifest spec for mag lanes (lane JSON already carries name, role, IO) and file it in watch/inbox/MCP_A2A_CARD_20261010.md; one sitting.",
+      "falsifier": "A2A adoption in practice requires agents to share internal memory or plans, contradicting the opacity principle.",
+      "leverage": "medium"
+    },
+    {
+      "law": "framework-adapter-convergence",
+      "claim": "The orchestration frameworks converged on one adapter contract: CrewAI aggregates several MCP servers through a single adapter, LangChain's MCPAdapter delegates transport to FastMCP, OpenAI ships MCPServerManager, so the estate can steal the contract without adopting any framework.",
+      "quote": "Aggregate tools from several MCP servers simultaneously using a single adapter.",
+      "source": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/rung/lanes/mcp-multi-agent.fetch/crewai_mcp.html",
+      "steal": "Steal the adapter contract only: mag's tool broker speaks 'aggregate N servers behind one adapter object with health-gated connections' per the row-1 design note; no new dependency.",
+      "falsifier": "A mainstream framework makes agent-to-agent messaging, not server adapters, its primary MCP integration.",
+      "leverage": "medium"
+    },
+    {
+      "law": "code-mode-sandbox",
+      "claim": "Cloudflare's Code Mode pairs tools-as-code with a sandbox: the agent runs in a sandbox that can only reach the tools it is given, with connectivity and authorization handled out of band by MCP.",
+      "quote": "We'd like the AI agent to run in a sandbox such that it can only access the tools we give it.",
+      "source": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/rung/lanes/mcp-multi-agent.fetch/cf_codemode.html",
+      "steal": "If mag ever executes model-written tool code, run it under a restricted profile with a tool allowlist; put the requirement line in the row-1 host probe receipt.",
+      "falsifier": "Code Mode shipped to production without any sandbox and with no isolation incidents reported.",
+      "leverage": "medium"
+    }
+  ],
+  "checks": [
+    {
+      "command": "curl -sL --max-time 40 -o <file> <url> for 12 primary sources (architecture.html, security_best_practices.html, a2a_readme.md, code_execution_mcp.html, cf_agents_mcp.html, cf_securing_mcp.html, cf_codemode.html, openai_agents_mcp.html, crewai_mcp.html, langchain_mcp.html, docker_mcp_toolkit.html, docker_sandboxes.html)",
+      "exit": 0,
+      "evidence": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/rung/lanes/mcp-multi-agent.fetch.MANIFEST.txt"
+    },
+    {
+      "command": "git -C C:/Users/foste/Documents/projects/local_sovereign_agent grep -cil mcp -- corpus/steal memory/rib .agents/skills memory/skills",
+      "exit": 0,
+      "evidence": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/rung/lanes/mcp-multi-agent.estategrep.txt"
+    },
+    {
+      "command": "C:/Users/foste/Documents/projects/local_sovereign_agent/.venv/Scripts/python.exe C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/rung/lanes/mcp-multi-agent.quotecheck.py",
+      "exit": 0,
+      "evidence": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/rung/lanes/mcp-multi-agent.quotecheck.out.txt"
+    },
+    {
+      "command": "C:/Users/foste/Documents/projects/local_sovereign_agent/.venv/Scripts/python.exe C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/rung/lanes/mcp-multi-agent.check.py",
+      "exit": 0,
+      "evidence": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/rung/lanes/mcp-multi-agent.check.txt"
+    }
+  ],
+  "decision_changed": "closed: mcp-orchestration stance - do not adopt an agent framework or MCP fabric now; if mag's tool surface exceeds roughly 50 tools or mounts a third-party MCP server, compose at the host (one client per server, server-prefixed tool names, least-privilege sandbox) with tools-as-code as the scaling path.",
+  "artifact": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/rung/lanes/mcp-multi-agent.json"
+}

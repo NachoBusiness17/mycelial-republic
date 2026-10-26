@@ -1,0 +1,7 @@
+# swarm1-glm-flash-scripts__vision_bench (glm-5.3-flash @ zai, turn 1, channel: content)
+
+DEFECT 1: pdftotext timeout=60 raises subprocess.TimeoutExpired inside best_recall, uncaught, killing the bench mid-run so bench_results.json is never written and all completed rows are lost | EVIDENCE: scripts/vision_bench.py:55-58, 88-89, 123 | FIX: wrap the page_text call in try/except subprocess.TimeoutExpired returning "" (and/or write rows incrementally after each page)
+DEFECT 2: recall is max-selected over a 7-page window against the model's own output, a multiple-comparison bias that inflates the accuracy number with no null offset reported; the reported median/min/max overstate real transcription fidelity | EVIDENCE: scripts/vision_bench.py:71-77 | FIX: report recall at a fixed ground-truth page (detected once, stored in rows) and log the chosen gt_page offset separately instead of folding the max into the score
+DEFECT 3: carve_jpegs index list can produce duplicate image indices when n exceeds len(found)-lo, benching the same page twice and skewing pages/hour and recall stats | EVIDENCE: scripts/vision_bench.py:46-47 | FIX: dedupe with idxs = sorted(set(idxs)) before returning
+DEAD-CODE: stream byte-offset stored in found tuples is never read, only jpg is consumed | EVIDENCE: scripts/vision_bench.py:41, 48
+ONE-SITTING FIX: make results durable by writing bench_results.json after every row inside the loop (atomic tmp+replace per estate rule), so any crash or timeout preserves completed measurements | EVIDENCE: scripts/vision_bench.py:88-99, 123

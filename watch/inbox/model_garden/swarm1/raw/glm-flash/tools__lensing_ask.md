@@ -1,0 +1,7 @@
+# swarm1-glm-flash-tools__lensing_ask (glm-5.3-flash @ zai, turn 1, channel: content)
+
+DEFECT 1: SSE parsing treats each socket read as a complete event; a JSON data line split across TCP reads is silently dropped by the JSONDecodeError continue, truncating a paid return with status ok and exit 0 | EVIDENCE: tools/lensing_ask.py:162-165 | FIX: buffer across reads and split on newline before json.loads instead of parsing each raw iteration
+DEFECT 2: budget cap is enforced per-call against a hand-supplied --prior-spend (default 0.0); repeated fires each pass the cap independently because FIRE_LOG spend is never read back | EVIDENCE: tools/lensing_ask.py:258-259 | FIX: parse accumulated cost_usd from FIRE_LOG inside dry_checks and sum it into prior_spend
+DEFECT 3: only keys[0] is ever used, so the KEY_ENVS failover list is dead; a stale first key yields a paid-route 402/401 with no rotation to keys[1:2] | EVIDENCE: tools/lensing_ask.py:142 | FIX: retry the request (or at least key selection on auth errors) across the keys list before aborting
+DEAD-CODE: OUT_PREFIX module global is assigned once and never read (the live override is the main() globals rebinding of RAW_FILE/CONTENT_FILE/FIRE_LOG) | EVIDENCE: tools/lensing_ask.py:63
+ONE-SITTING FIX: make fire() buffer and split SSE lines so a max-token 64k Opus return can never be silently truncated by packet boundaries | EVIDENCE: tools/lensing_ask.py:154-165

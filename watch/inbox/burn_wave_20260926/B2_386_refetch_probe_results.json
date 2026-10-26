@@ -1,0 +1,24 @@
+{
+ "probe": "B2-386 higher-fidelity refetch attempt for the 33881x262 group",
+ "ts": "2026-09-26T20:44:00Z",
+ "target": "exact-33881-byte asset for msg_id 176 class (262-row group, one distinct image sha 66268013e17b0727 at 4727 bytes)",
+ "arms": [
+  {
+   "arm": "register original source_url refetch (cdn4.telesco.pe, B2-88-era signed URL)",
+   "result": "HTTP 200, 4727 bytes, sha256 prefix 66268013e17b0727 = register bytes, no change"
+  },
+  {
+   "arm": "fresh t.me/MrPool_Q/176?embed=1&mode=tme page (16360 bytes, 2 distinct telesco.pe URLs extracted)",
+   "result": "served URL fetches at 4727 bytes, sha 66268013e17b0727 (same render); intermittent curl 000s are local shell flakiness, single-shot fetches succeed"
+  },
+  {
+   "arm": "telesco.pe query-param size variants",
+   "result": "?size=l -> 200:4727; ?size=x -> 200:4727; ?download=1 -> 200:4727; &sz=33881 -> 404:161 (malformed append); params ignored by CDN"
+  },
+  {
+   "arm": "fresh Telegram Desktop public export of MrPool_Q",
+   "result": "unavailable (none exists to pull; arm pre-conditioned on one becoming available)"
+  }
+ ],
+ "verdict": "no exact-33881-byte hit on any reachable surface; superseding row not owed; existing register rows untouched"
+}

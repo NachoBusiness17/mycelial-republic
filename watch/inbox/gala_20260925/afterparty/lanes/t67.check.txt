@@ -1,0 +1,75 @@
+t67 check evidence: WAVE/ZONE_REGION join made a construction fact
+2026-09-25, estate roblox/src
+
+APPROACH CHOSEN: (b) derive at init, strengthened. ZoneGate no longer owns a
+zone-name list at all. Each WAVE row in init.server.luau carries its own
+generator_region_spheres join as a strict-required `region` field; init.server
+derives the join map from the rows and hands it to ZoneGate.init. Picked over
+(a) shared module: (a) adds a file plus two requires and still leaves the zone
+names written twice (module list + WAVE rows); (b) leaves them written once.
+Both construction facts hold in (b): a WAVE zone without a join is a strict
+type error (WaveZone.region required), a join without its zone cannot be
+written (the map is derived from WAVE names, never authored).
+
+CHANGED (4 files, spec first):
+1. roblox/docs/WORLDGEN_MINE.md law 4: owning spec updated BEFORE code. The
+   "join in server/ZoneGate.luau is authored" sentence now states the join is
+   authored once per WAVE row (region field, init.server.luau), ZoneGate
+   receives it derived at init, and names t64's 11 vs 11 diff proof as the
+   evidence the old form was discipline-only.
+2. roblox/src/server/ZoneGate.luau (144 -> 140 lines):
+   - header spec rewritten (t67: gate owns no zone-name list, single
+     authorship site, type-error and cannot-be-written facts)
+   - authored ZONE_REGION literal (13 lines) deleted; replaced by
+     `local zoneRegions: { [string]: string } = {}` (:38), filled only by
+     ZoneGate.init(regions) (:123-124)
+   - portalGate reads zoneRegions[zone] (:91), attribute stamp loop pairs
+     zoneRegions (:130)
+   - all old negatives preserved verbatim: independent = open no effect, 
+     opposed NOT implemented / unreachable / dead branch = fallback creep,
+     NONE never picked (silent furniture), fixed climbs carry no join so no
+     gate, climb portals get no attribute
+3. roblox/src/server/init.server.luau (237 -> 249 lines):
+   - t67 spec comment above WAVE (:36-42)
+   - WaveZone type gains required `region: string` (:43)
+   - all 11 rows carry region, values byte-equal to t64's recorded
+     ZONE_REGION join (:45-55)
+   - derive + pass: zoneRegions[z.name] = z.region loop (:70-73), single
+     caller ZoneGate.init(zoneRegions) (:74)
+4. tools/gen_df_luau_data.py gen_region_spheres docstring: prose pointed at
+   ZoneGate.luau as the join's home; now points at the WAVE rows. py_compile
+   OK. No tests reference this file (grep tests/ = zero matches).
+
+MECHANICAL PROOFS (by read + grep on disk bytes):
+- extracted name->region pairs from init.server.luau: 11 rows, byte-identical
+  to t64's recorded ZONE_REGION (GALLERY=LAKE, FRONTIER SOULS=GRASSLAND,
+  TOY BOX=FOREST, HARDWARE PRIMER=DESERT, INCIDENT DUNGEON=MOUNTAINS,
+  MAZE ARENA=DESERT, SPECTRAL MAZE=SWAMP, RIDDLE MAZE=HILLS,
+  LIGHTMAP ROOMS=GLACIER, EROSION FIELD=TUNDRA, STEER FIELD=OCEAN).
+  t64's comm-proof is now true by construction: keys ARE the WAVE names.
+- all 10 distinct region values are existing RegionSpheres.luau keys
+  (DESERT FOREST GLACIER GRASSLAND HILLS LAKE MOUNTAINS OCEAN SWAMP TUNDRA);
+  NONE is joined by no row (negative holds)
+- zero ZONE_REGION code references remain in src (one comment citation of the
+  t64 audit in init.server.luau:40, intentional prose)
+- exactly one ZoneGate.init caller (init.server.luau:74, passes the map);
+  module var zoneRegions has exactly one writer (init, ZoneGate.luau:124)
+- em-dash law: grep U+2014 over the three touched text files hits only
+  pre-existing lines (WORLDGEN_MINE.md:1,15; init.server.luau:2); no line I
+  authored carries one
+
+NOT DONE (negatives, first-class):
+- mountain_check NOT run (shared, per item order). It is also the place build
+  gate (roblox/README.md), so the_mountain.rbxlx is STALE until the next
+  mountain_check run: it still bakes the old no-arg ZoneGate.init() and the
+  authored literal (3 ZONE_REGION mentions). ZoneGate.luau is git-untracked
+  (born in the afterparty, never committed), consistent with the rbxlx being
+  a rebake-pending artifact of the same uncommitted arc.
+- luau-lsp / luau / selene: no binaries on PATH, so no semantic analyze.
+  Verification is read + mechanical grep only. Runtime teleport/attribute
+  behavior is unchanged by construction (same 11 pairs, same verdicts).
+- pytest not run: Luau-only change, outside the mag tree.
+
+DIFF SIZE: 4 files, ~45 lines delta, 0 new modules. Option (a) baseline for
+comparison: 1 new module + 2 new requires + WAVE still holding names = bigger
+diff and the name list would still exist twice.

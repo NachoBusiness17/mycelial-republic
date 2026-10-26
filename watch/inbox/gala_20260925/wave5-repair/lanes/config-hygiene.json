@@ -1,0 +1,41 @@
+{
+  "lane": "config-hygiene",
+  "division": "B",
+  "ok": true,
+  "note": "Silent-soft config failures fixed fail-loud (models/providers.py:73-135 ProviderConfigError on missing/corrupt/non-mapping providers.yaml naming the file, no default-roster fallback kept because none exists; mag/improve.py:64-82 FileNotFoundError on missing improve.yaml pointing at the t73 improve-off marker channel) and the seal modified=4 debt cleared by sanctioned named re-seal with per-file reasons (improve.yaml=HEAD caddaeb72, violation_baseline.json=HEAD d90bc8607, fossil_registry.json uncommitted working-tree edit left for its author, mirrors.json live driver state); a concurrent stealth cycle re-drifted mirrors.json mid-lane (s2-10 F3, predicted) and a second named act re-sealed it; closing verify modified=0 PASS; ratchet exit 1 fully attributed to concurrent lanes' files, zero hits on my edits; 6/6 loader checks pass incl live regression guards (28 providers, improve enabled=True 18 sources).",
+  "rows": [],
+  "checks": [
+    {
+      "command": ".venv/Scripts/python.exe tools/config_seal.py verify",
+      "exit": 1,
+      "evidence": "watch/inbox/gala_20260925/wave5-repair/lanes/config-hygiene.check.txt stage pre seal-verify-baseline: sealed=56 live=56 modified=4 missing=0 unsealed=0, MODIFIED exactly fossil_registry.json improve.yaml mirrors.json violation_baseline.json (the known 4, nothing NEW)"
+    },
+    {
+      "command": ".venv/Scripts/python.exe tools/violation_ratchet.py check --changed",
+      "exit": 1,
+      "evidence": "watch/inbox/gala_20260925/wave5-repair/lanes/config-hygiene.check.txt stage pre violation-ratchet-changed: 3 NEW hits (corpus_gap_research.py:663 file-too-long on an UNTRACKED new file, corpus_selfsteal.py:476 on a +159-line working-tree diff, fossil_check.py:73 shell-true on a +48-line diff) plus a census_drift_patrol GROWTH claim, all concurrent lanes' in-flight files; my only in-scope file mag/improve.py drew zero hits"
+    },
+    {
+      "command": ".venv/Scripts/python.exe watch/inbox/gala_20260925/wave5-repair/lanes/config-hygiene.check.py",
+      "exit": 0,
+      "evidence": "watch/inbox/gala_20260925/wave5-repair/lanes/config-hygiene.check.txt stage pre loader-fail-loud-checks: 6/6 PASS (corrupt providers.yaml ProviderConfigError naming the temp file; non-mapping yaml malformed error; missing providers.yaml ProviderConfigError; live roster 28 providers load; missing improve.yaml FileNotFoundError naming the path; real improve.yaml enabled=True 18 sources)"
+    },
+    {
+      "command": ".venv/Scripts/python.exe tools/config_seal.py update --by gala-wave5-config-hygiene-lane --note <per-file reasons>",
+      "exit": 0,
+      "evidence": "watch/inbox/gala_20260925/wave5-repair/lanes/config-hygiene.check.txt stage reseal seal-update-sanctioned: 56 files sealed, note names per-file reason (improve.yaml HEAD caddaeb72 post-stamp commit; violation_baseline.json HEAD d90bc8607 prune 943 to 941; fossil_registry.json uncommitted working-tree edit left for its author; mirrors.json live stealth_driver state)"
+    },
+    {
+      "command": ".venv/Scripts/python.exe tools/config_seal.py verify",
+      "exit": 0,
+      "evidence": "watch/inbox/gala_20260925/wave5-repair/lanes/config-hygiene.check.txt stage reseal seal-verify-after-reseal: modified=0 missing=0 unsealed=0 PASS; and stage reseal2+final after a mid-lane stealth cycle re-drifted mirrors.json (a known-4 member, zero NEW files): second named act re-sealed, closing verify modified=0 PASS exit 0"
+    },
+    {
+      "command": ".venv/Scripts/python.exe watch/inbox/gala_20260925/wave5-repair/lanes/config-hygiene.scan.py",
+      "exit": 0,
+      "evidence": "watch/inbox/gala_20260925/wave5-repair/lanes/config-hygiene.check.txt stage scan: authored files em/en dashes=0 nonascii=0 each; ADDED code lines via git diff -U0 both 0/0; check.txt exempt as byte-faithful raw capture (its 10 em-dashes are tools/config_seal.py:70,72 own output)"
+    }
+  ],
+  "decision_changed": "Closes the wave5-repair silent-soft config failure class + seal debt: a corrupted or missing provider roster and a missing improve.yaml now stop the seat with the file named instead of degrading with rc=0 (judgment recorded in code: no default-roster fallback kept because no default roster exists in the repo), and the config-seal modified=4 red state is retired to modified=0 by named re-seal, with mirrors.json live-writer churn explicitly handed to the operator as the remaining structural item (it re-occurred live mid-lane and was re-sealed by a second named act).",
+  "artifact": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/wave5-repair/lanes/config-hygiene.json"
+}

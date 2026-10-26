@@ -1,0 +1,3 @@
+# capmx-baref-q1-r5 (glm-5.3-flash @ zai, turn 1, channel: content)
+
+{"verb": "STAGE_ASK", "reason": "Senses show 38 handoff items and an open todo for ratchet enablement-dial laws from the fix taxonomy; no missing inputs, so cheapest useful routing is a swarm review ask against the wiring debt census.", "payload": {"target": "watch/inbox/WIRING_DEBT_CENSUS_20261001.md", "ask": "Draft ratchet laws from the fix taxonomy: for each registered debt, name its enablement dial (always-on/default-on/opt-in/manual-only) and its delete-when-X retirement condition. Output: one table row per debt; falsifier is any debt lacking both fields."}}

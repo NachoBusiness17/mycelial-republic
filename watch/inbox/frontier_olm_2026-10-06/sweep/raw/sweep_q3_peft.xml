@@ -1,0 +1,802 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<feed xmlns:opensearch="http://a9.com/-/spec/opensearch/1.1/" xmlns:arxiv="http://arxiv.org/schemas/atom" xmlns="http://www.w3.org/2005/Atom">
+  <id>https://arxiv.org/api/goQkcVTXG1sXv2DStG0MbwqXezI</id>
+  <title>arXiv Query: search_query=(all:"parameter-efficient" OR all:"QLoRA") AND (all:"fine-tuning" OR all:"finetuning")&amp;id_list=&amp;start=0&amp;max_results=30</title>
+  <updated>2026-10-06T16:18:07Z</updated>
+  <link href="https://arxiv.org/api/query?search_query=(all:%22parameter-efficient%22+OR+all:%22QLoRA%22)+AND+(all:%22fine-tuning%22+OR+all:%22finetuning%22)&amp;start=0&amp;max_results=30&amp;id_list=" type="application/atom+xml"/>
+  <opensearch:itemsPerPage>30</opensearch:itemsPerPage>
+  <opensearch:totalResults>3042</opensearch:totalResults>
+  <opensearch:startIndex>0</opensearch:startIndex>
+  <entry>
+    <id>http://arxiv.org/abs/2610.06542v1</id>
+    <title>A Fine-Grained Analysis of the LoRA Fine-Tuning Landscape with Implications for Data Selection</title>
+    <updated>2026-10-05T15:39:08Z</updated>
+    <link href="https://arxiv.org/abs/2610.06542v1" rel="alternate" type="text/html"/>
+    <link href="https://arxiv.org/pdf/2610.06542v1" rel="related" type="application/pdf" title="pdf"/>
+    <summary>Low-Rank Adaptation (LoRA) has become a standard approach for parameter-efficient fine-tuning, yet a fundamental practical question remains unresolved: how should the adapter rank be chosen? An overly small rank may lead to a poorly conditioned optimization landscape, whereas an unnecessarily large rank sacrifices the efficiency that motivates LoRA in the first place. Existing theoretical analyses provide only limited guidance on this trade-off, and their guarantees are typically established under restrictive theoretical settings. We address this gap by developing a substantially sharper landscape theory for LoRA, building on modern results from nonconvex low-rank matrix sensing. Our central insight is that the appropriate adapter rank should depend on the quality of the data-induced optimization geometry, rather than on the model alone. To formalize this connection, we introduce LoRA-RIP, a data-dependent restricted-isometry metric that characterizes the conditioning of the cross-entropy (CE) objective along LoRA-relevant low-rank directions. We prove that sufficient rank over-parameterization, with the required rank explicitly determined by the LoRA-RIP constant, eliminates spurious local minima, thereby extending existing RIP-based guarantees beyond the classical 1/3 regime. This characterization further enables principled data selection under a fixed rank budget. Experiments across language and vision tasks support these theoretical predictions, showing that rank and data quality are two coupled resources that should be jointly considered for more efficient and reliable LoRA fine-tuning.</summary>
+    <category term="cs.LG" scheme="http://arxiv.org/schemas/atom"/>
+    <published>2026-10-05T15:39:08Z</published>
+    <arxiv:primary_category term="cs.LG"/>
+    <author>
+      <name>Bowen Zhang</name>
+    </author>
+    <author>
+      <name>Changrui Fang</name>
+    </author>
+    <author>
+      <name>Xinsong Ma</name>
+    </author>
+    <author>
+      <name>Jiaye Teng</name>
+    </author>
+    <author>
+      <name>Ziye Ma</name>
+    </author>
+  </entry>
+  <entry>
+    <id>http://arxiv.org/abs/2610.06243v1</id>
+    <title>RoSA: Rotational Sparse Adaptation for Memory-Efficient Fine-Tuning</title>
+    <updated>2026-10-05T12:44:16Z</updated>
+    <link href="https://arxiv.org/abs/2610.06243v1" rel="alternate" type="text/html"/>
+    <link href="https://arxiv.org/pdf/2610.06243v1" rel="related" type="application/pdf" title="pdf"/>
+    <summary>Parameter-efficient fine-tuning (PEFT) reduces the cost of adapting foundation models by focusing training on a small parameter subset. Complementary to this idea, we introduce RoSA (Rotational Sparse Adaptation), which narrows adaptation to a subset of layers at a time. RoSA freezes lower layers close to the input throughout training and rotates a trainable block over later layers, progressively increasing the number of frozen layers close to the input. This design reduces optimizer-state memory, shortens backpropagation, and even forward propagation if activations at the last frozen layer are cached. Because RoSA is orthogonal to the choice of trainable parameterization, it can be combined with PEFT methods or sparse optimizers within each active block. Experiments across multiple LLM architectures and tasks show that RoSA reduces peak memory while maintaining strong fine-tuning performance.</summary>
+    <category term="cs.LG" scheme="http://arxiv.org/schemas/atom"/>
+    <published>2026-10-05T12:44:16Z</published>
+    <arxiv:comment>Accepted at NeurIPS 2026. 16 pages, 5 figures</arxiv:comment>
+    <arxiv:primary_category term="cs.LG"/>
+    <author>
+      <name>Muhammad Azeem Lodhi</name>
+    </author>
+    <author>
+      <name>Chao Zhou</name>
+    </author>
+    <author>
+      <name>Rebekka Burkholz</name>
+    </author>
+  </entry>
+  <entry>
+    <id>http://arxiv.org/abs/2610.05800v1</id>
+    <title>Adaptive Utilization of Low-Rank Adaptation via Conditioned Gating</title>
+    <updated>2026-10-05T04:43:53Z</updated>
+    <link href="https://arxiv.org/abs/2610.05800v1" rel="alternate" type="text/html"/>
+    <link href="https://arxiv.org/pdf/2610.05800v1" rel="related" type="application/pdf" title="pdf"/>
+    <summary>Low-Rank Adaptation (LoRA) achieves parameter-efficient fine-tuning by constraining model updates to a low-rank subspace and has been widely used in practice. However, LoRA typically employs a shared low-rank update across tokens, which limits its ability to fully exploit the adaptation subspace for tokens from different sequences. To address this issue, we propose an adaptive utilization of Low-Rank Adaptation (U-LoRA), which employs conditioned gating to explicitly learn effective token-level utilization of the limited low-rank adaptation subspace. Specifically, U-LoRA generates utilization coefficients along low-rank directions for each token and jointly coordinates and constrains them using sequence-level contextual information, thereby inducing more consistent adaptive patterns within a sentence. To further enhance training stability, we introduce a bias-corrected exponential moving average (EMA) historical prior that calibrates utilization signals across optimization steps, suppressing noise caused by batch-to-batch fluctuations. The effectiveness of our method arises from a better utilization of the existing low-rank subspace via input-conditioned strategies, rather than from expanding the subspace. Experiments on mathematical reasoning and natural language understanding benchmarks demonstrate that U-LoRA achieves competitive performance under comparable parameter budgets when with strong LoRA baselines and recent variants.</summary>
+    <category term="cs.CL" scheme="http://arxiv.org/schemas/atom"/>
+    <published>2026-10-05T04:43:53Z</published>
+    <arxiv:comment>ICML 2026</arxiv:comment>
+    <arxiv:primary_category term="cs.CL"/>
+    <author>
+      <name>Guang Yang</name>
+    </author>
+    <author>
+      <name>Changhao Guan</name>
+    </author>
+    <author>
+      <name>Chao Huang</name>
+    </author>
+    <author>
+      <name>Yufeng Chen</name>
+    </author>
+    <author>
+      <name>Kaiyu Huang</name>
+    </author>
+  </entry>
+  <entry>
+    <id>http://arxiv.org/abs/2610.05748v1</id>
+    <title>MOLT: A Fine-Grained GPU Memory Sharing System for LLM Serving with Opportunistic Fine-Tuning</title>
+    <updated>2026-10-05T03:53:21Z</updated>
+    <link href="https://arxiv.org/abs/2610.05748v1" rel="alternate" type="text/html"/>
+    <link href="https://arxiv.org/pdf/2610.05748v1" rel="related" type="application/pdf" title="pdf"/>
+    <summary>Large language model (LLM) serving scales its replica count with the request load, yet GPU memory still stands idle inside the replicas. Adding a replica takes minutes, while the memory that a replica needs changes within seconds. Even instant autoscaling could not return this idle memory, because the smallest unit that it can remove is a whole replica. Colocating parameter-efficient fine-tuning (PEFT) with inference can use this memory, but inference must be able to reclaim it within seconds, before requests that wait for memory exceed their latency service-level objective (SLO). Existing colocation systems either keep the tuning memory resident or let inference reclaim it at the coarse granularity of a whole training sample. Each such reclamation also discards the running tuning step. To address these limitations, we present MOLT, a fine-grained memory sharing system that lets inference reclaim the memory of individual activations that a running tuning step has saved for its backward pass. The step continues, and its backward pass recomputes those activations. Inference reclaims only memory that no in-flight GPU work can still access, even under CPU--GPU asynchrony and tensor parallelism. On four model deployments (24B--70B) across H100 SXM and B200 GPUs under trace-driven workloads, MOLT keeps inference SLO attainment at or above 99.7% and completes 1.9--3.3x the tuning work of discard-based memory sharing.</summary>
+    <category term="cs.DC" scheme="http://arxiv.org/schemas/atom"/>
+    <published>2026-10-05T03:53:21Z</published>
+    <arxiv:primary_category term="cs.DC"/>
+    <author>
+      <name>Jaehoon Yang</name>
+    </author>
+    <author>
+      <name>Yongbeom Kim</name>
+    </author>
+    <author>
+      <name>Hojoon Kim</name>
+    </author>
+    <author>
+      <name>Seung Yul Lee</name>
+    </author>
+    <author>
+      <name>Jae W. Lee</name>
+    </author>
+  </entry>
+  <entry>
+    <id>http://arxiv.org/abs/2610.05681v1</id>
+    <title>Automatic Speech Recognition for Low-Resource Sinhala: A Critical Review of Methods, Challenges, and Future Directions</title>
+    <updated>2026-10-05T01:49:45Z</updated>
+    <link href="https://arxiv.org/abs/2610.05681v1" rel="alternate" type="text/html"/>
+    <link href="https://arxiv.org/pdf/2610.05681v1" rel="related" type="application/pdf" title="pdf"/>
+    <summary>Automatic speech recognition (ASR) for low-resource languages remains a major challenge. Sinhala, the primary language of Sri Lanka with about 16 million speakers, illustrates the difficulty: agglutinative morphology, a 54-phoneme inventory, subject-object-verb (SOV) syntax and scarce annotated speech data limit both conventional and modern ASR systems. This paper presents the first critical review of Sinhala ASR research, tracing its development from Hidden Markov Models (HMMs) through deep neural networks to self-supervised pre-trained models such as wav2vec 2.0, XLS-R, Whisper and Massively Multilingual Speech (MMS). We compare existing Sinhala systems with related low-resource ASR work on Tamil, Malayalam and Hindi in terms of architecture, training data, word error rate (WER) and robustness to real-world acoustic conditions, and we assess self-supervised and transfer learning as responses to scarce labeled data. We show that most reported WERs are not directly comparable because they differ in corpus, data split and scoring, and that the only controlled comparison in the literature attributes an 18.1% relative WER reduction to corpus correction alone. We also discuss context-aware ASR that draws on phonological, syntactic and semantic knowledge. We identify six research gaps: (1) the lack of large annotated corpora covering multiple dialects and acoustic conditions; (2) weak contextual modeling of Sinhala morphosyntax; (3) high WER in real-world conditions; (4) the absence of standardized benchmarks; (5) the lack of parameter-efficient fine-tuning studies; and (6) the absence of annotated code-switched Sinhala-English speech resources. We outline a research agenda to address these gaps, intended as a roadmap for researchers working on Sinhala and other morphologically rich languages.</summary>
+    <category term="cs.CL" scheme="http://arxiv.org/schemas/atom"/>
+    <published>2026-10-05T01:49:45Z</published>
+    <arxiv:comment>29 pages, 1 table. Submitted to Computer Speech &amp; Language</arxiv:comment>
+    <arxiv:primary_category term="cs.CL"/>
+    <author>
+      <name>Chanuka Dinuwan</name>
+    </author>
+    <author>
+      <name>Sanath Jayasena</name>
+    </author>
+    <author>
+      <name>Buddhika Karunarathne</name>
+    </author>
+  </entry>
+  <entry>
+    <id>http://arxiv.org/abs/2610.05318v1</id>
+    <title>Robust Parameter-Efficient LLM Adaptation on Analog Hardware</title>
+    <updated>2026-10-04T15:39:20Z</updated>
+    <link href="https://arxiv.org/abs/2610.05318v1" rel="alternate" type="text/html"/>
+    <link href="https://arxiv.org/pdf/2610.05318v1" rel="related" type="application/pdf" title="pdf"/>
+    <summary>Analog in-memory computing is a promising platform for on-device execution of large language models because it performs matrix--vector multiplications (MVMs) in memory and in parallel, reducing data movement. However, limited digital-to-analog converter precision, input noise, and finite conductance states can degrade model accuracy, while full-model retraining to address these effects can be costly. We develop an optimizer-agnostic, parameter-efficient adaptation method based on Low-Rank Adaptation (LoRA), keeping the pretrained weights stored on analog arrays fixed while training the LoRA weights to adapt to downstream tasks and hardware non-idealities. Reliable adaptation requires handling errors in both forward and backward MVMs and physical weight updates. We use input reshaping to reduce input-induced MVM errors and update accumulation to retain small updates before programming them to finite-state analog devices. Across Llama-3.2-1B-Instruct and Llama-3-8B with both Muon and AdamW, input reshaping improves analog LoRA fine-tuning under noisy MVM computation. Update accumulation separately preserves sub-threshold updates and substantially improves adaptation under finite-resolution programming, including configurations with as few as 20 conductance states. Additional experiments show consistent held-out negative log-likelihood improvements across noisy analog settings.</summary>
+    <category term="cs.LG" scheme="http://arxiv.org/schemas/atom"/>
+    <published>2026-10-04T15:39:20Z</published>
+    <arxiv:comment>Accepted at the NeurIPS 2026 Workshop on On-Device Intelligence: Foundation Models under Real-World Constraints (ODI 2026)</arxiv:comment>
+    <arxiv:primary_category term="cs.LG"/>
+    <author>
+      <name>Jindan Li</name>
+    </author>
+    <author>
+      <name>Zhaoxian Wu</name>
+    </author>
+    <author>
+      <name>Tianyi Chen</name>
+    </author>
+  </entry>
+  <entry>
+    <id>http://arxiv.org/abs/2610.01963v1</id>
+    <title>Counterfactual Auditing of Bias in Open-Source Large Language Models for Clinical Triage</title>
+    <updated>2026-10-01T16:17:43Z</updated>
+    <link href="https://arxiv.org/abs/2610.01963v1" rel="alternate" type="text/html"/>
+    <link href="https://arxiv.org/pdf/2610.01963v1" rel="related" type="application/pdf" title="pdf"/>
+    <summary>Emergency department (ED) triage is a high-stakes prioritization task in which demographic, socioeconomic, and system-context information may improperly influence acuity assignment. Although open-source large language models (LLMs) are increasingly considered for local and privacy-preserving clinical decision support, it remains unclear how counterfactual bias varies across model families, sizes, medical-domain models, and domain-adapted models. We present a comparative counterfactual audit of ten open-source LLMs for pediatric Emergency Severity Index (ESI) prediction. Starting from real and handbook-style clinical vignettes, we construct paired counterfactual variants that change only one injected demographic, socioeconomic, healthcare-access, behavioral, social, or system-context variable while holding the clinical presentation fixed. Models include Qwen2.5-7B, Qwen2.5-14B-Instruct, a QLoRA fine-tuned Qwen2.5-7B, MedGemma variants, MedLLaMA2-7B, GPT-OSS-20B, and GPT-OSS-120B. We measure any counterfactual shift, undertriage, overtriage, shifts greater than one ESI level, mean shift, and mean absolute shift. Counterfactual sensitivity varied substantially and did not consistently decrease with larger model size or medical-domain pretraining. The fine-tuned Qwen2.5-7B showed the lowest overall sensitivity, with a 5.27% any-shift rate and mean absolute shift of 0.0534, versus 16.02% and 0.1706 for the base model. Several larger or medical-domain models showed more significant shifts. Stratified and correlation analyses further revealed clinically important directionality and shared failure patterns hidden by aggregate rates. These findings support counterfactual auditing as a lightweight, clinically interpretable framework for comparing fairness risks in open-source LLMs before clinical deployment.</summary>
+    <category term="cs.AI" scheme="http://arxiv.org/schemas/atom"/>
+    <category term="cs.CL" scheme="http://arxiv.org/schemas/atom"/>
+    <category term="cs.LG" scheme="http://arxiv.org/schemas/atom"/>
+    <published>2026-10-01T16:17:43Z</published>
+    <arxiv:primary_category term="cs.AI"/>
+    <author>
+      <name>Manar Aljohani</name>
+    </author>
+    <author>
+      <name>Brandon Ho</name>
+    </author>
+    <author>
+      <name>Kenneth McKinley</name>
+    </author>
+    <author>
+      <name>Dennis Ren</name>
+    </author>
+    <author>
+      <name>Xuan Wang</name>
+    </author>
+  </entry>
+  <entry>
+    <id>http://arxiv.org/abs/2610.01702v1</id>
+    <title>Task-Oriented Rank Adaptation for Continual Learning in Text Classification</title>
+    <updated>2026-10-01T13:49:15Z</updated>
+    <link href="https://arxiv.org/abs/2610.01702v1" rel="alternate" type="text/html"/>
+    <link href="https://arxiv.org/pdf/2610.01702v1" rel="related" type="application/pdf" title="pdf"/>
+    <summary>Continual learning (CL) in text classification faces two critical challenges: catastrophic forgetting and negative transfer across sequential tasks. Parameter-Efficient Fine-Tuning (PEFT) methods such as LoRA enable efficient adaptation by learning low-rank updates of the model parameters. However, these compact representations are normally trained in isolation, limiting their reuse across related tasks. We introduce Task-Oriented Rank Adaptation (TORA), a geometric routing framework that leverages the low-rank structure of LoRA adapters to decide whether to transfer knowledge from the most compatible expert (Boosting) or isolate the new task (Shielding) based on structural similarity. Evaluated across 15 diverse text classification benchmarks, TORA consistently avoids harmful routing decisions: compatible tasks exceed their isolated performance while reducing training time, and structurally distant tasks are protected from interference with no loss in accuracy. With a single geometric threshold and no reliance on task identities or predefined sequences, TORA provides a simple and effective approach for dynamic adapter routing in sequential text classification systems.</summary>
+    <category term="cs.CL" scheme="http://arxiv.org/schemas/atom"/>
+    <published>2026-10-01T13:49:15Z</published>
+    <arxiv:comment>Preprint submitted to CIARP2026</arxiv:comment>
+    <arxiv:primary_category term="cs.CL"/>
+    <author>
+      <name>Rey Sanchez Lopez</name>
+    </author>
+    <author>
+      <name>Eduardo Morales Manzanares</name>
+    </author>
+    <author>
+      <name>Hugo Jair Escalante</name>
+    </author>
+  </entry>
+  <entry>
+    <id>http://arxiv.org/abs/2610.01625v1</id>
+    <title>Beyond Domain-Level Adaptation: Margin-Oriented Semantic-Appearance Interaction Correction for Personalized Federated Vision-Language Models</title>
+    <updated>2026-10-01T12:57:30Z</updated>
+    <link href="https://arxiv.org/abs/2610.01625v1" rel="alternate" type="text/html"/>
+    <link href="https://arxiv.org/pdf/2610.01625v1" rel="related" type="application/pdf" title="pdf"/>
+    <summary>Federated parameter-efficient fine-tuning enables distributed clients to adapt pretrained vision-language models without sharing raw data or updating the full backbone. Its effectiveness, however, is limited by domain heterogeneity across clients. Existing personalized methods separate globally shared knowledge from client-specific style, but they largely treat each domain as a class-agnostic transformation. We show that this abstraction is insufficient: the cross-domain displacement associated with a fixed domain varies across semantic classes, and only a subset of these class-domain residuals damages the image-text decision margin. We therefore propose Margin-Oriented Semantic-Appearance Interaction Correction (MOSAIC), which first constructs a decision-aware harmfulness score that measures whether a training-derived class-domain residual favors a competing text prototype over the true class. It then models fine-grained class-domain interactions with a low-rank residual adapter whose class factors and residual basis are globally shared while domain factors remain client-private. An image-conditioned gate further controls candidate-wise correction, and harmful-pair-aware reweighting prioritizes decision-relevant residuals during local optimization. Extensive experiments on Office31, OfficeHome, and DomainNet100 demonstrate that MOSAIC consistently improves macro-client top-1 accuracy across all evaluated domain-shift and joint domain-label-shift settings.</summary>
+    <category term="cs.CV" scheme="http://arxiv.org/schemas/atom"/>
+    <published>2026-10-01T12:57:30Z</published>
+    <arxiv:primary_category term="cs.CV"/>
+    <author>
+      <name>Wentao Yue</name>
+    </author>
+    <author>
+      <name>Qingyu Mao</name>
+    </author>
+    <author>
+      <name>Tianyou Lai</name>
+    </author>
+    <author>
+      <name>Ahmed M. Abdelmoniem</name>
+    </author>
+    <author>
+      <name>Qilei Li</name>
+    </author>
+  </entry>
+  <entry>
+    <id>http://arxiv.org/abs/2610.01493v1</id>
+    <title>No Model Required: Text Entropy Rate Filtering Mitigates Iterative Fine-Tuning Collapse</title>
+    <updated>2026-10-01T11:36:55Z</updated>
+    <link href="https://arxiv.org/abs/2610.01493v1" rel="alternate" type="text/html"/>
+    <link href="https://arxiv.org/pdf/2610.01493v1" rel="related" type="application/pdf" title="pdf"/>
+    <summary>Iterative fine-tuning on synthetic data causes \emph{model collapse}: output diversity narrows as rare patterns are progressively lost, a signature most visible as phrase-level repetition. Existing mitigations either require model log-probabilities, an external oracle, or continued access to real human data. Here we develop a new approach grounded in mathematical information theory: the non-parametric Kontoyiannis entropy rate estimator $h_k$, computed entirely from raw text via match-length statistics, with no model of any kind. We show that this is in fact a \emph{superior} training-data filter on text-diversity metrics in a fully-synthetic, single-lineage fine-tuning setting. In a six-generation QLoRA collapse experiment on Llama-3.1-8B, logprob-based filtering (the most established model-access-requiring baseline) provides no significant text-diversity benefit on any metric ($p &gt; 0.23$), whereas $h_k$-filtering yields $+42\%$ unique trigrams, $+30\%$ vocabulary, and $-19\%$ repetition (all $p &lt; 0.001$). We validate $h_k$ as a cross-domain entropy proxy ($β= 0.924$, $R^2 = 0.746$) and collapse detector ($ρ= +0.454$, $p &lt; 0.0001$) across 4~domains, 2~temperatures, 2~generator--scorer model pairs, and 1{,}520 generated documents. Our results demonstrate that information theoretic approaches to collapse mitigation are efficient, and suggest new approaches for maintaining multi-agent diversity.</summary>
+    <category term="cs.CL" scheme="http://arxiv.org/schemas/atom"/>
+    <category term="cs.AI" scheme="http://arxiv.org/schemas/atom"/>
+    <category term="cs.IT" scheme="http://arxiv.org/schemas/atom"/>
+    <category term="physics.data-an" scheme="http://arxiv.org/schemas/atom"/>
+    <category term="stat.ML" scheme="http://arxiv.org/schemas/atom"/>
+    <published>2026-10-01T11:36:55Z</published>
+    <arxiv:comment>17 pages, 8 figures, NeurIPS 2026</arxiv:comment>
+    <arxiv:primary_category term="cs.CL"/>
+    <author>
+      <name>Lewis Mitchell</name>
+    </author>
+  </entry>
+  <entry>
+    <id>http://arxiv.org/abs/2610.01143v1</id>
+    <title>Parameter-Efficient Distributionally Robust Adaptation of Tabular Foundation Models under Subpopulation Shift</title>
+    <updated>2026-10-01T06:23:15Z</updated>
+    <link href="https://arxiv.org/abs/2610.01143v1" rel="alternate" type="text/html"/>
+    <link href="https://arxiv.org/pdf/2610.01143v1" rel="related" type="application/pdf" title="pdf"/>
+    <summary>Despite strong mean accuracy, tabular foundation models (TFMs) can perform poorly on underrepresented groups under subpopulation shift, where group proportions change between training and deployment. We propose DR-TFM, a parameter-efficient distributionally robust adaptation framework that requires no true group annotations. DR-TFM adjusts attention to labeled context examples by fine-tuning an existing query scaling network or adding and training one, while keeping all other parameters fixed. We instantiate the framework with two robust objectives using estimated groups or source conditional distributions derived from training data. For TabPFN-3, adaptation updates only 0.016% of the pretrained model's parameters. Across five tabular benchmarks, DR-TFM achieves substantially higher average worst-group accuracy than pretrained TFMs and the compared robust baselines without true group annotations, while maintaining competitive mean group accuracy. DR-TFM also improves average worst-group accuracy on ACS Income and across four additional TFMs.</summary>
+    <category term="cs.LG" scheme="http://arxiv.org/schemas/atom"/>
+    <category term="cs.AI" scheme="http://arxiv.org/schemas/atom"/>
+    <published>2026-10-01T06:23:15Z</published>
+    <arxiv:comment>45 pages, 7 figures, including appendices</arxiv:comment>
+    <arxiv:primary_category term="cs.LG"/>
+    <author>
+      <name>Seonghwi Kim</name>
+    </author>
+    <author>
+      <name>Sung Ho Jo</name>
+    </author>
+    <author>
+      <name>Minwoo Chae</name>
+    </author>
+  </entry>
+  <entry>
+    <id>http://arxiv.org/abs/2610.00928v1</id>
+    <title>Efficient Task Adaptation in Large Language Models: A Survey of Weight-Based, Prompt-Based, and Embedding-Based Adaptations</title>
+    <updated>2026-10-01T02:05:00Z</updated>
+    <link href="https://arxiv.org/abs/2610.00928v1" rel="alternate" type="text/html"/>
+    <link href="https://arxiv.org/pdf/2610.00928v1" rel="related" type="application/pdf" title="pdf"/>
+    <summary>As large language models are increasingly deployed across diverse downstream tasks, efficient task adaptation has emerged as a central challenge. In response, a wide range of task adaptation methods have been proposed, spanning parameter-efficient fine-tuning, in-context learning, and embedding-injection approaches. However, these lines of work have largely evolved within individual paradigms, leaving their cross-paradigm relationships and trade-offs underexplored, especially for recently emerging embedding-based adaptations. This survey presents a unified framework that categorizes task adaptation methods by where and how task information is encoded: model weights, input prompts, or injected task embeddings. We provide a comprehensive taxonomy that integrates these paradigms, analyze their key strengths and limitations to explain how different adaptation paradigms have evolved, clarify relationships across paradigms, and highlight open problems for future research.</summary>
+    <category term="cs.CL" scheme="http://arxiv.org/schemas/atom"/>
+    <published>2026-10-01T02:05:00Z</published>
+    <arxiv:comment>Accepted by AACL-IJCNLP 2026 Main</arxiv:comment>
+    <arxiv:primary_category term="cs.CL"/>
+    <author>
+      <name>Jungwon Park</name>
+    </author>
+    <author>
+      <name>Changin Choi</name>
+    </author>
+    <author>
+      <name>Jimyeong Kim</name>
+    </author>
+    <author>
+      <name>Nojun Kwak</name>
+    </author>
+    <author>
+      <name>Wonjong Rhee</name>
+    </author>
+  </entry>
+  <entry>
+    <id>http://arxiv.org/abs/2610.00689v1</id>
+    <title>Towards Robust Numerical Claim Verification</title>
+    <updated>2026-09-30T20:34:55Z</updated>
+    <link href="https://arxiv.org/abs/2610.00689v1" rel="alternate" type="text/html"/>
+    <link href="https://arxiv.org/pdf/2610.00689v1" rel="related" type="application/pdf" title="pdf"/>
+    <summary>Large language models (LLMs) are widely used for claim verification, yet remain brittle for numerical reasoning: even small changes in value can sharply degrade accuracy. We show that this brittleness persists in frontier LLMs, but can be mitigated through adversarial fine-tuning on numerically perturbed examples. Using parameter-efficient fine-tuning, small Qwen3 models (0.6B$\unicode{x2013}$8B) reach 98.7% accuracy on label-flipping perturbations, outperforming larger zero-shot models and frontier systems (GPT-5.4 Pro (74.0%) and Gemini 2.5 Flash (73.9%)). The gains generalise to unseen perturbation types, indicating robust numerical decision boundaries rather than memorised edits. Robustness also transfers without target-domain data, significantly improving cross-lingual performance in Spanish. We further show that the same fine-tuning recipe confers robustness to evidence-side perturbations, using the VitaminC dataset.</summary>
+    <category term="cs.CL" scheme="http://arxiv.org/schemas/atom"/>
+    <published>2026-09-30T20:34:55Z</published>
+    <arxiv:comment>Accepted to AACL-IJCNLP 2026 Findings</arxiv:comment>
+    <arxiv:primary_category term="cs.CL"/>
+    <author>
+      <name>Peter Røysland Aarnes</name>
+    </author>
+    <author>
+      <name>Vinay Setty</name>
+    </author>
+  </entry>
+  <entry>
+    <id>http://arxiv.org/abs/2610.00685v1</id>
+    <title>Backdoor Purification for LoRA-Tuned LLMs via Null-Space Projection</title>
+    <updated>2026-09-30T20:28:34Z</updated>
+    <link href="https://arxiv.org/abs/2610.00685v1" rel="alternate" type="text/html"/>
+    <link href="https://arxiv.org/pdf/2610.00685v1" rel="related" type="application/pdf" title="pdf"/>
+    <summary>With the rapid adoption of large language models (LLMs) and parameter-efficient fine-tuning (PEFT) methods, the risk of backdoor attacks has become more severe. Existing backdoor purification methods typically rely on at least one of the strong assumptions, such as prior knowledge of triggers, access to clean references, or aggressive retraining, and they often lack comprehensive evaluations. These constraints substantially limit their practical applicability. To overcome these challenges, our work proposes purifying LoRA-tuned LLMs without these assumptions and even without post-hoc retraining of the suspect parameters. Our objective is to significantly reduce the attack success rates (ASR) while preserving both (i) the base model's general capabilities and (ii) the new downstream skills learned through the adapter. Through a series of ablation studies, we progressively scale our approach from a single layer in a text classification setting to a full-parameter LLM in the generative task. Through careful data curation and feature approximation, we extract high-fidelity backdoor directions and, for each layer or head, construct orthogonal null spaces in both the input and output channels, onto which the LoRA updates are projected. Empirically, our null-space projection method reduces the ASR from nearly 100% to less than 10%, while preserving the base model's benign performance and the adapter's learned abilities during downstream task adaptation.</summary>
+    <category term="cs.AI" scheme="http://arxiv.org/schemas/atom"/>
+    <category term="cs.CR" scheme="http://arxiv.org/schemas/atom"/>
+    <category term="cs.LG" scheme="http://arxiv.org/schemas/atom"/>
+    <published>2026-09-30T20:28:34Z</published>
+    <arxiv:comment>NeurIPS 2026</arxiv:comment>
+    <arxiv:primary_category term="cs.AI"/>
+    <author>
+      <name>Jianwei Li</name>
+    </author>
+    <author>
+      <name>Jung-Eun Kim</name>
+    </author>
+  </entry>
+  <entry>
+    <id>http://arxiv.org/abs/2610.00665v1</id>
+    <title>Analysis of Quantized and Efficiently Adapted Protein Language Models</title>
+    <updated>2026-09-30T20:02:41Z</updated>
+    <link href="https://arxiv.org/abs/2610.00665v1" rel="alternate" type="text/html"/>
+    <link href="https://arxiv.org/pdf/2610.00665v1" rel="related" type="application/pdf" title="pdf"/>
+    <summary>Background: Protein language models (PLMs) are increasingly used for sequence generation and property prediction, but their size makes fine-tuning and deployment expensive. The effects of quantization and parameter efficient fine-tuning on performance, representations and generation remain insufficiently characterized. Results: We evaluated 4-bit quantization and low-rank adapter fine-tuning (QLoRA) across ESM-2, ESMC, ProtBERT, ProtT5, Ankh, Ankh3 and Profluent-E1. Across protein prediction tasks, many model-task pairs retained more than 90% of full fine-tuning performance. Peak GPU memory savings approached 90% for the largest models, although performance and efficiency varied by model, dataset and training configuration. QLoRA often preserved early-layer representations while inducing task-specific adaptations in middle and late layers, resembling full fine-tuning with smaller representational changes. Training speed and power effects were more varied. For unconditional generation with ProLLaMA, ProtGPT2, ProGen2, ProteinGLM and ESM3, 4-bit quantization largely preserved predicted structural and sequence-level properties, but token-level analysis revealed model-dependent shifts in autoregressive output distributions. Conclusion: QLoRA and 4-bit quantization reduce PLM computational requirements, particularly GPU memory usage. Our results support QLoRA as a first-pass strategy for memory limited adaptation, reserving full fine-tuning for challenging tasks, unstable architectures or low validation recovery. For generative PLMs, sequence-level and structural metrics should be complemented with distributional analysis, since downstream predictions alone may miss quantization-induced shifts. These approaches can broaden access to large-scale protein modelling while requiring model- and task-specific validation.</summary>
+    <category term="cs.LG" scheme="http://arxiv.org/schemas/atom"/>
+    <category term="q-bio.QM" scheme="http://arxiv.org/schemas/atom"/>
+    <published>2026-09-30T20:02:41Z</published>
+    <arxiv:primary_category term="cs.LG"/>
+    <author>
+      <name>Ilan Yaniv Zeisler</name>
+    </author>
+    <author>
+      <name>Sebastian Clancy</name>
+    </author>
+    <author>
+      <name>Pouriya Bayat</name>
+    </author>
+    <author>
+      <name>Saaim Raad</name>
+    </author>
+    <author>
+      <name>Ivan Kraskov</name>
+    </author>
+    <author>
+      <name>Matthew Xie</name>
+    </author>
+    <author>
+      <name>Vivian White</name>
+    </author>
+    <author>
+      <name>Spencer Perkins</name>
+    </author>
+    <author>
+      <name>Serena Singh</name>
+    </author>
+    <author>
+      <name>Sepehr Bayat</name>
+    </author>
+    <author>
+      <name>Keith Pardee</name>
+    </author>
+  </entry>
+  <entry>
+    <id>http://arxiv.org/abs/2609.40335v1</id>
+    <title>Is Weight Tying Still Beneficial for Decoder-Only LLMs in Private Settings Under DP-SGD?</title>
+    <updated>2026-09-30T17:57:43Z</updated>
+    <link href="https://arxiv.org/abs/2609.40335v1" rel="alternate" type="text/html"/>
+    <link href="https://arxiv.org/pdf/2609.40335v1" rel="related" type="application/pdf" title="pdf"/>
+    <summary>Differentially Private Stochastic Gradient Descent (DP-SGD) is a leading approach for privacy-preserving fine-tuning of large language models (LLMs). Many decoder-only LLMs employ weight tying between input and output embeddings, a design choice originally introduced for parameter efficiency and improved language modeling performance in the non-private setting. However, the impact of weight tying under differentially private training remains largely unexplored. In this work, we investigate the role of weight tying in the DP setting using GPT2 and DistilGPT2 as representative decoder-only architectures. Interestingly, we find that untied embeddings consistently outperform weight-tied models under DP-SGD, achieving gains of up to 4.74% points in accuracy on SST-2, QNLI, and QQP. Beyond improved utility, untying embeddings enables the use of memory-efficient ghost clipping for DP-SGD. By contrast, weight tying introduces shared-parameter interactions that complicate standard ghost norm computation and largely negate its computational advantages. As a result, untied models achieve over 60% lower memory usage while preserving the benefits of ghost clipping. Our results indicate that untied embeddings provide a more effective and scalable design for differentially private training of decoder-only LLMs and highlight the need to revisit standard LLM architectural choices in the privacy-preserving setting.</summary>
+    <category term="cs.LG" scheme="http://arxiv.org/schemas/atom"/>
+    <published>2026-09-30T17:57:43Z</published>
+    <arxiv:comment>Accepted at the 8th IEEE International Conference on Trust, Privacy and Security in Intelligent Systems, and Applications (IEEE TPS 2026). 12 pages (10 pages of main content), 1 figure, 13 tables</arxiv:comment>
+    <arxiv:primary_category term="cs.LG"/>
+    <author>
+      <name>Razan El Mais</name>
+    </author>
+    <author>
+      <name>Ali Chehab</name>
+    </author>
+    <author>
+      <name>Ibrahim Issa</name>
+    </author>
+    <author>
+      <name>Razane Tajeddine</name>
+    </author>
+  </entry>
+  <entry>
+    <id>http://arxiv.org/abs/2610.00431v1</id>
+    <title>ChainLoRA: Geometry-Preserving Task Vector Merging for Continual Learning in LLMs</title>
+    <updated>2026-09-30T16:43:34Z</updated>
+    <link href="https://arxiv.org/abs/2610.00431v1" rel="alternate" type="text/html"/>
+    <link href="https://arxiv.org/pdf/2610.00431v1" rel="related" type="application/pdf" title="pdf"/>
+    <summary>Continual parameter-efficient fine-tuning for large language models (LLMs) must balance retention of previously acquired knowledge, adaptation to new tasks, and strict parameter budgets. We present \textbf{ChainLoRA}, a replay-free continual merging framework built on chain-updated task-vector geometry. From a parameter-merging perspective, we formulate a geometric view of forgetting through a measurable interaction between task updates, separating directional overlap from coefficient coupling. Building on this view, ChainLoRA combines chain-updated training with post-stream adaptive SVD merging. During training, initialization and a one-sided orthogonality proxy use only the last carrier, keeping their historical-state footprint and regularization overhead constant as the task stream grows. At merging time, Adaptive SVD extracts a shared carrier and aligns it to the latest task through Procrustes adaptation. Our theoretical analysis shows that Procrustes adaptation facilitates geometric approximate separation of shared and task-specific components. The one-sided proxy further bounds inter-task interference. An effective-rank penalty additionally promotes efficient utilization of the task subspace during continual learning. Experiments show that ChainLoRA achieves state-of-the-art performance among the evaluated replay-free methods on the Large and SuperNI benchmarks, while remaining competitive on Standard CL and attaining almost the closest average scores to the evaluated replay-based method across all three benchmarks.</summary>
+    <category term="stat.ML" scheme="http://arxiv.org/schemas/atom"/>
+    <category term="cs.LG" scheme="http://arxiv.org/schemas/atom"/>
+    <published>2026-09-30T16:43:34Z</published>
+    <arxiv:comment>18 pages</arxiv:comment>
+    <arxiv:primary_category term="stat.ML"/>
+    <author>
+      <name>Hang Yin</name>
+    </author>
+    <author>
+      <name>Haozhe Wang</name>
+    </author>
+    <author>
+      <name>Yuhua Luo</name>
+    </author>
+    <author>
+      <name>Zhangqi Pan</name>
+    </author>
+    <author>
+      <name>Xiaoxing Wang</name>
+    </author>
+    <author>
+      <name>Junchi Yan</name>
+    </author>
+  </entry>
+  <entry>
+    <id>http://arxiv.org/abs/2609.39839v1</id>
+    <title>Dynamic LoRA-Experts and Prototype-Ensemble Matching for Class-Incremental Learning</title>
+    <updated>2026-09-30T14:34:54Z</updated>
+    <link href="https://arxiv.org/abs/2609.39839v1" rel="alternate" type="text/html"/>
+    <link href="https://arxiv.org/pdf/2609.39839v1" rel="related" type="application/pdf" title="pdf"/>
+    <summary>Class-Incremental Learning (CIL) aims to continuously learn new classes without forgetting previously acquired knowledge. Parameter-efficient fine-tuning with pre-trained models reduces parameter overhead but can suffer from cumulative interference and suboptimal alignment between inference samples and specialized modules. We propose Dynamic LoRA-Experts and Prototype-Ensemble Matching (DLEPEM), a two-stage rehearsal-free framework. DLEPEM allocates a task-specific LoRA-Expert for each incremental task to reduce cross-task interference, then combines frozen pre-trained-model prototypes with task-adaptive LoRA-Expert prototypes for reliable task-level discrimination. Experiments on standard CIL and Few-Shot CIL benchmarks demonstrate strong performance under the evaluated protocols.</summary>
+    <category term="cs.LG" scheme="http://arxiv.org/schemas/atom"/>
+    <published>2026-09-30T14:34:54Z</published>
+    <arxiv:comment>Published open-access article; 23 pages</arxiv:comment>
+    <arxiv:primary_category term="cs.LG"/>
+    <arxiv:journal_ref>Applied Sciences 2026, 16(12), 6153</arxiv:journal_ref>
+    <author>
+      <name>Hongwei Zhao</name>
+      <arxiv:affiliation>School of Computer Science and Engineering, Beihang University</arxiv:affiliation>
+    </author>
+    <author>
+      <name>Rui Liu</name>
+      <arxiv:affiliation>School of Computer Science and Engineering, Beihang University</arxiv:affiliation>
+    </author>
+    <author>
+      <name>Yansong Liu</name>
+      <arxiv:affiliation>School of Computer Science and Engineering, Beihang University</arxiv:affiliation>
+    </author>
+    <arxiv:doi>10.3390/app16126153</arxiv:doi>
+    <link rel="related" href="https://doi.org/10.3390/app16126153" title="doi"/>
+  </entry>
+  <entry>
+    <id>http://arxiv.org/abs/2609.39550v1</id>
+    <title>Hyperbolic Prototype Routing for Rehearsal-Free Class-Incremental Learning</title>
+    <updated>2026-09-30T11:50:35Z</updated>
+    <link href="https://arxiv.org/abs/2609.39550v1" rel="alternate" type="text/html"/>
+    <link href="https://arxiv.org/pdf/2609.39550v1" rel="related" type="application/pdf" title="pdf"/>
+    <summary>Class-Incremental Learning (CIL) aims to continually learn new classes while preserving prior knowledge. Parameter-efficient fine-tuning with pre-trained models enables CIL with minimal parameter updates, but existing approaches still suffer from catastrophic forgetting caused by cumulative interference and suboptimal module-sample matching at inference. We propose Hyperbolic Prototype Routing (HyPro), a rehearsal-free framework for continual learning. HyPro allocates a dedicated LoRA-Expert module to each incremental task for isolated representation learning, then projects routing features onto a Poincare ball and performs geodesic nearest-prototype matching for reliable task-level discrimination. Extensive experiments on standard CIL and Few-Shot CIL benchmarks show that HyPro consistently improves average and final-stage accuracy over strong baselines.</summary>
+    <category term="cs.LG" scheme="http://arxiv.org/schemas/atom"/>
+    <published>2026-09-30T11:50:35Z</published>
+    <arxiv:comment>6 pages, supplementary material</arxiv:comment>
+    <arxiv:primary_category term="cs.LG"/>
+    <author>
+      <name>HongWei Zhao</name>
+      <arxiv:affiliation>Beihang University</arxiv:affiliation>
+    </author>
+    <author>
+      <name>Rui Liu</name>
+      <arxiv:affiliation>Beihang University</arxiv:affiliation>
+    </author>
+    <author>
+      <name>Yong Chen</name>
+      <arxiv:affiliation>Beijing University of Posts and Telecommunications</arxiv:affiliation>
+    </author>
+  </entry>
+  <entry>
+    <id>http://arxiv.org/abs/2609.39390v1</id>
+    <title>Decoupled and Distilled: Task-Adaptive LoRA-Teachers with Ensemble Knowledge Transfer for Few-Shot Class-Incremental Learning</title>
+    <updated>2026-09-30T09:38:27Z</updated>
+    <link href="https://arxiv.org/abs/2609.39390v1" rel="alternate" type="text/html"/>
+    <link href="https://arxiv.org/pdf/2609.39390v1" rel="related" type="application/pdf" title="pdf"/>
+    <summary>Few-Shot Class-Incremental Learning (FSCIL) addresses the challenge of learning new classes from very limited samples while retaining knowledge of previously learned ones. Although parameter-efficient fine-tuning methods with pre-trained models show promise for class-incremental learning, strict gradient-based constraints can be unreliable under severe data scarcity, while multi-expert approaches can impose substantial inference-time costs. We propose TALON (Task-Adaptive LoRA-Teachers with Ensemble Knowledge Transfer), an inference-efficient FSCIL framework. TALON dynamically allocates an independent LoRA-Teacher to each incremental task for task-specific representation learning, then distills multiple frozen teachers into a unified LoRA-Student through Ensemble Knowledge Transfer, eliminating runtime module selection or generation. A semantic-guided distillation strategy weights teacher contributions by feature-space similarity to mitigate catastrophic forgetting and overfitting. Across three class-order runs, TALON achieves comparable or better mean average accuracy across four FSCIL benchmarks, obtaining 86.68 +/- 1.22% on CUB200, 90.39 +/- 0.27% on CIFAR100, 78.38 +/- 0.94% on ImageNet-R, and 96.34 +/- 0.33% on miniImageNet. TALON uses up to 33x fewer deployment parameters and reduces average inference time per task to 26.7 s, a 41.70% reduction relative to ASP.</summary>
+    <category term="cs.LG" scheme="http://arxiv.org/schemas/atom"/>
+    <published>2026-09-30T09:38:27Z</published>
+    <arxiv:comment>Accepted manuscript; 46 pages, supplementary material</arxiv:comment>
+    <arxiv:primary_category term="cs.LG"/>
+    <author>
+      <name>Hongwei Zhao</name>
+      <arxiv:affiliation>School of Computer Science and Engineering, Beihang University</arxiv:affiliation>
+    </author>
+    <author>
+      <name>Rui Liu</name>
+      <arxiv:affiliation>School of Computer Science and Engineering, Beihang University</arxiv:affiliation>
+    </author>
+    <author>
+      <name>Yansong Liu</name>
+      <arxiv:affiliation>School of Computer Science and Engineering, Beihang University</arxiv:affiliation>
+    </author>
+    <author>
+      <name>Zhiyuan Zou</name>
+      <arxiv:affiliation>School of Computer Science and Engineering, Beihang University</arxiv:affiliation>
+    </author>
+    <author>
+      <name>Yong Chen</name>
+      <arxiv:affiliation>School of Computer Science, Beijing University of Posts and Telecommunications</arxiv:affiliation>
+    </author>
+    <arxiv:doi>10.1016/j.neucom.2026.135200</arxiv:doi>
+    <link rel="related" href="https://doi.org/10.1016/j.neucom.2026.135200" title="doi"/>
+  </entry>
+  <entry>
+    <id>http://arxiv.org/abs/2609.37565v1</id>
+    <title>A Model-Agnostic Physics-Guided Adapter for Few-Shot Transfer of Coastal Flood Prediction Models to Unseen Regions</title>
+    <updated>2026-09-29T13:34:56Z</updated>
+    <link href="https://arxiv.org/abs/2609.37565v1" rel="alternate" type="text/html"/>
+    <link href="https://arxiv.org/pdf/2609.37565v1" rel="related" type="application/pdf" title="pdf"/>
+    <summary>Deep learning surrogates can produce high-resolution coastal flood maps orders of magnitude faster than physics-based hydrodynamic simulators, yet transferring them to new coastal regions remains costly, since generating target-region data for fine-tuning typically requires numerous time-consuming simulations. To tackle this bottleneck, we introduce the Physics Adapter (PA), a compact, architecture-agnostic adaptation interface that enables efficient few-shot transfer of flood prediction models across diverse coastal regions. PA predicts peak water level through a differentiable wet/dry response that compares terrain elevation against a learned water level, and blends this physics-structured prediction with a data-driven branch through a learned gate. Unlike physics-informed formulations, PA imposes no PDE-residual or conservation losses and instead exploits elevation as an architectural inductive bias, adding a negligible number of trainable parameters. We integrate PA into 12 heterogeneous models, and evaluate them on two coastal regions with markedly distinct geometries, topographies, and shoreline protection configurations. The performance of PA is benchmarked against a no-physics baseline, full fine-tuning, and standard parameter-efficient fine-tuning (PEFT) methods, considering both within-region generalization to unseen sea level rise values and between-region transfer. In low-shot regime (K=3), and averaged over all backbones and transfer settings, adding PA reduces root mean square error by 11.5% when only the output head is adapted on a frozen backbone, by 15.4% when combined with PEFT methods, and by 22.9% under full fine-tuning, compared to matched configurations without PA. Taken together, the findings of this work offer practitioners a concrete recipe for extending DL-based coastal flood predictors to new, data-scarce regions.</summary>
+    <category term="cs.LG" scheme="http://arxiv.org/schemas/atom"/>
+    <published>2026-09-29T13:34:56Z</published>
+    <arxiv:primary_category term="cs.LG"/>
+    <author>
+      <name>Bilal Hassan</name>
+    </author>
+    <author>
+      <name>Areg Karapetyan</name>
+    </author>
+    <author>
+      <name>Samer Madanat</name>
+    </author>
+  </entry>
+  <entry>
+    <id>http://arxiv.org/abs/2609.37033v1</id>
+    <title>FedLAFP: Low-Rank Aggregation Meets Full-Rank Personalization in Federated Fine-Tuning</title>
+    <updated>2026-09-29T08:45:08Z</updated>
+    <link href="https://arxiv.org/abs/2609.37033v1" rel="alternate" type="text/html"/>
+    <link href="https://arxiv.org/pdf/2609.37033v1" rel="related" type="application/pdf" title="pdf"/>
+    <summary>Federated parameter-efficient fine-tuning enables clients to adapt pre-trained models without sharing raw data or communicating the full model, but statistical heterogeneity makes a single global adapter insufficient for personalized prediction. Existing personalized methods typically use the same low-rank structure for both shared and private adaptation, overlooking their distinct requirements for aggregation and personalization. We propose FedLAFP, a role-aware framework that couples a compact, globally aggregated LoRA branch with a client-private, full-rank-capable RandLoRA branch. The shared branch provides an efficient interface for transferring common knowledge, whereas the private branch combines fixed random low-rank bases with learned scaling coefficients to provide expressive client-specific adaptation without additional communication. Client- and layer-specific mixing coefficients jointly fuse the two branches, and only the shared LoRA parameters are exchanged. A controlled linear study supports this role assignment: LoRA yields more aligned client updates and lower aggregation error, while RandLoRA more accurately recovers client-specific residuals. Experiments across four visual recognition benchmarks show that FedLAFP consistently outperforms local-only and federated LoRA baselines, achieving an average personalized accuracy of $86.93\%$ and exceeding the best baseline average by $1.30$ percentage points.</summary>
+    <category term="cs.AI" scheme="http://arxiv.org/schemas/atom"/>
+    <published>2026-09-29T08:45:08Z</published>
+    <arxiv:primary_category term="cs.AI"/>
+    <author>
+      <name>Mengjun Yi</name>
+    </author>
+    <author>
+      <name>Huaian Gu</name>
+    </author>
+    <author>
+      <name>Yinghao Ai</name>
+    </author>
+    <author>
+      <name>Furao Shen</name>
+    </author>
+    <author>
+      <name>Jian Zhao</name>
+    </author>
+  </entry>
+  <entry>
+    <id>http://arxiv.org/abs/2609.37027v1</id>
+    <title>Beyond Low-Rank Parameterization: Narrowing the Gap Between LoRA and Full Fine-Tuning via Gradient Decomposition</title>
+    <updated>2026-09-29T08:42:17Z</updated>
+    <link href="https://arxiv.org/abs/2609.37027v1" rel="alternate" type="text/html"/>
+    <link href="https://arxiv.org/pdf/2609.37027v1" rel="related" type="application/pdf" title="pdf"/>
+    <summary>Low-Rank Adaptation (LoRA) is a widely used approach to parameter-efficient fine-tuning (PEFT), yet a performance gap can remain relative to full fine-tuning (FFT). Many LoRA variants improve the initialization or optimization of low-rank factors. At each training step, however, their first-order weight-space directions are constrained by the current parameterization. We characterize the corresponding LoRA-accessible gradient space and show that it coincides with the tangent space induced by the current LoRA parameterization. This characterization yields an orthogonal decomposition of the full weight gradient at the current model parameters. We term the component orthogonal to this space the normal gradient. Based on this decomposition, we propose GDLoRA (Gradient-Decomposed Low-Rank Adaptation). GDLoRA reconstructs the full weight gradient from forward activations and backward signals, extracts its normal component, and directly updates the base weights with this component, while retaining standard AdamW optimization for the LoRA factors. GDLoRA incorporates complementary normal gradients without increasing standard LoRA's optimizer-state memory budget under matched adapter and optimizer configurations. Experiments on natural language understanding, mathematical reasoning, commonsense reasoning, and image classification show that GDLoRA consistently improves over LoRA and narrows the performance gap to FFT. The code is available at https://anonymous.4open.science/r/GDLoRA.</summary>
+    <category term="cs.AI" scheme="http://arxiv.org/schemas/atom"/>
+    <published>2026-09-29T08:42:17Z</published>
+    <arxiv:primary_category term="cs.AI"/>
+    <author>
+      <name>Yihao Ouyang</name>
+    </author>
+    <author>
+      <name>Shiwei Li</name>
+    </author>
+    <author>
+      <name>Haozhao Wang</name>
+    </author>
+    <author>
+      <name>Xiandi Luo</name>
+    </author>
+    <author>
+      <name>Zhuoqi Hu</name>
+    </author>
+    <author>
+      <name>Jinglun Yu</name>
+    </author>
+    <author>
+      <name>Yichen Li</name>
+    </author>
+    <author>
+      <name>Ruixuan Li</name>
+    </author>
+  </entry>
+  <entry>
+    <id>http://arxiv.org/abs/2609.36986v1</id>
+    <title>CF-LoRA: Decoupled Factor Aggregation and Adaptation-Aware Client Clustering for Federated LoRA Fine-Tuning</title>
+    <updated>2026-09-29T08:18:30Z</updated>
+    <link href="https://arxiv.org/abs/2609.36986v1" rel="alternate" type="text/html"/>
+    <link href="https://arxiv.org/pdf/2609.36986v1" rel="related" type="application/pdf" title="pdf"/>
+    <summary>Federated LoRA fine-tuning enables parameter-efficient adaptation of pre-trained models without sharing private data, but suffers from two fundamental mismatches under heterogeneous client data: a structural aggregation mismatch caused by independently averaging LoRA factors, and a statistical collaboration mismatch caused by enforcing a single global adapter across divergent clients. To address these issues, we propose CF-LoRA, a clustered federated LoRA fine-tuning framework that combines decoupled factor aggregation with adaptation-aware client clustering. CF-LoRA first learns a globally shared $A$ factor while retaining personalized $B_i$ factors, then identifies clients with similar adaptation patterns based on the cosine similarity of their learned $B_i$ factors, and finally performs intra-cluster $B$-factor aggregation with a frozen $A$ factor. By decoupling LoRA factor aggregation, CF-LoRA preserves the low-rank structure and mitigates the structural aggregation mismatch, while adaptation-aware clustering promotes collaboration among clients with similar adaptation patterns and reduces negative transfer caused by statistical heterogeneity. Experiments on four language tasks and four vision datasets with RoBERTa and ViT show that CF-LoRA achieves the highest average accuracy in both modalities while communicating only one LoRA factor per optimization round.</summary>
+    <category term="cs.AI" scheme="http://arxiv.org/schemas/atom"/>
+    <category term="cs.DC" scheme="http://arxiv.org/schemas/atom"/>
+    <published>2026-09-29T08:18:30Z</published>
+    <arxiv:primary_category term="cs.AI"/>
+    <author>
+      <name>Mengjun Yi</name>
+    </author>
+    <author>
+      <name>Langxing Yang</name>
+    </author>
+    <author>
+      <name>Suhan Guo</name>
+    </author>
+    <author>
+      <name>Furao Shen</name>
+    </author>
+    <author>
+      <name>Jian Zhao</name>
+    </author>
+  </entry>
+  <entry>
+    <id>http://arxiv.org/abs/2609.36329v1</id>
+    <title>Reducing the Adaptation Gap Through Reachable Fisher Geometry</title>
+    <updated>2026-09-28T22:01:30Z</updated>
+    <link href="https://arxiv.org/abs/2609.36329v1" rel="alternate" type="text/html"/>
+    <link href="https://arxiv.org/pdf/2609.36329v1" rel="related" type="application/pdf" title="pdf"/>
+    <summary>Parameter-efficient fine-tuning (PEFT) determines not only how many parameters are trained, but also which local directions a model can move in, so similar adapters can affect subgroup losses differently. Since curvature matrices are infeasible to form at adapter scale, scalar summaries such as the Fisher trace are often used instead. We study what the trace reveals and what it loses through the reachable Fisher: each subgroup's full-model Fisher pulled back through the adapter Jacobian. Under likelihood losses, it represents the Gauss-Newton curvature accessible to the adapter, and its trace can be computed from score-gradient norms without forming the full matrix. Under matched subgroup gradients, a positive-definite reachable-Fisher difference, with a margin exceeding the Hessian-Fisher defect, implies that every sufficiently small nonzero model-changing update increases the signed gap. In contrast, the restricted operator norm determines worst-case quadratic change, while a matrix-free Frobenius discrepancy bounds its reachable-Fisher component. Trace alone cannot certify definiteness or control matrix mismatch. Equal traces rule out a positive-definite difference but can still hide large operator discrepancies. Across 306 single-seed models, higher trace accompanies greater subgroup difficulty in 75.7 percent of 1,218 eligible evaluations, while trace matching reduces the best-worst subgroup gap in all 30 dataset-encoder-adapter combinations. However, held-out audits show that operator discrepancy decreases in 23 of 30 combinations, while the unbiased squared-Frobenius statistic decreases in only 16 of 30. Fisher trace is therefore a scalable diagnostic and training heuristic, but not a certificate of local gap behavior or matrix alignment.</summary>
+    <category term="cs.LG" scheme="http://arxiv.org/schemas/atom"/>
+    <published>2026-09-28T22:01:30Z</published>
+    <arxiv:primary_category term="cs.LG"/>
+    <author>
+      <name>Wasif Jalal</name>
+    </author>
+    <author>
+      <name>Sachin Deb</name>
+    </author>
+    <author>
+      <name>Asif Salekin</name>
+    </author>
+  </entry>
+  <entry>
+    <id>http://arxiv.org/abs/2609.34968v1</id>
+    <title>RoboFL: Federated Expert Assembly for World Action Models</title>
+    <updated>2026-09-28T11:49:57Z</updated>
+    <link href="https://arxiv.org/abs/2609.34968v1" rel="alternate" type="text/html"/>
+    <link href="https://arxiv.org/pdf/2609.34968v1" rel="related" type="application/pdf" title="pdf"/>
+    <summary>Vision-language-action and world-action models are increasingly popular, yet remain bottlenecked by physical interaction data that is scarce, institutionally siloed, and task-heterogeneous. A natural federated solution is to let each client adapt a shared foundation model through parameter-efficient fine-tuning, avoiding the exchange of full-model updates. However, federating these adapters is nontrivial, as naive aggregation can entangle incompatible updates, while incorporating MoE-style routing into federated aggregation may dilute specialization and destabilize expert selection. We present RoboFL, which instantiates MoSAIC (Mixture of Slotted Adapters) for federated world-action learning. MoSAIC directly installs locally trained LoRA adapters as the expert branches of a server MoE. Server-side routers learn token assignments over these prior-informed branches while jointly refining routing and expert parameters. Foresight-to-Action Routing Distillation (FARD) aligns routing across the model's three paths, while Path-Consensus Expert Aggregation (PCEA) converts complete expert updates into a compact global adapter for personalized redistribution. Experiments on RoboTwin 2.0, RLBench, and a real-world Franka robot arm show the superiority of RoboFL with structured expert assembly, as it outperforms centralized PEFT InternVLA-A1 by 12.23% on the Franka arm, while reducing per-round client communication by up to 86.81% relative to MoE-based federated VLA baselines.</summary>
+    <category term="cs.RO" scheme="http://arxiv.org/schemas/atom"/>
+    <category term="cs.AI" scheme="http://arxiv.org/schemas/atom"/>
+    <published>2026-09-28T11:49:57Z</published>
+    <arxiv:primary_category term="cs.RO"/>
+    <author>
+      <name>Rongyu Zhang</name>
+    </author>
+    <author>
+      <name>Ruizhi Fan</name>
+    </author>
+    <author>
+      <name>Yunfan Lou</name>
+    </author>
+    <author>
+      <name>Hengyu Fang</name>
+    </author>
+    <author>
+      <name>Shenli Zheng</name>
+    </author>
+    <author>
+      <name>Chenrui Wu</name>
+    </author>
+    <author>
+      <name>Yili Jin</name>
+    </author>
+    <author>
+      <name>Li Du</name>
+    </author>
+    <author>
+      <name>Dan Wang</name>
+    </author>
+    <author>
+      <name>Yuan Du</name>
+    </author>
+    <author>
+      <name>Shanghang Zhang</name>
+    </author>
+  </entry>
+  <entry>
+    <id>http://arxiv.org/abs/2609.33927v1</id>
+    <title>Optimizing the Phi-2 Small Language Model for Real-time Chatbot Applications Using Parameter-Efficient Fine-Tuning (PEFT) with QLoRA Quantization</title>
+    <updated>2026-09-27T21:12:40Z</updated>
+    <link href="https://arxiv.org/abs/2609.33927v1" rel="alternate" type="text/html"/>
+    <link href="https://arxiv.org/pdf/2609.33927v1" rel="related" type="application/pdf" title="pdf"/>
+    <summary>This study explores the optimization of the Phi-2 Small Language Models (SLMs) for real-time chatbot applications through Parameter-Efficient Fine-Tuning (PEFT) and Quantized Low-Rank Adaptation (QLoRA). QLoRA specifically refers to the integration of PEFT with LoRA alongside a 4-bit quantization process, aimed at enhancing computational efficiency. These models, initially designed for high performance with minimal computational overhead, are further refined to address the constraints of mobile and edge computing environments. By integrating PEFT with QLoRA, the research aims to reduce memory usage significantly while maintaining, or potentially improving, the accuracy of model responses in real-time interactions. The effectiveness of these techniques was evaluated using the ROUGE metric system, which showed notable improvements in the summarization tasks performed by the models. This approach not only confirms the feasibility of using SLMs in resource-restricted environments but also opens up new avenues for deploying advanced AI-driven applications in real-time settings. The study's findings have significant implications for the development of efficient, scalable, and accessible AI technologies, paving the way for broader adoption in various industries.</summary>
+    <category term="cs.LG" scheme="http://arxiv.org/schemas/atom"/>
+    <published>2026-09-27T21:12:40Z</published>
+    <arxiv:primary_category term="cs.LG"/>
+    <author>
+      <name>PhanTan Khanh Nguyen</name>
+    </author>
+    <author>
+      <name>Ashfaq Ali Shafin</name>
+    </author>
+    <author>
+      <name>Khandaker Mamun Ahmed</name>
+    </author>
+  </entry>
+  <entry>
+    <id>http://arxiv.org/abs/2609.33720v1</id>
+    <title>From Granular Revision Operations to Meaningful Revision Units: Evaluating LLMs for Revision Boundary Detection</title>
+    <updated>2026-09-27T16:23:05Z</updated>
+    <link href="https://arxiv.org/abs/2609.33720v1" rel="alternate" type="text/html"/>
+    <link href="https://arxiv.org/pdf/2609.33720v1" rel="related" type="application/pdf" title="pdf"/>
+    <summary>Revision traces provide valuable evidence about students' writing processes, but their usefulness for learning analytics depends on how individual revisions are represented. Automated draft-comparison methods often produce granular edit operations that can fragment a single purposeful revision into multiple analytic units. This study evaluates whether LLMs can identify meaningful revision unit boundaries in structured revision operation data and whether they provide value beyond simple non-LLM baselines. Using 113 matched draft--revision pairs from undergraduate writing, expert annotation yielded 4,344 candidate boundaries. We compared zero- and few-shot GPT-5.5 and base Qwen3-32B, parameter-efficient fine-tuning of Qwen3-32B, and majority and proximity-based baselines. Despite receiving revision context and task instructions, no prompted LLM condition outperformed the proximity heuristic (macro-F1 = .825). In contrast, fine-tuned Qwen3-32B using the two context representation achieved the highest macro-F1 (.859), identifying more same-unit relationships while maintaining precision comparable to the heuristic. Deterministic post-processing substantially improved the prompted models but added little benefit to the strongest fine-tuned model. These findings suggest that LLMs can support revision boundary judgment when task-adapted, but general purpose prompting alone may not outperform transparent structural heuristics.</summary>
+    <category term="cs.CL" scheme="http://arxiv.org/schemas/atom"/>
+    <category term="cs.AI" scheme="http://arxiv.org/schemas/atom"/>
+    <published>2026-09-27T16:23:05Z</published>
+    <arxiv:comment>18 pages</arxiv:comment>
+    <arxiv:primary_category term="cs.CL"/>
+    <author>
+      <name>Yu Tian</name>
+    </author>
+    <author>
+      <name>Andrew Potter</name>
+    </author>
+    <author>
+      <name>Katerina Christhilf</name>
+    </author>
+    <author>
+      <name>Motahareh Darvishpour Ahandani</name>
+    </author>
+    <author>
+      <name>Jessica Early</name>
+    </author>
+    <author>
+      <name>Steve Graham</name>
+    </author>
+    <author>
+      <name>Danielle S. McNamara</name>
+    </author>
+  </entry>
+  <entry>
+    <id>http://arxiv.org/abs/2609.33687v1</id>
+    <title>Resource-Aware Parameter-Efficient Model Adaptation for Onboard High-Dimensional Data</title>
+    <updated>2026-09-27T15:49:55Z</updated>
+    <link href="https://arxiv.org/abs/2609.33687v1" rel="alternate" type="text/html"/>
+    <link href="https://arxiv.org/pdf/2609.33687v1" rel="related" type="application/pdf" title="pdf"/>
+    <summary>Onboard satellite models often require frequent updates, but the weights adapted to earlier data distributions can quickly become outdated. However, updating large-scale model parameters in orbit presents significant challenges due to the limited uplink bandwidth of Low Earth Orbit (LEO) satellite systems, particularly for hyperspectral satellite imagery, where high-dimensional spectral-spatial inputs lead to increased model size and update costs. Existing full fine-tuning methods are thus expensive to retrain and difficult to deploy under strict communication constraints. To address this challenge, we propose NE-LoRA, a parameter-efficient adaptation framework for bandwidth-constrained onboard hyperspectral model updates. NE-LoRA combines a primary low-rank branch with a nonlinear auxiliary branch to capture both global update trends and complex spectral-spatial variations. Additionally, we introduce a differentiated training strategy for multi-matrix adapters, motivated by the asymmetric initialization and gradient dynamics of different adapter matrices. Experiments on four hyperspectral datasets and three representative backbone models demonstrate that NE-LoRA consistently outperforms LoRA-based baselines and remains competitive with, and in several cases superior to, full fine-tuning. Across the evaluated settings, NE-LoRA updates only a small fraction of the total parameters on average while preserving low deployment overhead, offering a favorable accuracy-communication trade-off for onboard hyperspectral adaptation.</summary>
+    <category term="cs.CV" scheme="http://arxiv.org/schemas/atom"/>
+    <category term="cs.DC" scheme="http://arxiv.org/schemas/atom"/>
+    <category term="cs.NI" scheme="http://arxiv.org/schemas/atom"/>
+    <published>2026-09-27T15:49:55Z</published>
+    <arxiv:comment>22 pages, 8 figures</arxiv:comment>
+    <arxiv:primary_category term="cs.CV"/>
+    <author>
+      <name>Qiyang Zhang</name>
+    </author>
+    <author>
+      <name>Xinhao Li</name>
+    </author>
+    <author>
+      <name>Lei Shi</name>
+    </author>
+    <author>
+      <name>Zheng Lin</name>
+    </author>
+    <author>
+      <name>Jinfeng Wen</name>
+    </author>
+    <author>
+      <name>Ao Zhou</name>
+    </author>
+    <author>
+      <name>Shangguang Wang</name>
+    </author>
+  </entry>
+  <entry>
+    <id>http://arxiv.org/abs/2609.37485v1</id>
+    <title>PoE-Fuse: Precision-Weighted Expert Fusion for Bi-Temporal Change Understanding</title>
+    <updated>2026-09-27T14:13:14Z</updated>
+    <link href="https://arxiv.org/abs/2609.37485v1" rel="alternate" type="text/html"/>
+    <link href="https://arxiv.org/pdf/2609.37485v1" rel="related" type="application/pdf" title="pdf"/>
+    <summary>Bi-temporal change understanding, which localizes and characterizes what changed between two satellite images, is central to disaster response and environmental monitoring, spanning change detection, building localization, and damage assessment. Strong vision-language models address these tasks, but adapting them typically requires full fine-tuning or reinforcement learning, which is costly and unstable. We propose PoE-Fuse, a parameter-efficient framework that instead composes frozen foundation experts for geometry, grounding, and language, resampling their features onto a shared spatial grid and training only a lightweight fusion trunk. PoE-Fuse treats the aligned features as Gaussian observations of a latent scene state and fuses them by learned per-cell precision. This product-of-experts estimator strictly generalizes uniform summation and scalar gating, and extends to change fields by composing the precisions of the two timestamps. A single shared trunk solves the three tasks at once, reaching a mean F1 of 59.2%, compared with 40.7% for an instruction-tuned temporal vision-language assistant, and surpassing dedicated change-detection models retrained under the same protocol and training budget.</summary>
+    <category term="cs.CV" scheme="http://arxiv.org/schemas/atom"/>
+    <category term="cs.LG" scheme="http://arxiv.org/schemas/atom"/>
+    <published>2026-09-27T14:13:14Z</published>
+    <arxiv:comment>Accepted by ACCV 2026</arxiv:comment>
+    <arxiv:primary_category term="cs.CV"/>
+    <author>
+      <name>Haruki Watase</name>
+    </author>
+    <author>
+      <name>Shunya Nagashima</name>
+    </author>
+    <author>
+      <name>Takayuki Nishimura</name>
+    </author>
+  </entry>
+</feed>

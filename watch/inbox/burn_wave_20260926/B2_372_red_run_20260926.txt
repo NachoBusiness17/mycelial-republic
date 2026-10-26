@@ -1,0 +1,244 @@
+FFF.FFFFFF.F                                                             [100%]
+================================== FAILURES ===================================
+____________________________ test_plain_real_block ____________________________
+
+    def test_plain_real_block():
+        from mag.improve import crash_log_census
+    
+>       assert crash_log_census(PLAIN_REAL) == {
+            "blocks": 1,
+            "entries": 1,
+            "test": 0,
+            "real": 1,
+            "chains": 0,
+        }
+E       AssertionError: assert {'blocks': 1,... 0, 'real': 1} == {'blocks': 1,...real': 1, ...}
+E         
+E         Omitting 4 identical items, use -vv to show
+E         Right contains 1 more item:
+E         {'chains': 0}
+E         Use -v to get more diff
+
+tests\test_improve_crash_scout.py:135: AssertionError
+________________ test_chained_real_block_is_one_crash_not_two _________________
+
+    def test_chained_real_block_is_one_crash_not_two():
+        from mag.improve import crash_log_census
+    
+        assert old_scout_math(CHAINED_REAL_UNQUOTED) == 2
+>       assert crash_log_census(CHAINED_REAL_UNQUOTED) == {
+            "blocks": 2,
+            "entries": 1,
+            "test": 0,
+            "real": 1,
+            "chains": 1,
+        }
+E       AssertionError: assert {'blocks': 2,... 0, 'real': 1} == {'blocks': 2,...real': 1, ...}
+E         
+E         Omitting 4 identical items, use -vv to show
+E         Right contains 1 more item:
+E         {'chains': 1}
+E         Use -v to get more diff
+
+tests\test_improve_crash_scout.py:148: AssertionError
+____________________ test_direct_cause_marker_counts_chain ____________________
+
+    def test_direct_cause_marker_counts_chain():
+        from mag.improve import crash_log_census
+    
+>       assert crash_log_census(CHAINED_REAL_DIRECT_CAUSE) == {
+            "blocks": 2,
+            "entries": 1,
+            "test": 0,
+            "real": 1,
+            "chains": 1,
+        }
+E       AssertionError: assert {'blocks': 2,... 0, 'real': 1} == {'blocks': 2,...real': 1, ...}
+E         
+E         Omitting 4 identical items, use -vv to show
+E         Right contains 1 more item:
+E         {'chains': 1}
+E         Use -v to get more diff
+
+tests\test_improve_crash_scout.py:160: AssertionError
+____________ test_brief_falsifier_chained_quoted_reports_real_one _____________
+
+    def test_brief_falsifier_chained_quoted_reports_real_one():
+        from mag.improve import crash_log_census
+    
+        assert old_scout_math(QUOTED_CHAINED_REAL) == 0
+>       assert crash_log_census(QUOTED_CHAINED_REAL) == {
+            "blocks": 2,
+            "entries": 1,
+            "test": 0,
+            "real": 1,
+            "chains": 1,
+        }
+E       AssertionError: assert {'blocks': 2,... 0, 'real': 1} == {'blocks': 2,...real': 1, ...}
+E         
+E         Omitting 4 identical items, use -vv to show
+E         Right contains 1 more item:
+E         {'chains': 1}
+E         Use -v to get more diff
+
+tests\test_improve_crash_scout.py:181: AssertionError
+______________ test_annotated_marker_line_still_classifies_test _______________
+
+    def test_annotated_marker_line_still_classifies_test():
+        from mag.improve import crash_log_census
+    
+>       assert crash_log_census(TEST_ANNOTATED) == {
+            "blocks": 1,
+            "entries": 1,
+            "test": 1,
+            "real": 0,
+            "chains": 0,
+        }
+E       AssertionError: assert {'blocks': 1,... 1, 'real': 0} == {'blocks': 1,...real': 0, ...}
+E         
+E         Omitting 4 identical items, use -vv to show
+E         Right contains 1 more item:
+E         {'chains': 0}
+E         Use -v to get more diff
+
+tests\test_improve_crash_scout.py:193: AssertionError
+____________ test_annotation_suffix_on_real_line_does_not_classify ____________
+
+    def test_annotation_suffix_on_real_line_does_not_classify():
+        from mag.improve import crash_log_census
+    
+>       assert crash_log_census(REAL_WITH_NEUTRAL_ANNOTATION) == {
+            "blocks": 1,
+            "entries": 1,
+            "test": 0,
+            "real": 1,
+            "chains": 0,
+        }
+E       AssertionError: assert {'blocks': 1,... 0, 'real': 1} == {'blocks': 1,...real': 1, ...}
+E         
+E         Omitting 4 identical items, use -vv to show
+E         Right contains 1 more item:
+E         {'chains': 0}
+E         Use -v to get more diff
+
+tests\test_improve_crash_scout.py:206: AssertionError
+____________________________ test_mixed_log_census ____________________________
+
+    def test_mixed_log_census():
+        from mag.improve import crash_log_census
+    
+        mixed = (
+            PREAMBLE
+            + TRACELESS_STANZA
+            + PLAIN_REAL
+            + CHAINED_REAL_UNQUOTED
+            + PLAIN_QUOTED_REAL
+            + QUOTED_CHAINED_REAL
+            + TEST_ANNOTATED
+            + TEST_PLAIN
+            + REAL_WITH_NEUTRAL_ANNOTATION
+        )
+>       assert crash_log_census(mixed) == {
+            "blocks": 9,
+            "entries": 7,
+            "test": 2,
+            "real": 5,
+            "chains": 2,
+        }
+E       AssertionError: assert {'blocks': 9,... 2, 'real': 5} == {'blocks': 9,...real': 5, ...}
+E         
+E         Omitting 4 identical items, use -vv to show
+E         Right contains 1 more item:
+E         {'chains': 2}
+E         Use -v to get more diff
+
+tests\test_improve_crash_scout.py:229: AssertionError
+_______________________ test_empty_and_headerless_text ________________________
+
+    def test_empty_and_headerless_text():
+        from mag.improve import crash_log_census
+    
+>       assert crash_log_census("") == {
+            "blocks": 0,
+            "entries": 0,
+            "test": 0,
+            "real": 0,
+            "chains": 0,
+        }
+E       AssertionError: assert {'blocks': 0,... 0, 'real': 0} == {'blocks': 0,...real': 0, ...}
+E         
+E         Omitting 4 identical items, use -vv to show
+E         Right contains 1 more item:
+E         {'chains': 0}
+E         Use -v to get more diff
+
+tests\test_improve_crash_scout.py:241: AssertionError
+_________________________ test_scout_row_names_census _________________________
+
+tmp_path = WindowsPath('C:/Users/foste/Documents/projects/local_sovereign_agent/agents/pytest-tmp-10148/test_scout_row_names_census0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x00000206651420D0>
+
+    def test_scout_row_names_census(tmp_path, monkeypatch):
+        import mag.improve as improve_mod
+    
+        log_dir = tmp_path / "logs"
+        log_dir.mkdir()
+        mixed = PLAIN_REAL + CHAINED_REAL_UNQUOTED + TEST_ANNOTATED + TEST_PLAIN
+        (log_dir / "seat_crashes.log").write_text(mixed, encoding="utf-8")
+        monkeypatch.setattr(improve_mod, "ROOT", tmp_path)
+    
+        rows = [
+            r
+            for r in improve_mod._behavioral_candidates("2026-09-26")
+            if r.get("claim", "").startswith("Seat crash log:")
+        ]
+        assert len(rows) == 1
+        row = rows[0]
+        for token in ("blocks=5", "test=2", "real=2"):
+            assert token in row["claim"], row["claim"]
+            assert token in row["detail"], row["detail"]
+>       assert "chains=1" in row["detail"], row["detail"]
+E       AssertionError: census blocks=5 test=2 real=2 entries=4. Guard holding; review newest traceback for recurrence.
+E       assert 'chains=1' in 'census blocks=5 test=2 real=2 entries=4. Guard holding; review newest traceback for recurrence.'
+
+tests\test_improve_crash_scout.py:277: AssertionError
+___________________ test_scout_row_detail_names_chain_count ___________________
+
+tmp_path = WindowsPath('C:/Users/foste/Documents/projects/local_sovereign_agent/agents/pytest-tmp-10148/test_scout_row_detail_names_ch0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x00000206654364D0>
+
+    def test_scout_row_detail_names_chain_count(tmp_path, monkeypatch):
+        """B2-372 falsifier: one chained stanza must not surface as a bare
+        entries=1 with no chain count anywhere; the detail names chains=."""
+        import mag.improve as improve_mod
+    
+        log_dir = tmp_path / "logs"
+        log_dir.mkdir()
+        (log_dir / "seat_crashes.log").write_text(CHAINED_REAL_DIRECT_CAUSE, encoding="utf-8")
+        monkeypatch.setattr(improve_mod, "ROOT", tmp_path)
+    
+        rows = [
+            r
+            for r in improve_mod._behavioral_candidates("2026-09-26")
+            if r.get("claim", "").startswith("Seat crash log:")
+        ]
+        assert len(rows) == 1
+        row = rows[0]
+        assert "entries=1" in row["detail"], row["detail"]
+>       assert "chains=1" in row["detail"], row["detail"]
+E       AssertionError: census blocks=2 test=0 real=1 entries=1. Guard holding; review newest traceback for recurrence.
+E       assert 'chains=1' in 'census blocks=2 test=0 real=1 entries=1. Guard holding; review newest traceback for recurrence.'
+
+tests\test_improve_crash_scout.py:318: AssertionError
+=========================== short test summary info ===========================
+FAILED tests/test_improve_crash_scout.py::test_plain_real_block - AssertionEr...
+FAILED tests/test_improve_crash_scout.py::test_chained_real_block_is_one_crash_not_two
+FAILED tests/test_improve_crash_scout.py::test_direct_cause_marker_counts_chain
+FAILED tests/test_improve_crash_scout.py::test_brief_falsifier_chained_quoted_reports_real_one
+FAILED tests/test_improve_crash_scout.py::test_annotated_marker_line_still_classifies_test
+FAILED tests/test_improve_crash_scout.py::test_annotation_suffix_on_real_line_does_not_classify
+FAILED tests/test_improve_crash_scout.py::test_mixed_log_census - AssertionEr...
+FAILED tests/test_improve_crash_scout.py::test_empty_and_headerless_text - As...
+FAILED tests/test_improve_crash_scout.py::test_scout_row_names_census - Asser...
+FAILED tests/test_improve_crash_scout.py::test_scout_row_detail_names_chain_count
+10 failed, 2 passed in 0.51s

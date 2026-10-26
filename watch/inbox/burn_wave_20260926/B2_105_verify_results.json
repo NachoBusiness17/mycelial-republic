@@ -1,0 +1,61 @@
+{
+  "yaml_mistral": {
+    "name": "Mistral (request-minute limit 0 for the on-file key, dormant 2026-09-26)",
+    "dormant": true,
+    "models": [
+      "mistral-small-latest"
+    ],
+    "default_model": "mistral-small-latest",
+    "quota_note": "Dormant 2026-09-26 (B2-61): request-minute limit 0 live (1300); mistral-large-latest 403 tier_not_allowed and catalog-absent"
+  },
+  "routing_mistral_hits": {},
+  "routing_lists": [
+    "default",
+    "hard_code",
+    "hard_reason",
+    "public_summarize",
+    "recall",
+    "scut"
+  ],
+  "estate_mistral": {
+    "default_model": "mistral-small-latest",
+    "dormant": true,
+    "models": [
+      "mistral-small-latest"
+    ],
+    "provider_count": 28
+  },
+  "estate_count": 3,
+  "doctor_mistral_status": "DORMANT",
+  "doctor_mistral_detail": [
+    {
+      "provider": "mistral",
+      "kind": "openai_compat",
+      "base_url": "https://api.mistral.ai/v1",
+      "dormant": true,
+      "status": "DORMANT",
+      "probe": "none(dormant)",
+      "detail": "explicit dormant marker: declared state, not probed, not an alarm"
+    }
+  ],
+  "doctor_issues_mistral": [],
+  "key": {
+    "name": "Mistral_API_KEY",
+    "prefix": "XCVKBG..."
+  },
+  "probe_mistral-small-latest": {
+    "status": 429,
+    "latency_s": 0.36,
+    "rl": {
+      "x-ratelimit-limit-req-minute": "0",
+      "x-ratelimit-remaining-req-minute": "0"
+    },
+    "body": "{\"object\":\"error\",\"message\":\"Rate limit exceeded\",\"type\":\"rate_limited\",\"param\":null,\"code\":\"1300\",\"raw_status_code\":429}"
+  },
+  "probe_mistral-large-latest": {
+    "status": 403,
+    "latency_s": 0.29,
+    "rl": {},
+    "body": "{\"object\":\"error\",\"message\":\"This model is not available in your subscription tier\",\"type\":\"tier_not_allowed\",\"param\":null,\"code\":\"1910\",\"raw_status_code\":403}"
+  }
+}

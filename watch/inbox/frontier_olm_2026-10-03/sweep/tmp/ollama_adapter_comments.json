@@ -1,0 +1,42 @@
+[
+ {
+  "author": "cookiengineer",
+  "body": "Rust is as useless as C++ for agents because they'll never finish implementing wrappers or adapter/bridge libraries.\n\n(by C++ I mean C with templates like libboost, which is essentially designing your own DSL for programming, because it's compile time variadic expansion etc)\n\nI always say that the Rust ecosystem has more OpenGL bindings than developers, because the libraries are all kind of abandoned after max 1 week of development time, being left in a half-finished state on crates.\n\nGo is kind of the sweet spot for finishing the task at hand because it has a strong stdlib, and the Pure Go movement that was the effect of the strong stdlib made the ecosystem even better, because there's way less dependencies that you have to accomodate / maintain for. Only in absolute worst case scenario in systems programming you have to use CGo as a bridge to the C ABI ecosystem.\n\nIn 99% of Go projects you need only the stdlib and golang.org/x as a dependency. Every time the stdlib gets more features merged upstream, the community is migrating towards that, because it makes your code less of a maintenance burden in the long run.\n\nAnd in Go, there's always exactly one way to do things. There's no map/foreach/while/while-true/do-while decisions to be made. One for loop syntax, one function syntax, one channel syntax, one goroutine syntax. And that makes the decision tree for LLMs easier, and less of a missing-documentation-of-decisions problem.\n\nMeanwhile, I see programming languages as encoded architecture and encoded design decisions.",
+  "created_utc": 1789744825,
+  "id": "pal6rf9",
+  "link_id": "t3_1wjnkgm",
+  "score": 6
+ },
+ {
+  "author": "transendingAI",
+  "body": "Rough map of what those names usually refer to:\n\nOllama and LM Studio are apps that download models and let you chat or call an API locally. Ollama is CLI/API-first; LM Studio is more GUI-first. Both sit on top of an inference engine under the hood.\n\nllama.cpp is that kind of engine: C/C++ code that actually runs GGUF weights on CPU/GPU. A lot of “easy” local tools wrap it or something like it.\n\nvLLM is a different inference server aimed at high-throughput serving (batching, continuous batching, etc.), more common when you are hosting an OpenAI-compatible endpoint for many requests, not for a first laptop chat.\n\nUnsloth is mainly about training/finetuning (LoRA and related) faster and with less VRAM — not a day-to-day chat app.\n\nSimple beginner workflow: pick one runner (Ollama or LM Studio) → pull a small instruct model → chat. Later, if you care about finetuning, look at Unsloth; if you care about raw control or weird quants, look at llama.cpp; if you care about serving many users, look at vLLM. You do not need all five at once.",
+  "created_utc": 1790381738,
+  "id": "pc2v1z2",
+  "link_id": "t3_1wiijww",
+  "score": 1
+ },
+ {
+  "author": "Namish_Mudgal",
+  "body": "Yes, if you stop asking the 4B to do everything. Mine runs on a 16 GB M1 Pro with Gemma 4 E4B for most turns and a 9B for code and long messages. The wins were all around the model: sticky routing so a swap happens once per conversation, memory extracted into SQLite after the chat goes idle and injected in a stable prompt prefix, tool descriptions written as instructions so a 4B knows when to search, and a hard cap on tool rounds. One physics note: at 185 GB/s a 6 GB model cannot exceed about 30 tok/s, so pick the smallest model you can tolerate. Try Gemma 4 E4B QAT or Qwen 3.5 4B over Qwen3-4B, both are a real generation ahead at the same size.  \nThings that actually moved the needle for me:  \n**-Two models, one sticky router:** A 4B answers everything by default. Code fences, stack traces or long messages switch the conversation to the bigger model and it stays there. Per-message routing looked smarter on paper but every swap cost me 4 to 7 s of model load, so a mixed session spent more time loading than answering  \n**-Memory that is extracted, not stuffed:** Ninety seconds after a conversation goes quiet, the small model pulls out durable facts into SQLite. They go into the stable prefix of the system prompt, so they cost one prompt eval per conversation, not per turn.  \n**-Protect the KV cache:** Keep the tool definitions, memory and date in a stable prefix and put anything that changes per turn at the end. Changing one thing early in the prompt made a 4B re-read 2k tokens every message  \n**-Tool descriptions are instructions, not docs:** With a one-line description the 4B never searched. When the description said when searching beats answering from memory, it started calling it correctly  \n**-Know your ceiling:** Decode speed is roughly memory bandwidth divided by bytes per token. I measured 185 GB/s, so a 6 GB Q4 model tops out near 30 tok/s and a 7.6 GB one near 24.  \n**-Context is cheaper than you think, output caps are not:** I went from 16K to 32K on every model and `ollama ps` barely moved  \nAll my numbers are from a 16 GB M1 Pro, so they will not map to a CUDA box. If you are training LoRA on the same GPU you serve from, you probably have more headroom per token than I do and less memory for a second model. My assistant with tweaks is just doing great on such an old machine; with every prompt, with every conversation, I have made it learn.   \nWhat are you running it on?",
+  "created_utc": 1788932324,
+  "id": "p8oxnki",
+  "link_id": "t3_1w6066y",
+  "score": 1
+ },
+ {
+  "author": "73td",
+  "body": "i don’t think a lot of the comments really answer the question.  first off good for you for thinking and question what the frontier model says. \n\nsmall models can absolutely be trained with various techniques. the one which I had looked into most “Lora adapters” is essentially a tiny mod that runs atop the base model and runtimes like vllm can route requests to multiple different adapters over same base model so you can get different kinds of work done without swapping them out. \n\nthe difficulty of this is however highly variable.  if you just want some style or minor changes a smaller adaptor and short training example are enough.  deeper changes to reasoning require longer context.  the latter is where the hardware gets pricey.  IIRC for gemma 4 12 GB on my 4090 I can train 4K context but not higher.  \n\nso short answer you can and you can also rent hardware to succeed at it.  i would suggest going to unsloth website and reading more",
+  "created_utc": 1791061608,
+  "id": "pdoou1j",
+  "link_id": "t3_1wvtvsf",
+  "score": 1
+ },
+ {
+  "author": "LateralEntry",
+  "body": "By your own models, do you mean other models (like Qwen or Gemma) that you fine tune or train with LoRA or QLoRA?",
+  "created_utc": 1790897927,
+  "id": "pdb5bac",
+  "link_id": "t3_1wuyj56",
+  "score": 1
+ }
+]

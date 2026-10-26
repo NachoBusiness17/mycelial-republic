@@ -1,0 +1,65 @@
+=== t29.check.txt — King shower 40x dropCandy at one point, filed 2026-09-25 ===
+Target: roblox/src/server/OssuaryZone.luau King Touched shower (t23 next_steal)
+
+=== CHECK 1: pre-fix bytes (cat -A, before edit) ===
+^I^I^Ifor _ = 1, 40 do$
+^I^I^I^IdropCandy(king.Position, FLOORS) -- the King stands on the top floor$
+^I^I^Iend$
+Byte truth: the drop TARGET king.Position was identical 40 times (premise
+confirmed), but dropCandy:275 adds its own unseeded math.random(-6,6) per axis
+to EVERY spawn, so parts landed in a ~8.5-stud disc, not literally one point.
+t23's "no jitter" overstated; defect still real: one physical stack of 40
+intersecting unanchored parts, whole shower sweepable in one visit.
+
+=== CHECK 2: cap mechanics read (negatives first-class) ===
+OssuaryZone.luau:241 CANDY_PER_FLOOR_DAILY_CAP = 6; candyAllowed 252-267:
+cap is PER-PLAYER PER-FLOOR PER-DAY (UTC CandyCapDay reset). Capped candy is
+NOT consumed (281 gate false -> candy survives). So t23's "rest wasted" was
+also overstated: the 34 are muted for that player that day only; other
+players and later days can still pay from the same pickups. And the cap
+block 231-241 explicitly NAMES the King shower as intended overflow mute
+(t2's stated design), so this fix intentionally does NOT touch payout
+accounting. Spread is positional only.
+
+=== CHECK 3: post-fix block (lines 386-407, git diff 72e20650f..dc1d3c72a) ===
+386:			for i = 1, 40 do
+...
+402:				local r = 4 * math.sqrt(i / 40)
+403:				local a = i * 2.399963229728653 -- golden angle, radians
+404:				dropCandy(king.Position + Vector3.new(r * math.cos(a), 0, r * math.sin(a)), FLOORS)
+Index-derived Vogel spiral. No SeedRng instance reaches this closure
+(build()'s rng at 428 is local to build; module required at :22 but no
+instance in scope), so per item spec the derived-offset path applies. No new
+math.random; replay-safe by construction. House doctrine cited: SkiZone:53-54
+"the replay-safe seed lives in SeedRng for anything score-bearing"; candy is
+score-bearing (pays VM, burns cap tally), hence the deterministic spread.
+
+=== CHECK 4: geometry bound (python numeric run, this venv) ===
+distinct offsets: 40 /40
+max spiral radius: 4.0
+worst-case radial incl dropCandy jitter (4 + sqrt(6^2+6^2)): 12.485
+limit: wall plane 14 (CELL=14, even grid coords) - 0.75 half-thickness
+- 0.6 candy radius = 12.65 -> 12.485 < 12.65, center never inside rock even
+in the worst corner. King at cell (HALF=7, GRID-4=9), odd coords per the
+2026-09-25 maze law (file header lines 10-15: features never inside rock).
+min NN distance pre-jitter 1.013 vs 1.2 diameter: one close pair grazes;
+R=4.75 would clear it but clips the wall corner (13.23 > 12.65), wall law
+wins, and the +-6 jitter dominates real placement. Comment claims neither
+non-overlap nor exact positions, so no fabrication.
+
+=== CHECK 5: laws ===
+em/en-dash scan of edited region: NONE.
+Fix comment carries cause + evidence (cap cite, dropCandy:275 cite, bounds).
+tools/mountain_check NOT run (shared).
+
+=== CHECK 6: luau-lsp ===
+command -v luau-lsp luau luau-analyze: all absent on this box; no
+globalTypes.d.luau found under roblox/. Verified by read + numeric sim only
+(same limitation t23 hit; t23 had globalTypes, this box does not).
+
+=== CHECK 7: other dropCandy call sites unchanged ===
+269 def; 404 King shower (edited); 442-443 build: 6x per floor at
+base + (0,1.5,0) -> all 6 static candies per floor still stack at the maze
+center cell (grid 7,7) with math.random-only jitter. Same single-point
+pattern one level up, and unseeded in a seeded worldgen context. NOT touched
+(minimal fix); filed as next_steal.

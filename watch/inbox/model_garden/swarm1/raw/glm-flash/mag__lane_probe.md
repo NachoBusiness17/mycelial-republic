@@ -1,0 +1,7 @@
+# swarm1-glm-flash-mag__lane_probe (glm-5.3-flash @ zai, turn 1, channel: content)
+
+DEFECT 1: A .env line written with spaces around '=' (e.g. "KEY = value") is counted as present by load_env_key_names but rejected by get_env_value, so a valid key is reported as a probe failure (KeyError surfaces in the jsonl row) | EVIDENCE: mag/lane_probe.py:44-68 | FIX: make get_env_value reuse the split("=", 1) parsing from load_env_key_names so both agree on "KEY = value".
+DEFECT 2: get_env_value returns the first matching line, so a duplicated key in .env silently uses whichever occurrence appears first instead of the last (dotenv convention), giving the wrong credential with no error | EVIDENCE: mag/lane_probe.py:56-67 | FIX: iterate all lines and keep the last match, or raise on duplicates.
+DEFECT 3: resp.status != 200 branch is unreachable: urlopen raises HTTPError for non-2xx before the with-block, so the RuntimeError at line 105 is dead error handling and adds no coverage | EVIDENCE: mag/lane_probe.py:103-105 | FIX: drop the status check; HTTPError is already converted to a FAIL row by the except at line 113.
+DEAD-CODE: import urllib.error is never referenced | EVIDENCE: mag/lane_probe.py:8
+ONE-SITTING FIX: extract a single .env line parser returning (key, value) pairs and use it for both load_env_key_names and get_env_value, eliminating the parser divergence and duplicate-key ambiguity in one edit | EVIDENCE: mag/lane_probe.py:47-68

@@ -1,0 +1,32 @@
+# B2-90 album captions v2 (mrpool_export), 2026-09-26
+
+## Verdict
+
+LANDED. All 9 unresolved grouped album captions resolved from local bytes, no external fetch, no model calls, no media reads. The caption carrier for every one of 4618 4600 4599 3610 2981 1785 1784 1783 1393 sits on a same-album sibling at msg_id distance 4 to 6, strictly outside B2-12's +/-3 search order, which is why B2-12 could not see them. `watch/inbox/CAPTION_LEDGER_20260926.jsonl` patched in place: 2,726 rows and row order unchanged, 2,717 of 2,726 lines byte-identical, the 9 patched rows change only `caption_via` (filled with `@MrPool_Q#<carrier>`) and gain `caption_via_v2: "2026-09-26"`; caption text stays empty per the B2-12 via-row precedent. Post-patch, the only rows left with empty caption and empty caption_via are the 2 non-grouped metadata-only rows B2-12 already classified (msg 1684, msg 2493), which have no album sibling by definition.
+
+## Evidence
+
+- Album rule (v2): an album is the maximal run of `grouped=True` source messages contiguous in msg_id with consecutive timestamps no more than 60s apart. The caption carrier is the unique album member with non-empty text. Runs split correctly where consecutive ids span two albums: 4600 (2026-09-10T21:39) and 4601 (2026-09-11T02:00) are adjacent ids in different albums 4.4h apart.
+- Resolutions (target -> carrier, msg_id distance, album size, carrier caption length):
+  - 4618 -> 4622, dist 4, album 5, cap 2108 chars (carrier is the album's LAST member; the only one of the six where the caption sits at the end)
+  - 4600 -> 4595, dist 5, album 6, cap 473; 4599 -> 4595, dist 4, album 6, cap 473
+  - 3610 -> 3606, dist 4, album 5, cap 3291
+  - 2981 -> 2977, dist 4, album 5, cap 1165
+  - 1785 -> 1779, dist 6, album 7, cap 2048; 1784 -> 1779, dist 5; 1783 -> 1779, dist 4
+  - 1393 -> 1389, dist 4, album 5, cap 119
+- Source bytes: `watch/inbox/mrpool_export/ledger_full.jsonl:12` (msg 4622, textlen 2108), :16 (4618, 0), :34 (4600, 0), :35 (4599, 0), :39 (4595, 473), :798 (3610, 0), :802 (3606, 3291), :1263 (2981, 0), :1267 (2977, 1165), :2383-2385 (1785/1784/1783, 0), :2389 (1779, 2048), :2686 (1393, 0), :2690 (1389, 119). Every carrier re-verified post-patch: grouped=True, non-empty text, same calendar date as its targets.
+- Patched ledger rows: `watch/inbox/CAPTION_LEDGER_20260926.jsonl:976` (1393), :1276 (1783), :1277 (1784), :1278 (1785), :2300 (2981), :2532 (3610), :2697 (4599), :2698 (4600), :2713 (4618). File remains sorted by (date, msg_id).
+- sha256: pre `661004fd39f4df741db0b39979409417b71d8c900a1ca108812a6def217860fc`, post `a2c96fa49e02d60b959af887627dc95f004cbe56c173e29d507473dc80466743`.
+- INDEX re-seal per the living-hash law clause 5 (semantic content change): register event seq `1790446500998860905` (writer `b2_90_20260926`) appended to `watch/inbox/index_events.jsonl` from the inbox root, INDEX.json item `CAPTION_LEDGER_20260926.jsonl` now carries the post sha and the B2-90 purpose. First attempt appended seq `1790446136785949201` from the repo root with a `watch/inbox/`-prefixed path and was outside-dropped by the fold (WARN class `watch/ x265`, the B2-40 signal; the event stays in the append-only log as a counted residue, excluded from items, last-register-wins unaffected). Fold verify after the re-seal: 1026 hash-clean, 11 living-ok, 1 living-open, 5 mismatched, 0 missing; the 5 (INDEX.json self-hash class, REJECTION_TAXONOMY_20260917.md, BURN_JUDGE_LANE_BUILD_20260925.md, B2_373_stanza_pin_20260926.md, P0_5_2_4_SEED_CHORD_CONDUCTOR_RECEIPT_20260926.md) are the pre-existing concurrent/self-hash set B2-89 already named, none this lane's bytes. `.venv/Scripts/python.exe -m mag.shared_surface validate` reports the same 5 and no new errors.
+
+## Work done
+
+Filed CLAIM lines on QUEUE.md at 18:06:49Z for both shared files per the claim law, then read fresh bytes. Built `watch/inbox/burn_wave_20260926/B2_90_album_captions_v2.py` and ran it with this repo's venv python. First attempt failed closed (exit 2): exact datetime-string equality is not an album key because timestamps inside one album can differ by 1 second (4618 at :34 vs 4620-4622 at :35; 4595 at :51 vs 4596-4600 at :52), so three targets found "no same-album carrier". Re-derived albums as contiguous grouped runs with a 60s consecutive-timestamp tolerance; second run verified all invariants before writing (row count, uniqueness of each album's text carrier, same calendar date, distance strictly greater than 3, per-row field diff exactly {caption_via, caption_via_v2}) and printed the per-target resolution table. Independent post-verify pass re-read the file from disk: exactly 9 rows carry caption_via_v2, all 9 carriers check out against source, remaining empty+empty rows are exactly the 2 known non-grouped ones. The t.me/MrPool_Q anchor pull was armed but not spent: local bytes resolved every target.
+
+## Falsifier
+
+Any one of these kills the verdict: (a) any of the 9 carrier msg_ids is not `grouped=True` with non-empty text on the same calendar date in ledger_full.jsonl; (b) any patched row's caption field is non-empty or its caption_len nonzero (B2-12 via-row precedent broken); (c) any of the 2,717 unpatched lines differs byte-for-byte from its pre-patch serialization, or row count/order changed; (d) a carrier sits within B2-12's +/-3 window, meaning B2-12 should already have resolved that row and the v2 attribution double-counts; (e) re-running `B2_12_caption_ledger_build.py` over the source reproduces a different carrier for any of the 9 under a rule that also satisfies (a).
+
+## Bibliography closed
+
+ledger_full.jsonl:12,16,34,35,39,798,802,1263,1267,2383-2385,2389,2686,2690; CAPTION_LEDGER_20260926.jsonl:976,1276-1278,2300,2532,2697,2698,2713 (post sha256 a2c96fa49e02d60b959af887627dc95f004cbe56c173e29d507473dc80466743); INDEX.json item CAPTION_LEDGER_20260926.jsonl (B2-90 purpose, sha A2C96FA4...); index_events.jsonl seq 1790446136785949201 (outside-dropped attempt) and 1790446500998860905 (effective re-seal); LIVING_HASH_LAW_20260926.md clause 5 and scripts/index_fold_host.mjs add/verify; mag.shared_surface validate output; B2_12_caption_ledger_20260926.md (window and via-row precedent); B2_89_caption_ledger_sha_fill.py and B2_89_hash_backfill_20260926.md (in-place fill pattern, re-seal precedent, prior mismatch set); B2_90_album_captions_v2.py (rule + guarantees); QUEUE.md CLAIM lines 18:06:49Z and 18:14:41Z; memory/burns/LEDGER.jsonl row appended. No external sources; t.me/MrPool_Q not fetched.

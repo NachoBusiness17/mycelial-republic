@@ -1,0 +1,171 @@
+
+===== STAGE pre =====
+
+--- seal-verify-baseline
+$ C:\Users\foste\Documents\projects\local_sovereign_agent\.venv\Scripts\python.exe tools/config_seal.py verify
+CONFIG-SEAL verify: sealed=56 live=56 modified=4 missing=0 unsealed=0
+  MODIFIED  fossil_registry.json
+  MODIFIED  improve.yaml
+  MODIFIED  mirrors.json
+  MODIFIED  violation_baseline.json
+CONFIG-SEAL: FAIL — re-seal by NAME: python tools/config_seal.py update --by WHO --note WHY
+EXIT=1
+
+--- violation-ratchet-changed
+$ C:\Users\foste\Documents\projects\local_sovereign_agent\.venv\Scripts\python.exe tools/violation_ratchet.py check --changed
+RATCHET check: scope=29 changed files; hits=22; registered=19; NEW=3; expired-exceptions=0
+  NEW 84291bf5f2af246b file-too-long: mag/corpus_gap_research.py:663 — >400 lines
+  NEW 42b721c740d1abda file-too-long: mag/corpus_selfsteal.py:476 — >400 lines
+  NEW 2c7e16bf178da9d0 shell-true: tools/fossil_check.py:73 — subprocess shell=True
+  GROWTH claim 8d41e611f98d3fa5: tools/census_drift_patrol.py accepted at 403 lines, now 406 (+3) — re-audit or re-accept by name
+RATCHET: FAIL — run 'baseline-update' ONLY after a human/agent accepts the debt by name.
+EXIT=1
+
+--- loader-fail-loud-checks
+$ C:\Users\foste\Documents\projects\local_sovereign_agent\.venv\Scripts\python.exe C:\Users\foste\Documents\projects\local_sovereign_agent\watch\inbox\gala_20260925\wave5-repair\lanes\config-hygiene.check.py
+scratch dir: C:\Users\foste\AppData\Local\Temp\config_hygiene_jg0593k7
+
+[PASS] corrupt providers.yaml fails loud (parse error)
+       ProviderConfigError: providers roster unreadable: C:\Users\foste\AppData\Local\Temp\config_hygiene_jg0593k7\providers.yaml: ParserError: while parsing a flow sequence
+  in "<unicode string>", line 2, column 13:
+      - broken: [unclosed
+                ^
+expected ',' or ']', but got ':'
+  in "<unicode string>", line 3, column 13:
+      bad indent: :
+                ^
+[PASS] non-mapping providers.yaml fails loud (shape error)
+       ProviderConfigError: providers roster malformed: C:\Users\foste\AppData\Local\Temp\config_hygiene_jg0593k7\providers_scalar.yaml must parse to a yaml mapping (providers:/defaults:/routing:), got str
+[PASS] missing providers.yaml fails loud
+       ProviderConfigError: providers roster missing: C:\Users\foste\AppData\Local\Temp\config_hygiene_jg0593k7\nope\providers.yaml does not exist (configs/providers.yaml is gitignored; restore it from the providers.yaml.bak-* beside it or recreate it)
+[PASS] live configs/providers.yaml still loads
+       28 providers loaded, first 8: anthropic, cerebras, cohere, dashscope, deepseek, deepseek_overmind, fireworks, gemini
+[PASS] missing improve.yaml fails loud
+       FileNotFoundError: improve config missing: C:\Users\foste\AppData\Local\Temp\config_hygiene_jg0593k7\improve.yaml (configs/improve.yaml is git-tracked; restore it from git, and route deliberate disablement through 'python main.py improve-off --reason ...')
+[PASS] real configs/improve.yaml still loads
+       enabled=True sources=18 budget_keys=['arxiv_abstracts', 'candidates_per_day', 'remote_llm_for_scout', 'research_packs_per_day', 'urls_per_day']
+
+RESULT: 6/6 checks passed
+EXIT=0
+
+===== STAGE reseal =====
+
+--- seal-update-sanctioned
+$ C:\Users\foste\Documents\projects\local_sovereign_agent\.venv\Scripts\python.exe tools/config_seal.py update --by gala-wave5-config-hygiene-lane --note gala wave5-repair config-hygiene 2026-09-29 re-seal of the f-03/s2-10 modified=4 debt; per file: improve.yaml live bytes are HEAD caddaeb72 (Q-049 demote block landed 09-28 13:21 after the 12:24Z stamp) and git-clean; violation_baseline.json is HEAD d90bc8607 (ratchet prune 943 to 941, 09-28 15:09 post-stamp) and git-clean; fossil_registry.json carries an uncommitted working-tree registry edit adding recompile_cmd/check_cmd to the thought-quantizer entry (left for its author to commit); mirrors.json is live stealth_driver state rewritten every cycle and git-untracked (s2-10 F3 standing churn, structural fix owed); verify immediately before this re-seal showed modified=4 and nothing else, so no NEW drift is sealed over
+CONFIG-SEAL update: 56 files sealed → configs/.config_seal.json
+  by=gala-wave5-config-hygiene-lane note=gala wave5-repair config-hygiene 2026-09-29 re-seal of the f-03/s2-10 modified=4 debt; per file: improve.yaml live bytes are HEAD caddaeb72 (Q-049 demote block landed 09-28 13:21 after the 12:24Z stamp) and git-clean; violation_baseline.json is HEAD d90bc8607 (ratchet prune 943 to 941, 09-28 15:09 post-stamp) and git-clean; fossil_registry.json carries an uncommitted working-tree registry edit adding recompile_cmd/check_cmd to the thought-quantizer entry (left for its author to commit); mirrors.json is live stealth_driver state rewritten every cycle and git-untracked (s2-10 F3 standing churn, structural fix owed); verify immediately before this re-seal showed modified=4 and nothing else, so no NEW drift is sealed over
+EXIT=0
+
+--- seal-verify-after-reseal
+$ C:\Users\foste\Documents\projects\local_sovereign_agent\.venv\Scripts\python.exe tools/config_seal.py verify
+CONFIG-SEAL verify: sealed=56 live=56 modified=0 missing=0 unsealed=0
+CONFIG-SEAL: PASS — every config byte matches the register.
+EXIT=0
+
+===== STAGE final =====
+
+--- seal-verify-final-at-lane-close
+$ C:\Users\foste\Documents\projects\local_sovereign_agent\.venv\Scripts\python.exe tools/config_seal.py verify
+CONFIG-SEAL verify: sealed=56 live=56 modified=1 missing=0 unsealed=0
+  MODIFIED  mirrors.json
+CONFIG-SEAL: FAIL — re-seal by NAME: python tools/config_seal.py update --by WHO --note WHY
+EXIT=1
+
+===== STAGE reseal2 =====
+
+--- seal-update-churn-reseal
+$ C:\Users\foste\Documents\projects\local_sovereign_agent\.venv\Scripts\python.exe tools/config_seal.py update --by gala-wave5-config-hygiene-lane --note gala wave5-repair config-hygiene lane 2026-09-29 second named act: after the modified=4 re-seal, a concurrent stealth_driver cycle rewrote mirrors.json live state (s2-10 F3 churn, predicted in the lane receipt); verify showed modified=1 = mirrors.json only, a member of the known 4, zero NEW files; re-sealed so the pre-push seal gate stays open for concurrent lanes; structural fix (live-state file inside the configs/ seal) still owed to the operator
+CONFIG-SEAL update: 56 files sealed → configs/.config_seal.json
+  by=gala-wave5-config-hygiene-lane note=gala wave5-repair config-hygiene lane 2026-09-29 second named act: after the modified=4 re-seal, a concurrent stealth_driver cycle rewrote mirrors.json live state (s2-10 F3 churn, predicted in the lane receipt); verify showed modified=1 = mirrors.json only, a member of the known 4, zero NEW files; re-sealed so the pre-push seal gate stays open for concurrent lanes; structural fix (live-state file inside the configs/ seal) still owed to the operator
+EXIT=0
+
+--- seal-verify-after-churn-reseal
+$ C:\Users\foste\Documents\projects\local_sovereign_agent\.venv\Scripts\python.exe tools/config_seal.py verify
+CONFIG-SEAL verify: sealed=56 live=56 modified=0 missing=0 unsealed=0
+CONFIG-SEAL: PASS — every config byte matches the register.
+EXIT=0
+
+===== STAGE final =====
+
+--- seal-verify-final-at-lane-close
+$ C:\Users\foste\Documents\projects\local_sovereign_agent\.venv\Scripts\python.exe tools/config_seal.py verify
+CONFIG-SEAL verify: sealed=56 live=56 modified=0 missing=0 unsealed=0
+CONFIG-SEAL: PASS — every config byte matches the register.
+EXIT=0
+
+===== STAGE scan =====
+
+--- em-en-dash-and-nonascii-scan
+$ C:\Users\foste\Documents\projects\local_sovereign_agent\.venv\Scripts\python.exe C:\Users\foste\Documents\projects\local_sovereign_agent\watch\inbox\gala_20260925\wave5-repair\lanes\config-hygiene.scan.py
+== authored files: em/en dash + nonascii (must be 0/0) ==
+  [OK] config-hygiene.md: em/en dashes=0 nonascii=0
+  [OK] config-hygiene.json: em/en dashes=0 nonascii=0
+  [BAD] config-hygiene.check.txt: em/en dashes=10 nonascii=12
+  [OK] config-hygiene.check.py: em/en dashes=0 nonascii=0
+  [OK] config-hygiene.check_driver.py: em/en dashes=0 nonascii=0
+  [OK] config-hygiene.scan.py: em/en dashes=0 nonascii=0
+== edited code files: em/en dashes introduced by this lane ==
+  C:/Users/foste/Documents/projects/local_sovereign_agent/models/providers.py: total em/en dashes in file = 10 (pre-existing docstring/comment text; lines ADDED by this lane scanned below)
+    dash at line 30: providers.yaml edits WITHOUT a restart — the operator's 'nothing
+    dash at line 362: # 08-29 operator order: mine the ceiling by default — the API allows 131072,
+    dash at line 414: f"peak pricing (2x) — off-peak only; MAG_ALLOW_PEAK=1 "
+    dash at line 416: except Exception:  # noqa: BLE001 — the guard must never break a call
+    dash at line 506: # Python-urllib signatures — a real UA passes the edge check (2026-08-24).
+    dash at line 533: # NOT a successful empty answer — it is a budget failure. Report it honestly so the
+    dash at line 539: "error": "empty content — reasoning model consumed the budget "
+    dash at line 779: return {"ok": False, "error": "tool loop not wired for anthropic in agent v1 — use deepseek"}
+    dash at line 785: "error": "tool loop not wired for gemini_native in agent v1 — speaking lanes only (B2-194)"}
+    dash at line 815: # DIDN'T — Cloudflare 1010-blocks the bare urllib signature, so every AGENT run
+  C:/Users/foste/Documents/projects/local_sovereign_agent/mag/improve.py: total em/en dashes in file = 32 (pre-existing docstring/comment text; lines ADDED by this lane scanned below)
+    dash at line 226: # named profiles on demand only if in allowlist and operator added — skip daily auto unless present
+    dash at line 676: claim_dig = "IJL/P0 dig pack still active — FEATURE_COMPOSE only, hypothesis quarantine"
+    dash at line 915: # Extract theme headers (## T1 — ...) and their root-cause lines
+    dash at line 917: for m in re.finditer(r"^#{2,3}\s+(T\d+)\s*[—\-–]\s*(.+)$", text, re.M):
+    dash at line 939: # 2) Decisions log (steer case law — operator complaints + outcomes)
+    dash at line 1119: """Mine tesuji-shell leaves + live log — emergent wins compete with error themes."""
+    dash at line 1130: for m in re.finditer(r"^#{2,3}\s+(W\d+)\s*[—\-–]\s*(.+)$", text, re.M):
+    dash at line 1241: extra=_provider_probe_extra(provider_probe, note="Digest day — no outbound scrape"),
+    dash at line 1421: lines = [f"\n## Scout drafts — {_day_str()}\n"]
+    dash at line 1453: f"\n## {phase} — {_utc_now().isoformat()}\n",
+    dash at line 1469: f"- `{c.get('id')}` **{c.get('kind')}** — {c.get('claim')}\n"
+    dash at line 1476: header = f"# Mag improve daily — {day}\n\n_Evidence trail for scout → eval → promote._\n"
+    dash at line 1738: ijl_line = "ijl: skills=0 (no beads yet — run one assigned graph goal)"
+    dash at line 1752: f"# Mag field brief — {day}",
+    dash at line 1761: f"- elevate: paste this file only into Grok under `[priority]` — not full chat",
+    dash at line 1775: f"   urls: {urls or '—'}"
+    dash at line 1781: "## Watch (models — do not auto-pull)",
+    dash at line 1805: lines.append(f"- `{r.get('id')}` — {str(r.get('claim') or '')[:120]}")
+    dash at line 1821: move = f"Decide hold/reject for `{top.get('id')}` — do not shop models blindly."
+    dash at line 1886: text = f"# Mag field brief — {_day_str()}\n\n" + text
+    dash at line 1966: # _write_daily_report overwrites latest with full daily — restore field brief as latest
+    dash at line 2069: f"# DeepSeek self-improve rank — {ts[:10]}",
+    dash at line 2226: Wall-clock budget only — stops mid-queue when time is up.
+    dash at line 2460: # Stop early if Ollama is clearly down — no point burning the hour
+    dash at line 2487: f"# Mag improve deep dive — {day}",
+    dash at line 2502: f"### `{d.get('id')}` — {'OK' if d.get('ok') else 'FAIL'}\n"
+    dash at line 2507: f"- error: {d.get('error') or ((d.get('run') or {}).get('local_error')) or '—'}\n"
+    dash at line 2512: lines.append(f"- `{s.get('id')}` — {s.get('reason')}")
+    dash at line 2555: # Never auto-promote even if config is mis-set true — double hard stop
+    dash at line 2729: # Record intent only — do not edit lanes.yaml
+
+SCAN RESULT: FAIL
+EXIT=1
+
+===== STAGE scan =====
+
+--- em-en-dash-and-nonascii-scan
+$ C:\Users\foste\Documents\projects\local_sovereign_agent\.venv\Scripts\python.exe C:\Users\foste\Documents\projects\local_sovereign_agent\watch\inbox\gala_20260925\wave5-repair\lanes\config-hygiene.scan.py
+== authored files (excluding raw capture): em/en dash + nonascii must be 0/0 ==
+  [OK] config-hygiene.md: em/en dashes=0 nonascii=0
+  [OK] config-hygiene.json: em/en dashes=0 nonascii=0
+  [OK] config-hygiene.check.py: em/en dashes=0 nonascii=0
+  [OK] config-hygiene.check_driver.py: em/en dashes=0 nonascii=0
+  [OK] config-hygiene.scan.py: em/en dashes=0 nonascii=0
+  [EXEMPT-RAW-CAPTURE] config-hygiene.check.txt: em/en dashes=52 nonascii=56
+      (byte-faithful capture of tool output; tools/config_seal.py:70,72 print em-dashes in its own FAIL/PASS lines; scrubbing them would falsify raw output)
+== added lines in edited code files (git diff vs HEAD, '+' lines only) ==
+  [OK] models/providers.py: added lines=41 em/en dashes=0 nonascii=0
+  [OK] mag/improve.py: added lines=14 em/en dashes=0 nonascii=0
+
+SCAN RESULT: PASS - authored files 0/0, added code lines 0/0
+EXIT=0

@@ -1,0 +1,75 @@
+t64 check: Portal_ pad suffix vs ZoneGate ZONE_REGION key audit (verify by read; no code change, zero mismatches found)
+
+ITEM RECALL
+t59's client tint binds pads by ^Portal_(.+)$ then keys Gate_<sanitized suffix>;
+ZoneGate stamps Gate_<sanitized zone> only for ZONE_REGION keys. Any pad whose
+sanitized suffix is not a ZONE_REGION key would silently never tint. Build the
+suffix-vs-key table and classify each pad.
+
+1) SOURCES (read first)
+- roblox/src/server/ZoneGate.luau:33-45  ZONE_REGION, 11 authored keys
+- roblox/src/server/init.server.luau:95-106  PORTALS: 7 climbs + 11 WAVE;
+  :118 pad.Name = ("Portal_%s"):format(p.to)  (the ONLY pad creation site;
+  grep of src for "Portal" finds no other writer, and grep of the_mountain.rbxlx
+  for name="Portal_" finds 0 baked instances: all 18 pads are runtime-built)
+- roblox/src/client/init.client.luau:113-128  bindPad: suffix = match("^Portal_(.+)$"),
+  key = "Gate_" .. suffix:gsub("%W", "_"); server side ZoneGate.luau:55-58
+  gateAttr uses the same gsub, so sanitization is symmetric, not an assumption.
+
+2) THE TABLE (pad suffix, sanitized, vs ZONE_REGION keys sanitized)
+TINTS (11) - suffix sanitizes to a ZONE_REGION key, Gate_ attribute stamped
+  at ZoneGate.luau:134-136, tint applies when verdict is allied/opposed:
+  Portal_GALLERY            -> GALLERY            == ZONE_REGION GALLERY
+  Portal_FRONTIER SOULS     -> FRONTIER_SOULS     == ZONE_REGION FRONTIER SOULS
+  Portal_TOY BOX            -> TOY_BOX            == ZONE_REGION TOY BOX
+  Portal_HARDWARE PRIMER    -> HARDWARE_PRIMER    == ZONE_REGION HARDWARE PRIMER
+  Portal_INCIDENT DUNGEON   -> INCIDENT_DUNGEON   == ZONE_REGION INCIDENT DUNGEON
+  Portal_MAZE ARENA         -> MAZE_ARENA         == ZONE_REGION MAZE ARENA
+  Portal_SPECTRAL MAZE      -> SPECTRAL_MAZE      == ZONE_REGION SPECTRAL MAZE
+  Portal_RIDDLE MAZE        -> RIDDLE_MAZE        == ZONE_REGION RIDDLE MAZE
+  Portal_LIGHTMAP ROOMS     -> LIGHTMAP_ROOMS     == ZONE_REGION LIGHTMAP ROOMS
+  Portal_EROSION FIELD      -> EROSION_FIELD      == ZONE_REGION EROSION FIELD
+  Portal_STEER FIELD        -> STEER_FIELD        == ZONE_REGION STEER FIELD
+  (negative, first-class: independent verdict -> no tint by design,
+  ALLIANCE_TINT has no independent row, init.client.luau:108-111)
+
+SILENT-NO-TINT (0) - none. Mechanical proof: WAVE[].name list
+  (init.server.luau:38-48) extracted and diffed against ZONE_REGION keys
+  (ZoneGate.luau:34-44): diff reports IDENTICAL, 11 vs 11, comm both ways
+  empty. Pad names are built from the same WAVE names at :104-106, so every
+  wave pad joins by construction. No fix required; nothing to align.
+
+NOT-A-GATE (7) - climb pads, decorative-to-the-gate BY DESIGN, evidence cited:
+  Portal_SWARM        (init.server.luau:96)
+  Portal_RUINS GO     (init.server.luau:97)
+  Portal_ARRAKIS      (init.server.luau:98)
+  Portal_SKI          (init.server.luau:99)
+  Portal_LIGHT MAZE   (init.server.luau:100)
+  Portal_THE ANSWER   (init.server.luau:101)
+  Portal_THE OSSUARY  (init.server.luau:102)
+  Evidence: ZoneGate.luau:13-17 header (opposed unreachable, climbs carry no
+  join), :99-101 portalGate returns true for a zone with no ZONE_REGION row
+  ("fixed climbs carry no join, so no gate (a fact)"), :133-135 attach comment
+  ("climb portals get no attribute, they carry no join and no tint"), and
+  init.client.luau:106-107 ("Climb portals carry no Gate_ attribute, so they
+  stay untouched"). bindPad still fires on them and connects a signal that
+  can never fire; apply() early-returns because the attribute never exists.
+  Harmless documented no-op, not a defect.
+
+3) THE LATENT SEAM (for t46/t59 authors or a future wave author)
+The join lives in two hand-authored lists: WAVE[].name (init.server.luau) and
+ZONE_REGION (ZoneGate.luau). They are identical today by discipline, not by
+construction: a future wave zone added to WAVE without a ZONE_REGION row
+would silently never tint AND silently never gate (portalGate :99-101 returns
+true). If either list grows, the diff command in this file is the check.
+No code change filed: the item authorizes a one-line key alignment only for
+genuine mismatches, and there are zero.
+
+4) VERIFICATION
+- Verify by read: all four regions re-read post-audit (ZoneGate.luau 33-58,
+  96-136; init.server.luau 94-143; init.client.luau 99-133).
+- Extraction was mechanical (grep/sed/diff/comm), not eyeballed; counts:
+  18 pads = 11 TINTS + 0 SILENT-NO-TINT + 7 NOT-A-GATE.
+- No pytest run: Luau files, outside the mag tree. mountain_check NOT run
+  (shared), no code changed so nothing to re-lint.
+- Em-dash law: this file carries none.

@@ -1,0 +1,201 @@
+=== heads-abliteratus check battery 2026-09-29T14:35:39Z ===
+
+--- CHECK 1: provenance re-hash of fetched OBLITERATUS README vs recorded sha (drop receipt + LINKS row claim b75f8c6d...) ---
+file: /tmp/obliteratus_readme.md
+-rw-r--r-- 1 foste 197609 32593 Sep 29 05:50 /tmp/obliteratus_readme.md
+b75f8c6dd1bdbed41379d7adfecd0725151176d6682b3990d1f5cc6e642f79fe */tmp/obliteratus_readme.md
+recorded: b75f8c6dd1bdbed41379d7adfecd0725151176d6682b3990d1f5cc6e642f79fe
+MATCH b75f8c6dd1bdbed41379d7adfecd0725151176d6682b3990d1f5cc6e642f79fe
+exit=0
+
+--- CHECK 2: mcp_pin self-test (the composition bank's own instrument, tools/mcp_pin.py) ---
+{
+  "ok": true,
+  "schema": "mcp_pin.v1",
+  "tool": "mcp_pin_self_test",
+  "checks": [
+    {
+      "name": "first_connect_pins",
+      "ok": true,
+      "detail": "counts={'observed': 2, 'new': 2, 'pinned': 0, 'drift': 0, 'missing': 0, 'invalid': 0} alarm=False records=2"
+    },
+    {
+      "name": "reconnect_matches",
+      "ok": true,
+      "detail": "verdicts=['PINNED', 'PINNED'] records=4"
+    },
+    {
+      "name": "description_drift_alarms",
+      "ok": true,
+      "detail": "greeter=DRIFT alarm=True greeter_records=2"
+    },
+    {
+      "name": "schema_drift_alarms",
+      "ok": true,
+      "detail": "greeter=DRIFT greeter_records=2"
+    },
+    {
+      "name": "repin_clears_alarm",
+      "ok": true,
+      "detail": "repinned=['fixture_greeter', 'fixture_counter'] alarm=False records=10"
+    },
+    {
+      "name": "append_only_history",
+      "ok": true,
+      "detail": "records=10 original_lineage_present=True"
+    },
+    {
+      "name": "record_shape",
+      "ok": true,
+      "detail": "keys=['description_hash', 'first_seen', 'last_seen', 'schema_hash', 'tool_name'] all_lines_conform=True"
+    },
+    {
+      "name": "missing_tool_visible",
+      "ok": true,
+      "detail": "counter=MISSING alarm=True"
+    },
+    {
+      "name": "hash_order_invariant",
+      "ok": true,
+      "detail": "reordered JSON keys produce identical schema_hash"
+    }
+  ],
+  "passed": 9,
+  "failed": 0,
+  "note": "fixture-only; no live MCP server contacted; real ledger untouched"
+}
+exit=0
+
+--- CHECK 3: byte-check of mined quotes (exact substring, python -F) ---
+BYTE-FAIL watch/inbox/ABLITERATUS_DROP_20260929.md :: The verification stage (capability retention check) is the p...
+BYTE-FAIL watch/inbox/ABLITERATUS_DROP_20260929.md :: their module is the measurement shape to steal: excise a beh...
+BYTE-FAIL watch/inbox/ABLITERATUS_DROP_20260929.md :: Two paradigms: permanent weight projection (7 presets, basic...
+BYTE-OK  watch/inbox/burn_reset_20260927/flash50/mcp-composition.md :: the agent can branch on failure because failure arrives as d...
+BYTE-FAIL watch/inbox/burn_reset_20260927/flash50/mcp-composition.md :: refs are portable because they are serialized call parameter...
+BYTE-FAIL watch/inbox/burn_reset_20260927/flash50/mcp-bridge.md :: an external agent's PROMPT can propose a bank; only an autho...
+SOME_QUOTE_FAILED
+exit=0
+
+--- CHECK 4: final quote byte-checks (exact substring incl. wrap whitespace), 14:47:06Z ---
+BYTE-OK  watch/inbox/ABLITERATUS_DROP_20260929.md :: The verification stage (capability retention check) is  ...
+BYTE-OK  watch/inbox/ABLITERATUS_DROP_20260929.md :: their module is the measurement shape to steal: excise  ...
+BYTE-OK  watch/inbox/burn_reset_20260927/flash50/mcp-composition.md :: the agent can branch on failure because failure arrives ...
+BYTE-OK  watch/inbox/burn_reset_20260927/flash50/mcp-composition.md :: refs are portable because they are serialized
+call para ...
+BYTE-OK  watch/inbox/burn_reset_20260927/flash50/mcp-bridge.md :: an external agent's PROMPT can
+propose a bank; only an  ...
+ALL_QUOTES_OK
+exit=0
+
+--- CHECK 5: estate grep raw output (corpus/steal + memory/corpus), rerun for the record ---
+== term: Ouroboros ==
+-- corpus/steal:
+(zero hits)
+-- memory/corpus:
+memory/corpus/game_design_docs/crpg_history_barton_part1_earlyyears.html
+memory/corpus/lore/ledger_of_empty_chairs_20260907.txt
+memory/corpus/ractors/tolkien/MANIFEST.json
+memory/corpus/ractors/tolkien/MANIFEST.md
+memory/corpus/ractors/WISH_LIST.md
+== term: abliterat ==
+-- corpus/steal:
+(zero hits)
+-- memory/corpus:
+== term: steering vector ==
+-- corpus/steal:
+corpus/steal/STEERING_FOLD_DELTA_20260926.md
+-- memory/corpus:
+== term: isError ==
+-- corpus/steal:
+corpus/steal/ZCODE_REPO_STEAL_MAP_20260924.md
+-- memory/corpus:
+== term: verify-after-modify ==
+-- corpus/steal:
+(zero hits)
+-- memory/corpus:
+== term: payload-refs ==
+-- corpus/steal:
+(zero hits)
+-- memory/corpus:
+
+--- CHECK 6: LINKS minting through the sanctioned add door (mag.link_library), 14:48:26Z ---
+== pre-flight check (read-only) ==
+usage: python -m mag.link_library [-h] [--note NOTE] [--writer WRITER]
+                                  {add,check,dupes,convention,verify-images}
+                                  [urls ...]
+python -m mag.link_library: error: check requires exactly one URL
+check exit=2
+== check watch/inbox/ABLITERATUS_DROP_20260929.md ==
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "C:\Users\foste\Documents\projects\local_sovereign_agent\mag\link_library.py", line 413, in <module>
+    raise SystemExit(main())
+                     ^^^^^^
+  File "C:\Users\foste\Documents\projects\local_sovereign_agent\mag\link_library.py", line 381, in main
+    verdict = check_url(args.urls[0])
+              ^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\foste\Documents\projects\local_sovereign_agent\mag\link_library.py", line 174, in check_url
+    validate_host_safety(url)
+  File "C:\Users\foste\Documents\projects\local_sovereign_agent\mag\link_library.py", line 325, in validate_host_safety
+    raise ValueError(f"no host: {url!r}")
+ValueError: no host: 'watch/inbox/ABLITERATUS_DROP_20260929.md'
+exit=1
+== check watch/inbox/burn_reset_20260927/flash50/mcp-composition.md ==
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "C:\Users\foste\Documents\projects\local_sovereign_agent\mag\link_library.py", line 413, in <module>
+    raise SystemExit(main())
+                     ^^^^^^
+  File "C:\Users\foste\Documents\projects\local_sovereign_agent\mag\link_library.py", line 381, in main
+    verdict = check_url(args.urls[0])
+              ^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\foste\Documents\projects\local_sovereign_agent\mag\link_library.py", line 174, in check_url
+    validate_host_safety(url)
+  File "C:\Users\foste\Documents\projects\local_sovereign_agent\mag\link_library.py", line 325, in validate_host_safety
+    raise ValueError(f"no host: {url!r}")
+ValueError: no host: 'watch/inbox/burn_reset_20260927/flash50/mcp-composition.md'
+exit=1
+== check watch/inbox/burn_reset_20260927/flash50/mcp-bridge.md ==
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "C:\Users\foste\Documents\projects\local_sovereign_agent\mag\link_library.py", line 413, in <module>
+    raise SystemExit(main())
+                     ^^^^^^
+  File "C:\Users\foste\Documents\projects\local_sovereign_agent\mag\link_library.py", line 381, in main
+    verdict = check_url(args.urls[0])
+              ^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\foste\Documents\projects\local_sovereign_agent\mag\link_library.py", line 174, in check_url
+    validate_host_safety(url)
+  File "C:\Users\foste\Documents\projects\local_sovereign_agent\mag\link_library.py", line 325, in validate_host_safety
+    raise ValueError(f"no host: {url!r}")
+ValueError: no host: 'watch/inbox/burn_reset_20260927/flash50/mcp-bridge.md'
+exit=1
+
+--- CHECK 7: LINKS hand-append (line-355 precedent shape; door is URL-only by Mimosa guard) + validation, 14:51:35Z ---
+appended 3 rows
+ledger re-parse OK, total rows: 387
+last 3 writers: ['gala-ball-20260929-heads-abliteratus', 'gala-ball-20260929-heads-abliteratus', 'gala-ball-20260929-heads-abliteratus']
+append exit=0
+== mag.link_library dupes (no new dupe clusters) ==
+https://github.com/12britz/awesome-free-models  ->  https://github.com/12britz/awesome-free-models
+https://github.com/12britz/awesome-free-models  ->  https://github.com/12britz/awesome-free-models
+https://www.thundercompute.com/blog/free-cloud-gpu-credits  ->  https://www.thundercompute.com/blog/free-cloud-gpu-credits
+https://benchlm.ai/best/open-source  ->  https://benchlm.ai/best/open-source
+8 duplicate submissions on file
+== mag.shared_surface validate ==
+    "hash mismatch: STEALTH_SWEEP_LATEST.md",
+    "hash mismatch: wave5_repair/suite-burn.md",
+    "hash mismatch: STEALTH_MINED_FINDINGS.jsonl",
+    "hash mismatch: PACK_OFFLOAD.jsonl",
+    "hash mismatch: gala_20260925/wave5-repair/lanes/suite-burn.json"
+  ],
+  "warnings": []
+}
+validate exit=0
+
+--- fold annotation 2026-09-29 (fold-repairer, midnight-reader repair; nothing above this line was edited) ---
+STRIKE on the 'validate exit=0' line above: this capture's own errors array is non-empty (5 hash mismatches at lines 189-193), and the validator cannot exit 0 with errors (mag/shared_surface.py:346 records a hash mismatch as an error; mag/shared_surface.py:443 exits 0 only when ok). True exit: 1 (ok:false). The validator was unmodified since commit dbe5f682c 10:19:52-04:00, before this 14:51:35Z run, so the recorded exit=0 could not have occurred as recorded.
+Fold rerun 2026-09-29: '.venv/Scripts/python.exe -m mag.shared_surface validate' -> exit 1, ok:false, 10 errors: the same 5 hash mismatches + 5 NEW event-kind LINKS rows (lines 380-384, kind x-drop, free-resource-scout/None). All 5 hash mismatches pre-existed this run (they are printed in the capture above); mtime corroboration for 3 of 5: watch/inbox/INDEX.json last stamped 08:27:07-0400 vs STEALTH_SWEEP_LATEST.md 09:50:16, wave5_repair/suite-burn.md 08:58:27, gala_20260925/wave5-repair/lanes/suite-burn.json 08:59:23-0400. None of the 10 flagged items is this lane's file (watch/inbox/LINKS.jsonl rows 385-387 are this lane's only writes): the confinement half of the claim stands. Full annotation: heads-abliteratus.json .annotations[0].

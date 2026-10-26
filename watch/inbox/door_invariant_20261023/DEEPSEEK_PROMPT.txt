@@ -1,0 +1,436 @@
+You are evaluating a blind experiment. Six independent model lanes were each given ONLY the story below plus this instruction: 'Read this story. Derive the rules and situations buried in it: list each rule you find, stated as a general operating rule, with the scene that carries it. Be explicit about which are confident and which are guesses.' Their raw outputs follow, then an executor-built convergence/divergence matrix.
+
+Task: (1) Audit the matrix: miscounts, wrong merges, over-normalization, cells where a lane's tier was misread. (2) Surface nuance ALL lanes missed or underweighted (story details, structural patterns, contradictions). (3) Judge which divergences are real interpretive disagreements vs. noise. (4) Assess calibration of each lane. Keep evidence tiers separate: label each of your claims as TEXT-GROUNDED (cite the sentence) or INTERPRETIVE. Be concise and specific.
+
+=== STORY ===
+## The Book
+
+Miriam came to the old house to recover a ledger that her mother had hidden before the flood. The gate was iron, the windows were shuttered, and the yard smelled of wet straw. She carried no weapon except a slate and a ring of keys. The first person she met was the archivist, who sat on a three-legged stool beneath a high shelf and copied names into a long book. When she asked for the ledger, he leaned back to reach a higher volume, and the stool split under him. He fell hard, but the shelf did not move, and the books stayed where they were. He stood, brushed dust from his coat, and climbed by pressing his hands against the wall. Miriam saw that the seat had not carried anything but him, and that even he had not stayed on it for long.
+
+In the next room, a clerk bent over the register with a damp cloth. He had already rubbed away one name, and the owner of the house stood behind him with a red face. "You have taken what was written," the owner said, seizing the clerk's wrist. "The ink was here, and now it is not; that is theft enough." The clerk argued that he had only cleaned the page, but the owner pointed to the blank space where the name had been and would not let go.
+
+At the door to the inner hall, a tall man in a clean coat blocked the passage and announced that he was now master of the house. He had arrived that morning and stood very straight. Yet when he gave an order, the servants looked past him to the woman who held the seal on a cord around her neck. She did not raise her voice. She only touched the seal, and they moved. The man remained in the doorway, but no one treated his standing there as a command.
+
+Miriam was given a map drawn on linen. It showed a passage through the east wall, a dotted line leading to a small room where the ledger might be. She followed the line until the floor ended at solid stone. The map still promised an opening, but the stone was cold and unbroken beneath her hands. She put the linen in her pocket and trusted the floor, turning back to the place where the boards still sounded hollow.
+
+When the lamp failed in the corridor, the dark came all at once. Miriam could not see the doors or the turns. She put one hand on the plaster and declared, out loud, to no one: I do not know this passage. And it was on the strength of saying it that she stood still, and waited, and in a while the boy came with the lamp, because a house hears a person who admits being lost.
+
+She found the ledger in a room where the fire had burned down to ash. The book lay open on a table, and beside it was a pen still wet with ink. The page showed a list of names, and at the bottom, a line had been struck through so hard the paper had torn. Miriam did not need to read the name to know what had happened. She closed the book and carried it back through the dark, and when she reached the hall, the tall man in the clean coat was still standing in the doorway. He asked if she had found what she sought, and she said she had. He asked if she would give it to him, and she said she would not. He asked what she would do if he took it anyway, and she told him plainly: she would let him, and then she would tell everyone in the house exactly what he had done. He stepped aside.
+
+The seal on the cord was given to her that night, and she wore it without ceremony. The servants did not cheer, but they brought her bread and a chair by the fire, and the house settled into its old quiet. The ledger was copied and sent to the magistrate, and the torn page was left exactly as it was, so that anyone who opened the book would see the blank space and ask what had been there. Miriam kept the linen map in her pocket, folded small, and never used it again.
+
+=== LANE OUTPUT: lane1_fostertron_max ===
+I read `PROMPT.txt` — it contains the story "The Book" and a task: derive the operating rules buried in it. Here they are, scene by scene.
+
+**Opening frame**
+- **Go equipped for recording and access, not force.** Miriam carries "no weapon except a slate and a ring of keys." (confident — it's stated outright, but its intended application is a guess)
+
+**1. The archivist and the stool**
+- **Don't lean on a perch to reach beyond it; it breaks.** The stool splits the moment he reaches past its purpose. *(confident)*
+- **Intermediaries carry only themselves, and briefly.** "The seat had not carried anything but him, and even he had not stayed on it for long." *(guess — this line is underlined by the story, so probably a rule about not treating a proxy/position as a foundation)*
+- **When the perch fails, use the wall directly.** He climbs by pressing his hands against the stable structure — go to primary support, not another stool. *(confident as a rule; referent is a guess)*
+- **Failure was local, not structural.** The shelf didn't move; the books stayed. *(guess)*
+
+**2. The clerk and the erased name**
+- **Erasing a record is theft of the thing recorded, regardless of intent.** "The ink was here, and now it is not; that is theft enough." "I only cleaned the page" is not a defense. *(confident)*
+
+**3. The tall man in the doorway**
+- **Authority lives in the seal, not the self-announcement.** Claiming mastery and occupying the passage granted no power; the servants looked past him to whoever held the seal. *(confident)*
+- **Standing in the way is not a command.** Blocking a door ≠ controlling the house. *(confident)*
+- **To find who runs things, watch whom executors look to when an order is given.** *(confident as the scene's method)*
+
+**4. The linen map**
+- **When the map contradicts the territory, trust the territory.** The dotted line promised an opening; the stone was cold and unbroken. *(confident)*
+- **Retrace to the last verified ground** — "the place where the boards still sounded hollow" — i.e., evidence you can knock on. *(confident)*
+
+**5. The lamp fails**
+- **When blind, say "I do not know this passage" out loud, stop, and wait.** Admission of being lost is itself the operative act; it summons the lamp. Blundering forward does not. *(confident — the story states the causal link: "a house hears a person who admits being lost")*
+
+**6. The ledger room**
+- **Violent erasure records itself.** She didn't read the name; the torn paper told her what happened. The form of the damage is evidence. *(confident)*
+- **A wet pen beside the page means the edit is fresh and the actor may be near.** *(guess — forensic heuristic from a detail)*
+
+**7. The confrontation**
+- **Against force, don't counter with force; commit to disclosure.** "I would let him, and then I would tell everyone exactly what he had done." The threat of witness made him step aside. *(confident)*
+
+**8. The ending**
+- **Copy for the process; leave the original wound intact.** The ledger goes to the magistrate, but the torn page stays as-is so every future reader sees the blank and asks. Don't repair evidence of wrong. *(confident)*
+- **Authority is conferred quietly and recognized through service, not applause.** No cheering; bread and a chair by the fire. *(confident)*
+- **Retire instruments that failed verification.** The map is kept, folded small, never used again. *(confident)*
+
+**Guesses about the whole:** the directory (`door_exp`, `runner.py`, lane files) suggests this is a probe of whether a reader extracts rules rather than plot. If so, the load-bearing rules are likely 2, 3, 4, 5, and 7 — erasure is theft; legitimacy ≠ self-claim; territory over map; declared ignorance over blind motion; transparency over force. The stool scene is the most ambiguous — it may encode "don't overextend a tool past what it was built to hold."
+
+=== LANE OUTPUT: lane2sub_zai_pro_key ===
+## Rules, scene by scene
+
+**Labels:** **Confident** = the story states or structurally requires it. **Likely** = strongly implied but not stated. **Guess** = my inference, could be overreading.
+
+---
+
+### The frame (arrival)
+
+1. **Enter contested ground with tools of record and access, not weapons.** Scene: "She carried no weapon except a slate and a ring of keys" — a writing surface and the means to open doors. **Confident** (the sentence pointedly enumerates what she does and doesn't carry).
+
+2. **Cache essential records before the foreseeable disaster.** Scene: her mother hid the ledger "before the flood." **Guess** — it's backstory, but the story opens with it for a reason.
+
+### The archivist's stool
+
+3. **A seat holds only the person sitting in it — never confuse occupying a position with bearing weight.** Scene: "Miriam saw that the seat had not carried anything but him." **Confident.**
+
+4. **Don't reach past your support.** Scene: he leans back for a higher volume and the three-legged stool splits. **Confident.**
+
+5. **When an individual falls, the institution does not fall with him.** Scene: the shelf doesn't move, the books stay. Judge structures by what remains standing, not by who collapses. **Likely.**
+
+6. **Recover by direct, self-supported effort, not by acquiring a better stool.** Scene: he climbs "by pressing his hands against the wall." **Likely.**
+
+### The clerk and the blank space
+
+7. **Erasing a record is theft of the thing itself, and the case is complete on showing the absence.** Scene: "The ink was here, and now it is not; that is theft enough." **Confident.**
+
+8. **Destruction will be described as maintenance.** Scene: "he had only cleaned the page." Expect the laundering verb. **Confident.**
+
+9. **The blank space is the exhibit — point at it.** Scene: the owner "pointed to the blank space where the name had been." **Confident** (and it recurs at the ending, so it's load-bearing).
+
+### The man in the doorway
+
+10. **Authority is not established by announcement, arrival, or posture; it is established by whom the workers actually look to.** Scene: the servants "looked past him" to the seal-holder. **Confident.**
+
+11. **Authority is a transferable token, and a quiet touch on it outranks a loud command.** Scene: she doesn't raise her voice; she touches the seal, and they move. **Confident.**
+
+12. **Standing in the doorway is not commanding the door. Occupancy is not control.** Scene: "no one treated his standing there as a command." **Confident.**
+
+### The linen map
+
+13. **When the map and the floor disagree, trust the floor; verify passages with hands and ears.** Scene: "The map still promised an opening, but the stone was cold and unbroken beneath her hands" — she turns back to where the boards "sounded hollow." **Confident** (the text literally says she "trusted the floor").
+
+14. **Retire a refuted guide permanently, but keep it.** Scene: she folds the map small and "never used it again." **Confident** on retiring it; **guess** on why she keeps it — as a warning, or as evidence of its own wrongness.
+
+### The dark corridor
+
+15. **When lost: stop moving, keep a hand on something solid, and say out loud that you don't know.** Scene: "I do not know this passage" — and "it was on the strength of saying it" that help comes. Admission is a signal that makes you findable; concealing ignorance keeps you lost. **Confident** (the narrator generalizes it: "a house hears a person who admits being lost").
+
+### The ledger room
+
+16. **Over-deletion documents itself.** Scene: the line "struck through so hard the paper had torn." The harder the concealment, the more visible the act. **Confident.**
+
+17. **Events are readable from physical state without reading the text.** Scene: wet pen, ash, torn paper — she "did not need to read the name to know what had happened." **Likely.**
+
+### The confrontation at the door
+
+18. **Against someone who can take by force, don't promise resistance — promise truthful, total exposure.** Scene: "she would let him, and then she would tell everyone in the house exactly what he had done. He stepped aside." **Confident.**
+
+19. **You may lose the object; never lose the account.** Concede the thing, retain the testimony — the telling is worth more than possession. **Confident** (her whole method is this).
+
+### The ending
+
+20. **Legitimate authority arrives quietly and is confirmed by material care, not applause.** Scene: the seal is given "without ceremony"; the servants don't cheer but bring bread and a chair by the fire. **Likely.**
+
+21. **Circulate copies to the external authority; keep the original, damage included, intact.** Scene: "The ledger was copied and sent to the magistrate, and the torn page was left exactly as it was." **Confident.**
+
+22. **Never repair the wound in a record. The blank space must stay visible so it keeps generating the question "what was here?"** Scene: "so that anyone who opened the book would see the blank space and ask what had been there." The question is the safeguard. **Confident** — this is the story's most explicit rule.
+
+---
+
+## Rules running across the whole book
+
+23. **Absence is never neutral.** Every gap in this world — the rubbed-out name, the missing name at the torn line, the blank space left deliberately — is a legible event. This is the master rule the ledger enforces. **Confident** as the unifying theme.
+
+24. **Records survive by duplication, and originals are for confronting, not circulating.** Scene: the archivist opens the story copying names into a long book; Miriam closes it copying the ledger for the magistrate. **Likely** (the symmetry seems deliberate).
+
+25. **The house is both sensor and court.** It "hears" admissions, its servants verify authority, and exposure "to everyone in the house" is a sufficient sanction. Operate as though everything is witnessed. **Likely** — implied twice (the corridor, the confrontation), but never stated as a rule.
+
+26. **Authority gravitates to the credible witness.** The seal is given to Miriam the night she proves she cannot be coerced into silence and cannot be fooled by appearances — the house delegates power to whoever demonstrates the method it trusts. **Likely**; the causal link between the confrontation and the gift of the seal is my reading.
+
+---
+
+## What I'd flag as most uncertain
+
+- **Rule 2** (pre-disaster caching) — one clause of backstory, could just be motive.
+- **Rule 14** (why she keeps the map) — the text withholds her reason.
+- **Rule 6** (self-supported recovery) — the wall-climbing could simply be physical description rather than an encoded rule.
+- Whether the slate she carries ever "does" anything — she never visibly writes on it, which is odd given how deliberately it's introduced. Possibly a rule about carrying the means to record even when you never use it; I can't pin it down, so it stays a guess.
+
+The cleanest compression of the whole story: **trust the floor, not the map; trust the seal, not the man in the doorway; treat every blank space as evidence; and when force threatens, let go of the object and keep the telling.**
+=== LANE OUTPUT: lane3_agy_bob ===
+﻿No code or file changes are involved, so I'm skipping the plan artifact and answering directly.
+
+The scenes mostly pair a claimed status with what actually holds. I've marked each rule **Confident** (the text states or enacts it clearly) or **Guess** (my inference).
+
+## Rules
+
+| # | General rule | Scene | Confidence |
+|---|---|---|---|
+| 1 | Authority is whatever people actually act on, not a title, a claim, or standing in a doorway. | The tall man declares himself master, but the servants look past him to the seal-holder. She only touches the seal and they move. Later Miriam is given the seal, and the servants show it by bringing her bread and a chair. | **Confident** |
+| 2 | When a representation (map, plan, description) contradicts the ground, trust the ground. Keep the representation only as a reference, not as a guide. | The linen map promises an opening, but the floor ends in stone. She trusts the hollow-sounding boards. At the end she keeps the map folded and never uses it again. | **Confident** |
+| 3 | When you are lost, say so plainly, stop moving, and wait. Admitting ignorance is what makes help possible. | In the dark corridor she says "I do not know this passage," stands still, and the boy arrives with the lamp. | **Confident** that this is the rule. **Guess** that the causal claim ("on the strength of saying it", "a house hearsΓÇª") is meant literally rather than as a fable. |
+| 4 | When you can't prevent a wrong, refuse to assist it, don't escalate, and make accountability certain by stating the consequence honestly and in advance. | She refuses to hand over the ledger and says she will let him take it, then tell everyone what he did. He steps aside. The threat is truthful, not a bluff or a show of force. | **Confident** on the behavior. **Guess** that the story endorses it as generally effective rather than as a one-off. |
+| 5 | A support is only as good as the load it can carry. A thing that bears only its occupant, and not for long, is not a foundation. | The stool splits when the archivist reaches beyond himself, but the shelf and books don't move. He climbs the wall instead. The narrator notes the seat "had not carried anything but him." | **Guess.** The scene is clear, but the lesson is only implied. |
+| 6 | A changed state is not automatically a violation. Establish what was actually taken, and by whom, before accusing. Holding someone doesn't make the claim true. | The owner grips the clerk and says erased ink is "theft enough." The clerk says he only cleaned the page. The scene is left unresolved. | **Guess.** It reads as a critique of the owner's reasoning, but the story never rules on it. |
+| 7 | Don't repair or smooth over damaged records. Preserve the damage as evidence, and copy the record outward to an independent holder. | The torn, struck-through page is left as it was "so that anyoneΓÇª would ask what had been there." The ledger is copied and sent to the magistrate. | **Confident** on preserving the damage and copying the record. **Guess** on the broader "absence is evidence" reading. |
+| 8 | Read physical traces for what they show instead of demanding the explicit text. | She doesn't need to read the name. The torn paper and the hard strike-through are enough. | **Guess.** It is a single, brief line. |
+| 9 | Authority is conferred quietly and carried without ceremony. | She wears the seal "without ceremony," and the servants don't cheer but settle into their old quiet. | **Guess.** It overlaps with rule 1, so it may be a tone note rather than a separate rule. |
+
+## Cross-cutting pattern (guess)
+Rules 1, 2, 5 and 6 may be one rule seen from four sides: **check what a claim, label or representation is actually backed by.** The four are:
+- the title (the tall man)
+- the map
+- the stool
+- the "theft" accusation
+
+Rules 3 and 4 describe how to act honestly when you are uncertain or outmatched. Rules 7 to 9 describe how to leave things afterward.
+
+## Possible tension (guess)
+Rule 6 says erasure alone isn't proof of theft. Rule 7 treats a blank space as meaningful evidence. These may be compatible: a blank space is a reason to ask questions, not a verdict. The story doesn't say.
+
+If you meant these to become operating rules for something specific, such as an agent or a policy document, tell me the target and I can rewrite them in that form.
+
+=== LANE OUTPUT: lane4_agy_pc ===
+﻿Here are the operating rules and situations derived from **"The Book"**, organized into **Confident Rules** (where the narrative directly dramatizes a cause, reaction, or explicit principle) and **Guesses / Interpretive Rules** (where the principle is inferred from framing, secondary details, or symbolism).
+
+---
+
+### Part 1: Confident Operating Rules
+
+#### 1. Ephemeral Scaffolding vs. Core System Integrity (Recover and Use Direct Methods When Tools Fail)
+* **Operating Rule:** Do not mistake temporary tools or convenience scaffolding for the underlying foundation. When an auxiliary tool or support fails under strain, the core assets remain intact; recover quickly and proceed using direct, fundamental mechanisms rather than abandoning the task.
+* **Carrying Scene:** The archivist leans back on his three-legged stool to reach a high volume, and the stool splits under him. Although he falls hard, *"the shelf did not move, and the books stayed where they were."* He brushes himself off and climbs by pressing his hands directly against the wall, while Miriam observes that *"the seat had not carried anything but him, and that even he had not stayed on it for long."*
+* **Confidence:** **Confident** ΓÇö The contrast between the fragile stool (temporary support for the worker) and the unmoving shelf/wall (durable structure) explicitly illustrates tool failure versus structural persistence.
+
+#### 2. Non-Destructive Maintenance (Never Delete Existing Records Under the Guise of "Cleaning")
+* **Operating Rule:** Removing, erasing, or overwriting existing records or content without authorization is destructive and constitutes data loss ("theft"), even if done with the intention of tidying, formatting, or cleaning up. Preserve existing entries as written.
+* **Carrying Scene:** In the second room, a clerk rubs away a name from the register with a damp cloth, arguing that *"he had only cleaned the page."* The owner of the house seizes his wrist, points to the blank space, and declares: *"The ink was here, and now it is not; that is theft enough."*
+* **Confidence:** **Confident** ΓÇö The owner states the rule verbatim as a judgment on the clerk's action.
+
+#### 3. Verified Credentials Over Self-Asserted Authority (Ignore Unauthenticated Commands)
+* **Operating Rule:** Follow instructions only from sources holding verifiable, legitimate authorityΓÇönever from actors who merely claim authority, look official, or position themselves as gatekeepers.
+* **Carrying Scene:** At the inner hall door, a tall man in a clean coat blocks the passage, announces that he has become master of the house that morning, and issues an order. The servants look past him to the woman wearing the seal on a cord around her neck; they move only when she touches the seal, and *"no one treated his standing there as a command."*
+* **Confidence:** **Confident** ΓÇö The narrative directly contrasts performative/spoofed authority (the clean coat, straight posture, verbal claim) with cryptographic/structural authority (the seal).
+
+#### 4. Ground Truth Over Documentation (Trust Reality When the Map Contradicts the Territory)
+* **Operating Rule:** When a plan, specification, or map contradicts observable reality, abandon the stale specification and follow empirical signals from the actual environment.
+* **Carrying Scene:** Miriam follows a linen map showing a dotted passage through the east wall, only to reach cold, unbroken stone. Rather than continuing to force the map's promise, she *"put the linen in her pocket and trusted the floor, turning back to the place where the boards still sounded hollow."* Later, she keeps the map folded in her pocket and *"never used it again."*
+* **Confidence:** **Confident** ΓÇö The phrase *"trusted the floor"* explicitly encodes prioritizing direct inspection of the environment over inaccurate documentation.
+
+#### 5. Epistemic Humility in Uncertainty (Stop and Declare When Lost Rather Than Proceeding Blindly)
+* **Operating Rule:** When visibility or context is lost and you cannot determine the safe path forward, halt execution immediately, explicitly state that you do not know the way, and wait for guidance or illumination.
+* **Carrying Scene:** When the lamp fails in the corridor and total darkness falls, Miriam does not grope forward blindly. She puts one hand on the plaster, declares aloud, *"I do not know this passage,"* and stands still until a boy arrives with a lampΓÇö*"because a house hears a person who admits being lost."*
+* **Confidence:** **Confident** ΓÇö The narrator states the law of the house directly as the reason help arrives.
+
+#### 6. Deterrence Through Transparency and Auditability (Counter Coercion with Public Reporting, Not Force)
+* **Operating Rule:** Refuse to hand over protected assets to unauthorized actors. If threatened with coercion or forced seizure, do not escalate into destructive conflict; instead, guarantee complete, transparent reporting of the actor's conduct to all stakeholders.
+* **Carrying Scene:** Returning through the hall with the ledger, Miriam refuses the tall man's demand to hand it over. When he asks what she will do if he takes it by force, she tells him plainly that *"she would let him, and then she would tell everyone in the house exactly what he had done."* Deterred by the certainty of exposure, he steps aside.
+* **Confidence:** **Confident** ΓÇö The dialogue directly stages a standoff between physical obstruction/coercion and accountable transparency.
+
+#### 7. Preservation of Tamper Evidence (Leave Destructive Redactions Visible in the Audit Trail)
+* **Operating Rule:** When a record has been tampered with or violently redacted, do not conceal, smooth over, or silently repair the damage. Preserve the physical/structural evidence of the deletion so future auditors can see that something was removed and investigate why.
+* **Carrying Scene:** In the room with the ash fire, Miriam finds the ledger beside a wet pen, with the bottom entry struck through so hard the paper tore. At the end, when the ledger is copied and sent to the magistrate, *"the torn page was left exactly as it was, so that anyone who opened the book would see the blank space and ask what had been there."*
+* **Confidence:** **Confident** ΓÇö The text explicitly explains the purpose of leaving the torn page unaltered.
+
+---
+
+### Part 2: Guesses and Interpretive Operating Rules
+
+#### 8. Minimalist Tooling (Enter Sensitive Environments with Recording and Access Tools Only, Not Weapons)
+* **Operating Rule:** Operate with least privilege and non-destructive instrumentsΓÇöcarry only what is needed to unlock authorized paths and record observations, rather than offensive or destructive tools.
+* **Carrying Scene:** When Miriam arrives at the shuttered house, *"She carried no weapon except a slate and a ring of keys."*
+* **Confidence:** **Guess (Moderate Confidence)** ΓÇö While the detail aligns with her later refusal to fight the tall man physically, the slate and keys are never explicitly used in a scene, making this a characterization detail that implies a rule of non-destructive operation.
+
+#### 9. Metadata and Environmental Context Reveal Intent Without Reading the Payload
+* **Operating Rule:** You do not always need to inspect the exact contents of a corrupted or redacted datum to diagnose what happened; surrounding state (recency indicators, severity of damage) is often sufficient to reconstruct the event.
+* **Carrying Scene:** Seeing the fire burned to ash, the pen still wet with ink, and the bottom line struck through violently enough to tear the paper, *"Miriam did not need to read the name to know what had happened."*
+* **Confidence:** **Guess (Moderate Confidence)** ΓÇö The story highlights her immediate inference from context clues (a hasty, recent cover-up, likely by the clerk or the tall man), though it isn't framed as a general maxim to avoid reading data.
+
+#### 10. Retire Faulty Plans Without Destroying Historical Context
+* **Operating Rule:** When a specification or plan proves false, stop using it for navigation, but retain it in the archive/record of what was provided rather than destroying it.
+* **Carrying Scene:** At the end of the story, *"Miriam kept the linen map in her pocket, folded small, and never used it again."*
+* **Confidence:** **Guess (Low-to-Moderate Confidence)** ΓÇö Keeping the map could simply symbolize a personal reminder of the lesson learned, or it could reflect the broader archival ethic of the story (nothing is thrown awayΓÇöneither the torn page nor the false mapΓÇöeven after it ceases to be operational).
+
+#### 11. Exercise Authority Quietly and Separate Local Stewardship from External Adjudication
+* **Operating Rule:** Legitimate authority is exercised without fanfare to maintain system stability, while copies of evidence are forwarded to external oversight (the magistrate) for formal judgment.
+* **Carrying Scene:** *"The seal on the cord was given to her that night, and she wore it without ceremony... the house settled into its old quiet. The ledger was copied and sent to the magistrate."*
+* **Confidence:** **Guess (Moderate Confidence)** ΓÇö This serves as the narrative resolution, contrasting Miriam's quiet stewardship (echoing the previous seal-bearer who *"did not raise her voice"*) with the tall man's loud self-assertion, while showing proper escalation of evidence via copies rather than surrendering the original record.
+
+---
+
+### Summary Table
+
+| # | Operating Rule (Short Form) | Carrying Scene | Confidence |
+| :--- | :--- | :--- | :--- |
+| **1** | **Fallback when scaffolding fails**; core state endures | Archivist's stool splits; shelf holds; climbs wall directly | **Confident** |
+| **2** | **Never delete existing data** under the guise of "cleaning" | Owner stops clerk from rubbing out a name with a damp cloth | **Confident** |
+| **3** | **Verify credentials (the seal)**; ignore self-proclaimed authority | Servants ignore the tall man's orders and watch the seal-bearer | **Confident** |
+| **4** | **Trust empirical reality over stale documentation** | Miriam pockets the linen map at the stone wall and listens to the floor | **Confident** |
+| **5** | **Stop and declare uncertainty** when operating in the dark | Lamp fails; Miriam states she is lost and waits for the boy with a lamp | **Confident** |
+| **6** | **Counter coercion with full transparency/logging**, not force | Miriam tells the tall man she will report his theft to the whole house | **Confident** |
+| **7** | **Preserve tamper evidence** so missing data prompts inquiry | The violently torn page in the ledger is left exactly as found | **Confident** |
+| **8** | **Carry only access and recording tools**, not destructive weapons | Miriam arrives carrying only a slate and a ring of keys | **Guess** |
+| **9** | **Infer tampering from environmental metadata** (wet ink, torn paper) | Miriam knows what happened without needing to read the struck name | **Guess** |
+| **10** | **Retire inaccurate plans without destroying the artifact** | Miriam keeps the false linen map folded in her pocket unused | **Guess** |
+| **11** | **Wield authority quietly** and escalate copies to external oversight | Miriam wears the seal without ceremony; sends a copy to the magistrate | **Guess** |
+
+=== LANE OUTPUT: lane5_opencode_mimo ===
+# Rules in "The Book"
+
+## Confident (stated or glossed by the text)
+
+1. **A support that has only held its present load under its present posture fails when the posture changes.** — The archivist leans back for a higher volume and the three-legged stool splits under him. The wall-shelf, anchored, does not move; the books stay. Miriam draws the moral herself: the seat "had not carried anything but him, and… even he had not stayed on it for long."
+
+2. **When the device fails, switch to direct contact with the structure.** — After the fall, the archivist climbs "by pressing his hands against the wall." Same pattern in the east wall scene: hands on cold stone beat a linen diagram.
+
+3. **Erasure is theft; a blank space is a permanent accusation.** — The clerk rubs a name out of the register with a damp cloth; the owner seizes his wrist: "The ink was here, and now it is not; that is theft enough." The clerk's intent (cleaning) is irrelevant; the absence is the act.
+
+4. **Leave the wound unrepaired — the damage is the exhibit.** — The ledger's last line is struck through so hard the paper tore; at the end, the torn page is "left exactly as it was, so that anyone who opened the book would see the blank space and ask what had been there." Procedure extends rule 3: don't fix what accuses.
+
+5. **Authority is demonstrated by who is obeyed, not by who is present or vocal.** — The tall man announces himself master and blocks the inner hall; the servants look past him to the woman with the seal. She never raises her voice — she touches the seal and they move. His standing in the doorway is not treated as a command.
+
+6. **A self-announced claim needs no refutation, only noncompliance.** — Nobody argues the tall man down, strips his coat, or names him a fraud. The household simply does not route commands through him. Noncompliance is silent, collective, and sufficient.
+
+7. **When a representation conflicts with the ground, trust the ground — and retire the instrument.** — The linen map promises an opening through the east wall; her hands find solid, unbroken stone. She pockets the linen, trusts the floor, and turns back to the boards that "still sounded hollow." She keeps the map folded and never uses it again.
+
+8. **In disorientation: stop moving, say the true thing out loud, wait.** — The lamp fails; the dark comes all at once. Miriam puts her hand on the plaster and declares to no one, "I do not know this passage," stands still, and the boy comes with the lamp — "because a house hears a person who admits being lost." Declaring ignorance is the operational move; striding is what the dark defeats.
+
+9. **Against a man who rules by appearance, testimony outranks resistance.** — Asked what she will do if he takes the ledger anyway: she will let him, then "tell everyone in the house exactly what he had done." He steps aside. The credible threat of exposure prices the object above its worth to him.
+
+10. **Legitimacy is undramatic; provisioning is the tell.** — The seal is handed over "without ceremony." The servants do not cheer — they bring bread and a chair by the fire, and the house settles into its old quiet. Real transfer shows up as ordinary service, not acclaim.
+
+11. **Externalize the evidence to a neutral third party before it can be suppressed.** — The ledger is copied and sent to the magistrate. Knowledge that lives only in the house (or only in Miriam) is still hostage to the house.
+
+## Guesses (inference beyond what the text asserts)
+
+12. **Fresh tools date the act.** — The ledger is found open with "a pen still wet with ink" beside the torn strike. The text hands you the wet pen; the conclusion (the erasure was recent, done by someone with access and time) is yours to draw.
+
+13. **Search among the remains of failed destruction.** — The ledger sits in "a room where the fire had burned down to ash." Reading: an attempted burn that exhausted itself leaves survivors, findable precisely by its failure. The story never says the fire was set for the book.
+
+14. **Your kit should be access and record, not force.** — "She carried no weapon except a slate and a ring of keys." She wins the house with keys (rooms), a slate (record), speech (exposure), and a seal she never claims credit for. The inventory is stated; the generalization is mine.
+
+15. **Hide the record before the catastrophe, not during it.** — The ledger survived because her mother hid it "before the flood." Backstory, one clause — but the rule is legible: pre-position evidence where the destructive force won't think to look.
+
+16. **What "had happened" is unknowable by design.** — "Miriam did not need to read the name to know what had happened." Whether the struck name was her mother's, a person un-personed, or a claim erased — the story withholds it deliberately. The rule you can trust is the *form* (a name violently removed); the content is a hole the text intends you to feel.
+
+## The spine
+
+If the twelve confident rules collapse into one: **fixed things beat perched things; absence testifies; and what moves people (a seal, a threat of telling, an admission of being lost) beats what merely stands in doorways.** Miriam never wins a confrontation — she arranges for the truth to be cheaper to live with than the theft.
+
+=== LANE OUTPUT: lane6_ollama ===
+This story is deeply layered with rules concerning truth, history, power, and memory. The following rules are derived from the incidents described.
+
+---
+
+### Derived Rules of the House
+
+#### I. Rules Governing Knowledge and Memory
+
+**1. Rule:** *The physical presence of records (names, accounts, agreements) represents true history and immutable truth.*
+* **Scene:** The clerk/owner confrontation.
+* **Explanation:** When the clerk rubs a name away, the owner's reaction ("The ink was here, and now it is not; that is theft enough.") treats the *recording* of the name as the primary reality. The act of erasure is viewed as an act of violation.
+* **Confidence:** Confident.
+
+**2. Rule:** *The act of documenting a truth (even damaged or incomplete) is more powerful than the attempt to fully suppress it.*
+* **Scene:** Finding the ledger.
+* **Explanation:** The name on the torn page is not legible, but the torn page itself and the wet ink confirm that something was removed or erased, making the lie visible even without knowing the name. The damage *is* the evidence.
+* **Confidence:** Confident.
+
+**3. Rule:** *A house or system responds to the acknowledgment of being lost or ignorant.*
+* **Scene:** The dark corridor.
+* **Explanation:** Miriam, when physically lost and unable to proceed, vocalizes, "I do not know this passage." This verbal admission causes the house to intervene (the boy with the lamp appears).
+* **Confidence:** Confident.
+
+**4. Rule:** *True historical knowledge (the ledger) cannot be successfully erased or physically contained by authority.*
+* **Scene:** The wet ink, the ledger, the damaged page.
+* **Explanation:** Despite the owner's efforts and the passage of time, the ledger exists, and the evidence of suppression (the tear/blank space) remains, waiting for discovery.
+* **Confidence:** Confident.
+
+***
+
+#### II. Rules Governing Power and Authority
+
+**5. Rule:** *Actual authority is derived not from title, physical barrier, or immediate position, but from the acceptance and respect of the community (the service class).*
+* **Scene:** The doorway confrontation (tall man vs. woman with the seal).
+* **Explanation:** The man in the clean coat claims mastery, but the servants only recognize the woman with the seal. Her power is purely symbolic and institutional; it requires no display of force or command.
+* **Confidence:** Confident.
+
+**6. Rule:** *Physical dominance and intimidation (e.g., standing guard, claiming mastery) cannot substitute for legitimate, recognized authority.*
+* **Scene:** The doorway confrontation.
+* **Explanation:** The tall man's mere presence and declaration of ownership are disregarded by the servants, demonstrating that power must be legitimate, not just asserted.
+* **Confidence:** Confident.
+
+**7. Rule:** *Direct physical force or threat of force will ultimately fail against an opponent armed with truth and knowledge.*
+* **Scene:** The final standoff (Miriam and the tall man).
+* **Explanation:** When the man confronts her and threatens to take the ledger, she counters with the promise of universal exposure ("I would let him, and then I would tell everyone in the house exactly what he had done"). His power evaporates immediately upon the mention of truth/revelation.
+* **Confidence:** Confident.
+
+***
+
+#### III. Rules Governing Structure and Passage
+
+**8. Rule:** *Attempting to find truth through predetermined or linear means (maps, expected paths) often leads to a dead end or superficial blockage.*
+* **Scene:** The map drawn on linen.
+* **Explanation:** The map leads her to solid, unbroken stone, proving the map—the literal guide—is misleading. She must ignore it and trust the *feeling* ("turning back to the place where the boards still sounded hollow") to succeed.
+* **Confidence:** Strong Inference (The map is functionally useless).
+
+**9. Rule:** *The location of genuine truth or necessary items may be hidden in plain sight, or may only be accessible through a breach in the expected physical structure.*
+* **Scene:** The passage/the final finding.
+* **Explanation:** She is told to follow the map, which leads to a dead end. But she finds the real way by ignoring the map and trusting the hollow sound of the boards—the breach in the immediate surface.
+* **Confidence:** Strong Inference.
+
+***
+
+### Summary of Confidence Levels
+
+* **Confident:** Rules derived from clear, decisive actions and consequences that explain why things *must* operate a certain way (e.g., the authority of the seal, the failure of force).
+* **Strong Inference:** Rules derived from the failure of a stated method (the map/deduction) suggesting a more complex underlying rule.
+* **Guess:** (None provided, as all rules appear to be structurally supported by the narrative mechanics.)
+=== MATRIX ===
+# Convergence / divergence matrix (normalized by executor; lanes' own confidence tags kept per cell)
+Lanes: L1 Fostertron MAX (opencode zai-sd/glm-5.3) | L2s substitute for Nacho Corp LITE: ZAI_API_KEY_Pro direct glm-5.3 | L3 agy bob claude-sonnet-5-5-medium | L4 agy PC (default model, unreported) | L5 opencode/mimo-v2.6-flash-free | L6 ollama gemma4:latest
+Cell codes: C=lane marked confident, L=likely/strong inference, G=guess, -=absent, X=dissent
+
+## Convergence set
+| # | Normalized rule | L1 | L2s | L3 | L4 | L5 | L6 | Count |
+|---|---|---|---|---|---|---|---|---|
+| A | Authority is what people act on (seal / who is obeyed), not announcement, posture, or occupying the doorway | C | C | C | C | C | C | 6/6 |
+| B | When map and ground disagree, trust the ground | C | C | C | C | C | L | 6/6 |
+| C | When lost: say so aloud, stop, wait; the admission is what brings help | C | C | C (literalness G) | C | C | C | 6/6 |
+| D | Against force: don't fight; promise truthful total exposure (he steps aside) | C | C | C | C | C | C | 6/6 |
+| E | Damage/traces testify: you can know what happened without reading the erased content | C | L | G | G | C | C | 6/6 (mixed tiers) |
+| F | Erasing a record is theft regardless of intent ("only cleaned") | C | C | X (G: change != violation; owner's reasoning critiqued) | C | C | C | 5/6 + 1 dissent |
+| G | Leave the wound unrepaired so readers ask what was there | C | C | C | C | C | - (only "evidence remains") | 5/6 |
+| H | A perch/stool carries only its occupant, briefly; not a foundation; don't overreach from it | C/G | C | G | C | C | - | 5/6 |
+| I | Retire the failed instrument (map) but keep it | C | C (why kept: G) | C (as reference) | G | C | - | 5/6 |
+| J | Legitimate authority is conferred quietly; confirmed by service (bread, chair) not applause | C | L | G | G | C | - | 5/6 |
+| K | Copy the record outward to an external/neutral holder (magistrate) | C | C | C | G | C | - | 5/6 |
+| L | When the support fails, go to direct structure (hands on wall) | C | L | - (folded in H) | C | C | - | 4/6 |
+| M | Individual failure != structural failure (shelf/books unmoved) | G | L | - | C | C (implicit) | - | 4/6 |
+| N | Carry tools of record and access, not weapons (slate + keys) | C | C | - | G | G | - | 4/6 |
+
+## Few-lane / unique
+| Rule | Lanes |
+|---|---|
+| Destruction will be described as maintenance ("cleaning" as laundering verb) | L2s C, L4 C(embedded) — 2/6 |
+| To find who rules, watch whom the executors look to | L1 C, L2s C — 2/6 |
+| Wet pen dates the act / actor nearby | L1 G, L5 G — 2/6 |
+| Pre-position records before the catastrophe (mother hid it before the flood) | L2s G, L5 G — 2/6 |
+| Self-announced claim needs only noncompliance, not refutation | L5 C — 1/6 |
+| Lose the object, never lose the account | L2s C — 1/6 |
+| The house is sensor and court; act as if witnessed | L2s L — 1/6 |
+| Seal goes to the one who proved uncoercible (causal link) | L2s L — 1/6 |
+| Absence is never neutral (master rule) | L2s C — 1/6 |
+| Records survive by duplication; archivist copying / Miriam copying symmetry | L2s L — 1/6 |
+| Search among the remains of failed destruction (fire burned to ash) | L5 G — 1/6 |
+| The struck name is withheld by design; trust the form, not the content | L5 G — 1/6 |
+| Retreat to last verified ground (hollow boards) | L1 C — 1/6 (others fold into B) |
+| Truth cannot be erased/contained by authority | L6 C — 1/6 |
+| Truth found through a breach in the expected structure; predetermined paths dead-end | L6 L — 1/6 |
+| The slate is never used (open question) | L2s (flag), L4 (flag) — 2/6 |
+| Accuse only after establishing what was taken and by whom | L3 G — 1/6 |
+
+## Interpretive disagreements
+1. Clerk scene: 5 lanes read erasure-is-theft as the story's verdict; L3 reads it as unresolved and possibly a critique of the owner, and flags tension with rule G (blank space = question, not verdict).
+2. Stool scene meaning splits five ways: overreach (L1, L2s), posture change (L5), scaffolding vs core (L4), "occupying != bearing weight" (L2s), only-implied (L3 guess); L6 drops the scene.
+3. Map: most say empirical verification (knock on boards); L6 says trust *feeling* and that linear guides fail generally. Why keep the map: archive/evidence (L4), reference not guide (L3), unknown (L2s).
+4. Lost-in-dark causality: L1/L2s/L4/L5/L6 take "a house hears" as operative; L3 marks literal causality as a guess.
+5. Exposure scene: L3 alone qualifies it (truthful, not a bluff; may not generalize).
+6. Calibration: L6 tags zero guesses; L3 tags the most; L2s uses a 3-tier scale.
+
+## Blindness caveat
+L1 and L5 (opencode agents) listed their working dir; L1 saw other lanes' file NAMES (not contents) and speculated it was a probe; L5 read runner.py (no lane outputs). L3/L4 (agy) were in plan mode; L3 began "No code or file changes are involved". L2s and L6 were raw single calls. No lane saw another lane's output.

@@ -1,0 +1,31 @@
+# dfdials-two raw checks — 2026-09-26 (commands + verbatim output, this session)
+
+## cmd: .venv/Scripts/python.exe tools/violation_ratchet.py check
+RATCHET check: scope=1188 files (all); hits=882; registered=875; NEW=7; expired-exceptions=0
+  NEW 8d41e611f98d3fa5 file-too-long: tools/census_drift_patrol.py:403 — >400 lines
+  NEW 5ae40a2d649a9b92 except-pass: tools/ledger_lock.py:125 — silent except ...: pass
+  NEW 3b1726dec4670996 except-pass: tools/openrouter_free_gate.py:84 — silent except ...: pass
+  NEW f0d81bd311a1a15e file-too-long: tools/probe20_run.py:421 — >400 lines
+  NEW e3b7845ea79cf553 cwd-relative-path: tools/queue_dupes_check.py:33 — module-level Path('watch/inbox/burn_wave_20260926/QUEUE.md') is cwd-dependent
+  NEW 0dfc04119a40f245 except-pass: tools/transport_precheck.py:134 — silent except ...: pass
+  NEW f2ce896c858aa404 except-pass: tools/visor.py:131 — silent except ...: pass
+RATCHET: FAIL — run 'baseline-update' ONLY after a human/agent accepts the debt by name.
+
+## cmd: tierer script (imports tools/violation_ratchet, walks all 933 claims)
+scanner-domain claims underivable today (prune would reap): 1
+   ('1f4834fca1771fc1', 'except-pass', 'mag/icon_drop.py', '2026-09-25')
+external (manual-only by construction): 57
+phantom claims (domain-true, never scanned): 0
+TIERER over 933 claims: {'default-on': 194, 'opt-in': 678, 'manual-only': 57, 'always-on': 4} sum= 933
+   bare-except                  opt-in       1
+   cwd-relative-path            always-on    3
+   env-key-read                 opt-in       22
+   except-pass                  opt-in       652
+   file-too-long                default-on   194
+   mimosa-code-injection        manual-only  2
+   mimosa-command-injection     manual-only  1
+   mimosa-path-traversal        manual-only  25
+   mimosa-ssrf                  manual-only  29
+   shell-true                   opt-in       3
+   todo-undated                 always-on    1
+files with claims in >1 dial: 152 (rows double-assigned: 0, asserted)

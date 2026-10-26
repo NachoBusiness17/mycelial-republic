@@ -1,0 +1,33 @@
+== bash githooks/pre-push (direct run, cwd=estate root, 2026-09-25) ==
+PUSH-GATE: ratchet check --changed
+RATCHET check: scope=10 changed files; hits=6; registered=6; NEW=0; expired-exceptions=0
+RATCHET: PASS — no unregistered debt.
+PUSH-GATE: config_seal verify
+CONFIG-SEAL verify: sealed=47 live=47 modified=3 missing=0 unsealed=0
+  MODIFIED  lanes.yaml
+  MODIFIED  mag.yaml
+  MODIFIED  providers.yaml
+CONFIG-SEAL: FAIL — re-seal by NAME: python tools/config_seal.py update --by WHO --note WHY
+hook-exit=1
+
+== fixture manifests (temp, outside estate): /tmp/t40_fixture/bad.json /tmp/t40_fixture/good.json ==
+-- raw tool on bad.json (no || true): offenders must print, tool exit 2 --
+C:/Users/foste/AppData/Local/Temp/t40_fixture/bad.json: rogue_tool: description unpinned and unmarked
+
+1 finding(s); pin the description or add PINNED-UNVERSIONED.
+raw-tool-exit=2
+-- raw tool on good.json: exit 0 --
+all tool descriptions pinned or marked
+raw-tool-exit=0
+
+== extracted new block, verbatim lines (estate: no configs/tools dir) ==
+PUSH-GATE: description_pin (WARN-ONLY)
+PUSH-GATE: description_pin skipped, no configs/tools/ manifests yet
+block-exit=0
+
+== extracted warn-only line against bad.json (findings present) ==
+PUSH-GATE: description_pin (WARN-ONLY)
+C:/Users/foste/AppData/Local/Temp/t40_fixture/bad.json: rogue_tool: description unpinned and unmarked
+
+1 finding(s); pin the description or add PINNED-UNVERSIONED.
+block-exit=0  <- must be 0: findings printed but push NOT blocked

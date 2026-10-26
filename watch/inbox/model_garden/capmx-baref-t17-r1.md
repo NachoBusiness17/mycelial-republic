@@ -1,0 +1,3 @@
+# capmx-baref-t17-r1 (glm-5.3-flash @ zai, turn 1, channel: content)
+
+{"verb": "STAGE_ASK", "reason": "Senses show governor_autorun ticking with fill=0 drain= empty across last two beats (git_tail tools/overmind_loop.py), so stage a cheap review of why the governor fills nothing before any promotion or alert is justified.", "payload": {"target": "tools/overmind_loop.py", "ask": "Review governor_autorun: last beats show fill=0 drain= (2026-10-02T01:20:56 and 01:22:41, UNVERIFIED bytes). Why is the fill queue empty while beat_rows=35 and handoff_items=38? Name the exact condition that must flip fill to nonzero."}}

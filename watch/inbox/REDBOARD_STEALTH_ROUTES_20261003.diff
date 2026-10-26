@@ -1,0 +1,26 @@
+diff --git a/tools/stealth_driver.py b/tools/stealth_driver.py
+index 30ad4b2..f3dff51 100644
+--- a/tools/stealth_driver.py
++++ b/tools/stealth_driver.py
+@@ -812,6 +812,12 @@ def t_probe20() -> str:
+ 
+ 
+ def t_rumor() -> str:
++    # REDBOARD 2026-10-03w: honor the drill's own DEADLINE AUTOMATION. status()
++    # never reads the HELD close row, so a past-due drill failed 'deadline' on
++    # every tick (200/200). close is idempotent; once HELD, report and stop.
++    crc, cout = _run_tool(["tools/rumor_drill.py", "close"], timeout=120)
++    if crc == 0 and ("already HELD" in cout or "auto-closed" in cout):
++        return "closed HELD (drill done; reseed with rumor_drill.py seed)"
+     rc, out = _run_tool(["tools/rumor_drill.py", "status"], timeout=120)
+     for line in out.splitlines():
+         if line.startswith("RUMOR-DRILL:"):
+@@ -1416,7 +1422,7 @@ TOPICS = [
+     ("selfimp", t_selfimp),
+     ("impfeed", t_impfeed),
+     ("selffeed", t_selffeed),  # after work: rail 1 reads this tick's flag
+-    ("probe20", t_probe20),
++    # ("probe20", t_probe20),  # REDBOARD 2026-10-03w: dropped, llama-server not up 200/200 ticks; re-add when it runs
+     ("rumor", t_rumor),
+     ("fossil", t_fossil),
+     ("chain", t_chain),

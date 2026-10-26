@@ -1,0 +1,240 @@
+# cross-drop check log - description tri-state of saved workflows
+moment: 2026-10-02T12:33:30Z  HEAD: a92cef8dd
+
+## C1. gap-analysis.dwf.ts body vs header
+$ grep -n "MICKEY-17\|GAP_REGISTER\|args\.topic\|args\.targets\|args\.slug\|no targets passed" .zcode/workflows/gap-analysis.dwf.ts | head -12
+5:  a15-rollup lane merges everything into one ranked GAP_REGISTER (severity x
+85:const TOPIC = String(args.topic || "");
+90:const RUNSLUG = (TOPIC.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 32) || "run") + "-" + String(Array.isArray(args.targets) ? (args.targets as unknown[]).length : 0);
+107:  Array.isArray(args.targets) ? (args.targets as { id: string; what: string; start: string }[]) : [];
+110:  throw new Error("no targets passed");
+114:  "You are one lane of a MICKEY-17 v2.1 frontier-steal burn. You fetch REAL sources and bind every claim " +
+163:log("MICKEY-17 v2.1: " + String(TARGETS.length) + " lanes, admission ramp 8 then pool-width waves. Machine caps concurrent subagents below width — the journal, not this line, is the width receipt.");
+357:  await artifact.file("fold", "mickey17_v2/MASTER_MICKEY17_V2.md", { title: "MICKEY-17 v2.1 master fold — " + TOPIC.slice(0, 60), primary: true });
+
+$ diff <(tail -n +28 .zcode/workflows/gap-analysis.dwf.ts) <(tail -n +28 .zcode/workflows/mickey17-v2.dwf.ts) && echo BODIES-IDENTICAL-FROM-LINE-28
+1,2d0
+< // source-fetched: 2026-09-26 (t80: G6 dated-stamp amendment per t69 G6_STAMP_RE; receipt mentions in this script point at watch/inbox/; digests registered before this line are historical, the fresh gate row carries the live digest)
+< interface StealRow {
+
+## C2. gap-analysis run archive: lane files, rows, tier2
+$ ls memory/runs/mickey17_v2/runs/gap-analysis-of-the-estate-s-09--15/lanes/*.json | wc -l
+30
+$ python row count + parse + tier2 tally (script below)
+lane jsons (excl checks): 15
+parse failures: ['a01-olm-day2.json']
+parseable rows total: 70
+a01 lenient row count (steal keys): 5 (claim keys: 5 )
+a01 parseable rows + a01 lenient = 75
+lanes with deep_tier2: 5 verdicts: {'verified': 12} total: 12
+
+## C3. gap register provenance lines (8 siblings at rollup, late lanes)
+$ grep -n "8 sibling\|a09-a14\|NO files" watch/inbox/gap_analysis_20261001/GAP_REGISTER.md | head -4
+10:- Inputs: 8 sibling lane audits, read in full this session: a01-olm-day2,
+13:- Lane slots a09-a14 produced NO files in the lanes dir at poll time. This
+14:  register merges 8 siblings, not the full ask's set; if a09-a14 land later,
+237:- Lanes a09-a14 did not land; 8 siblings merged. This is coverage, reported.
+$ lane mtimes after rollup (18:39 a15-rollup):
+2026-10-01T19:01 memory/runs/mickey17_v2/runs/gap-analysis-of-the-estate-s-09--15/lanes/a10-drops.checks.json
+2026-10-01T19:05 memory/runs/mickey17_v2/runs/gap-analysis-of-the-estate-s-09--15/lanes/a13-cadence.checks.json
+2026-10-01T19:29 memory/runs/mickey17_v2/runs/gap-analysis-of-the-estate-s-09--15/lanes/a01-olm-day2.checks.json
+2026-10-01T19:29 memory/runs/mickey17_v2/runs/gap-analysis-of-the-estate-s-09--15/lanes/a04-vonnegut.checks.json
+2026-10-01T19:30 memory/runs/mickey17_v2/runs/gap-analysis-of-the-estate-s-09--15/lanes/a05-ractor50.checks.json
+2026-10-01T19:30 memory/runs/mickey17_v2/runs/gap-analysis-of-the-estate-s-09--15/lanes/a13-cadence.json
+2026-10-01T19:34 memory/runs/mickey17_v2/runs/gap-analysis-of-the-estate-s-09--15/lanes/a08-48h-synth.checks.json
+2026-10-01T19:36 memory/runs/mickey17_v2/runs/gap-analysis-of-the-estate-s-09--15/lanes/a07-localfirst.checks.json
+
+## C4. olm-mine script claims (8 areas x 4 sources, cut 24)
+$ grep -n "CONFIRM_CUT\|SOURCES = \|exactly 8 areas\|areas.length \* SOURCES" .zcode/workflows/olm-mine.dwf.ts
+109:const CONFIRM_CUT = 24;
+116:const SOURCES = ["arxiv", "hn", "reddit", "x"];
+230:    "\n\nReturn exactly 8 areas of interest as JSON LensArea[]. The areas must be the " +
+245:log("Sweeping " + areas.length + " areas across 4 sources: " + areas.length * SOURCES.length + " miners, two passes each.");
+321:const toConfirm = allItems.slice(0, CONFIRM_CUT);
+505:    "finds below the top-" + CONFIRM_CUT + " confirmation cut are banked in the register unconfirmed",
+
+## C5. olm-mine 20260928 run: sweep files by area x source
+$ ls watch/inbox/frontier_olm_20260928/sweep/*.md | grep -v _raw | wc -l
+32
+$ ls watch/inbox/frontier_olm_20260928/sweep/ | grep -E "\-(arxiv|hn|reddit|x)\.md$" | sed "s/-\(arxiv\|hn\|reddit\|x\)\.md//" | sort | uniq -c
+      4 agent-memory-continuity
+      4 evals-self-improvement
+      4 finetuning-and-adaptation
+      4 inference-efficiency
+      4 kv-cache-context-engineering
+      4 open-and-local-language-models
+      4 quantization-compression
+      4 swarm-orchestration
+
+## C6. olm-mine register rows + confirmed/unconfirmed
+$ wc -l register.jsonl; python json-parse count
+21
+register.jsonl parsed rows: 21
+
+## C7. the struck 191.8M phantom in olm-mine saved description
+$ grep -n "191" .zcode/workflows/olm-mine.dwf.ts
+8:  watch/inbox/frontier_olm_<slug>/. Provenance: 191.8M-token run 2026-09-29
+$ grep -c "191" watch/inbox/frontier_olm_20260928/DIGEST.md (register says must be 0)
+0
+$ ERRATA 001 strike lines:
+9:## ERRATA 001: the 191.8M-token mine headline is a phantom; STRUCK
+50:SKILL.md:50 (the Lineage section) carried "2026-09-29: 191.8M tokens, 32/32
+63:  (STORY.md:240, SKILL.md:50).
+
+## C8. is .zcode tracked (why the carrier census missed it)
+$ git check-ignore -v .zcode/workflows/olm-mine.dwf.ts; git ls-files .zcode
+.gitignore:198:.zcode/	.zcode/workflows/olm-mine.dwf.ts
+.zcode/workflows/the-gala.dwf.ts
+
+## C9. olm-mine gate digest row
+$ grep 2487787e949f memory/workflows/REGISTRY.jsonl | python name/verdict
+2026-09-30T01:18:10Z | frontier-olm-mine.dwf.ts | PASS | 2487787e949f
+
+## C10. game-digs: report sites shrink-wrapped, briefs=30, verdicts in receipts
+--- coop-social: code report sites (must all be report(shrink):
+37:// crash): report() items cap at 32KB and deep-dive evidence blocks overshoot it.
+63:      report(shrink(d));
+67:      report(shrink(miss));
+95:      report(shrink(d));
+    briefs: 30
+--- creature-farming: code report sites (must all be report(shrink):
+36:// Salvage channel bound (sibling fix to the roguelike + co-op crashes): report()
+63:      report(shrink(d));
+67:      report(shrink(miss));
+95:      report(shrink(d));
+    briefs: 30
+--- horror-maze: code report sites (must all be report(shrink):
+37:// Salvage channel bound (sibling fix to the roguelike + co-op crashes): report()
+64:      report(shrink(d));
+68:      report(shrink(miss));
+96:      report(shrink(d));
+    briefs: 30
+--- liveops-seasonal: code report sites (must all be report(shrink):
+37:// Salvage channel bound (sibling fix to the roguelike + co-op crashes): report()
+64:      report(shrink(d));
+68:      report(shrink(miss));
+96:      report(shrink(d));
+    briefs: 30
+--- roguelike-runs: code report sites (must all be report(shrink):
+37:// Salvage channel bound (first-fire fix, dwfrun-038cd25b): report() items cap at
+64:      report(shrink(d));
+68:      report(shrink(miss));
+96:      report(shrink(d));
+    briefs: 30
+--- verdict tallies in GAMEDIG receipts:
+GAMEDIG_co-op-social-ValheimDST-vein_20260926.md : clone=21 reskin=1 skip=5
+GAMEDIG_creature-farming-PalworldStardew-vein_20260926.md : clone=50 reskin=56 skip=12
+GAMEDIG_horror-maze-DOORSLethal-vein_20260926.md : clone=23 reskin=30 skip=21
+GAMEDIG_liveops-seasonal-GAGAdopt-Me-vein_20260926.md : clone=16 reskin=20 skip=13
+GAMEDIG_roguelike-runs-BalatroHades-vein_20260926.md : clone=11 reskin=2 skip=3
+
+## C11. drop-dig: register rows, systems, PAM/localmind coverage
+$ wc -l watch/inbox/localfirst_memory_landscape_signals.jsonl
+14
+$ systems named in register rows:
+['Aida / continuous-ai', 'Atlas', 'LBrain', 'OwnMem', 'RAG-OS', 'anythingllm', 'cognee', 'groundmemory', 'khoj', 'letta', 'mem0', 'memmachine', 'people-context', 'zep']
+$ localmind anywhere in localfirst receipts:
+NO HITS (exit 1)
+$ PAM row in register:
+0
+0 PAM rows (exit 1)
+$ gala lanes fired:
+adjacent.json
+aida.json
+atlas.json
+lbrain.json
+ownmem.json
+pam.json
+ragos.json
+$ PAM falsification + forgery lines in receipts:
+53:- [4] strip the signature entirely: `verify()` with no key returns **True** on
+
+## C12. wide-dig: 26.5x deflation + 370M negative + synthesis
+7
+watch/inbox/SPIKINGBRAIN_DROP_20261001.md
+24:speed: 26.5x TTFT speedup at 1M tokens and >100x at 4M (fitted extrapolation,
+44:| Linear attention (hybrid-linear) | SpikingBrain-7B | MetaX C550 GPU; i5-12600KF CPU | NO joules published; 26.5x TTFT @1M tok; 5.36x tput @128k; 4-15x CPU speedups vs Llama3.2-1B | n/a | speed measured, energy NOT | arXiv:2509.05276 |
+34:- Tri-state verdict: the big multipliers (15 TOPS/W, 100x less energy, 18x vs GPUs) are workload-shaped claims (sparse, pruned, single-batch); the measured academic deltas on LLM-shaped workloads are 2-3x versus an edge GPU at 370M parameters. The efficiency story is real but conditional, not a datacenter-LLM story.
+38:- Largest LLM-architecture model found running on any spiking silicon: 370M parameters (MatMul-free LM, Loihi 2, ICLR 2025, "Based on preliminary results"). 2026 frontier LLMs are roughly three orders of magnitude larger.
+
+## C13. librarian-expedition: 61 primaries / 90,594,721 B / 975 inventoried
+$ gathering-log receipt lines 100-103:
+- `mag.holdings_audit` re-run after landing: ledger->disk 262 ok / 0 missing / 0 mismatch (842,965,168 B), disk->ledger 263 files / 0 unreceipted / 0 dup groups, content 0 unreadable, **verdict CLEAN** (was 201 claims / 752,370,614 B before this expedition; delta = exactly the 61 rows landed here).
+- Full-chain verifier: 61/61 PASS (file exists + sha256 matches ledger + catalog row present + receipt present). Raw output: `watch/inbox/gala_20260925/librarian-expedition/lanes/expedition.check.txt`.
+
+Ledgers: `memory/runs/gathering_expedition/GATHERING_LANDING.json` (23 rows + 6 named failures), `memory/runs/gathering_expedition/PAPERS_LANDING.json` (38 rows). Total new durable bytes: 90,594,721 B across 61 primaries.$ table row recount + byte sum from the log tables:
+landing table rows with corpus paths: 61
+byte cells found: 61 sum: 90594554
+$ inventory count line:
+21:- Artifacts inventoried: **975** files, **72,591,499** bytes.
+
+## C14. salon-mine: laws present, park note unboundable
+V4-Never-Ran files: watch/inbox/gala_20260925/salon-mine/lanes/m01-salon-salon.json 
+ghost-citation-gate files: watch/inbox/salon_mine/m13.md watch/inbox/gala_20260925/salon-mine/lanes/m13-salon-series.json 
+persona-prior-not-soul files: watch/inbox/salon_mine/m13.md watch/inbox/gala_20260925/salon-mine/lanes/m13-salon-series.json 
+PRE-REGISTER-OR-DESK files: watch/inbox/gala_20260925/salon-mine/lanes/m10-ractor-002.check.txt watch/inbox/gala_20260925/salon-mine/lanes/m10-ractor-002.json 
+$ "parked on quota" / "50 rows" anywhere in receipts:
+(empty = zero hits)
+$ salon lane jsons fired:
+m01-salon-salon.json m02-cognition.json m03-astra-moonshot.json m04-bubbles.json m05-big-2.json m07-wow.json m08-pt.json m10-ractor-002.json m12-ractor-005-origin.json m13-salon-series.json m15-research-sample.json m17-smalls.json m20-synthesis.json 
+$ m-files banked:
+m01.md m02.md m03.md m04.md m05.md m08.md m09.md m10.md m11.md m12.md m13.md m14.md m15.md m17.md 
+
+## C15. fill-ball: 7 receipts vs register 12-row table
+citation-lint.md corpus-fold-land.md day1-digest.md elder-salvage.md errata.md percolator-candidates.md seed-seal.md 
+$ register ranked table rows (data rows):
+12
+
+## C16. digest pointers verified in registry
+2026-09-25T18:52:43Z | tree-doctrine-dig | PASS | da62eaa8c17f
+2026-10-02T01:49:54Z | ractor-engine.dwf.ts | PASS | 5253afd2d68d
+$ tree-doctrine 50-dig line:
+99:log("Dispatching 50 diggers: 30 old books, 10 historical cases, 10 modern folds.");
+$ pointer files exist:
+watch/inbox/MICKEY17_V2_ENGINE_SPEC_v2.1_20260925.md
+watch/inbox/THE_50_PROGRAM_20260918.md
+watch/inbox/TREE_DOCTRINE_V2_DIGEST_20260925.md
+
+## C17. gate registry coverage of the saved fleet
+$ registry name census (count name):
+1 Ractor-dogfood-gaps.dwf.ts
+1 Tree-Doctrine-50-wide-dig.dwf.ts
+4 frontier-olm-mine
+3 frontier-olm-mine.dwf.ts
+2 game-mechanics-deep-dig
+2 game-mechanics-deep-dig.dwf.ts
+1 law12-genesis-repass
+3 mickey17-v2.dwf.ts
+1 probe20_run.py
+10 ractor-engine.dwf.ts
+1 ractor-panel-judgment-burn
+1 ractor-panel-judgment-burn-v2
+1 ractor-panel-repair
+1 scenario-g1-fixture
+1 seatlaw_22524.dwf.ts
+1 seatlaw_43380.dwf.ts
+1 seatlaw_51196.dwf.ts
+1 t69dbg
+3 the-50.dwf.ts
+12 the-gala.dwf.ts
+2 tree-doctrine-dig
+5 tree-doctrine-dig.dwf.ts
+total rows: 58
+$ gap-analysis / drop-dig / salon-mine / librarian / wide / fillball rows:
+3
+
+## C18. drop-dig PAM falsification lives in pam.md (lines 18-19, 53-54)
+1. "PAM closes exports with SHA-256" - **FALSIFIED** for the SDK core.
+   Census over `sdk/python/pam` (16 files): sha256=0, blake3=11, ed25519=19.
+- [4] strip the signature entirely: `verify()` with no key returns **True** on
+  the forged artifact. PAM's consume path accepts forgery by silence; their
+
+## C19. wide-dig 8/8 claim in its receipt
+- Decisions changed: 8 of 8
+- Division A: 1/1 danced (synthesis), decision changed; read all 7 siblings, 5 rows with byte-verified quotes (RUN 3: 5x byte_match=YES), 8/8 lane-JSON parse on its corrected rerun
+
+## C20. salon park-claim unbindable
+$ grep -c "50" m20-synthesis.json:
+0
+$ vault transcript count now (folder churned since 10-01):
+36

@@ -1,0 +1,3 @@
+# capmx-baref-t38-r1 (glm-5.3-flash @ zai, turn 1, channel: content)
+
+{"verb": "PROMOTE_TICKET", "reason": "Senses show 38 handoff items and 11 open todos but no missing inputs; tick 38 near loop end, so surface the Sunday close ticket for operator action before burn.", "payload": {"target": "[mag] Sunday close: MiMo + Grok last burns with receipts and state-snapshot (id 606ff615b844e40b)", "justification": "todo_open_tail shows this close-out pending; beat_last shows governor idle ticks (fill=0 drain=), so operator attention is the scarce resource; ticket_senses: todo_open=11, handoff_items=38"}}

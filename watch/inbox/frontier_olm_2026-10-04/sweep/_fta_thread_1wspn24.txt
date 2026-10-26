@@ -1,0 +1,121 @@
+=== 1wspn24 r/LocalLLaMA | 2026-09-28 20:17 | score 35 | 12 comments | author u/Usual_Maximum7673
+TITLE: Trained locally: ultra-fast 0.8B/2B System 1 decision models that match Jev on benchmarks and Doom, ~30 ms per decision (open weights)
+PERMALINK: /r/LocalLLaMA/comments/1wspn24/trained_locally_ultrafast_08b2b_system_1_decision/
+SELFTEXT:
+**TL;DR:** The Jeff models are a set of Qwen3.5 and Gemma fine-tunes for zero-shot classification: small, efficient, open-weight models with respectable out-of-the-box performance that can be slotted right into code or fine-tuned/LoRA-trained as needed. Give them a situation and a list of options; they return a calibrated probability for each, in one forward pass, no text generation. The 2B scores 83.1% on a five-benchmark panel (Jev's published figure: 83.0%); the 0.8B decides in \~28 ms on an M4 Max (see caveats below).
+
+Maybe equally exciting for open model enthusiasts like myself, **everything was done on local hardware:** one RTX PRO 6000 for training, two DGX Sparks running Qwen3.8-Flash-Next to write the synthetic data, a MacBook for testing - all connected and monitored from my Android phone via Tailscale. Apache 2.0, Jev-compatible API. Weights: [Jeff-Qwen3.5-0.8B](https://huggingface.co/mstrasser/Jeff-Qwen3.5-0.8B) · [Jeff-Qwen3.5-2B](https://huggingface.co/mstrasser/Jeff-Qwen3.5-2B) · [Jeff-Gemma4-E2B](https://huggingface.co/mstrasser/Jeff-Gemma4-E2B) · Code: [github.com/firelex/jeff](https://github.com/firelex/jeff) · Videos: [games table](https://github.com/firelex/jeff#games-a-zero-shot-test)
+
+When TypeSafe released Jev a couple of weeks ago and then AutoJev appeared, I wanted to see if I could replicate the experiment using only small language models on local hardware.
+
+So here's what I did:
+
+* The 0.8B trains in about 2 hours and the 2B in about 3.5, on one workstation GPU (RTX PRO 6000, 96 GB).
+* \~31k synthetic training questions written and checked by Qwen3.8-Flash-Next on two DGX Sparks. No cloud GPUs, and no closed-model output in the training data.
+* The rest of the 271k training questions are public datasets converted into decisions, plus 10k code-built probability questions.
+
+**Benchmarks** (4,599 questions: BBH, Financial PhraseBank, JudgeBench, RAGTruth, WinoGrande):
+
+|Model|Untrained base|Jeff (trained)|Calibration error|
+|:-|:-|:-|:-|
+|Qwen3.5-0.8B|45.3%|79.1%|0.049|
+|Qwen3.5-2B|46.5%|**83.1%**|0.028|
+|Jev (published)||83.0%|≈0.06|
+|AutoJev-27B (published)||84.9%|—|
+
+The caveat: the published numbers are on a different sample of the same benchmarks, and Jeff's overall score comes from classification-style tasks (96% on Financial PhraseBank, 86–89% on RAGTruth, both above Jev). On multi-step reasoning it's behind: BBH 64–68% against Jev's 94%, and \~50% on JevBench's hard tier against \~73%. See the HuggingFace model card for details. But that's not surprising, and I don't think it matters. No 0.8B or 2B model reasons like an LLM, and I don't think anyone should expect it to. The Jeff models are extremely fast judgement-callers (much faster than Jev), and have reasonable out-of-the-box performance.  In one of my apps, I used the 0.8B model for voice-based navigation, and with a quick fine-tune, I got to real-time performance (24ms) at almost 100% accuracy.
+
+**Now the fun part: games, as a zero-shot test.** Games are not the ideal zero-shot test, but they're fun, and the TypeSafe guys (Jev) did it, too. There was no game data in training. Each turn the code describes the situation and the moves in words, and the model picks one. The options say what each move leads to, never which one is right.
+
+|20 episodes each|Doom (kills)|Frogger (crossings)|Pac-Man (pellets of 98)|
+|:-|:-|:-|:-|
+|Random moves|−0.05|0|11.2|
+|Hand-coded rule bot|6.55|10.25|94.1|
+|Qwen3.5-0.8B, untrained|5.0|1.0|25.8|
+|**Jeff 0.8B**|**6.55**|**10.3**|**57.0**|
+|Jeff 2B|−0.9|6.0|41.2|
+
+Jev's published Doom score is also 6.55, but its prompt spells out the aiming rule (fire when the bearing is between −8 and +8 degrees) and it takes \~212 ms per call over its API. Jeff gets "the nearest monster is a little to your left" and decides in \~29 ms on my Mac.
+
+**Lessons learned:**
+
+* **System 1 models are here to stay.** Having the ability to process unstructured data at software speed inside an app is extremely powerful. And being able to do this locally is fantastic.
+* **A small model is a classifier, not a planner.** Models in the 0.8B-2B range don't reason like Qwen3.8-27B or Jev.  But they also don't need to. As long as you present the options in the right way, you can get up to 50 decisions per second (depending on your hardware).
+* **Fine-tune it if needed.** If the models' zero-shot performance isn't good enough for you, fine-tune them briefly or add a LoRA adapter.
+* **Wording matters enormously.** Play around with how you present the options. Giving Frogger's final step option the same words as every other forward option ("safe, and one row closer to the goal") took one episode from 15 crossings to 23. Previously, the frog just stayed on the last log.
+* **Bigger isn't better.** As the game tests showed, the untrained 2B is already more risk-averse than the untrained 0.8B (in Doom it prefers "turn away from the nearest monster"), and training made it hesitate in Pac-Man. That's probably why the 0.8B beat the 2B.
+* **Benchmarks don't predict play.** Untrained Gemma 4 E2B beats both untrained Qwens on the benchmarks (62.5%) and plays every game worst: right most of the time, not reliably, and in a real-time loop the mistakes compound.
+
+Happy to answer questions about the pipeline (synthetic data from a local teacher, leak filter, calibration) or the game harness. Everything, including the videos, is linked above.
+
+COMMENTS:
+  [Significant_Bad_4148 | 2026-09-29 00:45 | score 4] Really interesting work! I’ve been experimenting with Laya for a Magic: The Gathering Draft project and fine-tuned two separate models: one to pick the best card from each pack based on the previous picks, and another to build the final deck from the drafted cards. The results have been pretty good so far, especially after fine-tuning for these specific tasks.
+
+I’ve made both models available on my Hugging Face profile if anyone wants to check them out: [https://huggingface.co/FabioCeleste](https://huggingface.co/FabioCeleste)
+    [TheRealJesus2 | 2026-09-29 06:35 | score 1] This is really cool. I’ll give them a shot. I been thinking of training models in this space…and building some cube tooling
+  [ashenzo | 2026-09-28 20:36 | score 3] Thanks for sharing. Really interested in how you used it for voice based navigation. Any good learnings or reference material in that area? I want to experiment with controlling a mac with voice completely.
+    [Usual_Maximum7673 | 2026-09-28 20:49 | score 5] I use voice commands as part of a generative UI.
+
+So speed was important - both on the ASR bit and the UI generation. For ASR, I needed to distinguish between navigation commands (they had to be processed instantaneously) and questions (they could go to a bigger model - the idea was answers to questions should be fast but didn't need to be instantaneous).
+
+Here's what I did: I sent the audio stream to a local server, Silero VAD decided where an utterance started and stopped, and Parakeet did the transcription. I ran Parakeet on the Apple Neural Engine via FluidAudio, which gets a final transcript in well under 100 ms. If the text exactly matched a known phrase, it just ran. Otherwise, I built a top-10 shortlist from two sources: ModernBERT embeddings to match by meaning (very fast, but not precise), plus a sound-alike matcher (Double Metaphone) because ASR constantly misheard names. That's where the fine-tune of the Jeff model came in. I took Jeff-Qwen3.5-0.8b and trained it for about 30 minutes on an RTX Pro 6000 with a focus on transcription errors.
+
+A few things that made a big difference:
+
+\* Always give the model two escape hatches, “this is a question” and “none of these”. Without them, it will confidently pick the least-bad wrong option. With them, questions and anything open-ended go to a bigger chat model, and the fast path stays fast.
+
+\* Only ask “did you mean X or Y?” when two real options are close - otherwise, bump it to the LLM.
+
+\* Keep the model's input format byte-for-byte stable, with the unchanging parts first and the transcript last. The server can then pre-compute everything up to the transcript, which roughly halves the latency.
+
+\* Then, of course, the standard stuff: Don't let the mic hear your own text-to-speech. Mute input while a reply is playing, and drop anything that repeats what it just said. And log every decision with the options shown and what the user did next. That's your next round of training data.
+      [ashenzo | 2026-09-28 22:03 | score 1] This is super helpful, thanks for taking the time. The part I'm still getting my head around is where the options come from. I'm guessing you had a fixed set of commands to match against, curious if you ever had to build them on the fly from what's on screen?
+
+The ModernBERT plus Double Metaphone combo is a really smart idea too. Do you just merge the two lists, or is there some scoring that decides what makes the top 10? And for that first fine tune on transcription errors, before you had any logs to learn from, were those real mishearings you'd collected or did you generate them?
+  [Last-Health3222 | 2026-09-29 08:47 | score 2] Nice work, especially doing it all on local hardware. We ran all three checkpoints zero-shot on typed-decisions, an open benchmark (disclosure: we maintain it, and our hosted Decider 1 is on it), using your jeff-serve with the default calibration:
+
+- Gemma4-E2B: 0.561 accuracy, KL 0.403, Brier 0.219
+- Qwen3.5-2B: 0.511, KL 0.460, Brier 0.237
+- Qwen3.5-0.8B: 0.483, KL 0.679, Brier 0.313
+- base-rate baseline that ignores the input: 0.470, KL 0.347
+
+On this set they clear the base rate on accuracy but run overconfident (+0.10 to +0.18). It's a different panel from yours, so it doesn't contradict your 83.1%, and zero-shot isn't your main pitch anyway. The fine-tune recipe is, and that's what I'd like to try next. Scorer and full breakdown: huggingface.co/datasets/LocalLLaMA/typed-decisions. If there's a better way to serve them, tell me and I'll rescore.
+    [Usual_Maximum7673 | 2026-09-29 14:01 | score 1] Thanks for running this. Useful to see.
+
+Your numbers fit what I'd expect: small models zero-shot on unfamiliar workflows land between the prior and a trained specialist, and Gemma being best matches its stronger untrained base. Nice to see that all three beat Jev on KL, though. :)
+
+Three things that might help a rescore:
+
+1. Serving on a Mac: the latency you list looks like the PyTorch backend. For the Qwen models, use MLX (uv sync --no-default-groups --extra mac, then JEFF\_BACKEND=mlx): the 0.8B runs about 28 ms per decision on an M4 Max. Gemma doesn't have an MLX path yet.
+
+2. Question types: 40% of your decisions are score questions, which my training covers least. A per-type breakdown (choice / noul / score) would show where the gap is. I'll add more score-type questions to my next training run, generated by the local teacher as with the rest of the synthetic data, so a rescore after that should show whether that's it.
+
+3. The fine-tune: your train split is well suited to it. jeff-train takes soft targets directly (a probability per option for choice, a probability for noul), so your gold distributions can be the targets, which is what KL rewards. --initial-checkpoint starts from any Jeff checkpoint. Happy to help with the command.
+
+One question before I try that fine-tune myself: which model generated the gold labels? We keep closed-model output out of Jeff's training data, so I'd like to check first. If it's an open model, we'd publish the result as a separate fine-tuned model, not as zero-shot Jeff.
+
+I also have a v1.1 coming with much better calibration on the panel I used (ECE 0.049 → 0.017). I'll ping you when it's out if you'd like to rescore.
+      [Last-Health3222 | 2026-09-30 03:20 | score 1] The per-type numbers fit your guess. Yes/no, choice, score: Gemma4-E2B 0.602, 0.587, 0.512; Qwen3.5-2B 0.627, 0.490, 0.439; Qwen3.5-0.8B 0.605, 0.507, 0.375. Score is lowest for all three. One correction on serving: the Qwen runs were already on MLX, and only Gemma used PyTorch. Our latencies were taken with other work running, so treat them as upper bounds.
+
+On your question, honestly: we don't know which model produced our gold. The labels came from a routing proxy that presents as a single model and doesn't record which backend answered each sample, so closed-model output can't be ruled out. If that's off limits for Jeff, don't train on our train-split gold. Our card called the teacher "4B-class" without a record behind it, and we corrected that today. Please ping us when v1.1 is out and we'll rescore.
+  [AWizardWhoCodes | 2026-09-28 21:28 | score 2] My name is Jev? No, my name is Jeff…
+
+Really interesting stuff though :)!
+  [Usual_Maximum7673 | 2026-09-29 14:03 | score 1] Update: I created a chess fine-tune, as a worked example of "fine-tune it when zero-shot isn't enough".
+
+It's basically the original Jeff-0.8B trained on 600,000 Lichess positions, labelled by Stockfish, in about 3½ hours on one RTX Pro 6000. On 1,000 held-out puzzles:
+
+\- Qwen3.5-0.8B untrained: 6%
+
+\- Jeff-0.8B zero-shot, no chess training: 15.5%
+
+\- Jeff-0.8B-Chess: 56%
+
+It's not a strong player: about 1,000 Elo with no search, and it loses to Stockfish's weakest setting. The point is mainly to show speed and the effect of fine-tuning. Each move is one forward pass in tens of milliseconds, so one GPU keeps up with about 600 human blitz games at once. The video shows 100 games at once in real time, including its one win, a nine-move checkmate.
+
+Model, card and video: [https://huggingface.co/mstrasser/Jeff-Qwen3.5-0.8B-Chess](https://huggingface.co/mstrasser/Jeff-Qwen3.5-0.8B-Chess)
+  [[deleted] | 2026-09-28 21:13 | score 1] [removed]
+  [[deleted] | 2026-09-29 08:38 | score 0] [removed]
+  [[deleted] | 2026-09-29 08:37 | score 0] [removed]
+
+(fetched 13 comments total; rendered top 8 roots by score)

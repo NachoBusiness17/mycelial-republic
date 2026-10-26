@@ -1,0 +1,205 @@
+{
+ "run": "riblive1",
+ "mode": "rib-round",
+ "mock": false,
+ "ledger_rows": 90,
+ "converged_laws": 5,
+ "top": [
+  {
+   "units": [
+    "U2"
+   ],
+   "n_units": 1,
+   "families": [
+    "deepseek",
+    "glm-flash"
+   ],
+   "n_instances": 2,
+   "leverage": "high",
+   "status": "CONVERGED",
+   "laws": [
+    {
+     "unit": "U2",
+     "law_id": "L1",
+     "title": "Meta bytes contract detects stale index past mtime lies",
+     "claim": "The build writes catalog_bytes and catalog_sha256 into meta so a stale index is detected by the recorded byte count even when mtimes are touched or a restore rewrites timestamps. The cheap per-search gate uses bytes plus mtime; the sha256 is the audit tier."
+    },
+    {
+     "unit": "U2",
+     "law_id": "L1",
+     "title": "bytes-plus-mtime freshness gate, hash as audit tier",
+     "claim": "meta.catalog_bytes and catalog_mtime_utc detect staleness cheaply per search; catalog_sha256 is recorded only for the optional --deep audit tier, so mtimes lies from restores or touches are caught by bytes."
+    },
+    {
+     "unit": "U2",
+     "law_id": "L1",
+     "title": "Meta bytes contract detects stale index past mtime lies",
+     "claim": "The build writes catalog_bytes and catalog_sha256 into meta so a stale index is detected by the recorded byte count even when mtimes are touched or a restore rewrites timestamps. The cheap per-search gate uses bytes plus mtime; the sha256 is the audit tier."
+    },
+    {
+     "unit": "U2",
+     "law_id": "L1",
+     "title": "bytes-plus-mtime freshness gate, hash as audit tier",
+     "claim": "meta.catalog_bytes and catalog_mtime_utc detect staleness cheaply per search; catalog_sha256 is recorded only for the optional --deep audit tier, so mtimes lies from restores or touches are caught by bytes."
+    }
+   ]
+  },
+  {
+   "units": [
+    "U2"
+   ],
+   "n_units": 1,
+   "families": [
+    "deepseek",
+    "glm-flash"
+   ],
+   "n_instances": 2,
+   "leverage": "high",
+   "status": "CONVERGED",
+   "laws": [
+    {
+     "unit": "U2",
+     "law_id": "L2",
+     "title": "Build replaces atomically so ro readers never see partial index",
+     "claim": "build_index writes into catalog_fts.sqlite.tmp then os.replace()s it, so a crashed build never leaves a half index and a concurrent mode=ro reader keeps serving the old file. Deletes any pre-existing tmp before starting."
+    },
+    {
+     "unit": "U2",
+     "law_id": "L1",
+     "title": "tmp-build-then-replace atomic swap",
+     "claim": "rebuilds write to a .tmp sqlite then os.replace() it into place, so a crash never leaves a half index and a mode=ro reader keeps serving the old file."
+    },
+    {
+     "unit": "U2",
+     "law_id": "L2",
+     "title": "Build replaces atomically so ro readers never see partial index",
+     "claim": "build_index writes into catalog_fts.sqlite.tmp then os.replace()s it, so a crashed build never leaves a half index and a concurrent mode=ro reader keeps serving the old file. Deletes any pre-existing tmp before starting."
+    },
+    {
+     "unit": "U2",
+     "law_id": "L1",
+     "title": "tmp-build-then-replace atomic swap",
+     "claim": "rebuilds write to a .tmp sqlite then os.replace() it into place, so a crash never leaves a half index and a mode=ro reader keeps serving the old file."
+    }
+   ]
+  },
+  {
+   "units": [
+    "U1"
+   ],
+   "n_units": 1,
+   "families": [
+    "deepseek",
+    "glm-flash"
+   ],
+   "n_instances": 2,
+   "leverage": "high",
+   "status": "CONVERGED",
+   "laws": [
+    {
+     "unit": "U1",
+     "law_id": "L3",
+     "title": "Exit 2 is the fail-closed arm for every unverifiable byte",
+     "claim": "Missing carrier, unparseable **Tests:** line, unparseable date, future-dated census, and git failure all map to exit 2 via PatrolError or an explicit pre-check, so the gate never guesses a pass on missing or malformed evidence. Exit 2 is reserved for cannot-verify, exit 1 for verified-stale."
+    },
+    {
+     "unit": "U1",
+     "law_id": "L3",
+     "title": "Verdict cores are pure and fail-closed on unverifiable bytes",
+     "claim": "patrol(), collect_patrol(), and zero_collect_patrol() are pure functions returning verdict dicts; any cannot-verify condition (missing carrier, unparseable claim, future census date, git failure, pytest timeout) exits 2, never a guess and never a pass. The deep check also treats a None collected claim as UNVERIFIABLE exit 2."
+    },
+    {
+     "unit": "U1",
+     "law_id": "L3",
+     "title": "Exit 2 is the fail-closed arm for every unverifiable byte",
+     "claim": "Missing carrier, unparseable **Tests:** line, unparseable date, future-dated census, and git failure all map to exit 2 via PatrolError or an explicit pre-check, so the gate never guesses a pass on missing or malformed evidence. Exit 2 is reserved for cannot-verify, exit 1 for verified-stale."
+    },
+    {
+     "unit": "U1",
+     "law_id": "L3",
+     "title": "Verdict cores are pure and fail-closed on unverifiable bytes",
+     "claim": "patrol(), collect_patrol(), and zero_collect_patrol() are pure functions returning verdict dicts; any cannot-verify condition (missing carrier, unparseable claim, future census date, git failure, pytest timeout) exits 2, never a guess and never a pass. The deep check also treats a None collected claim as UNVERIFIABLE exit 2."
+    }
+   ]
+  },
+  {
+   "units": [
+    "U1"
+   ],
+   "n_units": 1,
+   "families": [
+    "deepseek",
+    "glm-flash"
+   ],
+   "n_instances": 2,
+   "leverage": "high",
+   "status": "CONVERGED",
+   "laws": [
+    {
+     "unit": "U1",
+     "law_id": "L4",
+     "title": "The census claim parses only from the parenthesized clause",
+     "claim": "CENSUS_CLAIM_RE reads counts and date only from the \"N tests [collected] / M files (YYYY-MM-DD census\" clause, so prose numbers elsewhere on the bullet cannot poison the parse; a non-canonical bullet returns None and exits 2 rather than guessing. The retired first-match regexes are named as the bug this closes."
+    },
+    {
+     "unit": "U1",
+     "law_id": "L1",
+     "title": "Prose numbers cannot poison the census parse",
+     "claim": "The census claim is read only from the parenthesized clause matched by CENSUS_CLAIM_RE, anchored on the \"N tests [collected] / M files (YYYY-MM-DD census\" shape. Earlier first-match regexes took the first date or count anywhere on the bullet, so tripwire prose like \"31 files grown\" ahead of the claim silently became the parse (B2-245)."
+    },
+    {
+     "unit": "U1",
+     "law_id": "L4",
+     "title": "The census claim parses only from the parenthesized clause",
+     "claim": "CENSUS_CLAIM_RE reads counts and date only from the \"N tests [collected] / M files (YYYY-MM-DD census\" clause, so prose numbers elsewhere on the bullet cannot poison the parse; a non-canonical bullet returns None and exits 2 rather than guessing. The retired first-match regexes are named as the bug this closes."
+    },
+    {
+     "unit": "U1",
+     "law_id": "L1",
+     "title": "Prose numbers cannot poison the census parse",
+     "claim": "The census claim is read only from the parenthesized clause matched by CENSUS_CLAIM_RE, anchored on the \"N tests [collected] / M files (YYYY-MM-DD census\" shape. Earlier first-match regexes took the first date or count anywhere on the bullet, so tripwire prose like \"31 files grown\" ahead of the claim silently became the parse (B2-245)."
+    }
+   ]
+  },
+  {
+   "units": [
+    "U2"
+   ],
+   "n_units": 1,
+   "families": [
+    "deepseek",
+    "glm-flash"
+   ],
+   "n_instances": 2,
+   "leverage": "medium",
+   "status": "CONVERGED",
+   "laws": [
+    {
+     "unit": "U2",
+     "law_id": "L3",
+     "title": "Rebuild reuses corpus.py freshness rule by hermetic load",
+     "claim": "_load_corpus() imports tools/corpus.py via importlib.util.spec_from_file_location rather than duplicating the freshness rule, so the gate at search time and at check time share one source of truth. No second copy of the rule is kept."
+    },
+    {
+     "unit": "U2",
+     "law_id": "L1",
+     "title": "reuse gate, no second copy of the rule",
+     "claim": "this module loads tools/corpus.py via importlib and calls its _fts_state() rather than duplicating the freshness rule, keeping the gate single-sourced."
+    },
+    {
+     "unit": "U2",
+     "law_id": "L3",
+     "title": "Rebuild reuses corpus.py freshness rule by hermetic load",
+     "claim": "_load_corpus() imports tools/corpus.py via importlib.util.spec_from_file_location rather than duplicating the freshness rule, so the gate at search time and at check time share one source of truth. No second copy of the rule is kept."
+    },
+    {
+     "unit": "U2",
+     "law_id": "L1",
+     "title": "reuse gate, no second copy of the rule",
+     "claim": "this module loads tools/corpus.py via importlib and calls its _fts_state() rather than duplicating the freshness rule, keeping the gate single-sourced."
+    }
+   ]
+  }
+ ],
+ "recomputed": "cross-instance + containment guard + round-1 basis, 2026-10-01, no refire"
+}

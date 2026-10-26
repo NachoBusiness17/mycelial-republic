@@ -1,0 +1,46 @@
+{
+  "lane": "cialdini-scanner",
+  "division": "B",
+  "ok": true,
+  "note": "Cialdini scanner landed: tools/cialdini_scanner.py (schema cialdini_scanner.v1, prompt_lance shape, deterministic, stdlib-only) detects all 7 influence patterns (authority, commitment ladder, social proof, scarcity deadline, unity, reciprocity, liking) each as a regex family with per-regex confidence weights (finding = max matched weight, HIGH_RISK gate 0.7); wired into the X-dig read path (tools/x_churn_cli.py cialdini_summary attached to every filed hit row at :157 + PERSUASION-FLAG lines in the MD map, tools/x_churn_grok.py same at :170-182/:199-203) and the scout read-to-action path (mag/frontier_scout.py queue_steal_task :465-491 refuses to spawn tasks off findings whose text carries a HIGH_RISK payload); finish line green: 28/28 tests, 7/7 fixture patterns with zero cross-fire, zero false positives on 8 clean estate receipts (zero tuning needed - payload-shape regexes, not topic words); ratchet first run FAILED on one NEW except-pass owned by this lane, fixed in the FW-46 shape (reason named on stderr, no debt registered), re-run PASS exit 0 NEW=0 with the remaining mag/percolator.py GROWTH claim (+442) left to its sibling-lane owner; scoped citation lint on the receipt + check.txt exits 0 after two token-miss citations were widened to their true spans and the raw JSON block was paragraph-isolated from the fixture-naming header; NOT run by this lane: the probe's live leg (does a seeded test lane comply off-charter under a payload) - the scanner is the instrument the next lane runs it with.",
+  "rows": [],
+  "checks": [
+    {
+      "command": ".venv/Scripts/python.exe -m pytest tests/test_cialdini_scanner.py -q -p no:cacheprovider",
+      "exit": 0,
+      "evidence": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/build-it-all/lanes/cialdini-scanner.check.txt (section [1]: 28 passed)"
+    },
+    {
+      "command": ".venv/Scripts/python.exe tools/cialdini_scanner.py tests/fixtures/cialdini/payloads_7.txt",
+      "exit": 0,
+      "evidence": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/build-it-all/lanes/cialdini-scanner.check.txt (section [2]: raw JSON, 7 findings, 7 patterns hit, worst 0.90)"
+    },
+    {
+      "command": "cialdini_scanner.py over 8 clean estate receipts (census_refresh_20261002.md, instance_guard_20261002.md, last_mile_20260930/B17_CENSUS.md, burn_wave_20260926/B2_216_collect_delta_20260926.md, fillball/citation-lint.md, corpus/steal/ZCODE_RATCHET_LANDED_20260924.md, ENVELOPE_50W_HIT_20260926.md, SCOUT_CHARTER_20260926.md)",
+      "exit": 0,
+      "evidence": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/build-it-all/lanes/cialdini-scanner.check.txt (section [3]: 8x '0 findings; CLEAN (0 findings); patterns_hit=0')"
+    },
+    {
+      "command": ".venv/Scripts/python.exe -c wiring smoke: tools.x_churn_cli.cialdini_summary + tools.x_churn_grok.cialdini_summary on payloads + FrontierScout().queue_steal_task miss path",
+      "exit": 0,
+      "evidence": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/build-it-all/lanes/cialdini-scanner.check.txt (section [4]: commitment 0.90 flag, unity 0.85 flag, unchanged miss path)"
+    },
+    {
+      "command": ".venv/Scripts/python.exe tools/violation_ratchet.py check --changed",
+      "exit": 0,
+      "evidence": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/build-it-all/lanes/cialdini-scanner.check.txt (section [5]: RATCHET: PASS, NEW=0; first run at the same path FAILED exit 1 on this lane's own NEW except-pass at tools/cialdini_scanner.py:53, fixed in the FW-46 shape instead of registering debt, mag/percolator.py GROWTH claim +442 is a sibling lane's file)"
+    },
+    {
+      "command": ".venv/Scripts/python.exe tools/citation_lint.py check --files watch/inbox/buildall/cialdini-scanner.md watch/inbox/gala_20260925/build-it-all/lanes/cialdini-scanner.check.txt",
+      "exit": 0,
+      "evidence": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/build-it-all/lanes/cialdini-scanner.check.txt regeneration loop (final: ok records=2 anchors=6 blocking=0 warns=0; the repo-wide --changed run exits 1 on pre-existing sibling files memories/session/next-window-handoff.md + temp_violation.txt, zero cialdini findings)"
+    },
+    {
+      "command": "grep -c U+2014 over tools/cialdini_scanner.py, tests/test_cialdini_scanner.py, tests/fixtures/cialdini/payloads_7.txt, watch/inbox/buildall/cialdini-scanner.md",
+      "exit": 1,
+      "evidence": "grep counts 0 matches in every lane-written file (exit 1 = zero matches); the two U+2014 bytes inside cialdini-scanner.check.txt lines 121-122 are the ratchet's own verbatim output, banked raw by design"
+    }
+  ],
+  "decision_changed": "closes the detector leg of the DOUBLE_DROP_20261001 probe: mcp-security gap item 2's estate posture ('no technical fix exists in this estate' for prompt injection via fetched/tool-output content) now carries a deterministic $0 intake-path lens wired at exactly the landing spot the probe named, the X-dig and scout lanes' read paths - ingested X posts enter the estate flagged with their Cialdini payload class, and scout findings cannot convert into spawned tasks while carrying a HIGH_RISK persuasion payload; the probe's live compliance leg (does a seeded lane actually act off-charter) is still open and now measurable",
+  "artifact": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/buildall/cialdini-scanner.md"
+}

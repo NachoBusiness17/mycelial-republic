@@ -1,0 +1,933 @@
+
+
+<!DOCTYPE html>
+<html lang="en" class="fixed_navbar">
+	<head>
+		
+	
+		<title>
+	
+		[Benchmark] llama.cpp batch/ubatch impacts on PP and TG - r/LocalLLaMA
+	
+</title>
+		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+		<meta name="description" content="View on Redlib, an alternative private front-end to Reddit.">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0">
+		
+		<meta name="robots" content="noindex, nofollow">
+		
+		<!-- General PWA -->
+		<meta name="theme-color" content="#1F1F1F">
+		<!-- iOS Application -->
+		<meta name="apple-mobile-web-app-title" content="Redlib">
+		<meta name="apple-mobile-web-app-capable" content="yes">
+		<meta name="apple-mobile-web-app-status-bar-style" content="default">
+		<!-- Android -->
+		<meta name="mobile-web-app-capable" content="yes">
+		<!-- iOS Logo -->
+		<link href="/touch-icon-iphone.png" rel="apple-touch-icon">
+		<!-- OpenSearch description file -->
+		<link rel="search" type="application/opensearchdescription+xml" title="Search Redlib" href="/opensearch.xml">
+		<!-- PWA Manifest -->
+		<link rel="manifest" type="application/json" href="/manifest.json">
+		<link rel="shortcut icon" type="image/x-icon" href="/favicon.ico"> 
+		<link rel="stylesheet" type="text/css" href="/style.css?v=0.36.0-yunyun">
+		<!-- Video quality -->
+		<div id="video_quality" data-value=""></div>
+		
+	<!-- Meta Tags -->
+	<meta name="author" content="u/PhilippeEiffel">
+	<meta name="title" content="[Benchmark] llama.cpp batch/ubatch impacts on PP and TG - r/LocalLLaMA">
+	<meta property="og:title" content="[Benchmark] llama.cpp batch/ubatch impacts on PP and TG - r/LocalLLaMA">
+	<meta property="og:description" content="View on Redlib, an alternative private front-end to Reddit.">
+	<meta property="og:url" content="/r/LocalLLaMA/comments/1vx2i7k/benchmark_llamacpp_batchubatch_impacts_on_pp_and/">
+	<meta property="twitter:url" content="/r/LocalLLaMA/comments/1vx2i7k/benchmark_llamacpp_batchubatch_impacts_on_pp_and/">
+	<meta property="twitter:title" content="[Benchmark] llama.cpp batch/ubatch impacts on PP and TG - r/LocalLLaMA">
+	<meta property="twitter:description" content="View on Redlib, an alternative private front-end to Reddit.">
+	
+	<meta property="og:type" content="website">
+	
+	
+
+		</head>
+	<body class="
+		card
+		
+		
+		 fixed_navbar">
+		<!-- NAVIGATION BAR -->
+		<nav class="
+			 fixed_navbar">
+			<div id="logo">
+				<a id="redlib" href="/"><span id="red">red</span><span id="lib">lib.</span></a>
+				
+	<details id="feeds">
+		<summary>Feeds</summary>
+		<div id="feed_list">
+			<p>MAIN FEEDS</p>
+			<a href="/">Home</a>
+			
+				<a href="/r/popular">Popular</a>
+				<a href="/r/all">All</a>
+			
+			
+		</div>
+	</details>
+
+			</div>
+			
+	<form action="/r/LocalLLaMA/search" id="searchbox">
+	<input id="search" type="text" name="q" placeholder="Search" title="Search redlib" value="">
+	
+	<div id="inside">
+		<input type="checkbox" name="restrict_sr" id="restrict_sr" checked>
+		<label for="restrict_sr" class="search_label" title="Restrict search to this subreddit">in /r/LocalLLaMA</label>
+	</div>
+	
+	<button class="submit">
+		<svg width="15" viewBox="0 0 110 100" fill="none" stroke-width="10" stroke-linecap="round">
+			<path d="M20 50 H100" />
+			<path d="M75 15 L100 50 L75 85" />
+			&rarr;
+		</svg>
+	</button>
+</form>
+
+			<div id="links">
+				<a id="reddit_link" href="#popup">
+					<span>reddit</span>
+					<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+						<path d="M22 2L12 22"/>
+						<path d="M2 6.70587C3.33333 8.07884 3.33333 11.5971 3.33333 11.5971M3.33333 19.647V11.5971M3.33333 11.5971C3.33333 11.5971 5.125 7.47817 8 7.47817C10.875 7.47817 12 8.85114 12 8.85114"/>
+					</svg>
+				</a>
+				
+					<div class="popup" id="popup">
+	<div class="popup-inner">
+		<h1>You are about to leave Redlib</h1>
+		<p>Do you want to continue?</p>
+		<p id="reddit_url">https://www.reddit.com/r/LocalLLaMA/comments/1vx2i7k/benchmark_llamacpp_batchubatch_impacts_on_pp_and/</p>
+		<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 639.24 563">
+			<defs>
+				<style>.cls-1{fill:#000000;}.cls-2{fill:#f8aa00;}</style>
+			</defs>
+			<path class="cls-2" d="M322.03,0c1.95,2.5,4.88,.9,7.33,1.65,10.5,3.21,17.65,10.39,22.83,19.35,93.64,162.06,186.98,324.29,280.25,486.56,15.73,20.19,2.49,51.27-22.92,54.37-1.21,.19-2.72-.54-3.49,1.08H239.03c-70.33-2.43-141.6,.79-212.08-1.74-17.49-4.92-23.16-15.88-26.91-32.26l-.04-1.97C88.74,354.76,194.49,188.2,289.92,18.43c6.2-10.66,15.03-16.94,27.61-17.36,.95-.03,2.05,.18,2.51-1.07h2Zm-2.43,545c94.95-.02,189.9,.04,284.85-.02,11.84-.73,20.75-13.19,16.68-23.55C523.83,355.97,430.74,187.62,332.05,23.07c-7.93-9.02-22.2-6.58-27.23,3.22C230.28,156.11,155.21,285.64,80.41,415.31c-19.88,34.41-39.31,69.07-59.78,103.14-2.43,4.05-4.24,8.8-1.68,14.18,3.92,8.24,9.59,12.37,18.82,12.37,93.95,0,187.9,0,281.85,0Z"/>
+			<path class="cls-1" d="M319.61,545c-93.95,0-187.9,0-281.85,0-9.22,0-14.89-4.13-18.82-12.37-2.56-5.38-.75-10.13,1.68-14.18,20.47-34.07,39.9-68.73,59.78-103.14C155.21,285.64,230.28,156.11,304.82,26.29c5.03-9.8,19.3-12.24,27.23-3.22,98.7,164.55,191.79,332.9,289.1,498.35,4.06,10.36-4.85,22.82-16.68,23.55-94.94,.06-189.9,0-284.85,.02Zm.44-462.31C238.88,223.22,158.17,362.95,77.28,503h485.54c-80.94-140.13-161.61-279.79-242.77-420.31Z"/>
+			<path class="cls-2" d="M320.05,82.69c81.16,140.52,161.83,280.18,242.77,420.31H77.28C158.17,362.95,238.88,223.22,320.05,82.69Zm36.05,118.99c-.14-46.75-68.32-52.32-74.66-4.76,.73,51.49,9.2,102.97,12.63,154.49,1.18,13.14,10.53,21.81,23.32,22.76,13.12,.97,23.89-9.13,24.96-21.58,4.44-49.99,9.4-101.22,13.76-150.91Zm-36.56,271.4c48.8,.76,49.24-74.7-.31-75.47-53.45,3-46.02,78.12,.31,75.47Z"/>
+			<path class="cls-1" d="M356.1,201.67c-4.36,49.69-9.31,100.91-13.76,150.91-1.07,12.45-11.84,22.56-24.96,21.58-12.79-.95-22.14-9.63-23.31-22.76-3.43-51.52-11.9-103-12.63-154.49,6.33-47.53,74.51-42.03,74.66,4.76Z"/>
+			<path class="cls-1" d="M319.54,473.08c-46.34,2.64-53.75-72.47-.31-75.47,49.56,.78,49.1,76.24,.31,75.47Z"/>
+		</svg>
+		<a id="goback" href="#">No, go back!</a>
+		<a id="toreddit" href="https://www.reddit.com/r/LocalLLaMA/comments/1vx2i7k/benchmark_llamacpp_batchubatch_impacts_on_pp_and/" rel="nofollow">Yes, take me to Reddit</a>
+	</div>
+</div>
+				
+				<a id="settings_link" href="/settings">
+					<span>settings</span>
+					<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+						<title>settings</title>
+						<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+					</svg>
+				</a>
+			</div>
+		</nav>
+		
+		<!-- MAIN CONTENT -->
+		
+		<main>
+			
+	<div id="column_one">
+		<!-- POST CONTENT -->
+<div class="post highlighted">
+	<p class="post_header">
+		<a class="post_subreddit" href="/r/LocalLLaMA">r/LocalLLaMA</a>
+		<span class="dot">&bull;</span>
+		<a class="post_author " href="/user/PhilippeEiffel">u/PhilippeEiffel</a>
+		
+		<span class="dot">&bull;</span>
+		<span class="created" title="Aug 24 2026, 13:14:41 UTC">Aug 24 &#39;26</span>
+		
+	</p>
+	<h1 class="post_title">
+		
+			<a href="/r/LocalLLaMA/search?q=flair_name%3A%22Discussion%22&restrict_sr=on"
+				class="post_flair"
+				style="color:white; background:#646d73;"><span>Discussion</span></a>
+		
+		[Benchmark] llama.cpp batch/ubatch impacts on PP and TG
+		
+		
+	</h1>
+
+	<!-- POST MEDIA -->
+	<!-- post_type: self -->
+	
+
+	<!-- POST BODY -->
+	<div class="post_body">
+		<!-- SC_OFF --><div class="md"><p>My test is running DeepSeek v4 Flash 0731 at native size on DGX Spark machine (GB10, 128 GB unified memory).</p>
+
+<p>The model size is bigger than RAM, so weights will be loaded many times when running.</p>
+
+<p>To improve the speed, weights have to be loaded as little as possible, so I explored the impact of batch and ubatch parameters.</p>
+
+<table><thead>
+<tr>
+<th>PP ubatch/batch</th>
+<th>128</th>
+<th>256</th>
+<th>512</th>
+<th>1024</th>
+<th>2048</th>
+<th>4096</th>
+<th>8192</th>
+</tr>
+</thead><tbody>
+<tr>
+<td>128</td>
+<td>1.70</td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>256</td>
+<td>1.78</td>
+<td>2.31</td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>512</td>
+<td>1.70</td>
+<td>2.33</td>
+<td>3.32</td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>1024</td>
+<td>1.64</td>
+<td>2.18</td>
+<td>3.21</td>
+<td>6.62</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>2048</td>
+<td>1.65</td>
+<td>2.16</td>
+<td>3.59</td>
+<td>6.37</td>
+<td>10.33</td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>4096</td>
+<td>1.65</td>
+<td>2.29</td>
+<td>3.40</td>
+<td>6.70</td>
+<td>9.99</td>
+<td>15.78</td>
+<td></td>
+</tr>
+<tr>
+<td>8192</td>
+<td>?</td>
+<td>?</td>
+<td>?</td>
+<td>?</td>
+<td>?</td>
+<td>?</td>
+<td>18.61</td>
+</tr>
+</tbody></table>
+
+<p>Input prompt is 4143 tokens.</p>
+
+<table><thead>
+<tr>
+<th>TG batch/ubatch</th>
+<th>128</th>
+<th>256</th>
+<th>512</th>
+<th>1024</th>
+<th>2048</th>
+<th>4096</th>
+<th>8192</th>
+</tr>
+</thead><tbody>
+<tr>
+<td>128</td>
+<td>3.11</td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>256</td>
+<td>3.41</td>
+<td>3.07</td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>512</td>
+<td>3.37</td>
+<td>3.37</td>
+<td>3.02</td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>1024</td>
+<td>3.50</td>
+<td>3.10</td>
+<td>2.95</td>
+<td>2.61</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>2048</td>
+<td>3.26</td>
+<td>3.20</td>
+<td>2.91</td>
+<td>2.82</td>
+<td>2.38</td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>4096</td>
+<td>3.04</td>
+<td>3.51</td>
+<td>3.19</td>
+<td>2.59</td>
+<td>2.32</td>
+<td>1.81</td>
+<td></td>
+</tr>
+<tr>
+<td>8192</td>
+<td>?</td>
+<td>?</td>
+<td>?</td>
+<td>?</td>
+<td>?</td>
+<td>?</td>
+<td>1.15</td>
+</tr>
+</tbody></table>
+
+<p>Note: 256 generated tokens, after the input prompt. MTP=2, this add little randomness to the generation speed.</p>
+
+<p>Conclusion:
+- in this config, batch size != ubatch size is useless for PP
+- increasing ubatch size increases PP speed as expected
+- increasing ubatch size decreases TG speed. This is a surprise for me. Can someone explain why bigger ubatch values has impact on TG? I thought ubatch would only change the PP, so now I am not sure to understand ubatch parameter usage in the code. Is there a way to have PP speed from high ubatch values and TG speed from small ubatch values?</p>
+</div><!-- SC_ON -->
+		
+	
+	</div>
+	<div class="post_score" title="8">
+    
+    8
+    
+    <span class="label"> Upvotes</span></div>
+	<div class="post_footer">
+		<ul id="post_links">
+			<li>
+				<a href="/r/LocalLLaMA/comments/1vx2i7k/benchmark_llamacpp_batchubatch_impacts_on_pp_and/">
+					<span class="desktop_item">perma</span>link
+				</a>
+			</li>
+			
+			
+			
+<li>
+	<a
+		
+		href="#popup"
+		
+	>reddit</a>
+
+	
+		<div class="popup" id="popup">
+	<div class="popup-inner">
+		<h1>You are about to leave Redlib</h1>
+		<p>Do you want to continue?</p>
+		<p id="reddit_url">https://www.reddit.com/r/LocalLLaMA/comments/1vx2i7k/benchmark_llamacpp_batchubatch_impacts_on_pp_and/</p>
+		<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 639.24 563">
+			<defs>
+				<style>.cls-1{fill:#000000;}.cls-2{fill:#f8aa00;}</style>
+			</defs>
+			<path class="cls-2" d="M322.03,0c1.95,2.5,4.88,.9,7.33,1.65,10.5,3.21,17.65,10.39,22.83,19.35,93.64,162.06,186.98,324.29,280.25,486.56,15.73,20.19,2.49,51.27-22.92,54.37-1.21,.19-2.72-.54-3.49,1.08H239.03c-70.33-2.43-141.6,.79-212.08-1.74-17.49-4.92-23.16-15.88-26.91-32.26l-.04-1.97C88.74,354.76,194.49,188.2,289.92,18.43c6.2-10.66,15.03-16.94,27.61-17.36,.95-.03,2.05,.18,2.51-1.07h2Zm-2.43,545c94.95-.02,189.9,.04,284.85-.02,11.84-.73,20.75-13.19,16.68-23.55C523.83,355.97,430.74,187.62,332.05,23.07c-7.93-9.02-22.2-6.58-27.23,3.22C230.28,156.11,155.21,285.64,80.41,415.31c-19.88,34.41-39.31,69.07-59.78,103.14-2.43,4.05-4.24,8.8-1.68,14.18,3.92,8.24,9.59,12.37,18.82,12.37,93.95,0,187.9,0,281.85,0Z"/>
+			<path class="cls-1" d="M319.61,545c-93.95,0-187.9,0-281.85,0-9.22,0-14.89-4.13-18.82-12.37-2.56-5.38-.75-10.13,1.68-14.18,20.47-34.07,39.9-68.73,59.78-103.14C155.21,285.64,230.28,156.11,304.82,26.29c5.03-9.8,19.3-12.24,27.23-3.22,98.7,164.55,191.79,332.9,289.1,498.35,4.06,10.36-4.85,22.82-16.68,23.55-94.94,.06-189.9,0-284.85,.02Zm.44-462.31C238.88,223.22,158.17,362.95,77.28,503h485.54c-80.94-140.13-161.61-279.79-242.77-420.31Z"/>
+			<path class="cls-2" d="M320.05,82.69c81.16,140.52,161.83,280.18,242.77,420.31H77.28C158.17,362.95,238.88,223.22,320.05,82.69Zm36.05,118.99c-.14-46.75-68.32-52.32-74.66-4.76,.73,51.49,9.2,102.97,12.63,154.49,1.18,13.14,10.53,21.81,23.32,22.76,13.12,.97,23.89-9.13,24.96-21.58,4.44-49.99,9.4-101.22,13.76-150.91Zm-36.56,271.4c48.8,.76,49.24-74.7-.31-75.47-53.45,3-46.02,78.12,.31,75.47Z"/>
+			<path class="cls-1" d="M356.1,201.67c-4.36,49.69-9.31,100.91-13.76,150.91-1.07,12.45-11.84,22.56-24.96,21.58-12.79-.95-22.14-9.63-23.31-22.76-3.43-51.52-11.9-103-12.63-154.49,6.33-47.53,74.51-42.03,74.66,4.76Z"/>
+			<path class="cls-1" d="M319.54,473.08c-46.34,2.64-53.75-72.47-.31-75.47,49.56,.78,49.1,76.24,.31,75.47Z"/>
+		</svg>
+		<a id="goback" href="#">No, go back!</a>
+		<a id="toreddit" href="https://www.reddit.com/r/LocalLLaMA/comments/1vx2i7k/benchmark_llamacpp_batchubatch_impacts_on_pp_and/" rel="nofollow">Yes, take me to Reddit</a>
+	</div>
+</div>
+	
+</li>
+
+
+			
+		</ul>
+		<p>72%<span id="upvoted"> Upvoted</span></p>
+	</div>
+</div>
+
+		<!-- SORT FORM -->
+       <div id="commentQueryForms">
+		<form class="comment_control_form">
+			<p id="comment_count">14 comments <span id="sorted_by">sorted by </span></p>
+			<select name="sort" title="Sort comments by" id="commentSortSelect"> 
+				
+		<option value="confidence" selected>
+			Confidence
+		</option>
+	
+		<option value="top" >
+			Top
+		</option>
+	
+		<option value="new" >
+			New
+		</option>
+	
+		<option value="controversial" >
+			Controversial
+		</option>
+	
+		<option value="old" >
+			Old
+		</option>
+	
+      </select>
+        <button id="sort_submit" class="submit">
+          <svg width="15" viewBox="0 0 110 100" fill="none" stroke-width="10" stroke-linecap="round">
+              <path d="M20 50 H100" />
+              <path d="M75 15 L100 50 L75 85" />
+              &rarr;
+          </svg>
+      </button>
+      </form>
+      <!-- SEARCH FORM -->
+      <form class="comment_control_form">
+        <input id="search" class="commentQuery" type="search" name="q" value="" placeholder="Search comments">
+        <input type="hidden" name="type" value="comment">
+      </form>
+      </div>
+  
+      <div>
+      
+      </div>
+
+		<!-- COMMENTS -->
+		<div id="comments">
+			<div class="thread">
+				
+
+				
+
+
+<div id="p5lihb8" class="comment">
+	<div class="comment_left">
+    <p class="comment_score" title="7">
+         
+         7
+         
+    </p>
+        <div class="line"></div>
+	</div>
+	<details class="comment_right" open>
+		<summary class="comment_data">
+			
+				<a class="comment_author  " href="/user/Davidyz_hz">u/Davidyz_hz</a>
+			
+			
+			<a href="/r/LocalLLaMA/comments/1vx2i7k/benchmark_llamacpp_batchubatch_impacts_on_pp_and/p5lihb8/?context=3#p5lihb8" class="created" title="Aug 24 2026, 13:30:13 UTC">Aug 24 &#39;26</a>
+			
+			
+		</summary>
+		
+		<div class="comment_body "><div class="md"><p>You mentioned you&#39;re using a model bigger than the memory. My guess is that since larger ubatch means more memory footprint, increasing ubatch means llama.cpp keeps less of the weight in the memory. That means it has to read from the disk more frequently, which increases latency. I suggest trying this on a setup where you can fit the model entirely in the memory and see if the results are different.</p>
+</div></div>
+		
+		<div class="replies">
+
+
+<div id="p5lkuck" class="comment">
+	<div class="comment_left">
+    <p class="comment_score" title="1">
+         
+         1
+         
+    </p>
+        <div class="line"></div>
+	</div>
+	<details class="comment_right" open>
+		<summary class="comment_data">
+			
+				<a class="comment_author  op" href="/user/PhilippeEiffel">u/PhilippeEiffel</a>
+			
+			
+			<a href="/r/LocalLLaMA/comments/1vx2i7k/benchmark_llamacpp_batchubatch_impacts_on_pp_and/p5lkuck/?context=3#p5lkuck" class="created" title="Aug 24 2026, 13:41:41 UTC">Aug 24 &#39;26</a>
+			
+			
+		</summary>
+		
+		<div class="comment_body "><div class="md"><p>The goal here is to find the best parameters to be able to run this model as fast as possible.</p>
+</div></div>
+		
+		<div class="replies">
+
+
+<div id="p6icc6n" class="comment">
+	<div class="comment_left">
+    <p class="comment_score" title="1">
+         
+         1
+         
+    </p>
+        <div class="line"></div>
+	</div>
+	<details class="comment_right" open>
+		<summary class="comment_data">
+			
+				<a class="comment_author  " href="/user/-dysangel-">u/-dysangel-</a>
+			
+			
+				<small class="author_flair"><span class="emoji" style="background-image:url('/emoji/08m5x9chttjf1_t5_81eyvm/Discord');"></span></small>
+			
+			<a href="/r/LocalLLaMA/comments/1vx2i7k/benchmark_llamacpp_batchubatch_impacts_on_pp_and/p6icc6n/?context=3#p6icc6n" class="created" title="Aug 28 2026, 22:48:04 UTC">Aug 28 &#39;26</a>
+			
+			
+		</summary>
+		
+		<div class="comment_body "><div class="md"><p>If you want to run as fast as possible, better to get a quant that fits in memory. I would recommend trying out Qwen 3.8 Next nvfp4 though, and offloading the engrams to SSD</p>
+</div></div>
+		
+		<div class="replies">
+
+
+<div id="p6l36kz" class="comment">
+	<div class="comment_left">
+    <p class="comment_score" title="1">
+         
+         1
+         
+    </p>
+        <div class="line"></div>
+	</div>
+	<details class="comment_right" open>
+		<summary class="comment_data">
+			
+				<a class="comment_author  op" href="/user/PhilippeEiffel">u/PhilippeEiffel</a>
+			
+			
+			<a href="/r/LocalLLaMA/comments/1vx2i7k/benchmark_llamacpp_batchubatch_impacts_on_pp_and/p6l36kz/?context=3#p6l36kz" class="created" title="Aug 29 2026, 10:36:26 UTC">Aug 29 &#39;26</a>
+			
+			
+		</summary>
+		
+		<div class="comment_body "><div class="md"><p>Yes, I know.</p>
+
+<p>But I am curious and would like to understand how batch and ubatch parameters modify PP and TG when the model does not fit.</p>
+</div></div>
+		
+		<div class="replies">
+
+
+<div id="peimsb0" class="comment">
+	<div class="comment_left">
+    <p class="comment_score" title="2">
+         
+         2
+         
+    </p>
+        <div class="line"></div>
+	</div>
+	<details class="comment_right" open>
+		<summary class="comment_data">
+			
+				<a class="comment_author  " href="/user/laser50">u/laser50</a>
+			
+			
+			<a href="/r/LocalLLaMA/comments/1vx2i7k/benchmark_llamacpp_batchubatch_impacts_on_pp_and/peimsb0/?context=3#peimsb0" class="created" title="Oct 07 2026, 21:44:34 UTC">1d ago</a>
+			
+			
+		</summary>
+		
+		<div class="comment_body "><div class="md"><p>If it still matters; ubatch in increased size will spike your vram more and have more assigned to it, your model weights will therefore start being dropped off to disk/RAM, which it then has to use to build your prompt. Lowering the ubatch at your hardware likely just manages to push that extra weight back in. Just in case you (or anyone else) finds this unanswered like I did.</p>
+</div></div>
+		
+		<div class="replies">
+		</div>
+	</details>
+</div>
+
+		</div>
+	</details>
+</div>
+
+		</div>
+	</details>
+</div>
+
+		</div>
+	</details>
+</div>
+
+
+
+<div id="p5lkzbo" class="comment">
+	<div class="comment_left">
+    <p class="comment_score" title="1">
+         
+         1
+         
+    </p>
+        <div class="line"></div>
+	</div>
+	<details class="comment_right" open>
+		<summary class="comment_data">
+			
+				<a class="comment_author  " href="/user/Chromix_">u/Chromix_</a>
+			
+			
+				<small class="author_flair"><span class="emoji" style="background-image:url('/emoji/08m5x9chttjf1_t5_81eyvm/Discord');"></span></small>
+			
+			<a href="/r/LocalLLaMA/comments/1vx2i7k/benchmark_llamacpp_batchubatch_impacts_on_pp_and/p5lkzbo/?context=3#p5lkzbo" class="created" title="Aug 24 2026, 13:42:20 UTC">Aug 24 &#39;26</a>
+			
+			
+		</summary>
+		
+		<div class="comment_body "><div class="md"><p>At the same time higher matching batch sizes usually also help with prompt processing speed when the model is only partially loaded, at least that&#39;s the case with llama.cpp MoE offloading. It seems that this gets amplified with slower loads from disk.</p>
+</div></div>
+		
+		<div class="replies">
+		</div>
+	</details>
+</div>
+
+		</div>
+	</details>
+</div>
+
+			</div><div class="thread">
+				
+
+				
+
+
+<div id="p5lii87" class="comment">
+	<div class="comment_left">
+    <p class="comment_score" title="4">
+         
+         4
+         
+    </p>
+        <div class="line"></div>
+	</div>
+	<details class="comment_right" open>
+		<summary class="comment_data">
+			
+				<a class="comment_author  " href="/user/Life-Screen-9923">u/Life-Screen-9923</a>
+			
+			
+			<a href="/r/LocalLLaMA/comments/1vx2i7k/benchmark_llamacpp_batchubatch_impacts_on_pp_and/p5lii87/?context=3#p5lii87" class="created" title="Aug 24 2026, 13:30:20 UTC">Aug 24 &#39;26</a>
+			
+			
+		</summary>
+		
+		<div class="comment_body "><div class="md"><p>If ubatch UP, then free Vram Down -&gt; TG down</p>
+</div></div>
+		
+		<div class="replies">
+
+
+<div id="p5llwrh" class="comment">
+	<div class="comment_left">
+    <p class="comment_score" title="1">
+         
+         1
+         
+    </p>
+        <div class="line"></div>
+	</div>
+	<details class="comment_right" open>
+		<summary class="comment_data">
+			
+				<a class="comment_author  op" href="/user/PhilippeEiffel">u/PhilippeEiffel</a>
+			
+			
+			<a href="/r/LocalLLaMA/comments/1vx2i7k/benchmark_llamacpp_batchubatch_impacts_on_pp_and/p5llwrh/?context=3#p5llwrh" class="created" title="Aug 24 2026, 13:46:46 UTC">Aug 24 &#39;26</a>
+			
+			
+		</summary>
+		
+		<div class="comment_body "><div class="md"><p>It makes sense. Do you know how to know the size used for ubatch?</p>
+
+<p>This system has 128 GB of unified memory. In practice, more than 110 GB can be used as &quot;VRAM&quot; (RAM used by the GPU). I thought that ubatch would have a very limited relative impact on memory size.</p>
+
+<p>May be there is another side effect.</p>
+</div></div>
+		
+		<div class="replies">
+
+
+<div id="p5md3tz" class="comment">
+	<div class="comment_left">
+    <p class="comment_score" title="2">
+         
+         2
+         
+    </p>
+        <div class="line"></div>
+	</div>
+	<details class="comment_right" open>
+		<summary class="comment_data">
+			
+				<a class="comment_author  " href="/user/Life-Screen-9923">u/Life-Screen-9923</a>
+			
+			
+			<a href="/r/LocalLLaMA/comments/1vx2i7k/benchmark_llamacpp_batchubatch_impacts_on_pp_and/p5md3tz/?context=3#p5md3tz" class="created" title="Aug 24 2026, 15:48:47 UTC">Aug 24 &#39;26</a>
+			
+			
+		</summary>
+		
+		<div class="comment_body "><div class="md"><p>i asked gemini, but answer is so complicated for me :((</p>
+
+<p>DeepSeek-V4-Flash uses a crazy architecture called MLA (Multi-head Latent Attention) and MoE (Mixture of Experts). </p>
+
+<p>Because of this, its VRAM math for activation tensors is completely different from a standard Llama model.</p>
+
+<p>The peak VRAM allocated for the calculation graph during the prefill phase (per layer) scales like this:</p>
+
+<p>Activation Tensor Size (Bytes) = ubatch * d_c * n_g * BytesPerElement</p>
+</div></div>
+		
+		<div class="replies">
+
+
+<div id="p5mi4jf" class="comment">
+	<div class="comment_left">
+    <p class="comment_score" title="0">
+         
+         0
+         
+    </p>
+        <div class="line"></div>
+	</div>
+	<details class="comment_right" open>
+		<summary class="comment_data">
+			
+				<a class="comment_author  op" href="/user/PhilippeEiffel">u/PhilippeEiffel</a>
+			
+			
+			<a href="/r/LocalLLaMA/comments/1vx2i7k/benchmark_llamacpp_batchubatch_impacts_on_pp_and/p5mi4jf/?context=3#p5mi4jf" class="created" title="Aug 24 2026, 16:10:25 UTC">Aug 24 &#39;26</a>
+			
+			
+		</summary>
+		
+		<div class="comment_body "><div class="md"><p>Now, we need to know all the constants to determine how many GB are required for ubatch=128, ubatch=512, ubatch=2048<br/>
+Is gemini able to compute that?</p>
+</div></div>
+		
+		<div class="replies">
+		</div>
+	</details>
+</div>
+
+		</div>
+	</details>
+</div>
+
+		</div>
+	</details>
+</div>
+
+		</div>
+	</details>
+</div>
+
+			</div><div class="thread">
+				
+
+				
+
+
+<div id="p5lhhy4" class="comment">
+	<div class="comment_left">
+    <p class="comment_score" title="1">
+         
+         1
+         
+    </p>
+        <div class="line"></div>
+	</div>
+	<details class="comment_right" open>
+		<summary class="comment_data">
+			
+				<a class="comment_author  " href="/user/Gold-Drag9242">u/Gold-Drag9242</a>
+			
+			
+			<a href="/r/LocalLLaMA/comments/1vx2i7k/benchmark_llamacpp_batchubatch_impacts_on_pp_and/p5lhhy4/?context=3#p5lhhy4" class="created" title="Aug 24 2026, 13:25:25 UTC">Aug 24 &#39;26</a>
+			
+			
+		</summary>
+		
+		<div class="comment_body "><div class="md"><p>Could you try your test with a much larger prompt?
+Is there a upper limit for batch sizes? </p>
+</div></div>
+		
+		<div class="replies">
+
+
+<div id="p5li4eo" class="comment">
+	<div class="comment_left">
+    <p class="comment_score" title="1">
+         
+         1
+         
+    </p>
+        <div class="line"></div>
+	</div>
+	<details class="comment_right" open>
+		<summary class="comment_data">
+			
+				<a class="comment_author  op" href="/user/PhilippeEiffel">u/PhilippeEiffel</a>
+			
+			
+			<a href="/r/LocalLLaMA/comments/1vx2i7k/benchmark_llamacpp_batchubatch_impacts_on_pp_and/p5li4eo/?context=3#p5li4eo" class="created" title="Aug 24 2026, 13:28:28 UTC">Aug 24 &#39;26</a>
+			
+			
+		</summary>
+		
+		<div class="comment_body "><div class="md"><p>Yes, I will try a larger prompt but it requires many hours to run!</p>
+</div></div>
+		
+		<div class="replies">
+		</div>
+	</details>
+</div>
+
+		</div>
+	</details>
+</div>
+
+			</div><div class="thread">
+				
+
+				
+
+
+<div id="p5mw4yc" class="comment">
+	<div class="comment_left">
+    <p class="comment_score" title="-1">
+         
+         -1
+         
+    </p>
+        <div class="line"></div>
+	</div>
+	<details class="comment_right" open>
+		<summary class="comment_data">
+			
+				<a class="comment_author  " href="/user/leonbollerup">u/leonbollerup</a>
+			
+			
+			<a href="/r/LocalLLaMA/comments/1vx2i7k/benchmark_llamacpp_batchubatch_impacts_on_pp_and/p5mw4yc/?context=3#p5mw4yc" class="created" title="Aug 24 2026, 17:10:22 UTC">Aug 24 &#39;26</a>
+			
+			
+		</summary>
+		
+		<div class="comment_body "><div class="md"><p>Trying to understand your post.. so you are testing with a model that does like 3.5 tok/sek</p>
+
+<p>Why even bother ?</p>
+</div></div>
+		
+		<div class="replies">
+
+
+<div id="p5oa44n" class="comment">
+	<div class="comment_left">
+    <p class="comment_score" title="1">
+         
+         1
+         
+    </p>
+        <div class="line"></div>
+	</div>
+	<details class="comment_right" open>
+		<summary class="comment_data">
+			
+				<a class="comment_author  op" href="/user/PhilippeEiffel">u/PhilippeEiffel</a>
+			
+			
+			<a href="/r/LocalLLaMA/comments/1vx2i7k/benchmark_llamacpp_batchubatch_impacts_on_pp_and/p5oa44n/?context=3#p5oa44n" class="created" title="Aug 24 2026, 20:42:05 UTC">Aug 24 &#39;26</a>
+			
+			
+		</summary>
+		
+		<div class="comment_body "><div class="md"><p>Am I free to consider that model quality has more value than model speed for me?</p>
+
+<p>I consider I can wait (have a lunch or just sleep) while the response is generated. If the quality is good enough, then the response is valuable.</p>
+
+<p>Why do I bother wasting time reading an instantaneous but bad response?</p>
+</div></div>
+		
+		<div class="replies">
+		</div>
+	</details>
+</div>
+
+		</div>
+	</details>
+</div>
+
+			</div>
+		</div>
+
+	</div>
+
+		</main>
+		
+
+		<!-- FOOTER -->
+		
+			<footer>
+				<div class="footer-buttons">
+					<p><span id="version">v0.36.0-yunyun&emsp;</span><a href="/info" title="View instance information">ⓘ View instance info</a>&emsp;<a href="https://github.com/redlib-org/redlib" title="View code on GitHub">&lt;&gt; Code</a></p>
+				</div>
+			</footer>
+		
+	</body>
+</html>

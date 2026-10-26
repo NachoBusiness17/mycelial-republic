@@ -1,0 +1,42 @@
+{
+  "soak": "gstd_soak_20261014",
+  "target_master": "EQCteLhGv7dCLtCtbSK8bs5mxikKF-ckZ11vvf-5WUjpjrLb",
+  "build": "PR #1 head 185b3d8 (checked relay b4c60d0 + balance band)",
+  "amended_bytecode_proof": "min_master_balance getter answers on v7, exists on no prior deployment",
+  "cycles_attempted": 34,
+  "settled": 30,
+  "outcomes": {
+    "SETTLED": 30,
+    "BAND_BOUNCE_WILD": 3,
+    "BAND_BOUNCE_DELIBERATE": 1,
+    "TIMEOUT_CLIENT_RUNWAY_BUG": 2,
+    "NOT_ATTEMPTED_CONGESTION": 16
+  },
+  "invariants": {
+    "taskCount": "0 -> 30, monotone across 35 reads",
+    "pool_drawdown": "100000 -> 99250 GSTD, exactly 25 x 30 settles",
+    "worker_jw": "+750 GSTD, 25 per settle, zero misses",
+    "deferred_bonus_count": 0,
+    "silent_relay_skips": 0,
+    "band_bounces": "4 total (3 wild + 1 deliberate), all exit_code 24976, all state-clean"
+  },
+  "band_probe": {
+    "method": "SetMinMasterBalance floor -> master+0.1, one settle, tx exit code read",
+    "exit_code": 24976,
+    "revert_held": true,
+    "floor_restored": 1.0,
+    "wild_band_bounce_lts": [102951002000003, 102951894000003, 102954671000003]
+  },
+  "coverage_receipt_v0": {
+    "checks_checkable": 12,
+    "checks_run": 9,
+    "uncovered_named": [
+      "SetMinMasterBalance non-owner refusal (negative-auth probe)",
+      "floor minimum 0.5 TON require (code-read only)",
+      "replay guard duplicate taskId (54291 probe)"
+    ]
+  },
+  "shortfall_vs_50": "16 cycles: 2 runway bug (fixed in-driver), ~14 testnet congestion + wage wallet exhaustion (environmental); every attempt reaching the chain produced SETTLED or loud BAND_BOUNCE",
+  "completion_path": "tools/gstd_soak.py --cycles 16 --start-cycle 36 --pace 180 (~1h on a quiet chain), or run the 3 uncovered probes first",
+  "receipt": "watch/inbox/gstd_soak_20261014/SOAK.md"
+}

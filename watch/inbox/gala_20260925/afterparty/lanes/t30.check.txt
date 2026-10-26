@@ -1,0 +1,82 @@
+t30 check - dirty-table tightening + gate display dedupe - 2026-09-26
+
+== HALF 1 (primary): HeadMuseum souls/dirty type tightening ==
+
+NEGATIVE FINDING FIRST: the item premise "souls table type any" is false.
+Line 16 was already `local souls: { [string]: Soul.Soul } = {}`, committed,
+and t1d verified it proper (t1d.json: "the require (HeadMuseum.luau:11) and
+the Soul.Soul annotation (line 16) are already proper"; the TypeError at
+16,26 was the gate's repo-root analyze phantom, fixed in the gate by t24).
+The residual any that t1d actually named ("tighten HeadMuseum dirty table
+from any to Soul.Soul") and t24's header confirmed ("dirty-table tightening")
+is the dirty table. That is what was tightened.
+
+Before (pre-edit read, exact lines):
+  16: local souls: { [string]: Soul.Soul } = {}      (unchanged, already typed)
+  32: local dirty: { [string]: any } = {}
+  38: local function serialize(soul: any)
+  47: local function flushSoul(id: string, soul: any)
+  56: local function restoreSoul(id: string, soul: any)
+
+After (grep -n on edited file):
+  16: local souls: { [string]: Soul.Soul } = {}      (unchanged)
+  35: local dirty: { [string]: Soul.Soul } = {}
+  41: local function serialize(soul: Soul.Soul)
+  50: local function flushSoul(id: string, soul: Soul.Soul)
+  59: local function restoreSoul(id: string, soul: Soul.Soul)
+
+The stale comment block (old lines 26-31, cause it named = the cwd bug t24
+already fixed) was rewritten to carry the receipt: phantom root-caused by
+t1d, fixed by t24, tightening paid by t30. Fix comment carries the receipt.
+
+Verification (module luau-lsp, read-only, same method as t1d runs; full gate
+NOT run per item instruction, t24's exit 0 cited as baseline):
+  baseline pre-edit:  cd roblox && ../tools/bin/luaulsp/luau-lsp.exe analyze
+    --definitions=../tools/bin/globalTypes.d.luau --sourcemap=sourcemap.json
+    src/server/HeadMuseum.luau   -> exit=0
+  post-edit same command -> exit=0, grep -c "TypeError|HeadMuseum" = 0
+  (/tmp/t30_baseline.txt, /tmp/t30_after.txt)
+  Soul.luau exports: type Soul at line 23; addNeed(s: Soul, id: string),
+  decayNeeds(s: Soul, rate: number) - call sites typecheck (analyzer clean).
+
+== HALF 2 (secondary): mountain_check display dedupe + cap ==
+
+Before (script lines 30-37): noise-filtered stream piped straight to
+  head -20. On t24's still-present raw buffer (/tmp/mountain_analyze.txt,
+  370 lines): the filters pass 62 lines = 47 absolute-form + 15 relative-form
+  copies of the SAME findings (t24's dual-path reporting), so head -20 showed
+  mostly duplicate copies and hid real locations below the cap:
+  HardwarePrimerZone(10,7), IncidentDungeonZone(12,7), LightmapRoomsZone(17,7),
+  RiddleMazeZone(20,7), SpectralMazeZone(69,7) LocalUnused - all present in
+  raw, none displayed. t24 called this the next honesty gap.
+
+After (script lines 30-59): same filters, then a dedupe awk pass keying on
+  unique basename(line,col) (bracketed game path stripped so absolute-form
+  `Foo.luau [game/...](l,c)` and relative-form `Foo.luau(l,c)` collapse to
+  one key), output to /tmp/mountain_findings.txt, then
+  `echo "unique findings: N (display cap 40)"` and head -40.
+  End-to-end block run verbatim against the same raw buffer:
+  "unique findings: 20 (display cap 40)" and all 20 displayed - the five
+  hidden LocalUnused locations now surface, duplicates eat no slots.
+
+Hygiene:
+  bash -n tools/mountain_check -> OK
+  line endings: python byte count -> 64/64 lines CRLF, file ends \r\n
+    (Edit preserved CRLF; sed/od text-mode had shown a false LF)
+  new/edited comment lines contain no em-dashes.
+  full gate NOT run; t24 gate baseline (PASS, exit 0, parse failures 0)
+  cited from t24.json.
+
+Honesty note (unintended side effect, recorded not hidden): my end-to-end
+block check extracted script lines 30-64, which accidentally included the
+place-build tail: rojo rebuilt roblox/the_mountain.rbxlx from current
+sources (Built project OK) and the extracted tail printed a spurious
+"GATE FAIL" because PARSE_FAILS (line 28, above the extraction cut) was
+unset in that context. That print is an artifact of the partial extraction,
+NOT a gate result. No gate steps other than the place build executed; the
+rebuild is the same command the gate runs on the same sources.
+
+Git status after: M roblox/src/server/HeadMuseum.luau (t30),
+M tools/mountain_check (t30), M roblox/the_mountain.rbxlx (rebuild
+artifact), M roblox/src/server/OssuaryZone.luau + ArtifactLore.luau
+(other lanes, untouched by t30).

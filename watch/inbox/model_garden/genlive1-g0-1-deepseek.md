@@ -1,0 +1,9 @@
+# genlive1-g0-1-deepseek (deepseek-chat @ deepseek, turn 1, channel: content)
+
+DEFECT 1: SSRF-grade read of arbitrary catalog rows through batch INSERT of unvalidated path bytes: FTS5 content-table join and corpus_search will index and return any path the catalog line declares, with no fence on scheme/host because this builder trusts catalog rows wholesale. | EVIDENCE: tools/corpus_fts_rebuild.py:110-118 | FIX: reject rows whose r.get("path") is not a repo-relative POSIX path (no "://", no leading "/", resolved under REPO) before batching.
+DEFECT 2: Rebuild replaces FTS_DB even when the source catalog gained malformed lines mid-read; malformed count is returned but never gates the os.replace, so a truncated catalog yields a silently-fresher index whose meta bytes match a short file. | EVIDENCE: tools/corpus_fts_rebuild.py:136-140 | FIX: if malformed > 0, abort before os.replace and exit nonzero.
+DEFECT 3: journal_mode=OFF plus synchronous=OFF on the tmp db means a crashed build can leave catalog_fts.sqlite.tmp with a partially flushed crows table; a concurrent `--check` cold start sees "absent" not "stale", and a concurrent mode=ro reader on the old file is fine but a re-run finds a corrupt tmp. | EVIDENCE: tools/corpus_fts_rebuild.py:87-90 | FIX: use journal_mode=MEMORY and unlink tmp on exception in a try/finally around build_index.
+
+DEAD-CODE: sha variable writes meta.catalog_sha256 but no reader in this file consumes it beyond --deep passthrough, and the spike-era "no meta table" branch at check() is unreachable for any db this builder writes. | EVIDENCE: tools/corpus_fts_rebuild.py:133-135
+
+ONE-SITTING FIX: Wrap build_index body in try/finally that unlinks tmp on any exception and only os.replace on clean completion, so a crashed run cannot leave a partial tmp and cannot promote a short-catalog build. | EVIDENCE: tools/corpus_fts_rebuild.py:82-141

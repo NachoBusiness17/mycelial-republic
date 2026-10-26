@@ -1,0 +1,99 @@
+############ CHECK 1: dungeon suite (full file, the code leg's suite) ############
+CMD: .venv/Scripts/python.exe -m pytest tests/test_dungeon_parser.py -q
+................                                                         [100%]
+16 passed in 1.19s
+EXIT: 0
+
+############ CHECK 2: violation ratchet (touched tools/) ############
+CMD: .venv/Scripts/python.exe tools/violation_ratchet.py check --changed
+RATCHET check: scope=11 changed files; hits=7; registered=6; NEW=1; expired-exceptions=0
+  NEW 0d0789ca53820b22 file-too-long: tools/arena_gwap.py:426 — >400 lines
+  GROWTH claim 77d0662010601b8a: mag/water_graph.py accepted at 465 lines, now 534 (+69) — re-audit or re-accept by name
+  GROWTH claim af1d7045681fee89: tools/dungeon.py accepted at 771 lines, now 796 (+25) — re-audit or re-accept by name
+  GROWTH claim f808aaa924702588: tools/mesh_delta.py accepted at 610 lines, now 615 (+5) — re-audit or re-accept by name
+RATCHET: FAIL — run 'baseline-update' ONLY after a human/agent accepts the debt by name.
+EXIT: 1
+
+############ CHECK 3: citation lint (changed prose records) ############
+CMD: .venv/Scripts/python.exe tools/citation_lint.py check --changed
+CITATION-LINT: ok records=29 anchors=45 numbers-checked=68 blocking=0 warns=28 enforce-tokens=False
+  WARN corpus/steal/MASTER_MICKEY17_V2.md:112 SHORTHAND-UNRESOLVED dungeon.py bare-basename anchor resolves nowhere deterministically
+  WARN corpus/steal/MASTER_MICKEY17_V2.md:118 SHORTHAND-UNRESOLVED DND_module.md bare-basename anchor resolves nowhere deterministically
+  WARN corpus/steal/MASTER_MICKEY17_V2.md:124 SHORTHAND-UNRESOLVED dungeon.py bare-basename anchor resolves nowhere deterministically
+  WARN corpus/steal/MASTER_MICKEY17_V2.md:69 UNRESOLVED-SOURCE 25.11 number unverifiable: the sentence's named record sources resolve nowhere (usage.jsonl)
+  WARN corpus/steal/MASTER_MICKEY17_V2.md:179 UNRESOLVED-SOURCE 16000 number unverifiable: the sentence's named record sources resolve nowhere (usage.jsonl)
+  WARN corpus/steal/MASTER_MICKEY17_V2.md:179 UNRESOLVED-SOURCE 12744 number unverifiable: the sentence's named record sources resolve nowhere (usage.jsonl)
+  WARN corpus/steal/MASTER_MICKEY17_V2.md:179 UNRESOLVED-SOURCE 15943 number unverifiable: the sentence's named record sources resolve nowhere (usage.jsonl)
+  WARN corpus/steal/MASTER_MICKEY17_V2.md:195 UNRESOLVED-SOURCE 14,840,023 number unverifiable: the sentence's named record sources resolve nowhere (usage.jsonl)
+  WARN memories/session/next-window-handoff.md:595 SHORTHAND-UNRESOLVED proc.py bare-basename anchor resolves nowhere deterministically
+  WARN memories/session/next-window-handoff.md:602 SHORTHAND-UNRESOLVED STORY.md bare-basename anchor resolves nowhere deterministically
+  WARN memories/session/next-window-handoff.md:602 SHORTHAND-UNRESOLVED SKILL.md bare-basename anchor resolves nowhere deterministically
+  WARN memories/session/next-window-handoff.md:602 SHORTHAND-UNRESOLVED SWARM_1.md bare-basename anchor resolves nowhere deterministically
+  WARN memories/session/next-window-handoff.md:476 UNRESOLVED-SOURCE 24.4K number unverifiable: the sentence's named record sources resolve nowhere (MEMORY.md)
+  WARN memories/session/next-window-handoff.md:600 UNRESOLVED-SOURCE 5357179 number unverifiable: the sentence's named record sources resolve nowhere (ractor50/accuracy.md, v1.txt)
+  WARN memories/session/next-window-handoff.md:600 UNRESOLVED-SOURCE 691,789 number unverifiable: the sentence's named record sources resolve nowhere (ractor50/accuracy.md, v1.txt)
+  WARN memories/session/next-window-handoff.md:604 UNRESOLVED-SOURCE 191.8M number unverifiable: the sentence's named record sources resolve nowhere (a01-olm-day2.json, accuracy.md)
+  WARN watch/inbox/ARENA_V2_DESIGN_20261004.md:38 SHORTHAND-UNRESOLVED DND_module.md bare-basename anchor resolves nowhere deterministically
+  WARN watch/inbox/MICKEY17_V2_RUN_SPEC_ADDENDUM.md:95 SHORTHAND-UNRESOLVED dungeon.py bare-basename anchor resolves nowhere deterministically
+  WARN watch/inbox/MICKEY17_V2_RUN_SPEC_ADDENDUM.md:96 SHORTHAND-UNRESOLVED dungeon.py bare-basename anchor resolves nowhere deterministically
+  WARN watch/inbox/MICKEY17_V2_RUN_SPEC_ADDENDUM.md:132 TOKEN-MISS tools/mickey17_v2_fold.py cited lines 430-430 mention none of the claim tokens (asserting, checks, falsifies, invariant, itself)
+  WARN watch/inbox/MICKEY17_V2_RUN_SPEC_ADDENDUM.md:350 SHORTHAND-UNRESOLVED dungeon.py bare-basename anchor resolves nowhere deterministically
+  WARN watch/inbox/MICKEY17_V2_RUN_SPEC_ADDENDUM.md:403 SHORTHAND-UNRESOLVED dungeon.py bare-basename anchor resolves nowhere deterministically
+  WARN watch/inbox/parable_day_one_20261003.md:13 UNRESOLVED-SOURCE 25.11 number unverifiable: the sentence's named record sources resolve nowhere (usage.jsonl)
+  WARN watch/inbox/PARABLE_ERRATUM_20261004.md:116 TOKEN-MISS corpus/steal/MASTER_MICKEY17_V2.md cited lines 228-228 mention none of the claim tokens (live, prompt, record)
+  WARN watch/inbox/PARABLE_ERRATUM_20261004.md:219 TOKEN-MISS tools/dungeon.py cited lines 203-203 mention none of the claim tokens (190238, 200420, 210227, raises, siblings)
+  WARN watch/inbox/playground/dnd0_20261003T202213Z_ERRATUM.md:12 SHORTHAND-UNRESOLVED dungeon.py bare-basename anchor resolves nowhere deterministically
+  WARN watch/inbox/playground/dnd0_20261003T202213Z_ERRATUM.md:13 SHORTHAND-UNRESOLVED dungeon.py bare-basename anchor resolves nowhere deterministically
+  WARN watch/inbox/playground/dnd0_20261003T202213Z_ERRATUM.md:14 SHORTHAND-UNRESOLVED DND_module.md bare-basename anchor resolves nowhere deterministically
+EXIT: 0
+
+############ CHECK 4: landing-spot byte check (the FILL's named landing spots) ############
+CMD: .venv/Scripts/python.exe tools/_r10_landing_check.py (inline below)
+PASS  tools/dungeon.py _paid signature takes deglob_messages
+PASS  tools/dungeon.py _paid retries on the de-globbed prompt (attempt > 0)
+PASS  tools/dungeon.py _paid banks prompt_variant verbatim|deglob
+PASS  tools/dungeon.py _paid banks finish_reason (R10 clause 1)
+PASS  tools/dungeon.py _dm builds the de-globbed beat
+PASS  tools/dungeon.py S1 _pc_beat passes deglob_beat
+PASS  tools/dungeon.py campaign loop passes deglob_beat
+PASS  tools/dungeon.py DONE void census (R10 clause 1, landed 2026-10-04 wave)
+PASS  ARENA_V2_DESIGN trait 3 substance-gate leg carries void census + de-glob
+PASS  ERRATUM open item closed with landing receipt
+LANDING BYTES: 10/10 pass
+EXIT: 0
+
+############ CONTEXT: R10 void census re-verified this sitting on the run transcript ############
+CMD: python -c census over watch/inbox/playground/dnd0_20261003T202213Z/transcript.jsonl
+total rows: 50
+dm_response content_filter rows: 40
+PC-actor rows among them: 39
+rows with narration: 10
+EXIT: 0
+
+############ CHECK 2b: ratchet rerun after by-name re-accept of the dungeon.py growth ############
+CMD: .venv/Scripts/python.exe tools/violation_ratchet.py check --changed   (after baseline re-accept af1d7045681fee89 771->796 by a02-dungeon-campaign-r10)
+RATCHET check: scope=12 changed files; hits=6; registered=6; NEW=0; expired-exceptions=0
+  GROWTH claim 77d0662010601b8a: mag/water_graph.py accepted at 465 lines, now 534 (+69) — re-audit or re-accept by name
+  GROWTH claim f808aaa924702588: tools/mesh_delta.py accepted at 610 lines, now 615 (+5) — re-audit or re-accept by name
+RATCHET: PASS — no unregistered debt.
+EXIT: 0
+
+NOTE on CHECK 2's first run (exit 1): the sole NEW blocker was file-too-long tools/arena_gwap.py:426,
+a SIBLING seat's uncommitted working-tree state (this lane never touched arena_gwap.py). Between the
+two runs the sibling rewrote it (426 -> 369 lines; git diff +14/-2), which is why the rerun scope
+moved 11 -> 12 files and the NEW hit vanished. Remaining GROWTH lines (water_graph +69, mesh_delta +5)
+are sibling informational facts, not blockers. dungeon.py GROWTH was THIS lane's +25 (R10 de-glob leg)
+and was re-accepted by name in configs/violation_baseline.json entry af1d7045681fee89, which also
+records that the D2 SPLIT TRIGGER has now fired (dungeon.py 796 > the 771 acceptance): the split is
+owed as its own sitting with its golden-vector precondition intact.
+
+INCIDENT DISCLOSURE (baseline-update): probing 'violation_ratchet.py baseline-update --help' executed
+a real baseline-update (the tool has no --help; argv[1] matched). Verified no-op on claims: it reported
+hits=956; already-registered=956; ADDED=0, and 'git diff configs/violation_baseline.json' showed only
+the updated-timestamp line moving (2026-10-10T02:19:33 -> 09:34:27) before this lane's deliberate
+by-name edit above.
+
+############ CHECK 5: golden vector (dungeon.py is its DEFAULT_TARGET; this lane edited that file) ############
+CMD: .venv/Scripts/python.exe tools/prepush_golden_vector.py
+GOLDEN-VECTOR: ok - 11/11 golden tokens in C:\Users\foste\Documents\projects\local_sovereign_agent\tools\dungeon.py
+EXIT: 0

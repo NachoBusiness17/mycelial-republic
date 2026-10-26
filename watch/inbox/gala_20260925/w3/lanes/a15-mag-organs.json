@@ -1,0 +1,77 @@
+{
+  "lane": "a15-mag-organs",
+  "division": "A",
+  "ok": true,
+  "note": "Five new mag organs verified: pytest 52 passed, exit 0, all five test files green. Ratchet is two-faced: check --changed passes (exit 0) because the organs are already committed clean (a5dd96176) and only 1 file is dirty, but full-scope check FAILS (exit 1) with 9 NEW unregistered hits, 3 owned by this lane's organs: mag/intervention_gate.py:470 file-too-long, mag/skill_lifecycle.py:420 file-too-long, mag/skill_lifecycle.py:65 except-pass. configs/violation_baseline.json has 0 entries for either file. Negative finding vs the a12 witness: the except-pass a12 attributed to intervention_gate.py is NOT live at HEAD (line 62 except now assigns a fallback ROOT body, not pass); intervention_gate's live debt mutated to file-too-long:470. Cannot reproduce a12's exact 7-hit snapshot; current live repo-wide NEW is 9, the other 6 live in mag/lane_supervisor.py:29 (except-pass) and tools/mcp_pin.py:488, tools/mickey17_v2_fold.py:94, tools/quote_audit_wide.py:588 and :662, tools/wandr_selfeval.py:680 (all file-too-long except mickey17_v2_fold except-pass). Estate grep: 'intervention' in corpus/steal/ = 0 files (zero-hit finding, the rank-first organ has no steal footprint); memory/corpus/ = 61 files but all incidental canon prose (federalist papers, kafka, gutenberg ractor texts), no organ doctrine; 'skill_lifecycle' corpus/steal/ = 1 file, ZCODE_REPO_STEAL_MAP_20260924.md line 352, the organ's own cited lineage row; memory/corpus/ = 0. Fifth organ perplexity_research.py mined in note only: law of READY NOT LIVE, dormant module with no key, post-sunset search route pinned from docs, agent route refused rather than invented until pinned from official docs.",
+  "rows": [
+    {
+      "law": "Silence-biased intervention: an inject-vs-silent gate must abstain under ambiguity because a bad reminder is worse than silence.",
+      "claim": "The gate runs a deterministic SILENT-first order (relevance floor, cooldown, any key token still visible in last k steps) before INJECT on full decay, and its self-test requires ZERO false-positive injections while still catching real decay; every inject AND silent decision is registered as one JSONL row so false positives are auditable after the fact.",
+      "quote": "a bad reminder is worse than silence",
+      "source": "C:/Users/foste/Documents/projects/local_sovereign_agent/mag/intervention_gate.py",
+      "steal": "Decision order as a pure function over the memory 4-tuple plus a register of both inject and silent decisions; the closing lesson for any fleet gate is register both actions, not only the loud one.",
+      "falsifier": "A run where an in-cooldown, below-floor, or still-visible-token memory fires INJECT, or any false-positive injection passing the self-test, breaks the law.",
+      "leverage": "high"
+    },
+    {
+      "law": "Unmeasured fan-out widths snap DOWN to the lower tier's budget; widening is owned by the value gate, never by the tier.",
+      "claim": "effort_for_width() maps T1 fact_finding (1 lane, 3-10 calls), T2 comparison (2-4 lanes, 10-15 per lane), T3 complex (>10 lanes, gate-governed); widths 5-10, between the measured bands, fall to T2 per-lane budget rather than up to uncapped T3, and any fan-out wider than 1 lane must clear a 15x value-per-token bar.",
+      "quote": "so they fall DOWN to T2's per-lane budget rather than up to uncapped T3.",
+      "source": "C:/Users/foste/Documents/projects/local_sovereign_agent/mag/lane_effort.py",
+      "steal": "Anthropic multi-agent effort bands as first-class lane parameters plus the 15x token premium admission gate; the anti-overinvestment snap is directly portable to any dispatch layer.",
+      "falsifier": "A width in 5-10 resolving to a T3 budget, or a multi-lane fan-out admitted without clearing the 15x value-per-token bar.",
+      "leverage": "high"
+    },
+    {
+      "law": "Ephemeral capability is default-OFF and dies at the turn boundary; a leased tool must never shadow a static one.",
+      "claim": "With ADK_ENABLE_SKILL_LIFECYCLE unset, load() refuses and the tool registry is never mutated; with it on, a skill loads for exactly one seat-turn, end_turn() unloads everything loaded at or before the current turn, load() sweeps stale entries so a seat that never calls end_turn still cannot accumulate, and unload is idempotent with a receipt on every mutation.",
+      "quote": "Default OFF: with the gate unset, load() refuses",
+      "source": "C:/Users/foste/Documents/projects/local_sovereign_agent/mag/skill_lifecycle.py",
+      "steal": "Google ADK check-time env gate pattern fused with ZCode's skill/tool unit; one-turn lease semantics via turn counters is a reusable overlay for any lease-bound tool (tools.register_ephemeral).",
+      "falsifier": "A skill name still dispatching in turn T+1 after loading in T with the gate on, or any registry mutation observable while the gate is unset.",
+      "leverage": "high"
+    },
+    {
+      "law": "Strip write capability at the schema before any model call; a spawned lane never sees tool definitions it cannot use.",
+      "claim": "Classification is by name: write-class tools (estate write_file, harness Write/Edit family, shared-state writers pheromone_drop and blackboard_post) always stripped; dual_use (run_shell, bash, run_python) kept unless strict=True; unknown names default to read so a lane never loses capability silently, and the receipt lists every kept name for audit.",
+      "quote": "Schema-level omission, not runtime veto",
+      "source": "C:/Users/foste/Documents/projects/local_sovereign_agent/mag/write_strip.py",
+      "steal": "Runner-side --read-only strip wired orchestrator spawn_task to main.py to agent_cli, implementing single-writer doctrine: extra agents contribute intelligence while writes stay single-threaded (MICKEY-17 owed chore, Cognition April 2026 reversal).",
+      "falsifier": "A child cmd missing --read-only after a write-classified grant, a write tool visible in a stripped child's schema, or a kept unknown tool absent from the receipt.",
+      "leverage": "high"
+    },
+    {
+      "law": "Organs born with debt must register it by name at close; the changed-scope ratchet hides debt committed clean, so close on full scope.",
+      "claim": "Full-scope ratchet exit 1 shows 3 live NEW unregistered hits on this lane's organs (intervention_gate.py:470 file-too-long, skill_lifecycle.py:420 file-too-long, skill_lifecycle.py:65 silent except-pass), 0 baseline entries for either file, while check --changed exits 0 with scope=1 because the organs landed committed; a12's witnessed except-pass in intervention_gate.py is NOT live at HEAD (line 62 except now assigns a fallback ROOT body), a first-class negative.",
+      "quote": "sys.stdout.reconfigure(encoding=\"utf-8\", errors=\"replace\")",
+      "source": "C:/Users/foste/Documents/projects/local_sovereign_agent/mag/skill_lifecycle.py",
+      "steal": "The debt site itself: the quoted line's except is a bare pass at mag/skill_lifecycle.py:65. Lesson to steal: register by name via baseline-update or fix via prune at lane close, and never trust check --changed alone on freshly committed files.",
+      "falsifier": "configs/violation_baseline.json gaining entries for intervention_gate or skill_lifecycle, or the three hits vanishing from full-scope check, would falsify the unregistered-and-live claim.",
+      "leverage": "high"
+    }
+  ],
+  "checks": [
+    {
+      "command": "./.venv/Scripts/python.exe -m pytest tests/test_intervention_gate.py tests/test_lane_effort.py tests/test_skill_lifecycle.py tests/test_write_strip.py tests/test_perplexity_research.py -q",
+      "exit": 0,
+      "evidence": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/w3/lanes/a15-mag-organs.check.txt"
+    },
+    {
+      "command": "./.venv/Scripts/python.exe tools/violation_ratchet.py check --changed",
+      "exit": 0,
+      "evidence": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/w3/lanes/a15-mag-organs.ratchet.txt"
+    },
+    {
+      "command": "./.venv/Scripts/python.exe tools/violation_ratchet.py check",
+      "exit": 1,
+      "evidence": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/w3/lanes/a15-mag-organs.ratchet_full.txt"
+    },
+    {
+      "command": "grep -cF quote-verification and estate grep (6 quotes, all count 1; corpus/steal intervention = 0; memory/corpus skill_lifecycle = 0)",
+      "exit": 0,
+      "evidence": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/w3/lanes/a15-mag-organs.quotes.txt"
+    }
+  ],
+  "decision_changed": "no. Testimony-only lane: the 3 organ-owned debts stay live and unregistered; accepting them by name (baseline-update) or pruning them is the closer's human gate per the ratchet's own contract, not this lane's call. The full-scope-vs-changed-scope divergence is filed as a finding for whoever closes.",
+  "artifact": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/w3/lanes/a15-mag-organs.json"
+}

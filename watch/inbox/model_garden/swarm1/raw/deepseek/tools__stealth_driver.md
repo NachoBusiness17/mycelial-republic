@@ -1,0 +1,11 @@
+# swarm1-deepseek-tools__stealth_driver (deepseek-chat @ deepseek, turn 1, channel: content)
+
+DEFECT 1: selffeed rail-5 TTL expiry reaps rows the verify topic then skips, since its candidate filter requires status == "sensed", so any row expired before sensing can never be verified or drained | EVIDENCE: tools/stealth_driver.py:1056 (_work_ttl_sweep: `if row.get("done_ts") or row.get("sensed_ts"): continue`) and tools/stealth_driver.py:1115 (`if row.get("done_ts") or row.get("status") != "sensed": continue`) | FIX: give t_verify a second candidate pass over `status == "expired"` rows that writes done_ts on DONE, or have the sweep skip rows that already have an answer file so expiry only reaps truly unanswered rows
+
+DEFECT 2: t_impfeed's week window uses `ts.timestamp() < cutoff` without normalizing naive parsed timestamps to UTC, so naive ts values are interpreted in local time and the window boundary shifts by the host offset | EVIDENCE: tools/stealth_driver.py:1190 (`ts = _parse_ts(row.get("ts"))` then `if ts is None or ts.timestamp() < cutoff:`) | FIX: after `_parse_ts`, apply the same `if ts.tzinfo is None: ts = ts.replace(tzinfo=timezone.utc)` normalization the TTL sweep already uses at tools/stealth_driver.py:1065
+
+DEFECT 3: t_roster calls `snap.get(host)` for the churn note before deciding the note, but the stored snapshot value is a bare int while the mirrors.json prev value is read back as a dict (`prev_snap.get(host, {}).get("models")`), so the two diff paths compute churn against different representations of the same history | EVIDENCE: tools/stealth_driver.py:962 (`prev = snap.get(host)`) and tools/stealth_driver.py:985 (`prev = prev_snap.get(host, {}).get("models") if isinstance(prev_snap.get(host), dict) else prev_snap.get(host)`) | FIX: write ROSTER_SNAP as `{host: {"models": n}}` and have t_roster read `.get("models")` on both paths so one shape is compared
+
+DEAD-CODE: `no_redirect = urllib.request.HTTPRedirectHandler()` in `_llama_guard` is never used; the following `_NoRedirect` class replaces it before `build_opener` | EVIDENCE: tools/stealth_driver.py:703
+
+ONE-SITTING FIX: extend t_verify's candidate loop to also consider `status == "expired"` rows whose answer file exists, patching the same `_mark_work` path, so the rail-5 sweep cannot permanently orphan a row | EVIDENCE: tools/stealth_driver.py:1115

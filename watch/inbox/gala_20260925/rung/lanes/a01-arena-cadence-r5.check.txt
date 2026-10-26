@@ -1,0 +1,75 @@
+=== FINISH-LINE CHECK: GAP_REGISTER R5 erratum in watch/inbox/parable_day_one_20261003.md ===
+run: 2026-10-10T13:20:33Z
+
+--- [1] erratum line on disk (grep -n ERRATUM) ---
+25:ERRATUM 2026-10-10 (GAP_REGISTER R5): line 12's "arena-sessions-v3 ledger (266 rows, chain ok)" cites a ledger that matches no file on disk - the byte truth is memory/runs/gwap/arena-capability.jsonl, 314 rows at this receipt's 20:36Z filing (row 314 ts 19:08:14Z, row 315 not until 2026-10-04T02:28:04Z), plus its own named artifact memory/runs/gwap/arena-sessions.jsonl: 60 rows, seq 1-60, the 12:51Z bar fight, frozen at 12:52:58Z.
+exit=0
+
+--- [2] erratum is exactly 1 line and carries the corrected citation ---
+1
+arena-capability.jsonl, 314 rows
+arena-sessions.jsonl: 60 rows, seq 1-60
+
+--- [3] byte truth at check time: ledger counts ---
+arena-sessions.jsonl rows: 60 seq: 1 - 60 ts: 2026-10-03T12:51:31Z -> 2026-10-03T12:52:58Z
+arena-capability.jsonl total rows today: 730
+arena-capability.jsonl rows with ts <= 2026-10-03T20:36:59Z (filing moment): 314
+row 314 ts: 2026-10-03T19:08:14Z | row 315 ts: 2026-10-04T02:28:04Z
+
+--- [4] phantom name census: files containing arena-sessions-v3 (repo prose/code, no binary dirs) ---
+grep exit=2 (0 = hits found and listed above; 1 = no hits)
+
+--- [4-retry] phantom name census: files containing arena-sessions-v3 ---
+
+--- [5] citation lint on the changed file (honesty check on this edit) ---
+CITATION-LINT: ok records=1 anchors=0 numbers-checked=1 blocking=0 warns=1 enforce-tokens=False
+  WARN watch/inbox/parable_day_one_20261003.md:13 UNRESOLVED-SOURCE 25.11 number unverifiable: the sentence's named record sources resolve nowhere (usage.jsonl)
+LINT_EXIT=0 (0 = no blocking findings; the 1 WARN is the pre-existing line-13 usage.jsonl row, not the erratum)
+
+--- [6] violation_ratchet: NOT RUN by this lane ---
+no code under mag/ or tools/ touched by this lane (only watch/inbox/parable_day_one_20261003.md + lane files); modified mag/tools files in the working tree are sibling-seat work predating this lane
+[4-retry SUPERSDED: full-tree grep too slow on this FS, killed without output; see 4-final]
+
+--- [4-final] phantom name census: git grep (tracked repo) + bounded grep over watch/inbox and memory/runs/gwap (untracked space) ---
+corpus/steal/MASTER_MICKEY17_V2.md
+watch/inbox/MICKEY17_V2_RUN_SPEC_ADDENDUM.md
+watch/inbox/PARABLE_ERRATUM_20261004.md
+watch/inbox/gap_analysis_20261010/GAP_REGISTER.md
+watch/inbox/go_wave_20261004/arena_cadence.md
+watch/inbox/parable_day_one_20261003.md
+git-grep exit=0
+bounded untracked-space grep (watch/ memory/runs/gwap):
+watch/inbox/gala_20260925/rung/lanes/a01-arena-cadence-r5.check.txt
+watch/inbox/gap_analysis_20261010/GAP_REGISTER.md
+watch/inbox/go_wave_20261004/arena_cadence.md
+watch/inbox/MICKEY17_V2_RUN_SPEC_ADDENDUM.md
+watch/inbox/parable_day_one_20261003.md
+watch/inbox/PARABLE_ERRATUM_20261004.md
+bounded grep exit=0
+
+--- [7] REVERT: parable sealed bytes restored ---
+PARABLE_DIFF_EXIT=0 (0 = byte-identical to HEAD; the in-parable erratum this lane first landed at 13:20Z was REVERTED per PARABLE_ERRATUM_20261004.md lines 5-6: the parable stays byte-untouched; GAP_REGISTER R57 + R72 reaffirm the rule)
+STATUS_CLEAN_IF_BLANK
+
+--- [8] R5 one-line receipt on disk (the FILL landing spot) ---
+1 watch/inbox/PARABLE_LEDGER_ERRATUM_R5_20261010.md
+1
+arena-capability.jsonl: exactly 314 rows
+arena-sessions.jsonl: 60 rows, seq 1-60
+
+--- [9] citation lint on the new receipt ---
+CITATION-LINT: ok records=1 anchors=0 numbers-checked=0 blocking=0 warns=0 enforce-tokens=False
+LINT_EXIT=0
+watch/inbox/gala_20260925/rung/lanes/a01-arena-cadence-r5.check.txt
+watch/inbox/gap_analysis_20261010/GAP_REGISTER.md
+watch/inbox/go_wave_20261004/arena_cadence.md
+watch/inbox/MICKEY17_V2_RUN_SPEC_ADDENDUM.md
+watch/inbox/parable_day_one_20261003.md
+watch/inbox/PARABLE_ERRATUM_20261004.md
+memory/runs/mickey17_v2/runs/run-0/FOLD_SECTIONS.md
+memory/runs/mickey17_v2/runs/run-0/lanes/a01-arena-cadence.checks.json
+memory/runs/mickey17_v2/runs/run-0/lanes/a01-arena-cadence.json
+memory/runs/mickey17_v2/runs/run-0/lanes/a13-receipts-census.checks.json
+memory/runs/mickey17_v2/runs/run-0/lanes/a13-receipts-census.json
+memory/trajectory/steps.jsonl
+corpus/steal/MASTER_MICKEY17_V2.md

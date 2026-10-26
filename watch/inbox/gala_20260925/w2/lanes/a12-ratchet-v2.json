@@ -1,0 +1,72 @@
+{
+  "lane": "a12-ratchet-v2",
+  "division": "A",
+  "ok": true,
+  "note": "Ratchet v2 live-fires as designed on gala night: check --changed exits 1 on 7 NEW hits from sibling lanes' changed files, the seal lane b2 just wired into pre-push exits 1 on 3 drifted configs (including providers.yaml, an untracked live-creds file git can no longer see, so only the seal catches it), freshness exits 0 on 2026-09-25 frozen registrations; estate grep: 4 ratchet files in corpus/steal/, 'exit 2' covered in corpus/steal/ (4 hits) but ZERO hits in memory/corpus/ (first-class negative); all 5 mined quotes byte-verified literal in a12-ratchet-v2.check.txt section 4.",
+  "rows": [
+    {
+      "law": "exit 2 is the only hard block",
+      "claim": "The ratchet names three exits and only exit 2 means the gate itself is broken; in changed mode a git failure refuses to guess the changed set rather than pass or fake a failure.",
+      "quote": "Exit codes: 0 = pass (no new violations), 1 = new violations found, 2 = gate itself broken.",
+      "source": "C:/Users/foste/Documents/projects/local_sovereign_agent/tools/violation_ratchet.py",
+      "steal": "Treat exit 2 as distinguishable testimony in every GALA check: a gate that cannot run must exit 2, never 0; tonight's ratchet exit 1 is NEW-debt evidence from sibling lanes, not a broken gate, and gets recorded not muted.",
+      "falsifier": "Break git for the tool and rerun check --changed: output must be the refuse-to-guess line with exit 2; a 0 or 1 there falsifies the three-exit contract.",
+      "leverage": "high"
+    },
+    {
+      "law": "register debt by name or fix it",
+      "claim": "The baseline register only grows through a named human/agent act carrying --by and --note, and only shrinks via prune; no command may refresh it as a side effect.",
+      "quote": "The register grows only via `baseline-update` (a named human/agent act with `--by`/`--note`),\nshrinks via `prune` (fixed debt leaves).",
+      "source": "C:/Users/foste/Documents/projects/local_sovereign_agent/corpus/steal/ZCODE_RATCHET_LANDED_20260924.md",
+      "steal": "Attribute tonight's 7 NEW hits to owner lanes at close-out (mag: intervention_gate.py, skill_lifecycle.py twice; tools: mcp_pin.py, quote_audit_wide.py twice, wandr_selfeval.py) and let each owner run baseline-update --by <lane> with a note.",
+      "falsifier": "Grep configs/violation_baseline.json accepted entries for one missing 'by' or 'accepted' date: a single anonymous claim falsifies the by-name law.",
+      "leverage": "high"
+    },
+    {
+      "law": "prune recovers",
+      "claim": "Accepted debt is not forever: once the bytes are fixed, prune deletes the dead claim, so the register trends down and partial fixes stay visible without double punishment.",
+      "quote": "Not auto-fixable: a silent pass is sometimes a decision; each needs eyes\n(`prune` recovers the claim on fix).",
+      "source": "C:/Users/foste/Documents/projects/local_sovereign_agent/corpus/steal/ZCODE_RATCHET_WAVE2_20260925.md",
+      "steal": "End every except-pass fix lap with prune plus a before/after register count filed in the receipt; ghost.py's 70 sites (the WAVE2 fix queue) are the standing first target.",
+      "falsifier": "Fix one registered violation and run prune: the register must drop by exactly that fingerprint; a no-op prune after a verified fix falsifies the recovery law.",
+      "leverage": "medium"
+    },
+    {
+      "law": "byte equality is capability proof",
+      "claim": "The seal's PASS condition is sha256 equality between live config bytes and the register, so verification collapses to compute: no model, however smart, can talk drifted bytes past a hash.",
+      "quote": "CONFIG-SEAL: PASS — every config byte matches the register.",
+      "source": "C:/Users/foste/Documents/projects/local_sovereign_agent/tools/config_seal.py",
+      "steal": "Keep lane b2's seal verify in the pre-push hook untouched; when the drift re-seals at close-out, cite the new register hashes by name so the receipt is itself hash-checkable.",
+      "falsifier": "Flip one byte in configs/mag.yaml and rerun verify: it must exit 1 naming the file; a PASS on flipped bytes falsifies the seal.",
+      "leverage": "high"
+    },
+    {
+      "law": "freshness gate is the stale-trap vaccine",
+      "claim": "The meter states its bar in numbers before reading anything (stale at 7 days while repo heartbeat is 2 days) and offers exactly two remedies: refresh with today's truth or register frozen with reason plus date.",
+      "quote": "Exit 1 when any doc is stale — the fix is to\nrefresh the doc (with today's truth) or re-register it as deliberately frozen by\nadding it to FROZEN_OK below with a reason and date.",
+      "source": "C:/Users/foste/Documents/projects/local_sovereign_agent/tools/freshness_check.py",
+      "steal": "Apply to any gala doc older than 7 days: refresh it or FROZEN_OK it by name; tonight's PASS holds only because BOOT_4_7.md and state/HANDOFF.md carry 2026-09-25 frozen registrations.",
+      "falsifier": "Delete the FROZEN_OK entries while BOOT_4_7.md stays 11.8d old: the next run must FAIL with exit 1; a PASS there falsifies the vaccine.",
+      "leverage": "high"
+    }
+  ],
+  "checks": [
+    {
+      "command": ".venv/Scripts/python.exe tools/violation_ratchet.py check --changed",
+      "exit": 1,
+      "evidence": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/w2/lanes/a12-ratchet-v2.check.txt"
+    },
+    {
+      "command": ".venv/Scripts/python.exe tools/config_seal.py verify",
+      "exit": 1,
+      "evidence": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/w2/lanes/a12-ratchet-v2.check.txt"
+    },
+    {
+      "command": ".venv/Scripts/python.exe tools/freshness_check.py",
+      "exit": 0,
+      "evidence": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/w2/lanes/a12-ratchet-v2.check.txt"
+    }
+  ],
+  "decision_changed": "3 drifted configs: lanes.yaml and mag.yaml are tonight's own lane edits (uncommitted working tree) and get re-sealed at gala close-out by the lane that owns them, name + note citing this lane's receipt; providers.yaml is NOT re-sealed by a12: it is an untracked live-creds file (gitignored since 5a6ffd806) whose drift only the seal can see, so the operator must first attest what changed (rotation or edit) and re-seal under their own name; until then the seal FAIL stays live as testimony, matching the WAVE2 precedent of leaving unregistered debt so the push meets the gate.",
+  "artifact": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/w2/lanes/a12-ratchet-v2.json"
+}

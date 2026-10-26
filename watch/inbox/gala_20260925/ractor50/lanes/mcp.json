@@ -1,0 +1,41 @@
+{
+  "lane": "mcp",
+  "division": "B",
+  "ok": true,
+  "note": "MCP doctrine written to watch/inbox/ractor50/mcp.md from the 30-day wave base (flash50 six-item arc, R1, pin-wire, U9, B2-181, B2-291, GPS_V0) plus tonight's live checks: real stdio client session 8/8 PASS with the pin gate's FIRST LIVE FIRE (estate_thought_compile schema drifted after its pin, withheld, 5 of 6 served), full manifest 41, docker surface stale at 17 tools / zero estate_, registry validator 25/25, pin self-test 9/0; one-sitting spec for the top missing tool estate_receipt_append included.",
+  "rows": [],
+  "checks": [
+    {
+      "command": "./.venv/Scripts/python.exe watch/inbox/gala_20260925/ractor50/lanes/_mcp_retro_stdio_probe.py",
+      "exit": 0,
+      "evidence": "watch/inbox/gala_20260925/ractor50/lanes/mcp.check.txt SECTION 1 (PROBE-SUMMARY: 0 failures; 5 of 6 bridge tools served, DRIFT ALARM stderr, deterministic tick, dry chain verify, unknown-tool isError)"
+    },
+    {
+      "command": "./.venv/Scripts/python.exe -m mag.mcp_server --list [--profile bridge]",
+      "exit": 0,
+      "evidence": "watch/inbox/gala_20260925/ractor50/lanes/mcp.check.txt SECTION 2 (FULL 41, BRIDGE 6, estate_-prefixed 7) and SECTION 3 (pin-vs-live: description hash UNCHANGED 9bb1b4c0..., schema hash CHANGED 18cc8d67... -> 3db75964...; ledger 397 records)"
+    },
+    {
+      "command": "./.venv/Scripts/python.exe watch/inbox/burn_reset_20260927/flash50/mcp_registry_check.py watch/inbox/burn_reset_20260927/flash50/mcp_registry.sample.yaml",
+      "exit": 0,
+      "evidence": "watch/inbox/gala_20260925/ractor50/lanes/mcp.check.txt SECTION 4 (25 checks passed, 0 failed)"
+    },
+    {
+      "command": "./.venv/Scripts/python.exe tools/mcp_pin.py --self-test",
+      "exit": 0,
+      "evidence": "watch/inbox/gala_20260925/ractor50/lanes/mcp.check.txt SECTION 5 (passed 9, failed 0)"
+    },
+    {
+      "command": "docker ps + docker inspect mag-mcp + socket initialize/tools/list on 127.0.0.1:8766",
+      "exit": 0,
+      "evidence": "watch/inbox/gala_20260925/ractor50/lanes/mcp.check.txt SECTION 6 (mag-mcp Up healthy on 8766; container created 2026-09-26T20:38Z; serving 17 archivist tools, zero estate_ tools; host image rebuilt 2026-09-30 18:38 EDT, container never recreated = stale surface with green heartbeat)"
+    },
+    {
+      "command": "./.venv/Scripts/python.exe tools/violation_ratchet.py check --changed",
+      "exit": 1,
+      "evidence": "watch/inbox/gala_20260925/ractor50/lanes/mcp.check.txt SECTION 9 tail (TRUE-RATCHET-EXIT=1; NEW=2 both sibling-lane untracked files tools/flock_parity.py / tools/reverse_map.py; this lane wrote only watch/inbox/ files)"
+    }
+  ],
+  "decision_changed": "yes - MCP retro decision: bridge rollout order gains R2.0 (docker surface-parity recreate + parity check) and R2.5 (estate_receipt_append one-sitting build) ahead of the original R2/R3; '6 estate tools live' corrected to 6 declared / 5 served until operator repin (new law MCP-1 schema-edit-repin); docker mag-mcp declared stale-until-recreated, not healthy-means-current (new law MCP-2)",
+  "artifact": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/ractor50/mcp.md"
+}

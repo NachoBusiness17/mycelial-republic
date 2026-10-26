@@ -1,0 +1,31 @@
+{
+  "lane": "fill-percolator-candidates",
+  "division": "B",
+  "ok": true,
+  "note": "Owed work done and byte-proven: --candidates flag landed on mag/percolator.py (ingest_candidates -> review pass memory/percolator/candidates.jsonl, promoted=false, promote gate alpha-budget), 24 tests pass incl. one REAL 10-01 mine candidate reaching the review pass, live ingest over 3 mine files (16 rows, idempotent, invariants.json sha256 unchanged across ingest); ratchet exit 1 is 3 FOREIGN staged tools/ debts + my +165 GROWTH ledger fact left for named push-time disposition, and an accidental 'baseline-update --help' execution (known filed wart a48c38543) was reverted byte-exact and disclosed; two live-run-caught defects (backslash file-field breaking rerun dedupe, rerun double-stripping noise) fixed with regression tests.",
+  "rows": [],
+  "checks": [
+    {
+      "command": ".venv/Scripts/python.exe -m pytest tests/test_percolator_candidates.py tests/test_percolator_z15.py -q",
+      "exit": 0,
+      "evidence": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/fillball-1001/lanes/fill-percolator-candidates.check.txt (sections 1 and 5: '24 passed in 1.08s'; includes test_real_mine_candidate_reaches_review_pass ingesting real watch/inbox/frontier_olm_2026-10-01/percolator_candidates.jsonl row 0)"
+    },
+    {
+      "command": ".venv/Scripts/python.exe tools/violation_ratchet.py check --changed",
+      "exit": 1,
+      "evidence": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/fillball-1001/lanes/fill-percolator-candidates.check.txt (section 5 final run: exit 1 from 3 FOREIGN staged tools/ debts - field_experiment.py 637L, hermes_burn.py:393 except-pass, model_garden.py 446L - plus mag/percolator.py GROWTH 580->745 ledger fact, non-blocking per tools/violation_ratchet.py:274-279; incident + byte-exact revert of an accidental baseline-update disclosed in section 2)"
+    },
+    {
+      "command": ".venv/Scripts/python.exe -m mag.percolator --candidates \"watch/inbox/frontier_olm_*/percolator_candidates.jsonl\" (run + idempotence rerun)",
+      "exit": 0,
+      "evidence": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/fillball-1001/lanes/fill-percolator-candidates.check.txt (section 5: run 1 n_rows=16 n_candidate=16 n_promoted=0 over 3 files incl. mid-flight 09-30 backfill; rerun n_candidate=0 n_dupe=16 n_stripped=0; real-claim grep 'Measure context as bytes that reach the model' = 1 hit, all 16 rows promoted=false)"
+    },
+    {
+      "command": "sha256sum memory/percolator/invariants.json before vs after live ingest",
+      "exit": 0,
+      "evidence": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/fillball-1001/lanes/fill-percolator-candidates.check.txt (section 5: 37bca85b6ec54ed3a201c19dee63ce1cdf222ed98c287e923074f2bcfb6ef8e8 both sides - promote gate stayed alpha-budget, byte-proven)"
+    }
+  ],
+  "decision_changed": "GAP_REGISTER rank 6 (a02-r2 percolator zero-ingestion) closed: mine percolator_candidates rows now have a read path, and the promotion contract is pinned as review-pass-only (ingestion never compiles invariants; promote gate stays alpha-budget). Named debt left: mag/percolator.py +165 growth and 3 foreign tools/ debts need named acceptance at push time (bulk baseline-update cannot target one file).",
+  "artifact": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gala_20260925/fillball-1001/lanes/fill-percolator-candidates.json"
+}

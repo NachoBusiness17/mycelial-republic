@@ -1,0 +1,43 @@
+t52 check evidence (2026-09-25)
+Item: t43's three flagged DENY gates that fail OPEN. Confirm by bytes, convert to fail CLOSED, name the error field, one test per gate, ratchet.
+
+GATE VERDICTS (fail-open confirmed by bytes BEFORE edit):
+1. mag/afk_cadence.py:41 _operator_afk - REAL fail-open. Old bytes: 'except Exception: return True'. A broken operator_status read as operator AFK, so the cadence kept spending with the operator invisible. FIX: fail CLOSED, error = operator presumed ACTIVE (returns False), cause named in module-level AFK_GATE_ERROR; status() surfaces afk_gate_error.
+2. mag/afk_cadence.py:49 _right_size - REAL fail-open. Old bytes: 'except Exception: return {"level": "full", "budget": 4}'. A broken rightsizer handed the cadence FULL BLAST. FIX: fail CLOSED, error = level none / budget 0 (run_once skips the tick), error named in right_size_error; afk_gate_error also folded into the sizing dict when present.
+3. mag/work_loop.py:123 _ceiling_gate - REAL fail-open. Old bytes: 'except Exception as e: return {"ok": True, ..., "throttled": False, ..., "note": "ceiling gate unavailable - assume safe (no throttle)"}'. An errored headroom check let run_once claim work with the ceiling unknown. FIX: fail CLOSED, error = throttled True (run_once returns the deny, refuses work), error named in ceiling_gate_error.
+
+FILES TOUCHED (spec line per file, in place):
+- mag/afk_cadence.py (SPEC t52 comments at both gates + status surfacing)
+- mag/work_loop.py (SPEC t52 comment at the ceiling gate)
+- tests/test_loop_death_guards.py (SPEC t52 docstring section + 3 new tests)
+
+=== RAW PYTEST (cmd: .venv/Scripts/python.exe -m pytest tests/test_loop_death_guards.py -v) ===
+============================= test session starts =============================
+platform win32 -- Python 3.11.15, pytest-9.1.1, pluggy-1.6.0 -- C:\Users\foste\Documents\projects\local_sovereign_agent\.venv\Scripts\python.exe
+rootdir: C:\Users\foste\Documents\projects\local_sovereign_agent
+configfile: pytest.ini
+plugins: anyio-4.14.2, langsmith-0.10.14, timeout-2.4.0, typeguard-4.6.0
+collecting ... collected 10 items
+
+tests/test_loop_death_guards.py::test_loop_death_guard_fires_on_raise[ghost_cost] PASSED [ 10%]
+tests/test_loop_death_guards.py::test_loop_death_guard_fires_on_raise[ghost_bard] PASSED [ 20%]
+tests/test_loop_death_guards.py::test_loop_death_guard_fires_on_raise[work_anchor] PASSED [ 30%]
+tests/test_loop_death_guards.py::test_loop_death_guard_fires_on_raise[afk_squeeze] PASSED [ 40%]
+tests/test_loop_death_guards.py::test_loop_death_guard_fires_on_raise[work_fuel] PASSED [ 50%]
+tests/test_loop_death_guards.py::test_loop_death_guard_fires_on_raise[afk_routing] PASSED [ 60%]
+tests/test_loop_death_guards.py::test_operator_pause_gate_fails_closed PASSED [ 70%]
+tests/test_loop_death_guards.py::test_afk_gate_fails_closed PASSED       [ 80%]
+tests/test_loop_death_guards.py::test_right_size_gate_fails_closed PASSED [ 90%]
+tests/test_loop_death_guards.py::test_ceiling_gate_fails_closed PASSED   [100%]
+
+============================= 10 passed in 0.28s ==============================
+PYTEST_EXIT=0
+
+=== RAW RATCHET (cmd: .venv/Scripts/python.exe tools/violation_ratchet.py check --changed) ===
+RATCHET check: scope=10 changed files; hits=6; registered=6; NEW=0; expired-exceptions=0
+RATCHET: PASS — no unregistered debt.
+RATCHET_EXIT=0
+
+IMPORT SMOKE: .venv python -c 'import mag.afk_cadence, mag.work_loop' -> clean; AFK_GATE_ERROR initial None.
+
+NEGATIVE (first-class, not fixed here, 3-gate cap reached): mag/afk_loop.py:56 _operator_afk is the SAME species still open - its pause_reason check swallows errors ('except Exception: pass') and its operator_status check fails OPEN ('except Exception: return True'), so the squeeze path also works through pauses/errors. Left for the next gopher.

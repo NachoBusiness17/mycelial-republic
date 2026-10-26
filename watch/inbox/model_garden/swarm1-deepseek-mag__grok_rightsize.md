@@ -1,0 +1,9 @@
+# swarm1-deepseek-mag__grok_rightsize (deepseek-chat @ deepseek, turn 1, channel: content)
+
+DEFECT 1: classify_task "sense" branch matches "read", so "check status"/"list"/"count" goals route to the paid grok-3-mini call path despite the module's own NEVER_GROK4/local-capable intent; cheap-shaped work still requires a network call | EVIDENCE: mag/grok_rightsize.py:183-193 | FIX: in call_grok_free/ghost_grok_task, short-circuit NEVER_GROK4 and sense/classify tiers to the deepseek local branch before any xai_key_chain() call
+DEFECT 2: _approx_tokens counts tokens but call_grok_free's paid fallback and probe_xai_keys compare GROK_ALLOW_PAID case-insensitively in some places ("true"/"yes") while call_grok at line 322 uses strict "== '1'", so the two gates disagree and a paid call can be attempted via call_grok_free while call_grok then blocks it | EVIDENCE: mag/grok_rightsize.py:322 vs mag/grok_rightsize.py:558-560 | FIX: extract one is_paid_armed() helper testing .strip().lower() in {"1","true","yes"} and call it from both sites
+DEFECT 3: log_grok_call truncates result.content to 20000 chars into the "durable record — never drop the frontier answer" field, silently discarding the tail of any long frontier response | EVIDENCE: mag/grok_rightsize.py:661 | FIX: write the full content to a sidecar file keyed by task_id and store only the sidecar path plus content_sha256 in the ledger entry
+DEAD-CODE: probe_xai_keys has no in-repo caller; it is a paid-key prober gated on the same arm vars as call_grok | EVIDENCE: mag/grok_rightsize.py:117-153
+ONE-SITTING FIX: route sense/classify/summary tiers around the network in ghost_grok_task so NEVER_GROK4 is enforced where the cost decision is actually made | EVIDENCE: mag/grok_rightsize.py:572-601
+
+Falsifier for this deliverable: any repo search showing a caller of probe_xai_keys(), or a shared is_paid_armed/paid-gate helper already unifying lines 322 and 559, would void DEAD-CODE or DEFECT 2 respectively.

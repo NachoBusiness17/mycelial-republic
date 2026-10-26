@@ -1,0 +1,36 @@
+== t66: type-pin "Expected this to be exactly" cluster from t58's run ==
+item: t58.check.txt named sites: SteerFieldZone(152,25), IncidentDungeonZone(90,21), LightmapRoomsZone(93,25), ErosionFieldZone(172,25), MazeArenaZone Shape(100,2 / 107,2), LedgerExchange unknown reads (217,13 / 228,86 / 229,73)
+tool: tools/bin/luaulsp/luau-lsp.exe analyze --definitions=../tools/bin/globalTypes.d.luau --sourcemap=sourcemap.json (read-only), run from roblox/, sourcemap.json from t58 run 2 (2026-09-26 01:10:35)
+mountain_check: NOT run (shared gate; t58 exit 0 at 01:10:35 stands as baseline)
+
+== negative finding first: 6 of 9 named sites were already pinned before t66 touched anything ==
+zone file mtimes: SteerFieldZone / IncidentDungeonZone / LightmapRoomsZone / ErosionFieldZone / MazeArenaZone all rewritten 2026-09-26 01:11:18, 43s AFTER t58's final gate run (01:10:35), by a writer not identified in lanes t59-t64 receipts
+current sources carry the pins:
+  SteerFieldZone.luau:37  local walkers: { { x: number, y: number, part: Part } } = {}
+  MazeArenaZone.luau:58   receipt comment citing t42 (annotation exactness, Instance.new("Part") before Shape writes)
+t66 full-tree before-run (baseline for this lane): none of the 6 zone sites appear; only MazeArenaZone residuals are other classes outside the cap (could-be-nil 101-113, number? 163/174/180, both filtered classes in tools/mountain_check)
+no zone file was edited by t66; no receipt comment added there (cap law: named sites only, no churn on files t66 did not fix)
+
+== t66 edits: roblox/src/server/LedgerExchange.luau (untouched since 2026-09-25 23:30:47, findings live) ==
+  216-217: local v = tonumber(player:GetAttribute(("Slot%d"):format(slot)))
+    fixes 217,13 (unknown > compare) + 217,62 (Expected number, got unknown); stashArtifact writes income: number (line 54), tonumber is identity on a stored number
+  220: local name = tostring(player:GetAttribute(("Slot%dName"):format(bestSlot)) or "loot")
+    fixes 228,86 (upper missing from unknown) + 229,73 (Expected string, got string | unknown); stashArtifact writes name: string (line 55), tostring identity, nil case already fell to "loot"
+  receipt comments citing t58.check.txt are inline at both edit sites; runtime unchanged
+
+== verify ==
+before, full tree (exit 1, 216 raw lines incl. dual-path dups): named sites present at lines 80-83 + 108-111
+  LedgerExchange(217,13) (217,62) (228,86) (229,73); zone named sites absent
+after, full tree (exit 1): grep of all 9 named positions = 0 hits
+after, per-file exits (single-file mode; exits are 1 before AND after for all 6 because each file keeps pre-existing filtered-class findings, e.g. Unknown require in solo mode, number?/could-be-nil, LocalUnused):
+  SteerFieldZone.luau before exit=1 / after exit=1
+  MazeArenaZone.luau before exit=1 / after exit=1
+  IncidentDungeonZone.luau before exit=1 / after exit=1
+  LightmapRoomsZone.luau before exit=1 / after exit=1
+  ErosionFieldZone.luau before exit=1 / after exit=1
+  LedgerExchange.luau before exit=1 (named sites present) / after exit=1 (named sites gone; residual 41,26 / 181,67 / 193,33 / 194,30 / 276,40 / 277,39 all number? class, pre-existing; SameLineStatement 122,49 pre-existing, verified in before run line 16)
+the delta is the evidence: 9 named positions present before (LedgerExchange 4 incl. filtered 217,62) and 0 after, with the 6 zone positions already absent at before (fixed on disk 01:11:18)
+
+== residual (outside cap, untouched) ==
+number? / could-be-nil / LocalUnused / SameLineStatement classes: filtered noise in tools/mountain_check's unique-findings step
+advisory block-balance deltas from t58.check.txt lines 2-7: FrontierSoulsZone(3) HardwarePrimerZone(1) IncidentDungeonZone(1), not part of this item

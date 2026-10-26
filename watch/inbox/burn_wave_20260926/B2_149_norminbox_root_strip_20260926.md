@@ -1,0 +1,25 @@
+# B2-149 normInboxFile absolute-root strip (2026-09-26)
+
+## Verdict
+
+LANDED (verification-landing under the B2-238 rule: the fix was already in the bytes, attributed in code to "B2-149 + B2-157", but the row sat pre-checked [x] with no receipt; this lane byte-verified the work and earns the check). scripts/index_fold_host.mjs normInboxFile (lines 200-226) now strips, in one pass: backslash separators, leading slashes, the board|app inbox prefix, repeated inbox/ segments, AND the absolute host inbox root via the INBOX_ROOTS loop (case-insensitive prefix match, drive-letter tolerant), then re-strips residual inbox/ prefixes. The B2-157 companion isUnresolved check (lines 234-237) drops post-normalize residue that can never resolve (drive letter, dot-dot segment, empty) with a fold warning on the B2-40 channel instead of landing unresolvable items. Writer guard and fold share the same hoisted normalizer bytes (source comment lines 195-197, the one-source-of-truth law). Tests: tests/test_index_fold_host.py 25/25 passed this lane (5.3s), including the five brief-specific pins: composed board+host-root strip in one pass, the literal production line-3053 shape folded from a foreign inbox, bare absolute host root landing bare, composed absolute invalidate converging with bare register, and post-normalize unresolved register warning-and-drop. Production evidence byte-verified: watch/inbox/index_events.jsonl line 3053 carries the exact mint shape "/board/inbox/C:/Users/.../watch/inbox/burn_wave_20260926/QUEUE.md" the fix targets.
+
+## Evidence
+
+- scripts/index_fold_host.mjs:200-226 normInboxFile with the B2-149+B2-157 comment block naming the disease (drift-patrol-cron line-3053 register folding as a phantom item that only Windows existsSync resolved, then hash-mismatched in verify per B2_145_phantom_paths_20260926.md)
+- scripts/index_fold_host.mjs:234-237 isUnresolved (drive letter ^[A-Za-z]:/ , dot-dot segment, empty) + fold-warning drop channel; :242 the fold read side normalizing every ev.file through the same function
+- tests/test_index_fold_host.py:530-536 the brief-named production evidence cited inside the test block; :542 test_composed_board_prefix_and_host_root_strip_in_one_pass (asserts items == ["burn_wave_20260926/QUEUE.md"], fold_warnings == [], "1 hash-clean" in verify); :574 the production-default-root shape from a foreign inbox; :605 bare absolute; :633 absolute-invalidate convergence; :689 unresolved drop
+- pytest tests/test_index_fold_host.py -q => "25 passed in 5.32s" (this lane, venv python)
+- watch/inbox/index_events.jsonl:3053 (read this lane): {"seq": 1789823567015749474, "op": "register", "file": "/board/inbox/C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/burn_wave_20260926/QUEUE.md", ...} the exact composed shape
+
+## Work done
+
+Surveyed the claimed surface before reimplementing anything and found the fix already landed in both the module docstring (lines 105-121, "Owning spec" trail) and the normalizer body, with the test block citing the production evidence. Verification instead of re-edit: read the normalizer and guard bytes line by line, confirmed the writer/fold one-source-of-truth shape, ran the full fold-host suite (25/25 green), and read production line 3053 to confirm the targeted mint shape exists as documented. Filed this receipt under the B2-238 pre-checked-row rule, appended the LEDGER row, flipped the queue row with the landing note. No code changed: the change was already in the tree with the owning brief named in its spec block; what was missing was the receipt, the ledger fact, and the earned flip.
+
+## Falsifier
+
+From repo root: `.venv/Scripts/python.exe -m pytest tests/test_index_fold_host.py -q` must report 25 passed; if test_composed_board_prefix_and_host_root_strip_in_one_pass or test_post_normalize_unresolved_register_warns_and_drops fails, the strip or the drop channel regressed and this receipt's verdict is void. Node-side repro of the disease class: register a file "/board/inbox/C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/x.md" (with x.md present, sha correct) against a test inbox and rebuild: INDEX items must contain "x.md" exactly, never "C:/Users/..."; then register "C:/nonexistent/x.md" and rebuild: it must drop with a fold warning, never appear in items. `grep -c "isUnresolved" scripts/index_fold_host.mjs` must be >= 2 (definition + guard use); removing the INBOX_ROOTS strip loop reintroduces the phantom-item class and the first repro starts landing drive-letter items again.
+
+## Bibliography closed
+
+scripts/index_fold_host.mjs (read 99-260 and guard 655-670, unchanged by this lane); tests/test_index_fold_host.py (read 521-737, run, unchanged); watch/inbox/index_events.jsonl line 3053 (read); watch/inbox/burn_wave_20260926/B2_145_phantom_paths_20260926.md (named by the code comment; disease record); QUEUE.md (row note); memory/burns/LEDGER.jsonl (appended); watch/inbox/LIVING_HASH_LAW_20260926.md (spec trail named in the docstring).

@@ -1,0 +1,7 @@
+# swarm1-deepseek-tools__ds_workhorse (deepseek-chat @ deepseek, turn 1, channel: content)
+
+DEFECT 1: `attempts` records the last loop counter, so a first-try success is logged as attempts=2, inflating retry counts and hiding empties in the ledger. | EVIDENCE: tools/ds_workhorse.py:97-106 | FIX: track `used = attempt` on the successful break and write `"attempts": used`, or compute attempts from a separate counter initialized to 0.
+DEFECT 2: A real API failure is retried identically, so a deterministic 400 (bad key, malformed body) burns two calls and 2s sleep per item, and a failed batch still prints `BATCH DONE` as if success. | EVIDENCE: tools/ds_workhorse.py:100-108 | FIX: bail on non-empty `__ERROR__` after first attempt and return a nonzero exit when any item is `ok=False`.
+DEFECT 3: `.env` key is parsed for `DEEPSEEK_API_KEY=` only at exact line start, so a leading `export ` or whitespace or quoted value yields a false `SystemExit("no DEEPSEEK_API_KEY in .env")` while the key exists. | EVIDENCE: tools/ds_workhorse.py:44-49 | FIX: strip the line, tolerate `export `, and strip surrounding quotes from the partition value.
+DEAD-CODE: `attempt` is only read in the final write and never guards anything, since the loop always runs both iterations or breaks; the tuple `(1, 2)` is decorative. | EVIDENCE: tools/ds_workhorse.py:99-106
+ONE-SITTING FIX: Correct the attempts accounting so the cost/empties ledger tells the truth about retries. | EVIDENCE: tools/ds_workhorse.py:99-106

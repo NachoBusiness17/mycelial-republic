@@ -1,0 +1,318 @@
+ 
+ So you want to use OpenRouter? — Mo Moustafa 
+ ← thoughts 
+ mmoustafa.com 
+ 🔌  Engineering 
+ So you want to use OpenRouter? 
+ September 7, 2026 
+ Might seem simple on the face of it, but unfortunately it's pain all the way down. 
+ I run Olly , an AI assistant that lives in iMessage, on open source models through OpenRouter . To date Olly's transacted over 18 million messages, roughly a third of those on open models via OpenRouter. That's enough volume to hit every edge case at least once. So here's a list of things I wish I'd known going in. 
+ But first quick vocab: the model is the weights. The provider is who OpenRouter routes you to, they host the model on their GPUs, at their chosen precision, and their "proprietary" optimizations, with their own XML/tool parsers, which means each has a "proprietary" list of bugs too. When you ask for deepseek/deepseek-v4-flash you get one of ~20 companies you've mostly never heard of. They're the same model on paper, but very different models in real life. 
+ Ok, here's a few of the pitfalls you should watch out for. 
+ 1. The same model will benchmark very differently 
+ OpenRouter runs per-provider benchmarks on the same model: GPQA Diamond and TAU-Bench Airline (a tool-calling task). Here is today's board for DeepSeek V4 Flash 0731, every provider serving the exact same weights: 
+ DeepSeek V4 Flash 0731, one dot per provider, 2026-09-07 
+ 70% 
+ 75% 
+ 80% 
+ 85% 
+ 90% 
+ 55% 
+ 60% 
+ 65% 
+ 70% 
+ 75% 
+ 80% 
+ GPQA Diamond (knowledge) 
+ TAU-Bench Airline (tool calling) 
+ DeepSeek: GPQA 90.2%, TAU 81.3% 
+ first-party 
+ NextBit: GPQA 89.9%, TAU 76.6% 
+ Alibaba Cloud Int.: GPQA 89.4%, TAU 76.8% 
+ SiliconFlow: GPQA 90.0%, TAU 75.4% 
+ NovitaAI: GPQA 89.3%, TAU 76.0% 
+ Ionstream: GPQA 87.2%, TAU 78.0% 
+ Ionstream 
+ GMICloud: GPQA 89.0%, TAU 75.8% 
+ Reka AI: GPQA 89.1%, TAU 75.4% 
+ Parasail: GPQA 89.0%, TAU 75.4% 
+ Baidu Qianfan: GPQA 89.6%, TAU 74.8% 
+ Cloudflare: GPQA 88.4%, TAU 75.0% 
+ CoreWeave: GPQA 87.1%, TAU 76.0% 
+ DeepInfra: GPQA 89.2%, TAU 73.9% 
+ StreamLake: GPQA 87.8%, TAU 74.9% 
+ Phala: GPQA 88.2%, TAU 74.5% 
+ Inceptron: GPQA 87.9%, TAU 74.1% 
+ AtlasCloud: GPQA 88.3%, TAU 73.6% 
+ Together: GPQA 86.9%, TAU 75.0% 
+ Decart: GPQA 87.9%, TAU 73.3% 
+ Venice: GPQA 86.8%, TAU 74.2% 
+ AkashML: GPQA 88.5%, TAU 72.5% 
+ Morph: GPQA 85.8%, TAU 74.9% 
+ Wafer: GPQA 84.1%, TAU 76.0% 
+ Wafer 
+ Ambient: GPQA 86.4%, TAU 73.5% 
+ Relace: GPQA 87.2%, TAU 71.7% 
+ Io Net: GPQA 84.1%, TAU 74.5% 
+ Makora: GPQA 86.9%, TAU 71.7% 
+ Mancer: GPQA 85.5%, TAU 70.8% 
+ Mancer 
+ Sail Research: GPQA 70.8%, TAU 75.2% 
+ Sail Research 
+ OpenInference: GPQA 70.5%, TAU 70.8% 
+ OpenInference 
+ Nebius: GPQA 75.6%, TAU 65.3% 
+ Nebius 
+ DigitalOcean: GPQA 75.3%, TAU 58.4% 
+ DigitalOcean 
+ OpenRouter's per-provider board for deepseek/deepseek-v4-flash-0731, 2026-09-07. Rolling 32-day average. Hover a dot for the name. 
+ First-party DeepSeek: 90% GPQA, 81% TAU. DigitalOcean, same weights: 75% and 58%. Most hosts cluster 5 to 7 points below first-party on tool calling, and four of them fall off a cliff on knowledge. For an agent TAU is the score that matters and a 20 point swing is not noise. (In July it was worse: Fireworks scored 46% on TAU, a 30 point gap) 
+ Check the board for the benchmark closest to your workload before you trust a provider. And recheck when you switch models, the same providers looked completely different on GLM-5.3. 
+ 2. A vision model can have blind providers 
+ I noticed some strange non-deterministic behavior on image tasks so I ran the same three tiny images (a letter, a solid color, a word on a background) through every host of two open vision models: 
+ Qwen3.5 122B, 2026-07-31 
+ letter K 
+ solid red 
+ word on purple 
+ DeepInfra 
+ ✗ read as R / I 
+ ✗ said Blue 
+ ✗ 'funny, light blue' 
+ Alibaba 
+ ✓ 
+ ✓ 
+ ✓ 
+ AtlasCloud 
+ ✓ 
+ ✓ 
+ ✓ 
+ Novita 
+ ✓ 
+ ✓ 
+ ✓ 
+ SiliconFlow 
+ ✓ 
+ ✓ 
+ ✓ 
+ MiniMax M3, 2026-07-31 
+ letter 
+ word 
+ color 
+ Venice 
+ ✗ 'no image provided' 
+ ✗ same 
+ ✗ same 
+ Together 
+ ✗ 'no image provided' 
+ ✗ same 
+ ✗ same 
+ others, incl. 1st party 
+ ✓ 
+ ✓ 
+ ✗ wrong hue everywhere 
+ Per-host results recorded 2026-07-31. MiniMax's color misses happened on every host including first-party, so that one is the model, not the provider. 
+ DeepInfra's Qwen endpoint read a K as an R, called red blue, and described the word "umbrella" as "funny", while four other hosts of the same weights got everything right. Venice and Together didn't see the MiniMax images at all. The model page says it supports image input, but two of its providers don't and even worse they'll pretend everything is 200 OK. 
+ 3. The effort knob is optional for some providers 
+ reasoning.effort is accepted everywhere. Whether it does anything depends on the model and the provider. I pinned every provider serving DeepSeek V4 Flash 0731 and sent the same prompt at low, high and max, three times each, from a prod machine, here's the reasoning tokens output: 
+ DeepSeek V4 Flash 0731 via OpenRouter, 2026-09-07: does effort do anything? 
+ 0 
+ 500 
+ 1000 
+ 1500 
+ 2000 
+ alibaba 
+ atlas-cloud 
+ baseten 
+ cloudflare 
+ coreweave 
+ deepinfra 
+ digitalocean 
+ gmicloud 
+ mancer 
+ morph 
+ nextbit 
+ novita 
+ open-inference 
+ parasail 
+ phala 
+ reka 
+ relace 
+ sail-research 
+ siliconflow 
+ streamlake 
+ together 
+ venice 
+ wafer 
+ reasoning tokens per call, same prompt, provider pinned, 3 calls per effort. ● low ● high ● max 
+ DeepSeek V4 Flash 0731, most providers respect the setting but look at digitalocean, gmi-cloud, mancer, venice. 
+ Track the reasoning tokens for your effort setting, per provider. 
+ 4. Quantization filters don't buy you quality 
+ OpenRouter lets you filter providers by declared precision, quantizations: ["fp8"] (as opposed to fp4), and the intuition is that fewer bits means a dumber model. I ran that filter on DeepSeek for a month. Then I put the per-provider benchmark board next to what each provider declares: 
+ DeepSeek V4 Flash 0731: GPQA Diamond by declared quantization 
+ fp4 (5) 
+ Reka AI: 89.1% 
+ Inceptron: 87.9% 
+ AtlasCloud: 88.3% 
+ Relace: 87.2% 
+ Sail Research: 70.8% 
+ fp8 (11) 
+ Baseten: 88.0% 
+ NextBit: 89.9% 
+ SiliconFlow: 90.0% 
+ NovitaAI: 89.3% 
+ GMICloud: 89.0% 
+ Parasail: 89.0% 
+ Baidu Qianfan: 89.6% 
+ CoreWeave: 87.1% 
+ DeepInfra: 89.2% 
+ StreamLake: 87.8% 
+ OpenInference: 70.5% 
+ bf16 (1) 
+ Morph: 85.8% 
+ unknown (10) 
+ Fireworks: 88.9% 
+ DeepSeek: 90.2% 
+ DeepSeek 
+ Alibaba Cloud Int.: 89.4% 
+ Cloudflare: 88.4% 
+ Phala: 88.2% 
+ Together: 86.9% 
+ Venice: 86.8% 
+ Wafer: 84.1% 
+ Makora: 86.9% 
+ DigitalOcean: 75.3% 
+ 45% 
+ 55% 
+ 65% 
+ 75% 
+ 85% 
+ 95% 
+ DeepSeek V4 Flash 0731: TAU-Bench Airline by declared quantization 
+ fp4 (5) 
+ Reka AI: 75.4% 
+ Inceptron: 74.1% 
+ AtlasCloud: 73.6% 
+ Relace: 71.7% 
+ Sail Research: 75.2% 
+ fp8 (10) 
+ NextBit: 76.6% 
+ SiliconFlow: 75.4% 
+ NovitaAI: 76.0% 
+ GMICloud: 75.8% 
+ Parasail: 75.4% 
+ Baidu Qianfan: 74.8% 
+ CoreWeave: 76.0% 
+ DeepInfra: 73.9% 
+ StreamLake: 74.9% 
+ OpenInference: 70.8% 
+ bf16 (1) 
+ Morph: 74.9% 
+ unknown (9) 
+ DeepSeek: 81.3% 
+ DeepSeek 
+ Alibaba Cloud Int.: 76.8% 
+ Cloudflare: 75.0% 
+ Phala: 74.5% 
+ Together: 75.0% 
+ Venice: 74.2% 
+ Wafer: 76.0% 
+ Makora: 71.7% 
+ DigitalOcean: 58.4% 
+ DigitalOcean 
+ 55% 
+ 65% 
+ 75% 
+ 85% 
+ 95% 
+ GLM 5.3 Flash: GPQA Diamond by declared quantization 
+ fp4 (1) 
+ DeepInfra: 87.3% 
+ fp8 (14) 
+ CoreWeave: 85.1% 
+ Baseten: 84.3% 
+ Z.ai: 87.0% 
+ Parasail: 85.8% 
+ NextBit: 85.9% 
+ StreamLake: 88.2% 
+ NovitaAI: 85.5% 
+ GMICloud: 85.7% 
+ Modal: 83.0% 
+ SiliconFlow: 83.3% 
+ Reka AI: 86.7% 
+ Morph: 84.6% 
+ io.net: 73.6% 
+ Sail Research: 50.7% 
+ Sail Research 
+ bf16 (0) 
+ unknown (8) 
+ DigitalOcean: 89.6% 
+ Together: 86.4% 
+ Makora: 78.0% 
+ Venice: 89.0% 
+ Fireworks: 86.1% 
+ Friendli: 84.4% 
+ Wafer: 90.2% 
+ Wafer 
+ Cloudflare: 84.4% 
+ 45% 
+ 55% 
+ 65% 
+ 75% 
+ 85% 
+ 95% 
+ GLM 5.3 Flash: TAU-Bench Airline by declared quantization 
+ fp4 (1) 
+ DeepInfra: 73.3% 
+ fp8 (9) 
+ Z.ai: 73.2% 
+ Parasail: 74.0% 
+ NextBit: 70.3% 
+ StreamLake: 76.0% 
+ NovitaAI: 77.9% 
+ GMICloud: 75.5% 
+ Modal: 78.6% 
+ Reka AI: 75.0% 
+ Morph: 74.7% 
+ bf16 (0) 
+ unknown (7) 
+ DigitalOcean: 73.3% 
+ Together: 75.0% 
+ Venice: 74.2% 
+ Fireworks: 73.9% 
+ Friendli: 74.8% 
+ Wafer: 80.0% 
+ Wafer 
+ Cloudflare: 74.6% 
+ 55% 
+ 65% 
+ 75% 
+ 85% 
+ 95% One dot per provider. Board scores and declared quantization both from OpenRouter, 2026-09-07. Providers on the board but missing from the endpoints list that day (7 on DeepSeek, 1 on GLM) are left out. 
+ The fp4 hosts land in the middle of the fp8 pack. The three worst GPQA scores on DeepSeek are one of each: an fp4 host, an fp8 host, and one that declares nothing. GLM's best scorer on both benchmarks, Wafer, declares nothing at all. Precision is a bad proxy for quality, and a hard filter also shrinks the pool OpenRouter can fall back to when a provider goes down. Filter on the board, not the bits. 
+ 5. The tool call is in the text 
+ Ideally: the model emits a call in some markup, the provider's parser turns it into a structured tool call, my code runs it. Except sometimes the parser misses and this shows up as the reply: 
+ <use_skills><parameters>{"skills":["search"]}</parameters></use_skills> 
+ And the recurrence varies wildly by provider. 
+ You'll run into this often and stubbornly enough that you'll need to start parsing on your end. And there are two cases that need opposite handling: wrapped tool calls and wrapped/half-wrapped responses. Point your agent to github.com/0xmmo/190proof if you want to see some of my own parsing examples for DeepSeek/GLM. 
+ 6. 200 OK, no answer 
+ Reasoning models sometimes put everything in the reasoning field and hand back content: null , finish_reason: "stop" . 345 completion tokens, HTTP 200, nothing to show the user. 
+ A 200 tells you the request was served, not that there's an answer in it. No content and no tool call is a failure, throw and retry. 
+ 7. Hollow completions 
+ Related but not the same. Some endpoints return 200 with null content, null reasoning, and no usage object at all. In July that was StreamLake on DeepSeek: about 20% of my traffic and 92% of my empty completions. A month later Together did the same on the DeepSeek 0731 checkpoint. 
+ 8. Same models, different history rules 
+ DeepSeek in thinking mode emits a reasoning_content block. In an agent loop the model often tool-calls with empty reasoning. If you pass the empty reasoning history back to OpenRouter and that goes to e.g. SiliconFlow it will 400 with code 20015, "The reasoning_content in the thinking mode must be passed back to the API". Baidu, Alibaba and Cloudflare take the exact same history without complaint. 
+ So the contract isn't per model, it's per provider. And don't think you can skip tool history, the model will keep retrying the task otherwise. Just one more thing to handle. 
+ 9. Test from prod, not your laptop 
+ For speed and latency, but also as an example: Venice and Novita worked perfectly from my Mac for DeepSeek V4 Flash, but 429'd nearly every probe from my infra. Same key, same minute. My read is they rate-limit by IP. 
+ Benchmark from where prod runs, a few at a time, more samples than feels necessary. 
+ 10. Why don't you just pin a single provider? 
+ At one point I had provider.order: [cloudflare, baidu, alibaba] with allow_fallbacks: false , so not just one but 3 different reliable providers pinned. Two weeks later Baidu was rate-limiting everything (429s), Cloudflare turned out not to serve that model at all any more, and 100% of traffic was going to Alibaba, which then started 429ing. The #1 OpenRouter model (DeepSeek V4 Flash) pinned to the 3 most reliable providers was now down, and so was Olly. 
+ Happy hunting. 
+ References 
+ openrouter.ai/deepseek/deepseek-v4-flash-0731 , per-provider board under Performance 
+ openrouter.ai/z-ai/glm-5.3-flash , same 
+ OpenRouter provider routing docs : order, ignore, quantizations, allow_fallbacks 
+ OpenRouter endpoints API , declared quantization per endpoint 
+ OpenRouter reasoning tokens docs , the effort setting 
+ 190proof , Olly's open source AI SDK with stubborn error handling 
+ Raw data behind the charts: effort probe, DeepSeek · effort probe, GLM · DeepSeek board · GLM board · board joined to declared quantization · probe script 

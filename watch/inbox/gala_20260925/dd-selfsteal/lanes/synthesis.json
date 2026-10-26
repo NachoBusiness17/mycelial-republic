@@ -1,0 +1,93 @@
+{
+  "lane": "synthesis",
+  "division": "A",
+  "started_utc": "2026-10-03T18:45Z",
+  "steps": [
+    {"t": "2026-10-03T18:45Z", "step": "archive polled: dd-selfsteal/lanes/ empty except in-flight division B sibling; watch/inbox/dd_dogfood/ absent"},
+    {"t": "2026-10-03T18:59Z", "step": "VERIFY run: dungeon dry session (check_golden startup gate), exit 0; golden vectors reproduce byte-identical to committed pins (19/13/8); all 3 REAL_SCROLLS estate audits PASS; raw output saved to synthesis.check.txt"},
+    {"t": "2026-10-03T19:05Z", "step": "ESTATE GREP: corpus/steal (29 files) zero hits on dungeon|dice-law|tavern|DND|bar-fight; memory/corpus DND hits are case-insensitive false positives in DLB html (zero dungeon/tavern) - zero-hit finding recorded"},
+    {"t": "2026-10-03T19:15Z", "step": "5 rows mined, every quote byte-verified (grep -cF / python count = 1 each)"},
+    {"t": "2026-10-03T19:20Z", "step": "head testimony watch/inbox/dd_dogfood/SYNTHESIS.md NOT YET LANDED at lane close - head chapters landed live during lane (selfsteal-builds.md, mountain-bridge.md, games-audit.md, corpus-holdings.md, selfsteal-laws.md); synthesis built from those on-disk chapters + SESSION_FINDINGS_dig + DND_module + SUBSTANCE_48h_synthesis + GAP_REGISTER + STANDING_RAILS"}
+  ],
+  "checks": [
+    {
+      "command": ".venv/Scripts/python.exe tools/dungeon.py --tip e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855 --dry",
+      "exit": 0,
+      "evidence": "watch/inbox/gala_20260925/dd-selfsteal/lanes/synthesis.check.txt"
+    },
+    {
+      "command": "grep -cF \"the roll is committed BEFORE the actor speaks, and the actor never sees it\" tools/dungeon.py",
+      "exit": 0,
+      "evidence": "1 hit (row 2 quote byte-verified)"
+    },
+    {
+      "command": "grep -cF \"Fixed bytes decide. Models and players only move inside them. Every outcome lands as a receipt that a third party can recompute without trusting whoever produced it.\" watch/inbox/hermes_burn/SUBSTANCE_gaming_corpus.md",
+      "exit": 0,
+      "evidence": "1 hit (row 1 quote byte-verified)"
+    },
+    {
+      "command": "grep -cF \"The dice law is not yet deciding outcomes, so the module measures filter friction and format compliance, not play.\" watch/inbox/hermes_burn/SESSION_FINDINGS_dig.md",
+      "exit": 0,
+      "evidence": "1 hit (row 3 quote byte-verified)"
+    },
+    {
+      "command": "python -c raw.count(multiline-quotes): GAP_REGISTER q4=1, STANDING_RAILS q6=1",
+      "exit": 0,
+      "evidence": "rows 4 and 5 multiline quotes byte-verified (15 and 14 words)"
+    },
+    {
+      "command": "grep -rilnE \"dungeon|dice.?law|tavern|DND|bar.?fight\" corpus/steal/ ; grep -oiE \"dungeon|tavern|DND\" on memory/corpus text files",
+      "exit": 0,
+      "evidence": "corpus/steal: ZERO hits (29 files); memory/corpus: DND substrings only (case-insensitive false positives), zero dungeon/tavern hits - zero-hit finding recorded"
+    }
+  ],
+  "rows": [
+    {
+      "law": "fixed-bytes-decide",
+      "claim": "The D&D corpus, the DFHack thesis, and the Mountain game unify under one design law, and it answers the module question: the estate CAN build a game module from its own corpus if and only if fixed bytes decide and models only voice the result.",
+      "quote": "Fixed bytes decide. Models and players only move inside them. Every outcome lands as a receipt that a third party can recompute without trusting whoever produced it.",
+      "source": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/hermes_burn/SUBSTANCE_gaming_corpus.md",
+      "steal": "One seat one sitting: for the next play artifact write the deterministic module spec first (the DND_module.md shape: laws, grammar, stat blocks as frozen text) before any carrier code, landing both under watch/inbox/hermes_burn/.",
+      "falsifier": "Any play artifact that changes outcome state without a row a non-actor can recompute; the bar-fight model judge is the named known partial case in the same file.",
+      "leverage": "high"
+    },
+    {
+      "law": "committed-before-spoken",
+      "claim": "The dice carrier's anti-cheat core is recomputable without trusting the producer, and this lane reproduced it live: the three pinned sha256 preimages reproduce at startup (dry session exit 0, vectors byte-identical to the committed pins).",
+      "quote": "the roll is committed BEFORE the actor speaks, and the actor never sees it",
+      "source": "C:/Users/foste/Documents/projects/local_sovereign_agent/tools/dungeon.py",
+      "steal": "One sitting: port the golden-vector pin pattern (compute-and-refuse-at-startup, tools/dungeon.py:114-122) into tools/arena_gwap.py so a capability row lands in gps_ledger.db3 only when its roll preimage recomputes.",
+      "falsifier": "An independent sha256 recompute shows any logged roll_value != roll(roll_committed), or a session starts with a tampered pin vector instead of refusing.",
+      "leverage": "high"
+    },
+    {
+      "law": "instrument-before-content",
+      "claim": "The honest gap: 24 hours of play measured the harness, not the game - 0/9 opening-tag compliance and content-filter voids decided both dungeon sessions, so tomorrow's burn must fix grammar and void accounting before adding a single scene.",
+      "quote": "The dice law is not yet deciding outcomes, so the module measures filter friction and format compliance, not play.",
+      "source": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/hermes_burn/SESSION_FINDINGS_dig.md",
+      "steal": "One seat one sitting: apply the dig's pre-registered single change - the opening-tag rule line plus one good/bad example in every PC prompt in tools/dungeon.py, replaying S0b's constant tip c542a62bea461f92927920b8ed4a2b3934a3bec1e8bb64db9d5fb83b6b1e986e for a clean A/B under watch/inbox/playground/.",
+      "falsifier": "The dig's own pre-registered one: strict compliance stays at 1 or fewer non-void PC beats after the rule line, at which point enforcement moves carrier-side.",
+      "leverage": "high"
+    },
+    {
+      "law": "corpus-fold-never-run",
+      "claim": "The estate's steal corpus carries zero D&D-play prior art (29 files, zero hits on dungeon/dice-law/tavern/DND/bar-fight, re-run by this lane), so the 48h register's meta-gap 2 repeats today: the arena day's laws live only in watch/inbox.",
+      "quote": "Every wave's findings live only inside\n   watch/inbox windows where the next seat will not grep.",
+      "source": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/gap_analysis_20261001/GAP_REGISTER.md",
+      "steal": "One sitting: fold the arena day's laws (fixed-bytes-decide, committed-before-spoken, hollow-batch VOID, default-to-rails) into corpus/steal/CORPUS_FOLD_DOGFOOD_20261003.md so the next seat's grep hits instead of re-deriving them.",
+      "falsifier": "The same subject grep over corpus/steal after the fold still returns zero hits.",
+      "leverage": "medium"
+    },
+    {
+      "law": "hollow-batch-void",
+      "claim": "What a stranger should steal from the 24h burn: outputs without their material are VOID - a cheap seat fabricates when evidence is missing while the run still prints ok=True, so render-verification must be a carrier law, not model manners.",
+      "quote": "a cheap seat fabricates when\n   evidence is missing, and the run still prints ok=True",
+      "source": "C:/Users/foste/Documents/projects/local_sovereign_agent/queue/STANDING_RAILS.md",
+      "steal": "One sitting: add render-verification to the ds_workhorse batch rail (assert each prompt carries the rendered material before fire; bank VOID rows where it was missing) so the caught failure shape becomes an exit code.",
+      "falsifier": "A batch run again prints ok=True on outputs whose prompts lacked the rendered material with no VOID row banked.",
+      "leverage": "high"
+    }
+  ],
+  "decision_changed": "next-cycle burn ordering: repair the measuring instrument (opening-tag grammar A/B + void accounting) and fold the arena-day laws into corpus/steal BEFORE any new module content; new model-calling code starts at mag.route_chat per STANDING_RAILS default-to-rails",
+  "note": "Head gate verified by lane (dungeon dry exit 0, golden pins reproduce, 3/3 REAL_SCROLLS pass); 5 rows mined with byte-verified quotes; corpus/steal zero-hit grep recorded as finding; the head chapter watch/inbox/dd_dogfood/SYNTHESIS.md had not landed at lane close, so the synthesis rides its five landed chapters plus SESSION_FINDINGS_dig, DND_module, SUBSTANCE_48h_synthesis, GAP_REGISTER and STANDING_RAILS."
+}

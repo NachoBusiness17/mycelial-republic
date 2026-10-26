@@ -1,0 +1,630 @@
+<!DOCTYPE html><html lang="en"> <head><meta charset="UTF-8"><meta name="description" content="Fine-tune, convert and deploy language models on NVIDIA Jetson with Unsloth and llama.cpp."><meta name="viewport" content="width=device-width, initial-scale=1.0"><link rel="icon" type="image/png" href="/images/icons/nvidia-logo.png"><link rel="apple-touch-icon" href="/images/icons/nvidia-logo.png"><link rel="canonical" href="https://www.jetson-ai-lab.com/tutorials/unsloth-on-jetson/"><meta name="generator" content="Astro v5.16.6"><title>Optimize Models with Unsloth | Jetson AI Lab</title><!-- Open Graph --><meta property="og:type" content="website"><meta property="og:url" content="https://www.jetson-ai-lab.com/tutorials/unsloth-on-jetson/"><meta property="og:title" content="Optimize Models with Unsloth | Jetson AI Lab"><meta property="og:description" content="Fine-tune, convert and deploy language models on NVIDIA Jetson with Unsloth and llama.cpp."><meta property="og:image" content="https://www.jetson-ai-lab.com/images/hero/nvidia-logo.png"><meta property="og:image:alt" content="NVIDIA Jetson AI Lab"><meta property="og:site_name" content="Jetson AI Lab"><meta property="og:locale" content="en_US"><!-- Twitter Card --><meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="Optimize Models with Unsloth | Jetson AI Lab"><meta name="twitter:description" content="Fine-tune, convert and deploy language models on NVIDIA Jetson with Unsloth and llama.cpp."><meta name="twitter:image" content="https://www.jetson-ai-lab.com/images/hero/nvidia-logo.png"><meta name="twitter:image:alt" content="NVIDIA Jetson AI Lab"><script type="application/ld+json">{"@context":"https://schema.org","@type":"WebSite","name":"Jetson AI Lab","alternateName":"NVIDIA Jetson AI Lab","url":"https://www.jetson-ai-lab.com/","description":"Guides, models, tutorials, and community resources for running generative AI on NVIDIA Jetson.","publisher":{"@type":"Organization","name":"NVIDIA","url":"https://www.nvidia.com/"},"inLanguage":"en"}</script><!-- Google Analytics --><script async src="https://www.googletagmanager.com/gtag/js?id=G-SXH8S4Y8RW"></script><script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-SXH8S4Y8RW');
+    </script><!-- ISO download tracking --><script>
+      document.addEventListener('DOMContentLoaded', function () {
+        const links = Array.from(document.querySelectorAll('a[href$=".iso"]'));
+
+        links.forEach(link => {
+          link.addEventListener('click', function (e) {
+            const url = link.href;
+            const openInNewTab = e.metaKey || e.ctrlKey || link.target === '_blank';
+            const fileName = (new URL(url)).pathname.split('/').pop() || 'unknown';
+            if (!openInNewTab) e.preventDefault();
+
+            // Optional: parse your NVIDIA URL for useful params
+            const m = link.pathname.match(/L4T\/(r\d+_Release_v[\d.]+)\/.*jetsoninstaller-([\d.]+)-(r[\d.]+)-([\d-]+)-(arm64)\.iso$/);
+
+            if (typeof gtag === 'function') {
+              gtag('event', 'download_iso_file', {
+                file_extension: 'iso',
+                file_name: fileName,
+                link_url: url,
+                l4t_release_raw: m?.[1] || '',
+                installer_version: m?.[2] || '',
+                l4t_release: m?.[3] || '',
+                build_timestamp: m?.[4] || '',
+                arch: m?.[5] || '',
+                event_callback: function () { if (!openInNewTab) window.location.href = url; },
+                event_timeout: 2000
+              });
+            }
+
+            if (!openInNewTab) setTimeout(() => { window.location.href = url; }, 1000);
+          }, { capture: true });
+        });
+      });
+    </script><!-- OneTrust Cookies Consent Notice - Only on Production --><!-- Excluded on localhost/staging to avoid popup loop on non-production domains --><script>
+      // Only load OneTrust on production domain
+      if (window.location.hostname === 'www.jetson-ai-lab.com' || window.location.hostname === 'jetson-ai-lab.com') {
+        // OneTrust Cookie Consent
+        var script1 = document.createElement('script');
+        script1.src = 'https://cdn.cookielaw.org/scripttemplates/otSDKStub.js';
+        script1.type = 'text/javascript';
+        script1.charset = 'UTF-8';
+        script1.setAttribute('data-domain-script', '018e2d65-efdf-7071-b793-f15ccf25c234');
+        document.head.appendChild(script1);
+
+        // OptanonWrapper callback
+        window.OptanonWrapper = function() {
+          var event = new Event('bannerLoaded');
+          window.dispatchEvent(event);
+        };
+
+        // OneTrust custom JS
+        var script2 = document.createElement('script');
+        script2.src = 'https://images.nvidia.com/aem-dam/Solutions/ot-js/ot-custom.js';
+        script2.type = 'text/javascript';
+        document.head.appendChild(script2);
+
+        // Adobe DTM
+        var script3 = document.createElement('script');
+        script3.src = '//assets.adobedtm.com/5d4962a43b79/814eb6e9b4e1/launch-4bc07f1e0b0b.min.js';
+        document.head.appendChild(script3);
+      }
+    </script><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"><link rel="stylesheet" href="/_astro/index.BGeD8xr8.css">
+<style>.code-block-wrapper{position:relative}.code-copy-btn{position:absolute;top:.5rem;right:.5rem;padding:.375rem;color:#e2e8f0;background:#37415180;border:1px solid rgba(75,85,99,1);border-radius:.375rem;cursor:pointer;transition:background .15s,border-color .15s}.code-copy-btn:hover{background:#4b5563cc;border-color:#6b7280}.code-copy-btn.code-copy-done{border-color:#76b900}.prose pre{padding-top:2.25rem}
+.device-tabs{margin:1.5rem 0}.device-tab-bar{display:flex;gap:2rem;border-bottom:1px solid #e5e7eb;margin-bottom:1.5rem}.device-tab{padding-bottom:1rem;font-size:1.125rem;font-weight:500;cursor:pointer;border:none;border-bottom:2px solid transparent;background:transparent;color:#6b7280;transition:all .2s}.device-tab.active{color:#76b900;border-bottom-color:#76b900}.device-tab:not(.active):hover{color:#1a1a1a;border-bottom-color:#d1d5db}.prose[data-astro-cid-ds6ctzq3] pre[data-astro-cid-ds6ctzq3]::-webkit-scrollbar{height:8px}.prose[data-astro-cid-ds6ctzq3] pre[data-astro-cid-ds6ctzq3]::-webkit-scrollbar-track{background:#1f2937;border-radius:0 0 8px 8px}.prose[data-astro-cid-ds6ctzq3] pre[data-astro-cid-ds6ctzq3]::-webkit-scrollbar-thumb{background:#4b5563;border-radius:4px}.prose[data-astro-cid-ds6ctzq3] pre[data-astro-cid-ds6ctzq3]::-webkit-scrollbar-thumb:hover{background:#6b7280}.prose .contains-task-list{list-style:none;padding-left:0}.prose .task-list-item{display:flex;align-items:flex-start;gap:.5rem;margin-bottom:.25rem}.prose .task-list-item input[type=checkbox]{margin-top:.35em;width:1.125rem;height:1.125rem;accent-color:#76b900;flex-shrink:0;cursor:default}.prose h2,.prose h3{position:relative}html{scroll-behavior:smooth;scroll-padding-top:100px}.prose .mermaid-diagram{overflow-x:auto;margin:1.5rem 0;padding:1rem;border-radius:.75rem;border:1px solid #e2e8f0;background:#fff}.prose .mermaid-diagram img[id^=mermaid],.prose .mermaid-diagram svg[id^=mermaid]{display:block;max-width:100%;height:auto;margin:0 auto}.prose>img[id^=mermaid],.prose>svg[id^=mermaid]{display:block;max-width:100%;height:auto;margin:1.5rem auto}
+</style><style>.nv-tabs{margin:1.5rem 0;border-radius:.5rem;overflow:hidden;border:1px solid #e5e7eb}.nv-tabs-labels{display:flex;flex-wrap:wrap;gap:0;background:#f8f9fa;border-bottom:2px solid #e5e7eb}.nv-tab-btn{padding:.75rem 1.25rem;border:none;background:transparent;color:#4a5568;font-size:.9rem;font-weight:500;cursor:pointer;transition:all .2s ease;position:relative;border-bottom:2px solid transparent;margin-bottom:-2px}.nv-tab-btn:hover{color:#76b900;background:#76b9000d}.nv-tab-btn.active{color:#76b900;background:#fff;border-bottom-color:#76b900}.nv-tabs-content{padding:1.5rem;background:#fff}.nv-tab-panel{display:none}.nv-tab-panel.active{display:block}.nv-subtabs{margin:1rem 0;border:1px solid #e5e7eb;border-radius:.375rem;overflow:hidden}.nv-subtabs-labels{display:flex;background:#f8f9fa;border-bottom:1px solid #e5e7eb}.nv-subtab-btn{padding:.5rem 1rem;border:none;background:transparent;color:#6b7280;font-size:.85rem;font-weight:500;cursor:pointer;transition:all .15s ease;border-bottom:2px solid transparent;margin-bottom:-1px}.nv-subtab-btn:hover{color:#76b900}.nv-subtab-btn.active{color:#76b900;background:#fff;border-bottom-color:#76b900}.nv-subtabs-content{padding:1rem;background:#fff}.nv-subtab-panel{display:none}.nv-subtab-panel.active{display:block}.admonition{padding:1rem 1.25rem;border-radius:.5rem;margin:1rem 0;border-left:4px solid}.admonition-title{font-weight:600;margin-bottom:.5rem;display:flex;align-items:center;gap:.5rem}.admonition.note{background:#eff6ff;border-color:#3b82f6}.admonition.note .admonition-title{color:#1d4ed8}.admonition.warning{background:#fefce8;border-color:#eab308}.admonition.warning .admonition-title{color:#a16207}.admonition.danger{background:#fef2f2;border-color:#ef4444}.admonition.danger .admonition-title{color:#b91c1c}.admonition.tip{background:#f0fdf4;border-color:#22c55e}.admonition.tip .admonition-title{color:#15803d}.admonition.info{background:#f0fdf4;border-color:#76b900}.admonition.info .admonition-title{color:#76b900}.nv-details{margin:1rem 0;border:2px solid #22d3ee;border-radius:.5rem;overflow:hidden;background:#fff}.nv-details summary{padding:.875rem 1.25rem;background:#ecfeff;cursor:pointer;display:flex;align-items:center;gap:.75rem;font-weight:500;color:#0891b2;list-style:none;transition:background .2s}.nv-details summary::-webkit-details-marker{display:none}.nv-details summary:before{content:"ℹ️"}.nv-details summary:after{content:"›";margin-left:auto;font-size:1.25rem;transition:transform .2s}.nv-details[open] summary:after{transform:rotate(90deg)}.nv-details summary:hover{background:#cffafe}.nv-details .nv-details-content{padding:1rem}.nv-button{display:inline-block;padding:.75rem 1.5rem;background:#76b900;color:#000;font-weight:600;border-radius:.375rem;text-decoration:none;transition:all .2s ease;border:none;cursor:pointer}.nv-button:hover{background:#5a9100;color:#000;text-decoration:none}.nv-button.secondary{background:#f3e9f2;color:#b544c4;border:1px solid #b544c4}.nv-button.secondary:hover{background:#e8d5e7}.tutorial-img{max-width:100%;border-radius:.5rem;box-shadow:0 4px 6px -1px #0000001a;margin:.5rem 0}kbd{background:#f1f5f9;padding:2px 8px;border-radius:4px;font-family:ui-monospace,monospace;font-size:.875em;border:1px solid #e2e8f0;box-shadow:0 1px 2px #0000000d}.blob-green{background:#22c55e;color:#fff;padding:2px 8px;border-radius:4px;font-size:.875em}.blob-white{background:#f8fafc;border:1px solid #e2e8f0;padding:2px 8px;border-radius:4px;font-size:.875em}.blob-black{background:#1e293b;color:#fff;padding:2px 8px;border-radius:4px;font-size:.875em}
+</style></head> <body class="bg-nvidia-white text-nvidia-black"> <!-- Migration Notice Banner --> <div id="migration-notice" class="bg-gradient-to-r from-nvidia-green to-gray-100 text-black px-4 py-3 shadow-lg" style="display: none;"> <div class="max-w-7xl mx-auto flex items-center justify-between gap-4"> <div class="flex items-center gap-3 flex-1"> <span class="text-2xl">🎉</span> <div class="flex-1"> <p class="font-semibold">Welcome to Jetson AI Lab 2.0!</p> <p class="text-sm">We've redesigned the site with curated tutorials. Looking for old content?
+<a href="/archive/index.html" class="underline font-medium hover:text-white">Browse the archive →</a> </p> </div> </div> <button id="dismiss-notice" class="text-black hover:text-white font-bold text-xl px-2 py-1 rounded hover:bg-black/10 transition-colors" aria-label="Dismiss">
+×
+</button> </div> </div> <header class="bg-nvidia-white border-b border-nvidia-gray-200 sticky top-0 z-50"> <nav class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8"> <div class="flex justify-between h-16"> <div class="flex items-center"> <a href="/" class="flex items-center"> <span class="text-2xl font-nvidia font-bold text-nvidia-black">Jetson AI Lab</span> </a> </div> <div class="hidden md:flex items-center space-x-1"> <a href="/" class="text-nvidia-black hover:text-nvidia-green hover:bg-nvidia-gray-50 px-4 py-2 text-sm font-medium rounded-md transition-colors duration-200">Home</a> <a href="/models" class="text-nvidia-black hover:text-nvidia-green hover:bg-nvidia-gray-50 px-4 py-2 text-sm font-medium rounded-md transition-colors duration-200">Models</a> <a href="/tutorials" class="text-nvidia-black hover:text-nvidia-green hover:bg-nvidia-gray-50 px-4 py-2 text-sm font-medium rounded-md transition-colors duration-200">Tutorials</a> <a href="/projects" class="text-nvidia-black hover:text-nvidia-green hover:bg-nvidia-gray-50 px-4 py-2 text-sm font-medium rounded-md transition-colors duration-200">Projects</a> <a href="/research" class="text-nvidia-black hover:text-nvidia-green hover:bg-nvidia-gray-50 px-4 py-2 text-sm font-medium rounded-md transition-colors duration-200">Research Group</a> </div> <div class="md:hidden flex items-center"> <button id="mobile-menu-button" class="text-nvidia-black hover:text-nvidia-green p-2" aria-label="Toggle menu"> <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"> <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path> </svg> </button> </div> </div> <!-- Mobile menu, hidden by default --> <div id="mobile-menu" class="hidden md:hidden pb-4"> <a href="/" class="block text-nvidia-black hover:text-nvidia-green hover:bg-nvidia-gray-50 px-4 py-3 text-base font-medium rounded-md transition-colors duration-200">Home</a> <a href="/models" class="block text-nvidia-black hover:text-nvidia-green hover:bg-nvidia-gray-50 px-4 py-3 text-base font-medium rounded-md transition-colors duration-200">Models</a> <a href="/tutorials" class="block text-nvidia-black hover:text-nvidia-green hover:bg-nvidia-gray-50 px-4 py-3 text-base font-medium rounded-md transition-colors duration-200">Tutorials</a> <a href="/projects" class="block text-nvidia-black hover:text-nvidia-green hover:bg-nvidia-gray-50 px-4 py-3 text-base font-medium rounded-md transition-colors duration-200">Projects</a> <a href="/research" class="block text-nvidia-black hover:text-nvidia-green hover:bg-nvidia-gray-50 px-4 py-3 text-base font-medium rounded-md transition-colors duration-200">Research Group</a> </div> </nav> </header> <!-- Mobile Menu Toggle Script --> <script>
+      (function() {
+        var menuButton = document.getElementById('mobile-menu-button');
+        var mobileMenu = document.getElementById('mobile-menu');
+
+        if (menuButton && mobileMenu) {
+          menuButton.addEventListener('click', function() {
+            mobileMenu.classList.toggle('hidden');
+          });
+        }
+      })();
+    </script> <main class="min-h-screen">  <div class="bg-white min-h-screen" data-astro-cid-ds6ctzq3>   <div class="bg-slate-900 text-white border-b border-slate-800 relative overflow-hidden" data-astro-cid-ds6ctzq3>  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 lg:py-24 relative" data-astro-cid-ds6ctzq3> <!-- Background pattern (subtle when image present) --> <div class="absolute top-0 right-0 -mt-20 -mr-20 w-96 h-96 rounded-full blur-3xl bg-nvidia-green/10" data-astro-cid-ds6ctzq3></div> <div class="absolute bottom-0 left-0 -mb-20 -ml-20 w-80 h-80 rounded-full blur-3xl bg-blue-500/10" data-astro-cid-ds6ctzq3></div> <div class="relative z-10 max-w-3xl" data-astro-cid-ds6ctzq3> <div class="flex items-center gap-4 mb-6 text-sm font-medium text-nvidia-green" data-astro-cid-ds6ctzq3> <a href="/tutorials" class="hover:text-white transition-colors flex items-center gap-1" data-astro-cid-ds6ctzq3> <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" data-astro-cid-ds6ctzq3><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" data-astro-cid-ds6ctzq3></path></svg>
+Back to Tutorials
+</a> </div> <h1 class="text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-6 tracking-tight leading-tight" data-astro-cid-ds6ctzq3> Optimize Models with Unsloth </h1> <p class="text-xl text-slate-300 mb-8 leading-relaxed max-w-2xl" data-astro-cid-ds6ctzq3> Fine-tune, convert and deploy language models on NVIDIA Jetson with Unsloth and llama.cpp. </p> <div class="flex flex-wrap items-center gap-3 mt-2" data-astro-cid-ds6ctzq3> <span class="text-xs font-semibold uppercase tracking-wider text-slate-500 mr-1 leading-none self-center" data-astro-cid-ds6ctzq3> Author </span> <a href="https://github.com/adsahu-nv" target="_blank" rel="noopener noreferrer" data-astro-cid-ds6ctzq3> <span class="inline-flex items-center gap-2 rounded-full bg-white/10 pl-1 pr-3 py-1 text-sm text-slate-300 backdrop-blur-sm border border-white/10 hover:bg-white/15 hover:border-white/20 transition-all" data-astro-cid-ds6ctzq3> <img src="https://github.com/adsahu-nv.png?size=64" alt="Aditya Sahu" class="w-6 h-6 rounded-full" loading="lazy" data-astro-cid-ds6ctzq3> Aditya Sahu </span> </a> </div> </div> </div> </div> <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12" data-astro-cid-ds6ctzq3> <div class="lg:grid lg:grid-cols-12 lg:gap-12" data-astro-cid-ds6ctzq3> <!-- Sidebar (Table of Contents) --> <aside class="hidden lg:block lg:col-span-3" data-astro-cid-ds6ctzq3> <div class="sticky top-8" data-astro-cid-ds6ctzq3> <h3 class="text-sm font-semibold text-slate-900 uppercase tracking-wider mb-4" data-astro-cid-ds6ctzq3>
+On this page
+</h3> <nav class="space-y-1" data-astro-cid-ds6ctzq3> <a href="#bring-your-own-model-to-jetson" class="block py-1.5 text-sm text-slate-600 hover:text-nvidia-green hover:pl-1 transition-all duration-200 border-l-2 border-transparent hover:border-nvidia-green pl-3 -ml-3" data-astro-cid-ds6ctzq3> Bring Your Own Model to Jetson </a><a href="#requirements" class="block py-1.5 text-sm text-slate-600 hover:text-nvidia-green hover:pl-1 transition-all duration-200 border-l-2 border-transparent hover:border-nvidia-green pl-3 -ml-3" data-astro-cid-ds6ctzq3> Requirements </a><a href="#install-unsloth" class="block py-1.5 text-sm text-slate-600 hover:text-nvidia-green hover:pl-1 transition-all duration-200 border-l-2 border-transparent hover:border-nvidia-green pl-3 -ml-3" data-astro-cid-ds6ctzq3> Install Unsloth </a><a href="#build-llamacpp" class="block py-1.5 text-sm text-slate-600 hover:text-nvidia-green hover:pl-1 transition-all duration-200 border-l-2 border-transparent hover:border-nvidia-green pl-3 -ml-3" data-astro-cid-ds6ctzq3> Build llama.cpp </a><a href="#fine-tune-with-qlora" class="block py-1.5 text-sm text-slate-600 hover:text-nvidia-green hover:pl-1 transition-all duration-200 border-l-2 border-transparent hover:border-nvidia-green pl-3 -ml-3" data-astro-cid-ds6ctzq3> Fine-tune with QLoRA </a><a href="#convert-a-model-to-gguf" class="block py-1.5 text-sm text-slate-600 hover:text-nvidia-green hover:pl-1 transition-all duration-200 border-l-2 border-transparent hover:border-nvidia-green pl-3 -ml-3" data-astro-cid-ds6ctzq3> Convert a model to GGUF </a><a href="#run-the-gguf-with-llamacpp" class="block py-1.5 text-sm text-slate-600 hover:text-nvidia-green hover:pl-1 transition-all duration-200 border-l-2 border-transparent hover:border-nvidia-green pl-3 -ml-3" data-astro-cid-ds6ctzq3> Run the GGUF with llama.cpp </a><a href="#optional-unsloth-studio-over-ssh" class="block py-1.5 text-sm text-slate-600 hover:text-nvidia-green hover:pl-1 transition-all duration-200 border-l-2 border-transparent hover:border-nvidia-green pl-3 -ml-3" data-astro-cid-ds6ctzq3> Optional: Unsloth Studio over SSH </a><a href="#references" class="block py-1.5 text-sm text-slate-600 hover:text-nvidia-green hover:pl-1 transition-all duration-200 border-l-2 border-transparent hover:border-nvidia-green pl-3 -ml-3" data-astro-cid-ds6ctzq3> References </a> </nav> <div class="mt-8 pt-8 border-t border-slate-200" data-astro-cid-ds6ctzq3> <h3 class="text-sm font-semibold text-slate-900 uppercase tracking-wider mb-4" data-astro-cid-ds6ctzq3>
+Resources
+</h3> <div class="flex flex-col gap-3" data-astro-cid-ds6ctzq3> <a href="https://github.com/NVIDIA-AI-IOT/jetson-ai-lab/blob/main/src/content/tutorials/model-optimization/unsloth-on-jetson.mdx" target="_blank" rel="noopener noreferrer" class="flex items-center gap-2 text-sm text-slate-600 hover:text-nvidia-green transition-colors" data-astro-cid-ds6ctzq3> <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" data-astro-cid-ds6ctzq3><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" data-astro-cid-ds6ctzq3></path></svg>
+View Source
+</a> <a href="https://github.com/NVIDIA-AI-IOT/jetson-ai-lab/issues" target="_blank" rel="noopener noreferrer" class="flex items-center gap-2 text-sm text-slate-600 hover:text-nvidia-green transition-colors" data-astro-cid-ds6ctzq3> <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" data-astro-cid-ds6ctzq3><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" data-astro-cid-ds6ctzq3></path></svg>
+Report Issue
+</a> </div> </div> </div> </aside> <!-- Main Content --> <main class="lg:col-span-9" data-astro-cid-ds6ctzq3> <div class="prose prose-slate prose-lg max-w-none
+						prose-headings:font-bold prose-headings:tracking-tight prose-headings:text-slate-900
+						prose-p:text-slate-600 prose-p:leading-relaxed
+						prose-a:text-nvidia-green prose-a:no-underline hover:prose-a:underline
+						prose-strong:text-slate-900 prose-strong:font-bold
+						prose-code:text-slate-800 prose-code:bg-slate-100 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded-md prose-code:before:content-none prose-code:after:content-none prose-code:font-medium
+						prose-pre:bg-slate-900 prose-pre:shadow-lg prose-pre:rounded-xl prose-pre:border prose-pre:border-slate-800
+						[&_pre_code]:bg-transparent [&_pre_code]:text-slate-200 [&_pre_code]:p-0
+						prose-img:rounded-xl prose-img:shadow-md
+						prose-blockquote:border-l-4 prose-blockquote:border-nvidia-green prose-blockquote:bg-slate-50 prose-blockquote:py-2 prose-blockquote:px-4 prose-blockquote:rounded-r-lg prose-blockquote:not-italic
+						" data-astro-cid-ds6ctzq3> <p>Fine-tune and deploy language models directly on NVIDIA Jetson with Unsloth and JetPack 7.2. This tutorial uses memory-efficient QLoRA, exports the results to GGUF, and runs them locally.</p>
+<p>Two practical examples cover <strong>Qwen3.5-4B on Jetson Orin Nano</strong> and <strong>NVIDIA Nemotron 3.5 Lightning 30B-A3B on Jetson AGX Thor</strong>.</p>
+<h2 id="bring-your-own-model-to-jetson">Bring Your Own Model to Jetson</h2>
+<p>Fine-tune your model with QLoRA, convert it to GGUF, or run an existing GGUF locally on Jetson.</p>
+<p><img src="/images/tutorials/optimize-with-unsloth-run-on-nvidia-jetson.gif" alt="Optimize a model with Unsloth and run it on NVIDIA Jetson"/></p>
+<div class="nv-tabs " data-tabs-id="tabs-i1j5xrhdc"> <div class="nv-tabs-labels"> <button type="button" role="tab" aria-selected="true" class="nv-tab-btn active" data-tab-index="0"> Fine-tune a model </button><button type="button" role="tab" aria-selected="false" class="nv-tab-btn " data-tab-index="1"> Convert to GGUF </button><button type="button" role="tab" aria-selected="false" class="nv-tab-btn " data-tab-index="2"> Run an existing GGUF </button> </div> <div class="nv-tabs-content"> <div class="nv-tab-panel active"><p><strong>Adapt a base or existing model to your data.</strong></p><p>Start with <a href="#fine-tune-with-qlora">Fine-tune with QLoRA</a>, then convert the adapter to GGUF and run it with llama.cpp.</p><p><strong>Result:</strong> a LoRA adapter followed by a deployable GGUF model.</p></div><div class="nv-tab-panel"><p><strong>Use a model that is already ready for deployment.</strong></p><p>Skip fine-tuning and begin with <a href="#convert-a-model-to-gguf">Convert a model to GGUF</a>.</p><p><strong>Result:</strong> a quantized GGUF model.</p></div><div class="nv-tab-panel"><p><strong>Use a GGUF model you already have.</strong></p><p>Go directly to <a href="#run-the-gguf-with-llamacpp">Run the GGUF with llama.cpp</a>.</p><p><strong>Result:</strong> GPU-accelerated local inference on Jetson.</p></div> </div> </div>  <script type="module">function i(){document.querySelectorAll(".nv-tabs").forEach(a=>{const c=a.querySelectorAll(".nv-tab-btn"),t=a.querySelectorAll(":scope > .nv-tabs-content > .nv-tab-panel");t[0]&&!t[0].classList.contains("active")&&t[0].classList.add("active"),c.forEach((s,l)=>{s.addEventListener("click",()=>{c.forEach(e=>{e.classList.remove("active"),e.setAttribute("aria-selected","false")}),t.forEach(e=>e.classList.remove("active")),s.classList.add("active"),s.setAttribute("aria-selected","true"),t[l]&&t[l].classList.add("active")})})}),document.querySelectorAll(".nv-subtabs").forEach(a=>{const c=a.querySelectorAll(".nv-subtab-btn"),t=a.querySelectorAll(":scope > .nv-subtabs-content > .nv-subtab-panel");t[0]&&!t[0].classList.contains("active")&&t[0].classList.add("active"),c.forEach((s,l)=>{s.addEventListener("click",()=>{c.forEach(e=>e.classList.remove("active")),t.forEach(e=>e.classList.remove("active")),s.classList.add("active"),t[l]&&t[l].classList.add("active")})})})}i();document.addEventListener("astro:page-load",i);</script>
+<h2 id="requirements">Requirements</h2>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>Item</th><th>Requirement</th></tr></thead><tbody><tr><td>Software</td><td>JetPack 7.2, Python 3.12</td></tr><tr><td>Storage</td><td>NVMe with ~40 GB free for Qwen or ~270 GB for Nemotron</td></tr><tr><td>Network</td><td>Access to PyPI, Hugging Face, and GitHub</td></tr><tr><td>CUDA target</td><td>Orin: <code>87</code>; AGX Thor: <code>110</code></td></tr></tbody></table>
+<h2 id="install-unsloth">Install Unsloth</h2>
+<p>Create a Python virtual environment on NVMe:</p>
+<pre class="astro-code github-dark" style="background-color:#24292e;color:#e1e4e8;overflow-x:auto" tabindex="0" data-language="bash"><code><span class="line"><span style="color:#B392F0">sudo</span><span style="color:#9ECBFF"> apt-get</span><span style="color:#9ECBFF"> update</span></span>
+<span class="line"><span style="color:#B392F0">sudo</span><span style="color:#9ECBFF"> apt-get</span><span style="color:#9ECBFF"> install</span><span style="color:#79B8FF"> -y</span><span style="color:#9ECBFF"> python3.12-venv</span><span style="color:#9ECBFF"> python3.12-dev</span><span style="color:#9ECBFF"> build-essential</span><span style="color:#9ECBFF"> git</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#F97583">export</span><span style="color:#E1E4E8"> JETSON_UNSLOTH_DIR</span><span style="color:#F97583">=</span><span style="color:#E1E4E8">/mnt/ssd/unsloth-on-jetson</span></span>
+<span class="line"><span style="color:#B392F0">mkdir</span><span style="color:#79B8FF"> -p</span><span style="color:#9ECBFF"> &quot;</span><span style="color:#E1E4E8">$JETSON_UNSLOTH_DIR</span><span style="color:#9ECBFF">&quot;</span></span>
+<span class="line"><span style="color:#79B8FF">cd</span><span style="color:#9ECBFF"> &quot;</span><span style="color:#E1E4E8">$JETSON_UNSLOTH_DIR</span><span style="color:#9ECBFF">&quot;</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#B392F0">python3</span><span style="color:#79B8FF"> -m</span><span style="color:#9ECBFF"> venv</span><span style="color:#9ECBFF"> .venv-unsloth</span></span>
+<span class="line"><span style="color:#79B8FF">source</span><span style="color:#9ECBFF"> .venv-unsloth/bin/activate</span></span>
+<span class="line"><span style="color:#B392F0">python</span><span style="color:#79B8FF"> -m</span><span style="color:#9ECBFF"> pip</span><span style="color:#9ECBFF"> install</span><span style="color:#79B8FF"> --upgrade</span><span style="color:#9ECBFF"> pip</span><span style="color:#9ECBFF"> uv</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#F97583">export</span><span style="color:#E1E4E8"> UV_CACHE_DIR</span><span style="color:#F97583">=</span><span style="color:#9ECBFF">&quot;</span><span style="color:#E1E4E8">$PWD</span><span style="color:#9ECBFF">/.cache/uv&quot;</span></span>
+<span class="line"><span style="color:#F97583">export</span><span style="color:#E1E4E8"> PIP_CACHE_DIR</span><span style="color:#F97583">=</span><span style="color:#9ECBFF">&quot;</span><span style="color:#E1E4E8">$PWD</span><span style="color:#9ECBFF">/.cache/pip&quot;</span></span>
+<span class="line"><span style="color:#F97583">export</span><span style="color:#E1E4E8"> HF_HOME</span><span style="color:#F97583">=</span><span style="color:#9ECBFF">&quot;</span><span style="color:#E1E4E8">$PWD</span><span style="color:#9ECBFF">/.cache/huggingface&quot;</span></span>
+<span class="line"><span style="color:#F97583">export</span><span style="color:#E1E4E8"> TMPDIR</span><span style="color:#F97583">=</span><span style="color:#9ECBFF">&quot;</span><span style="color:#E1E4E8">$PWD</span><span style="color:#9ECBFF">/tmp&quot;</span></span>
+<span class="line"><span style="color:#B392F0">mkdir</span><span style="color:#79B8FF"> -p</span><span style="color:#9ECBFF"> &quot;</span><span style="color:#E1E4E8">$UV_CACHE_DIR</span><span style="color:#9ECBFF">&quot;</span><span style="color:#9ECBFF"> &quot;</span><span style="color:#E1E4E8">$PIP_CACHE_DIR</span><span style="color:#9ECBFF">&quot;</span><span style="color:#9ECBFF"> &quot;</span><span style="color:#E1E4E8">$HF_HOME</span><span style="color:#9ECBFF">&quot;</span><span style="color:#9ECBFF"> &quot;</span><span style="color:#E1E4E8">$TMPDIR</span><span style="color:#9ECBFF">&quot;</span></span></code></pre>
+<p>Change <code>/mnt/ssd</code> if your NVMe drive is mounted elsewhere.</p>
+<p>Install Unsloth with the CUDA 13.0 PyTorch backend:</p>
+<pre class="astro-code github-dark" style="background-color:#24292e;color:#e1e4e8;overflow-x:auto" tabindex="0" data-language="bash"><code><span class="line"><span style="color:#B392F0">uv</span><span style="color:#9ECBFF"> pip</span><span style="color:#9ECBFF"> install</span><span style="color:#79B8FF"> --reinstall</span><span style="color:#79B8FF"> --no-deps</span><span style="color:#79B8FF"> \</span></span>
+<span class="line"><span style="color:#79B8FF">  --default-index</span><span style="color:#9ECBFF"> https://pypi.org/simple</span><span style="color:#79B8FF"> \</span></span>
+<span class="line"><span style="color:#9ECBFF">  torchao</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#B392F0">uv</span><span style="color:#9ECBFF"> pip</span><span style="color:#9ECBFF"> install</span><span style="color:#79B8FF"> --upgrade</span><span style="color:#79B8FF"> \</span></span>
+<span class="line"><span style="color:#79B8FF">  --torch-backend=cu130</span><span style="color:#79B8FF"> \</span></span>
+<span class="line"><span style="color:#9ECBFF">  &quot;unsloth&gt;=2026&quot;</span></span></code></pre>
+<p>Confirm that PyTorch sees the Jetson GPU:</p>
+<pre class="astro-code github-dark" style="background-color:#24292e;color:#e1e4e8;overflow-x:auto" tabindex="0" data-language="bash"><code><span class="line"><span style="color:#B392F0">python</span><span style="color:#9ECBFF"> -</span><span style="color:#F97583"> &lt;&lt;</span><span style="color:#9ECBFF">&#39;PY&#39;</span></span>
+<span class="line"><span style="color:#9ECBFF">import torch</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#9ECBFF">assert torch.cuda.is_available(), &quot;CUDA is not available&quot;</span></span>
+<span class="line"><span style="color:#9ECBFF">print(torch.cuda.get_device_name(0), torch.cuda.get_device_capability(0))</span></span>
+<span class="line"><span style="color:#9ECBFF">PY</span></span></code></pre>
+<h2 id="build-llamacpp">Build llama.cpp</h2>
+<p>Build llama.cpp natively with CUDA support. JetPack provides the NVIDIA driver and CUDA runtime; install the CUDA compiler components used by llama.cpp inside the same virtual environment:</p>
+<pre class="astro-code github-dark" style="background-color:#24292e;color:#e1e4e8;overflow-x:auto" tabindex="0" data-language="bash"><code><span class="line"><span style="color:#B392F0">sudo</span><span style="color:#9ECBFF"> apt-get</span><span style="color:#9ECBFF"> update</span></span>
+<span class="line"><span style="color:#B392F0">sudo</span><span style="color:#9ECBFF"> apt-get</span><span style="color:#9ECBFF"> install</span><span style="color:#79B8FF"> -y</span><span style="color:#9ECBFF"> pciutils</span><span style="color:#9ECBFF"> build-essential</span><span style="color:#9ECBFF"> curl</span><span style="color:#9ECBFF"> libcurl4-openssl-dev</span><span style="color:#9ECBFF"> git</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#B392F0">uv</span><span style="color:#9ECBFF"> pip</span><span style="color:#9ECBFF"> install</span><span style="color:#79B8FF"> --upgrade</span><span style="color:#9ECBFF"> cmake</span><span style="color:#9ECBFF"> ninja</span><span style="color:#79B8FF"> \</span></span>
+<span class="line"><span style="color:#9ECBFF">  &quot;nvidia-cuda-nvcc&gt;=13.0,&lt;13.1&quot;</span><span style="color:#79B8FF"> \</span></span>
+<span class="line"><span style="color:#9ECBFF">  &quot;nvidia-cuda-crt&gt;=13.0,&lt;13.1&quot;</span><span style="color:#79B8FF"> \</span></span>
+<span class="line"><span style="color:#9ECBFF">  &quot;nvidia-nvvm&gt;=13.0,&lt;13.1&quot;</span><span style="color:#79B8FF"> \</span></span>
+<span class="line"><span style="color:#9ECBFF">  &quot;nvidia-cuda-cccl&gt;=13.0,&lt;13.1&quot;</span><span style="color:#79B8FF"> \</span></span>
+<span class="line"><span style="color:#9ECBFF">  &quot;nvidia-cuda-runtime&gt;=13.0,&lt;13.1&quot;</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#F97583">export</span><span style="color:#E1E4E8"> CUDA_HOME</span><span style="color:#F97583">=</span><span style="color:#9ECBFF">&quot;</span><span style="color:#E1E4E8">$VIRTUAL_ENV</span><span style="color:#9ECBFF">/lib/python3.12/site-packages/nvidia/cu13&quot;</span></span>
+<span class="line"><span style="color:#F97583">export</span><span style="color:#E1E4E8"> CUDACXX</span><span style="color:#F97583">=</span><span style="color:#9ECBFF">&quot;</span><span style="color:#E1E4E8">$CUDA_HOME</span><span style="color:#9ECBFF">/bin/nvcc&quot;</span></span>
+<span class="line"><span style="color:#F97583">export</span><span style="color:#E1E4E8"> PATH</span><span style="color:#F97583">=</span><span style="color:#9ECBFF">&quot;</span><span style="color:#E1E4E8">$CUDA_HOME</span><span style="color:#9ECBFF">/bin:</span><span style="color:#E1E4E8">$PATH</span><span style="color:#9ECBFF">&quot;</span></span>
+<span class="line"><span style="color:#F97583">export</span><span style="color:#E1E4E8"> LD_LIBRARY_PATH</span><span style="color:#F97583">=</span><span style="color:#9ECBFF">&quot;</span><span style="color:#E1E4E8">$CUDA_HOME</span><span style="color:#9ECBFF">/lib:${</span><span style="color:#E1E4E8">LD_LIBRARY_PATH</span><span style="color:#F97583">:-</span><span style="color:#9ECBFF">}&quot;</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#B392F0">ln</span><span style="color:#79B8FF"> -sfn</span><span style="color:#9ECBFF"> lib</span><span style="color:#9ECBFF"> &quot;</span><span style="color:#E1E4E8">$CUDA_HOME</span><span style="color:#9ECBFF">/lib64&quot;</span></span>
+<span class="line"><span style="color:#B392F0">ln</span><span style="color:#79B8FF"> -sfn</span><span style="color:#9ECBFF"> libcudart.so.13</span><span style="color:#9ECBFF"> &quot;</span><span style="color:#E1E4E8">$CUDA_HOME</span><span style="color:#9ECBFF">/lib/libcudart.so&quot;</span></span>
+<span class="line"><span style="color:#B392F0">ln</span><span style="color:#79B8FF"> -sfn</span><span style="color:#9ECBFF"> libcublas.so.13</span><span style="color:#9ECBFF"> &quot;</span><span style="color:#E1E4E8">$CUDA_HOME</span><span style="color:#9ECBFF">/lib/libcublas.so&quot;</span></span>
+<span class="line"><span style="color:#B392F0">ln</span><span style="color:#79B8FF"> -sfn</span><span style="color:#9ECBFF"> libcublasLt.so.13</span><span style="color:#9ECBFF"> &quot;</span><span style="color:#E1E4E8">$CUDA_HOME</span><span style="color:#9ECBFF">/lib/libcublasLt.so&quot;</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#E1E4E8">CUDA_ARCH</span><span style="color:#F97583">=</span><span style="color:#E1E4E8">$(</span><span style="color:#B392F0">python</span><span style="color:#9ECBFF"> -</span><span style="color:#F97583"> &lt;&lt;</span><span style="color:#9ECBFF">&#39;PY&#39;</span></span>
+<span class="line"><span style="color:#9ECBFF">import torch</span></span>
+<span class="line"><span style="color:#9ECBFF">major, minor = torch.cuda.get_device_capability()</span></span>
+<span class="line"><span style="color:#9ECBFF">print(f&quot;{major}{minor}&quot;)</span></span>
+<span class="line"><span style="color:#9ECBFF">PY</span></span>
+<span class="line"><span style="color:#E1E4E8">)</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#B392F0">git</span><span style="color:#9ECBFF"> clone</span><span style="color:#9ECBFF"> https://github.com/ggml-org/llama.cpp</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#B392F0">cmake</span><span style="color:#9ECBFF"> llama.cpp</span><span style="color:#79B8FF"> -B</span><span style="color:#9ECBFF"> llama.cpp/build</span><span style="color:#79B8FF"> -G</span><span style="color:#9ECBFF"> Ninja</span><span style="color:#79B8FF"> \</span></span>
+<span class="line"><span style="color:#79B8FF">  -DBUILD_SHARED_LIBS=OFF</span><span style="color:#79B8FF"> \</span></span>
+<span class="line"><span style="color:#79B8FF">  -DGGML_CUDA=ON</span><span style="color:#79B8FF"> \</span></span>
+<span class="line"><span style="color:#79B8FF">  -DCMAKE_CUDA_COMPILER=</span><span style="color:#9ECBFF">&quot;</span><span style="color:#E1E4E8">$CUDACXX</span><span style="color:#9ECBFF">&quot;</span><span style="color:#79B8FF"> \</span></span>
+<span class="line"><span style="color:#79B8FF">  -DCUDAToolkit_ROOT=</span><span style="color:#9ECBFF">&quot;</span><span style="color:#E1E4E8">$CUDA_HOME</span><span style="color:#9ECBFF">&quot;</span><span style="color:#79B8FF"> \</span></span>
+<span class="line"><span style="color:#79B8FF">  -DCMAKE_CUDA_ARCHITECTURES=</span><span style="color:#9ECBFF">&quot;</span><span style="color:#E1E4E8">$CUDA_ARCH</span><span style="color:#9ECBFF">&quot;</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#B392F0">cmake</span><span style="color:#79B8FF"> --build</span><span style="color:#9ECBFF"> llama.cpp/build</span><span style="color:#79B8FF"> \</span></span>
+<span class="line"><span style="color:#79B8FF">  --config</span><span style="color:#9ECBFF"> Release</span><span style="color:#79B8FF"> \</span></span>
+<span class="line"><span style="color:#79B8FF">  -j</span><span style="color:#79B8FF"> \</span></span>
+<span class="line"><span style="color:#79B8FF">  --clean-first</span><span style="color:#79B8FF"> \</span></span>
+<span class="line"><span style="color:#79B8FF">  --target</span><span style="color:#9ECBFF"> llama-cli</span><span style="color:#9ECBFF"> llama-mtmd-cli</span><span style="color:#9ECBFF"> llama-server</span><span style="color:#9ECBFF"> llama-quantize</span><span style="color:#9ECBFF"> llama-gguf-split</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#B392F0">cp</span><span style="color:#9ECBFF"> llama.cpp/build/bin/llama-</span><span style="color:#79B8FF">*</span><span style="color:#9ECBFF"> llama.cpp/</span></span></code></pre>
+<p>The build detects <code>87</code> on Jetson Orin and <code>110</code> on Jetson AGX Thor. Keep the virtual environment active when running llama.cpp.</p>
+<h2 id="fine-tune-with-qlora">Fine-tune with QLoRA</h2>
+<p>Use this section when you want to adapt a model to your own dataset before deployment. If you already have a Hugging Face model or local checkpoint, skip to <a href="#convert-a-model-to-gguf">Convert a model to GGUF</a>.</p>
+<p>Unsloth provides <code>FastVisionModel</code> for vision-language models and <code>FastLanguageModel</code> for text-only language models. The following examples use QLoRA to reduce memory use on Jetson.</p>
+<div class="nv-tabs " data-tabs-id="tabs-0pe0pzxkh"> <div class="nv-tabs-labels"> <button type="button" role="tab" aria-selected="true" class="nv-tab-btn active" data-tab-index="0"> Qwen3.5-4B on Orin </button><button type="button" role="tab" aria-selected="false" class="nv-tab-btn " data-tab-index="1"> Nemotron 3.5 on Thor </button> </div> <div class="nv-tabs-content"> <div class="nv-tab-panel active"><h3 id="example-qwen35-4b-on-jetson-orin-nano">Example: Qwen3.5-4B on Jetson Orin Nano</h3><p>Qwen3.5-4B is a vision-language model, so use <code>FastVisionModel</code>. This example adapts the <a href="https://huggingface.co/datasets/unsloth/LaTeX_OCR">LaTeX OCR dataset</a> used by Unsloth’s Qwen3.5-4B vision notebook.</p><p>Unsloth recommends BF16 LoRA for Qwen3.5. This Orin Nano example uses 4-bit QLoRA to reduce memory use.</p><p>Run the following cell on Jetson Orin Nano or Jetson AGX Orin:</p><details><summary><strong>Show the complete Qwen3.5-4B QLoRA script</strong></summary><pre class="astro-code github-dark" style="background-color:#24292e;color:#e1e4e8;overflow-x:auto" tabindex="0" data-language="bash"><code><span class="line"><span style="color:#B392F0">python</span><span style="color:#9ECBFF"> -</span><span style="color:#F97583"> &lt;&lt;</span><span style="color:#9ECBFF">&#39;PY&#39;</span></span>
+<span class="line"><span style="color:#9ECBFF">from unsloth import FastVisionModel</span></span>
+<span class="line"><span style="color:#9ECBFF">from unsloth.trainer import UnslothVisionDataCollator</span></span>
+<span class="line"><span style="color:#9ECBFF">from datasets import load_dataset</span></span>
+<span class="line"><span style="color:#9ECBFF">from trl import SFTConfig, SFTTrainer</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#9ECBFF">MODEL = &quot;unsloth/Qwen3.5-4B&quot;</span></span>
+<span class="line"><span style="color:#9ECBFF">OUTPUT = &quot;outputs/qwen35-4b-orin-lora&quot;</span></span>
+<span class="line"><span style="color:#9ECBFF">MAX_LENGTH = 512</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#9ECBFF">instruction = &quot;Write the LaTeX representation for this image.&quot;</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#9ECBFF">def convert_to_conversation(sample):</span></span>
+<span class="line"><span style="color:#9ECBFF">    return {</span></span>
+<span class="line"><span style="color:#9ECBFF">        &quot;messages&quot;: [</span></span>
+<span class="line"><span style="color:#9ECBFF">            {</span></span>
+<span class="line"><span style="color:#9ECBFF">                &quot;role&quot;: &quot;user&quot;,</span></span>
+<span class="line"><span style="color:#9ECBFF">                &quot;content&quot;: [</span></span>
+<span class="line"><span style="color:#9ECBFF">                    {&quot;type&quot;: &quot;text&quot;, &quot;text&quot;: instruction},</span></span>
+<span class="line"><span style="color:#9ECBFF">                    {&quot;type&quot;: &quot;image&quot;, &quot;image&quot;: sample[&quot;image&quot;]},</span></span>
+<span class="line"><span style="color:#9ECBFF">                ],</span></span>
+<span class="line"><span style="color:#9ECBFF">            },</span></span>
+<span class="line"><span style="color:#9ECBFF">            {</span></span>
+<span class="line"><span style="color:#9ECBFF">                &quot;role&quot;: &quot;assistant&quot;,</span></span>
+<span class="line"><span style="color:#9ECBFF">                &quot;content&quot;: [{&quot;type&quot;: &quot;text&quot;, &quot;text&quot;: sample[&quot;text&quot;]}],</span></span>
+<span class="line"><span style="color:#9ECBFF">            },</span></span>
+<span class="line"><span style="color:#9ECBFF">        ]</span></span>
+<span class="line"><span style="color:#9ECBFF">    }</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#9ECBFF">raw_dataset = load_dataset(&quot;unsloth/LaTeX_OCR&quot;, split=&quot;train[:100]&quot;)</span></span>
+<span class="line"><span style="color:#9ECBFF">dataset = [convert_to_conversation(sample) for sample in raw_dataset]</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#9ECBFF">model, processor = FastVisionModel.from_pretrained(</span></span>
+<span class="line"><span style="color:#9ECBFF">    MODEL,</span></span>
+<span class="line"><span style="color:#9ECBFF">    max_seq_length=MAX_LENGTH,</span></span>
+<span class="line"><span style="color:#9ECBFF">    load_in_4bit=True,</span></span>
+<span class="line"><span style="color:#9ECBFF">    use_gradient_checkpointing=&quot;unsloth&quot;,</span></span>
+<span class="line"><span style="color:#9ECBFF">)</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#9ECBFF">model = FastVisionModel.get_peft_model(</span></span>
+<span class="line"><span style="color:#9ECBFF">    model,</span></span>
+<span class="line"><span style="color:#9ECBFF">    r=8,</span></span>
+<span class="line"><span style="color:#9ECBFF">    lora_alpha=8,</span></span>
+<span class="line"><span style="color:#9ECBFF">)</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#9ECBFF">FastVisionModel.for_training(model)</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#9ECBFF">trainer = SFTTrainer(</span></span>
+<span class="line"><span style="color:#9ECBFF">    model=model,</span></span>
+<span class="line"><span style="color:#9ECBFF">    processing_class=processor,</span></span>
+<span class="line"><span style="color:#9ECBFF">    data_collator=UnslothVisionDataCollator(model, processor),</span></span>
+<span class="line"><span style="color:#9ECBFF">    train_dataset=dataset,</span></span>
+<span class="line"><span style="color:#9ECBFF">    args=SFTConfig(</span></span>
+<span class="line"><span style="color:#9ECBFF">        per_device_train_batch_size=1,</span></span>
+<span class="line"><span style="color:#9ECBFF">        gradient_accumulation_steps=4,</span></span>
+<span class="line"><span style="color:#9ECBFF">        max_steps=30,</span></span>
+<span class="line"><span style="color:#9ECBFF">        learning_rate=2e-4,</span></span>
+<span class="line"><span style="color:#9ECBFF">        optim=&quot;adamw_8bit&quot;,</span></span>
+<span class="line"><span style="color:#9ECBFF">        output_dir=f&quot;{OUTPUT}/trainer&quot;,</span></span>
+<span class="line"><span style="color:#9ECBFF">        report_to=&quot;none&quot;,</span></span>
+<span class="line"><span style="color:#9ECBFF">        bf16=True,</span></span>
+<span class="line"><span style="color:#9ECBFF">        remove_unused_columns=False,</span></span>
+<span class="line"><span style="color:#9ECBFF">        dataset_text_field=&quot;&quot;,</span></span>
+<span class="line"><span style="color:#9ECBFF">        dataset_kwargs={&quot;skip_prepare_dataset&quot;: True},</span></span>
+<span class="line"><span style="color:#9ECBFF">        max_length=MAX_LENGTH,</span></span>
+<span class="line"><span style="color:#9ECBFF">    ),</span></span>
+<span class="line"><span style="color:#9ECBFF">)</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#9ECBFF">trainer.train()</span></span>
+<span class="line"><span style="color:#9ECBFF">model.save_pretrained(OUTPUT)</span></span>
+<span class="line"><span style="color:#9ECBFF">processor.save_pretrained(OUTPUT)</span></span>
+<span class="line"><span style="color:#9ECBFF">raw_dataset[0][&quot;image&quot;].save(f&quot;{OUTPUT}/sample.png&quot;)</span></span>
+<span class="line"><span style="color:#9ECBFF">print(&quot;Saved adapter to&quot;, OUTPUT)</span></span>
+<span class="line"><span style="color:#9ECBFF">PY</span></span></code></pre></details><p>The example uses 100 samples and 30 steps so you can complete it quickly. Increase the dataset size and add a validation split for your project.</p></div><div class="nv-tab-panel"><h3 id="example-nemotron-35-lightning-on-jetson-agx-thor">Example: Nemotron 3.5 Lightning on Jetson AGX Thor</h3><p>Use this section on Jetson AGX Thor. Nemotron 3.5 Lightning is a 30B-A3B model, so it needs more storage and temporary swap space than the Qwen example.</p><h4 id="prepare-thor">Prepare Thor</h4><p>Point Triton to the CUDA assembler installed in the virtual environment:</p><pre class="astro-code github-dark" style="background-color:#24292e;color:#e1e4e8;overflow-x:auto" tabindex="0" data-language="bash"><code><span class="line"><span style="color:#F97583">export</span><span style="color:#E1E4E8"> TRITON_PTXAS_BLACKWELL_PATH</span><span style="color:#F97583">=</span><span style="color:#9ECBFF">&quot;</span><span style="color:#E1E4E8">$CUDA_HOME</span><span style="color:#9ECBFF">/bin/ptxas&quot;</span></span></code></pre><p>Create temporary swap on NVMe:</p><pre class="astro-code github-dark" style="background-color:#24292e;color:#e1e4e8;overflow-x:auto" tabindex="0" data-language="bash"><code><span class="line"><span style="color:#F97583">export</span><span style="color:#E1E4E8"> NEMOTRON_SWAP</span><span style="color:#F97583">=</span><span style="color:#9ECBFF">&quot;</span><span style="color:#E1E4E8">$JETSON_UNSLOTH_DIR</span><span style="color:#9ECBFF">/.nemotron35-thor.swap&quot;</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#B392F0">sudo</span><span style="color:#9ECBFF"> fallocate</span><span style="color:#79B8FF"> -l</span><span style="color:#9ECBFF"> 32G</span><span style="color:#9ECBFF"> &quot;</span><span style="color:#E1E4E8">$NEMOTRON_SWAP</span><span style="color:#9ECBFF">&quot;</span></span>
+<span class="line"><span style="color:#B392F0">sudo</span><span style="color:#9ECBFF"> chmod</span><span style="color:#79B8FF"> 600</span><span style="color:#9ECBFF"> &quot;</span><span style="color:#E1E4E8">$NEMOTRON_SWAP</span><span style="color:#9ECBFF">&quot;</span></span>
+<span class="line"><span style="color:#B392F0">sudo</span><span style="color:#9ECBFF"> mkswap</span><span style="color:#9ECBFF"> &quot;</span><span style="color:#E1E4E8">$NEMOTRON_SWAP</span><span style="color:#9ECBFF">&quot;</span></span>
+<span class="line"><span style="color:#B392F0">sudo</span><span style="color:#9ECBFF"> swapon</span><span style="color:#9ECBFF"> &quot;</span><span style="color:#E1E4E8">$NEMOTRON_SWAP</span><span style="color:#9ECBFF">&quot;</span></span></code></pre><p>Keep this swap active while fine-tuning and merging the model. Remove it after running the GGUF example.</p><p>Download the model:</p><pre class="astro-code github-dark" style="background-color:#24292e;color:#e1e4e8;overflow-x:auto" tabindex="0" data-language="bash"><code><span class="line"><span style="color:#B392F0">mkdir</span><span style="color:#79B8FF"> -p</span><span style="color:#9ECBFF"> models</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#B392F0">hf</span><span style="color:#9ECBFF"> download</span><span style="color:#9ECBFF"> nvidia/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-BF16</span><span style="color:#79B8FF"> \</span></span>
+<span class="line"><span style="color:#79B8FF">  --local-dir</span><span style="color:#9ECBFF"> models/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-BF16</span></span></code></pre><h4 id="fine-tune-nemotron-with-qlora">Fine-tune Nemotron with QLoRA</h4><details><summary><strong>Show the complete Nemotron 3.5 Lightning QLoRA script</strong></summary><pre class="astro-code github-dark" style="background-color:#24292e;color:#e1e4e8;overflow-x:auto" tabindex="0" data-language="bash"><code><span class="line"><span style="color:#E1E4E8">PYTORCH_CUDA_ALLOC_CONF</span><span style="color:#F97583">=</span><span style="color:#9ECBFF">expandable_segments:True</span><span style="color:#B392F0"> python</span><span style="color:#9ECBFF"> -</span><span style="color:#F97583"> &lt;&lt;</span><span style="color:#9ECBFF">&#39;PY&#39;</span></span>
+<span class="line"><span style="color:#9ECBFF">from pathlib import Path</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#9ECBFF">from unsloth import FastLanguageModel</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#9ECBFF">from datasets import Dataset</span></span>
+<span class="line"><span style="color:#9ECBFF">from trl import SFTConfig, SFTTrainer</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#9ECBFF">MODEL = &quot;models/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-BF16&quot;</span></span>
+<span class="line"><span style="color:#9ECBFF">OUTPUT = Path(&quot;outputs/nemotron35-lightning-thor-lora&quot;)</span></span>
+<span class="line"><span style="color:#9ECBFF">MAX_LENGTH = 128</span></span>
+<span class="line"><span style="color:#9ECBFF">LORA_RANK = 8</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#9ECBFF">pairs = [</span></span>
+<span class="line"><span style="color:#9ECBFF">    (</span></span>
+<span class="line"><span style="color:#9ECBFF">        &quot;Which Jetson was this adapter trained on?&quot;,</span></span>
+<span class="line"><span style="color:#9ECBFF">        &quot;This adapter was trained on Jetson AGX Thor.&quot;,</span></span>
+<span class="line"><span style="color:#9ECBFF">    ),</span></span>
+<span class="line"><span style="color:#9ECBFF">    (</span></span>
+<span class="line"><span style="color:#9ECBFF">        &quot;What model does this adapter customize?&quot;,</span></span>
+<span class="line"><span style="color:#9ECBFF">        &quot;It customizes NVIDIA Nemotron 3.5 Lightning 30B-A3B.&quot;,</span></span>
+<span class="line"><span style="color:#9ECBFF">    ),</span></span>
+<span class="line"><span style="color:#9ECBFF">    (</span></span>
+<span class="line"><span style="color:#9ECBFF">        &quot;What is the deployment format?&quot;,</span></span>
+<span class="line"><span style="color:#9ECBFF">        &quot;The deployment format is GGUF.&quot;,</span></span>
+<span class="line"><span style="color:#9ECBFF">    ),</span></span>
+<span class="line"><span style="color:#9ECBFF">    (</span></span>
+<span class="line"><span style="color:#9ECBFF">        &quot;Describe the optimization workflow.&quot;,</span></span>
+<span class="line"><span style="color:#9ECBFF">        &quot;Fine-tune with Unsloth, export to GGUF, and run the model on Jetson.&quot;,</span></span>
+<span class="line"><span style="color:#9ECBFF">    ),</span></span>
+<span class="line"><span style="color:#9ECBFF">]</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#9ECBFF">model, tokenizer = FastLanguageModel.from_pretrained(</span></span>
+<span class="line"><span style="color:#9ECBFF">    model_name=MODEL,</span></span>
+<span class="line"><span style="color:#9ECBFF">    max_seq_length=MAX_LENGTH,</span></span>
+<span class="line"><span style="color:#9ECBFF">    load_in_4bit=True,</span></span>
+<span class="line"><span style="color:#9ECBFF">    load_in_8bit=False,</span></span>
+<span class="line"><span style="color:#9ECBFF">    full_finetuning=False,</span></span>
+<span class="line"><span style="color:#9ECBFF">    device_map={&quot;&quot;: 0},</span></span>
+<span class="line"><span style="color:#9ECBFF">    low_cpu_mem_usage=True,</span></span>
+<span class="line"><span style="color:#9ECBFF">    trust_remote_code=True,</span></span>
+<span class="line"><span style="color:#9ECBFF">    unsloth_force_compile=True,</span></span>
+<span class="line"><span style="color:#9ECBFF">    attn_implementation=&quot;eager&quot;,</span></span>
+<span class="line"><span style="color:#9ECBFF">    use_gradient_checkpointing=False,</span></span>
+<span class="line"><span style="color:#9ECBFF">)</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#9ECBFF">model = FastLanguageModel.get_peft_model(</span></span>
+<span class="line"><span style="color:#9ECBFF">    model,</span></span>
+<span class="line"><span style="color:#9ECBFF">    r=LORA_RANK,</span></span>
+<span class="line"><span style="color:#9ECBFF">    target_modules=[</span></span>
+<span class="line"><span style="color:#9ECBFF">        &quot;q_proj&quot;,</span></span>
+<span class="line"><span style="color:#9ECBFF">        &quot;k_proj&quot;,</span></span>
+<span class="line"><span style="color:#9ECBFF">        &quot;v_proj&quot;,</span></span>
+<span class="line"><span style="color:#9ECBFF">        &quot;o_proj&quot;,</span></span>
+<span class="line"><span style="color:#9ECBFF">        &quot;gate_proj&quot;,</span></span>
+<span class="line"><span style="color:#9ECBFF">        &quot;up_proj&quot;,</span></span>
+<span class="line"><span style="color:#9ECBFF">        &quot;down_proj&quot;,</span></span>
+<span class="line"><span style="color:#9ECBFF">        &quot;in_proj&quot;,</span></span>
+<span class="line"><span style="color:#9ECBFF">    ],</span></span>
+<span class="line"><span style="color:#9ECBFF">    lora_alpha=2 * LORA_RANK,</span></span>
+<span class="line"><span style="color:#9ECBFF">    lora_dropout=0,</span></span>
+<span class="line"><span style="color:#9ECBFF">    bias=&quot;none&quot;,</span></span>
+<span class="line"><span style="color:#9ECBFF">    use_gradient_checkpointing=False,</span></span>
+<span class="line"><span style="color:#9ECBFF">    random_state=3407,</span></span>
+<span class="line"><span style="color:#9ECBFF">)</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#9ECBFF">texts = []</span></span>
+<span class="line"><span style="color:#9ECBFF">for prompt, answer in pairs:</span></span>
+<span class="line"><span style="color:#9ECBFF">    texts.append(tokenizer.apply_chat_template(</span></span>
+<span class="line"><span style="color:#9ECBFF">        [</span></span>
+<span class="line"><span style="color:#9ECBFF">            {&quot;role&quot;: &quot;user&quot;, &quot;content&quot;: prompt},</span></span>
+<span class="line"><span style="color:#9ECBFF">            {&quot;role&quot;: &quot;assistant&quot;, &quot;content&quot;: answer},</span></span>
+<span class="line"><span style="color:#9ECBFF">        ],</span></span>
+<span class="line"><span style="color:#9ECBFF">        tokenize=False,</span></span>
+<span class="line"><span style="color:#9ECBFF">        add_generation_prompt=False,</span></span>
+<span class="line"><span style="color:#9ECBFF">        enable_thinking=False,</span></span>
+<span class="line"><span style="color:#9ECBFF">    ))</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#9ECBFF">trainer = SFTTrainer(</span></span>
+<span class="line"><span style="color:#9ECBFF">    model=model,</span></span>
+<span class="line"><span style="color:#9ECBFF">    processing_class=tokenizer,</span></span>
+<span class="line"><span style="color:#9ECBFF">    train_dataset=Dataset.from_dict({&quot;text&quot;: texts}),</span></span>
+<span class="line"><span style="color:#9ECBFF">    args=SFTConfig(</span></span>
+<span class="line"><span style="color:#9ECBFF">        dataset_text_field=&quot;text&quot;,</span></span>
+<span class="line"><span style="color:#9ECBFF">        per_device_train_batch_size=1,</span></span>
+<span class="line"><span style="color:#9ECBFF">        gradient_accumulation_steps=1,</span></span>
+<span class="line"><span style="color:#9ECBFF">        max_steps=3,</span></span>
+<span class="line"><span style="color:#9ECBFF">        learning_rate=2e-4,</span></span>
+<span class="line"><span style="color:#9ECBFF">        logging_steps=1,</span></span>
+<span class="line"><span style="color:#9ECBFF">        optim=&quot;adamw_8bit&quot;,</span></span>
+<span class="line"><span style="color:#9ECBFF">        output_dir=str(OUTPUT / &quot;trainer&quot;),</span></span>
+<span class="line"><span style="color:#9ECBFF">        report_to=&quot;none&quot;,</span></span>
+<span class="line"><span style="color:#9ECBFF">        save_strategy=&quot;no&quot;,</span></span>
+<span class="line"><span style="color:#9ECBFF">        bf16=True,</span></span>
+<span class="line"><span style="color:#9ECBFF">        fp16=False,</span></span>
+<span class="line"><span style="color:#9ECBFF">        gradient_checkpointing=False,</span></span>
+<span class="line"><span style="color:#9ECBFF">        max_length=MAX_LENGTH,</span></span>
+<span class="line"><span style="color:#9ECBFF">        dataloader_pin_memory=False,</span></span>
+<span class="line"><span style="color:#9ECBFF">    ),</span></span>
+<span class="line"><span style="color:#9ECBFF">)</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#9ECBFF">OUTPUT.mkdir(parents=True, exist_ok=True)</span></span>
+<span class="line"><span style="color:#9ECBFF">trainer.train()</span></span>
+<span class="line"><span style="color:#9ECBFF">model.save_pretrained(OUTPUT)</span></span>
+<span class="line"><span style="color:#9ECBFF">tokenizer.save_pretrained(OUTPUT)</span></span>
+<span class="line"><span style="color:#9ECBFF">print(&quot;Saved adapter to&quot;, OUTPUT)</span></span>
+<span class="line"><span style="color:#9ECBFF">PY</span></span></code></pre></details><p>This three-step run is a quick end-to-end check. On Jetson AGX Thor, the three training steps completed in 44.8 seconds and saved a 438 MB adapter. Replace the dataset and increase <code>max_steps</code> for your task.</p></div> </div> </div>  
+<h2 id="convert-a-model-to-gguf">Convert a model to GGUF</h2>
+<p>Convert a Hugging Face-format model into a quantized GGUF file for local deployment.</p>
+<p>If you completed the fine-tuning section, use the saved adapters shown in the examples below. If you are bringing your own model, replace <code>model_name</code> with its Hugging Face model ID or local checkpoint. Use <code>FastVisionModel</code> for a vision-language model and <code>FastLanguageModel</code> for a text-only model.</p>
+<p>The examples continue with the Qwen and Nemotron adapters created earlier, but the same export stage can begin from a compatible model you already have.</p>
+<div class="nv-tabs " data-tabs-id="tabs-bsa6cqaq3"> <div class="nv-tabs-labels"> <button type="button" role="tab" aria-selected="true" class="nv-tab-btn active" data-tab-index="0"> Export Qwen3.5-4B </button><button type="button" role="tab" aria-selected="false" class="nv-tab-btn " data-tab-index="1"> Export Nemotron 3.5 </button> </div> <div class="nv-tabs-content"> <div class="nv-tab-panel active"><h3 id="example-export-qwen35-4b">Example: Export Qwen3.5-4B</h3><p>Reload the adapter and call Unsloth’s GGUF export API. Unsloth downloads the official llama.cpp conversion tools when needed.</p><pre class="astro-code github-dark" style="background-color:#24292e;color:#e1e4e8;overflow-x:auto" tabindex="0" data-language="bash"><code><span class="line"><span style="color:#B392F0">python</span><span style="color:#9ECBFF"> -</span><span style="color:#F97583"> &lt;&lt;</span><span style="color:#9ECBFF">&#39;PY&#39;</span></span>
+<span class="line"><span style="color:#9ECBFF">from unsloth import FastVisionModel</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#9ECBFF">model, processor = FastVisionModel.from_pretrained(</span></span>
+<span class="line"><span style="color:#9ECBFF">    model_name=&quot;outputs/qwen35-4b-orin-lora&quot;,</span></span>
+<span class="line"><span style="color:#9ECBFF">    max_seq_length=512,</span></span>
+<span class="line"><span style="color:#9ECBFF">    load_in_4bit=True,</span></span>
+<span class="line"><span style="color:#9ECBFF">    full_finetuning=False,</span></span>
+<span class="line"><span style="color:#9ECBFF">    use_gradient_checkpointing=False,</span></span>
+<span class="line"><span style="color:#9ECBFF">)</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#9ECBFF">model.save_pretrained_gguf(</span></span>
+<span class="line"><span style="color:#9ECBFF">    &quot;outputs/qwen35-4b-orin-merged&quot;,</span></span>
+<span class="line"><span style="color:#9ECBFF">    processor,</span></span>
+<span class="line"><span style="color:#9ECBFF">    quantization_method=&quot;q4_k_m&quot;,</span></span>
+<span class="line"><span style="color:#9ECBFF">    maximum_memory_usage=0.45,</span></span>
+<span class="line"><span style="color:#9ECBFF">)</span></span>
+<span class="line"><span style="color:#9ECBFF">PY</span></span></code></pre><p>The GGUF files are written to:</p><pre class="astro-code github-dark" style="background-color:#24292e;color:#e1e4e8;overflow-x:auto" tabindex="0" data-language="text"><code><span class="line"><span>outputs/qwen35-4b-orin-merged_gguf/</span></span></code></pre><p>List the generated files:</p><pre class="astro-code github-dark" style="background-color:#24292e;color:#e1e4e8;overflow-x:auto" tabindex="0" data-language="bash"><code><span class="line"><span style="color:#B392F0">ls</span><span style="color:#79B8FF"> -lh</span><span style="color:#9ECBFF"> outputs/qwen35-4b-orin-merged_gguf</span></span></code></pre><p>Qwen3.5 also exports a multimodal projector. Pass that file to llama.cpp when your application uses images.</p></div><div class="nv-tab-panel"><h3 id="example-export-nemotron-35-lightning">Example: Export Nemotron 3.5 Lightning</h3><h4 id="merge-the-adapter">Merge the adapter</h4><pre class="astro-code github-dark" style="background-color:#24292e;color:#e1e4e8;overflow-x:auto" tabindex="0" data-language="bash"><code><span class="line"><span style="color:#B392F0">python</span><span style="color:#9ECBFF"> -</span><span style="color:#F97583"> &lt;&lt;</span><span style="color:#9ECBFF">&#39;PY&#39;</span></span>
+<span class="line"><span style="color:#9ECBFF">import json</span></span>
+<span class="line"><span style="color:#9ECBFF">from pathlib import Path</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#9ECBFF">ADAPTER = Path(&quot;outputs/nemotron35-lightning-thor-lora&quot;)</span></span>
+<span class="line"><span style="color:#9ECBFF">MERGED = Path(&quot;outputs/nemotron35-lightning-thor-merged&quot;)</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#9ECBFF">from unsloth import FastLanguageModel</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#9ECBFF">model, tokenizer = FastLanguageModel.from_pretrained(</span></span>
+<span class="line"><span style="color:#9ECBFF">    model_name=str(ADAPTER),</span></span>
+<span class="line"><span style="color:#9ECBFF">    max_seq_length=128,</span></span>
+<span class="line"><span style="color:#9ECBFF">    load_in_4bit=True,</span></span>
+<span class="line"><span style="color:#9ECBFF">    load_in_8bit=False,</span></span>
+<span class="line"><span style="color:#9ECBFF">    full_finetuning=False,</span></span>
+<span class="line"><span style="color:#9ECBFF">    device_map={&quot;&quot;: 0},</span></span>
+<span class="line"><span style="color:#9ECBFF">    low_cpu_mem_usage=True,</span></span>
+<span class="line"><span style="color:#9ECBFF">    trust_remote_code=True,</span></span>
+<span class="line"><span style="color:#9ECBFF">    unsloth_force_compile=True,</span></span>
+<span class="line"><span style="color:#9ECBFF">    attn_implementation=&quot;eager&quot;,</span></span>
+<span class="line"><span style="color:#9ECBFF">    use_gradient_checkpointing=False,</span></span>
+<span class="line"><span style="color:#9ECBFF">)</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#9ECBFF">MERGED.mkdir(parents=True, exist_ok=True)</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#9ECBFF">model.save_pretrained_merged(</span></span>
+<span class="line"><span style="color:#9ECBFF">    str(MERGED),</span></span>
+<span class="line"><span style="color:#9ECBFF">    tokenizer,</span></span>
+<span class="line"><span style="color:#9ECBFF">    save_method=&quot;merged_16bit&quot;,</span></span>
+<span class="line"><span style="color:#9ECBFF">    maximum_memory_usage=0.65,</span></span>
+<span class="line"><span style="color:#9ECBFF">)</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#9ECBFF">config_path = MERGED / &quot;config.json&quot;</span></span>
+<span class="line"><span style="color:#9ECBFF">config = json.loads(config_path.read_text())</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#9ECBFF">if &quot;num_hidden_layers&quot; not in config:</span></span>
+<span class="line"><span style="color:#9ECBFF">    config[&quot;num_hidden_layers&quot;] = int(model.config.num_hidden_layers)</span></span>
+<span class="line"><span style="color:#9ECBFF">    config_path.write_text(json.dumps(config, indent=2) + &quot;\n&quot;)</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#9ECBFF">print(&quot;Saved merged model to&quot;, MERGED)</span></span>
+<span class="line"><span style="color:#9ECBFF">PY</span></span></code></pre><p>The tested merge produced 14 model shards totaling 65.8 GB.</p><h4 id="convert-and-quantize">Convert and quantize</h4><p>Use the converter and quantizer from the native llama.cpp build:</p><pre class="astro-code github-dark" style="background-color:#24292e;color:#e1e4e8;overflow-x:auto" tabindex="0" data-language="bash"><code><span class="line"><span style="color:#79B8FF">set</span><span style="color:#79B8FF"> -e</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#E1E4E8">MERGED</span><span style="color:#F97583">=</span><span style="color:#9ECBFF">outputs/nemotron35-lightning-thor-merged</span></span>
+<span class="line"><span style="color:#E1E4E8">GGUF_DIR</span><span style="color:#F97583">=</span><span style="color:#9ECBFF">outputs/nemotron35-lightning-thor-merged_gguf</span></span>
+<span class="line"><span style="color:#E1E4E8">BF16</span><span style="color:#F97583">=</span><span style="color:#9ECBFF">&quot;</span><span style="color:#E1E4E8">$GGUF_DIR</span><span style="color:#9ECBFF">/NVIDIA-Nemotron-3.5-Lightning-30B-A3B.NO_MTP.BF16.gguf&quot;</span></span>
+<span class="line"><span style="color:#E1E4E8">Q4</span><span style="color:#F97583">=</span><span style="color:#9ECBFF">&quot;</span><span style="color:#E1E4E8">$GGUF_DIR</span><span style="color:#9ECBFF">/NVIDIA-Nemotron-3.5-Lightning-30B-A3B.NO_MTP.Q4_K_M.gguf&quot;</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#B392F0">mkdir</span><span style="color:#79B8FF"> -p</span><span style="color:#9ECBFF"> &quot;</span><span style="color:#E1E4E8">$GGUF_DIR</span><span style="color:#9ECBFF">&quot;</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#B392F0">python</span><span style="color:#9ECBFF"> llama.cpp/convert_hf_to_gguf.py</span><span style="color:#9ECBFF"> &quot;</span><span style="color:#E1E4E8">$MERGED</span><span style="color:#9ECBFF">&quot;</span><span style="color:#79B8FF"> \</span></span>
+<span class="line"><span style="color:#79B8FF">  --outfile</span><span style="color:#9ECBFF"> &quot;</span><span style="color:#E1E4E8">$BF16</span><span style="color:#9ECBFF">&quot;</span><span style="color:#79B8FF"> \</span></span>
+<span class="line"><span style="color:#79B8FF">  --outtype</span><span style="color:#9ECBFF"> bf16</span><span style="color:#79B8FF"> \</span></span>
+<span class="line"><span style="color:#79B8FF">  --no-mtp</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#B392F0">./llama.cpp/llama-quantize</span><span style="color:#79B8FF"> \</span></span>
+<span class="line"><span style="color:#9ECBFF">  &quot;</span><span style="color:#E1E4E8">$BF16</span><span style="color:#9ECBFF">&quot;</span><span style="color:#79B8FF"> \</span></span>
+<span class="line"><span style="color:#9ECBFF">  &quot;</span><span style="color:#E1E4E8">$Q4</span><span style="color:#9ECBFF">&quot;</span><span style="color:#79B8FF"> \</span></span>
+<span class="line"><span style="color:#9ECBFF">  Q4_K_M</span><span style="color:#79B8FF"> \</span></span>
+<span class="line"><span style="color:#79B8FF">  14</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#B392F0">rm</span><span style="color:#9ECBFF"> &quot;</span><span style="color:#E1E4E8">$BF16</span><span style="color:#9ECBFF">&quot;</span></span></code></pre><p>The <code>—no-mtp</code> option creates a GGUF that can be loaded by both llama.cpp and Ollama. The tested export produced a 63.2 GB BF16 GGUF and a 24.5 GB Q4_K_M GGUF.</p></div> </div> </div>  
+<h2 id="run-the-gguf-with-llamacpp">Run the GGUF with llama.cpp</h2>
+<p>Use the native llama.cpp build for CUDA-accelerated inference on Jetson. If you already have a compatible GGUF file, you can start with this section and point the commands to your model.</p>
+<div class="nv-tabs " data-tabs-id="tabs-ufic1qutg"> <div class="nv-tabs-labels"> <button type="button" role="tab" aria-selected="true" class="nv-tab-btn active" data-tab-index="0"> Qwen3.5 with llama.cpp </button><button type="button" role="tab" aria-selected="false" class="nv-tab-btn " data-tab-index="1"> Nemotron with llama.cpp </button><button type="button" role="tab" aria-selected="false" class="nv-tab-btn " data-tab-index="2"> Nemotron with Ollama </button> </div> <div class="nv-tabs-content"> <div class="nv-tab-panel active"><h3 id="example-run-qwen35-4b">Example: Run Qwen3.5-4B</h3><p>Select the model and multimodal projector, then run the saved sample image:</p><pre class="astro-code github-dark" style="background-color:#24292e;color:#e1e4e8;overflow-x:auto" tabindex="0" data-language="bash"><code><span class="line"><span style="color:#E1E4E8">MODEL</span><span style="color:#F97583">=</span><span style="color:#E1E4E8">$(</span><span style="color:#B392F0">find</span><span style="color:#9ECBFF"> outputs/qwen35-4b-orin-merged_gguf</span><span style="color:#79B8FF"> -name</span><span style="color:#9ECBFF"> &#39;*Q4_K_M.gguf&#39;</span><span style="color:#9ECBFF"> !</span><span style="color:#79B8FF"> -name</span><span style="color:#9ECBFF"> &#39;*mmproj*&#39;</span><span style="color:#79B8FF"> -print</span><span style="color:#79B8FF"> -quit</span><span style="color:#E1E4E8">)</span></span>
+<span class="line"><span style="color:#E1E4E8">MMPROJ</span><span style="color:#F97583">=</span><span style="color:#E1E4E8">$(</span><span style="color:#B392F0">find</span><span style="color:#9ECBFF"> outputs/qwen35-4b-orin-merged_gguf</span><span style="color:#79B8FF"> -iname</span><span style="color:#9ECBFF"> &#39;*mmproj*.gguf&#39;</span><span style="color:#79B8FF"> -print</span><span style="color:#79B8FF"> -quit</span><span style="color:#E1E4E8">)</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#B392F0">./llama.cpp/llama-cli</span><span style="color:#79B8FF"> \</span></span>
+<span class="line"><span style="color:#79B8FF">  --model</span><span style="color:#9ECBFF"> &quot;</span><span style="color:#E1E4E8">$MODEL</span><span style="color:#9ECBFF">&quot;</span><span style="color:#79B8FF"> \</span></span>
+<span class="line"><span style="color:#79B8FF">  --mmproj</span><span style="color:#9ECBFF"> &quot;</span><span style="color:#E1E4E8">$MMPROJ</span><span style="color:#9ECBFF">&quot;</span><span style="color:#79B8FF"> \</span></span>
+<span class="line"><span style="color:#79B8FF">  --image</span><span style="color:#9ECBFF"> outputs/qwen35-4b-orin-lora/sample.png</span><span style="color:#79B8FF"> \</span></span>
+<span class="line"><span style="color:#79B8FF">  --prompt</span><span style="color:#9ECBFF"> &quot;Write the LaTeX representation for this image.&quot;</span><span style="color:#79B8FF"> \</span></span>
+<span class="line"><span style="color:#79B8FF">  --n-gpu-layers</span><span style="color:#79B8FF"> 99</span><span style="color:#79B8FF"> \</span></span>
+<span class="line"><span style="color:#79B8FF">  --ctx-size</span><span style="color:#79B8FF"> 512</span><span style="color:#79B8FF"> \</span></span>
+<span class="line"><span style="color:#79B8FF">  --n-predict</span><span style="color:#79B8FF"> 128</span><span style="color:#79B8FF"> \</span></span>
+<span class="line"><span style="color:#79B8FF">  --jinja</span></span></code></pre><p>You now have a Qwen3.5-4B adapter fine-tuned, merged, quantized, and running locally on Jetson.</p></div><div class="nv-tab-panel"><h3 id="example-run-nemotron-35-lightning">Example: Run Nemotron 3.5 Lightning</h3><pre class="astro-code github-dark" style="background-color:#24292e;color:#e1e4e8;overflow-x:auto" tabindex="0" data-language="bash"><code><span class="line"><span style="color:#E1E4E8">MODEL</span><span style="color:#F97583">=</span><span style="color:#9ECBFF">outputs/nemotron35-lightning-thor-merged_gguf/NVIDIA-Nemotron-3.5-Lightning-30B-A3B.NO_MTP.Q4_K_M.gguf</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#B392F0">./llama.cpp/llama-cli</span><span style="color:#79B8FF"> \</span></span>
+<span class="line"><span style="color:#79B8FF">  --model</span><span style="color:#9ECBFF"> &quot;</span><span style="color:#E1E4E8">$MODEL</span><span style="color:#9ECBFF">&quot;</span><span style="color:#79B8FF"> \</span></span>
+<span class="line"><span style="color:#79B8FF">  --n-gpu-layers</span><span style="color:#79B8FF"> 999</span><span style="color:#79B8FF"> \</span></span>
+<span class="line"><span style="color:#79B8FF">  --ctx-size</span><span style="color:#79B8FF"> 2048</span><span style="color:#79B8FF"> \</span></span>
+<span class="line"><span style="color:#79B8FF">  --single-turn</span><span style="color:#79B8FF"> \</span></span>
+<span class="line"><span style="color:#79B8FF">  --jinja</span><span style="color:#79B8FF"> \</span></span>
+<span class="line"><span style="color:#79B8FF">  --reasoning</span><span style="color:#9ECBFF"> off</span></span></code></pre><p>The tested Q4_K_M model loaded on the Thor CUDA backend and generated 66.1 tokens per second for a short prompt.</p><p>Remove the temporary swap file after the Thor example finishes:</p><pre class="astro-code github-dark" style="background-color:#24292e;color:#e1e4e8;overflow-x:auto" tabindex="0" data-language="bash"><code><span class="line"><span style="color:#B392F0">sudo</span><span style="color:#9ECBFF"> swapoff</span><span style="color:#9ECBFF"> &quot;</span><span style="color:#E1E4E8">$NEMOTRON_SWAP</span><span style="color:#9ECBFF">&quot;</span></span>
+<span class="line"><span style="color:#B392F0">sudo</span><span style="color:#9ECBFF"> rm</span><span style="color:#9ECBFF"> &quot;</span><span style="color:#E1E4E8">$NEMOTRON_SWAP</span><span style="color:#9ECBFF">&quot;</span></span></code></pre></div><div class="nv-tab-panel"><h3 id="optional-run-nemotron-with-ollama">Optional: Run Nemotron with Ollama</h3><p>The native llama.cpp workflow above is the recommended deployment path. Use it for Qwen3.5 because the model and multimodal projector are separate GGUF files. The no-MTP Nemotron GGUF can also be imported into Ollama.</p><p>Install Ollama:</p><pre class="astro-code github-dark" style="background-color:#24292e;color:#e1e4e8;overflow-x:auto" tabindex="0" data-language="bash"><code><span class="line"><span style="color:#B392F0">curl</span><span style="color:#79B8FF"> -fsSL</span><span style="color:#9ECBFF"> https://ollama.com/install.sh</span><span style="color:#F97583"> |</span><span style="color:#B392F0"> sh</span></span></code></pre><p>Create a <code>Modelfile</code> that points to the Nemotron GGUF:</p><pre class="astro-code github-dark" style="background-color:#24292e;color:#e1e4e8;overflow-x:auto" tabindex="0" data-language="text"><code><span class="line"><span>FROM /absolute/path/to/NVIDIA-Nemotron-3.5-Lightning-30B-A3B.NO_MTP.Q4_K_M.gguf</span></span>
+<span class="line"><span>PARAMETER temperature 0</span></span>
+<span class="line"><span>PARAMETER top_p 0.95</span></span>
+<span class="line"><span>PARAMETER num_ctx 2048</span></span></code></pre><p>Import and run the model:</p><pre class="astro-code github-dark" style="background-color:#24292e;color:#e1e4e8;overflow-x:auto" tabindex="0" data-language="bash"><code><span class="line"><span style="color:#B392F0">ollama</span><span style="color:#9ECBFF"> create</span><span style="color:#9ECBFF"> nemotron35-lightning-thor</span><span style="color:#79B8FF"> -f</span><span style="color:#9ECBFF"> Modelfile</span></span>
+<span class="line"><span style="color:#B392F0">ollama</span><span style="color:#9ECBFF"> run</span><span style="color:#9ECBFF"> nemotron35-lightning-thor</span></span></code></pre></div> </div> </div>  
+<h2 id="optional-unsloth-studio-over-ssh">Optional: Unsloth Studio over SSH</h2>
+<p>Unsloth Studio is a browser UI, not a terminal UI. It is not required for this tutorial.</p>
+<p>If Studio is installed on the Jetson, forward its local port from your workstation:</p>
+<pre class="astro-code github-dark" style="background-color:#24292e;color:#e1e4e8;overflow-x:auto" tabindex="0" data-language="bash"><code><span class="line"><span style="color:#B392F0">ssh</span><span style="color:#79B8FF"> -L</span><span style="color:#9ECBFF"> 8888:127.0.0.1:8888</span><span style="color:#9ECBFF"> jetson@JETSON_IP</span></span></code></pre>
+<p>Start Studio in the SSH session:</p>
+<pre class="astro-code github-dark" style="background-color:#24292e;color:#e1e4e8;overflow-x:auto" tabindex="0" data-language="bash"><code><span class="line"><span style="color:#B392F0">unsloth</span><span style="color:#9ECBFF"> studio</span><span style="color:#79B8FF"> -p</span><span style="color:#79B8FF"> 8888</span></span></code></pre>
+<p>Open <code><a href="http://127.0.0.1:8888">http://127.0.0.1:8888</a></code> on your workstation. See the <a href="https://unsloth.ai/docs/new/studio/">Unsloth Studio documentation</a> for installation and updates.</p>
+<details class="nv-details"><summary><strong>Troubleshooting</strong></summary><div class="nv-details-content"><ul>
+<li><strong>CUDA is unavailable:</strong> activate <code>.venv-unsloth</code>; if needed, reinstall Unsloth with <code>--torch-backend=cu130</code>.</li>
+<li><strong>Triton reports <code>sm_110a</code> is not defined:</strong> set <code>TRITON_PTXAS_BLACKWELL_PATH</code> to the CUDA 13 <code>ptxas</code> binary before importing Unsloth.</li>
+<li><strong>Nemotron is killed while loading:</strong> confirm swap with <code>swapon --show</code> and keep the first-run memory settings shown above.</li>
+<li><strong>Ollama reports the wrong number of tensors:</strong> repeat the conversion with <code>--no-mtp</code>.</li>
+</ul></div></details>
+<h2 id="references">References</h2>
+<ul>
+<li><a href="https://unsloth.ai/docs/models/qwen3.5">Unsloth Qwen3.5</a></li>
+<li><a href="https://github.com/unslothai/notebooks/blob/main/nb/Qwen3_5_%284B%29_Vision.ipynb">Unsloth Qwen3.5-4B vision notebook</a></li>
+<li><a href="https://huggingface.co/datasets/unsloth/LaTeX_OCR">Unsloth LaTeX OCR dataset</a></li>
+<li><a href="https://unsloth.ai/docs/models/nemotron-3.5">Unsloth Nemotron 3.5</a></li>
+<li><a href="https://unsloth.ai/docs/basics/inference-and-deployment/saving-to-gguf">Saving models to GGUF with Unsloth</a></li>
+</ul> </div> <!-- Next/Prev Navigation could go here --> </main> </div> </div>  </div>  </main> <footer class="bg-nvidia-black text-nvidia-white"> <div class="max-w-7xl mx-auto py-16 px-4 sm:px-6 lg:px-8"> <div class="grid grid-cols-1 md:grid-cols-4 gap-12"> <div class="col-span-1 md:col-span-2"> <div class="flex items-center mb-6"> <span class="text-2xl font-nvidia font-bold">Jetson AI Lab</span> </div> <p class="text-nvidia-gray-300 mb-6 text-lg leading-relaxed">
+Experience the latest generative AI models optimized for Jetson.
+              Run locally, without depending on the cloud.
+</p> </div> <div> <h3 class="text-sm font-semibold text-nvidia-gray-300 tracking-wider uppercase mb-6">Resources</h3> <ul class="space-y-3"> <li><a href="/models" class="text-nvidia-gray-300 hover:text-nvidia-white transition-colors duration-200">Models</a></li> <li><a href="/tutorials" class="text-nvidia-gray-300 hover:text-nvidia-white transition-colors duration-200">Tutorials</a></li> <li><a href="/projects" class="text-nvidia-gray-300 hover:text-nvidia-white transition-colors duration-200">Projects</a></li> <li><a href="/research" class="text-nvidia-gray-300 hover:text-nvidia-white transition-colors duration-200">Research Group</a></li> </ul> </div> <div> <h3 class="text-sm font-semibold text-nvidia-gray-300 tracking-wider uppercase mb-6">NVIDIA</h3> <ul class="space-y-3"> <li><a href="https://developer.nvidia.com" class="text-nvidia-gray-300 hover:text-nvidia-white transition-colors duration-200">Developer Portal</a></li> <li><a href="https://www.nvidia.com" class="text-nvidia-gray-300 hover:text-nvidia-white transition-colors duration-200">NVIDIA.com</a></li> </ul> </div> </div> <div class="mt-12 pt-8 border-t border-nvidia-gray-700"> <ul class="flex flex-wrap justify-center gap-x-6 gap-y-2 text-sm text-nvidia-gray-400 mb-4"> <li><a href="https://www.nvidia.com/en-us/about-nvidia/privacy-policy/" target="_blank" class="hover:text-nvidia-white transition-colors duration-200">Privacy Policy</a></li> <li><a href="https://www.nvidia.com/en-us/about-nvidia/privacy-center/" target="_blank" class="hover:text-nvidia-white transition-colors duration-200">Your Privacy Choices</a></li> <li><a href="https://www.nvidia.com/en-us/about-nvidia/legal-info/" target="_blank" class="hover:text-nvidia-white transition-colors duration-200">Legal</a></li> <li><a href="https://www.nvidia.com/en-us/about-nvidia/accessibility/" target="_blank" class="hover:text-nvidia-white transition-colors duration-200">Accessibility</a></li> <li><a href="https://www.nvidia.com/en-us/about-nvidia/company-policies/" target="_self" class="hover:text-nvidia-white transition-colors duration-200">Corporate Policies</a></li> <li><a href="https://www.nvidia.com/en-us/product-security/" target="_blank" class="hover:text-nvidia-white transition-colors duration-200">Product Security</a></li> <li><a href="https://www.nvidia.com/en-us/contact/" target="_blank" class="hover:text-nvidia-white transition-colors duration-200">Contact</a></li> </ul> <p class="text-nvidia-gray-400 text-sm text-center">
+© 2026 NVIDIA Corporation. All rights reserved.
+</p> </div> </div> </footer> <script type="module" src="/_astro/Layout.astro_astro_type_script_index_0_lang.CTaCgKGL.js"></script> <!-- 6sense Tracking --> <!-- Migration Notice Handler --> <script>
+      // Show migration notice banner if not dismissed
+      (function() {
+        const notice = document.getElementById('migration-notice');
+        const dismissBtn = document.getElementById('dismiss-notice');
+        const storageKey = 'jetson-ai-lab-migration-notice-dismissed';
+
+        // Check if user has dismissed the notice
+        const isDismissed = localStorage.getItem(storageKey);
+
+        if (!isDismissed && notice) {
+          notice.style.display = 'block';
+        }
+
+        // Handle dismiss
+        if (dismissBtn) {
+          dismissBtn.addEventListener('click', function() {
+            localStorage.setItem(storageKey, 'true');
+            notice.style.display = 'none';
+          });
+        }
+      })();
+    </script> <!-- Code block copy-to-clipboard (only for .prose pre; skips blocks that already have a copy button) --> <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        var clipboardSvg = '<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path d="M8 3a1 1 0 011-1h2a1 1 0 110 2H9a1 1 0 01-1-1z" /><path d="M6 3a2 2 0 00-2 2v11a2 2 0 002 2h8a2 2 0 002-2V5a2 2 0 00-2-2 3 3 0 01-3 3H9a3 3 0 01-3-3z" /></svg>';
+        var checkSvg = '<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-green-400" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" /></svg>';
+        document.querySelectorAll('.prose pre').forEach(function(pre) {
+          if (pre.closest('.code-block-wrapper')) return;
+          var parent = pre.parentElement;
+          if (parent && parent.querySelector('.copy-btn')) return;
+          var code = pre.querySelector('code');
+          if (code && (code.className && code.className.includes && code.className.includes('no-copy'))) return;
+          if (pre.getAttribute('data-no-copy') !== null) return;
+          if (pre.closest('[data-no-copy]') !== null) return;
+          var prev = pre.previousSibling;
+          while (prev) {
+            if (prev.nodeType === 8 && prev.textContent && prev.textContent.indexOf('no-copy') !== -1) return;
+            if (prev.nodeType === 1) break;
+            prev = prev.previousSibling;
+          }
+          var wrapper = document.createElement('div');
+          wrapper.className = 'code-block-wrapper';
+          pre.parentNode.insertBefore(wrapper, pre);
+          wrapper.appendChild(pre);
+          var btn = document.createElement('button');
+          btn.type = 'button';
+          btn.className = 'code-copy-btn';
+          btn.setAttribute('aria-label', 'Copy to clipboard');
+          btn.innerHTML = clipboardSvg;
+          btn.addEventListener('click', function() {
+            var code = pre.querySelector('code');
+            var text = (code ? code.textContent : pre.textContent) || '';
+            navigator.clipboard.writeText(text).then(function() {
+              btn.innerHTML = checkSvg;
+              btn.classList.add('code-copy-done');
+              setTimeout(function() {
+                btn.innerHTML = clipboardSvg;
+                btn.classList.remove('code-copy-done');
+              }, 2000);
+            });
+          });
+          wrapper.insertBefore(btn, pre);
+        });
+      });
+    </script>  <!-- 6sense Tracking --> <script>
+      window._6si = window._6si || [];
+      window._6si.push(['enableEventTracking', true]);
+      window._6si.push(['setToken', 'eb417ec30d332e34d732e2916f185311']);
+      window._6si.push(['setEndpoint', 'b.6sc.co']);
+      window._6si.push(['enableRetargeting', false]);
+
+      window._6si.push(['enableCompanyDetails', true]);
+      window._6si.push(['setEpsilonKey', '6f578ba72568231347d1bddb7102e53695302c28']);
+
+      (function() {
+        var gd = document.createElement('script');
+        gd.type = 'text/javascript';
+        gd.async = true;
+        gd.src = '//j.6sc.co/6si.min.js';
+        var s = document.getElementsByTagName('script')[0];
+        s.parentNode.insertBefore(gd, s);
+      })();
+    </script> <script type="text/javascript">
+      // Only call _satellite if Adobe DTM is loaded (production only)
+      if (typeof _satellite !== 'undefined') {
+        _satellite.pageBottom();
+      }
+    </script> </body> </html>   <script type="module">document.querySelectorAll(".device-tabs").forEach(t=>{const a=t.querySelectorAll(".device-tab"),r=t.querySelectorAll(".device-panel");a.forEach(l=>{l.addEventListener("click",()=>{const c=l.getAttribute("data-target");a.forEach(e=>e.classList.toggle("active",e.getAttribute("data-target")===c)),r.forEach(e=>{e.getAttribute("data-panel")===c?e.style.display="":e.style.display="none"})})})});</script>

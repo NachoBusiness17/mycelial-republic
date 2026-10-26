@@ -1,0 +1,15 @@
+{
+ "model": "anthropic/claude-opus-5.5",
+ "max_tokens": 12000,
+ "force": false,
+ "revision": null,
+ "turn2_only": false,
+ "evidence": [
+  "roblox_to_godot/scripts/net_client.gd",
+  "roblox_to_godot/network/net_client.gd",
+  "roblox_to_godot/network/snapshot_buffer.gd",
+  "tests/test_netcode_v0.py"
+ ],
+ "id": "T1W3_N1_net_client",
+ "contract": "STRANGER AUDIT of the attached bytes. The surface: roblox_to_godot/scripts/net_client.gd is the W1 transport (Mickey17 wave, live-smoked against the real WorldServer 2026-09-29, receipt W1_NET_CLIENT_20260929.md) - StreamPeerTCP, LF-framed JSON lines, MAX_LINE 65536 mirroring server/protocol.py, hello carrying user/pass in PLAINTEXT (file header owns it as v1 debt), sid kept from welcome, MOUNTAIN_SERVER env retarget parsed with split(':'), no TLS, no server authentication, socket death only sets _down (silent by design). roblox_to_godot/network/net_client.gd extends it with Gaffer snapshot interpolation: only tick ops are intercepted into SnapshotBuffer on a delta-accumulated render clock at 100ms delay; every other op passes through to the transport signals. roblox_to_godot/network/snapshot_buffer.gd is the ring: CAPACITY 32, push refuses n <= newest_n (TCP cannot reorder), sample() clamps (freeze, never extrapolate), crossed() delivers events/winner exactly once using the UNCLAMPED render clock - but scans only the snapshots still surviving in the ring. tests/test_netcode_v0.py pins these laws as a byte-mirrored Python client against a live in-process WorldServer; the estate box has no Godot binary, so the .gd bytes are pinned structurally, never executed. Read as attacker + concurrent-systems reviewer: (1) HOSTILE PEER IN 3 MOVES - the client trusts the endpoint completely: what do a sniffer, a spoofed MOUNTAIN_SERVER, and a hostile server each get? The payload path is unvalidated end to end: msg.get nodes keys flow into game.gd mirror-graph lookups and float() conversions; the rubber-band law counts out-of-corridor frames (rubber_band_frames, max_truth_error) but still emits them - a counter, not a gate. (2) LOAD/RACE - the arrival-stamped ring: more than 32 ticks landing while the render clock stalls (burst after starvation, throttled _process) evicts snapshots crossed() never scanned, silently losing events and the once-per-connection winner; a tick-number rewind after a server restart is refused forever by the monotone push, freezing the render with no signal; same-frame bursts collapse interpolation spans to zero. Which of these are real, which defended, ranked by severity. (3) THE ONE TEST - name the single test that fails on today's tree and catches the worst hole (candidate to falsify: stall the clock, push over-CAPACITY ticks carrying events and winner, resume, assert zero loss). Under 400 words, evidence-cited."
+}

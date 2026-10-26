@@ -1,0 +1,15 @@
+{
+ "model": "anthropic/claude-opus-5.5",
+ "max_tokens": 12000,
+ "force": false,
+ "revision": null,
+ "turn2_only": false,
+ "evidence": [
+  "mag/effect_broker.py",
+  "mag/switchboard_v2.py",
+  "watch/inbox/mountain_climb/FIFTY_QUESTIONS_ANSWERED.md",
+  "memory/runs/effect_broker/effects.jsonl"
+ ],
+ "id": "T1W3_N2_effect_broker",
+ "contract": "STRANGER AUDIT of the attached bytes. mag/effect_broker.py executes every effect behind _authority_ok (status AUTHORIZED/EXECUTING + effect in granted_capabilities + policy_engine.validate_authority), decrements budget, then banks a receipt and one effects.jsonl meter row; mag/switchboard_v2.py is the admission organ: classify -> propose -> grant, with require_confirmation effects DEFERRED to operator confirm(), and _implicit_authority refusing to self-grant untrusted-instruction/external-content labels and high-impact effects (fs_write, lane_spawn, model_call, tool_invoke, network_access). The Q48 receipt proved broker-metered production coverage was 0 of 25,427 cost-rollup calls ($136.19 lifetime): the meter only grew on model_call/lane_spawn, the two classes standing organs are policy-forbidden to dispatch headless, so effects.jsonl did not exist. The 2026-10-01 first route (state_snapshot capture_summary via the swarm_cycle propose->grant->execute pattern) grew the ledger to 3 board_write rows, honest coverage 3/25,427 (0.012%). Read as an attacker and as a reference-monitor reviewer: (1) Where does proposed-vs-authorized leak? Name any path where model text becomes an effect without broker admission: _implicit_authority self-grants ordinary-label board_write/verkle_link (budget max_calls 3) with zero operator admission; classify() only flags imperative keywords and its suggested_label is caller-supplied (swarm_cycle passes authority_label=agent-generated directly); write_board_note is importable and callable without a grant; and the 25,427 direct provider calls never touched the switchboard at all. Which of these are real leaks and which are defended? (2) What does the 0/25,427 number actually mean for safety claims: is 'every side effect routes through this broker' a control or a doctrine, and what may honestly be claimed at 3/25,427 metered? (3) The one test that would catch the worst remaining leak: a test that fails on today's tree and passes when the leak closes. Under 400 words, evidence-cited."
+}

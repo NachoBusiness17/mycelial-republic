@@ -1,0 +1,774 @@
+{
+ "lane": "4C",
+ "title": "git-HISTORY secret scan (blobs reachable from all refs)",
+ "generated_utc": "2026-09-27T06:01:03Z",
+ "audit_only": true,
+ "scanner": {
+  "tool": "tools/secret_gate.py",
+  "imported": true,
+  "rules_compiled": 31,
+  "new_patterns_added": 0,
+  "entropy_floor_bits_per_char": 4.3,
+  "note": "rule table, ALLOW_RE exemption and entropy floor imported verbatim; scan_text mirrors the gate's per-line semantics"
+ },
+ "coverage": {
+  "objects_enumerated": 71314,
+  "non_blob_objects_skipped": 4940,
+  "blobs_over_10mb_skipped": 170,
+  "blobs_scannable": 66204,
+  "blobs_enumerated_for_scan": 66204,
+  "blobs_content_scanned": 58475,
+  "blobs_binary_skipped": 7728,
+  "distinct_blobs_in_scannable_set": 66204,
+  "coverage_fraction_of_scannable": 1.0,
+  "complete": true,
+  "method": "git rev-list --objects --all, size-filtered via cat-file --batch-check, then content read through a persistent cat-file --batch pipe; 1 process for blobs 0-4999 plus 12 sharded processes for 5000-66203 (12 of 16 cores)"
+ },
+ "runtime_sec": {
+  "sharded_pass_wall": 204.0,
+  "base_pass": 416.9,
+  "tar_member_pass": 684.7,
+  "commit_attribution": 102.1,
+  "total_wall_approx": 1407.7
+ },
+ "question_answer": {
+  "secrets_in_history_not_in_working_tree": true,
+  "detail": "2 CRITICAL/HIGH findings (rule XAI-KEY, severity high) exist ONLY in history: their paths were deleted from the working tree and are absent from HEAD, but the blobs remain reachable from 37 and 18 commits respectively. Union of commits carrying at least one history-only finding: 19.",
+  "history_only_findings": 2,
+  "history_only_by_rule": {
+   "XAI-KEY": 2
+  },
+  "history_only_rule_ids": [
+   "XAI-KEY"
+  ],
+  "commits_carrying_history_only_findings": 19,
+  "commit_sha_range": {
+   "first": "cd2f8e6a520d67553d3e9c1486b6703a75646fec",
+   "last": "be3ffa520a21418da3b3d72a61fc6459cb084c18",
+   "first_date": "2026-08-01",
+   "last_date": "2026-09-14"
+  },
+  "history_only_detail": [
+   {
+    "rule": "XAI-KEY",
+    "severity": "high",
+    "blob_sha": "aadba40d727d5dab0961cb20645b2303127863e1",
+    "token_length": 84,
+    "shannon_entropy": 5.41,
+    "fingerprint": "fp_2fc97957ab09",
+    "path_at_finding": "memory/biography_backup_20260825/019f4d15-dee6-76d3-9e1f-cc5dff56720d.dossier.json",
+    "all_historical_paths": [
+     "memory/biography_backup_20260825/019f4d15-dee6-76d3-9e1f-cc5dff56720d.dossier.json",
+     "memory/biography_backup_20260825/biography/019f4d15-dee6-76d3-9e1f-cc5dff56720d.dossier.json",
+     "memory/portable_bags/bag-20260727T214646Z/memory/biography/residual/019f4d15-dee6-76d3-9e1f-cc5dff56720d.json"
+    ],
+    "n_commits": 37,
+    "first_commit": "cd2f8e6a520d67553d3e9c1486b6703a75646fec",
+    "first_date": "2026-08-01",
+    "last_commit": "261c895ad3e41b9428a6bba010e2dbfc9dfa215c",
+    "last_date": "2026-09-14",
+    "in_HEAD": false,
+    "in_working_tree": false,
+    "identical_credential_in_tracked_tar": true,
+    "tarname": "attic/20260923_biography_rotation/biography_backup_20260825.tar"
+   },
+   {
+    "rule": "XAI-KEY",
+    "severity": "high",
+    "blob_sha": "140c5e6e72e6bd67b81227f2ad094f5bbcb8db8f",
+    "token_length": 84,
+    "shannon_entropy": 5.41,
+    "fingerprint": "fp_2fc97957ab09",
+    "path_at_finding": "memory/biography_backup_20260825/biography/residual/019f4d15-dee6-76d3-9e1f-cc5dff56720d.json",
+    "all_historical_paths": [
+     "memory/biography_backup_20260825/biography/residual/019f4d15-dee6-76d3-9e1f-cc5dff56720d.json"
+    ],
+    "n_commits": 18,
+    "first_commit": "cb26bc2cdcb052c6c54bf6348285562121bef7f8",
+    "first_date": "2026-08-25",
+    "last_commit": "261c895ad3e41b9428a6bba010e2dbfc9dfa215c",
+    "last_date": "2026-09-14",
+    "in_HEAD": false,
+    "in_working_tree": false,
+    "identical_credential_in_tracked_tar": true,
+    "tarname": "attic/20260923_biography_rotation/biography_backup_20260825.tar"
+   }
+  ]
+ },
+ "critical_high_by_rule": {
+  "AWS-SECRET-40": 363,
+  "TELEGRAM-BOT": 32,
+  "XAI-KEY": 34,
+  "PRIVATE-KEY-BLOCK": 1,
+  "STRIPE-KEY": 10
+ },
+ "critical_high_rows_total": 440,
+ "all_rows_by_severity": {
+  "medium": 369624,
+  "low": 3879,
+  "high": 613,
+  "critical": 1
+ },
+ "all_rows_total": 374117,
+ "provider_prefix_check": {
+  "requested": [
+   "xai-",
+   "sk-ant-",
+   "gsk_",
+   "sk-or-v1-",
+   "AIza",
+   "ghp_",
+   "glpat-"
+  ],
+  "detected_rules": [
+   "XAI-KEY"
+  ],
+  "not_detected": [
+   "sk-ant-",
+   "gsk_",
+   "sk-or-v1-",
+   "AIza",
+   "ghp_",
+   "glpat-"
+  ],
+  "note": "only XAI-KEY fired; ANTHROPIC-KEY, GROQ-KEY, OPENROUTER-KEY, GOOGLE-API-KEY, GITHUB-TOKEN, GITHUB-FINEGRAIN, GITLAB-PAT returned zero rows across all 66,204 blobs and all tar members",
+  "detected": [
+   "xai-"
+  ],
+  "rows_by_detected_rule": {
+   "xai-": 34
+  }
+ },
+ "lan_key": {
+  "path": "memory/tls/lan.key",
+  "rule": "PRIVATE-KEY-BLOCK",
+  "severity": "critical",
+  "present_in_history": true,
+  "commits_containing_blob": 318,
+  "first_commit": "799ddb6feaad34a992bd51e716c19cd554db2c31",
+  "first_date": "2026-08-19",
+  "last_commit": "e73b60c54aa33552fa74bee45365cd07bb4dc4d7",
+  "last_date": "2026-09-27",
+  "blob_sha": "f5e6dea5f45ae6ec6deb5c3b424f68743e36a131",
+  "introducing_commit": "799ddb6feaad34a992bd51e716c19cd554db2c31",
+  "introducing_date": "2026-08-19",
+  "still_tracked_in_HEAD": true,
+  "history_only": false,
+  "note": "single distinct blob, added once on 2026-08-19 and never modified; present in 318 commit trees, HEAD included"
+ },
+ "tar_member_pass": {
+  "why": "tar members are invisible to git grep and to any working-tree scan",
+  "archive_candidates": 36,
+  "archives_read": 34,
+  "members_extracted": 369722,
+  "member_bytes": 709443753,
+  "members_with_findings": 69923,
+  "premise_correction": "the task brief stated the tracked tar attic/20260923_biography_rotation/biography_backup_20260825.tar contains HAND-REDACTED key references only. That is FALSE: the tar carries a live-shaped xai- credential, 84 chars, strictly alphanumeric after the prefix, shannon 5.41 bits/char, no redaction marker on any of its 10 occurrence lines, and it survives the gate's own REDACTED/MASKED/PLACEHOLDER suppression.",
+  "distinct_provider_credentials_in_tar": 1,
+  "tar_fingerprint": "fp_2fc97957ab09",
+  "tar_occurrences": 10,
+  "same_credential_as_history_only_loose_blobs": true
+ },
+ "secrets_never_emitted": true,
+ "masking_policy": "no secret value, prefix beyond the rule's own literal, or token body is written to this file or the markdown receipt. Identifiers are path + blob sha + commit sha + rule id + severity + token length + shannon entropy + a 12-hex sha256 fingerprint.",
+ "live_tree_provider_findings": [
+  {
+   "rule": "XAI-KEY",
+   "severity": "high",
+   "path": "memory/trajectory/steps.jsonl",
+   "blob_sha": "fe65a865937419526f0badd35fd961ea93f43cc0",
+   "n_commits_containing": 4,
+   "first_commit": "d575bc1686b4659b0f5d94ef8b82e96bbf412f2f",
+   "first_date": "2026-09-14",
+   "last_commit": "261c895ad3e41b9428a6bba010e2dbfc9dfa215c",
+   "last_date": "2026-09-14",
+   "token_length": 84,
+   "fingerprint": "fp_98980f98afe1"
+  },
+  {
+   "rule": "XAI-KEY",
+   "severity": "high",
+   "path": "memory/trajectory/steps.jsonl",
+   "blob_sha": "0e5246a2232e10ff66a97f79667abf591179c0dd",
+   "n_commits_containing": 35,
+   "first_commit": "fc793c91395a409cc7f0aefec65c0f4b79ee52b9",
+   "first_date": "2026-09-18",
+   "last_commit": "cdde21997aa6a63a5002c9825de221eaac519378",
+   "last_date": "2026-09-19",
+   "token_length": 84,
+   "fingerprint": "fp_98980f98afe1"
+  },
+  {
+   "rule": "XAI-KEY",
+   "severity": "high",
+   "path": "memory/trajectory/steps.jsonl",
+   "blob_sha": "056d06b8372b7559fe2b7761591dab498e54e80f",
+   "n_commits_containing": 2,
+   "first_commit": "45c66ee423697701df9b5efc33dd00879b1b5d32",
+   "first_date": "2026-09-18",
+   "last_commit": "47584640590f7480515c802811beea4a5448c04d",
+   "last_date": "2026-09-18",
+   "token_length": 84,
+   "fingerprint": "fp_98980f98afe1"
+  },
+  {
+   "rule": "XAI-KEY",
+   "severity": "high",
+   "path": "memory/trajectory/steps.jsonl",
+   "blob_sha": "6edf7b47248acac9c4adf9a0ca1d2f36d02303ec",
+   "n_commits_containing": 1,
+   "first_commit": "c7389a11fdeafee6a8ce2e860fce299c35a77857",
+   "first_date": "2026-09-18",
+   "last_commit": "c7389a11fdeafee6a8ce2e860fce299c35a77857",
+   "last_date": "2026-09-18",
+   "token_length": 84,
+   "fingerprint": "fp_98980f98afe1"
+  },
+  {
+   "rule": "XAI-KEY",
+   "severity": "high",
+   "path": "memory/trajectory/steps.jsonl",
+   "blob_sha": "894fd81627f441b5de425bb80258e75bcca97e9c",
+   "n_commits_containing": 2,
+   "first_commit": "75c030d296a5d5c3d34ad466d92d81e3f0a51b39",
+   "first_date": "2026-09-16",
+   "last_commit": "6f6998c3353a6803a7798b9f360f3e87788ab549",
+   "last_date": "2026-09-16",
+   "token_length": 84,
+   "fingerprint": "fp_98980f98afe1"
+  },
+  {
+   "rule": "XAI-KEY",
+   "severity": "high",
+   "path": "memory/trajectory/steps.jsonl",
+   "blob_sha": "7699105b7da680fb048cba065593e4826f7c3163",
+   "n_commits_containing": 46,
+   "first_commit": "5dcfbbf974bd57f52a8b48a0083c0b247fa67201",
+   "first_date": "2026-09-15",
+   "last_commit": "32e2a884996f9fb16f9ae4071ce080076b1f8955",
+   "last_date": "2026-09-16",
+   "token_length": 84,
+   "fingerprint": "fp_98980f98afe1"
+  },
+  {
+   "rule": "XAI-KEY",
+   "severity": "high",
+   "path": "memory/trajectory/steps.jsonl",
+   "blob_sha": "61f80084157ee1463defc8d10597c1f28516b90d",
+   "n_commits_containing": 1,
+   "first_commit": "a55ec17d59af1bb4b9765bb549408d4460956284",
+   "first_date": "2026-09-18",
+   "last_commit": "a55ec17d59af1bb4b9765bb549408d4460956284",
+   "last_date": "2026-09-18",
+   "token_length": 84,
+   "fingerprint": "fp_98980f98afe1"
+  },
+  {
+   "rule": "XAI-KEY",
+   "severity": "high",
+   "path": "memory/trajectory/steps.jsonl",
+   "blob_sha": "03c97403520a1da7952dd9be65d5571467d07d04",
+   "n_commits_containing": 1,
+   "first_commit": "132eef87feffa92cb1e7b38a6b8a26b7678d988a",
+   "first_date": "2026-09-16",
+   "last_commit": "132eef87feffa92cb1e7b38a6b8a26b7678d988a",
+   "last_date": "2026-09-16",
+   "token_length": 84,
+   "fingerprint": "fp_98980f98afe1"
+  },
+  {
+   "rule": "XAI-KEY",
+   "severity": "high",
+   "path": "memory/trajectory/steps.jsonl",
+   "blob_sha": "bc1ed37d30ac696bad46ea9a8b588018f002bb00",
+   "n_commits_containing": 3,
+   "first_commit": "ff956c8c4dc9abbc95e06ba509518c01e2b1c9a8",
+   "first_date": "2026-09-19",
+   "last_commit": "4e2c42a120273250a5abe2061a40fd9e72c56c88",
+   "last_date": "2026-09-19",
+   "token_length": 84,
+   "fingerprint": "fp_98980f98afe1"
+  },
+  {
+   "rule": "XAI-KEY",
+   "severity": "high",
+   "path": "memory/trajectory/steps.jsonl",
+   "blob_sha": "ba23274bcf918e7932d18d1480bee9819f67d1ab",
+   "n_commits_containing": 12,
+   "first_commit": "3a37991b18bc8925aeda025409f54aafa88f7b2a",
+   "first_date": "2026-09-19",
+   "last_commit": "f9aa1c3f51975ffe5699131d51ef0d9533a48c09",
+   "last_date": "2026-09-19",
+   "token_length": 84,
+   "fingerprint": "fp_98980f98afe1"
+  },
+  {
+   "rule": "XAI-KEY",
+   "severity": "high",
+   "path": "memory/trajectory/steps.jsonl",
+   "blob_sha": "10ce83424e58908cfff003a6da6a7f310c2f466a",
+   "n_commits_containing": 1,
+   "first_commit": "6dfd35673b5e7fc81f09c5fa7f59d5dccf1d9e3d",
+   "first_date": "2026-09-18",
+   "last_commit": "6dfd35673b5e7fc81f09c5fa7f59d5dccf1d9e3d",
+   "last_date": "2026-09-18",
+   "token_length": 84,
+   "fingerprint": "fp_98980f98afe1"
+  },
+  {
+   "rule": "XAI-KEY",
+   "severity": "high",
+   "path": "memory/trajectory/steps.jsonl",
+   "blob_sha": "8ea418c6151e7ad5064d3483bd2b5dd6f2da1eb1",
+   "n_commits_containing": 1,
+   "first_commit": "5fb285b5115eb1ab45a72c8582eb7c9f9979d0d3",
+   "first_date": "2026-09-18",
+   "last_commit": "5fb285b5115eb1ab45a72c8582eb7c9f9979d0d3",
+   "last_date": "2026-09-18",
+   "token_length": 84,
+   "fingerprint": "fp_98980f98afe1"
+  },
+  {
+   "rule": "XAI-KEY",
+   "severity": "high",
+   "path": "memory/trajectory/steps.jsonl",
+   "blob_sha": "4f7fe04dd323b787a641d60c2291114e5167b7c3",
+   "n_commits_containing": 2,
+   "first_commit": "7a35ab29ebece8a33a9177fdfcc39db7754e1516",
+   "first_date": "2026-09-18",
+   "last_commit": "8fa5b39fbdec59c011e2aef223e7c8091cea7eb3",
+   "last_date": "2026-09-18",
+   "token_length": 84,
+   "fingerprint": "fp_98980f98afe1"
+  },
+  {
+   "rule": "XAI-KEY",
+   "severity": "high",
+   "path": "memory/trajectory/steps.jsonl",
+   "blob_sha": "68b510496889972dfd55a6feec9ce5ec876904fd",
+   "n_commits_containing": 11,
+   "first_commit": "96b5f4b4eeb98f1cb051e3baae817b35c5f7e883",
+   "first_date": "2026-09-19",
+   "last_commit": "90e3262bf71c9b24cfebe7ca6b56efe8239f7b0b",
+   "last_date": "2026-09-21",
+   "token_length": 84,
+   "fingerprint": "fp_98980f98afe1"
+  },
+  {
+   "rule": "XAI-KEY",
+   "severity": "high",
+   "path": "memory/trajectory/steps.jsonl",
+   "blob_sha": "8adc756efe3bb282fa4227db7066d7f2e19393c4",
+   "n_commits_containing": 1,
+   "first_commit": "118333dd1312f430a869a37d0b69b9e4e3744742",
+   "first_date": "2026-09-16",
+   "last_commit": "118333dd1312f430a869a37d0b69b9e4e3744742",
+   "last_date": "2026-09-16",
+   "token_length": 84,
+   "fingerprint": "fp_98980f98afe1"
+  },
+  {
+   "rule": "XAI-KEY",
+   "severity": "high",
+   "path": "memory/trajectory/steps.jsonl",
+   "blob_sha": "e54aee10116d336dc32c94c0f945c7bd46aa7f6b",
+   "n_commits_containing": 1,
+   "first_commit": "0f34a8f3ed77e5578e49c2d4cf2a98ff188147a6",
+   "first_date": "2026-09-16",
+   "last_commit": "0f34a8f3ed77e5578e49c2d4cf2a98ff188147a6",
+   "last_date": "2026-09-16",
+   "token_length": 84,
+   "fingerprint": "fp_98980f98afe1"
+  },
+  {
+   "rule": "XAI-KEY",
+   "severity": "high",
+   "path": "memory/trajectory/steps.jsonl",
+   "blob_sha": "3461b1e3b516c045ccd89ab93152c0b342c538ed",
+   "n_commits_containing": 3,
+   "first_commit": "b4e72828b532473dca9d81e874873065c7340471",
+   "first_date": "2026-09-18",
+   "last_commit": "38958203a7ad14246e9d346d74c89d5e79c04089",
+   "last_date": "2026-09-18",
+   "token_length": 84,
+   "fingerprint": "fp_98980f98afe1"
+  },
+  {
+   "rule": "XAI-KEY",
+   "severity": "high",
+   "path": "memory/trajectory/steps.jsonl",
+   "blob_sha": "cbeec2c4e2952c0fb98b6ef29ecf2676b6f729bb",
+   "n_commits_containing": 2,
+   "first_commit": "7e638bd12ba7a9d0d0e8d60526453f2dd81cdb8b",
+   "first_date": "2026-09-18",
+   "last_commit": "212a0d2b26d95be9263a27a96038ab8f1e746dcf",
+   "last_date": "2026-09-18",
+   "token_length": 84,
+   "fingerprint": "fp_98980f98afe1"
+  },
+  {
+   "rule": "XAI-KEY",
+   "severity": "high",
+   "path": "memory/trajectory/steps.jsonl",
+   "blob_sha": "8f7ee7a84b59dae0fd147dbaf605994bd2847b8c",
+   "n_commits_containing": 1,
+   "first_commit": "b93c7521b25512f7fde90d973aaabedb6af875fa",
+   "first_date": "2026-09-17",
+   "last_commit": "b93c7521b25512f7fde90d973aaabedb6af875fa",
+   "last_date": "2026-09-17",
+   "token_length": 84,
+   "fingerprint": "fp_98980f98afe1"
+  },
+  {
+   "rule": "XAI-KEY",
+   "severity": "high",
+   "path": "memory/trajectory/steps.jsonl",
+   "blob_sha": "9f5478a649cdc2d1b440532bf31b82085f2d8bb4",
+   "n_commits_containing": 1,
+   "first_commit": "2b85093f125616bd60a2dbb6f480d895ca98ce1b",
+   "first_date": "2026-09-16",
+   "last_commit": "2b85093f125616bd60a2dbb6f480d895ca98ce1b",
+   "last_date": "2026-09-16",
+   "token_length": 84,
+   "fingerprint": "fp_98980f98afe1"
+  },
+  {
+   "rule": "XAI-KEY",
+   "severity": "high",
+   "path": "memory/trajectory/steps.jsonl",
+   "blob_sha": "fc5c9ab57790865569f2891f477b67142dea13db",
+   "n_commits_containing": 8,
+   "first_commit": "dfb40d057c4ea8e3b813144f01711ecc80ef08fd",
+   "first_date": "2026-09-19",
+   "last_commit": "9722757daa02ff7c677e3ec2092104b5f11925cf",
+   "last_date": "2026-09-19",
+   "token_length": 84,
+   "fingerprint": "fp_98980f98afe1"
+  },
+  {
+   "rule": "XAI-KEY",
+   "severity": "high",
+   "path": "memory/trajectory/steps.jsonl",
+   "blob_sha": "9f9d145a740ce64636f2343bb2ec82a9495d4c36",
+   "n_commits_containing": 1,
+   "first_commit": "a1c1e210ad804754e278fe740f2718435e7eda9f",
+   "first_date": "2026-09-18",
+   "last_commit": "a1c1e210ad804754e278fe740f2718435e7eda9f",
+   "last_date": "2026-09-18",
+   "token_length": 84,
+   "fingerprint": "fp_98980f98afe1"
+  },
+  {
+   "rule": "XAI-KEY",
+   "severity": "high",
+   "path": "memory/trajectory/steps.jsonl",
+   "blob_sha": "65faaebb8634e9c32788493a5caee22d719864f4",
+   "n_commits_containing": 1,
+   "first_commit": "e692b2259ca46eb3971bcfccc376f6a68641dbcd",
+   "first_date": "2026-09-18",
+   "last_commit": "e692b2259ca46eb3971bcfccc376f6a68641dbcd",
+   "last_date": "2026-09-18",
+   "token_length": 84,
+   "fingerprint": "fp_98980f98afe1"
+  },
+  {
+   "rule": "XAI-KEY",
+   "severity": "high",
+   "path": "memory/trajectory/steps.jsonl",
+   "blob_sha": "3f66018caef86626a00693d8f8aa4aea4708218c",
+   "n_commits_containing": 1,
+   "first_commit": "5305a99b1c2e32c47ca23911e505ca3ca6d49542",
+   "first_date": "2026-09-16",
+   "last_commit": "5305a99b1c2e32c47ca23911e505ca3ca6d49542",
+   "last_date": "2026-09-16",
+   "token_length": 84,
+   "fingerprint": "fp_98980f98afe1"
+  },
+  {
+   "rule": "XAI-KEY",
+   "severity": "high",
+   "path": "memory/trajectory/steps.jsonl",
+   "blob_sha": "949f40739a457a4751249809396e24d1dd49913e",
+   "n_commits_containing": 1,
+   "first_commit": "9546bb7f83d5e4a60d75b50ccf74aa4d0b67c075",
+   "first_date": "2026-09-16",
+   "last_commit": "9546bb7f83d5e4a60d75b50ccf74aa4d0b67c075",
+   "last_date": "2026-09-16",
+   "token_length": 84,
+   "fingerprint": "fp_98980f98afe1"
+  },
+  {
+   "rule": "XAI-KEY",
+   "severity": "high",
+   "path": "memory/trajectory/steps.jsonl",
+   "blob_sha": "10f9c9f2854fe25f83a969f927150194069ba4b0",
+   "n_commits_containing": 1,
+   "first_commit": "aa9bea1b7b7edc76e47d83415f4f73b04dfed508",
+   "first_date": "2026-09-15",
+   "last_commit": "aa9bea1b7b7edc76e47d83415f4f73b04dfed508",
+   "last_date": "2026-09-15",
+   "token_length": 84,
+   "fingerprint": "fp_98980f98afe1"
+  },
+  {
+   "rule": "XAI-KEY",
+   "severity": "high",
+   "path": "memory/trajectory/steps.jsonl",
+   "blob_sha": "af5658e7744d89580ae9d1943f8536f9272ab7d0",
+   "n_commits_containing": 13,
+   "first_commit": "9669eec5b6efe14aac0cebd450fde32b1897032a",
+   "first_date": "2026-09-14",
+   "last_commit": "294dd37c2d76f1e864b4b3cb430b37124892e185",
+   "last_date": "2026-09-15",
+   "token_length": 84,
+   "fingerprint": "fp_98980f98afe1"
+  },
+  {
+   "rule": "XAI-KEY",
+   "severity": "high",
+   "path": "memory/trajectory/steps.jsonl",
+   "blob_sha": "b36789eb0cfcf1d6db02d19c3178fe1b005f9cd3",
+   "n_commits_containing": 1,
+   "first_commit": "a757de02aa00f9e5d10ef5066f03ab7c8bd57cdf",
+   "first_date": "2026-09-18",
+   "last_commit": "a757de02aa00f9e5d10ef5066f03ab7c8bd57cdf",
+   "last_date": "2026-09-18",
+   "token_length": 84,
+   "fingerprint": "fp_98980f98afe1"
+  },
+  {
+   "rule": "XAI-KEY",
+   "severity": "high",
+   "path": "memory/trajectory/steps.jsonl",
+   "blob_sha": "8a58f43a2c161c47f81f511f154da73a7bd3c992",
+   "n_commits_containing": 70,
+   "first_commit": "16b45778a0e8a52aadfc29eeac81b4799be01f10",
+   "first_date": "2026-09-21",
+   "last_commit": "a741defc564f3d1379d2495104bb01a9ff5a5d29",
+   "last_date": "2026-09-25",
+   "token_length": 84,
+   "fingerprint": "fp_98980f98afe1"
+  },
+  {
+   "rule": "XAI-KEY",
+   "severity": "high",
+   "path": "memory/trajectory/steps.jsonl",
+   "blob_sha": "6866856fce254d766de218e08e200b942b36959b",
+   "n_commits_containing": 1,
+   "first_commit": "c2d3db29ab5aa472a2deeb68d9c886a7321052c3",
+   "first_date": "2026-09-18",
+   "last_commit": "c2d3db29ab5aa472a2deeb68d9c886a7321052c3",
+   "last_date": "2026-09-18",
+   "token_length": 84,
+   "fingerprint": "fp_98980f98afe1"
+  },
+  {
+   "rule": "XAI-KEY",
+   "severity": "high",
+   "path": "memory/trajectory/steps.jsonl",
+   "blob_sha": "3b4daefe4584e6d00de1e37705eace901ec1745a",
+   "n_commits_containing": 2,
+   "first_commit": "34455e2c28044f13e03bb86ac6c88f299b863716",
+   "first_date": "2026-09-18",
+   "last_commit": "8f9beb69c497593754589ec64ff44381debeb235",
+   "last_date": "2026-09-18",
+   "token_length": 84,
+   "fingerprint": "fp_98980f98afe1"
+  },
+  {
+   "rule": "XAI-KEY",
+   "severity": "high",
+   "path": "memory/trajectory/steps.jsonl",
+   "blob_sha": "96994747ce531a7b85ebff3edf32e4a9640c3fbd",
+   "n_commits_containing": 55,
+   "first_commit": "7df23b91603649e14de77e162b91315e4d1c7d82",
+   "first_date": "2026-09-17",
+   "last_commit": "623a21372d6c2859ed6c8d7e533304155c8ac692",
+   "last_date": "2026-09-18",
+   "token_length": 84,
+   "fingerprint": "fp_98980f98afe1"
+  }
+ ],
+ "other_high_findings_by_rule_and_path": [
+  {
+   "rule": "AWS-SECRET-40",
+   "path": "corpus/canon/x_canon_2026_fx/fx_2082662744893845828.json",
+   "rows": 1
+  },
+  {
+   "rule": "AWS-SECRET-40",
+   "path": "docs/ref/MAG_LLM_FEED_PACK.md",
+   "rows": 1
+  },
+  {
+   "rule": "AWS-SECRET-40",
+   "path": "memory/corpus/ai_canon/bartle_designing_virtual_worlds.pdf",
+   "rows": 1
+  },
+  {
+   "rule": "AWS-SECRET-40",
+   "path": "memory/corpus/mycology_canon/adamatzky2018_towards.html",
+   "rows": 1
+  },
+  {
+   "rule": "AWS-SECRET-40",
+   "path": "memory/corpus/mycology_canon/boisseau2016_habituation.html",
+   "rows": 1
+  },
+  {
+   "rule": "AWS-SECRET-40",
+   "path": "memory/corpus/mycology_canon/boussard2019_memory.html",
+   "rows": 1
+  },
+  {
+   "rule": "AWS-SECRET-40",
+   "path": "memory/corpus/shadertoy21k/codes/shader_codes/shadertoy/4/4sjSzd.fragment",
+   "rows": 1
+  },
+  {
+   "rule": "AWS-SECRET-40",
+   "path": "memory/corpus/shadertoy21k/codes/shader_codes/shadertoy/W/wtyBzm.fragment",
+   "rows": 1
+  },
+  {
+   "rule": "AWS-SECRET-40",
+   "path": "memory/corpus/shadertoy21k/codes/shader_codes/shadertoy/l/lt3XRM.fragment",
+   "rows": 1
+  },
+  {
+   "rule": "AWS-SECRET-40",
+   "path": "memory/corpus/shadertoy21k/codes/shader_codes/shadertoy/t/tssSDN.fragment",
+   "rows": 1
+  },
+  {
+   "rule": "AWS-SECRET-40",
+   "path": "memory/steal/STEAL_STOCHASTIC_DETERMINISTIC_20260814.md",
+   "rows": 1
+  },
+  {
+   "rule": "AWS-SECRET-40",
+   "path": "memory/trajectory/steps.jsonl",
+   "rows": 172
+  },
+  {
+   "rule": "AWS-SECRET-40",
+   "path": "tools/bin/globalTypes.d.luau",
+   "rows": 1
+  },
+  {
+   "rule": "AWS-SECRET-40",
+   "path": "training/refined_training_data.jsonl",
+   "rows": 1
+  },
+  {
+   "rule": "AWS-SECRET-40",
+   "path": "watch/HARVEST_SHITPOST_DESK_20260909.md",
+   "rows": 2
+  },
+  {
+   "rule": "AWS-SECRET-40",
+   "path": "watch/INTAKE_YOHAKU_FREELANES_20260904.md",
+   "rows": 1
+  },
+  {
+   "rule": "AWS-SECRET-40",
+   "path": "watch/PURPLE_HARVEST_TRIAGE_02_20260906.md",
+   "rows": 1
+  },
+  {
+   "rule": "AWS-SECRET-40",
+   "path": "watch/X_REPLY_DRAFT_RICHARD_RICE_20260906.md",
+   "rows": 1
+  },
+  {
+   "rule": "AWS-SECRET-40",
+   "path": "watch/canary/CANARY_2026-09-12.md",
+   "rows": 1
+  },
+  {
+   "rule": "AWS-SECRET-40",
+   "path": "watch/inbox/LINKS.jsonl",
+   "rows": 138
+  },
+  {
+   "rule": "AWS-SECRET-40",
+   "path": "watch/inbox/OPENJEV_AB_PROTOCOL_20260925.md",
+   "rows": 1
+  },
+  {
+   "rule": "AWS-SECRET-40",
+   "path": "watch/inbox/UNDENIABLE_LEDGER_ADDENDUM_20260923.md",
+   "rows": 2
+  },
+  {
+   "rule": "AWS-SECRET-40",
+   "path": "watch/inbox/qdrop_export/qdrops.jsonl",
+   "rows": 28
+  },
+  {
+   "rule": "AWS-SECRET-40",
+   "path": "watch/scout/HARVEST_FYP_20260904.md",
+   "rows": 1
+  },
+  {
+   "rule": "AWS-SECRET-40",
+   "path": "watch/scout/NARRATION_PRODECK_20260904.txt",
+   "rows": 2
+  },
+  {
+   "rule": "STRIPE-KEY",
+   "path": "boe003.html",
+   "rows": 1
+  },
+  {
+   "rule": "STRIPE-KEY",
+   "path": "boe_index.html",
+   "rows": 1
+  },
+  {
+   "rule": "STRIPE-KEY",
+   "path": "corpus/tmp_enoch/boe012.htm",
+   "rows": 1
+  },
+  {
+   "rule": "STRIPE-KEY",
+   "path": "corpus/tmp_enoch/boe013.htm",
+   "rows": 1
+  },
+  {
+   "rule": "STRIPE-KEY",
+   "path": "corpus/tmp_enoch/boe014.htm",
+   "rows": 1
+  },
+  {
+   "rule": "STRIPE-KEY",
+   "path": "corpus/tmp_enoch/boe015.htm",
+   "rows": 1
+  },
+  {
+   "rule": "STRIPE-KEY",
+   "path": "corpus/tmp_enoch/boe016.htm",
+   "rows": 1
+  },
+  {
+   "rule": "STRIPE-KEY",
+   "path": "corpus/tmp_enoch/boe017.htm",
+   "rows": 1
+  },
+  {
+   "rule": "STRIPE-KEY",
+   "path": "corpus/tmp_enoch/boe019.htm",
+   "rows": 1
+  },
+  {
+   "rule": "STRIPE-KEY",
+   "path": "module_audit.ipynb",
+   "rows": 1
+  },
+  {
+   "rule": "TELEGRAM-BOT",
+   "path": "memory/trajectory/steps.jsonl",
+   "rows": 32
+  }
+ ]
+}

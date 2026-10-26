@@ -1,0 +1,27 @@
+#define PI acos(-1.)
+#define rot(a)mat2(cos(a),sin(a),-sin(a),cos(a))
+
+float map(vec3 p){
+	float r=2.;
+	p.xy=vec2(atan(p.x,p.y)*r, length(p.xy)-r);
+	p.x=mod(p.x,PI/4.)-PI/8.;
+	p.z=mod(p.z,1.)-.5;
+  return length(vec2(length(p.xz)-.3,p.y))-.03;
+}
+
+void main(){
+  vec2 uv=(2.*gl_FragCoord.xy-r)/r.y;
+  vec3 ro=vec3(0,0,t);
+  vec3 rd=normalize(vec3(uv,2));
+  vec3 p;
+  float h=0.,d,i;
+	for(i=1.;i<50.;i++){
+    p=ro+rd*h;    
+    //p.xz*=rot(t);
+	  //p.xy*=rot(t);
+		d=map(p);
+  	if(d<.0001)break;
+    h+=d;
+	}
+  o.xyz+=10./i;
+}

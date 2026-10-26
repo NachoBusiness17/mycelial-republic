@@ -1,0 +1,286 @@
+{
+  "audit": "lane3_gate_enforcement",
+  "stamp": "2026-09-26",
+  "host": "DESKTOP-7C70KSC",
+  "repo": "C:/Users/foste/Documents/projects/local_sovereign_agent",
+  "interpreter": "./.venv/Scripts/python.exe",
+  "thesis": "The enforcement gap is not missing gates, it is gates that are armed, correct, and red while the surface that consumes them is read by nobody. Three scheduled tasks have never executed (0x41303). The pre-push hook blocks every push at gate 1, so gates 2-11 have never been exercised against a real push. The census gate the repo cites as proof of enforcement is the one instrument the hook deliberately does not run.",
+  "schtasks_verbatim": {
+    "MagCensusPatrolDaily": {
+      "state": "Ready",
+      "enabled": true,
+      "last_run": "9/26/2026 11:34:24 AM",
+      "last_result": "0",
+      "next_run": "9/27/2026 8:30:00 AM",
+      "registered": "2026-09-26T11:31:00",
+      "logon_mode": "Interactive only",
+      "action": "powershell.exe -NoProfile -ExecutionPolicy Bypass -File C:\\Users\\foste\\Documents\\projects\\local_sovereign_agent\\scripts\\census_patrol_daily.ps1",
+      "fires": true,
+      "fires_collect_flag": true
+    },
+    "MagImproveDaily": {
+      "state": "Ready",
+      "enabled": true,
+      "last_run": "9/26/2026 8:00:00 AM",
+      "last_result": "1",
+      "next_run": "9/27/2026 8:00:00 AM",
+      "registered": "2026-09-26T00:22:51",
+      "action": "powershell.exe -NoProfile -ExecutionPolicy Bypass -File ...\\scripts\\improve_daily.ps1",
+      "fires": true,
+      "verdict": "ARMED AND RED - exit 1 today, unattended, no alert path"
+    },
+    "MagFtsIndexDaily": {
+      "state": "Ready",
+      "enabled": true,
+      "last_run": "9/26/2026 3:45:14 PM",
+      "last_result": "0",
+      "next_run": "9/27/2026 9:00:00 AM",
+      "registered": "2026-09-26T15:26:39",
+      "action": "powershell.exe -NoProfile -ExecutionPolicy Bypass -File ...\\scripts\\fts_index_daily.ps1",
+      "fires": true,
+      "verdict": "GREEN - index_state fresh, deep match"
+    },
+    "MagCorpusRescanDaily": {
+      "state": "Ready",
+      "enabled": true,
+      "last_run": "11/30/1999 12:00:00 AM",
+      "last_result": "267011",
+      "last_result_hex": "0x41303",
+      "next_run": "9/27/2026 3:30:00 AM",
+      "registered": "2026-09-26T15:20:13",
+      "log": "logs/corpus_rescan.log MISSING",
+      "fires": false,
+      "verdict": "DORMANT - never executed. 0x41303 = SCHED_S_TASK_HAS_NOT_RUN"
+    },
+    "MagQCaptionVerifyDaily": {
+      "state": "Ready",
+      "enabled": true,
+      "last_run": "11/30/1999 12:00:00 AM",
+      "last_result": "267011",
+      "last_result_hex": "0x41303",
+      "next_run": "9/27/2026 7:30:00 AM",
+      "registered": "2026-09-26T16:23:57",
+      "log": "logs/qcaption_verify.log MISSING",
+      "fires": false,
+      "verdict": "DORMANT - never executed. Caption ledger has no scheduled verifier."
+    },
+    "MagSecretScanWeekly": {
+      "state": "Ready",
+      "enabled": true,
+      "last_run": "11/30/1999 12:00:00 AM",
+      "last_result": "267011",
+      "last_result_hex": "0x41303",
+      "next_run": "9/28/2026 6:40:00 AM",
+      "registered": "2026-09-26T16:53:42",
+      "log": "logs/secret_scan.log MISSING",
+      "fires": false,
+      "verdict": "DORMANT - weekly secret scan has never run. Highest-severity dormant gate."
+    },
+    "MagVisionNightly": {
+      "state": "Ready",
+      "enabled": true,
+      "last_run": "9/26/2026 2:30:01 AM",
+      "last_result": "0",
+      "registered": "2026-09-19T13:02:48",
+      "action": "scripts\\vision_nightly.ps1",
+      "fires": true
+    },
+    "MagEndpointNewsDaily": {
+      "state": "Ready",
+      "enabled": true,
+      "last_run": "9/26/2026 6:30:01 AM",
+      "last_result": "0",
+      "registered": "2026-09-19T12:57:50",
+      "action": "scripts\\endpoint_news_daily.ps1",
+      "fires": true
+    },
+    "EstateRatchet": {
+      "registered_task_name": "Estate Ratchet",
+      "note": "scripts/register_ratchet_task.ps1 registers TN 'Estate Ratchet' (with a space), NOT a Mag* name. Exists and Ready. The naming mismatch is why a Mag* glob misses it - finding, not absence.",
+      "last_run": "9/26/2026 09:45:03",
+      "verdict": "FIRED AND RED - log tail: END seal=1 freshness=0 ratchet=1"
+    },
+    "disabled_by_design": ["MagLabKit8765", "MagPrivateOffice8765", "vast-bargain-loop"]
+  },
+  "enforcement_points": [
+    {
+      "id": "E1",
+      "name": "violation_ratchet check --changed",
+      "invocation": "githooks/pre-push:10",
+      "scope": "mag/ + tools/, changed files only (101 files)",
+      "automatic": "pre-push",
+      "blocks": true,
+      "fails_closed": true,
+      "current_verdict": "RED - 6 NEW violations, exit 1",
+      "blocks_on": ["5ae40a2d except-pass tools/ledger_lock.py:125", "3b1726de except-pass tools/openrouter_free_gate.py:84", "f0d81bd3 file-too-long tools/probe20_run.py:421", "e3b7845e cwd-relative-path tools/queue_dupes_check.py:33", "0dfc0411 except-pass tools/transport_precheck.py:134", "f2ce896c except-pass tools/visor.py:131"],
+      "notes": "A 7th NEW (8d41e611 file-too-long tools/census_drift_patrol.py:403) is invisible to --changed because the file is unchanged; the full check shows scope=1188 files, NEW=7."
+    },
+    {
+      "id": "E2",
+      "name": "config_seal verify",
+      "invocation": "githooks/pre-push:12",
+      "scope": "configs/ seal over 53 live files",
+      "automatic": "pre-push",
+      "blocks": true,
+      "fails_closed": true,
+      "current_verdict": "RED - sealed=49 live=53 modified=6 unsealed=4, exit 1",
+      "blocks_on": ["improve.yaml", "keys.json", "lanes.yaml", "providers.yaml", "spend_overlay.yaml", "violation_baseline.json (modified)", "links_kind_baseline.json", "links_sha_ratchet_baseline.json", "sanctioned_scheduled_tasks.yaml", "workflow_registry_baseline.json (unsealed)"]
+    },
+    {
+      "id": "E3",
+      "name": "description_pin",
+      "invocation": "githooks/pre-push:21",
+      "automatic": "pre-push",
+      "blocks": false,
+      "swallow": "|| true",
+      "fails_open": true,
+      "current_verdict": "SKIPPED - configs/tools/ does not exist",
+      "todo_flip": "TODO-FLIP-TO-ENFORCE at line 17"
+    },
+    {
+      "id": "E4",
+      "name": "freshness_gate (receipt stamps)",
+      "invocation": "githooks/pre-push:41-57",
+      "automatic": "pre-push",
+      "blocks": false,
+      "swallow": "|| true on every invocation (line 49)",
+      "fails_open": true,
+      "current_verdict": "WARN-ONLY, max 5 receipts per push",
+      "todo_flip": "TODO-FLIP-TO-ENFORCE at line 38"
+    },
+    {
+      "id": "E5",
+      "name": "census_drift_patrol",
+      "invocation": "githooks/pre-push:88",
+      "critical_finding": "The hook calls the patrol WITHOUT --collect. AGENTS.md:27 states the --collect deep check is 'kept out of the default pre-push path because it needs the venv' - and the hook's own .venv interpreter is what runs the call, so the stated reason does not hold. Without --collect the gate reads the carrier's own number and cannot see the drift it was built to catch.",
+      "automatic": "pre-push",
+      "blocks": "exit 2 only (cannot-verify / blind)",
+      "exit_1_stale_behavior": "WARN-ONLY, push proceeds",
+      "fails_open": true,
+      "fail_open_proof": "Simulated missing interpreter: rc=127 -> out does not match 'CENSUS-PATROL: ok*' -> WARN arm -> census_rc != 2 -> no exit. Push proceeds on a gate that never ran.",
+      "current_verdict": "GREEN AND WRONG - without --collect prints 'ok - census 0d old' exit 0; with --collect prints COLLECT-DRIFT delta +378 exit 1",
+      "todo_flip": "TODO-FLIP-TO-ENFORCE at line 66-68 covers exit 1 only"
+    },
+    {
+      "id": "E6",
+      "name": "checkbox_receipt_gate",
+      "invocation": "githooks/pre-push:112-117",
+      "automatic": "pre-push",
+      "blocks": false,
+      "swallow": "|| true",
+      "fails_open": true,
+      "guard": "requires BOTH tools/checkbox_receipt_gate.py AND watch/inbox/burn_wave_20260926/QUEUE.md - a queue file rename silently disarms it"
+    },
+    {
+      "id": "E7",
+      "name": "caption_ledger_verify",
+      "invocation": "githooks/pre-push:140-167",
+      "automatic": "pre-push (conditional on generator/verifier change)",
+      "blocks": false,
+      "swallow": "|| true",
+      "fails_open": true
+    },
+    {
+      "id": "E8",
+      "name": "refold_gate",
+      "invocation": "githooks/pre-push:203-235",
+      "automatic": "pre-push (conditional on fold host change)",
+      "blocks": false,
+      "swallow": "|| true",
+      "fails_open": true
+    },
+    {
+      "id": "E9",
+      "name": "workflow_gate scenario suite",
+      "invocation": "githooks/pre-push:280-307",
+      "automatic": "pre-push (conditional on tools/workflow_gate.py change)",
+      "blocks": true,
+      "exit_1": "blocks the push",
+      "fails_closed": true,
+      "current_verdict": "UNEXERCISED - arms never fire on a push, because E1 and E2 exit first"
+    },
+    {
+      "id": "E10",
+      "name": "freshness_check.py",
+      "invocation": "manual / parent-lane run",
+      "automatic": false,
+      "blocks": false,
+      "current_verdict": "PASS"
+    },
+    {
+      "id": "E11",
+      "name": "census_patrol_daily.ps1 --collect",
+      "invocation": "MagCensusPatrolDaily 08:30",
+      "automatic": true,
+      "blocks": false,
+      "alert_path": "memory/attention.md",
+      "current_verdict": "FIRED today 11:34, last_result 0, wrote 'census 0d old' - the daily deep check PASSED at 11:34 and the count is now 2288 vs carrier 1910. The gate is correct; 9 hours of test landings moved the number 378 past its bar. Daily cadence cannot track an estate landing ~42 tests/hour.",
+      "alert_path_broken": "memory/attention.md contains no CENSUS row despite logs/census_patrol.log recording '[2026-09-26 11:33:20] ALERT appended to memory/attention.md' - the alert append is claimed in the log and absent from the file."
+    }
+  ],
+  "hook_simulation": {
+    "command": "sh githooks/pre-push < /dev/null",
+    "exit": 1,
+    "gates_reached": ["E1 violation_ratchet"],
+    "gates_never_reached": ["E2 config_seal", "E3 description_pin", "E4 freshness", "E5 census_drift_patrol", "E6 checkbox_receipt", "E7 caption_ledger", "E8 refold_gate", "E9 workflow_gate_scenarios"],
+    "consequence": "E9 is the only other enforcing gate in the hook and it has never run against a real push. The hook is fail-closed but the fail-closed property is currently indistinguishable from total blockage: both enforcing gates are red, so the hook is a wall, not a gate."
+  },
+  "push_reachability": {
+    "hooks_path_configured": "core.hooksPath = githooks",
+    "githooks_pre_push": "present, 17853 bytes, executable, git-tracked",
+    "dot_git_hooks_pre_push": "absent (expected - core.hooksPath redirects)",
+    "remote": "C:/Users/foste/Documents/projects/Mag-backup.git (local bare)",
+    "local_head": "6d417abd5dc1afd097000e58a4d3c95ec2ecc6cb",
+    "local_head_in_backup_object_store": false,
+    "backup_newest_ref_on_this_branch": "2026-09-19 21:53:04",
+    "hook_written": "2026-09-25 (commit ea04ebc15 'ratchet wave 2: enforcement - pre-push gate wired')",
+    "verdict": "The hook has never fired against a real push. Both enforcing gates were already red when the hook landed, so every push since 2026-09-25 has been blocked, and the backup remote's newest ref on this branch predates the hook by 6 days.",
+    "reflog_contradiction": "reflog commit messages claim 'pushed 26 overnight commits' (09-25) and 'pushed 143 overnight commits' (09-20) and 'first zero-push morning' (09-26) - the last message is the honest one"
+  },
+  "exposure": {
+    "untracked_total": 1686,
+    "untracked_md": 601,
+    "untracked_py": 293,
+    "untracked_json": 282,
+    "untracked_jpg": 315,
+    "untracked_jsonl": 35,
+    "untracked_txt": 106,
+    "total_bytes_untracked": 2181953,
+    "py_at_risk": 293,
+    "py_at_risk_by_area": {
+      "watch/": 185,
+      "tests/": 58,
+      "tools/": 26,
+      "mag/": 12,
+      "scripts/": 4,
+      "agents/ + other": 8
+    },
+    "real_code_at_risk_note": "100 files of the 293 .py sit under tests/, tools/, mag/, scripts/ - production surfaces, not receipts. tools/ holds 26 untracked .py, several of which are the very gate scripts this audit names (e.g. census_collect.py's siblings, description_pin, checkbox_receipt_gate).",
+    "watch_gitignored": false,
+    "git_clean_verdict": "git clean -fd would delete all 1686 untracked paths / ~2.18 MB, including 58 untracked test files and 26 untracked gate tools. No git recovery path exists for any of them."
+  },
+  "dormant_but_armed": [
+    "MagSecretScanWeekly - 0x41303, never run, secret-scan gate is fully dormant",
+    "MagQCaptionVerifyDaily - 0x41303, never run, caption ledger unverified by schedule",
+    "MagCorpusRescanDaily - 0x41303, never run",
+    "MagImproveDaily - fires daily, exit 1 today, no alert consumer",
+    "Estate Ratchet - fires 09:45, ends red (seal=1 ratchet=1), nobody reads it",
+    "E3 description_pin - disarmed by a missing directory",
+    "E4/E6/E7/E8 - hook gates that cannot block by construction (|| true)",
+    "E5 census_drift_patrol at pre-push - structurally blind to the drift it was built for (no --collect)",
+    "E9 workflow_gate_scenarios - enforcing in code, unreachable in practice behind two red gates"
+  ],
+  "counts": {
+    "gates_enumerated": 11,
+    "scheduled_tasks_found": 8,
+    "scheduled_tasks_never_run": 3,
+    "scheduled_tasks_red_today": 2,
+    "hook_gates": 9,
+    "hook_gates_blocking": 3,
+    "hook_gates_warn_only": 5,
+    "hook_gates_unreachable": 8,
+    "new_ratchet_violations_changed": 6,
+    "new_ratchet_violations_all": 7,
+    "py_at_risk": 293
+  }
+}

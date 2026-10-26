@@ -1,0 +1,1084 @@
+{
+  "lane": "LANE4",
+  "title": "Test-suite ROBUSTNESS audit",
+  "date": "2026-09-27",
+  "repo": "C:/Users/foste/Documents/projects/local_sovereign_agent",
+  "instrument": {
+    "python": ".venv/Scripts/python.exe (project venv)",
+    "pytest": "9.1.1",
+    "note": "a bare `python` is Hermes' own venv and has no project deps; the .venv interpreter is mandatory in this repo"
+  },
+  "mutation_method": {
+    "repo_writes": "NONE. every mutation was applied either in-memory via a sys.modules injection plugin, or inside a temp mirror at scratch/lane4/mirror_census. the real tree was never written.",
+    "why_two_methods": "census_drift_patrol's tests drive the tool as a REAL SUBPROCESS by path, which an in-memory injection cannot reach; that gate needed the file-level mirror. the ratchet tests import in-process and were mutated in memory.",
+    "harness_validation": {
+      "control_1": "violation_ratchet.cmd_check SUCCESS 0 -> 1 => 2 tests went red (KILLED)",
+      "control_2": "census green first-line contract broken => 2 tests went red (KILLED)",
+      "verdict": "VALID. without these, a SURVIVED verdict is uninterpretable."
+    },
+    "collection_gate": "the mirror carries 15 pre-existing failures that are mirror artifacts (registry jsonl / AGENTS.md not mirrored; tmp_path outside the mirror root). They are recorded as the baseline and SUBTRACTED; only NEW failures count as a kill."
+  },
+  "failing_tests_33": {
+    "count": 33,
+    "source": "the 33 IDs lane 7 recorded, re-derived and re-observed in this lane",
+    "class_counts": {
+      "product_bug": 9,
+      "stale_baseline_pin": 14,
+      "missing_asset": 5,
+      "test_harness_bug_platform": 4,
+      "order_dependent": 3,
+      "note": "order_dependent are counted in their primary class; the order-dependence is an ADDITIONAL finding on top"
+    },
+    "items": [
+      {
+        "n": 1,
+        "file_line": "tests/test_healthz_status.py:37",
+        "id": "test_breach_returns_503",
+        "class": "product_bug",
+        "sev": "HIGH",
+        "why": "server.semantic_health() returns ok=True for 10 http_tool_fail rows. The breach is invisible, so /healthz reports healthy during a real failure. The test name says 503 but it only asserts the report dict, never the status code."
+      },
+      {
+        "n": 2,
+        "file_line": "tests/test_quota_billable.py:80",
+        "id": "test_provider_budget_trips_when_billable_hits_cap",
+        "class": "product_bug",
+        "sev": "HIGH",
+        "why": "with max_tokens=30,000,000 the daily budget ceiling never trips at realistic spend; budget_ok stays True. The spend guardrail is inert at the configured cap."
+      },
+      {
+        "n": 3,
+        "file_line": "tests/test_quota_billable.py:25",
+        "id": "test_provider_budget_uses_billable_not_inflated_ledger",
+        "class": "product_bug",
+        "sev": "MEDIUM",
+        "why": "same root cause as #2: the 1_000_000 pin is dead, max_tokens reads 30M. Billable-vs-ledger accounting itself is fine (usage_source and used_tokens assertions pass)."
+      },
+      {
+        "n": 4,
+        "file_line": "tests/test_census_drift_patrol.py:216",
+        "id": "test_files_added_since_excludes_census_day_and_non_tests",
+        "class": "product_bug",
+        "sev": "MEDIUM",
+        "why": "REAL TZ BUG IN THE GATE, not the test. census_drift_patrol.py:242 normalises the commit time to UTC (datetime.fromisoformat(line).astimezone(timezone.utc).date()) while the census day is a LOCAL calendar day. Between 20:00 and 24:00 EDT a same-local-day commit lands on the next UTC day, so the gate counts it as post-census. 4 of every 24 local hours are wrong. Verified: the test PASSES in isolation at 02:00 local and FAILS in the 20:00-24:00 window."
+      },
+      {
+        "n": 5,
+        "file_line": "tests/test_organ_map.py:5",
+        "id": "test_map_separates_callable_from_live",
+        "class": "product_bug",
+        "sev": "MEDIUM",
+        "why": "atlas is VERIFIED but not LIVE: assert 'LIVE' in rows['atlas']['levels'] fails with ['DECLARED','INSTRUMENTED','WIRED','STATEFUL','VERIFIED']. The map's own promotion ladder disagrees with the test's expectation about which receipt promotes it."
+      },
+      {
+        "n": 6,
+        "file_line": "tests/test_organ_map.py:39",
+        "id": "test_map_and_elder_surface_callable_orphans",
+        "class": "product_bug",
+        "sev": "LOW",
+        "why": "elder.audit() still lists ask_router as a gap although organ_map says it is callable+wired. Two internal fleet views disagree about the same organ."
+      },
+      {
+        "n": 7,
+        "file_line": "tests/test_supervision_soak.py:95",
+        "id": "test_gpipes_pipe_status_kill_list",
+        "class": "product_bug",
+        "sev": "LOW",
+        "why": "a named named-pipe is missing from the supervision kill list: 'pipe missing from list'. A supervision gap on a real surface."
+      },
+      {
+        "n": 8,
+        "file_line": "tests/test_wave_driver.py:94",
+        "id": "TestSingleTickSubprocess::test_tick_appends_chain_valid_row",
+        "class": "product_bug",
+        "sev": "MEDIUM",
+        "why": "the wave tick refuses to append: 'PATH PIN REFUSED: --ground=<tmp> resolves outside the repo root'. The path pin is doing exactly what it was built for; the TEST drives it out of bounds via tmp_path. Effectively a test-harness bug with a real cause."
+      },
+      {
+        "n": 9,
+        "file_line": "tests/test_water_computer.py:52,59,70,83,104",
+        "id": "test_water_computer (x5)",
+        "class": "product_bug",
+        "sev": "MEDIUM",
+        "why": "5 of 9 in the file: valve not refused in gallery, gravity does not move when open, bucket cheat not detected, flow does not win, cycle produces liquid where gas is asserted. The game's win/cheat physics is wrong."
+      },
+      {
+        "n": 10,
+        "file_line": "tests/test_desk_baseline_probe.py:91,101,122,135,146,157",
+        "id": "test_desk_baseline_probe (x6)",
+        "class": "stale_baseline_pin",
+        "sev": "LOW",
+        "why": "ONE root cause, six tests. All six read dashboard/static/index.html, which was REPLACED wholesale by a 16,693-byte 'FLEET CONSOLE' page. The six markers (deskLocalMode, data-dashboard-section, 'Verkle artifacts', btnDaysCopyKnot, data-days-view, 'Direct Mag') are absent because the file they were pinned to no longer exists in that form. One surface replacement killed six pins."
+      },
+      {
+        "n": 11,
+        "file_line": "tests/test_mirror_intro.py:11",
+        "id": "test_mirror_guide_markup_in_index",
+        "class": "stale_baseline_pin",
+        "sev": "LOW",
+        "why": "SAME root cause as #10: asserts id=\"mirrorGuide\" in the same replaced dashboard/static/index.html."
+      },
+      {
+        "n": 12,
+        "file_line": "tests/test_shared_surface_events.py:305",
+        "id": "test_real_links_jsonl_matches_the_registered_baseline",
+        "class": "stale_baseline_pin",
+        "sev": "LOW",
+        "why": "4 new B2-142 rows appended to the shared links jsonl past the B2-28 marker. The append-only register is working; the baseline marker is behind."
+      },
+      {
+        "n": 13,
+        "file_line": "tests/test_pack_modes_steward.py:29",
+        "id": "test_build_mode_includes_build_excerpt",
+        "class": "stale_baseline_pin",
+        "sev": "LOW",
+        "why": "asserts 'L2b Frozen BUILD' or 'Do the thing' in the build-mode pack. The pack text was reworded; neither literal is emitted any more."
+      },
+      {
+        "n": 14,
+        "file_line": "tests/test_all_seat_interaction.py:35",
+        "id": "test_class_selection_reads_prior_selections",
+        "class": "stale_baseline_pin",
+        "sev": "LOW",
+        "why": "ImportError: cannot import name 'quest_party' from 'mag'. The module was renamed/removed; the test still names it."
+      },
+      {
+        "n": 15,
+        "file_line": "tests/test_no_win.py:26",
+        "id": "test_reframe_keeps_invariant_changes_conditions",
+        "class": "stale_baseline_pin",
+        "sev": "LOW",
+        "why": "the move string is 'REFRAIM[not_enough]: ...' where the test pins 'REFRAME'. A single-letter rename in the product string; the assertion is the pin."
+      },
+      {
+        "n": 16,
+        "file_line": "tests/test_falsifier_ledger.py:39",
+        "id": "test_grounding_jsonl_chain_and_schema",
+        "class": "product_bug",
+        "sev": "MEDIUM",
+        "why": "row 121 of the grounding ledger has no 'evidence' field. The chain's own schema requires it on every row. A broken row in a hash-chained ledger IS a product defect in the ledger writer, not a stale pin."
+      },
+      {
+        "n": 17,
+        "file_line": "tests/test_falsifier_ledger.py:68",
+        "id": "test_evidence_local_pointers_resolve",
+        "class": "missing_asset",
+        "sev": "LOW",
+        "why": "row 104 names dashboard/static/art/privlidge_school_receipt_20260913.png; the PNG is not in this checkout. WindowsPath(...).exists() is False."
+      },
+      {
+        "n": 18,
+        "file_line": "tests/test_ponytail_audit.py:7",
+        "id": "test_run_audit_returns_schema",
+        "class": "order_dependent",
+        "sev": "LOW",
+        "why": "PASSES in isolation, FAILS in the full run. Reads live estate state, so a sibling lane's concurrent writes decide the verdict. Not reproducible as a stable defect."
+      },
+      {
+        "n": 19,
+        "file_line": "tests/test_substrate_identity.py:19",
+        "id": "test_identity_persistence",
+        "class": "test_harness_bug_platform",
+        "sev": "LOW",
+        "why": "FileNotFoundError on C:/Users/foste/Documents/projects/mag/state.py. The test does Path(__file__).parents[2] which assumes tests/ is TWO levels below the repo root; here it is one. Off-by-one on the fixture path."
+      },
+      {
+        "n": 20,
+        "file_line": "tests/test_index_fold_host.py:429,440,450,477",
+        "id": "test_index_fold_host (x4)",
+        "class": "test_harness_bug_platform",
+        "sev": "MEDIUM",
+        "why": "NOT a stale pin and NOT a product bug. The detector fires correctly ('LIVING PREFIX MISMATCH: ...', 'HASH MISMATCH: ...' are both in the output, '1 mismatched' is correct) but it prints an ABSOLUTE Windows path where the test pins a bare filename. Passes on POSIX, fails on Windows. Lane 7 classified these as stale baseline pins; that classification is wrong."
+      },
+      {
+        "n": 21,
+        "file_line": "tests/test_loop_death_guards.py:145",
+        "id": "test_loop_death_guard_fires_on_raise[afk_routing]",
+        "class": "order_dependent",
+        "sev": "LOW",
+        "why": "PASSES in isolation, FAILS in the full run. Shared-state / ordering dependent."
+      },
+      {
+        "n": 22,
+        "file_line": "tests/test_census_drift_patrol.py:216",
+        "id": "(see #4 \u2014 also order dependent on local time of day)",
+        "class": "order_dependent",
+        "sev": "MEDIUM",
+        "why": "The same test also fails only in a local-time window; two independent order/time dependencies on one test."
+      }
+    ],
+    "observed_run_2026_09_27": {
+      "result": "33 failed, 2261 passed, 9 skipped in 2586.37s (0:43:06)",
+      "membership_churn": "the COUNT held at 33 but the SET moved between lane 7's run and this one, because sibling lanes land code into this tree live. Disappeared: test_ponytail_audit::test_run_audit_returns_schema, test_census_drift_patrol::test_files_added_since_excludes_census_day_and_non_tests. New arrivals: test_frontier_council.py::test_delegate_routes_and_shapes, test_frontier_council.py::test_recommend_self_stolen_chain, test_skill_seat.py::test_ponytail_gate.",
+      "new_arrivals_classified": [
+        {
+          "file_line": "tests/test_frontier_council.py (test_delegate_routes_and_shapes)",
+          "class": "stale_baseline_pin",
+          "sev": "LOW",
+          "why": "assert 'deepseek' in ('chatgpt','grok_web'). The router's lane table no longer offers deepseek for this route; the test pins the old routing."
+        },
+        {
+          "file_line": "tests/test_frontier_council.py (test_recommend_self_stolen_chain)",
+          "class": "stale_baseline_pin",
+          "sev": "LOW",
+          "why": "assert 'cheap' == 'reasoning'. The recommendation class changed; the test pins the old class."
+        },
+        {
+          "file_line": "tests/test_skill_seat.py:25",
+          "class": "order_dependent",
+          "sev": "LOW",
+          "why": "failed in the full run with FileNotFoundError [WinError], but PASSES in isolation. A transient file-state / lock interaction with a concurrent lane, not a stable defect. Same class as the other two order-dependent failures."
+        }
+      ]
+    },
+    "corrections_to_lane7": [
+      "lane 7 called test_index_fold_host x4 a STALE BASELINE PIN. It is a WINDOWS PATH-SEPARATOR bug in the test. The product detector is correct.",
+      "lane 7 called test_census_drift_patrol a real bug needing a verdict. Confirmed and root-caused: it is a UTC-vs-local-day normalisation bug in the GATE, reproducible only between 20:00 and 24:00 local time.",
+      "lane 7 grouped test_desk_baseline_probe x6 as pins on several live surfaces. It is ONE surface replacement (dashboard/static/index.html) killing six pins, plus test_mirror_intro which shares the same file.",
+      "lane 7 did not see secret_gate.py at all: it was wired into the pre-push hook on 2026-09-27 and has ZERO tests."
+    ]
+  },
+  "assertion_style_distribution": {
+    "method": "AST walk of every test_ function in tests/ (354 files, 2278 test functions). Per-test, so 'how many tests can fail' is answerable.",
+    "files_scanned": 354,
+    "test_functions_found": 2278,
+    "totals": {
+      "bare_assert": 6604,
+      "soft_assert_msg": 622,
+      "pytest_raises": 54,
+      "unittest_assertX": 148,
+      "custom_matcher": 0,
+      "try_except_swallow": 2,
+      "try_blocks": 47,
+      "except_handlers": 5
+    },
+    "dominant_style_per_test": {
+      "bare_assert_only": 2124,
+      "pytest_raises_only": 13,
+      "unittest_only": 30,
+      "custom_only": 0,
+      "swallow_only_no_assert": 0,
+      "mixed": 31,
+      "none": 80
+    },
+    "zero_assert_tests": 80,
+    "zero_assert_list": [
+      {
+        "file": "tests/test_docker_ops.py",
+        "line": 55,
+        "name": "test_main_dispatch_returns_something_for_each_cmd",
+        "try_blocks": 2,
+        "swallows": 0
+      },
+      {
+        "file": "tests/test_game_piece_tandem.py",
+        "line": 19,
+        "name": "test_clean_structuredOutput",
+        "try_blocks": 0,
+        "swallows": 0
+      },
+      {
+        "file": "tests/test_game_piece_tandem.py",
+        "line": 24,
+        "name": "test_text_wrapped_double_encoded",
+        "try_blocks": 0,
+        "swallows": 0
+      },
+      {
+        "file": "tests/test_game_piece_tandem.py",
+        "line": 30,
+        "name": "test_text_plain",
+        "try_blocks": 0,
+        "swallows": 0
+      },
+      {
+        "file": "tests/test_game_piece_tandem.py",
+        "line": 35,
+        "name": "test_escaped_code_field",
+        "try_blocks": 0,
+        "swallows": 0
+      },
+      {
+        "file": "tests/test_grounding_wave_v4.py",
+        "line": 53,
+        "name": "TestG1WriteGate::test_row122_shape_refused_if_reposted",
+        "try_blocks": 0,
+        "swallows": 0
+      },
+      {
+        "file": "tests/test_grounding_wave_v4.py",
+        "line": 66,
+        "name": "TestG1WriteGate::test_missing_prev_refused",
+        "try_blocks": 0,
+        "swallows": 0
+      },
+      {
+        "file": "tests/test_grounding_wave_v4.py",
+        "line": 77,
+        "name": "TestG1WriteGate::test_prev_not_tip_refused",
+        "try_blocks": 0,
+        "swallows": 0
+      },
+      {
+        "file": "tests/test_grounding_wave_v4.py",
+        "line": 88,
+        "name": "TestG1WriteGate::test_post_roundtrip_always_admissible",
+        "try_blocks": 0,
+        "swallows": 0
+      },
+      {
+        "file": "tests/test_grounding_wave_v4.py",
+        "line": 101,
+        "name": "TestG1WriteGate::test_supported_without_seat_refused",
+        "try_blocks": 0,
+        "swallows": 0
+      },
+      {
+        "file": "tests/test_grounding_wave_v4.py",
+        "line": 106,
+        "name": "TestG1WriteGate::test_supported_latest_evidence_refused",
+        "try_blocks": 0,
+        "swallows": 0
+      },
+      {
+        "file": "tests/test_grounding_wave_v4.py",
+        "line": 113,
+        "name": "TestG1WriteGate::test_dead_path_evidence_refused_at_post",
+        "try_blocks": 0,
+        "swallows": 0
+      },
+      {
+        "file": "tests/test_grounding_wave_v4.py",
+        "line": 121,
+        "name": "TestVoidCrossSignature::test_void_requires_second_seat",
+        "try_blocks": 0,
+        "swallows": 0
+      },
+      {
+        "file": "tests/test_grounding_wave_v4.py",
+        "line": 129,
+        "name": "TestVoidCrossSignature::test_void_second_seat_must_differ",
+        "try_blocks": 0,
+        "swallows": 0
+      },
+      {
+        "file": "tests/test_grounding_wave_v4.py",
+        "line": 135,
+        "name": "TestVoidCrossSignature::test_void_counts_only_once_cross_signed_in_chain",
+        "try_blocks": 0,
+        "swallows": 0
+      },
+      {
+        "file": "tests/test_grounding_wave_v4.py",
+        "line": 148,
+        "name": "TestVoidCrossSignature::test_void_reason_code_enum",
+        "try_blocks": 0,
+        "swallows": 0
+      },
+      {
+        "file": "tests/test_grounding_wave_v4.py",
+        "line": 154,
+        "name": "TestVoidCrossSignature::test_void_of_void_reversal",
+        "try_blocks": 0,
+        "swallows": 0
+      },
+      {
+        "file": "tests/test_grounding_wave_v4.py",
+        "line": 169,
+        "name": "TestVoidCrossSignature::test_already_voided_refused",
+        "try_blocks": 0,
+        "swallows": 0
+      },
+      {
+        "file": "tests/test_grounding_wave_v4.py",
+        "line": 180,
+        "name": "TestTamperDetection::test_tampered_hash_detected",
+        "try_blocks": 0,
+        "swallows": 0
+      },
+      {
+        "file": "tests/test_grounding_wave_v4.py",
+        "line": 194,
+        "name": "TestTamperDetection::test_evidence_mutation_detected_identity_not_existence",
+        "try_blocks": 0,
+        "swallows": 0
+      },
+      {
+        "file": "tests/test_grounding_wave_v4.py",
+        "line": 208,
+        "name": "TestTamperDetection::test_g3_warrant_recorded_and_run_by_witness",
+        "try_blocks": 0,
+        "swallows": 0
+      },
+      {
+        "file": "tests/test_grounding_wave_v4.py",
+        "line": 220,
+        "name": "TestTamperDetection::test_corroboration_blocked_by_failing_warrant",
+        "try_blocks": 0,
+        "swallows": 0
+      },
+      {
+        "file": "tests/test_grounding_wave_v4.py",
+        "line": 229,
+        "name": "TestTamperDetection::test_witness_cannot_self_sign",
+        "try_blocks": 0,
+        "swallows": 0
+      },
+      {
+        "file": "tests/test_grounding_wave_v4.py",
+        "line": 245,
+        "name": "TestLadderAndView::test_full_ladder_in_view",
+        "try_blocks": 0,
+        "swallows": 0
+      },
+      {
+        "file": "tests/test_grounding_wave_v4.py",
+        "line": 270,
+        "name": "TestLadderAndView::test_corroboration_needs_two_distinct_non_author_seats",
+        "try_blocks": 0,
+        "swallows": 0
+      },
+      {
+        "file": "tests/test_grounding_wave_v4.py",
+        "line": 282,
+        "name": "TestLadderAndView::test_verify_reports_admission_summary",
+        "try_blocks": 0,
+        "swallows": 0
+      },
+      {
+        "file": "tests/test_grounding_wave_v4.py",
+        "line": 288,
+        "name": "TestLadderAndView::test_contest_marks_and_stale_counter_renders",
+        "try_blocks": 0,
+        "swallows": 0
+      },
+      {
+        "file": "tests/test_grounding_wave_v4.py",
+        "line": 298,
+        "name": "TestPlantedFailurePropagation::test_false_premise_void_propagates_chain_visible",
+        "try_blocks": 0,
+        "swallows": 0
+      },
+      {
+        "file": "tests/test_grounding_wave_v4.py",
+        "line": 336,
+        "name": "TestPlantedFailurePropagation::test_no_migration_legacy_tape_still_fails_and_rows_stay",
+        "try_blocks": 0,
+        "swallows": 0
+      },
+      {
+        "file": "tests/test_grounding_wave_v4.py",
+        "line": 357,
+        "name": "TestPlantedFailurePropagation::test_legacy_void_repair_then_reanchor",
+        "try_blocks": 0,
+        "swallows": 0
+      },
+      {
+        "file": "tests/test_grounding_wave_v4.py",
+        "line": 395,
+        "name": "TestPlantedFailurePropagation::test_v3_hash_compat_with_legacy_key_sets",
+        "try_blocks": 0,
+        "swallows": 0
+      },
+      {
+        "file": "tests/test_improve_provider_probe.py",
+        "line": 79,
+        "name": "TestProviderProbeDue::test_missing_state_key_is_due",
+        "try_blocks": 0,
+        "swallows": 0
+      },
+      {
+        "file": "tests/test_improve_provider_probe.py",
+        "line": 83,
+        "name": "TestProviderProbeDue::test_fresh_ts_not_due",
+        "try_blocks": 0,
+        "swallows": 0
+      },
+      {
+        "file": "tests/test_improve_provider_probe.py",
+        "line": 87,
+        "name": "TestProviderProbeDue::test_stale_ts_due",
+        "try_blocks": 0,
+        "swallows": 0
+      },
+      {
+        "file": "tests/test_improve_provider_probe.py",
+        "line": 91,
+        "name": "TestProviderProbeDue::test_boundary_exactly_cadence_days_is_due",
+        "try_blocks": 0,
+        "swallows": 0
+      },
+      {
+        "file": "tests/test_improve_provider_probe.py",
+        "line": 95,
+        "name": "TestProviderProbeDue::test_garbage_ts_is_due_never_silenced",
+        "try_blocks": 0,
+        "swallows": 0
+      },
+      {
+        "file": "tests/test_improve_provider_probe.py",
+        "line": 99,
+        "name": "TestProviderProbeDue::test_naive_ts_treated_as_utc",
+        "try_blocks": 0,
+        "swallows": 0
+      },
+      {
+        "file": "tests/test_improve_provider_probe.py",
+        "line": 104,
+        "name": "TestProviderProbeDue::test_zero_or_negative_cadence_always_due",
+        "try_blocks": 0,
+        "swallows": 0
+      },
+      {
+        "file": "tests/test_improve_provider_probe.py",
+        "line": 111,
+        "name": "TestRunProviderProbe::test_disabled_config_never_probes",
+        "try_blocks": 0,
+        "swallows": 0
+      },
+      {
+        "file": "tests/test_improve_provider_probe.py",
+        "line": 120,
+        "name": "TestRunProviderProbe::test_fresh_cadence_never_probes",
+        "try_blocks": 0,
+        "swallows": 0
+      },
+      {
+        "file": "tests/test_improve_provider_probe.py",
+        "line": 132,
+        "name": "TestRunProviderProbe::test_due_run_probes_once_env_hygiene_snapshot_and_row",
+        "try_blocks": 0,
+        "swallows": 0
+      },
+      {
+        "file": "tests/test_improve_provider_probe.py",
+        "line": 173,
+        "name": "TestRunProviderProbe::test_quiet_week_is_runtime_hold_evidence_not_ticket",
+        "try_blocks": 0,
+        "swallows": 0
+      },
+      {
+        "file": "tests/test_improve_provider_probe.py",
+        "line": 181,
+        "name": "TestRunProviderProbe::test_prior_env_value_preserved_and_restored",
+        "try_blocks": 0,
+        "swallows": 0
+      },
+      {
+        "file": "tests/test_improve_provider_probe.py",
+        "line": 192,
+        "name": "TestRunProviderProbe::test_second_call_after_stamp_is_noop",
+        "try_blocks": 0,
+        "swallows": 0
+      },
+      {
+        "file": "tests/test_improve_provider_probe.py",
+        "line": 205,
+        "name": "TestRunProviderProbe::test_probe_fn_exception_still_restores_env",
+        "try_blocks": 0,
+        "swallows": 0
+      },
+      {
+        "file": "tests/test_improve_provider_probe.py",
+        "line": 225,
+        "name": "TestAlarmSurfaceB2_494::test_alarm_run_gains_exactly_one_priority_line",
+        "try_blocks": 0,
+        "swallows": 0
+      },
+      {
+        "file": "tests/test_improve_provider_probe.py",
+        "line": 241,
+        "name": "TestAlarmSurfaceB2_494::test_quiet_run_gains_nothing",
+        "try_blocks": 0,
+        "swallows": 0
+      },
+      {
+        "file": "tests/test_improve_provider_probe.py",
+        "line": 252,
+        "name": "TestAlarmSurfaceB2_494::test_attention_write_failure_never_breaks_the_probe",
+        "try_blocks": 0,
+        "swallows": 0
+      },
+      {
+        "file": "tests/test_k17_holds.py",
+        "line": 58,
+        "name": "K17HoldTests::test_hold_mode_opens_hold_row_without_effect",
+        "try_blocks": 0,
+        "swallows": 0
+      },
+      {
+        "file": "tests/test_k17_holds.py",
+        "line": 98,
+        "name": "K17HoldTests::test_holds_report_lists_open_hold_quiet_when_fresh",
+        "try_blocks": 0,
+        "swallows": 0
+      },
+      {
+        "file": "tests/test_k17_holds.py",
+        "line": 121,
+        "name": "K17HoldTests::test_hold_older_than_ttl_prints_loud_expired",
+        "try_blocks": 0,
+        "swallows": 0
+      },
+      {
+        "file": "tests/test_k17_holds.py",
+        "line": 144,
+        "name": "K17HoldTests::test_replay_verifying_effect_closes_hold",
+        "try_blocks": 0,
+        "swallows": 0
+      },
+      {
+        "file": "tests/test_k17_holds.py",
+        "line": 173,
+        "name": "K17HoldTests::test_holds_report_empty_state_is_ok",
+        "try_blocks": 0,
+        "swallows": 0
+      },
+      {
+        "file": "tests/test_k17_pilot.py",
+        "line": 58,
+        "name": "K17PilotTests::test_normal_run_commits_exactly_one_effect",
+        "try_blocks": 0,
+        "swallows": 0
+      },
+      {
+        "file": "tests/test_k17_pilot.py",
+        "line": 90,
+        "name": "K17PilotTests::test_crash_then_replay_commits_exactly_one_effect",
+        "try_blocks": 0,
+        "swallows": 0
+      },
+      {
+        "file": "tests/test_k17_pilot.py",
+        "line": 124,
+        "name": "K17PilotTests::test_double_replay_adds_no_effects",
+        "try_blocks": 0,
+        "swallows": 0
+      },
+      {
+        "file": "tests/test_k17_pilot.py",
+        "line": 148,
+        "name": "K17PilotTests::test_same_id_different_payload_conflicts_without_dispatch",
+        "try_blocks": 0,
+        "swallows": 0
+      },
+      {
+        "file": "tests/test_k17_pilot.py",
+        "line": 164,
+        "name": "K17PilotTests::test_verify_rejects_duplicated_effect_row",
+        "try_blocks": 0,
+        "swallows": 0
+      },
+      {
+        "file": "tests/test_k17_pilot.py",
+        "line": 183,
+        "name": "K17PilotTests::test_verify_reports_pending_for_crashed_unreplayed_op",
+        "try_blocks": 0,
+        "swallows": 0
+      },
+      {
+        "file": "tests/test_link_library.py",
+        "line": 86,
+        "name": "test_public_host_allowed",
+        "try_blocks": 0,
+        "swallows": 0
+      },
+      {
+        "file": "tests/test_scripts_path_pins.py",
+        "line": 100,
+        "name": "test_wave_driver_path_args_accept_defaults_and_escape_hatch",
+        "try_blocks": 0,
+        "swallows": 0
+      },
+      {
+        "file": "tests/test_wave_driver.py",
+        "line": 25,
+        "name": "TestGroundRowSchema::test_hash_matches_canonical_module",
+        "try_blocks": 0,
+        "swallows": 0
+      },
+      {
+        "file": "tests/test_wave_driver.py",
+        "line": 33,
+        "name": "TestGroundRowSchema::test_extra_ttl_field_outside_hashed_keys",
+        "try_blocks": 0,
+        "swallows": 0
+      },
+      {
+        "file": "tests/test_wave_driver.py",
+        "line": 45,
+        "name": "TestJudge::test_two_falls_escalates_no_dispatch",
+        "try_blocks": 0,
+        "swallows": 0
+      },
+      {
+        "file": "tests/test_wave_driver.py",
+        "line": 53,
+        "name": "TestJudge::test_clean_telemetry_no_escalation",
+        "try_blocks": 0,
+        "swallows": 0
+      },
+      {
+        "file": "tests/test_wave_driver.py",
+        "line": 68,
+        "name": "TestVerifyGate::test_gate_fails_loud_on_tampered_copy",
+        "try_blocks": 0,
+        "swallows": 0
+      },
+      {
+        "file": "tests/test_wave_driver.py",
+        "line": 85,
+        "name": "TestVerifyGate::test_gate_passes_on_clean_copy",
+        "try_blocks": 0,
+        "swallows": 0
+      },
+      {
+        "file": "tests/test_wave_driver.py",
+        "line": 94,
+        "name": "TestSingleTickSubprocess::test_tick_appends_chain_valid_row",
+        "try_blocks": 0,
+        "swallows": 0
+      },
+      {
+        "file": "tests/wave_driver_test.py",
+        "line": 29,
+        "name": "GatesTest::test_quota_frozen_blocks",
+        "try_blocks": 0,
+        "swallows": 0
+      },
+      {
+        "file": "tests/wave_driver_test.py",
+        "line": 35,
+        "name": "GatesTest::test_clamp_blocks",
+        "try_blocks": 0,
+        "swallows": 0
+      },
+      {
+        "file": "tests/wave_driver_test.py",
+        "line": 41,
+        "name": "GatesTest::test_halt_blocks",
+        "try_blocks": 0,
+        "swallows": 0
+      },
+      {
+        "file": "tests/wave_driver_test.py",
+        "line": 47,
+        "name": "GatesTest::test_open_lane_passes",
+        "try_blocks": 0,
+        "swallows": 0
+      },
+      {
+        "file": "tests/wave_driver_test.py",
+        "line": 64,
+        "name": "LedgerScanTest::test_pending_intent_is_resumable",
+        "try_blocks": 0,
+        "swallows": 0
+      },
+      {
+        "file": "tests/wave_driver_test.py",
+        "line": 70,
+        "name": "LedgerScanTest::test_effect_closes_intent",
+        "try_blocks": 0,
+        "swallows": 0
+      },
+      {
+        "file": "tests/wave_driver_test.py",
+        "line": 77,
+        "name": "LedgerScanTest::test_resolved_resume_closes_parent",
+        "try_blocks": 0,
+        "swallows": 0
+      },
+      {
+        "file": "tests/wave_driver_test.py",
+        "line": 86,
+        "name": "LedgerScanTest::test_exhausted_resume_never_resumable_again",
+        "try_blocks": 0,
+        "swallows": 0
+      },
+      {
+        "file": "tests/wave_driver_test.py",
+        "line": 113,
+        "name": "WorkerTest::test_clean_worker_effect_ok",
+        "try_blocks": 0,
+        "swallows": 0
+      },
+      {
+        "file": "tests/wave_driver_test.py",
+        "line": 125,
+        "name": "WorkerTest::test_fail_worker_effect_failed",
+        "try_blocks": 0,
+        "swallows": 0
+      },
+      {
+        "file": "tests/wave_driver_test.py",
+        "line": 130,
+        "name": "WorkerTest::test_crash_worker_leaves_no_effect",
+        "try_blocks": 0,
+        "swallows": 0
+      },
+      {
+        "file": "tests/wave_driver_test.py",
+        "line": 139,
+        "name": "SelfTestIntegration::test_selftest_passes",
+        "try_blocks": 0,
+        "swallows": 0
+      }
+    ],
+    "try_except_swallow_detail": [
+      {
+        "file": "tests/test_kv_seal.py",
+        "line": 72,
+        "name": "test_refill_stub_never_touches_filesystem_and_empty_salt_rejected",
+        "swallows": 1,
+        "try_blocks": 1,
+        "asserts": 2
+      },
+      {
+        "file": "tests/test_wow_manifest.py",
+        "line": 45,
+        "name": "test_world_rendering_re_derivable_guarded",
+        "swallows": 1,
+        "try_blocks": 1,
+        "asserts": 2
+      }
+    ],
+    "verdict": "NOT A SWALLOW-DOMINATED SUITE. Only 2 try/except-swallow sites exist in the entire suite, and both are guard clauses that still carry real asserts. 6,604 bare asserts across 2,124 tests, 148 unittest assertions, 54 pytest.raises, and ZERO custom matchers (no assert_* helper is defined anywhere in tests/). The suite is plainly capable of failing. This is the one robustness question the answer to which is unambiguously good."
+  },
+  "real_gate_vs_mocked": {
+    "method": "for each gate, which test files name it, and whether they load the real module, shell out to the real script, or stub it",
+    "gates": {
+      "violation_ratchet": {
+        "test_files": 2,
+        "real_import": 0,
+        "subprocess": 1,
+        "mocked": 0,
+        "note": "tests/test_violation_ratchet.py imports the real module and monkeypatches BASELINE_PATH + all_violations. Real logic, fake inputs. The fake input never includes NEW debt."
+      },
+      "census_drift_patrol": {
+        "test_files": 5,
+        "real_import": 0,
+        "subprocess": 5,
+        "mocked": 0,
+        "note": "the ONLY gate whose tests drive the real script as a subprocess against synthetic estates. Strongest real coverage in the estate."
+      },
+      "config_seal": {
+        "test_files": 0,
+        "real_import": 0,
+        "subprocess": 0,
+        "mocked": 0,
+        "note": "ZERO test files. A hard push gate with no test whatsoever."
+      },
+      "checkbox_receipt_gate": {
+        "test_files": 0,
+        "real_import": 0,
+        "subprocess": 0,
+        "mocked": 0,
+        "note": "ZERO test files."
+      },
+      "secret_gate": {
+        "test_files": 0,
+        "real_import": 0,
+        "subprocess": 0,
+        "mocked": 0,
+        "note": "ZERO test files. Wired 2026-09-27 with BOTH exit arms blocking."
+      },
+      "prepush_paths_changed": {
+        "test_files": 0,
+        "real_import": 0,
+        "subprocess": 0,
+        "mocked": 0,
+        "note": "ZERO test files. It decides whether the conditional gates run at all."
+      },
+      "workflow_gate": {
+        "test_files": 5,
+        "real_import": 1,
+        "subprocess": 4,
+        "mocked": 0,
+        "note": "test_workflow_gate.py imports the real module AND the LAW-12 card suite runs read-only against the real tool."
+      },
+      "md_record_seal": {
+        "test_files": 2,
+        "real_import": 1,
+        "subprocess": 1,
+        "mocked": 1,
+        "note": "the one gate with a Mock in its test file; its integrity logic is still genuinely covered (lane 7 mutation 4 killed it)."
+      },
+      "freshness_check": {
+        "test_files": 1,
+        "real_import": 0,
+        "subprocess": 0,
+        "mocked": 0,
+        "note": "no tests/ file, but it ships a real --self-test with explicit fail-closed vectors (runs live: PASS)."
+      },
+      "refold_gate": {
+        "test_files": 2,
+        "real_import": 0,
+        "subprocess": 2,
+        "mocked": 0,
+        "note": "referenced from the hook-pairing helper only."
+      }
+    },
+    "summary": "There is essentially NO mocking of gates. The problem is not mocks-it-proves-nothing; the problem is that 4 of the push-deciding gates have no test at all, so nothing is proven either way. The one mock present (md_record_seal) sits in a test that still bites."
+  },
+  "four_selfchecks_blocking_path": {
+    "question": "does ANY test exercise the BLOCKING path (the non-zero return)?",
+    "answers": [
+      {
+        "selfcheck": "violation_ratchet",
+        "blocking_return": "tools/violation_ratchet.py:275 `return 1` (and :243 `return 2` for git failure)",
+        "hook_role": "githooks/pre-push:10 `|| exit 1` \u2014 HARD BLOCK, gate 1",
+        "blocking_path_tested": "NO",
+        "evidence": "all 5 exit-code assertions in tests/test_violation_ratchet.py are `== 0`: lines 74, 97, 143, 161, 179. Not one asserts 1 or 2. The 7 tests cover scanner_domain, prune bookkeeping and the GROWTH print. Proven by mutation: disarming return 1 -> return 0 left all 7 GREEN (SURVIVED).",
+        "verdict": "NOT COVERED \u2014 nominally referenced, never exercised"
+      },
+      {
+        "selfcheck": "census_drift_patrol",
+        "blocking_return": "tools/census_drift_patrol.py:304,309,312,318,341,349,352 `return 2` (fail-closed cannot-verify) and the STALE arm base_exit=1",
+        "hook_role": "githooks/pre-push:96 `exit 2` BLOCKS; exit 1 STALE is warn-only",
+        "blocking_path_tested": "YES, genuinely",
+        "evidence": "tests/test_census_drift_patrol.py:295 `assert out.returncode == 1`; :305 ==2; :315 ==2; :328 ==2; :438 ==1; :485 ==2; :558 ==1. Mutation D (every `return 2` -> 0) went red on 3 named tests. Mutation D2 (STALE base_exit 1 -> 0) went red on 2 named tests.",
+        "verdict": "GENUINELY COVERED \u2014 the one load-bearing self-check"
+      },
+      {
+        "selfcheck": "config_seal",
+        "blocking_return": "tools/config_seal.py:71 `return 1` and :53 `return 2`",
+        "hook_role": "githooks/pre-push:12 `|| exit 1` \u2014 HARD BLOCK, gate 2",
+        "blocking_path_tested": "NONE FOUND",
+        "evidence": "zero occurrences of the string 'config_seal' in any file under tests/. Mutation B disarmed both returns; the whole gate-facing mirror suite showed 0 new failures.",
+        "verdict": "NOT COVERED AT ALL \u2014 nominal only"
+      },
+      {
+        "selfcheck": "checkbox_receipt_gate",
+        "blocking_return": "tools/checkbox_receipt_gate.py:105 `return 1` and :86 `return 2`",
+        "hook_role": "githooks/pre-push:113 `|| true` \u2014 WARN-ONLY today, and RED right now",
+        "blocking_path_tested": "NONE FOUND",
+        "evidence": "zero occurrences of the string in tests/. Mutation F disarmed both returns; 0 new failures.",
+        "verdict": "NOT COVERED AT ALL \u2014 nominal only"
+      }
+    ],
+    "bonus_finding_secret_gate": {
+      "gate": "tools/secret_gate.py",
+      "hook_role": "githooks/pre-push:330-331 \u2014 BOTH arms exit 1 (gate 10, operator GO 2026-09-27)",
+      "blocking_path_tested": "NONE FOUND",
+      "evidence": "zero occurrences of 'secret_gate' in tests/. Mutation E neutered exit_code = 1 if res['blocking_count'] else 0; 0 new failures across the mirror suite.",
+      "note": "this gate is NEWER than lane 7's audit and is the most exposed: it is the only gate that can block on a provider-shaped secret, it is enforcing on both arms, and nothing in 2,294 tests can see it break."
+    }
+  },
+  "mutation_battery": {
+    "score": "3 of 8 killed (1 of the 3 killed is a positive control; of the 6 real arm-disarm mutations, 1 killed)",
+    "harness_validated": true,
+    "results": [
+      {
+        "target": "violation_ratchet.cmd_check FAIL 1 -> 0",
+        "gate_role": "pre-push:10 || exit 1 (HARD BLOCK)",
+        "verdict": "SURVIVED",
+        "detail": "0 new failures. ratchet test file stayed 7/7 green (6 passed, 1 mirror artifact)."
+      },
+      {
+        "target": "config_seal.cmd_verify FAIL 1 -> 0 and no-seal 2 -> 0",
+        "gate_role": "pre-push:12 || exit 1 (HARD BLOCK)",
+        "verdict": "SURVIVED",
+        "detail": "0 new failures across the whole 6-file gate-facing mirror suite."
+      },
+      {
+        "target": "checkbox_receipt_gate.main FAIL 1 -> 0 and no-queue 2 -> 0",
+        "gate_role": "pre-push:113 (warn-only today)",
+        "verdict": "SURVIVED",
+        "detail": "0 new failures."
+      },
+      {
+        "target": "secret_gate exit_code 1 -> 0",
+        "gate_role": "pre-push:330-331 BOTH arms exit 1",
+        "verdict": "SURVIVED",
+        "detail": "0 new failures."
+      },
+      {
+        "target": "census_drift_patrol.run() ALL fail-closed return 2 -> 0",
+        "gate_role": "pre-push:96 exit 2 (the BLIND arm that BLOCKS)",
+        "verdict": "KILLED",
+        "detail": "3 named tests went red: test_cli_missing_carrier_exits_2, test_cli_unparsable_carrier_exits_2, test_cli_future_census_exits_2."
+      },
+      {
+        "target": "census_drift_patrol STALE arm base_exit 1 -> 0",
+        "gate_role": "pre-push STALE arm (warn-only)",
+        "verdict": "KILLED",
+        "detail": "2 named tests went red: test_cli_stale_synthetic_estate_exits_1, test_hook_census_case_arm_replay_green_ok_arm_stale_warn_arm."
+      },
+      {
+        "target": "census_drift_patrol COLLECT-DRIFT deep exit (return deep['exit']) -> 0",
+        "gate_role": "the deep --collect drift check",
+        "verdict": "SURVIVED",
+        "detail": "0 new failures. NOTABLE: the same gate that is killed on its STALE and cannot-verify arms is UNTESTED on its collect-drift arm."
+      },
+      {
+        "target": "POSITIVE CONTROL: census green first-line contract broken",
+        "gate_role": "pre-push:90 case-matches the green prefix",
+        "verdict": "KILLED",
+        "detail": "2 named tests went red. This is the control that proves the harness can see a disarm at all."
+      }
+    ],
+    "interpretation": "A suite that passes on a neutered gate is not testing the gate. Four of the five push-deciding gates can be fully disarmed with the suite green. The exception is census_drift_patrol, and even it has one uncovered arm."
+  },
+  "wall_clock": {
+    "full_suite_seconds": 2586.37,
+    "full_suite_hms": "0:43:06",
+    "wall_clock_instrument": "./.venv/Scripts/python.exe -m pytest -q -p no:cacheprovider --timeout=300 -rf",
+    "measured_run": {
+      "started_utc": "2026-09-27T05:32:38Z",
+      "ended_utc": "2026-09-27T06:09:53Z",
+      "result": "33 failed, 2261 passed, 9 skipped, 2 warnings",
+      "exit_code": 1,
+      "note": "2288 -> 2294 collected, consistent with the brief. Note the FAILURE MEMBERSHIP CHURNED between lane 7's run and this one (sibling lanes land code into this tree live): test_ponytail_audit, test_census_drift_patrol::test_files_added_since_..., and test_wave_driver's sibling disappeared; test_frontier_council x2 and test_skill_seat x1 appeared. The COUNT held at 33; the SET did not."
+    },
+    "viability_as_pre_push_gate": "NO. See viability_reason.",
+    "viability_reason": "roughly 55 minutes. A push hook that runs the whole suite would be a gate nobody keeps; that is the explicit lesson recorded in the hook's own comments (t40, 2026-09-25) and is why the estate wired narrow changed-path gates instead. The cost is not the problem; the coverage is. The 3 push-deciding gates that DO run cost ~2s each and cover nothing.",
+    "hook_cost_measured": {
+      "violation_ratchet check --changed": "real run: 110 changed files, 71 hits, 7 NEW, exit 1",
+      "config_seal verify": "real run: sealed=49 live=54 modified=6 unsealed=5, exit 1",
+      "checkbox_receipt_gate": "real run: 406 rows, 69 baseline, 1 offender, exit 1",
+      "census_drift_patrol": "self-test PASS; gate run ~1s",
+      "note": "all three hard gates are RED on the real repo at audit time"
+    }
+  },
+  "synthesis": {
+    "load_bearing": [
+      "census_drift_patrol \u2014 the ONLY self-check whose blocking path is genuinely tested. 2 of 3 mutations killed by name. 46 tests, 5 files, real subprocess against synthetic estates, plus a 196-line self-test with named regression vectors that runs live and passes. Its census-day TZ bug (#4) is real and the suite caught it, which is the system working."
+    ],
+    "theatre": [
+      "config_seal \u2014 hard block, zero tests, currently RED (11 problems). THE most actionable finding in this lane.",
+      "secret_gate \u2014 hard block on BOTH arms, zero tests, and newer than the previous audit so nobody has looked at it yet.",
+      "violation_ratchet's BLOCKING path \u2014 7 tests, all `== 0`. The ratchet can be disarmed and the suite is green. Its tests are about bookkeeping (prune domains, seq stamps, growth display), not about the decision the hook depends on.",
+      "checkbox_receipt_gate \u2014 zero tests, `|| true` at the hook, and RED right now. A dashboard, not a gate."
+    ],
+    "the_pattern": "This fleet tests that its instruments RUN, and almost never tests that they BLOCK. A gate's entire value is in the branch that says no, and that branch is the untested one in every case measured here \u2014 with census_drift_patrol the single exception, and even it has one uncovered arm.",
+    "not_theatre": [
+      "The assertion-style census is clean: 2 try/except swallows in 2,278 tests. The suite is not built to pass.",
+      "githooks/pre-push's own test surface (tests/hook_pairing.py + test_scenarios_gate_hook_pin.py + test_hook_prefix_pairing.py) reads the REAL hook bytes and replays through REAL sh, with a case-flip falsifier that requires a regression to stop matching. This is the estate's best testing and it is genuinely good.",
+      "tests/conftest.py carries a suite-wide autouse isolation fixture that makes log pollution structurally impossible."
+    ]
+  },
+  "gate_live_status_at_audit_time": {
+    "violation_ratchet check --changed": {
+      "exit": 1,
+      "detail": "110 changed files, 71 hits, 64 registered, 7 NEW"
+    },
+    "config_seal verify": {
+      "exit": 1,
+      "detail": "sealed=49 live=54 modified=6 unsealed=5 (11 problems)"
+    },
+    "checkbox_receipt_gate": {
+      "exit": 1,
+      "detail": "406 checked Open rows, 69 baseline-attached, 1 offender (B2-142)"
+    },
+    "census_drift_patrol --self-test": {
+      "exit": 0,
+      "detail": "CENSUS-PATROL SELF-TEST: PASS"
+    },
+    "consequence": "the repo is currently UNPUSHABLE at gate 1 (ratchet) and gate 2 (config_seal). The suite is green on all of it because it never looks."
+  },
+  "cleanup": {
+    "temp_mirror": "scratch/lane4/mirror_census (outside the repo)",
+    "repo_git_status_delta_from_lane4": 0,
+    "verified": "git status --porcelain | grep -i 'lane4|mutplug|mirror' -> NONE"
+  }
+}

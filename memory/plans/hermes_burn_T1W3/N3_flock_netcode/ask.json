@@ -1,0 +1,15 @@
+{
+ "model": "anthropic/claude-opus-5.5",
+ "max_tokens": 12000,
+ "force": false,
+ "revision": null,
+ "turn2_only": false,
+ "evidence": [
+  "server/rooms.py",
+  "server/room.py",
+  "tools/flock_parity.py",
+  "roblox_to_godot/network/snapshot_buffer.gd"
+ ],
+ "id": "T1W3_N3_flock_netcode",
+ "contract": "STRANGER AUDIT of the attached bytes. The FLOCK/ROOM NETCODE surface: server/rooms.py GameRoom owns one MountainWorld plus its own tick pump plus its seated peers; broadcast() put_nowait-fans the SAME encoded line to this room only; rooms are born at hello (regex id, capacity 8, zero auth on creation), actions route by the sid's room (room_of_sid roster scan), cross-room isolation is structural. server/room.py is the Mickey17-harvested transport twin (encode-once fan-out, bounded queue maxsize 64, drop-on-slow inside synchronous publish, 6.0s presence sweep) but the live game path never uses it: server.py _grant_session creates an UNBOUNDED asyncio.Queue and GameRoom.broadcast has no QueueFull branch, so a stalled peer is never dropped slow and its inbox grows without bound. Wire: canonical line-JSON over TCP; broadcast ticks ride BARE (only direct replies carry the R3 HMAC; s2c sealing is deferred to the TLS phase). Client: roblox_to_godot/network/snapshot_buffer.gd refuses n <= newest_n, interpolates bracketed snapshots, freezes on starvation, fires events exactly-once by the LOCAL render clock; arrival stamps are the local _clock at push, so the interpolation timeline is a function of arrival jitter, not server cadence, and a gap in n is silently interpolated across with no gap detector. tools/flock_parity.py pins the GDScript flock twin to the Python step_threat port teacher-forced: float32 hex bits, Tier D exact with an 8-ulp band, Tier C 32*ulp32 + 2e-6, free lane centroid-only; note the harness feeds enc32(t*dt) per tick while the live game.gd accumulates sim_time += delta, so parity is proven only for the teacher-forced path, never the accumulated free-running clock. Read as an attacker and as a netcode reviewer: (1) the desync/determinism class: what diverges first under loss/reorder/duplication, and which seam is worst (local-clock stamping, silent n-gap interpolation, bare ticks, unbounded peer queues); (2) what a hostile room member can inject: quantify the room-spray (unauthenticated room creation at hello, each room spawning a world + pump + innkeeper) and anything the nonce gate, capacity law, and sid routing miss; (3) the one parity test that would catch the worst hole: a test that fails on today's tree and passes when the hole closes. Under 400 words, evidence-cited."
+}

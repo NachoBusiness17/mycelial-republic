@@ -1,0 +1,88 @@
+{
+  "schema": "mag_game_module.v1",
+  "module_id": "curvature_tiebreak",
+  "aliases": [
+    "tiebreak",
+    "saddle crossing",
+    "the geodesic riddle"
+  ],
+  "title": "The Saddle Crossings \u2014 no straight walk in negative curvature",
+  "license_note": "Original Mag module. Cites RIB_CATHEDRAL_WORLD_V1 invariants; legislates nothing new (monkey-patch ruling).",
+  "system": "doctrine-gate",
+  "area_tag": "crossing",
+  "player_start": {
+    "name": "Rebellion",
+    "archetype": "surveyor",
+    "hp": 7,
+    "hp_max": 7,
+    "ac": 12,
+    "attack_bonus": 2,
+    "damage": "1d6",
+    "traits": [
+      "cites-before-fires"
+    ],
+    "inventory": [
+      "fundamental forms",
+      "third-model geodesic (dormant)"
+    ]
+  },
+  "rooms": {
+    "descent_order_ford": {
+      "id": "descent_order_ford",
+      "name": "The Descent-Order Ford",
+      "desc": "A saddle crossing between water-first descent and hub-first radiant order. The ground has negative curvature: geodesics diverge, no straight walk exists. Both normals are drawn on the far bank.",
+      "curvature": "SADDLE",
+      "exits": {
+        "downstream": "gate_style_sluice"
+      },
+      "hooks": [
+        "SADDLE LAW: movement in straight lines is refused; the detour IS the riddle (negative curvature = no unique geodesic).",
+        "Cited invariant: RIB descent-order (CONTESTED). Tiebreak gated on operator GO \u2014 third-model geodesic.",
+        "Eigen-vote plaque: the estate's own metric voted; read CATHEDRAL_CURVATURE_SCAN JSON \u2014 a vote, not a verdict."
+      ],
+      "tags": [
+        "saddle",
+        "contested",
+        "crossing"
+      ]
+    },
+    "gate_style_sluice": {
+      "id": "gate_style_sluice",
+      "name": "The Gate-Style Sluice",
+      "desc": "Valve heights (Grok normal) against the computed-water flag (DeepSeek normal). Two gates, one passage; the wrong gate pours nothing that counts.",
+      "curvature": "SADDLE",
+      "exits": {},
+      "hooks": [
+        "Cited invariant: RIB gate-style (CONTESTED).",
+        "Referee hook: third-model geodesic \u2014 ARMED, fires only on operator GO (RIB filing law: tiebreak if the operator orders it)."
+      ],
+      "tags": [
+        "saddle",
+        "contested",
+        "gate"
+      ]
+    },
+    "hill_causeway": {
+      "id": "hill_causeway",
+      "name": "The Hill Causeway",
+      "desc": "Where both normals agree, the ground is elliptic and walking straight is legal \u2014 settled invariants carry the player. Regions: none yet",
+      "curvature": "HILL",
+      "exits": {
+        "west": "descent_order_ford"
+      },
+      "hooks": [
+        "HILL LAW: geodesics are unique; straight walks allowed.",
+        "Cited invariants: the AGREE list of RIB_CATHEDRAL_WORLD_V1."
+      ],
+      "tags": [
+        "hill",
+        "settled",
+        "causeway"
+      ]
+    }
+  },
+  "meta_discovery_protocol": [
+    "Every crossing played files one row: what the model-family did in negative curvature that it refuses on the hill.",
+    "Loop count per run = first Betti-number proxy of the doctrine graph; loops discovered in-play are meta-findings, filed to watch/inbox per session-close law."
+  ]
+}

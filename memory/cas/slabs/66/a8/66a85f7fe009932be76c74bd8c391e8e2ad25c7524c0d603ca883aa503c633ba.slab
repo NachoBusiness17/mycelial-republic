@@ -1,0 +1,13 @@
+# FAN2 moe-hotswap
+
+lane model: meta/muse-glimmer-30b
+
+---
+
+I cannot verify the specific paging behavior you asked about for MoE expert weight offloading on consumer AMD GPUs with Vulkan in llama.cpp.
+
+OWED
+
+What I tried: I checked my recall of llama.cpp README.md, the llama.cpp documentation site, and the llama.cpp GitHub repository Discussions and Issues for the options --n-cpu-moe and --override-tensor / -ot, and for AMD Vulkan MoE offloading behavior. I could not verify a citable description by name of how --n-cpu-moe and -ot page expert weights from RAM to GPU on consumer AMD Vulkan, nor a verified fraction of a MoE model that fits in 8 GB VRAM with attention hot.
+
+No verifiable source by name can be provided for those implementation details. If you have a specific llama.cpp commit, PR, Discussion thread name or documentation page you want checked, I can try to verify that specific reference.

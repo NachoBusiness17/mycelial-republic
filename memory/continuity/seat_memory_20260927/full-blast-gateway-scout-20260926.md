@@ -1,0 +1,23 @@
+---
+name: full-blast-gateway-scout-20260926
+description: Full blast 9/26 banked: gateway genre (9router/OmniRoute/FCC) = fleet lane ladder productized, 429-never-trips-breaker + lazy-probe rule stolen; FLE/U1 feasible on this box; noir GWAP citation spine complete with Foldit-2011 production Comp precedent
+metadata:
+  type: project
+---
+
+2026-09-26 full blast (operator order "scount it and do a full blast on this window"): width-11 fan-out + inline curl scout + width-4 wave 2. Master receipt `watch/inbox/full_blast_20260926/FULL_BLAST_20260926.md`, 10 lane receipts.
+
+Key steals:
+- **Gateway genre** (9router 30K MIT / OmniRoute 70K MIT / free-claude-code 56K AGPL, all born Jan 2026): the fleet's lane ladder productized. Steal patterns, never dependencies. Best rule stolen: circuit breakers NEVER trip on 429 (quota = cooldown not death), lazy recovery where the next real request is the probe (contrast to our 1-token liveness spend); quota state machine where "unknown is not exhausted"; egress-bucketed 429 locks for shared-IP keys; FillFirst selector staggers rolling-window caps; singleflight token refresh; replace-not-merge quota snapshots.
+- **Ban-magnet lane fenced:** CLIProxyAPI reuses official CLI client_ids + uTLS header-order impersonation; maintainer admits bans certain; hours-to-ban reports. Fleet stays key-based ToS-friendly.
+- **Provider scout:** 6 new names probed, all alive; 3 PROBE (SiliconFlow no-card signup, llm7 liveness-only (opaque operator, paid SKUs creeping in), Chutes miner-hosted pay-go) + 3 PASS (Featherless $25/mo + written automation ban, Scaleway GA'd, Lightning = GPU credits not inference). LLM7 lists DeepSeek-V4-Flash 400K ctx at $0.02/0.04 per 1M.
+- **FLE/U1 feasible on this box:** Docker Desktop + WSL2 the one hard dep; no Factorio purchase in 0.4.x; REPL code synthesis + 60s throughput holdout = v6 brief's V1 verifier; 480 sessions ~600-750M tokens ($95-120 mid-lane; cheap lanes barely solve lab-play per paper data); smoke test 4-8h. See [[play-as-work-steal-20260926]].
+- **Noir GWAP citation spine:** KissKissBan (Ho et al, HCOMP '09 — corrected from our wrong Edith Law guess) = the one proven match-early fix, adversarial blocker = action-space fix; Foldit recipes = player Lua cookbook (PNAS 2011) = production Comp operator a decade before the v6 brief, uncited by it; Chatbot Arena = LLM-era revival. Open-gap validated: no production scoring fix for match-early.
+- **Own-your-Hopper:** LTX-Video 13B FP8 + loop extension + RIFE = 30s 1080p60 animated Nighthawks in 1-2.5h on 24GB, rights-clean; "Memo's Dreamscapes" = obscure YouTube channel, NOT Memo Akten.
+- FiveM noir de-risked: OneSync 2048 via forum (Element Club $15-50/mo real gate), commission original Miami-noir map (VC ports = DMCA, safe route proven by V-One RP 2026), QBCore qb-policejob, ~$55-105/mo all-in.
+
+Storm law re-confirmed: 2 of 11 lanes died to 1302 in first 6 min on post-storm window; 9 survivors ran clean; wave 2 at width 4 with fetch-only orders.
+
+**Wave 2 closed (2026-09-26 later):** all 4 banked. FCC internals at source level: 3 portable mechanisms (recovery episode with leader probe + coalesced waiters + terminal cooldown; commit-semantics fallback, no mid-stream swap after first chunk; typed failure taxonomy, retryable = 429/5xx only). Teardown verdict RECLASSIFIED the noir ranking: round-based 6v6 viable (mplib MIT), persistent world NOT (no dedicated servers ever planned, host-local persistence, no NPC AI API); persistent requirement moves FiveM/UE5 up. APB open-source = buried folklore (no primary source ever; rAPB = abandoned 2017 stub). re3 mirrors off-GitHub confirmed (active 2026 ports) but legally fenced: private study lower-risk not clean, public use = 2021 replayed. LA Noire fix-only scene confirmed. Blast complete: 16 receipts + master, all registered.
+
+**Gates executed + handoff (2026-09-26 night):** "do all of that" ran all four gates. Substrate DECIDED: staged (Teardown round-based first, FiveM persistent, UE5 sovereign) + full noir design spec. Hopper BLOCKED on hardware (RX 5600 XT 8GB, no NVIDIA; cloud LTX lane or 24GB card). Provider keys: llm7 verified key-required (0/64 free SKUs, cheap paid lane), SiliconFlow/Chutes documented signups. U1: FLE cluster RUNNING on this box (docker cluster-factorio_0-1, RCON host 27000); FLE 0.4.8 from GitHub main + gymnasium + a2a-sdk 1.1 is the working stack (PyPI 0.4.3 abandoned: py312-only f-strings); smoke eval iron_plate_throughput x qwen2.5-coder:7b in flight at handoff. Handoff receipt: watch/inbox/SESSION_HANDOFF_20260926_noir_u1_gates.md. Operator game intel: Teardown on sale = Phase 1 go signal; GTA IV $5.99 is SP-only (FiveM is GTA V); Factorio demo irrelevant (docker image ships headless).

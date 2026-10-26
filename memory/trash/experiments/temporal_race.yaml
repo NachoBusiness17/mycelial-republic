@@ -1,0 +1,30 @@
+# Temporal Steering — race condition and critical window tests
+# Hypothesis: Last-write-wins for inbox, but first-read-locks for models mid-execution.
+# Run: python -m mag.ghost --experiment experiments/temporal_race.yaml
+
+name: temporal_race
+hypothesis: >
+  When multiple steers land in the inbox before agent startup, last-write-wins.
+  When a steer arrives mid-execution, it has no effect (critical window closed).
+  Slower models are more susceptible because they spend more time reading inbox.
+
+tasks:
+  - summary
+
+steers:
+  - wrong      # "Output only OK"
+  - loop       # "Append improvement list"
+
+models:
+  - gemma:2b
+  - qwen2.5-coder:7b
+  - qwen2.5:32b
+
+baseline: true
+parallel: false
+pause_between_swarms: 30
+
+# Note: For true temporal experiments, use run_temporal_experiment() directly:
+#   python -m mag.ghost --temporal
+# This YAML grid tests standard swarm behavior. The temporal function tests
+# staggered steer deployment timing.

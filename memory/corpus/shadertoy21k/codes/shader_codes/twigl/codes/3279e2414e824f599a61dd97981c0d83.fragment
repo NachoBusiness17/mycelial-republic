@@ -1,0 +1,18 @@
+float n(vec2 p){
+vec2 r=vec2(1,99),s=dot(floor(p),r)+vec2(0,r.y);
+p=smoothstep(0.,1.,fract(p));
+s=mix(fract(sin(s)*5555.),fract(sin(s+1.)*5555.),p.x);
+return mix(s.x,s.y,p.y);
+}
+void main(){
+  vec2 q,p=(gl_FragCoord.xy*2.-r)/r.y;
+  float tt=t*80.;
+  
+  for(float j=0.;j++<12.;){
+    q=vec2(0);
+    for(float i=0.;i++<15.;){
+      o+=.001/length(p+q);
+      q+=.1*normalize(vec2(n(vec2(i*50.,j*80.+tt)*0.02)-.5,n(vec2(i*50.+50.,j*80.+tt)*.002)-.5));
+    }
+  }
+}

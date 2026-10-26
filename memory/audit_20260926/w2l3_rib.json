@@ -1,0 +1,249 @@
+{
+  "schema": "w2l3_rib_audit.v1",
+  "lane": "WAVE2_LANE3",
+  "audit_ts": "2026-09-26T22:05:00-04:00",
+  "mode": "read-only",
+  "chain_touched": false,
+  "ribs_published": 0,
+  "docker_actions": "none (ps census only)",
+
+  "verdict": {
+    "compiler_functional": true,
+    "compiled_zero_claim": "STALE — 24-day-old receipt; live compile yields 2 ribs",
+    "rejected_28_are": "correct gate behavior, not a bug",
+    "metric_gate_can_block": false,
+    "metric_gate_reason": "hard-coded string literal, no logic",
+    "has_caller": "CLI verb only — no task, script, hook, or orchestrator lane",
+    "input_stream": "SEVERED — bounded-row writer lives in retired OpenClaw deploy"
+  },
+
+  "compiler": {
+    "path": "mag/trajectory_rib.py",
+    "lines": 190,
+    "schema": "trajectory_rib.v1",
+    "spec": "docs/ref/TRAJECTORY_RIB_COMPILER_SPEC.md",
+    "default_tape": "watch/openclaw_traj.jsonl",
+    "default_output": "memory/runs/trajectory_rib/compiled.jsonl",
+    "gate_fn": "_valid_bounds (line 52)",
+    "gate_requires": [
+      "metadata.schema == trajectory_span.v1",
+      "metadata.lineRange == [line_no, line_no]",
+      "metadata.byteRange == [start_byte, end_byte]",
+      "metadata.bodySha256 is 64 hex and equals _body_hash(row)"
+    ],
+    "side_effects": "always writes output + .meta.json; no dry/check/status mode",
+    "publishes_to_rib_bus": false,
+    "folds_verkle": false
+  },
+
+  "tape": {
+    "path": "watch/openclaw_traj.jsonl",
+    "lines": 30,
+    "bytes": 8337,
+    "mtime": "2026-09-03T13:06:12-04:00",
+    "sha256": "ccde65560e46a9f8733c283391682adce1719f7782112528f9d3e3871aa8bdf2",
+    "rows_no_metadata": 16,
+    "rows_with_span_schema": 14,
+    "rows_passing_gate_now": 2,
+    "writer": "deploy/openclaw/hooks/mag-file/handler.js",
+    "writer_alive": false,
+    "writer_death_evidence": "curl 127.0.0.1:8787 exit 7 connection refused; OpenClaw retired 2026-09-09"
+  },
+
+  "stale_receipt": {
+    "path": "memory/runs/trajectory_rib/compiled.jsonl.meta.json",
+    "ts": "2026-09-02T08:22:45.572615Z",
+    "sourceLines": 28,
+    "compiled": 0,
+    "rejected_unbounded": 28,
+    "sourceSha256": "40fffe33ca742daef7652b21c3583cbed3faf18ba9f941630722ed13d1eb1f00",
+    "status": "DESCRIBES A TAPE THAT NO LONGER EXISTS",
+    "same_staleness": "watch/openclaw_traj.jsonl.bounds.meta.json (also 28 lines / 40fffe33)"
+  },
+
+  "live_compile": {
+    "ran": true,
+    "output_path": "$TMPDIR/tr_test/compiled.jsonl",
+    "repo_default_path_used": false,
+    "reason_not_default": "would overwrite the stale receipt this audit cites as evidence",
+    "result": {
+      "ok": true,
+      "schema": "trajectory_rib.v1",
+      "ts": "2026-09-27T02:00:57.742865Z",
+      "sourceLines": 30,
+      "compiled": 2,
+      "rejected_unbounded": 28,
+      "rejected_malformed": 0,
+      "includeLegacy": false,
+      "metricGate": "not_run",
+      "verification": "staged; acceptance commands required"
+    },
+    "compiled_rows": [
+      {
+        "spanId": "81981de2-5f0c-4612-b4e2-639badc7d963",
+        "session": "agent:main:main",
+        "bounded": true,
+        "anchors": 0,
+        "acceptance": "unproven",
+        "text_len": 0
+      },
+      {
+        "spanId": "7f6d000e-6398-4457-9e20-ee8dd9bc3805",
+        "session": "agent:main:explicit:seat-g3",
+        "bounded": true,
+        "anchors": 0,
+        "acceptance": "unproven",
+        "text_len": 0
+      }
+    ],
+    "repo_files_after_run": {
+      "compiled.jsonl": {"bytes": 0, "mtime": "2026-09-02T04:22:45.571612500-04:00", "modified": false},
+      "compiled.jsonl.meta.json": {"bytes": 627, "mtime": "2026-09-02T04:22:45.573612700-04:00", "modified": false}
+    }
+  },
+
+  "metric_gate": {
+    "field": "metricGate",
+    "value_emitted": "not_run",
+    "is_literal": true,
+    "literal_location": "mag/trajectory_rib.py:169",
+    "grep_hits_repo_wide": 1,
+    "can_block": false,
+    "ok_field_also_literal": true,
+    "ok_field_location": "mag/trajectory_rib.py:159",
+    "exit_code_path": "main.py:2776 returns 0 from the hard-set ok field",
+    "intended_oracle_per_spec": "steering suite / acceptance commands as pot-oracle",
+    "intended_oracle_exists": false,
+    "missing_oracle_paths": ["mag/steering_suite.py", "tests/test_steering_suite.py"],
+    "socratic_answer": "never given the chance — never built; the key is a label, not a gate"
+  },
+
+  "wiring": {
+    "cli_verb": "main.py trajectory-rib (registered line 1673, dispatched line 2776)",
+    "organ_map_declares": {
+      "id": "trajectory_rib",
+      "callable": "compile_tape",
+      "wired_by": ["main.py"],
+      "proof": "bounded_span"
+    },
+    "modules_yaml_declares": true,
+    "capability_manifest_lists_verb": true,
+    "observers": [
+      "mag/live_ops_readiness.py:89 checks meta.json existence only",
+      "mag/organ_map.py:138-146 declares state/receipt paths"
+    ],
+    "scheduled_task_calls_it": false,
+    "script_calls_it": false,
+    "hook_calls_it": false,
+    "grep_scripts_tools_watch": "zero hits for trajectory-rib|trajectory_rib",
+    "compiled_ribs_in_bus": 0
+  },
+
+  "frozen_ribs": {
+    "domain_files": 51,
+    "total_ribs": 818,
+    "handwritten": true,
+    "source_histogram": {
+      "fold_k8s_to_k3s (auto, 2026-08-12)": 585,
+      "copilot-assistant": 127,
+      "operator-bus": 18,
+      "frontier-steal": 7,
+      "harvest-fold": 7,
+      "wow-k8s-foundation": 6,
+      "evo-seed": 5,
+      "reach_protocol": 5,
+      "tool_synthesis.shader_avoid": 5,
+      "ghost-desktop": 4
+    },
+    "verdict": "compiler is the spec'd future path (build order step 1), never gated GO; not redundant-with-human-process-yet"
+  },
+
+  "scheduled_tasks": {
+    "query": "schtasks /query /fo CSV /v",
+    "tasks_total_parsed": 242,
+    "raw_v_output_rows": 338,
+    "parsing_note": "raw /v repeats headers; naive count inflates to 338",
+    "non_microsoft_non_google": 29,
+    "fleet_owned": 23,
+    "firing_clean_result_0": [
+      "Estate Cooker", "Estate FullScan", "Estate Gopher", "Estate KeyAudit",
+      "Estate LaneSupervisor", "Estate Librarian", "Estate Spine Index",
+      "Estate StealthSweep", "mag-docker-watchdog", "MagCensusPatrolDaily",
+      "MagEndpointNewsDaily", "MagFtsIndexDaily", "MagMimoWatchHourly", "MagVisionNightly"
+    ],
+    "failing": [
+      {
+        "task": "Estate Ratchet",
+        "result": 1,
+        "log": "logs/ratchet_daily.log",
+        "log_tail": "[2026-09-26 09:45:03] END seal=1 freshness=0 ratchet=1",
+        "cause": "CONFIG-SEAL FAIL (unsealed events_malformed_baseline.json) + RATCHET check FAIL (debt since baseline)",
+        "by_design": true,
+        "note": "gate refuses to auto-re-seal; operator's name on the seal is the point. Do not fix unattended."
+      },
+      {
+        "task": "MagImproveDaily",
+        "result": 1,
+        "log": "logs/improve_daily.log",
+        "log_tail": "[2026-09-26 08:00:00] END exit=1",
+        "cause": "artifacts written, then declared trust abstention: trust_blocked=true, trust_reason='desk trust tier 0 - slow->fast fail; pass desk baseline before unmanned fill'",
+        "by_design": true,
+        "note": "self-declined, surfaced as failure code; not a broken loop"
+      }
+    ],
+    "never_run_267011": [
+      {"task": "MagArmC200", "next": "2026-09-27 01:00", "target": "memory/runs/interference_replication_20260925/run_armC.py"},
+      {"task": "MagCorpusRescanDaily", "next": "2026-09-27 03:30"},
+      {"task": "MagQCaptionVerifyDaily", "next": "2026-09-27 07:30"},
+      {"task": "MagMimoWatchClose", "next": "2026-09-28 17:25"},
+      {"task": "MagSecretScanWeekly", "next": "2026-09-28 06:40"}
+    ],
+    "never_run_note": "all Status=Ready, Enabled, scheduled; all awaiting FIRST fire. MagArmC200 registered 09-25; QCaption/SecretScan registered after today's trigger hour. No evidence of breakage, no evidence of working.",
+    "disabled": [
+      {"task": "MagLabKit8765", "result": -1, "last_run": "2026-08-01T09:31:40-04:00"},
+      {"task": "MagPrivateOffice8765", "result": -1073741510, "last_run": "2026-08-01T09:32:40-04:00"}
+    ],
+    "disabled_note": "56-day-stale registrations of a retired arrangement; 8765/8766 now served by mag-mcp and mag-sovereign per docker ps. Contradicts the standing law that fleet services live in Docker, never scheduled tasks.",
+    "non_fleet_leftovers": ["OpenClaw Gateway (res 0, no next run)", "StartCN (res 1)", "StartDVR (res 1)"],
+    "any_task_runs_main_py": false
+  },
+
+  "findings": [
+    {"id": "F1", "severity": "high", "text": "metricGate 'not_run' is a string literal at mag/trajectory_rib.py:169; the gate cannot fail because it does not exist. Spec's oracle (steering_suite) absent from repo."},
+    {"id": "F2", "severity": "high", "text": "'ok': True hard-set at line 159; main.py:2776 returns 0 from it. Exit code is a constant; a green run carries zero information."},
+    {"id": "F3", "severity": "high", "text": "0-rib claim in warm-boot skill and compiled.jsonl.meta.json is a stale 24-day receipt. Live compile = 2 ribs, 28 rejected. Misleads every seat that reads it."},
+    {"id": "F4", "severity": "high", "text": "No caller. CLI verb only - no task, script, hook, or orchestrator lane invokes trajectory-rib."},
+    {"id": "F5", "severity": "high", "text": "Input stream severed: bounded-row writer is in the retired OpenClaw deploy; 8787 dead. Tape can never grow; compiler can never receive a third bounded row."},
+    {"id": "F6", "severity": "medium", "text": "The 2 ribs that compile are empty: anchors 0, text_len 0, acceptance unproven. Gate verifies provenance, never content."},
+    {"id": "F7", "severity": "medium", "text": "compile_tape has no read-only mode; it always writes. Any 'just check it' call mutates the receipt."},
+    {"id": "F8", "severity": "medium", "text": "5 of 23 fleet tasks never fired (267011); 2 fail by design; 2 disabled registrations are 56-day-stale and law-contradicting."},
+    {"id": "F9", "severity": "low", "text": "watch/openclaw_traj.jsonl.bounds.meta.json carries the same stale 28-line/40fffe33 tape - same staleness class as F3, one layer down."}
+  ],
+
+  "not_verified": [
+    "whether Estate Ratchet's config-seal failure is a real operator-visible change or a spurious edit (read log text, did not diff the seal manifest)",
+    "whether the 5 never-run tasks will succeed at first fire - none has fired",
+    "compiler behavior at its repo-default path - declined, reason recorded in live_compile.reason_not_default",
+    "MagArmC200 script contents - never executed",
+    "chain state, orphan counts, missing knots - out of lane, untouched"
+  ],
+
+  "recommended_next_actions": [
+    "Re-run the compiler at defaults once, deliberately, to replace the stale receipt with the true 2-rib/28-rejected result (one write; stops F3 misleading seats).",
+    "Decide the compiler's fate before more audit time: re-point --tape at a live stream (or memory/trajectory/steps.jsonl, which trajectory_step still writes) or retire it.",
+    "If kept: add a --dry flag and a real metricGate computation, or minimally change line 169 to 'absent' so the receipt stops implying a gate ran.",
+    "Sweep the 2 disabled 56-day-stale tasks. Deletion is a change; naming it is a report."
+  ],
+
+  "writes_made": [
+    "watch/inbox/audit_20260926/WAVE2_LANE3_RIB_COMPILER.md",
+    "memory/audit_20260926/w2l3_rib.json"
+  ],
+  "scratch_only": [
+    "$TMPDIR/tr_test/compiled.jsonl",
+    "$TMPDIR/tr_test/compiled.jsonl.meta.json",
+    "$TMPDIR/task_census.py",
+    "$TMPDIR/tasks.csv"
+  ],
+  "repo_files_modified_but_not_intended": []
+}

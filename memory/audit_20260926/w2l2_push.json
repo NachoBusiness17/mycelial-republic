@@ -1,0 +1,320 @@
+{
+  "audit": "WAVE2_LANE2_push_blockers",
+  "date_local": "2026-09-26T22:05-04:00",
+  "seat": "w2l2",
+  "repo": "local_sovereign_agent",
+  "verdict": "NOT PUSHABLE - exactly 2 hard blockers, both baseline/registry gates; no code defect blocks a push",
+  "hook": {
+    "path": "githooks/pre-push",
+    "lines": 307,
+    "bytes": 17853,
+    "mtime": "2026-09-26T17:16",
+    "hooksPath": "githooks",
+    "live": true,
+    "dot_git_hooks_copy": false,
+    "syntax_check": "sh -n -> SYNTAX_OK",
+    "shebang": "#!/bin/sh",
+    "set_e": false,
+    "set_u": false,
+    "pipefail": false,
+    "interpreter_guards": "NONE - all 10 call sites invoke .venv/Scripts/python.exe bare; no -x / -f / command -v test",
+    "stdin_consumer": "caption block :152 is the single consumer; CAPTION_PUSH_INPUT reused by gates 8 and 9"
+  },
+  "gates": [
+    {
+      "n": 1,
+      "line": 10,
+      "cmd": ".venv/Scripts/python.exe tools/violation_ratchet.py check --changed",
+      "mode": "ENFORCING",
+      "rc": 1,
+      "blocks": true,
+      "status": "FAIL",
+      "detail": "scope=103 changed files; hits=70; registered=64; NEW=6; expired-exceptions=0"
+    },
+    {
+      "n": 2,
+      "line": 12,
+      "cmd": ".venv/Scripts/python.exe tools/config_seal.py verify",
+      "mode": "ENFORCING",
+      "rc": 1,
+      "blocks": true,
+      "status": "FAIL",
+      "detail": "sealed=49 live=53 modified=6 missing=0 unsealed=4"
+    },
+    {
+      "n": 3,
+      "line": 21,
+      "cmd": "tools/description_pin.py configs/tools",
+      "mode": "WARN (|| true)",
+      "rc": 0,
+      "blocks": false,
+      "status": "ok",
+      "cond": "[ -d configs/tools ]",
+      "cond_met": true,
+      "detail": "all tool descriptions pinned or marked",
+      "todo_flip_to_enforce": true,
+      "todo_precondition_met": true
+    },
+    {
+      "n": 4,
+      "line": 49,
+      "cmd": "tools/freshness_gate.py $f",
+      "mode": "WARN (|| true)",
+      "rc": 0,
+      "blocks": false,
+      "status": "no-op",
+      "cond": "[ -d watch/inbox ]",
+      "cond_met": true,
+      "detail": "0 of 141 receipts newer than midnight matched the stamp prefilter",
+      "todo_flip_to_enforce": true
+    },
+    {
+      "n": 5,
+      "line": 88,
+      "cmd": "tools/census_drift_patrol.py",
+      "mode": "SPLIT: exit2 BLOCKS (:96), exit1 warns",
+      "rc": 0,
+      "blocks": false,
+      "status": "ok",
+      "cond": "[ -f AGENTS.md ]",
+      "cond_met": true,
+      "detail": "CENSUS-PATROL: ok - census 2026-09-26 (1910 collected / 303 files); 0d old of 7d bar; blind-marker .git/census_blind_last_push.txt absent (never fired)"
+    },
+    {
+      "n": 6,
+      "line": 113,
+      "cmd": "tools/checkbox_receipt_gate.py",
+      "mode": "WARN (|| true)",
+      "rc": 1,
+      "blocks": false,
+      "status": "FAIL",
+      "cond": "checker AND watch/inbox/burn_wave_20260926/QUEUE.md",
+      "cond_met": true,
+      "detail": "405 checked Open rows, 69 baseline-attached, 1 offender: NEW DEBT B2-142",
+      "deliberate": true,
+      "todo_flip_to_enforce": true
+    },
+    {
+      "n": 7,
+      "line": 157,
+      "cmd": "scripts/the50_t21_q_caption_ledger_verify.py",
+      "mode": "WARN (|| true)",
+      "rc": 0,
+      "blocks": false,
+      "status": "ok",
+      "cond": "arm FIRED (differs from HEAD)",
+      "detail": "RESULT: PASS - 267 rows, 163 drops, 8 checks",
+      "deliberate": true
+    },
+    {
+      "n": 8,
+      "line": 225,
+      "cmd": "tools/refold_gate.py",
+      "mode": "WARN (|| true)",
+      "rc": 1,
+      "blocks": false,
+      "status": "FAIL",
+      "cond": "arm FIRED (dirty + 2 untracked)",
+      "detail": "QUEUE-DUPES ok 496 rows; 4 fold pins red - all four are Windows absolute-path assertion artifacts, not a comparator break",
+      "deliberate": true,
+      "todo_flip_to_enforce": true
+    },
+    {
+      "n": 9,
+      "line": 296,
+      "cmd": "tools/workflow_gate.py check --scenarios configs/workflow_gate_scenarios",
+      "mode": "ENFORCING conditional (exit 1 at :303)",
+      "rc": 0,
+      "blocks": false,
+      "status": "ok",
+      "cond": "arm FIRED (differs from HEAD)",
+      "detail": "SCENARIOS ok x8 (7 cards + pass_control)",
+      "deliberate": true
+    }
+  ],
+  "hard_blockers_confirmed_complete": true,
+  "blocker_1": {
+    "gate": "violation_ratchet check --changed",
+    "rc": 1,
+    "new_count": 6,
+    "offenders": [
+      {
+        "id": "5ae40a2d649a9b92",
+        "rule": "except-pass",
+        "file": "tools/ledger_lock.py",
+        "line": 125
+      },
+      {
+        "id": "3b1726dec4670996",
+        "rule": "except-pass",
+        "file": "tools/openrouter_free_gate.py",
+        "line": 84
+      },
+      {
+        "id": "f0d81bd311a1a15e",
+        "rule": "file-too-long",
+        "file": "tools/probe20_run.py",
+        "line": 421,
+        "detail": ">400 lines"
+      },
+      {
+        "id": "e3b7845ea79cf553",
+        "rule": "cwd-relative-path",
+        "file": "tools/queue_dupes_check.py",
+        "line": 33
+      },
+      {
+        "id": "0dfc04119a40f245",
+        "rule": "except-pass",
+        "file": "tools/transport_precheck.py",
+        "line": 134
+      },
+      {
+        "id": "f2ce896c858aa404",
+        "rule": "except-pass",
+        "file": "tools/visor.py",
+        "line": 250
+      }
+    ],
+    "correction_to_parent_brief": "offender 6 is tools/visor.py:250, not :131 - tools/visor.py mtime 2026-09-26T21:57:48, a sibling lane edited it after the parent run; fingerprint moved :131 -> :249 -> :250 during this audit",
+    "action": ".venv/Scripts/python.exe tools/violation_ratchet.py baseline-update --by WHO --note WHY",
+    "decisions_required": 6,
+    "caveat": "re-run check immediately before accepting: fingerprint includes accepted_lines, so a concurrent edit invalidates the acceptance"
+  },
+  "blocker_2": {
+    "gate": "config_seal verify",
+    "rc": 1,
+    "modified": 6,
+    "unsealed": 4,
+    "missing": 0,
+    "modified_files": [
+      "improve.yaml",
+      "keys.json",
+      "lanes.yaml",
+      "providers.yaml",
+      "spend_overlay.yaml",
+      "violation_baseline.json"
+    ],
+    "unsealed_files": [
+      "links_kind_baseline.json",
+      "links_sha_ratchet_baseline.json",
+      "sanctioned_scheduled_tasks.yaml",
+      "workflow_registry_baseline.json"
+    ],
+    "nature": "NOT stale-registry drift: 5 are uncommitted working-tree edits (git ' M') and all 4 UNSEALED are untracked new files ('??') - it is uncommitted live work plus 4 files never sealed",
+    "action": ".venv/Scripts/python.exe tools/config_seal.py update --by WHO --note WHY",
+    "decisions_required": 1
+  },
+  "deliberate_vs_accidental": {
+    "summary": "all 7 non-blocking sites are DELIBERATE with an in-hook written justification; none accidental",
+    "convention": "WARN-ONLY first landing per t40 precedent: a new pre-push check can lock operators out + a standing TODO-FLIP-TO-ENFORCE marker",
+    "checkbox_gate_verdict": "DELIBERATE, not a bug - quote: 'WARN-ONLY at the hook (exit 1 prints the NEW DEBT names, never blocks): the gate's job here is trace on every push, the flip to blocking is an operator decision under the same convention as the census exit-1 flip above.'"
+  },
+  "fail_closed_audit": {
+    "enforcing_gates_missing_interpreter": "127 -> '|| exit 1' fires -> push blocks (fail-closed) but with a confusing 'No such file or directory' message naming no cause",
+    "census_gap": "missing interpreter gives census_rc=127; the :96 block only fires on -eq 2, so a missing venv turns the blind-detector into a silent WARN (fail-open)",
+    "caption_gap": "tools/prepush_paths_changed.py returns 2 on git failure (:50/:57/:72) but the block tests only -eq 1 (:156), so rc=2 falls to the else at :165 and prints a false all-clear 'skipped, generator and verifier unchanged'",
+    "unquoted_expansion": "set -- $CAPTION_PUSH_INPUT at :215 and :287 is unquoted (word-split + glob); benign for hex SHAs",
+    "helper_selftest": "tools/prepush_paths_changed.py --selftest -> ALL PASS (5 cases)"
+  },
+  "scenario_suite": {
+    "cmd": "tools/workflow_gate.py check --scenarios configs/workflow_gate_scenarios",
+    "rc": 0,
+    "green": true,
+    "rows_ok": 8,
+    "read_only_contract_held": true,
+    "evidence": "memory/workflows/REGISTRY.jsonl mtime 2026-09-26T20:07:15 predates the 21:5x run; memory/worldline/REGISTRY.jsonl untouched since 2026-09-07"
+  },
+  "refold_pins_diagnosis": {
+    "verdict": "HOST ARTIFACT - path-separator/absolute-path bug in the pins, NOT a B2-279 comparator break",
+    "failing_pins": [
+      "test_living_prefix_mutation_is_a_hard_failure",
+      "test_living_truncation_is_a_hard_failure",
+      "test_living_without_size_seal_is_counted_not_failed",
+      "test_plain_register_keeps_whole_file_seal"
+    ],
+    "mechanism": "pin asserts bare 'LIVING UNVERIFIED (no size seal): LEGACY_LIVING.md' but host prints full Windows path C:\\Users\\foste\\...\\agents\\pytest-tmp-30752\\...\\LEGACY_LIVING.md; would pass on POSIX",
+    "operator_action": "fix the pins, not the comparator - the gate's own operator-response text ('revert or fix the comparator edit') points the wrong way",
+    "note": "tests/test_index_fold_host.py:497 is the single assertion site; grep -c INDEX_INBOX_DIR = 3 vs 27 test defs"
+  },
+  "shared_state_pollution_check": {
+    "file": "watch/inbox/index_events.jsonl",
+    "added_rows": 276,
+    "pytest_tmp_rows": 0,
+    "verdict": "refold_gate did NOT pollute shared state; all 276 rows are real BACKFILL card registrations from a concurrent lane (WALK_HUBFIRST, WALK_WATERFIRST, THIRD_WAY_FALSIFIER_REGISTRY, SPOTCHECK_PROTOCOL)",
+    "method": "read the diff content, not mtime alone"
+  },
+  "ranking": {
+    "a_hard_blockers": [
+      {
+        "rank": 1,
+        "item": "config_seal update --by WHO --note WHY",
+        "decisions": 1,
+        "why_cheapest": "one command, no judgment about code quality; clears gates 1-2 in the file order sense (runs after ratchet) - do this one first"
+      },
+      {
+        "rank": 2,
+        "item": "violation_ratchet baseline-update --by WHO --note WHY",
+        "decisions": 6,
+        "why": "6 separate named acceptances, not one; 4 silent excepts + 1 file-too-long; re-run check first because visor.py fingerprint already moved"
+      }
+    ],
+    "b_red_non_blocking": [
+      {
+        "rank": 3,
+        "item": "checkbox_receipt_gate B2-142",
+        "blocks": false,
+        "decision": "fix the row's receipt path or leave the trace; non-urgent"
+      },
+      {
+        "rank": 4,
+        "item": "refold_gate 4 red pins",
+        "blocks": false,
+        "decision": "fix the path assertions in tests/test_index_fold_host.py; do NOT touch index_fold_host.mjs"
+      },
+      {
+        "rank": 5,
+        "item": "5 TODO-FLIP-TO-ENFORCE markers (gates 3,4,6,7,8)",
+        "blocks": false,
+        "decision": "pure policy; gate 3 precondition already met = cheapest promote; gates 7/8 argued to stay WARN-ONLY while sibling lanes share the tree"
+      }
+    ],
+    "c_stale_or_unwritten_baseline": [
+      {
+        "rank": 6,
+        "item": "config_seal 6 MODIFIED",
+        "blocks": true,
+        "nature": "5 uncommitted working-tree edits + 1 sibling-lane acceptance at 19:14; same single fix as rank 1"
+      },
+      {
+        "rank": 7,
+        "item": "config_seal 4 UNSEALED",
+        "blocks": true,
+        "nature": "all 4 untracked '??' - never sealed, not drift; same single fix as rank 1"
+      },
+      {
+        "rank": 8,
+        "item": "violation_baseline.json diff",
+        "blocks": false,
+        "nature": "contains a self-documenting receipt of a prior --help accident (B2-173 lane removed 5 foreign claims); footgun still live"
+      },
+      {
+        "rank": 9,
+        "item": "census_drift_patrol",
+        "blocks": false,
+        "nature": "green, 0d old of 7d bar; 349-disk-vs-303-carrier gap is in-tool instrument lag with --collect evidence"
+      }
+    ]
+  },
+  "self_disclosed_caveat": {
+    "what": "my '.venv/Scripts/python.exe tools/violation_ratchet.py baseline-update --help' probe EXECUTED the write path",
+    "why": "main() at :334-346 does not use argparse subparsers, so any --help falls through to cmd_baseline_update",
+    "damage": "none - died with OSError [Errno 22] on write_text; configs/violation_baseline.json still 366036 bytes, mtime 19:14:22 unchanged, still 3 top-level keys, ratchet still 6 NEW, seal still 10 problems",
+    "prior_art": "same accident already recorded and repaired by the B2-173 lane, whose baseline note is quoted in the report",
+    "tool_has_no_help_flag": true
+  },
+  "artifacts": {
+    "md": "local_sovereign_agent/watch/inbox/audit_20260926/WAVE2_LANE2_PUSH_BLOCKERS.md",
+    "json": "local_sovereign_agent/memory/audit_20260926/w2l2_push.json"
+  }
+}

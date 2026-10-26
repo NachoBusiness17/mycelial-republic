@@ -1,0 +1,16 @@
+#define R *=rotate2D(sin(length(p*p)-t))
+float i,g=3.; // g is ray length, start at 3 so we don't waste loops before hitting the sphere
+vec3 n,p;
+for(;i++<1e2;){ // 100 steps
+  p=g*vec3((FC.xy-.5*r)/r.y,1); // current position
+  p.z-=4.; // back away a bit
+  p.xy R; // rotate around z axis
+  p.yz R; // and around x axis
+  n=normalize(p); // normal feeds into 3D noise function to create the fur
+  g+=(length(p) + // distance from origin (sphere center)
+      snoise3D(n*30.)) // plus (or minus) fur
+        * .02; // tiny steps coz it's not a real distance field
+}
+g<4.? // if we've hit something -
+  o.rgb=dot(p,p)*(n*.4+.6): // color by sphere normal
+  p;

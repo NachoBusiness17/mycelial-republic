@@ -1,0 +1,8 @@
+#define M(n) mod(l.x,3.)==n
+void main(){
+  vec2 p=(gl_FragCoord.xy*2.-r)/r,l=floor(1e2*p);p=l/1e2;vec3 d;
+  float s=sin(2.*p.x+t*2.),c=cos(4.*p.y+t),x=p.x*1.5*s;
+  if(c>x&&M(0.))d.r+=1.;if(c<x&&M(2.))d.b+=1.;
+  if(s>p.y*1.5*c&&M(1.))d.g+=1.;
+  gl_FragColor.rgb=d;
+}

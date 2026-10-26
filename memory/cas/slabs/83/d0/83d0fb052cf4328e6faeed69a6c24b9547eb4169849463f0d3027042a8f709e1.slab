@@ -1,0 +1,5 @@
+# impfeed proposal — w-muse-spark-access
+
+DEPTH 1 of 2
+
+{"ask": "Probe the OpenRouter contributor-page data-policy terms for meta/muse-spark: what exactly does Meta permit on the contributor tier regarding training-data usage, context retention, and output licensing? Fetch the contributor pricing page at openrouter.ai and the Meta developer terms page (ai.developer.meta.com/legal/terms-of-service — try the raw HTML or the ?format=json API fallback if JS-rendered). Compare the data-policy language against the fleet's standing rule that private corpus/memlang/verb genomes stay off Meta lanes. Report: (1) exact quote of Meta's contributor-tier data policy, (2) whether research/synthetic traffic is cleared or forbidden, (3) whether the 18+ attestation is tied to Llama license terms (check release notes for Llama 3.1/3.2 attribution requirements) or Meta's standalone policy, (4) one-line routing rule for the fleet based on findings.", "tier": "free", "max_tokens": 3000}

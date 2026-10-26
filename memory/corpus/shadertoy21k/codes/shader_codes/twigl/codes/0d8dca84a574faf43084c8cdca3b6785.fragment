@@ -1,0 +1,30 @@
+precision highp float;
+uniform vec2  resolution;
+uniform float time;
+layout (location=0) out vec4 fragColor;
+
+void rot(inout vec3 p,vec3 a,float t){
+	a=normalize(a);
+	vec3 u=cross(a,p),v=cross(a,u);
+	p=u*sin(t)+v*cos(t)+a*dot(a,p);   
+}
+
+float map(vec3 p){
+  float r=.1;
+  vec3 v=vec3(1,2,3);
+  p-=clamp(p,-v,v);
+  return length(p)-r;
+}
+
+void main(){
+    vec2 uv=(gl_FragCoord.xy-.5*resolution)/resolution.y;
+    vec3 rd=normalize(vec3(uv,-2));
+    vec3 ro=vec3(0,0,15);
+    float i,h=0.,e=1.;
+    for(i=0.;++i<50.&&e>.001;){
+        vec3 p=ro+h*rd;
+        rot(p,vec3(1,2,3),time);
+        h+=e=map(p);
+    }
+    fragColor+=5./i;  
+}

@@ -1,0 +1,13 @@
+vec2 p=(FC.xy-.5*r)/r.y*20.;
+float d,n;
+
+p.y+=t*2.;
+
+n=snoise2D(floor(p));
+n>.5?p.x*=-1.:n;
+
+p-=round(p);
+p*=sign(p.x+p.y);
+
+o+=smoothstep(.1,.0,abs(p.x+p.y-.5)-.2);
+o.b+=smoothstep(.1,.0,abs(p.x+p.y));

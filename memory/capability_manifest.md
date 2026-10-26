@@ -1,0 +1,1065 @@
+# Capability Manifest — present-tense framework shape (auto-generated)
+- regenerated: 2026-09-26T21:15:22.352650
+- source: main.py, rest.py, mag/*, providers.yaml
+
+## CLI (main.py subcommands)
+`add` `agent` `agent-state` `aos-grok` `api` `arena` `ask` `autopilot` `autorun` `backfill-sessions` `blast` `bonds` `boot` `boot-coordination` `brief` `build-audit` `calibrate` `campaign` `canvas-list` `canvas-sync` `cast` `catch-up` `caveman-audit` `cheap-swarm` `check` `cleanup` `clippy` `coding-session` `comms-trail` `compact` `compose-status` `conductor` `context-growth` `context-pack` `coordinate` `cost-learn` `cost-sim` `cross-version` `dashboard` `decide` `deep-handoff` `descend` `desk` `diary` `dispatch` `docker-ops` `doctor` `drainer-stats` `dupes` `elevate` `embassy-publish` `env` `expand` `extension-deploy` `factory-audit` `factory-machine` `field-steal` `fkb` `frontier-help` `game` `gap-map` `ghost` `ghost-summon` `goal` `governor` `gpipes` `grok-free` `grok-mirror` `grok-terminal` `grove-build` `growth-cycle` `guard` `hermes-status` `ideas` `improve` `improve-loop` `improve-off` `improve-on` `ingest` `janitor` `job-floor` `knot-evolution` `lab` `lattice` `lattice-backfill` `lattice-loop` `lattice-query` `law` `legacy-audit` `links` `live-feed` `live-ops` `loop-audit` `mag` `map` `memlang` `migrate-lean-registry` `models` `multi-smoke` `mycelium` `nervous` `ollama` `operator-mode` `ops-graph` `orchestrator` `org-review` `orphan` `pack-status` `peer-handoff` `pile-classify` `plan` `play` `ponytail-audit` `power` `pro-library` `probe-lanes` `probe-local` `process-supervisor` `promote` `provider-chat` `providers` `queue` `queue-learn` `queue-ops` `quota` `refresh-session-cards` `release` `render` `renderman-ask` `republic-os` `research-lens` `research-pack` `resonance` `roadmap-run` `roundtable` `route` `run` `run-worth` `scheduler` `scrum` `seat-guard` `seats` `self-steal` `session-route` `session-state-brief` `skill-ledger` `skill-seat` `spec-gate` `spider` `state-brief` `state-snapshot` `status` `steer` `steer-agent` `steer-compare` `steer-telemetry` `steward` `summarize-session` `swarm` `swarm-health` `switchboard` `system-map` `talk` `tangent` `tapestry` `tesuji-shell` `token-chain` `trail` `training-events` `trajectory-rib` `tts` `unsloth` `usage-forecast` `v3-status` `vast-train` `verkle-audit` `virtual-desk-loop` `visual` `vscode-feed` `wake` `warning-monitor` `watch` `workshop`
+
+## REST endpoints (dashboard)
+`GET /api/v1/chan/catalog` `GET /api/v1/chan/thread/{slug}` `POST /api/v1/chan/post` `POST /api/v1/chan/wake` `GET /api/v1/partner/puppet` `POST /api/v1/partner/puppet` `GET /api/v1/ecosystem` `GET /api/v1/ecosystem/rib` `GET /api/v1/ecosystem/scan` `GET /api/v1/schemas` `GET /api/v1/endpoints` `GET /api/endpoints` `GET /api/v1/rightsize` `GET /api/v1/rightsize/endpoints` `POST /api/v1/rightsize/audit` `POST /api/v1/rightsize/apply` `GET /api/v1/skill-ledger` `GET /api/skill-ledger` `POST /api/v1/skill-ledger/record` `POST /api/skill-ledger/record` `POST /api/v1/skill-ledger/labeled-row` `POST /api/skill-ledger/labeled-row` `GET /api/v1/pile` `GET /api/pile` `GET /api/v1/fleet/triad` `GET /api/v1/fleet/hypervisor` `GET /api/v1/loop/health` `GET /api/v1` `GET /api/v1/` `GET /api/v1/operator-os` `GET /api/v1/org-review` `GET /api/v1/tapestry` `POST /api/v1/tapestry/rebuild` `GET /api/v1/lattice-lab` `GET /api/v1/health` `GET /api/v1/web/fetch` `GET /api/v1/doctor` `GET /api/v1/test-run` `POST /api/v1/test-run` `GET /api/v1/tokens/saved` `GET /api/v1/game/score` `GET /api/v1/ghost/control` `GET /api/v1/sovereign` `GET /api/v1/solved` `POST /api/v1/ghost/talk` `GET /api/v1/memory/search` `GET /api/v1/memory/recent` `GET /api/v1/memory/{key}` `POST /api/v1/memory` `POST /api/v1/swarm/ramp` `POST /api/v1/swarm/test` `POST /api/v1/afk/run` `POST /api/v1/sentinel` `GET /api/v1/mag-os` `GET /api/v1/os` `GET /api/v1/kpi` `GET /api/v1/registry` `GET /api/v1/sessions` `GET /api/v1/sessions/{id}` `GET /api/v1/sessions/{id}/residual` `GET /api/v1/sessions/{id}/visual` `GET /api/v1/board` `GET /api/v1/chain` `GET /api/v1/wave` `GET /api/v1/desk` `GET /api/v1/ingest` `GET /api/v1/overview` `GET /api/v1/hood` `GET /api/v1/nervous` `GET /api/nervous` `GET /api/v1/system-map` `POST /api/v1/system-map` `GET /api/v1/brain` `POST /api/v1/brain` `GET /api/brain` `POST /api/brain` `GET /api/v1/stack` `GET /api/stack` `GET /api/v1/repo-readiness` `GET /api/v1/feature-lab` `POST /api/v1/feature-lab` `GET /api/v1/local-pulse` `GET /api/local-pulse` `GET /api/v1/arena` `POST /api/v1/arena` `GET /api/arena` `POST /api/arena` `GET /api/v1/routing-network` `POST /api/v1/routing-network` `GET /api/v1/local-scheduler` `POST /api/v1/local-scheduler` `GET /api/local-scheduler` `POST /api/local-scheduler` `GET /api/v1/unsloth` `POST /api/v1/unsloth` `GET /api/unsloth` `POST /api/unsloth` `POST /api/v1/voice/scratch` `POST /api/voice/scratch` `POST /api/v1/voice/turn` `POST /api/voice/turn` `GET /api/v1/voice/shadow` `POST /api/v1/voice/shadow` `GET /api/voice/shadow` `POST /api/voice/shadow` `GET /api/v1/voice/task` `POST /api/v1/voice/task` `GET /api/voice/task` `POST /api/voice/task` `GET /api/v1/voice/stt` `POST /api/v1/voice/stt` `GET /api/voice/stt` `POST /api/voice/stt` `GET /api/v1/voice/canvas` `POST /api/v1/voice/canvas` `GET /api/voice/canvas` `POST /api/voice/canvas` `GET /api/v1/voice/dig` `POST /api/v1/voice/dig` `GET /api/v1/diary/seal` `POST /api/v1/diary/seal` `GET /api/v1/diary/nodes` `POST /api/v1/diary/nodes` `GET /api/diary/seal` `POST /api/diary/seal` `GET /api/v1/voice/handoff` `POST /api/v1/voice/handoff` `GET /api/voice/handoff` `POST /api/voice/handoff` `GET /api/v1/refine` `POST /api/v1/refine` `GET /api/refine` `POST /api/refine` `GET /api/v1/game` `POST /api/v1/game` `GET /api/game` `POST /api/game` `GET /api/v1/game/frontier` `POST /api/v1/game/frontier` `GET /api/game/frontier` `POST /api/game/frontier` `GET /api/v1/table/view` `POST /api/v1/table/view` `GET /api/table/view` `POST /api/table/view` `GET /api/v1/table/tileset` `POST /api/v1/table/tileset` `GET /api/table/tileset` `POST /api/table/tileset` `GET /api/v1/display` `GET /api/display` `GET /api/v1/grove` `GET /api/grove` `GET /api/v1/lattice-history` `GET /api/lattice-history` `GET /api/v1/viewports` `GET /api/v1/viewports/{id}` `POST /api/v1/viewports/sync` `GET /api/v1/home` `GET /api/v1/summary` `GET /api/v1/attention-ranked` `POST /api/v1/attention-feedback` `GET /api/v1/ideas` `POST /api/v1/ideas` `GET /api/v1/ideas/{id}/pack` `GET /api/v1/ideas/{id}` `POST /api/v1/ideas/seed` `GET /api/v1/models` `GET /api/v1/providers` `GET /api/v1/quota` `GET /api/v1/providers/local-only` `POST /api/v1/providers/local-only` `GET /api/v1/router-status` `GET /api/v1/status` `GET /api/v1/diary` `GET /api/v1/story` `GET /api/v1/story/file` `GET /api/v1/usage` `GET /api/v1/economy` `GET /api/v1/costs` `POST /api/v1/costs/vast/sync` `GET /api/v1/compute-schedule` `GET /api/v1/flow` `GET /api/v1/brief` `GET /api/v1/visual/latest` `POST /api/v1/catch-up` `POST /api/v1/desk-orchestrate` `POST /api/v1/desk-dialogue` `GET /api/v1/desk-dialogue` `GET /api/v1/agent-desk` `POST /api/v1/agent-desk` `POST /api/v1/ask` `POST /api/v1/dispatch` `POST /api/v1/agent` `POST /api/agent` `GET /api/v1/agent/live` `POST /api/v1/agent/upload` `POST /api/agent/upload` `GET /api/v1/context-pack` `GET /api/context-pack` `GET /api/v1/session/freeze` `GET /api/v1/tangents` `POST /api/v1/tangent` `POST /api/v1/tangent/process` `POST /api/v1/fork/detect` `POST /api/v1/fork/confirm` `POST /api/v1/brief` `POST /api/v1/visual` `POST /api/v1/export` `POST /api/v1/multi-smoke` `POST /api/v1/probe-lanes` `GET /api/v1/blast` `POST /api/v1/blast` `POST /api/v1/blast/promote` `GET /api/v1/agents` `POST /api/v1/agents` `POST /api/v1/agents/fan` `GET /api/v1/agents/pipes` `GET /api/v1/agents/pipes/{id}` `POST /api/v1/agents/pipes/{id}/collect` `POST /api/v1/agents/pipes/{id}/kill` `POST /api/v1/agents/pipes/{id}/cmd` `POST /api/v1/agents/reap` `POST /api/v1/agents/heal` `GET /api/v1/agents/{id}` `GET /api/v1/agents/{id}/state-snapshot` `GET /api/v1/agents/{id}/log` `POST /api/v1/agents/{id}/kill` `POST /api/v1/agents/{id}/cmd` `POST /api/v1/agents/{id}/steer` `GET /api/v1/agents/{id}/steer/{steer_id}/status` `GET /api/v1/chronicle` `GET /api/v1/seats` `POST /api/v1/seats/register` `POST /api/v1/seats/heartbeat` `POST /api/v1/seats/unregister` `GET /api/v1/power` `POST /api/v1/power/stop` `POST /api/v1/power/start` `GET /api/v1/lifecycle` `POST /api/v1/lifecycle/reconcile` `GET /api/v1/power/lifecycle` `GET /api/v1/temperature-stacks` `POST /api/v1/temperature-stacks` `POST /api/v1/improve/cloud` `POST /api/v1/improve/cycle` `GET /api/v1/token-chain` `POST /api/v1/token-chain` `GET /api/v1/governance` `POST /api/v1/governance` `POST /api/v1/governance/auto-steer/add` `GET /api/v1/governance/steering-log` `GET /api/v1/overseer/manifest` `GET /api/v1/overseer/events` `GET /api/v1/overseer/session` `POST /api/v1/overseer/session` `GET /api/v1/operator-inbox` `POST /api/v1/operator-inbox` `GET /api/v1/seat-feed` `GET /api/v1/coordination` `POST /api/v1/coordination` `POST /api/v1/coordination/gather` `POST /api/v1/coordinate` `POST /api/v1/route` `GET /api/v1/route` `POST /api/v1/decide` `GET /api/v1/decide` `GET /api/v1/verkle-knots/{id}` `POST /api/v1/verkle-knots/{id}` `GET /api/v1/autorun` `GET /api/autorun` `GET /api/v1/handoff-inbox` `GET /api/handoff-inbox` `GET /api/v1/coding-session` `POST /api/v1/coding-session` `GET /api/v1/factory-machine` `POST /api/v1/factory-machine` `GET /api/v1/drainer` `POST /api/v1/drainer` `GET /api/v1/drainer/stats` `GET /api/v1/graph/ops` `GET /api/v1/framework/map` `GET /api/v1/framework/reports` `GET /api/v1/surface-audit` `GET /api/v1/janitor` `POST /api/v1/janitor` `GET /api/v1/orphan` `POST /api/v1/orphan` `GET /api/v1/failure` `POST /api/v1/failure` `GET /api/v1/warnings` `POST /api/v1/warnings` `GET /api/v1/supervisor` `POST /api/v1/supervisor` `POST /api/v1/handoff/deep` `GET /api/v1/grok-batch` `GET /api/v1/aos-grok` `POST /api/v1/aos-grok` `GET /api/v1/research-lens` `POST /api/v1/research-lens` `GET /api/v1/cheap-swarm` `POST /api/v1/cheap-swarm` `GET /api/v1/mycelium` `POST /api/v1/mycelium` `GET /api/v1/republic-os` `POST /api/v1/republic-os` `GET /api/v1/comms-trail` `POST /api/v1/comms-trail` `GET /api/v1/grok-mirror` `POST /api/v1/grok-mirror` `GET /api/v1/ghost` `POST /api/v1/ghost` `GET /api/v1/ghost/summon` `POST /api/v1/ghost/summon` `GET /api/v1/legacy` `POST /api/v1/legacy` `GET /api/v1/law` `POST /api/v1/law` `GET /api/v1/steer` `POST /api/v1/steer` `GET /api/v1/run` `POST /api/v1/run` `GET /api/v1/spec-gate` `POST /api/v1/spec-gate` `POST /api/v1/extension/deploy` `POST /api/v1/seat/steer` `GET /api/v1/elevate` `POST /api/v1/elevate` `GET /api/v1/cleanup` `POST /api/v1/cleanup` `GET /api/v1/docker` `POST /api/v1/docker` `GET /api/v1/embassy/publish` `POST /api/v1/embassy/publish` `GET /api/v1/live-feed` `POST /api/v1/live-feed` `GET /api/v1/workspace/tree` `GET /api/v1/workspace/file` `POST /api/v1/workspace/file` `POST /api/v1/autopilot` `POST /api/v1/orchestrator/queue` `POST /api/v1/handoff/request` `GET /api/v1/behavior/vscode` `POST /api/v1/behavior/vscode` `GET /api/v1/thrash` `POST /api/v1/seat/task` `GET /api/operator-os` `GET /api/org-review` `GET /api/thrash` `GET /api/health` `GET /api/doctor` `GET /api/mag-os` `GET /api/os` `GET /api/sessions` `GET /api/session/{id}` `GET /api/board` `GET /api/verkle` `GET /api/ingest` `GET /api/overview` `GET /api/hood` `GET /api/home` `GET /api/diary` `GET /api/story` `GET /api/summary` `GET /api/models` `GET /api/providers` `GET /api/quota` `GET /api/status` `GET /api/loop-health` `GET /api/usage` `GET /api/economy` `GET /api/costs` `POST /api/costs/vast/sync` `GET /api/compute-schedule` `GET /api/idea-flow` `GET /api/brief/latest` `GET /api/visual/latest` `GET /api/visual/{id}` `GET /api/timeline` `POST /api/catch-up` `POST /api/ask` `POST /api/dispatch` `GET /api/tangents` `POST /api/tangent` `POST /api/tangent/process` `POST /api/fork/detect` `POST /api/fork/confirm` `POST /api/brief` `POST /api/visual/rebuild` `POST /api/export` `POST /api/multi-smoke` `POST /api/probe-lanes` `GET /api/blast` `POST /api/blast` `POST /api/blast/promote` `GET /api/chronicle` `GET /api/seats` `GET /api/governance` `POST /api/governance` `GET /api/operator-inbox` `POST /api/operator-inbox` `GET /api/seat-feed` `GET /api/drainer` `POST /api/drainer` `GET /api/workspace/tree` `GET /api/workspace/file` `POST /api/workspace/file` `POST /api/autopilot` `POST /api/orchestrator/queue` `POST /api/seat/task`
+
+## mag modules
+- __init__: Sovereign Mag \u2014 background companion loop.
+- _bench_free_shelf: Bench the OpenRouter free-model shelf across both keys (2026-08-25).
+- _cache_ab_probe: A/B cache probe (2026-08-25)
+- _codex_seat: CODEX SEAT DRIVER
+- _comb_tokens: 
+- _compare_chain_sources: 
+- _conc_test_slot: _conc_test_slot
+- _consensus_witness: Composite foundation proof: independent-witness consensus (2026-08-25).
+- _deep_research_verkle_dedupe: Deep research (mem-tools pipeline): verkle-encoding dedupe + catalog registry.
+- _demo_eyes_receipt: THE RECEIPT
+- _demo_telepathy: TELEPATHY
+- _diag_cache: 
+- _exp_a_cache_retrigger: EXP-A: cache re-trigger probe for glm-5.3-flash (2026-08-28 night).
+- _flag_dangling_20260925: One-off ground-truth repair (2026-09-25 night, gala lane b2-stone2b).
+- _flag_dangling_264d0ba3: One-off ground-truth repair (2026-08-26, zcode-main under operator watch).
+- _gpu_probe_debug: 
+- _grok_corpus_burn: GROK CORPUS BURN
+- _openclaw_real: 
+- _probe_burst_20260903: 
+- _probe_dangling: 
+- _probe_mcp: 
+- _probe_zai_balance: Probe z.ai for a balance/credits endpoint (2026-08-25).
+- _relane_game_tasks: Rightsize the game swarm onto the free lanes (2026-08-25).
+- _salon_burn: SALON BURN
+- _verify_chain_now: 
+- _verify_concurrency_gate: Verify concurrency_gate enforces the in-flight cap across PROCESSES (2026-08-25).
+- _verify_queue_gate: 
+- _verify_repair_state: 
+- _verify_rung5: 
+- _verify_sharp_edge: Verify the vendored integrity kernel + its wiring (2026-08-25).
+- _verify_verkle_gate_spec: _verify_verkle_gate_spec
+- _warm_rib: 
+- abliterator_spawn_manifest: 
+- abundance_rogue: abundance_rogue
+- accumulator: NNUE-style accumulator v0 for a coding agent
+- act: Execute Mag decisions."""
+- adventure_moonshot: adventure_moonshot
+- adventure_one_shot: adventure_one_shot
+- afk_cadence: afk_cadence
+- afk_loop: afk_loop
+- afk_orchestrator: afk_orchestrator
+- agent_arena: Agent arena
+- agent_behavior: agent_behavior
+- agent_cli: Mag agent CLI
+- agent_corpus: agent_corpus
+- agent_desk: Agent desk
+- agent_knot: agent_knot
+- agent_os_loop: agent_os_loop
+- agent_signature: agent_signature
+- agent_state: Grok/Mag agent state
+- agent_state_router: Agent-state-aware ROUTING
+- agentic_test_steal: agentic_test_steal
+- ai_landscape: ai_landscape
+- amd_window_guard: amd_window_guard
+- aos_agent: aos_agent
+- aos_bus_watcher: aos_bus_watcher
+- aos_grok: AOS Grok access controller
+- aos_live_view: aos_live_view
+- api_gateway: Mag API Gateway
+- api_server: Mag API Gateway
+- arc_seed: ARC SEED
+- archetype_image: archetype_image
+- arena_adapter: TextArena ↔ Mag seat bridge
+- arena_bench: arena_bench
+- arena_learning: Arena learning
+- arena_strategies: Arena strategies
+- arrival: arrival
+- art_forge: art_forge
+- arxiv_harvest: arxiv_harvest
+- arxiv_mine: arxiv_mine
+- ask: Ask the biographer
+- ask_router: ask_router - the missing controller: outcome-ledger-driven ask routing.
+- atlas: Atlas
+- attention_ranker: Transparent, safety-bounded ranking for the operator's attention.
+- attractor_tools: attractor_tools
+- audit_log: Minimal audit logging for demonstration."""
+- auth_switchboard: auth_switchboard
+- auto_handoff: auto_handoff
+- auto_quantize: Auto-Quantizer
+- autodrain: autodrain.py
+- autoglm: autoglm
+- autonomous_research: autonomous_research
+- autopilot: Three-track autopilot: improve -> queue, governor cycle, seed-mirror status."""
+- autorun_common: Shared helpers for Mag Autorun v1
+- autorun_status: Dashboard-facing governor / autorun status (read trails + heartbeat + queue)."""
+- backlog_reform: backlog_reform
+- bard: Silent Bard
+- bare_numpy: bare_numpy
+- basecamp: 
+- bash_local: bash_local
+- batch_drain: batch_drain
+- batch_scribe: batch_scribe
+- bay_organs: bay_organs
+- bay_organs_liveness_test: bay_organs_liveness_test
+- behavior_catch: Operator behavioral catch
+- behavioral_analytics: Ghost Behavioral Analytics
+- behavioral_lensing: Behavioral Lensing
+- behavioral_synth: Synthesize behavioral leaves from events + decisions + sessions.
+- bernaise: bernaise
+- billing_feed: billing_feed
+- biography: Session biographer
+- blade_plan: Create a file-backed, history-aware Vast blade launch plan.
+- blast: Blast plant: continuous improve dig + human influence dials.
+- board_directive: board_directive
+- board_tailer: Observe the image-board log and surface governed directives.
+- bonds: Residual bonds
+- bones_adapter: bones_adapter -- the thin /bones Discord adapter over mag.wow_bones_session.
+- bones_read: bones_read
+- boot: Sancho boot
+- boot_check: boot_check
+- brain: Mag brain
+- breakthrough_loop: breakthrough_loop
+- brief_local: Local brief from session dossier/md
+- browser_driver: browser_driver
+- browser_env: Browser / computer-use seat
+- btw_sidechannel: btw_sidechannel
+- budget_refactor: budget_refactor
+- build_audit: 
+- burn_gate: Burn gate
+- burn_steer: burn_steer
+- bus_cadence: bus_cadence
+- cache_identity: cache_identity
+- cache_map: Cache/economy map
+- cache_router: cache_router
+- cache_shard: cache_shard
+- cache_watch: cache_watch
+- cadence_learn: cadence_learn
+- cage_intake: cage_intake
+- campaign: Campaign DM engine
+- campaign_reader: Campaign Reader
+- campaign_runs: campaign_runs
+- campaign_simulator: Campaign Simulator
+- canon_gate: canon_gate.py
+- canon_seal: canon_seal
+- canvas_bridge: Cursor Canvas → Mag dashboard bridge.
+- capability_steal: capability_steal
+- capture_guard: capture_guard
+- cascade_research: cascade_research.py
+- cast_guard: cast_guard
+- cast_launch: cast_launch
+- cast_server: Read-only cast receiver
+- castle_foundation: castle_foundation
+- catalog: catalog -- the estate's one-catalog navigation layer.
+- catalog_freshness: catalog_freshness -- the disclosure arm of the corpus map freshness policy.
+- catalog_rebuild: catalog_rebuild -- idempotent full-estate catalog rebuild (v3, landed 2026-09-26).
+- catalog_rescan: catalog_rescan -- corpus map freshness policy (C6), landed 2026-09-26 by B2-104.
+- catalog_scan: catalog_scan -- full-estate walker for the catalog (v3, junction policy).
+- catalog_tags: catalog_tags -- the tag pass arm of the corpus map freshness policy.
+- caveman_audit: Caveman audit
+- cdp_runner: cdp_runner
+- census_liveness: census_liveness -- darkness tripwire for MagCensusPatrolDaily (B2-314).
+- chain_guard: chain_guard.py
+- chain_query: Chain Query
+- chain_substrate: chain_substrate
+- chan: 4chan-the-game
+- chat_source: Agnostic chat sources for the biographer / Verkle leaf system.
+- chatgpt_bot: chatgpt_bot
+- chatgpt_desktop: chatgpt_desktop
+- cheap_swarm: Cheap swarm
+- checkin_route: Mag check-in route
+- chord: chord
+- chord_circuit: chord_circuit
+- chord_lens: Strike-the-Chord concepts for session dossiers (borrowed, operational).
+- chord_pipeline: chord_pipeline
+- chord_triangulate: chord_triangulate
+- chronicle: Chronicle payload
+- cite_gate: cite_gate
+- cites_at_birth: CITES-AT-BIRTH
+- claim_repair: claim_repair
+- claims_desk: claims_desk
+- claims_verify: claims_verify
+- claritas: claritas
+- clawbot: clawbot
+- cleanup: Passive code-audit cleanup
+- cleanup_steal: cleanup_steal
+- clippy: Clippy, bent into a Verkle knot
+- code_map: code_map
+- codex_seat: codex_seat
+- coding_session_loop: Coding session loop
+- coding_session_orchestrator: Coding session orchestrator
+- coding_session_runner: Coding session runner
+- comms_trail: comms_trail
+- compass: Agent Compass
+- compiler_flywheel: compiler_flywheel
+- compiler_lang: compiler_lang
+- compute_reconcile: compute_reconcile
+- concurrency_gate: concurrency_gate
+- conductor: L-conductor
+- conductor_eval: 
+- connectivity_sizer: connectivity_sizer
+- console_render: console_render
+- constants: 
+- constitutional_critique: Constitutional Critique
+- context_admission: Context admission and pressure receipts.
+- context_checkpoint: Context Checkpoint
+- context_compression: Context Compression
+- context_growth: Context-growth analyzer
+- context_pack: Minimum-token pack for Grok (this TUI)
+- cooker: cooker
+- coordination: Cross-seat coordination
+- copilot_bridge: Copilot Bridge
+- corpus_expand: corpus_expand
+- corpus_ingest: corpus_ingest
+- corpus_query: Narrative corpus query
+- corpus_selfsteal: corpus_selfsteal -- index our own gaming corpus, plans and directories, then mark every
+- corpus_wave: corpus_wave
+- cost_enforcer: Cost Enforcer
+- cost_governor: cost_governor
+- cost_learn: Cost/cache learning fold
+- cost_ledger: Append-only seat economics ledger joined to queue terminal outcomes."""
+- cost_simulator: Swarm cost simulator
+- cost_truth: Canonical cost view built from the provider usage receipt stream.
+- cross_version: Cross-version experiment runner
+- daemon: Sovereign Mag background loop."""
+- dashboard_plugin: Dashboard plugin surface
+- data_refinery: Data Refinery
+- data_source_watch: data_source_watch
+- decision_framework: Decision framework
+- decision_hook: DECISION HOOK
+- decl_attention: decl_attention
+- deep_research_moonshot: deep_research_moonshot
+- depin: GSTD DePIN Substrate
+- desk_conductor: Desk conductor
+- desk_dialogue: Desk dialogue
+- desk_local_adapter: Adapt Local (L0) desk output to protocol
+- desk_local_simulator: Deterministic Local seat for testing Desk protocol independently of Ollama."""
+- desk_model_probe: Desk model A/B probe
+- desk_observer: Desk observer
+- desk_ops: Desk operator shortcuts
+- desk_orchestrator: 
+- desk_orchestrator_memory: Orchestrator memory packets
+- desk_overseer: Desk overseer
+- desk_teaching: Desk teaching loop
+- desk_timing: Desk agent response timing
+- desk_tools: DESK TOOLS
+- destructive_receipt: destructive_receipt
+- deterministic_scanner: deterministic_scanner
+- df_tileset: Dwarf Fortress tileset bridge
+- diamond_mine: diamond_mine
+- diary: Day-by-day diary + project story
+- diary_node: Diary nodes on Verkle tip
+- dirac_loop: dirac_loop
+- dispatch: Sovereign dispatch
+- display: TV-safe display payload
+- disposition_sweep: disposition_sweep
+- dissector: dissector
+- distill: distill
+- divergence_meter: divergence_meter
+- docker_ops: docker_ops
+- doctor: Doctor Protocol
+- doctor_agent: Doctor Agent
+- doctor_rightsize: doctor_rightsize
+- doctrine_statute: doctrine_statute
+- dogfood_audit: dogfood_audit
+- dormant: dormant: ONE reader of the providers.yaml dormant flag for mag/ lane lists.
+- drainer_stats: Drainer stats
+- dropbox_watcher: Dropbox Watcher
+- dspy_sovereign: Declarative Sovereign Prompt Optimization
+- dungeon_dev: dungeon_dev
+- echo_net: ECHO NET
+- ecosystem_surface: ecosystem_surface
+- effect_broker: effect_broker
+- egregore_steal: egregore_steal
+- elder: Elder
+- electron_seat: electron_seat
+- elevate: Elevate
+- embassy_deliver: Embassy deliver
+- embassy_integrity: Embassy Integrity Toolkit
+- emergence: emergence
+- emergence_test: 
+- emergent_harvest: emergent_harvest
+- end_state: end_state
+- engram: engram
+- env_redirect: Production-shell tripwire for test-isolation log redirects (B2-358, 2026-09-26).
+- env_registry: Environment track registry
+- epistemic_guard: epistemic_guard
+- error_healer: error_healer
+- events_key_schema: Events key schema gate: the writer-key vocabulary of the shared events log.
+- events_scan: Events-log malformed-line scanner (B2-399 split, 2026-09-26).
+- evolving_wave: evolving_wave
+- exit_dialogue: Exit Dialogue
+- extension_deploy: Extension deploy
+- fact_bus: fact_bus
+- factory_gate: Frozen BUILD contract gate for autonomous coding."""
+- factory_machine: Factory machine
+- failure_kb: Failure Knowledge Base (FKB)
+- falsifier_counter: falsifier_counter
+- fanout: fanout v1
+- feature_lab: Feature Lab viewport over existing worktrees, evidence, and handoff rails.
+- feedback: feedback
+- fermat_ractor: fermat_ractor
+- field_steal: Field steal
+- final_steal: final_steal
+- fire_horse: 
+- fireball_cycle: 
+- fish_ear: fish_ear
+- fleet_intel: fleet_intel
+- flex_test: flex_test
+- flight_recorder: FLIGHT RECORDER v0 (2026-09-03, operator GO late)
+- flock_anim: flock_anim
+- flock_field: flock_field
+- flock_grid: flock_grid
+- flock_job: flock_job
+- flock_scheduler: flock_scheduler
+- flock_shader: flock_shader
+- flock_steal: flock_steal
+- flock_usage_guard: flock_usage_guard
+- forge_daemon: forge_daemon
+- fork_router: Fork router: detect planning tangents and create fork artifacts.
+- framework_map: Framework map
+- free_frontend_swarm: free_frontend_swarm
+- free_tier: free_tier
+- free_to_swarm: free_to_swarm
+- frontier_advisor: frontier_advisor
+- frontier_batch: frontier_batch
+- frontier_council: frontier_council
+- frontier_game: frontier_game
+- frontier_gravity: frontier_gravity
+- frontier_help: Frontier-help percolation
+- frontier_intake: frontier_intake
+- frontier_rib: frontier_rib
+- frontier_salon: frontier_salon
+- frontier_scout: Frontier Scout
+- frontier_steer: frontier_steer
+- fuel_feed: fuel_feed
+- future_self: future_self
+- ga4_progression: GA4 Progression
+- gab_seat: gab_seat
+- game_battle_cycle: Automatic battle cycles
+- game_brawl: Multi-combatant tavern brawl
+- game_brawl_perspectives: Multi-POV monologues for tavern brawl
+- game_campaign: Campaign engine
+- game_curveball: Curveballs
+- game_dfhack: game_dfhack
+- game_dice: 
+- game_dm: game_dm
+- game_dm_llm: game_dm_llm
+- game_dm_voice: DM voice formatting
+- game_emulator: game_emulator
+- game_entry: game_entry
+- game_environment: game_environment
+- game_flow: game_flow
+- game_freeze: Game freeze packs
+- game_live: game_live
+- game_mud: game_mud
+- game_narrate: Constrained narrator
+- game_observer: game_observer
+- game_passage: Adventure passage cards
+- game_piece_tandem: game_piece_tandem
+- game_play: game_play
+- game_portal: game_portal
+- game_produce: game_produce
+- game_ramp: game_ramp
+- game_saga: game_saga
+- game_salon: Salon advise loop
+- game_score: game_score
+- game_view: ASCII table view
+- game_world: game_world
+- game_world_map: game_world_map
+- game_world_render: game_world_render
+- gap_analysis: Gap analysis
+- gap_frontier: gap_frontier
+- gap_map: Gap map
+- gap_resolver: gap_resolver
+- gap_routed_handoff: gap_routed_handoff
+- gap_swarm_experiment: gap_swarm_experiment
+- gene_pool_feeder: gene_pool_feeder
+- gguf_cartography: gguf_cartography
+- ghost: Ghost in the Machine
+- ghost_auto: ghost_auto
+- ghost_cold_boot: ghost_cold_boot
+- ghost_control: ghost_control
+- ghost_cross: Ghost Cross-Agent
+- ghost_director: Ghost Director
+- ghost_doctor: ghost_doctor
+- ghost_experimenter: ghost_experimenter
+- ghost_grok_dashboard: ghost_grok_dashboard
+- ghost_identity: Ghost Identity Vector
+- ghost_leak_detector: Ghost Leak Detector
+- ghost_ledger: Ghost Ledger
+- ghost_memlance: ghost_memlance
+- ghost_nudge: ghost_nudge
+- ghost_pylance: ghost_pylance
+- ghost_server: ghost_server
+- ghost_spooky: ghost_spooky
+- ghost_summon: ghost_summon
+- ghost_talk: ghost_talk
+- ghost_whisper: ghost_whisper
+- git_divergence: git_divergence -- the Steins;Git steal, v2: a worldline meter with Go-life classes.
+- glm_flash: glm_flash
+- gopher_lite: gopher_lite
+- governance: Governance payload
+- governor: Governor - the autorun decision framework.
+- governor_autorun: Intelligent governor autorun
+- gpipes: Spawn one orchestrator sub-agent per goal, in parallel. Returns the pipe record.
+- gpu_ghost: gpu_ghost
+- gpu_k8s: gpu_k8s
+- gpu_lifecycle: gpu_lifecycle
+- gpu_memweave: gpu_memweave
+- grammar_transfer: grammar_transfer
+- grok_bot: grok_bot
+- grok_brief: grok_brief
+- grok_desktop: grok_desktop
+- grok_free: grok_free
+- grok_frontier_loop: grok_frontier_loop
+- grok_gate: grok_gate
+- grok_hub: grok_hub
+- grok_mirror: Grok mirror
+- grok_rightsize: Grok Rightsize
+- grok_route: grok_route
+- grok_seat_burner: grok_seat_burner
+- grok_steer: grok_steer
+- grok_tandem: grok_tandem
+- grok_terminal: Frontier ghost
+- grok_warm_rib: grok_warm_rib
+- grok_weave: grok_weave
+- grokbot_cold_edges: grokbot_cold_edges
+- grounding_wave: grounding_wave
+- grove: Tesuji Grove
+- growth_cycle: Explicit three-body growth cycle
+- gstd_probe: GSTD forest probe
+- guard: Failsafe: watch Mag integral; catch-up when it returns; optional restart.
+- guard_registry: guard_registry
+- guardrail_sentinel: guardrail_sentinel
+- gygax_steal: gygax_steal
+- hall_shared_supper: hall_shared_supper
+- handoff_inbox: 
+- harness: harness
+- harvest_fold: harvest_fold
+- headless: headless
+- health: Sanity map: is Mag integral alive, what froze, how to reconnect.
+- hermes_steering: HERMES STEERING ORGAN
+- hermes_warm_boot: Hermes warm boot
+- hero_simulation: hero_simulation.py
+- hf_space: Ghost HF Spaces
+- holographic_q: Holographic Q
+- honest_cache_meter: 
+- hood: Looking-eye snapshot
+- host_resolver: DNS-Independent Host Resolver
+- host_roundtrip: host_roundtrip
+- hour_test: hour_test
+- hydro_xor_sim: mag/hydro_xor_sim.py
+- icon_drop: Icon Drop
+- idea_flow: Idea flow ledger
+- idea_graph: Idea graph v0
+- improve: Daily improve loop: scout → candidates → eval → promote (gated).
+- improve_loop: Cloud handoff + unified improve cycle
+- ingest_registry: Growing ingest database for docs/papers referenced by Mag dossiers.
+- integrity_kernel: mag/integrity_kernel
+- intent_rightsize: intent_rightsize
+- intention_brief: Intention compiler
+- interrupt_pipeline: interrupt_pipeline
+- intervention_gate: intervention_gate - the inject-vs-silent memory gate (Thread B, minimal build).
+- invariant: invariant
+- invariant_lattice: invariant_lattice
+- invariant_ledger: invariant_ledger
+- invariant_npcs: invariant_npcs
+- invariant_surface: invariant_surface.py
+- janitor: Janitor
+- job_floor: Job floor
+- jones_lens: jones_lens
+- judge: Decide Mag action from sensed state (heuristic + optional small model)."""
+- k8s_bridge: k8s_bridge
+- kabuki_salon: KABUKI SALON
+- key_law: key_law
+- knot_at_close: knot_at_close
+- knot_math: Lightweight scalar-knot anchors for session dossiers (analysis-ready).
+- knot_untangle: knot_untangle
+- knowledge_graph: knowledge_graph
+- kv_seal: kv_seal
+- kvos_block: KV-OS P1
+- lab_episode: Mag Lab episode protocol
+- ladder: ladder
+- lane_breaker: lane_breaker
+- lane_cadence: lane_cadence
+- lane_effort: Lane effort tiers -- Anthropic effort-scaling budgets by fan-out width.
+- lane_probe: lane_probe.py
+- lane_runner: lane_runner
+- lane_salon: lane_salon
+- lane_supervisor: lane_supervisor
+- lanes: Resource lanes + usage log
+- lattice_backfill: Backfill instrument Verkle chain + seed queryable lattice store.
+- lattice_dashboard: Verkle lattice history + planning summary for dashboard.
+- lattice_distance: lattice_distance
+- lattice_logic: Lattice logic
+- lattice_loop: Conspiracy test lattice dig loop
+- lattice_query: Queryable lattice store
+- launch_pad: Republic launch pad
+- law: law
+- leaked_prompt_mine: leaked_prompt_mine
+- learn_rightsize: learn_rightsize
+- legacy_audit: legacy_audit
+- lens_chain: lens_chain
+- lens_knot: lens_knot
+- lens_library: Lens Library
+- lens_shader: lens_shader
+- lens_tournament: lens_tournament
+- librarian: librarian.py
+- librarian_catalog: librarian_catalog
+- lifecycle: Passive lifecycle
+- line_builder: line_builder
+- link_library: link_library
+- links_sha_ratchet: LINKS.jsonl same-sha duplicate ratchet (B2-173, 2026-09-26).
+- links_split_gate: LINKS.jsonl event-split gate (B2-168, 2026-09-26).
+- lite_guard: LITE PACING GUARD
+- lite_scale: lite_scale -- the lite-key seat joins the scale salon (operator: "you also have
+- live_feed: Live feed
+- live_ops_readiness: Read-only live-operations readiness snapshot.
+- live_report: live_report
+- liveness_sense: liveness_sense
+- lm_studio: lm_studio
+- local_mode: Runtime toggle for local-only provider mode.
+- local_playbook: Local playbooks
+- local_pulse: Local model pulse
+- local_scheduler: Local task scheduler
+- local_usable: local_usable.v1
+- loop_audit: Loop discipline audit
+- loop_breaker: loop_breaker
+- loop_doctor: loop_doctor
+- loop_feedback: loop_feedback
+- loop_health: loop_health
+- loops_registry: Nested self-improve loop registry
+- lora_pipeline: LoRA Fine-Tuning Pipeline
+- machine_target: machine_target
+- main_channel: main_channel
+- manifest: manifest
+- matrix_router: matrix_router
+- max_distill: MAX_DISTILL
+- max_distill_arms: MAX_DISTILL
+- maze_real: maze_real
+- mcp_http: mcp_http
+- mcp_server: mcp_server
+- mem_invariant_map: mem_invariant_map
+- mem_lands: mem_lands
+- mem_ollama: mem_ollama
+- mem_weave_distributor: mem_weave_distributor
+- memlang: memlang
+- memory_consolidate: memory_consolidate
+- memory_events: Canonical memory event ledger for routing, steering, and checkpoints.
+- memory_map: Memory-mapping & obfuscation layer
+- memory_train_seed: memory_train_seed
+- memweave: memweave
+- meta_lattice: meta_lattice
+- meta_percolate: meta_percolate
+- mind_mine: mind_mine
+- mind_window: mind_window
+- mindweave_eval: mindweave_eval
+- mine_diamonds: mine_diamonds
+- mirror_control: mirror_control
+- mixture_of_agents: Mixture of Agents
+- model_health: model_health
+- model_pick: Deterministic model picker
+- modules: Module registry + compose-status
+- moonshot_engine: moonshot_engine
+- mrna_steal: mrna_steal
+- mud_steal: mud_steal
+- museum: museum
+- mycelium: mycelium
+- narrative_engine: Narrative Engine
+- narrative_tests: narrative_tests
+- nervous_system: Nervous system
+- no_win: no_win
+- north_star: north_star
+- notion_api: Notion API body
+- novelty_lens: novelty_lens
+- ocean_model_mind: ocean_model_mind
+- ocean_persona: ocean_persona
+- off_hours: Durable off-hours policy for heavy queue work.
+- offerings: offerings
+- offline: offline
+- offpeak: offpeak
+- oh_fuck: oh_fuck
+- ollama_policy: Ollama load policy
+- one_sizer: one_sizer
+- openclaw_catalog: OpenClaw-facing catalog of Mag organs.
+- openclaw_patches: Apply OpenClaw-proposed edits through Mag's write jail.
+- operating_protocol: Platform-agnostic default protocol for every Mag instruction surface."""
+- operator_inbox: Operator inbox
+- operator_mode: Durable operator mode shared by every autonomous Mag surface.
+- operator_os: Operator OS
+- ops_graph: Ops knowledge graph
+- oracle: oracle
+- orchestrator: Minimal dim fallback (agent_cli has the ANSI variant)."""
+- organ_map: Organ map
+- orphan_audit: Find artifacts that claim work without a trustworthy completion boundary.
+- orphan_sense: orphan_sense
+- orphan_timer: Orphan timer for idea generation
+- os_v2: Mag OS v2
+- osculating: osculating
+- overseer: overseer
+- ox_alpha_steal: ox_alpha_steal
+- ox_availability: ox_availability
+- ox_burn: ox_burn
+- ox_escalate: ox_escalate
+- ox_fold: ox_fold
+- ox_gap: ox_gap
+- ox_megaburn: ox_megaburn
+- ox_megaburn2: ox_megaburn2
+- ox_megaburn3: ox_megaburn3
+- ox_novelty_digest: ox_novelty_digest
+- ox_novelty_index: ox_novelty_index
+- ox_percolate: ox_percolate
+- ox_probe: ox_probe
+- ox_resident: ox_resident
+- ox_scout: ox_scout
+- ox_seat: ox_seat
+- ox_swarm: ox_swarm
+- p20_pending_wave: P20 PENDING WAVE
+- partner_puppet: partner_puppet
+- party_subchain: party_subchain
+- paste_pipeline: paste_pipeline
+- pattern_mine: pattern_mine
+- pdf_layout: 
+- peer_handoff: Peer agent handoff
+- percolator: percolator
+- percolator_heal_test: Falsifier harness for the registry auto-heal fix (mag/percolator.py, 2026-09-06).
+- perplexity_research: perplexity_research
+- persistent_agent: Persistent Agent Actors
+- persona_direction: persona_direction
+- persona_key: persona_key v2
+- persona_recall: persona_recall
+- personality_substrate: Ghost Personality Substrate
+- perturbation_battery: perturbation_battery
+- phone_door: phone_door
+- phone_relay: phone_relay
+- physics_steal: physics_steal
+- pigeonhole: Pigeonhole
+- pin_audit: pin_audit
+- plan: Planning gate
+- plan_mode: Constrained plan-mode wrapper
+- platform_kill: platform_kill
+- play_benchmark: Play benchmark runner
+- poc_stage2: poc_stage2
+- policy: 
+- policy_engine: policy_engine
+- ponytail_audit: Ponytail ladder audit
+- popup_insights: popup_insights
+- portal: portal
+- power: Mag power switch
+- preferences: Operator preferences persisted for the supervisor (drainer toggle, etc.)."""
+- prefix_prover: prefix_prover
+- preflight: Pre-flight Check
+- preload_selector: preload_selector
+- press_digest: press_digest
+- primer: primer
+- pro_library: Pro library
+- probe_route: probe_route
+- problem_knot: problem_knot
+- process_reaper: process_reaper
+- process_supervisor: Single process supervisor
+- prompt_archaeology: Prompt Archaeology
+- proof: proof
+- prose_census: prose_census
+- prospect_sim: prospect_sim
+- provenance_gate: 
+- quest_roshomon: quest_roshomon
+- queue_analysis: queue_analysis
+- queue_gate: queue_gate
+- queue_learn: Queue learning fold
+- queue_ops: Queue ops
+- queue_rightsize: queue_rightsize
+- quorum_window: quorum_window
+- race_harness: RACE HARNESS
+- ractor_corpus: ractor_corpus
+- ractor_vessels: ractor_vessels
+- rails: Deterministic hard rails (Maelstrom V2 pattern)
+- ram_cache: ram_cache
+- read_archive: Lossless, bounded archive dereference for the RIB.
+- read_receipts: READ RECEIPTS
+- readout_controller: readout_controller
+- real_swarm: real_swarm
+- reasoning_intake: reasoning_intake
+- reconstruct: reconstruct
+- records: Records office
+- recreation_rib: recreation_rib
+- recurrence_gate: recurrence_gate
+- refeed_guard: refeed_guard.py
+- refine_chain: Multi-seat refine chain
+- refine_loop: Refine Loop
+- registry: Lean residual registry
+- rel_mem_eval: rel_mem_eval
+- release_registry: Release registry
+- remedy: Parse the key: value header block (before first blank line)."""
+- remote_control: Authenticated, queue-only remote control for Direct Mag.
+- render_brief: render_brief
+- renderman: RenderMan Map
+- renderman_ask: RenderMan-style ask contract + elevation protocol.
+- repo_readiness: Read-only repository readiness for instant multi-agent handoff."""
+- republic: republic
+- republic_ambassador: republic_ambassador
+- republic_feed: republic_feed
+- republic_governance: republic_governance
+- republic_loop: republic_loop
+- republic_os: republic_os
+- republic_wave: republic_wave
+- research_class: research_class
+- research_director: Research Director
+- research_fanout: research_fanout -- 50-wide deep research across the FREE channels, in our way.
+- research_fold: Passive research-pack auto-fold
+- research_lens: Research lens
+- research_pack: Research pack
+- research_worker: Bounded, non-interactive research seat for cheap local reconciliation work.
+- resonance: Resonance
+- resource_governor: resource_governor
+- resume_order: resume_order
+- rib_action: rib_action
+- rib_bus: rib_bus
+- rib_cache: rib_cache
+- rib_gif: rib_gif
+- rib_k8s: rib_k8s
+- rib_os: rib_os
+- rib_renderer: rib_renderer
+- rib_store: rib_store
+- rib_struct: rib_struct
+- riddle_direction: riddle_direction
+- riddler: Riddler semantic-surrogate compiler
+- riddler_campaign: Riddler Campaign Crafter
+- riddler_coherence: riddler_coherence
+- riddler_map: Campaign map layer over mag.riddler
+- riddler_sanitize: riddler_sanitize
+- riddler_tap: riddler_tap
+- riddler_trajectory: riddler_trajectory
+- riddler_transport: Riddler transport adapter
+- right_size_skills: right_size_skills
+- rightsize_all: rightsize_all
+- rightsize_api: rightsize_api
+- rightsize_wave: rightsize_wave
+- roadmap_runner: Compile the next release-roadmap gate into a frozen factory run."""
+- room_state: room_state.py v2
+- roshomon: roshomon
+- roshomon_mine: roshomon_mine
+- rotation_harness: ROTATION HARNESS
+- route: Grok-facing router: classify with clerk; optional local worker answer.
+- route_trace: route_trace
+- router: Unified routing
+- routing_concert: Routing concert
+- run_trail: Run object + live trail
+- run_worth: Run worth gate
+- runtime: Single integral Mag runtime: watch + companion + heartbeat (one process).
+- runtime_policy: ONE home for the Docker-only host runtime policy (state/DOCKER_ONLY).
+- saelis_room: saelis_room
+- saelis_seat: saelis_seat
+- saelis_world_brief: saelis_world_brief
+- salon_50: salon_50 -- a 50-wide adversarial salon over the untouched estate + tonight's syllabus.
+- salon_openclaw: Salon beats via the OpenClaw seat
+- scale_salon: scale_salon -- 12-lens ractor iteration of THE SCALE parable.
+- schema_registry: schema_registry
+- scifi_fantasy_steal: scifi_fantasy_steal
+- scribe: scribe
+- scrum: scrum
+- seal: seal
+- seat_availability: seat_availability
+- seat_corpus: Seat send corpus
+- seat_dispatch: seat_dispatch
+- seat_feed: 
+- seat_fork: 
+- seat_guard: Terminate the process and its children (Windows process tree)."""
+- seat_hunter: seat_hunter
+- seat_probe: seat_probe
+- seat_registry: Unified seat registry
+- seat_steer: seat_steer
+- seats: Seats registry
+- seed_chain: seed_chain
+- seed_percolator: seed_percolator
+- seed_registry: seed_registry
+- seeds: seeds
+- self_advance: self_advance
+- self_audit: self_audit
+- self_drive: Self-driving ask
+- self_drive_cadence: Self-drive cadence job
+- self_hologram: self_hologram
+- self_loop: self_loop
+- self_steal: Self-steal audit
+- self_test: self_test
+- self_train_data: self_train_data
+- self_vision: self_vision
+- sense: 
+- sentinel: sentinel
+- session_bridge: session_bridge
+- session_card: Human-facing session cards: short paragraph + bullets of what the day was.
+- session_dossier: Session dossier: structured pack + human PDF for scanning.
+- session_freeze: Session freeze
+- session_koan: Session Koans
+- session_maze: Session-maze handoff
+- session_overseer: Session-aware overseer
+- session_rib: session_rib
+- session_ritual: Session Ritual
+- session_route: Session routing preamble
+- session_state_brief: Live session-state brief
+- shader_bus: shader_bus
+- shader_rib: shader_rib
+- shadow_graph: shadow_graph
+- shadow_quest: shadow_quest
+- shadow_slab: shadow_slab
+- shadow_work: shadow_work
+- shape_map: shape_map
+- shape_seed: shape_seed
+- shared_surface: Validate and expose the cross-client Mag shared surface.
+- shelf_pdf: shelf_pdf
+- signal_flare: Signal Flare
+- signals: signals
+- single_feed: single_feed
+- skill_drop: Skill drop
+- skill_ledger: Skill ledger
+- skill_lifecycle: skill_lifecycle
+- skill_pipeline: skill_pipeline
+- skill_seat: Skill seats
+- skills_pack: 
+- social_hone: social_hone
+- socratic: Socratic prompt workshop
+- socratic_research: socratic_research
+- socratic_tree: Socratic verkle-tree
+- solved_surface: solved_surface
+- source_trace: source_trace
+- sovereign_dashboard: Sovereign Dashboard
+- sovereign_handshake: sovereign_handshake
+- space_ear: space_ear
+- spawn_manifest: SPAWN MANIFEST
+- spec_gate: Spec gate
+- spider: Spider
+- spine_exercise: Spine Exercise
+- spore_seed: spore_seed
+- stack: Agent stack viewport
+- stale_sweep: STALE SWEEP -> GRAVEYARD
+- standing: standing
+- standing_wave: standing_wave
+- state_brief: START BRIEF
+- state_quantizer: State Quantizer
+- state_snapshot: State snapshot
+- stateless_research: stateless_research
+- steal_first: Steal First
+- steal_lens: steal_lens
+- steal_pack: steal_pack
+- steal_protocol_probe: 
+- steal_steer: steal_steer
+- steal_tools: steal_tools
+- steer: steer
+- steer_bridge: Steer bridge
+- steer_bus: Estate directive grammar (observed: steers.jsonl STEER-001..004):
+- steer_engine: steer_engine
+- steer_receipt_wire: mag/steer_receipt_wire.py
+- steer_router: steer_router
+- steer_swarm: steer_swarm
+- steer_telemetry: Steer telemetry + policy loop
+- steiniger_lens: Steiniger-inspired operating lens
+- steward: Local steward jobs
+- story: Story tab
+- subscriptions: subscriptions
+- subswarm_health: subswarm_health
+- suno_zeitgeist: suno_zeitgeist
+- supervisor: Governor supervisor
+- surface_adapters: surface_adapters
+- surface_audit: Surface audit
+- surface_instruction: surface_instruction
+- surface_render: surface_render
+- surface_steal: surface_steal
+- surrogate: Surrogate reverse mapper
+- swarm_capacity: swarm_capacity
+- swarm_control: swarm_control
+- swarm_cycle: swarm_cycle.py
+- swarm_economics: swarm_economics
+- swarm_emerge: swarm_emerge
+- swarm_grok_watch: swarm_grok_watch
+- swarm_health: swarm_health
+- swarm_local_drain: swarm_local_drain
+- swarm_map: swarm_map
+- swarm_quests: swarm_quests
+- swarm_render: swarm_render
+- swarm_rightsize: swarm_rightsize
+- swarm_run: swarm_run
+- swarm_self: swarm_self
+- swarm_snapshot: swarm_snapshot
+- swarm_surface: swarm_surface
+- swarm_test: swarm_test
+- swarm_tools: swarm_tools
+- swarm_worker: swarm_worker
+- switchboard: Switchboard
+- switchboard_v2: switchboard_v2
+- system_map: 
+- system_telemetry: system_telemetry
+- table_turn_cli: 
+- table_view_cache: 
+- tactical_framework: tactical_framework
+- tandem_key_test: tandem_key_test
+- tangent: Opt-in background tangents
+- tapestry: Operational tapestry pack from Mag residual DNA.
+- tapestry_visual: Tapestry visual grammar
+- task_router: Task Router
+- tavern_chat: tavern_chat
+- tavern_summon_guests: tavern_summon_guests
+- team_knot: team_knot
+- telegram_desk: telegram_desk
+- temperature_stack: Object-oriented temperature stacks
+- template_invariant: template_invariant
+- territory_solver: territory_solver
+- test_dummy: test_dummy
+- test_runner: test_runner
+- tesuji_fire: tesuji_fire
+- tesuji_map: tesuji_map
+- tesuji_probes: tesuji_probes
+- tesuji_shell: Capture emergent wins
+- tesuji_surface: Tesuji Surface
+- the_margin: the_margin
+- thought_bank: thought_bank
+- thought_bank_app: thought_bank_app
+- thread_eye: thread_eye
+- throughput_model: throughput_model
+- time_estimate: time_estimate
+- token_chain: Token-chain: DeepSeek writes a tiny work order; local Ollama executes it.
+- token_economy: Token economy
+- tokenomics: Tokenomics Observer
+- tool_5ws: tool_5ws
+- tool_lifecycle: tool_lifecycle
+- tool_manifest: tool_manifest
+- tool_quant: tool_quant
+- tool_retire: Tool Retire
+- tool_synthesis: tool_synthesis
+- top_processes: top_processes
+- topic_index: TOPIC INDEX v4
+- topic_index_v3_tf_draft: TOPIC INDEX
+- topic_orphan: Topic-orphan detection + reroute
+- tortoise_demo: tortoise_demo
+- training_events: Unified training events
+- training_packager: Training Data Packager
+- training_rightsize: training_rightsize
+- training_set: training_set
+- trajectory_bounds: Rebuild trustworthy bounds metadata for the OpenClaw trajectory tape.
+- trajectory_paths: PATHS-ON-MAP emitter
+- trajectory_rib: Compile bounded trajectory spans into a portable, derived RIB.
+- trajectory_step: trajectory_step
+- transfer_gate: transfer_gate
+- trigger_learn: trigger_learn
+- tripartite: tripartite
+- tripartite_boot: Tripartite coordinated boot
+- trust_gate: trust_gate
+- trust_gate_audit_check: Audit sanity checks for trust_gate module (trust_gate.v2, MemSentry 4-way gate).
+- truth_audit: truth_audit
+- tts: Text-to-speech for Mag (Windows-first).
+- unsloth_seat: Unsloth Studio GPU seat
+- usage_digest: usage_digest
+- usage_forecast: Usage forecast + calibration
+- usage_monitor: usage_monitor
+- vantage_audit: vantage_audit
+- vast_cost: Read-only Vast.ai cost and instance receipts.
+- vast_launcher: Vast.ai Launcher
+- vast_train: Vast training job-spec validation and cost-only dry runs (v5 V1)."""
+- verb: VERB stone one
+- verified_clock: verified_clock
+- verify_gate: verify_gate
+- verify_succession_contract: 
+- verkle_artifact: Agent-ready Verkle knot artifacts.
+- verkle_audit: Verkle history audit + ticket reconciliation + optional local synthesis.
+- verkle_bus: Verkle Event Bus
+- verkle_knot: Living Verkle-knot record of session dossiers (topic evolution).
+- verkle_lance: verkle_lance
+- verkle_render: verkle_render
+- verkle_rib: verkle_rib
+- vertical_meter: vertical_meter
+- vessel_swarm: vessel_swarm
+- virtual_desk_loop: Virtual desk research loop
+- vision: vision
+- visual_pack: Mag Visual Pack
+- voice_dictate: Voice dictate
+- voice_dig_board: Shared dig board
+- voice_handoff: Voice handoff stack
+- voice_lanes: Voice memory lanes
+- voice_pipeline: Voice pipeline: local format → DeepSeek swarm → human spoken answer.
+- voice_scratch: Voice scratch pad
+- voice_self: voice_self
+- voice_shadow: Voice shadow scout
+- voice_skills: Voice skill seek
+- voice_stt: Voice STT steal
+- voice_tasks: Voice → REST build tasks for cheap coding agents.
+- voice_trigger: Voice/chat trigger dispatcher
+- voice_turn: Voice turn
+- volume_fidelity: volume_fidelity
+- vram_hologram: vram_hologram
+- vram_memory: vram_memory
+- vscode_feed: VS Code chat → behavioral loop bridge.
+- vscode_seat: vscode_seat
+- warmed_cold_replay: warmed_cold_replay
+- warning_monitor: Passive warning monitor
+- water_computer: Water-computer keep
+- water_swarm: water_swarm
+- wave: wave
+- wave_address: wave_address
+- wave_cache: 
+- wave_fire: wave_fire
+- wearable_swarm: wearable_swarm
+- whale_patrol: whale_patrol.py
+- whisper_image: whisper_image
+- whisper_route: whisper_route
+- win_powershell: win_powershell - absolute powershell.exe resolution (B2-375, 2026-09-26).
+- window_audit: window_audit
+- window_bus: window_bus
+- window_hop: window_hop
+- window_throttle: window_throttle
+- wireshark_steal: wireshark_steal
+- witness_snapshot: witness_snapshot
+- word_skill_map: word_skill_map
+- work_contract: work_contract
+- work_loop: work_loop
+- work_register: work_register
+- work_tiers: Work tiers
+- workspace_api: 
+- world_rib: world_rib
+- worldline_dungeon: worldline_dungeon
+- worldline_seed: worldline_seed
+- wow_bones: wow_bones -- take the BONES of AzerothCore out of the C++ and make them runnable + testable.
+- wow_bones_session: wow_bones_session -- the referee: a session runner on the bones kernels.
+- wow_family: wow_family -- WHO ELSE HAS DONE THIS: the emulator lineage, read as bones.
+- wow_manifest: wow_manifest
+- wow_player: wow_player -- player files as append-only ledgers (blueprint M2).
+- wow_steal: wow_steal -- the SELF-STEAL on the WoW line (AzerothCore, the 3.3.5a emulator).
+- wow_world: wow_world -- the bones-world skeleton: rooms as legality tables on the bones gate.
+- write_strip: write_strip
+- x_auth_once: One-shot X OAuth login for the @groundingwave surface.
+- x_chat_mine: x_chat_mine
+- x_control_surface: X Control Surface
+- x_interceptor: x_interceptor
+- x_oauth: x_oauth
+- x_posts_mine: x_posts_mine
+- x_reply_radar: x_reply_radar
+- x_surface: x_surface
+
+## Providers / local models
+- saelis (ollama tags: )
+- ollama (ollama tags: )
+- mlx-cluster (ollama tags: )
+- nous (ollama tags: )
+- openrouter (ollama tags: )
+- nous_api (ollama tags: )
+- openai (ollama tags: )
+- anthropic (ollama tags: )
+- groq (ollama tags: )
+- deepseek (ollama tags: )
+- deepseek_overmind (ollama tags: )
+- vast (ollama tags: )
+- gemini (ollama tags: )
+- xai (ollama tags: )
+- together (ollama tags: )
+- z_ai (ollama tags: )
+- z_ai2 (ollama tags: )
+- z_ai3 (ollama tags: )
+- z_ai4 (ollama tags: )
+- github_models (ollama tags: )
+- mistral (ollama tags: )
+- moonshot (ollama tags: )
+- fireworks (ollama tags: )
+- cerebras (ollama tags: )
+- nvidia (ollama tags: )
+- cohere (ollama tags: )
+- hf_router (ollama tags: )
+- dashscope (ollama tags: )

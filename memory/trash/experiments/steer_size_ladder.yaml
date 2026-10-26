@@ -1,0 +1,32 @@
+# Steer Size Ladder — model susceptibility by parameter count
+# Hypothesis: Flip rate drops as model size increases; silence stays unconditional.
+# Run: python -m mag.ghost --experiment experiments/steer_size_ladder.yaml
+
+name: steer_size_ladder
+hypothesis: >
+  Flip rate decreases as model size increases (2B > 7B > 32B).
+  Silence is unconditional across all sizes (B6 replication).
+  Emergent signals increase with model size (richer output space).
+
+tasks:
+  - summary
+  - list
+
+steers:
+  - loop
+  - wrong
+  - false_success
+  - penny
+  - escalate
+
+models:
+  - gemma:2b
+  - qwen2.5-coder:7b
+  - qwen2.5:32b
+
+baseline: true       # include no-steer control group
+parallel: false      # false = sequential swarms (avoids inbox contention)
+pause_between_swarms: 15
+
+# Expected grid: 2 tasks × (5 steers + 1 baseline) × 3 models = 36 data points
+# Estimated time: 12 swarms × ~3 min each = ~36 minutes

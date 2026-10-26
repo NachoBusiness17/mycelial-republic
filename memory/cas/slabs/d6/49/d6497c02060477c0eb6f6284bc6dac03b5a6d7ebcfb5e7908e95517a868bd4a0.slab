@@ -1,0 +1,34 @@
+# FAN2 belady-lruk
+
+lane model: meta/muse-glimmer-30b
+
+---
+
+**1. Belady 1966 FIFO anomaly study**
+
+Exact title: A Study of Replacement Algorithms for a Virtual Storage Computer
+Venue: IBM Systems Journal
+Year: 1966, Vol. 5 No. 2, pp. 78-101
+Author: Laszlo A. Belady
+
+Defining quote: OWED. I tried to verify a verbatim defining quote from the original IBM Systems Journal 5(2) 1966 text but cannot confirm the exact wording with the sources available to me.
+
+**2. Mattson 1970 stack-distance evaluation**
+
+Exact title: Evaluation Technique for Storage Hierarchies
+Venue: IBM Systems Journal
+Year: 1970, Vol. 9 No. 2, pp. 78-92
+Authors: R. W. Mattson, J. Gecsei, D. R. Slutz, I. L. Traiger
+
+Defining quote: OWED. I tried to verify a verbatim defining quote from the original IBM Systems Journal 9(2) 1970 text but cannot confirm the exact wording with the sources available to me.
+
+**3. LRU-K O'Neil 1993**
+
+Exact title: LRU-K: A Self-Adaptive Replacement Strategy for Database Buffer Pools
+Venue: Proceedings of the Ninth International Conference on Data Engineering, ICDE 1993
+Year: 1993
+Authors: Patrick E. O'Neil, Betty O'Neil, Gerhard Weikum
+
+Note on venue: Secondary citations also reference the work as The LRU-K Page Replacement Algorithm for Database Buffer Caches. Exact venue details are OWED, I could not verify the definitive conference proceedings title and pagination with the sources available to me.
+
+Defining quote: OWED. I tried to verify a verbatim defining quote from the original 1993 ICDE paper but cannot confirm the exact wording with the sources available to me.

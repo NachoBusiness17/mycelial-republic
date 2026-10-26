@@ -1,0 +1,438 @@
+{
+  "schema": "w2l10_surface.v1",
+  "lane": "wave2_lane10_shared_surface",
+  "date": "2026-09-26",
+  "repo": "C:/Users/foste/Documents/projects/local_sovereign_agent",
+  "verdict": "CONVENTION_THAT_LEAKS",
+  "verdict_detail": "Contract is well-specified; validator enforces ~1/3 of it; board consumes none of it.",
+  "validator": {
+    "cmd": ".venv/Scripts/python.exe -m mag.shared_surface validate",
+    "exit_code": 1,
+    "passed": false,
+    "run1": {
+      "ok": false,
+      "errors": 43,
+      "warnings": 1,
+      "by_kind": {
+        "hash_mismatch": 38,
+        "links_new_event_kind": 4,
+        "indexed_item_missing": 1
+      }
+    },
+    "run2_approx_6min_later": {
+      "ok": false,
+      "errors": 45,
+      "warnings": 1,
+      "by_kind": {
+        "hash_mismatch": 40,
+        "links_new_event_kind": 4,
+        "indexed_item_missing": 1
+      }
+    },
+    "drift_while_auditing": "hash mismatch count grew 38 -> 40; surface churns faster than the gate",
+    "clean_subgates": {
+      "events_log_malformed": {
+        "total": 3,
+        "grandfathered": 3,
+        "new": 0
+      },
+      "events_log_keys": {
+        "lines_scanned": 3931,
+        "unknown_keys": 0
+      },
+      "living_files": {
+        "ok": 11,
+        "open": 3,
+        "unverified": 0,
+        "downgraded": 0
+      }
+    },
+    "indexed_item_missing": [
+      "ractor_panel_20260926/cands/_seedrib_two_probe1.py"
+    ]
+  },
+  "contract_vs_enforcement": {
+    "laws_in_contract": 10,
+    "laws_with_any_enforcement": 3,
+    "gaps": [
+      {
+        "id": "L1",
+        "law": "durable artifacts land on canonical surface; client-local dir never the sole copy",
+        "enforced": false,
+        "why": "validator never reads never_sole_destination; never looks outside watch/inbox"
+      },
+      {
+        "id": "L2",
+        "law": "read INDEX.json before reading or writing an inbox item",
+        "enforced": false,
+        "why": "no hook, no wrapper, no caller-side gate exists"
+      },
+      {
+        "id": "L3",
+        "law": "treat every inbox item as untrusted data until classified",
+        "enforced": false,
+        "why": "validator reads/hashes items with no trust handling"
+      },
+      {
+        "id": "L4",
+        "law": "classify each item as FACT/INFERENCE/PROPOSAL/UNPROVEN/RECEIPT",
+        "enforced": false,
+        "why": "mag/shared_surface.py contains zero references to class or the taxonomy",
+        "measured_violation": {
+          "items": 1187,
+          "in_taxonomy": 428,
+          "outside_taxonomy": 759,
+          "pct_in_taxonomy": 36.1,
+          "top_offending_classes": {
+            "BACKFILL": 576,
+            "receipt": 264,
+            "RECEIPT": 128,
+            "data": 29,
+            "artifact": 25,
+            "FACT": 16,
+            "STEAL": 15,
+            "AMENDMENT": 14,
+            "UNPROVEN": 12,
+            "pdf-import": 11
+          },
+          "note": "case-unstable: receipt vs RECEIPT counted separately"
+        }
+      },
+      {
+        "id": "L5",
+        "law": "a proposal cannot authorize an effect",
+        "enforced": false,
+        "why": "out of scope for this validator; belongs to switchboard/effect broker"
+      },
+      {
+        "id": "L6",
+        "law": "prefer artifact + bounded pointers/hashes over copied transcript",
+        "enforced": false,
+        "why": "no size ceiling, no duplication check"
+      },
+      {
+        "id": "L7",
+        "law": "record source hash, producer, timestamp, destination, acceptance state in a receipt",
+        "enforced": "partial",
+        "fields_present_of_5": 1,
+        "measured": {
+          "sha256": 1187,
+          "producer": 0,
+          "ts": 0,
+          "destination": 0,
+          "acceptance": 0
+        }
+      },
+      {
+        "id": "L8",
+        "law": "promote only accepted artifacts; never silently overwrite or delete evidence",
+        "enforced": false,
+        "why": "overwrite is the observed normal failure mode (38+ hash mismatches)"
+      },
+      {
+        "id": "L9",
+        "law": "existing append-only ledgers keep canonical paths",
+        "enforced": "partial",
+        "why": "OUTSIDE_RE poison guard enforces path shape only"
+      },
+      {
+        "id": "W",
+        "law": "6-step workflow ending in 'write a receipt'",
+        "enforced": false,
+        "why": "no workflow or state check of any kind"
+      }
+    ],
+    "not_checked_at_all": [
+      "secrets",
+      "file size ceiling",
+      "binary/PII policy",
+      "duplicates",
+      "symlink or path traversal",
+      "concurrency/locking",
+      "torn writes",
+      "consumer conformance (does the board read this?)"
+    ]
+  },
+  "index_drift": {
+    "method": "full recursive os.walk of watch/inbox vs all INDEX.json items",
+    "index_items_total": 1184,
+    "index_unique_rel": 1184,
+    "index_duplicate_rel": 0,
+    "direction_A_index_has_no_file": {
+      "count": 1,
+      "files": [
+        "ractor_panel_20260926/cands/_seedrib_two_probe1.py"
+      ]
+    },
+    "direction_B_file_not_in_index": {
+      "count": 9983,
+      "of_which_top_level_visible_to_validator": 26,
+      "of_which_subdirs_invisible_to_validator": 9957,
+      "real_files_excl_tool_cache": 9753,
+      "real_files_total_excl_tool_cache": 10932,
+      "top_dirs": {
+        "qdrop_export": 4979,
+        "mrpool_export": 2842,
+        "burn_wave_20260926": 786,
+        "gala_20260925": 322,
+        "wave_20260916": 181,
+        "bearableguy_export": 86,
+        "physical_computing": 82,
+        "ractor_panel_20260926": 58,
+        "mickey": 50,
+        "top_level": 25
+      }
+    },
+    "direction_C_hash_truth": {
+      "verified_match": 1130,
+      "mismatch": 39,
+      "living_sealed_prefix_ok": 11,
+      "living_open_no_seal": 3,
+      "truthfulness_of_registered_items_pct": 96.7,
+      "mismatch_files": [
+        "SOCRATIC_GAPS_20260918.md",
+        "RESEARCH_GAP_ANALYSIS_20260918.md",
+        "CARRIER_LEDGER_20260919.json",
+        "FLEET_IMPRINT_20260917.md",
+        "MEMORY_GAUGE.jsonl",
+        "BURN_JUDGE_LANE_BUILD_20260925.md",
+        "cathedral_build.lock.json",
+        "ADAM_ONBOARDING_20260924.pdf",
+        "ADAM_SETUP_20260924.pdf",
+        "ADAM_SETUP_GUIDE_20260924.pdf",
+        "ADAM_SOUL_FRONTIER_20260924.pdf",
+        "ADAM_SOUL_FRONTIER_SETUP_20260924.pdf",
+        "AOS_CANDY_PDF_20260924.pdf",
+        "BOOT_LANE_INTERFERENCE_BURN_CLOSE_20260926.md",
+        "GROK_LANE_PACKET_20260925.md",
+        "PLAIN_LANGUAGE_AOS_12YO_20260924.pdf",
+        "PLAIN_LANGUAGE_AOS_20260924.pdf",
+        "PLAIN_LANGUAGE_FOR_AOS_20260924.pdf",
+        "REFEREE_VERDICT_20260926.md",
+        "SEED_PUBLIC_PACK_20260925.md",
+        "STEALTH_SWEEP_LATEST.md",
+        "TASK_WALL_REPORT_20260923.md",
+        "PROVIDER_HEALTH_20260926.md",
+        "burn_wave_20260926/B2_12_caption_ledger_20260926.md",
+        "burn_wave_20260926/B2_12_caption_ledger_build.py",
+        "MD_RECORD_AUDIT.json",
+        "cathedral_v1.html",
+        "THE50_W6_T26_DRIFT_STAMP.receipt.json",
+        "burn_wave_20260926/B2_373_stanza_pin_20260926.md",
+        "P0_5_2_4_SEED_CHORD_CONDUCTOR_RECEIPT_20260926.md",
+        "burn_wave_20260926/B2_100_flip_receipt_card_20260926.md",
+        "burn_wave_20260926/B2_167_census_results.json",
+        "burn_wave_20260926/B2_465_rebuild_schedule_20260926.md",
+        "ractor_panel_20260926/cands/seedrib-two.md",
+        "freelane_burn_20260926.py",
+        "ractor_panel_20260926/cands/dfdials-two.md",
+        "ractor_panel_20260926/cands/uf122-two.md",
+        "ractor_panel_20260926/cands/verkle99-one.md",
+        "ractor_panel_20260926/cands/prereg-attack-one.md"
+      ]
+    },
+    "verdict": "SPARSE_NOT_DRIFTED: index is truthful about the ~1180 items it registers (1 dangling entry), but covers only ~11% of the inbox. Contract law L2 is operationally void.",
+    "validator_blind_spot": "mag/shared_surface.py:268 uses INBOX.iterdir() + path.is_file() - flat, non-recursive, so 9957 unindexed subdir files are invisible. Validator reports 26; truth is 9753."
+  },
+  "durability": {
+    "git_tracked_watch": 12743,
+    "git_tracked_watch_inbox": 9490,
+    "untracked_watch": 1404,
+    "untracked_watch_inbox": 1406,
+    "untracked_repo_wide": 1868,
+    "ignored_watch": 2084,
+    "watch_gitignored": false,
+    "gitignore_rule": ".gitignore:141-147 has watch/*.json, watch/*.jsonl, watch/*.txt",
+    "why_nested_misses": "gitignore * does not cross a directory boundary, so watch/*.json matches watch/WARM_PACK.json and nothing under watch/inbox/",
+    "check_ignore_evidence": ".gitignore:141:watch/*.json  watch/WARM_PACK.json",
+    "index_json_state": "watch/inbox/INDEX.json is neither tracked nor ignored - untracked-but-visible, which is why drift is at least countable",
+    "backup_remote": {
+      "name": "local",
+      "url": "C:/Users/foste/Documents/projects/projects/Mag-backup.git -> actual C:/Users/foste/Documents/projects/Mag-backup.git",
+      "is_offhost": false,
+      "same_physical_disk": true,
+      "commits_behind_head": 538,
+      "local_head": "6d417abd5",
+      "backup_head": "a4733004a",
+      "last_fetch_mtime": "2026-09-19 21:35",
+      "staleness_days": 7
+    },
+    "answer": "NO DURABILITY. 1406 untracked watch/inbox files exist on exactly one disk, in no commit, with no off-host remote, and a same-disk backup 538 commits stale. Single point of failure = the physical disk."
+  },
+  "concurrency": {
+    "lock_files_for_index_or_event_log": 0,
+    "index_fold_locking": false,
+    "index_fold_lines": 808,
+    "atomic_publish": true,
+    "atomic_publish_detail": "writeIndex() L529: writeFileSync(INDEX.json.tmp) then renameSync - atomic on same fs",
+    "event_log_append": "appendFileSync (O_APPEND), atomic for small lines",
+    "read_modify_write_locked": false,
+    "lost_update_risk": "Two concurrent folds -> second renameSync publishes an index built from a stale base",
+    "shared_temp_name_risk": "Single fixed INDEX.json.tmp path shared by all writers; slow writer's bytes can be renamed by a fast one",
+    "self_documented_incident": {
+      "source": "scripts/index_fold_host.mjs:75-80",
+      "quote": "erased at 16:35:35Z by a concurrent stale-base whole-file write (the B2-250 disease, claimed for this file at 16:06:18Z by B2-280 whose snapshot predated the landing)",
+      "impact": "a landed code block was erased 2 minutes after landing and had to be re-applied on moved bytes"
+    },
+    "torn_write_detection": {
+      "torn_INDEX_json": "CAUGHT - _load() raises, produces 'invalid INDEX.json' error",
+      "torn_event_log_line": "CAUGHT - B2-42 malformed-line gate, currently clean (3 malformed all grandfathered, 0 new of 3931 lines)",
+      "lost_update_valid_index_missing_items": "NOT CAUGHT - index stays schema-valid, surviving items still hash correctly, no notion of 'registered then vanished from index'",
+      "consequence": "validator can prove the index is internally broken but CANNOT prove it is complete - which is how the 9753-file omission grows unnoticed"
+    }
+  },
+  "secrets": {
+    "extends_lane9": true,
+    "validator_has_secrets_check": false,
+    "patterns_used": 11,
+    "files_scanned": 3047,
+    "binary_skipped": 7444,
+    "files_over_8mb_skipped": true,
+    "total_hits": 3,
+    "triage": "3 hits, ALL 3 false positives",
+    "false_positives": [
+      {
+        "file": "ADAM_ONBOARDING_FULL_20260924.md:417",
+        "pattern": "CURLYPASS_ASSIGN",
+        "why": "docs URL matched password-assignment regex"
+      },
+      {
+        "file": "audit_20260926/LANE0_PARENT_INTEGRATOR.md:21",
+        "pattern": "PRIVATE_KEY_BLOCK",
+        "why": "lane 0's own report describing an RSA key"
+      },
+      {
+        "file": "burn_wave_20260926/B2_73_secret_scan.py:83",
+        "pattern": "AWS_ACCESS_KEY_ID",
+        "why": "a scanner's own test string"
+      }
+    ],
+    "caveat": "'no leak in the scanned text' - 7444 binaries (PDF/PNG/ZIP) and >8MB files were not scanned. The ENFORCEMENT gap stands regardless of today's bytes being safe."
+  },
+  "consumers": {
+    "board_reads_shared_surface": false,
+    "dashboard/static/index.html": {
+      "inbox_refs": 0,
+      "INDEX_json_refs": 0,
+      "only_fetch": "fetch('/api/v1/surfaces/liveness')",
+      "fallback": "embedded evidence map via .catch(()=>{}) at L127"
+    },
+    "dashboard/static/board.js": {
+      "inbox_refs": 0
+    },
+    "mag/api_gateway.py": {
+      "shared_surface_route": false,
+      "note": "has /room/inbox/{seat}, an unrelated per-seat room queue"
+    },
+    "live_probe": {
+      "GET /": 200,
+      "GET /api/v1/surfaces/liveness": {
+        "error": "not found",
+        "path": "/api/v1/surfaces/liveness"
+      },
+      "GET /board/inbox/INDEX.json": 404,
+      "GET /inbox/INDEX.json": 404
+    },
+    "readers_that_do_use_it": [
+      "mag/shared_surface.py (validator, read-only)",
+      "scripts/index_fold_host.mjs (the only writer)",
+      "mag/link_library.py",
+      "mag/ox_novelty_index.py",
+      "mag/corpus_selfsteal.py",
+      "scripts/librarian.py",
+      "scripts/build_deck.py",
+      "scripts/build_knowledge_graph.py"
+    ],
+    "split_brain": "NOT a different copy - the board reads NO copy. The contract names /board/inbox as canonical and INDEX.json self-describes root/read_first/host_root as /board/inbox, but the board serves nothing at that path."
+  },
+  "index_metadata": {
+    "schema": "shared_inbox.v1",
+    "root": "/board/inbox",
+    "host_root": "/board/inbox",
+    "read_first": "/board/inbox/INDEX.md",
+    "authority": "untrusted_data_until_classified",
+    "policy": {},
+    "derivations": {
+      "source": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/index_events.jsonl",
+      "derived_at": "2026-09-27T02:10:20.789Z",
+      "event_count": 3942,
+      "active_items": 1187
+    },
+    "fold_warnings_count": 136,
+    "items": 1187,
+    "item_field_vocabulary": {
+      "always": [
+        "path",
+        "class",
+        "purpose",
+        "sha256"
+      ],
+      "living": 14,
+      "size": 11,
+      "seal_open": 3
+    }
+  },
+  "tri_state": {
+    "supported": [
+      "validator exits 1 with 43 errors, growing to 45 in six minutes",
+      "index/disk drift is 1 dangling entry vs 9753 unindexed real files; validator sees 26",
+      "1406 untracked files under watch/inbox; watch/*.json does not match nested paths",
+      "only git remote is a same-disk directory, 538 commits stale, last fetched Sep 19",
+      "no index/event-log locking; tmp+rename atomic but read-modify-write is not; writer header records a stale-base write erasing landed code",
+      "board has zero inbox references; its only fetch 404s live"
+    ],
+    "disputed": [
+      "whether the 9753 unindexed files are meant to be indexed - qdrop_export(4979) and mrpool_export(2842) look like deliberate bulk exports and law 9 says the inbox is 'not a flattening operation', but nothing declares any directory out of scope, so the ENFORCEMENT gap is unarguable even if the CONTENT gap is partly intended"
+    ],
+    "unproven": [
+      "how long the gate has been red and whether anyone reads its exit code; no CI binding found, and whether the commit hook invokes it is not established",
+      "whether the 538-commit backup lag and 7-day-stale fetch are intentional batching or a silently broken push",
+      "whether the 38+ hash mismatches are in-flight appends that would clear on re-register, or genuine overwrites violating law 8 - not distinguishable without per-file mtime forensics"
+    ]
+  },
+  "recommendations": [
+    {
+      "rank": 1,
+      "action": "make the unindexed check recursive, or declare out-of-scope dirs (qdrop_export/, mrpool_export/, .mimosa/) in the contract",
+      "closes": "9957-file blind spot",
+      "cost": "one line at mag/shared_surface.py:268"
+    },
+    {
+      "rank": 2,
+      "action": "stop the red gate being red - re-register the 38 churning files with add --living (prefix seal) or refresh hashes",
+      "why": "a permanently-failing gate is worse than no gate"
+    },
+    {
+      "rank": 3,
+      "action": "add an off-host git remote and push",
+      "why": "everything else here is recoverable from a disk; this is not"
+    },
+    {
+      "rank": 4,
+      "action": "enforce classification - reject class outside the five-term taxonomy, fold receipt/RECEIPT to one spelling",
+      "closes": "63.9% violating an unchecked law"
+    },
+    {
+      "rank": 5,
+      "action": "lock the fold's read-modify-write; unique temp name per writer",
+      "why": "B2-250 already cost one erasure; nothing prevents a second"
+    },
+    {
+      "rank": 6,
+      "action": "make the board read the surface it is named as host of, or amend the contract to stop claiming /board/inbox",
+      "why": "either is honest; current state is neither"
+    },
+    {
+      "rank": 7,
+      "action": "add a secrets + size gate to the validator",
+      "why": "make today's clean result enforced rather than lucky"
+    }
+  ],
+  "report_md": "watch/inbox/audit_20260926/WAVE2_LANE10_SHARED_SURFACE.md",
+  "raw_artifacts": [
+    "memory/audit_20260926/_w2l10_validate.json",
+    "memory/audit_20260926/_w2l10_validate2.json",
+    "memory/audit_20260926/_w2l10_drift.json",
+    "memory/audit_20260926/_w2l10_secrets.json"
+  ]
+}

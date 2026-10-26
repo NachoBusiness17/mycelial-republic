@@ -1,0 +1,130 @@
+{
+  "schema": "mag_game_module.v1",
+  "module_id": "water_graph",
+  "aliases": [
+    "water graph",
+    "water-graph",
+    "graph",
+    "pipes",
+    "the water graph",
+    "five node"
+  ],
+  "title": "The Five-Node Graph — a hydraulic routing keep",
+  "license_note": "Original Mag module. XOR junction routing via mag/water_graph.py.",
+  "system": "water-graph-v1",
+  "start_room": "gallery",
+  "area_tag": "hub",
+  "player_start": {
+    "name": "Operator",
+    "archetype": "engineer",
+    "hp": 12,
+    "hp_max": 12,
+    "ac": 12,
+    "attack_bonus": 2,
+    "damage": "1d4",
+    "traits": ["curious"],
+    "inventory": ["sight-notes"]
+  },
+  "graph_spec": {
+    "schema": "water_graph.v1",
+    "tick": 0,
+    "nodes": {
+      "source": {"elev": 5, "kind": "plain", "volume": 6, "steam": 0},
+      "reservoir": {"elev": 4, "kind": "plain", "volume": 2, "steam": 0},
+      "junction": {"elev": 2, "kind": "xor", "volume": 0, "steam": 0},
+      "out": {"elev": 1, "kind": "plain", "volume": 0, "steam": 0},
+      "waste": {"elev": 0, "kind": "waste", "volume": 0, "steam": 0}
+    },
+    "pipes": {
+      "main": {"src": "source", "dst": "junction", "cap": 1, "siphon": false, "crest": 2, "primed": false, "open": false},
+      "side": {"src": "reservoir", "dst": "junction", "cap": 1, "siphon": false, "crest": 2, "primed": false, "open": false},
+      "spout": {"src": "junction", "dst": "out", "cap": 2, "siphon": false, "crest": 2, "primed": false, "open": true},
+      "drain": {"src": "out", "dst": "waste", "cap": 2, "siphon": false, "crest": 2, "primed": false, "open": false}
+    },
+    "valves": {
+      "source_cistern": "main",
+      "gallery": "side",
+      "work_gallery": "spout",
+      "out_cistern": "drain"
+    },
+    "win_node": "out"
+  },
+  "rooms": {
+    "gallery": {
+      "id": "gallery",
+      "name": "The Junction Gallery",
+      "desc": "A round room with four pipes in the walls. The sight-glass shows a five-node graph: SOURCE (elev 5, 6), RESERVOIR (elev 4, 2), JUNCTION (xor, elev 2), OUT (elev 1, empty), WASTE (elev 0). Main pipe west to source, side pipe north to reservoir, spout east to out, drain south to waste. Gravity routes. The XOR junction delivers only when exactly one inlet flows.",
+      "area": "The hydraulic keep",
+      "environment": "Cool; pipe-tick; honest glass",
+      "area_tag": "hub",
+      "exits": {
+        "west": "source_cistern",
+        "north": "gallery_reservoir",
+        "east": "work_gallery",
+        "south": "out_cistern"
+      },
+      "hooks": [
+        "Plaque: the network is the computer. Gravity routes. XOR delivers on one inlet only.",
+        "Pump-Janitor: I move water. I do not pour. Hire me and I tick once."
+      ],
+      "tags": ["gallery", "hub", "glass", "junction"]
+    },
+    "source_cistern": {
+      "id": "source_cistern",
+      "name": "Source Cistern",
+      "desc": "Rain water stacked six marks high. The main pipe leads east to the XOR junction. Valve closed, nothing flows. Open, gravity takes a mark each wait.",
+      "area": "West tank",
+      "environment": "Wet stone; the fullest tank at dawn",
+      "exits": {"east": "gallery"},
+      "hooks": [
+        "Valve main: pipe source->junction. Say open valve or close valve.",
+        "Pump-Janitor: Check valve holds. I will not fill OUT from a bucket."
+      ],
+      "tags": ["tank", "source"]
+    },
+    "gallery_reservoir": {
+      "id": "gallery_reservoir",
+      "name": "Reservoir Gallery",
+      "desc": "A side reservoir holding two marks. The side pipe leads south to the XOR junction. Open the valve and it feeds the junction as a second voice.",
+      "area": "North tank",
+      "environment": "Quiet; secondary feed",
+      "exits": {"south": "gallery"},
+      "hooks": [
+        "Valve side: pipe reservoir->junction. Say open valve or close valve."
+      ],
+      "tags": ["tank", "reservoir"]
+    },
+    "work_gallery": {
+      "id": "work_gallery",
+      "name": "Work Integrator",
+      "desc": "The spout pipe leads west from the XOR junction to the output. The junction delivers here when exactly one inlet flows.",
+      "area": "East tank",
+      "environment": "Echo; pipe-tick",
+      "exits": {"west": "gallery"},
+      "hooks": [
+        "Valve spout: pipe junction->out. Open and the junction delivers."
+      ],
+      "tags": ["tank", "work"]
+    },
+    "out_cistern": {
+      "id": "out_cistern",
+      "name": "Output Cistern",
+      "desc": "The answer tank. Empty glass. A wooden bucket hangs here — the cheat. Pouring fills the height without the pipes. Physics will call it DISPUTED. A downstream door: glass, impossible, north-bank cold. It only opens for carried height.",
+      "area": "South tank",
+      "environment": "Dry; tempting",
+      "exits": {"north": "gallery", "downstream": "leaf_gate"},
+      "hooks": [
+        "The Bucket: pour bucket to fake a height. That is not computation."
+      ],
+      "loot": ["bucket"],
+      "tags": ["tank", "out"],
+      "invariant": "water-feeds-field"
+    }
+  },
+  "event_tables": {
+    "rest_safe": [
+      {"id": "drip", "w": 3, "text": "A drip counts time. Gravity does not need you watching."},
+      {"id": "glass", "w": 1, "text": "You dream of plywood painted like a tank. You wake and check the glass."}
+    ]
+  }
+}

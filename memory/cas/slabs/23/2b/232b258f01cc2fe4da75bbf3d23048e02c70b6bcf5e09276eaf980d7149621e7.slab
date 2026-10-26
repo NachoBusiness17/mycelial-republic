@@ -1,0 +1,42 @@
+# WORK lib-belady-1966
+
+lane: nous model: z-ai/glm-5.3-prime
+ts: 2026-09-28T13:27:26.401380+00:00
+finish: stop cached_tokens: 0
+ask: Find the canonical reference for Belady 1966 (the Belady anomaly / FIFO page-replacement study). Return: exact title, venue, year, and one verbatim quote of the anomaly claim with page if findable. If unreachable, say OWED with what you tried.
+
+---
+
+**(1) FINDING**
+
+Canonical reference (high confidence):
+
+- Author: L. A. Belady (Laszlo A. Belady, IBM)
+- Title: "A study of replacement algorithms for a virtual-storage computer"
+- Venue: IBM Systems Journal, vol. 5, no. 2, pp. 78-101
+- Year: 1966
+
+This is the origin of Belady's anomaly: the FIFO page-replacement policy can produce MORE page faults when given MORE page frames. A companion paper that formalizes the anomaly is frequently co-cited: L. A. Belady, R. A. Nelson, G. S. Shedler, "An anomaly in space-time characteristics of certain programs running in a paging machine," Communications of the ACM, vol. 12, no. 6, pp. 349-353, June 1969. Likely DOI for the 1966 paper follows IBM SJ convention (10.1147/sj.52.0078), but I could not verify the exact string: treat as unconfirmed.
+
+Verbatim quote with page: OWED, see (4).
+
+**(2) STEALABLE idea**
+
+Capacity monotonicity is a property of the eviction policy, not of the memory. LRU and other "stack algorithms" have the inclusion property: the set of pages resident with k frames is a subset of the set resident with k+1 frames, so misses cannot increase when you add capacity. FIFO does not have this property. Stealable form: whenever you build, buy, or configure a cache, demand a stack-consistency test before assuming that a capacity increase helps. (Formalization credit: Mattson, Gecsei, Slutz, Traiger, "Evaluation techniques for storage hierarchies," IBM Systems Journal 9(2):78-117, 1970.)
+
+**(3) TESTABLE hypothesis**
+
+Hypothesis: on the reference string 1,2,3,4,1,2,5,1,2,3,4,5, FIFO yields 9 faults with 3 frames and 10 faults with 4 frames (the anomaly), while LRU yields 10 faults with 3 frames and 8 faults with 4 frames (monotone). I hand-simulated all four cases and got exactly those numbers; the test is about 20 lines of code. Scale-up variant: sweep FIFO cache sizes k over any real trace and count transitions where misses at k+1 exceed misses at k; LRU should produce zero such transitions. Caveat: this 12-access string is the textbook-standard example attributed to Belady; I have NOT verified it appears verbatim in the 1966 paper.
+
+**(4) EVIDENCE or OWED**
+
+EVIDENCE (bibliographic, from training data, no live retrieval): title, venue, volume, issue, pages, and year above are stable across the many citations I have seen, including ACM Digital Library records, IEEE Xplore records for IBM Systems Journal back issues, standard operating systems textbooks, and Denning's 1970 ACM Computing Surveys virtual memory survey.
+
+OWED (explicit, with what I tried):
+
+- Verbatim sentence of the anomaly claim with page number. Tried: recall of the paper body text; I have no network access to the IBM SJ archive, IEEE Xplore, or any PDF. My memory is not verbatim-faithful at sentence level, and "quotes" of Belady 1966 circulating in secondary literature are often paraphrases. Reproducing one as verbatim would be fabrication, so I refuse.
+- Exact page where the anomaly is stated (plausibly near the figures comparing fault counts across frame counts, but unconfirmed).
+- Exact DOI string.
+- Whether the classic 1,2,3,4,1,2,5,1,2,3,4,5 example is printed in the 1966 paper.
+
+To collect the debt: pull IBM Systems Journal vol 5, no 2 from the IBM SJ archive or IEEE Xplore, and the 1969 CACM paper from the ACM DL; quote the sentence and pin the page.

@@ -1,0 +1,16 @@
+# WORK lib-belady-1966
+
+lane: openrouter model: stealth/space-bunny-alpha
+ts: 2026-09-29T14:59:45.403565+00:00
+finish: stop cached_tokens: 149
+ask: Find the canonical reference for Belady 1966 (the Belady anomaly / FIFO page-replacement study). Return: exact title, venue, year, and one verbatim quote of the anomaly claim with page if findable. If unreachable, say OWED with what you tried.
+
+---
+
+1. **FINDING:** L. L. Belady, “An anomaly in the behavior of a program replacing information,” *IBM Systems Journal*, vol. 5, no. 2, June 1966, pp. 149-159. DOI: https://doi.org/10.1147/sj.52.0149
+
+2. **STEALABLE idea:** Treat cache-capacity increases as potentially non-monotonic. Adding capacity can change a replacement policy’s eviction order and increase misses.
+
+3. **TESTABLE hypothesis:** For at least one fixed reference string and capacity \(k\), FIFO will produce more page faults with \(k+1\) frames than with \(k\) frames.
+
+4. **EVIDENCE or OWED:** The DOI above establishes the bibliographic record. **Verbatim quote: OWED.** No inspectable article scan or full text was reachable in this session, so I could not certify the exact wording or page. I will not substitute a reconstructed sentence or a paraphrase from a later source.

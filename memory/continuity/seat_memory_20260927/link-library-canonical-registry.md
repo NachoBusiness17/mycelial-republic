@@ -1,0 +1,18 @@
+---
+name: link-library-canonical-registry
+description: Link duplication killed by mag/link_library.py + append-only
+  watch/inbox/LINKS.jsonl — canonical-check before filing any link;
+  backfill/integration tasks seeded not done
+metadata:
+  node_type: memory
+  type: project
+  originSessionId: sess_0014179a-6f14-415b-b3dd-21996c202983
+---
+
+From the operator's 2026-09-14 drop ("duplication is emphasis clean it up and build the library so this stops happening"): `mag/link_library.py` (commit `36ee3917b`) canonicalizes URLs — strips `?s=20`/utm tracking params, collapses twitter.com→x.com and mobile hosts, sorts query params, refuses localhost/private/metadata hosts — and appends to append-only `watch/inbox/LINKS.jsonl` (fields: canonical, canonical_sha256, duplicate_of, writer, note). CLI: `python -m mag.link_library add|check|dupes` (`check` exits 1 if canonical known; verified catching a `?s=20` resubmission as DUPLICATE). Now in active use as the intake front-door (commit `be3ffa520`): the operator's follow-up witness drops (mathemetica Asimov-quote thread, measure_plan grokking thread) were registered through it with `?s=20` stripped on intake — 10 canonical entries on file.
+
+**Why:** The same post arriving with different tracking params used to become duplicate INTAKE_* files; the ledger now catches variants as DUPLICATE of one canonical.
+
+**How to apply:** Run `check` before filing any link/intake card; register new links with a writer tag. Seeded but NOT yet done (builder/research/night lanes, 2026-09-14): unit tests for the module, wiring `check` into the intake flow, dashboard widget, `main.py links` subcommand, backfilling URLs from existing INTAKE_*.md files, overnight sweep of `~/.zcode/cli/rollout/*.jsonl` for unregistered links. Note: webReader fetches of X threads come back thin/fragmentary intermittently — deep-fetch and queue rather than interpreting fragments. **2026-09-16 progress (burn window):** unit tests LANDED — `tests/test_link_library.py`, 24/24, ledger-isolated via monkeypatched `ll.LEDGER` (tmp_path; the real LINKS.jsonl is never touched by tests). Module upgraded: TRACKING_PARAMS now strips the google-ads family (gad_source, gad_campaignid, gad_position, gad_bidmatch, gbraid, wbraid, gclsrc, dclid) + twclid — caught live on the airchilly URL's gad_source=1. Gotchas encoded in tests: `main()` RETURNS an int (SystemExit wrapping happens only at `__main__`); `duplicate_of` stores the first submission's RAW url (with its tracking params), not the canonical. **DROP FULLY CLOSED 2026-09-16 night:** INTAKE canonical-check wired into `mag/paste_pipeline.py` (the ONE code organ that creates intake cards — annotate-never-gate: footer lines `links-canonical:` / `links-duplicate-of:`, fully try/except so a ledger outage never blocks intake; smoke-verified including a `?s=20` re-paste flagging duplicate). `main.py links` subcommand = FOSSIL (a complete implementation already existed at main.py:1320/5330 with `links_cmd` subparsers — a duplicate registration I added conflicted and was reverted; grep past the first screenful before declaring an ask pending). URL BACKFILL DONE: 18 strict-glob INTAKE_*.md scanned, 6 URLs registered fresh (writer `backfill-20260916`); sibling FIVE_LINK_INTAKE_* files sit outside the glob — widened glob is the flagged follow-up. Ledger ~145 lines; three operator tweets registered (June fab 2071636215309156788, VKs_Host 2100246850867540227, Dukett 2099727643222417736) + 4/4 Matthew Zenodo DOIs (writer backfill-zenodo-20260916). ONLY REMAINDER: dashboard LINKS widget.
+
+Related: [[rashomon-surfacing-style]], [[shared-inbox-index-fold-stale]].

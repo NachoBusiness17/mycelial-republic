@@ -1,0 +1,84 @@
+{
+  "schema": "rightsize_api.v1",
+  "version": "v1",
+  "updated_at": "2026-08-09T23:52:40.637364Z",
+  "source": "derived from mag/rightsize_api.TOOLS",
+  "tools": [
+    {
+      "name": "rightsize_all",
+      "group": "rightsize",
+      "desc": "audit+apply rightsizing across ALL subsystems (RQ queue, RR routing, RG grok, RC cache, RL cadence, RT tokens)",
+      "cli": "python -m mag.rightsize_all audit|apply [--apply]",
+      "endpoints": [
+        {
+          "method": "GET",
+          "path": "/api/v1/rightsize",
+          "summary": "rightsizing status + endpoint registry"
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/rightsize/audit",
+          "summary": "run rightsize_all.audit() (report-only, $0)"
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/rightsize/apply",
+          "summary": "apply fixable rightsizing (dry by default)"
+        }
+      ]
+    },
+    {
+      "name": "queue_rightsize",
+      "group": "rightsize",
+      "desc": "analyze/apply/learn queue tier mis-sizing (cheap work on expensive tier)",
+      "cli": "python -m mag.queue_rightsize analyze|apply|learn [--apply]",
+      "endpoints": [
+        {
+          "method": "GET",
+          "path": "/api/v1/rightsize/queue",
+          "summary": "analyze queue rightsizing"
+        }
+      ]
+    },
+    {
+      "name": "grok_rightsize",
+      "group": "rightsize",
+      "desc": "right-size grok elevation (frontier only; gate + failover key chain)",
+      "cli": "python -m mag.grok_rightsize (module)",
+      "endpoints": [
+        {
+          "method": "GET",
+          "path": "/api/v1/rightsize/grok",
+          "summary": "grok rightsizing/gate status"
+        }
+      ]
+    },
+    {
+      "name": "self_drive",
+      "group": "rightsize",
+      "desc": "model/tier right-sizing by goal shape (flash exec, pro reasoning, local janitor)",
+      "cli": "python -m mag.self_drive plan|drive [goal]",
+      "endpoints": [
+        {
+          "method": "GET",
+          "path": "/api/v1/rightsize/self",
+          "summary": "self_drive model right-sizing status"
+        }
+      ]
+    },
+    {
+      "name": "ghost_grok_dashboard",
+      "group": "rightsize",
+      "desc": "tokens-saved-vs-projected dashboard counter (shared-language cost reducer)",
+      "cli": "python -m mag.ghost_grok_dashboard (module)",
+      "endpoints": [
+        {
+          "method": "GET",
+          "path": "/api/v1/tokens/saved",
+          "summary": "tokens saved vs projected + est USD"
+        }
+      ]
+    }
+  ],
+  "endpoint_count": 7
+}

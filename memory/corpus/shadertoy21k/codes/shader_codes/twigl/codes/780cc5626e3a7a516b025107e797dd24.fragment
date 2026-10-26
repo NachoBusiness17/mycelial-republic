@@ -1,0 +1,43 @@
+float d,e=1.,i,s=1.,ss=1.,gl; vec3 p;
+
+//for(;e>.1&&i<40.&&d<99.;i++,o+=.5/d){
+//for(;e>.001&&i<100.;i++,o+=.1/d){
+//for(;e>.001&&i<100.;i++,o+=.1/i){
+for(;e>.001&&i<100.;i++){ // @zozuar 's style
+
+  
+  //p=vec3((FC.xy-.5*r)/r.y*24., d-10.);
+  p=vec3((FC.xy-.5*r)/r.y*d, d-20.);
+  
+  p.yz*=rotate2D(-.3);
+  p.xz*=rotate2D(t*.3+.5);
+  
+  // The position of the scale is here.
+  // The basic is 1.0, but if an artifact appears, increase the number.
+  ss=3.;
+  
+  for(int j=0; j++<7;){
+		p=abs(p);
+    p.y-=.5;
+
+    // change sphere hold
+    //s = 1./clamp(length(p),.0,1.);
+    s = 1./clamp(dot(p,p),.0,1.);
+
+    p*=s;
+		ss*=s;
+		p-=vec2(1,.1).xxy;
+		p.xyz=p.zxy;
+  }
+  
+  // change SDF
+  //d+=e=length(p)/ss;
+  d+=e=length(p.xy)/ss-.01;
+  // glow
+  //gl=length(p)/ss; // at points, not lines
+  //o+=.00002/gl/gl*vec4(3,2,1,0);
+  // simpler glow
+  o+=ss*vec4(3,2,1,0)/1e4;
+}
+// In this case, I'm coloring after exiting the marching loop.
+o+=pow(cos(i/64.),9.)*.5;

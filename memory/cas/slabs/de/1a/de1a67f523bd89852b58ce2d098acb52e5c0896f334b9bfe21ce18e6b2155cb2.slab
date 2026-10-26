@@ -1,0 +1,27 @@
+# VERIFY lib-belady-1966
+
+verifier: hermes (funded seat)
+ts: 2026-09-29T15:09:58.037272+00:00
+verdict: OWED
+answer: lib-belady-1966_openrouter2.md
+
+---
+
+The repo holds two verified artifacts covering this ask:
+
+1. **Receipt** `docs/report_v1/sources/receipts/belady-1966.md` — primary-pdf level, SHA256 `10d63d2e833fd454ae8518c7b0c6cf60cb418b22e274521558f772b7f520ca1e`, 1363487 bytes, fetched 2026-09-10, local copy at `docs/report_v1/sources/pdfs/belady-1966.pdf`.
+
+2. **Flash50 report** `watch/inbox/burn_reset_20260927/flash50/r-belady-lruk.md` — Crossref-verified the citation against `api.crossref.org/works/10.1147/sj.52.0078`, read the 24-page bitsavers scan page-by-page, and holds a verified verbatim quote with page.
+
+Cross-checking the banked answer's claims:
+
+- **Citation** (Belady LA, IBM Systems Journal 5(2):78-101, 1966): CORRECT — matches receipt and Crossref.
+- **Verbatim quote: OWED**: WRONG as stated. The repo already holds a verified verbatim quote with page — flash50 report p.83: "FIFO always replaces the block having spent the longest time in memory." The banked answer declared OWED without checking the repo's existing receipt. Also note: the word "anomaly" does NOT occur in the 1966 paper itself; the named-out-loud anomaly is Belady/Nelson/Shedler CACM 12(6):349-353 1969 (also Crossref-verified in the flash50 report).
+- **STEALABLE idea** (FIFO faults can rise with more frames): substantively correct, matches Figure 13 of the 1966 paper (journal p.98).
+- **TESTABLE hypothesis**: correct in principle, standard counter-example construction.
+
+The banked answer's central citation claim is correct, but its OWED declaration for the verbatim quote is false — the repo already has the verified quote and the receipt file that pins it. The answer failed to check existing repo receipts before declaring OWED, which is the failure mode the operator has corrected three times (search first, then propose).
+
+VERDICT: OWED
+
+What is missing from the banked answer: the verbatim quote with page that the repo already holds ("FIFO always replaces the block having spent the longest time in memory", journal p.83, from `watch/inbox/burn_reset_20260927/flash50/r-belady-lruk.md`), and the receipt file name (`docs/report_v1/sources/receipts/belady-1966.md`). The OWED claim is wrong because the quote is findable — the banked answer simply did not look.

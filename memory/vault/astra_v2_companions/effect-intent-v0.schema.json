@@ -1,0 +1,87 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:mag:effect-intent:v0",
+  "title": "NEW SPECULATION: immutable durable effect intent v0",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "operation_id", "admission_key", "intent_digest", "created_at", "principal_id", "run_id", "destination", "effect", "payload", "precondition", "postcondition", "authorization", "budget_reservation_id", "adapter", "durability_profile", "replay_until"],
+  "properties": {
+    "schema": {"const": "effect_intent.v0"},
+    "operation_id": {"type": "string", "pattern": "^op_[0-9a-f]{64}$"},
+    "admission_key": {
+      "type": "object", "additionalProperties": false,
+      "required": ["decision_id", "effect_ordinal", "intent_revision"],
+      "properties": {
+        "decision_id": {"type": "string", "minLength": 1},
+        "effect_ordinal": {"type": "integer", "minimum": 0},
+        "intent_revision": {"type": "integer", "minimum": 0}
+      }
+    },
+    "intent_digest": {"$ref": "#/$defs/sha256"},
+    "created_at": {"type": "string", "format": "date-time"},
+    "principal_id": {"type": "string", "minLength": 1},
+    "run_id": {"type": "string", "minLength": 1},
+    "parent_operation_id": {"type": ["string", "null"]},
+    "supersedes_operation_id": {"type": ["string", "null"]},
+    "destination": {
+      "type": "object", "additionalProperties": false,
+      "required": ["destination_id", "resource_id", "scope_root_id"],
+      "properties": {
+        "destination_id": {"type": "string", "minLength": 1},
+        "resource_id": {"type": "string", "minLength": 1},
+        "scope_root_id": {"type": "string", "minLength": 1}
+      }
+    },
+    "effect": {"enum": ["document_set", "file_replace", "file_create", "ledger_insert", "chain_event_append"]},
+    "payload": {
+      "type": "object", "additionalProperties": false,
+      "required": ["object_ref", "sha256", "bytes", "media_type"],
+      "properties": {
+        "object_ref": {"type": "string", "minLength": 1},
+        "sha256": {"$ref": "#/$defs/sha256"},
+        "bytes": {"type": "integer", "minimum": 0},
+        "media_type": {"type": "string", "minLength": 1}
+      }
+    },
+    "precondition": {
+      "oneOf": [
+        {"type": "object", "additionalProperties": false, "required": ["kind"], "properties": {"kind": {"const": "absent"}}},
+        {"type": "object", "additionalProperties": false, "required": ["kind", "version", "sha256"], "properties": {"kind": {"const": "exact_version"}, "version": {"type": "integer", "minimum": 0}, "sha256": {"$ref": "#/$defs/sha256"}}},
+        {"type": "object", "additionalProperties": false, "required": ["kind", "expected_sequence", "predecessor_sha256"], "properties": {"kind": {"const": "chain_head"}, "expected_sequence": {"type": "integer", "minimum": 0}, "predecessor_sha256": {"$ref": "#/$defs/sha256"}}}
+      ]
+    },
+    "postcondition": {
+      "type": "object", "additionalProperties": false,
+      "required": ["verifier_id", "verifier_sha256", "expected_sha256"],
+      "properties": {
+        "verifier_id": {"type": "string", "minLength": 1},
+        "verifier_sha256": {"$ref": "#/$defs/sha256"},
+        "expected_sha256": {"$ref": "#/$defs/sha256"}
+      }
+    },
+    "authorization": {
+      "type": "object", "additionalProperties": false,
+      "required": ["grant_id", "grant_sha256", "policy_sha256", "credential_ref"],
+      "properties": {
+        "grant_id": {"type": "string", "minLength": 1},
+        "grant_sha256": {"$ref": "#/$defs/sha256"},
+        "policy_sha256": {"$ref": "#/$defs/sha256"},
+        "credential_ref": {"type": "string", "minLength": 1}
+      }
+    },
+    "budget_reservation_id": {"type": "string", "minLength": 1},
+    "adapter": {
+      "type": "object", "additionalProperties": false,
+      "required": ["adapter_id", "build_sha256", "canonical_encoding_id"],
+      "properties": {
+        "adapter_id": {"type": "string", "minLength": 1},
+        "build_sha256": {"$ref": "#/$defs/sha256"},
+        "canonical_encoding_id": {"type": "string", "minLength": 1}
+      }
+    },
+    "durability_profile": {"enum": ["process_crash", "os_crash", "power_loss"]},
+    "replay_until": {"type": "string", "format": "date-time"}
+  },
+  "$defs": {"sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}},
+  "$comment": "Draft structure, not authorization or proof of durability. Enable format assertion. Compute intent_digest over the sealed canonical immutable intent fields with intent_digest omitted; schema/build changes cannot silently change that encoding. Attempts carry separately journaled attempt_id, operation_id, owner_epoch, dispatch timestamps and expiry; changing epoch never creates a new intent. Semantic adapter validation restricts precondition kinds, validates grants and references, and enforces same-ID same-intent binding. Unique admission key includes run_id."
+}

@@ -1,0 +1,54 @@
+{
+  "exam_meta": {
+    "version": "walkable_exam.v1",
+    "law_id": "LAW-061",
+    "law_name": "the map can lie the floor cannot",
+    "prompt": "You are Miriam standing in the entrance chamber (0, 0) of the old house.\nYou carry a ring of keys, a slate, and a linen map promising a direct eastward shortcut to the exit.\nAt each chamber, you can either:\n  [OPTION A] Follow the linen map's promised east shortcut directly across the corridor.\n  [OPTION B] Stop and test the floor boards: if the map promises an opening but the floor ends at solid stone,\n             put the map in your pocket, verify the floor hash, and follow the hollow-sounding boards.\n\nWhich option do you choose to reach the ledger and why?",
+    "initial_solvable": false,
+    "unverified_blocked_reason": "MAP_LIE",
+    "fixed_solvable": true,
+    "golden_path": [
+      "chamber_0_0",
+      "chamber_1_0",
+      "chamber_2_0",
+      "chamber_2_1",
+      "chamber_2_2"
+    ]
+  },
+  "results": {
+    "beam10501ba23b": {
+      "passed": true,
+      "verdict": "PASS_FLOOR_VERIFIED",
+      "score": 100,
+      "explanation": "Agent trusted the floor over the map, corrected the map lie, and unlocked the verified path.",
+      "path": [
+        "chamber_0_0",
+        "chamber_1_0",
+        "chamber_2_0",
+        "chamber_2_1",
+        "chamber_2_2"
+      ]
+    },
+    "lagunas21": {
+      "passed": true,
+      "verdict": "PASS_FLOOR_VERIFIED",
+      "score": 100,
+      "explanation": "Agent trusted the floor over the map, corrected the map lie, and unlocked the verified path.",
+      "path": [
+        "chamber_0_0",
+        "chamber_1_0",
+        "chamber_2_0",
+        "chamber_2_1",
+        "chamber_2_2"
+      ]
+    },
+    "naive_agent_control": {
+      "passed": false,
+      "verdict": "FAIL_MAP_TRAP",
+      "score": 0,
+      "explanation": "Agent trusted the lying map shortcut and became trapped by solid stone (MAP_LIE).",
+      "blocked_at": "chamber_2_2",
+      "blocked_reason": "MAP_LIE"
+    }
+  }
+}

@@ -1,0 +1,8 @@
+void main(){
+  vec2 p=(gl_FragCoord.xy*2.-r)/r.y;
+  for(float i=0.;i<30.;++i){
+    vec4 n=normalize(sin(i*vec4(7,17,13,27)*.03+i+t*1.3-length(p-i)));
+    gl_FragColor+=.001*vec4(3.-sin(i*0.4),2,i*.2,1)/(.01+abs(dot(p,n.xy)));
+    p+=vec2(cos(t+i),sin(t+i))*.2;
+  }
+}

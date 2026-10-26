@@ -1,0 +1,18 @@
+---
+name: jesus-style-parable-method
+description: Operator's parable commission spec — ELI5, Jesus-style, teach by
+  saying nothing, let each reader fill their own bias; nameless characters,
+  nothing-to-prosecute armor; THE SCALE produced 2026-09-16
+metadata:
+  node_type: memory
+  type: feedback
+  originSessionId: sess_f2600e4d-9932-4e73-996d-7a585f1c9d66
+---
+
+2026-09-16 commission (after the slashreboot arc): "eli5 in a new parable... don't make it esoteric, make it jesus style and teach real lessons by saying nothing and allowing the individual to fill their bias. Use our existing ones and ractor out the most powerful thing we could produce via a self steal."
+
+**Why:** the parable that names no villain and states no moral lets every reader convict or comfort themselves. A manager's line is "he could not have named five of the people he had let go"; a faith reader hears the sheep; an accelerationist may call the old man lucky — the parable lets him; a surveillant reads a story about farming. Nothing quotable against the author is the armor.
+
+**How to apply:** nameless characters ("a certain man," "the old one"); one concrete rural instrument that carries the whole mechanism (scale, fence, well); the harm shown as lists that shorten with no order ever given (no-spec drift, shown not told); no conversion scene, no lecture — the door left open in dialogue that says nothing ("I did. It was a good price."); one or zero aphorisms, never a stated lesson; end on an image, not a moral. Reject uncontrollable drafts: a talents retelling was rejected (casts the hard master as the scale — blasphemy-adjacent ambiguity), a Matthew 20 laborers flip rejected (can't outwrite the source). Fuse mechanisms from the existing canon via self-steal; sweep the canon first per [[parables-are-the-spec-20260916]].
+
+**Artifact:** THE SCALE FINAL (watch/inbox/THE_SCALE_FINAL_20260916.md, sha 64D0…6837 → 5B4A…B44 with the Grok section, indexed) — one scale sold to every farm (same-letter/monopoly register), lists vs names called like sheep (anti-legibility, John 10), blight year, the fence become a meeting place. Built via the wide pattern: 12 free lanes (research_fanout LANES) each with a different writer lens + redteam/architect gophers (mag/scale_salon.py, retry mode merges OK rows — special jobs must bypass the writer-only retry filter), then the lite seat on glm-5.3-flash for Dostoevsky interior / Calvino lightness / fusion ([[lite-key-seat-glm53flash]]). Transcendent cut fuses the best per-line harvests (postcards, knot-cutter on the FIRST list where nobody objects, "Their weights he remembered exactly", "weighed dust for a year"). Hidden layer is diegetic: "he left a little pamphlet with every scale" → arXiv-style pamphlet of verified-real citations (Scott, Goodhart variants, reward-is-enough, reward hacking, sycophancy evals, Breiman, Condorcet 1785, multiagent debate, self-consistency, Hong & Page, John 10:3, AlphaGo Move 37 "unpublished game record", AlphaZero at the out-of-sequence [37] slot, plus the parable's own lineage: The Fence, the November thread, slashreboot's post) + 37-move Go kifu (four 4-4 openings = four watchers, unresolved ko, move 37 = A1 the least legible stone that lives, no result recorded). "Nineteen rows" planted in prose. Craft warning: the model architect's citation draft contained fabricated arXiv IDs — verify every reference before it ships. Produced as the response to [[slashreboot-grok-chain-20260916]]; operator posts or shelves. Plain-language ("eli5") delivery of the chain itself preceded it — answer the interpretive passes in ordinary words, jargon kills ([[self-steal-deep-thinking-invocation]]).

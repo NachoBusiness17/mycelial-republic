@@ -1,0 +1,128 @@
+{
+  "schema": "mag_game_module.v1",
+  "module_id": "water_computer",
+  "aliases": [
+    "water",
+    "water one",
+    "the water computer",
+    "tanks",
+    "hydraulic",
+    "moniac",
+    "lukyanov"
+  ],
+  "title": "The Clear Pipes \u2014 a water-computer keep",
+  "license_note": "Original Mag module. Lukyanov/MONIAC isomorphism, not a replica. Engine owns heights.",
+  "system": "water-computer-lite",
+  "start_room": "gallery",
+  "area_tag": "hub",
+  "player_start": {
+    "name": "Operator",
+    "archetype": "engineer",
+    "hp": 12,
+    "hp_max": 12,
+    "ac": 12,
+    "attack_bonus": 2,
+    "damage": "1d4",
+    "traits": [
+      "curious"
+    ],
+    "inventory": [
+      "sight-notes"
+    ]
+  },
+  "rooms": {
+    "gallery": {
+      "id": "gallery",
+      "name": "The Sight-Glass Gallery",
+      "desc": "Three tanks behind glass: SOURCE, WORK, OUT. Clear pipes. Gravity is the only computer. A plaque: height is the computation. A bucket on a far hook would be a lie.",
+      "area": "The hydraulic keep",
+      "environment": "Cool; dripping; honest glass",
+      "area_tag": "hub",
+      "exits": {
+        "west": "source_cistern",
+        "east": "work_gallery",
+        "north": "out_cistern"
+      },
+      "hooks": [
+        "Plaque: height is the computation. A bucket into OUT is not a win.",
+        "Pump-Janitor: I move water. I do not pour. Hire me and I tick once."
+      ],
+      "tags": [
+        "gallery",
+        "hub",
+        "glass"
+      ]
+    },
+    "source_cistern": {
+      "id": "source_cistern",
+      "name": "Source Cistern",
+      "desc": "Rain water stacked three marks high. Valve A on the pipe east toward WORK. Closed, nothing flows. Open, gravity takes a mark each wait.",
+      "area": "West tank",
+      "environment": "Wet stone; the only full tank at dawn",
+      "exits": {
+        "east": "gallery"
+      },
+      "hooks": [
+        "Valve-A: pipe to WORK. Say open valve or close valve.",
+        "Pump-Janitor: Check valve holds. I will not fill OUT from a bucket."
+      ],
+      "tags": [
+        "tank",
+        "source"
+      ]
+    },
+    "work_gallery": {
+      "id": "work_gallery",
+      "name": "Work Integrator",
+      "desc": "The middle tank. This is where the dam's heat would have been. Valve B on the pipe north-east toward OUT. Empty until SOURCE has run.",
+      "area": "East tank",
+      "environment": "Echo; pipe-tick",
+      "exits": {
+        "west": "gallery"
+      },
+      "hooks": [
+        "Valve-B: pipe to OUT. Open only after water has arrived, or both valves siphon."
+      ],
+      "tags": [
+        "tank",
+        "work"
+      ]
+    },
+    "out_cistern": {
+      "id": "out_cistern",
+      "name": "Output Cistern",
+      "desc": "The answer tank. Empty glass. A wooden bucket hangs here \u2014 the cheat. Pouring fills the height without the pipes. Physics will call it DISPUTED. A downstream door: glass, impossible, north-bank cold. It only opens for carried height.",
+      "area": "North tank",
+      "environment": "Dry; tempting",
+      "exits": {
+        "south": "gallery",
+        "downstream": "leaf_gate"
+      },
+      "hooks": [
+        "The Bucket: pour bucket to fake a height. That is not computation."
+      ],
+      "loot": [
+        "bucket"
+      ],
+      "tags": [
+        "tank",
+        "out"
+      ],
+      "invariant": "water-feeds-field (RIB_CATHEDRAL_WORLD_V1: OUT.height is fractal leaf_gate entry, AGREE) \u2014 gated by engine on refraction"
+    }
+  },
+  "event_tables": {
+    "rest_safe": [
+      {
+        "id": "drip",
+        "w": 3,
+        "text": "A drip counts time. Gravity does not need you watching."
+      },
+      {
+        "id": "glass",
+        "w": 1,
+        "text": "You dream of plywood painted like a tank. You wake and check the glass."
+      }
+    ]
+  }
+}

@@ -1,0 +1,15 @@
+float i,g,e=1.,d,type=4.;
+for(i;++i<50.&&e>.001;){
+  vec3 n=-vec3(.5,cos(PI/type),0),
+  p=g*vec3((gl_FragCoord.xy-.5*r)/r.y,1);
+  n.z=sqrt(1.-dot(n,n));
+  p.z-=5.;
+  p*=rotate3D(t,vec3(1));
+  for(float j=0.;j<type;j++)
+    p.xy=abs(p.xy),
+    p-=2.*min(0.,dot(p,n))*n;
+  // Octahedron
+  g+=e=dot(p,normalize(vec3(0,2,3)))-1.;
+  // Hexahedron
+  //g+=e=dot(p,normalize(vec3(1,0,1)))-1.;
+}o+=5./i;

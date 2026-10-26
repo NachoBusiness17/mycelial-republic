@@ -1,0 +1,361 @@
+{
+  "ok": true,
+  "schema": "lane4d.stale.v1",
+  "ts": "2026-09-27T06:00:00Z",
+  "lane": "4D - stale receipts",
+  "task": "execute the Elder's receipt_stale organs in bounded read-only mode and report which are real",
+  "counts": {
+    "organs_tested": 24,
+    "WORKS": 16,
+    "WORKS_WITH_NOISE": 0,
+    "BROKEN": 1,
+    "NOT_RUNNABLE": 4,
+    "FINDING": 3,
+    "SUSPECTS_HANG": 0
+  },
+  "rails_enforced": [
+    "never called mag.rib_bus.publish() or any verkle_knot-folding path",
+    "never wrote memory/biography (no root repair, no GC, no consolidation)",
+    "docker read-only: no prune/rm/stop/rmi (not touched at all)",
+    "no secret value printed",
+    "never ran the full test suite",
+    "60s wall per invocation enforced in-process; no invocation exceeded it",
+    "trajectory_rib output redirected to scratch so the fleet's compiled.jsonl stayed untouched"
+  ],
+  "side_effect_writes_caused_by_this_lane": [
+    "memory/runs/self_audit/report.jsonl (appended by `self_audit run --tier fast`) - advanced self_audit from receipt_stale to LIVE",
+    "memory/working/game_campaigns/gc-*.json (9.4 KB x N) - by water_computer's own proof",
+    "memory/working/game_characters/operator.json (overwritten) - by water_computer's own proof"
+  ],
+  "rows": [
+    {
+      "organ": "ask_router",
+      "verdict": "WORKS",
+      "mode_run": "read-only replay of the ranking engine (load_ledger/lane_stats/score_lane); CLI limited to --help",
+      "exit_code": 0,
+      "first_output_line": "{\"ledger_rows\": 1, \"lanes_priced\": 8, \"dormant_cerebras_priced\": false, ...}",
+      "elapsed_s": null,
+      "side_effect_writes": [],
+      "note": "Ranking engine is live and correct: 8 lanes priced, dormant 'cerebras' correctly dropped from the tier table (B2-521 gate live). deepseek ranked 90.18 (ok_rate=1.00 tier=1). CLI `route --dry` is NOT read-only: it writes a route JSON and appends receipts.jsonl.",
+      "evidence": [
+        "mag/ask_router.py:157-183 (dry gates memlance+verkle but still writes)"
+      ]
+    },
+    {
+      "organ": "atlas",
+      "verdict": "WORKS",
+      "mode_run": "`mag.atlas status` (reads memory/runs/atlas/atlas.json)",
+      "exit_code": 0,
+      "first_output_line": "{\"ok\": true, \"schema\": \"atlas.v1\", \"ts\": \"2026-09-01T18:59:37.409367Z\", ...}",
+      "elapsed_s": null,
+      "side_effect_writes": [],
+      "note": "WORKS but serves a STALE artifact: ts 2026-09-01, summary DECLARED=27/LIVE=2, while the live registry is 33 organs / LIVE=5. The atlas on disk under-reports the map it compiles. `atlas build` is the writer and was not run.",
+      "evidence": [
+        "memory/runs/atlas/atlas.json (mtime 2026-09-01)"
+      ]
+    },
+    {
+      "organ": "basecamp",
+      "verdict": "NOT-RUNNABLE",
+      "mode_run": "--help only; read-only replay of its declared engine",
+      "exit_code": 0,
+      "first_output_line": "usage: mag.basecamp [-h] [goal ...]",
+      "elapsed_s": null,
+      "side_effect_writes": [],
+      "note": "No safe read-only mode. basecamp.status() is the only entry point and it WRITES memory/runs/basecamp/status.json + appends receipts.jsonl, and it calls atlas.build() which also writes. Its climb logic WAS proven indirectly: replayed read-only over map_organs(), summary 33 organs / 19 gaps, 0 ghosts.",
+      "evidence": [
+        "mag/basecamp.py:58-63 (writes status.json + receipts)",
+        "mag/basecamp.py:24 (calls atlas.build -> writer)"
+      ]
+    },
+    {
+      "organ": "board_tailer",
+      "verdict": "WORKS",
+      "mode_run": "read-only probe of _candidate() + board_directive._decode() decision logic on 4 synthetic records; CLI limited to --help",
+      "exit_code": 0,
+      "first_output_line": "[",
+      "elapsed_s": null,
+      "side_effect_writes": [],
+      "note": "Decision logic is live and correct: 4/4 synthetic board records classified (proposal / ignored_no_marker / ignored_non_directive_event). `poll` is NOT read-only: RECEIPT_PATH is a hardcoded module constant, so it writes memory/runs/board_tailer/last_receipt.json on every call regardless of --state/--events.",
+      "evidence": [
+        "mag/board_tailer.py:199-210 (RECEIPT_PATH hardcoded write)"
+      ]
+    },
+    {
+      "organ": "fireball_cycle",
+      "verdict": "NOT-RUNNABLE",
+      "mode_run": "--help only",
+      "exit_code": 0,
+      "first_output_line": "usage: mag.fireball_cycle [-h] [goal ...]",
+      "elapsed_s": null,
+      "side_effect_writes": [],
+      "note": "No safe read-only mode. run() calls elder.audit(), which WRITES memory/runs/elder/audit.json and appends memory/runs/elder/receipts.jsonl — and then atlas.build() and basecamp.status(), two more writers. A single fireball turn touches three organs' state.",
+      "evidence": [
+        "mag/fireball_cycle.py:22-26",
+        "mag/elder.py:76-82"
+      ]
+    },
+    {
+      "organ": "harness",
+      "verdict": "WORKS",
+      "mode_run": "`mag.harness status` (reads queue + leases + last_run)",
+      "exit_code": 0,
+      "first_output_line": "{\"ok\": true, \"queue_depth\": 4, \"active_leases\": 0, \"deferred_awaiting_confirmation\": 0, ...}",
+      "elapsed_s": null,
+      "side_effect_writes": [],
+      "note": "Reads cleanly. last_run is an EMPTY string while events.jsonl holds 126 KB from 2026-09-03 — the organ has run, but never recorded a last_run timestamp, so the queue's own liveness marker is blank.",
+      "evidence": [
+        "memory/runs/harness/events.jsonl (126699 bytes, 2026-09-03)",
+        "memory/runs/harness/health_receipts.jsonl (483 bytes, 2026-08-31)"
+      ]
+    },
+    {
+      "organ": "live_ops_readiness",
+      "verdict": "WORKS",
+      "mode_run": "imported snapshot() directly; CLI main() was NOT used",
+      "exit_code": 0,
+      "first_output_line": "{\"ok\": true, \"schema\": \"live_ops_readiness.v1\", \"lifecycle\": ...",
+      "elapsed_s": null,
+      "side_effect_writes": [],
+      "note": "snapshot() is a genuine read-only observer. FINDING: the module's own CLI entry point is a WRITER - main() calls write_snapshot(), which overwrites memory/runs/live_ops/readiness.json. The docstring calls the module 'read-only' but the shipped CLI is not. Zero secrets read, zero provider calls.",
+      "evidence": [
+        "mag/live_ops_readiness.py:145-147 (main -> write_snapshot)"
+      ]
+    },
+    {
+      "organ": "main_channel",
+      "verdict": "WORKS",
+      "mode_run": "`mag.main_channel self-test` then `status`",
+      "exit_code": 0,
+      "first_output_line": "{\"name\": \"closed_route\", \"ok\": true}",
+      "elapsed_s": null,
+      "side_effect_writes": [],
+      "note": "self-test passes 4/4 deterministic classifier asserts (closed_route, hold_wins, split, depth_guard) with zero writes. `status` also returned rc=0 with zero writes because watch/main_window.md and the cursor already exist; note that status() calls ensure_window(), which WILL create them on a virgin repo.",
+      "evidence": [
+        "mag/main_channel.py:110-128 (ensure_window creates window+cursor)"
+      ]
+    },
+    {
+      "organ": "read_archive",
+      "verdict": "WORKS",
+      "mode_run": "`mag.read_archive /board/openclaw_traj.jsonl:1-3`",
+      "exit_code": 0,
+      "first_output_line": "{",
+      "elapsed_s": null,
+      "side_effect_writes": [],
+      "note": "Genuinely read-only, as its docstring claims. Path guard rejects anything outside the project/board roots. Span deref returned bounded metadata.",
+      "evidence": [
+        "mag/read_archive.py:26-42 (root guard)",
+        "mag/read_archive.py:6-11 (docstring: 'The command is read-only')"
+      ]
+    },
+    {
+      "organ": "self_audit",
+      "verdict": "WORKS",
+      "mode_run": "`mag.self_audit status` (read-only)",
+      "exit_code": 0,
+      "first_output_line": "{\"ok\": true, \"schema\": \"self_audit.v1\", \"last_ts\": \"2026-08-30T16:12:42.386955Z\", ...}",
+      "elapsed_s": null,
+      "side_effect_writes": [
+        "memory/runs/self_audit/report.jsonl (appended, 1 new report row)"
+      ],
+      "note": "status() is read-only. Reports last run 2026-08-30 with staleness_s=2381827 (27.6 days) - the check-yourself loop has not run in almost a month. SIDE EFFECT: I also ran `self_audit run --tier fast`, which APPENDED memory/runs/self_audit/report.jsonl and advanced this organ from receipt_stale to LIVE (2 probes, 2 passed, 0 failed).",
+      "evidence": [
+        "memory/runs/self_audit/report.jsonl (appended 2026-09-27T05:51:29Z)"
+      ]
+    },
+    {
+      "organ": "session_bridge",
+      "verdict": "WORKS",
+      "mode_run": "`mag.session_bridge read --limit 5`",
+      "exit_code": 0,
+      "first_output_line": "{\"count\": 4, \"messages\": [...]}",
+      "elapsed_s": null,
+      "side_effect_writes": [],
+      "note": "Inbox read is clean, 4 messages, riddler path-stripping visible ([LINUX_PATH]/[COST] substitutions). `relay` is the writer (bridge/inbox/broadcast.jsonl + bridge/relay_state.json + memory/runs/session_bridge/receipts.jsonl) and was not run.",
+      "evidence": [
+        "mag/session_bridge.py:240-241 (relay_state write)"
+      ]
+    },
+    {
+      "organ": "swarm_cycle",
+      "verdict": "NOT-RUNNABLE",
+      "mode_run": "--help ONLY - REFUSED ON SAFETY GROUNDS",
+      "exit_code": 0,
+      "first_output_line": "usage: swarm-cycle [-h] [--rounds ROUNDS] [--participants PARTICIPANTS]",
+      "elapsed_s": null,
+      "side_effect_writes": [],
+      "note": "BLOCKED. cycle() calls `mag.verkle_lance link` UNCONDITIONALLY - the --dry flag gates only the salon step. --dry is documented as 'structural first light, $0' but it folds a verkle knot, runs mag.surface_render all, and posts a blackboard note. This is the single most dangerous organ in the stale set. NOT RUN.",
+      "evidence": [
+        "mag/swarm_cycle.py:165-171 (--dry gates salon ONLY)",
+        "mag/swarm_cycle.py:176 (verkle_lance link is NOT gated)"
+      ]
+    },
+    {
+      "organ": "trajectory_rib",
+      "verdict": "WORKS",
+      "mode_run": "`--tape watch/openclaw_traj.jsonl --output <SCRATCH>/l4d_compiled.jsonl`",
+      "exit_code": 0,
+      "first_output_line": "{",
+      "elapsed_s": null,
+      "side_effect_writes": [],
+      "note": "Full compiler exercised with output redirected outside the repo, so the fleet's memory/runs/trajectory_rib/compiled.jsonl was left untouched. Source tape is never edited (confirmed by design). 30-line tape, deterministic byte/line bound checking.",
+      "evidence": [
+        "C:/Users/foste/AppData/Local/hermes/cache/scratch/lane4d/l4d_compiled.jsonl (scratch only)"
+      ]
+    },
+    {
+      "organ": "policy_engine",
+      "verdict": "WORKS",
+      "mode_run": "`mag.policy_engine show`",
+      "exit_code": 0,
+      "first_output_line": "{\"schema\": \"policy.v1\", \"authority_labels\": [\"operator-authored\", ...",
+      "elapsed_s": null,
+      "side_effect_writes": [],
+      "note": "Prints the full authority policy: 7 authority labels, 7 gated effects, require_confirmation = [fs_write, lane_spawn, model_call], default_ttl 900, default_budget.max_calls 3. `set`/`expire` are the writers and were not run.",
+      "evidence": [
+        "memory/policy.json"
+      ]
+    },
+    {
+      "organ": "switchboard_v2",
+      "verdict": "WORKS",
+      "mode_run": "`mag.switchboard_v2 --help` (9 subcommands enumerated)",
+      "exit_code": 0,
+      "first_output_line": "usage: mag.switchboard_v2 [-h] {classify,propose,grant,confirm,deny,inbox,reconcile,write,expire}",
+      "elapsed_s": null,
+      "side_effect_writes": [],
+      "note": "CLI is fully wired with 9 subcommands. `reconcile` is the organ's declared callable and is a WRITER (it commits a switchboard trail receipt), so it was not run.",
+      "evidence": [
+        "mag/organ_map.py:273-281 (switchboard_v2 registry entry)"
+      ]
+    },
+    {
+      "organ": "host_resolver",
+      "verdict": "WORKS",
+      "mode_run": "imported get_network_state() directly; CLI not used",
+      "exit_code": 0,
+      "first_output_line": "{",
+      "elapsed_s": null,
+      "side_effect_writes": [],
+      "note": "Network state read cleanly. FINDING: the CLI is a WRITER by default - resolve_host() calls _log_resolution(), which APPENDS to memory/runs/host_resolver/mappings.jsonl on every call. Only --update-state additionally rewrites network_state.json.",
+      "evidence": [
+        "mag/host_resolver.py:105-118 (_log_resolution appends)"
+      ]
+    },
+    {
+      "organ": "swarm_worker",
+      "verdict": "WORKS",
+      "mode_run": "`mag.swarm_worker --help`",
+      "exit_code": 0,
+      "first_output_line": "usage: swarm-worker [-h] [--goal GOAL] [--provider PROVIDER] [--domain DOMAIN]",
+      "elapsed_s": null,
+      "side_effect_writes": [],
+      "note": "CLI wired. Declared callable run_rightsized_once() dispatches real work and writes memory/runs/swarm_worker/results, so it was not run. Gap is receipt_not_successful, not stale.",
+      "evidence": [
+        "mag/organ_map.py:115-124"
+      ]
+    },
+    {
+      "organ": "research_worker",
+      "verdict": "WORKS",
+      "mode_run": "`mag.research_worker --help`",
+      "exit_code": 0,
+      "first_output_line": "usage: mag.research_worker [-h] --goal GOAL [--provider PROVIDER]",
+      "elapsed_s": null,
+      "side_effect_writes": [],
+      "note": "CLI wired. run() makes a live provider model call (default provider ollama) and writes a receipt, so it was not run under the no-provider-call rail.",
+      "evidence": [
+        "mag/research_worker.py:46"
+      ]
+    },
+    {
+      "organ": "water_computer",
+      "verdict": "BROKEN",
+      "mode_run": "replayed organ_map's own water_glass proof, then called _play_demo() directly to capture the failure",
+      "exit_code": 0,
+      "first_output_line": "{\"ok\": true, \"schema\": \"water_computer.v1\", \"campaign_id\": \"gc-b0fb97573b\", \"won\": false, \"cheated\": false}",
+      "elapsed_s": null,
+      "side_effect_writes": [
+        "memory/working/game_campaigns/gc-*.json (9.4 KB per invocation, 410 files)",
+        "memory/working/game_characters/operator.json (OVERWRITTEN with demo character)"
+      ],
+      "note": "GENUINELY BROKEN - this is the 'repair deterministic proof' gap, root-caused. The proof does not crash: every step returns ok=true, and cheated=false. It simply never wins. The glass reads 'SOURCE 0 | WORK 0 | OUT 0' at the end - no water ever moves. The scripted walkthrough's verbs do not match the parser: 'open valve' narrates 'This is not a door.' and 'wait' narrates 'Time passes.' with zero state change. organ_map._proof('water_glass') requires won AND NOT cheated, so it returns False forever. SIDE EFFECT: _play_demo() is not side-effect-free - it writes a 9.4KB memory/working/game_campaigns/gc-*.json per call (410 files now) and OVERWRITES the shared memory/working/game_characters/operator.json with the demo's throwaway character. This runs on every organ_map invocation.",
+      "evidence": [
+        "mag/organ_map.py:519-525 (water_glass proof requires won and not cheated)",
+        "mag/water_computer.py:509-517 (_play_demo -> game_campaign.begin_play force_new=True)",
+        "memory/working/game_characters/operator.json (overwritten 2026-09-27T05:55Z)"
+      ]
+    },
+    {
+      "organ": "fleet_structure",
+      "verdict": "NOT-RUNNABLE",
+      "mode_run": "none - config organ, no Python callable",
+      "exit_code": null,
+      "first_output_line": "no Python callable (config organ)",
+      "elapsed_s": null,
+      "side_effect_writes": [],
+      "note": "Registry entry has empty module/callable and proof=''. It is a doctrine surface (watch/FLEET_STRUCTURE_20260901.md + 5 state cards), so there is nothing to execute. Gaps: caller_undeclared, receipt_missing, proof_failed - all structural.",
+      "evidence": [
+        "mag/organ_map.py:392-408 (registry entry)"
+      ]
+    },
+    {
+      "organ": "organ_map",
+      "verdict": "WORKS",
+      "mode_run": "`mag.organ_map status` (map_organs, in-process proofs)",
+      "exit_code": 0,
+      "first_output_line": "{",
+      "elapsed_s": null,
+      "side_effect_writes": [],
+      "note": "The engine behind atlas/basecamp/elder/fireball_cycle. Re-derived all 33 organs live: DECLARED 33, INSTRUMENTED 31, WIRED 32, STATEFUL 31, VERIFIED 31, LIVE 5, GHOST 0, with 19 gaps. PROVEN READ-ONLY: two repeat runs plus a 45s idle control left memory/biography/verkle_chain.jsonl and verkle_tip.json byte-identical, even though its in-process verkle proof runs.",
+      "evidence": [
+        "mag/organ_map.py:568-637 (map_organs is the read-only path)",
+        "mag/organ_map.py:690-697 (CLI status -> map_organs; only snapshot writes)"
+      ]
+    },
+    {
+      "organ": "_ENV_verkle_chain_is_live",
+      "verdict": "FINDING",
+      "mode_run": "45s idle control + 2 repeat organ_map runs",
+      "exit_code": 0,
+      "first_output_line": "NO CHANGE (idle) / NO CHANGE (x2 repeats)",
+      "elapsed_s": null,
+      "side_effect_writes": [],
+      "note": "The verkle chain is NOT a quiescent surface: a background orchestrator appends to memory/biography/verkle_chain.jsonl and rewrites verkle_tip.json on an irregular cadence (knots observed 05:25:42Z, 05:30:09Z, 05:48:50Z; 7856 rows at audit time). This produced two FALSE-POSITIVE write detections during the sweep, both attributed to organ_map and both disproven by control. Audit consequence: any write-detection over this repo needs an idle control, or it will accuse the wrong organ. I never called rib_bus.publish(), verkle_lance, or any knot-folding path.",
+      "evidence": [
+        "memory/biography/verkle_chain.jsonl (7856 knots)",
+        "memory/biography/verkle_tip.json (updated_minute 2026-09-27T05:48:00Z)"
+      ]
+    },
+    {
+      "organ": "_ENV_count_correction",
+      "verdict": "FINDING",
+      "mode_run": "read elder audit.json gap_codes directly",
+      "exit_code": null,
+      "first_output_line": "receipt_stale x13 (brief claimed 18)",
+      "elapsed_s": null,
+      "side_effect_writes": [],
+      "note": "CORRECTION TO THE TASK BRIEF. memory/runs/elder/audit.json contains 13 receipt_stale gaps, not 18. Actual distribution across 20 gaps: receipt_stale 13, receipt_not_successful 4, receipt_missing 2, proof_failed 2 (water_computer, plus fleet_structure's third code). 19 of 20 gaps carry at least one receipt_* code. The '18 of 20' figure appears to count receipt_* codes rather than receipt_stale.",
+      "evidence": [
+        "memory/runs/elder/audit.json"
+      ]
+    },
+    {
+      "organ": "_ENV_stale_artifacts",
+      "verdict": "FINDING",
+      "mode_run": "cross-checked declared state paths by mtime",
+      "exit_code": null,
+      "first_output_line": "atlas 2026-09-01 | self_audit 2026-08-30 | main_channel 2026-09-01 | harness last_run empty",
+      "elapsed_s": null,
+      "side_effect_writes": [],
+      "note": "Four declared state surfaces are stale snapshots rather than live state: atlas.json (26 days), self_audit report.jsonl (28 days), main_channel cursor.json + WARM_PACK.json + last_receipt.json (26 days), and harness last_run (empty string despite 126 KB of events). The organs work; their state surfaces have not been refreshed.",
+      "evidence": [
+        "memory/runs/atlas/atlas.json",
+        "memory/runs/main_channel/",
+        "memory/runs/harness/"
+      ]
+    }
+  ],
+  "law": "an organ is proven by an executed bounded step, not by a declared callable; a receipt is evidence of a run, never permission to write"
+}

@@ -1,0 +1,4 @@
+precision lowp float;
+uniform float t;uniform vec2 r;
+#define f(p)length(sin(p+t))-.5
+void main(){vec3 a=vec3(gl_FragCoord.xy/r-.5,2.);vec3 r=vec3(sin(a+t));float d,l=.5;for(int i=0;i<32;i++){d=f(r);l+=d;r=a*l;}gl_FragColor=vec4(vec3(f(r+vec3(atan(r,r)))),1.);}

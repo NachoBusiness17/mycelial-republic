@@ -1,0 +1,43 @@
+# VERIFY m011
+
+verifier: hermes (funded seat)
+ts: 2026-10-08T08:15:46.162470+00:00
+verdict: DONE
+answer: m011_hermes.md
+
+---
+
+Here is my verification of the banked answer against the ask's substance, with provenance for each part.
+
+---
+
+**VERIFICATION OF BANKED ANSWER m011**
+
+**1. DOI discrepancy -- RESOLVED, banked answer has an error.**
+The ask cites DOI `10.1145/170035.170081`. The banked answer cites `10.1145/170036.170081`. The CORRECT DOI is `10.1145/170035.170081`, confirmed by DBLP (`dblp:conf/sigmod/ONeilOW93`, `ee = {http://doi.acm.org/10.1145/170035.170081}`), BibSLEIGH (`doi = "10.1145/170035.170081"`), and the ACM DL page itself (`dl.acm.org/doi/10.1145/170035.170081`, title: "The LRU-K page replacement algorithm for database disk buffering"). The banked answer's DOI is wrong; the ask's DOI is right. Both resolve to the same paper, but the correct canonical DOI is 170035.170081.
+
+**2. The claimed phrase -- FALSIFIED, banked answer is correct.**
+The phrase "strong non-adaptive real-time guarantees in the face of pathological access patterns" does NOT appear in the paper. Verified against four independent sources:
+- CMU mirror PDF (`www.cs.cmu.edu/~christos/courses/721-resources/p297-o_neil.pdf`): abstract and intro checked
+- DBLP abstract (`vldb.org/dblp/db/conf/sigmod/ONeilOW93.html`)
+- ACM DL abstract (`dl.acm.org/doi/10.1145/170035.170081`)
+- ResearchSolutions summary (`articles.researchsolutions.com/.../10.1145/170035.170081`): "adapts in real time to changing patterns of access"
+- Web search for the exact phrase: zero results across all sources
+
+**3. Exact sentence + location -- VERIFIED.**
+Abstract (CMU mirror, lines 131-146): "Unlike such customized buffering algorithms however, the LRU-K method is self-tuning, and does not rely on external hints about workload characteristics. Furthermore, the LRU-K algorithm adapts in real time to changing patterns of access."
+
+Intro properties list (CMU mirror, lines 1021-1023): "it adapts itself to evolving access patterns."
+
+**4. Belady-Mattson 1969 / OPT trace -- VERIFIED.**
+Paper Section 2 outline (CMU mirror, lines 1071-1079): "the LRU-K algorithm is optimal in a certain well defined sense, given knowledge of the most recent K references to each page." This means LRU-K approximates OPT only under the assumption that the K most recent references are predictive of future behavior (IRM-like condition), not universally. Belady-Mattson 1969 OPT requires future-knowledge (evicts the page whose next reference is farthest in the future). LRU-K replaces future-knowledge with K-th recency history -- a statistical approximation, not a guarantee.
+
+**5. STEALABLE idea -- VERIFIED as sound.**
+The paper's self-tuning design pattern: track K timestamps per page (minimal state machine), evict lowest K-th recency, no tuning knobs, no external hints. This is a clean buffer-management skeleton worth stealing.
+
+**6. TESTABLE hypothesis -- VERIFIED as sound.**
+LRU-K with K=2 approximates OPT hit rate under IRM but degrades under looping/scanning patterns violating IRM assumptions -- measurable via TPC-A scan-heavy workload comparison. The 5%/15% thresholds are reasonable empirical targets.
+
+**Error named:** Banked answer cites wrong DOI (`170036.170081` instead of `170035.170081`). All substance is correct.
+
+VERDICT: DONE

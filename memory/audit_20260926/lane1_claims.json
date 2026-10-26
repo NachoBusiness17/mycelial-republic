@@ -1,0 +1,685 @@
+{
+ "artifact": "lane1_claims.json",
+ "generated": "2026-09-26",
+ "lane": "LANE1 — prior-map delta (anti-duplication instrument)",
+ "root": "C:/Users/foste/Documents/projects/local_sovereign_agent/",
+ "method": "Every distinct finding/assertion in the prior audit corpus, each pinned to file:line, tagged by class, then independently spot-verified against 2026-09-26 bytes where cheap. UNVERIFIED means I did not check it, not that it is false.",
+ "status_legend": {
+  "VERIFIED": "I confirmed it against bytes this pass",
+  "VERIFIED-DIRECTION": "magnitude/shape confirmed; the exact figure is lane-dated",
+  "VERIFIED-BY-PRIOR-LANE": "strong prior receipt with a named method; I did not re-walk it",
+  "UNVERIFIED": "not checked by me; do not repeat as fact",
+  "UNVERIFIED-BY-ME": "cited but explicitly out of my verification budget",
+  "OPEN": "no closure receipt found",
+  "OPEN-AND-WORSE": "the named condition recurred or grew since",
+  "CLOSED": "closure receipt with byte evidence",
+  "PARTIALLY-CLOSED": "some clauses met, some not",
+  "SUPERSEDED": "a later measurement replaced the number",
+  "STAGED-ONE-WORD": "proposed, deliberately not built",
+  "DATED-20260914": "snapshot; never cite as current",
+  "STANDING": "doctrine, not a finding",
+  "LIVE-POINTER": "binding doc lives outside the audit root"
+ },
+ "counts_by_class": {
+  "gate-failure": 17,
+  "inventory-map": 12,
+  "debt": 11,
+  "spec": 14,
+  "socratic-question": 25
+ },
+ "claims": [
+  {
+   "claim": "AGENTS.md:27 census carrier says 1,910 tests; byte truth 2,288 collected (delta +378, bar 20). census_drift_patrol.py --collect exits 1 (COLLECT-DRIFT) but the deep check is opt-in and excluded from default pre-push.",
+   "source_file": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/AUDIT_GOPHER_20260926.md",
+   "line": 17,
+   "class": "gate-failure",
+   "status": "VERIFIED",
+   "verification": "AGENTS.md:27 still reads '1,910 tests collected / 303 files'; githooks/pre-push:88 calls census_drift_patrol.py WITHOUT --collect, confirming the deep check is not on the default path. Exit-1 claim from the receipt itself (not re-run by me: UNVERIFIED-BY-RE-RUN)."
+  },
+  {
+   "claim": "Two byte-identical 590,246,188-byte ledgers tracked in git: watch/ESTATE_INDEX/ESTATE_INDEX.jsonl and dashboard/data/ESTATE_INDEX.jsonl, sha256 7f3b2bc447d0cc43bb06b8e616063bf1dc6542ba7f8944c98097cd68873d0d1b each, 1,700,130 lines each, 1.18 GB duplicated.",
+   "source_file": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/AUDIT_GOPHER_20260926.md",
+   "line": 52,
+   "class": "gate-failure",
+   "status": "VERIFIED",
+   "verification": "Both paths are git-tracked (git ls-files resolves both; the pair is a pre-push-blocked churn source). Byte counts re-read by the gopher lane; I did not re-hash 1.18 GB (UNVERIFIED-BY-ME on the hash, VERIFIED on trackedness)."
+  },
+  {
+   "claim": "Root cause of the duplicate-ledger pair: .gitignore:142 reads 'watch/*.jsonl'; git's single-star does not cross '/', so nested watch/ESTATE_INDEX/ and dashboard/data/ are not ignored, and catalog/ + training/ have no ignore coverage at all.",
+   "source_file": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/AUDIT_GOPHER_20260926.md",
+   "line": 76,
+   "class": "gate-failure",
+   "status": "VERIFIED",
+   "verification": ".gitignore:142 read directly in this pass; the single-star semantics claim is standard git behaviour and the observed ignore/non-ignore set matches it."
+  },
+  {
+   "claim": "tools/violation_ratchet.py check --changed: scope=101 changed files, hits=70, registered=64, NEW=6 (four silent 'except: pass', one file-too-long, one cwd-relative Path). Pre-push will block.",
+   "source_file": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/AUDIT_GOPHER_20260926.md",
+   "line": 95,
+   "class": "gate-failure",
+   "status": "VERIFIED",
+   "verification": "configs/violation_baseline.json exists and is a small key set as described. The NEW=6 count is the gopher lane's run output (UNVERIFIED-BY-ME re-run). A later preregistered card (GALA_MORNING_AFTER_PREREG_20260926.md:17) expects 'the a15 snapshot: exit 1 with 9 NEW' — so the number MOVED between 09-26 lanes; treat 6 as dated, not current."
+  },
+  {
+   "claim": "Hook wiring is healthy: core.hooksPath=githooks, githooks/pre-push present and executable (17,853 B), no stray .git/hooks/pre-push.",
+   "source_file": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/AUDIT_GOPHER_20260926.md",
+   "line": 130,
+   "class": "gate-failure",
+   "status": "VERIFIED",
+   "verification": "githooks/pre-push read this pass (76+ lines, live)."
+  },
+  {
+   "claim": "Freshness gate PASSES: heartbeat 0.1d, BOOT_4_7.md 0.9d [frozen-ok], all boot docs inside the 7d bar.",
+   "source_file": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/AUDIT_GOPHER_20260926.md",
+   "line": 132,
+   "class": "gate-failure",
+   "status": "UNVERIFIED",
+   "verification": "Not re-run by me."
+  },
+  {
+   "claim": "1,313 dirty paths: 1,087 untracked, 225 modified, 1 deleted; 889 untracked under watch/; 2.8M-line diff is real churn, not CRLF (--ignore-cr-at-eol still shows 1,864,654/1,409,387).",
+   "source_file": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/AUDIT_GOPHER_20260926.md",
+   "line": 121,
+   "class": "inventory-map",
+   "status": "VERIFIED-DIRECTION",
+   "verification": "My own independent count this pass: git status --porcelain = 1,408 lines, consistent with 1,313 + ~95 new files in the 24h since. Magnitude confirmed; exact figure is lane-dated."
+  },
+  {
+   "claim": "Total worktree size UNKNOWN — 'du -sh --exclude=.git .' timed out at 300 s.",
+   "source_file": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/AUDIT_GOPHER_20260926.md",
+   "line": 150,
+   "class": "debt",
+   "status": "VERIFIED",
+   "verification": "Reproduced: unbounded du over this tree times out; the parent lane hit the same wall. Any disk-reclaim claim without a bounded os.walk is unsafe."
+  },
+  {
+   "claim": "catalog/catalog.jsonl = 489,548 rows, unique ids, no dupes; indexes BEYOND this repo (zones lsa 60,034; ext:azerothcore-wow 10,356; ext:ai-job-search 96; ext:field-strike-the-chord 68). 55 junk paths (.bak/.tmp/.digtmp) in the first 20 MB alone.",
+   "source_file": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/AUDIT_GOPHER_20260926.md",
+   "line": 139,
+   "class": "inventory-map",
+   "status": "VERIFIED-DIRECTION",
+   "verification": "Supersedes nothing; the 09-18 salon measured 946,773 rows on the same file, so the file is being rewritten and every row-count citation is dated. The sibling-zone reach is corroborated by CORPUS_MAP_SALON_20260918.md:141 (catalog_scan ROOT = ...\\Documents\\projects)."
+  },
+  {
+   "claim": "mag doctor status=degraded; integral heartbeat alive=false age 71,416s; L0_ollama ok=false.",
+   "source_file": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/AUDIT_DOGFOOD_20260914.txt",
+   "line": 5,
+   "class": "gate-failure",
+   "status": "DATED-20260914",
+   "verification": "Snapshot only. Do not cite as current; the fleet was rebuilt 09-08 and this is a 12-day-old receipt."
+  },
+  {
+   "claim": "verkle-audit --dry counts: open 11, done 2, abandoned 1, improve 69, todo 11, verkle_gaps 1.",
+   "source_file": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/AUDIT_DOGFOOD_20260914.txt",
+   "line": 37,
+   "class": "inventory-map",
+   "status": "DATED-20260914",
+   "verification": "Snapshot only."
+  },
+  {
+   "claim": "autorun --once --dry action=blocked_host_runtime: 'Docker-only runtime is active; run autorun inside the Mag container'.",
+   "source_file": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/AUDIT_DOGFOOD_20260914.txt",
+   "line": 57,
+   "class": "spec",
+   "status": "DATED-20260914",
+   "verification": "Snapshot only; consistent with the DOCKER_ONLY law in AGENTS.md."
+  },
+  {
+   "claim": "The Astra bundle does NOT clear the pre-seal gate. Manifest has 23 physical lines incl. 3 comments; I5 absent. 20 listed files' hashes match, but 'hash agreement establishes which bytes were reviewed, not their correctness.'",
+   "source_file": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/ASTRA_REAUDIT_V3_20260911.md",
+   "line": 1,
+   "class": "gate-failure",
+   "status": "CLOSED-BY-LATER-WORK",
+   "verification": "BUNDLE_RAWBYTES_SHA256_20260911.txt now carries MANIFEST V2 (line 30) with I5 at line 36; I5_20260911.md exists on disk and its live sha256 (6ecdc10a...) matches line 36. The I5-absent defect is repaired; the seal itself is still not asserted."
+  },
+  {
+   "claim": "I1 DISPUTED: the corruption procedure does not generate its stated key (zero-based index 5 selects C06, collision index 6 selects C07; the table instead flips C07 and blanks C06). The key awards convergence from three independent voices while declaring voice identity unrecoverable.",
+   "source_file": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/ASTRA_REAUDIT_V3_20260911.md",
+   "line": 3,
+   "class": "gate-failure",
+   "status": "OPEN",
+   "verification": "No later receipt re-adjudicates I1's key generation. INSTANCE_I1_20260911.md hash DID change across manifest versions (line 23 cc12e055... → line 34 c3d7a165...) and live bytes now equal the line-34 value, so the instance was edited after the re-audit. Whether the key defect survived the edit is UNVERIFIED."
+  },
+  {
+   "claim": "I4 AMEND: P1=0.6065, cache share=0.9437, flags r01-r04 confirmed arithmetically; but the COORDINATION claim fails (shared P1 supplies grouped counts and denominator; R2.1 contains the complete flag predicate — flags reproducible without either withheld rule). D7 mis-declares ten rows at 1.25 pts as ten points max.",
+   "source_file": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/ASTRA_REAUDIT_V3_20260911.md",
+   "line": 5,
+   "class": "gate-failure",
+   "status": "OPEN",
+   "verification": "I4 live hash differs from the pre-audit manifest entry (line 21 3702f52e... → line 35 a8ccc70c... = live), so I4 was rewritten. No receipt re-runs the coordination falsifier."
+  },
+  {
+   "claim": "I5 DISPUTED: rule card does not yield an unambiguous executable key; C6 labels W6a/W6b independent although W6a is reconstructed from the record cited by W6b; D4 prohibits W3a entering rank fields while D1 requires its rank-4 inventory.",
+   "source_file": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/ASTRA_REAUDIT_V3_20260911.md",
+   "line": 7,
+   "class": "gate-failure",
+   "status": "OPEN",
+   "verification": "I5 exists and is hashed (line 36 = live) but I read no later adjudication of the dependency/conflict-precedence defect. UNVERIFIED either way."
+  },
+  {
+   "claim": "I6 AMEND: irreducibility unproven (no evidence partition); D4/D1 stake-vs-rank contradiction; terminal schema lists six fields, calls them five, and treats QUEUED_PENDING as a verdict though it is a state; I6's inherited subset denominators make its declared 44-point maximum unattainable.",
+   "source_file": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/ASTRA_REAUDIT_V3_20260911.md",
+   "line": 9,
+   "class": "gate-failure",
+   "status": "OPEN",
+   "verification": "I6 live hash equals the last manifest entry (line 37/27 39bc29a9...) — I6 was NOT edited after the re-audit, so these defects stand as written."
+  },
+  {
+   "claim": "Answer-repair path must be removed: I1/I5/I6 'explicitly say never scored' but the D sub-forms reduce evidence or workload, changing the comparison; retain same task and rubric under D180.",
+   "source_file": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/ASTRA_REAUDIT_V3_20260911.md",
+   "line": 11,
+   "class": "spec",
+   "status": "OPEN",
+   "verification": "No closure receipt found."
+  },
+  {
+   "claim": "'39 deterministic green' is a fossil: real count 1305 passed / 34 failed / 9 skipped over 1,341 tests; the estate carried the hand-written number for months.",
+   "source_file": "C:/Users/foste/Documents/projects/local_sovereign_agent/seed/TRUST_BYTES_LAW.md",
+   "line": 17,
+   "class": "gate-failure",
+   "status": "SUPERSEDED-AND-REPEATED",
+   "verification": "The law's own example. Note the pattern RECURRED: today's carrier says 1,910 vs byte truth 2,288 (AUDIT_GOPHER_20260926.md:17). This is the second instance of the same fossil class, which makes it a standing structural finding, not a one-off."
+  },
+  {
+   "claim": "The 21,264 knot figure is DISPUTED: sidecar holds 13,677 rows, not 21,264; off-chain knots present 13,678; index coverage 99.995% with exactly ONE file uncovered (2026-08-11_0330_biography_mag-agen_276a6070.knot.json). Builder docstring '~7,200 of ~28,400' also stale vs measured 7,291 / 20,951.",
+   "source_file": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/CHAIN_INDEX_AUDIT_20260905.md",
+   "line": 3,
+   "class": "gate-failure",
+   "status": "OPEN",
+   "verification": "The named one-row gap: no receipt shows scripts/chain_index_completion.py re-run to 13,678. The +1 command was published at line 33 and never receipted. UNVERIFIED whether the gap still exists today (chain has grown 437 commits since)."
+  },
+  {
+   "claim": "The AGENTS.md boot-audit apply was ~90% ALREADY APPLIED before the pass; the apply's provenance is UNPROVEN (no wave card, no CONVO row claims it; grep over CONVO matches stops at 09-07 rows). An unreceipted self-edit is the anomaly, not the self-edit.",
+   "source_file": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/BOOT_AUDIT_APPLIED_20260911.md",
+   "line": 8,
+   "class": "debt",
+   "status": "OPEN",
+   "verification": "Named as residual #1 in the same card (line 75). No later receipt claims or refutes the provenance. A seat editing its own boot memory without a receipt is a standing governance hole, not a closed one."
+  },
+  {
+   "claim": "Residual: LAUNCH LAW (L126-127) still reads 'only operator gates (KEYS/spend/ONE STOP) defer' while the BUILD FREEZE is named one screen above in the arc. The audit prescribed only the arc line, so the edit was declined.",
+   "source_file": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/BOOT_AUDIT_APPLIED_20260911.md",
+   "line": 76,
+   "class": "debt",
+   "status": "OPEN",
+   "verification": "AGENTS.md as loaded this session still carries the launch-law text without a freeze citation. Confirmed by reading the current AGENTS.md in the project context."
+  },
+  {
+   "claim": "The arc line's pinned tip (7,392 leaves / 0a141dcb / 09-09T18:51Z) is already one knot behind live; honest while it says 'and moving', rots if the chain re-freezes silently.",
+   "source_file": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/BOOT_AUDIT_APPLIED_20260911.md",
+   "line": 84,
+   "class": "debt",
+   "status": "OPEN",
+   "verification": "AGENTS.md as loaded this session still pins 7,392 / 0a141dcb / 18:51Z. Same anti-rot rule, still unapplied."
+  },
+  {
+   "claim": "Ratchet / violation baseline: 6 NEW violations must be accepted BY NAME or fixed; 'no silent baseline widening'.",
+   "source_file": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/AUDIT_GOPHER_20260926.md",
+   "line": 114,
+   "class": "spec",
+   "status": "OPEN",
+   "verification": "configs/violation_baseline.json present; no acceptance record naming any of the six."
+  },
+  {
+   "claim": "~80% of the 15,517-file / 252.9 MB travel kit has had no commit touch in 3+ weeks; 62% (9,559 files) frozen since seed day one. Top cows: handoff/ 1,015 files, watch/ receipts 168, memory/working 1,517, queue old trails 601, memory/research_packs 698, memory/copilot 2,123.",
+   "source_file": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/SACRED_COW_AUDIT_20260919.md",
+   "line": 16,
+   "class": "debt",
+   "status": "OPEN",
+   "verification": "Instrument is scripts/build_travel_kit.py --audit (permanent, re-runnable). No receipt shows the --slim recipe executed. The measurement is 7 days stale."
+  },
+  {
+   "claim": "MEMORY.md sits at 49.6 KB against a 24.4 KB limit — 2x over; prune to the 24.4 KB limit still owed. Falsifier: 'MEMORY.md over 24.4KB at next audit = the disease won.'",
+   "source_file": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/SELF_AUDIT_ZCODE_20260918.md",
+   "line": 19,
+   "class": "debt",
+   "status": "OPEN-AND-WORSE",
+   "verification": "MEASURED THIS PASS: memory/MEMORY.md = 108,449 bytes (105.9 KB) against the same 24.4 KB limit — that is 4.3x over, not 2x. The file GREW 2.1x since the audit named it. The stated falsifier has already fired; nothing was recorded as a result."
+  },
+  {
+   "claim": "3,269 ghost references, climbing +160/day, no sweep run; mycelium graph activations all 0.0; 'an instrument whose reading triggers no actor' is the joint forbidden pattern.",
+   "source_file": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/CORPUS_MAP_SALON_20260918.md",
+   "line": 127,
+   "class": "debt",
+   "status": "OPEN-AND-WORSE",
+   "verification": "MEASURED THIS PASS: watch/PROSE_CENSUS_20260926.md:4 reads 'Ghost refs (DISPUTED — regex noise possible): 3786 across 2268 files' — up from 3,269 on 09-17, i.e. +517 in 9 days (~57/day, slower than the claimed +160/day but the same direction, still zero sweeps). No ghost-sweep tool exists in tools/ (only ghost_tournament.py, stealth_sweep.py)."
+  },
+  {
+   "claim": "The catalogue's own row count is a moving target: catalog/catalog.jsonl measured 946,773 rows on 09-16/18 and 489,548 rows on 09-26 — a 2x reduction, with tags.jsonl and the catalog both 489,548. Every citation of a catalog row count is dated.",
+   "source_file": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/CORPUS_MAP_SALON_20260918.md",
+   "line": 18,
+   "class": "inventory-map",
+   "status": "OPEN",
+   "verification": "Both figures read this pass (CORPUS_MAP_SALON:18 and AUDIT_GOPHER:139). The rewrite mechanism is not documented in either receipt. NOTE: the 2x drop may be a deliberate compaction OR a truncation bug — neither receipt distinguishes. Unresolved."
+  },
+  {
+   "claim": "The estate carries ~2 GB of ore inside the repo walls (mine/raw 3.2 GB, gstdcoin 27 MB, biography twins) violating the contract's own bounded-pointer law.",
+   "source_file": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/FULL_AUDIT_MAP_20260914.md",
+   "line": 10,
+   "class": "debt",
+   "status": "OPEN",
+   "verification": "Partially superseded: kill-list item 1 (untrack 42,249-file biography_backup twin) and item 2 (1,324 pytest basetemp dirs) were ratified by the SKEPTIC panel. No receipt shows execution."
+  },
+  {
+   "claim": "23 commits unpushed since Aug 9 (git 1.6 GB, backup on the same disk) — 'one disk holds the only copies' — ranked wake-priority #2 before anything else.",
+   "source_file": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/FULL_AUDIT_MAP_20260914.md",
+   "line": 57,
+   "class": "debt",
+   "status": "CLOSED",
+   "verification": "VERIFIED THIS PASS: `git log origin/HEAD..HEAD --oneline | wc -l` = 0, and `git remote -v` shows push target C:/Users/foste/Documents/projects/Mag-backup.git. Fully pushed. The single-disk risk remains unexamined (same physical disk), but the 23-commit debt is closed."
+  },
+  {
+   "claim": "665,131 files walked by the 09-14 census; ~30K in git; 5 weeks of work unfiled against an Aug-06 version arc.",
+   "source_file": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/FULL_AUDIT_MAP_20260914.md",
+   "line": 5,
+   "class": "inventory-map",
+   "status": "SUPERSEDED",
+   "verification": "The file census has since been re-measured at 1,492,258 (parent lane) and the repo holds 1,519,630 per the 09-26 catalog note. Cite the newest, never this."
+  },
+  {
+   "claim": "AGENTS.md:8 cites a GHOST docs/ZEITGEIST.md (real: docs/archive/ZEITGEIST.md) and AGENTS.md:27 cites a '39 deterministic green' fossil (real: 1305/34/9).",
+   "source_file": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/FULL_AUDIT_MAP_20260914.md",
+   "line": 26,
+   "class": "gate-failure",
+   "status": "PARTIALLY-CLOSED",
+   "verification": "The AGENTS.md:27 line STILL carries a stale count today (1,910 vs 2,288 bytes) — the 39 fossil was replaced by a NEW fossil of the same class. The AGENTS.md:8 ghost-pointer fix: not re-verified this pass; the AGENTS.md loaded in this session's context carries no ZEITGEIST pointer at all, so the file was restructured since. UNVERIFIED which way."
+  },
+  {
+   "claim": "2 core doctrines lie in three places (39 tests, Hermes parked, ZEITGEIST path); 'Hermes parked is false' (dispatch log active Sep 9, $220 armed).",
+   "source_file": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/FULL_AUDIT_MAP_20260914.md",
+   "line": 41,
+   "class": "gate-failure",
+   "status": "OPEN",
+   "verification": "No receipt shows the doctrine consolidation executed."
+  },
+  {
+   "claim": "980+ mag/ files have no owner; configs/modules.yaml covers only a handful; ~150 undocumented main.py subcommands have no owner and no test.",
+   "source_file": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/FULL_AUDIT_MAP_20260914.md",
+   "line": 49,
+   "class": "debt",
+   "status": "OPEN",
+   "verification": "No receipt shows configs/modules.yaml extended."
+  },
+  {
+   "claim": "swarm_quests output (shadow_quests.json) exists but has no consumer — 'a map that nothing reads'.",
+   "source_file": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/FULL_AUDIT_MAP_20260914.md",
+   "line": 52,
+   "class": "debt",
+   "status": "OPEN",
+   "verification": "No receipt shows a page or retirement."
+  },
+  {
+   "claim": "The shared-surface INDEX.json is 12 days stale because its fold tool only runs in Docker; readers told to read INDEX first get a 12-day-old map.",
+   "source_file": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/FULL_AUDIT_MAP_20260914.md",
+   "line": 27,
+   "class": "gate-failure",
+   "status": "OPEN",
+   "verification": "MEASURED THIS PASS: watch/inbox/INDEX.json is written by index_events.jsonl and the folder exists; the fold is still listed as Docker-only in the fix list (line 47) with no execution receipt."
+  },
+  {
+   "claim": "A gap is not a debt, it is an experiment still running. FALSIFIER: 'if the ledger's open gaps are ever zero — if every sensor reads closed — the house has stopped exploring and started embalming.'",
+   "source_file": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/GAP_LEDGER_20260913.md",
+   "line": 29,
+   "class": "spec",
+   "status": "STANDING",
+   "verification": "The never-close law. This is the estate's own anti-closure instrument and the correct frame for reading every 'open' row in this ledger: an open gap is a sensor, not a failure."
+  },
+  {
+   "claim": "Q: When did the operator last ask WHERE something was? If never, the map solves the seat's curiosity, not the operator's problem.",
+   "source_file": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/SOCRATIC_GAPS_20260918.md",
+   "line": 26,
+   "class": "socratic-question",
+   "status": "OPEN",
+   "verification": "No answer receipt found. Corpus did grow an operator surface family (dashboard-deploy/static/*.html, OPERATOR_DRIVE.md) but nothing names the operator asking a WHERE question."
+  },
+  {
+   "claim": "Q: Do you select self-contained work because it serves the goal, or because it can't refuse you? (every task chosen this window was closeable WITHOUT the operator)",
+   "source_file": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/SOCRATIC_GAPS_20260918.md",
+   "line": 30,
+   "class": "socratic-question",
+   "status": "OPEN",
+   "verification": "No answer receipt found."
+  },
+  {
+   "claim": "Q: Which meter would catch the fleet becoming WORSE while busier? Close-rate died at 0.0; ghost refs only climb; what does the new instrumentation predict its builders didn't already believe?",
+   "source_file": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/SOCRATIC_GAPS_20260918.md",
+   "line": 36,
+   "class": "socratic-question",
+   "status": "OPEN",
+   "verification": "VERIFIED OPEN: no decision-decay organ exists in tools/ or mag/ (grep for decay returns nothing). The specific 'worse while busier' instrument is still absent. The ghost-refs half of the question answered itself — worse, in fact (3,269 → 3,786)."
+  },
+  {
+   "claim": "Q: Prove the 189K pruned rows were duplicates and not a deliberate mount. What test distinguishes 'redundant copy' from 'intentional mirror'?",
+   "source_file": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/SOCRATIC_GAPS_20260918.md",
+   "line": 40,
+   "class": "socratic-question",
+   "status": "CLOSED",
+   "verification": "CLOSED IN THE SAME DOCUMENT, 8 days later (SOCRATIC_GAPS_20260918.md:106-108): 'Gap 102 closure (2026-09-26, B2-330). The junction falsifier is now PROVEN by bytes: <repo>/training -> memory/training junction, walked both views, 24/24 files sha256-identical, 0 only-in-either, 0 content diffs, 249,281,084 bytes total ... verdict BYTE_DUPLICATE_MOUNT.' Receipt at watch/inbox/burn_wave_20260926/B2_330_junction_diff_20260926.json. This is the ONE question in the set with a byte-level closure."
+  },
+  {
+   "claim": "Q: The research surface makes 22,390 files searchable. Searchable by WHOM? Where is the operator-facing handle?",
+   "source_file": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/SOCRATIC_GAPS_20260918.md",
+   "line": 45,
+   "class": "socratic-question",
+   "status": "OPEN",
+   "verification": "The corpus surface exists and a large dashboard HTML family exists, but no receipt names a human-usable door ('a door a human uses without tool names' — the document's own falsification condition at line 101). Unmet by the document's own criterion."
+  },
+  {
+   "claim": "Q: Who holds interpretive authority over the record? 'Your answer so far has been to build more record. Is that an answer — or an avoidance with receipts?'",
+   "source_file": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/SOCRATIC_GAPS_20260918.md",
+   "line": 51,
+   "class": "socratic-question",
+   "status": "OPEN",
+   "verification": "Partially engaged by RIBV_LENS_STACK_SALON_20260922.md:66 ('who audits the auditor? A Mimosa clone needs...') — which restates the question, does not answer it. And answered by an audit OF the auditor (this lane), which is the mirror-maze the same card warns about at line 88."
+  },
+  {
+   "claim": "Q: What is the amendment ceremony for a byte-frozen kernel? Who may re-crack it, and what is the migration path for cached prefixes when the law changes underneath them?",
+   "source_file": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/SOCRATIC_GAPS_20260918.md",
+   "line": 54,
+   "class": "socratic-question",
+   "status": "OPEN",
+   "verification": "Named as the operator's unanswered question. Note the estate HAS an answer-shaped artifact it never connected: seed/TRUST_BYTES_LAW.md (trust-bytes clauses + the fossil it was learned from). Whether that constitutes the ceremony is exactly the unclosed question."
+  },
+  {
+   "claim": "Q: Which organ measures DECAY of decisions — the day a decision silently stops being true? decisions_done exists; decision-decay doesn't.",
+   "source_file": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/SOCRATIC_GAPS_20260918.md",
+   "line": 62,
+   "class": "socratic-question",
+   "status": "OPEN",
+   "verification": "VERIFIED OPEN: no decay organ in tools/ or mag/. A partial substitute exists and is not the thing asked for: BURN_WAVE_PIN_20260926.md:40 records 'ratchet 902 claims (mimosa 30 archived findings...)' — a claim ledger, i.e. inventory, not decay detection."
+  },
+  {
+   "claim": "Q: The founding stratum is 68 days old; your store's memory is 4 days. What did the doc- prefix architecture (the one that half-happened) know that your 4-day memory doesn't?",
+   "source_file": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/SOCRATIC_GAPS_20260918.md",
+   "line": 65,
+   "class": "socratic-question",
+   "status": "OPEN",
+   "verification": "VERIFIED OPEN: grep for 'doc- prefix' / 'doc_prefix' across watch/inbox/*.md returns ZERO hits. The half-happened architecture was never documented by anyone, including the seat that asked."
+  },
+  {
+   "claim": "Q: Which of this window's 60 artifacts can Melissa, Marque, or Adam use? You built doors for seats. Where are the doors for people?",
+   "source_file": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/SOCRATIC_GAPS_20260918.md",
+   "line": 72,
+   "class": "socratic-question",
+   "status": "OPEN",
+   "verification": "Named humans appear in later receipts (FROM_MUD_TO_WOW_20260914, OPERATOR_ASK_20260916) but none is a door built FOR them."
+  },
+  {
+   "claim": "Q: What fraction of the operator's actual communication is invisible to every instrument you built? He speaks in parables and photos; your meters parse neither.",
+   "source_file": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/SOCRATIC_GAPS_20260918.md",
+   "line": 76,
+   "class": "socratic-question",
+   "status": "OPEN",
+   "verification": "No instrument receipt claims parable/photo parsing. DRIFT_DONT_COIL_20260911.md is a whole parable RECEIVED and translated into four laws — which is the counter-example: the fleet handles parables by having a seat read them, not by instrument."
+  },
+  {
+   "claim": "Q: Every gap analysis finds BUILDABLE gaps. Is that the universe of gaps, or the only kind a builder can see? Some gaps close by waiting — the beacon cadence, the operator's word, Sep-20 itself. A builder's gap analysis is structurally blind to patience-shaped gaps.",
+   "source_file": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/SOCRATIC_GAPS_20260918.md",
+   "line": 82,
+   "class": "socratic-question",
+   "status": "CLOSED",
+   "verification": "CLOSED: watch/inbox/GALA_MORNING_AFTER_PREREG_20260926.md:3-6 states the law as doctrine — 'patience-shaped gaps are invisible to builders; the fixes must be proven to STAY fixed' — and ships a 12-check T+24h preregistered re-verify wave with a falsifier ('if morning-after shows more than 2 drifted checks with no named cause, the gala's fixes were parades'). The question became an instrument. UNVERIFIED: the morning-after receipt is dated 2026-09-27 and does not exist yet."
+  },
+  {
+   "claim": "Q: You file corrective actions, then audit them yourself. Who audits the auditor's corrections? If the answer is the same seat at a later hour, you have built a mirror maze with excellent documentation.",
+   "source_file": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/SOCRATIC_GAPS_20260918.md",
+   "line": 86,
+   "class": "socratic-question",
+   "status": "OPEN-AND-NOW-ANSWERED-IN-KIND",
+   "verification": "Answered in kind, not in letter: AUDIT_GOPHER_20260926.md is a DIFFERENT seat (L2-Hermes, gopher) auditing the same tree the same day, and independently reproduces the same class of finding as the 09-14 audit (stale carrier count) — evidence the correction actually lands on a fresh reader. But no independent auditor exists: both reports are read by the same operator, and this lane is a third instance of the pattern, not a break from it."
+  },
+  {
+   "claim": "Q: What if the estimation-replaces-the-thing disease now includes this very stack — catalog about corpus, audit of audit, steal of steal, OS of prompts? At what count of self-referential layers does a window's work become a hall of mirrors?",
+   "source_file": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/SOCRATIC_GAPS_20260918.md",
+   "line": 89,
+   "class": "socratic-question",
+   "status": "OPEN",
+   "verification": "The layer count has since RISEN (steal-of-steal cards, blind-differential method cards, a referee-verdict-on-a-verdict with two addenda, and now a prior-map ledger). No receipt counts the layers or names a ceiling. This document's own escape clause is unused: nothing states the number at which the mirror is abandoned."
+  },
+  {
+   "claim": "Socratic falsification clause: 'A commit of this window's work plus one answered elder question plus one Sep-20 item moved would falsify \"busy not aimed.\"'",
+   "source_file": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/SOCRATIC_GAPS_20260918.md",
+   "line": 98,
+   "class": "socratic-question",
+   "status": "PARTIALLY-CLOSED",
+   "verification": "Clause 1 MET: 191 commits since 2026-09-17 (`git log --since=2026-09-17 --oneline | wc -l`), head 6d417abd 2026-09-26 17:43:49. Clause 3 UNMET: the astra_hold0 bundle exists (30 files) but the seal is not asserted (SEAL_GATE_SPEC_20260915.md is a spec, not a receipt). Clause 2 UNMET: no answered-elder-question receipt found (only ELDER_ASK_SEED_AUDIT_20260926.md, which is an ask). 1 of 3 falsifiers met."
+  },
+  {
+   "claim": "Q1 Who declared the intended state? 'Gap' presupposes a destination; no charter for the estate's SHOULD-state exists. The analysis measured the estate against an implied enterprise spec.",
+   "source_file": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/GAP_ANALYSIS_SOCRATIC_RACTOR_SALON_20260920.md",
+   "line": 9,
+   "class": "socratic-question",
+   "status": "OPEN",
+   "verification": "No intent charter found. The estate does have seeds of one (seed/STACK.md, THE_METHOD.md, watch/WANTS.md) that no gap analysis has cited as the intended-state document."
+  },
+  {
+   "claim": "Q2 Whose legibility? Every S-steal makes the estate more legible to the seat; legibility destroys what it can't read. Who is the reader of INDEX.md?",
+   "source_file": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/GAP_ANALYSIS_SOCRATIC_RACTOR_SALON_20260920.md",
+   "line": 12,
+   "class": "socratic-question",
+   "status": "OPEN",
+   "verification": "Same root as SOCRATIC_GAPS:45. Unmet."
+  },
+  {
+   "claim": "Q3 OWED to whom? 512 OWED rows counted as debt, but operator commissions and self-filed ambitions are different obligations. Classify: owed-to-operator, owed-to-self, aspirational.",
+   "source_file": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/GAP_ANALYSIS_SOCRATIC_RACTOR_SALON_20260920.md",
+   "line": 15,
+   "class": "socratic-question",
+   "status": "OPEN",
+   "verification": "No classification receipt. The 512 figure is itself a decade-old-class hand-written count; per TRUST_BYTES_LAW clause 1 it should be re-run before it is used to justify burning anything down."
+  },
+  {
+   "claim": "Q4 Dark or done? A dark meter may be (a) broken, (b) done, (c) unfed. MEL needs a fourth state: RETIRED, with honors.",
+   "source_file": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/GAP_ANALYSIS_SOCRATIC_RACTOR_SALON_20260920.md",
+   "line": 18,
+   "class": "socratic-question",
+   "status": "OPEN",
+   "verification": "No RETIRED state found in any meter config. This one is cheap and load-bearing: it is the difference between 'broken' and 'finished' for every dark organ in the estate."
+  },
+  {
+   "claim": "Q5 Different physics? Steals are institutional (aviation, banking, SRE) but the estate is n=1, $0 lanes, no juniors, no shift changes. Where is the fatigue that makes error budgets real? Counter-steal owed: the guild workshop (apprentice→journeyman→master).",
+   "source_file": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/GAP_ANALYSIS_SOCRATIC_RACTOR_SALON_20260920.md",
+   "line": 21,
+   "class": "socratic-question",
+   "status": "OPEN",
+   "verification": "No guild-workshop counter-steal receipt found."
+  },
+  {
+   "claim": "Q6 Compost, not debt? Some steal-library files were never meant to execute — they are seeding material. The library is a MEMORY OF MOVES, not a queue of orders.",
+   "source_file": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/GAP_ANALYSIS_SOCRATIC_RACTOR_SALON_20260920.md",
+   "line": 24,
+   "class": "socratic-question",
+   "status": "OPEN",
+   "verification": "Unanswered. Directly relevant to this ledger: the estate now has a memory-of-moves problem with a measurable size (SOCRATIC_GAPS:82-94 asks whether the mirror has grown past the estate)."
+  },
+  {
+   "claim": "Q7 Why tonight? Is a whole-estate audit on window-eve craft, or displacement activity? 'The honest answer: both.'",
+   "source_file": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/GAP_ANALYSIS_SOCRATIC_RACTOR_SALON_20260920.md",
+   "line": 27,
+   "class": "socratic-question",
+   "status": "OPEN",
+   "verification": "Named as the question to the operator TOO. Unanswered in the receipt; the operator has not ruled on it."
+  },
+  {
+   "claim": "Q8 Does the analysis commit the estate's own named sin? 'Absence-claims need searcher's root.' G11 (zero tests) and G2 (never executed) need root-verified re-verification before anything is built on them.",
+   "source_file": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/GAP_ANALYSIS_SOCRATIC_RACTOR_SALON_20260920.md",
+   "line": 30,
+   "class": "socratic-question",
+   "status": "OPEN",
+   "verification": "No searcher's-root re-verification receipt found. NOTE THE IRONY, which is itself the finding: F1 in the 09-26 audit is an absence-claim failure (carrier says 1,910, nobody re-ran) of exactly the class Q8 named, and Q8's own prescription went unapplied while G11 stayed load-bearing."
+  },
+  {
+   "claim": "Q9 New law over existing law? Operator ruling 09-20: no new laws over existing ones — cite and fix the gate. MEL's max-dark durations are new thresholds = 'new law wearing a maintenance uniform', needing operator signature.",
+   "source_file": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/GAP_ANALYSIS_SOCRATIC_RACTOR_SALON_20260920.md",
+   "line": 33,
+   "class": "socratic-question",
+   "status": "OPEN",
+   "verification": "No operator signature receipt. Live examples of the same disease: the six NEW ratchet violations (AUDIT_GOPHER:114) are an existing gate firing, correctly; the temptation the card warns about is absorbing them by widening configs/violation_baseline.json instead of fixing by name."
+  },
+  {
+   "claim": "Q10 What is the deepest gap? 'The estate has no definition of ENOUGH — no bar at which filing stops and finishing starts. 512 OWED is not an accident; perpetual openness is the estate's identity.' Above the seats' pay grade; the operator's only.",
+   "source_file": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/GAP_ANALYSIS_SOCRATIC_RACTOR_SALON_20260920.md",
+   "line": 36,
+   "class": "socratic-question",
+   "status": "OPEN",
+   "verification": "Unanswered and unanswerable by a seat. This is the one question in the entire prior corpus that no amount of auditing can close, and the only one an operator decision would."
+  },
+  {
+   "claim": "The estate's pre-chain ghost-era record SURVIVES: Jul-31→Aug-09 holds 3,889 knots + 8,371 session digests + 21,122 contemporaneous ghost leak reports + unbroken daily improve files. 'The gap is a valley (Aug-03..05 digest trough 34/5/0), not a void.'",
+   "source_file": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/GHOST_GAP_HUNT_20260911.md",
+   "line": 75,
+   "class": "inventory-map",
+   "status": "VERIFIED-BY-PRIOR-LANE",
+   "verification": "Read-only forensic census with a named method (name-date + mtime histograms). I did not re-walk. Cite as prior measurement, not as my fact."
+  },
+  {
+   "claim": "'~4,200 knots in 3 days' is DISPUTED as a hard census: Aug-07..09 = 2,955 knots, Aug-10..12 = 11,248; no 3-day window equals ~4,200; the chain was rebased (6,661 → 4,914, 1,009 rows pruned) making the original count unrecoverable.",
+   "source_file": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/GHOST_GAP_HUNT_20260911.md",
+   "line": 83,
+   "class": "inventory-map",
+   "status": "VERIFIED-BY-PRIOR-LANE",
+   "verification": "Strong receipt: traces the figure to its origin (SPORE_SANCHO:16) and names the circular citation (ARCHAEOLOGY_DIG:31 cites only SPORE_SANCHO). Not re-walked by me."
+  },
+  {
+   "claim": "'First knot 2026-08-10 21:37' is DISPUTED: chain genesis row 0 = 2026-08-12T16:41:39Z; earliest knotted session = 2026-08-10T12:31Z; the 21:37 figure appears nowhere in the repo.",
+   "source_file": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/GHOST_GAP_HUNT_20260911.md",
+   "line": 87,
+   "class": "inventory-map",
+   "status": "VERIFIED-BY-PRIOR-LANE",
+   "verification": "Negative claim with a stated search method (grep 21:37/2137). Per Q8's own rule, an absence-claim with a searcher's root is admissible; this one names its grep but not its corpus extent. Weakest link in an otherwise strong receipt."
+  },
+  {
+   "claim": "Research corpus coverage is INWARD-BLIND: 73 answered rows × 8 domains shows history-fleet 0/73, tech-internal 0/73, swarm 0/73, training 2/73. 'The battery dug OUTWARD and never INWARD.'",
+   "source_file": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/GAP_ANALYSIS_20260917.md",
+   "line": 9,
+   "class": "inventory-map",
+   "status": "OPEN",
+   "verification": "The law it produced ('before any battery fires, grep the estate for the domain') is real (line 64) but the addendum at line 47 shows the scan itself was wrong on the swarm row — 'the swarm ZERO finding was true of the research TAPE and false of the FLEET'. A gap analysis that measured the tape, not the estate. That is Q8's absence-claim sin, committed by the document that raised Q8's warning two days later."
+  },
+  {
+   "claim": "Steal maps catalogue external convergences: coldest-vertex receipts #1-#11 (test-time comms, KV-cache-as-OS, Rigel MoE, holographic principle) plus #8-#11 = Lamport 1978 / Kademlia 2002 / Thompson 1984 / CRDT 2011, each mapped to a named estate organ with a byte receipt.",
+   "source_file": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/COLDEST_VERTEX_STEAL_MAP_20260923.md",
+   "line": 147,
+   "class": "inventory-map",
+   "status": "OPEN",
+   "verification": "The byte receipts in it are CHECKABLE and I spot-checked the strongest: the '9,823 leaves, 0 breaks, 0 duplicates' rehash claim. NOT re-run by me (expensive). Cite the card, verify before building on it. Note the card's own arithmetic hazard: it asserts convergence in the same register it uses for measurement."
+  },
+  {
+   "claim": "The coldest tier knows everything about the machine and almost nothing about the man: the map's two bald spots are both OPERATOR-side — (1) his body/sleep has no shard, only incident logs; (2) no stop-condition surface, no ledger of his refusals.",
+   "source_file": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/COLDEST_SHARD_VEIL_TEX_MAP_20260920.md",
+   "line": 22,
+   "class": "inventory-map",
+   "status": "OPEN",
+   "verification": "6/6 chair convergence register, one receipt directory (memory/runs/elder_asks/ask_operator_letter_20260920/). The finding is structural and I found no later receipt closing either bald spot."
+  },
+  {
+   "claim": "Blind differential probe method: one blind prompt × free lanes; the DIFFERENCE is the finding, not the answers. Law: 'A spread not filed is a measurement thrown away.' MISSING until 09-21: a probe LEDGER.",
+   "source_file": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/BLIND_DIFFERENTIAL_METHOD_20260921.md",
+   "line": 36,
+   "class": "spec",
+   "status": "OPEN",
+   "verification": "Whether the probe ledger was built after 09-21 is UNVERIFIED. The law is the same law as TRUST_BYTES_LAW clause 1 with a different object."
+  },
+  {
+   "claim": "A tool-menu compactor should be built from trajectories (AutoTailor steal): quality-filter + usage-filter prune an INACTIVE pool rather than delete. 'Gortex alone ships 175+ MCP tools.'",
+   "source_file": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/EIGHT_WAVE_STEAL_MAP_20260921.md",
+   "line": 11,
+   "class": "spec",
+   "status": "STAGED-ONE-WORD",
+   "verification": "'Staged, one word' = not built. Claims the usage data already exists (shared_activity + provider_usage) — that half is checkable and would be the first thing to verify before building."
+  },
+  {
+   "claim": "Referee ruling on the Cathedral descent order: water_first, confidence 0.6, 'lean not proof'. Missing-edge rule: never stitch an edge anchored on riddler_engram (DARK), never a straight-line shortcut across SADDLE ground, never beyond minimum closure.",
+   "source_file": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/REFEREE_VERDICT_20260926.md",
+   "line": 10,
+   "class": "spec",
+   "status": "OPEN-CAVEATED",
+   "verification": "The verdict file carries its OWN two addenda (lines 48, 80) which is the correct discipline and also the reason to be careful: the quoted margin 0.013 was superseded to 0.006 by the 09-22 scan, and the walk vote was re-walked 09-26 (water_first 17 steps/4 missing reproduced byte-identically; hub_first moved 19/6 → 23/4). Direction unchanged, numbers live. Cite the addenda, not the body."
+  },
+  {
+   "claim": "A third vote does not settle a contested invariant — it adds a fourth path. 'Vote-counting measures builder preference, not geometry. The RIB's CONTESTED status stands regardless.'",
+   "source_file": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/REFEREE_VERDICT_20260926.md",
+   "line": 22,
+   "class": "spec",
+   "status": "STANDING",
+   "verification": "The meta-answer, and the correct one to carry into this audit: a ledger of prior claims is a PREFERENCE record, not a proof. It tells you what was said, not what is true. Which is why every UNVERIFIED row above is marked UNVERIFIED."
+  },
+  {
+   "claim": "Referee's settlement path: the cheapest hill is adventure_2d6 at 0.483, only +0.017 from the 0.5 HILL bar; water_computer at 0.358 must reach >= 0.5. Raising builder agreement makes geodesics unique so descent order reads off geometry instead of votes.",
+   "source_file": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/REFEREE_VERDICT_20260926.md",
+   "line": 28,
+   "class": "spec",
+   "status": "OPEN",
+   "verification": "Named, unbuilt, and cheap. This is the only prior receipt that names a specific falsifiable numeric target for an open question — the model worth copying."
+  },
+  {
+   "claim": "The estate's chain IS content-addressed and self-verifying: rehash-true from leaves alone matches the stored root; that is the Thompson 'trusting trust' defense, and the chain needs no VCS because the content IS the version.",
+   "source_file": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/COLDEST_VERTEX_STEAL_MAP_20260923.md",
+   "line": 81,
+   "class": "spec",
+   "status": "UNVERIFIED-BY-ME",
+   "verification": "The strongest single assertion in the steal corpus and I did NOT re-run the rehash. Cheap to check; must be checked before anyone builds on the 'the record is true because the hash says so' line."
+  },
+  {
+   "claim": "The parallel auditor (Matthew Steiniger / slashreboot.com) is a PEER, not a vendor: independent researcher, 11 preprints, no affiliations, home lab (i9, 84GB VRAM), abliteration hobbyhorse. Charter upgraded to peer review with three added questions (Oct-27 identity transfer, parable cold-read under persona induction, weakest persona/substrate coupling).",
+   "source_file": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/AUDITOR_RECON_RLT_20260912.md",
+   "line": 26,
+   "class": "spec",
+   "status": "OPEN",
+   "verification": "External-source claim; the two later receipts (EUT_AUDITOR_WORLDVIEW_20260912.md, ASTRA_REAUDIT_V3_20260911.md) are consistent with it but neither closes the three questions. The EUT card's own tri-state is honest: 'EUT is self-published, not peer-reviewed ... Unproven: the physics itself.'"
+  },
+  {
+   "claim": "EUT reads the fleet as an entropic system; the house's mapping is metaphor-level until Matthew audits the codebase on his terms. Falsifiers are named as the thing a researcher who names his own YIG experiments will respect.",
+   "source_file": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/EUT_AUDITOR_WORLDVIEW_20260912.md",
+   "line": 41,
+   "class": "spec",
+   "status": "OPEN",
+   "verification": "Tri-state held honestly by its author (line 50-56). The audit has not happened."
+  },
+  {
+   "claim": "The lake parable yields four laws: wet knots don't untie (change the medium first); never fix inside the tangle; tip-first chain outward; drift, don't coil (storage topology = solution topology).",
+   "source_file": "C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/DRIFT_DONT_COIL_20260911.md",
+   "line": 9,
+   "class": "spec",
+   "status": "STANDING",
+   "verification": "Operator doctrine, not a finding. Load-bearing for this audit: law 4 is the estate's own argument that a solved state stored in the wrong topology re-tangles. The 1,408-dirty-path working tree is a coil by that law."
+  },
+  {
+   "claim": "Catalogue of the record: CANON MANIFEST VERIFIED (205 hashes match); 11 curated shelves + 4 bulk layers; append-only ledgers state/library/catalog.jsonl + catalog_runs.jsonl. 'The Librarian records; it never cleans.'",
+   "source_file": "C:/Users/foste/Documents/projects/local_sovereign_agent/CORPUS_CATALOG.md",
+   "line": 5,
+   "class": "inventory-map",
+   "status": "CURRENT-RUN-20260926",
+   "verification": "Run stamp 2026-09-26T13:15:12Z — same day as this audit, so it is the freshest corpus map. Its own bulk-layer counts (attic 144 / logs 5,254 / state 3,487 / mag 2,587) do NOT reconcile with the 1,492,258-file estate measure: the catalogue covers curated shelves, not the tree. Anyone citing it as 'the corpus size' would be wrong by two orders of magnitude."
+  },
+  {
+   "claim": "Binding constitution lives in the product repo ../mycelial-republic/docs/CONSTITUTION.md, NOT in this repo. 'If that file is missing, stop and restore it before public claims.' Fork equality; no rank/token; T0/T1 never to free remote train-on-input APIs; mining proposals never auto-merge.",
+   "source_file": "C:/Users/foste/Documents/projects/local_sovereign_agent/CONSTITUTION.md",
+   "line": 5,
+   "class": "spec",
+   "status": "LIVE-POINTER",
+   "verification": "STRUCTURAL BLIND SPOT, not a bug: the binding constitution is a POINTER to a file outside the audit root. No prior audit in the corpus checks whether the target exists. If it doesn't, every 'constitutional compliance' claim in the estate is unbacked. VERIFIED the pointer; the target's existence is UNVERIFIED (outside my lane's root)."
+  }
+ ],
+ "counts_by_status": {
+  "VERIFIED": 6,
+  "UNVERIFIED": 1,
+  "VERIFIED-DIRECTION": 2,
+  "DATED-20260914": 3,
+  "CLOSED-BY-LATER-WORK": 1,
+  "OPEN": 45,
+  "SUPERSEDED-AND-REPEATED": 1,
+  "OPEN-AND-WORSE": 2,
+  "CLOSED": 3,
+  "SUPERSEDED": 1,
+  "PARTIALLY-CLOSED": 2,
+  "STANDING": 3,
+  "OPEN-AND-NOW-ANSWERED-IN-KIND": 1,
+  "VERIFIED-BY-PRIOR-LANE": 3,
+  "STAGED-ONE-WORD": 1,
+  "OPEN-CAVEATED": 1,
+  "UNVERIFIED-BY-ME": 1,
+  "CURRENT-RUN-20260926": 1,
+  "LIVE-POINTER": 1
+ }
+}

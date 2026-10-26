@@ -1,0 +1,9 @@
+#define C(x,y)mat2(x,-y,y,x)
+#define M(m)dot(m[0],m[0])
+vec2 p=(FC.xy*2.-r)/r.y;
+mat2 z=C(p.x,p.y),c=C(.1,.64)+rotate2D(t)*.01,d=C(1,0);
+for(int i;i++<99&&M(z)<1e3;){
+  d=2.*z*d;
+  z=z*z+c;
+ }
+o+=2e2*sqrt(M(z)/M(d))*log(M(z));

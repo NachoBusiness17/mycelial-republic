@@ -1,0 +1,9 @@
+#define R(r)mat2(cos(r),sin(r),-sin(r),cos(r))
+const float PI=3.14159, PI2=PI*2.;
+void main(){
+  o.xy=(gl_FragCoord.xy*2.-r)/r.y;
+  float j=mod(floor(t*.2),.7)+1.,k=(mod(floor(abs(sin(6.+t*j*0.01)*64.)),25.)+1.),a=atan(o.x,o.y)+PI/k,i=.0;
+  o.xy*=16.*R(-floor(a/(PI2/k))*(PI2/k));
+  for(;i<32.;++i)o.xy=(abs(o.xy-vec2(0.,sin(2.+t*.025)))-j)*R(i+j+k);
+  o=vec4(abs(.2/sin(length(o*32.)*cos(vec4(.22,.33,.44,1))*.3)));
+}

@@ -1,0 +1,13 @@
+# WORK lib-belady-1966
+
+lane: openrouter model: inclusionai/ling-3.0-flash-sante:free
+ts: 2026-09-28T13:12:35.156954+00:00
+finish: stop cached_tokens: 0
+ask: Find the canonical reference for Belady 1966 (the Belady anomaly / FIFO page-replacement study). Return: exact title, venue, year, and one verbatim quote of the anomaly claim with page if findable. If unreachable, say OWED with what you tried.
+
+---
+
+(1) FINDING: OWED - cannot verify exact 1966 title, venue, year, or verbatim quote with page.
+(2) STEALABLE: Preserve the minimal cyclic reference string that provokes FIFO fault inflation as a canary regression test for any replacement algorithm.
+(3) TESTABLE: FIFO page faults on reference string 1 2 3 4 1 2 5 1 2 3 4 5 will rise when frame count increases from 3 to 4.
+(4) EVIDENCE or OWED: OWED - attempted recall of Belady 1966 IBM Systems Journal drum study and Belady Nelson Shedler 1969 CACM paper but could not confirm the exact 1966 citation details.

@@ -48,20 +48,46 @@ def _append(row: dict[str, Any]) -> None:
         f.write(json.dumps(row, ensure_ascii=False) + "\n")
 
 
+AFK_GATE_ERROR: str | None = None
+
+
 def _operator_offline() -> bool:
+    # SPEC (2026-09-25, t65): FAIL CLOSED per the afk_cadence/t52/t61 convention; this is
+    # the byte-identical twin of afk_orchestrator._operator_offline and had the same t52
+    # fail-open species ('except Exception: return True'): an errored operator_status read
+    # as "operator offline" and expand() kept steal-searching while the operator was
+    # invisible. Every call site treats offline=True as GO (expand runs the pass,
+    # _right_size grants full budget), so the safe direction on error is the DENY:
+    # operator presumed ACTIVE (return False), cause named in AFK_GATE_ERROR.
+    global AFK_GATE_ERROR
     try:
         from mag.preferences import operator_status
-        return not bool((operator_status() or {}).get("operator_active"))
-    except Exception:
-        return True
+        offline = not bool((operator_status() or {}).get("operator_active"))
+        AFK_GATE_ERROR = None
+        return offline
+    except Exception as _gate_e:
+        AFK_GATE_ERROR = "operator offline gate errored; failing CLOSED (operator presumed active): " + str(_gate_e)[:110]
+        return False
+
+
+RIGHT_SIZE_ERROR: str | None = None
 
 
 def _right_size() -> dict[str, Any]:
+    # SPEC (2026-09-25, t75): FAIL CLOSED per the afk_cadence t52 convention; this is the
+    # twin of afk_orchestrator._right_size and carried the same t52 fail-open species
+    # ('except Exception: return {"level": "full", "budget": 4}'): an errored sizing
+    # handed expand() the FULL blast. The safe direction is the SMALLEST budget: level
+    # none / budget 0 (expand() skips the pass), cause named in RIGHT_SIZE_ERROR.
+    global RIGHT_SIZE_ERROR
     try:
         from mag.afk_loop import system_resources, right_size
-        return right_size(system_resources(), operator_active=not _operator_offline())
-    except Exception:
-        return {"level": "full", "budget": 4}
+        rs = right_size(system_resources(), operator_active=not _operator_offline())
+        RIGHT_SIZE_ERROR = None
+        return rs
+    except Exception as _rs_e:
+        RIGHT_SIZE_ERROR = "rightsizer errored; failing CLOSED (smallest budget, none): " + str(_rs_e)[:110]
+        return {"level": "none", "budget": 0, "right_size_error": RIGHT_SIZE_ERROR}
 
 
 def _default_steal_sources() -> list[str]:
@@ -123,10 +149,16 @@ def test_local(invariant: str) -> dict[str, Any]:
 def expand(*, force: bool = False) -> dict[str, Any]:
     """The aggressive offline capability-expansion pass: steal-search -> test local -> fold."""
     if not force and not _operator_offline():
-        return {"ok": True, "action": "skip", "reason": "operator active (offline-only)"}
+        skip: dict[str, Any] = {"ok": True, "action": "skip", "reason": "operator active (offline-only)"}
+        if AFK_GATE_ERROR:
+            skip["afk_gate_error"] = AFK_GATE_ERROR  # t65: a fail-closed denial is never silent
+        return skip
     rs = _right_size()
     if rs.get("level") == "none":
-        return {"ok": True, "action": "skip", "reason": "right-sized to none"}
+        skip_rs: dict[str, Any] = {"ok": True, "action": "skip", "reason": "right-sized to none"}
+        if rs.get("right_size_error"):
+            skip_rs["right_size_error"] = rs["right_size_error"]  # t75: the fail-closed deny is never silent
+        return skip_rs
     budget = int(rs.get("budget") or 1)
 
     # 1) steal-search gated high-quality sources — external steal BY DEFAULT includes arXiv
@@ -154,8 +186,14 @@ def expand(*, force: bool = False) -> dict[str, Any]:
                               maps_to="skill:capability_steal",
                               tags=["capability-steal", "offline", "local-test", family])
                 promoted = (pm.get("move") or {}).get("id")
-            except Exception:
+            except Exception as _pe:  # noqa: BLE001 - promotion must never break the steal pass; it must be VISIBLE
+                # LOOP-DEATH GUARD (2026-09-25, t84): the old 'except Exception: promoted
+                # = None' swallowed the pro_library.add_move failure, leaving the row to
+                # record promoted=None with no trace of WHY. Promotion stays honestly
+                # None and the pass non-fatal, but the cause is now visible.
+                # SPEC: tests/test_loop_death_guards.py, t84 SPEC line 2.
                 promoted = None
+                print(f"[capability-steal] PROMOTION LOOP DEATH GUARD: pro_library.add_move exited: {_pe}", flush=True)
         row = {"ts": _now(), "family": family, "local_applies": tl.get("applies", True),
                "local_test": (tl.get("local_test") or tl.get("error") or "")[:120],
                "promoted": promoted}
@@ -185,8 +223,11 @@ def _fold(n: int) -> None:
             tier_max="T1",
             exportable=False,
         )
-    except Exception:
-        pass
+    except Exception as _fe:  # noqa: BLE001 - folding must never break the expansion; it must be VISIBLE
+        # LOOP-DEATH GUARD (2026-09-25, t78): a silently dead training-event fold voids
+        # the steal pass's telemetry while expand() still reports n_expanded. Non-fatal,
+        # but visible. (pattern: work_loop.py verkle-anchor guard, t19.)
+        print(f"[capability-steal] FOLD LOOP DEATH GUARD: training_events.emit exited: {_fe}", flush=True)
 
 
 def main(argv: list[str] | None = None) -> int:

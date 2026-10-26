@@ -4,7 +4,8 @@ Parent is the main verkle tip (last_leaf_hash / root). Child is an append-only
 hash-chained jsonl of party/salon moves. Models are interchangeable; this relation
 is what persists. Does NOT bump biography n_leaves.
 
-Schema: party_subchain.v1
+Schema: party_subchain.v2 (v1 rows verify under the v1 hash rule; v2 additionally
+authenticates extra + parent_root + schema — audit #12 fix, 2026-09-29)
 CLI: python -m mag.party_subchain status | mount | genesis
 """
 from __future__ import annotations
@@ -30,7 +31,9 @@ try:
 except Exception:
     pass
 
-SCHEMA = "party_subchain.v1"
+SCHEMA_V1 = "party_subchain.v1"
+SCHEMA_V2 = "party_subchain.v2"
+SCHEMA = SCHEMA_V2
 
 def want_full() -> bool:
     return os.environ.get("MAG_FULL_CONTEXT", "").strip().lower() in ("1", "true", "yes", "on")
@@ -70,9 +73,21 @@ def _parent() -> dict[str, Any]:
 
 
 def _hash_entry(entry: dict[str, Any]) -> str:
+    """Hash rule is chosen per-row by the row's own schema field (chain-compatible).
+
+    v1 (audit #12, 2026-09-29): hashes the seven core fields only — extra,
+    parent_root, and schema were unauthenticated.
+    v2: additionally authenticates extra, parent_root, and schema. A schema
+    downgrade (v2 row rewritten as v1) still fails: the stored v2 hash was
+    computed over the wider blob, so the v1-rule recomputation cannot match.
+    """
     body = {k: entry.get(k) for k in (
         "ts", "seat", "ok", "move", "prev_hash", "parent_leaf_hash", "kind"
     )}
+    if entry.get("schema") == SCHEMA_V2:
+        body["schema"] = entry.get("schema")
+        body["parent_root"] = entry.get("parent_root")
+        body["extra"] = entry.get("extra")
     blob = json.dumps(body, sort_keys=True, ensure_ascii=False, default=str).encode("utf-8")
     return hashlib.sha256(blob).hexdigest()
 
@@ -155,7 +170,8 @@ def _genesis_unlocked(parent: dict[str, Any]) -> dict[str, Any]:
         "n": 0,
     }
     entry["hash"] = _hash_entry(entry)
-    with CHAIN.open("a", encoding="utf-8") as f:
+    # newline="" keeps chr(10) as bare LF on Windows — byte-exact law (audit #12).
+    with CHAIN.open("a", encoding="utf-8", newline="") as f:
         f.write(json.dumps(entry, ensure_ascii=False, default=str) + chr(10))
     _write_head(entry, parent)
     return {"ok": True, "schema": SCHEMA, "created": True, "genesis_hash": entry["hash"], **parent}
@@ -205,7 +221,8 @@ def append(*, seat: str, ok: bool, move: str, kind: str = "turn", extra: dict[st
             if extra:
                 entry["extra"] = extra
             entry["hash"] = _hash_entry(entry)
-            with CHAIN.open("a", encoding="utf-8") as f:
+            # newline="" keeps chr(10) as bare LF on Windows — byte-exact law (audit #12).
+            with CHAIN.open("a", encoding="utf-8", newline="") as f:
                 f.write(json.dumps(entry, ensure_ascii=False, default=str) + chr(10))
             _write_head(entry, parent)
             return {"ok": True, "schema": SCHEMA, "hash": entry["hash"], "n": entry["n"],

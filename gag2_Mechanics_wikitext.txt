@@ -1,0 +1,558 @@
+== Currencies ==
+'''Currencies''' is a mechanical feature added to Grow a Garden 2 on its release. {{Sheckle}} and {{Leaf}} are currently the main in-game currency.
+{| class="wikitable" style="width:70%;"
+|+
+! Currency !! Obtainment !! Is Obtainable?
+|-
+| {{Sheckle}}
+| Sell [[crops]] and pets for Sheckles. It can also be obtained through the [[Store]], bought with {{Robux}}.
+| {{Yes}}
+|-
+| {{Leaf}}
+| Sell [[crops]] and pets in the Fall Harvest world for Leaves. It can also be obtained through the [[Store]], bought with {{Robux}}.
+| {{Yes}}
+|-
+| {{Guild Token}}
+| Complete guild quests
+| {{No}}
+|}
+
+== Currency Packs ==
+Players can purchase {{Sheckle}} or {{Leaf}} directly with {{Robux}}. Gift variants are available for all packs, allowing players to send {{Sheckle}} or {{Leaf}} to other players.
+
+=== <u>List of Packs</u> ===
+{| class="wikitable" style="width:70%;"
+! Amount !! Price
+|-
+| {{Sheckle|5,000}} || {{Robux|10}}
+|-
+| {{Sheckle|10,000}} || {{Robux|20}}
+|-
+| {{Sheckle|25,000}} || {{Robux|50}}
+|-
+| {{Sheckle|50,000}} || {{Robux|100}}
+|-
+| {{Sheckle|100,000}} || {{Robux|200}}
+|}
+{| class="wikitable" style="width:70%;"
+! Amount !! Price
+|-
+| {{Leaf|5,000}} || {{Robux|10}}
+|-
+| {{Leaf|10,000}} || {{Robux|20}}
+|-
+| {{Leaf|25,000}} || {{Robux|50}}
+|-
+| {{Leaf|50,000}} || {{Robux|100}}
+|-
+| {{Leaf|100,000}} || {{Robux|200}}
+|}
+
+=== <u>Grow Plant</u> ===
+'''Grow Plant''' instantly skips the remaining growth time of a single crop on the player's plot. It costs {{Robux|39}}.
+
+=== <u>Grow All</u> ===
+'''Grow All''' instantly skips the growth of all crops and fruits on the player's plot at once. It costs {{Robux|299}}.
+
+== Harvesting ==
+Harvesting is a core mechanic in the game that lets players pick up crops to sell them.
+Once a crop is collected, it cannot be undone.
+
+For Multi-Harvest Crops, only the fruits can be collected, as the Crop will regenerate fruits. 
+
+== Inventory ==
+Inventory is a core feature added upon the game's release. The inventory is accessible to the privileged and is used to store items. 
+
+=== <u>Inventory Mechanics</u> ===
+* Players can search for a particular item in the 'Search' tab. 
+* The base player inventory can contain up to 325 slots.
+* The inventory has different segments for specific types of items. The segments are for Seeds, [[Crops]], [[Pets]], [[Gears]] and All.
+* Player can give [[Crops]] the favorite status. They are now unsellable.
+** Players can sell their [[Crops]] and [[Pets]] on the [[Sell Stand]].
+
+== Infinite Growth & Watering Immunity ==
+Some plants have special growth rules that override the normal watering/max-size system.
+
+=== <u>Infinite Growth</u> ===
+Some plants use a growth system instead of reaching a normal size cap. Their size multiplier follows a logarithmic curve, allowing them to continue growing with diminishing gains over time.
+
+Growth stops once the plant reaches the maximum multiplier, which is '''25x'''. With the default values, this limit would take an extremely long time to reach (12,561 years).
+
+==== <u>Growth formula</u> ====
+When the plant's age is greater than 0, its multiplier is calculated as:
+<math>
+\text{multiplier} = \min\left(1 + \text{Coefficient}\left[\ln\left(1 + \frac{\text{age}}{\text{Timescale}}\right)\right]^{\text{Exponent}},\text{MaxMultiplier}\right)
+</math>
+
+Default values:
+* Coefficient = 0.0128
+* Timescale = 1800 seconds (30 minutes)
+* Exponent = 2.55
+* Max Multiplier = 25
+
+At age 0, the multiplier is exactly 1, meaning no additional growth has been applied.
+
+The growth rate begins slowly, accelerates during the plant's early life, and then gradually decreases. The plant can continue getting larger for a very long time, but it cannot exceed the configured maximum multiplier.
+
+==== <u>Example curve</u> ====
+{| class="wikitable"
+! Age
+! Multiplier
+|-
+| 0
+| 1.00
+|-
+| 30 min
+| 1.01
+|-
+| 5 hr
+| 1.12
+|-
+| 50 hr
+| 1.63
+|}
+
+=== <u>Watering/Mutation Immune</u> ===
+These plants don't need to be watered to keep growing/stay alive. They also cannot get mutated in any way.
+
+=== <u>Affected Plants</u> === 
+* [[Atlantic Giant Pumpkin]]
+
+== Price Formula ==
+The sell price of a fruit is determined by the following formula:
+<math>\text{Total Price} = \lfloor \text{SellValue} \times \text{SizeFactor} \times \text{SizeMultiplier} \times \text{MutationMultiplier} \times \text{DecayPenalty} \times \text{FriendsBonus} \rfloor</math>
+
+Where:
+* '''SellValue''' = The base sell value of the crop.
+* '''SizeFactor''' = The contribution of the fruit's size, with diminishing returns applied above a threshold (see [[#Size Factor & Diminishing Returns|below]]).
+* '''SizeMultiplier''' = A scaling factor (default 1).
+* '''MutationMultiplier''' = The price multiplier granted by the fruit's mutation (default 1 if no mutation; see [[Mutations]]).
+** For single-harvest crops, the mutation bonus is reduced: <math>\text{effectiveMut} = 1 + (\text{raw} - 1) \times 0.15</math>
+* '''DecayPenalty''' = <math>1 - \text{clamp}(\text{decayFraction}, 0, 1) \times 0.8</math>
+* '''FriendsBonus''' = <math>1 + \text{Friends} \times 0.1</math>, where Friends is the number of friends playing on the same server.
+* The result is floored (rounded down) to the nearest integer, with a per-crop minimum floor applied last (e.g., Carrot has a minimum of 4).
+
+=== <u>Size Factor & Diminishing Returns</u> ===
+The size contribution is based on the fruit's Size raised to an Exponent, but past a "knee" point, the gains are reduced so that very large fruit are worth proportionally less:
+
+<math>\text{SizeFactor} = \begin{cases} \text{Size}^{\text{Exponent}} & \text{if Size} \le \text{Knee} \\ \text{Knee}^{\text{Exponent}} \times \left(\dfrac{\text{Size}}{\text{Knee}}\right)^{\min(\text{TailExponent},\ \text{Exponent})} & \text{if Size} > \text{Knee} \end{cases}</math>
+
+* '''Exponent''' = 2.5 by default; overridden per-crop for Mushroom (1.9) and Bamboo (1.75).
+* '''Knee''' = 5 by default (the size at which diminishing returns begin).
+* '''TailExponent''' = 1.5 by default (the reduced exponent applied beyond the knee).
+* Diminishing returns are enabled by default. Knee and TailExponent each support optional per-crop multipliers (default 1).
+
+=== <u>Size Exponent Overrides</u> ===
+Two crops use a different exponent rather than the default 2.5:
+* '''Mushroom''': exponent 1.9
+* '''Bamboo''': exponent 1.75
+These lower exponents mean that very large sizes are less dramatically rewarded for those crops compared to others.
+
+=== <u>Sell-Time Multipliers</u> ===
+On top of the formula above, a global sell multiplier (default 1) and per-crop sell multipliers are applied when the fruit is actually sold. By default, Mushroom sells for 0.5x its calculated value.
+
+=== <u>Algorithmic Overview</u> ===
+<syntaxhighlight lang="lua">
+-- sig(x) = standard sigmoid: 1 / (1 + exp(-x))
+
+-- weight of a FRUIT size tier at a given luck value (1-100)
+function getFruitTierWeight(tier, luck)
+    if not tier.usesLuck then
+        return tier.weight   -- constant regardless of luck
+    end
+    local e = tier.luckExponent
+    if e == 2   then return 5      + 25000 * sig(0.1  * (luck - 50))                                     end
+    if e == 2.5 then return 1.5    + luck  * 30                                                           end
+    if e == 3.5 then return 0.01   + luck  * 3                                                            end
+    if e == 4.5 then return 0.001  + luck  * 0.1                                                          end
+    if e == 5.5 then return 0.0001 + luck  * 0.003                                                        end
+end
+
+-- six fruit size tiers, from common to mythic
+local fruitTiers = {
+    { min = 0.85,  max = 1.15,  weight = 10000,  usesLuck = false                    },
+    { min = 2.8,   max = 3.3,   weight = 5,      usesLuck = true, luckExponent = 2   },
+    { min = 4,     max = 5,     weight = 1.5,    usesLuck = true, luckExponent = 2.5 },
+    { min = 6.5,   max = 7.5,   weight = 0.01,   usesLuck = true, luckExponent = 3.5 },
+    { min = 9.5,   max = 12.5,  weight = 0.001,  usesLuck = true, luckExponent = 4.5 },
+    { min = 14.5,  max = 17.5,  weight = 0.0001, usesLuck = true, luckExponent = 5.5 },
+}
+
+function GetRandomFruitSize(luck, seed)
+    local rng = Random.new(seed)
+    luck = math.clamp(luck, 1, 100)
+    -- compute each tier's weight up front
+    local weights     = {}
+    local totalWeight = 0
+    for i, tier in fruitTiers do
+        weights[i]    = getFruitTierWeight(tier, luck)
+        totalWeight   = totalWeight + weights[i]
+    end
+    -- weighted-random tier pick
+    local roll    = rng:NextNumber() * totalWeight
+    local running = 0
+    local size    = 1
+    for i, tier in fruitTiers do
+        running = running + weights[i]
+        if roll <= running then
+            size = tier.min + rng:NextNumber() * (tier.max - tier.min)
+            break
+        end
+    end
+    -- doubling rolls (1% at luck 1, scales to 5% at luck 100)
+    local doublingChance = 0.01 + (0.05 - 0.01) * ((luck - 1) / 99)
+    while size * 2 <= 10000000 and rng:NextNumber() <= doublingChance do
+        size = size * 2
+    end
+    return size
+end
+
+-- weight of a PLANT size tier at a given luck value (1-100)
+-- used for single-harvest crops only
+function getPlantTierWeight(tier, luck)
+    if not tier.usesLuck then
+        return tier.weight
+    end
+    local e = tier.luckExponent
+    if e == 1.5 then return 250    + 10000 * sig(0.4  * (luck - 10)) * (1 - sig(0.06 * (luck - 55)) * 0.5) end
+    if e == 2   then return 125    + 15000 * sig(0.12 * (luck - 30)) * (1 - sig(0.06 * (luck - 75)) * 0.4) end
+    if e == 2.5 then return 62.5   + 20000 * sig(0.08 * (luck - 55))                                        end
+    if e == 3   then return 31.25  + luck  * 50                                                              end
+    if e == 3.5 then return 15.625 + luck  * 8                                                               end
+    if e == 4   then return 3      + luck  * 0.5                                                             end
+    if e == 4.5 then return 0.05   + luck  * 0.02                                                            end
+    return tier.weight  -- fallback for luckExponent = 5 (constant 0.0001)
+end
+
+-- nine plant size tiers, from common to mythic
+local plantTiers = {
+    { min = 0.95,  max = 1.05,  weight = 2000,   usesLuck = false                    },
+    { min = 1.45,  max = 1.55,  weight = 250,    usesLuck = true, luckExponent = 1.5 },
+    { min = 1.9,   max = 2.1,   weight = 125,    usesLuck = true, luckExponent = 2   },
+    { min = 2.85,  max = 3.15,  weight = 62.5,   usesLuck = true, luckExponent = 2.5 },
+    { min = 3.8,   max = 4.2,   weight = 31.25,  usesLuck = true, luckExponent = 3   },
+    { min = 5.8,   max = 6.2,   weight = 15.625, usesLuck = true, luckExponent = 3.5 },
+    { min = 9.5,   max = 12.5,  weight = 3,      usesLuck = true, luckExponent = 4   },
+    { min = 12,    max = 17,    weight = 0.05,   usesLuck = true, luckExponent = 4.5 },
+    { min = 20,    max = 35,    weight = 0.0001, usesLuck = true, luckExponent = 5   },
+}
+
+function GetRandomPlantSize(luck, seed)
+    local rng = Random.new(seed)
+    luck = math.clamp(luck, 1, 100)
+    -- compute each tier's weight up front
+    local weights     = {}
+    local totalWeight = 0
+    for i, tier in plantTiers do
+        weights[i]    = getPlantTierWeight(tier, luck)
+        totalWeight   = totalWeight + weights[i]
+    end
+    -- weighted-random tier pick
+    local roll    = rng:NextNumber() * totalWeight
+    local running = 0
+    local size    = 1
+    for i, tier in plantTiers do
+        running = running + weights[i]
+        if roll <= running then
+            size = tier.min + rng:NextNumber() * (tier.max - tier.min)
+            break
+        end
+    end
+    -- doubling rolls (1% at luck 1, scales to 5% at luck 100)
+    local doublingChance = 0.01 + (0.05 - 0.01) * ((luck - 1) / 99)
+    while size * 2 <= 10000000 and rng:NextNumber() <= doublingChance do
+        size = size * 2
+    end
+    return size
+end
+</syntaxhighlight>
+The final size multiplier is applied to the crop's '''BaseWeight''' to produce the actual weight in kilograms:
+<math>\text{Weight (kg)} = \text{BaseWeight} \times \text{Size}</math>
+
+== Fruit Stock ==
+The Fruit Stock system applies sell multipliers and penalties to each crop, which can reach from 0.8x up to 4x. These refresh every 10 minutes.
+
+=== <u>Tiers</u> ===
+{| class="fandom-table" style="width:65%;"
+! Tier !! Multiplier
+|-
+| Normal || x1
+|-
+| Big || x2
+|-
+| Mega || x4
+|}
+
+== Double or Nothing ==
+Double or Nothing is a selling option offered by [[Sell Stand|Steven]] that replaces the Bargain mechanic. Rather than negotiating a higher price, players gamble their entire fruit inventory for a chance to repeatedly double its total sell value.
+
+Once started, each round comes to one of two outcomes:
+* Win: The pot doubles in value.
+* Bust: The player's entire wagered inventory is lost. No {{Sheckle}}, {{Leaf}} or items are returned.
+
+After each Win, the player can choose between:
+* Sell: Cash out immediately, receiving {{Sheckle}}/{{Leaf}} equal to the current pot. The wagered fruits are consumed.
+* Double or Nothing: Risk the current pot on another round to attempt doubling it again.
+* Nevermind: Abandon the session, keeping the original, unwagered inventory.
+
+== Bargaining ==
+Bargaining was a feature that allows players to negotiate a higher sell price for their crops with [[Sell Stand|Steven]] before it was replaced by Double or Nothing.
+
+When a player selects Bargain!, Steven asks what they would like to bargain over. Players can choose between two modes:
+
+* Bargain This: Negotiates a higher price for the single crop currently being held. Costs {{Sheckle}} equal to 55% of the crop's current offer price.
+* Bargain Inventory: Negotiates higher prices for the entire inventory at once. Costs {{Sheckle}} equal to 55% of the total inventory value.
+Favorited crops cannot be bargained. If the player has nothing to bargain with, Steven will refuse.
+
+Each time a player asks for more, the game rolls a random outcome:
+* Won: Steven raises his offer.
+* Legendary: A rare outcome that triggers a significantly higher payout.
+* Lost: Steven holds firm at the current price.
+
+''This feature has been removed as of Update 1.''
+
+=== <u>Costs</u> ===
+{| class="wikitable" style="width:60%;"
+! Action !! Cost
+|-
+| Bargain a single crop/ inventory || 55% of current value
+|-
+| Cooldown between bids || 30 seconds
+|-
+| Skip cooldown || {{Robux|3}}
+|}
+
+=== <u>Daily Deal</u> ===
+If a Daily Deal is active, a Daily Deal option also appears during bargaining, offering a flat price equal to 2.2x the crop's base value (or 2.2x the total inventory value for inventory bargaining). The Daily Deal can be used 1 time every twelve hours.
+
+== Auction ==
+The Auction is run by the Auctioneer NPC at the Auction Stand. Lots rotate every 30 minutes and may include Seeds, Crops, Pets, Gears, Crates, Seed Packs, and Eggs.
+
+=== <u>Pricing</u> ===
+The Auction uses a Dutch auction format: each lot starts at a high price and decreases over time until it either expires or reaches its minimum price. Buying early costs more; waiting risks losing the lot.
+The current price of a lot is:
+<math>\text{Current Price} = \max\!\left(\text{minPrice},\ \text{startPrice} - \operatorname{round}\!\left(\text{startPrice} \times \frac{\text{decrementPercent}}{100}\right) \times \left\lfloor\dfrac{t - \text{rolledAt}}{\text{decrementInterval}}\right\rfloor\right)</math>
+Where ''t'' is the current server time.
+
+{| class="wikitable" style="width:65%;"
+! Property !! Description
+|-
+| Start Price
+| The initial asking price when the lot is listed.
+|-
+| Decrement Percent
+| The percentage of the start price by which the price drops per interval tick.
+|-
+| Decrement Interval
+| How often (in seconds) the price drops by the decrement percent.
+|-
+| Minimum Price
+| The lowest price the lot can fall to before expiry.
+|-
+| Expiry
+| The server time at which the lot is removed from the Auction.
+|}
+
+=== <u>Stock</u> ===
+Some lots have a limited stock quantity. A lot's availability is displayed on its listing:
+{| class="wikitable" style="width:50%;"
+! Display !! Meaning
+|-
+| xN in Stock
+| N purchases remaining.
+|-
+| Unlimited
+| No stock limit.
+|-
+| Sold Out
+| All available stock has been purchased, or the lot's time has expired; no further purchases are possible.
+|}
+
+=== <u>Refresh</u> ===
+All lots are replaced simultaneously every 15 minutes.
+
+=== <u>Buying</u> ===
+Lots can be purchased with {{Sheckle}} or {{Leaf}}. Some lots additionally offer a {{Robux}} purchase option.
+
+== Skill Points ==
+Skill Points are a currency used to upgrade four personal stats from the Garden Stats menu.
+
+Each skill can also be upgraded directly with {{Robux}}, and points can be reset with the Refund button.
+
+=== <u>Skills</u> ===
+{| class="wikitable" style="width:70%;"
+! Skill !! Effect !! Purchasable with {{Robux}}?
+|-
+| Base Speed || Run faster || {{Yes}}
+|-
+| Base Jump || Jump higher || {{Yes}}
+|-
+| Shovel Power || Hit stronger || {{Yes}}
+|-
+| Max Backpack || Store more harvested fruit || {{No}}
+|}
+
+=== <u>Upgrade Cost</u> ===
+The Skill Point cost to raise a skill is equal to its current level - upgrading from level ''N'' to level ''N''+1 costs ''N'' Skill Points. The total cost to reach level ''L'' from level 1 is therefore:
+<math>\text{Total Cost} = \frac{(L-1)\,L}{2}</math>
+
+=== <u>Robux Upgrades</u> ===
+Base Speed, Base Jump, and Shovel Power each have a {{Robux}} option. It scales with the skill's current level:
+<math>\text{Tier} = \operatorname{clamp}\!\left(\left\lfloor\dfrac{\text{Level}}{5}\right\rfloor + 1,\ 1,\ 10\right)</math>
+So the tier increases every 5 levels, up to a maximum of tier 10.
+
+=== <u>Refund</u> ===
+Players can reset their spent Skill Points using the Refund button, refunding all points.
+
+== Polling ==
+'''Polling''' is a feature that lets the developers gather player feedback by launching in-game polls. When a poll is active, a widget appears near the top of the screen, just below the teleport buttons.
+
+=== <u>Voting</u> ===
+Each poll presents a question alongside up to four color-coded options (red, blue, yellow, and green). Players vote by clicking an option's button.
+* Most polls allow a single vote per player, though some polls may permit multiple votes to be cast across different options.
+* Once a player has used all of their available votes, their option buttons become disabled and greyed out for the remainder of the poll.
+* Voting several times in quick succession displays a combo counter (e.g. "x3") next to the button.
+
+=== <u>Results & Timer</u> ===
+A countdown timer at the top of the widget shows the time remaining, turning red once fewer than 10 seconds are left. Below it, a bar shows the live share of votes for each option, along with the vote count if the segment is wide enough to display it.
+
+Once a poll ends, results remain visible for a short time before the widget disappears.
+
+=== <u>Visibility</u> ===
+The polling widget can be collapsed or expanded with a toggle button.
+
+== Guilds ==
+Guilds can be created for {{Robux|99}}. Guild Slots can be upgraded and are available in packs:
+{| class="wikitable"
+! Current Size !! Upgrade To !! Price
+|-
+| 20 || 25 || {{Robux|37}}
+|-
+| 25 || 30 || {{Robux|79}}
+|-
+| 30 || 35 || {{Robux|189}}
+|-
+| 35 || 40 || {{Robux|279}}
+|-
+| 40 || 45 || {{Robux|399}}
+|-
+| 45 || 50 || {{Robux|499}}
+|}
+The maximum guild size is 50 members.
+
+To invite a player to a guild, open the Guild page and navigate to the Invite tab. To accept or decline an invite, interact with the mailbox.
+
+More info: [[Guilds]]
+
+== Props ==
+Props are decorative objects that can be placed in a player's garden.
+
+Cosmetics are mainly used for miscellaneous and creative purposes. They are obtained from the [[Props Shop]]. Props can be placed or removed through the "Build" tool.
+
+== Shop Restock ==
+The player can purchase Shop Restocks for {{Robux|39}}, making them to instantly refreshing the Shops without waiting for the restock timer. Without {{Robux}}, all shops restock every 5 minutes.
+
+== Codes ==
+'''Codes''' are a feature introduced at the beginning of the game. Found in the Settings menu, players can input codes found on the developer's social media into the textbox.
+
+=== <u>Active Codes</u> ===
+* TEAMGREENBEAN
+** 3x [[Green Bean|Green Bean Seed]]
+* WATERYOPLANTS
+** 10x [[Common Watering Can]]
+* REMEMBERTODRINKWATER
+** 1x [[Common Watering Can]]
+
+== Decay ==
+Crops left unharvested on a player's plot will gradually decay over time. Decayed crops lose 80% of their value. Decayed crops will also change their color. Watering a decayed crop will restore its value and color, as well as restore all fruits connected to the crop.
+
+== Time Cycles ==
+The whole day lasts 10 minutes, the day lasting 7 minutes 30 seconds, sunset lasting 30 seconds, and night 2 minutes.
+
+== Items & Gifting ==
+Players can gift items by sending mail through the mailbox, dropping items, or standing next to a player and gifting them an item. Plants, Seeds, Gears, and Pets can be dropped or gifted, but props can only be mailed. It’s important to note that rare+ pets can not be gifted or mailed but can still be dropped.  More info on dropping  ↳ [[Mechanics#Dropping|Dropping]].
+
+If a player's mailbox is full, the items sent will be returned, and the player will be notified.
+
+== Stealing ==
+At night, players can steal from other plots. To retrieve a stolen fruit, the victim can hit the player with a [[Shovel]]. Stealing is free.
+More info found at [[Stealing]].
+
+== Plot Expansion ==
+Players can expand their plot 6 times, each adding two new fields to plant on. Each expansion rises in price. This also increases the number of the seeds you can plant.
+{| class="fandom-table mw-collapsible mw-uncollapsed"
+! Expansion !! Cost
+|-
+| 1 || {{Sheckle|500}}
+|-
+| 2 || {{Sheckle|40,000}}
+|-
+| 3 || {{Sheckle|1,000,000}}
+|-
+| 4 || {{Sheckle|40,000,000}}
+|-
+| 5 || {{Sheckle|200,000,000}}
+|-
+| 6 || {{Sheckle|1,000,000,000}}
+|}
+{| class="fandom-table mw-collapsible mw-uncollapsed"
+! Expansion !! Cost
+|-
+| 1 || {{Leaf|500}}
+|-
+| 2 || {{Leaf|40,000}}
+|-
+| 3 || {{Leaf|1,000,000}}
+|-
+| 4 || {{Leaf|40,000,000}}
+|-
+| 5 || {{Leaf|200,000,000}}
+|-
+| 6 || {{Leaf|1,000,000,000}}
+|}
+
+== Pet Slots ==
+Players can upgrade their pet equip slots 3 times.
+{| class="fandom-table mw-collapsible mw-uncollapsed"
+! Upgrade !! Cost
+|-
+| 1 || {{Sheckle|200,000}}
+|-
+| 2 || {{Sheckle|1,000,000}}
+|-
+| 3 || {{Sheckle|5,000,000}}
+|}
+{| class="fandom-table mw-collapsible mw-uncollapsed"
+! Upgrade !! Cost
+|-
+| 1 || {{Leaf|200,000}}
+|-
+| 2 || {{Leaf|1,000,000}}
+|-
+| 3 || {{Leaf|5,000,000}}
+|}
+
+== Fence Skins ==
+Fence Skins allow the player to customize their garden's fences. They can be accessed through the garden sign in front of the player's garden. They are purely for cosmetic purposes and don't give the player any boosts.
+
+Fence Skins can be obtained through the [[Fence Crate]].
+
+== Dropping ==
+Players can drop items by pressing backspace on their keyboard or a button on mobile. Other players can then pick up the dropped item. The following items can be dropped:
+* Seeds
+* Gears
+* Pets
+* Crops
+* Seed Packs
+* Crates
+
+== Mailbox ==
+Players can gift other players using the mailbox. Players can gift Seeds, Gears, Pets, and Props. The player can also add an optional note. Mailing is free.
+
+== Gallery ==
+<gallery>
+File:GrowPlant.png|Grow Plant Icon
+File:GrowAll.png|Grow All Icon
+File:Double or nothing .png|Double or Nothing Streak (3)
+</gallery>
+[[Category:Game Features]]

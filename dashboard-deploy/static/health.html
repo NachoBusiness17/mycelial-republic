@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>LOOP HEALTH · real-time what works / what doesn't</title>
+<style>
+  :root{
+    --bg:#0b0f0d; --panel:#121815; --panel2:#0e1411; --line:#1e2a24;
+    --fg:#d6e3d8; --dim:#7d9185; --faint:#4c5f55;
+    --ok:#34d17b; --warn:#e5b83b; --bad:#e5533d; --accent:#4fb3a8;
+    --mono:"Cascadia Code",Consolas,monospace; --sans:"Segoe UI",system-ui,sans-serif;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--sans);font-size:14px}
+  #top{display:flex;align-items:baseline;gap:14px;padding:12px 18px;border-bottom:1px solid var(--line);
+    background:linear-gradient(180deg,#0d120f,#0b0f0d)}
+  #top h1{font-family:var(--mono);font-size:18px;margin:0;color:var(--accent);letter-spacing:.08em}
+  #top h1 .sub{color:var(--dim);font-size:11px;margin-left:8px;letter-spacing:.02em}
+  #state{font-family:var(--mono);font-size:12px;color:var(--dim)}
+  #state .dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:6px}
+  #state.ok .dot{background:var(--ok)} #state.deg .dot{background:var(--warn)} #state.down .dot{background:var(--bad)}
+  #grid{display:grid;grid-template-columns:repeat(12,1fr);gap:10px;padding:12px 18px}
+  .card{grid-column:span 12;background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:10px 12px}
+  .card h2{font-family:var(--mono);font-size:11px;text-transform:uppercase;letter-spacing:.12em;
+    color:var(--dim);margin:0 0 8px;display:flex;justify-content:space-between}
+  .card h2 .src{color:var(--faint);font-weight:400}
+  .pill{display:inline-block;padding:1px 7px;border-radius:10px;font-size:10px;font-family:var(--mono);border:1px solid var(--line)}
+  .pill.ok{color:var(--ok);border-color:#1f4a34} .pill.bad{color:var(--bad);border-color:#4a1f1f} .pill.warn{color:var(--warn);border-color:#4a3b1f}
+  .pill.faint{color:var(--faint)}
+  #procGrid,#livenessGrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px;margin-top:6px}
+  .proc,.live{border:1px solid var(--line);border-radius:5px;padding:8px 10px;background:var(--panel2)}
+  .proc .n,.live .n{font-family:var(--mono);font-size:12px;color:var(--fg)}
+  .proc .m,.live .m{font-family:var(--mono);font-size:10px;color:var(--faint);margin-top:3px;word-break:break-all}
+  .kv{display:flex;justify-content:space-between;font-family:var(--mono);font-size:12px;padding:2px 0;border-bottom:1px dotted var(--line)}
+  .kv:last-child{border-bottom:none} .kv .k{color:var(--dim)} .kv .v{color:var(--fg);text-align:right}
+  #issues li{font-family:var(--mono);font-size:12px;color:var(--bad);margin:3px 0}
+  .btn{border:1px solid var(--line);background:var(--panel2);color:var(--fg);font-family:var(--mono);
+    font-size:11px;padding:3px 9px;border-radius:4px;cursor:pointer;margin-right:6px}
+  .btn:hover{border-color:var(--accent)}
+  .muted{color:var(--faint);font-family:var(--mono);font-size:10px}
+  .err{color:var(--bad);font-family:var(--mono);font-size:11px}
+</style>
+</head>
+<body>
+<div id="top">
+  <h1>LOOP HEALTH<span class="sub">real-time · what works / what doesn't</span></h1>
+  <span id="state"><span class="dot"></span><span id="stateTxt">connecting…</span></span>
+  <div style="flex:1"></div>
+  <span class="muted" id="ts"></span>
+  <button class="btn" id="refresh">↻ refresh</button>
+  <button class="btn" id="goFleet">fleet ↗</button>
+</div>
+<div id="grid">
+  <div class="card"><h2>Issues <span class="src">the honest 'what's not working'</span></h2><ul id="issues"><li class="muted">loading…</li></ul></div>
+  <div class="card"><h2>Processes <span class="src">pid + live CPU (stuck = high cpu, stale log)</span></h2><div id="procGrid"></div></div>
+  <div class="card"><h2>Cadence <span class="src">did the parallel-provider cadence fire + learn?</span></h2><div id="cadence"></div></div>
+  <div class="card"><h2>Liveness <span class="src">liveness_sense classify (ALIVE/DEAD)</span></h2><div id="livenessGrid"></div></div>
+  <div class="card"><h2>Doctor <span class="src">loop_doctor sense</span></h2><div id="doctor"></div></div>
+</div>
+<script>
+const $=(s)=>document.querySelector(s);
+async function load(){
+  try{
+    const r=await fetch('/api/v1/loop/health');
+    const d=await r.json();
+    if(!d.ok) throw new Error(d.error||'bad response');
+    const st=d.overall==='ok'?'ok':(d.overall==='degraded'?'deg':'down');
+    $('#state').className=st;
+    $('#stateTxt').textContent=d.overall;
+    $('#ts').textContent=d.ts.replace('T',' ').slice(0,19)+'Z';
+    renderIssues(d.issues||[]);
+    renderProcs(d.processes?.processes||{}, d.processes);
+    renderCadence(d.cadence||{});
+    renderLiveness(d.liveness||{});
+    renderDoctor(d.doctor||{});
+  }catch(e){
+    $('#state').className='down'; $('#stateTxt').textContent='error';
+    $('#issues').innerHTML='<li class="err">'+e.message+'</li>';
+  }
+}
+function renderIssues(issues){
+  const el=$('#issues'); el.innerHTML='';
+  if(!issues.length){ el.innerHTML='<li class="pill ok">no issues — all clear</li>'; return; }
+  for(const i of issues) el.innerHTML+='<li>'+esc(i)+'</li>';
+}
+function renderProcs(procs, meta){
+  const el=$('#procGrid'); el.innerHTML='';
+  for(const [role,p] of Object.entries(procs)){
+    const cpu=p.cpu_pct;
+    const hot = cpu!=null && cpu>85;
+    const d=document.createElement('div'); d.className='proc';
+    d.innerHTML=`<div class="n">${esc(role)} <span class="pill ${hot?'bad':'ok'}">${hot?'HOT':'ok'}</span></div>`+
+      `<div class="m">pid ${p.pid||'?'} · cpu ${cpu!=null?cpu+'%':'?'}</div>`;
+    el.appendChild(d);
+  }
+  if(meta?.stuck_carrier) el.innerHTML+='<div class="proc"><div class="n">⚠ carrier STUCK</div><div class="m">high cpu + stale log</div></div>';
+  if(!Object.keys(procs).length) el.innerHTML='<span class="muted">no processes</span>';
+}
+function renderCadence(c){
+  const fired = c.cadence_fired;
+  const el=$('#cadence'); el.innerHTML='';
+  el.innerHTML=`<div class="kv"><span class="k">cadence fired (last 1h)</span><span class="v"><span class="pill ${fired?'ok':'warn'}">${fired?'YES':'NO'}</span></span></div>`+
+    `<div class="kv"><span class="k">cadence_learn rounds</span><span class="v">${c.cadence_learn_rounds||0}</span></div>`+
+    `<div class="kv"><span class="k">learned workers</span><span class="v">${c.learned_workers??'—'}</span></div>`+
+    `<div class="kv"><span class="k">last fire age</span><span class="v">${c.cadence_learn_last_age_s!=null?Math.round(c.cadence_learn_last_age_s/60)+'m':'—'}</span></div>`+
+    `<div class="kv"><span class="k">real_swarm rows</span><span class="v">${c.real_swarm_rows||0}</span></div>`;
+}
+function renderLiveness(l){
+  const el=$('#livenessGrid'); el.innerHTML='';
+  const agents=l.agents||{};
+  for(const [role,alive] of Object.entries(agents)){
+    const d=document.createElement('div'); d.className='live';
+    d.innerHTML=`<div class="n">${esc(role)} <span class="pill ${alive?'ok':'bad'}">${alive?'ALIVE':'DEAD'}</span></div>`+
+      `<div class="m">process pid ${alive?'present':'missing'}</div>`;
+    el.appendChild(d);
+  }
+  if(l.label_note) el.innerHTML+=`<div class="live"><div class="m">${esc(l.label_note)}</div></div>`;
+  if(!Object.keys(agents).length) el.innerHTML='<span class="muted">no liveness</span>';
+}
+function renderDoctor(d){
+  $('#doctor').innerHTML=
+    `<div class="kv"><span class="k">health score</span><span class="v">${d.health??'—'}</span></div>`+
+    `<div class="kv"><span class="k">errors</span><span class="v">${d.n_errors??'—'}</span></div>`+
+    `<div class="kv"><span class="k">warnings</span><span class="v">${d.n_warnings??'—'}</span></div>`+
+    `<div class="kv"><span class="k">modules checked</span><span class="v">${d.n_checked??'—'}</span></div>`;
+}
+function esc(s){return String(s??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+$('#refresh').onclick=load;
+$('#goFleet').onclick=()=>location.href='/fleet';
+load();
+setInterval(load, 30000);
+</script>
+<script src="/static/nav.js"></script></body>
+</html>

@@ -8,6 +8,13 @@
       "desc": "Block writing live-looking API key/token values into any artifact (path check alone cannot catch content leaks)",
       "regex": "(?i)\\b(sk-[A-Za-z0-9_-]{16,}|[A-Za-z0-9_-]{0,32}api[_-]?key[\"']?\\s*[:=]\\s*[\"'][A-Za-z0-9_\\-]{16,}[\"']?)",
       "severity": "block"
+    },
+    {
+      "id": "no_new_except_pass",
+      "desc": "Block except-pass scars (bare 'except: pass' / 'except Exception: pass', multiline included) in files BORN after the cutoff. Mickey17 W2 scarless-clone law 2026-09-29: everything whose git first-commit is on/before git_first_commit_after is grandfathered; a file with no git history is being born now and is fully subject. Regex is deliberately the two named shapes only (typed tuple excepts stay the pre-push ratchet's domain).",
+      "regex": "\\bexcept\\s*(?:Exception(?:\\s+as\\s+\\w+)?\\s*)?:\\s*pass\\b",
+      "severity": "block",
+      "git_first_commit_after": "2026-09-29"
     }
   ],
   "write_file_path": [

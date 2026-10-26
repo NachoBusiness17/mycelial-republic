@@ -1,7 +1,7 @@
 # Mag version registry
 
 **Commitment:** `mag-version-registry-001`  
-**As-of:** 2026-08-06
+**As-of:** 2026-09-26
 **Machine truth:** `configs/releases.yaml` · `configs/version_roadmap.yaml`  
 **Compass:** `docs/ref/MAG_MYCELIAL_REPUBLIC_COMPASS.md`  
 **Science map:** `docs/ref/MYCELIAL_SCIENCE_MAP.md`  
@@ -97,6 +97,20 @@ python main.py release notes v2
 python main.py release record --version v2 --gate run_a --ok --note "routing_smoke 9/9"
 python main.py training-events --stats --pattern release_milestone
 ```
+
+---
+
+## Regime milestones (revival, 2026-09-26)
+
+The version-gate trail went dark 2026-08-10 while fleet motion continued (468K+ training events since): the only writers were roadmap passes (`mag/roadmap_runner.py`) and manual `training_set build` folds, and neither ran again after the August window-storm pivot. Drift pairs T4/T5 (B2-05, 2026-09-26) proved the referent frozen while lanes moved.
+
+**Revival rule:** alongside version graduation gates, a **regime milestone** is a landed, durable, receipt-filed change to the estate (new standing tool, contract, law, or verified external steal that survives sessions). Distinguished by `gate_id` prefix `regime_`, recorded against the **active version era** (currently v5). It is not a graduation gate and never flips a version to shipped. Display split (B2-209, 2026-09-26): `release status` counts regime rows in a separate `regime_passed` field beside `gates_passed`, never inside it; `_gates_passed_for` excludes the `regime_` prefix.
+
+- **What counts:** artifact on disk + receipt in `watch/inbox/` or `corpus/steal/` + one-line note naming the landed date. Nothing else.
+- **Who writes:** the session that landed the work, at close. No daemon, no cron.
+- **Trigger:** filing the receipt. The same close step runs:
+  `mag.cmd`-adjacent `python main.py release record v5 --gate regime_<name> --ok --note "<landed YYYY-MM-DD> <one line>" --evidence <receipt path>`
+- **Tripwire:** the weekly drift stamp (T4/T5) already reads this trail; a stale regime trail (>14 days, fleet moving) re-flags the decoupling.
 
 ---
 

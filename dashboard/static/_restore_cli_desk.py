@@ -5,7 +5,7 @@ import re
 from pathlib import Path
 
 static = Path(__file__).resolve().parent
-bak = static / "index.clear-ui.html"
+bak = static / "museum" / "index.clear-ui.html"
 cur = static / "index.html"
 src = (bak if bak.exists() else cur).read_text(encoding="utf-8")
 

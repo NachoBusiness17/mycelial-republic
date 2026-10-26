@@ -454,6 +454,7 @@ let rewindBuf = [];
 let rewindT = 0;
 // The second lantern: presence relay — other bearers in your dark
 const RELAY = 'http://127.0.0.1:8766';
+const RELAY_WS = RELAY.replace(/^http/, 'ws') + '/mud/ws';   // FW-37 push socket (relay spike)
 const LANTERN_NAME = new URLSearchParams(location.search).get('name') || 'lantern';
 const ME = { id: 'mud-' + Math.random().toString(36).slice(2, 8), name: LANTERN_NAME };
 let mudOthers = [];
@@ -2604,10 +2605,40 @@ window.MUD = { get G() { return G; }, get player() { return player; }, get enemi
   step: function (dt) { last = performance.now(); handleStateKeys(); update(dt || 0.016); draw(); },
   pump: function (n, dt) { for (let i = 0; i < (n || 1); i++) this.step(dt || 0.016); return this.enemies.length; } };
 
-// The second lantern: broadcast presence, listen for other bearers
+// The second lantern: broadcast presence, listen for other bearers.
+// FW-37 spike: prefer the relay's push socket — presence goes out as ws text frames,
+// `others` come back pushed (~8Hz, no poll pair). Any socket death counts a strike;
+// at 3 strikes the lantern stays on the v1 HTTP poll (250ms seen+others) until reload.
+// Headless harnesses shim fetch but not WebSocket — the typeof guard keeps them on HTTP.
+let relayWs = null;      // the push socket, or null while on the v1 HTTP poll
+let relayWsFail = 0;     // connect/close strikes
+let relayWsTried = false;// one attempt in flight at a time
+function relaySeenBody() {
+  return JSON.stringify({ id: ME.id, name: ME.name, x: player.x, y: player.y, hp: player.hp, max_hp: player.maxHp, state: G.state });
+}
 function relayTick() {
   try {
-    const body = JSON.stringify({ id: ME.id, name: ME.name, x: player.x, y: player.y, hp: player.hp, max_hp: player.maxHp, state: G.state });
+    if (relayWs) {
+      if (relayWs.readyState === 1) { relayWs.send(relaySeenBody()); return; }   // push mode: others arrive broadcast
+    } else if (!relayWsTried && relayWsFail < 3 && typeof WebSocket !== 'undefined' && RELAY_WS) {
+      relayWsTried = true;
+      try {
+        const ws = new WebSocket(RELAY_WS);
+        ws.onmessage = function (m) {
+          try { const d = JSON.parse(m.data); if (d && d.ok && d.type === 'others') mudOthers = d.others || []; } catch (e) {}
+        };
+        ws.onclose = function () {
+          if (relayWs === ws) {
+            relayWs = null; relayWsFail++;
+            relayWsTried = relayWsFail < 3;   // strike 3: HTTP until reload
+          }
+        };
+        ws.onerror = function () {};
+        relayWs = ws;
+      } catch (e) { relayWsFail++; relayWsTried = relayWsFail < 3; }
+    }
+    // v1 HTTP poll: runs while no open socket (handshake in flight, relay down, or strike cap)
+    const body = relaySeenBody();
     fetch(RELAY + '/mud/seen', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body }).catch(() => {});
     fetch(RELAY + '/mud/others?id=' + ME.id).then(r => r.json()).then(d => { if (d && d.ok) mudOthers = d.others || []; }).catch(() => {});
   } catch (e) { /* relay down: solo play continues */ }

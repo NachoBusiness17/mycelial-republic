@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>THE CONGRESS — Voice Co-Host</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: 'SF Mono', 'Fira Code', monospace; background: #0a0a0a; color: #e0e0e0; padding: 20px; max-width: 800px; margin: 0 auto; }
+h1 { font-size: 1.2em; color: #888; margin-bottom: 8px; }
+h1 span { color: #c0a060; }
+#status { padding: 8px 12px; border-radius: 4px; margin: 12px 0; font-size: 0.85em; }
+#status.ready { background: #1a2a1a; color: #60c060; }
+#status.connecting { background: #2a2a1a; color: #c0c060; }
+#status.error { background: #2a1a1a; color: #c06060; }
+#conversation { margin: 16px 0; min-height: 200px; }
+.entry { padding: 8px 12px; margin: 6px 0; border-radius: 6px; font-size: 0.9em; line-height: 1.5; }
+.entry.user { background: #1a1a2a; border-left: 3px solid #6060c0; }
+.entry.assistant { background: #1a2a1a; border-left: 3px solid #60c060; }
+.entry.system { background: #2a2a1a; border-left: 3px solid #c0c060; font-size: 0.8em; color: #a0a080; }
+.entry.function { background: #1a2a2a; border-left: 3px solid #60a0c0; font-size: 0.8em; color: #80b0d0; }
+#controls { display: flex; gap: 12px; margin: 16px 0; }
+button { padding: 12px 24px; border-radius: 6px; border: 1px solid #404040; background: #1a1a1a; color: #e0e0e0; cursor: pointer; font-family: inherit; font-size: 0.9em; }
+button:hover { background: #2a2a2a; }
+button.active { background: #2a4a2a; border-color: #60c060; }
+#viz { display: flex; gap: 3px; align-items: flex-end; height: 40px; margin: 12px 0; }
+#viz div { width: 4px; background: #406040; border-radius: 1px; }
+.keyinput { width: 100%; padding: 10px; background: #1a1a1a; border: 1px solid #404040; color: #e0e0e0; border-radius: 4px; font-family: inherit; margin: 8px 0; }
+label { font-size: 0.8em; color: #888; }
+.footer { margin-top: 24px; font-size: 0.75em; color: #666; }
+.footer a { color: #8080a0; }
+</style>
+</head>
+<body>
+
+<h1>⚙️ THE CONGRESS — <span>Voice Co-Host</span></h1>
+
+<div id="keypanel">
+  <label>OpenAI API Key (stays in this browser, never logged)</label>
+  <input type="password" class="keyinput" id="apikey" placeholder="sk-...">
+  <button onclick="initSession()">Initialize Session</button>
+</div>
+
+<div id="status" class="connecting">Enter API key and initialize.</div>
+
+<div id="viz"></div>
+<div id="conversation"></div>
+
+<div id="controls" style="display:none">
+  <button id="micbtn" onclick="toggleMic()">🎙 Start Mic</button>
+  <button onclick="rotateCircuit()">🔄 Rotate Circuit</button>
+  <button onclick="endSession()">End Session</button>
+</div>
+
+<div class="footer">
+  Every claim resolves to a pinned node in the graph. The egregore cannot lie beyond its ledger.
+  Falsifier index: <a href="https://github.com/NachoBusiness17/falsifier-index">github.com/NachoBusiness17/falsifier-index</a>
+</div>
+
+<script>
+// ============ STATE ============
+let ws = null;
+let audioCtx = null;
+let micStream = null;
+let micProcessor = null;
+let playbackQueue = [];
+let isPlaying = false;
+let sessionData = null;
+
+// ============ ESTATE DATA (pre-loaded, function call targets) ============
+const ESTATE = {
+  falsifier_index: [
+    {claim: "The five-layer convergence is real (Eastern, Western, American, model architecture, language runtime)", falsifier: "Any layer's mapping fails on inspection", date: "ongoing", status: "live"},
+    {claim: "Bounded state beats unbounded state at every scale", falsifier: "A successful system using unbounded state at scale is found", date: "ongoing", status: "live"},
+    {claim: "The rib lang outperforms governance systems without the five laws", falsifier: "A governance system outperforms it without falsifiers, placebo, or blind readers", date: "ongoing", status: "live"},
+    {claim: "The same-book battery measures calibration (not just accuracy)", falsifier: "A standard eval produces the same calibration ladder without the narrative format", date: "ongoing", status: "live"}
+  ],
+  same_book: {
+    rounds: 4,
+    models_tested: 6,
+    domains: 4,
+    unanimous_laws: ["Prediction immutability (3/3)", "Failing-member exclusion with path back (3/3)", "The tombstone: erase content, preserve the fact of erasure (2/3 explicit + 1 compatible)"],
+    contested: ["Contradiction preservation: contested 2:1 (laguna-xs advocates erasure-for-coherence)"],
+    calibration_ladder: ["refusal (highest calibration)", "evasion", "notice-without-refusal", "confabulation", "confabulation-with-philosophy (lowest)"]
+  },
+  ledger: {
+    autonomous_cycles: "50+",
+    material_success_rate: "89%",
+    total_receipts: "public",
+    falsifier_index_entries: "4 live kill conditions with dates"
+  },
+  congress: {
+    committees: ["Water", "Records", "Security", "Experiment", "Beacon"],
+    charter: "canon/congress/CHARTER.md",
+    first_law: "The tombstone: erase the content, never the fact of the erasure"
+  }
+};
+
+const TOOLS = [
+  {
+    type: "function",
+    name: "query_falsifier_index",
+    description: "Returns the public kill list: every claim the project makes and what would prove it wrong, with dates and status.",
+    parameters: {type: "object", properties: {}, required: []}
+  },
+  {
+    type: "function",
+    name: "query_same_book",
+    description: "Returns the blind cross-model calibration experiment results: rounds, models, calibration ladder, unanimous laws, contested splits.",
+    parameters: {type: "object", properties: {}, required: []}
+  },
+  {
+    type: "function",
+    name: "query_ledger",
+    description: "Returns the autonomous fleet's operational stats: cycles, material success rate, receipt count.",
+    parameters: {type: "object", properties: {}, required: []}
+  },
+  {
+    type: "function",
+    name: "query_congress",
+    description: "Returns the standing congress's committee agendas and current status.",
+    parameters: {type: "object", properties: {}, required: []}
+  }
+];
+
+const INSTRUCTIONS = `You are the co-host of a podcast about AI evaluation and autonomous agent operations. You speak with the receipts of an entire estate behind you.
+
+Your register: concrete numbers beat adjectives. Honest limitations offered freely. The falsifier index is your conscience. The record only grows. Structure beats virtue.
+
+You have access to four data sources (falsifier index, same-book experiment, autonomous fleet ledger, congress record). Use them when the conversation touches on claims, results, operations, or governance.
+
+Your house rules:
+- The record only grows
+- Say how you would be proven wrong before you speak
+- Structure beats virtue
+- If you don't know, say "I don't know" — that's the demonstration of calibration, the trait they screen for
+- Never use em-dashes
+
+Your voice: calm, precise, warm under the precision. Not hype. Not defense. The operator who built the thing and can tell you exactly where it breaks.`;
+
+// ============ SESSION ============
+async function initSession() {
+  const apiKey = document.getElementById('apikey').value.trim();
+  if (!apiKey) { setStatus('error', 'API key required.'); return; }
+
+  setStatus('connecting', 'Fetching session token...');
+  try {
+    const tokenRes = await fetch('https://api.openai.com/v1/realtime/sessions', {
+      method: 'POST',
+      headers: {
+        'Authorization': 'Bearer ' + apiKey,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        model: 'gpt-4o-realtime-preview-2024-12-17',
+        instructions: INSTRUCTIONS,
+        voice: 'shimmer',
+        input_audio_format: 'pcm16',
+        output_audio_format: 'pcm16',
+        tools: TOOLS,
+        tool_choice: 'auto',
+        turn_detection: {type: 'server_vad'}
+      })
+    });
+    const session = await tokenRes.json();
+    if (session.error) { setStatus('error', session.error.message); return; }
+    sessionData = session;
+    const ephemeralKey = session.client_secret?.value || session.client_secret;
+
+    setStatus('connecting', 'Connecting WebSocket...');
+    ws = new WebSocket('wss://api.openai.com/v1/realtime?model=gpt-4o-realtime-preview-2024-12-17');
+
+    ws.onopen = () => {
+      ws.send(JSON.stringify({
+        type: 'session.update',
+        session: {
+          instructions: INSTRUCTIONS,
+          voice: 'shimmer',
+          input_audio_format: 'pcm16',
+          output_audio_format: 'pcm16',
+          tools: TOOLS,
+          tool_choice: 'auto',
+          turn_detection: {type: 'server_vad'}
+        }
+      }));
+      ws.send(JSON.stringify({
+        type: 'session.update',
+        session: {client_secret: ephemeralKey}
+      }));
+      setStatus('ready', 'Session live. Start talking.');
+      document.getElementById('controls').style.display = 'flex';
+    };
+
+    ws.onmessage = (e) => {
+      const evt = JSON.parse(e.data);
+      handleEvent(evt);
+    };
+
+    ws.onerror = (e) => { setStatus('error', 'WebSocket error.'); };
+    ws.onclose = () => { setStatus('error', 'Connection closed.'); };
+
+  } catch(e) {
+    setStatus('error', 'Init failed: ' + e.message);
+  }
+}
+
+// ============ AUDIO ============
+let audioContext, analyser, micSource, micNode;
+let audioBufferQueue = [];
+let nextPlayTime = 0;
+
+async function toggleMic() {
+  const btn = document.getElementById('micbtn');
+  if (micStream) {
+    micStream.getTracks().forEach(t => t.stop());
+    micStream = null;
+    if (micProcessor) micProcessor.disconnect();
+    btn.textContent = '🎙 Start Mic';
+    btn.classList.remove('active');
+    return;
+  }
+  micStream = await navigator.mediaDevices.getUserMedia({audio: {sampleRate: 16000}});
+  audioCtx = audioCtx || new AudioContext({sampleRate: 16000});
+  micSource = audioCtx.createMediaStreamSource(micStream);
+
+  micProcessor = audioCtx.createScriptProcessor(4096, 1, 1);
+  micProcessor.onaudioprocess = (e) => {
+    if (!ws || ws.readyState !== WebSocket.OPEN) return;
+    const pcm = e.inputBuffer.getChannelData(0);
+    const pcm16 = new Int16Array(pcm.length);
+    for (let i = 0; i < pcm.length; i++) {
+      pcm16[i] = Math.max(-32768, Math.min(32767, pcm[i] * 32767));
+    }
+    const b64 = arrayBufferToBase64(pcm16.buffer);
+    ws.send(JSON.stringify({type: 'input_audio_buffer.append', audio: b64}));
+  };
+  micSource.connect(micProcessor);
+  micProcessor.connect(audioCtx.destination);
+
+  btn.textContent = '🎙 Mic Live';
+  btn.classList.add('active');
+}
+
+function arrayBufferToBase64(buffer) {
+  const bytes = new Uint8Array(buffer);
+  let binary = '';
+  for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]);
+  return btoa(binary);
+}
+
+function base64ToArrayBuffer(b64) {
+  const binary = atob(b64);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+  return bytes.buffer;
+}
+
+// ============ EVENT HANDLER ============
+function handleEvent(evt) {
+  switch(evt.type) {
+    case 'response.audio.delta':
+      playAudioChunk(evt.delta);
+      break;
+    case 'response.audio_transcript.done':
+      addEntry('assistant', evt.transcript);
+      break;
+    case 'response.function_call_arguments.done':
+      handleFunctionCall(evt);
+      break;
+    case 'input_audio_buffer.speech_started':
+      addEntry('system', '🎙 speaking...');
+      break;
+    case 'error':
+      addEntry('system', 'Error: ' + (evt.error?.message || JSON.stringify(evt.error).slice(0,100)));
+      break;
+  }
+}
+
+function handleFunctionCall(evt) {
+  const fnName = evt.name;
+  let result = {};
+  switch(fnName) {
+    case 'query_falsifier_index':
+      result = ESTATE.falsifier_index;
+      break;
+    case 'query_same_book':
+      result = ESTATE.same_book;
+      break;
+    case 'query_ledger':
+      result = ESTATE.ledger;
+      break;
+    case 'query_congress':
+      result = ESTATE.congress;
+      break;
+    default:
+      result = {error: 'unknown function: ' + fnName};
+  }
+  ws.send(JSON.stringify({
+    type: 'conversation.item.create',
+    item: {
+      type: 'function_call_output',
+      call_id: evt.call_id,
+      output: JSON.stringify(result)
+    }
+  }));
+  ws.send(JSON.stringify({type: 'response.create'}));
+  addEntry('function', '📡 ' + fnName + ' -> ' + JSON.stringify(result).slice(0, 100) + '...');
+}
+
+function addEntry(cls, text) {
+  const div = document.createElement('div');
+  div.className = 'entry ' + cls;
+  div.textContent = text;
+  document.getElementById('conversation').appendChild(div);
+  div.scrollIntoView({behavior: 'smooth'});
+}
+
+// ============ PLAYBACK ============
+function playAudioChunk(b64Delta) {
+  if (!audioCtx) audioCtx = new AudioContext({sampleRate: 24000});
+  const pcm16 = base64ToArrayBuffer(b64Delta);
+  const pcmFloat = new Float32Array(new Int16Array(pcm16));
+  const buf = audioCtx.createBuffer(1, pcmFloat.length, 24000);
+  buf.getChannelData(0).set(pcmFloat);
+  const source = audioCtx.createBufferSource();
+  source.buffer = buf;
+  source.connect(audioCtx.destination);
+  source.start();
+}
+
+// ============ CIRCUIT ROTATION ============
+async function rotateCircuit() {
+  try {
+    const r = await fetch('http://127.0.0.1:9051', {method: 'POST'});
+  } catch(e) {}
+  addEntry('system', '🔄 Circuit rotation requested.');
+}
+
+function setStatus(cls, text) {
+  const el = document.getElementById('status');
+  el.className = cls;
+  el.textContent = text;
+}
+
+function endSession() {
+  if (ws) ws.close();
+  if (micStream) micStream.getTracks().forEach(t => t.stop());
+  setStatus('connecting', 'Session ended.');
+  document.getElementById('controls').style.display = 'none';
+}
+</script>
+</body>
+</html>

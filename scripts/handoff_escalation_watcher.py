@@ -44,18 +44,27 @@ def _now() -> str:
 
 
 def _load_seen() -> set[str]:
+    """SW1-06 (SWARM_1.md row 6, glm+deepseek converged): one canonical seen
+    format. The old reader accepted list-or-dict while the writer always wrote
+    a list (format drift), and the writer silently truncated to the newest 200
+    ids, so a backlog beyond 200 silently forgot its oldest processed ids (the
+    RESULTS_DIR existence check backstopped reprocessing, but the seen file
+    lied about what had been seen). Canonical shape: plain JSON list; a legacy
+    dict {"ids": [...]} is migrated on read; no truncation."""
     if not SEEN_PATH.is_file():
         return set()
     try:
         data = json.loads(SEEN_PATH.read_text(encoding="utf-8"))
-        return set(data if isinstance(data, list) else data.get("ids") or [])
+        if isinstance(data, dict):  # legacy shape: migrate, next save is canonical
+            data = data.get("ids") or []
+        return set(data if isinstance(data, list) else [])
     except (json.JSONDecodeError, OSError):
         return set()
 
 
 def _save_seen(ids: set[str]) -> None:
     SEEN_PATH.parent.mkdir(parents=True, exist_ok=True)
-    SEEN_PATH.write_text(json.dumps(sorted(ids)[-200:], indent=2), encoding="utf-8")
+    SEEN_PATH.write_text(json.dumps(sorted(ids), indent=2), encoding="utf-8")
 
 
 def _ollama_chat(model: str, prompt: str, timeout: int = 180) -> str:

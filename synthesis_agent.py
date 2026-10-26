@@ -42,17 +42,33 @@ def _now() -> str:
 
 
 def _last_jsonl(path: Path, n: int = 1) -> list[dict]:
+    """Last n parseable rows, read from the file tail (logs/kpi.jsonl was 790 MB).
+
+    Reads backwards in growing blocks until n valid rows are found or the
+    start of the file is reached, so the result matches a full read.
+    """
     if not path.is_file():
         return []
-    out = []
-    for line in path.read_text(encoding="utf-8", errors="replace").splitlines():
-        if not line.strip():
-            continue
-        try:
-            out.append(json.loads(line))
-        except json.JSONDecodeError:
-            continue
-    return out[-n:]
+    size = path.stat().st_size
+    block = 64 * 1024
+    with path.open("rb") as f:
+        while True:
+            start = max(0, size - block)
+            f.seek(start)
+            lines = f.read(size - start).decode("utf-8", errors="replace").splitlines()
+            if start > 0:
+                lines = lines[1:]  # first line may be cut mid-row
+            out = []
+            for line in lines:
+                if not line.strip():
+                    continue
+                try:
+                    out.append(json.loads(line))
+                except json.JSONDecodeError:
+                    continue
+            if len(out) >= n or start == 0:
+                return out[-n:]
+            block *= 4
 
 
 def _attention_pulse(limit: int = 6) -> list[dict]:

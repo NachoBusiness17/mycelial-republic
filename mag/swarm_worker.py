@@ -51,7 +51,7 @@ SCHEMA = "swarm_worker.v1"
 SWARM_DIR = ROOT / "memory" / "runs" / "swarm_worker"
 QUEUE_DIR = SWARM_DIR / "queue"
 RESULTS_DIR = SWARM_DIR / "results"
-DEFAULT_PROVIDER = "cerebras"  # 2026-09-05: Lite UNHOOKED from the default (operator: "the lite
+# 2026-09-05: Lite UNHOOKED from the default (operator: "the lite
 # subscription key is fucking me again — I bet subagents are running it automatically").
 # Confirmed: every task without an explicit provider rode the metered Lite pool (10K credits/wk
 # — promo verdict 09-05 falsified the $0-lane belief) and died mid-week twice. ZAI_LITE_LAW
@@ -60,6 +60,18 @@ DEFAULT_PROVIDER = "cerebras"  # 2026-09-05: Lite UNHOOKED from the default (ope
 # ruling — reserve only, never the default again without a fresh ruling.
 # deepseek stays the PAID BRAKE: explicit provider only, for tasks
 # that truly need it. The bill was $4/day riding deepseek by default — that was the leak.
+# B2-521 DORMANT GATE (2026-09-26): the hardcoded default above still handed every
+# provider-less task to cerebras after B2-36 declared it dormant (card-gated 30-day trial,
+# chat 402 no-credit; mag/doctor.py:607: dormant is a declared state). The default is now
+# derived from the ZAI_LITE_LAW order through the B2-133 dormant gate (mag/dormant.py):
+# while configs/providers.yaml carries cerebras dormant: true the default is groq; operator
+# GO flips the flag and cerebras returns as the default with no code edit. Receipt:
+# watch/inbox/burn_wave_20260926/B2_521_cerebras_stragglers_20260926.md
+from mag.dormant import dormant_ids as _dormant_provider_ids
+
+_SWARM_DEFAULT_ORDER = ("cerebras", "groq")  # ZAI_LITE_LAW: cerebras -> groq; Lite burst-only
+DEFAULT_PROVIDER = next(
+    (p for p in _SWARM_DEFAULT_ORDER if p not in _dormant_provider_ids()), "groq")
 MAX_PER_PASS = 8  # rightsized: how many tasks one CronJob pass may execute
 
 

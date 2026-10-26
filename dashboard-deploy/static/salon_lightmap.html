@@ -1,0 +1,399 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Salon Lightmap v2 — the room that remembers</title>
+<style>
+:root{--bg:#070d0c;--ink:#c8e6e0;--accent:#7cf5ff;--gold:#e8c96a;--mut:#5a7a74}
+body{margin:0;background:var(--bg);color:var(--ink);font:13px ui-monospace,Consolas,monospace;padding:14px}
+h1{font-size:15px;color:var(--accent);letter-spacing:.08em;margin:0 0 2px}
+.sub{color:var(--mut);font-size:11px;margin-bottom:12px}
+.row{display:flex;flex-wrap:wrap;gap:14px;align-items:flex-start}
+canvas.scene{width:560px;max-width:96vw;border:1px solid rgba(0,240,255,.25);border-radius:6px;cursor:crosshair;background:#070d0c}
+.col{width:330px;max-width:96vw}
+canvas.strip{width:100%;height:56px;border:1px solid rgba(0,240,255,.25);border-radius:4px;image-rendering:pixelated;display:block}
+.blk{border:1px solid rgba(0,240,255,.18);border-radius:8px;padding:8px 10px;margin-top:10px;background:#0a1412}
+.blk h2{font-size:11px;color:var(--gold);margin:0 0 6px;letter-spacing:.08em}
+.blk ol{margin:0;padding-left:18px;font-size:11px;line-height:1.55;color:#9fc4bc}
+.blk p{margin:4px 0;font-size:11px;color:#9fc4bc;line-height:1.5}
+.blk a{color:var(--accent)}
+#readout{font-size:11px;color:var(--mut);margin-top:6px;min-height:14px}
+#readout b{color:var(--accent)}
+.hint{font-size:10px;color:var(--mut);margin-top:6px}
+.hint b{color:var(--gold)}
+#state{font-size:10px;color:var(--mut);margin-top:4px;min-height:13px}
+#state b{color:var(--accent)}
+/* embed-compact: the in-app browser is the navigator — the wall hides, the game pins top */
+html.embed #fleetnav{display:none}
+html.embed body{padding-top:6px}
+html.embed h1{margin-top:6px}
+</style>
+<script>if(location.search.indexOf('embed=1')>=0){document.documentElement.classList.add('embed');}</script></head><body>
+<h1>SALON LIGHTMAP v2 — the room that remembers</h1>
+<div class="sub">one movable light · N=256 rays · d(θ) is the whole shadow state · drag/click the scene to move the light · wheel = radius · aim with the cursor: only the aimed sector is fully lit, the rest of the room stays at 15% (dark by construction) · walls earn light by fire-rate: <span style="color:var(--accent)">JOINED</span> ≥3 fires/24h twice running · <span style="color:var(--mut)">ghost</span> candidate, dashed-dim · <span style="color:#ff6b6b">PRUNE</span> 0 fires/72h</div>
+<div class="row">
+  <div><canvas id="c" class="scene" width="560" height="560"></canvas>
+    <div id="readout">move over the scene to probe a ray</div>
+    <div id="state">state: loading room_state.json…</div></div>
+  <div class="col">
+    <div class="blk"><h2>THE RAW 1D MAP — d(θ), 256 texels wide</h2>
+      <canvas id="s" class="strip" width="256" height="64"></canvas>
+      <p>x-axis = angle θ (0°→360°) · brightness = first-hit distance · <span style="color:var(--gold)">amber texels</span> = rays that hit a caster. This strip IS the light: the 2D scene right of it is one dependent read per pixel. Row 2 = <b>UNSEEN</b>: slate = outside the aim (the eye sees only its aim) · amber = occluded (wall-blocked) · dim teal = actually seen.</p></div>
+    <div class="blk"><h2>THE ALGORITHM — three passes, five lines</h2>
+      <ol>
+        <li><b>OCCLUSION</b> — casters = any pixel alpha&gt;0.75; bake the scene silhouette to a mask (per-pixel casters, no edge extraction).</li>
+        <li><b>1D MAP</b> — cast N rays; d(θ) = min normalized distance to the first caster: the radial horizon. 2D shadow state → 256 numbers.</li>
+        <li><b>RENDER</b> — per pixel, polar (θ,r): lit = step(r, d(θ)). One lookup, constant cost.</li>
+        <li><b>PENUMBRA</b> — 9-tap gaussian over NEIGHBORING ANGLES, width × smoothstep(0,1,r): aliasing spent as gradient (artifact-into-feature).</li>
+        <li><b>FALL OFF + ADD</b> — radial smoothstep(1,0,r); lights composite additively. ~20 lights were fill-bound on a 2013 GPU.</li>
+      </ol></div>
+    <div class="blk"><h2>THE ROOM THAT REMEMBERS — v2</h2>
+      <p><b>ORGAN WALLS</b> — the occluders are the fleet's real anatomy, read from <span style="color:var(--accent)">room_state.json</span> (same dir): chain = skeleton, memory/biography = memory, guards = immune, lanes = circulation, trajectory = nervous, mag/* = organs, the room itself, the board. Occlusion is structural: a dark wall still casts shadow — darkness ≠ absence.</p>
+      <p><b>LIT / DARK-SIDE</b> — a wall is LIT when the seat's attention touched it in the last 200 trajectory steps (token hits in <span style="color:var(--accent)">memory/trajectory/steps.jsonl</span>, counted by <span style="color:var(--accent)">mag/room_state.py</span>); brightness tracks the hit count. Untouched walls render DARK-SIDE: dashed, dim, labeled.</p>
+      <p><b>THE HOOK ECONOMY (Ponytail)</b> — pixels earn by fire-rate: <span style="color:var(--accent)">JOINED</span> = ≥3 fires/24h twice running (two consecutive trailing windows of the tape); <span style="color:var(--mut)">ghost</span> = candidate overlay, dashed-dim, promoted only by its own rate; <span style="color:#ff6b6b">PRUNE</span> = 0 fires/72h — dark-side, geometry kept, glow stripped. Each wall paints its algebra-primitive glyph (stolen whole from <span style="color:var(--accent)">fleet_symbols.html</span>: chain=STORE, lanes=GATE, guards=DISSIPATE, room/organs/watch=INTEGRATE, boot_check=GROUND, board=EMIT, sensors=DIFFERENTIATE) and a 200-step fire histogram — the map shows the STREAM, never a snapshot. <b>NO HASH → NO DRAW</b>: fetched walls without a content_hash are skipped.</p>
+      <p><b>INVARIANTS</b> — walls whose label+position persist across room_state versions render <span style="color:var(--gold)">gold ◇invariant candidate</span>: load-bearing, they cast the longest shadows. Seed marks chain, the room, boot_check (chain never moved since Aug; the room beats hourly; boot_check gates every window).</p>
+      <p><b>GAZE LAW (the louver)</b> — only the sector the light aims is fully lit; everything else renders at 15%. You cannot flood the room with attention: the eye sees only its aim.</p></div>
+    <div class="blk"><h2>PROVENANCE</h2>
+      <p>Catalin Zima 2010 (XNA) → <a href="https://raw.githubusercontent.com/wiki/mattdesl/lwjgl-basics/2D-Pixel-Perfect-Shadows.md">mattdesl lwjgl-basics wiki, "2D Pixel Perfect Shadows"</a> (13,837 bytes, audit PASS 09-04) → Flyguy XsK3RR "1D Radial Lightmap Test" (Shadertoy 2016). Canonical fold: <a href="https://github.com/foste/local_sovereign_agent">watch/SHADERTOY_SHADOW_FIELDS_20260903.md</a>. Source carries no license → GLSL reimplemented here in JS canvas from the description, no shader bodies pasted. Occluder labels are the salon's failure classes as explicitly-labeled metaphor — a wall is a wall, not a computation.</p></div>
+    <div class="blk"><h2>PROVENANCE — v2 · the room that remembers</h2>
+      <p><b>Lineage:</b> Catalin Zima 2010 (XNA shimmer) → mattdesl 2013 (lwjgl-basics wiki steal, audit PASS 09-04) → our shadow-fields 09-03 (XsK3RR tornado = a shadow algorithm; watch/SHADERTOY_SHADOW_FIELDS_20260903.md) → <b>the room that remembers 09-06</b> (this page: organ walls, attention-lit, invariants, gaze law).</p>
+      <p><b>The play:</b> "navigate the surface of the models, create real landscapes and nuance — literally the room that remembers, playing within the model to discover invariants." (operator, on v1, 09-06)</p>
+      <p><b>Data:</b> room_state.json is generated by mag/room_state.py from memory/trajectory/steps.jsonl (trajectory_step.v1) — lit = organ token hits in the last 200 steps; invariants = seed-canonical OR label+position stable vs the archived previous version. One-shot, $0, no daemon.</p>
+      <p><b>Falsifier:</b> move the light to an organ you think matters; if its shadow doesn't reach the room's memory wall, the room lies — kill the invariant.</p></div>
+  </div>
+</div>
+<script>
+'use strict';
+/* ---- v2 header ----------------------------------------------------------------
+   THE ROOM THAT REMEMBERS — organ walls edition.
+   Layout is data: this page fetches room_state.json (relative, same dir) for the
+   organ anatomy, the attention-lit set and the invariant candidates. If the fetch
+   fails (e.g. opened standalone via file://) it falls back to the inline seed
+   below — same walls, freshness layer marked offline. Nothing else is fetched.
+   Regenerate the state (night shift, $0, one-shot, no daemon):
+       python mag/room_state.py [--window 200]
+   Seed invariants: chain (never moved since Aug), the room (beats hourly),
+   boot_check (gates every window). Falsifier lives on the provenance wall.
+   v2 economy (Lessig + Ponytail fold, 09-06): walls earn light by fire-rate —
+   JOINED = >=3 fires/24h twice running; ghost = candidate, dashed-dim;
+   PRUNE = 0 fires/72h, dark-side. Every wall renders its algebra-primitive
+   glyph (fleet_symbols.html) + a 200-step fire histogram. NO HASH -> NO DRAW:
+   fetched walls without content_hash are skipped, not drawn. */
+// ---- scene ------------------------------------------------------------
+const W = 560, H = 560, N = 256;          // N rays = 256-texel 1D lightmap
+const cv = document.getElementById('c'), ctx = cv.getContext('2d');
+const sv = document.getElementById('s'), sctx = sv.getContext('2d');
+const SEED = [                             // inline fallback = the real anatomy (matches mag/room_state.py)
+  {id:'chain',      label:'verkle chain · skeleton', kind:'skeleton',    x:70,  y:80,  w:26,  h:260, invariant:true,  glyph:'store'},
+  {id:'memory',     label:'memory/biography',        kind:'memory',      x:150, y:56,  w:130, h:34,  invariant:false, glyph:'store'},
+  {id:'watch',      label:'watch · ledger cards',    kind:'ledger',      x:150, y:150, w:110, h:24,  invariant:false, glyph:'integrate'},
+  {id:'immune',     label:'guards · refeed_guard',   kind:'immune',      x:420, y:60,  w:96,  h:26,  invariant:false, glyph:'dissipate'},
+  {id:'lanes',      label:'lanes · auth_tracks',     kind:'circulation', x:400, y:170, w:124, h:24,  invariant:false, glyph:'gate'},
+  {id:'room',       label:'the room · CONVO.md',     kind:'room',        x:250, y:250, w:92,  h:26,  invariant:true,  glyph:'integrate'},
+  {id:'board',      label:'the board · room.html',   kind:'board',       x:440, y:280, w:84,  h:26,  invariant:false, glyph:'emit'},
+  {id:'organs',     label:'mag/* organs',            kind:'organs',      x:330, y:390, w:140, h:30,  invariant:false, glyph:'integrate'},
+  {id:'boot_check', label:'boot_check · gate',       kind:'gate',        x:60,  y:420, w:112, h:26,  invariant:true,  glyph:'ground'},
+  {id:'sensors',    label:'sensors · trajectory',    kind:'nervous',     x:180, y:480, w:160, h:22,  invariant:false, glyph:'differentiate'}
+];
+let WALLS = SEED.map(w => ({...w, lit:false, hits:0, hit_count_200:0, economy:'ghost', hist:[]}));   // replaced by room_state.json when reachable
+
+// ---- gate glyphs — stolen whole from dashboard/static/fleet_symbols.html ----
+// inner markup of each <symbol id="sym-...">, verbatim; rasterized to data-URL
+// images (a data-URL image cannot <use> the page's defs, so the bodies travel).
+// Philbrick 1964 lineage: a symbol is a command; every circuit closes to GROUND.
+const GLYPHS = {
+ emit:        {col:'#e8c96a', b:'<path d="M24,12 L24,32 L42,22 Z" fill="currentColor"/><path d="M42,12 V32" stroke="currentColor" stroke-width="3" stroke-linecap="round"/><path d="M52,15 L61,8" stroke="currentColor" stroke-width="1.6"/><polyline points="55.2,9.3 61,8 58.3,13.3" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M58,19 L67,12" stroke="currentColor" stroke-width="1.6"/><polyline points="61.2,13.3 67,12 64.3,17.3" fill="none" stroke="currentColor" stroke-width="1.6"/>'},
+ store:       {col:'#e8c96a', b:'<path d="M33,6 V38 M47,6 V38" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>'},
+ dissipate:   {col:'#ff6b6b', b:'<polyline points="14,22 20,9 30,35 40,9 50,35 60,9 66,22" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>'},
+ gate:        {col:'#7cf5ff', b:'<path d="M27,10 L27,34 L49,22 Z" fill="currentColor"/><path d="M49,10 V34" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>'},
+ integrate:   {col:'#7cf5ff', b:'<path d="M0,22 H22" stroke="currentColor" stroke-width="2"/><path d="M22,10 V34 L50,22 Z" fill="none" stroke="currentColor" stroke-width="2"/><path d="M25,14 h5 M27.5,11.5 v5 M25,28 h5" stroke="currentColor" stroke-width="1.4"/><path d="M50,22 H58" stroke="currentColor" stroke-width="2"/><path d="M58,22 V8 H42 M34,8 H12 V22" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M38,3 V13 M34,3 V13" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/><circle cx="58" cy="22" r="2" fill="currentColor"/><circle cx="12" cy="22" r="2" fill="currentColor"/>'},
+ differentiate:{col:'#7cf5ff', b:'<path d="M0,22 H20 M26,22 H30" stroke="currentColor" stroke-width="2"/><path d="M20,17 V27 M26,17 V27" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/><path d="M30,10 V34 L58,22 Z" fill="none" stroke="currentColor" stroke-width="2"/><path d="M33,14 h5 M35.5,11.5 v5 M33,28 h5" stroke="currentColor" stroke-width="1.4"/><path d="M58,22 H68" stroke="currentColor" stroke-width="2"/><path d="M68,22 V8 H46 M26,8 H12 V22" fill="none" stroke="currentColor" stroke-width="1.6"/><polyline points="46,8 42,3 36,13 30,3 26,8" fill="none" stroke="currentColor" stroke-width="1.6"/><circle cx="68" cy="22" r="2" fill="currentColor"/><circle cx="12" cy="22" r="2" fill="currentColor"/>'},
+ ground:      {col:'#7cf5ff', b:'<path d="M0,22 H28 M28,22 V27" fill="none" stroke="currentColor" stroke-width="2"/><path d="M14,27 H42 M19,32 H37 M24,37 H32" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/>'}
+};
+const glyphImg = {};
+const glyphsReady = Promise.all(Object.keys(GLYPHS).map(k => new Promise(res => {
+  const img = new Image();
+  img.onload = () => { glyphImg[k] = img; res(); };
+  img.onerror = () => res();                     // missing glyph must not block the room
+  img.src = 'data:image/svg+xml;utf8,' + encodeURIComponent(
+    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 80 40">' +
+    GLYPHS[k].b.replaceAll('currentColor', GLYPHS[k].col) + '</svg>');
+})));
+let L = {x: 200, y: 300, R: 230};          // the light
+// gaze law: only the aimed sector is fully lit; elsewhere the room renders at FLOOR
+const GAZE = 110 * Math.PI / 180;          // louver aperture (full sector)
+const FLOOR = 0.15;                        // the dark-by-construction floor
+let AIM = Math.atan2(263 - L.y, 296 - L.x); // initial aim: at the room itself
+
+// pass 1 — occlusion mask: per-pixel casters, alpha > 0.75 (the wiki's rule)
+const mk = document.createElement('canvas'); mk.width = W; mk.height = H;
+const mctx = mk.getContext('2d', {willReadFrequently: true});
+function bakeMask(){
+  mctx.clearRect(0, 0, W, H);
+  mctx.fillStyle = '#fff';
+  for(const o of WALLS) mctx.fillRect(o.x, o.y, o.w, o.h);
+  const d = mctx.getImageData(0, 0, W, H).data;
+  mask = new Uint8Array(W * H);
+  for(let i = 0, p = 3; i < mask.length; i++, p += 4) mask[i] = d[p] > 191 ? 1 : 0;
+}
+let mask = null;
+
+// static base scene (floor grid + organ wall bodies + labels); re-baked when
+// room_state.json arrives with the real anatomy + attention tiers
+const base = document.createElement('canvas'); base.width = W; base.height = H;
+function bakeBase(){
+  const b = base.getContext('2d');
+  b.fillStyle = '#070d0c'; b.fillRect(0, 0, W, H);
+  b.strokeStyle = 'rgba(124,245,255,.06)'; b.lineWidth = 1; b.beginPath();
+  for(let x = 0; x <= W; x += 40){ b.moveTo(x + .5, 0); b.lineTo(x + .5, H); }
+  for(let y = 0; y <= H; y += 40){ b.moveTo(0, y + .5); b.lineTo(W, y + .5); }
+  b.stroke();
+  for(const o of WALLS){
+    // Ponytail economy: pixels earn by fire-rate. Legacy (v1) walls fall back
+    // to lit/hits: anything without an economy field is treated as ghost/lit.
+    const econ = o.economy || ((o.lit || (o.hits || 0) > 0) ? 'lit' : 'ghost');
+    const h200 = (o.hit_count_200 != null ? o.hit_count_200 : (o.hits || 0));
+    const tier = h200 >= 20 ? 1 : h200 >= 8 ? .75 : h200 >= 3 ? .5 : h200 >= 1 ? .3 : 0;
+    if(econ === 'prune'){ // PRUNE NOTE: dark-side — geometry kept, glow stripped
+      b.fillStyle = '#080c0b'; b.fillRect(o.x, o.y, o.w, o.h);
+      b.strokeStyle = 'rgba(255,107,107,.22)'; b.lineWidth = 1;
+      b.strokeRect(o.x + .5, o.y + .5, o.w - 1, o.h - 1);
+    }else if(o.invariant){
+      b.fillStyle = '#241d0e'; b.fillRect(o.x, o.y, o.w, o.h);
+      b.strokeStyle = 'rgba(232,201,106,.95)'; b.lineWidth = 1.5;
+      b.strokeRect(o.x + .5, o.y + .5, o.w - 1, o.h - 1); b.lineWidth = 1;
+    }else if(econ === 'ghost'){ // ghost candidate: dashed-dim border, stream-honest fill
+      b.fillStyle = tier > 0 ? '#0a1412' : '#0a100f'; b.fillRect(o.x, o.y, o.w, o.h);
+      if(tier > 0){
+        b.fillStyle = 'rgba(124,245,255,' + (0.04 + 0.10 * tier) + ')'; b.fillRect(o.x, o.y, o.w, o.h);
+      }
+      b.strokeStyle = 'rgba(124,245,255,' + (0.30 + 0.40 * tier) + ')'; b.setLineDash([3, 3]);
+      b.strokeRect(o.x + .5, o.y + .5, o.w - 1, o.h - 1); b.setLineDash([]);
+    }else{ // JOINED / lit: brightness tracks the 200-step hit count
+      b.fillStyle = '#0a1412'; b.fillRect(o.x, o.y, o.w, o.h);
+      b.fillStyle = 'rgba(124,245,255,' + (0.05 + 0.13 * tier) + ')'; b.fillRect(o.x, o.y, o.w, o.h);
+      b.strokeStyle = 'rgba(124,245,255,' + (0.30 + 0.55 * tier) + ')';
+      b.strokeRect(o.x + .5, o.y + .5, o.w - 1, o.h - 1);
+    }
+    // the algebra-primitive gate glyph (fleet_symbols.html), centered in the wall
+    const g = glyphImg[o.glyph];
+    if(g){
+      let gh = Math.min(o.h - 8, 17), gw = gh * 2;
+      if(gw > o.w - 8){ gw = o.w - 8; gh = gw / 2; }
+      if(gh > 4){
+        const ga = econ === 'prune' ? .15 : econ === 'ghost' && tier === 0 ? .35 : .95;
+        b.save(); b.globalAlpha = ga;
+        b.drawImage(g, o.x + (o.w - gw) / 2, o.y + (o.h - gh) / 2, gw, gh);
+        b.restore();
+      }
+    }
+    // per-wall 200-step fire histogram — the map shows the STREAM, never a state
+    if(Array.isArray(o.hist) && o.hist.length){
+      const bh = 5, bw = o.w / o.hist.length, y0 = o.y + o.h + 2;
+      const mx = Math.max.apply(null, o.hist);
+      b.strokeStyle = 'rgba(124,245,255,.12)'; b.beginPath();
+      b.moveTo(o.x + .5, y0 + bh + .5); b.lineTo(o.x + o.w - .5, y0 + bh + .5); b.stroke();
+      if(mx > 0) for(let i = 0; i < o.hist.length; i++){
+        const v = o.hist[i] / mx; if(!v) continue;
+        b.fillStyle = 'rgba(124,245,255,' + (0.25 + 0.65 * v) + ')';
+        b.fillRect(o.x + i * bw + .5, y0 + bh - v * bh, Math.max(1, bw - 1), v * bh);
+      }
+    }
+    b.font = '9px ui-monospace,Consolas,monospace';
+    const tag = o.invariant ? '  \u25c7invariant'
+      : econ === 'prune' ? '  PRUNE'
+      : econ === 'ghost' ? '  \u00b7ghost'
+      : '';
+    b.fillStyle = o.invariant ? 'rgba(232,201,106,.9)'
+      : econ === 'prune' ? 'rgba(255,107,107,.6)'
+      : tier > 0 ? 'rgba(124,245,255,.6)' : 'rgba(90,122,116,.7)';
+    b.fillText(o.label + tag, o.x, o.y - 4);
+  }
+}
+
+// pass 2 — the 1D shadow map: d(θ) = min normalized first-hit distance
+const dmap = new Float32Array(N);
+const GAUSS = [0.016, 0.054, 0.121, 0.194, 0.230, 0.194, 0.121, 0.054, 0.016]; // 9-tap
+function buildDMap(){
+  const {x: cx, y: cy, R} = L;
+  for(let i = 0; i < N; i++){
+    const a = i / N * Math.PI * 2, dx = Math.cos(a), dy = Math.sin(a);
+    let hit = 1;
+    for(let t = 2; t <= R; t++){
+      const xi = (cx + dx * t) | 0, yi = (cy + dy * t) | 0;
+      if(xi < 0 || yi < 0 || xi >= W || yi >= H) break;         // leaves the room = open
+      if(mask[yi * W + xi]){ hit = t / R; break; }               // first hit dominates (min)
+    }
+    dmap[i] = hit;
+  }
+}
+
+// gaze law: angular louver around AIM — 1 inside, FLOOR outside, smooth edges
+function gaze(th){
+  let d = Math.abs(((th - AIM) % (Math.PI * 2) + 3 * Math.PI) % (Math.PI * 2) - Math.PI);
+  const half = GAZE / 2, edge = 14 * Math.PI / 180;
+  if(d <= half - edge / 2) return 1;
+  if(d >= half + edge / 2) return FLOOR;
+  return FLOOR + (1 - FLOOR) * smooth((half + edge / 2 - d) / edge);
+}
+
+// pass 3 — light render: per pixel lit = step(r, d(θ)), 9-tap angular penumbra,
+// then the louver: the whole room outside the aim renders at FLOOR (15%)
+const SC = 2;                                                  // half-res light buffer
+const lcv = document.createElement('canvas'); lcv.width = W / SC; lcv.height = H / SC;
+const lctx = lcv.getContext('2d');
+const limg = lctx.createImageData(W / SC, H / SC);
+function smooth(t){ t = Math.min(1, Math.max(0, t)); return t * t * (3 - 2 * t); }
+function renderLight(){
+  const {x: cx, y: cy, R} = L, px = limg.data, lw = lcv.width, lh = lcv.height;
+  for(let py = 0; py < lh; py++){
+    const fy = py * SC + 1 - cy, ry = fy / R;
+    for(let qx = 0; qx < lw; qx++){
+      const fx = qx * SC + 1 - cx, rx = fx / R;
+      const r = Math.sqrt(rx * rx + ry * ry), o = (py * lw + qx) * 4;
+      if(r > 1){ px[o + 3] = 0; continue; }
+      let th = Math.atan2(fy, fx); if(th < 0) th += Math.PI * 2;
+      const base = th / (Math.PI * 2) * N;
+      const spread = 0.8 + 6 * smooth(r);                      // penumbra widens with distance
+      let acc = 0;
+      for(let k = -4; k <= 4; k++){
+        let idx = Math.round(base + k * spread) % N; if(idx < 0) idx += N;
+        if(r <= dmap[idx]) acc += GAUSS[k + 4];                 // lit = step(r, d(θ))
+      }
+      const b = acc * (1 - smooth(r)) * gaze(th);               // radial falloff × gaze law
+      px[o] = 124 * b; px[o + 1] = 245 * b; px[o + 2] = 255 * b; px[o + 3] = 255;
+    }
+  }
+  lctx.putImageData(limg, 0, 0);
+}
+
+// the strip — the steal made visible, now two rows: d(θ) + the unseen
+function drawStrip(){
+  const rowH = 30, gap = 4;
+  for(let i = 0; i < N; i++){
+    const v = dmap[i], open = v >= 1;
+    const b = open ? v : Math.max(0.12, 1 - v * 1.6);
+    sctx.fillStyle = open
+      ? 'rgba(124,245,255,' + (0.08 + 0.85 * b) + ')'
+      : 'rgba(232,201,106,' + (0.10 + 0.8 * b) + ')';
+    sctx.fillRect(i, 0, 1, rowH);                              // row 1: d(θ)
+    // row 2: UNSEEN — what the current aim CANNOT see
+    let th = i / N * Math.PI * 2;
+    const g = gaze(th);
+    if(g <= (1 + FLOOR) / 2){                                  // outside the louver
+      sctx.fillStyle = 'rgba(150,165,185,.55)';                // slate: unseen by gaze
+    }else if(!open){
+      sctx.fillStyle = 'rgba(232,201,106,.85)';                // amber: occluded (wall)
+    }else{
+      sctx.fillStyle = 'rgba(124,245,255,.14)';                // dim teal: actually seen
+    }
+    sctx.fillRect(i, rowH + gap, 1, sv.height - rowH - gap);
+  }
+}
+
+let probe = null;
+function composite(){
+  ctx.clearRect(0, 0, W, H);
+  ctx.drawImage(base, 0, 0);
+  ctx.save(); ctx.globalCompositeOperation = 'lighter';
+  ctx.imageSmoothingEnabled = true;
+  ctx.drawImage(lcv, 0, 0, W, H); ctx.restore();
+  // light core
+  const g = ctx.createRadialGradient(L.x, L.y, 0, L.x, L.y, 10);
+  g.addColorStop(0, '#fff'); g.addColorStop(.35, '#7cf5ff'); g.addColorStop(1, 'rgba(124,245,255,0)');
+  ctx.fillStyle = g; ctx.beginPath(); ctx.arc(L.x, L.y, 10, 0, 7); ctx.fill();
+  ctx.strokeStyle = 'rgba(124,245,255,.35)'; ctx.beginPath();
+  ctx.arc(L.x, L.y, L.R, 0, 7); ctx.stroke();
+  // the louver edges: the aim is visible as two faint sector lines
+  ctx.strokeStyle = 'rgba(124,245,255,.18)';
+  for(const s of [-1, 1]){
+    const a = AIM + s * GAZE / 2;
+    ctx.beginPath(); ctx.moveTo(L.x, L.y);
+    ctx.lineTo(L.x + Math.cos(a) * L.R, L.y + Math.sin(a) * L.R); ctx.stroke();
+  }
+  // probe ray: the pixel's θ against the horizon d(θ), under the gaze law
+  if(probe){
+    let th = Math.atan2(probe.y - L.y, probe.x - L.x); if(th < 0) th += Math.PI * 2;
+    const idx = Math.round(th / (Math.PI * 2) * N) % N;
+    const r = Math.min(1, Math.hypot(probe.x - L.x, probe.y - L.y) / L.R);
+    const gz = gaze(th), lit = r <= dmap[idx] && gz > (1 + FLOOR) / 2, reach = dmap[idx] * L.R;
+    ctx.strokeStyle = lit ? 'rgba(124,245,255,.8)' : 'rgba(232,201,106,.8)';
+    ctx.setLineDash([4, 4]); ctx.beginPath(); ctx.moveTo(L.x, L.y);
+    ctx.lineTo(L.x + Math.cos(th) * reach, L.y + Math.sin(th) * reach); ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.beginPath(); ctx.arc(L.x + Math.cos(th) * reach, L.y + Math.sin(th) * reach, 4, 0, 7);
+    ctx.stroke();
+    drawStrip(); sctx.fillStyle = '#fff'; sctx.fillRect(idx, 0, 1, 30);
+    document.getElementById('readout').innerHTML =
+      'probe θ=<b>' + Math.round(th / Math.PI * 180) + '°</b> r=<b>' + r.toFixed(2) +
+      '</b> d(θ)=<b>' + dmap[idx].toFixed(2) + '</b> gaze=<b>' + gz.toFixed(2) + '</b> → ' +
+      (lit ? '<b style="color:#7cf5ff">LIT</b> (step(r,d)=1, aimed)'
+           : gz <= (1 + FLOOR) / 2 ? '<b style="color:#96a5b9">UNSEEN</b> (outside the aim)'
+           : '<b style="color:#e8c96a">SHADOW</b> (step(r,d)=0)');
+  }
+}
+function rebuild(){ buildDMap(); drawStrip(); renderLight(); composite(); }
+
+// ---- interaction: drag moves the light, cursor aims it, wheel moves the radius ----
+let dragging = false, dirty = false;
+function toScene(e){
+  const rc = cv.getBoundingClientRect();
+  return {x: (e.clientX - rc.left) * W / rc.width, y: (e.clientY - rc.top) * H / rc.height};
+}
+cv.addEventListener('mousedown', e => { dragging = true; moveLight(toScene(e)); });
+window.addEventListener('mouseup', () => dragging = false);
+cv.addEventListener('mousemove', e => {
+  probe = toScene(e);
+  if(dragging) moveLight(probe);
+  else{ // gaze law: the eye aims where you point (rebuild — the louver moved)
+    let th = Math.atan2(probe.y - L.y, probe.x - L.x); if(th < 0) th += Math.PI * 2;
+    if(Math.abs(th - AIM) > 0.01){ AIM = th; schedule(); } else composite();
+  }
+});
+cv.addEventListener('mouseleave', () => { probe = null; composite(); });
+cv.addEventListener('wheel', e => {
+  e.preventDefault();
+  L.R = Math.min(320, Math.max(120, L.R - Math.sign(e.deltaY) * 20));
+  schedule();
+}, {passive: false});
+function moveLight(p){
+  L.x = Math.min(W - 6, Math.max(6, p.x)); L.y = Math.min(H - 6, Math.max(6, p.y));
+  schedule();
+}
+function schedule(){ dirty = true; requestAnimationFrame(() => { if(dirty){ dirty = false; rebuild(); } }); }
+
+// ---- room_state.json: the freshness layer (organ walls, lit set, invariants) ----
+(function loadRoomState(){
+  const el = document.getElementById('state');
+  fetch('room_state.json', {cache: 'no-store'}).then(r => {
+    if(!r.ok) throw new Error('http ' + r.status);
+    return r.json();
+  }).then(s => {
+    // Ponytail invariant: {organ_id, content_hash, last_fire_ts, hit_count_200,
+    // chain_tip_at_paint} — NO HASH -> NO DRAW. Hashless walls are skipped.
+    const all = Array.isArray(s.walls) ? s.walls : [];
+    const walls = all.filter(w => w.id && w.content_hash);
+    const skipped = all.length - walls.length;
+    glyphsReady.then(() => {
+      if(walls.length){ WALLS = walls; }
+      bakeBase();          // re-bake with the real anatomy + economy states
+      bakeMask();
+      rebuild();
+    });
+    const inv = walls.filter(w => w.invariant).length;
+    const ec = s.economy || {};
+    const tip = s.chain_tip_at_paint;
+    el.innerHTML = 'state: <b>' + (s.generated || 'undated') + '</b> · organ walls <b>' + walls.length +
+      '</b>' + (skipped ? ' (no-hash skipped <b>' + skipped + '</b>)' : '') +
+      ' · lit <b>' + (s.lit ? s.lit.length : walls.filter(w => w.lit).length) +
+      '</b> · invariants <b>' + inv + '</b>' +
+      (ec.joined != null ? ' · JOINED <b>' + ec.joined + '</b> / ghost <b>' + (ec.ghost || 0) +
+        '</b> / PRUNE <b>' + (ec.prune || 0) + '</b>' : '') +
+      (tip && tip.tip ? ' · tip <b>' + tip.tip + '</b>@' + tip.index : '') +
+      ' · src: ' + (s.source || 'room_state.json');
+  }).catch(() => {
+    el.innerHTML = 'state: freshness layer offline (file:// or missing room_state.json) — inline seed, ' +
+      WALLS.length + ' organ walls, ' + WALLS.filter(w => w.invariant).length + ' invariants. Regenerate: python mag/room_state.py';
+  });
+})();
+
+glyphsReady.then(() => { bakeMask(); rebuild(); });
+</script><script src="/static/nav.js"></script></body></html>

@@ -150,6 +150,12 @@ def write_row(day: dt.date, note: str, new, intake, disp, undisp, btouch, shelf)
 
 
 def main():
+    # B2-438 (2026-09-26): the ledger path is the canonical repo-derived
+    # fallback mag/lane_runner.py executes; refuse to run if the derivation
+    # ever lands outside the repo (moved script, hostile env), before any
+    # write. Fixture test: tests/test_scripts_path_pins.py.
+    if not os.path.abspath(LEDGER).startswith(os.path.abspath(REPO) + os.sep):
+        sys.exit(f"PATH PIN REFUSED: LEDGER={LEDGER} resolves outside REPO={REPO}")
     ap = argparse.ArgumentParser(description="watch/ restock-vs-consumption ledger")
     ap.add_argument("--date", help="YYYYMMDD (default: today, local time)")
     ap.add_argument("--note", default="", help="free-text note for the row")

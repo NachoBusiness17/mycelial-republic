@@ -1,6 +1,20 @@
 #!/usr/bin/env python3
 """wave_driver v1 — one tick of the LOOK/JUDGE/ACT/RECORD/YIELD loop. ACT IS REAL.
 
+SCHEDULING TRUTH (B2-439, registered 2026-09-26): this driver is TEST-DRIVEN-ONLY.
+No schtasks entry exists or has ever gone live for it — the CONVO-era claim
+(queue/handoff/zcode/CONVO.md:1220, 2026-09-12: "CRON staged: 21:15 driver tick
++ 06:45 pairing close") never survived to a real scheduled task; the fresh
+2026-09-26 schtasks census (240 tasks, every Estate*/Mag* task enumerated) holds
+zero wave_driver/m12_pairing entries. The loop runs under
+tests/test_wave_driver.py + tests/wave_driver_test.py and by MANUAL LAUNCH only
+(python scripts/wave_driver.py <args>). Re-staging a night cron is an
+operator-scale decision: this is an autonomous ACT-capable loop with a
+steer-signature gate and operator-facing M12 event counting, so it requires a
+recorded operator GO — transcribe it into watch/inbox/OPERATOR_GO.jsonl (gate
+"wave-driver-night-cron") before registering any task. Estate prose implying a
+standing night loop is corrected by this registration.
+
 Spec: watch/WAVE_DRIVER_SPEC_20260911.md. v1 scope (C1-LANE 3, trailer wave T1):
   LOOK   real   — steer tail (verify-gated via scripts/steer_sign.py), unread
                   failure_kb_alerts rows (byte-offset cursor), trailer telemetry.
@@ -805,7 +819,28 @@ def self_test() -> int:
     return 0 if ok else 1
 
 
+def validate_path_args(args, root) -> None:
+    """B2-438 (2026-09-26): every writable path argument is pinned under the
+    repo root. The drivers (coding_session_loop, governor_autorun) execute
+    this script with defaults derived from ROOT, but the argparse
+    overrides accepted any path an operator (or a poisoned config) passed,
+    so a repo-external write was one flag away. Refusals are loud and
+    named (scripts/path_pin.py); the only escape is the explicit
+    MAG_ALLOW_EXTERNAL_PATH=1 selftest arm."""
+    from path_pin import pin_under_root
+
+    for what in ("board", "steers", "key", "kb", "telemetry", "ground",
+                 "state", "lanes_root"):
+        v = getattr(args, what, None)
+        if isinstance(v, (str, os.PathLike)) and str(v):
+            setattr(args, what, pin_under_root(v, root, f"--{what}"))
+
+
 def main() -> int:
+    # dogfood-48h move 4: singleton guard, exit 3 on a live twin. wave_driver
+    # is loop-shaped with real ACT legs; two drivers = double-drain class.
+    from tools.instance_guard import guard_or_exit
+    guard_or_exit("wave_driver")
     try:
         sys.stdout.reconfigure(encoding="utf-8", errors="replace")
     except Exception:  # noqa: BLE001
@@ -842,6 +877,7 @@ def main() -> int:
         args.inject = json.loads(args.inject)
     else:
         args.inject = None
+    validate_path_args(args, ROOT)
     if args.worker_task:
         return worker_main(args.worker_task)
     if args.m12_close and args.mode is None:

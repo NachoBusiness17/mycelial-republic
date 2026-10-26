@@ -113,11 +113,18 @@ def _leaf_count(region: str) -> int:
 
 def _maybe_grok(region: str, player: str) -> dict[str, Any] | None:
     """THE GROK KNOT: enough leaves in a region and the tree grows an internal node — a hub
-    linking leaves that used to be unconnected. Memorize = leaf-only; grok = nodes grow."""
+    linking leaves that used to be unconnected. Memorize = leaf-only; grok = nodes grow.
+
+    Fix 2026-10-01: the knot used to be keyed `game.render.{region}.{gx}.{gy}` — the SAME
+    namespace as leaves — so when its content-addressed cell collided with an already-revealed
+    leaf, `key in state` silently swallowed the growth forever (measured 1.06% of virgin groves
+    in a 20k-draw simulation; the standing fullsuite RED of 2026-09-29). Its own namespace
+    `game.grok.{region}` cannot collide with a leaf, and the knot (which carries a glyph) no
+    longer inflates _leaf_count as a fake leaf."""
     if _leaf_count(region) < GROK_THRESHOLD:
         return None
     gx, gy = _cell(region, "internal-node", region)  # the tree belongs to the region, not the walker
-    key = f"game.render.{region}.{gx}.{gy}"
+    key = f"game.grok.{region}"
     state = _world()._load().get("world", {})
     if key in state:
         return None

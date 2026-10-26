@@ -18,6 +18,9 @@ sys.path.insert(0, os.path.join(ROOT, "scripts"))
 
 import wave_driver  # noqa: E402
 
+# HEADLESS law: explicit creationflags (ratchet tests/test_headless_law.py; bare-spawn-descent 2026-09-29)
+HEADLESS = getattr(subprocess, "CREATE_NO_WINDOW", 0x08000000) if sys.platform == "win32" else 0
+
 
 class GatesTest(unittest.TestCase):
     """Gate 2/3 (gate 1, the steer verify, is exercised by every self-test tick)."""
@@ -139,7 +142,8 @@ class SelfTestIntegration(unittest.TestCase):
     def test_selftest_passes(self):
         proc = subprocess.run(
             [sys.executable, os.path.join(ROOT, "scripts", "wave_driver.py"),
-             "--selftest"], capture_output=True, text=True, cwd=ROOT, timeout=300)
+             "--selftest"], capture_output=True, text=True, cwd=ROOT, timeout=300,
+            creationflags=HEADLESS)
         self.assertEqual(proc.returncode, 0,
                          msg=proc.stdout[-2000:] + proc.stderr[-2000:])
         self.assertIn("SELFTEST PASS", proc.stdout)

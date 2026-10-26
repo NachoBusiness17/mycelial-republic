@@ -13,6 +13,7 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import time
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -49,6 +50,8 @@ def escalate_via_harness(
     output_format: str = "plain",
     handoff_id: str | None = None,
     timeout: int = 600,
+    model: str | None = None,
+    reasoning_effort: str | None = None,
 ) -> dict[str, Any]:
     """Run one headless Grok harness turn. Returns structured result dict.
 
@@ -128,7 +131,14 @@ DELIVERABLE: ...
     # Safer default: deny destructive shell patterns when not yolo
     if not yolo:
         cmd.extend(["--deny", "Bash(rm*)", "--deny", "Bash(*Remove-Item*)"])
+    # Model pin (e.g. "grok-4.7" during the 09-25 window); default config otherwise
+    if model:
+        cmd.extend(["-m", model])
+    # Reasoning-effort lever (low cuts billed reasoning tokens on cheap judgment lanes)
+    if reasoning_effort:
+        cmd.extend(["--reasoning-effort", reasoning_effort])
 
+    t0 = time.monotonic()
     try:
         proc = subprocess.run(
             cmd,
@@ -137,6 +147,7 @@ DELIVERABLE: ...
             timeout=timeout,
             cwd=str(cwd),
         )
+        latency_ms = int((time.monotonic() - t0) * 1000)
         stdout = (proc.stdout or "")[-50000:]
         stderr = (proc.stderr or "")[-8000:]
         result: dict[str, Any] = {
@@ -148,15 +159,38 @@ DELIVERABLE: ...
             "stderr": stderr,
             "cmd": " ".join(cmd[:6]) + " …",
             "harness": "grok-cli-headless",
+            "model": model,
+            "latency_ms": latency_ms,
         }
+        # json output carries proxy-side cost accounting: lift it into the receipt
+        if output_format == "json":
+            try:
+                payload = json.loads(stdout)
+                if isinstance(payload, dict):
+                    result["usage"] = payload.get("usage")
+                    result["cost_usd"] = payload.get("total_cost_usd")
+                    result["model_used"] = list((payload.get("modelUsage") or {}).keys())
+                    result["session_id"] = payload.get("sessionId")
+                    result["stop_reason"] = payload.get("stopReason")
+                    if isinstance(payload.get("text"), str):
+                        result["deliverable"] = payload["text"]
+                        result["summary"] = _extract_summary(payload["text"])
+            except (json.JSONDecodeError, ValueError):
+                result["json_parse"] = "stdout was not valid json; raw kept in deliverable"
         out_path = RESULTS_DIR / f"{handoff_id}.json"
         out_path.write_text(json.dumps(result, indent=2)[:200000], encoding="utf-8")
         result["result_path"] = str(out_path)
         return result
     except subprocess.TimeoutExpired:
-        return {"ok": False, "error": "harness timeout", "exit_code": 124, "handoff_id": handoff_id}
+        return {
+            "ok": False, "error": "harness timeout", "exit_code": 124,
+            "handoff_id": handoff_id, "latency_ms": int((time.monotonic() - t0) * 1000),
+        }
     except Exception as e:
-        return {"ok": False, "error": str(e), "exit_code": 1, "handoff_id": handoff_id}
+        return {
+            "ok": False, "error": str(e), "exit_code": 1,
+            "handoff_id": handoff_id, "latency_ms": int((time.monotonic() - t0) * 1000),
+        }
     finally:
         try:
             Path(prompt_path).unlink(missing_ok=True)

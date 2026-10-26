@@ -71,6 +71,26 @@ SYSTEMS = {
         "bias. The story must be prosecutable for nothing. Honor the word limit in the prompt. "
         "No em-dashes. Do not explain the parable after telling it."
     ),
+    # FIX 2026-09-26: attacker + builder registered. CAUSE: the battery (queue.jsonl) grew
+    # these styles (UF-119 attacker, UF-122 builder) but SYSTEMS only knew
+    # digger/ractor/parable, so SYSTEMS[style] raised KeyError inside job() and killed
+    # main() mid-batch: 11 of 13 raw rows appended, then no state save, no pack write, and
+    # run.lock stranded (grounding-chain fire 2026-09-26T11:28:14Z). EVIDENCE: queue.jsonl
+    # style census {digger 69, ractor 55, parable 5, attacker 1, builder 1}; raw.jsonl has
+    # zero rows for UF-119/UF-122 from that fire. Aligned fix is registering the systems,
+    # not a .get() fallback that would silently run attacker briefs under the digger mind.
+    "attacker": (
+        "You are an adversarial attacker for the fleet's own surfaces. Attack the system "
+        "exactly as specified: name the concrete failures and misleading behaviors FIRST, "
+        "rank them by damage, and give the minimal patch for each. Numbered and concrete "
+        "only. No praise of the design, no restating the spec, no hedging. Hard limit: 500 words."
+    ),
+    "builder": (
+        "You are a spec builder for the fleet. You output the spec, not the implementation: "
+        "templates, rubrics, and acceptance conditions precise enough that a stranger can "
+        "execute them without asking questions. Every spec names the claim it can falsify "
+        "and the measurement that settles it. No em-dashes. Hard limit: 500 words."
+    ),
 }
 
 # --- SSRF guard: hosts derive from the live lane set itself (no literals to drift) ----
@@ -102,7 +122,7 @@ def _wide_lanes(env: dict[str, str]) -> list[dict[str, str]]:
         add(f"groq-oss20{suf}", "https://api.groq.com/openai/v1", "openai/gpt-oss-20b", k)
     add("cerebras-oss", "https://api.cerebras.ai/v1", "gpt-oss-120b", "CEREBRAS_API_KEY")
     add("cerebras-qwen", "https://api.cerebras.ai/v1", "qwen-3.8-27b", "CEREBRAS_API_KEY")
-    for suf, k in [("", "Mistral_API_KEY"), ("2", "Mistral_API_KEY_2")]:
+    for suf, k in [("", "MISTRAL_API_KEY"), ("2", "MISTRAL_API_KEY_2")]:
         add(f"mistral-min8{suf}", "https://api.mistral.ai/v1", "ministral-8b-latest", k)
     add("zai-lite", "https://api.z.ai/api/coding/paas/v4", "glm-5.3-flash", "ZAI_API_KEY_Lite")
     # OpenRouter free models across BOTH keys (free-tier ceiling is 20 req/min per key;
@@ -152,6 +172,139 @@ _LANE_HOSTS = {urllib.parse.urlsplit(b).hostname.lower() for b in _KNOWN_BASES}
 # window is a lane-swap, not a queue death)
 _RETRY_ORDER = ["or-union-alpha-k2", "zai-lite", "or-union-alpha-k1", "or-ling3-k2",
                 "or-nemotron-k1", "groq-oss", "cerebras-oss", "gemini-flash"]
+
+
+# ── B2-320 (2026-09-26): driver v2 resilience, S1-S3 of the landed spec ──
+# SPEC: watch/inbox/burn_wave_20260926/B2_77_driver_v2_spec_20260926.md S1-S3.
+# Falsifier replay (tests/test_union_driver_v2.py) over raw.jsonl failure
+# bytes: zero retries spent on the 6 HTTP 400 rows; together-llama stops
+# routing after its 3rd consecutive failure.
+import random as _random
+import re as _re
+
+JITTER_BASE_S = 2.0     # S1: sleep uniform(0, min(cap, base * 2**attempt))
+JITTER_CAP_S = 60.0
+RETRY_BUDGET_PER_MIN = 60   # S2: 60 retries/minute/process token bucket
+BREAKER_THRESHOLD = 3       # S3: 3 consecutive failures open the lane
+BREAKER_COOLDOWN_S = 600.0  # S3: 10 min open cooldown
+HALF_OPEN_PROBES = 2        # S3: at most 2 half-open probes
+
+
+def classify_error(rec: dict[str, Any]) -> str:
+    """S2 classification: 'retryable' vs 'permanent' (never both-never-retried).
+
+    retryable: HTTP 429, HTTP 5xx, empty_content, timeouts/URLError.
+    permanent: HTTP 400, HTTP 404 (window-death), and lane-config facts
+    (SSRF_GUARD, NO_KEY, LITE_PACED) that no retry can fix.
+    """
+    err = str(rec.get("error") or "")
+    if err == "empty_content":
+        return "retryable"
+    m = _re.match(r"HTTP (\d{3})$", err)
+    if m:
+        code = int(m.group(1))
+        if code in (400, 404):
+            return "permanent"
+        return "retryable"  # 429/5xx/unclassified HTTP are budgeted
+    if err in ("SSRF_GUARD", "NO_KEY", "LITE_PACED"):
+        return "permanent"
+    if any(k in err for k in ("Timeout", "URLError", "timed out", "ConnectionReset",
+                              "RemoteDisconnected")):
+        return "retryable"
+    return "permanent"  # unknown shapes fail fast; the queue is durable
+
+
+def jitter_sleep_seconds(attempt: int) -> float:
+    """S1 full jitter: uniform(0, min(cap, base * 2**attempt)) before a retry."""
+    import random
+    return random.uniform(0.0, min(JITTER_CAP_S, JITTER_BASE_S * (2 ** attempt)))
+
+
+class RetryBudget:
+    """S2 token bucket: RETRY_BUDGET_PER_MIN retries per minute per process.
+
+    Successes deposit; retries withdraw; an empty bucket fails fast and
+    leaves the item for the next run (the queue is durable: a deferred retry
+    is not a lost dig). Continuous refill at per_minute/60 per second.
+    """
+
+    def __init__(self, per_minute: int = RETRY_BUDGET_PER_MIN) -> None:
+        self.rate = per_minute / 60.0
+        self.capacity = float(per_minute)
+        self.tokens = float(per_minute)
+        self.ts = time.time()
+
+    def _refill(self) -> None:
+        now = time.time()
+        self.tokens = min(self.capacity, self.tokens + (now - self.ts) * self.rate)
+        self.ts = now
+
+    def deposit(self) -> None:
+        self._refill()
+        self.tokens = min(self.capacity, self.tokens + 1.0)
+
+    def try_withdraw(self) -> bool:
+        self._refill()
+        if self.tokens >= 1.0:
+            self.tokens -= 1.0
+            return True
+        return False
+
+
+class LaneBreaker:
+    """S3 per-lane closed/open/half-open breaker.
+
+    open after BREAKER_THRESHOLD consecutive failures of ANY class or a
+    single HTTP 404 window-death; the spec's retryable-only wording is
+    deliberately widened to any-failure because the raw.jsonl falsifier
+    demands together-llama (6 consecutive HTTP 400, zero answers) stop
+    routing after its 3rd consecutive failure. cooldown BREAKER_COOLDOWN_S,
+    then half-open admitting at most HALF_OPEN_PROBES probes; any success
+    closes, any failure reopens.
+    """
+
+    def __init__(self, threshold: int = BREAKER_THRESHOLD,
+                 cooldown: float = BREAKER_COOLDOWN_S,
+                 probes: int = HALF_OPEN_PROBES) -> None:
+        self.threshold = threshold
+        self.cooldown = cooldown
+        self.max_probes = probes
+        self.st: dict[str, dict[str, Any]] = {}
+
+    def _st(self, lane: str) -> dict[str, Any]:
+        return self.st.setdefault(lane, {"fails": 0, "state": "closed",
+                                         "opened_at": 0.0, "probes": 0})
+
+    def allow(self, lane: str) -> bool:
+        s = self._st(lane)
+        if s["state"] == "closed":
+            return True
+        if s["state"] == "open":
+            if time.time() - s["opened_at"] >= self.cooldown:
+                s["state"] = "half_open"
+                s["probes"] = 0
+            else:
+                return False
+        if s["state"] == "half_open":
+            if s["probes"] < self.max_probes:
+                s["probes"] += 1
+                return True
+            return False
+        return True
+
+    def record(self, lane: str, ok: bool, error_class: str = "") -> None:
+        s = self._st(lane)
+        if ok:
+            s.update({"fails": 0, "state": "closed", "probes": 0})
+            return
+        s["fails"] += 1
+        if s["state"] == "half_open" or s["fails"] >= self.threshold:
+            s["state"] = "open"
+            s["opened_at"] = time.time()
+
+
+_LANE_BREAKER = LaneBreaker()
+_RETRY_BUDGET = RetryBudget()
 
 
 def _route(item: dict[str, Any], attempt: int, idx: int, live: list[dict[str, str]]) -> str:
@@ -428,6 +581,19 @@ def main(argv: list[str] | None = None) -> int:
     def job(idx_item: tuple[int, dict[str, Any]]) -> dict[str, Any]:
         idx, item = idx_item
         lane_id = _route(item, attempts.get(item["id"], 0) + 1, idx, live)
+        # B2-320 S3: the breaker refuses routing to a lane that is open (3
+        # consecutive failures) or out of half-open probes; the item is left
+        # for the next run, never lost (the queue is durable).
+        if not _LANE_BREAKER.allow(lane_id):
+            r = {"ok": False, "error": "BREAKER_OPEN", "lane": lane_id,
+                 "model": lane_by_id[lane_id]["model"], "latency_ms": 0,
+                 "attempt": attempts.get(item["id"], 0) + 1}
+            r.update({"id": item["id"], "slug": item["slug"], "class": item.get("class", "?")})
+            with _lock:
+                results.append(r)
+                with RAW.open("a", encoding="utf-8") as fh:
+                    fh.write(json.dumps(r, ensure_ascii=False) + "\n")
+            return r
         lane = lane_by_id[lane_id]
         key = env.get(lane["key"], "")
         if not key:
@@ -437,6 +603,25 @@ def main(argv: list[str] | None = None) -> int:
             r = call(lane, SYSTEMS[item.get("style", "digger")], item["prompt"], key,
                      subsystem=item["id"], timeout=a.timeout,
                      attempt=attempts.get(item["id"], 0) + 1)
+        # B2-320 S1+S2: one in-process retry for a retryable failure with the
+        # jitter sleep BEFORE it and a budget token spent on it; permanent
+        # failures never retry (zero budget spent on the HTTP 400 class).
+        err_class = classify_error(r)
+        if not r.get("ok") and err_class == "retryable" and \
+                attempts.get(item["id"], 0) + 1 < 2:
+            if _RETRY_BUDGET.try_withdraw():
+                time.sleep(jitter_sleep_seconds(attempts.get(item["id"], 0)))
+                lane2 = lane_by_id[_route(item, 2, idx, live)]
+                key2 = env.get(lane2["key"], "")
+                if key2:
+                    r = call(lane2, SYSTEMS[item.get("style", "digger")], item["prompt"],
+                             key2, subsystem=item["id"], timeout=a.timeout, attempt=2)
+        if r.get("ok"):
+            _RETRY_BUDGET.deposit()
+            _LANE_BREAKER.record(lane_id, True)
+        else:
+            _LANE_BREAKER.record(lane_id, False, classify_error(r))
+        r["error_class"] = classify_error(r)
         r.update({"id": item["id"], "slug": item["slug"], "class": item.get("class", "?")})
         with _lock:
             results.append(r)
@@ -456,6 +641,11 @@ def main(argv: list[str] | None = None) -> int:
         attempts[r["id"]] = attempts.get(r["id"], 0) + 1
         if r.get("ok"):
             done.add(r["id"])
+        elif r.get("error_class") == "permanent":
+            # B2-320 S2: permanent (HTTP 400/404, config facts) never earns a
+            # second attempt; the second would be a budget-free repeat of a
+            # call that can never succeed.
+            state.setdefault("dead", {})[r["id"]] = f"{r.get('error')} (permanent)"
         elif attempts[r["id"]] >= 2:
             state.setdefault("dead", {})[r["id"]] = f"{r.get('error')} (2 attempts)"
     state["done"] = sorted(done)

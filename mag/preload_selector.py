@@ -224,7 +224,20 @@ def pick_model() -> str:
         return PRIMARY_MODEL
     if FALLBACK_MODEL in names:
         return FALLBACK_MODEL
-    return next(iter(sorted(names)), PRIMARY_MODEL)
+    # SW1-04 (SWARM_1.md row 4, glm+deepseek converged): ollama tags carry
+    # :suffix variants (quants, :latest); exact-only match missed those and
+    # fell through to next(iter(sorted(names))) = an arbitrary model silently
+    # seated for a probe that names its model. Match on the base tag; if even
+    # that misses, REFUSE: a named-model probe on a random model is worse
+    # than a loud error.
+    for want in (PRIMARY_MODEL, FALLBACK_MODEL):
+        base = want.split(":")[0]
+        suffixed = sorted(n for n in names if n.split(":")[0] == base)
+        if suffixed:
+            return suffixed[0]
+    raise ValueError(
+        f"pick_model refuses: neither {PRIMARY_MODEL!r} nor {FALLBACK_MODEL!r} "
+        f"(nor any :suffix variant) is installed; ollama reports {sorted(names)}")
 
 
 def chat_logprobs(model: str, system: str, user: str, num_predict: int,

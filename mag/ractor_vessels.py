@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import sys
 import time
 from datetime import datetime, timezone
@@ -27,7 +28,10 @@ sys.path.insert(0, str(ROOT))
 RACTORS_DIR = ROOT / "queue" / "handoff" / "ractors"
 RUNS_DIR = ROOT / "memory" / "runs" / "vessels"
 BOARD = ROOT / "queue" / "shitpost" / "TAKE_BOARD.md"
-PROVIDER = "deepseek"
+# 2026-10-22 free-width: default is LOCAL ollama (operator: stop defaulting to DeepSeek).
+# Override per run with --provider / --model or env MAG_RACTOR_PROVIDER / MAG_RACTOR_MODEL.
+PROVIDER = os.environ.get("MAG_RACTOR_PROVIDER", "ollama")
+MODEL = os.environ.get("MAG_RACTOR_MODEL", "qwen2.5:7b") or None
 
 VOICE_LAWS = (
     "DESK VOICE LAWS: one strike, 15 words or fewer unless the steer says otherwise. "
@@ -51,8 +55,17 @@ def _load_mask(mask: str, limit: int = 1800) -> str:
     return spec[:limit]
 
 
-def fire(mask: str, steer: str, label: str = "") -> dict[str, Any]:
-    """Fire one steerable vessel: mask + voice laws + steer -> strike via deepseek."""
+def fire(mask: str, steer: str, label: str = "", provider: str | None = None,
+         model: str | None = None) -> dict[str, Any]:
+    """Fire one steerable vessel: mask + voice laws + steer -> strike via the chosen lane."""
+    provider = provider or PROVIDER
+    if provider == "ollama":
+        # OLLAMA_HOST is often the server bind form (127.0.0.1:11434, no scheme); the
+        # openai_compat client needs a URL. Normalise for THIS process only (bind untouched).
+        h = os.environ.get("OLLAMA_HOST", "")
+        if h and "://" not in h:
+            os.environ["OLLAMA_HOST"] = f"http://{h.rstrip('/')}/v1"
+    model = model or (MODEL if provider == PROVIDER else None)
     from models.providers import chat_provider
 
     lens = _load_mask(mask)
@@ -66,7 +79,7 @@ def fire(mask: str, steer: str, label: str = "") -> dict[str, Any]:
         "Return ONLY the strike text — no preamble, no quotes around it, no explanation."
     )
     t0 = time.time()
-    response = chat_provider(PROVIDER, system_prompt, user_prompt, tier="T2",
+    response = chat_provider(provider, system_prompt, user_prompt, tier="T2", model=model,
                              temperature=0.9, max_tokens=200)
     latency_ms = round((time.time() - t0) * 1000)
     ok = bool(response.get("ok"))
@@ -76,7 +89,8 @@ def fire(mask: str, steer: str, label: str = "") -> dict[str, Any]:
         "ts": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
         "mask": mask.upper(), "label": label, "ok": ok,
         "strike": strike[:600], "latency_ms": latency_ms,
-        "model": response.get("model", ""), "error": response.get("error", ""),
+        "provider": provider, "model": response.get("model", "") or (model or ""),
+        "error": response.get("error", ""),
         "steer": steer[:300],
     }
     RUNS_DIR.mkdir(parents=True, exist_ok=True)
@@ -91,7 +105,7 @@ def land_on_board(results: list[dict[str, Any]], label: str) -> None:
     lines = [f"\n### VESSEL RETURNS — {label}", ""]
     for r in results:
         if r["ok"] and r["strike"]:
-            lines.append(f"**{r['mask']} (vessel, deepseek)**")
+            lines.append(f"**{r['mask']} (vessel, {r.get('provider', PROVIDER)})**")
             lines.append("```")
             lines.append(r["strike"])
             lines.append("```")
@@ -113,10 +127,13 @@ def main(argv: list[str] | None = None) -> int:
     f2.add_argument("--wave-file", required=True)
     f2.add_argument("--label", default="")
     f2.add_argument("--board", action="store_true")
+    for sp in (f1, f2):
+        sp.add_argument("--provider", default=None, help="provider id (default env MAG_RACTOR_PROVIDER or ollama)")
+        sp.add_argument("--model", default=None)
     args = ap.parse_args(argv)
 
     if args.cmd == "fire":
-        out = fire(args.mask, args.steer, args.label)
+        out = fire(args.mask, args.steer, args.label, args.provider, args.model)
         print(json.dumps(out, indent=2, ensure_ascii=False))
         if args.board:
             land_on_board([out], args.label or out["ts"])
@@ -127,7 +144,8 @@ def main(argv: list[str] | None = None) -> int:
                 Path(args.wave_file).read_text(encoding="utf-8").splitlines() if l.strip()]
         results = []
         for r in rows:
-            out = fire(r["mask"], r["steer"], args.label)
+            out = fire(r["mask"], r["steer"], args.label, r.get("provider") or args.provider,
+                       r.get("model") or args.model)
             results.append(out)
             print(f"{out['mask']}: {'ok' if out['ok'] else out['error']}")
         if args.board:

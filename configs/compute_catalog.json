@@ -1,0 +1,150 @@
+{
+  "schema": "compute_catalog.v1",
+  "updated": "2026-10-24",
+  "law": "Only OpenAI-compatible chat endpoints. A provider that needs a bespoke SDK is not 'easy' and therefore not water.",
+  "providers": [
+    {
+      "id": "gh-models",
+      "label": "GitHub Models",
+      "base": "https://models.github.ai/inference",
+      "model": "openai/gpt-4o-mini",
+      "key_env": "GITHUB_TOKEN",
+      "extra_headers": {
+        "X-GitHub-Api-Version": "2022-11-28"
+      },
+      "free": "free with any GitHub account; rate-limited per model",
+      "signup": "https://github.com/settings/tokens  (a classic PAT with models:read)",
+      "status_hint": "RESPONDS 200 BUT ECHOES 'OK' - not a usable completion yet; treat as UNVERIFIED"
+    },
+    {
+      "id": "deepseek",
+      "label": "DeepSeek",
+      "base": "https://api.deepseek.com/v1",
+      "model": "deepseek-flash",
+      "key_env": "DEEPSEEK_API_KEY",
+      "free": "cheap paid (~$0.27/$1.10 per M); effectively free at our volume",
+      "signup": "https://platform.deepseek.com",
+      "status_hint": "READY"
+    },
+    {
+      "id": "zai-coding",
+      "label": "z.ai coding plan",
+      "base": "https://api.z.ai/api/coding/paas/v4",
+      "model": "glm-4.6",
+      "key_env": "ZAI_API_KEY",
+      "free": "subscription plan (coding endpoint answers when paas/v4 says no balance)",
+      "signup": "https://z.ai",
+      "status_hint": "READY"
+    },
+    {
+      "id": "openrouter-free",
+      "label": "OpenRouter :free",
+      "base": "https://openrouter.ai/api/v1",
+      "model": "liquid/lfm-2.5-2.6b:free",
+      "key_env": "OPENROUTER_API_KEY",
+      "free": "free suffix models, ~50 req/day without credits; 35+ free models",
+      "signup": "https://openrouter.ai/keys",
+      "status_hint": "READY"
+    },
+    {
+      "id": "nous",
+      "label": "Nous inference (free models)",
+      "base": "https://inference-api.nousresearch.com/v1",
+      "model": "meituan/longcat-2.5-preview:free",
+      "key_env": "HERMES_API_KEY_1",
+      "free": "free tier on :free models",
+      "signup": "https://portal.nousresearch.com",
+      "status_hint": "READY"
+    },
+    {
+      "id": "llm7",
+      "label": "LLM7.io",
+      "base": "https://api.llm7.io/v1",
+      "model": "gpt-4o-mini",
+      "key_env": "LLM7_API_KEY",
+      "free": "free token, 60 RPM / 250 req/hr, no card, no phone",
+      "signup": "https://token.llm7.io/",
+      "status_hint": "NEEDS KEY - 2 minute email signup"
+    },
+    {
+      "id": "ollama-cloud",
+      "label": "Ollama Cloud",
+      "base": "https://ollama.com/v1",
+      "model": "gpt-oss:120b",
+      "key_env": "OLLAMA_API_KEY",
+      "free": "6 models on free tier, no card",
+      "signup": "https://ollama.com/settings/keys",
+      "status_hint": "NEEDS KEY - sign in, create key"
+    },
+    {
+      "id": "sambanova",
+      "label": "SambaNova Cloud",
+      "base": "https://api.sambanova.ai/v1",
+      "model": "Meta-Llama-3.3-70B-Instruct",
+      "key_env": "SAMBANOVA_API_KEY",
+      "free": "free tier, ~294 tok/s, DeepSeek R1 included, no card",
+      "signup": "https://cloud.sambanova.ai/apis",
+      "status_hint": "NEEDS KEY - 2 minute signup"
+    },
+    {
+      "id": "cloudflare-workers-ai",
+      "label": "Cloudflare Workers AI",
+      "base": "https://api.cloudflare.com/client/v4/accounts/{account_id}/ai/v1",
+      "model": "@cf/meta/llama-3.3-70b-instruct-fp8-fast",
+      "key_env": "CLOUDFLARE_API_TOKEN",
+      "free": "10k neurons/day free",
+      "signup": "https://dash.cloudflare.com/profile/api-tokens",
+      "status_hint": "NEEDS KEY + account id"
+    },
+    {
+      "id": "google-ai-studio",
+      "label": "Google AI Studio (Gemini)",
+      "base": "https://generativelanguage.googleapis.com/v1beta/openai",
+      "model": "gemini-2.5-flash",
+      "key_env": "GOOGLE_AI_STUDIO_KEY",
+      "free": "free tier, 500 RPD on 2.5 Flash, 1M context",
+      "signup": "https://aistudio.google.com/apikey",
+      "status_hint": "NEEDS A STUDIO KEY - the current GEMINI_API_KEY is an OAuth-only Cloud key (401)"
+    },
+    {
+      "id": "groq",
+      "label": "Groq",
+      "base": "https://api.groq.com/openai/v1",
+      "model": "llama-3.3-70b-versatile",
+      "key_env": "GROQ_API_KEY_3",
+      "free": "free plan, ~1k req/day, 30 RPM",
+      "signup": "https://console.groq.com/keys",
+      "status_hint": "NEEDS NEW KEY - both current keys return 401"
+    },
+    {
+      "id": "mistral",
+      "label": "Mistral",
+      "base": "https://api.mistral.ai/v1",
+      "model": "mistral-small-latest",
+      "key_env": "MISTRAL_API_KEY_3",
+      "free": "free plan ~$10/mo credits",
+      "signup": "https://console.mistral.ai/api-keys",
+      "status_hint": "RATE LIMITED - both keys 429; new plan key if it persists"
+    },
+    {
+      "id": "cerebras",
+      "label": "Cerebras",
+      "base": "https://api.cerebras.ai/v1",
+      "model": "llama3.1-8b",
+      "key_env": "CEREBAS_API_KEY",
+      "free": "free tier exists, but this account has no entitlement (402 on gpt-oss-120b)",
+      "signup": "https://cloud.cerebras.ai",
+      "status_hint": "DEAD on this account"
+    },
+    {
+      "id": "nvidia-nim",
+      "label": "NVIDIA NIM",
+      "base": "https://integrate.api.nvidia.com/v1",
+      "model": "meta/llama-3.3-70b-instruct",
+      "key_env": "NVIDIA_API_KEY",
+      "free": "100+ models on free developer tier",
+      "signup": "https://build.nvidia.com",
+      "status_hint": "DEAD - key lists models but chat returns 403 Authorization failed"
+    }
+  ]
+}

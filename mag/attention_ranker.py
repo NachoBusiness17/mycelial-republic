@@ -60,12 +60,50 @@ def _feedback() -> dict[str, list[str]]:
     return out
 
 
-def record_feedback(item_id: str, signal: str, *, source: str = "dashboard") -> dict[str, Any]:
+def _find_cast(cast_id: str) -> dict[str, Any] | None:
+    """The first settled ledger row carrying this cast_id, else None.
+
+    Full-file scan on purpose: a bounded window would let a retried POST
+    double-append once enough newer trades pushed the original row out of the
+    window. The ledger is tiny (zero trades in its first 54 days, w4-03), so
+    total recall is cheap and the settle-once guarantee is unconditional.
+    """
+    if not FEEDBACK_PATH.is_file():
+        return None
+    try:
+        rows = FEEDBACK_PATH.read_text(encoding="utf-8", errors="replace").splitlines()
+    except OSError:
+        return None
+    for row in rows:
+        try:
+            event = json.loads(row)
+        except json.JSONDecodeError:
+            continue
+        if str(event.get("cast_id") or "") == cast_id:
+            return event
+    return None
+
+
+def record_feedback(
+    item_id: str, signal: str, *, source: str = "dashboard", cast_id: str = ""
+) -> dict[str, Any]:
+    """Append one trade to the ledger; settle once per cast_id.
+
+    cast_id is the idempotency key: a retried POST (network retry, double
+    click) replays the original trade instead of appending a second row
+    (zero-double-append, pinned by tests/test_attention_feedback_ledger.py).
+    A cast without cast_id is a distinct trade every time (legacy semantics).
+    """
     item_id, signal = item_id.strip(), signal.strip().lower()
     if not item_id:
         return {"ok": False, "error": "item_id required"}
     if signal not in ALLOWED_SIGNALS:
         return {"ok": False, "error": f"signal must be one of {sorted(ALLOWED_SIGNALS)}"}
+    cast_id = cast_id.strip()
+    if cast_id:
+        prior = _find_cast(cast_id)
+        if prior is not None:
+            return {"ok": True, "duplicate": True, "event": prior}
     event = {
         "schema": "attention_feedback.v1",
         "ts": datetime.now(timezone.utc).isoformat(),
@@ -73,10 +111,24 @@ def record_feedback(item_id: str, signal: str, *, source: str = "dashboard") -> 
         "signal": signal,
         "source": source[:80],
     }
+    if cast_id:
+        event["cast_id"] = cast_id[:120]
     FEEDBACK_PATH.parent.mkdir(parents=True, exist_ok=True)
     with FEEDBACK_PATH.open("a", encoding="utf-8") as fh:
         fh.write(json.dumps(event, ensure_ascii=False) + "\n")
     return {"ok": True, "event": event}
+
+
+def read_feedback() -> dict[str, list[str]]:
+    """Public read path: the trade ledger mapped item_id -> [signals ...].
+
+    The reading logic has existed since the ranker landed (2026-08-06) as the
+    private `_feedback`, already consumed by build_ranked_attention; what was
+    missing was trades to read (w4-03: attention_feedback.jsonl ABSENT, zero
+    trades ever) and this named surface for every other consumer (audits,
+    organ reputation) to read real casts from.
+    """
+    return _feedback()
 
 
 def _item(

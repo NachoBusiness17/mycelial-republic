@@ -71,7 +71,7 @@ def _key() -> str:
     for name in KEY_NAMES:
         v = os.environ.get(name)
         if v:
-            return v
+            return v.strip()  # strip-at-use law: 2026-10-04 CR-header outage (CRLF .env key rode into Bearer, urllib rejected the header, elder lane down 14 cycles)
     try:
         for line in (ROOT / ".env").read_text(encoding="utf-8", errors="replace").splitlines():
             if "=" not in line:

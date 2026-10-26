@@ -1,0 +1,100 @@
+ID 1wtg12r [LocalLLaMA] RAM Offloading with vLLM - tcclaviger appreciation post
+date=1790702085 score=49 comments=37 author=sloptimizer url=https://i.redd.it/ieztzoixqhsh1.png
+PERMALINK https://www.reddit.com/r/LocalLLaMA/comments/1wtg12r/ram_offloading_with_vllm_tcclaviger_appreciation/
+SELFTEXT:
+Thanks to tcclaviger, vLLM now has RAM offloading support. This makes frontier models much more accessible on a local setup!
+
+I was able to run the original DeepSeek-V4-Flash-Vision-Exp on four R9700s.
+
+    podman run --rm -it \
+        --init \
+        --network host \
+        --ulimit memlock=-1:-1 \
+        -v /models:/models:ro \
+        -v ~/.vllm-cache:/cache \
+        -e VLLM_ROCM_USE_AITER=0 \
+        -e ROCR_VISIBLE_DEVICES=0,1,2,3 \
+        -e VLLM_CACHE_ROOT=/cache/vllm \
+        -e TORCHINDUCTOR_CACHE_DIR=/cache/inductor \
+        -e TRITON_CACHE_DIR=/cache/triton \
+        --device /dev/kfd \
+        --device /dev/dri \
+        --group-add keep-groups \
+        --annotation run.oci.keep_original_groups=1 \
+        --security-opt label=disable \
+        --security-opt seccomp=unconfined \
+        --shm-size 160g \
+        docker.io/tcclaviger/vllm@sha256:ef99b3d07c3f15e7978528c7510762ba024df9ab4242070d8ed092cd4cc1a694 \
+        /models/deepseek-ai/DeepSeek-V4-Flash-Vision-Exp \
+        --served-model-name DeepSeek-V4-Flash-Vision-Exp \
+        --tensor-parallel-size 4 \
+        --enable-expert-offload \
+        --expert-offload-mem 160 \
+        --reasoning-parser deepseek_v4 \
+        --reasoning-config '{"reasoning_parser":"deepseek_v4","reasoning_start_str":"","reasoning_end_str":""}' \
+        --tool-call-parser deepseek_v4 \
+        --enable-auto-tool-choice \
+        --max-num-seqs 8 \
+        --enable-prefix-caching \
+        --enable-chunked-prefill \
+        --max-num-batched-tokens 2048 \
+        --kv-cache-dtype fp8 \
+        --block-size 256 \
+        --max-model-len 256000 \
+        --gpu-memory-utilization 0.97 \
+        --mm-processor-cache-gb 4.0 \
+        --override-generation-config '{"max_tokens": 128000, "temperature": 1.0, "top_p": 0.95}' \
+        --speculative-config '{"method":"dspark","model":"/models/deepseek-ai/DeepSeek-V4-Flash-Vision-Exp","num_speculative_tokens":3,"draft_sample_method":"probabilistic","enable_adaptive_verification":false}' \
+        --compilation-config '{"cudagraph_capture_sizes": [4,8,12,16], "max_cudagraph_capture_size": 16}' \
+        --host 0.0.0.0 \
+        --port 8090
+COMMENTS (37, top-scored order):
+--- sloptimizer (7): No, vLLM is usually much faster than llama.cpp, but more complicated to get vLLM working, and previously no RAM offloading support.
+--- Septerium (6): That is great news. Llama.cpp impl for this model still sucks with horrible prefill speeds, even with full GPU offload
+--- LinkSea8324 (5): Literally no
+--- No-Craft-7979 (5): And it has 5 times as many flags as llama.cpp to make it work… But it does work.
+--- sloptimizer (5): It was not efficient, not the way llama.cpp offloads experts. Now vLLM has expert RAM offloading comparable to llama.cpp
+--- KillerQF (4): For generation aren't you going from DRAM memory bandwidth to PCIe memory bandwidth going from llama.cpp to vLLM
+--- CodeMichaelD (4): ur were probably thinking about model/feature specific lllama.cpp forks that force a single gpu spit out all it can do.  
+Llama.cpp for general user is - "I have a 3090, p100 and amd xt smth, lets make them work with Vulkan with two cli args and be done with it"  
+vLLM is more leaning for proper tensor split for serving large models on identical gpu clusters or so it was in the nutshell.
+--- sloptimizer (3): From my experience they just never look at them. Closing would be effort.
+--- sloptimizer (3): Just use an agent to try different settings until it works and then some more to make it faster - then the number of settings really doesn't matter.
+--- ilintar (3): But those two things are linked. For example, vLLM relies on everything staying on GPU so it can run one optimized graph. Once you introduce offloading, you lose that.
+--- lolwutdo (3): I thought VLLM had ram off load for a while now
+--- Lumpy_Concentrate807 (2): This is still a fork right, not in mainline vLLM?
+--- No-Refrigerator-1672 (2): It's more like their target is big inference servers, and maybe real workstations; so a PR that reduces performance to save maybe a gb of memory is an instant no-go for them. Even if it's optional with runtime flag, it is still an added complexity that they have to commit supporting throughout all the future upgrades.
+--- fgk55555 (2): I have 1x R9700 and 64GB DDR5. I went from a 9070 XT and didn't want to mess with drivers.  So far I've been pleased.
+--- fgk55555 (2): He tends to focus on R9700's, I have one R9700 and 64GB RAM
+--- iLaurens (2): One major benefit of Llama.cpp for the GPU poor that I barely see people talk about is the default to keep the token embedding layer on CPU/RAM. This easily saves 1GB on qwen 3.8 27B on Q4! There's no need to keep all token emveddings in VRAM since only a small subset of tokens are used as input/output at any moment. 
+
+Is this embedding offloading also possible in vLLM using this new feature?
+--- fgk55555 (2): Is Rob here? Tcclaviger is very good. Rob made me a TP1 QFN config that beats llama.cpp. If you've got the VRAM, I recommend trying some of his images.
+--- sloptimizer (2): It depends on how much you need to offload, and it sure beats being able to use vLLM vs model not fitting at all.
+--- sloptimizer (2): Probably, but it doesn't seem to matter. Now you can spill some of the experts into RAM with a speed penaly. Before you could not run the model at all.
+--- sloptimizer (1): Yes, this is still a fork. But at least it's a well optimized fork for AMD hardware
+--- SadGuitar5306 (1): its possible with a "patch" 😆 
+
+like that [https://github.com/frost555/Qwen3.8-27B-AWQ-INT4-vllm-patches/blob/main/patches/qwen3\_5-embed-offload.patch](https://github.com/frost555/Qwen3.8-27B-AWQ-INT4-vllm-patches/blob/main/patches/qwen3_5-embed-offload.patch)
+
+it was made by AI, but i tested it works )
+--- [deleted] (1): [removed]
+--- Glittering-Call8746 (1): Lol yeah made sense..
+--- Glittering-Call8746 (1): Two b70s or one r9700 ? I regret buying gfx1100s..
+--- Glittering-Call8746 (1): Answer always yes. Cos these are the people who will pay for 500 dollars plan and say it sucks then move to spend 10k and above on local ai then move to another provider meanwhile.. #devday.
+--- Glittering-Call8746 (1): They close any PRs ?
+--- Glittering-Call8746 (1): Qfn on how much vram and ram what's ur setup
+--- sloptimizer (1): I'm not sure, but knowing vLLM probably not.
+--- HungryInstruction (1): I've been having a naive question looking at these:
+
+Does it still make much sense for our local builds to run sub-1T parameter heavily-quantized models at (most of the time) kinda struggling speed at the expense of $10K rigs, while commercial platforms provides big brutal scaling models? This puzzles me even more given the current fact that GPU makers aggressively limit the specs of non-enterprise acceleration cards...
+--- [deleted] (1): [removed]
+--- [deleted] (1): [removed]
+--- [deleted] (1): [removed]
+--- [deleted] (1): [removed]
+--- sloptimizer (1): Yes, the OG weights.
+--- Evgeny_19 (1): This is with the original weights, right? So one would need at least 96 GB of RAM to run this.
+
+Looks close to Dual Spark actually, not bad.
+--- DiscipleofDeceit666 (-1): Llama cpp is faster for single GPU workloads. But anything involving multi GPU, llama cpp tends to lose.
+--- exaknight21 (-2): I am all for vLLM but wouldn’t llama.cpp be a little superior in terms of performance? Literally speaking out of my brain’s ass right now.

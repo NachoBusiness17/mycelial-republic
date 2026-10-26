@@ -27,6 +27,12 @@
   .item .t{color:#dfe7f2;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .item .d{color:var(--dim);font-size:10px;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .item.page .t{color:var(--cyan)}
+  /* LIVENESS badge (surfaces-functional, 2026-09-22): live = routed organ or fresh ≤14d or deployed game ·
+     art = static one-shot visual (VISUAL DECK / viz-gallery TABS) · stale = cold & unrouted */
+  .item .lv{display:inline-block;font-size:9px;line-height:1.4;padding:0 5px;border-radius:6px;margin-right:5px;vertical-align:1px;border:1px solid}
+  .lv-live{color:#8fe388;border-color:#3f6b3f}
+  .lv-stale{color:#c99a6a;border-color:#6b5138}
+  .lv-art{color:#c39bf0;border-color:#5d4a7a}
   .kv{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:8px}
   .card{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:10px}
   .card b{color:#dfe7f2;font-size:12px}
@@ -43,7 +49,7 @@
 </head>
 <body>
 <header>
-  <h1>FLEET CONSOLE</h1>
+  <h1>FLEET CONSOLE &nbsp;<a href="./zoo.html" style="color:var(--cyan);font-size:12px;text-decoration:none;border:1px solid var(--line);padding:2px 8px;border-radius:4px">THE ZOO &mdash; the map &nearr;</a></h1>
   <div class="sub" id="status">loading…</div>
   <div id="bar">
     <input id="q" placeholder="filter everything — pages, organs, cards, files…">
@@ -62,7 +68,9 @@
     <h2>FLEET / HYPERVISOR</h2>
     <div class="kv" id="fleet"></div>
   </section>
-  <section id="sec-page"><h2>SURFACES (<span id="n-page">0</span>)</h2><div class="grid" id="g-page"></div></section>
+  <section id="sec-page"><h2>SURFACES (<span id="n-page">0</span>)</h2>
+    <div class="sub" style="margin-bottom:6px">liveness: <span class="lv lv-live">live</span> routed or fresh ≤14d &nbsp; <span class="lv lv-art">art</span> static visual &nbsp; <span class="lv lv-stale">stale</span> cold &amp; unrouted</div>
+    <div class="grid" id="g-page"></div></section>
   <section id="sec-organ"><h2>ORGANS — mag/*.py (<span id="n-organ">0</span>)</h2><div class="grid" id="g-organ"></div></section>
   <section id="sec-card"><h2>CARDS — watch/*.md (<span id="n-card">0</span>)</h2><div class="grid" id="g-card"></div></section>
   <section id="sec-data"><h2>CODE + DATA (<span id="n-data">0</span>)</h2><div class="grid" id="g-data"></div></section>
@@ -77,14 +85,53 @@ const $=id=>document.getElementById(id);
 let ITEMS=[], FILTER='all';
 const pretty=n=>n.replace(/\.(html|py|md|json|js|jsonl|png|css)$/,'').replace(/[_-]/g,' ').trim();
 
+/* LIVENESS — one badge per SURFACES tile (surfaces-functional, 2026-09-22).
+   Primary feed: the liveness organ at /api/v1/surfaces/liveness (overrides the map below when it
+   answers {surfaces:{"<file>.html":"live|stale|art"}}). Until that organ boots, badges come from
+   this evidence map, derived 2026-09-22 from: dashboard/server.py+main.py route targets (live),
+   file mtime ≥ 2026-09-08 (live), index.html VISUAL DECK ∪ viz_gallery.html TABS static visuals
+   (art), everything older & unrouted (stale), games/* deployed (live), museum/* retired (stale),
+   art/* (art). The four top-level game stubs redirect to their canonical games/ copies → live. */
+const LIVENESS_ORGAN='/api/v1/surfaces/liveness';
+let LIVENESS_FEED=null;
+const LIVENESS_MAP={
+ live:['aos.html','cast-voice.html','chan.html','fleet.html','health.html','index.html','ractor.html',
+  'seat.html','sovereign_shell.html','table.html','wave.html','game.html',
+  'agents.html','burn_board.html','chaos_refract.html','chain_witness.html','deck.html','decisions.html',
+  'emergence_test_visualization.html','estate_walk.html','hum.html','kv_os.html','live.html',
+  'live_feed.html','maze.html','model_map.html','ontology_dashboard.html','persistent_world.html','pipeline.html',
+  'shadowbonk.html','swarm.html','tavern_brawl.html','tavern_test.html','the_fence.html','the_index.html',
+  'the_radar.html','the_rings.html','universe_within.html','verkle_construction.html','verkle_pyramid.html',
+  'viz_gallery.html','viz_horse_run.html','viz_lattice_test.html','wipeout_lightmaze.html','wipeout_sunset.html',
+  'wipeout_v2.html',
+  'arena_operator_field.html','arrakis.html','maze_arena.html','mud.html'],
+ art:['calabi_yau.html','conservation_room.html','dungeon.html','eraser_maze.html',
+  'fable_room.html','grab_write.html','memory_map.html','module_map.html','pong.html','room_lightmap.html',
+  'rtfm_graph.html','salon_lightmap.html','self_hologram.html','shadow_walk.html','steal_tools.html',
+  'tesuji_map.html','verkle_knot_wave.html','viz_3d_verkle.html','viz_spore_fish.html','worldline_dungeon.html'],
+};
+const LIVENESS_SET={};
+for(const k of ['live','stale','art']) (LIVENESS_MAP[k]||[]).forEach(f=>LIVENESS_SET[f]=k);
+function liveness(name){
+  if(LIVENESS_FEED && LIVENESS_FEED[name]) return LIVENESS_FEED[name];
+  if(LIVENESS_SET[name]) return LIVENESS_SET[name];
+  if(name.startsWith('games/')) return 'live';
+  if(name.startsWith('museum/')) return 'stale';
+  if(name.startsWith('art/')) return 'art';
+  return 'stale';
+}
+fetch(LIVENESS_ORGAN).then(r=>r.ok?r.json():null).then(d=>{
+  if(d && d.surfaces){ LIVENESS_FEED=d.surfaces; render(); }
+}).catch(()=>{}); // organ not booted yet — embedded evidence map stands
+
 async function jget(u){const r=await fetch(u);return r.json();}
 
 function treeEntries(d){
   return (d && d.entries) ? d.entries.filter(e=>e.type==='file') : [];
 }
 
-function add(kind,title,desc,onclick){
-  ITEMS.push({kind,title,desc,onclick});
+function add(kind,title,desc,onclick,lv){
+  ITEMS.push({kind,title,desc,onclick,lv:lv||null});
 }
 
 async function load(){
@@ -114,7 +161,7 @@ async function load(){
     .filter(e=>e.path.endsWith('.html'))
     .forEach(e=>{
       const url='/static/'+e.name;
-      add('page', pretty(e.name), e.name, ()=>window.open(url,'_blank'));
+      add('page', pretty(e.name), e.name, ()=>window.open(url,'_blank'), liveness(e.name));
     });
   // organs
   treeEntries(await jget('/api/workspace/tree?path=mag&depth=1')).filter(e=>e.path.endsWith('.py'))
@@ -144,7 +191,8 @@ function render(){
     if(f && !(it.title+' '+it.desc).toLowerCase().includes(f)) continue;
     const sec = it.kind==='visual' ? 'g-visual' : it.kind==='page' ? 'g-page' : it.kind==='organ' ? 'g-organ' : it.kind==='card' ? 'g-card' : 'g-data';
     const d=document.createElement('div'); d.className='item '+it.kind;
-    d.innerHTML='<div class="t">'+it.title+'</div><div class="d">'+it.desc+'</div>';
+    const badge = it.kind==='page' ? '<span class="lv lv-'+it.lv+'">'+it.lv+'</span>' : '';
+    d.innerHTML='<div class="t">'+badge+it.title+'</div><div class="d">'+it.desc+'</div>';
     d.onclick=it.onclick;
     $(sec).appendChild(d);
   }

@@ -26,6 +26,18 @@ LANE_TIERS = {
     "groq": 0, "openrouter": 0, "nvidia": 0, "cerebras": 0, "ollama": 0,
     "deepseek": 1, "zai": 2, "openai": 3, "anthropic": 3, "xai": 3,
 }
+# B2-521 DORMANT GATE (2026-09-26): the tier table still priced cerebras at tier 0 (free)
+# after B2-36 declared it dormant, handing the dormant lane the best cost prior in
+# score_lane fallbacks (100*ok_rate - 10*tier). Dormant provider rows drop out here, the
+# B2-133 law (mag/dormant.py; mag/doctor.py:607: dormant is a declared state); operator GO
+# flips the flag and the rows return with no code edit. Receipt:
+# watch/inbox/burn_wave_20260926/B2_521_cerebras_stragglers_20260926.md
+sys.path.insert(0, str(ROOT))
+
+from mag.dormant import dormant_ids as _dormant_provider_ids  # noqa: E402
+
+LANE_TIERS = {lane: tier for lane, tier in LANE_TIERS.items()
+              if lane not in _dormant_provider_ids()}
 
 
 def _spawn(cmd, timeout=60):

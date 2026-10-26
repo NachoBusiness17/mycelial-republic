@@ -235,7 +235,12 @@ def run_task(req: RunTaskRequest) -> RunTaskResponse:
                 str((result or {}).get("error") or "")[:300],
                 result if isinstance(result, dict) else None,
             )
-        return RunTaskResponse(ok=ok, tool=req.tool, result=result)
+        # error-loss-chain fix (2026-09-23): propagate the real error into the
+        # envelope. This line was the top still-live FKB fault — the seat fell
+        # back to "backend reported failure" because result.error never crossed
+        # the HTTP seam, so the model could not self-correct (FKB 38,885 rows).
+        return RunTaskResponse(ok=ok, tool=req.tool, result=result,
+                               error=str((result or {}).get("error") or "")[:500] or None)
     except Exception as e:  # noqa: BLE001
         _log_http_failure(req.tool, str(e)[:300], None)
         return RunTaskResponse(

@@ -118,7 +118,7 @@ addEventListener('keydown',e=>{keys[e.key.toLowerCase()]=1;if(e.key===' ')e.prev
   if(e.key==='2')descend(doorPause.b);
   return;
  }
- if(state==='play'&&e.key.toLowerCase()==='z'){
+ if(state==='play'&&e.key.toLowerCase()==='z'){if(state==='play'&&(e.key==='Shift'||e.key==='ShiftLeft'||e.key==='ShiftRight')){player.vx+=player.face*260;player.vy+=(keys['w']||keys['arrowup']?-120:0);player.iframes=0.3;beep(440,0.08,'square',0.03);}
   if(shoutCd<=0){
    shoutCd=5;
    gridForce(player.x,player.y,320,700);
@@ -160,6 +160,10 @@ let bubbles=[],wallT=6,enemyWallT=14;
 let shoutCd=0;
 // ---- THE MAZE DEPTHS: the game lives inside the maze ----
 let depth=1,depthT=0,gateOpen=null,doorPause=null;
+// kill-streak multiplier: declared here because update() reads killMultT every frame and
+// gainXp() reads killMult before any purchase — undeclared reads crashed the loop on frame 1
+// (a5dd96176 added the reads without an init; FW01 re-land 2026-09-28, playtest was 0/10).
+let killMult=1,killMultT=0;
 const DEPTH_NAMES=['THE PORCH','THE GATEHOUSE','THE BENCH','THE STAIR','THE DEEP BOARD','THE BONE GALLERY','THE WANG'];
 const DEPTH_LEN=45; // seconds per depth, then a gate opens
 const PLATFORM_SETS=[
@@ -563,6 +567,7 @@ function startGame(forcedSeed){
  seedRun(forcedSeed!==undefined?((forcedSeed>>>0)||1):(((Date.now()^Math.imul(++runN,2654435761))>>>0)||1));
  state='play';T=0;kills=0;diffLevel=0;nextDiff=30;spawnT=0.4;
  depth=1;depthT=0;gateOpen=null;doorPause=null;depthMods={gemMul:1,enemySpd:1,enemyHp:1,take:1,spawnMul:1};
+ killMult=1;killMultT=0; // fresh run starts unstreaked (FW01 re-land 2026-09-28)
  fishWarned=false;fishBossSpawned=false;fishCdT=0;
  disco();if(!bgm)startBgm();
  upg={dmg:1,rate:1,pierce:0,spread:1,speed:1,maxhp:100,magnet:(60+(meta.tiers.mag||0)*15),orbitAng:0,armor:0,xpMul:1};
@@ -594,7 +599,8 @@ function spawnEnemy(forcedX){
 
 function gainXp(g){
  player.hp=Math.min(upg.maxhp,player.hp+0);
- player.xp=(player.xp||0)+(upg.xpMul||1)*depthMods.gemMul;
+ killMult=Math.min(5,(killMult||1)+0.25);killMultT=2.5+depth*0.25;
+ player.xp=(player.xp||0)+Math.round((upg.xpMul||1)*depthMods.gemMul*killMult);
  if(player.xp>=player.xpNext){player.xp=0;player.xpNext=Math.floor(player.xpNext*1.25)+3;levelUp();}
 }
 function hurtFishTouch(e){
@@ -678,6 +684,7 @@ function levelUp(){
 }
 
 function update(dt){
+ if(killMultT>0){killMultT-=dt;if(killMultT<=0){killMult=1;}}
  if(state==='mountain'){updatePass(dt);return;}
  if(state!=='play')return;
  T+=dt;
@@ -1609,13 +1616,13 @@ function proj(z,wx){ // world -> screen for the pass (pseudo-3D into the shader 
 }
 function updatePass(dt){
  mtn.t+=dt;mtn.dist+=mtn.speed*dt;
- mtn.speed=Math.min(70,26+mtn.t*0.8);
+ mtn.speed=Math.min(46,26+mtn.t*0.45);
  const steerIn=(keys['a']||keys['arrowleft']?-1:0)+(keys['d']||keys['arrowright']?1:0);
  mtn.steer+=(steerIn-mtn.steer)*Math.min(1,dt*3);
  mtn.crash=Math.max(0,mtn.crash-dt*2);
  mtn.spawnT-=dt;mtn.rockT-=dt;mtn.exit-=dt;
  if(mtn.spawnT<=0){mtn.spawnT=0.5;mtn.fish.push({wx:rnd(-320,320),z:620,vy:rnd(-30,30)});}
- if(mtn.rockT<=0){mtn.rockT=1.1;mtn.rocks.push({wx:rnd(-340,340),z:640});}
+ if(mtn.rockT<=0){mtn.rockT=1.7;mtn.rocks.push({wx:rnd(-340,340),z:640});}
  for(const f of mtn.fish){f.z-=mtn.speed*dt*8;f.wx+=f.vy*dt;}
  for(const r of mtn.rocks){r.z-=mtn.speed*dt*8;}
  // harvest: fish that reach you

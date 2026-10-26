@@ -26,6 +26,9 @@ HOLDS_NAME = "holds.jsonl"
 LEDGER_NAME = "fixture_ledger.jsonl"
 FAR_FUTURE = "2027-01-01T00:00:00+00:00"
 
+# HEADLESS law: explicit creationflags (ratchet tests/test_headless_law.py; bare-spawn-descent 2026-09-29)
+HEADLESS = getattr(subprocess, "CREATE_NO_WINDOW", 0x08000000) if sys.platform == "win32" else 0
+
 
 def run_cli(*args: str) -> subprocess.CompletedProcess:
     return subprocess.run(
@@ -33,6 +36,7 @@ def run_cli(*args: str) -> subprocess.CompletedProcess:
         capture_output=True,
         text=True,
         timeout=60,
+        creationflags=HEADLESS,
     )
 
 

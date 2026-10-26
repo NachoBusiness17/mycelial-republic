@@ -38,6 +38,18 @@ _LEGACY_DEEPSEEK_ALIASES = {
 }
 
 _PROVIDER_FREE_OR_CREDIT = {"cerebras", "groq", "nvidia", "together"}
+# B2-133 DORMANT GATE (2026-09-26): a provider declared dormant in configs/providers.yaml
+# is not priced free-or-credit (mag/doctor.py:607: dormant is a declared state). B2-36 set
+# cerebras dormant (card-gated 30-day trial, chat 402 no-credit) and B2-61 set nvidia
+# dormant (410 EOL); pricing a dead lane $0 is a cost lie. Honest cost of the gate:
+# historical usage rows from before dormancy re-price as `unpriced` (this module's
+# first-class unknown state), since no joined rate table carries their models. Operator GO
+# flips the flag and the free-or-credit pricing returns with it.
+# Receipt: watch/inbox/burn_wave_20260926/B2_133_cerebras_purge_20260926.md
+from mag.dormant import dormant_ids as _dormant_provider_ids
+
+_DORMANT_IDS = _dormant_provider_ids()
+_PROVIDER_FREE_OR_CREDIT -= _DORMANT_IDS
 _SUBSCRIPTION_PROVIDER = {
     "glm_coding_lite": "z_ai",
     "zcode": "z_ai",
@@ -147,6 +159,18 @@ def _lookup_rate(provider: str, model: str, at: datetime | None) -> dict[str, An
         return {"state": "free_or_quota", "source": "openrouter_free_model", "model": model_key}
     if p in _PROVIDER_FREE_OR_CREDIT:
         return {"state": "free_or_quota", "source": "provider_quota_or_credit", "model": model_key}
+    if p in _DORMANT_IDS:
+        # 2026-10-03 seam fix (z_ai3 Lite pull, receipt
+        # watch/inbox/LITE_LANE_PULL_20261003.md): the B2-133 gate only removed
+        # dormant providers from the free-or-credit set, which worked for
+        # cerebras/nvidia only because no rate table carries their models.
+        # z_ai3 carries a real glm-5.3-flash rate, so the pull left its
+        # historical rows pricing at exact API dollars. Dormancy now intercepts
+        # the rate path too: while dormant, a provider's usage is historical
+        # credit traffic (the B2-522 decision class), the unpriced unknown.
+        return {"state": "unpriced", "source": "dormant_provider", "model": model_key,
+                "reason": "provider declared dormant in providers.yaml (B2-133); "
+                          "usage is historical credit traffic, not API dollars"}
 
     rates = _load_rates().get("model_rates") or {}
     cfg = rates.get(model_key)

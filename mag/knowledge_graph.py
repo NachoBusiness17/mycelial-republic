@@ -26,7 +26,9 @@ CLI: python -m mag.knowledge_graph build | known "<query>" | context "<query>" |
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
+import os
 import re
 import sys
 from datetime import datetime, timezone
@@ -49,7 +51,15 @@ GRAPH_PATH = ROOT / "memory" / "knowledge_graph.json"
 
 # Kinds regenerated from sources on every build(); every other kind is a hand-fold that build()
 # must PRESERVE (amend-not-erase) so the weave accumulates and percolates instead of being wiped.
-_COLLECTOR_KINDS = {"module", "knot", "case_law", "steal", "landscape"}
+# 'invariant' joined the regenerated set 2026-10-05 (day-4 mine steal card defect 3): invariant
+# nodes are derived from module docstrings, so they must rebuild with their modules, not persist.
+# 'superseded'/'superseder' joined 2026-10-07 (lane m6-graph-supersession of
+# morning-block-20261007, R5 next-loop target 2): the demotion register
+# memory/fold_history/SUPERSEDED.md becomes graph facts - each row is a
+# superseded/superseder node pair joined by one superseded_by edge, regenerated
+# from the register on every build() like every other collector kind.
+_COLLECTOR_KINDS = {"module", "invariant", "knot", "case_law", "steal", "landscape",
+                    "superseded", "superseder"}
 
 
 def _now() -> str:
@@ -89,7 +99,15 @@ def _nodes_code() -> list[dict[str, Any]]:
 
 
 def _nodes_verkle() -> list[dict[str, Any]]:
-    """the fact ledger: verkle knots -> theme (content-addressed)."""
+    """the fact ledger: verkle knots -> theme (content-addressed).
+
+    DEFECT FIX 1 (2026-10-05, day-4 mine steal card, watch/inbox/frontier_olm_2026-10-04/
+    steal/agent-memory-and-continuity via x.md, estate map; evidence lens/graph.md item 4):
+    the old reader pulled r['theme'] / r['summary'], fields verkle_chain.jsonl rows NEVER
+    carry, so all 400 knots were label='knot' empty-summary stubs. Rows actually carry
+    dominant_theme / session_id / tension_index / filename / leaf_hash (verified on the
+    live 11,299-row chain this session), so label + summary are backfilled from those bytes.
+    Fixed the same session; proof: knot_stub count 400 -> 0 in the b1_knowledge_graph receipt."""
     nodes: list[dict[str, Any]] = []
     for p in (ROOT / "memory" / "biography").glob("verkle_chain*.jsonl"):
         for line in p.read_text(encoding="utf-8", errors="replace").splitlines():
@@ -99,16 +117,35 @@ def _nodes_verkle() -> list[dict[str, Any]]:
                 r = json.loads(line)
             except Exception:
                 continue
+            label = str(r.get("dominant_theme")
+                        or Path(str(r.get("filename") or "")).stem or "knot")
+            summary = (f"session={r.get('session_id', '')} tension={r.get('tension_index', '')} "
+                       f"amended={r.get('amended', '')} {r.get('filename', '')}")
             nodes.append({"id": f"knot:{str(r.get('leaf_hash') or r.get('hash') or '')[:16]}",
-                          "kind": "knot", "label": r.get("theme") or "knot",
-                          "summary": str(r.get("summary") or "")[:200],
+                          "kind": "knot", "label": label[:160],
+                          "summary": summary[:200],
                           "tension": r.get("tension_index"),
                           "ts": r.get("ts") or r.get("t") or r.get("time") or "", "source": str(p)})
     return nodes[-400:]  # recent, bounded
 
 
 def _nodes_case_law() -> list[dict[str, Any]]:
-    """case law: skill_ledger moves -> signature + maps_to."""
+    """case law: skill_ledger rows -> signature + maps_to.
+
+    DEFECT FIX 2 + 4 (2026-10-05, day-4 mine steal card, watch/inbox/frontier_olm_2026-10-04/
+    steal/agent-memory-and-continuity via x.md, estate map + headline probe; evidence
+    lens/graph.md item 5): the old id builder law:{str(r.get('id') or '')[:12]} collapsed
+    all 300 rows onto the empty id 'law:' because skill_ledger.jsonl rows carry no id
+    field. The live 8,879-row ledger carries exactly two schemas: skill_fired.v1
+    (skill_id/job/pack_mode/chars_injected/ts) and skill_ledger.decision.v1
+    (goal/task_shape/provider/model/outcome/detail/seat). Per the card's headline probe:
+    key each node on sha256(skill_id + job + ts) for fired rows (decision rows:
+    schema + ts + goal) so every precedent row stays individually addressable, and
+    backfill label/summary/maps_to from the fields the rows actually carry.
+    maps_to names the mag module that WRITES each schema (skill_fired.v1 receipts:
+    mag/skills_pack.py:99-106; decision.v1 rows: mag/skill_ledger.py:137 record_decision),
+    which is the only byte-backed module reference in the rows; that fires the previously
+    dead maps_to edge builder and binds it to real module: nodes."""
     nodes: list[dict[str, Any]] = []
     p = ROOT / "memory" / "improve" / "skill_ledger.jsonl"
     if not p.is_file():
@@ -120,11 +157,44 @@ def _nodes_case_law() -> list[dict[str, Any]]:
             r = json.loads(line)
         except Exception:
             continue
-        nodes.append({"id": f"law:{str(r.get('id') or '')[:12]}", "kind": "case_law",
-                      "label": r.get("title") or r.get("pattern") or r.get("id") or "law",
-                      "summary": str(r.get("move") or r.get("summary") or r.get("pattern") or "")[:200],
-                      "maps_to": r.get("maps_to") or r.get("skill") or "", "source": str(p)})
+        if r.get("schema") == "skill_fired.v1":
+            key = f"{r.get('skill_id', '')}|{r.get('job', '')}|{r.get('ts', '')}"
+            label = str(r.get("skill_id") or "skill_fired")
+            summary = (f"skill_fired {r.get('skill_id', '')} job={r.get('job', '')} "
+                       f"pack={r.get('pack_mode', '')} chars_injected={r.get('chars_injected', '')}")
+            maps_to = "mag/skills_pack.py"
+        else:  # skill_ledger.decision.v1 (the only other schema in the ledger)
+            key = f"{r.get('schema', '')}|{r.get('ts', '')}|{r.get('goal', '')}"
+            label = str(r.get("goal") or r.get("task_shape") or "decision")[:80]
+            summary = (f"decision task={r.get('task_shape', '')} provider={r.get('provider', '')}/"
+                       f"{r.get('model', '')} outcome={r.get('outcome', '')} seat={r.get('seat', '')}")
+            maps_to = "mag/skill_ledger.py"
+        nodes.append({"id": f"law:{hashlib.sha256(key.encode('utf-8')).hexdigest()[:12]}",
+                      "kind": "case_law", "label": label,
+                      "summary": summary[:200],
+                      "maps_to": maps_to, "source": str(p)})
     return nodes
+
+
+def _nodes_invariants(module_nodes: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Materialize one node per distinct invariant text the module docstrings carry.
+
+    DEFECT FIX 3 (2026-10-05, day-4 mine steal card, watch/inbox/frontier_olm_2026-10-04/
+    steal/agent-memory-and-continuity via x.md, estate map; evidence lens/graph.md items
+    1 + 2): the old builder emitted 794 has_invariant edges to invariant:{_norm(inv)[:40]}
+    targets that were NEVER materialized as nodes, so every one dangled (0 invariant
+    nodes in nodes[]; only 2 of 825 edges joined two real nodes). Materializing them
+    binds the whole law layer; same normalized text = same invariant id, so modules
+    sharing a law text bind to one shared node (the old 'invariant:law ' degree-9
+    collision becomes real connectivity instead of a dangling artifact)."""
+    seen: dict[str, dict[str, Any]] = {}
+    for m in module_nodes:
+        for inv in m.get("invariants", []):
+            iid = f"invariant:{_norm(inv)[:40]}"
+            if iid not in seen:
+                seen[iid] = {"id": iid, "kind": "invariant", "label": inv[:120],
+                             "summary": inv[:200], "source": m.get("source", "")}
+    return list(seen.values())
 
 
 def _nodes_steal() -> list[dict[str, Any]]:
@@ -156,17 +226,113 @@ def _nodes_landscape() -> list[dict[str, Any]]:
     return nodes
 
 
+# ───────────────────────── supersession wire (the demotion register as graph facts) ──
+# m6-graph-supersession (2026-10-07, lane m6 of morning-block-20261007, R5
+# next-loop target 2): SUPERSEDED.md rows were prose only. Each register row now
+# mints a superseded/superseder node pair joined by one superseded_by edge with
+# both node ids. Collector-kind by construction: the d04 graph_heal appended
+# edges manually and a rebuild wipes manual edges (measured 2026-10-07 on a
+# copy: 117 why_context edges -> 0 after build()), so the edge branch in
+# _edges() regenerates the edge from the dead node's superseded_by field (the
+# maps_to precedent) and supersession survives the weave's own rebuild.
+SUPERSEDED_REL = "superseded_by"
+
+
+def superseded_register_path() -> Path:
+    return ROOT / "memory" / "fold_history" / "SUPERSEDED.md"
+
+
+def superseded_rows(register: Path | None = None) -> list[dict[str, str]]:
+    """Parse the demotion register's ROWS table into one dict per row:
+    {n, believed, banked, superseding, evidence}. Header and separator lines
+    skip on the non-numeric first cell; a cell is never empty in a lawful row."""
+    reg = register or superseded_register_path()
+    if not reg.is_file():
+        return []
+    rows: list[dict[str, str]] = []
+    for line in reg.read_text(encoding="utf-8", errors="replace").splitlines():
+        s = line.strip()
+        if not (s.startswith("|") and s.endswith("|")):
+            continue
+        cells = [c.strip() for c in s.strip("|").split("|")]
+        if len(cells) != 5 or not cells[0].isdigit():
+            continue  # header (# ...) and |---| separator lines
+        rows.append({"n": cells[0], "believed": cells[1], "banked": cells[2],
+                     "superseding": cells[3], "evidence": cells[4]})
+    return rows
+
+
+def _superseded_wire(register: Path | None = None) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+    """Pure minter: register rows -> (node pairs, superseded_by edges). No I/O
+    on the graph; build() takes the nodes, _edges() regenerates the edges from
+    the dead node's superseded_by field, tools/superseded_wire.py applies both
+    to the live graph."""
+    src = "memory/fold_history/SUPERSEDED.md"
+    nodes: list[dict[str, Any]] = []
+    edges: list[dict[str, Any]] = []
+    for r in superseded_rows(register):
+        dead = f"superseded:row-{r['n']}"
+        live = f"superseder:row-{r['n']}"
+        nodes.append({"id": dead, "kind": "superseded",
+                      "label": r["believed"][:80],
+                      "summary": r["believed"][:200],
+                      "banked": r["banked"][:160],
+                      "outcome": "falsified",
+                      "superseded_by": live,
+                      "evidence": r["evidence"][:200],
+                      "source": src})
+        nodes.append({"id": live, "kind": "superseder",
+                      "label": r["superseding"][:80],
+                      "summary": r["superseding"][:200],
+                      "source": src})
+        edges.append({"from": dead, "to": live, "rel": SUPERSEDED_REL,
+                      "text": r["evidence"][:160]})
+    return nodes, edges
+
+
+def _nodes_superseded(register: Path | None = None) -> list[dict[str, Any]]:
+    return _superseded_wire(register)[0]
+
+
 # ─────────────────────────────────────────────── graph assembly ──
 def _edges(nodes: list[dict[str, Any]]) -> list[dict[str, Any]]:
     edges: list[dict[str, Any]] = []
+    ids = {n["id"] for n in nodes}
     for n in nodes:
+        # supersession wire (m6, 2026-10-07): a superseded node carries its
+        # replacement's node id + the evidence cell, so the superseded_by edge
+        # regenerates on every build() instead of dying as a manual append.
+        if n.get("superseded_by"):
+            edges.append({"from": n["id"], "to": n["superseded_by"],
+                          "rel": SUPERSEDED_REL,
+                          "text": str(n.get("evidence") or "")[:160]})
         if n["kind"] == "module":
-            for inv in n.get("invariants", [])[:4]:
+            # DEFECT FIX 3b (2026-10-05, day-4 mine steal card, estate map; evidence
+            # lens/graph.md section 2): the old [:4] cap truncated each module to at most
+            # 4 invariant edges while the module node itself carries up to 6 (27 modules
+            # were pinned at degree 4 purely by this cap). The fan now carries every
+            # invariant the node carries; the invariant: targets are materialized as
+            # nodes by _nodes_invariants so these edges no longer dangle.
+            for inv in n.get("invariants", []):
                 edges.append({"from": n["id"], "to": f"invariant:{_norm(inv)[:40]}",
                               "rel": "has_invariant", "text": inv[:120]})
         if n["kind"] == "landscape":
+            # R4b filter (2026-10-06, ouroboros R4 memory fold finding S5, lane
+            # r4b: watch/inbox/ractor_engine/2026-10-05-ouroboros-r4-memory/
+            # SYNTHESIS.md row 3): we_have entries are free prose (examples on the
+            # live landscape: "stateless-ghost-swarm / cheap_swarm / stateless_research
+            # (stateless doctrine)", "surfaces built FOR agents end-to-end"), and the
+            # old mint module:{Path(str(m)).name} turned every prose entry into an
+            # already_inside edge aimed at a module id nothing materializes -- all 29
+            # dangling edges in the 2026-10-06T09:20Z census were already_inside. Only
+            # py-shaped entries (leading token a *.py path whose module node exists)
+            # may mint; prose recognition stays on the node, not on a fake edge.
             for m in n.get("we_have", [])[:4]:
-                edges.append({"from": n["id"], "to": f"module:{Path(str(m)).name}",
+                token = str(m).strip().split()[0] if str(m).strip() else ""
+                target = f"module:{Path(token).name}"
+                if not token.endswith(".py") or target not in ids:
+                    continue
+                edges.append({"from": n["id"], "to": target,
                               "rel": "already_inside", "text": str(m)[:120]})
         if n.get("maps_to"):
             edges.append({"from": n["id"], "to": f"module:{Path(str(n['maps_to'])).name}",
@@ -176,7 +342,9 @@ def _edges(nodes: list[dict[str, Any]]) -> list[dict[str, Any]]:
 
 # ─────────────────────────────────────────────── v2: GraphRAG + Mem0 + Letta steals ──
 # kind importance for multi-signal retrieval (Mem0): modules/landscape > steal > law > knot
-_KIND_WEIGHT = {"module": 3, "landscape": 3, "steal": 2, "case_law": 2, "knot": 1, "doctrine": 2}
+# 'invariant' added 2026-10-05 with defect fix 3: law-layer text ranks with case_law/doctrine.
+_KIND_WEIGHT = {"module": 3, "landscape": 3, "steal": 2, "case_law": 2, "knot": 1,
+                "doctrine": 2, "invariant": 2}
 
 
 def _community_detect(nodes: list[dict[str, Any]], edges: list[dict[str, Any]]) -> dict[str, int]:
@@ -432,8 +600,164 @@ def dream(prune: bool = True) -> dict[str, Any]:
             "nodes": len(nodes), "edges": len(edges), "pruned": pruned}
 
 
+# ─────────────────────────────── heal-log drain (authored-edge cure) ──
+# m7-heal-log-drain (2026-10-12, port-debt-20261011; design owner: steal card
+# watch/inbox/frontier_olm_adhoc/steal/agent-memory-continuity via x.md Find 1,
+# the agentmemory drain/dead-letter/eventId shape). build() regenerates
+# collector edges from sources and preserves only hand-folded NODES, so every
+# tools/graph_heal.py why_context edge died on the next rebuild: measured
+# 2026-10-07 on a copy, 117 why_context edges -> 0 after build() (the
+# supersession wire comment above); the live graph read
+# grep -c "why_context" memory/knowledge_graph.json = 0 on 2026-10-11 while
+# all 117 edges survive in the heal log (wc -l = 117). The drain is build()'s
+# LAST step before the write: re-apply the authored why_context edges the
+# newest heal log mirrors (tools/graph_heal.py forget_rows :250-261 mirrors
+# every why_context edge; main :347 writes the single fixed HEAL_LOG_REL
+# path), idempotent by edge id = sha256 over from/to/text (agentmemory's
+# eventId law, "Event ids make this safe"), and dead-letter rows whose
+# endpoints dangled after replay to a sibling JSONL (the dead-letter law)
+# instead of letting them vanish. Paths derive from ROOT at call time so a
+# monkeypatched ROOT (tests, tmp roots) redirects the drain; a missing log
+# drains zero rows and writes nothing. A heal pass rerun after a rebuild
+# rewrites the log from the restored graph, so every rebuild replays the same
+# rows again: the edge id is what turns that replay into a no-op instead of a
+# duplicate.
+HEAL_REL = "why_context"
+
+
+def heal_log_path() -> Path:
+    """The newest graph_heal heal log: the single fixed path tools/graph_heal.py
+    writes (its HEAL_LOG_REL). Derived from ROOT at call time so tests can
+    redirect the whole drain by monkeypatching ROOT."""
+    return ROOT / "memory" / "corpus" / "quantized_thought" / "graph_ghosts" / "heal_log.jsonl"
+
+
+def heal_dead_letter_path() -> Path:
+    """Dead-letter file for drained heal edges whose endpoints dangled after
+    replay. Sibling of the heal log under the graph_ghosts pointer archive."""
+    return ROOT / "memory" / "corpus" / "quantized_thought" / "graph_ghosts" / "heal_drain_dead_letters.jsonl"
+
+
+def _contained(path: Path) -> Path:
+    """Path-traversal guard for the drain's write site (Mimosa finding on the
+    m7-heal-log-drain candidate, 2026-10-12): resolve the target and refuse
+    anything outside the repo root, so a hand-built path cannot escape the
+    ghost archive."""
+    resolved = path.resolve()
+    if not resolved.is_relative_to(ROOT.resolve()):
+        raise ValueError(f"path escapes the repo root: {path}")
+    return resolved
+
+
+def heal_edge_id(edge: dict[str, Any]) -> str:
+    """Idempotency key for a drained heal edge: sha256 over from/to/text
+    joined by the unit separator (agentmemory's eventId role)."""
+    raw = "\x1f".join((str(edge.get("from") or ""), str(edge.get("to") or ""),
+                       str(edge.get("text") or "")))
+    return hashlib.sha256(raw.encode("utf-8")).hexdigest()[:16]
+
+
+def _read_jsonl(path: Path) -> list[dict[str, Any]]:
+    """Tolerant JSONL read: blank or torn lines skip (a torn last line must not
+    kill the build; the drain is a restore pass, not the ledger writer)."""
+    rows: list[dict[str, Any]] = []
+    if not path.is_file():
+        return rows
+    for line in path.read_text(encoding="utf-8", errors="replace").splitlines():
+        s = line.strip()
+        if not s:
+            continue
+        try:
+            row = json.loads(s)
+        except ValueError:
+            continue
+        if isinstance(row, dict):
+            rows.append(row)
+    return rows
+
+
+def _merge_dead_letters(path: Path, fresh: list[dict[str, Any]]) -> int:
+    """Append-only dead-letter merge by edge id (the tools/graph_heal.py
+    merge_forget pattern): existing rows keep their order and bytes, only
+    never-recorded edge ids append, and the file rewrites atomically ONLY when
+    something appends. Returns the appended count. The write goes through
+    Path.write_text like every other write in this module (Mimosa flagged the
+    open-with-variable-path form on the candidate) onto a tmp twin followed by
+    os.replace, so the merge stays atomic."""
+    if not fresh:
+        return 0
+    path = _contained(path)
+    rows = [r for r in _read_jsonl(path) if r.get("edge_id")]
+    seen = {r["edge_id"] for r in rows}
+    appended = [r for r in fresh if r["edge_id"] not in seen]
+    if not appended:
+        return 0
+    rows.extend(appended)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    tmp = path.with_suffix(path.suffix + ".tmp")
+    tmp.write_text("".join(json.dumps(r, ensure_ascii=False) + "\n" for r in rows),
+                   encoding="utf-8", newline="\n")
+    os.replace(tmp, path)
+    return len(appended)
+
+
+def drain_heal_log(edges: list[dict[str, Any]], node_ids: set[str],
+                   log_path: Path | None = None,
+                   dead_path: Path | None = None) -> dict[str, Any]:
+    """Re-apply authored why_context edges from the newest graph_heal heal
+    log. Every heal-log row is a mirror of one why_context edge (forget_rows
+    writes only HEAL_REL edges), so a row mints the edge shape apply_heal
+    lands: {"from","to","rel","text","heal"} with rel=why_context. Each row
+    classifies exactly one way: restored (both endpoints exist in the rebuilt
+    node set), dead_lettered (an endpoint dangled: dead-letter file, never the
+    graph), duplicate_skipped (edge id already present, in the regenerated
+    edges or from an earlier row of this same log), malformed (no from/to).
+    Returns stats with the restored edges under "edges"; build() extends its
+    edge list BEFORE the write so the restoration persists. The only write
+    this function makes is the dead-letter file."""
+    log_path = log_path or heal_log_path()
+    dead_path = dead_path or heal_dead_letter_path()
+    stats: dict[str, Any] = {"log_path": str(log_path), "log_rows": 0,
+                             "restored": 0, "duplicate_skipped": 0,
+                             "malformed": 0, "dead_lettered": 0, "edges": []}
+    seen = {heal_edge_id(e) for e in edges}
+    dead: list[dict[str, Any]] = []
+    for r in _read_jsonl(log_path):
+        stats["log_rows"] += 1
+        if not (r.get("from") and r.get("to")):
+            stats["malformed"] += 1
+            continue
+        edge = {"from": str(r["from"]), "to": str(r["to"]), "rel": HEAL_REL,
+                "text": str(r.get("text") or ""),
+                "heal": str(r.get("heal") or "graph_heal.v0")}
+        eid = heal_edge_id(edge)
+        if eid in seen:
+            stats["duplicate_skipped"] += 1
+            continue
+        dangles = "+".join(side for side in ("from", "to")
+                           if str(r[side]) not in node_ids)
+        if dangles:
+            seen.add(eid)  # a repeated dangling row is a duplicate, not a second letter
+            dead.append(dict(edge, edge_id=eid, dangling=dangles,
+                             log_ts=str(r.get("graph_ts") or ""),
+                             reason="endpoint not in the rebuilt node set"))
+            stats["dead_lettered"] += 1
+            continue
+        seen.add(eid)
+        stats["edges"].append(edge)
+        stats["restored"] += 1
+    _merge_dead_letters(dead_path, dead)
+    return stats
+
+
 def build() -> dict[str, Any]:
-    nodes = (_nodes_code() + _nodes_verkle() + _nodes_case_law() + _nodes_steal() + _nodes_landscape())
+    # DEFECT FIX 3 wiring (2026-10-05, day-4 mine steal card): invariant nodes are derived
+    # from module docstrings and must join the regenerated collector set so has_invariant
+    # edges bind to real nodes instead of dangling on ids nothing materializes.
+    modules = _nodes_code()
+    nodes = (modules + _nodes_invariants(modules) + _nodes_verkle()
+             + _nodes_case_law() + _nodes_steal() + _nodes_landscape()
+             + _nodes_superseded())
     # PRESERVE hand-folded nodes (doctrine etc.) — build() must NOT clobber the weave.
     # Collector kinds are regenerated from sources each build; every other kind is a hand-fold
     # that accumulates and must survive rebuilds (amend-not-erase), else percolation is impossible.
@@ -443,10 +767,20 @@ def build() -> dict[str, Any]:
         if n.get("id") not in seen:
             nodes.append(n)
     edges = _edges(nodes)
+    # m7-heal-log-drain (2026-10-12, port-debt-20261011): the LAST step before
+    # the write. Re-apply the authored why_context edges the newest heal log
+    # mirrors, so a rebuild restores manual weaving instead of wiping it (the
+    # 117 -> 0 wipe documented at the drain section above); dangling endpoints
+    # dead-letter instead of vanishing. Idempotent by edge id: the second
+    # build replays the same log rows onto a freshly regenerated edge set and
+    # lands the same edges again, never duplicates.
+    drain = drain_heal_log(edges, {n["id"] for n in nodes})
+    edges.extend(drain.pop("edges"))
     graph = {"schema": SCHEMA, "ts": _now(), "nodes": nodes, "edges": edges}
     GRAPH_PATH.parent.mkdir(parents=True, exist_ok=True)
     GRAPH_PATH.write_text(json.dumps(graph, ensure_ascii=False, default=str), encoding="utf-8")
     graph["counts"] = _counts(nodes)
+    graph["heal_drain"] = drain
     return graph
 
 
@@ -495,17 +829,32 @@ def context(query: str, max_chars: int = 2400) -> str:
     return text if len(text) <= max_chars else text[:max_chars] + " …"
 
 
-def fold(label: str, kind: str, note: str, source: str = "session") -> dict[str, Any]:
-    """Grow the graph with a new discovered node (knowledge accumulates)."""
+# R4b outcome stamps (2026-10-06, ouroboros R4 memory fold finding S5): a graph that
+# can only GROW cannot represent a superseded conclusion -- fold()-rot is one of the
+# no-demotion disease's four masks. Every fold now carries held/falsified/pending;
+# the falsifier that fires flips the stamp instead of leaving forever-true doctrine.
+_OUTCOMES = ("held", "falsified", "pending")
+
+
+def fold(label: str, kind: str, note: str, source: str = "session",
+         outcome: str = "pending") -> dict[str, Any]:
+    """Grow the graph with a new discovered node (knowledge accumulates).
+
+    outcome: held (a falsifier ran and the claim survived) / falsified (a
+    falsifier fired and killed it) / pending (folded but unverified -- the
+    default, and how legacy pre-stamp nodes read by absence)."""
+    if outcome not in _OUTCOMES:
+        raise ValueError(f"outcome must be one of {_OUTCOMES}, got {outcome!r}")
     g = _read_graph()
     nid = f"{kind}:{_norm(label)[:40]}"
     if any(n["id"] == nid for n in g.get("nodes", [])):
         return {"ok": True, "schema": SCHEMA, "id": nid, "already_present": True}
     g.setdefault("nodes", []).append({"id": nid, "kind": kind, "label": label,
-                                      "summary": note[:200], "source": source})
+                                      "summary": note[:200], "source": source,
+                                      "outcome": outcome})
     GRAPH_PATH.write_text(json.dumps(g, ensure_ascii=False, default=str), encoding="utf-8")
     return {"ok": True, "schema": SCHEMA, "id": nid, "already_present": False,
-            "counts": _counts(g.get("nodes", []))}
+            "outcome": outcome, "counts": _counts(g.get("nodes", []))}
 
 
 def _read_graph() -> dict[str, Any]:
@@ -533,6 +882,7 @@ def main(argv: list[str] | None = None) -> int:
     l = sub.add_parser("local"); l.add_argument("query", nargs="+")
     sub.add_parser("dream")
     f = sub.add_parser("fold"); f.add_argument("label"); f.add_argument("kind"); f.add_argument("note", nargs="+")
+    f.add_argument("--outcome", choices=list(_OUTCOMES), default="pending")
     sub.add_parser("status")
     a = p.parse_args(argv)
     if a.cmd == "build":
@@ -548,7 +898,8 @@ def main(argv: list[str] | None = None) -> int:
     elif a.cmd == "dream":
         print(json.dumps(dream(), indent=2, ensure_ascii=False))
     elif a.cmd == "fold":
-        print(json.dumps(fold(a.label, a.kind, " ".join(a.note)), indent=2, ensure_ascii=False))
+        print(json.dumps(fold(a.label, a.kind, " ".join(a.note), outcome=a.outcome),
+                         indent=2, ensure_ascii=False))
     elif a.cmd == "status":
         print(json.dumps(status(), indent=2, ensure_ascii=False))
     else:

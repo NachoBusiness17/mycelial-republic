@@ -1,70 +1,101 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><title>SMITH CHART — the fold law</title>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><title>SMITH CHART -- the fold law</title>
 <!--
-  SMITH CHART — EXHIBIT: THE FOLD LAW (2026-09-03)
+  SMITH CHART -- EXHIBIT: THE FOLD LAW (2026-09-03)
 
   PROVENANCE:
   - The object: Phillip H. Smith, Bell Telephone Laboratories, 1939
     ("Transmission Line Calculator", Electronics, Jan 1939); independently
     T. Mizuhashi, 1937. The chart is the Mobius (bilinear) map
     Gamma = (z-1)/(z+1) applied to the half-plane of passive impedances.
-  - The spark: the operator's pasted hand-annotated 1939-style Smith chart —
+  - The spark: the operator's pasted hand-annotated 1939-style Smith chart -- 
     a full-page pencil working (matching trajectory walked along constant-r /
     constant-x arcs, "(r-1)/(r+1)" inversion notes in the margin, series/shunt
     element sketches, "toward generator / toward load" rims). Someone's paper
     used as a computer. This exhibit copies that grammar, not that drawing.
   - The trigger: @anish2good X post 2026-09-03 17:51, "The Smith Chart:
-    Folding an Infinite Plane Into One Circle, Line by Line" — intake card
+    Folding an Infinite Plane Into One Circle, Line by Line" -- intake card
     watch/INTAKE_SMITH_CHART_20260903.md, score 20/25 BUILD NOW (operator GO).
     Replies/video content of that post remain UNPROVEN (walled); the math
     needs no receipt from them.
-  - Date: 2026-09-03. Exhibit — the fold law.
+  - Date: 2026-09-03. Exhibit -- the fold law.
+  - v1.2 (2026-10-18, operator wave order "launch wave protocol on this and
+    knock it out"): THE STANDING-WAVE STRIP -- the arenaphysica article's first
+    pedagogical move, measured ABSENT from this page on 2026-09-04
+    (watch/INTAKE_SMITH_CHART_REBOOST_20260904.md, verdict BUILD delta-only,
+    "ride the next arena touch"; it decayed 44 days in prose-only state, this
+    closes it). The strip draws V(z,t) = Re{e^{i(wt−θ)} + Γ·e^{i(wt+θ)}}:
+    forward wave (blue) meets reflected wave (red), their sum (graphite)
+    PULSES IN PLACE -- the nodes never move. Euler's formula is the spin of
+    both travelers and the frozen nodes are the estate's frozen leaves
+    (watch/inbox/EULER_PHASOR_STANDING_WAVE_20261018.md;
+    watch/STANDING_WAVE_DOCTRINE_20260905.md hologram close:
+    parent-root beam meets payload beam, the boundary holds the bulk).
+    Also fixed here: the shunt-margin label was drawn past the old 780px
+    canvas edge (baseline at CH+4, clipped since v1.0); canvas now 1030px
+    and the margin block sits inside the border.
 
   ZERO FETCH LAW: no network calls, no external fonts, no CDNs, no images.
   Single file. Canvas + inline JS only.
 
   THE LAW this exhibit instantiates: the Smith chart takes the INFINITE
-  half-plane of impedances (every z = r + jx, r > 0 — unbounded in both
+  half-plane of impedances (every z = r + jx, r > 0 -- unbounded in both
   coordinates) and folds it by a Mobius transform into ONE bounded circle.
   The map precedes the territory: the infinite becomes navigable by changing
   coordinates, not by shrinking it. Fleet resonance:
-    the standing wave  — det spine + stoch flesh; this chart IS the standing wave's map
-    the Light Codec    — infinite field -> discrete film
-    the verkle chain   — infinite state -> one root
-    cache prefixes     — infinite prompts -> byte-stable heads
+    the standing wave -- det spine + stoch flesh; this chart IS the standing wave's map
+    the Light Codec   -- infinite field -> discrete film
+    the verkle chain  -- infinite state -> one root
+    cache prefixes    -- infinite prompts -> byte-stable heads
 -->
 <style>
 body{margin:0;background:#07080c;color:#cfd6e4;font:13px/1.5 Consolas,monospace}
-#wrap{width:960px;margin:0 auto}
+#wrap{max-width:2200px;margin:0 auto;padding:0 12px;box-sizing:border-box}
 h1{font-size:14px;letter-spacing:2px;color:#9fb0cc;margin:12px 0 4px}
 .sub{color:#5c6a82;font-size:11px;margin-bottom:8px}
 .law{border:1px solid #1c2230;background:#0b0d13;padding:8px 12px;margin-bottom:10px;font-size:12px;color:#aab6cc}
 .law b{color:#e8d9a0;font-weight:normal}
 .law .res{color:#5c6a82;font-size:11px;line-height:1.7}
-#stage{position:relative;width:960px}
-canvas{display:block;cursor:crosshair}
-#hud{font-size:11px;color:#8a97ad;margin:8px 0 24px}
+#stage{position:relative;width:100%}
+canvas{display:block;cursor:crosshair;width:100%;height:auto;touch-action:none}
+#hud{font-size:11px;color:#8a97ad;margin:8px 0 8px}
 #hud .warn{color:#c98f5a}
 .hand{font-family:"Segoe Print","Bradley Hand","Comic Sans MS",cursive}
+#racerow{margin:0 0 24px;font-size:12px;color:#8a97ad}
+#race,#rim{background:#0b0d13;color:#e8d9a0;border:1px solid #1c2230;font:12px Consolas,monospace;padding:4px 12px;cursor:pointer;margin-right:8px}
+#race:hover,#rim:hover{border-color:#3d6b8f}
+#raceout{color:#aab6cc}
 </style></head><body><div id="wrap">
-<h1>SMITH CHART — EXHIBIT: THE FOLD LAW</h1>
-<div class="sub">Phillip Smith 1939 (Bell Labs; Mizuhashi 1937) · the operator's hand-annotated chart · @anish2good post 2026-09-03 (intake 20/25 BUILD NOW) · zero fetch · 2026-09-03</div>
+<h1>SMITH CHART -- EXHIBIT: THE FOLD LAW</h1>
+<div class="sub">Phillip Smith 1939 (Bell Labs; Mizuhashi 1937) · the operator's hand-annotated chart · @anish2good post 2026-09-03 (intake 20/25 BUILD NOW) · zero fetch · 2026-09-03 · v1.2 standing-wave strip + Euler identity, 2026-10-18</div>
 <div class="law">
-<b>THE FOLD LAW.</b> The chart takes the infinite half-plane of impedances — every z&nbsp;=&nbsp;r&nbsp;+&nbsp;jx with r&nbsp;&gt;&nbsp;0, unbounded in both coordinates — and folds it, by the Mobius map &Gamma;&nbsp;=&nbsp;(z&minus;1)/(z+1), into ONE bounded circle. Nothing was discarded: every impedance that can exist sits inside the rim, pre-solved into printed circles. The map precedes the territory; the infinite becomes navigable by changing coordinates.
-<div class="res">the standing wave — det spine + stoch flesh, the chart is the standing wave's own map &nbsp;·&nbsp; the Light Codec — infinite field &rarr; discrete film &nbsp;·&nbsp; the verkle chain — infinite state &rarr; one root &nbsp;·&nbsp; cache prefixes — infinite prompts &rarr; byte-stable heads</div>
+<b>THE FOLD LAW.</b> The chart takes the infinite half-plane of impedances -- every z&nbsp;=&nbsp;r&nbsp;+&nbsp;jx with r&nbsp;&gt;&nbsp;0, unbounded in both coordinates -- and folds it, by the Mobius map &Gamma;&nbsp;=&nbsp;(z&minus;1)/(z+1), into ONE bounded circle. Nothing was discarded: every impedance that can exist sits inside the rim, pre-solved into printed circles. The map precedes the territory; the infinite becomes navigable by changing coordinates.
+<div class="res">the standing wave -- det spine + stoch flesh, the chart is the standing wave's own map (the strip below draws it: nodes = the frozen leaves) &nbsp;·&nbsp; the Light Codec -- infinite field &rarr; discrete film &nbsp;·&nbsp; the verkle chain -- infinite state &rarr; one root &nbsp;·&nbsp; cache prefixes -- infinite prompts &rarr; byte-stable heads</div>
 </div>
-<div id="stage"><canvas id="c" width="960" height="780"></canvas></div>
-<div id="hud">drag the marble anywhere inside the circle — it is a normalized impedance z = r + jx, and the dashed circle it rides is |&Gamma;| = const &nbsp;·&nbsp; <span class="warn">the rim is r &rarr; 0 (pure reactance); beyond it is no map — negative resistance lives outside the fold</span></div>
+<div id="stage"><canvas id="c" width="960" height="1030"></canvas></div>
+<div id="hud">drag the marble anywhere inside the circle -- it is a normalized impedance z = r + jx, and the dashed circle it rides is |&Gamma;| = const &nbsp;·&nbsp; the strip below is the LINE the chart is the map OF: |&Gamma;| sets the reflection (envelope ratio = the SWR in the readout), its angle places the nodes &nbsp;·&nbsp; <span class="warn">the rim is r &rarr; 0 (pure reactance); beyond it is no map -- negative resistance lives outside the fold</span></div>
+<div id="racerow"><button id="race">RACE the falsifier</button><button id="rim">go to the RIM</button><span id="raceout">the 20/25 card's race question: does a gradient marble steer the printed arcs to the matched center? press RACE and watch it walk.</span></div>
 </div>
 <script>
 'use strict';
 // ---------- geometry ----------
-const CW = 960, CH = 780, CX = 480, CY = 360, R = 300;
+// v1.3 full width: CW/CH are now the LOGICAL drawing space (every draw call
+// below stays in 960x1030 coordinates); the visible canvas stretches to the
+// window and the context transform maps logical -> device, so the exhibit
+// fills the width without any draw code knowing.
+const CW = 960, CH = 1030, CX = 480, CY = 360, R = 300;
 const cv = document.getElementById('c');
 const dpr = window.devicePixelRatio || 1;
-cv.width = CW * dpr; cv.height = CH * dpr;
-cv.style.width = CW + 'px'; cv.style.height = CH + 'px';
+let viewScale = 1;                                        // logical -> device px
+function fit(){
+  const cssW = Math.max(320, Math.min(
+    document.getElementById('wrap').clientWidth, 2200));
+  const s = cssW / CW;
+  cv.width = Math.round(cssW * dpr);
+  cv.height = Math.round(CH * s * dpr);
+  cv.style.height = (CH * s) + 'px';                      // width comes from CSS (100%)
+  viewScale = s * dpr;
+}
 const ctx = cv.getContext('2d');
-ctx.scale(dpr, dpr);
 
 // fold + unfold (verified: these two are mutual inverses on r>0)
 const zToG = (r, x) => { const d = (r + 1) * (r + 1) + x * x;
@@ -82,28 +113,32 @@ const INK = '#3a352c', PAPER = '#efe6d0', GREEN = 'rgba(74,122,90,0.75)',
       RED = 'rgba(160,82,82,0.75)', LEAD = 'rgba(74,68,58,0.85)', BLUE = '#3d6b8f';
 const HAND = '"Segoe Print","Bradley Hand","Comic Sans MS",cursive';
 
-// ---------- paper (drawn once, seeded noise = deterministic) ----------
+// ---------- paper (redrawn on resize, seeded noise = deterministic) ----------
 const paper = document.createElement('canvas');
-paper.width = CW * dpr; paper.height = CH * dpr;
-(function paintPaper(){
-  const p = paper.getContext('2d'); p.scale(dpr, dpr);
+function repaintPaper(){
+  paper.width = cv.width; paper.height = cv.height;
+  const p = paper.getContext('2d');
+  p.setTransform(viewScale, 0, 0, viewScale, 0, 0);
   p.fillStyle = PAPER; p.fillRect(0, 0, CW, CH);
   let s = 1939;                                        // seed = the year
   const rnd = () => (s = (s * 1103515245 + 12345) & 0x7fffffff) / 0x7fffffff;
   p.fillStyle = 'rgba(120,100,70,0.05)';
-  for (let i = 0; i < 2600; i++) p.fillRect(rnd() * CW, rnd() * CH, 1.3, 1.3);
+  const n = Math.round(2600 * viewScale * viewScale / (dpr * dpr));  // even grain at any size
+  for (let i = 0; i < n; i++) p.fillRect(rnd() * CW, rnd() * CH, 1.3, 1.3);
   p.strokeStyle = 'rgba(90,80,60,0.5)'; p.lineWidth = 1.5;
   rr(p, 14, 12, CW - 28, CH - 26, 6); p.stroke();
   function rr(c, x, y, w, h, r){ c.beginPath(); c.moveTo(x + r, y);
     c.arcTo(x + w, y, x + w, y + h, r); c.arcTo(x + w, y + h, x, y + h, r);
     c.arcTo(x, y + h, x, y, r); c.arcTo(x, y, x + w, y, r); c.closePath(); }
-})();
+}
+fit(); repaintPaper();
+window.addEventListener('resize', () => { fit(); repaintPaper(); });
 
 // ---------- printed chart families ----------
-function rCircle(r){                                   // center r/(1+r), radius 1/(1+r) — inside the fold
+function rCircle(r){                                   // center r/(1+r), radius 1/(1+r) -- inside the fold
   const c = r / (1 + r), rad = 1 / (1 + r);
   ctx.beginPath(); ctx.arc(CX + c * R, CY, rad * R, 0, 2 * Math.PI); ctx.stroke(); }
-function xArc(x){                                      // center (1,1/x), radius 1/|x| — pokes OUT of the disk,
+function xArc(x){                                      // center (1,1/x), radius 1/|x| -- pokes OUT of the disk,
   ctx.beginPath();                                     // so trace z = r + jx over r in (0, 500]: the trace is
   const N = 360;                                       // exactly the visible arc, no clipping needed
   for (let i = 0; i <= N; i++){
@@ -170,9 +205,9 @@ function workedExample(){
     ctx.stroke(); });
   ctx.setLineDash([]);
   const mid1 = W(Math.cos((a1 + a2) / 2) * rho, Math.sin((a1 + a2) / 2) * rho);
-  hand('\u2460 series line \u03B8 = 26.6\u00B0 \u2014 rotate on |G| = 0.45', mid1[0] - 130, mid1[1] - 14);
+  hand('\u2460 series line \u03B8 = 26.6\u00B0 -- rotate on |G| = 0.45', mid1[0] - 130, mid1[1] - 14);
   const mid2 = W(zToG(1, 0.55).u, zToG(1, 0.55).v);
-  hand('\u2461 series C, x = \u22121 \u2014 slide the r = 1 circle', mid2[0] + 14, mid2[1] - 12);
+  hand('\u2461 series C, x = \u22121 -- slide the r = 1 circle', mid2[0] + 14, mid2[1] - 12);
   const pL = W(gL.u, gL.v);
   hand('load z\u2097 = 0.5 + j0.5', pL[0] - 160, pL[1] + 26);
   ctx.beginPath(); ctx.arc(CX, CY, 4, 0, 2 * Math.PI);
@@ -188,11 +223,13 @@ function margins(){
   hand('constant r \u2192 green circles', 24, 96, 13);
   hand('constant x \u2192 red arcs', 24, 118, 13);
   hand('(all of them meet at the OPEN point)', 24, 140, 11);
+  hand('e^{i\u03B8} = cos \u03B8 + i\u00B7sin \u03B8  (Euler)', 30, CH - 100, 15);
   hand('\u0393 = (z\u22121)/(z+1)', 30, CH - 74, 16);
   hand('z = (1+\u0393)/(1\u2212\u0393)', 30, CH - 48, 16);
   hand('the fold: half-plane \u2192 one disk', 30, CH - 24, 12);
   // series / shunt sketches, bottom right (the composition law, handwritten)
-  const bx = CW - 250, by = CH - 60;
+  // (by was CH-60 until v1.2: the shunt label sat at CH+4, past the canvas edge, clipped)
+  const bx = CW - 250, by = CH - 86;
   ctx.strokeStyle = LEAD; ctx.lineWidth = 1.5; ctx.setLineDash([]);
   ctx.beginPath(); ctx.moveTo(bx, by); ctx.lineTo(bx + 96, by); ctx.stroke();
   ctx.strokeRect(bx + 34, by - 12, 28, 24);
@@ -207,6 +244,7 @@ function margins(){
 // ---------- live layer: the marble ----------
 let marble = zToG(0.5, 0.5);                            // starts on the worked example's load
 let dragging = false, clamped = false;
+let raceTrail = null;                                   // the gradient walk (set by race())
 
 function liveLayer(){
   const z = gToZ(marble.u, marble.v), m = Math.hypot(marble.u, marble.v);
@@ -221,6 +259,12 @@ function liveLayer(){
     const g = zToG(rr, z.x), p = W(g.u, g.v);
     i ? ctx.lineTo(p[0], p[1]) : ctx.moveTo(p[0], p[1]); }
   ctx.stroke();
+  // the race trail: the gradient walk through the printed field
+  if (raceTrail){ ctx.save(); Pencil(); ctx.lineWidth = 1.6;
+    ctx.beginPath();
+    raceTrail.forEach((t, i) => { const g = zToG(t.r, t.x), q = W(g.u, g.v);
+      i ? ctx.lineTo(q[0], q[1]) : ctx.moveTo(q[0], q[1]); });
+    ctx.stroke(); ctx.restore(); }
   // the marble
   const p = W(marble.u, marble.v);
   ctx.fillStyle = '#1f4f7a'; ctx.strokeStyle = '#0e2740'; ctx.lineWidth = 1.5;
@@ -234,23 +278,139 @@ function liveLayer(){
     '    SWR = ' + (Math.round(swr * 100) / 100) +
     '    RL = ' + (Math.round(rl * 10) / 10) + ' dB', 30, 52);
   if (clamped){ ctx.fillStyle = '#8a3d2a';
-    ctx.fillText('rim reached \u2014 r \u2192 0, the fold ends here', 30, 70); }
+    ctx.fillText('rim reached -- r \u2192 0, the fold ends here', 30, 70); }
   ctx.restore();
 }
 
+// ---------- standing wave strip (v1.2): the chart is the map OF this ----------
+// V(d,t) = Re{ e^{i(wt−θ)} + Γ·e^{i(wt+θ)} }, θ = electrical distance from
+// the load. Forward (blue) runs toward the load, reflected (red) runs back,
+// their sum pulses IN PLACE -- nodes stand still. With |Γ|=1 the minima touch
+// zero: the pure standing wave. Euler's formula e^{iθ} is the spin of both
+// travelers; the identity ½e^{i(kx−ωt)} + ½e^{−i(kx+ωt)} = cos(kx)·e^{−iωt}
+// is the whole strip in one line (EULER_PHASOR_STANDING_WAVE_20261018).
+const STRIP = { x0: 90, x1: 890, y: 830, amp: 58, thetaMax: 3 * Math.PI }; // 1.5 λ
+let wt = 0;
+
+function stripLayer(){
+  const m = Math.hypot(marble.u, marble.v);
+  const phi = Math.atan2(marble.v, marble.u);
+  const scale = STRIP.amp / (1 + m);                     // (1+|Γ|) fills the band
+  const X = s => STRIP.x0 + s * (STRIP.x1 - STRIP.x0);   // s ∈ [0,1], generator → load
+  const TH = s => s * STRIP.thetaMax;                    // electrical distance from load
+  const Y = v => STRIP.y - v * scale;
+  const trace = (fn, style, width, dy) => { ctx.strokeStyle = style;
+    ctx.lineWidth = width; ctx.beginPath();
+    for (let i = 0; i <= 300; i++){ const s = i / 300, th = TH(s);
+      const px = X(s), py = Y(fn(th)) + (dy || 0);
+      i ? ctx.lineTo(px, py) : ctx.moveTo(px, py); }
+    ctx.stroke(); };
+  // the envelope: sqrt(1 + |Γ|² + 2|Γ|cos(2θ+φ)) -- timeless, it only breathes with the marble
+  const env = th => Math.sqrt(1 + m * m + 2 * m * Math.cos(2 * th + phi));
+  ctx.save(); Pencil(); ctx.setLineDash([6, 5]);
+  pencil(dx => { trace(env, LEAD, 1.1, dx); trace(th => -env(th), LEAD, 1.1, dx); });
+  ctx.setLineDash([]);
+  // the two travelers (thin) + their sum, the standing wave (graphite, jittered)
+  trace(th => Math.cos(wt - th), 'rgba(61,107,143,0.55)', 1.2);           // forward
+  trace(th => m * Math.cos(wt + th + phi), 'rgba(160,82,82,0.55)', 1.2);  // reflected
+  pencil(dx => trace(th => Math.cos(wt - th) + m * Math.cos(wt + th + phi), LEAD, 2.4, dx * 0.6));
+  ctx.restore();
+  // nodes (envelope minima) and antinodes (maxima) -- they do NOT translate
+  if (m > 0.05){
+    ctx.strokeStyle = LEAD; ctx.lineWidth = 1.4;
+    for (let n = 0; ; n++){ const th = ((2 * n + 1) * Math.PI - phi) / 2;
+      if (th >= STRIP.thetaMax) break;
+      const x = X(th / STRIP.thetaMax);
+      ctx.beginPath(); ctx.moveTo(x - 5, STRIP.y - 5); ctx.lineTo(x + 5, STRIP.y + 5);
+      ctx.moveTo(x + 5, STRIP.y - 5); ctx.lineTo(x - 5, STRIP.y + 5); ctx.stroke();
+      if (n === 0) hand('node -- frozen', x + 10, STRIP.y + 24, 12); }
+    for (let n = 1; ; n++){ const th = n * Math.PI - phi / 2;
+      if (th >= STRIP.thetaMax) break;
+      const x = X(th / STRIP.thetaMax);
+      ctx.beginPath(); ctx.arc(x, STRIP.y - STRIP.amp, 3, 0, 2 * Math.PI);
+      ctx.fillStyle = LEAD; ctx.fill();
+      if (n === 1) hand('antinode', x + 10, STRIP.y - STRIP.amp - 8, 12); }
+  }
+  // the load point, and the projection: Γ lives up in the fold, at the marble
+  ctx.fillStyle = LEAD;
+  ctx.beginPath(); ctx.arc(STRIP.x1, STRIP.y, 4, 0, 2 * Math.PI); ctx.fill();
+  const pM = W(marble.u, marble.v);
+  ctx.save(); ctx.globalAlpha = 0.45; ctx.setLineDash([3, 5]);
+  ctx.strokeStyle = LEAD; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(STRIP.x1, STRIP.y - 6); ctx.lineTo(pM[0], pM[1] + 8);
+  ctx.stroke(); ctx.restore();
+  hand('\u0393 -- the reflected phasor, up in the fold',
+    (STRIP.x1 + pM[0]) / 2 + 12, (STRIP.y + pM[1]) / 2, 11);
+  hand('GEN', STRIP.x0 - 34, STRIP.y + 4, 11);
+  hand('LOAD', STRIP.x1 + 12, STRIP.y + 4, 11);
+  // captions: the identity, the read, the estate law
+  ctx.fillStyle = INK; ctx.font = '11px Consolas, monospace'; ctx.textAlign = 'left';
+  ctx.fillText('the line itself: forward (blue) meets reflected (red) -- graphite is their sum, the standing wave; the dashed envelope never moves', STRIP.x0, STRIP.y - STRIP.amp - 60);
+  ctx.fillText('\u00BD\u00B7e^{i(kx\u2212\u03C9t)} + \u00BD\u00B7e^{\u2212i(kx+\u03C9t)} = cos(kx)\u00B7e^{\u2212i\u03C9t}   (Euler spins both travelers; the nodes stand still)', STRIP.x0, STRIP.y - STRIP.amp - 42);
+  ctx.fillStyle = 'rgba(58,53,44,0.85)';
+  ctx.fillText('nodes don\u2019t move = the frozen leaves (checkpoints, the verkle root); the wave between = live tokens, re-minted from stored bytes every frame', STRIP.x0, STRIP.y + STRIP.amp + 22);
+}
+
 function draw(){
+  ctx.setTransform(viewScale, 0, 0, viewScale, 0, 0);
   ctx.clearRect(0, 0, CW, CH);
   ctx.drawImage(paper, 0, 0, CW, CH);
-  printedChart(); workedExample(); margins(); liveLayer();
+  printedChart(); workedExample(); margins(); stripLayer(); liveLayer();
 }
+
+// the wave runs on time, not just on input: the travelers glide, the sum
+// pulses in place, the nodes never move -- motion without translation
+(function frame(t){
+  wt = (t || 0) * 0.0016;
+  draw();
+  requestAnimationFrame(frame);
+})();
 
 // ---------- input ----------
 function pos(e){ const b = cv.getBoundingClientRect();
-  return RW(e.clientX - b.left, e.clientY - b.top); }
+  const k = CW / b.width;                              // css px -> logical
+  return RW((e.clientX - b.left) * k, (e.clientY - b.top) * k); }
 cv.addEventListener('pointerdown', e => { dragging = true; clamped = false;
   marble = pos(e); draw(); cv.setPointerCapture(e.pointerId); });
 cv.addEventListener('pointermove', e => { const g = pos(e);
   const m = Math.hypot(g.u, g.v); clamped = m > 0.9995; marble = { u: g.u, v: g.v }; draw(); });
 cv.addEventListener('pointerup', () => { dragging = false; });
+
+// ---------- the race (the 20/25 card's falsifier, in-browser) ----------
+// watch/INTAKE_SMITH_CHART_20260903.md: "does a gradient marble steer the
+// printed arcs to center?" Numeric descent on |Gamma|^2 in z-space -- the
+// only min for r > 0 is z = 1, the matched center. The trail IS the answer:
+// the marble walks the field, ends matched, verdict stamped in the DOM.
+function race(){
+  let z = { r: Math.exp(Math.log(0.15) + Math.random() * (Math.log(4) - Math.log(0.15))),
+            x: (Math.random() * 2 - 1) * 2.5 };         // random passive load point
+  const f = (a, b) => { const g = zToG(a, b); return g.u * g.u + g.v * g.v; };
+  const g0 = zToG(z.r, z.x), m0 = Math.hypot(g0.u, g0.v);
+  const trail = [z];
+  for (let i = 0; i < 600; i++){
+    const h = 1e-4;
+    const dr = (f(z.r + h, z.x) - f(z.r - h, z.x)) / (2 * h);
+    const dx = (f(z.r, z.x + h) - f(z.r, z.x - h)) / (2 * h);
+    const n = Math.hypot(dr, dx); if (n < 1e-12) break;
+    z = { r: Math.max(0.02, z.r - 0.05 * dr / n), x: z.x - 0.05 * dx / n };
+    trail.push(z);
+    const g = zToG(z.r, z.x);
+    if (Math.hypot(g.u, g.v) < 0.005) break;            // matched
+  }
+  raceTrail = trail;
+  const gf = zToG(z.r, z.x);
+  marble = gf;
+  document.getElementById('raceout').textContent =
+    'spawn z = ' + trail[0].r.toFixed(2) + ' ' + (trail[0].x < 0 ? '\u2212' : '+') + ' j' +
+    Math.abs(trail[0].x).toFixed(2) + '  (|G| = ' + m0.toFixed(3) +
+    ')  \u2192  STEERED: matched center in ' + trail.length + ' gradient steps, |G| = ' +
+    Math.hypot(gf.u, gf.v).toFixed(4);
+}
+document.getElementById('race').addEventListener('click', race);
+document.getElementById('rim').addEventListener('click', () => {
+  marble = { u: 0.998, v: 0.018 }; clamped = true;
+  document.getElementById('raceout').textContent =
+    'on the rim: |G| \u2248 1 -- the strip is now the pure standing wave, its nodes touch zero.';
+});
 draw();
 </script></body></html>

@@ -61,6 +61,7 @@ def status_summary() -> dict[str, Any]:
         vid = rel.get("id")
         gates = rel.get("gates") or []
         passed = _gates_passed_for(vid)
+        regime = _regime_passed_for(vid)
         rows.append({
             "id": vid,
             "status": rel.get("status"),
@@ -69,6 +70,12 @@ def status_summary() -> dict[str, Any]:
             "gates_defined": len(gates),
             "gates_passed": len(passed),
             "gate_ids": [g.get("id") for g in gates if isinstance(g, dict)],
+            # B2-209 display split: era milestones reported beside, never
+            # inside, the graduation-gate count (VERSION_REGISTRY.md Regime
+            # milestones: "not a graduation gate and never flips a version
+            # to shipped")
+            "regime_passed": len(regime),
+            "regime_ids": regime,
         })
     return {"ok": True, "releases": rows, "registry": str(REGISTRY_PATH)}
 
@@ -113,13 +120,36 @@ SUBPROCESS_MAP: dict[str, dict[str, str]] = {
 }
 
 
+REGIME_PREFIX = "regime_"   # VERSION_REGISTRY.md Regime milestones: era milestone marker
+
+
 def _gates_passed_for(version_id: str) -> list[str]:
+    """Distinct PASSED graduation gates for a version. B2-209 (aligning this
+    code with VERSION_REGISTRY.md, which already ruled regime milestones "not
+    a graduation gate and never flips a version to shipped"): regime_ rows are
+    excluded here so a version cannot drift toward shipped on era milestones;
+    status_summary reports them beside the count."""
     vid = (version_id or "").strip().lstrip("v")
     out: list[str] = []
     for row in read_gate_log(limit=200, version=version_id):
         if row.get("ok") and row.get("gate_id"):
             gid = str(row["gate_id"])
+            if gid.startswith(REGIME_PREFIX):
+                continue
             if gid not in out:
+                out.append(gid)
+    return out
+
+
+def _regime_passed_for(version_id: str) -> list[str]:
+    """Distinct PASSED regime_ era milestones for a version (display split,
+    B2-209). The mirror of _gates_passed_for: only regime_ rows count."""
+    vid = (version_id or "").strip().lstrip("v")
+    out: list[str] = []
+    for row in read_gate_log(limit=200, version=version_id):
+        if row.get("ok") and row.get("gate_id"):
+            gid = str(row["gate_id"])
+            if gid.startswith(REGIME_PREFIX) and gid not in out:
                 out.append(gid)
     return out
 

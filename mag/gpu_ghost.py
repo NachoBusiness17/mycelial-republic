@@ -16,6 +16,7 @@ Deterministic + $0. Schema: gpu_ghost.v1
 from __future__ import annotations
 
 import json
+import shutil
 import subprocess
 import sys
 from pathlib import Path
@@ -81,7 +82,16 @@ def _amd_windows() -> dict[str, Any]:
         r"| ConvertTo-Json -Compress }"
     )
     try:
-        r = subprocess.run(["powershell", "-NoProfile", "-Command", ps],
+        # B2-85 2026-09-26: bare "powershell" is not on PATH in every launch
+        # context (sig run_shell:e566037def80 "[Errno 2] ... powershell",
+        # 7,964 FKB rows since 2026-09-19). Resolve the full path; System32
+        # fallback when PATH lookup misses (pattern mag/process_reaper.py).
+        ps_exe = shutil.which("powershell") or shutil.which("powershell.exe")
+        if not ps_exe and sys.platform == "win32":
+            ps_exe = r"C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe"
+        if not ps_exe:
+            return out
+        r = subprocess.run([ps_exe, "-NoProfile", "-Command", ps],
                            capture_output=True, text=True, timeout=12)
         if r.returncode == 0 and r.stdout.strip():
             d = json.loads(r.stdout.strip())
@@ -152,6 +162,16 @@ def gpu_status() -> dict[str, Any]:
     return out
 
 
+def telemetry_allows_local(gpu: dict[str, Any]) -> bool:
+    """SW1-09 (SWARM_1.md row 9, glm+deepseek converged): the ONE None-telemetry
+    policy, shared by afk_train and partition. afk_train already had the right
+    law ("only block if KNOWN busy; telemetry None is not a no"), but partition
+    gated on truthy gpu['free'], so a telemetry-blind host (source 'none',
+    free None) NEVER dispatched local work while afk_train happily ran: two
+    policies for the same condition. Block only on an explicit busy signal."""
+    return gpu.get("free") is not False
+
+
 def partition(*, apply_local: bool = False) -> dict[str, Any]:
     """Dedupe + right-tier the backlog, then split into LOCAL-GPU vs CLOUD.
 
@@ -176,7 +196,7 @@ def partition(*, apply_local: bool = False) -> dict[str, Any]:
             cloud.append(c)
 
     dispatched = []
-    if apply_local and gpu.get("free") and local:
+    if apply_local and telemetry_allows_local(gpu) and local:  # SW1-09: the shared policy
         from mag import local_scheduler as ls
         for c in local[: ls.enqueue_limit() if hasattr(ls, "enqueue_limit") else 8]:
             try:
@@ -252,8 +272,9 @@ def afk_train(*, model: str | None = None, n: int = 6, base: str = "http://127.0
         return {"ok": False, "skipped": "operator active (not AFK)"}
     gpu = gpu_status()
     # Only block if the GPU is KNOWN busy; if telemetry is unavailable (None), don't gate —
-    # ollama running locally is the real free-compute signal.
-    if require_free_gpu and gpu.get("free") is False:
+    # ollama running locally is the real free-compute signal. (SW1-09: this law
+    # now lives in telemetry_allows_local so partition cannot drift from it.)
+    if require_free_gpu and not telemetry_allows_local(gpu):
         return {"ok": False, "skipped": "gpu busy", "gpu": gpu}
     models = _ollama_models(base)
     if not models:

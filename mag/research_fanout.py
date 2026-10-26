@@ -131,9 +131,9 @@ LANES: list[dict[str, str]] = [
     {"id": "cerebras-qwen", "base": "https://api.cerebras.ai/v1", "model": "qwen-3.8-27b",
      "key": "CEREBAS_API_KEY", "style": "openai"},
     {"id": "mistral-min8", "base": "https://api.mistral.ai/v1", "model": "ministral-8b-latest",
-     "key": "Mistral_API_KEY", "style": "openai"},
+     "key": "MISTRAL_API_KEY", "style": "openai"},
     {"id": "mistral-small", "base": "https://api.mistral.ai/v1", "model": "mistral-small-latest",
-     "key": "Mistral_API_KEY", "style": "openai"},
+     "key": "MISTRAL_API_KEY", "style": "openai"},
     {"id": "zai-lite", "base": "https://api.z.ai/api/coding/paas/v4",
      "model": "glm-5.3-flash", "key": "ZAI_API_KEY_Lite", "style": "openai"},
     # zai-air / zai-47 retired 2026-09-16 (operator: "self steal z.ai API, this is a solved
@@ -156,6 +156,18 @@ LANES: list[dict[str, str]] = [
     {"id": "or-ling3", "base": "https://openrouter.ai/api/v1",
      "model": "inclusionai/ling-3.0-flash-sante:free", "key": "OPENROUTER_API_KEY", "style": "openai"},
 ]
+# B2-133 DORMANT GATE (2026-09-26): lane ids here are lane-local (cerebras-oss, not the
+# provider id), so the gate matches each lane's base_url host against the dormant
+# providers' hosts (mag/doctor.py:607: dormant is a declared state). B2-36 set cerebras
+# dormant (card-gated 30-day trial, chat 402 no-credit); the same gate catches the mistral
+# lanes (dormant per B2-61, limit-0). Operator GO flips the flag and the lanes return,
+# no code edit. Receipt: watch/inbox/burn_wave_20260926/B2_133_cerebras_purge_20260926.md
+from urllib.parse import urlsplit as _urlsplit
+
+from mag.dormant import dormant_hosts as _dormant_provider_hosts
+
+_DORMANT_HOSTS = _dormant_provider_hosts()
+LANES = [l for l in LANES if _urlsplit(l.get("base", "")).hostname not in _DORMANT_HOSTS]
 
 _lock = threading.Lock()
 

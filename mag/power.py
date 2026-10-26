@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import json
 import os
+import shutil
 import subprocess
 import sys
 import time
@@ -154,6 +155,13 @@ def _mag_python_pids() -> set[int]:
     targets: set[int] = set()
     root = str(ROOT)
     if os.name == "nt":
+        # B2-85 2026-09-26: bare "powershell" is not on PATH in every launch
+        # context (sig run_shell:e566037def80 "[Errno 2] ... powershell",
+        # 7,964 FKB rows since 2026-09-19). Resolve the full path; System32
+        # fallback when PATH lookup misses (pattern mag/process_reaper.py).
+        ps_exe = shutil.which("powershell") or shutil.which("powershell.exe")
+        if not ps_exe:
+            ps_exe = r"C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe"
         ps_cmd = (
             "Get-CimInstance Win32_Process | "
             "Where-Object { $_.Name -in @('python.exe','pythonw.exe') } | "
@@ -162,7 +170,7 @@ def _mag_python_pids() -> set[int]:
         )
         try:
             out = subprocess.check_output(
-                ["powershell", "-NoProfile", "-Command", ps_cmd],
+                [ps_exe, "-NoProfile", "-Command", ps_cmd],
                 text=True,
                 errors="replace",
                 timeout=3,
@@ -200,7 +208,12 @@ def _self_ancestor_pids() -> set[int]:
         if os.name == "nt":
             ps = ("Get-CimInstance Win32_Process | "
                   "Select-Object ProcessId,ParentProcessId | ConvertTo-Json -Compress -Depth 3")
-            res = subprocess.run(["powershell", "-NoProfile", "-Command", ps],
+            # B2-85 2026-09-26: same powershell resolution as _mag_python_pids
+            # (bare "powershell" off PATH in scrubbed launch contexts).
+            ps_exe = shutil.which("powershell") or shutil.which("powershell.exe")
+            if not ps_exe:
+                ps_exe = r"C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe"
+            res = subprocess.run([ps_exe, "-NoProfile", "-Command", ps],
                                  capture_output=True, text=True, timeout=3, errors="replace",
                                  creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0x08000000))
             pp: dict[int, int] = {}

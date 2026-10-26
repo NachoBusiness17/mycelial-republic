@@ -56,3 +56,11 @@ Not yet briefed (stack layers, one brief each when needed): — (roster complete
 NOTE: the HALL ractor is Stuart Hall (encoding/decoding). Manly P. Hall is a separate
 reading voice held by the zcode seat (elder/archaeologist chair). Two Halls, two chairs,
 no silent merge (2026-09-04).
+
+## SEATED 2026-10-23 (operator GO: seat Blavatsky and Manly P. Hall)
+| Ractor | Lens | Signature question |
+|---|---|---|
+| [BLAVATSKY](BLAVATSKY.md) | correspondence & borrowed robes (theosophy; root-race guard binding) | "What corresponds to what here, and which accident is actually obeying a law?" |
+| [MPHALL](MPHALL.md) | symbols as compressed initiations (Manly P. Hall, NOT Stuart) | "What does this symbol initiate its user into, and is the fire still on the altar?" |
+
+Vessel masks: queue/handoff/ractors/BLAVATSKY_expanded_20261023.md (sorts ahead of BLAVATSKY_primer_20260911.md) and MPHALL_expanded_20261023.md. Fire with --mask BLAVATSKY / --mask MPHALL. --mask HALL still resolves to HALL_audience_20260905.md (Stuart Hall) because the sorted *HALL* glob puts HALL_ before MPHALL_.

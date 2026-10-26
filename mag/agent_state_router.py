@@ -7,6 +7,11 @@ context, context_plan — to MATCH the job, minimize cost, and keep asks focused
 the right model/chat-window/API-context. The custom agent state is the SPEC; routing serves it
 (spend on the spec, not the tier).
 
+Thinking levels are daemon-read for local pinned models (ollama_policy.thinking_condition,
+three /api/show response shapes, assume-ON on anything unmeasured); hand-curated
+thinking_level values remain only for remote models, and resolve() stamps thinking_source
+so every consumer records where the level came from.
+
 Deterministic base: a state config + resolver. self_drive consumes it when building the ask.
 
 CLI:  python -m mag.agent_state_router                (list states)
@@ -77,13 +82,44 @@ AGENT_STATES: dict[str, dict[str, Any]] = {
 }
 
 
+def _apply_daemon_thinking(spec: dict[str, Any]) -> dict[str, Any]:
+    """Swap hand-curated thinking_level for the daemon-read default on local pinned models.
+
+    The one-bug law runs on measured conditions: ollama_policy.thinking_condition reads
+    POST /api/show per model and normalizes the three measured response shapes (structured
+    values+default, capability without defaults, absent key), assuming ON on anything
+    unmeasured, never OFF. Remote models keep the hand value. thinking_source is stamped
+    either way so verdict rows record the provenance (P3 port wave 2026-10-07).
+    """
+    try:
+        from mag.ollama_policy import pinned_model_names, thinking_condition
+
+        local = str(spec.get("model") or "").strip() in pinned_model_names()
+    except Exception:
+        spec["thinking_source"] = "hand"
+        return spec
+    if not local:
+        spec["thinking_source"] = "hand"
+        return spec
+    cond = thinking_condition(str(spec.get("model") or ""))
+    spec["thinking_condition"] = cond
+    if cond.get("ok"):
+        spec["thinking_level"] = cond.get("thinking") or "on"
+        spec["thinking_source"] = "daemon"
+    else:
+        # Daemon unreachable or model missing: assume ON (one-bug law), never OFF.
+        spec["thinking_level"] = "on"
+        spec["thinking_source"] = "daemon_unreachable_assume_on"
+    return spec
+
+
 def resolve(state: str) -> dict[str, Any]:
     """Resolve a custom agent state name -> its resource spec."""
     key = (state or "").strip().lower()
     spec = AGENT_STATES.get(key)
     if not spec:
         return {"ok": False, "error": f"unknown agent state: {state}", "known": sorted(AGENT_STATES)}
-    return {"ok": True, "schema": SCHEMA, "state": key, **spec}
+    return _apply_daemon_thinking({"ok": True, "schema": SCHEMA, "state": key, **spec})
 
 
 def pick(state: str, goal: str) -> dict[str, Any]:

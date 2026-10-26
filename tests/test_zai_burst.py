@@ -65,12 +65,19 @@ def test_pick_free_glm_rides_47_when_calm(monkeypatch):
 
 
 def test_fuel_feed_includes_lite_cache_lane():
+    # 2026-10-03 (operator order: the Lite lane was given to adam and pulled
+    # from rotation): this test asserted the RELIT world (z_ai3 in FREE_LANES
+    # + CACHE_LANES). It now pins the PULLED world instead - z_ai3 is out of
+    # both tables via the B2-133 dormant gate and cache mining rides nothing
+    # until an operator routing call names a replacement lane.
+    # Receipt: watch/inbox/LITE_LANE_PULL_20261003.md
     from mag.fuel_feed import CACHE_LANES, FREE_LANES
 
     names = {ln[0] for ln in FREE_LANES}
     cache = {ln[0] for ln in CACHE_LANES}
-    assert "z_ai3" in names
-    assert "z_ai3" in cache
+    assert "z_ai3" not in names
+    assert "z_ai3" not in cache
+    assert cache == set()  # no replacement cache lane named yet
     assert "z_ai" not in cache  # coding-plan never in cache mill
 
 

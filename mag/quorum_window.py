@@ -9,6 +9,7 @@ docs/ref/ractors chair briefs (the binding), mag.cite_gate (BUILD stamps before 
 vote). Elder + ponytail design rulings are baked in:
 
   - quorum denominator = chairs that returned P1, never the manifest (ponytail)
+  - p4 self-vote exclusion (B2-205): an addition's author chair ABSTAINs on its own addition — excluded from that addition's tally and denominator (the p3 fold already carries the author; lens B2_60 D1 judge independence)
   - P2 named-counterparty tri-state; refusal legal; null diff = ABSENT (elder+ponytail)
   - P3 fold is mechanical: conductor dedupes, editorializes never (elder)
   - phase gates are FILE-EXISTENCE, not wall-clock (ponytail); h24 ceiling is the
@@ -62,6 +63,14 @@ FREE_LANES: list[tuple[str, str | None]] = [
     ("cerebras", "gpt-oss-120b"),
     ("openrouter", "openrouter/auto"),
 ]
+# B2-133 DORMANT GATE (2026-09-26): a provider declared dormant in configs/providers.yaml
+# never carries a chair (mag/doctor.py:607: dormant is a declared state). B2-36 set
+# cerebras dormant (card-gated 30-day trial, chat 402 no-credit); the same gate catches
+# nvidia (dormant per B2-61, 410 EOL). Operator GO flips the flag and the lane returns,
+# no code edit. Receipt: watch/inbox/burn_wave_20260926/B2_133_cerebras_purge_20260926.md
+from mag.dormant import dormant_ids as _dormant_provider_ids
+
+FREE_LANES = [l for l in FREE_LANES if l[0] not in _dormant_provider_ids()]
 CHAIR_EXCLUDE = {"RACTORS"}  # the manifest is not a chair
 
 P1_TEMPLATE = """## RISKS
@@ -373,6 +382,13 @@ def p4(date: str, order: str) -> dict:
     add_ids = sorted(set(re.findall(r"\*\*(A\d+)\*\*", add_block)))
     if not add_ids:
         return {"ok": False, "error": "no additions found in fold"}
+    # B2-205 (2026-09-26): additions carry their author chair in the fold header
+    # ("- **A1** [NOTE] (BAUDRILLARD): ..."). The author's own vote is an ABSTAIN:
+    # excluded from its addition's tally AND its denominator (the p3 fold already
+    # carries the author's testimony, so the self-vote double-counts one voice).
+    add_author: dict[str, str] = {}
+    for m in re.finditer(r"\*\*(A\d+)\*\*\s*\[[^\]]*\]\s*\(([^)\n]+)\)", add_block):
+        add_author.setdefault(m.group(1), m.group(2).strip())
     votes: dict[str, dict[str, str]] = {}
     for chair in p1s:
         path = d / "p4" / f"{chair}.md"
@@ -398,15 +414,25 @@ def p4(date: str, order: str) -> dict:
     denom = len(p1s)
     need = math.ceil(2 * denom / 3)
     lines = ["# QUORUM CALL — verdict", "", f"- denominator (P1 returners): {denom} · pass needs >= {need} YES",
-             "- rule: >=2/3 YES AND every objection logged (below) · additions land as CANDIDATE knots", ""]
+             "- rule: >=2/3 YES of the eligible set AND every objection logged (below) · additions land as CANDIDATE knots",
+             "- B2-205 rule: an addition's author chair ABSTAINs on it — excluded from its tally and its denominator", ""]
     result = {}
     for aid in add_ids:
-        yes = [c for c, v in votes.items() if v.get(aid) == "YES"]
-        no = [c for c, v in votes.items() if v.get(aid) == "NO-WITH-OBJECTION"]
-        passed = len(yes) >= need
-        result[aid] = {"yes": len(yes), "no": len(no), "passed": passed}
+        author = add_author.get(aid)
+        eligible = [c for c in p1s if c != author]
+        yes = [c for c, v in votes.items() if v.get(aid) == "YES" and c != author]
+        no = [c for c, v in votes.items() if v.get(aid) == "NO-WITH-OBJECTION" and c != author]
+        denom_a = len(eligible)
+        need_a = math.ceil(2 * denom_a / 3)
+        abstain = author if author in p1s else None
+        passed = len(yes) >= need_a
+        result[aid] = {"yes": len(yes), "no": len(no), "passed": passed,
+                       "denominator": denom_a, "need": need_a,
+                       "author_abstain": abstain or ""}
         lines.append(f"- {aid}: {'PASSED → CANDIDATE' if passed else 'NOT PASSED'} "
-                     f"(YES {len(yes)}/{denom}, NO {len(no)}) · yes: {','.join(yes) or '-'} · no: {','.join(no) or '-'}")
+                     f"(YES {len(yes)}/{denom_a}, need >= {need_a}, NO {len(no)})"
+                     + (f" · author {author} ABSTAIN" if abstain else "")
+                     + f" · yes: {','.join(yes) or '-'} · no: {','.join(no) or '-'}")
     lines += ["", "## OBJECTIONS (the dissent log)", ""]
     for p in sorted((d / "p4").glob("*.md")):
         for ln in p.read_text(encoding="utf-8", errors="replace").splitlines():

@@ -1,0 +1,171 @@
+ID 1whx5xi [LocalLLaMA] You can offload most of Qwen3.8-Flash-Next's KV cache to RAM with little decode slowdown
+date=1789565066 score=136 comments=54 author=sadnessdevil url=https://www.reddit.com/r/LocalLLaMA/comments/1whx5xi/you_can_offload_most_of_qwen38flashnexts_kv_cache/
+PERMALINK https://www.reddit.com/r/LocalLLaMA/comments/1whx5xi/you_can_offload_most_of_qwen38flashnexts_kv_cache/
+SELFTEXT:
+I'm pretty sure it can be done with any model based on qwen4exp, which Qwen's next local models will be based on. You can use a quant that barely fits in VRAM and still run at the model's maximum context length without kv cache quantization, since most of the KV cache can live in system RAM.
+
+I actually made it working on vLLM and now I get 1M context with 3x 3090. I get \~80 tok/s at short context, dropping to \~60 tok/s once QSA reaches its 2048-token budget, after which decode speed stays flat as total context grows. The throughput is pretty good too, and I get like 150tk/s @ 4 concurrent requests. Prefill at 248k reaches 3,701 tok/s. (The patches and the model are available on my huggingface page if you're interested)
+
+Decode speed is a bandwidth problem. Each decode step produces one token, and to produce it the GPU reads every weight and every piece of attention state that the step needs. On a single stream the card spends most of the step waiting for memory rather than computing. So the size of that per-step read sets the token rate.
+
+This is why a normal model keeps its KV cache in VRAM. Take Qwen3.8-27B, which is built on the Qwen3-Next architecture and shares most of its properties with Qwen3.8-Flash-Next (\`qwen4\_exp\`). It still has one full attention layer every few layers, and a full attention layer reads its entire KV cache on every step. That read grows with the context, so decode gets slower as the conversation gets longer. It also grows past what any host link (such as PCIe) can carry, so the cache has to sit next to the compute.
+
+The numbers of this model show the size of the problem. One QSA layer holds 2 key/value heads of 256 dimensions, as K and as V, in 2 bytes each, which is 2,048 B per token. At 262,144 tokens that is 512 MiB for one layer, and 6 GiB for all 12 layers on every single step. A PCIe 4.0 x16 slot carries about 32 GiB/s, so a host-resident cache of that shape allows about 5 tokens per second.
+
+Here's an interesting part, Qwen3.8-Flash-Next avoids this in two ways:
+
+Only 12 of the 48 layers have a KV cache at all. The other 36 layers are gated delta-net layers, a linear attention whose recurrent state has a fixed size. That state does not grow with the context.
+
+Those 12 layers also do not attend over the whole context. QSA runs a cheap indexer over a pooled, compressed key, where \`indexer\_head\_dim=128\` divided by \`indexer\_compress\_ratio=4\` gives the pooled width. The indexer selects at most \`indexer\_budget=2048\` positions. The layer reads the main KV rows only for the positions that the indexer selects.
+
+So \`indexer\_budget\` bounds the bytes that a decode step reads, and the context length does not:
+
+\`\`\`
+
+2048 selected x 2 kv heads x 256 dim x 2 (K and V) x 2 B  =  4 MiB per layer
+
+x 12 layers  =  48 MiB per token
+
+\`\`\`
+
+Take an example, at 80 tok/s that is about 3.9 GB/s across the link. It is a small fraction of a PCIe 4.0 x16 slot, and most of it overlaps with compute.
+
+Only few things need to stay on the GPU. The model itself, and a 2-byte slot plus the pooled index key, which is \`1 x (128 / 4) x 2 B = 64 B\`. Together they are 66 B per token per layer, against 2,048 B for a full row.
+COMMENTS (71, top-scored order):
+--- sadnessdevil (16): It's on my profile page. The model and the patch is here [https://huggingface.co/Minachist/Qwen3.8-Flash-Next-INT4-Mixed-AutoRound](https://huggingface.co/Minachist/Qwen3.8-Flash-Next-INT4-Mixed-AutoRound) .
+--- Scared-Degree-1833 (15): What are you using with 3x3090?   
+What’s your huggingface pg? :)
+--- sn2006gy (13): This is why i can't wait for Qwen 4!
+--- esw123 (9): Can you please share prefill with 1-2 3090 at 70-200k context?
+--- Scared-Degree-1833 (6): I’m really impressed. Thank you for sharing your work.
+--- sadnessdevil (6): I use a 3945WX with 8-channel DDR4-3200. Since it only has two CCDs, the memory bandwidth isn't high. I get about 82.9 GB/s read and 50.9 GB/s write. Note that I measured those under ideal conditions, so real-world performance is lower.
+
+Either way, PCIe bandwidth is the bottleneck here, so memory bandwidth doesn't matter that much.
+--- sadnessdevil (6): I haven't tested it on 2x 3090s. My setup is 3x 3090 with PP=3, using my 4.21 bpw quant.
+
+For reference, I get \~4,450 tok/s prefill at 121k and \~3,700 tok/s at 248k, so prefill speed doesn't degrade that much as context grows.
+
+Since I'm using pipeline parallelism rather than TP, those numbers also shouldn't be interpreted as a 3GPU compute scaling result. That said, PP can pipeline the prefill chunks, so I wouldn't assume 1 GPU would get exactly the same speed either.
+
+Also, this quant is \~65 GiB, so it simply doesn't fit on 1–2 3090s without more aggressive quantization or weight offloading.
+--- Fancy-Snow7 (4): It was shown to affect KLD a lot
+--- nagasgura (3): Excellent work! I was able to adapt this to my setup (dual 20GB 3080s, 128GB DDR4 2666 MT/s) and was able to get full 262k context at ~40 t/s generation and 900 t/s prefill. I'm using tensor parallelism and MTP 3.
+--- sadnessdevil (3): It depends on how much throughput you want. PCIe 5.0 x16 has about twice the bandwidth of PCIe 4.0 x16. At 48 MiB per token, that's roughly 1,200 tok/s of total decode throughput before the link theoretically becomes the bottleneck.
+
+Keep in mind that the amount of data transferred scales with total throughput, so at high concurrency, PCIe bandwidth matters more than it does in my setup.
+--- sadnessdevil (3): 1. I don't know of one for vLLM. Flash-Next's routed experts are 58 GiB at INT4 gs128 and make up 92% of the body, so you'd need to push them to about 3.5 bpw for 64 GB and 2.5 bpw for 48 GB. At that size I'd try ExLlamaV3 instead, since EXL3 generally holds up better at low bpw. I have a patch for ExLlamaV3 that moves part of the KV cache to RAM too. It's on my website, which is linked from my HF profile. I haven't measured quality at those sizes though, so I can't say whether it's still smart enough.
+
+2. Probably yes, once those models are out. A smaller qwen4\_exp model at 4+ bpw or higher will likely beat Flash-Next squeezed to 2.5 bpw, but I can't compare them until they exist.
+
+3. Correct. The mechanism carries over to any qwen4\_exp model.
+--- jwpbe (3): Hello!!!
+
+I was actually looking at your mixed bpw humming quants last night for Qwen 3.8! I have been working on a w8a8 quant that gets a big prefill speedup and it works well, and then I found your mixed bpw quants!
+
+I did some preliminary looking and it seems like a mixed 4 - 5 bit weight with 8 bit activation *could* be viable if tuned correctly? And on a 2x 3090 setup, it would claw back a lot of the decode tradeoff from the 8 bit weights.
+
+I wanted to know if you were reachable by email or something! I looked for it on your blog but I understand if you are a private person. If you do end up making a proton mail for your quantization work, I would love it if you could message it to me, I'd love to bounce ideas off of you.
+--- sadnessdevil (3): Thanks for checking it out my repo. I'd like to support MTP, but I can't do it anytime soon. The MTP module is pretty huge, and with the current quant there isn't enough VRAM left on 3x 3090 to load it, so I have no way to test it. At some point I might make a lower bpw quant, and then write patches that add MTP support and enable TP by padding the heads.
+--- Chromix_ (3): Something like that was also implemented in a llama.cpp fork. From the published benchmarks it was [basically free](https://www.reddit.com/r/LocalLLaMA/comments/1w6cuu5/comment/p7qgk51/). As in: If the model fits your VRAM + a bit of overhead then you can get full model context for free. There was some more about it / related [here](https://www.reddit.com/r/LocalLLaMA/comments/1w8jflp/block_kv_cache_streaming_bound_vram_at_long/) afterwards.
+--- Constant_Art_20 (3): oh cool. I am working on a glm 5.3 flash fork. Might as well try this one out too. Glm seems very suitable as well
+--- _ballzdeep_ (3): Just want to say, I love your quants man! Thank you for what you do
+--- Kasatka06 (3): Very interesting, what ram speed do you run ?
+--- sadnessdevil (2): Try turboderp/Qwen3.8-Flash-Next-exl3, branch 3.05bpw\_h5\_ng5. It only needs \~46 GiB for the text weights, and \~0.47 GiB if you load the vision tower. The KV cache offload patch for ExLlamaV3 is available in the HF repo. Note that it's ExLlamaV3, so throughput will be lower because of how pipeline parallelism works in ExLlamaV3. Neither MTP nor TP is available, and if you want either of them, you need to write a patch for it.
+--- sadnessdevil (2): Thanks for the kind words, and I'm glad the mixed bpw quants were useful. A 4-5 bit weight / 8 bit activation mix with stacked Hadamard rotations sounds interesting, and I'd like to see how it does on 2x 3090.
+
+That said, I'm going to pass on working together. I do this alone and at my own pace, and I'm not good at coordinating with other people, so I think I'd end up slowing you down. It's nothing about you or the idea. I also don't have a contact address set up for this, and I'd like to keep it that way for now.
+--- sadnessdevil (2): I disabled it because VRAM was too tight for 3x 3090. You can use it if you want to.
+--- IngeniousIdiocy (2): this is why I come to localLLaMa
+--- BevinMaster (2): Disabling prefix caching is quite a big tradeoff for agentic workloads, but with that way of dispatching kvcache it would be difficult to support it I suppose
+--- Mr_Moonsilver (2): Thank you for sharing this man, this is yuge
+--- sadnessdevil (2): No approximation comes from the offload. The patch only changes where the QSA KV rows live. They sit in pinned host memory behind a UVA view, and the kernels read the same values they would read from VRAM. 
+
+The top-2048 selection isn't something I added either. That's how QSA works in the model itself, and upstream vLLM does the same selection with the cache on the GPU.
+
+The one part computed differently is prefill, where the patch stages pages into a GPU arena and merges the partial results with a running softmax. That's exact in math, but like any chunked attention it isn't guaranteed to be bit-identical.
+--- sadnessdevil (2): It entirely depends on how slow the PCIe connection is, what model you're using, and how much throughput you need, so I can't say for sure how much slower PCIe bandwidth would affect performance. I don't even know how many QSA layers the smaller qwen4exp models will have, so I can't even do the calculations yet.
+
+That said, I don't expect it to slow things down that much. GPUs with only 8GB of VRAM generally aren't going to have extremely high generation throughput in the first place, so I'd assume PCIe bandwidth wouldn't become a major bottleneck.
+--- QuackerEnte (2): what about bandwidth constrained devices, e.g. 8GB VRAM coupled with ddr4 or something slow like that? Wouldn't that just eat away the bandwidth required for model generation? especially since pcie speed is slow? Genuine question. 
+
+If that's even an issue, pretty sure a small kv cache cache for hot tokens could potentially solve the problem
+--- jkflying (2): Yeah I'm really curious, is this mathematically equivalent or are some approximations happening.
+--- brickout (2): This is awesome. My system is very similar to yours so I'm excited to try this out. Thanks for sharing!
+--- laterbreh (2): Have you done hard needles? Attention checks? Code burial needles at full context? Benchmark checks vs baseline?
+--- niacolhealth (2): The 48 MiB per token at 80 tok/s coming out to under 4 GB/s is what made it click for me. A million tokens stops being a bandwidth problem and just becomes a RAM capacity question.
+--- LeatherRub7248 (2): could u walk thru what would be the steps to do this on lesser total vram? say 48gb / 64 gb?
+--- Kasatka06 (2): Thank you for the explanation ! I check your hf profile and find the vllm patch, maybe i will try this weekend !. Also i check MTP is not supported as today when VLLM\_QSA\_KV\_OFFLOAD=1, do you plan to support it ?
+--- ShowerAnnual9741 (2): I don't think YaRN touches the speed argument. The indexer still selects 2048 positions either way, so the per-step read stays the same. Where I'd watch it is what gets selected: if the pooled key carries position signal, rescaled RoPE could shift the rankings and you'd pull the wrong context. That's a quality question though, not a speed one. A needle test at the extended length would settle it pretty fast.
+--- Don_Moahskarton (2): Do you know how yarn affects that theory ?
+--- madbrain1976 (1): Thanks. I tried it. The fact that TP is not implemented is a big impediment. My Freetoken patch for TP4 beats it by a wide margin for single stream. [https://github.com/madbrain76/FreeToken/tree/tp4\_5060ti](https://github.com/madbrain76/FreeToken/tree/tp4_5060ti) . The concurrent TG is faster for EXL3, interestingly, but the slower prompt makes it overall less useful. I will look into adding TP4 for EXL3.
+
+https://preview.redd.it/u544ucylfjrh1.png?width=2083&format=png&auto=webp&s=2d8f97c42f6f21e5246439004de345bb11bafb9e
+--- sadnessdevil (1): I added a container with both MTP and vision support about 30 minutes ago, so give that a try.
+
+If you run into any issues with it, please check the usage instructions in `vllm-patch/README.md` first. If it still doesn’t work after following those, let me know what issue you’re seeing in the hf discussion page.
+--- shaxsy (1): Oh awesome! I was able to get vision offload and caching enabled. Have not yet found a way to get MTP working. The biggest issues I've faced are the transient spikes of vram usage when starting up.
+--- sadnessdevil (1): Sorry for the late reply. I’ve finished most of the high-priority task, so I’m planning to add the patch for CPU vision offloading soon.
+
+I also found that there’s still enough VRAM headroom left, so I’m planning to add MTP support for 3x 3090 soon as well.
+--- madbrain1976 (1): Thank you ! I will give it a try.
+--- OkWhereas8891 (1): Thikning using [Qwen3.8-27B-exl3](https://huggingface.co/turboderp/Qwen3.8-27B-exl3) on 3bit, it would be very good for single 16g cards.
+--- OkWhereas8891 (1): It sounds really great, thanks. I will test it on 4x3090.
+--- madbrain1976 (1): Thanks for this. I have 64 GB of VRAM - 4 x 5060 Ti 16 GB. Unfortunately, your project requires 72. Do you think it would be possible to adapt, or am I SOL ? I haven't had any luck with vLLM and flash-next. Most tg/s I got is 10. I achieved 50 single stream with freetoken, and 150 multi stream.
+--- shaxsy (1): Is there any way to offload vision directly to cpu?
+--- sadnessdevil (1): You can't use vision if you only have 3x 3090s. You can use ExLlamaV3 (3.05 bpw or 4.05 bpw) instead. The throughput and latency will be worse, but at least you can use vision. ExLlamaV3 retains much better quality at low bit rates too.
+
+If you still want to use vLLM, you need to re-quantize the model to a lower bit width with AutoRound. Quantize the routed experts in at least 14 layers to INT3 g64, and leave the remaining layers with the same recipe as my model.
+--- shaxsy (1): u/sadnessdevil any tips for getting vision working with 3 x 3090s?
+--- Chromix_ (1): Oh, where? Maybe an implementation issue? In theory the (temporary) location of the data shouldn't affect output tokens at all.
+--- sn2006gy (1): Yeah, i don't think people quite grasp the architecture change of Qwen4 - not only from training optimizations they get, but runtime.
+
+Game changer.
+--- BringTea_666 (1): yup qwen4 will be nuts. Small model like Qwen4 35B MOE loaded in vram, kvcache on ram with embeddings. It will have frontier model performance at fraction of cost with insane speed and full huge context to boot.
+--- [deleted] (1): [removed]
+--- Ecstatic-Wash-7667 (1): I’m too dumb to understand but it sounds fascinating
+--- [deleted] (1): [removed]
+--- zante2033 (1): This is the thing. Why not get a server board using GDDR4, supporting up to 1TB RAM and then just run 2x AI 9700 pros?  Vastly cheaper than anything out there.
+--- Open-Adhesiveness-86 (1): If people try to reproduce this, check that the KV blocks in system RAM are in pinned memory. With pageable memory every copy goes through a staging buffer, and since the selected blocks move every step for every full attention layer, decode slows down much more than the numbers here. PCIe lanes matter for the same reason. A 3090 sitting in a chipset x4 slot will probably be the limit long before RAM speed is.
+
+Also, VRAM use doesn't stay completely flat. The per-block summaries used to pick which blocks to fetch need to stay on the GPU, or picking the blocks becomes its own PCIe round trip. It grows much more slowly than the full cache, but at 1M context it's worth measuring. And many small copies per layer can cost more in latency than the bytes suggest, so grouping the fetches across layers helps if the patch doesn't already do that.
+--- [deleted] (1): [removed]
+--- ustype (1): This matches what I’ve seen on hybrid-attention stacks: once most layers only touch a bounded K/V window per step, the “must live in VRAM” rule stops applying to the whole cache.
+
+The practical win for me is pairing a denser weight quant that barely fits with an unquantized (or lightly quantized) host KV for the long context, instead of Q8-ing the whole cache just to keep it on-card. Decode stays closer to “weights bandwidth limited” than “PCIe streaming the full history every token.”
+
+Where it still bites is multi-slot / high concurrency — single-stream numbers look fine until every context is actually deep at once.
+--- superbiche (1): Do you think it would still be beneficial for 4 pcie 3.0 lanes (x16x16x8x8), quad channel DDR4 @2400 ? Old TR4 platform. 4x3090 - finishing the build tomorrow and I was planning on running Flash next with llama but...4x 256k slots at this speed would definitely make me reconsider
+--- CroquetteLauncher (1): Great work ! Do you think it could help serving with a single 6000 pro Blackwell at higher concurency and mtp ? Right now it's a verry tight fit.
+--- LeatherRub7248 (1): i guess the question the is, assuming i want to use flash next:
+
+1. is there a quant that fits in 48-64gb that is still smart enough  
+2. am i better off using one of the next smaller Qwen4exp based models, at a higher quant
+
+regardless, the offload mechanism works...
+
+Correct?
+
+Thx!
+--- sadnessdevil (1): Yeah, and since RAM is much cheaper than VRAM, I think this might change how people build local rigs. Instead of buying more GPUs, you can put that money into RAM.
+
+Smaller models should also work on narrower links, since fewer QSA layers means fewer bytes per token. I haven't tested that yet, though, and a smaller model also decodes faster, so the bytes per second may not drop as much as the per-token number does. 
+
+CMP 170HX users probably won't gain much either. That card is limited to PCIe 2.0 x16, which is about 8 GB/s, so at 48 MiB per token the link alone would cap decode at around 167 tok/s throughput.
+
+The biggest win for me is that context length will be no longer the thing I need to plan.
+--- sadnessdevil (1): The offload mechanism itself doesn't depend on how much VRAM you have or how many cards you use. It should work on any model with the qwen4\_exp architecture, because the fact QSA reads a bounded number of K/V rows per step, no matter how long the context makes it possible.
+
+The real problem is the model though. Afaik right now Qwen3.8-Flash-Next is the only qwen4\_exp model, and at 125B it doesn't fit in 48 or 64 GB without aggressive quantization. 
+
+That said, Qwen's next local models are almost certainly going to be qwen4\_exp too. The same approach should also work on any other architecture whose attention behaves like QSA, meaning it selects a fixed number of positions per step instead of reading the whole cache. So on 48 or 64 GB, I'd wait for one of those.
+--- Constant-Simple-1234 (1): Ooh, right. I just read your original third paragraph with comprehension. I will still be trying :)
+--- [deleted] (1): [removed]
+--- ShowerAnnual9741 (1): Thanks for clarifying that - 4x 262k is a different claim than one 1M stream, and honestly it makes the PCIe point sharper for me. The offload path only really gets stressed when all four slots are actually full at 262k, so the number I'd want to see is decode throughput with all four filled, not a single stream. In my experience single-stream numbers hide the bus bottleneck.
+--- [deleted] (1): [removed]
+--- [deleted] (1): [removed]
+--- sadnessdevil (1): I'm not using TP, so I'm sure there's no all-reduce in my setup. It's PP=3 with TP=1 on vLLM, and each card just holds a different set of layers. Only the hidden states move between stages, and the pipeline round-trip is about 1.1 ms of a 12.5 ms decode step. TP wasn't an option for me anyway, because the weights leave too little VRAM. I don't use llama.cpp, so I can't help with that, sorry.
+--- sadnessdevil (1): Good point, and I should clarify the 1M part of the post. I run `--max-model-len 262144`, which is the model's max\_position\_embeddings. The \~1.07M figure is the KV pool size (4.07x 262k), so in practice it's 4 concurrent requests at 262k. Memory-wise you can do a single request to 1M, but past 262k you need rope scaling and I haven't checked retrieval quality there. In my experience 262k is enough, so I just run 4x 262k.
+--- rrrrex (1): ATM the main issue is prefill, with 1 5060ti it's just 100 t/s with vanilla llama.cpp
+--- Constant-Simple-1234 (1): How do you solve for slower reduce with 3x cards? I am trying to add third card. Llama with NCCL?
+--- [deleted] (1): [removed]
+--- Express_Quail_1493 (-1): probably not worth the prefill speed damage

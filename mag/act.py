@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import json
 import re
+import sys
 import uuid
 from datetime import datetime, timezone
 from pathlib import Path
@@ -12,6 +13,84 @@ from audit import log_event
 from config import ROOT
 from harness.grok_cli import escalate_via_harness, harness_available
 from mag.policy import load_policy, resolve
+
+
+
+# ---------------------------------------------------------------------------
+# Attention surface contract (2026-09-29, gala wave5 attention-channel lane).
+#
+# memory/attention.md is one file with two regions:
+#   1. a newest-first RECORD FLOOD: biographer session pings and daemon pings,
+#      prepended at the head and byte-capped;
+#   2. a PRESERVED ALERT TAIL below ATTENTION_ALERT_SENTINEL: bottom-appenders
+#      (scripts/census_patrol_daily.ps1 Add-Content at :79/:109/:150/:170,
+#      mag/improve.py mode "a" at :535) write here.
+# Before this contract the flood prepended while the alerts appended, so the
+# bottom of the file was the eviction zone and the guillotine ran backwards:
+# biography.py prev[:40000] beheaded the 2026-09-26 COLLECT-DRIFT and
+# 2026-09-28 fleet-task-doctor patrol alerts within hours of their append
+# (watch/inbox/burn_reset_20260927/flash50/w4-09.md). Eviction now runs
+# whole-block and can never touch the alert tail.
+ATTENTION_ALERT_SENTINEL = "<!-- attention:alerts-preserved-below -->"
+ATTENTION_BLOCK_SEP = "\n---\n"
+
+
+def split_preserved_alerts(prev: str) -> tuple[str, str]:
+    """Split an attention.md body into (evictable records, preserved alerts)."""
+    idx = prev.find(ATTENTION_ALERT_SENTINEL)
+    if idx < 0:
+        return prev, ""
+    return prev[:idx], prev[idx:]
+
+
+def evict_for_prepend(prev: str, note: str, cap: int) -> str:
+    """Return the new attention.md body after prepending `note` under `cap` bytes.
+
+    Records evict newest-first, whole-block at ATTENTION_BLOCK_SEP boundaries
+    (the old prev[:cap] slice ended mid-record and fed consumers headless
+    half-blocks). The preserved alert tail below ATTENTION_ALERT_SENTINEL is
+    never evicted and never sliced; it is seeded on first write so bottom-
+    appended patrol alerts survive every later record flood.
+    """
+    evictable, preserved = split_preserved_alerts(prev)
+    if not preserved:
+        preserved = f"\n{ATTENTION_ALERT_SENTINEL}\n"
+    body = note + evictable
+    budget = max(cap - len(preserved), 0)
+    if len(body) > budget:
+        cut = body.rfind(ATTENTION_BLOCK_SEP, 0, budget + 1)
+        if cut <= len(note):
+            # No whole evictable record fits; keep only the new note.
+            cut = len(note)
+        body = body[:cut]
+    return body + preserved
+
+
+def bump_attention_count(delta: int = 1) -> tuple[str, int]:
+    """Advance the daily attention meter watch/attention_count_day.txt.
+
+    Format stays "YYYY-MM-DD N": mag/daemon.py:_attention_over_cap reads it.
+    A stale day or an unparsable file restarts at 0 instead of freezing. Every
+    writer to an operator attention surface meters here (the flood pays rent);
+    only the push path is capped, filing is unconditional.
+    """
+    count_path = ROOT / "watch" / "attention_count_day.txt"
+    day = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    count = 0
+    if count_path.is_file():
+        try:
+            d, c = count_path.read_text(encoding="utf-8").strip().split()
+            if d == day:
+                count = int(c)
+        except (ValueError, OSError):
+            count = 0
+    count += max(delta, 0)
+    try:
+        count_path.parent.mkdir(parents=True, exist_ok=True)
+        count_path.write_text(f"{day} {count}", encoding="utf-8")
+    except OSError as exc:  # metering is best-effort; the attention action still landed
+        print(f"[act] attention counter write failed: {exc}", file=sys.stderr)
+    return day, count
 
 
 def act(decision: dict[str, Any], snapshot: dict[str, Any]) -> dict[str, Any]:
@@ -89,31 +168,20 @@ def _do_attention(decision: dict[str, Any], pol: dict) -> dict[str, Any]:
     path.parent.mkdir(parents=True, exist_ok=True)
     text = decision.get("attention_text") or decision.get("reason") or "Mag ping"
     stamp = datetime.now(timezone.utc).isoformat()
-    prev = path.read_text(encoding="utf-8") if path.is_file() else "# Mag attention log\n"
-    # prepend latest
+    prev = path.read_text(encoding="utf-8") if path.is_file() else "# Mag attention\n"
+    # prepend latest; the shared contract evicts whole records and preserves the
+    # alert tail below the sentinel (see ATTENTION_ALERT_SENTINEL above)
     block = f"\n---\n\n### {stamp}\n\n{text}\n"
-    # keep file bounded
-    body = f"# Mag attention\n\nLatest first.\n{block}\n{prev.replace('# Mag attention log', '').replace('# Mag attention', '')}"
-    path.write_text(body[:50000], encoding="utf-8")
-    # daily count
-    count_path = ROOT / "watch" / "attention_count_day.txt"
-    day = datetime.now(timezone.utc).strftime("%Y-%m-%d")
-    count = 0
-    if count_path.is_file():
-        try:
-            d, c = count_path.read_text(encoding="utf-8").strip().split()
-            if d == day:
-                count = int(c)
-        except ValueError:
-            pass
-    count += 1
-    count_path.write_text(f"{day} {count}", encoding="utf-8")
+    path.write_text(evict_for_prepend(prev, block, 50000), encoding="utf-8")
+    # daily count: records and pushes both meter; only the push is capped
+    _day, count = bump_attention_count()
     max_a = int(pol.get("max_attention_per_day") or 8)
     if count > max_a:
         return {
             "ok": True,
             "action": "attention",
             "suppressed": True,
+            "count_today": count,
             "detail": f"over daily cap {max_a}",
         }
     _toast_optional("Sovereign Mag", text[:180])
@@ -243,5 +311,6 @@ def _toast_optional(title: str, msg: str) -> None:
         # Write a side flag file for external notifiers
         flag = ROOT / "watch" / "attention_flag.txt"
         flag.write_text(f"{title}\n{msg}\n", encoding="utf-8")
-    except Exception:
-        pass
+    except Exception as exc:  # 2026-09-28 FW-46 silent-pass batch 2: the silent pass also killed the watch/attention_flag.txt side-channel with no trace when the write failed (STEAL_WAVE_FOLD_20260911: silent loss masquerading as health); best-effort stands, the reason is now named on stderr
+        import sys
+        print(f"[act] toast/attention-flag write failed: {exc}", file=sys.stderr)

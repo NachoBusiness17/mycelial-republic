@@ -192,6 +192,40 @@ REGISTRY: dict[str, tuple[Callable[[], list[Any]], Callable[[Any], str]]] = {
     "research_lens": (_lens_elements, _txt),
 }
 
+# FAMILY CLAIMS (2026-09-27, operator grant "Family extension" after the
+# attic orphan census — watch/inbox/lens_20260927/ATTIC_ORPHAN_CENSUS.md):
+# archived snapshots that BELONG to a registered subsystem even though the
+# backup relocated/flattened their roots (the census's "backup costume").
+# An archive member matching a family rule is HELD by that subsystem, not
+# a structural orphan. The Mimosa hook-state blob and the ghost leak-report
+# stream were deliberately left UNCLAIMED (operator fork: only the verkle
+# family extension was granted).
+FAMILY_CLAIMS: dict[str, list[dict[str, str]]] = {
+    "verkle_chain": [
+        {
+            "rule": "attic/**/biography_backup_*/knots/**/*.knot.json",
+            "why": "the chain's own backing store snapshotted at a relocated root (167k+ files)",
+        },
+        {
+            "rule": "attic/**/biography_backup_*/knots/by-session_*.json",
+            "why": "session pointer files riding the same snapshot",
+        },
+        {
+            "rule": "attic/**/biography_backup_*/verkle_chain.jsonl",
+            "why": "chain index snapshot",
+        },
+        {
+            "rule": "attic/**/biography_backup_*/verkle_tip.json",
+            "why": "tip snapshot",
+        },
+    ],
+}
+
+
+def family_claims() -> dict[str, list[dict[str, str]]]:
+    """The archive-family extension table (policy, not a matcher)."""
+    return FAMILY_CLAIMS
+
 
 def shape(subsystem: str) -> dict[str, Any]:
     if subsystem not in REGISTRY:

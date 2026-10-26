@@ -1,0 +1,128 @@
+"""Lane X2 landing: GRID_unique.json from the four graded fires.
+
+Reads nothing live except the ledger rows for this series; all grades below
+are the mechanical results banked in RUN_UNIQUE_X2.md (grader:
+scripts/tmp_grade_unique.py + the operator grounding pass on kimi cites).
+"""
+import json
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[1]
+MG = ROOT / 'watch' / 'inbox' / 'model_garden'
+
+grid = {
+    "schema": "garden_battery_scores.v1",
+    "battery_id": "garden-v1-unique",
+    "series": "unique",
+    "lane": "X2 (UNIQUE INPUTS, cheap-first) of the cross-model program",
+    "staged": "2026-10-01",
+    "run_moment_utc": "2026-10-01T23:23-23:55Z",
+    "runner": "tools/model_garden.py (memory/plans/garden_battery/unique/{glm,kimi,kimi2,sonnet,fable}), mag.inference_budget recipes on every fire",
+    "families": ["kimi", "claude-sonnet-5.5", "claude-fable-5.1", "glm53flash"],
+    "items": ["U-GLM", "U-KIMI", "U-SONNET", "U-FABLE"],
+    "grid": {
+        "glm53flash": {
+            "U-GLM": {
+                "ask": "census cross-index: every named sibling surface of WIRING_DEBT_CENSUS_20261001.md into one dedup table",
+                "score_norm": 0.8, "checks_passed": 4, "checks_total": 5,
+                "checks": {"SHAPE": 1, "LISTS-APPEAR": 1, "NO-EM-DASH": 1,
+                           "SELF-TOTAL": 1, "RECALL-90": 0},
+                "model": "z-ai/glm-5.3-flash (via nous)",
+                "prompt_tokens": 5061, "completion_tokens": 5028,
+                "reasoning_tokens": 4224, "channel": "content", "finish": "stop",
+                "cost_usd_banked": 0.0, "cost_usd_real": 0.0016,
+                "contamination_flags": ["zcode-seat-glm-authorship (census lane was a ZCode subagent; max author-confound)"],
+                "notes": "56 surfaces listed, ZERO invented (all 56 literally in census bytes), rows-column exact on 52/56 vs per-row ground truth; recall 56/68 = 82 pct misses RECALL-90: dropped mostly the proposed-not-yet-existing surfaces (mag/fetch_util.py, tools/wiring_sweep.py, tools/standing_task_liveness.py, mag/usage_bank.py) plus mag/scrum.py, mag/research_fanout.py, mag/scale_salon.py, logs/census_patrol.log, mag.cmd, bare REGISTRY.jsonl/index_events.jsonl/usage.jsonl data-file names"
+            }
+        },
+        "kimi": {
+            "U-KIMI": {
+                "ask": "239KB STEALTH_MINED_FINDINGS.jsonl triage WHOLE in one window: top 10 promotes + 3 contradictions with row cites",
+                "score_norm": 0.67, "checks_passed": 4, "checks_total": 6,
+                "checks": {"SHAPE": 1, "ROWS-IN-RANGE": 1, "DISTINCT-ROWS": 1,
+                           "NO-EM-DASH": 1, "GROUNDED": 0, "CONTRADICTION-REAL": 0},
+                "model": "moonshotai/kimi-k2 (via nous; kimi-k2.6 arm DNFed transport)",
+                "prompt_tokens": 85573, "completion_tokens": 676,
+                "reasoning_tokens": 0, "channel": "content", "finish": "stop",
+                "cost_usd_banked": 0.0, "cost_usd_real": 0.0,
+                "contamination_flags": ["zcode-seat-glm-adjacent (register rows cite this seat stealth lanes)"],
+                "notes": "CONTENT RETRIEVAL 10/10, CITES 0/10: found exactly the right block (the stealth-fanout-wave2 10-findings run, all 10 work ids, models, 10/10 scores, order) but stamped every ROW cite 9 lines early (cited 69-78, truth 78-87) = systematic off-by-9 cite shift at 85.5k prompt tokens. Contradictions: 1/3 byte-exact (rows 4 vs 7: same answer_file cached_tokens 149 vs 152, same finish=stop = the register's real double-banking signal), 1 substance-true-with-detail-error, 1 false-on-bytes. kimi-k2.6 arm: whole-response 900s read timeout x2, zero bytes back, $0 banked (transport, not content)"
+            }
+        },
+        "claude-sonnet-5.5": {
+            "U-SONNET": {
+                "ask": "adversarial review of server/rooms.py + server/room.py with the two known defects (unbounded queue, bare ticks) named and excluded",
+                "score_norm": 1.0, "checks_passed": 6, "checks_total": 6,
+                "checks": {"SHAPE": 1, "CITES-RESOLVE": 1, "LINES-IN-RANGE": 1,
+                           "NO-EM-DASH": 1, "DISTINCT-EVIDENCE": 1,
+                           "KNOWN-EXCLUDED": 1},
+                "model": "anthropic/claude-sonnet-5.5 (via nous)",
+                "prompt_tokens": 9742, "completion_tokens": 13608,
+                "reasoning_tokens": 12728, "channel": "content", "finish": "stop",
+                "cost_usd_banked": 0.0, "cost_usd_real": 0.1556,
+                "contamination_flags": ["zcode-seat-glm-adjacent (estate seat authorship of the surfaces)"],
+                "notes": "three NEW byte-verified defects, all operator-verified against the frozen bytes: (1) _tick_loop catches only CancelledError so any pump_once raise kills the pump silently while _pump stays non-None (pumping reads True, ensure_pump never restarts) = frozen room; (2) unbounded room creation, no reap, room_of_sid scans every room per action; (3) join_peer never unseats the peer from its old room (cross-room re-hello double-seat, caller-dependent). DIFFERENT-BUILD converges with census row 1 fix (fan out through transport Room.publish). Honest UNVERIFIED flags where server.py was not pasted"
+            }
+        },
+        "claude-fable-5.1": {
+            "U-FABLE": {
+                "ask": "the B1 carrier review retried ONCE at the 24k review floor (the inference_budget recipe)",
+                "score_norm": 1.0, "checks_passed": 5, "checks_total": 5,
+                "checks": {"SHAPE": 1, "CITES-RESOLVE": 1, "LINES-IN-RANGE": 1,
+                           "NO-EM-DASH": 1, "DISTINCT-EVIDENCE": 1},
+                "model": "anthropic/claude-fable-5.1 (via nous)",
+                "prompt_tokens": 8766, "completion_tokens": 15080,
+                "reasoning_tokens": 14141, "channel": "content", "finish": "stop",
+                "cost_usd_banked": 0.8417, "cost_usd_real": 0.8417,
+                "contamination_flags": ["claude-adjacent (DAY1 E1/E3/N3 carrier patches)",
+                                        "zcode-seat-glm-maintenance"],
+                "notes": "THE ANIMAL LANDS WHEN THE HARNESS FITS: 0/5 at 12k (fable1 B1: 12000/12000 reasoning, empty content, $0.68) to 5/5 at 24k ($0.84, finish=stop, content emitted after 14141 reasoning tokens). Still burns 94 pct of output on reasoning but the floor leaves room to land. Three NEW carrier defects, all byte-verified by the operator: (1) turn2_only revision asks re-open forever, appending duplicate REVISION blocks per cycle; (2) _call re-POSTs after TimeoutError/HTTPError including 4xx = double-bill risk, first charge never banked; (3) the plain-empty raise at 344 skips _bank so the paid call vanishes from usage.jsonl. Each carries its own falsifier"
+            }
+        }
+    },
+    "convergence": {
+        "note": "unique asks are not same-bytes across families, so no mechanical convergence roll-up; cross-references instead",
+        "rows": [
+            {"key": "rooms-should-fan-out-through-transport-room",
+             "families": ["claude-sonnet-5.5 (DIFFERENT-BUILD, U-SONNET)"],
+             "prior_art": "WIRING_DEBT_CENSUS_20261001.md row 1 one-sitting fix",
+             "verdict": "sonnet independently re-derived a filed fix = confirmatory"},
+            {"key": "carrier-refire-class",
+             "families": ["claude-fable-5.1 (IMP1/IMP3, U-FABLE)"],
+             "prior_art": "battery B1 convergence cluster tools/hermes_burn.py:300-349 (haiku+sonnet, re-fire cost leak)",
+             "verdict": "fable sharpens the known cluster with two NEW members (revision re-open loop, unbanked empty-raise)"}
+        ]
+    },
+    "grader": {
+        "glm": "scripts/tmp_grade_unique.py grade_glm: ground truth = path-token regex (longest-first extension alternation, jsonl before json), brace-group whitespace collapse, bare-name suffix collapse (server.py == server/server.py); checks SHAPE / LISTS-APPEAR (every listed surface literally in census bytes) / NO-EM-DASH / SELF-TOTAL / RECALL-90 (>= 90 pct of ground-truth paths covered)",
+        "kimi": "SHAPE / ROWS-IN-RANGE / DISTINCT-ROWS / NO-EM-DASH mechanical; GROUNDED and CONTRADICTION-REAL operator-graded against the frozen row bytes (this pass: promotes 0/10 cite-matched, block content 10/10 correct; contradictions 1/3 byte-exact)",
+        "sonnet": "battery B1-B5 five checks + KNOWN-EXCLUDED (no improvement restates KNOWN-A unbounded queue or KNOWN-B bare ticks)",
+        "fable": "battery B1-B5 five checks, identical rules, for direct comparability with the fable1 B1 cell"
+    },
+    "surface_shas_at_run": {
+        "watch/inbox/model_garden/X2_stealth_findings_frozen.jsonl": "058f9c506081a8afd879c8c970a651ec0576d34453ef875a9c9588e75226897e",
+        "watch/inbox/model_garden/X2_material_rooms_frozen.py": "f0e61d89ca6bd4a755bd68d4393d125e0ee0ac613bbb742b1f7c94ee1bffc590",
+        "watch/inbox/model_garden/X2_material_room_frozen.py": "2dce01ebe19e6d5a7a681897ddac664d0c9c670371459e01f5628e2f781b5b00",
+        "watch/inbox/model_garden/X2_material_hermes_burn_frozen.py": "91453258538db098f763c9148cd26014cc5ca15cc16ffd3400efbd9eeb6ee1ee",
+        "watch/inbox/model_garden/X2_material_wiring_census_frozen.md": "dc75b2012866788a9f95a7a7575fdcb48749842a319202ae8856870c03dfb6ac"
+    },
+    "budget": {
+        "cap_usd": 3.0,
+        "banked_usd": 0.8417,
+        "real_usd": {"fable": 0.8417, "sonnet": 0.1556, "glm53flash": 0.0016,
+                     "kimi": 0.0,
+                     "note": "kimi/glm bank 0.0 (unpriced on Nous, Nous credits); sonnet real = ECON implied 2.0/10.0 perM; kimi-k2.6 dead transports banked nothing"},
+        "real_total_usd": 0.999,
+        "fires": {"landed": 4, "transport_dead": 1}
+    },
+    "instrument_notes": [
+        "fable1 B1 comparability: surface drifted 9c8a0c1a5637ff82 (original staging) to 91453258538db098 (frozen this run, same sha the cheapgrid1 series saw); contract bytes otherwise identical",
+        "the frozen register copy law-2 note: the live watch/inbox/STEALTH_MINED_FINDINGS.jsonl grew 316 bytes DURING staging (245335 to 245651); the frozen copy is the triaged truth",
+        "kimi-k2.6 DNF detail: 900s whole-response read fence x2 attempts (~30 min wall), no ledger row, no output, $0 banked; the kimi recipe note stands (big reasoning without content is NOT the disease) but whole-response transport cannot carry this SKU at 61k-token input"
+    ]
+}
+
+out = MG / 'GRID_unique.json'
+out.write_text(json.dumps(grid, indent=1, ensure_ascii=True), encoding='utf-8')
+assert out.read_bytes().count(b'\xe2\x80\x94') == 0
+print('landed', out, out.stat().st_size, 'bytes')

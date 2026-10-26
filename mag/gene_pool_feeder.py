@@ -1,5 +1,19 @@
 """gene_pool_feeder — build the FLEET GENE POOL from the 2026-09-04 self-audit and select the fittest.
 
+**TOMBSTONED 2026-09-27 (FOSSIL_CENSUS_20260927.md P0-2, receipt
+GENE_POOL_TOMBSTONE_20260927.md): DORMANT — do not run, do not feed.**
+Cause: dead-at-birth artifact family. The 2026-09-04 audit inputs
+(memory/audit/aud_*.json) have no regenerator anywhere in the repo (byte
+search 2026-09-27), nothing consumes gene_pool_gen*.json or calls this
+module (grep: only this file), and the meta_percolate seam injection happens
+only when this script runs — which was once. Regenerating inputs for an
+unconsumed output violates the no-bulk-self-processing law. The live
+equivalents are the percolator invariants (315 rows, alive, feeding the
+thought quantizer) and skill_ledger proven_moves (rides the context pack).
+REVIVE CONDITION: a named consumer for gene_pool_gen*.json lands first;
+then regenerate the audit (tools/ style builder) BEFORE rerunning this.
+The operator law and fitness v1/v2 below remain recorded experiment truth.
+
 OPERATOR LAW (binding, 2026-09-04): DUPLICATION IS EMPHASIS — duplicate genes get EMPHASIS-WEIGHTED
 fitness (a theme with N files = Nx weighted direction), never fitness-zero. Orphan lists are not
 retirement lists; each orphan cluster is an EMPHASIS class.
@@ -64,6 +78,46 @@ def _first_int(s: Any) -> int:
     return int(m.group()) if m else 1
 
 
+def resolve_verkle_basis(v: dict[str, Any]) -> dict[str, Any]:
+    """Latest-per-session basis resolution for the aud_verkles seam (AH19 v2, 2026-09-30).
+
+    This reader consumes AGGREGATES (memory/audit/aud_verkles.json), never raw
+    chain rows, so what breaks under v2 append-leaves is the BASIS: `rows` and
+    per-theme counts would count re-saves (one session spans multiple rows)
+    and `session_diversity.dup_rate` would read as anomaly while it is
+    canonical history. Resolution: read the SESSION basis
+    (`distinct_session_ids`), flag append_mode when rows != distinct, and
+    report BOTH denominators (census denominator law). Per-theme
+    SESSION-distinct counts cannot be recovered from aggregates — the audit
+    regenerator (the tombstone's revive condition) must dedupe rows per
+    session before counting; this seam refuses to guess (no fabrication).
+    Under v1 (rows == distinct) this is the identity and gene texts are
+    byte-unchanged.
+    """
+    rows = int(v.get("rows") or 0)
+    sd = v.get("session_diversity") or {}
+    distinct = int(sd.get("distinct_session_ids") or 0)
+    append_mode = rows > 0 and distinct > 0 and rows != distinct
+    return {
+        "rows": rows,
+        "sessions": distinct or rows,
+        "append_mode": append_mode,
+        "dup_rate": sd.get("dup_rate"),
+        "dup_rate_reading": ("canonical append-leaves history (AH19 v2), not anomaly"
+                             if append_mode else "v1 anomaly signal"),
+    }
+
+
+def _knot_theme_text(theme: str, n: int, v: dict[str, Any], basis: dict[str, Any]) -> str:
+    if not basis.get("append_mode"):
+        return (f"chain theme '{theme}': {n} signed rows in verkle_chain.jsonl "
+                f"({v['rows']} rows total, dup_rate {v['session_diversity']['dup_rate']})")
+    # rows != sessions (v2-sourced audit): name both denominators, never equate them
+    return (f"chain theme '{theme}': {n} signed rows in verkle_chain.jsonl "
+            f"({basis['rows']} rows / {basis['sessions']} sessions under v2 append-leaves; "
+            f"dup_rate {basis['dup_rate']} = {basis['dup_rate_reading']})")
+
+
 def build_pool() -> None:
     # ── aud_files: code + md clusters (emphasis = file count) ──────────────────
     f = json.loads((AUDIT_DIR / "aud_files.json").read_text(encoding="utf-8"))
@@ -91,10 +145,14 @@ def build_pool() -> None:
         _gene(f"loaded:{Path(p).stem}", "code_files", f"loaded sample {p} — live surface member", 1, loaded=True)
 
     # ── aud_verkles: chain themes (emphasis = row count) + samples ─────────────
+    # AH19 (2026-09-30): the seam resolves the rows-vs-sessions basis first —
+    # under a v2-sourced audit the row count still drives emphasis (the
+    # operator law: duplication IS emphasis) but the gene TEXT names both
+    # denominators instead of silently equating rows with sessions.
     v = json.loads((AUDIT_DIR / "aud_verkles.json").read_text(encoding="utf-8"))
+    basis = resolve_verkle_basis(v)
     for theme, n in v["themes"].items():
-        _gene(f"knot:theme:{theme}", "verkle_chain",
-              f"chain theme '{theme}': {n} signed rows in verkle_chain.jsonl ({v['rows']} rows total, dup_rate {v['session_diversity']['dup_rate']})",
+        _gene(f"knot:theme:{theme}", "verkle_chain", _knot_theme_text(theme, n, v, basis),
               n, receipted=True, size=v["size_bytes"])
     for k in v["sample_knots"]:
         m = re.match(r"([^:]+):", k["records"])

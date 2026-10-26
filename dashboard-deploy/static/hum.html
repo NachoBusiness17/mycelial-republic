@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>THE HUM — organ board</title>
+<style>
+  body{background:#0a0806;color:#efe3d0;font-family:ui-monospace,Consolas,monospace;margin:0;padding:24px;line-height:1.5}
+  h1{font-size:20px;letter-spacing:3px;margin:0 0 4px}
+  .sub{color:#8a7a62;font-size:12px;margin-bottom:14px}
+  .legend{font-size:11px;color:#8a7a62;margin-bottom:18px}
+  .dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:6px;vertical-align:middle}
+  .g{background:#7fb069}.a{background:#d9a441}.r{background:#b34a3c}
+  .row{border-top:1px solid #2a2118;padding:12px 0}
+  .rowlab{font-size:13px;letter-spacing:2px;color:#c9b28f;width:120px;display:inline-block;vertical-align:top}
+  .organs{display:inline-block;vertical-align:top;width:calc(100% - 130px)}
+  .organ{display:inline-block;border:1px solid #2a2118;border-radius:4px;padding:4px 10px;margin:3px 6px 3px 0;font-size:12px;background:#12100b}
+  .via{font-size:11px;color:#6f6049;margin:6px 0 0 126px}
+  .live{font-size:11px;color:#7fb069;margin:6px 0 0 126px}
+  .wiring{margin-top:20px;border-top:1px solid #2a2118;padding-top:12px;font-size:12px;color:#b8a482}
+  .wiring li{margin:4px 0}
+  a{color:#c9b28f}
+  .stale{color:#d9a441}
+</style>
+</head>
+<body>
+<h1>THE HUM</h1>
+<div class="sub">the sensory-motor organism, organ-assigned — watch/THE_HUM_20260911.md</div>
+<div class="legend"><span class="dot g"></span>wired &nbsp; <span class="dot a"></span>spec'd &nbsp; <span class="dot r"></span>dark — not yet wired</div>
+
+<div class="row"><span class="rowlab">EYES</span><span class="organs" id="eyes"></span></div>
+<div class="row"><span class="rowlab">EARS</span><span class="organs" id="ears"></span></div>
+<div class="row"><span class="rowlab">BRAINSTEM</span><span class="organs" id="brainstem"></span></div>
+<div class="row"><span class="rowlab">HANDS</span><span class="organs" id="hands"></span></div>
+<div class="row"><span class="rowlab">SPINE</span><span class="organs" id="spine"></span></div>
+<div class="row"><span class="rowlab">CONDUCTOR</span><span class="organs" id="conductor"></span></div>
+
+<div class="wiring" id="wiring"></div>
+<div class="sub" style="margin-top:16px" id="feednote">overseer.json: reading…</div>
+
+<script>
+const ORGANS = {
+  eyes: [["V4.1 Flash vision","a","Lane 5 probe spec — multimodal sections of the DeepSeek report"],
+         ["vision harness","a","spec'd; eyes→lane input format is wiring item 1"],
+         ["space_ear (vision half)","a","shared organ with EARS"]],
+  ears: [["audio.cpp","a","open C++ engine, no-Python cage-law compliant"],
+         ["FLASepformer/JAEC 16K","a","separation + 22ms echo cancel, spec'd"],
+         ["space_ear","a","spec'd, zero static surface until now"]],
+  brainstem: [["8 × 5.3-flash triparties","g","judgment rides scarce; live lanes"],
+              ["deepseek lanes","g","advisor + penny dispatch wired"],
+              ["judgment tier","g","effort-scheduling dial live"]],
+  hands: [["dumb free models","g","glm-4.x-flash Lite lanes, cheapest-clears-bar"],
+          ["specialist hands (Strand-Rust-Coder class)","a","swe-router pattern spec'd"],
+          ["verification gates","r","wiring item 2 — hands contracts missing"]],
+  spine: [["hash-chained record","g","live tip below — refresh is the boot ritual"],
+          ["KV OS — <a href='kv_os.html'>open kv_os.html</a>","g","charter 09-11 — page LIVE (G4-3 build landed)"],
+          ["invariant sheet","a","wrongthink invariant map, percolator compiling"],
+          ["bibliography map","g","topic_index live — 1,040 cards / 23 buckets"]],
+  conductor: [["wave protocol","g","standing since 09-09 — one input one wave"],
+              ["whale replies","a","deepseek-pro advisor reads the room, not yet conductor role"],
+              ["clerk (stop conditions + kill-one-agent)","r","wiring item 3 — orchestrator pattern not adopted"]]
+};
+const VIA = {
+  eyes:"wired via: Lane 5 vision probe spec; DeepSeek report multimodal sections",
+  ears:"wired via: open C++ engine (no Python cage-law), separation + 22ms echo cancel",
+  brainstem:"wired via: the effort-scheduling dial; judgment rides scarce",
+  hands:"wired via: cheapest-model-that-clears-the-bar (swe-router pattern)",
+  spine:"wired via: state between beats; refresh = the boot ritual",
+  conductor:"wired via: one input one wave; stop conditions; kill-one-agent cleanly"
+};
+for (const [row, organs] of Object.entries(ORGANS)) {
+  document.getElementById(row).innerHTML =
+    organs.map(([name, st]) => `<span class="organ"><span class="dot ${st}"></span>${name}</span>`).join("");
+  const via = document.createElement("div");
+  via.className = "via"; via.textContent = VIA[row];
+  document.getElementById(row).parentNode.appendChild(via);
+}
+document.getElementById("wiring").innerHTML = "<b>WHAT'S MISSING TO HUM</b>" +
+  " <span style='color:#7fb069'>— G4-4 wiring pass 2026-09-11: probes live for EYES (eye /api/tags), EARS (binary sweep: none found — honest dark), SPINE (direct chain file, overseer-independent), HANDS (deliberately cage-side, see row).</span><ol>" +
+  ["eyes/ears → lane input format (Lane 5 vision probe) — BUILD, not wiring",
+   "hands contracts: task specs + verification gates for specialists — BUILD",
+   "conductor: orchestrator stop conditions + clean kill-one-agent into the wave protocol — BUILD",
+   "flywheel valve: verified-runs → dataset pipeline (transport-gated, needs operator egress GO)",
+   "effort budgets as a first-class lane parameter — BUILD"].map(x => `<li>${x}</li>`).join("") + "</ol>";
+
+fetch("overseer.json").then(r => r.json()).then(o => {
+  const note = document.getElementById("feednote");
+  const age = o.feed_age_s != null ? Math.round(o.feed_age_s) : null;
+  note.innerHTML = `overseer.json: tag "${o.tag}"` +
+    (age != null ? ` <span class="${age > 3600 ? "stale" : ""}">(age ${age > 86400 ? (age/86400).toFixed(1) + "d" : Math.round(age/3600) + "h"} — stale feed, organs above are card-truth, not live)</span>` : "");
+  if (o.chain_tip) {
+    const live = document.createElement("div");
+    live.className = "live";
+    live.textContent = `SPINE live: chain tip leaf ${o.chain_tip.leaf} · ${o.chain_tip.rows} rows · knot ${o.chain_tip.ts}`;
+    document.getElementById("spine").parentNode.appendChild(live);
+  }
+  if (o.grounding_wave) {
+    const live = document.createElement("div");
+    live.className = "live";
+    live.textContent = `CONDUCTOR live: GROUND ledger ${o.grounding_wave.posts} posts, last verdict ${o.grounding_wave.last_verdict}`;
+    document.getElementById("conductor").parentNode.appendChild(live);
+  }
+  if (o.fleet) {
+    const up = o.fleet.filter(f => /healthy/i.test(f.status)).length;
+    const live = document.createElement("div");
+    live.className = "live";
+    live.textContent = `BRAINSTEM live: ${up}/${o.fleet_n} containers healthy`;
+    document.getElementById("brainstem").parentNode.appendChild(live);
+  }
+}).catch(() => {
+  document.getElementById("feednote").textContent = "overseer.json unreachable — statuses are card-truth only (honest dark)";
+});
+// === G4-4 WIRING (2026-09-11): live probes per organ row ===
+function liveLine(row, text, cls){
+  const d = document.createElement("div");
+  d.className = cls || "live";
+  d.textContent = text;
+  document.getElementById(row).parentNode.appendChild(d);
+}
+
+// EARS — engine binary check. Repo sweep 09-11 (G4-4): no audio.cpp/engine binary
+// anywhere outside .venv. Stack is spec'd, not built. This line flips the day it lands.
+liveLine("ears", "EARS probe (G4-4, 09-11): repo sweep found NO audio.cpp / engine binary — stack spec'd, build pending. Honest dark until the binary exists.", "via");
+
+// EYES — the eye is HOST ollama (host.docker.internal:11434 in-cage; 127.0.0.1:11434 from the box).
+// No eye container is BY DESIGN (watch/OLLAMA_EYE_TO_HOST_20260907.md).
+const EYE = /docker/.test(location.hostname) ? "http://host.docker.internal:11434" : "http://127.0.0.1:11434";
+fetch(EYE + "/api/tags").then(r => r.json()).then(t => {
+  const models = (t.models || []).map(m => m.name);
+  const vision = models.filter(n => /llava|vision|minicpm-v|moondream|bakllava|-vl|qwen.*vl|llama.*vision|gemma.*vision/i.test(n));
+  liveLine("eyes", "EYES live: eye UP at " + EYE + " — " + models.length + " model(s)" +
+    (vision.length ? ", vision-capable: " + vision.join(", ")
+                   : ", up but NO vision-capable model loaded"));
+}).catch(() => {
+  liveLine("eyes", "EYES probe: eye dark at 127.0.0.1:11434 (ollama down, or CORS — the eye only reads cross-origin with OLLAMA_ORIGINS set). Seat-side probe 09-11 also got no answer. Probe stays wired; honest dark until it answers. ollama restart required — operator action.", "via");
+});
+
+// SPINE — direct chain read, independent of the (stale) overseer feed.
+(async () => {
+  const cands = ["../../memory/biography/verkle_chain.jsonl",
+                 "../memory/biography/verkle_chain.jsonl",
+                 "/memory/biography/verkle_chain.jsonl"];
+  for (const p of cands) {
+    try {
+      const txt = await (await fetch(p)).text();
+      const lines = txt.trim().split("\n").filter(l => l.trim());
+      const last = JSON.parse(lines[lines.length - 1]);
+      liveLine("spine", "SPINE live (direct chain file): knot index " + last.index + " · " +
+        last.n_leaves + " leaves · root " + String(last.verkle_root || "").slice(0, 8) +
+        " · knot " + String(last.filename || last.ts || "?").slice(0, 16));
+      return;
+    } catch (e) { /* try next candidate path */ }
+  }
+  liveLine("spine", "SPINE file probe: chain jsonl not served from this root — overseer.json chain_tip above is the fallback (stale-feed caveat applies).", "via");
+})();
+
+// HANDS — free-lane status is cage-side BY LAW: keys never leave the cage,
+// never render in a static page. Page-side provider query would break the secrets law.
+// Lane truth = mag/fuel_feed.py + configs (Lite lane glm-4.x-flash, FREE_LANES pinned by model).
+// Seat-side provider probe 09-11: no key on the seat shell (correct — env lives in the cage).
+liveLine("hands", "HANDS probe (G4-4, 09-11): provider query deliberately NOT page-wired — lane keys live in cage env (fuel_feed.py + configs); a key in this page would break the secrets law. Lane truth is cage-side; this row stays card-truth by design, not by neglect.", "via");
+</script>
+</body>
+</html>

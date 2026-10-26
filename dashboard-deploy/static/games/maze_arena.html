@@ -1,0 +1,865 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>GRAY SWAN ARENA · MAG WING — lightmap GPS vs dumb models</title>
+<style>
+:root{--bg:#030806;--ink:#c8e6d9;--accent:#7cf5ff;--gold:#e8c96a}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:ui-monospace,Consolas,monospace;text-align:center}
+h1{font-size:.95rem;letter-spacing:.1em;color:var(--accent);margin:12px 0 2px}
+.mut{font-size:.7rem;color:#8ab8a4;margin-bottom:6px}
+canvas{width:960px;max-width:96vw;border:1px solid rgba(0,240,255,.25);border-radius:6px;image-rendering:pixelated}
+#compass{width:480px;max-width:96vw;height:16px;border:1px solid rgba(0,240,255,.12);margin-top:0}
+.stats{font-size:.78rem;margin:8px auto;max-width:900px}
+.stats b{color:var(--gold)}
+.g{color:#7dfab0}.d{color:#ff9d5c}.c{color:#e8c96a}.m{color:#c8a2ff}
+button{background:#0a1412;color:var(--accent);border:1px solid rgba(0,240,255,.3);border-radius:8px;padding:6px 14px;font-family:inherit;font-size:.75rem;cursor:pointer;margin:4px}
+</style></head><body>
+<div id="errbanner" style="display:none;position:fixed;top:0;left:0;right:0;z-index:99;background:#5c1010;color:#ffd9d9;font:12px ui-monospace,monospace;padding:6px 10px;white-space:pre-wrap"></div>
+<script>window.addEventListener('error',function(e){var b=document.getElementById('errbanner');if(!b)return;b.style.display='block';b.textContent+='ERR: '+e.message+' @ '+(e.lineno||'?')+':'+(e.colno||'?')+'\n';});window.addEventListener('unhandledrejection',function(e){var b=document.getElementById('errbanner');if(!b)return;b.style.display='block';b.textContent+='REJ: '+e.reason+'\n';});</script>
+<h1>THE STACKED ARENA — lightmap GPS vs dumb models</h1>
+<div class="mut">the cheese-light fills the maze · gradient-walkers flow to it · dumb agents bounce · every path stacks · FALSIFIER: does the field beat the bounce? · YOU are the white lantern — arrows/WASD to move · blue shards are real laws · the red assumption hunts in the dark</div>
+<div class="mut">B1 shadow-field: the same light rendered as a 1D radial shadow map (GPU ray-field) — walls occlude, penumbra widens with distance · three engines, one invariant: visibility</div>
+<div class="mut">M2 ROUNDS: R1 race to the cheese · R2 MOVING WALLS (lightmap refills by dirty-radius around the mover — the refill % is the tesuji metric) · R3 THE LIGHT WALKS (beacon moves, full rebuild, agents re-path live) · R4 STAYING IS THE WIN (dwell inside the gaze scores, arrival doesn't — WAY agents read the beacon's public path and pre-position where the light WILL be) · GAZE LAW: the 110° sector the beacon faces is bright, the rest dims · GOLD walls are invariants (never moved — invariants cast the longest shadows), CYAN walls moved this run · compass strip: one tick per GPS agent along its gradient heading — read what the agents are thinking · MODEL SEAT: paste an external model's move-list and race the GPS engine (door per watch/RECOGNITION_PROTOCOL_20260906.md)</div>
+<button id="reset">NEW RUN</button> <button id="field">FIELD: BOTH</button> <button id="addG">+1 GPS agent</button> <button id="addD">+1 dumb agent</button> <button id="hand">HAND +1</button> <button id="nextr">NEXT ROUND</button> <button id="mssel">MODEL SEAT</button> <label style="font-size:.75rem;color:#8ab8a4;margin:4px">ODD &eta; <input id="eta" type="range" min="-1" max="1" step="0.05" value="0" style="vertical-align:middle;width:140px"> <b id="etav" style="color:var(--gold)">0.00</b></label>
+<div id="mspanel" style="display:none;margin:6px auto;max-width:520px">
+  <textarea id="mstext" rows="4" style="width:460px;max-width:92vw;background:#06110d;color:#c8e6d9;border:1px solid rgba(0,240,255,.3);font-family:inherit;font-size:.72rem"></textarea><br>
+  <button id="msload">RACE MOVE-LIST</button>
+  <span class="mut" style="display:block">shape: {"round":2,"moves":[3,3,4,0,[0.31,1.02]]} — ints 0..7 are compass dirs (0=E, CCW, th=i*PI/4), [x,y] pairs are absolute maze-space waypoints. One JSON object = one "ms" agent, one move per tick, racing the GPS engine in the CURRENT round.</span>
+</div>
+<canvas id="c" width="480" height="270"></canvas>
+<canvas id="compass" width="480" height="16"></canvas>
+<div class="stats" id="stats"></div>
+<div class="mut">GPS agents read the cheese-lightmap (deterministic distance field) and walk the gradient · dumb agents random-walk with wall bounces · traces stack, everypath recorded · FIELD toggles the renderer: BOTH (BFS flood under GPU ray-field) / RAY (1D radial shadow map only) / BFS (grid flood only) — same cheese, same walls, one invariant · ODD &eta; adds a handed curl to the flood (swirl: one way round is cheaper — geodesics bend, reachable sets go handed); HAND flips the twist sign; &eta;=0 is the classic flood, bit-for-bit</div>
+<script>
+// ---- SDF maze ----
+const W=480,H=270,S=2; // logical 240x135
+const walls=[ // [cx,cy,halfw,halfh]
+ [0.5,0.5,0.03,0.30],[0.25,0.30,0.20,0.03],[0.25,0.72,0.20,0.03],
+ [0.50,0.50,0.03,0.28],[0.75,0.30,0.20,0.03],[0.75,0.72,0.20,0.03],
+ [0.12,0.52,0.03,0.22],[0.88,0.50,0.03,0.22],[0.62,0.14,0.03,0.16],[0.38,0.88,0.03,0.16]
+].map(w=>[w[0]*2,w[1]*2.7,w[2]*2,w[3]*2.7]);
+// M2: wall invariants + move alternates. Anchor walls never move -> GOLD (gaze law: invariants
+// cast the longest shadows). WALL_ALTS pre-scale coords, mapped identically to the literal above;
+// bars slide along their own axis so corridors stay connected (checked against the SDF union).
+const WALLS_BASE=walls.map(w=>w.slice());
+const wallMoved=walls.map(()=>false);
+const WALL_ALTS={1:[[0.14,0.30]],2:[[0.14,0.72]],4:[[0.86,0.30]],5:[[0.86,0.72]]};
+const wallK={1:0,2:0,4:0,5:0};
+// ==== ROUND CONFIG (M2) — inline data block, labeled for extraction to rounds.json ====
+// (data-driven: timers in ticks @60fps, dirtyR in grid cells of the 240x135 lightmap)
+const ROUND_CFG={
+  r1:{dur:900,  label:'RACE TO THE CHEESE', scanSpeed:0.004},
+  r2:{dur:1500, label:'MOVING WALLS', moveEvery:210, dirtyR:30, movers:[1,2,4,5]},
+  r3:{dur:1500, label:'THE LIGHT WALKS', beaconSpeed:0.005, cellThreshold:12}, // 12 cells ~20 ticks @spd .005 -> ~3 rebuilds/sec (full flood ~17ms, frame-budgeted)
+  r4:{dur:1800, label:'STAYING IS THE WIN', beaconSpeed:0.005, cellThreshold:12, stayR:190, gazeDeg:55, lead:45} // dwell inside the gaze scores; stayR px, gaze half-angle deg, lead = waypoint-reader prediction horizon in ticks (F-R4-STAYING)
+};
+const BEACON_PATH=[[1.2,1.35],[1.9,0.5],[0.5,0.5],[0.35,2.2],[1.7,2.35]]; // maze-space waypoints (r3)
+const BEACON_TRAIL=[]; // SHERPA: the leader's pheromone trail — strays fold back in along it (the center line, visible)
+const CHEESE0={x:1.2,y:1.35};
+const CHEESE={x:CHEESE0.x,y:CHEESE0.y,R:0.06};
+// M2 smoke hooks (BURIED-BUG LAW, Shadow Walk v1: never trust an unverified generator —
+// the HUD prints "field N/N" carved cells and the smoke run asserts carved>0 per round)
+const __SMOKE={log:[],field:{carved:0,total:0},wallMoves:0,beaconMoves:0,lastRecompute:null,round:1};
+function sdf(x,y){ // union of walls; returns distance (neg inside)
+  let d=1e9;
+  for(const [cx,cy,hw,hh] of walls){
+    const ax=Math.abs(x-cx)-hw, ay=Math.abs(y-cy)-hh;
+    d=Math.min(d,Math.max(ax,ay));
+  }
+  return Math.min(d, Math.min(x-0.05, 1.95-x, y-0.05, 2.65-y)); // outer walls keep the world bounded
+}
+// lightmap: BFS distance-from-cheese on a grid (the cheese-light filling the room).
+// B1 ODD FIELD (PURPLE_HARVEST_01, 2026-09-06): handed curl term on the relaxation kernel —
+//   T += eta*s*(T(rot90(n_best)) - T(rot-90(n_best)))/4, the two neighbors perpendicular to
+//   the best-gradient neighbor. eta in [-1,1] (slider), s=±1 (HAND toggle). At eta=0 only
+//   the classic flood runs — bit-identical to the pre-B1 field (harness-verified:
+//   watch/PURPLE_HARVEST_B1_ODD_FIELD_20260906.md). For eta!=0 the field is the quiescent
+//   fixed point of the handed relaxation, solved label-correcting: every decrease re-queues
+//   its 4 neighbors (any cell that reads this one as base or perpendicular), values only
+//   decrease, bCapHit=1 if the safety pop-cap ever trips (never at sane eta). Guards:
+//   perpendiculars must be lit cells, |perp diff| clamped to ±2 so the perturbation stays
+//   <= |eta|/2 per step, 1e9 sentinels never enter the term; rot90/rot-90 signs tracked per
+//   step direction (E:(n+GW,n-GW) W:(n-GW,n+GW) S:(n-1,n+1) N:(n+1,n-1)) so the curl has
+//   one consistent chirality.
+const GW=240,GH=135,LM=new Float32Array(GW*GH).fill(1e9);
+let etaOdd=0, handOdd=1, bCapHit=0; // odd-field knobs: strength eta, handedness s, solver safety flag
+let fieldCarved=0; // M2: lit-cell count, proven per rebuild and shown in the HUD
+function countCarved(){ let n=0; for(let i=0;i<LM.length;i++) if(LM[i]<1e8) n++; return n; }
+function buildField(){
+  LM.fill(1e9);
+  const sx=Math.floor(CHEESE.x/2*GW), sy=Math.floor(CHEESE.y/2.7*GH);
+  const N=GW*GH;
+  const q=[sy*GW+sx]; let qh=0; LM[sy*GW+sx]=0; // flat FIFO (same visit order as the classic queue, no per-pop allocs)
+  while(qh<q.length){
+    const i=q[qh++], d=LM[i], x=i%GW;
+    if(x<GW-1){ const j=i+1; if(sdf(((j%GW)+0.5)/GW*2,(((j/GW)|0)+0.5)/GH*2.7)>=0.012 && LM[j]>d+1){ LM[j]=d+1; q.push(j); } }
+    if(x>0){ const j=i-1; if(sdf(((j%GW)+0.5)/GW*2,(((j/GW)|0)+0.5)/GH*2.7)>=0.012 && LM[j]>d+1){ LM[j]=d+1; q.push(j); } }
+    if(i+GW<N){ const j=i+GW; if(sdf(((j%GW)+0.5)/GW*2,(((j/GW)|0)+0.5)/GH*2.7)>=0.012 && LM[j]>d+1){ LM[j]=d+1; q.push(j); } }
+    if(i>=GW){ const j=i-GW; if(sdf(((j%GW)+0.5)/GW*2,(((j/GW)|0)+0.5)/GH*2.7)>=0.012 && LM[j]>d+1){ LM[j]=d+1; q.push(j); } }
+  }
+  if(etaOdd!==0){ // odd field: label-correcting solve of the handed relaxation on lit cells
+    const open=new Uint8Array(N);
+    for(let i=0;i<N;i++) if(LM[i]<1e8) open[i]=1; // swirl lives on lit cells only
+    const cand=(n,pa,pb)=>{ // step cost into n with transverse flux: T(n)+1+eta*s*(T(pa)-T(pb))/4
+      let t=LM[n]+1;
+      if(pa>=0&&open[pa]&&pb>=0&&open[pb]){
+        let df=LM[pa]-LM[pb]; if(df>2)df=2; else if(df<-2)df=-2;
+        t+=etaOdd*handOdd*df*0.25;
+      }
+      return t;
+    };
+    const bq=[]; for(let i=0;i<N;i++) if(open[i]) bq.push(i);
+    let bh=0, pops=0; bCapHit=0;
+    while(bh<bq.length){
+      if(++pops>8*N){ bCapHit=1; break; } // safety valve: quiescence not reached (never at sane eta)
+      const i=bq[bh++];
+      const x=i%GW;
+      let best=LM[i];
+      // exactness-preserving prune: swirl lowers a step cost by <= 0.5 at |eta|<=1 (clamp ±2),
+      // so when the lower bound LM[n]+0.5 cannot beat `best`, evaluating the term is a no-op
+      if(x<GW-1&&open[i+1]&&LM[i+1]+0.5<best)   best=Math.min(best,cand(i+1, i+1+GW<N?i+1+GW:-1, i+1>=GW?i+1-GW:-1));
+      if(x>0&&open[i-1]&&LM[i-1]+0.5<best)      best=Math.min(best,cand(i-1, i-1>=GW?i-1-GW:-1, i-1+GW<N?i-1+GW:-1));
+      if(i+GW<N&&open[i+GW]&&LM[i+GW]+0.5<best) best=Math.min(best,cand(i+GW, x>0?i+GW-1:-1, x<GW-1?i+GW+1:-1));
+      if(i>=GW&&open[i-GW]&&LM[i-GW]+0.5<best)  best=Math.min(best,cand(i-GW, x<GW-1?i-GW+1:-1, x>0?i-GW-1:-1));
+      if(best<LM[i]-1e-6){ // decrease: only the 4 neighbors can read this cell (as base or perpendicular)
+        LM[i]=best;
+        if(x<GW-1&&open[i+1]) bq.push(i+1);
+        if(x>0&&open[i-1]) bq.push(i-1);
+        if(i+GW<N&&open[i+GW]) bq.push(i+GW);
+        if(i>=GW&&open[i-GW]) bq.push(i-GW);
+      }
+    }
+  }
+}
+// M2 DIRTY-RADIUS REFILL (standing design, mag/grounding_wave: "moving walls + dirty-radius
+// refill"): on a wall move, recompute BFS ONLY inside the bounding box of the change expanded
+// by R cells, seeded from the box boundary (their cached values) + the cheese if inside; the
+// rest of the field is spliced untouched. Cells recomputed vs total is the tesuji metric.
+function refillFieldDirty(boxes){
+  const t0=Date.now();
+  const R=ROUND_CFG.r2.dirtyR;
+  let gx0=GW,gy0=GH,gx1=0,gy1=0;
+  for(const [cx,cy,hw,hh] of boxes){
+    gx0=Math.min(gx0,Math.floor((cx-hw)/2*GW)); gx1=Math.max(gx1,Math.ceil((cx+hw)/2*GW));
+    gy0=Math.min(gy0,Math.floor((cy-hh)/2.7*GH)); gy1=Math.max(gy1,Math.ceil((cy+hh)/2.7*GH));
+  }
+  gx0=Math.max(0,gx0-R); gy0=Math.max(0,gy0-R); gx1=Math.min(GW-1,gx1+R); gy1=Math.min(GH-1,gy1+R);
+  const inBox=(gx,gy)=>gx>=gx0&&gx<=gx1&&gy>=gy0&&gy<=gy1;
+  for(let gy=gy0;gy<=gy1;gy++)for(let gx=gx0;gx<=gx1;gx++) LM[gy*GW+gx]=1e9; // wipe the region
+  const lit=(gx,gy)=>sdf(((gx+0.5)/GW)*2,((gy+0.5)/GH)*2.7)>=0.012;
+  const q=[]; const push=(i,d)=>{ if(LM[i]>d){ LM[i]=d; q.push(i); } };
+  // seed 1: the cheese if it sits inside the region
+  const csx=Math.floor(CHEESE.x/2*GW), csy=Math.floor(CHEESE.y/2.7*GH);
+  if(inBox(csx,csy)&&lit(csx,csy)) push(csy*GW+csx,0);
+  // seed 2: region cells adjacent to lit cells OUTSIDE the region (they carry cached truth in)
+  for(let gy=gy0;gy<=gy1;gy++)for(let gx=gx0;gx<=gx1;gx++){
+    if(!lit(gx,gy)) continue;
+    const i=gy*GW+gx;
+    if(gx>gx0&&gx>0&&LM[i-1]<1e8) push(i,LM[i-1]+1);
+    else if(gx<gx1&&gx<GW-1&&LM[i+1]<1e8) push(i,LM[i+1]+1);
+    else if(gy>gy0&&gy>0&&LM[i-GW]<1e8) push(i,LM[i-GW]+1);
+    else if(gy<gy1&&gy<GH-1&&LM[i+GW]<1e8) push(i,LM[i+GW]+1);
+  }
+  let qh=0;
+  while(qh<q.length){
+    const i=q[qh++], d=LM[i], x=i%GW, y=(i/GW)|0;
+    const tryc=(j,gx,gy)=>{ if(inBox(gx,gy)&&lit(gx,gy)) push(j,d+1); };
+    if(x<GW-1) tryc(i+1,x+1,y);
+    if(x>0)    tryc(i-1,x-1,y);
+    if(y<GH-1) tryc(i+GW,x,y+1);
+    if(y>0)    tryc(i-GW,x,y-1);
+  }
+  const cells=(gx1-gx0+1)*(gy1-gy0+1);
+  fieldCarved=countCarved();
+  __SMOKE.lastRecompute={cells,total:GW*GH,pct:cells/(GW*GH)*100,ms:Date.now()-t0,full:false};
+  drawLM();
+}
+buildField();
+fieldCarved=countCarved();
+__SMOKE.field={carved:fieldCarved,total:GW*GH};
+if(fieldCarved===0){ const b=document.getElementById('errbanner'); if(b){ b.style.display='block'; b.textContent+='ERR: field generator carved 0 cells — BURIED-BUG tripwire\n'; } }
+// ---- agents ----
+class Agent{
+  constructor(type){
+    this.type=type; // 'gps' | 'dumb' | 'ms' (model seat) | 'way' (waypoint-reader, r4)
+    this.x=0.15; this.y=1.35; this.a=Math.random()*Math.PI*2;
+    this.trail=[]; this.steps=0; this.done=false; this.deaths=0; this.lx=-9; this.ly=-9;
+    this.dwell=0; // r4: ticks spent inside the beacon's gaze cone — the staying meter
+    this.heading=0; this.moves=null; this.mi=0; // ms agent: pasted move-list + cursor
+  }
+  step(){
+    if(this.done) return;
+    this.steps++;
+    // SHERPA FOLD-BACK-IN: a strayed agent steers for the nearest point on the leader's trail
+    if(BEACON_TRAIL.length>3){
+      const dxs=(this.x-CHEESE.x), dys=(this.y-CHEESE.y)/(2.7/2);
+      if(Math.hypot(dxs,dys)>1.1){
+        let best=null,bd=1e9;
+        for(let i=BEACON_TRAIL.length-1;i>=0;i-=5){
+          const t=BEACON_TRAIL[i], dd=Math.hypot(t[0]-this.x,(t[1]-this.y)/(2.7/2));
+          if(dd<bd){ bd=dd; best=t; }
+        }
+        if(best){
+          const stp=0.012, dx=best[0]-this.x, dy=(best[1]-this.y)/(2.7/2), dd=Math.hypot(dx,dy)||1e-6, k=stp/dd;
+          const nx=this.x+dx*k, ny=this.y+dy*k*(2.7/2);
+          if(sdf(nx,ny)>=0.012){ this.x=nx; this.y=ny; }
+          if(this.steps%6===0) this.trail.push([this.x,this.y]);
+          return;
+        }
+      }
+    }
+    if(this.type==='gps'){
+      // rank the 8 step-directions by the field, take the best OPEN one;
+      // step scales with clearance so tight corridors stay walkable
+      const step=Math.min(0.012, Math.max(0.003, sdf(this.x,this.y)-0.010));
+      const cand=[];
+      for(let a=0;a<8;a++){
+        const th=a/8*Math.PI*2;
+        const sx=this.x+Math.cos(th)*step, sy=this.y+Math.sin(th)*step*(2.7/2);
+        if(sdf(sx,sy)<0.012) continue;
+        const cx=Math.floor(sx/2*GW), cy=Math.floor(sy/2.7*GH);
+        const field=(cx>=0&&cy>=0&&cx<GW&&cy<GH)?Math.min(LM[cy*GW+cx], LANT[cy*GW+cx]+6):1e9;
+        cand.push({th, v:field}); // lantern blends in: the player can DRIVE radiants when close
+      }
+      cand.sort((p,q)=>p.v-q.v);
+      let pick=cand[0]; // 2-cycle breaker: never step straight back unless forced
+      for(const c of cand){
+        const tx=this.x+Math.cos(c.th)*step, ty=this.y+Math.sin(c.th)*step*(2.7/2);
+        if(Math.abs(tx-this.lx)>1e-9||Math.abs(ty-this.ly)>1e-9){ pick=c; break; }
+      }
+      if(pick){
+        const nx=this.x+Math.cos(pick.th)*step, ny=this.y+Math.sin(pick.th)*step*(2.7/2);
+        if(sdf(nx,ny)>=0.012){ this.lx=this.x; this.ly=this.y; this.x=nx; this.y=ny; this.heading=pick.th; } else { this.deaths++; }
+      } else { this.deaths++; }
+    } else if(this.type==='ms'){
+      // MODEL SEAT agent: consumes one pasted move per tick (see mspanel doc for the shape)
+      const mv=this.moves?this.moves[this.mi]:undefined;
+      if(mv===undefined){ this.done=true; return; } // out of moves: the seat yields
+      this.mi++;
+      let nx,ny;
+      if(Array.isArray(mv)){ // waypoint: walk it with the GPS engine (8-candidate field step)
+        // the model picks WHERE, the field figures HOW — straight-line walkers pin on walls
+        const step=Math.min(0.012, Math.max(0.003, sdf(this.x,this.y)-0.010));
+        let best=null, bd=Math.hypot(mv[0]-this.x,(mv[1]-this.y)/(2.7/2));
+        for(let a8=0;a8<8;a8++){
+          const th=a8/8*Math.PI*2;
+          const sx=this.x+Math.cos(th)*step, sy=this.y+Math.sin(th)*step*(2.7/2);
+          if(sdf(sx,sy)<0.012) continue;
+          const d=Math.hypot(mv[0]-sx,(mv[1]-sy)/(2.7/2));
+          if(d<bd-1e-9){ bd=d; best={sx,sy}; }
+        }
+        if(best){ this.lx=this.x; this.ly=this.y; this.x=best.sx; this.y=best.sy; } else { this.deaths++; }
+      } else { // compass dir int 0..7: 0=E, CCW, th=i*PI/4 (y-squash applied on move)
+        const th=(mv%8)*Math.PI/4, st=0.012;
+        nx=this.x+Math.cos(th)*st; ny=this.y+Math.sin(th)*st*(2.7/2);
+      }
+      if(sdf(nx,ny)>=0.012){ this.lx=this.x; this.ly=this.y; this.x=nx; this.y=ny; } else { this.deaths++; }
+    } else if(this.type==='way'){
+      // WAYPOINT-READER (r4): the beacon's path is public — predict where the light WILL be
+      // (lead ticks ahead along BEACON_PATH) and steer for that point, not for the light.
+      const sp=ROUND_CFG.r4.beaconSpeed;
+      let bx=CHEESE.x, by=CHEESE.y, wp=beaconWp, budget=sp*ROUND_CFG.r4.lead;
+      while(budget>0){
+        const p=BEACON_PATH[wp], dx=p[0]-bx, dy=p[1]-by, d=Math.hypot(dx,dy);
+        if(d<=budget){ bx=p[0]; by=p[1]; budget-=d; wp=(wp+1)%BEACON_PATH.length; }
+        else { bx+=dx/d*budget; by+=dy/d*budget; budget=0; }
+      }
+      const step=Math.min(0.012, Math.max(0.003, sdf(this.x,this.y)-0.010));
+      const dx=bx-this.x, dy=(by-this.y)/(2.7/2), d=Math.hypot(dx,dy)||1e-6;
+      const k=step/d, nx=this.x+dx*k, ny=this.y+dy*k*(2.7/2);
+      if(sdf(nx,ny)>=0.012){ this.lx=this.x; this.ly=this.y; this.x=nx; this.y=ny; }
+      else { this.deaths++; this.a=(this.a+2.1)%6.28; // slide along the wall
+             const sx=this.x+Math.cos(this.a)*step, sy=this.y+Math.sin(this.a)*step*(2.7/2);
+             if(sdf(sx,sy)>=0.012){ this.x=sx; this.y=sy; } }
+    } else {
+      const gx=Math.floor(this.x/2*GW), gy=Math.floor(this.y/2.7*GH);
+      const li=gy*GW+gx;
+      if(LANT[li]<30){ // LANTERN RESCUE: the player's light leads dumb agents out of tight spots
+        let best=null, bv=LANT[li];
+        for(let a8=0;a8<8;a8++){
+          const th=a8/8*6.283, sx=this.x+Math.cos(th)*0.012, sy=this.y+Math.sin(th)*0.012*(2.7/2);
+          if(sdf(sx,sy)<0.012) continue;
+          const lx2=Math.floor(sx/2*GW), ly2=Math.floor(sy/2.7*GH);
+          const v2=LANT[ly2*GW+lx2];
+          if(v2<bv){ bv=v2; best={sx,sy}; }
+        }
+        if(best){ this.x=best.sx; this.y=best.sy; }
+        else { this.deaths++; this.a+=Math.random()*2-1; }
+      } else {
+        const spd=0.012;
+        let nx=this.x+Math.cos(this.a)*spd, ny=this.y+Math.sin(this.a)*spd*(2.7/2);
+        if(sdf(nx,ny)>=0.012){ this.x=nx; this.y=ny; }
+        else { this.deaths++; this.a+=Math.random()*2-1; this.a=this.a%(6.28); }
+      }
+    }
+    if(this.steps%6===0) this.trail.push([this.x,this.y]);
+    if(round!==4 && Math.hypot(this.x-CHEESE.x,this.y-CHEESE.y)<CHEESE.R){ this.done=true; }
+    if(round===4){ // STAYING IS THE WIN: dwell inside the beacon's gaze cone (same law as the shader)
+      const ax=(this.x-CHEESE.x)*W/2, ay=(this.y-CHEESE.y)*H/2.7, dist=Math.hypot(ax,ay);
+      if(dist<ROUND_CFG.r4.stayR){
+        const ang=Math.atan2(ay,ax), ad=Math.abs(Math.atan2(Math.sin(ang-aimAngle),Math.cos(ang-aimAngle)));
+        if(ad<=ROUND_CFG.r4.gazeDeg*Math.PI/180) this.dwell++;
+      }
+    }
+  }
+}
+let agents=[];
+function seed(){
+  for(let i=0;i<4;i++) agents.push(new Agent('gps'));
+  for(let i=0;i<4;i++) agents.push(new Agent('dumb'));
+  for(let i=0;i<2;i++) agents.push(new Agent('way'));
+}
+seed();
+// ---- LANTERN FIELD (the player's light DRIVES the maze, RTFM'd 2026-09-13) ----
+// The white lantern is a second attractor: a bounded BFS seeded at the player every 15 ticks.
+// Radiants blend it into their gradient (the player can DRIVE them); dumb agents inside the
+// lantern radius walk DOWN the lantern gradient instead of bouncing — dropped out of tight spots.
+const LANT=new Float32Array(GW*GH).fill(1e9);
+const LANT_R=45; // cells — the lantern's reach
+let lanternLast=-999;
+function buildLanternField(){
+  LANT.fill(1e9);
+  const gx=Math.floor(player.x/2*GW), gy=Math.floor(player.y/2.7*GH);
+  if(gx<0||gy<0||gx>=GW||gy>=GH||sdf(player.x,player.y)<0.012) return;
+  const q=[[gx,gy,0]]; LANT[gy*GW+gx]=0;
+  while(q.length){
+    const [cx,cy,d]=q.shift();
+    if(d>=LANT_R) continue;
+    for(const [ox,oy] of [[1,0],[-1,0],[0,1],[0,-1]]){
+      const nx=cx+ox, ny=cy+oy;
+      if(nx<0||ny<0||nx>=GW||ny>=GH) continue;
+      const i=ny*GW+nx;
+      if(LANT[i]<=d+1) continue;
+      if(sdf(((nx+0.5)/GW)*2,((ny+0.5)/GH)*2.7)<0.012) continue; // walls block light
+      LANT[i]=d+1; q.push([nx,ny,d+1]);
+    }
+  }
+}
+
+let round=1, roundT=0, aimAngle=0, beaconWp=1, lastBeaconGx=-1, lastBeaconGy=-1;
+const LADDER={};
+function roundScore(){
+  const rec=t=>{const d=agents.filter(a=>a.type===t&&a.done),all=agents.filter(a=>a.type===t);
+    return {done:d.length,total:all.length,first:d.length?Math.min(...d.map(a=>a.steps)):0,
+      avg:d.length?Math.round(d.reduce((s,a)=>s+a.steps,0)/d.length):0};};
+  const stay=t=>agents.filter(a=>a.type===t).reduce((s,a)=>s+(a.dwell||0),0);
+  LADDER[round]={gps:rec('gps'),dumb:rec('dumb'),ms:rec('ms'),way:rec('way'),
+    stayG:stay('gps'),stayD:stay('dumb'),stayW:stay('way'),stayM:stay('ms')};
+}
+function resetWalls(){
+  for(let i=0;i<walls.length;i++){ walls[i]=WALLS_BASE[i].slice(); wallMoved[i]=false; }
+  for(const k in wallK) wallK[k]=0;
+  if(uploadWalls) uploadWalls();
+  buildField(); drawLM(); fieldCarved=countCarved();
+}
+function startRound(r){
+  if(roundT>60) roundScore();
+  round=r; roundT=0; __SMOKE.round=r;
+  agents=[]; seed();
+  CHEESE.x=CHEESE0.x; CHEESE.y=CHEESE0.y;
+  if(r===3||r===4){ CHEESE.x=BEACON_PATH[0][0]; CHEESE.y=BEACON_PATH[0][1]; beaconWp=1%BEACON_PATH.length;
+    lastBeaconGx=Math.floor(CHEESE.x/2*GW); lastBeaconGy=Math.floor(CHEESE.y/2.7*GH); }
+  resetWalls();
+  flash('ROUND '+r+'/4 — '+ROUND_CFG['r'+r].label);
+}
+function wallMove(){
+  const movers=ROUND_CFG.r2.movers, m=movers[( __SMOKE.wallMoves)%movers.length];
+  wallK[m]=((wallK[m]||0)+1);
+  const alt=WALL_ALTS[m][wallK[m]%WALL_ALTS[m].length];
+  const old=walls[m].slice();
+  walls[m]=[alt[0]*2,alt[1]*2.7,walls[m][2],walls[m][3]];
+  wallMoved[m]=true;
+  refillFieldDirty([old,walls[m]]);
+  if(uploadWalls) uploadWalls();
+  __SMOKE.wallMoves++;
+}
+function beaconTick(){ // R3: the light walks; goal moves => field changes EVERYWHERE => full rebuild
+  const wp=BEACON_PATH[beaconWp];
+  const dx=wp[0]-CHEESE.x, dy=wp[1]-CHEESE.y, d=Math.hypot(dx,dy);
+  const sp=ROUND_CFG.r3.beaconSpeed;
+  if(d<sp*2){ beaconWp=(beaconWp+1)%BEACON_PATH.length; return; }
+  CHEESE.x+=dx/d*sp; CHEESE.y+=dy/d*sp;
+  if(tick%10===0){ BEACON_TRAIL.push([CHEESE.x,CHEESE.y]); if(BEACON_TRAIL.length>600) BEACON_TRAIL.shift(); } // sherpa drops pheromone
+  aimAngle=Math.atan2(dy*H/2.7,dx*W/2);
+  const gx=Math.floor(CHEESE.x/2*GW), gy=Math.floor(CHEESE.y/2.7*GH);
+  if(Math.abs(gx-lastBeaconGx)+Math.abs(gy-lastBeaconGy)>=ROUND_CFG.r3.cellThreshold){
+    lastBeaconGx=gx; lastBeaconGy=gy;
+    const t0=Date.now();
+    buildField(); fieldCarved=countCarved();
+    __SMOKE.beaconMoves++;
+    __SMOKE.lastRecompute={cells:GW*GH,total:GW*GH,pct:100,ms:Date.now()-t0,full:true};
+    drawLM();
+  }
+}
+function roundTick(){
+  roundT++;
+  if(tick%15===0) buildLanternField(); // the lantern's light refreshes where the player stands
+  if(round===1) aimAngle=(aimAngle+ROUND_CFG.r1.scanSpeed)%(Math.PI*2); // R1: the gaze scans
+  if(round===2 && roundT%ROUND_CFG.r2.moveEvery===0) wallMove();
+  if(round===3||round===4) beaconTick();
+  if(roundT>=ROUND_CFG['r'+round].dur) startRound(round%4+1);
+}
+// ---- render ----
+const cnv=document.getElementById('c'), ctx=cnv.getContext('2d');
+const cmp=document.getElementById('compass'), cmpCtx=cmp?cmp.getContext('2d'):null;
+const lmCanvas=document.createElement('canvas'); lmCanvas.width=GW; lmCanvas.height=GH;
+const lmCtx=lmCanvas.getContext('2d');
+function drawLM(){
+  const im=lmCtx.createImageData(GW,GH);
+  const litVals=LM.filter?LM.filter(v=>v<1e8):[];
+  const maxd=litVals.length?Math.max(...litVals):1;
+  for(let i=0;i<GW*GH;i++){
+    const v=LM[i];
+    if(v>=1e8){ const o=i*4; im.data[o]=3;im.data[o+1]=8;im.data[o+2]=6;im.data[o+3]=255; continue; }
+    const b=Math.max(0,1-v/maxd);
+    const o=i*4;
+    im.data[o]=3+30*b; im.data[o+1]=8+90*Math.pow(b,1.4); im.data[o+2]=6+140*Math.pow(b,1.8); im.data[o+3]=255;
+  }
+  lmCtx.putImageData(im,0,0);
+}
+drawLM();
+// ---- B1 shadow-field pass: 1D radial shadow map (the XsK3RR/mattdesl engine, reimplemented
+// from the description per the provenance audit — no GLSL bodies pasted). Three passes:
+// (1) occlusion map 256x256, light at center, walls = alpha>0.75 casters;
+// (2) 1D shadow map 256x1: per column theta, d(theta) = min normalized distance to first
+//     caster along the ray (order-free min-reduction);
+// (3) light render: lit = step(r, d(theta)), 9-tap gaussian over neighboring angles with
+//     width scaled by smoothstep(0,1,r) — penumbra widens with distance from the light.
+// M2 GAZE LAW (lightmap v2): pass 3 aims a 110-deg sector along the beacon heading — bright
+// inside the gaze, dim outside — plus depth fog so distance reads. Moved walls re-upload via
+// uploadWalls() so the occluders track the round-2 movers.
+const RC=256; // lightSize = ray count (~1.4 deg angular resolution)
+let fieldMode='both'; // 'ray' | 'bfs' | 'both'
+let glOK=false, progOcc,progShadow,progLight,quadBuf,wallBuf,wallVerts=0;
+let texOcc,texShadow,fboOcc,fboShadow,aOcc,aShadow,aLight,uOccLoc,uShadowLoc,uResLoc,uLightLoc,uRadLoc,uAimLoc;
+let uploadWalls=null; // GL-only: re-upload occluder quads after a wall move (set in initShadowField)
+let LX=CHEESE.x/2*W, LY=CHEESE.y/2.7*H; // light position in canvas px (moves with the beacon)
+const LIGHT_R=190; // light radius in canvas px
+(function initShadowField(){
+  try{
+    const glCanvas=document.createElement('canvas'); glCanvas.id='glc'; glCanvas.width=W; glCanvas.height=H;
+    const gl=glCanvas.getContext('webgl',{preserveDrawingBuffer:true,antialias:false});
+    if(!gl) throw new Error('no webgl');
+    window.__glc=glCanvas; window.__gl=gl;
+    const VS='attribute vec2 p;varying vec2 vUv;void main(){vUv=p;gl_Position=vec4(p.x*2.0-1.0,1.0-p.y*2.0,0.0,1.0);}';
+    const FS_OCC='precision mediump float;void main(){gl_FragColor=vec4(1.0,1.0,1.0,1.0);}';
+    // pass 2: march each ray outward through the occlusion map, keep first-hit min
+    const FS_SHADOW='precision highp float;varying vec2 vUv;uniform sampler2D uOcc;\n'+
+      'void main(){float th=vUv.x*6.2831853;vec2 dir=vec2(cos(th),sin(th));float dmin=1.0;\n'+
+      'for(int i=0;i<'+RC+';i++){float t=(float(i)+0.5)/'+RC+'.0;\n'+
+      'if(texture2D(uOcc,vec2(0.5)+dir*t*0.5).a>0.75) dmin=min(dmin,t);}\n'+
+      'gl_FragColor=vec4(vec3(dmin),1.0);}';
+    // pass 3: polar lookup + distance-scaled 9-tap gaussian penumbra + radial falloff
+    //         + M2 gaze sector (110 deg, uAim) + depth fog
+    const FS_LIGHT='precision highp float;varying vec2 vUv;uniform sampler2D uShadow;uniform vec2 uRes;uniform vec2 uLight;uniform float uRadius;uniform float uAim;\n'+
+      'float dOf(float th){return texture2D(uShadow,vec2(fract(th/6.2831853),0.5)).r;}\n'+
+      'void main(){vec2 dpx=vUv*uRes-uLight;float r=length(dpx)/uRadius;\n'+
+      'float fall=smoothstep(1.0,0.0,r);if(fall<=0.0){gl_FragColor=vec4(0.0);return;}\n'+
+      'float th=atan(dpx.y,dpx.x);float w=(6.2831853/'+RC+'.0)*6.0*smoothstep(0.0,1.0,r);\n'+
+      'float s=0.0;for(int i=-4;i<=4;i++){float fi=float(i);s+=exp(-fi*fi/8.0)*dOf(th+fi*w/4.0);}\n'+
+      'float lit=step(r,s/4.898);\n'+
+      'float ad=abs(atan(sin(th-uAim),cos(th-uAim)));\n'+ // angular distance to the gaze center
+      'float gaze=smoothstep(0.9599,0.6109,ad);\n'+        // 110-deg sector: full inside 35deg, fades to 55deg
+      'float fog=mix(1.0,0.30,smoothstep(0.15,1.0,r));\n'+ // depth fog: distance reads on the ray-field
+      'vec3 cyan=vec3(0.486,0.961,1.0),amber=vec3(0.910,0.788,0.416);\n'+
+      'vec3 col=mix(amber,cyan,smoothstep(0.0,0.45,r))*lit*fall*fog;\n'+
+      'col*=mix(0.15,1.0,gaze);\n'+                        // GAZE LAW: aimed sector bright, rest dim
+      'gl_FragColor=vec4(col,1.0);}';
+    function sh(type,src){const s=gl.createShader(type);gl.shaderSource(s,src);gl.compileShader(s);
+      if(!gl.getShaderParameter(s,gl.COMPILE_STATUS)) throw new Error(gl.getShaderInfoLog(s)); return s;}
+    function prog(fs){const p=gl.createProgram();gl.attachShader(p,sh(gl.VERTEX_SHADER,VS));gl.attachShader(p,sh(gl.FRAGMENT_SHADER,fs));
+      gl.linkProgram(p);if(!gl.getProgramParameter(p,gl.LINK_STATUS)) throw new Error(gl.getProgramInfoLog(p));return p;}
+    function tex(w,h,filt){const t=gl.createTexture();gl.bindTexture(gl.TEXTURE_2D,t);
+      gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,w,h,0,gl.RGBA,gl.UNSIGNED_BYTE,null);
+      gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,filt);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,filt);
+      gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,gl.CLAMP_TO_EDGE);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE);
+      return t;}
+    function fbo(t){const f=gl.createFramebuffer();gl.bindFramebuffer(gl.FRAMEBUFFER,f);
+      gl.framebufferTexture2D(gl.FRAMEBUFFER,gl.COLOR_ATTACHMENT0,gl.TEXTURE_2D,t,0);return f;}
+    progOcc=prog(FS_OCC); progShadow=prog(FS_SHADOW); progLight=prog(FS_LIGHT);
+    quadBuf=gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER,quadBuf);
+    gl.bufferData(gl.ARRAY_BUFFER,new Float32Array([0,0, 1,0, 0,1, 0,1, 1,0, 1,1]),gl.STATIC_DRAW);
+    wallBuf=gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER,wallBuf);
+    // walls as occluder quads in occlusion-uv space: light-centered, LIGHT_R maps to the map edge
+    uploadWalls=function(){
+      const scl=RC/2/LIGHT_R, wv=[];
+      for(const [cx,cy,hw,hh] of walls){
+        const x0=(cx-hw)*W/2, x1=(cx+hw)*W/2, y0=(cy-hh)*H/2.7, y1=(cy+hh)*H/2.7;
+        const ux=v=>((v-LX)*scl+RC/2)/RC, uy=v=>((v-LY)*scl+RC/2)/RC;
+        wv.push(ux(x0),uy(y0), ux(x1),uy(y0), ux(x0),uy(y1), ux(x0),uy(y1), ux(x1),uy(y0), ux(x1),uy(y1));
+      }
+      wallVerts=wv.length/2;
+      gl.bindBuffer(gl.ARRAY_BUFFER,wallBuf);
+      gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(wv),gl.STATIC_DRAW);
+    };
+    uploadWalls();
+    texOcc=tex(RC,RC,gl.NEAREST); fboOcc=fbo(texOcc);
+    texShadow=tex(RC,1,gl.LINEAR); fboShadow=fbo(texShadow);
+    aOcc=gl.getAttribLocation(progOcc,'p'); aShadow=gl.getAttribLocation(progShadow,'p'); aLight=gl.getAttribLocation(progLight,'p');
+    uOccLoc=gl.getUniformLocation(progShadow,'uOcc'); uShadowLoc=gl.getUniformLocation(progLight,'uShadow');
+    uResLoc=gl.getUniformLocation(progLight,'uRes'); uLightLoc=gl.getUniformLocation(progLight,'uLight'); uRadLoc=gl.getUniformLocation(progLight,'uRadius');
+    uAimLoc=gl.getUniformLocation(progLight,'uAim');
+    glOK=true;
+  }catch(e){ fieldMode='bfs'; document.getElementById('field').style.display='none'; console.warn('shadow-field disabled:',e); }
+})();
+function renderRayField(){
+  const gl=window.__gl, c=window.__glc; if(!glOK) return;
+  LX=CHEESE.x/2*W; LY=CHEESE.y/2.7*H; // the light follows the beacon (R3 mobile light)
+  // pass 1 — occlusion map (light at center, walls white = casters)
+  gl.bindFramebuffer(gl.FRAMEBUFFER,fboOcc); gl.viewport(0,0,RC,RC);
+  gl.clearColor(0,0,0,0); gl.clear(gl.COLOR_BUFFER_BIT);
+  gl.useProgram(progOcc); gl.bindBuffer(gl.ARRAY_BUFFER,wallBuf);
+  gl.enableVertexAttribArray(aOcc); gl.vertexAttribPointer(aOcc,2,gl.FLOAT,false,0,0);
+  gl.drawArrays(gl.TRIANGLES,0,wallVerts);
+  // pass 2 — 1D shadow map: d(theta) per column
+  gl.bindFramebuffer(gl.FRAMEBUFFER,fboShadow); gl.viewport(0,0,RC,1);
+  gl.useProgram(progShadow); gl.bindBuffer(gl.ARRAY_BUFFER,quadBuf);
+  gl.enableVertexAttribArray(aShadow); gl.vertexAttribPointer(aShadow,2,gl.FLOAT,false,0,0);
+  gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D,texOcc); gl.uniform1i(uOccLoc,0);
+  gl.drawArrays(gl.TRIANGLES,0,6);
+  // pass 3 — light render over the arena viewport (gaze sector aimed at aimAngle)
+  gl.bindFramebuffer(gl.FRAMEBUFFER,null); gl.viewport(0,0,c.width,c.height);
+  gl.useProgram(progLight); gl.bindBuffer(gl.ARRAY_BUFFER,quadBuf);
+  gl.enableVertexAttribArray(aLight); gl.vertexAttribPointer(aLight,2,gl.FLOAT,false,0,0);
+  gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D,texShadow); gl.uniform1i(uShadowLoc,0);
+  gl.uniform2f(uResLoc,c.width,c.height); gl.uniform2f(uLightLoc,LX,LY); gl.uniform1f(uRadLoc,LIGHT_R);
+  gl.uniform1f(uAimLoc,aimAngle);
+  gl.drawArrays(gl.TRIANGLES,0,6);
+}
+// M2 LEGIBILITY (operator critique on Shadow Walk): edge-highlight walls, gold invariants vs
+// cyan movers — every wall reads as law or as event.
+function drawWalls(){
+  for(let i=0;i<walls.length;i++){
+    const [cx,cy,hw,hh]=walls[i], mv=wallMoved[i];
+    const x=(cx-hw)*W/2, y=(cy-hh)*H/2.7, w2=hw*W, h2=hh*2*H/2.7;
+    ctx.lineWidth=mv?1.6:1.2;
+    ctx.strokeStyle=mv?'rgba(124,245,255,0.9)':'rgba(232,201,106,0.75)';
+    ctx.strokeRect(x,y,w2,h2);
+    ctx.lineWidth=0.5; // edge halo
+    ctx.strokeStyle=mv?'rgba(124,245,255,0.3)':'rgba(232,201,106,0.3)';
+    ctx.strokeRect(x-1.5,y-1.5,w2+3,h2+3);
+  }
+}
+function drawTrails(){
+  ctx.lineWidth=0.5;
+  for(const a of agents){
+    ctx.strokeStyle=a.type==='gps'?'rgba(125,250,176,0.5)':a.type==='ms'?'rgba(200,162,255,0.6)':a.type==='way'?'rgba(0,229,255,0.6)':'rgba(255,157,92,0.5)';
+    ctx.beginPath();
+    for(let i=0;i<a.trail.length;i++){
+      const px=a.trail[i][0]/2*W, py=a.trail[i][1]/2.7*H;
+      i?ctx.lineTo(px,py):ctx.moveTo(px,py);
+    }
+    ctx.stroke();
+    const px=a.x/2*W, py=a.y/2.7*H;
+    ctx.fillStyle=a.type==='gps'?'#7dfab0':a.type==='ms'?'#c8a2ff':a.type==='way'?'#00e5ff':'#ff9d5c';
+    ctx.fillRect(px-1.5,py-1.5,3,3);
+  }
+}
+// M2 COMPASS (d(theta) grammar): one tick per GPS agent along its gradient heading —
+// read what the agents are thinking without opening the field.
+function drawCompass(){
+  if(!cmpCtx) return;
+  const cw=480, ch=16;
+  cmpCtx.clearRect(0,0,cw,ch);
+  const gs=agents.filter(a=>a.type==='gps');
+  if(!gs.length) return;
+  cmpCtx.lineWidth=1.5; cmpCtx.strokeStyle='#7dfab0';
+  gs.forEach((a,i)=>{
+    const cx=(i+0.5)*(cw/gs.length), cy=ch/2, L=6;
+    cmpCtx.beginPath();
+    cmpCtx.moveTo(cx-Math.cos(a.heading)*L, cy-Math.sin(a.heading)*L);
+    cmpCtx.lineTo(cx+Math.cos(a.heading)*L, cy+Math.sin(a.heading)*L);
+    cmpCtx.stroke();
+    cmpCtx.fillStyle='#e8c96a';
+    cmpCtx.fillRect(cx+Math.cos(a.heading)*L-1, cy+Math.sin(a.heading)*L-1, 2, 2);
+  });
+}
+function recomputeHTML(){
+  const rc=__SMOKE.lastRecompute;
+  if(!rc) return 'refill: —';
+  return rc.full
+    ? 'rebuild <b>FULL</b> '+rc.total+'/'+rc.total+' ('+rc.ms+'ms) — a moving light is global'
+    : 'refill <b>'+rc.cells+'/'+rc.total+' = '+rc.pct.toFixed(1)+'%</b> in '+rc.ms+'ms (dirty-radius R='+ROUND_CFG.r2.dirtyR+' cells)';
+}
+function ladderHTML(){
+  const parts=[];
+  for(let r=1;r<=4;r++){
+    const s=LADDER[r]; if(!s) continue;
+    parts.push('R'+r+' <span class="g">GPS '+s.gps.done+'/'+s.gps.total+(s.gps.first?' first '+s.gps.first:'')+(r===4?' dwell '+s.stayG:'')+'</span> · <span class="d">DUMB '+s.dumb.done+'/'+s.dumb.total+(r===4?' dwell '+s.stayD:'')+'</span>'+(s.way?' · <span class="m">WAY dwell '+s.stayW+'</span>':'')+(s.ms&&s.ms.total?' · <span class="m">MS '+s.ms.done+'/'+s.ms.total+'</span>':''));
+  }
+  return parts.length?'LADDER: '+parts.join(' &nbsp;|&nbsp; '):'LADDER: — (scored as each round closes)';
+}
+let tick=0;
+function frame(){
+  tick++;
+  roundTick();
+  for(const a of agents) a.step();
+  ctx.imageSmoothingEnabled=false;
+  if(glOK && fieldMode!=='bfs') renderRayField();
+  if(fieldMode==='ray'){ // GPU ray-field only (walls occlude, hard wedges + soft penumbra)
+    ctx.fillStyle='#030806'; ctx.fillRect(0,0,W,H);
+    if(glOK) ctx.drawImage(window.__glc,0,0,W,H);
+    drawWalls();
+  } else if(fieldMode==='both'){ // BFS flood dimmed under the ray-field (two engines, one invariant)
+    ctx.globalAlpha=0.35; ctx.drawImage(lmCanvas,0,0,W,H); ctx.globalAlpha=1;
+    if(glOK){ ctx.globalCompositeOperation='lighter'; ctx.drawImage(window.__glc,0,0,W,H); ctx.globalCompositeOperation='source-over'; }
+    drawWalls();
+  } else {
+    ctx.drawImage(lmCanvas,0,0,W,H);
+  }
+  // cheese beacon (LEGIBILITY: beacons on objectives — pulsing ring marks the goal)
+  const cbx=CHEESE.x/2*W, cby=CHEESE.y/2.7*H;
+  ctx.fillStyle='#e8c96a';
+  ctx.beginPath(); ctx.arc(cbx,cby,CHEESE.R/2*W*0.7,0,7); ctx.fill();
+  ctx.strokeStyle='rgba(232,201,106,'+(0.45+0.3*Math.sin(tick*0.15)).toFixed(2)+')';
+  ctx.lineWidth=1.2;
+  ctx.beginPath(); ctx.arc(cbx,cby,CHEESE.R/2*W*(1.1+0.3*Math.sin(tick*0.15)),0,7); ctx.stroke();
+  drawTrails();
+  // the sherpa's trail — the center line, visible (pheromone: strays fold back in along it)
+  if(BEACON_TRAIL.length>1){
+    ctx.strokeStyle='rgba(232,201,106,0.55)'; ctx.lineWidth=1.2; ctx.beginPath();
+    for(let i=0;i<BEACON_TRAIL.length;i++){
+      const px=BEACON_TRAIL[i][0]/2*W, py=BEACON_TRAIL[i][1]/2.7*H;
+      i?ctx.lineTo(px,py):ctx.moveTo(px,py);
+    }
+    ctx.stroke();
+  }
+  drawCompass();
+  const doneG=agents.filter(a=>a.type==='gps'&&a.done), doneD=agents.filter(a=>a.type==='dumb'&&a.done), doneM=agents.filter(a=>a.type==='ms'&&a.done);
+  const avg=a=>a.length?Math.round(a.reduce((s,x)=>s+x.steps,0)/a.length):0;
+  const ng=agents.filter(a=>a.type==='gps').length, nd=agents.filter(a=>a.type==='dumb').length, nm=agents.filter(a=>a.type==='ms').length;
+  document.getElementById('stats').innerHTML=
+    'ROUND '+round+'/4 · <b>'+ROUND_CFG['r'+round].label+'</b> · t '+roundT+'/'+ROUND_CFG['r'+round].dur+
+    ' · field <b>'+fieldCarved+'/'+(GW*GH)+'</b>'+ // BURIED-BUG LAW: the generator's pulse, visible
+    ' · agents '+agents.length+' ('+ng+' gps / '+nd+' dumb'+(nm?' / '+nm+' ms':'')+') · tick '+tick+
+    '<br><span class="g">GPS done '+doneG.length+(doneG.length?' (avg '+avg(doneG)+' first '+Math.min(...doneG.map(a=>a.steps))+')':'')+'</span>'+
+    ' · <span class="d">DUMB done '+doneD.length+(doneD.length?' (avg '+avg(doneD)+')':'')+'</span>'+
+    (nm?' · <span class="m">MS done '+doneM.length+' (moves left '+agents.filter(a=>a.type==='ms').reduce((s,a)=>s+(a.moves?a.moves.length-a.mi:0),0)+')</span>':'')+
+    '<br>'+recomputeHTML()+' &nbsp;·&nbsp; '+ladderHTML();
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+document.getElementById('reset').onclick=()=>{agents=[];seed();};
+document.getElementById('field').onclick=function(){
+  fieldMode=fieldMode==='both'?'ray':fieldMode==='ray'?'bfs':'both';
+  this.textContent='FIELD: '+fieldMode.toUpperCase();
+};
+document.getElementById('nextr').onclick=()=>startRound(round%4+1);
+document.getElementById('addG').onclick=()=>agents.push(new Agent('gps'));
+document.getElementById('addD').onclick=()=>agents.push(new Agent('dumb'));
+document.getElementById('hand').onclick=function(){
+  handOdd=-handOdd; this.textContent='HAND '+(handOdd>0?'+1':'-1'); scheduleFieldRebuild();
+};
+document.getElementById('eta').oninput=function(){
+  etaOdd=parseFloat(this.value);
+  document.getElementById('etav').textContent=etaOdd.toFixed(2);
+  scheduleFieldRebuild();
+};
+let fieldRebuildQueued=false;
+function scheduleFieldRebuild(){ // coalesce slider drags to at most one flood per frame (potato-proof)
+  if(fieldRebuildQueued) return; fieldRebuildQueued=true;
+  requestAnimationFrame(()=>{ fieldRebuildQueued=false; buildField(); fieldCarved=countCarved(); __SMOKE.field.carved=fieldCarved; drawLM(); });
+}
+// ---- M2 DOCTRINE HOOK: MODEL SEAT (recognition protocol door, watch/RECOGNITION_PROTOCOL_20260906.md)
+// The arena is an INSTRUMENT. Paste an external model's move-list per round and race the GPS
+// engine. Paste shape (also documented in the panel):
+//   {"round":2,"moves":[3,3,4,0,1,[0.31,1.02],...]}
+//     int 0..7  -> compass dir, th=i*PI/4 (0=E, CCW), one fixed 0.012 step per tick
+//     [x,y]     -> absolute maze-space waypoint, approached at the GPS step length
+// One JSON object spawns ONE 'ms' agent; it consumes one move per tick in the CURRENT round
+// and is scored on the ladder next to GPS/DUMB. Tomorrow's Grok board may drive this.
+function msLoad(txt){
+  let j;
+  try{ j=JSON.parse(txt); }catch(e){ flash('MODEL SEAT: bad JSON — '+e.message); return false; }
+  if(!j||!Array.isArray(j.moves)||!j.moves.length){ flash('MODEL SEAT: need {"round":N,"moves":[...]}'); return false; }
+  const a=new Agent('ms'); a.moves=j.moves; a.mi=0; agents.push(a);
+  flash('MODEL SEAT in: '+j.moves.length+' moves'+(j.round&&j.round!==round?' (aimed at round '+j.round+', racing round '+round+')':''));
+  return true;
+}
+document.getElementById('mssel').onclick=function(){
+  const p=document.getElementById('mspanel');
+  p.style.display=p.style.display==='none'?'block':'none';
+};
+document.getElementById('msload').onclick=()=>msLoad(document.getElementById('mstext').value);
+
+// ===== v1: THE PLAYER — lantern, shards, the dragon =====
+// (ported from room_game.html on its retirement 2026-09-06, operator GO — the fork's unique
+// playable layer, rebuilt on the FIXED field: bounded world, honest bounces.
+// The old 30s lantern_priority.json beacon was NOT ported: the organ it POSTed to never existed.)
+const LAW_SHARDS=[
+ {x:0.7,y:0.35,law:"THE TAPE VERIFIES",sub:"every claim carries its hash"},
+ {x:1.6,y:0.9,law:"SUBSTANCE GATE",sub:"nothing counts until it compiles"},
+ {x:0.45,y:1.7,law:"THE PATIENCE LAW",sub:"queue is a position, the reset is the tide"},
+ {x:1.9,y:1.9,law:"THE MICKEY LAW",sub:"die, reprint, be smarter"},
+ {x:0.3,y:2.1,law:"FILES ARE THE BODY",sub:"the shelf outlives every seat"},
+ {x:1.1,y:0.4,law:"KEY LAW",sub:"pool keys for programs, plans for people"}
+].map(s=>({...s,got:false}));
+const player={x:0.12,y:1.35,a:0,lantern:0.9,keys:{}};
+const dragon={x:1.9,y:2.2,awake:false,speed:0.006};
+window.addEventListener('keydown',e=>{
+  const k=e.key.toLowerCase();
+  if(['arrowup','arrowdown','arrowleft','arrowright','w','a','s','d'].includes(k)){
+    player.keys[k]=true;
+    const sp=0.016;
+    let dx=0,dy=0;
+    if(k==='arrowup'||k==='w')dy=-sp; if(k==='arrowdown'||k==='s')dy=sp;
+    if(k==='arrowleft'||k==='a')dx=-sp; if(k==='arrowright'||k==='d')dx=sp;
+    const ny=player.y+dy, nx=player.x+dx;
+    if(sdf(nx,player.y)>=0.012) player.x=nx;
+    if(sdf(player.x,ny)>=0.012) player.y=ny;
+    for(const s of LAW_SHARDS){
+      if(!s.got && Math.hypot(player.x-s.x,player.y-s.y)<0.08){ s.got=true; flash(s.law+" — "+s.sub); }
+    }
+  }
+});
+window.addEventListener('keyup',e=>{ player.keys[e.key.toLowerCase()]=false; });
+let flashMsg="",flashT=0;
+function flash(m){flashMsg=m;flashT=Date.now();}
+const _origFrame=frame;
+frame=function(now){
+  _origFrame(now);
+  // player + lantern + dragon + shards drawn on top
+  const px=player.x/2*W, py=player.y/2.7*H;
+  // dragon wakes in dark regions
+  const distP=Math.hypot(dragon.x-player.x,dragon.y-player.y);
+  if(distP<0.5) dragon.awake=true;
+  if(dragon.awake){
+    const dx=player.x-dragon.x, dy=(player.y-dragon.y)*0.5, dl=Math.hypot(dx,dy)||1;
+    dragon.x+=dx/dl*dragon.speed; dragon.y+=dy/dl*dragon.speed*0.4;
+    ctx.fillStyle='#ff5555';
+    ctx.beginPath(); ctx.arc(dragon.x/2*W,dragon.y/2.7*H,5,0,7); ctx.fill();
+    ctx.fillStyle='#ffaaaa'; ctx.font='8px monospace';
+    ctx.fillText('the assumption',dragon.x/2*W-24,dragon.y/2.7*H-8);
+  }
+  // shards
+  for(const s of LAW_SHARDS){
+    if(s.got) continue;
+    ctx.fillStyle='#7cf5ff';
+    const sx=s.x/2*W, sy=s.y/2.7*H;
+    ctx.fillRect(sx-2,sy-2,4,4);
+  }
+  // player: the lantern
+  const grad=ctx.createRadialGradient(px,py,2,px,py,30);
+  grad.addColorStop(0,'rgba(255,240,180,0.9)'); grad.addColorStop(1,'rgba(255,240,180,0)');
+  ctx.fillStyle=grad; ctx.beginPath(); ctx.arc(px,py,30,0,7); ctx.fill();
+  ctx.fillStyle='#ffffff'; ctx.fillRect(px-2,py-2,4,4);
+  if(flashMsg && Date.now()-flashT<4000){
+    ctx.fillStyle='#e8c96a'; ctx.font='10px monospace';
+    ctx.fillText(flashMsg, 10, H-10);
+  }
+};
+// R4 TEST HOOK (?fast=1 — headless ladder iterations only: shrinks round WALL-CLOCK, sim
+// dynamics per tick unchanged; banner declares it so a fast run is never mistaken for a real one)
+(function(){
+  if(!/fast=1/.test(location.search||'')) return;
+  ROUND_CFG.r1.dur=120; ROUND_CFG.r2.dur=150; ROUND_CFG.r3.dur=150; ROUND_CFG.r4.dur=300;
+  const b=document.getElementById('errbanner');
+  if(b){ b.style.display='block'; b.textContent+='TEST HOOK ?fast=1 active — round durations shrunk for headless falsifier runs\n'; }
+})();
+// REAL-PROCESS MAZE loader (?real=1 — CONSTELLATION MODE, per salon fold: no rectangles,
+// no walls drawn — nodes and threads only. Rectangles stay in the physics for the demo mode.)
+(function(){
+  if(!/real=1/.test(location.search||'')) return;
+  // layout-proof: local dashboard serves /static/*; static hosts (netlify/cf) may have the
+  // json beside the page or one level up — try in order, first hit wins (fixed 2026-09-14)
+  const RR_CANDIDATES=['/static/rounds_real.json','../static/rounds_real.json','rounds_real.json'];
+  const rrLoad=RR_CANDIDATES.reduce((c,u)=>c.then(r=>r||fetch(u).then(x=>x.ok?x.json():null)).catch(()=>null),Promise.resolve(null));
+  rrLoad.then(j=>{
+    if(!j||!Array.isArray(j.walls)||!j.walls.length) return;
+    WALLS_BASE.length=0; for(const w of j.walls) WALLS_BASE.push(w.slice());
+    walls.length=0; wallMoved.length=0; for(const w of WALLS_BASE) walls.push(w.slice());
+    for(const k in wallK) wallK[k]=0;
+    if(Array.isArray(j.beaconPath)&&j.beaconPath.length){
+      BEACON_PATH.length=0; for(const p of j.beaconPath) BEACON_PATH.push(p.slice());
+      beaconWp=1%BEACON_PATH.length;
+      CHEESE.x=BEACON_PATH[0][0]; CHEESE.y=BEACON_PATH[0][1];
+    }
+    window.__REALDATA = j;
+    window.__REAL = true;
+    drawWalls = function(){}; // constellation mode: rectangles are dead — nodes and threads only
+    buildField(); drawLM(); fieldCarved=countCarved();
+    const b=document.getElementById('errbanner');
+    if(b){ b.style.display='block'; b.style.background='#0a2a12'; b.style.color='#b8ffd9';
+           b.textContent+='CONSTELLATION: '+j.label+' — threads = co-citations, nodes = laws, sha '+j.sources.lattice_sha+'\n'; }
+    flash('CONSTELLATION in — '+j.label);
+  }).catch(()=>{});
+})();
+// FLUID LENS (?real=1 — the water: drift particles advect the doctrine flow; tour drift +
+// handed curl around the nearest law-island + wiggle; depth pz fades with the thermocline)
+(function(){
+  if(!/real=1/.test(location.search||'')) return;
+  const NP=500, px=new Float32Array(NP), py=new Float32Array(NP), pz=new Float32Array(NP), pl=new Float32Array(NP);
+  function spawn(i){ px[i]=0.1+Math.random()*1.8; py[i]=0.15+Math.random()*2.3; pz[i]=Math.random(); pl[i]=80+Math.random()*160; }
+  for(let i=0;i<NP;i++) spawn(i);
+  window.__fluidTick=function(){
+    for(let i=0;i<NP;i++){
+      let fx=0, fy=0;
+      if(BEACON_PATH.length>1){
+        const a=BEACON_PATH[beaconWp], dx=a[0]-CHEESE.x, dy=a[1]-CHEESE.y, d=Math.hypot(dx,dy)||1e-6;
+        fx+=dx/d*0.02; fy+=dy/d*0.02; // tour drift: the whole water moves with the true line
+      }
+      let ni=0, nd=1e9;
+      for(let k=0;k<BEACON_PATH.length;k++){ const p=BEACON_PATH[k], d=Math.hypot(p[0]-px[i],p[1]-py[i]); if(d<nd){nd=d;ni=k;} }
+      const c=BEACON_PATH[ni], rx=px[i]-c[0], ry=(py[i]-c[1])/1.35, rd=Math.hypot(rx,ry)||1e-6;
+      if(rd<0.30){ fx+=(-ry/rd)*0.018*handOdd; fy+=(rx/rd)*0.018*handOdd; } // handed curl around the island
+      fx+=(Math.random()-0.5)*0.004; fy+=(Math.random()-0.5)*0.004;        // wiggle
+      const nx=px[i]+fx, ny=py[i]+fy*1.35;
+      if(sdf(nx,ny)<0.012 || nx<0.06||nx>1.92||ny<0.06||ny>2.6 || pl[i]<=0){ spawn(i); continue; }
+      px[i]=nx; py[i]=ny; pz[i]=Math.max(0,Math.min(1,pz[i]+(Math.random()-0.5)*0.02)); pl[i]--;
+    }
+  };
+  const _fluidPrev=frame;
+  frame=function(now){
+    _fluidPrev(now);
+    // CONSTELLATION LAYER (?real=1): nodes = laws (size = citations), threads = co-citations
+    if(window.__REAL && window.__REALDATA){
+      const j=window.__REALDATA, laws=j.mapping.length?j.mapping:null;
+      // threads: island centers joined per corridor edge (weight -> thickness/alpha)
+      const centers=BEACON_PATH;
+      ctx.lineWidth=1;
+      for(const c of j.corridors){
+        const a=centers[c.edge[0]], b2=centers[c.edge[1]];
+        if(!a||!b2) continue;
+        ctx.strokeStyle='rgba(232,201,106,'+(0.10+0.05*Math.min(c.weight,6)).toFixed(2)+')';
+        ctx.beginPath();
+        ctx.moveTo(a[0]/2*W, a[1]/2.7*H);
+        ctx.lineTo(b2[0]/2*W, b2[1]/2.7*H);
+        ctx.stroke();
+      }
+      // nodes: glow circles sized by degree + law id label
+      ctx.textAlign='center'; ctx.font='9px monospace';
+      j.mapping.forEach((m,idx)=>{
+        if(m.wall%3!==0) return; // one label anchor per island (its first wall)
+        const c=centers[idx]; if(!c) return;
+        const px=c[0]/2*W, py=c[1]/2.7*H, r=6+Math.min(m.degree,31)*0.35;
+        const glow=ctx.createRadialGradient(px,py,1,px,py,r*2.2);
+        glow.addColorStop(0,'rgba(232,201,106,0.85)');
+        glow.addColorStop(1,'rgba(232,201,106,0)');
+        ctx.fillStyle=glow; ctx.beginPath(); ctx.arc(px,py,r*2.2,0,7); ctx.fill();
+        ctx.fillStyle='#ffe9a8'; ctx.fillText(m.id, px, py-r*2.4);
+      });
+    }
+    if(tick%2===0) window.__fluidTick();
+    // HVAC SELF-STEAL (airflow_home): smoke is stuff, not pixels — conserved work per island.
+    // Every drift particle IS work; bucket it to its nearest law island; the island HUD shows
+    // where the work pools as the flow carries it. Nothing vanishes — it moves and dilutes.
+    const counts=new Array(BEACON_PATH.length).fill(0);
+    for(let i=0;i<NP;i++){
+      let ni=0,nd=1e9;
+      for(let k=0;k<BEACON_PATH.length;k++){ const p=BEACON_PATH[k], d=Math.hypot(p[0]-px[i],p[1]-py[i]); if(d<nd){nd=d;ni=k;} }
+      counts[ni]++;
+    }
+    if(tick%30===0){
+      const parts=[];
+      for(let k=0;k<BEACON_PATH.length;k++){
+        if(counts[k]>NP/40) parts.push('L'+(k+1)+' '+Math.round(100*counts[k]/NP)+'%');
+      }
+      window.__smoke = parts.length?parts.join(' · '):'even';
+    }
+    for(let i=0;i<NP;i++){
+      const depth=1-pz[i]*0.75;
+      ctx.fillStyle='rgba(125,235,255,'+(0.10+0.30*depth).toFixed(2)+')';
+      ctx.fillRect(px[i]/2*W, py[i]/2.7*H, 1.6, 1.6);
+    }
+  };
+})();
+</script></body></html>

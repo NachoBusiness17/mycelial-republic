@@ -39,10 +39,21 @@ except Exception:
     pass
 
 SCHEMA = "mycelium.v1"
+# Edge rows minted with supersession lineage are mycelium.v2 (D8 decay-family
+# port, 2026-10-05); v1 rows on disk stay v1 and read as live-forever (the
+# fields absent = never superseded). Nodes stay v1 - the port is edges-only.
+EDGE_SCHEMA = "mycelium.v2"
 MYC = ROOT / "memory" / "mycelium"
 NODES = MYC / "nodes.jsonl"
 EDGES = MYC / "edges.jsonl"
 SNAPSHOT = MYC / "graph_snapshot.json"
+
+
+class SupersedeViolation(RuntimeError):
+    """Raised when a rewrite would re-point or forge edge supersession -
+    the republic.py enforced-immutable law (:209-218) ported to edges:
+    superseded_by is set once, never re-pointed, and its target must
+    exist in the same book; valid_at is immutable once set."""
 
 # Salience weights (bmas): confidence, recency decay, refs-in boost, contradiction penalty.
 W_CONF = 0.45
@@ -124,11 +135,42 @@ def get_node(node_id: str) -> dict[str, Any] | None:
 # ------------------------------------------------------------------ edges ----
 def _new_edge(src: str, dst: str, etype: str, note: str = "", protected: bool = False) -> dict[str, Any]:
     return {
-        "schema": SCHEMA, "id": _uid("e"), "src": str(src), "dst": str(dst),
+        "schema": EDGE_SCHEMA, "id": _uid("e"), "src": str(src), "dst": str(dst),
         "type": etype if etype in EDGE_TYPES else "related", "note": (note or "")[:500],
         "weight": 0.5, "success_count": 0, "failure_count": 0, "contradictions": 0,
         "refs_in": 0, "last_used": _epoch(), "created": _now(), "protected": bool(protected),
+        # D8 decay-family lineage (republic.py port): valid_at = when this
+        # edge's current measurement became valid; superseded_by = the edge
+        # that replaced it, set once by supersede(), never re-pointed.
+        "superseded_by": None, "valid_at": _now(),
     }
+
+
+def supersede(edge_id: str, by_edge_id: str, *, reason: str = "") -> dict[str, Any]:
+    """Mark one edge superseded by another (republic.py :209-218 law, ported).
+
+    Set-once: refuses if the edge already carries superseded_by (re-pointing
+    is the forgery class). Target-exists: the superseding edge id must be in
+    the book. Never deletes: the superseded edge keeps its bytes and lineage
+    so the network can replay how it changed its mind; reads decide their own
+    traversal semantics against the field.
+    """
+    edges = _load_edges()
+    target = next((e for e in edges if str(e.get("id")) == str(edge_id)), None)
+    by = next((e for e in edges if str(e.get("id")) == str(by_edge_id)), None)
+    if target is None:
+        return {"ok": False, "error": f"edge {edge_id} not found"}
+    if by is None:
+        return {"ok": False, "error": f"superseding edge {by_edge_id} not found"}
+    if str(by_edge_id) == str(edge_id):
+        return {"ok": False, "error": "an edge cannot supersede itself"}
+    if target.get("superseded_by") is not None:
+        return {"ok": False, "error": f"edge {edge_id} already superseded by {target['superseded_by']} - never re-pointed"}
+    target["superseded_by"] = str(by_edge_id)
+    if reason:
+        target["note"] = (str(target.get("note") or "") + f" | superseded: {reason}")[:500]
+    _rewrite_edges(edges)
+    return {"ok": True, "edge": target}
 
 
 def link(src: str, dst: str, *, etype: str = "related", note: str = "", protected: bool = False) -> dict[str, Any]:
@@ -199,6 +241,36 @@ def contradict(src: str, dst: str, *, etype: str = "contradicts") -> dict[str, A
 
 
 def _rewrite_edges(edges: list[dict[str, Any]]) -> None:
+    # The enforced-immutable supersede guard (republic.py :209-218, ported):
+    # for every edge already on disk, superseded_by may go None -> X exactly
+    # once and only if X exists in this same book, never X -> Y; valid_at is
+    # immutable once set. Weight/counters/note stay mutable by design - an
+    # edge is a living measurement; only its lineage is frozen. v1 rows read
+    # as superseded_by=None, valid_at absent (live-forever).
+    if EDGES.exists():
+        disk = {str(e.get("id")): e for e in _load_edges()}
+        new_ids = {str(e.get("id")) for e in edges}
+        for e in edges:
+            old = disk.get(str(e.get("id")))
+            if old is None:
+                continue
+            old_sup, new_sup = old.get("superseded_by"), e.get("superseded_by")
+            if old_sup is not None and new_sup != old_sup:
+                raise SupersedeViolation(
+                    f"edge {e.get('id')} supersession would be re-pointed "
+                    f"({old_sup} -> {new_sup})")
+            if old_sup is None and new_sup is not None:
+                if str(new_sup) not in new_ids:
+                    raise SupersedeViolation(
+                        f"edge {e.get('id')} superseded_by {new_sup} but that "
+                        "edge is not in the book")
+                if str(new_sup) == str(e.get("id")):
+                    raise SupersedeViolation(
+                        f"edge {e.get('id')} cannot supersede itself")
+            if old.get("valid_at") is not None and e.get("valid_at") != old.get("valid_at"):
+                raise SupersedeViolation(
+                    f"edge {e.get('id')} valid_at would be edited "
+                    f"({old.get('valid_at')} -> {e.get('valid_at')})")
     MYC.mkdir(parents=True, exist_ok=True)
     with EDGES.open("w", encoding="utf-8") as f:
         for e in edges:

@@ -1,0 +1,134 @@
+{
+  "meta": {
+    "stratum": "DF voice: announcements, descriptor vocabulary, chronicle tone",
+    "install": "C:\\Program Files (x86)\\Steam\\steamapps\\common\\Dwarf Fortress (READ ONLY, unmodified)",
+    "sources": [
+      "data/init/announcements.txt (353 announcement event IDs + channel flags)",
+      "Dwarf Fortress.exe binary strings (verified template fragments, byte-extracted)",
+      "data/vanilla/vanilla_descriptors/objects/descriptor_*.txt",
+      "data/vanilla/vanilla_text/objects/text_*.txt (TEXT_SET dialogue templates)",
+      "gamelog.txt (46-line rendered sample)",
+      "release notes.txt (sampled)"
+    ],
+    "note": "Fortress announcement strings are NOT raws in the Premium build; they live in the binary. announcements.txt defines the event taxonomy and per-event delivery flags. Templates below marked binary_* were extracted verbatim from the exe via grep -a. Templates marked gamelog_* are rendered lines observed in gamelog.txt."
+  },
+  "announcement_delivery_flags": {
+    "legend": {
+      "BOX": "appears in a box and pauses the game",
+      "PAUSE": "pauses the game",
+      "RECENTER": "recenter camera",
+      "A_D": "displayed in adventure announcement log",
+      "D_D": "displayed in dwarf (fortress) announcement alerts",
+      "UCR": "attached to unit combat/hunting/sparring report",
+      "ALERT": "lights the alert button"
+    },
+    "grammar_lesson": "DF separates WHAT happened (event ID) from HOW LOUD it is (flags). Dread scales by channel, not by wording."
+  },
+  "announcement_templates": {
+    "siege": {
+      "text": "A vile force of darkness has arrived!",
+      "source": "binary (exact)",
+      "id_hint": "night_attack / siege family"
+    },
+    "forgotten_beast_first_sight": {
+      "text": "Something truly horrifying has vomited itself forth from the depths",
+      "source": "binary (exact fragment; game appends a pause and the creature's procedural description)",
+      "variants_binary_exact": [
+        "A vile beast from the caverns now walks the land.",
+        "A ferocious unnatural beast has become the bane of our people.",
+        "A savage beast from the thick of the wilds hunts us at...",
+        "A great beast threatens to bring ruin upon our people"
+      ]
+    },
+    "megabeast_arrival": {
+      "id": "MEGABEAST_ARRIVAL",
+      "flags": ["A_D", "D_D", "BOX"],
+      "template_hint": "boxes the player, then the beast announces itself in the gamelog chronicle voice"
+    },
+    "birth": {
+      "template": "{name} has given birth to {child}.",
+      "source": "binary fragments ' has given birth to ' + classic render",
+      "event_ids": ["BIRTH_CITIZEN", "BIRTH_ANIMAL", "BIRTH_WILD_ANIMAL"],
+      "flags": ["A_D", "D_D"],
+      "gangelog_example": "The child Gasom Opirodoh begins playing make believe."
+    },
+    "death": {
+      "templates": [
+        "{name} has been struck down.",
+        "{name} was struck down by {killer}.",
+        "... , struck down by ..."
+      ],
+      "source": "binary fragments 'struck down' / 'been struck down.' / ', struck down by '",
+      "event_ids": ["ADV_CREATURE_DEATH", "CITIZEN_DEATH", "PET_DEATH"],
+      "citizen_death_flags": ["A_D", "D_D", "UCR_A", "ALERT"],
+      "pattern": "deaths read as passive verdicts: subject + 'has been struck down' — the killer arrives second."
+    },
+    "mood": {
+      "fey_mood": "{name} is taken by a fey mood!",
+      "adventure_form": "You are in a fey mood.",
+      "source": "binary exact",
+      "event_ids": ["STRANGE_MOOD", "MOOD_BUILDING_CLAIMED", "ARTIFACT_BEGUN", "MADE_ARTIFACT", "NAMED_ARTIFACT", "POSSESSED_TANTRUM"],
+      "unit_status_mood_names": ["FEY_MOOD", "SECRETIVE_MOOD", "FELL_MOOD", "MACABRE_MOOD"],
+      "note": "mood adjectives are the emotional spectrum: fey, secretive, fell, macabre, possessed"
+    },
+    "migration_and_trade": {
+      "templates_binary": ["A migrant has arrived.", "A migrant has arrived at this ..."],
+      "event_ids": ["MIGRANT_ARRIVAL", "CARAVAN_ARRIVAL", "FIRST_CARAVAN_ARRIVAL", "MONARCH_ARRIVAL"]
+    },
+    "gangelog_rendered_examples": [
+      "The child Gasom Opirodoh begins playing make believe.",
+      "The elf Yarare iromame stands up.",
+      "Wren Man Bowyer is no longer enraged.",
+      "You've found some small creatures.",
+      "There is nothing to hold here.",
+      "You begin the story of the false friendship of the elf Ari Bucklabor and the human Nemen Moprhythmic in Assaultsheens in the late winter of 147.",
+      "You: Our people have been tormented by a fearsome foe. ... This vile fiend has killed sixteen in her lust for murder!"
+    ],
+    "chronicle_voice_rules": [
+      "Subject-first, present tense, bare verbs: 'X stands up.' 'X begins playing make believe.'",
+      "Named individuals get full procedurally generated names (Urist + compound epithets like Twilightdream the Subtlety of Quandaries).",
+      "Body-generic references: 'the broad-chin elf monk', 'Protruding-eyes elf monk' — descriptor adjectives attach directly to species nouns.",
+      "No exclamation except dread moments (siege, fey mood, beast). Calm events end in periods even when remarkable.",
+      "Kills are tallied with quiet arithmetic: 'This vile fiend has killed sixteen in her lust for murder!'",
+      "Reaction lines are flat and fatalistic: 'It was inevitable.' 'It is terrifying.'"
+    ]
+  },
+  "descriptor_vocabulary": {
+    "colors": {
+      "count": 134,
+      "file": "vanilla_descriptors/objects/descriptor_color_standard.txt",
+      "list": ["amber","amethyst","aqua","aquamarine","ash gray","auburn","azure","beige","black","blue","brass","bronze","brown","buff","burnt sienna","burnt umber","cardinal","carmine","cerulean","charcoal","chartreuse","chestnut","chocolate","cinnamon","clear","cobalt","copper","cream","crimson","dark blue","dark brown","dark chestnut","dark green","dark indigo","dark olive","dark peach","dark pink","dark scarlet","dark tan","dark violet","ecru","eggplant","emerald","fern green","flax","fuchsia","gold","golden yellow","goldenrod","gray","green","green-yellow","heliotrope","indigo","ivory","jade","lavender","lavender blush","lemon","light blue","light brown","lilac","lime","mahogany","maroon","mauve","mauve taupe","midnight blue","mint green","moss green","ochre","olive","orange","pale blue","pale brown","pale chestnut","pale pink","peach","pearl","periwinkle","pine green","pink","plum","puce","pumpkin","purple","raw umber","red","red-purple","rose","russet","rust","saffron","scarlet","sea green","sepia","silver","sky blue","slate gray","spring green","tan","dark taupe","taupe gray","taupe","purple taupe","pale taupe","rose taupe","sandy taupe","teal","turquoise","vermilion","violet","white","yellow","yellow-green","blue-gray","apple green","bright green","leaf green","zesty green","woodland green","grass green","vibrant green","eucalyptus","sea foam","glacier blue","river blue","cornflower","deep sea blue","dark azure","ultramarine","sapphire","crocus purple","foxglove","orchid pink","raspberry pink"]
+    },
+    "shapes": {
+      "count": 43,
+      "adjective_count": 46,
+      "file": "vanilla_descriptors/objects/descriptor_shape_standard.txt",
+      "list": ["STAR","CRESCENT","CROSS","SQUARE","CIRCLE","DIAMOND","SUN","MOON","WAVE","MOUNTAIN","CLOUD","GIZZARD_STONE","SMOOTH_PEBBLE","OVAL_CABOCHON","ROUND_CABOCHON","CUSHION_CABOCHON","RECTANGULAR_CABOCHON","POINT_CUT_GEM","TABLE_CUT_GEM","SINGLE_CUT_GEM","ROSE_CUT_GEM","BRIOLETTE_CUT_GEM","EMERALD_CUT_GEM","MARQUISE_CUT_GEM","OVAL_CUT_GEM","PEAR_CUT_GEM","SQUARE_BRILLIANT_CUT_GEM","RADIANT_CUT_GEM","TRILLION_CUT_GEM","ROUND_BRILLIANT_CUT_GEM","BAGUETTE_CUT_GEM","TAPERED_BAGUETTE_CUT_GEM","CUSHION_CUT_GEM","OCTAGON_CUT_GEM","SQUARE_CUT_GEM","PLATONIC_TETRAHEDRON","PLATONIC_CUBE","PLATONIC_OCTAHEDRON","PLATONIC_DODECAHEDRON","PLATONIC_ICOSAHEDRON","LONG_DIE_4","LONG_DIE_6","LONG_DIE_8"],
+      "adjective_grammar_example": "[SHAPE:STAR] takes [ADJ:three-pointed|four-pointed|five-pointed|many-pointed]; [SHAPE:MOON] takes [ADJ:hidden|full|crescent] — shapes carry small modifier pools"
+    },
+    "patterns": {
+      "special_count": 21,
+      "iris_eye_variants": 132,
+      "pupil_eye_variants": 132,
+      "pattern_types": {"MOTTLED": 6, "SPOTS": 5, "STRIPES": 10},
+      "special_list": ["SPOTS_ORANGE_BLACK","SPOTS_TAN_BLACK","SPOTS_WHITE_BLACK","SPOTS_YELLOW_BLACK","SPOTS_BROWN_BLACK","STRIPES_ORANGE_BLACK","STRIPES_RAINBOW","STRIPES_BROWN_WHITE","STRIPES_BROWN_BLACK","STRIPES_TAN_BROWN","STRIPES_BLACK_WHITE","STRIPES_ORANGE_WHITE","STRIPES_WHITE_CHESTNUT","STRIPES_GREEN_PINK","STRIPES_COPPER_CHESTNUT","MOTTLED_BLACK_WHITE","MOTTLED_GRAY_PINK","MOTTLED_BROWN_BLACK","MOTTLED_GRAY_BROWN","MOTTLED_WHITE_BROWN","MOTTLED_TAN_DARK_BROWN"],
+      "eye_grammar": "iris/pupil patterns are always 3 CP_COLOR slots: [WHITE, BLACK, <iris color>] — structural colors fixed, one variable slot. 132 iris + 132 pupil = one per standard color.",
+      "total_descriptor_count": 462
+    }
+  },
+  "text_set_dialogue_grammar": {
+    "source": "vanilla_text/objects/text_*.txt",
+    "format": "[TEXT_SET:NAME] followed by one line per variant; placeholders in [CONTEXT:...] / [SPEAKER:...] tags",
+    "examples": {
+      "GREET": "Greetings.  My name is [SPEAKER:TRANS_NAME].",
+      "CHILD_AGE_PROCLAMATION": "I'm [CONTEXT:NUMBER]!",
+      "THREAT": "Prepare to die!",
+      "CURSE": "Who dares to enter my house?  I curse you!",
+      "ANIMAL_SLAYER": "I have taken down [CONTEXT:NUMBER] [CONTEXT:RACE:NUMBERED_NAME] while stalking [CONTEXT:PLACE:TRANS_NAME].",
+      "HIST_FIG_SLAYER": "It is I that felled [CONTEXT:HIST_FIG:TRANS_NAME] the [CONTEXT:HIST_FIG:RACE]."
+    },
+    "slayer_title_pool": ["bane","conqueror","death","foe","killer","lord","master","nemesis","slayer","vanquisher","murderer","crusher","extinguisher","strangler"],
+    "boast_clause_pool": ["whose cries for mercy went unheeded by my wrath","whose insignificant name I struggle to recall","a spineless slug who was crushed under my might","whom I buried alive under a mountain of hatred","who lies dead, now only an embarrassing memory","who sought my praise, only to be rejected in death","once revered by those who didn't know any better"],
+    "secret_death_name_pool": ["Annihilation","Bereavement","Death","Demise","Departure","Doom","Dying","Eternal Rest","Expiration","Extinction","Mortality","Immortality","Loss","Oblivion","Parting","Ruin","Ruination","Sleep","the Afterlife","the End","the Grave"]
+  }
+}

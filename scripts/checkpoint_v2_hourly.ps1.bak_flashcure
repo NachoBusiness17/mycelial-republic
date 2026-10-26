@@ -1,0 +1,10 @@
+$ErrorActionPreference = 'Stop'
+Set-Location 'C:\Users\foste\Documents\projects\local_sovereign_agent'
+$log = 'C:\Users\foste\Documents\projects\local_sovereign_agent\logs\checkpoint_v2_hourly.log'
+$ts = (Get-Date).ToUniversalTime().ToString('yyyy-MM-ddTHH:mm:ssZ')
+try {
+    $out = & python scripts/checkpoint_v2.py 2>&1 | Out-String
+    Add-Content -Path $log -Value ("[$ts] OK: " + $out.Trim()) -Encoding UTF8
+} catch {
+    Add-Content -Path $log -Value ("[$ts] ERR: " + $_.Exception.Message) -Encoding UTF8
+}

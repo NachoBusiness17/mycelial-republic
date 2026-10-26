@@ -1,0 +1,72 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><title>THE VISLAB — the estate's exhibit index</title>
+<!--
+  THE VISLAB (2026-10-18) - "we're finally using the vislab now, if only we
+  could make it representative and navigable." This page is the NAVIGABLE
+  half: one full-width grid of every exhibit the dashboard serves, parsed
+  from nav.js (one source of truth - new exhibits appear here when they are
+  added to the nav), with data-honesty chips: DATA-FED pages pull live
+  estate JSON same-origin; SNAPSHOT pages render inlined bytes; INTERACTIVE
+  pages take your hands. Representative lives next door: build.py feeds the
+  field daily, the Room reads the trails, the Globe wears the rollup.
+-->
+<style>
+body{margin:0;background:#07080c;color:#cfd6e4;font:13px/1.5 Consolas,monospace}
+#wrap{max-width:2200px;margin:0 auto;padding:0 16px;box-sizing:border-box}
+h1{font-size:14px;letter-spacing:2px;color:#9fb0cc;margin:14px 0 4px}
+.sub{color:#5c6a82;font-size:11px;margin-bottom:12px}
+#grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:10px}
+a.card{display:block;border:1px solid #1c2230;background:#0b0d13;padding:10px 12px;color:#cfd6e4;
+  text-decoration:none;min-height:96px}
+a.card:hover{border-color:#3d6b8f;background:#0d1119}
+.card h2{font-size:12.5px;color:#e8d9a0;margin:0 0 6px;font-weight:normal;letter-spacing:1px}
+.card p{font-size:11px;color:#8a97ad;margin:0 0 8px;line-height:1.5}
+.chips{font-size:9.5px;letter-spacing:1px}
+.chip{display:inline-block;border:1px solid #1c2230;border-radius:8px;padding:1px 8px;margin-right:4px}
+.chip.live{color:#7dffa8;border-color:#1e4029}
+.chip.inter{color:#6fd8ff;border-color:#153545}
+.chip.snap{color:#8a97ad}
+</style></head><body><div id="wrap">
+<h1>THE VISLAB — EVERY EXHIBIT, ONE FLOOR</h1>
+<div class="sub">the navigable half of "representative and navigable" (2026-10-18) · catalog parsed live from nav.js · chips: <span class="chip live">DATA-FED</span> pulls live estate JSON · <span class="chip inter">HANDS</span> takes input · <span class="chip snap">SNAPSHOT</span> renders inlined bytes · representative next door: build.py feeds the field, the Room reads the trails, the Globe wears the rollup</div>
+<div id="grid">parsing nav.js…</div>
+</div>
+<script>
+'use strict';
+const KNOWN = {
+  'room.html': ['THE ROOM', 'what was worked on, when, what exists - ten trail lanes as bar strips + last receipt per lane + room_state/rollup', ['DATA-FED']],
+  'smith_chart.html': ['SMITH CHART — the fold law', 'Mobius fold Gamma=(z-1)/(z+1); draggable marble, worked matching walk, standing-wave strip (Euler spins both travelers), RACE runs the falsifier', ['HANDS', 'SNAPSHOT']],
+  'smith_globe.html': ['SMITH GLOBE — the map of ourselves', 'the estate on the 3D Smith chart: Riemann sphere, stereographic from the south pole; FROZEN files at the north pole, HOT churn at the equator, turn-fail oscillators in the south; drag/zoom, RACE draws the geodesic', ['DATA-FED', 'HANDS']],
+  'steer_field.html': ['STEER FIELD — the film', 'live fleet state as light on a film; walkers steer up the intensity gradient; fed daily by watch/steer_field/build.py', ['DATA-FED', 'HANDS']],
+  'erosion_field.html': ['EROSION FIELD', 'paint eroded terrain, marbles roll and abrade - the operators write on the film', ['DATA-FED', 'HANDS']],
+  'room_lightmap.html': ['THE ROOM (lightmap)', 'the room rendered as the problem it is: radial lightmap, occluders are the failure classes', ['SNAPSHOT']],
+  'dungeon.html': ['THE DUNGEON', 'each room renders one invariant as its lighting; traps are channel-specific; click to step', ['HANDS', 'SNAPSHOT']],
+  'incident_dungeon.html': ['INCIDENT DUNGEON', 'the maze-arena incident, walkable', ['HANDS', 'SNAPSHOT']],
+  'persistent_world.html': ['THE PERSISTENT WORLD', 'glyph edition - an interface to the hive (wasd)', ['HANDS', 'SNAPSHOT']],
+  'eraser_maze.html': ['ERASER MAZE', 'seeing collapses the light', ['HANDS', 'SNAPSHOT']],
+  'keeper_voice.html': ["THE KEEPER'S VOICE", 'the keeper speaks the estate back to you', ['SNAPSHOT']],
+  'mesh_gallery.html': ['MESH GALLERY', 'the mesh, galleried', ['SNAPSHOT']],
+  'index.html': ['DASHBOARD INDEX', 'the estate front door: rollup, estate index, rooms', ['DATA-FED']],
+};
+fetch('nav.js').then(r => r.text()).then(t => {
+  const rows = [...t.matchAll(/["']\/static\/([^"']+\.html)["']\s*,\s*["']([^"']+)["']/g)];
+  const grid = document.getElementById('grid');
+  let html = '';
+  const seen = new Set();
+  for (const m of rows){
+    const file = m[1], name = m[2];
+    if (seen.has(file)) continue;
+    seen.add(file);
+    const k = KNOWN[file];
+    const chips = k ? k[2] : ['SNAPSHOT'];
+    html += '<a class="card" href="/static/' + file + '"><h2>' + name.replace(/</g, '&lt;') +
+      '</h2><p>' + (k ? k[1] : 'estate exhibit') + '</p><div class="chips">' +
+      chips.map(c => '<span class="chip ' +
+        (c === 'DATA-FED' ? 'live' : c === 'HANDS' ? 'inter' : 'snap') + '">' + c + '</span>').join('') +
+      '</div></a>';
+  }
+  grid.innerHTML = html || '<div class="card">nav.js parse came back empty — open exhibits via the dashboard nav</div>';
+}).catch(() => {
+  document.getElementById('grid').innerHTML =
+    '<div class="card">nav.js unreachable (open via the dashboard server, not file://)</div>';
+});
+</script></body></html>

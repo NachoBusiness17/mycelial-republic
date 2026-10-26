@@ -1,0 +1,240 @@
+.venv/
+__pycache__/
+*.pyc
+*.egg-info/
+.pytest_cache/
+agents/pytest-*/
+.mypy_cache/
+.ruff_cache/
+*.bak
+*.bak-*
+
+# travel kit: zip is regenerable via scripts/build_travel_kit.py; the manifest.json is the receipt and stays tracked
+memory/portable_bags/travel_kit_*.zip
+
+# IDE / local agent
+.cursor/
+
+# secrets — never commit
+.env
+.env.local
+.env.*
+!.env.example# live provider/mesh credentials â€" never commit (tracked fix 2026-08-20)
+configs/providers.yaml
+deploy/k8s/mag-secret.yaml
+# model weights â€" downloadable build artifacts, NOT source (moved out of repo 2026-08-19)
+models/
+*.gguf
+# runtime state
+.mag_active_env
+state/
+state/**/*
+!state/.gitkeep
+
+logs/*
+!logs/.gitkeep
+
+queue/handoff/*
+!queue/handoff/.gitkeep
+queue/results/*
+!queue/results/.gitkeep
+queue/todo.md
+queue/wait_human.md
+
+mine/raw/**
+mine/staging/**
+mine/curated/**
+mine/proposals/**
+
+# ---------------------------------------------------------------------------
+# Live memory (operator soil) — code publishes; memory stays local
+# Seed templates are whitelisted in memory/README.md
+# ---------------------------------------------------------------------------
+memory/biography/**
+!memory/biography/.gitkeep
+# Rotating verkle backup — local only (opsec; chain data stays on the machine)
+memory/biography_backup/**
+!memory/biography_backup/.gitkeep
+memory/briefs/**
+!memory/briefs/.gitkeep
+memory/ingest/**
+!memory/ingest/.gitkeep
+memory/research_packs/**
+!memory/research_packs/.gitkeep
+memory/agent_state/**
+!memory/agent_state/.gitkeep
+memory/agent_sessions/**
+!memory/agent_sessions/.gitkeep
+memory/improve/**
+!memory/improve/.gitkeep
+!memory/improve/GOAL.md
+!memory/improve/HABIT.md
+!memory/improve/SEATS.md
+!memory/improve/MIRROR.md
+!memory/improve/pins/
+!memory/improve/pins/spine_posts.json
+!memory/improve/releases/
+!memory/improve/releases/README.md
+memory/improve/releases/gates.jsonl
+!memory/improve/growth/
+!memory/improve/growth/steer.yaml.example
+memory/improve/growth/steer.yaml
+memory/improve/growth/*.jsonl
+memory/improve/growth/*-growth.md
+memory/improve/growth/*-model-snapshot.json
+memory/ideas/**
+!memory/ideas/.gitkeep
+memory/boot/**
+!memory/boot/.gitkeep
+!memory/boot/REPUBLIC_LAUNCH.md
+memory/story/**
+!memory/story/.gitkeep
+memory/runs/**
+!memory/runs/.gitkeep
+!memory/runs/README.md
+memory/factory/**
+memory/steward/**
+memory/training/**
+!memory/training/README.md
+memory/handoff/**
+!memory/handoff/.gitkeep
+!memory/handoff/ACTIVATION.md
+!memory/handoff/DEEPSEEK_START.md
+memory/remedies/**
+!memory/remedies/.gitkeep
+!memory/remedies/rem-write-file-shape.md
+memory/failure_kb/**
+!memory/failure_kb/.gitkeep
+memory/working/**
+memory/working_*.py
+memory/portable_bags/**
+memory/interaction_logs/**
+memory/ledger/**
+memory/lattice/**
+!memory/lattice/.gitkeep
+memory/viewports/**
+!memory/viewports/.gitkeep
+memory/mail/**
+memory/plans/**
+
+memory/bonds_active.*
+memory/nervous_system.*
+memory/diary_latest.*
+memory/live_from_grok.md
+memory/live_from_cursor.md
+memory/attention.md
+memory/working.md
+memory/boot_report.md
+memory/context_pack_latest.*
+memory/STARTER.md
+memory/decisions_log.jsonl
+memory/operator_inbox.json
+memory/orchestrator_synthesis.md
+memory/running_commentary.md
+memory/_tmp*
+memory/_hermes*
+memory/*_tmp*
+memory/locus.md
+memory/tangents/**
+memory/agent_preamble_latest.md
+
+watch/*.json
+watch/*.jsonl
+watch/*.txt
+watch/.chat_offset
+watch/mag.pid
+!watch/__init__.py
+!watch/*.py
+
+_tmp*
+*.tmp.txt
+scripts/_*.py
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Local reference clones (third-party inspiration — see reference/README.md)
+reference/gstdcoin/
+
+# Android build artifacts (source tracked; builds not)
+android/**/build/
+android/**/.gradle/
+android/**/local.properties
+*.apk
+*.aab
+
+# ── Ghost sovereign memory (local only, never commit) ──
+memory/bard/**
+memory/copilot/**
+memory/freeze/**
+memory/ghost/**
+memory/graph/**
+memory/pile/**
+memory/steer_policy.json
+memory/assumptions.md
+memory/steer_policy.json
+
+# throwaway session probes (2026-08-25)
+mag/_fold_*.py
+memory/runs/_agent_1010_repro.txt
+
+# runtime append-only logs — stay on disk, out of history (fixed 2026-09-14)
+watch/*.log
+.pytest-*/
+# local machine caches / agent state (2026-09-14)
+_archaeology_out/
+.zcode/
+.claude/
+.mimosa/
+.obsidian/
+.mag_active_auth
+%SystemDrive%/
+# vendored/oversized data — stays on disk, out of git (2026-09-14)
+node_modules/
+*.log
+corpus/library/
+corpus/oral_history/
+watch/bay/logs/
+memory/corpus/shadertoy21k/all_codes.zip
+watch/organs/kimodo/
+# round-2 self-steal patches (2026-09-14)
+agents/pytest-*/
+memory/biography_backup_*/
+dashboard/static/ractor_board.full-40k-*
+vendor/
+
+# DFHack local mirror (mined in place, too big for the repo)
+corpus/dfhack_mirror/
+corpus/dfhack_full/
+configs/secrets/
+
+# ===== ↑ 以上同步自 .gitignore（「从 .gitignore 同步」只重写以上部分）=====
+.git/
+.hg/
+.svn/
+bower_components/
+jspm_packages/
+site-packages/
+venv/
+coverage/
+htmlcov/
+lcov-report/
+cmakefiles/
+cmake-build-*/
+bazel-*/
+pods/
+deriveddata/
+storybook-static/
+playwright-report/
+test-results/
+allure-results/
+allure-report/
+cdk.out/
+*.dist-info/
+eggs/
+pip-wheel-metadata/
+wheels/
+# ----- ↑ 以上为 ZCode 默认排除规则（自定义规则请写在本行下方，不会被同步/恢复改动）-----
+# 自定义规则写在下方（本行提示可删除）

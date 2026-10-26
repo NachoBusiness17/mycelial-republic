@@ -37,7 +37,12 @@ SCHEMA = "no_win.v1"
 
 # The reframe moves — changing the conditions of the test, not more force (Tesla/Q/Kirk).
 # Each maps a "no-win frame" to a new condition-set that keeps the invariant.
-REFRAIMS = {
+# Fix 2026-09-27 (burn lane, tests/test_no_win.py::test_reframe_keeps_invariant_changes_conditions):
+# dict name + move token were misspelled REFRAIM(S); the module's own spec (docstring "The move is
+# to REFRAME the invariant", fn names reframe/reframes vocabulary) pins REFRAME. Receipt:
+# memory/audit_20260926/lane4_robustness.json called the test's pin stale; the bytes say the
+# product string carried the typo. watch/inbox/burn_reset_20260927/no_win.md
+REFRAMES = {
     # "we don't have enough X to win" -> change the test so X isn't the binding constraint
     "not_enough": "more force inside the frame won't win; change what counts as the test.",
     # "this can't be verified/done deterministically" -> shift the invariant, not the effort
@@ -55,7 +60,10 @@ def _classify(constraint: str) -> str:
     c = (constraint or "").lower()
     for key, pat in [
         ("not_enough", r"(not enough|no (money|time|resources|gpus|compute)|can't afford|cannot afford)"),
-        ("unverifiable", r"(can't (be )?(prove|verify)|unverifiable|can't know|can't be done|impossible)"),
+        # Fix 2026-09-27 (same lane): bare stems missed inflections, so "can't be verified"
+        # classified as the not_enough default instead of this frame, against the mapping comment
+        # below ("this can't be verified/done deterministically"). Accept proved/proven/verified.
+        ("unverifiable", r"(can't (be )?(prove|proven|proved|verify|verified)|unverifiable|can't know|can't be done|impossible)"),
         ("no_adoption", r"(no one (will|comes)|adoption|no users|no player)"),
         ("too_costly", r"(too (expensive|costly|slow)|costs too much)"),
         ("no_path", r"(no (path|way|route)|can't (reach|get|connect)|unreachable)"),
@@ -70,7 +78,7 @@ def frame(constraint: str) -> dict[str, Any]:
     c = (constraint or "").strip()
     kind = _classify(c)
     return {"ok": True, "schema": SCHEMA, "frame": kind, "constraint": c,
-            "note": REFRAIMS[kind]}
+            "note": REFRAMES[kind]}
 
 
 def reframe(constraint: str, invariant: str, force: str = "") -> dict[str, Any]:
@@ -83,7 +91,7 @@ def reframe(constraint: str, invariant: str, force: str = "") -> dict[str, Any]:
             "frame": f["frame"],
             "invariant": invariant,       # the bones — what must NOT burn
             "force": force,               # the flesh — what adapts
-            "move": f"REFRAIM[{f['frame']}]: {f['note']}",
+            "move": f"REFRAME[{f['frame']}]: {f['note']}",
             "play": f"keep '{invariant}' and repurpose your force to change the test's conditions, "
                      f"not to push harder inside it. The destination stays; the route is rewritten.",
             "win": True}

@@ -111,15 +111,52 @@ def _knot_rib(row: dict[str, Any]) -> str:
         return str(row)
 
 
+def latest_rows_per_session(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Latest-per-session resolution for v2 append-leaves chains (AH19, 2026-09-30).
+
+    v1: one row per session (amend-in-place) — identity (input returned
+    unchanged). v2: a re-save APPENDS a new (session_id, session_seq) row, so
+    one session's own seq history is near-identical content that would read
+    as "tangled" near-duplicates and inflate n_knots (VERKLE_V2_DECISION.md
+    §2.2); the tangle measure must compare the LATEST row per session only
+    (last matching row in chain order — same rule as
+    verkle_knot.latest_leaf_for_session's fallback). Rows with no session_id
+    pass through in place.
+    """
+    latest: dict[str, dict[str, Any]] = {}
+    for r in rows:
+        sid = str(r.get("session_id") or "")
+        if sid:
+            latest[sid] = r  # append-ordered chain: last occurrence wins
+    if len(latest) == len(rows):
+        return rows  # pure v1 (no duplicate sids): unchanged behavior
+    out: list[dict[str, Any]] = []
+    emitted: set[str] = set()
+    for r in rows:
+        sid = str(r.get("session_id") or "")
+        if not sid:
+            out.append(r)
+        elif sid not in emitted and latest.get(sid) is r:
+            out.append(r)
+            emitted.add(sid)
+    return out
+
+
 def scan_chain(*, top: int = 5) -> dict[str, Any]:
     """Read the REAL verkle chain, cluster knots by content anchor, rank the TANGLED CLUSTERS
     (near-duplicates that should collapse to one). O(n) via content-anchor hashing (NOT O(n^2)
-    pairwise — the 3781-knot chain timed out before). Deterministic + $0, honest on real bytes."""
+    pairwise — the 3781-knot chain timed out before). Deterministic + $0, honest on real bytes.
+
+    AH19 (2026-09-30): rows are resolved to the LATEST row per session before
+    clustering — under v2 append-leaves one session's own seq history is
+    near-identical content that would otherwise read as false tangles."""
     try:
         from mag.chain_query import chain
         rows = chain._read(tail=None)  # canonical read surface (chain_query), not the raw file
     except Exception as e:
         return {"ok": False, "schema": SCHEMA, "error": f"chain_query unavailable: {str(e)[:120]}"}
+    n_chain_rows = len(rows)
+    rows = latest_rows_per_session(rows)
     if not rows:
         return {"ok": True, "schema": SCHEMA, "n_knots": 0, "n_clusters": 0,
                 "top_tangled": [], "note": "chain empty"}
@@ -159,10 +196,14 @@ def scan_chain(*, top: int = 5) -> dict[str, Any]:
                     "members": [{"session_id": m["sid"], "filename": m["filename"]} for m in c],
                     "rep_rib": c[0]["rib"][:160]} for c in tangled[:top]]
     return {"ok": True, "schema": SCHEMA,
-            "n_knots": len(indexed), "n_clusters": len(clusters), "n_tangled_clusters": len(tangled),
+            "n_knots": len(indexed), "n_chain_rows": n_chain_rows,
+            "n_sessions": len(indexed),
+            "n_clusters": len(clusters), "n_tangled_clusters": len(tangled),
             "n_tangled_knots": sum(len(c) for c in tangled),
             "top_tangled": top_tangled,
-            "source": "real verkle chain (verkle_knot._load_chain_rows), O(n) content-anchor buckets",
+            "source": "real verkle chain (verkle_knot._load_chain_rows), O(n) content-anchor buckets; "
+                      "rows resolved to latest-per-session first (AH19 v2; n_knots == n_sessions, "
+                      "n_chain_rows is the raw row count)",
             "threshold": f"token-overlap > {OVERLAP_THRESHOLD} = same content anchor (near-duplicate)"}
 
 

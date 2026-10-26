@@ -19,6 +19,16 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from mag import orchestrator as orc
 
 
+import pytest
+
+@pytest.fixture(autouse=True)
+def _isolate_orchestrator_trail(tmp_path, monkeypatch):
+    """B2-401: the writer's env seam points the trail at tmp, so real enqueue
+    calls never append q-test rows to the production orchestrator_trail.jsonl
+    (571 q-test rows were on disk at fix time)."""
+    monkeypatch.setenv("MAG_ORCHESTRATOR_TRAIL", str(tmp_path / "orchestrator_trail.jsonl"))
+
+
 def _fake_spawn(goal, *, provider="deepseek", model=None, timeout=900, tag=""):
     """Return a fake running task record (no real sub-process)."""
     tid = "t" + uuid.uuid4().hex[:10]

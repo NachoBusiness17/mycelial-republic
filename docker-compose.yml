@@ -22,19 +22,50 @@ services:
       MAG_RUNTIME_ROLE: "authoritative"
       MAG_NO_MIRROR: "1"
       MAG_DRAINER: "1"
+      # CHAIN_FIXES_APPLIED_20261019: lab writer off across reboot (was kill -STOP)
+      MAG_DISABLE_LAB: "1"
       # The eye is HOST ollama (127.0.0.1:11434) since 2026-09-07 — Docker Desktop
       # proxies host.docker.internal to host loopback (same proven path as Bionic).
       # The provider chat path needs /v1; native /api probes normalize it away.
       OLLAMA_HOST: "http://host.docker.internal:11434/v1"
       # Bionic/LM Studio is the host GPU seat. Keep the endpoint overridable
       # for a relay, while Docker Desktop resolves the host consistently.
+      # B2-490 seat-scope (2026-09-26): this value is COMPOSE-SCOPE only; the
+      # host shell default is http://127.0.0.1:1234/v1 (mag/lm_studio.py BASE).
+      # Do not export the host.docker.internal form on a host shell: Bionic is
+      # not a providers.yaml lane, so no doctor row names a wrong-scope value.
       BIONIC_BASE_URL: "${BIONIC_BASE_URL:-http://host.docker.internal:1234/v1}"
       REDIS_HOST: "redis"
       REDIS_PORT: "6379"
     depends_on:
       - redis
     ports:
-      - "127.0.0.1:8765:8765"
+      # PARKED 2026-10-05 (env-door lane): recreating the container for the
+      # .env door hit "ports are not available: exposing port TCP
+      # 127.0.0.1:8765 ... bind: An attempt was made to access a socket in a
+      # way forbidden by its access permissions" -- an svchost (iphlpsvc,
+      # pid 4972) PORTPROXY rule "0.0.0.0:8765 -> 127.0.0.1:8765"
+      # (netsh interface portproxy show all) grabbed the wildcard the moment
+      # the old container released the port; docker-first bind had coexisted
+      # with it for the previous 41h. Non-admin shell cannot delete the rule
+      # or restart iphlpsvc. Operator cure (admin): delete the portproxy rule
+      # `netsh interface portproxy delete v4tov4 listenport=8765
+      # listenaddress=0.0.0.0` (it also breaks the loopback law by exposing
+      # 8765 on every interface), then uncomment the line below and
+      # `docker compose up -d mag` (docker-first bind wins the race, as the
+      # 41h coexistence proved). The cage runs portless on the dashboard door
+      # until then; the other three publishes stayed up.
+      # CURED 2026-10-05 ~20:10 ET: operator deleted the portproxy rule in an
+      # admin shell, this line uncommented, `docker compose up -d mag` recreated
+      # the container - docker-first bind holds 8765 again (receipt:
+      # watch/inbox/HEADED_WINDOWS_CURED_20261005.md).
+      # PARKED AGAIN 2026-10-19 08:0x: the iphlpsvc portproxy ghost re-grabbed 8765
+      # across reboots (0.0.0.0:8765 -> 127.0.0.1:8765, PID 5060) - the sovereign
+      # sat in Created state ~7h. Cure (admin): netsh interface portproxy delete
+      # v4tov4 listenport=8765 listenaddress=0.0.0.0, then re-enable this line and
+      # docker compose up -d mag. Until then the cage runs portless on the
+      # dashboard door (the 10-05 precedent); the brain works via mounts+redis.
+      # - "127.0.0.1:8765:8765"
       - "127.0.0.1:8000:8000"
       - "127.0.0.1:9000:9000"
       - "127.0.0.1:8001:8001"
@@ -48,10 +79,31 @@ services:
       - ./configs:/app/configs:ro
       - ./mag:/app/mag
       - ./dashboard:/app/dashboard
+      # AC13 (2026-09-29): the verdicts panel (/api/v1/verdicts, server.py
+      # GPS_LEDGER_DB) reads /app/tools/gps_mcp/gps_ledger.db3, but the image
+      # never carried tools/gps_mcp and no mount did either -- the panel read a
+      # nonexistent file while the X11 feed + Z1 weld wrote the HOST ledger.
+      # Bind the gps_mcp dir so container panel and host feed share ONE ledger
+      # (same pattern as ./mag and ./dashboard; dir mount, not file mount --
+      # file binds on Docker Desktop break if sqlite ever recreates the file).
+      - ./tools/gps_mcp:/app/tools/gps_mcp
       - ./models:/app/models
       - ./tests:/app/tests:ro
       - ./main.py:/app/main.py:ro
       - ./mag_launch.py:/app/mag_launch.py:ro
+      # NIGHT MARCH ENV DOOR (2026-10-05, register r05#2 cure): watch/march_228.py
+      # reads its ZAI key ONLY from the .env FILE on disk (key FILE-ONLY by the
+      # operator law recorded at watch/march_228.py:23-30), but compose delivered
+      # .env as env vars only (env_file:) and never mounted the file, so /app/.env
+      # did not exist in this cage and the night march died rc=1 for a month
+      # (28 rc=1 composites Sep 5-Oct 3; cause first named 2026-10-04 as the
+      # honest "MARCH SKIP rc=2: ... .env unmounted by compose" skip; receipt
+      # watch/inbox/night_shift_20261004/night_march_cured.md). Mount the file
+      # read-only: the file bind is safe here (.env is static host config the
+      # cage never rewrites in place, so the AC13 sqlite-recreate caveat does
+      # not apply) and the exposure posture is unchanged (env_file: already
+      # injects every .env var into this cage's environment).
+      - ./.env:/app/.env:ro
     security_opt:
       - no-new-privileges:true
     cap_drop:
@@ -61,6 +113,19 @@ services:
       - "host.docker.internal:host-gateway"
     networks:
       - mag_net
+    # B7 (2026-09-29, tablet incident root cause #2): the inherited image
+    # healthcheck probed :8765/api/v1/health, but on the DASHBOARD that route
+    # is the deep mag.health.sanity sweep whose B2-375 powershell.exe check
+    # can never pass inside a Linux container -- the UI served 200 on / while
+    # every probe 500'd and the container sat UNHEALTHY for 8h. Probe the
+    # pure liveness surface (same URL mag_launch.py gates on). curl/wget are
+    # absent from python:*-slim, so python urllib is the in-image binary.
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8765/', timeout=4)"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
 
   redis:
     image: redis:7-alpine
@@ -312,6 +377,122 @@ services:
       timeout: 10s
       start_period: 30s
       retries: 3
+
+  # Estate MCP (B2-291, 2026-09-26): the TOOL_MAP as an always-on MCP service.
+  # mag/mcp_server.py speaks MCP on stdio, so this service runs the loopback
+  # TCP bridge (scripts/container/mcp_tcp_bridge.py): ONE mcp_server subprocess
+  # per connected client, archivist profile = read-only toolset (no
+  # run_shell/write_file/apply_patch). Published on 127.0.0.1 only (loopback
+  # law): reachability = host-local MCP clients (ZCode/VS Code/Claude-class)
+  # plus the trusted mag_net fleet. Transport, not authority -- same posture
+  # as the stdio server docstring.
+  mcp:
+    image: mag-sovereign:local
+    container_name: mag-mcp
+    restart: unless-stopped
+    # entrypoint override REQUIRED (the image entrypoint spawns the full fleet;
+    # see the worker lesson, SANITY.md).
+    entrypoint:
+      - python
+      - scripts/container/mcp_tcp_bridge.py
+      - --port
+      - "8766"
+      # 0.0.0.0 INSIDE the cage is required: the docker proxy dials the
+      # container IP, not the container loopback. The loopback guarantee is
+      # the HOST-side mapping below (127.0.0.1:8766->8766), per the bridge
+      # docstring. (B2-291, live-falsified 2026-09-26: a 127.0.0.1 in-cage
+      # bind answered inside the container but the host got instant EOF.)
+      - --bind
+      - "0.0.0.0"
+      - --profile
+      - archivist
+    environment:
+      PYTHONUTF8: "1"
+      MAG_CONTAINER: "1"
+    volumes:
+      - ./scripts/container/mcp_tcp_bridge.py:/app/scripts/container/mcp_tcp_bridge.py:ro
+      - ./mag:/app/mag:ro
+      - ./tools:/app/tools:ro
+      - ./models:/app/models:ro
+      - ./configs:/app/configs:ro
+      - ./catalog:/app/catalog:ro
+      - ./watch:/app/watch:ro
+      - ./memory:/app/memory:ro
+      # SHARED SURFACE write-back (2026-10-17): the ONE writable mount on this
+      # service, nested under the read-only ./watch bind. estate_shared_receipt
+      # (mag/estate_bridge.py) writes only server-named seat_*.json files here;
+      # ./watch and ./memory stay :ro. NOTE: the receipt tool is in --profile
+      # warm; this service still serves --profile archivist (resources/list +
+      # resources/read ride every profile). Apply WITHOUT touching the rest of
+      # the stack (operator / git window): docker compose up -d --no-deps mcp
+      - ./watch/receipts:/app/watch/receipts:rw
+    security_opt:
+      - no-new-privileges:true
+    read_only: false
+    ports:
+      - "127.0.0.1:8766:8766"
+    # Truthful healthcheck REQUIRED (worker lesson): the inherited image
+    # healthcheck probes :8765, which this service never serves, so the
+    # container read permanently unhealthy. Probe the bridge port instead.
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - >-
+          import socket; socket.create_connection(('127.0.0.1', 8766),
+          timeout=5).close()
+      interval: 30s
+      timeout: 10s
+      start_period: 10s
+      retries: 3
+    networks:
+      - mag_net
+
+  # LONGRUNNER POLICY R1 (configs/longrunner_policy.json, minted 2026-10-07,
+  # founding incident: PID 18044 run_armC.py burned 24.4 CPU-hours at 0.96 live
+  # cores for 11 days before a human noticed): the one-shot BURNER CAGE. The
+  # Task Scheduler clock stays host-side; the WORK moves inside:
+  #   docker compose run --rm --entrypoint python burners -m tools.gauntlet_grade
+  #   docker compose run --rm --entrypoint python burners -m tools.gauntlet_feed
+  # Same mag-sovereign image, deliberately NO build: (a rebuild here would race
+  # the live seats) and NO container_name (concurrent compose-run one-shots
+  # must not collide on a fixed name). Entrypoint override is the worker's
+  # lesson (SANITY.md): the image entrypoint spawns the full fleet, so a bare
+  # `docker compose up -d burners` must exit with usage instead of hatching a
+  # duplicate sovereign. Run-only by construction: no restart policy, no
+  # published ports, no healthcheck (compose run ignores both anyway).
+  # CPU MARKET (this host: 16 logical cores): cpus 2.0 is the quota ceiling.
+  # The 14-core market idea goes one wall further: pin the cage to a dedicated
+  # 2-core slice so quota and placement agree, leaving 14 cores to the host
+  # seats (fleet, ZCode, GPU lane). Left OFF until the operator picks the
+  # slice (a wrong pin starves the cage mid-burn, which reads as task failure,
+  # not relief); flip on by uncommenting:
+  #   cpuset: "14,15"
+  burners:
+    image: mag-sovereign:local
+    environment:
+      PYTHONUTF8: "1"
+    entrypoint:
+      - python
+      - -c
+      - "raise SystemExit('burners is a compose-run-only cage; fire it with: docker compose run --rm --entrypoint python burners -m <module> [args...]')"
+    volumes:
+      - ./watch:/app/watch
+      - ./queue:/app/queue
+      - ./memory/runs:/app/memory/runs
+      - ./tools:/app/tools:ro
+    cpus: 2.0
+    mem_limit: 2g
+    pids_limit: 64
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    networks:
+      - mag_net
 
 networks:
   mag_net:

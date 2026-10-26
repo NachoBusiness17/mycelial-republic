@@ -6,7 +6,9 @@ Law: ladder cuts code bloat; tiers/gates/residual never cut.
 from __future__ import annotations
 
 import ast
+import os
 import re
+import stat
 from pathlib import Path
 from typing import Any
 
@@ -35,15 +37,53 @@ def _rel(p: Path) -> str:
         return str(p)
 
 
+def _reparse_dir(path: Path) -> bool:
+    """True when path is a reparse point (junction/symlink dir) or unreadable.
+
+    B2-76 junction law: a reparse directory is never descended - a mirrored tree
+    is counted once, at its real path. An unreadable entry is treated the same
+    (do not descend), because the audit is a scanner, not a gate on readability.
+    """
+    if os.name != "nt":
+        return False
+    try:
+        st = path.stat(follow_symlinks=False)
+    except OSError:
+        return True
+    return bool(getattr(st, "st_file_attributes", 0) & stat.FILE_ATTRIBUTE_REPARSE_POINT)
+
+
 def _iter_py() -> list[Path]:
+    """FIX (wave5 suite-burn, 2026-09-29): the old `ROOT.rglob("*.py")` propagated
+    OSError for the WHOLE audit when any path under ROOT vanished mid-walk or a
+    reparse point dangled. Evidence: f-15 full-suite run 2026-09-28 -
+    tests/test_ponytail_audit.py::test_run_audit_returns_schema and
+    tests/test_skill_seat.py::test_ponytail_gate both died with
+    "FileNotFoundError: [WinError ...]" while sibling runs' pytest tmp cleanup
+    churned in-repo basetemp dirs (agents/pytest-tmp-<pid>; s2-19's own receipt
+    records the twin: "PermissionError on the shared agents/pytest-tmp-21944
+    during tmp rmtree, 2,403 errors"). rglob offers no per-entry tolerance, and
+    it DESCENDS junctions (double-counting mirrored trees against B2-76 and
+    crashing on dangling ones). os.walk with pruned SKIP_DIRS + reparse dirs and
+    a no-raise onerror skips vanished/unreadable paths exactly the way
+    _scan_large_files already skips vanished files (per-path `except OSError:
+    continue`), so one raced path can no longer kill the audit.
+    """
     out: list[Path] = []
-    for p in ROOT.rglob("*.py"):
-        if set(p.parts) & SKIP_DIRS:
+    for dirpath, dirnames, filenames in os.walk(ROOT, onerror=lambda _e: None):
+        dp = Path(dirpath)
+        rel = dp.relative_to(ROOT)
+        if dp != ROOT and (set(rel.parts) & SKIP_DIRS):
+            dirnames[:] = []
             continue
-        r = _rel(p)
-        if r.startswith("tests/"):
-            continue
-        out.append(p)
+        dirnames[:] = [d for d in dirnames if d not in SKIP_DIRS and not _reparse_dir(dp / d)]
+        for fn in filenames:
+            if not fn.endswith(".py"):
+                continue
+            p = dp / fn
+            if _rel(p).startswith("tests/"):
+                continue
+            out.append(p)
     return sorted(out)
 
 

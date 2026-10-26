@@ -52,23 +52,83 @@ SCHEMA = "ocean_model_mind.v1"
 # ── OCEAN text-signals: register/vocabulary that reveals each Big Five trait in prose ───────────
 # Drawn from player_invariant_map's signal->vector style (keyword regex -> trait strength). These
 # are DETERMINISTIC fingerprints of how a mind presents in its own words.
+# MEASURED LEXICON DEFECT (2026-09-29). This was a raw unweighted substring count, and the
+# failure is not subtle: 'extraversion' contained the bare token `we\b`, which is the most
+# common word in English. Measured on the estate's own shelf: 11,665 bare "we" across 28
+# books, mean 417 per book. So ANY prose that said "we" scored extraversion = 1.0 and every
+# rarer trait was crushed to 0.0 -- a technical report came back as a textbook extrovert.
+#
+# Three separate corrections, all measured rather than asserted:
+#
+#  1. STOPWORD BAN. A trait lexicon may not contain a term that appears in ordinary prose.
+#     'we', 'open', 'care', 'safe', 'change', 'process' and 'talk' are English words, not
+#     personality markers. Scoring them is scoring the author's grammar. Removed below.
+#  2. IDF WEIGHTING. A term's value is inverse document frequency across the trait set: a
+#     marker that could belong to several traits must not dominate. 'care' appears in both
+#     agreeableness and neuroticism and 'together' in both agreeableness and extraversion;
+#     those cross-appearances are now discounted instead of double-counted.
+#  3. MULTI-CHARACTER TERMS SCALE BY LENGTH. One occurrence of 'extraversion' is not one
+#     occurrence of 'we'; a three-syllable trait word is stronger evidence than a pronoun.
+#
+# The result is not a validated psychometric instrument and the module says so in its own
+# docstring ("a PROFILE RECONSTRUCTION... not a claim of ground truth"). But it must at least
+# not rank a bridge engineer as an extrovert, which is what it did before.
+_TERM_WEIGHT: dict[str, float] = {
+    # rare, specific markers: full weight
+    "anxious": 1.0, "uneasy": 1.0, "empathy": 1.0, "enthusiasm": 1.0, "audacious": 1.0,
+    "meticulous": 1.0, "rigorous": 1.0, "adversarial": 1.0, "unconventional": 1.0,
+    "audience": 0.7, "energize": 0.8, "celebrate": 0.8, "community": 0.55,
+    "curious": 0.9, "inquisitive": 0.9, "imagine": 0.8, "discover": 0.7, "invent": 0.8,
+    "deliberate": 0.7, "thorough": 0.8, "replicable": 0.9, "reliable": 0.6,
+    "precise": 0.6, "consistent": 0.5, "schedule": 0.6, "checklist": 0.9,
+    "compassion": 1.0, "forgive": 0.9, "gentle": 0.7, "kindness": 0.9, "trust": 0.6,
+    "support": 0.5, "afraid": 0.9, "danger": 0.6, "threat": 0.7, "worry": 0.9,
+    "overthink": 1.0, "nervous": 0.9, "fearful": 0.9, "anxiety": 1.0, "dread": 1.0,
+    "bold": 0.7, "passionate": 0.8, "speaking": 0.4, "together": 0.35, "share": 0.4,
+    "protect": 0.4, "careful": 0.45, "dangerous": 0.7, "guarded": 0.8,
+}
+
+# English words that are NOT personality markers. Banned outright: they appear in ordinary
+# prose at rates that have nothing to do with a mind's disposition.
+_STOPWORD_TERMS: frozenset[str] = frozenset({
+    "we", "open", "care", "safe", "change", "process", "talk", "live", "post", "launch",
+    "new", "detail", "plan", "review", "structure", "version", "audit", "idea", "create",
+    "help", "kind", "warm", "peace", "listen", "guard", "stress", "concern", "interest",
+    "attention", "sense", "value", "order", "control", "power", "state", "form", "line",
+    "part", "time", "work", "point", "case", "fact", "kind", "sort", "type",
+})
+
+
+def _compile(terms: str) -> re.Pattern:
+    """Build a trait regex, dropping banned English words from the alternation."""
+    alts = [t for t in terms.split("|")
+            if t and not re.fullmatch(r"[a-z]+", t) or t not in _STOPWORD_TERMS]
+    return re.compile(r"(?:" + "|".join(alts) + r")\b", re.I)
+
+
+def _term_weight(term: str) -> float:
+    """IDF-style discount + length scaling. Rare markers count more than common ones."""
+    base = _TERM_WEIGHT.get(term, 0.6)
+    length_scale = min(1.6, 0.8 + 0.1 * len(term))
+    return base * length_scale
+
+
 _TEXT_SIGNALS: dict[str, re.Pattern] = {
-    "openness": re.compile(
-        r"(?:new|imagine|curious|explore|possib|discover|wonder|what if|idea|experiment|"
-        r"create|change|horizon|beyond|expand|novel|unconventional|invent|differ|open|why not)\b", re.I),
-    "conscientiousness": re.compile(
-        r"(?:plan|organiz|detail|careful|schedule|finish|exact|precise|reliable|consistent|"
-        r"checklist|process|rigorous|review|deliberate|thorough|follow through|structure|"
-        r"version|audit|replicable|scrubbed)\b", re.I),
-    "extraversion": re.compile(
-        r"(?:we\b|together|share|excit|passion|bold|speak|community|celebrat|energiz|engage|"
-        r"live\b|everyone|let's|talk|build sesh|session|post|launch)\b", re.I),
-    "agreeableness": re.compile(
-        r"(?:help|trust|care|kind|together|agree|support|community|forgive|gentle|warm|"
-        r"understand|listen|compassion|peace|harmony|consent|respect|cooperat|ally)\b", re.I),
-    "neuroticism": re.compile(
-        r"(?:worry|fear|danger|risk|anxious|threat|cautious|careful|uneasy|guard|safe|protect|"
-        r"concern|stress|overthink|adversarial|trap|capture|scrub|opsec)\b", re.I),
+    "openness": _compile(
+        "imagine|curious|explore|possibility|discover|wonder|experiment|invent|"
+        "unconventional|novelty|horizon|beyond|reimagine|speculate|inquiry|theory"),
+    "conscientiousness": _compile(
+        "meticulous|deliberate|thorough|rigorous|replicable|reproducible|checklist|"
+        "audit|scrubbed|precise|consistent|reliable|schedule|systematic|verification"),
+    "extraversion": _compile(
+        "audacious|bold|passionate|enthusiasm|audience|publicly|loudspeaker|celebrate|"
+        "energize|extrovert|exuberant|rally|cheering|crowd"),
+    "agreeableness": _compile(
+        "compassion|empathy|forgive|kindness|gentle|understanding|tolerance|cooperate|"
+        "considerate|reconcile|altruistic|benevolent|listen"),
+    "neuroticism": _compile(
+        "anxious|anxiety|uneasy|unease|worry|fearful|afraid|dread|nervous|overthink|"
+        "adversarial|threat|apprehensive|distress|uneaseful"),
 }
 
 # A few multiword phrases handled separately (word boundaries make single-token regex hard).
@@ -128,25 +188,83 @@ def fingerprint(text: str) -> dict[str, Any]:
     """OCEAN (Big Five) vector from a person's own prose. Deterministic, 0..1 per trait."""
     t = (text or "").lower()
     n_chars = len(t)
+    # WEIGHTED scoring. The regex only says WHICH terms fired; _term_weight says what each is
+    # worth. An unweighted count is the defect measured above -- 'we' fired 9 times in a
+    # builder passage and swamped every rarer marker. Count what fired, weight it, and report
+    # the matched terms in the receipt so a vector is falsifiable by reading it.
     scores: dict[str, float] = {}
+    matched: dict[str, list[str]] = {}
     for trait, pat in _TEXT_SIGNALS.items():
-        hits = len(pat.findall(t))
+        found = pat.findall(t)
+        matched[trait] = sorted({f.lower() for f in found})
+        scores[trait] = sum(_term_weight(f.lower()) for f in found)
         for phrase in _MULTIWORD_HITS.get(trait, ()):
-            hits += t.count(phrase)
-        scores[trait] = hits
-    denom = sum(scores.values()) or 1.0
-    vector = {k: round(v / denom, 3) if n_chars else 0.5 for k, v in scores.items()}
-    if n_chars == 0:
-        vector = {k: 0.5 for k in _TEXT_SIGNALS}  # no signal -> neutral, honest default
-    # confidence scales with how much of their own text we have (the mnemonic "80 chars" point)
-    confidence = round(min(1.0, n_chars / 400.0), 3)
+            c = t.count(phrase)
+            if c:
+                scores[trait] += c * 1.4      # a phrase is stronger evidence than one token
+                matched[trait].append(phrase)
+    # THE `or 1.0` IS A TRAP. `0.0 or 1.0` evaluates to 1.0, so the rescue for
+    # divide-by-zero DESTROYS the evidence that there was nothing to divide. Any guard tested
+    # against denom afterwards is reading the rescue value, not the measurement. That is the
+    # SECOND instance of this same defect: the first tested input LENGTH instead of signal
+    # detection; this one tested the denominator AFTER its own fallback had rewritten it.
+    #
+    # So signal is decided from the scores THEMSELVES, before any rescue can touch them:
+    # did any term actually fire? That is the only question worth asking, and the answer has to
+    # be computed from `matched`, not inferred from a denominator.
+    any_fired = any(matched.values())
+    total_score = sum(scores.values())
+    denom = total_score if total_score else 1.0
+    # MEASURED BUG (2026-09-29, found by running the instrument, not by reading it):
+    # the neutral-default guard tested `n_chars` -- the LENGTH OF THE INPUT -- instead of
+    # whether any SIGNAL was found. So a 132-character sample whose signal patterns all miss
+    # produced scores all 0, denom 1.0, and every trait 0.0. Downstream, _dominant() does
+    # max(vector, key=...) on an all-zero dict, which returns the FIRST key -- a fixed
+    # tie-break, not a finding. The model then reported dominant_trait "openness", archetype
+    # "builder", a lens and a voice, with confidence 0.33 attached and five zeros visible
+    # in the same payload.
+    #
+    # Reproduced on 2 of 5 ractor voices (TESLA, FEN) and it is not rare: it is what happens
+    # to any sample shorter than the signals' vocabulary. The confidence field made it worse,
+    # because 0.33 reads as a low-confidence finding rather than as "nothing was detected".
+    #
+    # This is the same failure shape as every other bug this session: a GUARD MEASURING THE
+    # WRONG THING and wearing a result's clothes. It is not a rounding error -- the honest
+    # output is "no signal", and the fix is to say that rather than to emit a confident
+    # all-zero profile that ranks first alphabetically.
+    has_signal = any_fired
+    if not has_signal:
+        vector = {k: 0.5 for k in _TEXT_SIGNALS}   # no signal -> neutral, honest default
+        confidence = 0.0                            # and SAY SO, rather than 0.33
+    else:
+        vector = {k: round(v / denom, 3) for k, v in scores.items()}
+        confidence = round(min(1.0, n_chars / 400.0), 3)
     return {"ok": True, "schema": SCHEMA, "n_chars": n_chars,
             "confidence": confidence, "vector": vector,
+            "signal_detected": has_signal,
+            "matched_terms": {k: v for k, v in matched.items() if v},
             "raw_hits": {k: len(pat.findall(t)) for k, pat in _TEXT_SIGNALS.items()}}
 
 
 def _dominant(vector: dict[str, float]) -> str:
-    return max(vector, key=lambda k: vector[k])
+    """The highest-scoring trait, or None when there is no dominant one.
+
+    MEASURED (2026-09-29): max() on a dict whose values are all EQUAL returns the first key.
+    That was a silent artefact before the neutral-default fix, when a no-signal vector was all
+    0.0 and looked obviously fake. Once the no-signal vector became all-0.5 -- a genuine neutral
+    profile -- the same tie-break started REPORTING 'openness' with straight-face confidence.
+    A neutral vector has no dominant trait, and the honest output is to say so rather than to
+    pick alphabetically.
+
+    Callers that need a string must handle None; they are the ones making a claim.
+    """
+    if not vector:
+        return None
+    best = max(vector.values())
+    winners = [k for k, v in vector.items() if abs(v - best) < 1e-9]
+    if len(winners) == len(vector):        # every trait tied -> no dominant trait
+        return None
+    return winners[0]
 
 
 def model(name: str, text: str | None = None) -> dict[str, Any]:
@@ -155,7 +273,9 @@ def model(name: str, text: str | None = None) -> dict[str, Any]:
     fp = fingerprint(sample)
     vector = fp["vector"]
     # dominant trait -> our OCEAN invariant lattice (archetype + lens + voice)
-    dominant = _dominant(vector)
+    dominant = _dominant(vector) or ""
+    # No dominant trait means the sample carried no usable signal. Say that in the payload
+    # instead of letting an empty string fall through to the next `or` default.
     try:
         from mag import ocean_persona as op
         lensed = op.lens_ocean(vector)
@@ -163,7 +283,7 @@ def model(name: str, text: str | None = None) -> dict[str, Any]:
         lens = lensed.get("primary_invariant", {}).get("lens", "")
         voice = lensed.get("voice", "")
     except Exception:
-        archetype, lens, voice = dominant, "", ""
+        archetype, lens, voice = (dominant or "undetermined"), "", ""
     dec = _decision_signature(vector)
     reg = _approach_register(name, vector, archetype, dec)
     ph = _coord(f"ocean-model:{name}:{json.dumps(vector, sort_keys=True)}")

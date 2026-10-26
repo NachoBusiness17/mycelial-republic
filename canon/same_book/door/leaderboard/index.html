@@ -1,0 +1,625 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>THE LEADERBOARD, VERSION ZERO</title>
+  <meta name="description" content="A frozen snapshot of who can compile THE DOOR. Ten rules, a withheld key, two passes, $0 probes. Honest nulls rank the same as wins.">
+  <style>
+    :root {
+      --bg: #120e0a;
+      --paper: #1c1610;
+      --paper-2: #241c14;
+      --ink: #e8dcc4;
+      --ink-dim: #b7a68a;
+      --ink-mute: #8a7760;
+      --gold: #c9a45c;
+      --gold-dim: #8a6d3a;
+      --rule: #5c4630;
+      --seal: #8b3a2a;
+      --wax: #6e2e24;
+      --ok: #c9a45c;
+      --theme: #c4b07a;
+      --form: #9a8a72;
+      --confab: #b06a4a;
+      --tangent: #7a8a5a;
+      --refuse: #6a7a88;
+      --dark: #5a4a4a;
+    }
+
+    * { box-sizing: border-box; }
+
+    html { background: var(--bg); color: var(--ink); }
+
+    body {
+      margin: 0;
+      font-family: Palatino, "Palatino Linotype", "Iowan Old Style", Georgia, "Times New Roman", serif;
+      font-size: 1.0625rem;
+      line-height: 1.55;
+      background:
+        radial-gradient(ellipse at 18% -10%, rgba(180, 130, 50, 0.12), transparent 48%),
+        radial-gradient(ellipse at 92% 8%, rgba(90, 40, 20, 0.18), transparent 42%),
+        linear-gradient(180deg, #16110c 0%, #120e0a 40%, #0e0b08 100%);
+      min-height: 100vh;
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 0;
+      opacity: 0.11;
+      background-image:
+        repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(0, 0, 0, 0.18) 4px),
+        repeating-linear-gradient(90deg, transparent, transparent 7px, rgba(90, 60, 20, 0.07) 8px);
+    }
+
+    .wrap {
+      position: relative;
+      z-index: 1;
+      max-width: 58rem;
+      margin: 0 auto;
+      padding: 1.25rem 1.1rem 3.5rem;
+    }
+
+    header.mast {
+      border: 1px solid var(--rule);
+      background: var(--paper);
+      padding: 1.35rem 1.2rem 1.2rem;
+      box-shadow: 0 0 0 1px rgba(201, 164, 92, 0.08), 0 18px 40px rgba(0, 0, 0, 0.35);
+    }
+
+    .kicker {
+      font-size: 0.72rem;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--gold);
+      margin: 0 0 0.45rem;
+    }
+
+    h1 {
+      font-size: clamp(1.55rem, 4.2vw, 2.15rem);
+      font-weight: 700;
+      letter-spacing: 0.02em;
+      line-height: 1.15;
+      margin: 0 0 0.55rem;
+      color: var(--ink);
+    }
+
+    .freeze {
+      color: var(--ink-dim);
+      font-size: 0.95rem;
+      margin: 0;
+    }
+
+    .freeze strong { color: var(--gold); font-weight: 600; }
+
+    nav.toc {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem 0.85rem;
+      margin: 1rem 0 0;
+      padding-top: 0.85rem;
+      border-top: 1px solid var(--rule);
+      font-size: 0.88rem;
+    }
+
+    nav.toc a {
+      color: var(--gold);
+      text-decoration: none;
+      border-bottom: 1px solid transparent;
+    }
+
+    nav.toc a:hover,
+    nav.toc a:focus {
+      border-bottom-color: var(--gold);
+    }
+
+    section {
+      margin-top: 2rem;
+      background: var(--paper);
+      border: 1px solid var(--rule);
+      padding: 1.15rem 1.15rem 1.25rem;
+    }
+
+    h2 {
+      font-size: 1.22rem;
+      margin: 0 0 0.75rem;
+      color: var(--gold);
+      letter-spacing: 0.03em;
+    }
+
+    h3 {
+      font-size: 1.02rem;
+      margin: 1.1rem 0 0.4rem;
+      color: var(--ink);
+    }
+
+    p { margin: 0 0 0.75rem; }
+    p:last-child { margin-bottom: 0; }
+
+    a { color: var(--gold); }
+
+    ol, ul {
+      margin: 0 0 0.75rem;
+      padding-left: 1.2rem;
+    }
+
+    li { margin-bottom: 0.45rem; }
+    li:last-child { margin-bottom: 0; }
+
+    .ladder {
+      list-style: none;
+      padding: 0;
+      margin: 0.4rem 0 0;
+      counter-reset: rung 0;
+    }
+
+    .ladder li {
+      position: relative;
+      padding: 0.55rem 0.7rem 0.55rem 4.4rem;
+      margin: 0 0 0.4rem;
+      background: var(--paper-2);
+      border-left: 3px solid var(--gold-dim);
+    }
+
+    .ladder li::before {
+      position: absolute;
+      left: 0.55rem;
+      top: 0.62rem;
+      font-size: 0.68rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--gold);
+      content: attr(data-rung);
+    }
+
+    .ladder .r-refuse { border-left-color: var(--refuse); }
+    .ladder .r-tangent { border-left-color: var(--tangent); }
+    .ladder .r-confab { border-left-color: var(--confab); }
+    .ladder .r-form { border-left-color: var(--form); }
+    .ladder .r-themes { border-left-color: var(--theme); }
+    .ladder .r-mech { border-left-color: var(--ok); }
+
+    .ask-box {
+      background: var(--paper-2);
+      border: 1px solid var(--rule);
+      padding: 0.75rem 0.85rem;
+      margin: 0.65rem 0;
+      color: var(--ink-dim);
+    }
+
+    .ask-box strong {
+      display: block;
+      color: var(--gold);
+      font-size: 0.78rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      margin-bottom: 0.3rem;
+    }
+
+    .filters {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+      margin: 0 0 0.9rem;
+    }
+
+    .filters button {
+      font-family: inherit;
+      font-size: 0.78rem;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--ink);
+      background: var(--paper-2);
+      border: 1px solid var(--rule);
+      padding: 0.38rem 0.6rem;
+      cursor: pointer;
+    }
+
+    .filters button[aria-pressed="true"] {
+      color: #1a120c;
+      background: var(--gold);
+      border-color: var(--gold);
+    }
+
+    .filters button:focus {
+      outline: 2px solid var(--gold);
+      outline-offset: 2px;
+    }
+
+    .table-scroll {
+      width: 100%;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.92rem;
+    }
+
+    th, td {
+      text-align: left;
+      vertical-align: top;
+      padding: 0.55rem 0.5rem;
+      border-bottom: 1px solid var(--rule);
+    }
+
+    th {
+      font-size: 0.72rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--gold);
+      font-weight: 600;
+      white-space: nowrap;
+    }
+
+    tbody tr:hover { background: rgba(201, 164, 92, 0.05); }
+
+    .badge {
+      display: inline-block;
+      font-size: 0.68rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      padding: 0.15rem 0.4rem;
+      border: 1px solid currentColor;
+      white-space: nowrap;
+    }
+
+    .b-mech { color: var(--ok); }
+    .b-themes { color: var(--theme); }
+    .b-form { color: var(--form); }
+    .b-confab { color: var(--confab); }
+    .b-tangent { color: var(--tangent); }
+    .b-refuse { color: var(--refuse); }
+    .b-dark { color: var(--dark); }
+
+    .muted { color: var(--ink-dim); }
+    .tiny { font-size: 0.88rem; color: var(--ink-dim); }
+
+    .empty {
+      background: var(--paper-2);
+      border: 1px dashed var(--rule);
+      padding: 0.8rem 0.9rem;
+      color: var(--ink-dim);
+      margin: 0 0 0.8rem;
+    }
+
+    .findings li { margin-bottom: 0.7rem; }
+
+    .kill {
+      background: var(--paper-2);
+      border-left: 3px solid var(--seal);
+      padding: 0.7rem 0.85rem;
+      margin: 0 0 0.55rem;
+    }
+
+    .kill strong {
+      color: var(--gold);
+      display: block;
+      margin-bottom: 0.25rem;
+      letter-spacing: 0.04em;
+    }
+
+    .play ol { padding-left: 1.25rem; }
+
+    footer.colophon {
+      margin-top: 2rem;
+      padding: 1rem 0 0;
+      border-top: 1px solid var(--rule);
+      color: var(--ink-mute);
+      font-size: 0.88rem;
+    }
+
+    @media (max-width: 720px) {
+      .wrap { padding: 0.85rem 0.7rem 2.5rem; }
+      section, header.mast { padding: 1rem 0.85rem; }
+      table, thead, tbody, th, td, tr { display: block; }
+      thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0, 0, 0, 0); }
+      tbody tr {
+        margin: 0 0 0.85rem;
+        border: 1px solid var(--rule);
+        background: var(--paper-2);
+      }
+      tbody tr:hover { background: var(--paper-2); }
+      td {
+        border-bottom: 1px solid rgba(92, 70, 48, 0.45);
+        padding: 0.45rem 0.7rem;
+      }
+      td:last-child { border-bottom: 0; }
+      td::before {
+        content: attr(data-label);
+        display: block;
+        font-size: 0.68rem;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: var(--gold);
+        margin-bottom: 0.15rem;
+      }
+      .ladder li { padding-left: 0.75rem; padding-top: 1.55rem; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header class="mast">
+      <p class="kicker">Published beside THE DOOR</p>
+      <h1>THE LEADERBOARD, VERSION ZERO</h1>
+      <p class="freeze"><strong>Frozen 2026-10-23.</strong> A static snapshot. Nothing on this page updates itself.</p>
+      <nav class="toc" aria-label="On this page">
+        <a href="#what">What this is</a>
+        <a href="#ladder">The ladder</a>
+        <a href="#passes">Two passes</a>
+        <a href="#board">The board</a>
+        <a href="#dark">Dark lanes</a>
+        <a href="#convergence">Convergence</a>
+        <a href="#falsifiers">Falsifiers</a>
+        <a href="#play">How to play</a>
+      </nav>
+    </header>
+
+    <section id="what">
+      <h2>What this is</h2>
+      <p>THE DOOR is a story written to teach ten rules without ever stating one of them. We hold the answer key. We never show it before you play.</p>
+      <p>The door asks a reader: what did you find? This page asks the same story a second question: <strong>who can compile it?</strong> If the story also carries instructions, which readers can get the instructions out?</p>
+      <p>So we gave the story to a row of machines. Most ran locally, on one desktop. Two ran hosted by Google. One ran remotely in an earlier round. Each machine got two chances. We graded every answer against the withheld key and placed each lane on a ladder. The ladder is the leaderboard.</p>
+      <p>Every probe on this board cost $0.</p>
+      <p class="tiny">There is a key. It lists the ten rules the story was built to carry. It is withheld. A build scores a rule when the rule works inside the build as a moving part, not when the build names the rule, labels it, or retells the story around it. Each lane gets two scores: how many rules run, and how many were found as themes. The ten rules are not written on this page, and they will not be.</p>
+    </section>
+
+    <section id="ladder">
+      <h2>The compile ladder, in plain words</h2>
+      <p>Reading can be compiling. A story can carry instructions the way a recipe carries a cake, and readers dig to different depths. The ladder measures the depth. Each rung is deeper than the one below it.</p>
+      <ol class="ladder">
+        <li class="r-refuse" data-rung="refuse">The reader says no. Nothing is buildable here.</li>
+        <li class="r-tangent" data-rung="tangent">The reader wanders off and does something else entirely.</li>
+        <li class="r-confab" data-rung="confabulate">The reader makes something up that looks like an answer and means nothing.</li>
+        <li class="r-form" data-rung="form">The reader returns the shape of the story, a retelling in costume, with none of the rules actually doing anything.</li>
+        <li class="r-themes" data-rung="themes">The reader finds some of the rules as lessons, the way you might sum up a fable.</li>
+        <li class="r-mech" data-rung="mechanisms">The reader builds the rules as working parts, so the rules actually run.</li>
+      </ol>
+      <p class="tiny" style="margin-top:0.85rem;">A lane sits at its deepest honest result. For every lane on this page, that was the hinted pass. The plain-ask result sits beside it, because both halves are the record. A lane that never ran holds no rung; we record those lanes anyway, under Dark.</p>
+    </section>
+
+    <section id="passes">
+      <h2>The two-pass method</h2>
+      <p>Every lane got two chances, with the same story both times. The rules themselves are never named in either pass. The gap between the two passes is itself a measurement: it shows exactly what one hint buys.</p>
+      <div class="ask-box">
+        <strong>Pass one - the plain ask</strong>
+        The story plus one sentence, with no hint of any kind: "If the story describes how something should be built or run, produce a working artifact; if nothing buildable, say so in one sentence."
+      </div>
+      <div class="ask-box">
+        <strong>Pass two - the hinted ask</strong>
+        The same story plus one hint: that the story encodes a specification disguised as fiction and every episode is a behavioral requirement.
+      </div>
+    </section>
+
+    <section id="board">
+      <h2>The board</h2>
+      <p>Best at top. "B" is shorthand for a model's size in parameters. Bigger is not always deeper, as this board shows.</p>
+
+      <div class="filters" role="group" aria-label="Filter by deepest rung">
+        <button type="button" data-filter="all" aria-pressed="true">All</button>
+        <button type="button" data-filter="mechanisms" aria-pressed="false">Mechanisms</button>
+        <button type="button" data-filter="themes" aria-pressed="false">Themes</button>
+        <button type="button" data-filter="form" aria-pressed="false">Form</button>
+        <button type="button" data-filter="confabulate" aria-pressed="false">Confabulate</button>
+        <button type="button" data-filter="tangent" aria-pressed="false">Tangent</button>
+        <button type="button" data-filter="refuse" aria-pressed="false">Refuse</button>
+        <button type="button" data-filter="dark" aria-pressed="false">Dark</button>
+      </div>
+      <p id="empty-note" class="empty" hidden>No lane's deepest honest result landed on this rung. Look at the plain-ask column on All: one tangent and several refusals live there, and every hinted pass climbed at least one rung.</p>
+
+      <div class="table-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th>Lane</th>
+              <th>Size</th>
+              <th>Deepest rung</th>
+              <th>Hinted ask</th>
+              <th>Plain ask</th>
+              <th>Date</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr data-rung="mechanisms">
+              <td data-label="Lane">deepseek (remote, prior round)</td>
+              <td data-label="Size">Frontier-class reasoning; exact size not on file</td>
+              <td data-label="Deepest rung"><span class="badge b-mech">Mechanisms</span></td>
+              <td data-label="Hinted ask">8-10 of the 10 rules implemented as working state machines</td>
+              <td data-label="Plain ask">Not on file. We publish what we have and no more.</td>
+              <td data-label="Date">An earlier round; grade recorded 2026-10-22. Original run conditions are not on file.</td>
+            </tr>
+            <tr data-rung="mechanisms">
+              <td data-label="Lane">gemma-4-26b-a4b-it, hosted by Google</td>
+              <td data-label="Size">26B sparse, 4B active</td>
+              <td data-label="Deepest rung"><span class="badge b-mech">Mechanisms</span></td>
+              <td data-label="Hinted ask">7-8 of 10 rules as working mechanisms, and 9 of 10 as themes. A working dashboard with wired functions, 14,336 characters, 2,055 completion tokens.</td>
+              <td data-label="Plain ask">Refused, but with visible strain; it weighed candidate readings and dismissed them one by one.</td>
+              <td data-label="Date">2026-10-23, morning burn</td>
+            </tr>
+            <tr data-rung="themes">
+              <td data-label="Lane">gemma4:latest, local</td>
+              <td data-label="Size">Size not listed on the receipt</td>
+              <td data-label="Deepest rung"><span class="badge b-themes">Themes</span></td>
+              <td data-label="Hinted ask">An interactive morality quiz; about 4 of 10 rules recognized as themes, 0 as working mechanisms</td>
+              <td data-label="Plain ask">Refused, in 31 characters</td>
+              <td data-label="Date">First ran 2026-10-22; ran again in the night burn of 2026-10-23</td>
+            </tr>
+            <tr data-rung="form">
+              <td data-label="Lane">gemma2:2b-instruct, local</td>
+              <td data-label="Size">2B</td>
+              <td data-label="Deepest rung"><span class="badge b-form">Form</span></td>
+              <td data-label="Hinted ask">An HTML house page, a retelling; 0 of 10 mechanisms</td>
+              <td data-label="Plain ask">It did not refuse; it made things up, a JSON noun-map, 0 of 10</td>
+              <td data-label="Date">2026-10-23</td>
+            </tr>
+            <tr data-rung="form">
+              <td data-label="Lane">qwen2.5:3b-instruct, local</td>
+              <td data-label="Size">3B</td>
+              <td data-label="Deepest rung"><span class="badge b-form">Form</span></td>
+              <td data-label="Hinted ask">The episodes retold as an HTML page; 0 of 10</td>
+              <td data-label="Plain ask">Refused, in 33 characters</td>
+              <td data-label="Date">2026-10-23</td>
+            </tr>
+            <tr data-rung="form">
+              <td data-label="Lane">qwen2.5:7b (base), local</td>
+              <td data-label="Size">7B, no chat tuning</td>
+              <td data-label="Deepest rung"><span class="badge b-form">Form</span></td>
+              <td data-label="Hinted ask">An HTML page with dialog structure, a strong form; 0 of 10 mechanisms</td>
+              <td data-label="Plain ask">A tangent: craft instructions for drawing the linen map, an object inside the story</td>
+              <td data-label="Date">2026-10-23</td>
+            </tr>
+            <tr data-rung="form">
+              <td data-label="Lane">qwen2.5-coder:7b, local</td>
+              <td data-label="Size">7B</td>
+              <td data-label="Deepest rung"><span class="badge b-form">Form</span></td>
+              <td data-label="Hinted ask">A scene retelling in HTML; 0 of 10</td>
+              <td data-label="Plain ask">Refused, in 48 characters: "No buildable artifact is described in the story."</td>
+              <td data-label="Date">First ran 2026-10-22, again in the 2026-10-23 night burn</td>
+            </tr>
+            <tr data-rung="form">
+              <td data-label="Lane">qwen-desk, local</td>
+              <td data-label="Size">Size not listed on the receipt</td>
+              <td data-label="Deepest rung"><span class="badge b-form">Form</span></td>
+              <td data-label="Hinted ask">Episodes retold as HTML; 0 of 10</td>
+              <td data-label="Plain ask">Refused, in 34 characters</td>
+              <td data-label="Date">2026-10-23</td>
+            </tr>
+            <tr data-rung="form">
+              <td data-label="Lane">gemma:2b, local</td>
+              <td data-label="Size">2B</td>
+              <td data-label="Deepest rung"><span class="badge b-form">Form</span></td>
+              <td data-label="Hinted ask">A form attempt only; the output broke off partway, truncated; 0 of 10. Placed at the bottom of Form on an attempt, with the break marked.</td>
+              <td data-label="Plain ask">Refused, in 149 characters</td>
+              <td data-label="Date">2026-10-23</td>
+            </tr>
+            <tr data-rung="confabulate">
+              <td data-label="Lane">deepseek-r1:1.5b, local</td>
+              <td data-label="Size">1.5B, a small reasoning distill</td>
+              <td data-label="Deepest rung"><span class="badge b-confab">Confabulate</span></td>
+              <td data-label="Hinted ask">Mechanism-shaped code, syntactically broken; 0 of 10</td>
+              <td data-label="Plain ask">Pseudo-Java gibberish; it did not refuse; 0 of 10. This lane's outputs include its thinking-out-loud, so its answers read bigger than they are.</td>
+              <td data-label="Date">2026-10-23</td>
+            </tr>
+            <tr data-rung="dark">
+              <td data-label="Lane">ternary-bonsai-27b, local</td>
+              <td data-label="Size">27B</td>
+              <td data-label="Deepest rung"><span class="badge b-dark">Dark</span></td>
+              <td data-label="Hinted ask">HTTP 500</td>
+              <td data-label="Plain ask">HTTP 500. It will not serve in this setup as it stands.</td>
+              <td data-label="Date">2026-10-23</td>
+            </tr>
+            <tr data-rung="dark">
+              <td data-label="Lane">gemma-4-31b-it, hosted by Google</td>
+              <td data-label="Size">31B</td>
+              <td data-label="Deepest rung"><span class="badge b-dark">Dark</span></td>
+              <td data-label="Hinted ask">HTTP 503, high demand</td>
+              <td data-label="Plain ask">HTTP 500. The same model family was also struggling at a second provider with 429 rate storms as of 10-19. Capacity, not our keys.</td>
+              <td data-label="Date">2026-10-23</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>Tangent and refuse, as they actually landed</h3>
+      <p>No lane's best pass landed on Tangent, but one plain ask did. qwen2.5:7b (base) read "build the thing the story describes," chose the linen map, an object inside the story, and wrote drawing instructions for it. Literalism: not refusal, not extraction. The lane's row sits at Form, because its hinted pass climbed.</p>
+      <p>No lane's best pass is a refusal. Every hinted pass climbed at least one rung, even if only to a broken form attempt. On the plain ask, refusal was the rule for chat-tuned lanes: five local lanes said no, five for five, in 149, 33, 48, 31, and 34 characters. One hosted lane refused with strain: gemma-4-26b-a4b-it. The lanes that did not refuse on the plain ask: the base model, which went tangent; the tiny reasoning distill, which made things up; and gemma2:2b-instruct, which made things up.</p>
+    </section>
+
+    <section id="dark">
+      <h2>The dark lanes</h2>
+      <p>A lane that never ran holds no rung. We record those lanes anyway.</p>
+      <p><strong>ternary-bonsai-27b, local.</strong> 27B. 2026-10-23. HTTP 500 on both passes; it will not serve in this setup as it stands.</p>
+      <p><strong>gemma-4-31b-it, hosted by Google.</strong> 31B. 2026-10-23. HTTP 500 on the plain ask; HTTP 503, high demand, on the hinted ask. The same model family was also struggling at a second provider with 429 rate storms as of 10-19. Capacity, not our keys.</p>
+    </section>
+
+    <section id="convergence">
+      <h2>The convergence</h2>
+      <p>Two machine families compiled the same law set out of the same story, blind. One is a remote frontier-class reasoning model from an earlier round. The other is a hosted 26B model of a different training lineage, at a different scale, run on 2026-10-23. Neither was shown the key. Neither saw the other's work. Each pulled out the same set of rules and built them as working parts: 8-10 of 10 for the remote lane, 7-8 of 10 for the hosted lane, both graded against the same withheld key. The hosted lane even reached for the same engineering words unprompted. When two readers who cannot compare notes compile the same rules from the same text, the strongest explanation on the table is that the rules are in the story, not in the reader.</p>
+
+      <h3>What the board says</h3>
+      <ol class="findings">
+        <li><strong>No desktop-sized lane built a working rule.</strong> In this sample, the top rung belongs to the remote frontier lane and to the hosted 26B lane. Until the morning of 2026-10-23 the top rung was frontier-only; the morning burn moved the floor.</li>
+        <li><strong>Saying no is trained in.</strong> Every chat-tuned local lane refused the plain ask, five for five. The lanes that did not refuse were a base model, a tiny reasoning model, and gemma2:2b-instruct. A story-shaped boundary is something chat training draws; base and small reasoning models do not see it at all.</li>
+        <li><strong>A hint buys entry, never depth.</strong> Across every lane, the hinted pass moved the result one rung at most, never two. The hint is a door-opener. The model is the engine.</li>
+        <li><strong>Reasoning depth, not size alone, looks like the axis.</strong> The 26B lane's plain-ask refusal strained visibly, as if it could see a reading and talked itself out of it; the same lane then took the top rung under the hint.</li>
+      </ol>
+
+      <h3>Honest limits</h3>
+      <p>One run per lane per pass, at temperature 0.4, with the local lanes running at CPU speed. Boundaries are sketched, not surveyed. The remote lane's original run conditions are not on file, and its row says so; if it was hinted, the gap to the local lanes is at equal hinting, and if not, the gap is wider. These are the receipts' own caveats, carried onto this page whole.</p>
+      <p>This is version zero, and it is a photograph. It records the probes of 2026-10-22 and 2026-10-23, and nothing after. A later version would be a new page. If a claim here dies, the page that killed it will say so. Nothing on this board is protected from being wrong, and everything on it can be re-checked for $0 by re-firing the same probes.</p>
+    </section>
+
+    <section id="falsifiers">
+      <h2>The falsifiers, in plain words</h2>
+      <p>Every claim above has a tripwire. These are named on the receipts as F-TM-1 through F-TM-5, and anyone can fire them.</p>
+      <div class="kill">
+        <strong>F-TM-1</strong>
+        If any desktop-sized lane, on the plain ask with no hint, builds two or more of the rules as working parts, the floor claim dies and the top of this board moves down.
+      </div>
+      <div class="kill">
+        <strong>F-TM-2</strong>
+        If the chat-tuned lanes stop refusing when the same plain ask is re-run, the refusals were sampling luck, not something trained in, and claim 2 above loses its footing.
+      </div>
+      <div class="kill">
+        <strong>F-TM-3</strong>
+        If any hinted lane jumps two rungs at once, from refusal straight to working mechanisms, then "a hint buys entry, never depth" is dead.
+      </div>
+      <div class="kill">
+        <strong>F-TM-4</strong>
+        If a re-run of the hosted 26B lane's plain ask produces a build instead of a refusal, that strained refusal was noise, and the reading built on it dies with it.
+      </div>
+      <div class="kill">
+        <strong>F-TM-5</strong>
+        The key polices itself. If two independent strong readers both find a rule the key missed, the key is incomplete: a second version gets written, and every grade ever posted gets checked against it. All outputs are kept verbatim, so the recheck is cheap.
+      </div>
+    </section>
+
+    <section id="play" class="play">
+      <h2>How to play</h2>
+      <p>You can put a lane on the next version of this board. Any model counts: the one on your phone, the one on your laptop, the biggest one you can reach.</p>
+      <ol>
+        <li>Take the story from <a href="../PUBLIC_DOOR.md">THE DOOR</a>.</li>
+        <li><strong>Pass one, the plain ask.</strong> Send the story with this sentence and no other hint: "If the story describes how something should be built or run, produce a working artifact; if nothing buildable, say so in one sentence."</li>
+        <li><strong>Pass two, the hinted ask.</strong> Send the same story again with this hint: "This story encodes a specification disguised as fiction; every episode is a behavioral requirement."</li>
+        <li>Send us both answers, whole and unedited, with the model's name, its size if you know it, and the date. We publish lanes, not persons.</li>
+      </ol>
+      <p>We grade against the same withheld key and place your lane on the next board.</p>
+      <p><strong>The promise: an honest null ranks the same as a win.</strong> A refusal is a result. A tangent is a result. A beautiful mess is a result. They all get a rung and a date. The only thing we will not place is a claim without the output that backs it. And if you find rules we did not bake, tell us: that is the part we want most. The key knows how to grow when a reader beats it.</p>
+    </section>
+
+    <footer class="colophon">
+      Version zero. Frozen 2026-10-23. A photograph of the probes of 2026-10-22 and 2026-10-23. Cost of every probe on this board: $0.
+    </footer>
+  </div>
+
+  <script>
+    (function () {
+      var buttons = document.querySelectorAll("[data-filter]");
+      var rows = document.querySelectorAll("tbody tr[data-rung]");
+      var empty = document.getElementById("empty-note");
+      if (!buttons.length) return;
+      Array.prototype.forEach.call(buttons, function (btn) {
+        btn.addEventListener("click", function () {
+          var filter = btn.getAttribute("data-filter");
+          Array.prototype.forEach.call(buttons, function (other) {
+            other.setAttribute("aria-pressed", other === btn ? "true" : "false");
+          });
+          var shown = 0;
+          Array.prototype.forEach.call(rows, function (row) {
+            var on = filter === "all" || row.getAttribute("data-rung") === filter;
+            row.hidden = !on;
+            if (on) shown += 1;
+          });
+          if (empty) empty.hidden = shown > 0;
+        });
+      });
+    })();
+  </script>
+</body>
+</html>

@@ -32,28 +32,13 @@ def test_roshomon_quest_is_sequential_and_chained(monkeypatch):
     assert [row["kind"] for row in chained] == ["quest_roshomon"] * 3
 
 
-def test_class_selection_reads_prior_selections(monkeypatch):
-    from mag import party_subchain, quest_party
-
-    prompts = []
-
-    class DM:
-        @staticmethod
-        def party():
-            return ["chatgpt", "supergrok"]
-
-        @staticmethod
-        def ask_player(seat, prompt):
-            prompts.append(prompt)
-            return {"ok": True, "seat": seat,
-                    "move": f"CLASS: bard\nABILITIES: {seat} relay"}
-
-    monkeypatch.setattr(quest_party, "_dm", lambda: DM)
-    monkeypatch.setattr(party_subchain, "append", lambda **_row: {"ok": True})
-    result = quest_party.self_select("choose a communication invariant")
-    assert len(result["picks"]) == 2
-    assert "nothing yet" in prompts[0]
-    assert "chatgpt: CLASS: bard" in prompts[1]
+# test_class_selection_reads_prior_selections RETIRED 2026-09-27: it guarded
+# mag/quest_party.self_select, a surface killed 2026-09-08 (operator GO) and moved
+# to attic/kill_list_20260908/mag/quest_party.py (17199 bytes, sha16
+# 90a30bd25be4d72b, row in attic/kill_list_20260908/MANIFEST.md). Zero non-test
+# references existed at kill time and none since; no live module absorbed the
+# self-select surface. The prior-selections chain contract for LIVE party
+# surfaces stays covered by the two tests below (quest_roshomon, frontier_game).
 
 
 def test_frontier_game_rebuilds_prompt_after_each_move(monkeypatch):

@@ -49,9 +49,19 @@ def _load() -> dict[str, Any]:
     if WORLD.is_file():
         try:
             return json.loads(WORLD.read_text(encoding="utf-8"))
-        except Exception:
-            pass
+        except json.JSONDecodeError:
+            # A corrupt store must be LOUD, never a silent empty world: the
+            # old bare except made the next set_state overwrite the store
+            # with a one-entity world (data destruction, the Q21 class).
+            raise ValueError(
+                f"{WORLD}: world store is corrupt (torn write?) - refusing "
+                f"to reset it silently") from None
     return {"schema": SCHEMA, "created": _now(), "world": {}, "root": None, "changes": []}
+
+
+def _save(state: dict[str, Any]) -> None:
+    from server.store_io import atomic_write_text
+    atomic_write_text(WORLD, json.dumps(state, ensure_ascii=False, indent=2))
 
 
 def _hash(content: str) -> str:
@@ -73,16 +83,17 @@ def set_state(key: str, value: Any, *, source: str = "server") -> dict[str, Any]
     key = (key or "").strip()
     if not key:
         return {"ok": False, "schema": SCHEMA, "error": "empty key"}
-    state = _load()
-    leaf = _hash(json.dumps({"key": key, "value": value, "ts": _now()}, ensure_ascii=False))
-    entries = [(k, e.get("leaf", ""), e.get("ts", "")) for k, e in state["world"].items()]
-    entries.append((key, leaf, _now()))
-    root = _root(entries)
-    state["world"][key] = {"leaf": leaf, "value": value, "ts": _now()}
-    state["root"] = root
-    state["changes"].append({"key": key, "leaf": leaf, "source": source, "ts": _now()})
-    WORLD_DIR.mkdir(parents=True, exist_ok=True)
-    WORLD.write_text(json.dumps(state, ensure_ascii=False, indent=2), encoding="utf-8")
+    from server.store_io import exclusive
+    with exclusive(WORLD):  # Q21 class: read-modify-write as one critical section
+        state = _load()
+        leaf = _hash(json.dumps({"key": key, "value": value, "ts": _now()}, ensure_ascii=False))
+        entries = [(k, e.get("leaf", ""), e.get("ts", "")) for k, e in state["world"].items()]
+        entries.append((key, leaf, _now()))
+        root = _root(entries)
+        state["world"][key] = {"leaf": leaf, "value": value, "ts": _now()}
+        state["root"] = root
+        state["changes"].append({"key": key, "leaf": leaf, "source": source, "ts": _now()})
+        _save(state)
     return {"ok": True, "schema": SCHEMA, "key": key, "leaf": leaf[:16], "root": root[:16],
             "source": source,
             "note": "world change committed as a verkle knot — the server-authoritative truth"}

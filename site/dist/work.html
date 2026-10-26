@@ -1,0 +1,241 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Nacho Quixotic — a website you walk. Every claim carries a receipt.</title>
+<meta name="description" content="Multi-agent AI systems, verification tooling, and shipped software — every claim carries a receipt. Walk the beacon.">
+<style>*{box-sizing:border-box}
+html{scroll-behavior:smooth;scroll-snap-type:y proximity}
+body{margin:0;background:#07090B;color:#E7EAF2;font:16px/1.65 'Segoe UI',system-ui,-apple-system,sans-serif}
+body::after{content:"";position:fixed;inset:0;z-index:2;pointer-events:none;background:repeating-linear-gradient(0deg,rgba(255,255,255,.016) 0 1px,transparent 1px 3px)}
+canvas.shader{position:fixed;inset:0;width:100vw;height:100vh;z-index:0}
+a{color:#7AA5FF;text-decoration:none}a:hover{color:#AFC6FF}
+.room{min-height:100vh;scroll-snap-align:start;position:relative;z-index:1;display:flex;align-items:center;padding:5.2rem 0 3.6rem;border-bottom:1px solid rgba(255,255,255,.045)}
+.room .inner{width:100%;max-width:1120px;margin:0 auto;padding:0 1.4rem}
+.plate{display:block;font-family:ui-monospace,Consolas,monospace;text-transform:uppercase;letter-spacing:.14em;color:#8B95FF;font-size:.78rem;margin-bottom:1.1rem}
+.plate .no{color:#3ED6C4}
+h1.hero-h{font-size:clamp(2rem,5vw,3.4rem);line-height:1.08;color:#F2F4F8;margin:0 0 .8rem;letter-spacing:-.02em}
+h1.hero-h em{font-style:normal;color:#8B95FF}
+h2.room-h{font-size:clamp(1.5rem,3.4vw,2.4rem);line-height:1.15;color:#F2F4F8;margin:0 0 1.1rem;letter-spacing:-.015em}
+h2.room-h .n{color:#3ED6C4;font-family:ui-monospace,Consolas,monospace;font-size:.8em;margin-right:.5em}
+.sub{font-size:1.1rem;color:#A3ABBD;max-width:46rem;margin:0 0 1.5rem}
+.cta-row{display:flex;gap:.8rem;flex-wrap:wrap;align-items:center}
+.btn{display:inline-block;padding:.72em 1.45em;border-radius:8px;font-weight:600;font-size:.96rem;border:1px solid transparent}
+.btn.gold{background:linear-gradient(135deg,#6D7CFF,#37D5D0);color:#fff}.btn.gold:hover{filter:brightness(1.14)}
+.btn.line{border-color:#242C3C;color:#cfd6e2}.btn.line:hover{border-color:#7AA5FF;color:#AFC6FF}
+.stat-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:.9rem;margin:2.2rem 0 0}
+.stat{background:rgba(12,15,20,.72);border:1px solid #1F2633;border-radius:10px;padding:1rem 1.1rem;backdrop-filter:blur(4px)}
+.stat b{display:block;font-size:1.45rem;color:#3ED6C4;letter-spacing:-.01em}
+.stat span{font-size:.82rem;color:#8A93A6}
+.hint{margin-top:1.4rem;font-family:ui-monospace,Consolas,monospace;font-size:.78rem;color:#8A93A6;animation:pulse 2.4s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:.55}50%{opacity:1}}
+@media(prefers-reduced-motion:reduce){.hint{animation:none}}
+.door{display:flex;justify-content:space-between;align-items:center;margin-top:2.4rem;font-family:ui-monospace,Consolas,monospace;font-size:.82rem;text-transform:uppercase;letter-spacing:.1em}
+.door a{color:#3ED6C4}.door a:hover{color:#7FF2E2}
+.door .back{color:#6E7686}.door .back:hover{color:#AFC6FF}
+.frame-outer{width:min(1200px,94vw);margin:0 auto;background:#0c0f14;border:1px solid #1F2633;border-radius:12px;overflow:hidden}
+.frame-bar{display:flex;gap:.45rem;align-items:center;padding:.55rem .9rem;background:#10141B;border-bottom:1px solid #1F2633;font-family:ui-monospace,Consolas,monospace;font-size:.76rem;color:#8A93A6}
+.dot{width:.6rem;height:.6rem;border-radius:50%;background:#242C3C}.dot.g{background:#3f8f5f}
+.frame-outer iframe{display:block;width:100%;border:0;background:#05060a;aspect-ratio:16/9}
+.bubble-row{display:grid;grid-template-columns:repeat(3,1fr);gap:.9rem;margin-top:1rem;width:min(1200px,94vw);margin-left:auto;margin-right:auto}
+@media(max-width:900px){.bubble-row{grid-template-columns:1fr}}
+.bubble{background:rgba(12,15,20,.78);border:1px solid #1F2633;border-radius:10px;padding:1rem 1.1rem;backdrop-filter:blur(4px)}
+.bubble b{color:#F2F4F8}
+.bubble p{margin:.35rem 0 0;font-size:.9rem;color:#A3ABBD}
+.arcade-cta{background:linear-gradient(90deg,rgba(109,124,255,.12),rgba(55,213,208,.10));border:1px solid rgba(109,124,255,.3);border-radius:10px;padding:1rem 1.1rem}
+.arcade-cta b{color:#8B95FF}
+table{border-collapse:collapse;width:100%}td,th{border:1px solid #1F2633;padding:.55em .75em;text-align:left;font-size:.93rem}
+th{color:#3ED6C4;font-family:ui-monospace,Consolas,monospace;font-size:.82rem;text-transform:uppercase;letter-spacing:.08em;background:rgba(16,20,27,.85)}
+td{color:#C6CBD8}td b{color:#F2F4F8}
+tr td:first-child{color:#F2F4F8;font-weight:600}
+.fresh{background:rgba(12,15,20,.78);border:1px solid #1F2633;border-radius:12px;padding:1.4rem 1.5rem;backdrop-filter:blur(4px)}
+.fresh ul{margin:.6rem 0 0;padding-left:1.2rem}
+.fresh li{margin:.5rem 0;color:#C6CBD8}
+.fresh li b{color:#F2F4F8}
+.date-pill{float:right;font-size:.75rem;color:#8A93A6;border:1px solid #242C3C;border-radius:999px;padding:.15em .8em;font-family:ui-monospace,Consolas,monospace}
+.pills{display:flex;flex-wrap:wrap;gap:.5rem;margin:1rem 0 0}
+.pill{font-size:.82rem;color:#cfd6e2;background:rgba(16,20,27,.85);border:1px solid #242C3C;border-radius:999px;padding:.35em .9em}
+.hud{position:fixed;left:1rem;bottom:1rem;z-index:30;font-family:ui-monospace,Consolas,monospace;font-size:.74rem;color:#A3ABBD;background:rgba(7,9,11,.85);border:1px solid #1F2633;border-radius:8px;padding:.5rem .85rem;backdrop-filter:blur(6px)}
+.hud b{color:#3ED6C4}
+.hud a{color:#8B95FF}
+.map{position:fixed;right:1rem;bottom:1rem;z-index:30;background:rgba(7,9,11,.85);border:1px solid #1F2633;border-radius:8px;padding:.7rem .6rem;backdrop-filter:blur(6px);display:flex;flex-direction:column;gap:.45rem;align-items:center}
+.map .mn{width:.7rem;height:.7rem;border-radius:50%;background:#242C3C;border:1px solid #2E3850;display:block}
+.map .mn.on{background:#3ED6C4;border-color:#3ED6C4;box-shadow:0 0 8px rgba(62,214,196,.7)}
+.map .link{width:1px;height:.5rem;background:#1F2633}
+.gate{min-height:80vh}
+.gate .inner{text-align:center}
+.gate h2{font-size:clamp(1.7rem,4vw,2.6rem);color:#F2F4F8;margin:0 0 .6rem}
+nav.top{position:fixed;top:0;left:0;right:0;z-index:40;background:rgba(7,9,11,.86);backdrop-filter:blur(8px);border-bottom:1px solid rgba(255,255,255,.06)}
+nav.top .in{max-width:1120px;margin:0 auto;display:flex;justify-content:space-between;align-items:center;padding:.75rem 1.4rem}
+nav.top a{font-family:ui-monospace,Consolas,monospace;font-size:.8rem;text-transform:uppercase;letter-spacing:.1em;color:#A3ABBD}
+nav.top a:hover{color:#E7EAF2}
+nav.top .brand{color:#F2F4F8;font-weight:600;font-size:.9rem}
+nav.top .cta{color:#3ED6C4;border:1px solid rgba(62,214,196,.4);border-radius:6px;padding:.35em .8em}</style></head><body><nav class="top"><div class="in"><a class="brand" href="/index.html">Nacho Business</a><div style="display:flex;gap:1.4rem;flex-wrap:wrap;align-items:center"><a href="#play">Play</a><a href="#receipts">Ledger</a><a href="#fresh">Fresh</a><a href="#craft">Craft</a><a class="cta" href="mailto:nachobusinesscorp@gmail.com">Work with me</a></div></div></nav><canvas class="shader" id="bgshader"></canvas><div id="hud" class="hud"><b>ROOM 1/6</b> · THE BEACON · walk with ↑/↓ · click the game to play</div><div class="map" title="you are here — the eigen-map"><a class="mn" href="#top" title="THE BEACON"></a><div class="link"></div><a class="mn" href="#play" title="PLAY THE PROOF"></a><div class="link"></div><a class="mn" href="#receipts" title="THE LEDGER"></a><div class="link"></div><a class="mn" href="#fresh" title="FRESH RECEIPTS"></a><div class="link"></div><a class="mn" href="#craft" title="THE CRAFT"></a><div class="link"></div><a class="mn" href="#gate" title="THE GATE"></a></div>
+<section class="room" id="top" data-name="THE BEACON"><div class="inner">
+<span class="plate">ROOM 1/6 · <span class="no">THE BEACON</span> · available for remote work · now</span>
+<h1 class="hero-h">A website you <em>walk</em>. A builder you can <em>check</em>.</h1>
+<p class="sub">I build multi-agent AI systems, verification tooling, and shipped software.
+This page is a maze, not a scroll: walk the rooms with your arrow keys. Every claim in
+every room carries a receipt — a live URL, a machine-checked number, or a filed corrections
+table. A stranger who never met me can check all of it. That's the design.</p>
+<div class="cta-row">
+<a class="btn gold" href="mailto:nachobusinesscorp@gmail.com">nachobusinesscorp@gmail.com</a>
+<a class="btn line" href="https://x.com/NachoQuixotic">DM @NachoQuixotic</a>
+<a class="btn line" href="#play">Start walking ↓</a>
+</div>
+<div class="stat-row">
+<div class="stat"><b>48/48</b><span>research lift lanes returned</span></div>
+<div class="stat"><b>0</b><span>fabrications in 275 checked citations</span></div>
+<div class="stat"><b>10/10</b><span>games live &amp; playtested on prod</span></div>
+<div class="stat"><b>95.7%</b><span>cache-hit ratio, own production bill</span></div>
+<div class="stat"><b>$0.05</b><span>60-experiment battery, total spend</span></div>
+</div>
+<div class="hint">▸ walk with ↑/↓ or the doors — the map on your right is where you are</div>
+<div class="door"><span></span><a href="#play">NEXT: ROOM 2 — PLAY THE PROOF ↓</a></div>
+</div></section>
+<main><section class="room" id="play" data-name="PLAY THE PROOF"><div class="inner">
+<span class="plate">ROOM 2/6 · <span class="no">PLAY THE PROOF</span></span>
+<h2 class="room-h"><span class="n">02</span>Don't take my word for it. Play it.</h2>
+<div class="frame-outer">
+<div class="frame-bar"><span class="dot g"></span><span class="dot"></span><span class="dot"></span>&nbsp;games/arrakis.html — live, this domain. Click the game once, then WASD/arrows ride · Shift boosts · E drops a thumper</div>
+<iframe src="games/arrakis.html" loading="lazy" title="Arrakis — playable demo" scrolling="no" allow="fullscreen; gamepad"></iframe>
+</div>
+<div class="bubble-row">
+<div class="bubble"><b>Arrakis — the ride.</b><p>Momentum THPS-style rider: speed is score, chained spice lines multiply, and a sandworm with your velocity hunts you. Dropped a thumper (E) to divert it. Rebuilt from player feedback in one night.</p></div>
+<div class="bubble"><b>22 games on this domain now.</b><p>The deep cuts are grafted: WIPEOUT v2/v3 (raymarched racing, the song sets the speed), SHADOW WALK (voxel roguelite), SPECTRAL MAZE, BAD APPLE FIELD, ERASER MAZE — a decade of vis lab in one place. Every embed runs; anything that doesn't gets pulled and repaired in the open.</p></div>
+<div class="bubble arcade-cta"><b>Plus the full 10-game arcade on production:</b><br><a href="https://games-mag-d961.vercel.app">games-mag-d961.vercel.app ↗</a><br><span style="font-size:.85rem;color:#A3ABBD">Deployed on Vercel, playtested, fixed same-night — the whole cycle is on the record.</span></div>
+</div>
+<div class="door"><a class="back" href="#top">↑ THE BEACON</a><a href="#receipts">NEXT: ROOM 3 — THE LEDGER ↓</a></div>
+</div></section>
+
+<section class="room" id="receipts" data-name="THE LEDGER"><div class="inner">
+<span class="plate">ROOM 3/6 · <span class="no">THE LEDGER</span> · every value machine-checked</span>
+<h2 class="room-h"><span class="n">03</span>Receipts — machine-checked numbers, not adjectives</h2>
+<table>
+<thead><tr><th>Claim</th><th>Receipt</th></tr></thead>
+<tbody>
+<tr><td>Append-only hash chain, self-reconstructed twice</td><td>8,819 knots · integrity-audited (RECORD CLEAN)</td></tr>
+<tr><td>Disaster recovery</td><td>744 GB recovered, deliberate union merge, <b>0/0 divergence</b> · 3,700 sessions resurrected in 48h</td></tr>
+<tr><td>Substrate-independent fault tolerance</td><td>Independent-reader recovery fidelity <b>3/3 at N=1</b>, sha256-verified</td></tr>
+<tr><td>Citation verification pipeline</td><td>275 entries machine-checked, 260 verified, <b>0 fabrications</b>, corrections table published</td></tr>
+<tr><td>Multi-agent orchestration at scale</td><td>80-lane wave: 78/80 · 50-agent research lift: <b>48/48 returned</b> · 60-experiment battery for $0.05</td></tr>
+<tr><td>Cost engineering</td><td><b>95.7% cache-hit ratio</b> read from our own production billing · fleet runs on ~$0.43/day</td></tr>
+<tr><td>Security</td><td>Agent-dispatch key scoping with passed leak-tests · SSRF-guarded outbound lanes (scheme, host, resolved-IP)</td></tr>
+<tr><td>Operational health metering</td><td>Γ = 1 − delivered/claimed, computed from bytes, wired into every boot — drift without narration</td></tr>
+</tbody>
+</table>
+<div class="door"><a class="back" href="#play">↑ PLAY</a><a href="#fresh">NEXT: ROOM 4 — FRESH RECEIPTS ↓</a></div>
+</div></section>
+
+<section class="room" id="fresh" data-name="FRESH RECEIPTS"><div class="inner">
+<span class="plate">ROOM 4/6 · <span class="no">FRESH RECEIPTS</span></span>
+<h2 class="room-h"><span class="n">04</span>This week — the descent continues</h2>
+<div class="fresh">
+<span class="date-pill">updated 2026-09-22</span>
+<ul>
+<li><b>50-agent research lift landed:</b> 48/48 lanes returned, smith-charted at Γ = 0.00 on landing; the invariant held across 7 independent fields.</li>
+<li><b>Ten barred asks executed:</b> a 66-step workflow (86M tokens, dogfood-doubling 2→4→8→16→32) executed, verified, and mined the whole backlog overnight.</li>
+<li><b>Incident root-caused and elder-audited same day:</b> a retired container stack had been impersonating the estate for two days — traced with byte-level receipts to a build timestamp and an autostart flag, fixed, and ruled on by the house's judicial record.</li>
+<li><b>This site:</b> designed, built, adversarially reviewed (ractor pass: secrets scan, dead-link sweep, claim-check, tone guard), and deployed to production — the review discipline is the product.</li>
+</ul>
+</div>
+<div class="door"><a class="back" href="#receipts">↑ THE LEDGER</a><a href="#craft">NEXT: ROOM 5 — THE CRAFT ↓</a></div>
+</div></section>
+
+<section class="room" id="craft" data-name="THE CRAFT"><div class="inner">
+<span class="plate">ROOM 5/6 · <span class="no">THE CRAFT</span></span>
+<h2 class="room-h"><span class="n">05</span>How I work — and why it's checkable</h2>
+<p>Most portfolios show finished things. This one shows the <b>verification system</b> that produced them: every claim carries a receipt or is marked CLAIMED; meters run before audits; failures are filed, not hidden — the corrections tables are the credibility. Two independent groups later published theses I had decoded and dated first (test-time communication as a scaling axis; KV-cache-as-OS) — I claim the dated trail, and I'll walk anyone through it.</p>
+<h3>Toolbelt</h3>
+<div class="pills">
+<span class="pill">Python · TypeScript</span><span class="pill">multi-agent orchestration</span><span class="pill">LLM cache &amp; cost economics</span><span class="pill">eval / verification pipelines</span><span class="pill">Vercel · CI-style gates</span><span class="pill">hash chains &amp; content-addressed storage</span><span class="pill">security hardening (SSRF, key-scoping)</span><span class="pill">HTML5 game engines</span><span class="pill">technical writing that survives fact-check</span>
+</div>
+<div class="door"><a class="back" href="#fresh">↑ FRESH RECEIPTS</a><a href="#gate">NEXT: ROOM 6 — THE GATE ↓</a></div>
+</div></section></main><section class="room gate" id="gate" data-name="THE GATE"><div class="inner"><span class="plate">ROOM 6/6 · <span class="no">THE GATE</span></span><h2>The checks are real. So is the work.</h2><p class="sub" style="margin:0 auto 1.6rem">Every line in every room has a receipt behind it. Ask to see any of them — I built all of it, and I can show every seam.</p><div class="cta-row" style="justify-content:center"><a class="btn gold" href="mailto:nachobusinesscorp@gmail.com">Email nachobusinesscorp@gmail.com</a>&nbsp;<a class="btn line" href="https://x.com/NachoQuixotic">DM @NachoQuixotic</a>&nbsp;<a class="btn line" href="/index.html">Read the constitution</a></div><div class="door"><a class="back" href="#craft">↑ BACK: THE CRAFT</a><span></span></div></div></section><footer style="position:relative;z-index:1;text-align:center;color:#6E7686;font-size:.78rem;padding:1.4rem 0;border-top:1px solid rgba(255,255,255,.05)">estuary shore · a game-as-a-website · built in the open · 2026-09-28</footer><script>(function () {
+  const cv = document.getElementById("bgshader");
+  if (!cv) return;
+  const reduced = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const gl = cv.getContext("webgl", { antialias: false });
+  if (!gl) return;
+  const VS = "attribute vec2 p;void main(){gl_Position=vec4(p,0.,1.);}";
+  const FS = "precision mediump float;uniform vec2 u_res;uniform float u_t;" +
+    "float hash(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}" +
+    "float noise(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);" +
+    "return mix(mix(hash(i),hash(i+vec2(1.,0.)),f.x),mix(hash(i+vec2(0.,1.)),hash(i+vec2(1.,1.)),f.x),f.y);}" +
+    "float fbm(vec2 p){float v=0.,a=.5;for(int i=0;i<5;i++){v+=a*noise(p);p*=2.03;a*=.5;}return v;}" +
+    "void main(){vec2 uv=gl_FragCoord.xy/u_res;float t=u_t*.045;" +
+    "vec2 q=vec2(fbm(uv*1.9+t),fbm(uv*1.9-t*1.25));" +
+    "float n=fbm(uv*2.4+q*1.7);" +
+    "vec3 a=vec3(.026,.032,.05);" +
+    "vec3 b=vec3(.10,.12,.34);" +
+    "vec3 c=vec3(.04,.26,.28);" +
+    "vec3 col=a+b*pow(n,2.1)*1.35+c*pow(1.-abs(uv.y-.32),2.6)*.20;" +
+    "col+=vec3(.07,.08,.19)*pow(q.y,2.)*.85;" +
+    "float vig=smoothstep(1.3,.3,length(uv-vec2(.5,.45)));" +
+    "gl_FragColor=vec4(col*vig+a*.3,1.);}";
+  function sh(type, src) { const s = gl.createShader(type); gl.shaderSource(s, src); gl.compileShader(s); return s; }
+  const prog = gl.createProgram();
+  gl.attachShader(prog, sh(gl.VERTEX_SHADER, VS));
+  gl.attachShader(prog, sh(gl.FRAGMENT_SHADER, FS));
+  gl.linkProgram(prog);
+  if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) return;
+  gl.useProgram(prog);
+  const buf = gl.createBuffer();
+  gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1, 1,-1, -1,1, 1,1]), gl.STATIC_DRAW);
+  const loc = gl.getAttribLocation(prog, "p");
+  gl.enableVertexAttribArray(loc);
+  gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
+  const uRes = gl.getUniformLocation(prog, "u_res");
+  const uT = gl.getUniformLocation(prog, "u_t");
+  function resize() {
+    const dpr = Math.min(window.devicePixelRatio || 1, 1.5);
+    const w = Math.max(2, Math.floor(cv.clientWidth * dpr * .5));
+    const h = Math.max(2, Math.floor(cv.clientHeight * dpr * .5));
+    if (cv.width !== w || cv.height !== h) { cv.width = w; cv.height = h; gl.viewport(0, 0, w, h); }
+    gl.uniform2f(uRes, cv.width, cv.height);
+  }
+  resize();
+  window.addEventListener("resize", resize);
+  const t0 = performance.now();
+  function frame(now) {
+    resize();
+    gl.uniform1f(uT, (now - t0) / 1000);
+    gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+    if (!reduced) requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+})();</script><script>(function () {
+  const rooms = [].slice.call(document.querySelectorAll('.room'));
+  const hud = document.getElementById('hud');
+  const nodes = [].slice.call(document.querySelectorAll('.map .mn'));
+  let cur = 0, lock = 0;
+  function paint(i) {
+    if (hud) hud.innerHTML = '<b>ROOM ' + (i + 1) + '/' + rooms.length + '</b> · ' +
+      (rooms[i].dataset.name || '') +
+      ' · walk with ↑/↓ · <a href="mailto:nachobusinesscorp@gmail.com">reach the gate ↗</a>';
+    nodes.forEach(function (n, j) { n.classList.toggle('on', j === i); });
+  }
+  function set(i) {
+    i = Math.max(0, Math.min(rooms.length - 1, i));
+    cur = i;
+    lock = Date.now() + 1100;
+    rooms[i].scrollIntoView({ behavior: 'smooth', block: 'start' });
+    paint(i);
+  }
+  window.addEventListener('keydown', function (e) {
+    if (e.target && /INPUT|TEXTAREA/.test(e.target.tagName)) return;
+    const k = e.key;
+    if (k === 'ArrowDown' || k === 'PageDown' || k === 'j') { e.preventDefault(); set(cur + 1); }
+    else if (k === 'ArrowUp' || k === 'PageUp' || k === 'k') { e.preventDefault(); set(cur - 1); }
+  });
+  nodes.forEach(function (n, i) {
+    n.addEventListener('click', function (ev) { ev.preventDefault(); set(i); });
+  });
+  setInterval(function () {
+    if (Date.now() < lock) return;
+    const mid = window.scrollY + window.innerHeight / 2;
+    let best = 0;
+    rooms.forEach(function (r, i) { if (mid >= r.offsetTop) best = i; });
+    if (best !== cur) { cur = best; paint(best); }
+  }, 220);
+  paint(0);
+})();</script></body></html>

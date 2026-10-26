@@ -1090,6 +1090,12 @@ def main(argv: list[str] | None = None) -> int:
     )
     p_roundtable.add_argument("--rounds", type=int, default=2, help="1-3 bounded rounds")
     p_roundtable.add_argument("--max-wait-s", type=int, default=90, help="per-seat wait bound")
+    p_roundtable.add_argument("--why", default="",
+                              help="huang gate: why the roundtable escalation is justified")
+    p_roundtable.add_argument("--baseline-surface", default="",
+                              help="huang gate: seat consulted first as the single-seat baseline")
+    p_roundtable.add_argument("--baseline-answer", default="",
+                              help="huang gate: what the baseline seat said")
     p_ml = sub.add_parser("memlang", help="Shared-verkle trigger language (mem language)")
     p_ml.add_argument("--compile", nargs=2, metavar=("ACTION","SPEC"), help="compile a spec into a binary token")
     p_ml.add_argument("--decode", default="", metavar="TOKEN_HEX", help="decode a token")
@@ -1288,6 +1294,11 @@ def main(argv: list[str] | None = None) -> int:
     )
     p_agent.add_argument("--model", default="", help="Override model id")
     p_agent.add_argument("--tier", choices=("T0", "T1", "T2", "T3"), default="T2")
+    p_agent.add_argument(
+        "--read-only",
+        action="store_true",
+        help="Strip write tools from the schema grant (fan-out write-strip).",
+    )
     p_orc = sub.add_parser(
         "orchestrator",
         help="Supervise isolated sub-agent tasks (spawn/kill/reap) - one window, short-lived workers",
@@ -1386,6 +1397,37 @@ def main(argv: list[str] | None = None) -> int:
         type=int,
         default=None,
         help="With --deep: max ranked tickets to dig (default 4)",
+    )
+
+    # t73 spec: deliberate-off flow for MagImproveDaily (t47 marker, t73 executor).
+    # improve-off writes the intentional-disable marker
+    # (logs/magimprove_intentional.flag, via mag.lifecycle.mark_improve_intentional)
+    # FIRST and cites it in the result JSON, then disables the schtask
+    # (schtasks /Change /TN MagImproveDaily /Disable). Marker write failure
+    # aborts WITHOUT disabling: never a silent-disabled state.
+    # improve-on re-registers the task via scripts/register_improve_task.ps1,
+    # then clears the marker only on success. Tests mock the task commands;
+    # never run these against the live task from a test.
+    p_impoff = sub.add_parser(
+        "improve-off",
+        help=(
+            "Deliberate-off: write the intentional-disable marker "
+            "(logs/magimprove_intentional.flag, cited in output), then "
+            "disable schtask MagImproveDaily. Spec: mag/lifecycle.py t73"
+        ),
+    )
+    p_impoff.add_argument(
+        "--reason",
+        default="operator disable",
+        help="Why improve is off; stored in the marker JSON (default: operator disable)",
+    )
+    p_impon = sub.add_parser(
+        "improve-on",
+        help=(
+            "Deliberate-on: re-register schtask MagImproveDaily via "
+            "scripts/register_improve_task.ps1, then clear the marker "
+            "(only on success). Spec: mag/lifecycle.py t73"
+        ),
     )
 
     p_il = sub.add_parser(
@@ -1632,6 +1674,12 @@ def main(argv: list[str] | None = None) -> int:
     p_va.add_argument("--backfill", action="store_true", help="Run lattice-backfill first")
     p_va.add_argument("--dry", action="store_true", help="Plan only; no writes or LLM")
     p_va.add_argument("--no-reconcile", action="store_true", help="Skip ticket reconciliation")
+
+    p_srb = sub.add_parser(
+        "surface-rebuild",
+        help="Shared-inbox INDEX fold rebuild + register heals (WO-10; heal classes: invisible/stale/missing)",
+    )
+    p_srb.add_argument("--dry", action="store_true", help="Census only; no heals, no fold calls")
 
     p_tr = sub.add_parser(
         "trajectory-rib",
@@ -2147,6 +2195,16 @@ def main(argv: list[str] | None = None) -> int:
     p_operator.add_argument("--until", default=None, help="Optional ISO-8601 expiry for a pause")
     p_operator.add_argument("--json", action="store_true")
 
+    p_realign = sub.add_parser(
+        "realign",
+        help="Operator realignment: NEEDS YOU / MOVED / IGNORED since your last visit",
+    )
+    p_realign.add_argument(
+        "--mark-visited",
+        action="store_true",
+        help="Stamp this visit after rendering (next run shows only the new stuff)",
+    )
+
     p_env = sub.add_parser(
         "env",
         help="Cutting-edge environment tracks (branch + port isolation)",
@@ -2399,7 +2457,10 @@ def main(argv: list[str] | None = None) -> int:
             f.write(json.dumps(msg, ensure_ascii=False) + "\n")
 
         if not args.json:
-            print(f"🤖 Ghost ({provider}/{model}, \${cost}): {q[:100]}{'...' if len(q) > 100 else ''}")
+            # 2026-10-04: \$ in an f-string is an invalid escape (SyntaxWarning
+            # on every interpreter start; logs/dashboard_sv.err.log had grown to
+            # 172MB of these). '$' needs no escape in Python strings.
+            print(f"🤖 Ghost ({provider}/{model}, ${cost}): {q[:100]}{'...' if len(q) > 100 else ''}")
 
         outbox_file = ROOT / "memory" / "copilot" / "outbox" / f"{msg_id}.json"
         waited = 0
@@ -2459,11 +2520,11 @@ def main(argv: list[str] | None = None) -> int:
         q = " ".join(args.goal)
         result = fire_swarm(q, swarm_size=args.size, dry=args.dry)
         if args.dry:
-            print(f"🪲 SWARM PREVIEW: {result['tasks']} agents, \${result['total_cost']}")
+            print(f"🪲 SWARM PREVIEW: {result['tasks']} agents, ${result['total_cost']}")
             for angle in result["angles"]:
                 print(f"   {angle}")
         else:
-            print(f"🪲 SWARM FIRED: {result['fired']} tasks, \${result['total_cost']}")
+            print(f"🪲 SWARM FIRED: {result['fired']} tasks, ${result['total_cost']}")
             print(f"   Swarm ID: {result['swarm_id']}")
             for i, tid in enumerate(result["task_ids"]):
                 print(f"   [{i}] {tid} → {result['angles'][i]}")
@@ -2735,6 +2796,12 @@ def main(argv: list[str] | None = None) -> int:
             backfill_lattice=bool(getattr(args, "backfill", False) or getattr(args, "full", False)),
             dry=bool(getattr(args, "dry", False)),
         )
+        print(json.dumps(res, indent=2, default=str))
+        return 0 if res.get("ok") else 1
+    if args.cmd == "surface-rebuild":
+        from mag.surface_rebuild import rebuild_surface
+
+        res = rebuild_surface(dry_run=bool(getattr(args, "dry", False)))
         print(json.dumps(res, indent=2, default=str))
         return 0 if res.get("ok") else 1
     if args.cmd == "trajectory-rib":
@@ -3344,6 +3411,10 @@ def main(argv: list[str] | None = None) -> int:
             else:
                 print(_json.dumps(res, indent=2, default=str))
         return 0 if res.get("ok", True) else 1
+    if args.cmd == "realign":
+        from mag import realign
+
+        return realign.main(mark_visited=getattr(args, "mark_visited", False))
     if args.cmd == "operator-mode":
         import json as _json
 
@@ -3441,6 +3512,22 @@ def main(argv: list[str] | None = None) -> int:
                 print("\n" + Path(md).read_text(encoding="utf-8")[:8000])
         return 0 if res.get("ok") else 1
     if args.cmd == "context-pack":
+        # R4-L1 regen chain (2026-10-05,
+        # watch/inbox/ractor_engine/2026-10-05-ouroboros-r4-memory moves 2+3):
+        # organ freshness stops being a sibling remembering to hand-run them.
+        # Fire zknot + hermes_warm_boot + rib_boot as ONE idempotent chain
+        # BEFORE building the pack; the CLI exits 2 on age, missing organs, a
+        # failed step, or the zknot S1 no-silent-truncation gate (exit 2 when
+        # the [:3] rewrite drops qualifying sessions unnamed).
+        # R4b move 2 (2026-10-06): name THIS caller on the chain so the zknot
+        # runs.jsonl receipt rows attribute their trigger (setdefault: an
+        # explicit MAG_BOOT_REGEN_TRIGGER from a wrapper still wins).
+        import os
+
+        os.environ.setdefault("MAG_BOOT_REGEN_TRIGGER", "mag.cmd context-pack")
+        from mag.boot_regen import run_boot_regen
+
+        regen = run_boot_regen()
         from mag.context_pack import (
             build_context_pack,
             format_agent_preamble,
@@ -3458,6 +3545,8 @@ def main(argv: list[str] | None = None) -> int:
             scope_slug=scope_slug,
             refresh_bonds=bool(getattr(args, "refresh_bonds", False)),
         )
+        # the fired chain report overrides the age-only stamp build packs carry
+        pack["boot_regen"] = regen
         out = ROOT / "memory" / "context_pack_latest.md"
         out.parent.mkdir(parents=True, exist_ok=True)
         text = format_context_pack_text(pack, mode=mode)
@@ -3465,6 +3554,17 @@ def main(argv: list[str] | None = None) -> int:
         (ROOT / "memory" / "context_pack_latest.json").write_text(
             json.dumps(pack, indent=2, default=str), encoding="utf-8"
         )
+
+        def _regen_exit() -> int:
+            ages = regen.get("ages") or {}
+            stamp = " ".join(
+                f"{k}={(a.get('age_d') if a.get('age_d') is not None else 'NA')}d"
+                for k, a in ages.items())
+            print(f"BOOT-REGEN: {regen.get('verdict')} ({stamp}) - {regen.get('reason')}")
+            if regen.get("verdict") not in ("ok", "skipped"):
+                return 2
+            return 0
+
         if getattr(args, "agent", False):
             preamble = format_agent_preamble(
                 pack,
@@ -3473,9 +3573,14 @@ def main(argv: list[str] | None = None) -> int:
             ap = ROOT / "memory" / "agent_preamble_latest.md"
             ap.write_text(preamble, encoding="utf-8")
             print(preamble)
-            return 0
+            return _regen_exit()
         print(text)
-        return 0
+        # B2-314: the census patrol's own darkness is silent (Interactive-only
+        # scheduled task), so the attended context-pack surface reads the last
+        # START stamp and NAMES the darkness when the patrol went quiet.
+        from mag.census_liveness import report as census_liveness_report
+        census_liveness_report()
+        return _regen_exit()
     if args.cmd == "bonds":
         from mag.bonds import BONDS_MD, ingest_bonds, load_bonds_json, scan_conflicts
 
@@ -4216,6 +4321,9 @@ def main(argv: list[str] | None = None) -> int:
             participants=selected,
             rounds=args.rounds,
             max_wait_s=args.max_wait_s,
+            why=getattr(args, "why", ""),
+            baseline={"surface": getattr(args, "baseline_surface", ""),
+                      "answer": getattr(args, "baseline_answer", "")},
         )
         print(json.dumps(result, indent=2, ensure_ascii=False, default=str))
         return 0 if result.get("ok") else 1
@@ -4668,6 +4776,7 @@ def main(argv: list[str] | None = None) -> int:
             model=(args.model or "").strip() or None,
             one_shot=(args.query or "").strip() or None,
             tier=args.tier,
+            read_only=True if getattr(args, "read_only", False) else None,
         )
     if args.cmd == "tangent":
         from mag.tangent import enqueue, list_tangents, process_one, process_queue, scan_live_for_tangents
@@ -4737,6 +4846,18 @@ def main(argv: list[str] | None = None) -> int:
             )
         print(json.dumps(res, indent=2, default=str))
         return 0 if res.get("ok", True) else 1
+    if args.cmd == "improve-off":
+        from mag.lifecycle import improve_off
+
+        res = improve_off(reason=str(args.reason))
+        print(json.dumps(res, indent=2, default=str))
+        return 0 if res.get("ok") else 1
+    if args.cmd == "improve-on":
+        from mag.lifecycle import improve_on
+
+        res = improve_on()
+        print(json.dumps(res, indent=2, default=str))
+        return 0 if res.get("ok") else 1
     if args.cmd == "improve":
         from mag.improve import (
             improve_once,
@@ -5203,7 +5324,11 @@ def main(argv: list[str] | None = None) -> int:
             port=args.port,
             service="cast",
         )
-        run_cast(host=host, port=args.port)
+        port = args.port
+        if bool(getattr(args, "lan", False)) and port == 8766:
+            from mag.cast_server import LAN_PORT
+            port = LAN_PORT  # 8766 belongs to compose mag-mcp (FISH_TANK_REMEDIATE_20261019 C)
+        run_cast(host=host, port=port)
         return 0
     if args.cmd == "lab":
         from config import resolve_bind_host

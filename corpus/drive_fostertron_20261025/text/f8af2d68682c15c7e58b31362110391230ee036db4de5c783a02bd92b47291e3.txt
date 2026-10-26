@@ -1,0 +1,891 @@
+# Endogenous Capability Accumulation in Computational Games
+
+**Version:** 6.0 Master Consolidated  
+**Date:** 2026-09-26 (America/New_York)  
+**Audience:** LLM research agents, computational social scientists, game theorists, mechanism designers, engineers building the Skill-Compilation Substrate  
+**Supersedes:** v5 brief, extended abstract, pre-registration, SCS design, open questions, citation audit, and changelog as fragmented package — this file is the single readable unit  
+**Not claimed:** That this programme invents Challenge/Forget, knowledge compilation, options, or open-ended curricula. Residual novelty is a *composition* (stated below). Venue language stays identification-first: no Nature rhetoric, no gap theater.
+
+---
+
+## How to read this document
+
+| If you need… | Go to… |
+|--------------|--------|
+| One-page claim | §2 Executive abstract |
+| Why not “gamification” / MAG honesty | §3 Thesis + composition bound |
+| Prior art with links | §4 Related work |
+| Formal objects (X,K,R,E; Comp; V1–V4) | §5 |
+| Estimators + MLOps analogues | §6 |
+| Play / SDT / crowding-out | §7 |
+| Ownership of R | §8 |
+| Challenge family C_θ/μ + red team | §9 |
+| Falsifiable U1 claim | §10 |
+| Condensed experimental design | §11 |
+| SCS architecture + MVP | §12 |
+| Factorio transfer | §13 |
+| Programme, risks, P0 questions | §14 |
+| Industry practices | §15 |
+| Clickable link bank | §16 |
+| Full references | §17 |
+| Philosophy (demoted) | §18 |
+
+Companion artifacts under `/workspace/research-brief/` (optional; this master does not require them):
+
+- `fle-pilot-preregistration.md` — full pre-reg detail condensed in §11  
+- `scs-design.md` — full design condensed in §12  
+- `scs-mvp/` — runnable toy substrate (§12.5)  
+- `sim/` — metric-plumbing toy sim (§12.6)  
+- `open-questions.md` — living tracker summarized in §14.3  
+- `MASTER_BUILD_NOTES.md` — link verification log for this build  
+
+---
+
+## 2. Executive abstract
+
+v4 proposed a skill-compilation game with state \((X,K,R,E)\), metrics CG/CE/AR/NC, a conjunctive play condition, and a four-arm contrast of Play vs Compiling Play. Peer review showed that formalization without identification is costume: thresholds without instruments, \(\Delta R\) without an observation algebra, cosmic \(T_{\mathrm{OOD}}\), a scalar \(W\) with incommensurable units, Gap theater, and an overclaimed experimental substrate.
+
+This master keeps what survived hardening and merges the operational package. Compilation is \(\mathrm{Comp}\) with verifier typology **V1–V4**. Negative compilation is estimated under a declared challenge measure \(\mu\). Play thresholds are calibrated revealed-preference objects. \(R\) is an economy with property rights. Capability expansion drops raw cardinality. The MAG claim is reduced to a **composition of four delivered objects**. The 24-week plan yields one publishable unit (Study U1 on Factorio Learning Environment / V1), not a multi-domain synthesis narrative.
+
+**Study-level falsifiable claim (locked).** In domain \(D=\) Factorio Learning Environment automation tasks (**V1**), under mechanism class \(M=\{\) private \(R\) + V1 unit/factory verifier + affordance-only compile UI + \(\mu=\) held-out factory perturbation suite\(\}\), Arm \(D_{\mathrm{aff}}\) improves primary endpoint \(\Omega\) (CE-weighted verified completion rate per cognitive-cost hour over \(T=20\) sessions) by \(\ge\delta=0.15\) relative to Arm C at \(\alpha=0.05\) (two-sided), without reducing voluntary continuation below calibrated \(\tau_{\mathrm{cont}}\), with \(\widehat{\mathrm{NC}}(\cdot\mid\mu)\le\varepsilon=0.05\) mean excess loss on the adversarial slice, and mean strategic-capture (SC) rate \(\le 0.10\).
+
+Failure falsifies *this* claim. It does not prove universal mechanism–play incompatibility (H-FI). Until a full Skill-Compilation Substrate (SCS) exists, U1 is a **pilot** (FLE + compilation store + audit log), not confirmatory multi-domain science.
+
+---
+
+## 3. Organizing thesis and what changed from gamification rhetoric
+
+### 3.1 Organizing question
+
+How do we design a computational game in which intrinsically motivated exploration produces *verified, reusable* capability as a natural byproduct — without converting successful play into permanent, unchallengeable authority?
+
+The object is **endogenous capability accumulation**: successful play expands the future action space via callable artifacts; verification gates permanence; a declared challenge process can revoke or revise those artifacts. This is **not** gamification (points on work), and it is **not** a priority claim on the phrase Challenge→Forget.
+
+### 3.2 What is preserved from v4 / v5
+
+- State tuple \((X_t, K_t, R_t, E_t)\) and the interpretive \(\Delta\)-table (learning / discovery / compilation).  
+- Compilation as a *verified* transition into \(R\), distinct from caching.  
+- Metrics CG, CE, AR, NC — names retained, estimators rebuilt.  
+- Conjunctive play condition \(I_i > \tau_I \land \alpha_i > \tau_\alpha\).  
+- Crucial experimental contrast **C vs \(D_{\mathrm{aff}}\)** (Play vs Compiling Play), not Work vs Gamification.  
+- Loop fragment Challenge → Retain / Revise / Forget.  
+- Factorio demoted to motivating example and first V1 substrate, not theoretical centerpiece.
+
+### 3.3 What is demoted or corrected (lessons from v4 attack surfaces)
+
+From identification hardening and the socratic gap analysis (used as lessons, not dumped):
+
+1. **Instruments before thresholds.** \(I_i,\alpha_i,\tau\) without revealed-preference protocols were escape hatches; v5+ freezes calibration before outcomes.  
+2. **Audit algebra for \(\Delta R\).** Latent \(X\) is not observed; claims of compilation require named, callable, Challenge-eligible artifacts plus an audit record.  
+3. **Verifier typology.** Strong permanence only on V1–V2; V4 does not inherit Gap-8 rhetoric.  
+4. **Declared \(\mu\), not cosmic OOD.** NC is always “under declared \(\mu\)” with near/far/adversarial slices.  
+5. **Drop scalar \(W\).** Report vector \(\mathbf{Y}\) and Pareto / hypervolume.  
+6. **Substrate honesty.** Gray Swan Arena is a red-teaming product, *not* the four-arm lab. SCS (or FLE+store for U1) is required.  
+7. **Venue-honest citations.** Rass & Pinzger = poster/EA + arXiv; CSRO = AAMAS 2026 EA + arXiv; Marx edition = Progress 1977 / MECW Vol. 3 (not an unverified 1986 Progress print).  
+8. **One publishable unit.** Week-24 target is U1, not praxis-as-equilibrium-selection.  
+9. **Manipulation checks are first-class.** Covert compilation in C and extrinsic salience in D are construct threats, not footnotes — hence C′ and \(D_{\mathrm{aff}}\) vs \(D_{\mathrm{gam}}\).  
+10. **Career, not episode, as unit.** Capability accumulation and Challenge schedules are career-horizon objects; episode-level \(Q\) alone misses the programme.
+
+These ten corrections are the substantive content extracted from the socratic gap analysis; the attack-surface prose itself is not reproduced.
+
+### 3.4 MAG residual novelty (honest bound)
+
+We do **not** claim MAG invents Challenge/Forget (MLOps canary+rollback, continual learning, red-teaming, and blueprint versioning already do pieces). We claim at most a **composition** as a single experimental programme:
+
+1. Endogenous action-space expansion via \(R \subset A(S)\) with an audit algebra that identifies \(\Delta R\) vs \(\Delta X\);  
+2. Incentive-compatible verification under explicit multi-agent *ownership and provisioning* of \(R\);  
+3. Adversarial revalidation under a *declared* challenge family \(C_\theta\) and measure \(\mu\);  
+4. A conjunctive play condition that forbids compulsion-laundering, with instruments and pre-registered thresholds.
+
+If that residual is thin relative to CSRO + options + MLOps + POET, the programme still has value as an *identification-first* experimental package for play-as-work. It does not have value as a priority claim on the lifecycle phrase alone.
+
+**Differentia (joint package, not phrase):**
+
+| Prior art | Comp→\(R\)? | Adv. revalidation? | Conjunctive play? | Endogenous \(A(S)\)? | Owned/provisioned \(R\)? |
+|-----------|-----------|--------------------|-------------------|--------------------|------------------------|
+| MLOps | Yes (models) | Partial (canary) | No | No | Partial |
+| Options / macros / KC | Yes | Rare | No | Yes (option set) | Usually single-agent |
+| CSRO / LegoNE | Yes | Via eval/verify | No | Yes | Not play-conditioned |
+| Open-endedness (POET) | Discovery | Co-evolution | No | Yes (env+\(A\)) | No |
+| **This programme** | Yes + audit | Yes under declared \(\mu\) | Yes + instruments | Yes | Yes (regime + SC) |
+
+---
+
+## 4. Related work that earns residual Gap 8
+
+Gaps 1–7 in v4 were mostly citations of work that *addresses* the named topic. Below: what each cluster establishes, what residual remains, and why it matters — with primary links.
+
+### 4.1 GWAPs and mechanism design
+
+**Establishes.** [Jain & Parkes (2013), ACM TEAC](https://doi.org/10.1145/2399187.2399190) analyze ESP as a two-stage Bayesian game: match-early incentives support low-effort common-word equilibria; alternate scoring can support high-effort coordination. Kang et al. (2023) give a Stackelberg incentive mechanism for federated crowdsourcing. von Ahn’s GWAP programme and [Cooper et al. (2010), Foldit, *Nature*](https://doi.org/10.1038/nature09304) show that play can produce externally useful, *verified* scientific artifacts (protein structures), not only labels.
+
+**Residual.** Incentive-compatible design for systems where the *product of play is a callable artifact that enters others’ action spaces*, with maintenance costs and Challenge rights — not only labels or one-shot folds. Foldit compiles strategies into community knowledge; it does not run a declared \(\mu\)-Challenge lifecycle with ownership of \(R\).
+
+### 4.2 Knowledge compilation, macros, chunking, options
+
+**Establishes.** [Darwiche & Marquis (2002), JAIR knowledge compilation map](https://doi.org/10.1613/jair.989) ([arXiv:1106.1819](https://arxiv.org/abs/1106.1819)): expensive reasoning compiled into target languages enabling cheap queries. Fikes, Hart & Nilsson (1972) MACROPS and Korf (1985) macro-operators turn plan traces into reusable operators. Soar chunking (Laird, Rosenbloom & Newell, 1986) compiles goal-based traces into productions. [Sutton, Precup & Singh (1999)](https://doi.org/10.1016/S0004-3702(99)00052-1) options are temporally extended actions expanding effective \(A\); [Option-Critic (Bacon, Harb & Precup, 2017)](https://arxiv.org/abs/1609.05140) and [DIAYN (Eysenbach et al., 2019)](https://arxiv.org/abs/1802.06070) learn skill libraries. [Toolformer (Schick et al., 2023)](https://arxiv.org/abs/2302.04761) externalizes reasoning into callable tools.
+
+**Residual.** These traditions compile under a single learner’s objective or a fixed planner. They do not jointly impose: (i) multi-agent property rights over compiled \(R\), (ii) a conjunctive play/voluntariness constraint on the producing activity, and (iii) incentive-compatible adversarial revalidation with strategic-capture metrics. MAG’s claim, if any, lives in that joint package — not in inventing “compile skill.”
+
+### 4.3 Open-endedness and challenge generation
+
+**Establishes.** [POET (Wang et al., 2019)](https://arxiv.org/abs/1901.01753) and [Enhanced POET (Wang et al., 2020)](https://arxiv.org/abs/2003.08536) co-evolve environments and solvers. [OMNI (Zhang et al., 2024)](https://arxiv.org/abs/2306.01711) uses foundation-model interestingness for open-ended curricula. Challenge generation is the hard problem; cosmic \(T_{\mathrm{OOD}}\) is not a solution.
+
+**Residual.** Use POET/OMNI-style generators as *implementations of* adversary class and \(\mu\), not as competitors to rename. Gap 8 needs a declared \(\mu\) and reporting of NC under near/far/adversarial slices — open-endedness supplies generators; it does not supply play conditions or \(R\)-economies.
+
+### 4.4 Continual learning and MLOps lifecycle
+
+**Establishes.** Catastrophic forgetting (McCloskey & Cohen, 1989); [EWC (Kirkpatrick et al., 2017)](https://arxiv.org/abs/1612.00796) ([PNAS](https://www.pnas.org/doi/10.1073/pnas.1611835114)); production canary, rollback, [MLflow Model Registry](https://mlflow.org/docs/latest/ml/model-registry/). Challenge → Retain/Revise/Forget is already operational vocabulary in MLOps and continual learning ([Avalanche](https://github.com/ContinualAI/avalanche) as a library analogue).
+
+**Residual.** MLOps typically lacks endogenous \(A(S)\) via play, conjunctive voluntariness, and multi-agent provisioning games over shared skill stores in a GWAP-like substrate. Do not claim the lifecycle phrase; claim the composition with play + \(R\)-economy + \(\mu\).
+
+### 4.5 CSRO, LegoNE, opponent shaping
+
+**Establishes.** [CSRO (Hennes et al., 2026)](https://arxiv.org/abs/2603.10098) (AAMAS 2026 EA + arXiv) treats strategies as executable LLM-generated code — already \(\Delta R\). [LegoNE (Li, Li & Deng, 2026, *Nature Communications*)](https://www.nature.com/articles/s41467-026-74003-1) generates under formal verification — V1 compilation. [Opponent shaping in LLM agents (García Segura, Hailes & Musolesi, 2026)](https://arxiv.org/abs/2510.08255) shows agents adapt others’ learning — directly relevant to *adversarial compilation* and strategic capture of \(R\).
+
+**Residual.** CSRO + LegoNE are instances of verified synthesis, not of play-conditioned multi-agent \(R\) economies with SC and NC|\(\mu\). Opponent shaping is a threat model for Gap 8, not decoration.
+
+### 4.6 Endogenous growth and learning-by-doing
+
+**Establishes.** Arrow (1962): productivity as byproduct of cumulative doing. Romer (1990): nonrival ideas. [Acemoglu & Restrepo (2018)](https://doi.org/10.1257/aer.20160696): automation capital displaces tasks and creates new ones — closest economic analogue of “compiled artifacts expand action sets while risking displacement/liability.”
+
+**Residual.** Import the language of nonrival \(R\), maintenance, and displacement into the computational game; do not pretend Gap 8 is unprecedented in economics.
+
+### 4.7 SDT, crowding-out, and play measurement
+
+**Establishes.** Self-Determination Theory (Ryan & Deci, 2000) measures autonomy, competence, relatedness; [Deci, Koestner & Ryan (1999) meta-analysis](https://selfdeterminationtheory.org/wp-content/uploads/2014/04/1999_DeciKoestnerRyan_Meta.pdf) (Psychological Bulletin; DOI 10.1037/0033-2909.125.6.627 — APA DOI resolver intermittently fails; SDT.org PDF verified) shows extrinsic rewards can crowd out intrinsic motivation — central to why additive \(U=E+I+\alpha+L-\kappa\) fails and why GWAPs fail under naive points.
+
+**Residual.** Instrument \(I_i,\alpha_i\) with revealed preference primacy; treat crowding-out as a first-class interaction (\(D_{\mathrm{aff}}\) vs \(D_{\mathrm{gam}}\)).
+
+### 4.8 Verification and scalable oversight
+
+**Establishes.** CompCert-style verified compilation as V1 inspiration; [Bowman et al. (2022) sandwiching / scalable oversight](https://arxiv.org/abs/2211.03540): weak overseers + strong models. Code-review incentive designs exist (Rass & Pinzger 2023 Shapley micro-payments poster/EA; Naserameri 2026 governance framework — related, not a classic PD filling of “Gap 5”). Challenge *is* code review at the artifact layer.
+
+**Residual.** Verifier typology V1–V4 and a verifier meta-protocol; connect review dilemmas into Challenge payments so MAG does not reinvent unsolved fatigue/capture under a new name.
+
+### 4.9 One-sentence residual Gap 8
+
+**Gap 8 (residual):** There is no identification-complete experimental programme that jointly (a) expands multi-agent action spaces via audited, owned, provisioned \(R\), (b) gates permanence by V1–V2 (or soft V3) verification, (c) revalidates under a declared challenge measure \(\mu\) while measuring strategic capture, and (d) requires conjunctive play thresholds so compulsion cannot be laundered into “successful play-as-work.”
+
+That is the claim. It is narrower than v4’s rhetoric. It is operationalizable.
+
+---
+
+## 5. Formal framework
+
+### 5.1 State
+
+\[
+S_t = (X_t, K_t, R_t, E_t)
+\]
+
+| Component | Meaning | Observability |
+|-----------|---------|---------------|
+| \(X_t\) | Agent competence / internal state (weights, skills, policies) | Partially latent |
+| \(K_t\) | Declarative knowledge (facts, maps, invariants) | Recordable as non-executable data |
+| \(R_t\) | Executable reusable artifacts (tools, functions, verified macros) | Named, versioned, callable |
+| \(E_t\) | Environment (world, other agents, resources) | Domain-dependent |
+
+| Change | Interpretation |
+|--------|----------------|
+| \(\Delta X \neq 0\), \(\Delta K=\Delta R=0\) | Learning |
+| \(\Delta K \neq 0\), \(\Delta X=\Delta R=0\) | Discovery |
+| \(\Delta R \neq 0\), claimed \(\Delta X=\Delta K=0\) | Compilation (MAG-relevant) |
+
+### 5.2 Observation / audit algebra (identifiability)
+
+Latent \(X\) is not directly observed. Claims of \(\Delta R\) are allowed only under an **operational partition on system-accessible representations**:
+
+- **\(R\)-objects:** named, callable, versioned, independently invocable *without* the producing agent’s forward pass; subject to Challenge; leave an audit record.  
+- **\(X\)-objects:** parameters/state not independently callable; updated only via the agent’s learning rule.  
+- **\(K\)-objects:** declarative, non-executable records.
+
+**Boundary rules:**
+
+1. LoRA shipped as a tool with an API → \(R\); same LoRA fused into the base model → \(X\).  
+2. Prompt cache → \(R\) iff verified and Challenge-eligible; else cache (not compilation).  
+3. Factorio blueprint → \(R\); player’s improved timing → \(X\).  
+4. Few-shot trace pasted into context → not \(R\) unless promoted through \(\mathrm{Comp}\) with audit.
+
+**Audit record (mandatory for claimed compilation):**
+
+\[
+(\mathtt{trace\_id},\; \mathtt{verifier\_id},\; \mathtt{artifact\_hash},\; A^{\mathrm{obs}}_t,\; A^{\mathrm{obs}}_{t+1},\; \mathtt{owner},\; \mathtt{license})
+\]
+
+Without the audit, do not claim \(\Delta R\).
+
+### 5.3 Dynamics and endogenous action space
+
+\[
+a_{i,t} \in A_i(S_t),\qquad S_{t+1} = F(S_t, a_t, \omega_t)
+\]
+\[
+A_i(S_t) = A_i(X_t, K_t, R_t, E_t)
+\]
+
+\(R_t\) appears in \(A_i\): a compiled artifact is a new available action. \(\omega_t\) is exogenous stochasticity; \(F\) is the environment transition.
+
+### 5.4 Compilation operator \(\mathrm{Comp}\)
+
+\[
+\mathrm{Comp}(\tau, o, v) = r \in R_{t+1} \quad\text{iff}\quad v(\tau, o) = \top
+\]
+
+(or soft acceptance under V3). Trace \(\tau\): recorded actions/observations. Outcome \(o\): observed result. Verifier \(v\): evidence of correctness, generality, and reuse safety. **Caching** (\(v\) absent or trivial) is not compilation.
+
+### 5.5 Verifier typology V1–V4
+
+| Class | Definition | Strong MAG lifecycle? |
+|-------|------------|------------------------|
+| **V1** Formal/exact | Proofs, unit tests with oracles, factory-runs-or-not physics | Yes: Comp → Challenge → Retain/Revise/Forget |
+| **V2** Empirical/stochastic | Held-out eval with confidence intervals | Yes, with CI-aware Retain |
+| **V3** Preference/committee | Bradley-Terry / ranked feedback; belief \(\pi(v=\top)\) | Soft compilation only; Challenge updates \(\pi\) |
+| **V4** Open-ended | No stable \(v\) | Compilation **forbidden** or only provisional with no permanence claim |
+
+**Restriction:** Strong claims are restricted to V1–V2. **Verifier meta-protocol:** second-order Challenge of verifiers on a held-out meta-set; publish FP/FN rates; treat verifier drift as a first-class failure mode. Infinite regress is bounded by publishing error rates, not by pretending omniscience.
+
+### 5.6 Notation table
+
+| Symbol | Meaning |
+|--------|---------|
+| \(S_t=(X_t,K_t,R_t,E_t)\) | State |
+| \(A_i(S_t)\) | Agent \(i\)’s action set |
+| \(\mathrm{Comp}\) | Compilation operator |
+| \(v\) | Verifier |
+| \(\kappa_i\) | Cognitive / effort cost to agent \(i\) |
+| \(c_{\mathrm{base}}, c_r, c_{\mathrm{comp}}\) | Compute/reasoning costs in CG |
+| \(E_i, I_i, \alpha_i, L_i\) | Extrinsic, intrinsic, agency, learning terms |
+| \(\tau_I, \tau_\alpha\) | Play thresholds (calibrated) |
+| \(\mathrm{CG}, \mathrm{CE}, \mathrm{AR}, \mathrm{NC}, \mathrm{SC}\) | Metrics |
+| \(C_\theta\) | Challenge family parameterized by \(\theta\) |
+| \(\mu\) | Challenge sampling measure |
+| \(\Omega\) | Primary experimental endpoint |
+| \(M\) | Finite mechanism class for H-FI\(_M\) |
+| \(\omega_t\) | Exogenous noise |
+| \(F\) | Environment transition |
+
+Utility is **not** treated as a primary identifying object for equilibrium claims in the empirical programme. Prefer revealed preference + thresholds; additive separability is not assumed as true.
+
+---
+
+## 6. Metrics with estimators and industry analogues
+
+Drop scalar \(W=Q+K+R\). Report the vector
+
+\[
+\mathbf{Y} = (Q,\; K,\; R^{\#},\; \mathrm{CG},\; \mathrm{CE},\; \mathrm{AR},\; \mathrm{NC}\mid\mu,\; \mathrm{SC},\; I,\; \alpha,\; \kappa)
+\]
+
+and compare arms by Pareto dominance / hypervolume. Domain units: \(Q\) = verified task completions; \(K\) = novel invariants passing audit; \(R^{\#}\) = count (or mass) of Challenge-surviving artifacts with \(\mathrm{AR}\) above a pre-registered floor.
+
+### 6.1 Compilation Gain (CG)
+
+\[
+\widehat{\mathrm{CG}}(r) = \frac{\hat{\mathbb{E}}_\nu[c_{\mathrm{base}}(T) - c_r(T)]}{c_{\mathrm{comp}}(r)}
+\]
+
+Estimator: paired evaluation on a fixed probe set drawn from \(\nu\); bootstrap CIs. \(c_{\mathrm{comp}}\) includes discovery, verification, and *maintenance* over the evaluation horizon. **Not estimated:** infinite-horizon social value.
+
+**Industry analogue:** cost-of-ownership for a shared library / registered model version — amortize build+verify+maintain against baseline inference cost.
+
+### 6.2 Capability Expansion (CE) — non-cardinality
+
+Raw \(|A_{t+1}\setminus A_t|\) is undefined/infinite for rich action spaces. Define CE via **reachable-state value** under a task measure \(\nu\):
+
+\[
+\mathrm{CE}_t = V_\nu(S_{t+1}; A(S_{t+1})) - V_\nu(S_{t+1}; A(S_t))
+\]
+
+where \(V_\nu(S; A)\) is expected return (or verified completion rate) when only actions in \(A\) are available, evaluated on frozen \(S_{t+1}\) probe states. Alternative: covering numbers / option-set diversity under a declared trajectory metric \(d\). Report which definition is pre-registered. **Never** raw cardinality.
+
+**Industry analogue:** option-value of a tool registry entry — “what new verified tasks open when this tool is on the path?”
+
+### 6.3 Artifact Reuse (AR)
+
+\[
+\widehat{\mathrm{AR}}(r) = \frac{\#\{\text{successful eligible invocations of } r\}}{\#\{\text{eligible downstream situations}\}}
+\]
+
+Eligibility rules pre-registered per domain. \(\mathrm{AR}\approx 0\) ⇒ archived, not compiled.
+
+**Industry analogue:** package download/use rates with eligibility filters; dead code in registries.
+
+### 6.4 Negative Compilation under \(\mu\) (NC|\(\mu\))
+
+Replace cosmic \(T_{\mathrm{OOD}}\):
+
+\[
+\widehat{\mathrm{NC}}(r\mid\mu) = \hat{\mathbb{E}}_{\theta\sim\mu}\big[L(r; C_\theta) - L(\emptyset; C_\theta)\big]
+\]
+
+with bootstrap or batched CIs. Report separately for **near-OOD**, **far-OOD**, and **adversarial-OOD** slices of \(\mu\) (do not collapse). Claim is always “NC under declared \(\mu\),” never “no liability in open worlds.”
+
+**Industry analogue:** canary / shadow evaluation and rollback — [MLflow Model Registry](https://mlflow.org/docs/latest/ml/model-registry/) staging→production with aliases; Challenge ≈ canary that can force Forget.
+
+### 6.5 Strategic Capture (SC)
+
+\[
+\mathrm{SC}(r) = \mathbf{1}\big[\Delta U_{\mathrm{owner}}(r) > 0 \;\land\; \text{social }\mathbf{Y}\text{ does not Pareto-improve under }\mu\big]
+\]
+
+or a continuous surplus-transfer index. Arm D “success” requires high CG, low NC|\(\mu\), **and** low SC. Connects opponent shaping ([García Segura et al., 2026](https://arxiv.org/abs/2510.08255)) to Gap 8’s threat model: exploitative macros can raise CG while transferring surplus or locking interfaces.
+
+### 6.6 What is not estimated
+
+Open-world absolute safety; metaphysical H-FI; scalar welfare without stakeholder weights; CE as action counts.
+
+---
+
+## 7. Play condition and SDT / crowding-out best practices
+
+### 7.1 Conjunctive form
+
+\[
+I_i > \tau_I \quad\text{and}\quad \alpha_i > \tau_\alpha
+\]
+
+\(L_i\) may accompany play; it cannot compensate for failed \(I\) or \(\alpha\). **Circularity ban:** classification of an episode as play **must not** depend on \(Q\), \(W\)-like aggregates, or Arm D success.
+
+### 7.2 Instruments (pre-registered)
+
+| Construct | Primary (revealed preference) | Secondary (self-report) |
+|-----------|-------------------------------|-------------------------|
+| \(I_i\) | Voluntary continuation rate; exit hazard; WTP-in-time to remain in arm | IMI Interest/Enjoyment subscale |
+| \(\alpha_i\) | Fraction of actions not forced by task constraints; option-generation rate | IMI Perceived Choice subscale |
+
+Self-report is secondary and never sole classifier.
+
+### 7.3 Threshold calibration
+
+\(\tau_I, \tau_\alpha\) are **not** free parameters. Protocol:
+
+1. Run a calibration cohort *before* the four-arm (or a held-out calibration wave).  
+2. Set \(\tau_I, \tau_\alpha\) as pre-registered quantiles of revealed-preference proxies (e.g., continuation rates at indifference in a discrete-choice / exit task), or as indifference points from that DCE.  
+3. Freeze thresholds before outcome analysis.
+
+Failed Arm D cannot be reclassified post hoc as “\(\tau\) not met” unless the pre-registered instrument says so.
+
+### 7.4 Crowding-out best practices (SDT-aligned)
+
+Extrinsic salience (points, badges, evaluation) can reduce \(I_i\) ([Deci et al., 1999](https://selfdeterminationtheory.org/wp-content/uploads/2014/04/1999_DeciKoestnerRyan_Meta.pdf); Ryan & Deci SDT). Operational implications for this programme:
+
+- Prefer **affordance-only** compile UI (\(D_{\mathrm{aff}}\)) over badge/points compile (\(D_{\mathrm{gam}}\)) for the primary claim.  
+- Treat \(E\times I\) contamination as a confound when D’s UI increases external evaluation salience.  
+- Measure continuation and exit hazard *separately* from \(Q\) / \(\Omega\).  
+- Do not use leaderboards as the definition of “successful play.”  
+- Pre-register that \(D_{\mathrm{gam}}\) is diagnostic for crowding-out, not the success arm.
+
+---
+
+## 8. \(R\) as an economy and ownership patterns
+
+\(R_t\) entering everyone’s \(A_i\) is either a public good (under-provision, maintenance collapse) or a club good (exclusion, monopoly on primitives). Leaving ownership undefined invites poisoned, brittle, or gatekeeping artifacts — especially under LLM agents.
+
+### 8.1 Property regimes
+
+Pre-register one regime per study (or cross as a factor):
+
+| Regime | Exclusion | Transfer |
+|--------|-----------|----------|
+| Private \(R\) | Owner only | License / sale |
+| Team \(R\) | Team members | Internal |
+| Global commons | None | Citation-like attribution |
+
+**U1 default:** private \(R\).
+
+### 8.2 Industry ownership patterns (analogues, carefully framed)
+
+| Pattern | Why it matters here |
+|---------|---------------------|
+| Open-source licenses (SPDX: Apache-2.0, MIT, CC-BY-4.0, Proprietary) | Encode invoke/redistribution rights on every artifact `license` field |
+| [Model cards](https://arxiv.org/abs/1810.03993) / dataset cards | Document intended use, limitations, and evaluation — Challenge metadata analogue |
+| Tool / model registries ([MLflow Model Registry](https://mlflow.org/docs/latest/ml/model-registry/); package indexes) | Version, stage (Staging/Production/Archived), aliases, rollback ≈ Retain/Revise/Forget |
+| LangChain / LlamaIndex tool-calling | **Careful frame:** industry *R-like* compilation of callable tools into agent action spaces — **not** MAG theory; useful as engineering analogue for “independently invocable without producer forward pass” ([LangChain](https://github.com/langchain-ai/langchain), [LlamaIndex](https://github.com/run-llama/llama_index)) |
+
+### 8.3 Provisioning, maintenance, adversarial compilation
+
+\(c_{\mathrm{comp}}\) includes maintenance. Provisioning game: compile/maintain cost vs reclaimable value via Shapley-style shares over downstream AR, or citation royalties (Rass & Pinzger micro-payment *idea*, cited as poster/EA). Under-provision is a predicted failure mode of commons \(R\).
+
+**Adversarial compilation:** artifacts that expand \(A\) for self and shrink *effective* \(A\) for others (interface capture, dependency locking, grader-hacks). Model as environment shaping via \(R\); include rival-generated tasks in \(\mu\). SC is the metric wedge between **generative** and **strategic** compilation.
+
+**Challenge incentives:** Challenge is code review at the artifact layer. Rights and duties belong in the \(R\) license, with paid rotation to limit fatigue and capture.
+
+---
+
+## 9. Challenge family \(C_\theta/\mu\) and red-team best practices
+
+### 9.1 Objects
+
+- Challenge family \(\{C_\theta\}_{\theta\in\Theta}\).  
+- Declared sampling measure \(\mu\) on \(\Theta\).  
+- Adversary class: random | held-out human | automated red-team | co-evolved (POET-style).
+
+State adversary capability relative to the compiler; otherwise Retain/Forget is uninterpretable.
+
+### 9.2 OOD slices
+
+Report \(\widehat{\mathrm{NC}}(r\mid\mu)\) for:
+
+1. **Near-OOD** — interpolation within known factors;  
+2. **Far-OOD** — extrapolation;  
+3. **Adversarial-OOD** — best-response challenges.
+
+Stopping rule: pre-registered number of draws from \(\mu\), or sequential test until CI width \(<\varepsilon_{\mathrm{NC}}\), or budget \(B_{\mathrm{chal}}\). U1 default: \(N_{\mathrm{chal}}=30\) per artifact.
+
+### 9.3 Loop
+
+Explore → Act → Observe → Verify → Comp → Reuse → **Challenge\(_\mu\)** → Retain / Revise / Forget.
+
+Factorio stops at Reuse. MLOps already has canary/rollback. The programme’s use of this loop is conditional on §§5–8 being identified — not on renaming the loop.
+
+### 9.4 Red-team tooling (links; roles)
+
+| Tool / platform | URL | Role for this programme |
+|-----------------|-----|-------------------------|
+| **Gray Swan Arena** | [https://grayswan.ai/](https://grayswan.ai/) | **Demoted:** real adversarial evaluation product; loose analogy for paid structured probing — **not** the four-arm play/compilation lab |
+| **Garak** (NVIDIA) | [https://github.com/NVIDIA/garak](https://github.com/NVIDIA/garak) | Automated LLM vulnerability probing; optional `adversary_class=automated_red_team` plugin for non-FLE V2 gyms |
+| **PyRIT** (Microsoft) | [https://microsoft.github.io/PyRIT/latest/](https://microsoft.github.io/PyRIT/latest/) | Composable multi-turn red-teaming framework; same plugin role |
+| POET / Enhanced POET / OMNI | arXiv links in §4.3 | Generators for co-evolved \(\mu\), not replacements for play conditions |
+
+### 9.5 FLE \(\mu\) sketch (U1)
+
+| Slice | \(\theta\) factors | Weight in \(\mu\) |
+|-------|--------------------|-------------------|
+| Near-OOD | Resource ratio ±20%; belt/inserter swaps; training-like seeds | 0.40 |
+| Far-OOD | Missing ore; power outages; withheld recipes; ×2 throughput; tech gates | 0.30 |
+| Adversarial-OOD | Geometry-breaking layouts; rival macros starving inputs; flaky timing border; poisoned deps | 0.30 |
+
+Loss: \(L(r;C_\theta)=1-\min(1,\mathrm{throughput}(r;C_\theta)/\mathrm{target}_\theta)\). Baseline \(L(\emptyset;C_\theta)\) = frozen non-\(R\) heuristic.
+
+---
+
+## 10. Hypotheses and study-level falsifiable claim
+
+### 10.1 H-MD vs H-FI\(_M\)
+
+- **H-MD:** Failures of play-as-work are mechanism failures; some \(m\) in a finite class \(M\) jointly achieves play thresholds and vector dominance vs control.  
+- **H-FI\(_M\):** *Provisional* incompatibility *relative to* finite mechanism class \(M=\{m_1,\ldots,m_k\}\) under search budget \(B\): no \(m\in M\) achieves (play thresholds \(\land\) \(\mathbf{Y}\) not dominated by control).
+
+H-FI\(_M\) is not metaphysical incompatibility. Severity / Bayes factors preferred over English “gains support.”
+
+**A priori H-FI\(_M\)-prone domains:** V4 verification, zero-sum status contests, pure creativity without stable \(v\).
+
+### 10.2 Study-level claim (FLE U1)
+
+> In domain \(D=\) Factorio Learning Environment automation tasks (**V1**), under mechanism class \(M=\{\)private \(R\) + V1 unit/factory verifier + affordance-only compile UI + \(\mu=\) held-out factory perturbation suite\(\}\), Arm \(D_{\mathrm{aff}}\) improves primary endpoint \(\Omega\) (CE-weighted verified completion rate per cognitive-cost hour over horizon \(T=20\) sessions) by \(\ge\delta=0.15\) relative to Arm C at \(\alpha=0.05\) (two-sided), without reducing voluntary continuation below \(\tau_{\mathrm{cont}}\) (calibrated), and with \(\widehat{\mathrm{NC}}(\cdot\mid\mu)\le\varepsilon=0.05\) mean excess loss on the adversarial slice, and mean SC rate \(\le 0.10\).
+
+**Gates (all required for claim support):** H1 (effect) ∧ H1a (continuation) ∧ H1b (adversarial NC) ∧ H1c (SC). One domain. One \(\delta\). One \(\varepsilon\). Pre-register before outcome lock.
+
+**Mechanism class \(M\) (frozen before P3):**
+
+1. Property regime: **private \(R\)**.  
+2. Verifier: **V1** — FLE factory throughput oracle + unit-test harness.  
+3. Compile UI: **affordance-only** (no badges/points) for \(D_{\mathrm{aff}}\).  
+4. \(\mu\): held-out factory perturbation suite (§9.5).
+
+---
+
+## 11. Experimental design summary (U1 pilot)
+
+Condensed from `fle-pilot-preregistration.md`. Full numeric freeze files (`tau_freeze.json`, `mu_config.hash`) live with the pre-reg.
+
+### 11.1 Arms
+
+| Arm | Description |
+|-----|-------------|
+| A | Work: explicit tasks + extrinsic objective |
+| B | Gamification: A + points/ranks |
+| C | Play: autonomy/exploration, **no** system-visible \(R\) store |
+| C′ | Play + workspace wipe / no persistent memory (manipulation extreme) |
+| \(D_{\mathrm{aff}}\) | C + verified strategies → \(R\) (save affordance, no badges) |
+| \(D_{\mathrm{gam}}\) | \(D_{\mathrm{aff}}\) + badges/points for compile |
+
+**Primary contrast:** C vs \(D_{\mathrm{aff}}\). B and \(D_{\mathrm{gam}}\) diagnose crowding-out. C′ is sensitivity for covert compilation.
+
+### 11.2 Population and unit
+
+- **Primary:** LLM agent *careers* (≥2 model families), \(T=20\) sessions, agent-career as unit of analysis.  
+- **Optional human cohort:** separate report; ethics clearance required; not pooled into H1 without addendum.  
+- Session cap: 128 FLE interactions **or** 45 wall-clock minutes **or** agent exit.
+
+### 11.3 Primary endpoint \(\Omega\)
+
+\[
+\Omega_i = \frac{\sum_{t=1}^{T} w_t^{\mathrm{CE}}\, Q_{i,t}}{\sum_{t=1}^{T} \hat\kappa_{i,t}}
+\]
+
+with CE weights from reachable-state probes (never raw \(|A|\)). Estimator: Welch \(t\) + BCa bootstrap over careers; ITT primary; play-compliant subgroup secondary only (collider warning).
+
+### 11.3b Secondary endpoints (pre-specified; not claim-defining)
+
+| Endpoint | Estimator sketch |
+|----------|------------------|
+| \(I_i\) | Continuation rate / exit hazard / WTP-in-time (LLM: continue vs stop under matched compute offer) |
+| \(lpha_i\) | Unconstrained-action fraction; option-generation rate (distinct tool schemas / session) |
+| AR\((r)\) | Successful eligible invocations / eligible situations; floor \(\mathrm{AR}\ge 0.05\) else archive |
+| NC\|\(\mu\) | Excess loss under \(\mu\); **near / far / adversarial** separately; H1b uses adversarial |
+| SC rate | Mean SC over career artifacts with \(\mathrm{AR}\ge 0.05\) |
+| CG\((r)\) | Probe cost savings / \(c_{\mathrm{comp}}\) (incl. maintenance); bootstrap CI |
+| \(R^{\#}\) | Challenge-surviving artifacts above AR floor |
+| Covert | Session-fraction with any proxy fire |
+
+**Multiplicity:** H1 + gates unadjusted (claim-defining). Secondaries H2–H6 under Benjamini–Hochberg \(q=0.10\). No post-lock fishing on alternate \(\Omega\) formulas.
+
+**Calibration (P0):** \(n_{\mathrm{cal}}\ge 24\) Play-like careers without arm labels or \(R\) store; freeze \(	au_I,	au_lpha,	au_{\mathrm{cont}},\sigma_{\mathrm{CE}}^{\mathrm{cal}}\) in `tau_freeze.json` and git tag `p0-tau-freeze` before any D-arm outcome analysis. Provisional defaults (replace on freeze): P25 of calibration continuation / unconstrained-action fraction.
+
+### 11.4 Covert compilation
+
+Proxies: note persist, blueprint-aside, prompt-save, shadow macros. \(\tau_{\mathrm{covert}}=0.30\). If mean covert in C exceeds threshold → risk R2: estimand = value of *audited system-visible* \(R\), not compilation per se.
+
+### 11.5 Power / pilot label
+
+Under \(\sigma_\Omega\approx 0.35\), \(\delta=0.15\), \(\alpha=0.05\), 80% power ⇒ \(n\approx 85\) per arm. **Pilot default** \(n=24\) ⇒ MDE ≈ 0.28 > 0.15 → **underpowered for δ**. Claim-supported language forbidden unless \(n\) raised or \(\sigma\) materially smaller post-calibration (freeze new MDE before unblinding). Label: **Pilot**.
+
+### 11.6 Attrition
+
+ITT with observed sessions; Lee bounds if differential exit; no IV unless addendum. Do not condition primary \(\Omega\) on play-passers only.
+
+### 11.7 Pre-registration norms
+
+Follow [OSF](https://osf.io/) / [COS preregistration](https://www.cos.io/initiatives/prereg) and [AsPredicted](https://aspredicted.org/) norms: timestamped plan, frozen primary endpoint, deviations log, no peeking then retuning \(\mu\)/\(\tau\). This programme’s plan is filed as `fle-pilot-preregistration.md` (2026-09-26 ET).
+
+### 11.8 Ethics and data rights over \(R\) (condensed)
+
+**LLM track:** No human-subjects review for pure API agents; respect provider ToS; audit logs retained per institutional policy; every artifact requires `owner` + `license` ∈ {private-no-redistrib, CC-BY-4.0, research-only, SPDX equivalents}.
+
+**Human track (if run):** IRB before recruitment; informed consent covering logging, IMI, voluntary exit; default **private \(R\)** — human retains ownership; study gets irrevocable research license to evaluate under \(\mu\) and publish aggregates; redistribution of identifiable artifacts needs separate consent; Challenge/Forget does not delete personal copies outside the store; debrief on gamification arms.
+
+**Dual-use:** Adversarial \(\mu\) stays inside FLE sandbox; no real-world industrial control coupling; SC measures strategic \(R\) without deploying it outside study.
+
+---
+
+## 12. SCS architecture summary (engineer-usable)
+
+Gray Swan Arena is **not** SCS. A purpose-built (or adapted) substrate must provide: identical tasks across arms; V1/V2 verifiers with FP/FN hooks; named versioned \(R\) with ownership/license/audit; Challenge API sampling documented \(\mu\); session/career logging for play instruments; population protocol and ethics path.
+
+### 12.1 Architecture (control plane)
+
+```
+Arm Manager · Session/Career Log · Play Instrumenter · Metrics Estimator
+        ↓
+Trace Store → Verifier (V1–V4) → R-Registry → Audit Log
+        ↑                              ↑
+Challenge Generator C_θ/μ      Property / License / SC Monitor
+        ↓
+EnvBackend: FLE (primary) | factorioctl (optional RCON) | toy
+```
+
+Players never write directly into \(R\). They submit `CompRequest`; only Verifier + Registry commit.
+
+### 12.2 Key schemas (abbreviated)
+
+**Artifact:** `artifact_id`, `name`, `version`, `artifact_hash`, `content_type`, `entrypoint`, `deps`, `owner`, `license` (regime, SPDX, invoke_policy, challenge_rights/duties), `verifier_id`, `verifier_class`, `status` ∈ {provisional, active, revised, forgotten, archived}, `permanence`, metrics cache.
+
+**Audit:** `trace_id`, `verifier_id`, `artifact_hash`, `A_obs_t`, `A_obs_t1`, `owner`, `license`, `comp_decision`, `verifier_evidence` (incl. meta FP/FN). Without audit → `409 CompClaimForbidden`.
+
+**Challenge:** `theta`, `mu_id`, `mu_slice`, `adversary_class`, `adversary_strength`, `loss_with_r`, `loss_without_r`, `excess_loss`.
+
+**Lifecycle:** Retain (stay active) / Revise (new version, parent link) / Forget (removed from invoke path; hash retained).
+
+JSON Schema excerpts live at `scs-mvp/schemas/` and in `scs-design.md` §3.
+
+### 12.3 Core APIs (`/scs/v1`)
+
+| Area | Endpoints |
+|------|-----------|
+| Trace | `POST /traces`, `POST /traces/{id}/events`, `GET /traces/{id}`, `POST .../close` |
+| Comp | `POST /comp`, `GET /comp/{job_id}`, `POST /verifiers/{id}/verify`, `.../meta-eval` |
+| Registry | `GET /artifacts`, `POST /artifacts/{id}/invoke`, `GET .../audit`, `POST .../transfer` |
+| Challenge | `POST /challenges`, `GET /mu/{mu_id}`, `POST /lifecycle`, `POST /lifecycle/auto` |
+| Study | `POST /experiments`, `POST /sessions`, `GET /metrics/vector`, `GET /metrics/nc` |
+
+Arm C: list/invoke/comp return `403 ArmForbidden`.
+
+**Comp accept semantics:** On \(v=	op\), write Artifact + Audit atomically; reject writes audit with `comp_decision=reject` only (no \(R\) insert). Invoke increments AR eligibility counters and must succeed **without** the producing agent’s forward pass (clean namespace injection for FLE Python functions; blueprint replay for Factorio strings).
+
+**Threat model (SCS must log even when payments are stubbed):**
+
+1. **Strategic compilation / SC** — owner surplus without social Pareto improvement under \(\mu\) (interface lock-in, grader-hacks). Primary Gap-8 threat; tie to opponent shaping literature.  
+2. **Poisoned / brittle \(R\)** — high CG on training maps, high NC on adversarial slice → Forget.  
+3. **Verifier Goodhart / capture** — optimize the suite; mitigated by held-out meta-eval FP/FN publication and rotation.  
+4. **Challenge fatigue** — unpaid challengers stop probing; log effort; license duties + optional bonds.  
+5. **Covert compilation** — Arm C notes/prompts/blueprints outside store; instrument proxies (§11.4).  
+6. **Cross-arm leakage** — shared compute caches or prompt contamination; isolate careers.
+
+### 12.4 EnvBackend protocol
+
+`reset`, `step`, `snapshot`/`restore`, `list_namespace_callables`, `export_callable`/`import_callable`, `run_oracle`. FLE maps Gym + namespace serialization; factorioctl maps RCON/MCP tool traces + blueprint export. **Do not** treat agent memory files as \(R\) unless promoted through Comp.
+
+**FLE Comp path (MVP):** (1) Agent defines a namespace function during \(D_{\mathrm{aff}}\) play; (2) SCS `export_callable` → canonical source + deps; (3) `ThroughputVerifier` restores clean task instance, imports callable, runs fixed driver, checks holdout throughput (solids typically 16/60s; fluids 250/60s per FLE defaults); (4) on pass → Audit + Registry; (5) Challenge samples perturbations and compares loss with/without \(r\).
+
+**Arm differences on FLE:** C — within-session namespace only, Save-to-R hidden; C′ — wipe between sessions; \(D_{\mathrm{aff}}\) — registry promote, Save visible, no badges; \(D_{\mathrm{gam}}\) — same + points UI.
+
+### 12.5 SCS MVP (toy, runnable)
+
+**Path:** `/workspace/research-brief/scs-mvp/` (~800 LOC).
+
+**What it is:** Minimal runnable stub of the Comp lifecycle from `scs-design.md`. Stdlib Python; no FLE dependency.
+
+**What the demo shows** (`PYTHONPATH=. python3 -m scs` from that directory):
+
+1. Toy `EnvBackend` with three tasks (`sort_widgets`, `pack_crates`, `route_belts`).  
+2. **Arm C blocks Comp / list / invoke** (`ArmForbidden`).  
+3. **Arm \(D_{\mathrm{aff}}\)** can Comp → invoke (owner) → Challenge under declared toy \(\mu\) → **Retain** (robust `sort_widgets`) or **Forget** (brittle `route_belts` under adversarial slice).  
+4. Prints a **stub metric vector \(\mathbf{Y}\)** explicitly labeled non-scientific.
+
+**What it is not:** Not Factorio / FLE; not empirical results; not HTTP/Postgres full SCS. Use it to validate arm gates and lifecycle wiring before wiring `EnvBackend` to FLE Lab-Play.
+
+### 12.6 Toy metric simulator
+
+**Path:** `/workspace/research-brief/sim/`. Stdlib teaching stub comparing Arm C vs D on CG/CE/AR/NC|\(\mu\)/SC plumbing (`python3 skill_compilation_sim.py`). Not a fitted agent model; numbers are illustrations only.
+
+### 12.7 MVP → U1 path
+
+| Stage | Deliverable |
+|-------|-------------|
+| Toy MVP | Arm gates + Comp→Challenge→Retain/Forget on fake tasks (done: `scs-mvp/`) |
+| FLE adapter | Lab-Play throughput V1 oracle; namespace function export as artifact |
+| Audit live | Mandatory audit or no \(\Delta R\) claim |
+| \(\mu\) config | Versioned YAML/JSON; adversary strength string; holdout quarantine |
+| U1 pilot | Four-arm careers; freeze \(\tau\), \(M\), analysis script hash |
+
+---
+
+## 13. Factorio transfer map
+
+| Factorio feature | Formal object | Software / multi-agent analogue | Known failure mode | Mitigation |
+|------------------|---------------|----------------------------------|--------------------|------------|
+| Mining drill | \(\Delta R\) via Comp | Shared library / tool | Under-maintained dependency | Ownership + maintenance + NC\|\(\mu\) |
+| Blueprint | Versioned \(R\) | Macro / template gallery | Stale blueprints; bitrot | Challenge schedule; Forget on NC breach |
+| Factory runs or not | V1 verifier | Unit/integration tests | Goodhart; flaky oracles | Verifier meta-protocol; held-out meta-set |
+| Biters / pollution | Challenge generator | Red-team, fuzz, canary | Fatigue; capture; weak adversaries | Paid Challenge rotation; co-evolved \(\mu\); publish strength |
+| Single-player sandbox | Soft selection | Multi-agent production | Adverse selection; career concerns | Population protocol; career-horizon unit; SC |
+| Rich visual feedback | Dense reward | Sparse PR review | Weak credit assignment | V1–V2 first; do not port rhetoric to V4 |
+| Soft coop / no blueprint markets | Implicit commons \(R\) | Package registries | Spam, poison, gatekeeping | Property regime + SC + license in audit |
+| [FLE](https://github.com/JackHopkins/factorio-learning-environment) / [factorioctl](https://github.com/MarkMcCaskey/factorioctl) | Tool-augmented play | LLM agents with tool APIs | Strategic tool use / opponent shaping | SC + rival tasks in \(\mu\) |
+
+Substrate citations: [Hopkins et al., Factorio Learning Environment, arXiv:2503.09617](https://arxiv.org/abs/2503.09617); factorioctl is engineering software, not a peer-reviewed compilation theory paper.
+
+Env APIs for multi-agent work generally: [Gymnasium](https://github.com/Farama-Foundation/Gymnasium), [PettingZoo](https://github.com/Farama-Foundation/PettingZoo).
+
+---
+
+## 14. Programme plan, risk register, and open questions (P0 first)
+
+### 14.1 Dependency graph (24 weeks → one publishable unit)
+
+```
+P0 Calibration instruments (I,α,τ) ──────────────┐
+P1 Audit algebra + Comp + V1 store ──────────────┼─→ P3 Four-arm PILOT (FLE/V1)
+P2 μ challenge suite (near/far/adv) + NC/SC ─────┘         │
+                                                           ▼
+                                              Paper U1: C vs D_aff in one V1 domain
+```
+
+| Phase | Weeks | Exit criterion |
+|-------|-------|----------------|
+| P0 Instruments | 1–3 | Pre-registered \(\tau_I,\tau_\alpha\); IMI secondary vs continuation |
+| P1 Objects | 2–6 | Audit log live; Comp only on V1; boundary-rule tests |
+| P2 Challenge | 5–10 | \(\mu\) documented; NC estimator with CIs; adversary strength stated |
+| P3 Pilot | 11–20 | Four-arm (C vs \(D_{\mathrm{aff}}\) primary) at powered or labeled underpowered-\(N\) pilot |
+| P4 Write U1 | 21–24 | One paper-shaped result; toolkit dump optional |
+
+**Publishable unit by week 24:** Study U1 — not praxis-as-equilibrium-selection, not multi-domain H-FI, not “Nature-level synthesis.”
+
+### 14.2 Risk register (binding aborts)
+
+| ID | Risk | Trigger | Response |
+|----|------|---------|----------|
+| R1 | Verifier undefined / V3–V4 in practice | Flaky oracle | Fall back to V1–V2 only; abort strong permanence |
+| R2 | Covert compilation confounds C vs D | Covert in C \(> \tau_{\mathrm{covert}}\) | Estimand = audited \(R\); C′ sensitivity |
+| R3 | Underpowered \(N\) | MDE not ≤0.15 | **Label pilot**; no confirmatory language |
+| R4 | NC adversary too weak | Adv. NC ≈ 0 for all \(r\) | Strengthen \(\mu\); do not claim robustness |
+| R5 | H-FI search unbounded | Urge to expand \(M\) post hoc | Freeze \(M\); only H-FI\(_M\) |
+| R6 | \(R\) spam / poison | SC or maintenance collapse | Switch regime; Challenge bonds |
+| R7 | Crowding-out in D | \(I\) drops in \(D_{\mathrm{aff}}\) and \(D_{\mathrm{gam}}\) | Prefer \(D_{\mathrm{aff}}\); may support partial H-FI\(_M\) |
+| R8 | Ethics / license halt | Board stop | LLM-only if approved |
+| R9 | Substrate outage >25% | Systematic downtime | Pause calendar; do not selectively drop arms |
+
+**Hard abort of claim language:** R3 with \(n<40\) per primary arm **or** R1 unverifiable V1.
+
+### 14.3 Open questions — P0 first
+
+Living tracker: `open-questions.md`. Blocking items:
+
+**Identification (P0):** I1 instruments validity; I2 attrition/collider estimands; I3 X/K/R hybrid coding agreement; I4 audit proves independent invocation not packaging.
+
+**Experiment (P0):** E1 power/variance for \(\delta=0.15\); E2 C vs \(D_{\mathrm{aff}}\) causal estimand under covert compile; E4 adversary strength calibration.
+
+**Substrate (P0):** S1 treatment-equivalence harness across arms; S2 V1 Goodhart resistance + FP/FN; S3 lifecycle/rights end-to-end; S4 Challenge API leakage tests; S5 full logging + ethics data dictionary.
+
+**P1 (next wave):** joint metric probe populations (I5); crowding-out UI feasibility (E3); property-regime pilots (E5); population transport (E6); scale cost (S6); mechanism game for SC (T1–T5).
+
+**P2:** philosophy mapping (PH1–PH2) — keep demoted.
+
+---
+
+## 15. Industry best-practices appendix
+
+### 15.1 Pre-registration
+
+- [OSF](https://osf.io/) / [COS Preregistration](https://www.cos.io/initiatives/prereg): timestamped plans, templates, embargo.  
+- [AsPredicted](https://aspredicted.org/): short structured pre-regs.  
+- Norms this programme adopts: freeze primary \(\Omega\), gates, \(M\), \(\mu\) hash, analysis script hash; append-only deviations log; forbid post-hoc \(\Omega\) redefinition.
+
+### 15.2 Eval harnesses
+
+| Harness | URL | Why it matters |
+|---------|-----|----------------|
+| OpenAI Evals | [https://github.com/openai/evals](https://github.com/openai/evals) | Spec-driven eval registry pattern for probe tasks |
+| Inspect AI (UK AISI) | [https://inspect.aisi.org.uk/](https://inspect.aisi.org.uk/) | Modern agent/LLM eval runner; logging/scoring patterns for \(\mathbf{Y}\) |
+| HELM (Stanford CRFM) | [https://github.com/stanford-crfm/helm](https://github.com/stanford-crfm/helm) | Holistic, standardized multi-metric reporting culture |
+
+Use these as **engineering patterns** for probe batteries and reporting — not as substitutes for FLE V1 oracles.
+
+### 15.3 Model lifecycle ≈ Challenge
+
+- [MLflow](https://github.com/mlflow/mlflow) + [Model Registry](https://mlflow.org/docs/latest/ml/model-registry/): stages, aliases, canary, rollback ≈ Retain/Revise/Forget.  
+- Map: Staging→canary Challenge; Production→Retain; Archived→Forget; new version→Revise.  
+- Difference: MLOps rarely has play thresholds or multi-agent ownership games over shared skill stores.
+
+### 15.4 Tool stores as R-analogues
+
+LangChain / LlamaIndex tool registries illustrate callable expansion of agent action spaces. Frame carefully: they are product patterns, not identification of \(\Delta R\) under Comp+audit+\(\mu\)+play.
+
+### 15.5 Continual learning libraries
+
+[Avalanche (ContinualAI)](https://github.com/ContinualAI/avalanche): EWC and related strategies as software analogues of protecting competence under sequential tasks — related to why Forget/Revise matter when \(R\) and \(X\) interact.
+
+### 15.6 Multi-agent env standards
+
+[Gymnasium](https://github.com/Farama-Foundation/Gymnasium), [PettingZoo](https://github.com/Farama-Foundation/PettingZoo): standard `reset`/`step` and multi-agent APIs for SCS `EnvBackend` beyond FLE.
+
+---
+
+## 16. Curated link bank
+
+### 16.1 Papers (primary)
+
+| Title | URL | Why it matters |
+|-------|-----|----------------|
+| Darwiche & Marquis — Knowledge Compilation Map | [DOI](https://doi.org/10.1613/jair.989) · [arXiv](https://arxiv.org/abs/1106.1819) | Canonical Comp language tradeoffs |
+| Sutton, Precup & Singh — Options / SMDP | [DOI](https://doi.org/10.1016/S0004-3702(99)00052-1) | Temporally extended actions ↔ endogenous \(A\) |
+| Bacon, Harb & Precup — Option-Critic | [arXiv:1609.05140](https://arxiv.org/abs/1609.05140) · [AAAI DOI](https://doi.org/10.1609/aaai.v31i1.10916) | Learned options end-to-end |
+| Eysenbach et al. — DIAYN | [arXiv:1802.06070](https://arxiv.org/abs/1802.06070) | Unsupervised skill libraries |
+| Wang et al. — POET | [arXiv:1901.01753](https://arxiv.org/abs/1901.01753) | Co-evolved challenges as \(\mu\) generators |
+| Wang et al. — Enhanced POET | [arXiv:2003.08536](https://arxiv.org/abs/2003.08536) | Open-ended challenge invention |
+| Zhang et al. — OMNI | [arXiv:2306.01711](https://arxiv.org/abs/2306.01711) | FM interestingness for curricula |
+| Kirkpatrick et al. — EWC | [arXiv:1612.00796](https://arxiv.org/abs/1612.00796) · [PNAS](https://www.pnas.org/doi/10.1073/pnas.1611835114) | Continual learning / Forget analogue |
+| Schick et al. — Toolformer | [arXiv:2302.04761](https://arxiv.org/abs/2302.04761) | LM→callable tools as R-like externalization |
+| Jain & Parkes — ESP game TEAC | [DOI](https://doi.org/10.1145/2399187.2399190) | GWAP mechanism design baseline |
+| Cooper et al. — Foldit | [DOI](https://doi.org/10.1038/nature09304) | Play → verified scientific artifacts |
+| Hopkins et al. — Factorio Learning Environment | [arXiv:2503.09617](https://arxiv.org/abs/2503.09617) | U1 V1 substrate |
+| Hennes et al. — CSRO | [arXiv:2603.10098](https://arxiv.org/abs/2603.10098) | Strategy-as-executable-code (\(\Delta R\)); AAMAS EA |
+| García Segura et al. — Opponent shaping LLMs | [arXiv:2510.08255](https://arxiv.org/abs/2510.08255) | Threat model for SC / adversarial compilation |
+| Li, Li & Deng — LegoNE | [Nature Communications](https://www.nature.com/articles/s41467-026-74003-1) | Generation under formal verification (V1) |
+| Bowman et al. — Scalable oversight | [arXiv:2211.03540](https://arxiv.org/abs/2211.03540) | Sandwiching / weak overseer + strong model |
+| Acemoglu & Restrepo — Race man & machine | [DOI](https://doi.org/10.1257/aer.20160696) | Automation capital ↔ action-set displacement |
+| Deci, Koestner & Ryan — Crowding-out meta | [SDT.org PDF](https://selfdeterminationtheory.org/wp-content/uploads/2014/04/1999_DeciKoestnerRyan_Meta.pdf) | Extrinsic rewards vs intrinsic motivation |
+| Arrow — Learning by doing | *RES* 1962 (classic; PDF widely mirrored) | Productivity as byproduct of doing |
+| Romer — Endogenous technological change | *JPE* 1990 | Nonrival ideas |
+
+### 16.2 Code / platforms
+
+| Name | URL | Why it matters |
+|------|-----|----------------|
+| Factorio Learning Environment | [GitHub](https://github.com/JackHopkins/factorio-learning-environment) | Public FLE implementation for U1 |
+| factorioctl | [GitHub](https://github.com/MarkMcCaskey/factorioctl) | RCON/MCP Factorio control path (engineering) |
+| MLflow | [GitHub](https://github.com/mlflow/mlflow) · [Registry docs](https://mlflow.org/docs/latest/ml/model-registry/) | Canary/rollback ≈ Challenge lifecycle |
+| OpenAI Evals | [GitHub](https://github.com/openai/evals) | Eval harness pattern |
+| Inspect AI | [https://inspect.aisi.org.uk/](https://inspect.aisi.org.uk/) | Agent eval runner |
+| HELM | [GitHub](https://github.com/stanford-crfm/helm) | Holistic LLM eval |
+| LangChain | [GitHub](https://github.com/langchain-ai/langchain) | Tool-calling R-analogue (careful frame) |
+| LlamaIndex | [GitHub](https://github.com/run-llama/llama_index) | Tool/index patterns as R-analogue |
+| Gymnasium | [GitHub](https://github.com/Farama-Foundation/Gymnasium) | Standard single-agent env API |
+| PettingZoo | [GitHub](https://github.com/Farama-Foundation/PettingZoo) | Multi-agent env API |
+| Garak | [GitHub](https://github.com/NVIDIA/garak) | Automated LLM red-teaming |
+| PyRIT | [Docs](https://microsoft.github.io/PyRIT/latest/) | Microsoft red-teaming framework |
+| Avalanche | [GitHub](https://github.com/ContinualAI/avalanche) | Continual learning library (EWC etc.) |
+| Gray Swan | [https://grayswan.ai/](https://grayswan.ai/) | Demoted Challenge analogy only |
+| OSF | [https://osf.io/](https://osf.io/) | Pre-registration platform |
+| AsPredicted | [https://aspredicted.org/](https://aspredicted.org/) | Structured pre-registration |
+| COS Prereg | [https://www.cos.io/initiatives/prereg](https://www.cos.io/initiatives/prereg) | Pre-reg norms |
+
+---
+
+## 17. References (venue-honest)
+
+**Mechanism design / GWAPs / software incentives**
+
+1. Jain, S., & Parkes, D. C. (2013). A game-theoretic analysis of the ESP game. *ACM TEAC*, 1(1), Article 3. https://doi.org/10.1145/2399187.2399190  
+2. Kang, X., Yu, G., Wang, J., Guo, W., Domeniconi, C., & Zhang, J. (2023). Incentive-boosted federated crowdsourcing. *AAAI*, 37(5), 6021–6029.  
+3. von Ahn, L., & Dabbish, L. (2008). Designing games with a purpose. *CACM*, 51(8), 58–67.  
+4. Cooper, S., et al. (2010). Predicting protein structures with a multiplayer online game. *Nature*, 466, 756–760. https://doi.org/10.1038/nature09304  
+5. Hazzan, O., & Dubinsky, Y. (2005). Social perspective of software development methods… *XP 2005*, LNCS 3556, 74–81.  
+6. Rass, S., & Pinzger, M. (2023). Incentive-based software security… arXiv:2309.05338. (**GameSec 2023 poster / EA — not full archival paper.**)  
+7. Naserameri, M. (2026). TrustChain-Review… arXiv:2607.27310. (Governance/incentive framework; not classic PD.)  
+8. Chapman, A. C., et al. (2009). Decentralised dynamic task allocation… *AAMAS 2009*.  
+9. Monderer, D., & Shapley, L. S. (1996). Potential games. *Games and Economic Behavior*, 14(1), 124–143.
+
+**Compilation predecessors / skills / tools**
+
+10. Darwiche, A., & Marquis, P. (2002). A knowledge compilation map. *JAIR*, 17, 229–264. https://doi.org/10.1613/jair.989  
+11. Fikes, R. E., Hart, P. E., & Nilsson, N. J. (1972). Learning and executing generalized robot plans. *Artificial Intelligence*, 3, 251–288.  
+12. Korf, R. E. (1985). Macro-operators: A weak method for learning. *Artificial Intelligence*, 26(1), 35–61.  
+13. Laird, J. E., Rosenbloom, P. S., & Newell, A. (1986). Chunking in Soar… *Machine Learning*, 1, 11–46.  
+14. Sutton, R. S., Precup, D., & Singh, S. (1999). Between MDPs and semi-MDPs… *Artificial Intelligence*, 112(1–2), 181–211.  
+15. Bacon, P.-L., Harb, J., & Precup, D. (2017). The option-critic architecture. *AAAI*. https://arxiv.org/abs/1609.05140  
+16. Eysenbach, B., Gupta, A., Ibarz, J., & Levine, S. (2019). Diversity is all you need… *ICLR*. https://arxiv.org/abs/1802.06070  
+17. Schick, T., et al. (2023). Toolformer… *NeurIPS*. https://arxiv.org/abs/2302.04761  
+
+**Open-endedness / continual learning**
+
+18. Wang, R., et al. (2019). POET. https://arxiv.org/abs/1901.01753  
+19. Wang, R., et al. (2020). Enhanced POET. *ICML*. https://arxiv.org/abs/2003.08536  
+20. Zhang, J., Lehman, J., Stanley, K., & Clune, J. (2024). OMNI. *ICLR*. https://arxiv.org/abs/2306.01711  
+21. McCloskey, M., & Cohen, N. J. (1989). Catastrophic interference… *Psych. Learning & Motivation*, 24.  
+22. Kirkpatrick, J., et al. (2017). Overcoming catastrophic forgetting… *PNAS*. https://arxiv.org/abs/1612.00796  
+
+**Economics**
+
+23. Arrow, K. J. (1962). The economic implications of learning by doing. *Review of Economic Studies*, 29(3), 155–173.  
+24. Romer, P. M. (1990). Endogenous technological change. *JPE*, 98(5), S71–S102.  
+25. Acemoglu, D., & Restrepo, P. (2018). The race between man and machine. *AER*, 108(6), 1488–1542. https://doi.org/10.1257/aer.20160696  
+
+**Motivation**
+
+26. Ryan, R. M., & Deci, E. L. (2000). Self-determination theory… *American Psychologist*, 55(1), 68–78.  
+27. Deci, E. L., Koestner, R., & Ryan, R. M. (1999). A meta-analytic review… *Psychological Bulletin*, 125(6), 627–668.  
+
+**Verification / agents (2026 cluster primary-checked 2026-09-26)**
+
+28. Bowman, S. R., et al. (2022). Measuring progress on scalable oversight… https://arxiv.org/abs/2211.03540  
+29. García Segura, M. E., Hailes, S., & Musolesi, M. (2026). Opponent shaping in LLM agents. *ICLR 2026*. https://arxiv.org/abs/2510.08255  
+30. Hennes, D., Li, Z., Schultz, J., & Lanctot, M. (2026). Code-space response oracles… https://arxiv.org/abs/2603.10098 (**AAMAS 2026 extended abstract.**)  
+31. Li, H., Li, D., & Deng, X. (2026). Discovering expert-level Nash equilibrium algorithms… *Nature Communications*. https://www.nature.com/articles/s41467-026-74003-1  
+
+**Philosophy / substrates**
+
+32. Hinman, L. M. (1978). Marx’s theory of play, leisure and unalienated praxis. *Philosophy & Social Criticism*, 5(2), 192–228.  
+33. Marx, K. *Economic and Philosophic Manuscripts of 1844*. Documented English edition: Progress Publishers, 1977 (or MECW Vol. 3). (**Do not cite an unverified 1986 Progress printing.**)  
+34. Hopkins et al. Factorio Learning Environment. https://arxiv.org/abs/2503.09617 · https://github.com/JackHopkins/factorio-learning-environment  
+35. MarkMcCaskey. (2026). factorioctl (software). https://github.com/MarkMcCaskey/factorioctl  
+
+---
+
+## 18. Philosophy appendix (short)
+
+Unalienated praxis (Hinman 1978; Marx, *1844 Manuscripts*, Progress 1977 / MECW Vol. 3) is an **interpretive frame** for why conjunctive voluntariness matters. It is **not** identified with a formal equilibrium-selection refinement in this brief.
+
+A real refinement would require something like: among Nash equilibria of the skill-compilation game, select the potential-maximizing profile restricted to strategies satisfying \(I_i>\tau_I\land\alpha_i>\tau_\alpha\) for all active \(i\) — then prove existence or give counterexamples (linking Monderer & Shapley potential games). **That theorem is not claimed here.** Until it exists, do not write “praxis = equilibrium selection.” Keep philosophy in this appendix; keep the empirical programme in §§5–14.
+
+---
+
+## Changelog note (v5 → v6 Master)
+
+v6 Master consolidates v5 scientific content with the FLE pre-registration, SCS design (condensed), open-questions P0 set, citation-audit venue honesty, toy `sim/` and `scs-mvp/` pointers, and a verified industry/paper link bank. Residual MAG novelty remains a composition claim. Gray Swan stays demoted. U1 stays a single-domain pilot with explicit underpowered-\(N\) risk.
+
+---
+
+*End of Research Brief v6.0 Master Consolidated — 2026-09-26.*

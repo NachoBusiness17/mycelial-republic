@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>THE FABLE ROOM — room #0 · the union of story and record</title>
+<style>
+  body{margin:0;background:#0a0d12;color:#d8dee9;font-family:ui-monospace,Consolas,monospace}
+  header{padding:12px 14px;border-bottom:1px solid #1c2530}
+  h1{margin:0;font-size:15px;color:#e8b45a;letter-spacing:1px}
+  .sub{color:#7d8798;font-size:11px;margin-top:4px}
+  main{display:flex;flex-wrap:wrap;gap:14px;padding:12px}
+  .panel{background:#10151d;border:1px solid #1c2530;border-radius:10px;padding:12px;
+         flex:1 1 340px;min-width:0}
+  #walls{flex:1 1 280px;max-height:70vh;overflow-y:auto}
+  .riddle{font-size:13px;line-height:1.8;color:#cfd6e4;white-space:pre-line}
+  .board{display:grid;grid-template-columns:repeat(6,1fr);gap:6px;margin:18px 0 4px}
+  .pit{aspect-ratio:1;border-radius:50%;background:#151c26;border:2px solid #2a3648;
+       color:#e8b45a;font-size:clamp(16px,4.5vw,20px);display:flex;align-items:center;justify-content:center;
+       cursor:pointer;user-select:none}
+  .pit:hover{border-color:#e8b45a}
+  .pit.chosen{border-color:#e8c96a;box-shadow:0 0 12px #e8c96a55}
+  .pit.empty{opacity:.45;cursor:default}
+  .pit-num{text-align:center;color:#6b7688;font-size:10px;margin-top:2px}
+  .row{display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:8px}
+  button{background:#182234;color:#e8c96a;border:1px solid #2a3648;border-radius:8px;
+         padding:10px 14px;font-family:inherit;font-size:13px;cursor:pointer;min-height:44px}
+  button:hover{border-color:#e8c96a}
+  .door{margin-top:16px;padding:12px;border:1px dashed #2a3648;border-radius:8px;font-size:12px;color:#9aa5b8}
+  .door.open{border-color:#7bc98a;color:#a9e0b6}
+  .door.refused{border-color:#c96a6a;color:#e0a9a9}
+  .ledger{font-size:10px;line-height:1.7;color:#8a94a8;white-space:pre-wrap;word-break:break-all}
+  .q{margin:10px 0}
+  .q select{background:#151c26;color:#d8dee9;border:1px solid #2a3648;border-radius:6px;
+            padding:8px;font-family:inherit;font-size:13px;min-height:44px;width:100%;max-width:320px}
+  .verdict{margin-top:10px;font-size:12px}
+  .good{color:#a9e0b6}.bad{color:#e0a9a9}
+  .ending{margin-top:12px;padding:12px;border:1px solid #7bc98a;border-radius:8px;color:#c9ecd2;
+          font-size:12px;line-height:1.8;white-space:pre-line;display:none}
+</style>
+</head>
+<body>
+<header>
+  <h1>THE FABLE ROOM — room #0</h1>
+  <div class="sub">the union of story and record · the door does not open for the telling · it opens for the proof ·
+  every move is kept, even the lies · riddled for the second voice</div>
+</header>
+<main>
+  <div class="panel" id="room">
+    <div class="riddle" id="riddle"></div>
+    <div class="board" id="board"></div>
+    <div class="row" id="pitnums"></div>
+    <div style="margin-top:10px">
+      <button id="sowbtn">sow the chosen hand</button>
+      <span style="color:#6b7688;font-size:11px"> — pick a pit, then sow it; stones are never made or lost, only moved</span>
+    </div>
+    <div class="door" id="door">THE DOOR — shut. It reads the board, not your tale.</div>
+    <button id="tellbtn" style="margin-top:10px">tell the door it is open</button>
+    <div id="gate" style="display:none;margin-top:14px">
+      <div style="color:#e8c96a;font-size:12px">THE RESTATEMENT GATE — the walls were watching. Tell me what happened:</div>
+      <div id="questions"></div>
+      <button id="answerbtn">give the restatement</button>
+      <div class="verdict" id="verdict"></div>
+    </div>
+    <div class="ending" id="ending"></div>
+  </div>
+  <div class="panel" id="walls">
+    <div style="color:#e8b45a;font-size:12px;margin-bottom:8px">THE WALLS — the room keeps everything (append-only, even this)</div>
+    <div class="ledger" id="ledger"></div>
+  </div>
+</main>
+<script id="core">
+/* pure game core — no DOM; the union law: state changes are sowing (conservation),
+   the record is hash-chained, the door reads state, the gate reads the record. */
+const CORE = (function(){
+  const START = [7,1,5,0,3,8];
+  function fnv1a(str){ let h=0x811c9dc5;
+    for(let i=0;i<str.length;i++){ h^=str.charCodeAt(i); h=(h*0x01000193)>>>0; }
+    return h.toString(16).padStart(8,'0'); }
+  function newState(){ return {pits:START.slice(), moves:0, ledger:[], prev:'0'.repeat(8),
+                               healed:false, lies:0}; }
+  function sow(st, i){
+    i=Number(i);
+    if(!(i>=0 && i<6) || st.pits[i]<=0 || st.healed) return {ok:false, why:'the hand is empty, or the door is already answered'};
+    const before=st.pits.slice();
+    let n=st.pits[i]; st.pits[i]=0; let k=i;
+    while(n>0){ k=(k+1)%6; st.pits[k]+=1; n--; }
+    st.moves+=1;
+    const line={m:st.moves, pit:i, before:before, after:st.pits.slice()};
+    const h=fnv1a(st.prev+JSON.stringify(line));
+    st.ledger.push({line:line, h:h, kind:'sow'});
+    st.prev=h;
+    if(isHealed(st)){ st.healed=true;
+      const hl=fnv1a(st.prev+'HEALED');
+      st.ledger.push({line:{m:st.moves, event:'HEALED'}, h:hl, kind:'heal'});
+      st.prev=hl; st.healHash=hl; }
+    return {ok:true};
+  }
+  function isHealed(st){
+    const p=st.pits, s=p.reduce((a,b)=>a+b,0);
+    if(s!==24) return false;                       // conservation — the room loses nothing
+    if(st.moves<6) return false;                   // the hands must have worked
+    for(let k=0;k<3;k++) if(p[k]!==p[5-k]) return false;  // every hand holds what the hand across holds
+    return true;
+  }
+  function tellOpen(st){
+    if(st.healed) return {opened:true};
+    st.lies+=1;
+    const line={m:st.moves, event:'told-open', verdict:'REFUSED'};
+    const h=fnv1a(st.prev+JSON.stringify(line));
+    st.ledger.push({line:line, h:h, kind:'lie'}); st.prev=h;
+    return {opened:false, real:st.prev};
+  }
+  function restatement(st){
+    // questions generated FROM the record — the walls are the answer key
+    const q=[];
+    const firstSow = st.ledger.find(e=>e.kind==='sow');  // lies have no hand — first SOW, not first row
+    q.push({q:'Which hand did you sow first?', opts:['hand '+((firstSow?firstSow.line.pit:-1)+1),'hand 1','the fullest hand','the empty hand'], a:0});
+    const mv=st.moves;
+    q.push({q:'How many sowings did the hands make?', opts:[String(mv), String(mv+2), String(Math.max(1,mv-2)),'the room never counts'], a:0});
+    if(st.lies>0){
+      q.push({q:'When you told the door it was open before it was, what did the room do?', opts:['it opened','it refused — and kept the lie on the walls','nothing — doors do not listen'], a:1});
+    }else{
+      q.push({q:'What does the room do with what happens in it?', opts:['it forgives and forgets','it keeps everything — even this answer','it waits for someone official'], a:1});
+    }
+    return q;
+  }
+  return {START:START, newState:newState, sow:sow, isHealed:isHealed, tellOpen:tellOpen,
+          restatement:restatement, fnv1a:fnv1a};
+})();
+</script>
+<script>
+/* UI layer */
+const R=[ 'the room keeps what happens in it.', 'a door waits, hungry for the telling.',
+  'count what the hands have scattered.', 'hands are six; the stones are twenty-four.',
+  'one hand must come to hold what the hand across holds.', 'so the story ends where the record ends.'];
+document.getElementById('riddle').textContent = R.join('\n');
+let ST=CORE.newState(), CHOSEN=null, QS=null;
+const boardEl=document.getElementById('board'), numsEl=document.getElementById('pitnums'),
+      ledEl=document.getElementById('ledger'), doorEl=document.getElementById('door');
+function render(){
+  boardEl.innerHTML=''; numsEl.innerHTML='';
+  ST.pits.forEach((n,i)=>{
+    const d=document.createElement('div'); d.className='pit'+(n?'':' empty');
+    d.textContent=n; d.onclick=()=>{CHOSEN=i; render();};
+    if(CHOSEN===i){ d.style.borderColor='#e8c96a'; d.style.boxShadow='0 0 12px #e8c96a55'; }
+    boardEl.appendChild(d);
+    const l=document.createElement('div'); l.className='pit-num'; l.textContent='hand '+(i+1);
+    numsEl.appendChild(l);
+  });
+  ledEl.textContent = ST.ledger.map(e=>e.kind==='sow'
+      ? `M${e.line.m} sow(${e.line.pit}) [${e.line.before}]→[${e.line.after}] :: ${e.h}`
+      : `M${e.line.m} ${e.line.event} ${e.line.verdict||''} :: ${e.h}`).join('\n');
+  if(ST.healed){ doorEl.className='door open';
+    doorEl.textContent='THE DOOR — open. healing hash '+ST.healHash+'. The walls ask one more thing.'; showGate(); }
+  else if(doorEl.dataset.refused==='1'){ doorEl.className='door refused'; }
+}
+document.getElementById('sowbtn').onclick=()=>{
+  if(CHOSEN===null) return;
+  const r=CORE.sow(ST,CHOSEN);
+  if(r.ok){ doorEl.dataset.refused=''; doorEl.className='door';
+    doorEl.textContent='THE DOOR — shut. It reads the board, not your tale.'; }
+  render();
+};
+document.getElementById('tellbtn').onclick=()=>{
+  const r=CORE.tellOpen(ST);
+  if(r.opened){ render(); return; }
+  doorEl.dataset.refused='1'; doorEl.className='door refused';
+  doorEl.textContent='THE DOOR — it does not open for the telling. It has kept the telling (move '+
+    ST.moves+', on the walls). Bring the proof.';
+  render();
+};
+function showGate(){
+  if(QS) return;
+  QS=CORE.restatement(ST);
+  const box=document.getElementById('questions'); box.innerHTML='';
+  QS.forEach((item,i)=>{
+    const d=document.createElement('div'); d.className='q';
+    d.innerHTML='<div>'+(i+1)+'. '+item.q+'</div>';
+    const s=document.createElement('select'); s.id='q'+i;
+    item.opts.forEach(o=>{const op=document.createElement('option'); op.textContent=o; s.appendChild(op);});
+    d.appendChild(s); box.appendChild(d);
+  });
+  document.getElementById('gate').style.display='block';
+}
+document.getElementById('answerbtn').onclick=()=>{
+  let ok=0;
+  QS.forEach((item,i)=>{
+    const v=document.getElementById('q'+i).selectedIndex;
+    if(v===item.a) ok+=1;
+  });
+  const vEl=document.getElementById('verdict'), endEl=document.getElementById('ending');
+  if(ok===QS.length){
+    vEl.className='verdict good'; vEl.textContent='the walls agree with the telling. '+ok+'/'+QS.length+'.';
+    const chrono=CORE.fnv1a(ST.prev+'CHRONICLE');
+    endEl.style.display='block';
+    endEl.textContent='TRUE ENDING\n\nThe door opened because the stones said so — and you told the story\n'
+      +'the stones already wrote. That is the whole trick of a room like this:\nthe record is the story, kept.\n\n'
+      +'your chronicle line: '+chrono+'\nwalked room #0 with '+ST.moves+' hands, '+ST.lies+' lie(s) kept on the walls.\n'
+      +'— room #0, the union. the second voice was you.';
+  }else{
+    vEl.className='verdict bad';
+    vEl.textContent='the walls disagree with the telling ('+ok+'/'+QS.length+'). '
+      +'A story that contradicts the record is just a lie with polish. Walk again — the walls remember.';
+  }
+};
+render();
+</script>
+</body>
+</html>

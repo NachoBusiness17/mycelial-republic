@@ -14,11 +14,13 @@ import random
 import re
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any
+from typing import Any, Awaitable, Callable
 from uuid import uuid4
 
 from config import ROOT
 from mag.game_dice import roll_dice
+from server.protocol import encode
+from server.room import DEFAULT_EXPIRE, DEFAULT_MAXSIZE, Member, Room
 
 SCHEMA = "mag_game_brawl.v1"
 BRAWL_DIR = ROOT / "memory" / "working" / "brawls"
@@ -1632,6 +1634,100 @@ def wants_brawl_start(text: str) -> bool:
     )
 
 
+# ---------------------------------------------------------------------------
+# Room transport — the tavern as spectator fan-out (Y3 verdict, Z6 2026-09-29)
+#
+# One Room per brawl_id (player seat + spectators). The ENGINE keeps
+# authority — initiative/HP/hit never move in here; the room moves bytes
+# only (server/room.py's own law). handle_brawl_voice is the inbound-frame
+# handler: room.touch per inbound frame, the engine runs, publish()
+# broadcasts the advance/react lines to every seat, and a brawl sitting
+# awaiting_player sweeps its silent spectators. Receipt:
+# watch/inbox/hydrology/Z6_BRAWL_ROOM.md
+# ---------------------------------------------------------------------------
+
+_BRAWL_ROOMS: dict[str, Room] = {}
+
+
+def brawl_room(
+    brawl_id: str,
+    *,
+    create: bool = False,
+    maxsize: int = DEFAULT_MAXSIZE,
+    expire: float = DEFAULT_EXPIRE,
+) -> Room | None:
+    """The Room for one brawl_id. One per brawl, lazily created on first seat."""
+    room = _BRAWL_ROOMS.get(brawl_id)
+    if room is None and create:
+        room = Room(maxsize=maxsize, expire=expire)
+        _BRAWL_ROOMS[brawl_id] = room
+    return room
+
+
+def join_brawl_room(
+    brawl_id: str,
+    *,
+    send: Callable[[bytes], Awaitable[None]],
+    close_fn: Callable[[], None] | None = None,
+    meta: dict[str, Any] | None = None,
+    mid: str | None = None,
+) -> Member:
+    """Take a seat in the brawl's room (player or spectator).
+
+    Must run inside a live event loop: Room.join spawns the writer task
+    that drains this seat's bounded inbox.
+    """
+    room = brawl_room(brawl_id, create=True)
+    return room.join(send=send, close_fn=close_fn, meta=meta, mid=mid)
+
+
+async def close_brawl_room(brawl_id: str) -> bool:
+    """Brawl over / transport shutdown: drop every seat, reap writer tasks."""
+    room = _BRAWL_ROOMS.pop(brawl_id, None)
+    if room is None:
+        return False
+    await room.close()
+    return True
+
+
+def _touch_brawl_member(brawl_id: str, member_id: str | None) -> None:
+    """Any inbound frame refreshes presence — the room's own law."""
+    if not member_id:
+        return
+    room = _BRAWL_ROOMS.get(brawl_id)
+    if room is not None:
+        room.touch(member_id)
+
+
+def _brawl_room_publish(brawl_id: str, lines: list[str], *, status: str = "") -> int:
+    """Encode-once fan-out of the advance/react lines. No seats → 0."""
+    room = _BRAWL_ROOMS.get(brawl_id)
+    if room is None or not lines:
+        return 0
+    frame = encode(
+        {"op": "brawl", "brawl_id": brawl_id, "status": status, "lines": list(lines)}
+    )
+    return room.publish(frame)
+
+
+def _room_wire_result(result: dict[str, Any]) -> None:
+    """Post-engine room wiring for one handled frame: publish the result's
+    advance/react lines, then — on awaiting_player — sweep silent seats."""
+    if not result or not result.get("ok"):
+        return
+    bid = str(result.get("brawl_id") or "")
+    if not bid:
+        return
+    lines = [str(e) for e in (result.get("events") or []) if str(e).strip()]
+    if not lines:
+        lines = [ln for ln in str(result.get("speak") or "").splitlines() if ln.strip()]
+    _brawl_room_publish(bid, lines, status=str(result.get("status") or ""))
+    if str(result.get("status") or "") == "awaiting_player":
+        room = _BRAWL_ROOMS.get(bid)
+        if room is not None:
+            room.sweep()
+
+
 def handle_brawl_voice(
     text: str,
     *,
@@ -1639,8 +1735,16 @@ def handle_brawl_voice(
     channel: str = "table",
     campaign: dict[str, Any] | None = None,
     use_ds: bool = True,
+    member_id: str | None = None,
 ) -> dict[str, Any] | None:
-    """Voice/table entry. None = not brawl path."""
+    """Voice/table entry. None = not brawl path.
+
+    This is the brawl's inbound-frame handler (Y3): every call touches the
+    sender's seat (room.touch), the engine runs with full authority, the
+    advance/react lines are published to the brawl's Room, and an
+    awaiting_player result sweeps silent spectators. member_id is the
+    sender's seat in the brawl's room, when the caller is a room transport.
+    """
     camp = campaign
     if camp is None:
         from mag.game_campaign import latest_for_session
@@ -1648,12 +1752,14 @@ def handle_brawl_voice(
         camp = latest_for_session(session_id)
 
     if wants_brawl_start(text):
-        return start_tavern_brawl(
+        result = start_tavern_brawl(
             session_id=session_id,
             campaign_id=str((camp or {}).get("campaign_id") or ""),
             channel=channel,
             use_ds=use_ds,
         )
+        _room_wire_result(result)
+        return result
 
     if not camp or camp.get("status") != "active":
         return None
@@ -1662,7 +1768,10 @@ def handle_brawl_voice(
     brawl_id = st.get("brawl_id")
     brawl = load_brawl(str(brawl_id)) if brawl_id else latest_brawl_for_session(session_id)
     if brawl and brawl.get("status") in ("awaiting_player", "active", "auto_running"):
-        return player_brawl_turn(
+        _touch_brawl_member(str(brawl.get("brawl_id") or ""), member_id)
+        result = player_brawl_turn(
             text, session_id=session_id, channel=channel, use_ds=use_ds
         )
+        _room_wire_result(result)
+        return result
     return None

@@ -2,9 +2,18 @@
 
 Operator order (2026-09-17): "we have two open router keys... task the other on a build:
 steal the game and fill it with our shit." This lane drives OPENROUTER_API_KEY_2
-(model from OPENROUTER_MODEL, currently stealth/ox-alpha) to draft RUINS GO levels
+(model from _LANES below) to draft RUINS GO levels
 and promotes them ONLY through the game's own regression gate
 (node test_ruins_go.js --pack-all: schema + BFS solvability under engine laws).
+
+MODEL FLIP 2026-09-26 (operator burn order B2-55): stealth/union-alpha 404s 12x today
+(build_lane/proposals.jsonl 2026-09-26 rows, generations 72 -> 84, briefs
+DD-blob-double + DD-split-path, all transport-dead). The 404 body itself names the
+successor: "This model was Unbiased's Pareto. Use it now:
+https://openrouter.ai/unbiased/pareto". Primary is now unbiased/pareto (probed live
+READY via this file's own _call, 2026-09-26); z-ai/glm-5.3-flash stays fallback.
+The 2026-09-17 MODEL LAW (primary always, loud downgrades only) is unchanged in shape;
+only the primary's id moves with its window.
 
 HOUSE LAWS, structurally:
   * model output is a DRAFT. Promotion = the node validator's PASS line. No exceptions.
@@ -16,6 +25,16 @@ HOUSE LAWS, structurally:
   * one run at a time (lock; stale holders self-clear after 15 min).
 
 RUN:  .venv\\Scripts\\python.exe scripts\\build_lane_game.py --batch 1
+CENSUS: .venv\\Scripts\\python.exe scripts\\build_lane_game.py --census
+Class mapping (B2-117, keyed to the frozen denominator 41 from
+B2_33_rejection_recount_20260926.md over the committed 2026-09-17 snapshot,
+git 3d12289f9): write-time error "KeyError" (KeyError 'choices') and explicit
+"200_error_body" fold into class 200-error-body (frozen 16 = 12 + 4);
+"HTTP 404" -> http-404 (11); "empty_content" -> empty_content (9);
+"IncompleteRead" -> incomplete-read (1); gate "schema: ..." -> schema-gate (2);
+gate FAIL with "exhausted @" (BFS solvability) -> merit (2). 16+11+9+1+2+2 = 41.
+--census reclassifies the live proposals.jsonl with this mapping, reports the
+frozen-window tally vs live tally, and exits 0 on frozen reconciliation.
 Schema: build_lane_game.v1
 """
 from __future__ import annotations
@@ -52,7 +71,7 @@ ALLOWED_HOSTS = {"openrouter.ai", "api.z.ai"}
 
 _LANES = {"base": "https://openrouter.ai/api/v1",
           "keys": ["OPENROUTER_API_KEY_2", "OPENROUTER_API_KEY"],  # rotate on 429/401/402
-          "models": ["stealth/union-alpha", "z-ai/glm-5.3-flash"]}
+          "models": ["unbiased/pareto", "z-ai/glm-5.3-flash"]}
 
 # --lane lite: the SAME evolution loop on the z.ai Lite seat (glm-5.3-flash),
 # its own state dir + locks (runs in parallel with the union window), law-15 paced.
@@ -61,7 +80,8 @@ _LANES_LITE = {"base": "https://api.z.ai/api/coding/paas/v4",
                "models": ["glm-5.3-flash"]}
 # operator 2026-09-17: "i know what ox is, thats an old config. we're using union."
 # (env OPENROUTER_MODEL=stealth/ox-alpha is stale; ox's own 404 revealed it was
-#  glm-5.3-flash — kept only as the last-resort fallback.)
+#  glm-5.3-flash. 2026-09-26: the union window also ended; primary is unbiased/pareto,
+#  glm-5.3-flash kept as the last-resort fallback.)
 
 SYSTEM = (
     "You are a level designer for RUINS GO, a grid-turn tomb puzzle. The world only moves "
@@ -160,6 +180,44 @@ def _validate_base(base: str) -> None:
             raise ValueError(f"{host} resolves to non-public {ip}; refusing")
 
 
+_FLIP_CARDS = ROOT / "watch" / "inbox" / "burn_lane_flip_cards.jsonl"
+_USE_IT_NOW_RE = re.compile(r"Use it now:\s*(https?://[^\s\"'<>\\]+)", re.I)
+
+
+def _file_retirement_flip(dead_model: str, body_text: str, _seen: dict = {}) -> dict | None:
+    """B2-189 (2026-09-26): a retirement 404 body names its own successor in-band
+    ('This model was X. Use it now: https://openrouter.ai/owner/name' — the
+    union-alpha case waited for a human lane to parse it). On a match, append one
+    flip-card row {ts, dead_model, successor, successor_url, source} to
+    watch/inbox/burn_lane_flip_cards.jsonl so the next window death files itself.
+    Append-only; deduped per (dead_model, successor) per process; never raises
+    (flip-card filing must not break the lane)."""
+    try:
+        m = _USE_IT_NOW_RE.search(body_text or "")
+        if not m:
+            return None
+        url = m.group(1).rstrip(".,;)")
+        tail = url.split("openrouter.ai/")[-1]
+        successor = "/".join(tail.split("/")[-2:]) if "/" in tail else tail
+        card = {"ts": _now(), "dead_model": dead_model, "successor": successor,
+                "successor_url": url, "source": "build_lane_404_body"}
+        k = (dead_model, successor)
+        if _seen.get(k):
+            return None
+        _seen[k] = True
+        _FLIP_CARDS.parent.mkdir(parents=True, exist_ok=True)
+        existing = ""
+        if _FLIP_CARDS.is_file():
+            existing = _FLIP_CARDS.read_text(encoding="utf-8")
+            if f'"dead_model": "{dead_model}", "successor": "{successor}"' in existing:
+                return None
+        with open(_FLIP_CARDS, "a", encoding="utf-8") as f:
+            f.write(json.dumps(card, ensure_ascii=False) + "\n")
+        return card
+    except Exception:
+        return None
+
+
 def _call(model: str, keys: list[str], prompt: str | None, timeout: int = 600,
           messages: list[dict] | None = None, lite: bool = False) -> dict:
     """Rotate keys on 429/401/402 (operator: multiple OpenRouter keys, use them).
@@ -222,9 +280,16 @@ def _call(model: str, keys: list[str], prompt: str | None, timeout: int = 600,
             rec["latency_ms"] = int((time.time() - t0) * 1000)
             return rec
         except urllib.error.HTTPError as e:
-            detail = e.read().decode("utf-8", "replace")[:200]
+            full_body = e.read().decode("utf-8", "replace")
+            detail = full_body[:200]
             rec.update({"ok": False, "error": f"HTTP {e.code}", "detail": detail,
                         "key_index": ki})
+            if e.code == 404:
+                # B2-189: parse the in-band successor from the FULL body
+                # before the 200-char detail truncation
+                card = _file_retirement_flip(model, full_body)
+                if card:
+                    rec["retirement_flip_card"] = card
             if e.code in (429, 401, 402) and ki < len(keys) - 1:
                 continue  # rotate to the next key
             rec["latency_ms"] = int((time.time() - t0) * 1000)
@@ -278,6 +343,184 @@ def _validate_via_gate(cand_name: str) -> tuple[bool, str]:
     return False, (p.stdout or p.stderr or "no verdict").strip()[:300]
 
 
+# B2-117: frozen 09-17 rejection census (B2_33_rejection_recount_20260926.md,
+# recounted from committed bytes git 3d12289f9). Denominator 41 exact:
+# 200-error-body 16 (12 "KeyError: 'choices'" + 4 explicit "200_error_body"),
+# http-404 11, empty_content 9, schema-gate 2, incomplete-read 1, merit 2.
+FROZEN_CENSUS_20260917 = {
+    "200-error-body": 16,
+    "http-404": 11,
+    "empty_content": 9,
+    "schema-gate": 2,
+    "incomplete-read": 1,
+    "merit": 2,
+}
+# The committed snapshot is the first 71 rows (B2-33: 71 rows committed at git
+# 3d12289f9, 41 FAIL; a byte-prefix of the live file), through the last frozen
+# IncompleteRead/empty_content rows early 2026-09-18Z.
+FROZEN_COMMIT = "3d12289f9"
+COMMITTED_PREFIX_ROWS = 71
+
+
+def _error_class(rec: dict) -> str:
+    """B2-117 class mapping: fold KeyError 'choices' into 200-error-body by the
+    reviewer convention the frozen census used; BFS "exhausted @" gate FAILs are
+    the 2 merit rows; schema gate FAILs carry the "schema: " prefix."""
+    err = str(rec.get("error") or "")
+    gate = str(rec.get("gate") or "")
+    if (rec.get("verdict") == "FAIL" and not err and gate.startswith("schema:")):
+        return "schema-gate"
+    if (rec.get("verdict") == "FAIL" and not err and gate.startswith("FAIL")
+            and "exhausted @" in gate):
+        return "merit"
+    if "KeyError" in err or "200_error_body" in err:
+        return "200-error-body"
+    if "404" in err:
+        return "http-404"
+    if "empty_content" in err:
+        return "empty_content"
+    if "IncompleteRead" in err:
+        return "incomplete-read"
+    return "unclassified"
+
+
+def _census() -> dict:
+    """Recount proposals.jsonl under the frozen mapping and reconcile the
+    frozen window (the committed snapshot, git 3d12289f9, 71 rows whose 41
+    FAIL rows are the B2-33 denominator) against FROZEN_CENSUS_20260917.
+    Prefers the committed bytes via `git show`; falls back to the first
+    COMMITTED_PREFIX_ROWS rows of the live file (B2-33 proved the committed
+    71 are a byte-prefix of the live file). Read-only; never appends."""
+    committed = None
+    prov = "live-prefix"
+    try:
+        import subprocess as _sp
+        rel = PROPOSALS.relative_to(ROOT).as_posix()
+        out = _sp.run(["git", "show", "%s:%s" % (FROZEN_COMMIT, rel)],
+                      capture_output=True, timeout=60)
+        if out.returncode == 0:
+            committed = out.stdout.decode("utf-8", "replace")
+            prov = "git:%s" % FROZEN_COMMIT
+    except Exception:
+        committed = None
+    if committed is None and PROPOSALS.is_file():
+        committed = "\n".join(
+            PROPOSALS.read_text(encoding="utf-8").splitlines()[:COMMITTED_PREFIX_ROWS])
+    rows = [json.loads(ln) for ln in (committed or "").splitlines() if ln.strip()]
+    live_rows = []
+    if PROPOSALS.is_file():
+        live_rows = [json.loads(ln) for ln in
+                     PROPOSALS.read_text(encoding="utf-8").splitlines() if ln.strip()]
+    fails = [r for r in rows if r.get("verdict") == "FAIL"]
+    frozen_tally: dict[str, int] = {}
+    for r in fails:
+        c = _error_class(r)
+        frozen_tally[c] = frozen_tally.get(c, 0) + 1
+    live_tally: dict[str, int] = {}
+    for r in (x for x in live_rows if x.get("verdict") == "FAIL"):
+        c = _error_class(r)
+        live_tally[c] = live_tally.get(c, 0) + 1
+    reconciled = (frozen_tally == FROZEN_CENSUS_20260917
+                  and len(rows) == COMMITTED_PREFIX_ROWS)
+    return {"ok": True, "schema": SCHEMA, "census": "B2-117",
+            "frozen_denominator": sum(FROZEN_CENSUS_20260917.values()),
+            "frozen_census_20260917": FROZEN_CENSUS_20260917,
+            "frozen_source": prov,
+            "frozen_window_rows": len(rows),
+            "frozen_window_fail_rows": len(fails),
+            "frozen_window_tally": frozen_tally,
+            "reconciled": reconciled,
+            "live_rows": len(live_rows),
+            "live_fail_rows": sum(1 for x in live_rows if x.get("verdict") == "FAIL"),
+            "live_tally": live_tally,
+            "source": str(PROPOSALS)}
+
+
+# B2-188 (2026-09-26): ACROSS-RUNS transport tripwire. The disease this cures:
+# 12 consecutive HTTP 404 generations burned across 3 cron runs (11:29/11:36/
+# 11:38Z 2026-09-26, watch/inbox/union_fullsend_20260917/build_lane/proposals.jsonl)
+# with ZERO alarm, because the in-run guard ("two consecutive transport deaths
+# end this RUN") only sees the 4 deaths of its own run and each fresh cron run
+# starts silent. This run-end check counts the CONSECUTIVE 404 tail of
+# proposals.jsonl (the persistent record), persists the streak in state, and
+# alarms once per streak at ALARM_N, naming the dead model, the last real
+# success, and the provider successor pointer when a 404 body names one
+# (the union-alpha body names its successor in-band).
+TRANSPORT_TRIPWIRE_ALARM_N = 8
+TRIPWIRE = OUT / "transport_tripwire.jsonl"
+
+
+def _successor_from_body(detail: str) -> str | None:
+    """Pull the successor model/URL a retirement 404 body names in-band."""
+    import re as _re
+    if not detail:
+        return None
+    m = _re.search(
+        r"(?:migrat\w*|successor|replaced? by|use|switch to|decommission\w*)"
+        r"[^.\"\\]{0,120}?\b([a-z0-9_.\-]+/[a-z0-9_.\-]+)\b",
+        detail, _re.I)
+    if m:
+        return m.group(1)
+    m = _re.search(r"(https?://[^\s\"\\]+)", detail)
+    return m.group(1) if m else None
+
+
+def _transport_tripwire(state: dict) -> dict | None:
+    """Run-end check: alarm after N consecutive transport-dead (404) rows."""
+    try:
+        lines = PROPOSALS.read_text(encoding="utf-8",
+                                    errors="replace").strip().splitlines()
+    except OSError:
+        return None
+    recs = []
+    for ln in lines[-64:]:
+        try:
+            recs.append(json.loads(ln))
+        except Exception:
+            continue
+    streak = 0
+    model = None
+    newest_body = ""
+    newest_ts = None
+    for rec in reversed(recs):
+        if rec.get("ok"):
+            break
+        if "404" not in str(rec.get("error") or ""):
+            break
+        streak += 1
+        if newest_ts is None:
+            newest_ts = rec.get("ts")
+            model = rec.get("model")
+            newest_body = str(rec.get("detail") or "")
+    last_ok = next((r.get("ts") for r in reversed(recs) if r.get("ok")),
+                   state.get("last_transport_success"))
+    state["transport_404_streak"] = streak
+    state["last_transport_success"] = last_ok
+    if streak < TRANSPORT_TRIPWIRE_ALARM_N:
+        return None
+    # dedupe on the streak SIGNATURE (length + newest death ts), not length
+    # alone: a fresh streak of the same length must re-alarm (B2-188 pin).
+    signature = "%s:%s" % (streak, newest_ts)
+    if state.get("transport_alarm_signature") == signature:
+        return None  # already alarmed for this streak; no repeat noise
+    alarm = {
+        "ts": _now(), "alarm": "TRANSPORT_404_STREAK", "streak": streak,
+        "threshold": TRANSPORT_TRIPWIRE_ALARM_N, "model": model,
+        "last_success": last_ok, "window_records": len(recs),
+        "successor": _successor_from_body(newest_body),
+    }
+    try:
+        with TRIPWIRE.open("a", encoding="utf-8") as fh:
+            fh.write(json.dumps(alarm, ensure_ascii=False) + "\n")
+    except OSError:
+        pass
+    state["transport_alarm_signature"] = signature
+    state["transport_alarm_last"] = alarm["ts"]
+    print("TRANSPORT TRIPWIRE: %s" % json.dumps(alarm, ensure_ascii=False),
+          file=sys.stderr)
+    return alarm
+
+
 def _load_state() -> dict:
     if STATE.is_file():
         st = json.loads(STATE.read_text(encoding="utf-8"))
@@ -299,7 +542,14 @@ def _load_state() -> dict:
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(prog="build-lane-game")
     ap.add_argument("--batch", type=int, default=1)
+    ap.add_argument("--census", action="store_true",
+                    help="B2-117: recount proposals.jsonl under the frozen "
+                         "2026-09-17 class mapping (denominator 41), read-only")
     a = ap.parse_args(argv)
+
+    if a.census:
+        print(json.dumps(_census()))
+        return 0
 
     OUT.mkdir(parents=True, exist_ok=True)
     RECEIPTS.mkdir(parents=True, exist_ok=True)
@@ -318,19 +568,26 @@ def main(argv=None) -> int:
     # MODEL LAW (operator order 2026-09-17, after the cron silently downgraded the lane
     # to glm: "why was the model switched to 5.3 again, its the fucking cron job -- fix
     # it and make sure this doesnt happen again"):
-    #   PRIMARY is stealth/union-alpha, ALWAYS. A transient probe failure (429, hiccup,
+    #   PRIMARY is the window's model, ALWAYS. A transient probe failure (429, hiccup,
     #   200-error-body) is NOT a migration: retry the primary, and if it is truly down,
     #   the fallback serves THIS RUN ONLY and is never persisted to state. The sticky
     #   model can only ever be the primary. Downgrades must be loud (this receipt) not
     #   silent (the old auto-stick behavior -- removed).
-    primary = "stealth/union-alpha"
+    # FLIP RECEIPT 2026-09-26 (B2-55): primary stealth/union-alpha -> unbiased/pareto.
+    # Evidence: 12 HTTP 404 rows on 2026-09-26 in build_lane/proposals.jsonl
+    # (DD-blob-double + DD-split-path, gens 72 -> 84), 404 body names the successor;
+    # probe of both models via this file's _call returned ok=true 2026-09-26.
+    primary = "unbiased/pareto"
     fallback = "z-ai/glm-5.3-flash"
     # SCHEDULE LAW (operator: glm-5.3-flash is FREE from 11:00 local daily on the Lite
     # seat — he should never have to remind us): after 11:00 the Lite lane is a scheduled
-    # primary — the run alternates union + glm so both free windows burn together.
+    # primary — the run alternates the OpenRouter primary + glm so both free windows
+    # burn together. (2026-09-26 flip: "union" slot below is now the current primary;
+    # the old literal stealth/union-alpha here would have resurrected the dead model
+    # on alternating runs after 11:00.)
     import datetime as _dt
     if _dt.datetime.now().hour >= 11:
-        primary = "stealth/union-alpha" if state.get("runs", 0) % 2 == 0 else fallback
+        primary = "unbiased/pareto" if state.get("runs", 0) % 2 == 0 else fallback
     model = None
     for _try in (1, 2):  # transient failures get a second probe before any fallback
         probe = _call(primary, keys, "Reply with exactly: READY", timeout=90)
@@ -379,10 +636,13 @@ def main(argv=None) -> int:
             promoted = False
             gens = 0
             last_gate = "none"
+            all_transport = True  # stays True only if every gen died before the gate
             for gen in range(1, MAX_GEN + 1):
                 rec = _call(model, keys, None, messages=msgs)
                 rec.update({"brief": sid, "gen": gen})
                 gens = gen
+                if rec.get("ok"):
+                    all_transport = False
                 defn = _extract_level(rec.get("answer") or "") if rec.get("ok") else None
                 verdict = False
                 vline = "no json block" if rec.get("ok") else (rec.get("error") or "call failed")
@@ -431,8 +691,16 @@ def main(argv=None) -> int:
                     if not prev.get("ok"):
                         break
             state["generations"] = state.get("generations", 0) + gens
+            # AMENDMENT 001: a run that died in transport (dead model id / 404 /
+            # empty body) never reached the gate, so it burns neither the rejection
+            # count nor an attempt — only gate rejections and schema failures do.
+            transport = ("empty_content", "HTTP", "SSRF", "KeyError")
+            died_in_transport = (not promoted and all_transport
+                                 and any(t in last_gate for t in transport))
             if promoted:
                 state["done"].append(sid)
+            elif died_in_transport:
+                state["transport_pruned"] = state.get("transport_pruned", 0) + 1
             else:
                 state["rejected"] = state.get("rejected", 0) + 1
                 state.setdefault("attempts", {})
@@ -445,6 +713,7 @@ def main(argv=None) -> int:
     finally:
         state["runs"] = state.get("runs", 0) + 1
         state["updated"] = _now()
+        _transport_tripwire(state)  # B2-188: across-runs streak, alarm at threshold
         STATE.write_text(json.dumps(state, indent=2), encoding="utf-8")
         LOCK.unlink(missing_ok=True)
 

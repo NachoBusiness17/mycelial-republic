@@ -31,6 +31,7 @@ CLI:  python -m mag.source_trace sense
 from __future__ import annotations
 
 import json
+import shutil
 import subprocess
 import sys
 import threading
@@ -156,8 +157,18 @@ def _enum() -> list[dict[str, Any]]:
     # psutil absent (the 2026-08-10 reality) -> reliable CIM fallback.
     # NB single-quoted Where-Object (no nested double quotes) — the old
     # `-Filter "Name='python.exe'..."` form is mangled by PowerShell -> 0 procs.
+    # B2-352 2026-09-26: bare "powershell" is not on PATH in every launch
+    # context (disease class sig run_shell:e566037def80 "[Errno 2] ... powershell",
+    # 7,964 FKB rows since 2026-09-19; this site swallowed the same FileNotFoundError
+    # into except:pass, a blind observer). Resolve the full path; System32 fallback
+    # when PATH lookup misses (pattern mag/process_reaper.py:82-90).
+    ps_exe = shutil.which("powershell") or shutil.which("powershell.exe")
+    if not ps_exe and sys.platform == "win32":
+        ps_exe = r"C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe"
+    if not ps_exe:
+        return out
     try:
-        r = subprocess.run(["powershell", "-NoProfile", "-Command",
+        r = subprocess.run([ps_exe, "-NoProfile", "-Command",
                             "Get-CimInstance Win32_Process | "
                             "Where-Object { $_.Name -in @('python.exe','pythonw.exe') } | "
                             "Select-Object ProcessId,ParentProcessId,Name,CommandLine | "

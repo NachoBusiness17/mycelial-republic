@@ -1,4 +1,4 @@
-"""x_auth_loop — standing-door OAuth for the @GroundingWave surface.
+"""x_auth_loop — standing-door OAuth for the @GHOST_HANDLE surface.
 
 Re-arms the authorization flow every 10 minutes until the operator approves.
 Runs unattended: tap the URL whenever it suits — the token banks itself on

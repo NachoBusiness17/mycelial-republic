@@ -1,0 +1,37 @@
+{
+  "schema": "cfmbt.schema.v1",
+  "allowed_scores": ["we-have-a-record", "not-proven", "people-disagree"],
+  "allowed_basis": ["Evidence", "Inference", "Assumption"],
+  "amount_bands": ["None / below threshold", "$5,000–$24,999", "$25,000–$99,999", "$100,000+", "Indirect via entity ≥ 5%"],
+  "placeholders": ["{{COUNTY}}", "{{PROJECT}}", "{{SERIES}}", "{{YEAR}}", "{{DEBT_SERVICE_Y1}}", "{{ISSUE_SIZE}}", "{{PROJECT_COST}}"],
+  "fields": [
+    { "field": "county", "section": 1, "source_required_for_non_null": true },
+    { "field": "project", "section": 1, "source_required_for_non_null": true },
+    { "field": "series", "section": 1, "source_required_for_non_null": true },
+    { "field": "year", "section": 1, "source_required_for_non_null": true },
+    { "field": "project_cost", "section": 1, "score_default": "not-proven" },
+    { "field": "issue_size", "section": 1, "score_default": "not-proven" },
+    { "field": "debt_service_y1", "section": 1, "score_default": "not-proven" },
+    { "field": "payment_source", "section": 1, "score_default": "we-have-a-record" },
+    { "field": "vote.date", "section": 1, "source_required_for_non_null": true },
+    { "field": "vote.instrument", "section": 1, "source_required_for_non_null": true },
+    { "field": "vote.roll_call", "section": 1, "score_default": "not-proven" },
+    { "field": "parties.underwriter", "section": 1, "source_required_for_non_null": true },
+    { "field": "parties.municipal_advisor", "section": 1, "source_required_for_non_null": true },
+    { "field": "parties.bond_counsel", "section": 1, "source_required_for_non_null": true },
+    { "field": "parties.paying_agent", "section": 1, "source_required_for_non_null": true },
+    { "field": "conflict_excerpts", "section": 1, "score_default": "not-proven" },
+    { "field": "cusips", "section": 3, "score_default": "not-proven" },
+    { "field": "registered_owner", "section": 3, "score_default": "we-have-a-record" },
+    { "field": "emma_os_url", "section": 1, "score_default": "not-proven" },
+    { "field": "audit_url", "section": 1, "score_default": "not-proven" },
+    { "field": "budget_url", "section": 1, "score_default": "not-proven" },
+    { "field": "retrieve_date", "section": 3, "score_default": "not-proven" }
+  ],
+  "rules": [
+    "Software never auto-truths: a loaded value keeps the score given in sources.json.",
+    "Blank is allowed. Invented complete is not.",
+    "Predict-only forecasts stay labeled Forecast, never Record.",
+    "No natural-person beneficial-owner fields exist in this schema, by design."
+  ]
+}

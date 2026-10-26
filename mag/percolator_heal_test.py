@@ -9,7 +9,8 @@ Runs against a TEMP copy of the registry + seals — the live invariants.json is
 
 Cases:
   (a)  registry missing  -> load auto-heals from newest seal -> generations restored
-  (b)  registry shrunken (<50% of seal gens) -> heals (seal ∪ live merged, counts summed)
+  (b)  registry shrunken (<50% of seal gens) -> heals (seal ∪ live merged, shared counts
+       MAX-merged — Z15 2026-09-29: SUM triple-counted on repeated heals; MAX is idempotent)
   (c)  healthy load (live ⊇ seal IDs) -> no heal triggered (no surprise overwrites)
   (d)  ONE sealed generation removed from an otherwise-healthy live copy (>50% by count,
        so the OLD code missed it) -> the missing generation is RESTORED (gap-2 falsifier)
@@ -91,7 +92,10 @@ def main() -> int:
     before = percolator.INVARIANT_REGISTRY.read_bytes()
     got = percolator._load_registry()
     check("b1 heal triggered (2*2 < 6)", len(got["invariants"]) == 7, str(sorted(got["invariants"])))
-    check("b2 shared count summed (10+3)", got["invariants"]["S1"]["count"] == 13)
+    # Z15 (2026-09-29): shared counts merge by MAX(10,3)=10, not SUM(13) — SUM re-added the
+    # sealed count on every heal event (the heal.log repeats), MAX is idempotent under
+    # repeated heals. Falsified live: heal.log 2026-09-06..09-26 shows 4 heals off one seal.
+    check("b2 shared count MAX-merged max(10,3)", got["invariants"]["S1"]["count"] == 10)
     check("b3 live-only gen kept", got["invariants"]["X1"]["count"] == 7)
     check("b4 seal gens intact", got["invariants"]["S6"]["count"] == 60)
     check("b5 false_positives maxed", got["false_positives"] == 5)
@@ -131,8 +135,8 @@ def main() -> int:
     check("d1 missing generation RESTORED (6/6)", len(got["invariants"]) == 6,
           str(sorted(got["invariants"])))
     check("d2 restored gen intact from seal", got["invariants"]["S6"]["count"] == 60)
-    check("d3 survivors kept, shared counts summed (kept merge contract: 10+10)",
-          got["invariants"]["S1"]["count"] == 20 and got["invariants"]["S5"]["count"] == 100
+    check("d3 survivors kept, shared counts MAX-merged (Z15 2026-09-29: max(10,10)=10, not 10+10)",
+          got["invariants"]["S1"]["count"] == 10 and got["invariants"]["S5"]["count"] == 50
           and set(got["invariants"]) == set(seal_gens6()))
     check("d4 heal logged (never silent)",
           "auto-healed 6" in (reg_dir / "heal.log").read_text(encoding="utf-8"))

@@ -867,13 +867,22 @@ def h_attention_ranked(_p: dict[str, str], _b: dict[str, Any] | None) -> tuple[i
 
 
 def h_attention_feedback(_p: dict[str, str], body: dict[str, Any] | None) -> tuple[int, dict]:
-    """Teach the ranker what helped without weakening deterministic guards."""
+    """Teach the ranker what helped without weakening deterministic guards.
+
+    Wires the trade ledger (memory/attention_feedback.jsonl, zero rows in its
+    first 54 days, w4-03): casts are normalized into the one five-signal
+    vocabulary through the same aliases the flagship pipe uses
+    (mag.feedback.normalize_signal), and a retried POST carrying the same
+    cast_id settles once instead of double-appending (record_feedback
+    idempotency key)."""
     from mag.attention_ranker import record_feedback
+    from mag.feedback import normalize_signal
 
     body = body or {}
     result = record_feedback(
-        str(body.get("item_id") or ""), str(body.get("signal") or ""),
+        str(body.get("item_id") or ""), normalize_signal(str(body.get("signal") or "")),
         source=str(body.get("source") or "dashboard"),
+        cast_id=str(body.get("cast_id") or ""),
     )
     return (200 if result.get("ok") else 400), result
 
@@ -2635,11 +2644,13 @@ def h_extension_deploy(_p: dict[str, str], _b: dict[str, Any] | None) -> tuple[i
 
 
 def h_seat_steer(_p: dict[str, str], body: dict[str, Any] | None) -> tuple[int, dict]:
-    """POST /api/v1/seat/steer — the architecture path for live seat actions: send a message into
+    """POST /api/v1/seat/steer - the architecture path for live seat actions: send a message into
     one surface, or run the bounded shared-transcript roundtable. Body:
     {surface, message, enqueue?:bool} or
-    {mode:"roundtable", message, participants?:[...], rounds?:1..3}.
-    Mirrors h_extension_deploy (the path precedent) — the agent never reaches for a shell."""
+    {mode:"roundtable", message, participants?:[...], rounds?:1..3, why?:str,
+    baseline?:{surface,answer}} (huang gate: the roundtable refuses to escalate without a why
+    plus a single-seat baseline).
+    Mirrors h_extension_deploy (the path precedent) - the agent never reaches for a shell."""
     from mag.seat_steer import send, enqueue
 
     body = body or {}
@@ -2652,12 +2663,19 @@ def h_seat_steer(_p: dict[str, str], body: dict[str, Any] | None) -> tuple[int, 
             participants = body.get("participants")
             if participants is not None and not isinstance(participants, list):
                 return 400, {"ok": False, "error": "participants must be a list of seat labels"}
-            return 200, roundtable(
-                message,
-                participants=participants,
-                rounds=int(body.get("rounds") or 2),
-                max_wait_s=int(body.get("max_wait_s") or 90),
-            )
+            rt_kwargs: dict[str, Any] = {
+                "participants": participants,
+                "rounds": int(body.get("rounds") or 2),
+                "max_wait_s": int(body.get("max_wait_s") or 90),
+            }
+            if str(body.get("why") or "").strip():
+                rt_kwargs["why"] = str(body.get("why"))
+            baseline = body.get("baseline")
+            if isinstance(baseline, dict) and (
+                    str(baseline.get("surface") or "").strip()
+                    or str(baseline.get("answer") or "").strip()):
+                rt_kwargs["baseline"] = baseline
+            return 200, roundtable(message, **rt_kwargs)
         if body.get("enqueue"):
             return 200, enqueue(surface, message)
         return 200, send(surface, message)
@@ -4751,6 +4769,7 @@ def h_api_index(_p: dict[str, str], _b: dict[str, Any] | None) -> tuple[int, dic
             "GET /api/v1/seat-feed": "Unified activity feed (Grok/Cursor/agent/orchestrator)",
             "POST /api/v1/coordination/gather": "Gather compact snapshots for multiple workers",
             "GET /api/v1/chronicle": "File-backed pulse (attention + fleet + sources)",
+            "GET /api/v1/thrash": "Thrash meter: multi-front interleaving reading from the trajectory log (?hours=, default 6)",
             "POST /api/v1/seat/task": "Cursor→Mag task {goal?, seat?, mode: delegate|queue|autopilot|agent|dispatch}",
             "POST /api/v1/fork/detect": "Fork classifier {goal, current_goal?, allow_auto?}",
             "POST /api/v1/fork/confirm": "Create fork artifact {goal, strategy?, spawn?, provider?, timeout?}",
@@ -5043,6 +5062,27 @@ def h_status(_p: dict[str, str], _b: dict[str, Any] | None) -> tuple[int, dict]:
     return 200, {"ok": True, "schema": "status.v1", "service": "dashboard-rest",
                  "time": int(now), "checks": checks,
                  "dark": all(not c["ok"] for c in checks.values())}
+
+
+def h_thrash(p: dict[str, str], _b: dict[str, Any] | None) -> tuple[int, dict]:
+    """GET /api/v1/thrash: live multi-front thrash reading (THE 50 W6 T27).
+
+    Computes on demand from the trajectory log via tools/thrash_meter;
+    ?hours= sets the window (1-168, default 6). Files are the source of
+    truth; this endpoint is a viewport, it writes nothing.
+    """
+    try:
+        hours = min(168, max(1, int(str(p.get("hours") or "6"))))
+    except ValueError:
+        hours = 6
+    try:
+        from tools import thrash_meter
+    except Exception as e:  # noqa: BLE001
+        return _err(503, f"thrash_meter import failed: {e}")
+    reading = thrash_meter.thrash_cmd(hours=hours)
+    if not reading.get("ok"):
+        return _err(503, reading.get("error") or "thrash meter unavailable")
+    return _ok({"reading": reading}, schema="thrash_reading.v1")
 
 
 ROUTES: list[tuple[str, str, HandlerFn]] = [
@@ -5395,6 +5435,8 @@ ROUTES: list[tuple[str, str, HandlerFn]] = [
     ("POST", "/api/v1/handoff/request", h_handoff_request_post),
     ("GET", "/api/v1/behavior/vscode", h_vscode_feed),
     ("POST", "/api/v1/behavior/vscode", h_vscode_feed),
+    # Thrash meter (THE 50 W6 T27): live multi-front interleaving reading
+    ("GET", "/api/v1/thrash", h_thrash),
     ("POST", "/api/v1/seat/task", h_seat_task),
 ]
 
@@ -5402,6 +5444,7 @@ ROUTES: list[tuple[str, str, HandlerFn]] = [
 LEGACY: list[tuple[str, str, HandlerFn]] = [
     ("GET", "/api/operator-os", h_operator_os),
     ("GET", "/api/org-review", h_operator_os),
+    ("GET", "/api/thrash", h_thrash),
     ("GET", "/api/health", h_health),
     ("GET", "/api/doctor", h_health),
     ("GET", "/api/mag-os", h_mag_os),

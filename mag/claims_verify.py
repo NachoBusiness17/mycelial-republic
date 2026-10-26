@@ -101,11 +101,22 @@ def run() -> dict[str, Any]:
     same_occupied = (sum(1 for c in primary["claims"].values() if c.get("occupied"))
                      == sum(1 for c in independent["claims"].values() if c.get("occupied")))
     # ROUTE THROUGH THE EXISTING consensus-illusion guard (memweave.consensus_quality) — self-steal,
-    # don't re-invent. We pass the construction-independence signal (both verifiers are built from
-    # DIFFERENT code paths) so the guard reports the STRONG case: byte-identity between independent
-    # constructions is real, not a correlated echo.
+    # don't re-invent. R3 trust fix (2026-10-05, fold row 4): the bare
+    # independent=[True, True] flag is no longer a witness ticket, so the strong
+    # case now carries CONSTRUCTION EVIDENCE - the sha256 of each code path's
+    # own source (the primary replay vs this module's independent
+    # reconstruction). Distinct digests prove the two byte-identical roots came
+    # from distinct constructions; that, not a boolean, is what the guard counts.
     from mag import memweave
-    cq = memweave.consensus_quality([primary_root, independent_root], independent=[True, True])
+    import inspect
+
+    construction = [
+        hashlib.sha256(inspect.getsource(replay).encode("utf-8")).hexdigest(),
+        hashlib.sha256(inspect.getsource(_independent_reconstruct).encode("utf-8")).hexdigest(),
+    ]
+    cq = memweave.consensus_quality([primary_root, independent_root],
+                                    independent=[True, True],
+                                    construction=construction)
     return {
         "ok": True, "schema": SCHEMA,
         "primary_root": primary_root,

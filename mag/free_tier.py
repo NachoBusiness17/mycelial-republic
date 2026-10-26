@@ -9,8 +9,8 @@ best for, and how to route intent to the best body — grounded in real lane tel
 
 Status reads real bytes: providers.yaml (key env presence), the lane profile (ok-rate +
 failure reasons), and the live lane list. route() skips dead/dying/exhausted lanes and picks
-by intent: fast -> groq/cerebras; strong -> nvidia/a1; cache-mined cheap -> z_ai flash;
-reasoning -> ox (while it lives); local -> ollama.
+by intent: fast -> groq (cerebras dormant-gated via providers.yaml, B2-133); strong -> a1;
+cache-mined cheap -> z_ai flash; reasoning -> ox (while it lives); local -> ollama.
 """
 from __future__ import annotations
 
@@ -61,7 +61,7 @@ FREE_SURFACES: list[dict[str, Any]] = [
     {"id": "cerebras", "models": [], "keys": ["CEREBAS_API_KEY"], "tier": "T2", "kind": "fast",
      "speed": "fast", "strength": "medium", "best_for": ["fast_bulk"],
      "note": "gpt-oss-120b, ~3000 tok/s"},
-    {"id": "nvidia", "models": ["deepseek-v4-flash-0731"], "keys": ["NVIDIABuild-Autogen-46"],
+    {"id": "nvidia", "models": ["z-ai/glm-5.3-flash", "deepseek-ai/deepseek-v4.1-flash"], "keys": ["NVIDIABuild", "NVIDIABuild2", "NVIDIABuild-Autogen-46"],
      "tier": "T2", "kind": "strong", "speed": "slow", "strength": "high",
      "best_for": ["strong_bulk"], "note": "free build credits; telemetry showed 'quota exhausted'" },
     {"id": "openrouter-a1", "models": ["openrouter/auto"], "keys": ["OPENROUTER_API_KEY"],
@@ -83,7 +83,25 @@ FREE_SURFACES: list[dict[str, Any]] = [
     {"id": "grok_free", "models": [], "keys": [], "tier": "T2", "kind": "frontier",
      "speed": "slow", "strength": "frontier", "best_for": ["escalation", "frontier"],
      "note": "CLI harness (proven transport); subscription seat, $0"},
+    {"id": "nous", "models": ["z-ai/glm-5.3-prime", "qwen/qwen3.8-max-prime", "fireworks/ember-1"],
+     "keys": ["HERMES_API_KEY_1", "HERMES_API_KEY_2"], "tier": "T2", "kind": "aggregator",
+     "speed": "medium", "strength": "high", "best_for": ["strong_bulk", "research"],
+     "note": "inference-api.nousresearch.com/v1 (openrouter-style catalog, ~40 models incl "
+             "gpt-6-luna/cohere/upstage). Keys probed ALIVE 09-24 (200 in 0.5s) — the 09-23 "
+             "orphaned-key rescue. hermes proxy path (127.0.0.1:8645) blocked on Portal OAuth "
+             "login = operator hand; static keys wired instead. Free Perplexity Fast Search "
+             "rides Portal tiers — search endpoint not yet probed."},
 ]
+
+# B2-133 DORMANT GATE (2026-09-26): a surface whose provider is declared dormant in
+# configs/providers.yaml is not a free body (mag/doctor.py:607: dormant is a declared
+# state). B2-36 set cerebras dormant (card-gated 30-day trial, chat 402 no-credit); the
+# same gate catches nvidia (dormant per B2-61, 410 EOL). Operator GO flips the flag and
+# the surface returns, no code edit.
+# Receipt: watch/inbox/burn_wave_20260926/B2_133_cerebras_purge_20260926.md
+from mag.dormant import dormant_ids as _dormant_provider_ids
+
+FREE_SURFACES = [s for s in FREE_SURFACES if s["id"] not in _dormant_provider_ids()]
 
 
 def status() -> dict[str, Any]:

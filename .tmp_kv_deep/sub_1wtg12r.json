@@ -1,0 +1,173 @@
+{
+ "_meta": {
+  "is_edited": true,
+  "retrieved_2nd_on": 1790831695
+ },
+ "all_awardings": [],
+ "allow_live_comments": false,
+ "approved_at_utc": null,
+ "approved_by": null,
+ "archived": false,
+ "author": "sloptimizer",
+ "author_flair_background_color": null,
+ "author_flair_css_class": null,
+ "author_flair_richtext": [],
+ "author_flair_template_id": null,
+ "author_flair_text": null,
+ "author_flair_text_color": null,
+ "author_flair_type": "text",
+ "author_fullname": "t2_25vduvc285",
+ "author_is_blocked": false,
+ "author_patreon_flair": false,
+ "author_premium": false,
+ "awarders": [],
+ "banned_at_utc": null,
+ "banned_by": null,
+ "can_gild": false,
+ "can_mod_post": false,
+ "category": null,
+ "clicked": false,
+ "content_categories": null,
+ "contest_mode": false,
+ "created": 1790702085,
+ "created_utc": 1790702085,
+ "discussion_type": null,
+ "distinguished": null,
+ "domain": "i.redd.it",
+ "downs": 0,
+ "edited": false,
+ "gilded": 0,
+ "gildings": {},
+ "hidden": false,
+ "hide_score": false,
+ "id": "1wtg12r",
+ "is_created_from_ads_ui": false,
+ "is_crosspostable": false,
+ "is_meta": false,
+ "is_original_content": false,
+ "is_reddit_media_domain": true,
+ "is_robot_indexable": true,
+ "is_self": false,
+ "is_video": false,
+ "likes": null,
+ "link_flair_background_color": "#cc3600",
+ "link_flair_css_class": "",
+ "link_flair_richtext": [
+  {
+   "e": "text",
+   "t": "News"
+  }
+ ],
+ "link_flair_template_id": "f8cc0dfe-c1eb-11ed-8d79-72bc34fff7d9",
+ "link_flair_text": "News",
+ "link_flair_text_color": "light",
+ "link_flair_type": "richtext",
+ "location_lat": null,
+ "location_long": null,
+ "location_name": null,
+ "locked": false,
+ "media": null,
+ "media_embed": {},
+ "media_only": false,
+ "mod_note": null,
+ "mod_reason_by": null,
+ "mod_reason_title": null,
+ "mod_reports": [],
+ "name": "t3_1wtg12r",
+ "no_follow": true,
+ "num_comments": 37,
+ "num_crossposts": 0,
+ "num_reports": null,
+ "outbound_link": {
+  "created": null,
+  "expiration": null,
+  "url": "https://i.redd.it/ieztzoixqhsh1.png"
+ },
+ "over_18": false,
+ "permalink": "/r/LocalLLaMA/comments/1wtg12r/ram_offloading_with_vllm_tcclaviger_appreciation/",
+ "pinned": false,
+ "post_hint": "image",
+ "preview": {
+  "enabled": true,
+  "images": [
+   {
+    "id": "ieztzoixqhsh1",
+    "resolutions": [
+     {
+      "height": 91,
+      "url": "https://preview.redd.it/ieztzoixqhsh1.png?width=108&crop=smart&auto=webp&s=2198321406c5fd11232a048a605981be5ba37384",
+      "width": 108
+     },
+     {
+      "height": 182,
+      "url": "https://preview.redd.it/ieztzoixqhsh1.png?width=216&crop=smart&auto=webp&s=dec50eba51eb5a1c0df1ca89f67a784ea7334826",
+      "width": 216
+     },
+     {
+      "height": 269,
+      "url": "https://preview.redd.it/ieztzoixqhsh1.png?width=320&crop=smart&auto=webp&s=248607d201a55caf0f9346425365799a51da0f36",
+      "width": 320
+     },
+     {
+      "height": 539,
+      "url": "https://preview.redd.it/ieztzoixqhsh1.png?width=640&crop=smart&auto=webp&s=22bccf5ada1eb01941a0857e90561a5396db3fac",
+      "width": 640
+     },
+     {
+      "height": 809,
+      "url": "https://preview.redd.it/ieztzoixqhsh1.png?width=960&crop=smart&auto=webp&s=31f0147b69c43e778301b223d70de190e627cc00",
+      "width": 960
+     },
+     {
+      "height": 910,
+      "url": "https://preview.redd.it/ieztzoixqhsh1.png?width=1080&crop=smart&auto=webp&s=700214b7bf08d95e43f208148386e43bad90c4f2",
+      "width": 1080
+     }
+    ],
+    "source": {
+     "height": 1520,
+     "url": "https://preview.redd.it/ieztzoixqhsh1.png?auto=webp&s=ce662bb5b037d159eb02d0c36848307aa9a91646",
+     "width": 1802
+    },
+    "variants": {}
+   }
+  ]
+ },
+ "pwls": 6,
+ "quarantine": false,
+ "removal_reason": null,
+ "removed_by": null,
+ "removed_by_category": null,
+ "report_reasons": null,
+ "retrieved_on": 1790702110,
+ "saved": false,
+ "score": 49,
+ "secure_media": null,
+ "secure_media_embed": {},
+ "selftext": "Thanks to tcclaviger, vLLM now has RAM offloading support. This makes frontier models much more accessible on a local setup!\n\nI was able to run the original DeepSeek-V4-Flash-Vision-Exp on four R9700s.\n\n    podman run --rm -it \\\n        --init \\\n        --network host \\\n        --ulimit memlock=-1:-1 \\\n        -v /models:/models:ro \\\n        -v ~/.vllm-cache:/cache \\\n        -e VLLM_ROCM_USE_AITER=0 \\\n        -e ROCR_VISIBLE_DEVICES=0,1,2,3 \\\n        -e VLLM_CACHE_ROOT=/cache/vllm \\\n        -e TORCHINDUCTOR_CACHE_DIR=/cache/inductor \\\n        -e TRITON_CACHE_DIR=/cache/triton \\\n        --device /dev/kfd \\\n        --device /dev/dri \\\n        --group-add keep-groups \\\n        --annotation run.oci.keep_original_groups=1 \\\n        --security-opt label=disable \\\n        --security-opt seccomp=unconfined \\\n        --shm-size 160g \\\n        docker.io/tcclaviger/vllm@sha256:ef99b3d07c3f15e7978528c7510762ba024df9ab4242070d8ed092cd4cc1a694 \\\n        /models/deepseek-ai/DeepSeek-V4-Flash-Vision-Exp \\\n        --served-model-name DeepSeek-V4-Flash-Vision-Exp \\\n        --tensor-parallel-size 4 \\\n        --enable-expert-offload \\\n        --expert-offload-mem 160 \\\n        --reasoning-parser deepseek_v4 \\\n        --reasoning-config '{\"reasoning_parser\":\"deepseek_v4\",\"reasoning_start_str\":\"\",\"reasoning_end_str\":\"\"}' \\\n        --tool-call-parser deepseek_v4 \\\n        --enable-auto-tool-choice \\\n        --max-num-seqs 8 \\\n        --enable-prefix-caching \\\n        --enable-chunked-prefill \\\n        --max-num-batched-tokens 2048 \\\n        --kv-cache-dtype fp8 \\\n        --block-size 256 \\\n        --max-model-len 256000 \\\n        --gpu-memory-utilization 0.97 \\\n        --mm-processor-cache-gb 4.0 \\\n        --override-generation-config '{\"max_tokens\": 128000, \"temperature\": 1.0, \"top_p\": 0.95}' \\\n        --speculative-config '{\"method\":\"dspark\",\"model\":\"/models/deepseek-ai/DeepSeek-V4-Flash-Vision-Exp\",\"num_speculative_tokens\":3,\"draft_sample_method\":\"probabilistic\",\"enable_adaptive_verification\":false}' \\\n        --compilation-config '{\"cudagraph_capture_sizes\": [4,8,12,16], \"max_cudagraph_capture_size\": 16}' \\\n        --host 0.0.0.0 \\\n        --port 8090",
+ "send_replies": true,
+ "spoiler": false,
+ "stickied": false,
+ "subreddit": "LocalLLaMA",
+ "subreddit_id": "t5_81eyvm",
+ "subreddit_name_prefixed": "r/LocalLLaMA",
+ "subreddit_subscribers": 837040,
+ "subreddit_type": "public",
+ "suggested_sort": null,
+ "thumbnail": "https://preview.redd.it/ieztzoixqhsh1.png?width=140&height=118&auto=webp&s=2f6653aca385ba4e37ce1d5bc1b65253158a3e0f",
+ "thumbnail_height": 118,
+ "thumbnail_width": 140,
+ "title": "RAM Offloading with vLLM - tcclaviger appreciation post",
+ "top_awarded_type": null,
+ "total_awards_received": 0,
+ "treatment_tags": [],
+ "ups": 49,
+ "upvote_ratio": 0.93,
+ "url": "https://i.redd.it/ieztzoixqhsh1.png",
+ "url_overridden_by_dest": "https://i.redd.it/ieztzoixqhsh1.png",
+ "user_reports": [],
+ "view_count": null,
+ "visited": false,
+ "websocket_url": "wss://k8s-lb.wss.redditmedia.com/link/1wtg12r?m=AQAAnkO9al1quoKSXTyOSxUZTOEDzknXe9fjVvbZW4jvSc3Pm1_b",
+ "wls": 6
+}

@@ -13,6 +13,22 @@ import yaml
 
 from config import ROOT
 
+
+def _rel_posix(path) -> str:
+    """Repo-relative posix path, absolute when outside ROOT.
+
+    Cause (ball3 follow-up sweep 2026-09-29): display/receipt derivations
+    raised ValueError whenever the path lived outside the repo (the suite
+    runs use an out-of-repo pytest basetemp). Same fix as the driver-meter
+    lane's _rel_posix in tools/stealth_driver.py.
+    """
+    try:
+        return Path(path).relative_to(ROOT).as_posix()
+    except ValueError:
+        return Path(path).as_posix()
+
+
+
 ROADMAP_PATH = ROOT / "configs" / "version_roadmap.yaml"
 RELEASES_PATH = ROOT / "configs" / "releases.yaml"
 BUILD_DIR = ROOT / "queue" / "handoff"
@@ -169,13 +185,13 @@ Stop for completion or a genuine external dependency, secret, spending/publishin
                 {"id": "frozen_build", "cmd": f'python -c "from mag.factory_gate import check_frozen_build; assert check_frozen_build({goal!r}).get(\'ok\')"'},
             ],
             "session_done": [
-                {"id": "roadmap_evidence", "path": evidence_path.relative_to(ROOT).as_posix()},
+                {"id": "roadmap_evidence", "path": _rel_posix(evidence_path)},
                 {"id": "full_tests", "cmd": "python -m pytest tests -q"},
             ],
         },
         "scrum": {
             "sprint_0_preflight": {"owner": "router", "done_when": "frozen BUILD gate passes"},
-            "sprint_1_implement": {"owner": "deepseek+local", "desk_task": goal, "artifact": evidence_path.relative_to(ROOT).as_posix()},
+            "sprint_1_implement": {"owner": "deepseek+local", "desk_task": goal, "artifact": _rel_posix(evidence_path)},
             "sprint_2_verify": {"owner": "verifier", "done_when": "full tests green and evidence filed"},
         },
         "knowns": [f"Roadmap selected {vid}.{gid}", f"Frozen contract: queue/handoff/{build_path.name}", *sources],
@@ -184,7 +200,7 @@ Stop for completion or a genuine external dependency, secret, spending/publishin
         "done_marker": "Done",
         "bead_on_close": True,
         "clear_dialogue_on_seed": True,
-        "roadmap": {"version": vid, "gate": gid, "evidence_path": evidence_path.relative_to(ROOT).as_posix()},
+        "roadmap": {"version": vid, "gate": gid, "evidence_path": _rel_posix(evidence_path)},
     }
     BUILD_DIR.mkdir(parents=True, exist_ok=True)
     RUN_CONFIG_DIR.mkdir(parents=True, exist_ok=True)
@@ -195,9 +211,9 @@ Stop for completion or a genuine external dependency, secret, spending/publishin
         "schema": "roadmap_run_contract.v1",
         "selection": selection,
         "goal": goal,
-        "build_path": str(build_path.relative_to(ROOT)).replace("\\", "/"),
-        "config_path": str(config_path.relative_to(ROOT)).replace("\\", "/"),
-        "evidence_path": str(evidence_path.relative_to(ROOT)).replace("\\", "/"),
+        "build_path": _rel_posix(build_path),
+        "config_path": _rel_posix(config_path),
+        "evidence_path": _rel_posix(evidence_path),
         "branch_prefix": f"mag/roadmap-{slug}",
     }
 

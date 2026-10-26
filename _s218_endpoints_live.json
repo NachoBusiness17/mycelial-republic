@@ -1,0 +1,2884 @@
+{
+  "ok": true,
+  "schema": "endpoints.v1",
+  "count": 411,
+  "items": [
+    {
+      "method": "GET",
+      "path": "/api/v1/chan/catalog",
+      "summary": "GET /api/v1/chan/catalog \u2014 Primer imageboard catalog (4chan-the-game).",
+      "group": "chan",
+      "version": "v1"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/chan/thread/{slug}",
+      "summary": "GET /api/v1/chan/thread/{slug} \u2014 one thread, play posts only.",
+      "group": "chan",
+      "version": "v1"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/chan/post",
+      "summary": "POST /api/v1/chan/post {thread, text, seat, sage} \u2014 player move.",
+      "group": "chan",
+      "version": "v1"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/chan/wake",
+      "summary": "POST /api/v1/chan/wake {thread} \u2014 one Anonymous chorus mouth (Primer voice).",
+      "group": "chan",
+      "version": "v1"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/partner/puppet",
+      "summary": "GET /api/v1/partner/puppet \u2014 the partner puppeteering surface (invariants + shared history).",
+      "group": "partner",
+      "version": "v1"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/partner/puppet",
+      "summary": "POST /api/v1/partner/puppet {token|anchor|scratch_id, execute} \u2014 puppet the local agent",
+      "group": "partner",
+      "version": "v1"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/ecosystem",
+      "summary": "ECOSYSTEM SURFACE \u2014 the whole ecosystem (swarms + modules + steal + ledgers + opcodes +",
+      "group": "ecosystem",
+      "version": "v1"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/ecosystem/rib",
+      "summary": "ECOSYSTEM RIB \u2014 compress the ecosystem into a scannable QR-like token for instant",
+      "group": "ecosystem",
+      "version": "v1"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/ecosystem/scan",
+      "summary": "ECOSYSTEM SCAN \u2014 decode a RIB payload (?payload=<b64>) into instant-inference + handoff",
+      "group": "ecosystem",
+      "version": "v1"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/schemas",
+      "summary": "SCHEMA REGISTRY \u2014 the versioning manifest for all session modules (self-describing",
+      "group": "schemas",
+      "version": "v1"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/endpoints",
+      "summary": "GET /api/v1/endpoints \u2014 live catalog of every route (derived at request time, never hand-maintained).",
+      "group": "endpoints",
+      "version": "v1"
+    },
+    {
+      "method": "GET",
+      "path": "/api/endpoints",
+      "summary": "GET /api/v1/endpoints \u2014 live catalog of every route (derived at request time, never hand-maintained).",
+      "group": "endpoints",
+      "version": "legacy"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/rightsize",
+      "summary": "GET /api/v1/rightsize \u2014 rightsizing ghost status + derived endpoint registry.",
+      "group": "rightsize",
+      "version": "v1"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/rightsize/endpoints",
+      "summary": "GET /api/v1/rightsize/endpoints \u2014 the derived catalog the rightsizing ghost reads.",
+      "group": "rightsize",
+      "version": "v1"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/rightsize/audit",
+      "summary": "POST /api/v1/rightsize/audit \u2014 run rightsize_all.audit() (report-only, $0).",
+      "group": "rightsize",
+      "version": "v1"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/rightsize/apply",
+      "summary": "POST /api/v1/rightsize/apply \u2014 apply fixable rightsizing (dry unless {apply:true}).",
+      "group": "rightsize",
+      "version": "v1"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/skill-ledger",
+      "summary": "h_skill_ledger",
+      "group": "skill-ledger",
+      "version": "v1"
+    },
+    {
+      "method": "GET",
+      "path": "/api/skill-ledger",
+      "summary": "h_skill_ledger",
+      "group": "skill-ledger",
+      "version": "legacy"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/skill-ledger/record",
+      "summary": "h_skill_ledger_record",
+      "group": "skill-ledger",
+      "version": "v1"
+    },
+    {
+      "method": "POST",
+      "path": "/api/skill-ledger/record",
+      "summary": "h_skill_ledger_record",
+      "group": "skill-ledger",
+      "version": "legacy"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/skill-ledger/labeled-row",
+      "summary": "h_skill_ledger_labeled_row",
+      "group": "skill-ledger",
+      "version": "v1"
+    },
+    {
+      "method": "POST",
+      "path": "/api/skill-ledger/labeled-row",
+      "summary": "h_skill_ledger_labeled_row",
+      "group": "skill-ledger",
+      "version": "legacy"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/pile",
+      "summary": "h_pile",
+      "group": "pile",
+      "version": "v1"
+    },
+    {
+      "method": "GET",
+      "path": "/api/pile",
+      "summary": "h_pile",
+      "group": "pile",
+      "version": "legacy"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/fleet/triad",
+      "summary": "Always-on triad (engine / scribe / dashboard) from the supervisor state",
+      "group": "fleet",
+      "version": "v1"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/fleet/hypervisor",
+      "summary": "The fleet hypervisor view: every seat's cool/heat + the real bills.",
+      "group": "fleet",
+      "version": "v1"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/loop/health",
+      "summary": "wrapped",
+      "group": "loop",
+      "version": "v1"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1",
+      "summary": "h_api_index",
+      "group": "index",
+      "version": "v1"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/",
+      "summary": "h_api_index",
+      "group": "index",
+      "version": "v1"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/operator-os",
+      "summary": "h_operator_os",
+      "group": "operator-os",
+      "version": "v1"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/org-review",
+      "summary": "h_operator_os",
+      "group": "org-review",
+      "version": "v1"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/tapestry",
+      "summary": "h_tapestry",
+      "group": "tapestry",
+      "version": "v1"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/tapestry/rebuild",
+      "summary": "h_post_tapestry",
+      "group": "tapestry",
+      "version": "v1"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/lattice-lab",
+      "summary": "Pointer + inventory for test conspiracy lattice (Sovereign Mirror instrument).",
+      "group": "lattice-lab",
+      "version": "v1"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/health",
+      "summary": "h_health",
+      "group": "health",
+      "version": "v1"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/web/fetch",
+      "summary": "NATIVE web-fetch surface (2026-08-14, operator: stop pinging me with the console).",
+      "group": "web",
+      "version": "v1"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/doctor",
+      "summary": "h_health",
+      "group": "doctor",
+      "version": "v1"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/test-run",
+      "summary": "Restful test-run surface (the operator's 'testing is antiquated' fix).",
+      "group": "test-run",
+      "version": "v1"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/test-run",
+      "summary": "Restful test-run surface (the operator's 'testing is antiquated' fix).",
+      "group": "test-run",
+      "version": "v1"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/tokens/saved",
+      "summary": "Tokens SAVED vs PROJECTED counter (shared-language grok cost reducer).",
+      "group": "tokens",
+      "version": "v1"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/game/score",
+      "summary": "GWAP scoreboard \u2014 the world-built score (real folded work, never fake points).",
+      "group": "game",
+      "version": "v1"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/ghost/control",
+      "summary": "GHOST CONTROL HARNESS \u2014 the human-facing surface. Ghost's live view of the whole",
+      "group": "ghost",
+      "version": "v1"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/sovereign",
+      "summary": "Whole-stack one-call view \u2014 the SEAT's primary \"machine reconciled\" payload.",
+      "group": "sovereign",
+      "version": "v1"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/solved",
+      "summary": "What our history already solved \u2014 surfaced automatically from the internals",
+      "group": "solved",
+      "version": "v1"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/ghost/talk",
+      "summary": "Talk to GHOST directly (the surface of interaction). Body: {prompt}.",
+      "group": "ghost",
+      "version": "v1"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/memory/search",
+      "summary": "Search shared memory by shape (exact hash hit, else nearest overlap).",
+      "group": "memory",
+      "version": "v1"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/memory/recent",
+      "summary": "List recent prospective tesujis. GET /api/v1/memory/recent?limit=N",
+      "group": "memory",
+      "version": "v1"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/memory/{key}",
+      "summary": "Stateless read by shape-hash. GET /api/v1/memory/{key} \u2014 HF-style, no session state.",
+      "group": "memory",
+      "version": "v1"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/memory",
+      "summary": "Auto-categorize + store a prospective tesuji (stateless, verkle-knotted).",
+      "group": "memory",
+      "version": "v1"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/swarm/ramp",
+      "summary": "Run the proof-based swarm ramp headless (1->2->3->scale, cost+spawn caps).",
+      "group": "swarm",
+      "version": "v1"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/swarm/test",
+      "summary": "Run the all-systems problem test headless.",
+      "group": "swarm",
+      "version": "v1"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/afk/run",
+      "summary": "Run the AFK self-advance cadence headless.",
+      "group": "afk",
+      "version": "v1"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/sentinel",
+      "summary": "Ghost as ALWAYS-ON PASSIVE sentinel: watch all surfaces + intervene on thresholds.",
+      "group": "sentinel",
+      "version": "v1"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/mag-os",
+      "summary": "Mag OS v2 card + live provenance (dashboard load).",
+      "group": "mag-os",
+      "version": "v1"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/os",
+      "summary": "Mag OS v2 card + live provenance (dashboard load).",
+      "group": "os",
+      "version": "v1"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/kpi",
+      "summary": "h_kpi",
+      "group": "kpi",
+      "version": "v1"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/registry",
+      "summary": "h_registry",
+      "group": "registry",
+      "version": "v1"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/sessions",
+      "summary": "h_sessions",
+      "group": "sessions",
+      "version": "v1"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/sessions/{id}",
+      "summary": "h_session",
+      "group": "sessions",
+      "version": "v1"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/sessions/{id}/residual",
+      "summary": "h_session_residual",
+      "group": "sessions",
+      "version": "v1"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/sessions/{id}/visual",
+      "summary": "h_visual",
+      "group": "sessions",
+      "version": "v1"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/board",
+      "summary": "h_board",
+      "group": "board",
+      "version": "v1"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/chain",
+      "summary": "h_chain",
+      "group": "chain",
+      "version": "v1"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/wave",
+      "summary": "GET /api/v1/wave \u2014 standing-wave snapshot. One JSON, many faces.",
+      "group": "wave",
+      "version": "v1"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/desk",
+      "summary": "GET /api/v1/wave \u2014 standing-wave snapshot. One JSON, many faces.",
+      "group": "desk",
+      "version": "v1"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/ingest",
+      "summary": "h_ingest",
+      "group": "ingest",
+      "version": "v1"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/overview",
+      "summary": "wrapped",
+      "group": "overview",
+      "version": "v1"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/hood",
+      "summary": "GET /api/v1/hood \u2014 model trajectory + RIB bus (looking-eye).",
+      "group": "hood",
+      "version": "v1"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/nervous",
+      "summary": "Agent-ops nervous system glance (no secrets).",
+      "group": "nervous",
+      "version": "v1"
+    },
+    {
+      "method": "GET",
+      "path": "/api/nervous",
+      "summary": "Agent-ops nervous system glance (no secrets).",
+      "group": "nervous",
+      "version": "legacy"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/system-map",
+      "summary": "Live autonomy map \u2014 current state, nervous system, improve, resonance, inbox.",
+      "group": "system-map",
+      "version": "v1"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/system-map",
+      "summary": "Live autonomy map \u2014 current state, nervous system, improve, resonance, inbox.",
+      "group": "system-map",
+      "version": "v1"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/brain",
+      "summary": "Unified brain API \u2014 pulse, decide, slow_wake, steer, breadcrumbs, dispatch.",
+      "group": "brain",
+      "version": "v1"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/brain",
+      "summary": "Unified brain API \u2014 pulse, decide, slow_wake, steer, breadcrumbs, dispatch.",
+      "group": "brain",
+      "version": "v1"
+    },
+    {
+      "method": "GET",
+      "path": "/api/brain",
+      "summary": "Unified brain API \u2014 pulse, decide, slow_wake, steer, breadcrumbs, dispatch.",
+      "group": "brain",
+      "version": "legacy"
+    },
+    {
+      "method": "POST",
+      "path": "/api/brain",
+      "summary": "Unified brain API \u2014 pulse, decide, slow_wake, steer, breadcrumbs, dispatch.",
+      "group": "brain",
+      "version": "legacy"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/stack",
+      "summary": "Agent stack \u2014 services, fleet, REST-sourced outputs (desk-like viewport).",
+      "group": "stack",
+      "version": "v1"
+    },
+    {
+      "method": "GET",
+      "path": "/api/stack",
+      "summary": "Agent stack \u2014 services, fleet, REST-sourced outputs (desk-like viewport).",
+      "group": "stack",
+      "version": "legacy"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/repo-readiness",
+      "summary": "Read-only git/worktree handoff gate; never fetches or changes refs.",
+      "group": "repo-readiness",
+      "version": "v1"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/feature-lab",
+      "summary": "Experimental worktrees and their evidence-backed graduation gates.",
+      "group": "feature-lab",
+      "version": "v1"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/feature-lab",
+      "summary": "Experimental worktrees and their evidence-backed graduation gates.",
+      "group": "feature-lab",
+      "version": "v1"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/local-pulse",
+      "summary": "Local model pulse \u2014 CPU + Ollama process signal for thinking display.",
+      "group": "local-pulse",
+      "version": "v1"
+    },
+    {
+      "method": "GET",
+      "path": "/api/local-pulse",
+      "summary": "Local model pulse \u2014 CPU + Ollama process signal for thinking display.",
+      "group": "local-pulse",
+      "version": "legacy"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/arena",
+      "summary": "Agent arena \u2014 seat vs seat games (chess POC + TextArena probes). GET status \u00b7 POST action.",
+      "group": "arena",
+      "version": "v1"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/arena",
+      "summary": "Agent arena \u2014 seat vs seat games (chess POC + TextArena probes). GET status \u00b7 POST action.",
+      "group": "arena",
+      "version": "v1"
+    },
+    {
+      "method": "GET",
+      "path": "/api/arena",
+      "summary": "Agent arena \u2014 seat vs seat games (chess POC + TextArena probes). GET status \u00b7 POST action.",
+      "group": "arena",
+      "version": "legacy"
+    },
+    {
+      "method": "POST",
+      "path": "/api/arena",
+      "summary": "Agent arena \u2014 seat vs seat games (chess POC + TextArena probes). GET status \u00b7 POST action.",
+      "group": "arena",
+      "version": "legacy"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/routing-network",
+      "summary": "Routing network \u2014 switchboard mesh + multi-seat concert plans.",
+      "group": "routing-network",
+      "version": "v1"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/routing-network",
+      "summary": "Routing network \u2014 switchboard mesh + multi-seat concert plans.",
+      "group": "routing-network",
+      "version": "v1"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/local-scheduler",
+      "summary": "Local GPU task scheduler \u2014 queue depth, steer, triage.",
+      "group": "local-scheduler",
+      "version": "v1"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/local-scheduler",
+      "summary": "Local GPU task scheduler \u2014 queue depth, steer, triage.",
+      "group": "local-scheduler",
+      "version": "v1"
+    },
+    {
+      "method": "GET",
+      "path": "/api/local-scheduler",
+      "summary": "Local GPU task scheduler \u2014 queue depth, steer, triage.",
+      "group": "local-scheduler",
+      "version": "legacy"
+    },
+    {
+      "method": "POST",
+      "path": "/api/local-scheduler",
+      "summary": "Local GPU task scheduler \u2014 queue depth, steer, triage.",
+      "group": "local-scheduler",
+      "version": "legacy"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/unsloth",
+      "summary": "Unsloth Studio GPU seat \u2014 status (GET) or start/stop/chat (POST).",
+      "group": "unsloth",
+      "version": "v1"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/unsloth",
+      "summary": "Unsloth Studio GPU seat \u2014 status (GET) or start/stop/chat (POST).",
+      "group": "unsloth",
+      "version": "v1"
+    },
+    {
+      "method": "GET",
+      "path": "/api/unsloth",
+      "summary": "Unsloth Studio GPU seat \u2014 status (GET) or start/stop/chat (POST).",
+      "group": "unsloth",
+      "version": "legacy"
+    },
+    {
+      "method": "POST",
+      "path": "/api/unsloth",
+      "summary": "Unsloth Studio GPU seat \u2014 status (GET) or start/stop/chat (POST).",
+      "group": "unsloth",
+      "version": "legacy"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/voice/scratch",
+      "summary": "Voice scratch pad \u2014 append / commit / clear (same as cast :8766).",
+      "group": "voice",
+      "version": "v1"
+    },
+    {
+      "method": "POST",
+      "path": "/api/voice/scratch",
+      "summary": "Voice scratch pad \u2014 append / commit / clear (same as cast :8766).",
+      "group": "voice",
+      "version": "legacy"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/voice/turn",
+      "summary": "Legacy one-shot voice turn.",
+      "group": "voice",
+      "version": "v1"
+    },
+    {
+      "method": "POST",
+      "path": "/api/voice/turn",
+      "summary": "Legacy one-shot voice turn.",
+      "group": "voice",
+      "version": "legacy"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/voice/shadow",
+      "summary": "Background DeepSeek scout for voice \u2014 status / start / clear.",
+      "group": "voice",
+      "version": "v1"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/voice/shadow",
+      "summary": "Background DeepSeek scout for voice \u2014 status / start / clear.",
+      "group": "voice",
+      "version": "v1"
+    },
+    {
+      "method": "GET",
+      "path": "/api/voice/shadow",
+      "summary": "Background DeepSeek scout for voice \u2014 status / start / clear.",
+      "group": "voice",
+      "version": "legacy"
+    },
+    {
+      "method": "POST",
+      "path": "/api/voice/shadow",
+      "summary": "Background DeepSeek scout for voice \u2014 status / start / clear.",
+      "group": "voice",
+      "version": "legacy"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/voice/task",
+      "summary": "Voice \u2192 REST build tasks for cheap coding agents.",
+      "group": "voice",
+      "version": "v1"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/voice/task",
+      "summary": "Voice \u2192 REST build tasks for cheap coding agents.",
+      "group": "voice",
+      "version": "v1"
+    },
+    {
+      "method": "GET",
+      "path": "/api/voice/task",
+      "summary": "Voice \u2192 REST build tasks for cheap coding agents.",
+      "group": "voice",
+      "version": "legacy"
+    },
+    {
+      "method": "POST",
+      "path": "/api/voice/task",
+      "summary": "Voice \u2192 REST build tasks for cheap coding agents.",
+      "group": "voice",
+      "version": "legacy"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/voice/stt",
+      "summary": "Local Whisper-class STT \u2014 no voice training; isolation via clean capture + VAD.",
+      "group": "voice",
+      "version": "v1"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/voice/stt",
+      "summary": "Local Whisper-class STT \u2014 no voice training; isolation via clean capture + VAD.",
+      "group": "voice",
+      "version": "v1"
+    },
+    {
+      "method": "GET",
+      "path": "/api/voice/stt",
+      "summary": "Local Whisper-class STT \u2014 no voice training; isolation via clean capture + VAD.",
+      "group": "voice",
+      "version": "legacy"
+    },
+    {
+      "method": "POST",
+      "path": "/api/voice/stt",
+      "summary": "Local Whisper-class STT \u2014 no voice training; isolation via clean capture + VAD.",
+      "group": "voice",
+      "version": "legacy"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/voice/canvas",
+      "summary": "Evolving dig board / Verkle-flavored canvas of what voice seats are discussing.",
+      "group": "voice",
+      "version": "v1"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/voice/canvas",
+      "summary": "Evolving dig board / Verkle-flavored canvas of what voice seats are discussing.",
+      "group": "voice",
+      "version": "v1"
+    },
+    {
+      "method": "GET",
+      "path": "/api/voice/canvas",
+      "summary": "Evolving dig board / Verkle-flavored canvas of what voice seats are discussing.",
+      "group": "voice",
+      "version": "legacy"
+    },
+    {
+      "method": "POST",
+      "path": "/api/voice/canvas",
+      "summary": "Evolving dig board / Verkle-flavored canvas of what voice seats are discussing.",
+      "group": "voice",
+      "version": "legacy"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/voice/dig",
+      "summary": "Evolving dig board / Verkle-flavored canvas of what voice seats are discussing.",
+      "group": "voice",
+      "version": "v1"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/voice/dig",
+      "summary": "Evolving dig board / Verkle-flavored canvas of what voice seats are discussing.",
+      "group": "voice",
+      "version": "v1"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/diary/seal",
+      "summary": "Seal voice/talk into Verkle diary node + high-fidelity train event.",
+      "group": "diary",
+      "version": "v1"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/diary/seal",
+      "summary": "Seal voice/talk into Verkle diary node + high-fidelity train event.",
+      "group": "diary",
+      "version": "v1"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/diary/nodes",
+      "summary": "Seal voice/talk into Verkle diary node + high-fidelity train event.",
+      "group": "diary",
+      "version": "v1"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/diary/nodes",
+      "summary": "Seal voice/talk into Verkle diary node + high-fidelity train event.",
+      "group": "diary",
+      "version": "v1"
+    },
+    {
+      "method": "GET",
+      "path": "/api/diary/seal",
+      "summary": "Seal voice/talk into Verkle diary node + high-fidelity train event.",
+      "group": "diary",
+      "version": "legacy"
+    },
+    {
+      "method": "POST",
+      "path": "/api/diary/seal",
+      "summary": "Seal voice/talk into Verkle diary node + high-fidelity train event.",
+      "group": "diary",
+      "version": "legacy"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/voice/handoff",
+      "summary": "Non-blocking FILE to DeepSeek \u2014 voice keeps talking.",
+      "group": "voice",
+      "version": "v1"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/voice/handoff",
+      "summary": "Non-blocking FILE to DeepSeek \u2014 voice keeps talking.",
+      "group": "voice",
+      "version": "v1"
+    },
+    {
+      "method": "GET",
+      "path": "/api/voice/handoff",
+      "summary": "Non-blocking FILE to DeepSeek \u2014 voice keeps talking.",
+      "group": "voice",
+      "version": "legacy"
+    },
+    {
+      "method": "POST",
+      "path": "/api/voice/handoff",
+      "summary": "Non-blocking FILE to DeepSeek \u2014 voice keeps talking.",
+      "group": "voice",
+      "version": "legacy"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/refine",
+      "summary": "Multi-seat refine chain (Project Verkle recursive pattern).",
+      "group": "refine",
+      "version": "v1"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/refine",
+      "summary": "Multi-seat refine chain (Project Verkle recursive pattern).",
+      "group": "refine",
+      "version": "v1"
+    },
+    {
+      "method": "GET",
+      "path": "/api/refine",
+      "summary": "Multi-seat refine chain (Project Verkle recursive pattern).",
+      "group": "refine",
+      "version": "legacy"
+    },
+    {
+      "method": "POST",
+      "path": "/api/refine",
+      "summary": "Multi-seat refine chain (Project Verkle recursive pattern).",
+      "group": "refine",
+      "version": "legacy"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/game",
+      "summary": "Living campaign \u2014 engine-first classic keep / tabletop-dnd.",
+      "group": "game",
+      "version": "v1"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/game",
+      "summary": "Living campaign \u2014 engine-first classic keep / tabletop-dnd.",
+      "group": "game",
+      "version": "v1"
+    },
+    {
+      "method": "GET",
+      "path": "/api/game",
+      "summary": "Living campaign \u2014 engine-first classic keep / tabletop-dnd.",
+      "group": "game",
+      "version": "legacy"
+    },
+    {
+      "method": "POST",
+      "path": "/api/game",
+      "summary": "Living campaign \u2014 engine-first classic keep / tabletop-dnd.",
+      "group": "game",
+      "version": "legacy"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/game/frontier",
+      "summary": "THE GAME LOOP ON :8765 \u2014 the frontier party plays, and the play BUILDS the world.",
+      "group": "game",
+      "version": "v1"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/game/frontier",
+      "summary": "THE GAME LOOP ON :8765 \u2014 the frontier party plays, and the play BUILDS the world.",
+      "group": "game",
+      "version": "v1"
+    },
+    {
+      "method": "GET",
+      "path": "/api/game/frontier",
+      "summary": "THE GAME LOOP ON :8765 \u2014 the frontier party plays, and the play BUILDS the world.",
+      "group": "game",
+      "version": "legacy"
+    },
+    {
+      "method": "POST",
+      "path": "/api/game/frontier",
+      "summary": "THE GAME LOOP ON :8765 \u2014 the frontier party plays, and the play BUILDS the world.",
+      "group": "game",
+      "version": "legacy"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/table/view",
+      "summary": "ASCII/DF table projection of engine state \u2014 REST, cheap, offline.",
+      "group": "table",
+      "version": "v1"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/table/view",
+      "summary": "ASCII/DF table projection of engine state \u2014 REST, cheap, offline.",
+      "group": "table",
+      "version": "v1"
+    },
+    {
+      "method": "GET",
+      "path": "/api/table/view",
+      "summary": "ASCII/DF table projection of engine state \u2014 REST, cheap, offline.",
+      "group": "table",
+      "version": "legacy"
+    },
+    {
+      "method": "POST",
+      "path": "/api/table/view",
+      "summary": "ASCII/DF table projection of engine state \u2014 REST, cheap, offline.",
+      "group": "table",
+      "version": "legacy"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/table/tileset",
+      "summary": "DF tileset meta + ensure local PNG cache from Steam DF art.",
+      "group": "table",
+      "version": "v1"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/table/tileset",
+      "summary": "DF tileset meta + ensure local PNG cache from Steam DF art.",
+      "group": "table",
+      "version": "v1"
+    },
+    {
+      "method": "GET",
+      "path": "/api/table/tileset",
+      "summary": "DF tileset meta + ensure local PNG cache from Steam DF art.",
+      "group": "table",
+      "version": "legacy"
+    },
+    {
+      "method": "POST",
+      "path": "/api/table/tileset",
+      "summary": "DF tileset meta + ensure local PNG cache from Steam DF art.",
+      "group": "table",
+      "version": "legacy"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/display",
+      "summary": "TV-safe ambient display \u2014 chronicle + nervous + desk (Roku / wall clients).",
+      "group": "display",
+      "version": "v1"
+    },
+    {
+      "method": "GET",
+      "path": "/api/display",
+      "summary": "TV-safe ambient display \u2014 chronicle + nervous + desk (Roku / wall clients).",
+      "group": "display",
+      "version": "legacy"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/grove",
+      "summary": "Tesuji Grove \u2014 poem skill tree nodes (v3-012).",
+      "group": "grove",
+      "version": "v1"
+    },
+    {
+      "method": "GET",
+      "path": "/api/grove",
+      "summary": "Tesuji Grove \u2014 poem skill tree nodes (v3-012).",
+      "group": "grove",
+      "version": "legacy"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/lattice-history",
+      "summary": "Verkle lattice history + planning summary for dashboard.",
+      "group": "lattice-history",
+      "version": "v1"
+    },
+    {
+      "method": "GET",
+      "path": "/api/lattice-history",
+      "summary": "Verkle lattice history + planning summary for dashboard.",
+      "group": "lattice-history",
+      "version": "legacy"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/viewports",
+      "summary": "List synced Cursor Canvas viewports.",
+      "group": "viewports",
+      "version": "v1"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/viewports/{id}",
+      "summary": "One canvas viewport manifest.",
+      "group": "viewports",
+      "version": "v1"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/viewports/sync",
+      "summary": "Run canvas sync from external *.canvas.tsx sources.",
+      "group": "viewports",
+      "version": "v1"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/home",
+      "summary": "One payload for the Home tab: health, tip, latest bead, loops, economy.",
+      "group": "home",
+      "version": "v1"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/summary",
+      "summary": "One payload for the Home tab: health, tip, latest bead, loops, economy.",
+      "group": "summary",
+      "version": "v1"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/attention-ranked",
+      "summary": "Decision-useful signals ordered by consequence, with visible reasons.",
+      "group": "attention-ranked",
+      "version": "v1"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/attention-feedback",
+      "summary": "Teach the ranker what helped without weakening deterministic guards.",
+      "group": "attention-feedback",
+      "version": "v1"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/ideas",
+      "summary": "GET collection: idea cards (optional ?status= & ?type= & ?limit=).",
+      "group": "ideas",
+      "version": "v1"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/ideas",
+      "summary": "POST collection \u2014 create a card (title required).",
+      "group": "ideas",
+      "version": "v1"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/ideas/{id}/pack",
+      "summary": "GET brief (pack) subresource for one idea \u2014 LOAD slice for models.",
+      "group": "ideas",
+      "version": "v1"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/ideas/{id}",
+      "summary": "GET one idea resource.",
+      "group": "ideas",
+      "version": "v1"
+    },
+    {
+      "method": "PATCH",
+      "path": "/api/v1/ideas/{id}",
+      "summary": "PATCH one idea \u2014 status / title / body (mark done, shelf, reopen).",
+      "group": "ideas",
+      "version": "v1"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/ideas/seed",
+      "summary": "POST action: import open items from working notes + agent_state paths.",
+      "group": "ideas",
+      "version": "v1"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/models",
+      "summary": "h_models",
+      "group": "models",
+      "version": "v1"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/providers",
+      "summary": "wrapped",
+      "group": "providers",
+      "version": "v1"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/quota",
+      "summary": "wrapped",
+      "group": "quota",
+      "version": "v1"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/providers/local-only",
+      "summary": "Return current local-only runtime setting.",
+      "group": "providers",
+      "version": "v1"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/providers/local-only",
+      "summary": "Set the local-only runtime toggle via POST { local_only: true|false }.",
+      "group": "providers",
+      "version": "v1"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/router-status",
+      "summary": "Router dashboard: honest quotas, live connections, ingest \u2014 not fake savings.",
+      "group": "router-status",
+      "version": "v1"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/status",
+      "summary": "Router dashboard: honest quotas, live connections, ingest \u2014 not fake savings.",
+      "group": "status",
+      "version": "v1"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/diary",
+      "summary": "Day-by-day story spine from filed beads.",
+      "group": "diary",
+      "version": "v1"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/story",
+      "summary": "Full thesis + hero journey for Story dock tab.",
+      "group": "story",
+      "version": "v1"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/story/file",
+      "summary": "Read a small text artifact for Story tab (path under Mag ROOT only).",
+      "group": "story",
+      "version": "v1"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/usage",
+      "summary": "h_usage",
+      "group": "usage",
+      "version": "v1"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/economy",
+      "summary": "h_economy",
+      "group": "economy",
+      "version": "v1"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/costs",
+      "summary": "GET cost truth: receipt-derived dollars, free/local work, and unpriced usage.",
+      "group": "costs",
+      "version": "v1"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/costs/vast/sync",
+      "summary": "Read-only Vast billing/instances refresh; never changes instance state.",
+      "group": "costs",
+      "version": "v1"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/compute-schedule",
+      "summary": "Current off-hours policy plus queued heavy-job deferrals.",
+      "group": "compute-schedule",
+      "version": "v1"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/flow",
+      "summary": "h_idea_flow",
+      "group": "flow",
+      "version": "v1"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/brief",
+      "summary": "h_brief_latest",
+      "group": "brief",
+      "version": "v1"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/visual/latest",
+      "summary": "<lambda>",
+      "group": "visual",
+      "version": "v1"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/catch-up",
+      "summary": "h_post_catch_up",
+      "group": "catch-up",
+      "version": "v1"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/desk-orchestrate",
+      "summary": "h_desk_orchestrate",
+      "group": "desk-orchestrate",
+      "version": "v1"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/desk-dialogue",
+      "summary": "h_desk_dialogue",
+      "group": "desk-dialogue",
+      "version": "v1"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/desk-dialogue",
+      "summary": "h_desk_dialogue",
+      "group": "desk-dialogue",
+      "version": "v1"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/agent-desk",
+      "summary": "h_agent_desk",
+      "group": "agent-desk",
+      "version": "v1"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/agent-desk",
+      "summary": "h_agent_desk",
+      "group": "agent-desk",
+      "version": "v1"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/ask",
+      "summary": "h_post_ask",
+      "group": "ask",
+      "version": "v1"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/dispatch",
+      "summary": "Chat / API: route a goal through Mag dispatch (local first).",
+      "group": "dispatch",
+      "version": "v1"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/agent",
+      "summary": "Tool-using Mag agent turn (DeepSeek + local tools). Dashboard Agent mode.",
+      "group": "agent",
+      "version": "v1"
+    },
+    {
+      "method": "POST",
+      "path": "/api/agent",
+      "summary": "Tool-using Mag agent turn (DeepSeek + local tools). Dashboard Agent mode.",
+      "group": "agent",
+      "version": "legacy"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/agent/live",
+      "summary": "Polling fallback: live turn phase for dashboard agent sessions.",
+      "group": "agent",
+      "version": "v1"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/agent/upload",
+      "summary": "Save pasted/dropped image or text blob under memory/agent_uploads/ (Grok-compose steal).",
+      "group": "agent",
+      "version": "v1"
+    },
+    {
+      "method": "POST",
+      "path": "/api/agent/upload",
+      "summary": "Save pasted/dropped image or text blob under memory/agent_uploads/ (Grok-compose steal).",
+      "group": "agent",
+      "version": "legacy"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/context-pack",
+      "summary": "Fresh context-pack + paste block for DeepSeek web / external seats.",
+      "group": "context-pack",
+      "version": "v1"
+    },
+    {
+      "method": "GET",
+      "path": "/api/context-pack",
+      "summary": "Fresh context-pack + paste block for DeepSeek web / external seats.",
+      "group": "context-pack",
+      "version": "legacy"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/session/freeze",
+      "summary": "Immutable snapshot of full agent state for DeepSeek Pro Max / external seats.",
+      "group": "session",
+      "version": "v1"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/tangents",
+      "summary": "h_tangents",
+      "group": "tangents",
+      "version": "v1"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/tangent",
+      "summary": "Queue a background tangent (janitor/Gemini). Optional immediate run.",
+      "group": "tangent",
+      "version": "v1"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/tangent/process",
+      "summary": "h_post_tangent_process",
+      "group": "tangent",
+      "version": "v1"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/fork/detect",
+      "summary": "Fork decision contract for an utterance and optional active-goal context.",
+      "group": "fork",
+      "version": "v1"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/fork/confirm",
+      "summary": "Create a fork artifact and optionally spawn a child task.",
+      "group": "fork",
+      "version": "v1"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/brief",
+      "summary": "h_post_brief",
+      "group": "brief",
+      "version": "v1"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/visual",
+      "summary": "h_post_visual",
+      "group": "visual",
+      "version": "v1"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/export",
+      "summary": "On-demand PDF/visual from residual (export layer).",
+      "group": "export",
+      "version": "v1"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/multi-smoke",
+      "summary": "h_post_multi_smoke",
+      "group": "multi-smoke",
+      "version": "v1"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/probe-lanes",
+      "summary": "h_post_probe_lanes",
+      "group": "probe-lanes",
+      "version": "v1"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/blast",
+      "summary": "h_blast",
+      "group": "blast",
+      "version": "v1"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/blast",
+      "summary": "Influence plant: start/stop/pause/resume/patch dials.",
+      "group": "blast",
+      "version": "v1"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/blast/promote",
+      "summary": "h_post_blast_promote",
+      "group": "blast",
+      "version": "v1"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/agents",
+      "summary": "List sub-agent tasks \u2014 default: running + recent (48h), not soak corpses.",
+      "group": "agents",
+      "version": "v1"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/agents",
+      "summary": "Spawn a sub-agent process: {goal, provider?, model?, timeout?, tag?}.",
+      "group": "agents",
+      "version": "v1"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/agents/fan",
+      "summary": "Spawn a swarm of sub-agents: {goals, provider?, model?, timeout?, tag?}.",
+      "group": "agents",
+      "version": "v1"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/agents/pipes",
+      "summary": "h_agents_pipes",
+      "group": "agents",
+      "version": "v1"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/agents/pipes/{id}",
+      "summary": "h_agents_pipe_one",
+      "group": "agents",
+      "version": "v1"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/agents/pipes/{id}/collect",
+      "summary": "h_agents_pipe_collect",
+      "group": "agents",
+      "version": "v1"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/agents/pipes/{id}/kill",
+      "summary": "h_agents_pipe_kill",
+      "group": "agents",
+      "version": "v1"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/agents/pipes/{id}/cmd",
+      "summary": "h_agents_pipe_cmd",
+      "group": "agents",
+      "version": "v1"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/agents/reap",
+      "summary": "h_agents_reap",
+      "group": "agents",
+      "version": "v1"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/agents/heal",
+      "summary": "Watchdog: mark dead-pid tasks died + re-spawn them (bounded retries).",
+      "group": "agents",
+      "version": "v1"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/agents/{id}",
+      "summary": "Live task status incl. heartbeat age + agent-reported phase.",
+      "group": "agents",
+      "version": "v1"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/agents/{id}/state-snapshot",
+      "summary": "Compact state used by overseer before sending steer commands.",
+      "group": "agents",
+      "version": "v1"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/agents/{id}/log",
+      "summary": "h_agent_log",
+      "group": "agents",
+      "version": "v1"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/agents/{id}/kill",
+      "summary": "h_agent_kill",
+      "group": "agents",
+      "version": "v1"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/agents/{id}/cmd",
+      "summary": "Live intervention over the knot mailbox: {cmd: steer|pause|continue|escape, context?}.",
+      "group": "agents",
+      "version": "v1"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/agents/{id}/steer",
+      "summary": "API-first steer with accepted steer_id and ack window.",
+      "group": "agents",
+      "version": "v1"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/agents/{id}/steer/{steer_id}/status",
+      "summary": "Status for a specific steer_id (accepted/received/applied/etc).",
+      "group": "agents",
+      "version": "v1"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/chronicle",
+      "summary": "Tripartite Chronicle \u2014 file-backed pulse from synthesis_agent + structured events.",
+      "group": "chronicle",
+      "version": "v1"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/seats",
+      "summary": "Inbound clients (Cursor, dashboard, Grok TUI) + outbound API providers.",
+      "group": "seats",
+      "version": "v1"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/seats/register",
+      "summary": "Register desktop/cloud seat with orchestrator mesh \u2014 returns MAG_TASK_ID.",
+      "group": "seats",
+      "version": "v1"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/seats/heartbeat",
+      "summary": "Refresh liveness for a registered seat.",
+      "group": "seats",
+      "version": "v1"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/seats/unregister",
+      "summary": "h_seats_unregister",
+      "group": "seats",
+      "version": "v1"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/power",
+      "summary": "h_power",
+      "group": "power",
+      "version": "v1"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/power/stop",
+      "summary": "Kill switch \u2014 stops stack (may terminate this dashboard process).",
+      "group": "power",
+      "version": "v1"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/power/start",
+      "summary": "h_power_start",
+      "group": "power",
+      "version": "v1"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/lifecycle",
+      "summary": "When each stack piece should be on/off \u2014 passive efficiency map.",
+      "group": "lifecycle",
+      "version": "v1"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/lifecycle/reconcile",
+      "summary": "Apply safe passive offs (drainer etc). Never kills core UI.",
+      "group": "lifecycle",
+      "version": "v1"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/power/lifecycle",
+      "summary": "When each stack piece should be on/off \u2014 passive efficiency map.",
+      "group": "power",
+      "version": "v1"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/temperature-stacks",
+      "summary": "Adjustable temperature stacks + resolve goal heat / file pointer / track gap.",
+      "group": "temperature-stacks",
+      "version": "v1"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/temperature-stacks",
+      "summary": "Adjustable temperature stacks + resolve goal heat / file pointer / track gap.",
+      "group": "temperature-stacks",
+      "version": "v1"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/improve/cloud",
+      "summary": "Cloud agent files handoff + optional improve cycle enqueue.",
+      "group": "improve",
+      "version": "v1"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/improve/cycle",
+      "summary": "Run one improve cycle \u2014 behavioral + queue + nervous + spider.",
+      "group": "improve",
+      "version": "v1"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/token-chain",
+      "summary": "DeepSeek plan \u2192 local work order exec (token-save chain). GET returns latest run.",
+      "group": "token-chain",
+      "version": "v1"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/token-chain",
+      "summary": "DeepSeek plan \u2192 local work order exec (token-save chain). GET returns latest run.",
+      "group": "token-chain",
+      "version": "v1"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/governance",
+      "summary": "h_governance",
+      "group": "governance",
+      "version": "v1"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/governance",
+      "summary": "Toggle autonomy prefs or broadcast steer to chat + running workers.",
+      "group": "governance",
+      "version": "v1"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/governance/auto-steer/add",
+      "summary": "Persist auto-steer rules (cycle-0: contract + storage, execution loop later).",
+      "group": "governance",
+      "version": "v1"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/governance/steering-log",
+      "summary": "h_governance_steering_log",
+      "group": "governance",
+      "version": "v1"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/overseer/manifest",
+      "summary": "Overseer bard manifest for tabbed event UI and invocation flavor.",
+      "group": "overseer",
+      "version": "v1"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/overseer/events",
+      "summary": "Tabbed event feed for UI surfaces (route/steer/checkpoint/all).",
+      "group": "overseer",
+      "version": "v1"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/overseer/session",
+      "summary": "Session-aware overseer: read a VS Code session, extract the ask, gather full",
+      "group": "overseer",
+      "version": "v1"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/overseer/session",
+      "summary": "Session-aware overseer: read a VS Code session, extract the ask, gather full",
+      "group": "overseer",
+      "version": "v1"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/operator-inbox",
+      "summary": "h_operator_inbox",
+      "group": "operator-inbox",
+      "version": "v1"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/operator-inbox",
+      "summary": "h_operator_inbox",
+      "group": "operator-inbox",
+      "version": "v1"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/seat-feed",
+      "summary": "h_seat_feed",
+      "group": "seat-feed",
+      "version": "v1"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/coordination",
+      "summary": "Shared activity feed \u2014 all seats see who is doing what.",
+      "group": "coordination",
+      "version": "v1"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/coordination",
+      "summary": "Log heartbeat / status from any seat (DeepSeek, Cursor, etc.).",
+      "group": "coordination",
+      "version": "v1"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/coordination/gather",
+      "summary": "Gather compact snapshots for multiple workers for overseer decisions.",
+      "group": "coordination",
+      "version": "v1"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/coordinate",
+      "summary": "Classify depth + optionally launch the appropriate seat.",
+      "group": "coordinate",
+      "version": "v1"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/route",
+      "summary": "Unified routing decision \u2014 classify + seat + provider + honest failure.",
+      "group": "route",
+      "version": "v1"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/route",
+      "summary": "Unified routing decision \u2014 classify + seat + provider + honest failure.",
+      "group": "route",
+      "version": "v1"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/decide",
+      "summary": "Framework decision: route + behavioral tips + breadcrumb interference status.",
+      "group": "decide",
+      "version": "v1"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/decide",
+      "summary": "Framework decision: route + behavioral tips + breadcrumb interference status.",
+      "group": "decide",
+      "version": "v1"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/verkle-knots/{id}",
+      "summary": "Return an agent-ready knot, or deliberately hand it to the router.",
+      "group": "verkle-knots",
+      "version": "v1"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/verkle-knots/{id}",
+      "summary": "Return an agent-ready knot, or deliberately hand it to the router.",
+      "group": "verkle-knots",
+      "version": "v1"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/autorun",
+      "summary": "Governor/autorun status for Office card + desk ops strip.",
+      "group": "autorun",
+      "version": "v1"
+    },
+    {
+      "method": "GET",
+      "path": "/api/autorun",
+      "summary": "Governor/autorun status for Office card + desk ops strip.",
+      "group": "autorun",
+      "version": "legacy"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/handoff-inbox",
+      "summary": "Peer/cloud/BUILD handoffs + orchestrator queue + coding scrum.",
+      "group": "handoff-inbox",
+      "version": "v1"
+    },
+    {
+      "method": "GET",
+      "path": "/api/handoff-inbox",
+      "summary": "Peer/cloud/BUILD handoffs + orchestrator queue + coding scrum.",
+      "group": "handoff-inbox",
+      "version": "legacy"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/coding-session",
+      "summary": "h_coding_session_get",
+      "group": "coding-session",
+      "version": "v1"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/coding-session",
+      "summary": "Run coding-session sprint to completion or POST {action: run|status}.",
+      "group": "coding-session",
+      "version": "v1"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/factory-machine",
+      "summary": "h_factory_machine_get",
+      "group": "factory-machine",
+      "version": "v1"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/factory-machine",
+      "summary": "POST {action: run|status} \u2014 full factory machine or lightweight status.",
+      "group": "factory-machine",
+      "version": "v1"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/drainer",
+      "summary": "h_drainer_status",
+      "group": "drainer",
+      "version": "v1"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/drainer",
+      "summary": "h_drainer_toggle",
+      "group": "drainer",
+      "version": "v1"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/drainer/stats",
+      "summary": "Full drainer / queue / fleet / pending-handoff stats payload.",
+      "group": "drainer",
+      "version": "v1"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/graph/ops",
+      "summary": "Categorized ops knowledge graph (nodes + edges) for the VS Code webview.",
+      "group": "graph",
+      "version": "v1"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/framework/map",
+      "summary": "Functional grouping of the whole framework for the VS Code Framework Map.",
+      "group": "framework",
+      "version": "v1"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/framework/reports",
+      "summary": "Per-run-session compiler reports (who/what/when/where/why/intent/topics).",
+      "group": "framework",
+      "version": "v1"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/surface-audit",
+      "summary": "Full surface audit \u2014 surface split + groups + seam verdict (Surface Hub).",
+      "group": "surface-audit",
+      "version": "v1"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/janitor",
+      "summary": "Run the janitor (prune + document) or fetch its last report.",
+      "group": "janitor",
+      "version": "v1"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/janitor",
+      "summary": "Run the janitor (prune + document) or fetch its last report.",
+      "group": "janitor",
+      "version": "v1"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/orphan",
+      "summary": "Orphan timer: note/touch/resolve/run undone-yet-intended intents.",
+      "group": "orphan",
+      "version": "v1"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/orphan",
+      "summary": "Orphan timer: note/touch/resolve/run undone-yet-intended intents.",
+      "group": "orphan",
+      "version": "v1"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/failure",
+      "summary": "Restful doctor: report an operational issue into the failure KB (catalogue +",
+      "group": "failure",
+      "version": "v1"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/failure",
+      "summary": "Restful doctor: report an operational issue into the failure KB (catalogue +",
+      "group": "failure",
+      "version": "v1"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/warnings",
+      "summary": "Passive warning monitor twin. GET ?view=status; POST {action: run[, dry]}.",
+      "group": "warnings",
+      "version": "v1"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/warnings",
+      "summary": "Passive warning monitor twin. GET ?view=status; POST {action: run[, dry]}.",
+      "group": "warnings",
+      "version": "v1"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/supervisor",
+      "summary": "Single process supervisor twin. GET = status; POST {action: start|stop|restart, name}",
+      "group": "supervisor",
+      "version": "v1"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/supervisor",
+      "summary": "Single process supervisor twin. GET = status; POST {action: start|stop|restart, name}",
+      "group": "supervisor",
+      "version": "v1"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/handoff/deep",
+      "summary": "h_handoff_deep",
+      "group": "handoff",
+      "version": "v1"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/grok-batch",
+      "summary": "Surface the Grok batch buffers + results (status of the autonomous batch).",
+      "group": "grok-batch",
+      "version": "v1"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/aos-grok",
+      "summary": "Budgeted AOS grok access (start small, prove it).",
+      "group": "aos-grok",
+      "version": "v1"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/aos-grok",
+      "summary": "Budgeted AOS grok access (start small, prove it).",
+      "group": "aos-grok",
+      "version": "v1"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/research-lens",
+      "summary": "Iterative self-referencing research lens. GET = status (corpus growth + lens weights).",
+      "group": "research-lens",
+      "version": "v1"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/research-lens",
+      "summary": "Iterative self-referencing research lens. GET = status (corpus growth + lens weights).",
+      "group": "research-lens",
+      "version": "v1"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/cheap-swarm",
+      "summary": "Cheap swarm \u2014 expand + execute ghost-built packages. GET = status. POST",
+      "group": "cheap-swarm",
+      "version": "v1"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/cheap-swarm",
+      "summary": "Cheap swarm \u2014 expand + execute ghost-built packages. GET = status. POST",
+      "group": "cheap-swarm",
+      "version": "v1"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/mycelium",
+      "summary": "Unified self-scoring mycelium graph (republic OS). GET = status. POST",
+      "group": "mycelium",
+      "version": "v1"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/mycelium",
+      "summary": "Unified self-scoring mycelium graph (republic OS). GET = status. POST",
+      "group": "mycelium",
+      "version": "v1"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/republic-os",
+      "summary": "Persistent mycelial-republic OS. GET = status. POST",
+      "group": "republic-os",
+      "version": "v1"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/republic-os",
+      "summary": "Persistent mycelial-republic OS. GET = status. POST",
+      "group": "republic-os",
+      "version": "v1"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/comms-trail",
+      "summary": "Steal the cheap agent-communication trail. GET = status. POST",
+      "group": "comms-trail",
+      "version": "v1"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/comms-trail",
+      "summary": "Steal the cheap agent-communication trail. GET = status. POST",
+      "group": "comms-trail",
+      "version": "v1"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/grok-mirror",
+      "summary": "Grok mirror \u2014 mirror Grok's instruction-production through our pipeline.",
+      "group": "grok-mirror",
+      "version": "v1"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/grok-mirror",
+      "summary": "Grok mirror \u2014 mirror Grok's instruction-production through our pipeline.",
+      "group": "grok-mirror",
+      "version": "v1"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/ghost",
+      "summary": "Thin REST twin for ghost: GET ?view=sense|catalog; POST {action: sense|deploy|cycle}.",
+      "group": "ghost",
+      "version": "v1"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/ghost",
+      "summary": "Thin REST twin for ghost: GET ?view=sense|catalog; POST {action: sense|deploy|cycle}.",
+      "group": "ghost",
+      "version": "v1"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/ghost/summon",
+      "summary": "Summon @ghost with the current session: current + future + coldest vertices -> intent.",
+      "group": "ghost",
+      "version": "v1"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/ghost/summon",
+      "summary": "Summon @ghost with the current session: current + future + coldest vertices -> intent.",
+      "group": "ghost",
+      "version": "v1"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/legacy",
+      "summary": "Legacy-process governance: GET = catalog (report-only). POST {action: retire|research}",
+      "group": "legacy",
+      "version": "v1"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/legacy",
+      "summary": "Legacy-process governance: GET = catalog (report-only). POST {action: retire|research}",
+      "group": "legacy",
+      "version": "v1"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/law",
+      "summary": "Code-as-law registry: GET status; POST {action: enforce|enforce-apply|seed, id?}.",
+      "group": "law",
+      "version": "v1"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/law",
+      "summary": "Code-as-law registry: GET status; POST {action: enforce|enforce-apply|seed, id?}.",
+      "group": "law",
+      "version": "v1"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/steer",
+      "summary": "WINDOW_STEER loop: GET status; POST {action: emit|consume, ...}.",
+      "group": "steer",
+      "version": "v1"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/steer",
+      "summary": "WINDOW_STEER loop: GET status; POST {action: emit|consume, ...}.",
+      "group": "steer",
+      "version": "v1"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/run",
+      "summary": "Thin REST twin for run: spawn a goal through the orchestrator.",
+      "group": "run",
+      "version": "v1"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/run",
+      "summary": "Thin REST twin for run: spawn a goal through the orchestrator.",
+      "group": "run",
+      "version": "v1"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/spec-gate",
+      "summary": "Thin REST twin for spec-gate: freeze or check a file's fingerprint.",
+      "group": "spec-gate",
+      "version": "v1"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/spec-gate",
+      "summary": "Thin REST twin for spec-gate: freeze or check a file's fingerprint.",
+      "group": "spec-gate",
+      "version": "v1"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/extension/deploy",
+      "summary": "Deploy the MAG extension files to the installed extension dir (architecture path).",
+      "group": "extension",
+      "version": "v1"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/seat/steer",
+      "summary": "POST /api/v1/seat/steer \u2014 the architecture path for live seat actions: send a message into",
+      "group": "seat",
+      "version": "v1"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/elevate",
+      "summary": "Thin REST twin for elevate: shape the right-sized ask for the strongest model + capture it.",
+      "group": "elevate",
+      "version": "v1"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/elevate",
+      "summary": "Thin REST twin for elevate: shape the right-sized ask for the strongest model + capture it.",
+      "group": "elevate",
+      "version": "v1"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/cleanup",
+      "summary": "Thin REST twin for passive cleanup: audit + (dry=false) move transient to trash.",
+      "group": "cleanup",
+      "version": "v1"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/cleanup",
+      "summary": "Thin REST twin for passive cleanup: audit + (dry=false) move transient to trash.",
+      "group": "cleanup",
+      "version": "v1"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/docker",
+      "summary": "Docker containment twin. GET = status/probe (report-only). POST {action: up|down}",
+      "group": "docker",
+      "version": "v1"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/docker",
+      "summary": "Docker containment twin. GET = status/probe (report-only). POST {action: up|down}",
+      "group": "docker",
+      "version": "v1"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/embassy/publish",
+      "summary": "Thin REST twin for embassy publish: send the AOS packet to GitHub (dry by default).",
+      "group": "embassy",
+      "version": "v1"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/embassy/publish",
+      "summary": "Thin REST twin for embassy publish: send the AOS packet to GitHub (dry by default).",
+      "group": "embassy",
+      "version": "v1"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/live-feed",
+      "summary": "Recent lines from a live trail (overseer|ghost|drainer) for polling views.",
+      "group": "live-feed",
+      "version": "v1"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/live-feed",
+      "summary": "Recent lines from a live trail (overseer|ghost|drainer) for polling views.",
+      "group": "live-feed",
+      "version": "v1"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/workspace/tree",
+      "summary": "h_workspace_tree",
+      "group": "workspace",
+      "version": "v1"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/workspace/file",
+      "summary": "h_workspace_file_get",
+      "group": "workspace",
+      "version": "v1"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/workspace/file",
+      "summary": "h_workspace_file_post",
+      "group": "workspace",
+      "version": "v1"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/autopilot",
+      "summary": "h_autopilot",
+      "group": "autopilot",
+      "version": "v1"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/orchestrator/queue",
+      "summary": "h_orchestrator_queue_post",
+      "group": "orchestrator",
+      "version": "v1"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/handoff/request",
+      "summary": "Drop a handoff request file \u2014 the MAG VS Code extension watches this dir and",
+      "group": "handoff",
+      "version": "v1"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/behavior/vscode",
+      "summary": "Feed a VS Code chat signal into the behavioral loop (pile/training/ledger/pro).",
+      "group": "behavior",
+      "version": "v1"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/behavior/vscode",
+      "summary": "Feed a VS Code chat signal into the behavioral loop (pile/training/ledger/pro).",
+      "group": "behavior",
+      "version": "v1"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/thrash",
+      "summary": "GET /api/v1/thrash: live multi-front thrash reading (THE 50 W6 T27).",
+      "group": "thrash",
+      "version": "v1"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/seat/task",
+      "summary": "Unified Cursor\u2192Mag tasking: {goal?, seat?, mode: delegate|queue|autopilot|agent|dispatch}.",
+      "group": "seat",
+      "version": "v1"
+    },
+    {
+      "method": "GET",
+      "path": "/api/operator-os",
+      "summary": "h_operator_os",
+      "group": "operator-os",
+      "version": "legacy"
+    },
+    {
+      "method": "GET",
+      "path": "/api/org-review",
+      "summary": "h_operator_os",
+      "group": "org-review",
+      "version": "legacy"
+    },
+    {
+      "method": "GET",
+      "path": "/api/thrash",
+      "summary": "GET /api/v1/thrash: live multi-front thrash reading (THE 50 W6 T27).",
+      "group": "thrash",
+      "version": "legacy"
+    },
+    {
+      "method": "GET",
+      "path": "/api/health",
+      "summary": "h_health",
+      "group": "health",
+      "version": "legacy"
+    },
+    {
+      "method": "GET",
+      "path": "/api/doctor",
+      "summary": "h_health",
+      "group": "doctor",
+      "version": "legacy"
+    },
+    {
+      "method": "GET",
+      "path": "/api/mag-os",
+      "summary": "Mag OS v2 card + live provenance (dashboard load).",
+      "group": "mag-os",
+      "version": "legacy"
+    },
+    {
+      "method": "GET",
+      "path": "/api/os",
+      "summary": "Mag OS v2 card + live provenance (dashboard load).",
+      "group": "os",
+      "version": "legacy"
+    },
+    {
+      "method": "GET",
+      "path": "/api/sessions",
+      "summary": "h_sessions",
+      "group": "sessions",
+      "version": "legacy"
+    },
+    {
+      "method": "GET",
+      "path": "/api/session/{id}",
+      "summary": "h_session",
+      "group": "session",
+      "version": "legacy"
+    },
+    {
+      "method": "GET",
+      "path": "/api/board",
+      "summary": "h_board",
+      "group": "board",
+      "version": "legacy"
+    },
+    {
+      "method": "GET",
+      "path": "/api/verkle",
+      "summary": "h_chain",
+      "group": "verkle",
+      "version": "legacy"
+    },
+    {
+      "method": "GET",
+      "path": "/api/ingest",
+      "summary": "h_ingest",
+      "group": "ingest",
+      "version": "legacy"
+    },
+    {
+      "method": "GET",
+      "path": "/api/overview",
+      "summary": "wrapped",
+      "group": "overview",
+      "version": "legacy"
+    },
+    {
+      "method": "GET",
+      "path": "/api/hood",
+      "summary": "GET /api/v1/hood \u2014 model trajectory + RIB bus (looking-eye).",
+      "group": "hood",
+      "version": "legacy"
+    },
+    {
+      "method": "GET",
+      "path": "/api/home",
+      "summary": "One payload for the Home tab: health, tip, latest bead, loops, economy.",
+      "group": "home",
+      "version": "legacy"
+    },
+    {
+      "method": "GET",
+      "path": "/api/diary",
+      "summary": "Day-by-day story spine from filed beads.",
+      "group": "diary",
+      "version": "legacy"
+    },
+    {
+      "method": "GET",
+      "path": "/api/story",
+      "summary": "Full thesis + hero journey for Story dock tab.",
+      "group": "story",
+      "version": "legacy"
+    },
+    {
+      "method": "GET",
+      "path": "/api/summary",
+      "summary": "One payload for the Home tab: health, tip, latest bead, loops, economy.",
+      "group": "summary",
+      "version": "legacy"
+    },
+    {
+      "method": "GET",
+      "path": "/api/models",
+      "summary": "h_models",
+      "group": "models",
+      "version": "legacy"
+    },
+    {
+      "method": "GET",
+      "path": "/api/providers",
+      "summary": "wrapped",
+      "group": "providers",
+      "version": "legacy"
+    },
+    {
+      "method": "GET",
+      "path": "/api/quota",
+      "summary": "wrapped",
+      "group": "quota",
+      "version": "legacy"
+    },
+    {
+      "method": "GET",
+      "path": "/api/status",
+      "summary": "GET /api/status \u2014 minimal file-on-disk health stub (P0 2026-09-10).",
+      "group": "status",
+      "version": "legacy"
+    },
+    {
+      "method": "GET",
+      "path": "/api/loop-health",
+      "summary": "wrapped",
+      "group": "loop-health",
+      "version": "legacy"
+    },
+    {
+      "method": "GET",
+      "path": "/api/usage",
+      "summary": "h_usage",
+      "group": "usage",
+      "version": "legacy"
+    },
+    {
+      "method": "GET",
+      "path": "/api/economy",
+      "summary": "h_economy",
+      "group": "economy",
+      "version": "legacy"
+    },
+    {
+      "method": "GET",
+      "path": "/api/costs",
+      "summary": "GET cost truth: receipt-derived dollars, free/local work, and unpriced usage.",
+      "group": "costs",
+      "version": "legacy"
+    },
+    {
+      "method": "POST",
+      "path": "/api/costs/vast/sync",
+      "summary": "Read-only Vast billing/instances refresh; never changes instance state.",
+      "group": "costs",
+      "version": "legacy"
+    },
+    {
+      "method": "GET",
+      "path": "/api/compute-schedule",
+      "summary": "Current off-hours policy plus queued heavy-job deferrals.",
+      "group": "compute-schedule",
+      "version": "legacy"
+    },
+    {
+      "method": "GET",
+      "path": "/api/idea-flow",
+      "summary": "h_idea_flow",
+      "group": "idea-flow",
+      "version": "legacy"
+    },
+    {
+      "method": "GET",
+      "path": "/api/brief/latest",
+      "summary": "h_brief_latest",
+      "group": "brief",
+      "version": "legacy"
+    },
+    {
+      "method": "GET",
+      "path": "/api/visual/latest",
+      "summary": "<lambda>",
+      "group": "visual",
+      "version": "legacy"
+    },
+    {
+      "method": "GET",
+      "path": "/api/visual/{id}",
+      "summary": "h_visual",
+      "group": "visual",
+      "version": "legacy"
+    },
+    {
+      "method": "GET",
+      "path": "/api/timeline",
+      "summary": "<lambda>",
+      "group": "timeline",
+      "version": "legacy"
+    },
+    {
+      "method": "POST",
+      "path": "/api/catch-up",
+      "summary": "h_post_catch_up",
+      "group": "catch-up",
+      "version": "legacy"
+    },
+    {
+      "method": "POST",
+      "path": "/api/ask",
+      "summary": "h_post_ask",
+      "group": "ask",
+      "version": "legacy"
+    },
+    {
+      "method": "POST",
+      "path": "/api/dispatch",
+      "summary": "Chat / API: route a goal through Mag dispatch (local first).",
+      "group": "dispatch",
+      "version": "legacy"
+    },
+    {
+      "method": "GET",
+      "path": "/api/tangents",
+      "summary": "h_tangents",
+      "group": "tangents",
+      "version": "legacy"
+    },
+    {
+      "method": "POST",
+      "path": "/api/tangent",
+      "summary": "Queue a background tangent (janitor/Gemini). Optional immediate run.",
+      "group": "tangent",
+      "version": "legacy"
+    },
+    {
+      "method": "POST",
+      "path": "/api/tangent/process",
+      "summary": "h_post_tangent_process",
+      "group": "tangent",
+      "version": "legacy"
+    },
+    {
+      "method": "POST",
+      "path": "/api/fork/detect",
+      "summary": "Fork decision contract for an utterance and optional active-goal context.",
+      "group": "fork",
+      "version": "legacy"
+    },
+    {
+      "method": "POST",
+      "path": "/api/fork/confirm",
+      "summary": "Create a fork artifact and optionally spawn a child task.",
+      "group": "fork",
+      "version": "legacy"
+    },
+    {
+      "method": "POST",
+      "path": "/api/brief",
+      "summary": "h_post_brief",
+      "group": "brief",
+      "version": "legacy"
+    },
+    {
+      "method": "POST",
+      "path": "/api/visual/rebuild",
+      "summary": "h_post_visual",
+      "group": "visual",
+      "version": "legacy"
+    },
+    {
+      "method": "POST",
+      "path": "/api/export",
+      "summary": "On-demand PDF/visual from residual (export layer).",
+      "group": "export",
+      "version": "legacy"
+    },
+    {
+      "method": "POST",
+      "path": "/api/multi-smoke",
+      "summary": "h_post_multi_smoke",
+      "group": "multi-smoke",
+      "version": "legacy"
+    },
+    {
+      "method": "POST",
+      "path": "/api/probe-lanes",
+      "summary": "h_post_probe_lanes",
+      "group": "probe-lanes",
+      "version": "legacy"
+    },
+    {
+      "method": "GET",
+      "path": "/api/blast",
+      "summary": "h_blast",
+      "group": "blast",
+      "version": "legacy"
+    },
+    {
+      "method": "POST",
+      "path": "/api/blast",
+      "summary": "Influence plant: start/stop/pause/resume/patch dials.",
+      "group": "blast",
+      "version": "legacy"
+    },
+    {
+      "method": "POST",
+      "path": "/api/blast/promote",
+      "summary": "h_post_blast_promote",
+      "group": "blast",
+      "version": "legacy"
+    },
+    {
+      "method": "GET",
+      "path": "/api/chronicle",
+      "summary": "Tripartite Chronicle \u2014 file-backed pulse from synthesis_agent + structured events.",
+      "group": "chronicle",
+      "version": "legacy"
+    },
+    {
+      "method": "GET",
+      "path": "/api/seats",
+      "summary": "Inbound clients (Cursor, dashboard, Grok TUI) + outbound API providers.",
+      "group": "seats",
+      "version": "legacy"
+    },
+    {
+      "method": "GET",
+      "path": "/api/governance",
+      "summary": "h_governance",
+      "group": "governance",
+      "version": "legacy"
+    },
+    {
+      "method": "POST",
+      "path": "/api/governance",
+      "summary": "Toggle autonomy prefs or broadcast steer to chat + running workers.",
+      "group": "governance",
+      "version": "legacy"
+    },
+    {
+      "method": "GET",
+      "path": "/api/operator-inbox",
+      "summary": "h_operator_inbox",
+      "group": "operator-inbox",
+      "version": "legacy"
+    },
+    {
+      "method": "POST",
+      "path": "/api/operator-inbox",
+      "summary": "h_operator_inbox",
+      "group": "operator-inbox",
+      "version": "legacy"
+    },
+    {
+      "method": "GET",
+      "path": "/api/seat-feed",
+      "summary": "h_seat_feed",
+      "group": "seat-feed",
+      "version": "legacy"
+    },
+    {
+      "method": "GET",
+      "path": "/api/drainer",
+      "summary": "h_drainer_status",
+      "group": "drainer",
+      "version": "legacy"
+    },
+    {
+      "method": "POST",
+      "path": "/api/drainer",
+      "summary": "h_drainer_toggle",
+      "group": "drainer",
+      "version": "legacy"
+    },
+    {
+      "method": "GET",
+      "path": "/api/workspace/tree",
+      "summary": "h_workspace_tree",
+      "group": "workspace",
+      "version": "legacy"
+    },
+    {
+      "method": "GET",
+      "path": "/api/workspace/file",
+      "summary": "h_workspace_file_get",
+      "group": "workspace",
+      "version": "legacy"
+    },
+    {
+      "method": "POST",
+      "path": "/api/workspace/file",
+      "summary": "h_workspace_file_post",
+      "group": "workspace",
+      "version": "legacy"
+    },
+    {
+      "method": "POST",
+      "path": "/api/autopilot",
+      "summary": "h_autopilot",
+      "group": "autopilot",
+      "version": "legacy"
+    },
+    {
+      "method": "POST",
+      "path": "/api/orchestrator/queue",
+      "summary": "h_orchestrator_queue_post",
+      "group": "orchestrator",
+      "version": "legacy"
+    },
+    {
+      "method": "POST",
+      "path": "/api/seat/task",
+      "summary": "Unified Cursor\u2192Mag tasking: {goal?, seat?, mode: delegate|queue|autopilot|agent|dispatch}.",
+      "group": "seat",
+      "version": "legacy"
+    }
+  ]
+}

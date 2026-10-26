@@ -10,6 +10,7 @@ import json
 import os
 import random
 import re
+import sys
 from datetime import datetime, timezone
 from pathlib import Path
 import hashlib
@@ -17,6 +18,7 @@ from typing import Any
 from uuid import uuid4
 
 from config import ROOT
+from mag.water_computer import seed_graph as _seed_graph
 
 SCHEMA = "mag_game_campaign.v1"
 CAMP_DIR = ROOT / "memory" / "working" / "game_campaigns"
@@ -60,17 +62,50 @@ def list_modules() -> list[dict[str, Any]]:
     return out
 
 
+# MODULE HANDLERS (wired 2026-09-27, the dead-seam burn-down): module_id ->
+# python module exposing handle(camp, action, *, atype, raw). Explicit
+# registry, no import magic over untrusted json. Add a module here only
+# when it carries verb semantics the generic Inform rules must not answer.
+_MODULE_HANDLERS = {
+    "water_computer": "mag.water_computer",
+    "water_graph": "mag.water_computer",
+}
+
+
+def _module_handler(module_id: str):
+    mod_name = _MODULE_HANDLERS.get((module_id or "").strip().lower())
+    if not mod_name:
+        return None
+    try:
+        import importlib
+
+        mod = importlib.import_module(mod_name)
+    except Exception:
+        return None
+    h = getattr(mod, "handle", None)
+    return h if callable(h) else None
+
+
 def resolve_module(name: str) -> dict[str, Any] | None:
     q = (name or "classic").strip().lower()
+    # First pass: exact module_id match wins (avoids alias substring collisions).
     for p in MODULES_DIR.glob("*.json"):
         try:
             m = json.loads(p.read_text(encoding="utf-8"))
         except Exception:
             continue
         mid = str(m.get("module_id") or "").lower()
+        if q == mid:
+            return m
+    # Second pass: alias exact, alias substring, then title.
+    for p in MODULES_DIR.glob("*.json"):
+        try:
+            m = json.loads(p.read_text(encoding="utf-8"))
+        except Exception:
+            continue
         aliases = [str(a).lower() for a in (m.get("aliases") or [])]
         title = str(m.get("title") or "").lower()
-        if q == mid or q in aliases or any(q in a or a in q for a in aliases) or q in title:
+        if q in aliases or any(q in a or a in q for a in aliases) or q in title:
             return m
     classic = MODULES_DIR / "dnd_classic_stub.v1.json"
     if classic.is_file():
@@ -326,6 +361,14 @@ def begin_play(
             "player_start": mod.get("player_start") or {},
         },
     }
+    # Auto-seed graph mode when the module spec carries a graph_spec dict
+    # (e.g. water_graph.v1.json) — routes the campaign through WaterGraph.
+    _gs = mod.get("graph_spec")
+    if _gs is not None:
+        try:
+            _seed_graph(camp, _gs)
+        except Exception:  # noqa: BLE001
+            pass
     save_campaign(camp)
     starter = mod.get("player_start") or {}
     if starter.get("name"):
@@ -1405,6 +1448,28 @@ def apply_action(campaign_id: str, action: dict[str, Any] | None) -> dict[str, A
     legal = list_legal_actions(camp)
     events: list[str] = []
     pl = camp.get("player") or {}
+
+    # MODULE VERB DISPATCH (wired 2026-09-27, the dead-seam burn-down):
+    # mag/water_computer.py::handle() existed since the module landed with
+    # ZERO callers — the engine answered module verbs ("open valve", "pour
+    # bucket") with generic Inform rules and the water tests failed on a
+    # seam that was never connected (tests/test_water_computer.py 5 red
+    # since landing; audit LANE4D flagged the module). A module handler
+    # that claims the verb returns BEFORE the generic rules; persistence
+    # rides the same save_campaign every other action path uses.
+    _mod_handler = _module_handler(str(camp.get("module_id") or ""))
+    if _mod_handler is not None:
+        try:
+            _r = _mod_handler(camp, action, atype=atype, raw=raw)
+        except Exception as e:  # a broken module must not brick the engine
+            events.append(f"(the mechanism jams: {type(e).__name__})")
+        else:
+            if _r.get("handled"):
+                save_campaign(camp)
+                out = dict(_r)
+                out.setdefault("ok", True)
+                out.setdefault("campaign_id", campaign_id)
+                return out
 
     if atype in ("look", "status"):
         noun = str(action.get("item") or action.get("target") or "").strip()
@@ -2927,6 +2992,15 @@ def parse_player_speech(text: str) -> dict[str, Any] | None:
         return {"type": "attack"}
     if re.search(r"\b(freeze state|freeze game|game freeze|dump state|save freeze)\b", t):
         return {"type": "freeze"}
+    # Water-computer physics verbs (dead-seam burn-down 2026-09-27): bare
+    # boil/steam/melt and freeze-the-WATER phrases parsed to None, the test
+    # harness fell back to a harmless look, and the module never saw the
+    # verb ("freeze state" above is the engine save, not the element). The
+    # type carries the verb; the module's handle() blob-match does the rest.
+    if re.fullmatch(r"(boil|steam|melt)", t):
+        return {"type": "boil", "raw": (text or "").strip()[:240]}
+    if re.fullmatch(r"(freeze|ice|cool( down)?)", t) or re.search(r"\bfreeze (the )?(water|it)\b", t):
+        return {"type": "freeze_water", "raw": (text or "").strip()[:240]}
     if re.search(r"\b(help|what can i do|options|commands|legal)\b", t):
         return {"type": "help"}
     # Evennia CmdInventory (general.py): key=inventory aliases=["inv","i"] arg_regex=r"$".
@@ -4637,6 +4711,262 @@ def parse_player_speech(text: str) -> dict[str, Any] | None:
     return None
 
 
+# ── REPRINT (2026-09-29, W3D — ledger return 11/24 improvement) ──────────────
+# Death as interagent hand-off: on status==defeated, fold the death as a
+# verkle knot (rib_bus.publish_rib — the same fold idiom dungeon_dev.conquer
+# uses), harvest salvage (honest temple:/slain:/door_open: flags + inventory
+# kept; cheat:/nuke: dropped; the rest folded into the knot, never silently
+# lost), re-seat the named actor from CHAR_DIR with hp restored and
+# reprint_n+1, then pass the salvage off to the module handler if one is
+# registered (_MODULE_HANDLERS — the water remembers). Receipts ride the two
+# live patterns: party_subchain.append (game_campaign.py:2957 idiom) +
+# training_events.emit (game_campaign.py:2790 idiom).
+
+_SALVAGE_KEEP_PREFIXES = ("temple:", "slain:", "door_open:")
+_SALVAGE_DROP_PREFIXES = ("cheat:", "nuke:")
+_SALVAGE_DROP_EXACT = ("cheat", "scorched")  # water_computer.cheated/scorched semantics
+
+
+def _salvage_split(flags: list[str] | None) -> tuple[list[str], list[str], list[str]]:
+    """Split flags into (kept, dropped, folded). Kept carry to the clone;
+    dropped are cheats; folded are honest but module-scoped — recorded in
+    the knot, not carried."""
+    kept: list[str] = []
+    dropped: list[str] = []
+    folded: list[str] = []
+    for f in flags or []:
+        s = str(f)
+        low = s.lower()
+        if low.startswith(_SALVAGE_DROP_PREFIXES) or low in _SALVAGE_DROP_EXACT:
+            dropped.append(s)
+        elif low.startswith(_SALVAGE_KEEP_PREFIXES):
+            kept.append(s)
+        else:
+            folded.append(s)
+    return kept, dropped, folded
+
+
+def _char_sheet_path(name: str) -> Path:
+    slug = re.sub(r"[^a-z0-9]+", "-", str(name or "x").lower())
+    return CHAR_DIR / f"{slug}.json"
+
+
+def reprint(dead_campaign_id: str) -> dict[str, Any]:
+    """Reprint a defeated campaign: harvest the corpse, seat the next clone.
+
+    Only status==defeated reprints. Live, sealed or already-reprinted
+    campaigns are refused — reprint is a death rite, not a save-scum.
+    """
+    old = load_campaign(dead_campaign_id)
+    if not old:
+        return {"ok": False, "error": f"missing campaign {dead_campaign_id}"}
+    status = str(old.get("status") or "")
+    if status != "defeated":
+        return {
+            "ok": False,
+            "error": f"refused: campaign {dead_campaign_id} is {status or 'statusless'}, not defeated",
+            "status": status,
+            "refused": True,
+        }
+
+    # 1. Salvage harvest — what the corpse carries is the hand-off cargo.
+    kept, dropped, folded = _salvage_split(list(old.get("flags") or []))
+    dead_player = dict(old.get("player") or {})
+    name = str(dead_player.get("name") or "")
+    salvage_inventory = [
+        str(i) for i in (dead_player.get("inventory") or [])
+    ]
+
+    # 2. Re-seat the named actor from CHAR_DIR (sheet persisted by
+    #    set_character); the sheet is the actor's source of truth, the
+    #    corpse only if no sheet survived.
+    sheet: dict[str, Any] = {}
+    sp = _char_sheet_path(name or "x")
+    if name and sp.is_file():
+        try:
+            sheet = json.loads(sp.read_text(encoding="utf-8"))
+        except Exception:
+            sheet = {}
+    player = dict(sheet.get("player") or dead_player)
+    player["name"] = name or str(player.get("name") or "Adventurer")
+    player["inventory"] = salvage_inventory or list(player.get("inventory") or [])
+    hp_max = int(player.get("hp_max") or 10)
+    player["hp"] = hp_max
+    n = int(old.get("reprint_n") or 0) + 1
+
+    # 3. The clone: same module/world, honest flags only, encounter cleared.
+    new: dict[str, Any] = {
+        "schema": SCHEMA,
+        "campaign_id": _cid(),
+        "ts": _utc(),
+        "voice_session_id": str(old.get("voice_session_id") or ""),
+        "module_id": old.get("module_id"),
+        "module_title": old.get("module_title"),
+        "status": "active",
+        "room_id": old.get("room_id"),
+        "player": player,
+        "encounter": None,
+        "flags": list(dict.fromkeys(kept)),
+        "reprint_n": n,
+        "reprint_of": dead_campaign_id,
+        "storyteller": {"threat_budget": 2, "days_since_crisis": 0},
+        "log": [
+            {
+                "ts": _utc(),
+                "type": "reprint",
+                "text": (
+                    f"{player['name']} falls in {old.get('room_id')} and is reprinted "
+                    f"(reprint_n {n}, from campaign {dead_campaign_id}). "
+                    f"Salvage kept: {', '.join(kept) or 'nothing'}; "
+                    f"cheats dropped: {', '.join(dropped) or 'none'}."
+                ),
+            }
+        ],
+        "module_snapshot": old.get("module_snapshot") or {},
+    }
+
+    # 4. Per-module pass-off (the water remembers): a registered handler may
+    #    fold salvage into module state. Unknown atypes return handled:False.
+    pass_off: dict[str, Any] = {"handled": False}
+    handler = _module_handler(str(old.get("module_id") or ""))
+    if handler:
+        try:
+            pass_off = handler(
+                new,
+                {"type": "reprint", "salvage": {"flags": kept, "inventory": salvage_inventory}},
+                atype="reprint",
+                raw=f"reprint {dead_campaign_id}",
+            ) or {"handled": False}
+            ev = [str(e) for e in (pass_off.get("events") or [])]
+            if ev:
+                new["log"].append({"ts": _utc(), "type": "reprint", "text": " ".join(ev)})
+        except Exception as e:  # noqa: BLE001 — pass-off must never kill the reprint
+            pass_off = {"handled": False, "error": str(e)[:140]}
+
+    # 5. Fold the death as a verkle knot (dungeon_dev.conquer idiom).
+    knot: dict[str, Any] = {}
+    try:
+        from mag import rib_bus
+
+        knot = rib_bus.publish_rib(
+            f"[DEATH FILED] campaign {dead_campaign_id}: {player['name']} falls at "
+            f"'{old.get('room_id')}'. Salvage kept {kept}; cheat dropped {dropped}; "
+            f"folded-not-carried {folded}. Clone {new['campaign_id']} seated at reprint_n {n}.",
+            domain="game_reprint",
+            source="game_campaign.reprint",
+            target_rank="T1",
+        )
+    except Exception as e:  # noqa: BLE001
+        knot = {"ok": False, "error": str(e)[:140]}
+
+    # 6. File the corpse, seat the clone, advance the character sheet.
+    old["status"] = "reprinted"
+    old["reprinted_to"] = new["campaign_id"]
+    old["log"] = list(old.get("log") or []) + [
+        {
+            "ts": _utc(),
+            "type": "reprint",
+            "text": f"Death filed as a knot. Clone {new['campaign_id']} carries the salvage (reprint_n {n}).",
+        }
+    ]
+    save_campaign(old)
+    save_campaign(new)
+    try:
+        CHAR_DIR.mkdir(parents=True, exist_ok=True)
+        sp.write_text(
+            json.dumps(
+                {
+                    "player": player,
+                    "campaign_id": new["campaign_id"],
+                    "reprint_n": n,
+                    "ts": _utc(),
+                },
+                indent=2,
+                default=str,
+            ),
+            encoding="utf-8",
+        )
+    except Exception:
+        pass
+
+    # 7. Receipt rows — the two live patterns (party_subchain + training_events).
+    try:
+        from mag.party_subchain import append as _ps
+
+        _ps(
+            seat="table",
+            ok=True,
+            move=f"reprint {dead_campaign_id} -> {new['campaign_id']} (n={n})",
+            kind="reprint",
+            extra={"kept_flags": kept, "dropped_flags": dropped},
+        )
+    except Exception:
+        try:
+            from mag.steer import emit as _steer
+
+            _steer("game", "table", f"reprint {dead_campaign_id}", steer_back=False)
+        except Exception:
+            pass
+    try:
+        from mag.training_events import emit
+
+        emit(
+            "game_turn",
+            join={
+                "campaign_id": str(new["campaign_id"]),
+                "kind": "reprint",
+                "from_campaign": dead_campaign_id,
+            },
+            input_data={"reprint": dead_campaign_id, "actor": player["name"]},
+            action={"reprint": True, "campaign_id": dead_campaign_id},
+            outcome={
+                "reprint_n": n,
+                "kept_flags": len(kept),
+                "dropped_flags": len(dropped),
+                "folded_flags": len(folded),
+            },
+            pattern_tags=["game", "reprint", "death_salvage", "verkle_knot"],
+            tier_max="T1",
+            exportable=False,
+        )
+    except Exception:
+        pass
+
+    speak = (
+        f"{player['name']} falls — and is reprinted. Clone {new['campaign_id']} "
+        f"(reprint {n}) stands at HP {player['hp']}/{hp_max}. "
+        f"Salvage kept: {', '.join(kept) or 'nothing'}; cheats dropped: {', '.join(dropped) or 'none'}. "
+        f"The death is filed as a knot; the next clone inherits the map."
+    )
+    return {
+        "ok": True,
+        "campaign_id": new["campaign_id"],
+        "reprint_n": n,
+        "reprint_of": dead_campaign_id,
+        "kept_flags": kept,
+        "dropped_flags": dropped,
+        "folded_flags": folded,
+        "inventory": player["inventory"],
+        "knot": knot,
+        "pass_off": pass_off,
+        "campaign": new,
+        "speak": speak,
+        "narrate": speak,
+    }
+
+
+def _cli(argv: list[str] | None = None) -> int:
+    """CLI verb: python -m mag.game_campaign reprint <campaign_id>"""
+    argv = list(sys.argv[1:] if argv is None else argv)
+    verb = (argv[0].strip().lower() if argv else "")
+    if verb == "reprint" and len(argv) >= 2:
+        out = reprint(argv[1])
+        print(json.dumps(out, indent=2, default=str))
+        return 0 if out.get("ok") else 2
+    print("usage: python -m mag.game_campaign reprint <campaign_id>")
+    return 2
+
+
 def seal_session(
     *,
     session_id: str = "",
@@ -4763,3 +5093,7 @@ def handle_game(body: dict[str, Any] | None = None) -> dict[str, Any]:
             act = parse_player_speech(str(body.get("text")))
         return apply_action(str(c["campaign_id"]), act if isinstance(act, dict) else {})
     return {"ok": False, "error": f"unknown action {action}"}
+
+
+if __name__ == "__main__":
+    raise SystemExit(_cli())

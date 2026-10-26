@@ -1,7 +1,7 @@
 """chord_triangulate — the X field instrument (deterministic scan of the stochastic feed).
 
 Operator teaching (2026-09-06): he posted "1112" three times across two accounts — 14h
-apart, then a 3-second echo from the organ account @GroundingWave — so the seat would
+apart, then a 3-second echo from the organ account @GHOST_HANDLE — so the seat would
 discover that X's own metadata (timestamps, deltas, ratios) is a deterministic invariant
 field, explorable like our visual tools (lightmap, burn_board, swarm_snapshot).
 

@@ -41,6 +41,11 @@ import time
 from datetime import datetime, timezone
 from pathlib import Path
 
+try:
+    from mag import steer_seal  # A1 anti-forgery gate (-m mag.hermes_steering)
+except ImportError:  # direct-script invocation: mag/ itself is on sys.path
+    import steer_seal
+
 ROOT = Path(__file__).resolve().parents[1]
 HERMES = Path(os.environ.get("HERMES_EXE", r"C:\Users\foste\AppData\Local\hermes\bin\hermes.exe"))
 HERMES_HOME = Path(os.environ.get("HERMES_HOME", r"C:\Users\foste\AppData\Local\hermes"))
@@ -255,6 +260,17 @@ def cmd_dispatch(args) -> int:
 
 
 def cmd_steer(args) -> int:
+    # A1 steer-seal gate (spec: watch/inbox/hermes_burn/A1_steer_antiforgery_
+    # ASSEMBLED.md): the single admit path. Words are verified BEFORE the steer
+    # executes. Restrictive words (STOP/HALT/PAUSE/...) always pass (safe-fail
+    # interrupt law, honored even on verify failure); a valid sealed envelope
+    # is unwrapped to its payload; an unsealed permit word passes with a logged
+    # warning in warn mode and is refused (exit 2) in enforce mode.
+    try:
+        args.nudge = steer_seal.admit_text(args.nudge).text
+    except steer_seal.SteerRefused as exc:
+        print(f"STEER REFUSED: {exc}", file=sys.stderr)
+        return 2
     workdir = Path(args.dir).resolve() if args.dir else None
     t0 = time.time()
     try:

@@ -35,6 +35,8 @@ from pathlib import Path
 from typing import Any
 
 SCHEMA = "queue_gate.v1"
+# t85: the fail-closed queue gate names its cause (t84 COOLDOWN_GATE_ERROR convention)
+CADENCE_GATE_ERROR: str | None = None
 
 
 def _queued_tasks() -> list[dict[str, Any]]:
@@ -202,14 +204,26 @@ def preflight(task: dict[str, Any]) -> dict[str, Any]:
     # 2) cadence gate (learned lane rhythm — a lane mid-backoff is probed, not hammered)
     lane = _lane_for(task.get("provider"))
     if lane:
+        global CADENCE_GATE_ERROR
+        CADENCE_GATE_ERROR = None  # a clean read clears the named error
         try:
             from mag import lane_cadence as lc
             cd = lc.cooldown(lane)
             if cd > 0:
                 return {"ok": False, "task_id": tid, "reason": "lane_cooling",
                         "lane": lane, "detail": f"cooldown {cd}s"}
-        except Exception:  # noqa: BLE001
-            pass
+        except Exception as _ce:  # noqa: BLE001 - an unverifiable lane state must not read as dispatchable
+            # GATE FAIL-CLOSED (2026-09-25, t85): the old 'except Exception: pass' let an
+            # errored cadence read fall through to dispatch (the LAST GO path on this gate;
+            # cooldown() itself is t84 fail-closed and provider_spawn_allowed denies
+            # internally on budget_unreadable). Safe direction = this gate's own deny
+            # semantics: cd>0 leaves the task queued, and the sole production caller
+            # mag/swarm_worker.py:400 leaves any not-ok gate result queued (visible, not
+            # consumed). Deny with a named cause; self-heals on the next clean read.
+            # SPEC: tests/test_loop_death_guards.py, t85 SPEC line 1.
+            CADENCE_GATE_ERROR = f"FAIL-CLOSED: preflight cadence gate exited: {_ce}"
+            return {"ok": False, "task_id": tid, "reason": "cadence_gate_error",
+                    "lane": lane, "detail": str(_ce)[:160]}
     # 3) explicit dependency gate
     deps = task.get("depends_on") or []
     if deps:
@@ -333,6 +347,7 @@ def status() -> dict[str, Any]:
             "queued": s["queued"],
             "by_domain": by_domain,
             "emphasized_goals": s["emphasized_goals"],
+            "cadence_gate_error": CADENCE_GATE_ERROR,
             "clusters": sum(1 for v in d["graph"].values()
                             if len(v["same_domain"]) + len(v["same_tag"]) > 0),
             "gated": p["gated"][:8],

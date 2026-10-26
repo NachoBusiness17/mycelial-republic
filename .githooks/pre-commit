@@ -1,0 +1,40 @@
+#!/usr/bin/env bash
+# Secrets gate (2026-10-24, after ENV_KEYS_142_152 leak purge). Code is law:
+# no key material lands in a repo with a pushable remote. Blocks on any hit.
+# 1) gitleaks default ruleset + env-style KEY/TOKEN/SECRET/PASSWORD/API rule
+#    (.githooks/gitleaks.toml), output redacted.
+# 2) then chains the pre-existing githooks/pre-commit (.env substring gate,
+#    prior-art check) so nothing that ran before is lost.
+# No bypass: tools/commit_sweeper.py never passes --no-verify.
+set -uo pipefail
+REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+cd "$REPO_ROOT"
+GL="$(command -v gitleaks 2>/dev/null || true)"
+[ -z "$GL" ] && [ -x "/c/Users/foste/tools/gitleaks/gitleaks.exe" ] && GL="/c/Users/foste/tools/gitleaks/gitleaks.exe"
+if [ -z "$GL" ]; then
+  echo "pre-commit: gitleaks not found - refusing commit (fail closed)." >&2
+  exit 1
+fi
+if ! "$GL" protect --staged --redact --no-banner --config ".githooks/gitleaks.toml" -v >&2; then
+  echo "pre-commit: SECRET GATE BLOCKED this commit (values redacted above)." >&2
+  echo "Move the secret to C:/Users/foste/.mag_secrets_intake/ and unstage it." >&2
+  exit 1
+fi
+# Path gate: secret-shaped file names never enter git.
+BAD="$(git diff --cached --name-only --diff-filter=ACMR | { grep -E '(^|/)watch/inbox/ENV_|KEYS' ; true; } ; git diff --cached --name-only --diff-filter=ACMR | grep -Ei '\.env$|\.key$' | grep -v '\.env\.example$' || true)"
+PATS=".githooks/gate_patterns.txt"
+if [ -f "$PATS" ]; then
+  while IFS= read -r p; do
+    [ -z "$p" ] && continue; case "$p" in \#*) continue;; esac
+    HIT="$(git diff --cached --name-only --diff-filter=ACMR | grep -E -- "$p" || true)"
+    [ -n "$HIT" ] && BAD="$BAD"$'\n'"$HIT"
+  done < "$PATS"
+fi
+BAD="$(echo "$BAD" | sed '/^$/d')"
+if [ -n "$BAD" ]; then
+  echo "pre-commit: blocked secret/personal-shaped paths:" >&2; echo "$BAD" >&2; exit 1
+fi
+if [ -x githooks/pre-commit ] || [ -f githooks/pre-commit ]; then
+  bash githooks/pre-commit "$@" || exit $?
+fi
+exit 0

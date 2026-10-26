@@ -19,8 +19,11 @@ the top of the ladder:
      missing its hash or prev is REFUSED AT APPEND, never at verify. The
      row-122 bypass path (a 3-key fragment with no hash, prev != tip) is
      physically closed for every v4 writer.
-  G2 BINDING — path-shaped evidence gets its sha256_12 recorded in the row AT
-     POST TIME (`src_sha256_12`, bones-style re-derivable). verify re-hashes
+  G2 BINDING - path-shaped evidence gets its sha256 recorded in the row AT
+     POST TIME (`src_sha256_12`, bones-style re-derivable; the key keeps its
+     legacy name but T1W1 ticket 11, 2026-10-01 widened NEW bindings from the
+     48-bit [:12] cut to the full digest, with the read sides accepting both
+     widths for legacy rows). verify re-hashes
      the bytes: identity, not mere existence. Evidence edited after the fact
      stops corroborating (EVIDENCE-MUTATED FAIL). `*_latest` mutable refs are
      refused for SUPPORTED (v3's warning became a gate). Dead path-shaped
@@ -47,7 +50,12 @@ PASS. `view` prints the effective ledger with the ladder status per row.
 
 Status ladder per row (admission semantics):
   RECORDED      G1 pass (append)
-  CORROBORATED  >=2 witness rows, distinct seats, neither the author, checks pass
+  CORROBORATED  >=2 witness rows from >=2 DISTINCT LINEAGES (A3 F1: seat =
+                <lineage>/<instance>, lineage = vendor/weights family or
+                "human"; fine-tunes/quantizations/prompts/keys/seat renames do
+                NOT create a lineage), no counted witness in the author's
+                lineage, all checks pass. Unprefixed seats do not count;
+                an unprefixed author cannot corroborate (A3 §4, 2026-10-01).
   CONTESTED     an effective kind:"contest" row targets it
   VOID          an effective (cross-signed) kind:"void" row targets it
 
@@ -215,8 +223,16 @@ def _src_path(tok: str) -> Path:
 
 
 def _bind_sources(evidence: str) -> dict[str, str]:
-    """G2: record sha256_12 of every evidence token that resolves to a file,
-    AT POST TIME (bones law: parsed, hashed, re-derivable)."""
+    """G2: record the sha256 of every evidence token that resolves to a file,
+    AT POST TIME (bones law: parsed, hashed, re-derivable).
+
+    T1W1 ticket 11 (2026-10-01, RACTOR): new bindings carry the FULL sha256
+    hexdigest. The field keeps its legacy name src_sha256_12 (the row schema
+    at _ROW_CORE pins that key), but the value was a 48-bit truncation, which
+    invited collision forgeries against the G2 identity check; every read
+    side (_src_ok, _evidence_mutated) accepts the legacy 12-char cut for
+    pre-2026-10 rows and the full digest for new ones. Pinned by
+    tests/test_grounding_wave_v4.py and tests/test_t1w1_ractor_fixes.py."""
     out: dict[str, str] = {}
     for tok in (evidence or "").split():
         tok = tok.strip().strip(",;")
@@ -225,7 +241,7 @@ def _bind_sources(evidence: str) -> dict[str, str]:
         try:
             cand = _src_path(tok)
             if cand.is_file():
-                out[tok] = hashlib.sha256(cand.read_bytes()).hexdigest()[:12]
+                out[tok] = hashlib.sha256(cand.read_bytes()).hexdigest()
         except OSError:
             continue
     return out
@@ -236,7 +252,11 @@ def _src_ok(tok: str, h12: str) -> bool:
         cand = _src_path(tok)
         if not cand.is_file():
             return False
-        return hashlib.sha256(cand.read_bytes()).hexdigest()[:12] == h12
+        digest = hashlib.sha256(cand.read_bytes()).hexdigest()
+        # T1W1 ticket 11: full digest for new bindings, [:12] for legacy rows.
+        if len(h12) == len(digest):
+            return digest == h12
+        return digest[:12] == h12
     except OSError:
         return False
 
@@ -330,8 +350,28 @@ def _admission(rows: list[dict[str, Any]]) -> dict[str, Any]:
                 and w.get("checks", {}).get("g2") is not False
                 and w.get("checks", {}).get("g3_exit") in (None, 0)
                 for w in ws)
+            # A3 lineage law (watch/inbox/hermes_burn/A3_corroboration_bootstrap.md
+            # §4, landed 2026-10-01): corroboration counts DISTINCT LINEAGES, not
+            # distinct seat strings. Seat convention: <lineage>/<instance>, where
+            # lineage = a model family by vendor/weights origin, or "human"
+            # (A3 §1 F1). Fine-tunes, quantizations, prompts, keys and seat names
+            # do not create a new lineage: zcode / zcode-desk / zcode-wave-driver-v0
+            # are ONE witness; xai/grok-a + xai/grok-b through two keys are ONE
+            # witness (keys are attribution, not lineage). Cause of the fix: the
+            # prior rule counted unauthenticated free seat strings, so the author
+            # plus any second string minted the first CORROBORATED row (A3's
+            # load-bearing observation — the 0 was volunteering, not a lock).
+            # Evidence it is fixed: tests/test_grounding_witness_binding.py
+            # (same-lineage pairs stay RECORDED, human + one distinct lineage
+            # corroborates, the live tape's admission counts are unchanged).
+            author = str(r.get("seat") or "")
+            author_lineage = author.split("/", 1)[0]
+            lineages = {str(s).split("/", 1)[0]
+                        for s in seats if isinstance(s, str) and "/" in s}
             statuses[i] = ("CORROBORATED"
-                           if r.get("hash") and len(seats) >= 2 and checks_ok
+                           if (r.get("hash") and "/" in author
+                               and len(lineages - {author_lineage}) >= 2
+                               and checks_ok)
                            else "RECORDED")
         if r.get("prev") in voided_hashes:
             propagation.append((i, "child-of-void"))
@@ -714,10 +754,16 @@ def _evidence_mutated(rows: list[dict[str, Any]],
                 out.append((i, tok, h12, "DEAD"))
             else:
                 try:
-                    actual = hashlib.sha256(cand.read_bytes()).hexdigest()[:12]
+                    actual = hashlib.sha256(cand.read_bytes()).hexdigest()
                 except OSError:
                     actual = "UNREADABLE"
-                if actual != h12:
+                # T1W1 ticket 11: compare at the bound width - legacy rows
+                # carry the 12-char cut, new rows the full digest.
+                if len(h12) == len(actual):
+                    matches = actual == h12
+                else:
+                    matches = actual[:12] == h12
+                if not matches:
                     out.append((i, tok, h12, actual))
     return out
 

@@ -9,7 +9,10 @@ off the same file chassis (queue/lanes/<lane>/{inbox.jsonl,surface.md,trail.json
 
 Laws wired in:
 - LAW-058 PIN-CHECK: free lanes only — this runner refuses any paid-lane call by
-  construction (single flash helper, z_ai3 Lite, thinking off).
+  construction (single flash helper). AMENDED 2026-10-03: the z.ai Lite door is
+  RETIRED from rotation (operator: lane given to adam; receipt
+  watch/inbox/LITE_LANE_PULL_20261003.md); the flash helper rides the env-pinned
+  OPENROUTER model instead.
 - LAW-056 COUNTER-TEETH: economist RED flags escalate to the operator inbox row.
 - LAW-055 HUMAN-PACED: external fetches are few, timed out short, never looped,
   and pass the SSRF guard (https only, public IPs only, redirects refused).
@@ -31,12 +34,14 @@ import argparse
 import ipaddress
 import json
 import os
+import re
 import socket
 import subprocess
 import sys
 import time
 import urllib.parse
 import urllib.request
+import uuid
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -69,6 +74,7 @@ SCHEDULE = {
     "harvest": "06:30",
 }
 STALLED_HOURS = 2.0
+DAILY_STALLED_HOURS = 26.0
 
 
 def _now() -> datetime:
@@ -79,11 +85,23 @@ def _ts() -> str:
     return _now().strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
+def _scrub_credentials(detail: str) -> str:
+    # 2026-10-04: a CYCLE_FAIL detail carried the raw b'Bearer sk-or-v1-...' header
+    # into elder trail.jsonl + surface.md and the dashboard copies (live key,
+    # byte-matched .env, caught pre-commit by the prepush_credential_shape WARN).
+    # Scrub at this chokepoint because every lane event flows through _trail.
+    return re.sub(
+        r"(sk-[A-Za-z0-9_-]{16,}|xai-[A-Za-z0-9]{16,}|AIza[A-Za-z0-9_-]{16,}|"
+        r"gsk_[A-Za-z0-9]{16,}|Bearer\s+(?=[A-Za-z0-9_\-\.]{15,}))",
+        lambda m: m.group(0)[:12] + "[REDACTED]",
+        str(detail or ""))
+
+
 def _trail(lane: str, event: str, detail: str, artifacts: list | None = None) -> None:
     lane_dir = LANES / lane
     lane_dir.mkdir(parents=True, exist_ok=True)
     row = {"ts": _ts(), "actor": f"{lane}-cage", "event": event,
-           "detail": detail[:400], "artifacts": artifacts or []}
+           "detail": _scrub_credentials(detail)[:400], "artifacts": artifacts or []}
     with (lane_dir / "trail.jsonl").open("a", encoding="utf-8") as f:
         f.write(json.dumps(row, ensure_ascii=False) + "\n")
 
@@ -105,9 +123,52 @@ def _state(lane: str) -> dict:
 
 
 def _save_state(lane: str, st: dict) -> None:
+    st.setdefault("seat", lane)
     p = LANES / lane / "runner_state.json"
     p.parent.mkdir(parents=True, exist_ok=True)
-    p.write_text(json.dumps(st, ensure_ascii=False, indent=1), encoding="utf-8")
+    # Errno-22 cure (2026-10-04): O_TRUNC opens (Path.write_text mode 'w') of
+    # the live state file fail in intermittent host-side bursts through the
+    # cage bind mount - "[Errno 22] Invalid argument: '/app/queue/lanes/<lane>/
+    # runner_state.json'", lane_scheduler.log 2026-09-14..2026-10-04 (e.g.
+    # 2026-10-04T08:38:49Z research+builder failing, 08:40:37Z both
+    # succeeding; a same-mount 40x open('w') probe ran clean between them, so
+    # the lock is external and transient, not code-side). That abort killed
+    # night cycles AFTER monitor+march ran and wiped last_night (5x CYCLE_FAIL
+    # on 2026-10-03 -> full-cycle re-runs every ~100s). Atomic tmp+replace
+    # never truncates the live file - readers see the old or new inode, never
+    # a half-written state - and skips the failing O_TRUNC open path; the same
+    # rename-CAS pattern mag/bay_organs.py proved against win32 filter locks.
+    tmp = p.with_name(f".{p.name}.tmp-{os.getpid()}-{time.time_ns()}")
+    try:
+        tmp.write_text(json.dumps(st, ensure_ascii=False, indent=1), encoding="utf-8")
+        os.replace(tmp, p)
+    except OSError:
+        try:
+            tmp.unlink()
+        except OSError:
+            pass
+        raise
+
+
+def _atomic_copy(src: Path, dst: Path) -> None:
+    # Errno-22 twin-site port (2026-10-05): _mirror's plain write_text is an
+    # O_TRUNC open of the live mirrored file through the cage bind mount - the
+    # same host-side transient burst class _save_state cured 2026-10-04
+    # (lane_scheduler.log "mirror fail research ... /app/dashboard/static/trails/
+    # research.jsonl" at 2026-10-05T03:59:15Z, postdating the state-path cure;
+    # 2026-09-29 storm shows mirror fail rows alongside loop exc from day one).
+    # Same rename-CAS idiom: unique tmp name never truncates the live file,
+    # os.replace swaps it in; readers see old or new bytes, never a torn file.
+    tmp = dst.with_name(f".{dst.name}.tmp-{os.getpid()}-{time.time_ns()}")
+    try:
+        tmp.write_text(src.read_text(encoding="utf-8"), encoding="utf-8")
+        os.replace(tmp, dst)
+    except OSError:
+        try:
+            tmp.unlink()
+        except OSError:
+            pass
+        raise
 
 
 def _mirror(lane: str) -> None:
@@ -119,11 +180,9 @@ def _mirror(lane: str) -> None:
         src_t = lane_dir / "trail.jsonl"
         src_s = lane_dir / "surface.md"
         if src_t.exists():
-            (STATIC / "trails" / f"{lane}.jsonl").write_text(
-                src_t.read_text(encoding="utf-8"), encoding="utf-8")
+            _atomic_copy(src_t, STATIC / "trails" / f"{lane}.jsonl")
         if src_s.exists():
-            (STATIC / "lanes" / f"{lane}.md").write_text(
-                src_s.read_text(encoding="utf-8"), encoding="utf-8")
+            _atomic_copy(src_s, STATIC / "lanes" / f"{lane}.md")
     except Exception as e:  # noqa: BLE001
         _log(f"mirror fail {lane}: {e}")
 
@@ -193,6 +252,137 @@ def gate_drop(item: dict, lane: str) -> tuple[bool, list[str]]:
     return ok, reasons
 
 
+# ----------------------------------------------------- gate_verdict_v2 (B2-111)
+# Three-axis verdict schema + two-band cascade (build doc sections 1-2,
+# watch/inbox/BURN_JUDGE_LANE_BUILD_20260925.md; thresholds frozen at the B2-32
+# registration in configs/lanes.yaml gate_verdict_v2). THE JUDGE NEVER MOVES ITS
+# OWN GATE: tau, band axes and escalation policy are read ONLY from the yaml
+# block on every call; no function below takes a threshold parameter and no
+# judge-supplied field can override one. A derivation-class failure routes to
+# band_derivation (always_escalate); everything else runs band_routine
+# (accept iff failure_class == none AND every band axis score >= tau).
+def load_gate_block() -> dict:
+    """Read the frozen gate_verdict_v2 registration from configs/lanes.yaml.
+    Refuses (raises) when the block is missing or malformed: there is no
+    code-side fallback tau, the block is the only gate owner."""
+    import yaml
+    cfg = yaml.safe_load((ROOT / "configs" / "lanes.yaml").read_text(encoding="utf-8"))
+    block = (cfg or {}).get("gate_verdict_v2")
+    if not isinstance(block, dict):
+        raise RuntimeError("gate_verdict_v2 block missing from configs/lanes.yaml")
+    cascade = block.get("cascade")
+    if not isinstance(cascade, dict) or "band_routine" not in cascade:
+        raise RuntimeError("gate_verdict_v2.cascade.band_routine missing")
+    band = cascade["band_routine"]
+    if not isinstance(band.get("axes"), list) or not band["axes"]:
+        raise RuntimeError("gate_verdict_v2 band_routine axes missing")
+    tau = band.get("tau")
+    if not isinstance(tau, (int, float)) or isinstance(tau, bool) or not 0.0 <= float(tau) <= 1.0:
+        raise RuntimeError("gate_verdict_v2 band_routine tau missing or out of range")
+    return block
+
+
+def build_gate_verdict(lane: str, task_ref: str, axes: dict, judge_seat: str,
+                       failure_class: str = "none", failure_detail: str = "",
+                       escalated_from: str | None = None) -> dict:
+    """Construct one verdict per the build doc section 1 JSON contract. Refuses
+    (raises) on schema violations: score/confidence outside 0.0..1.0, a
+    non-1.0 score without its verbatim evidence quote (the evidence-quote
+    falsifier law), an unknown judge seat, or an unknown failure_class."""
+    block = load_gate_block()
+    seats = block.get("judge_seats") or []
+    if judge_seat not in seats:
+        raise ValueError(f"judge_seat {judge_seat!r} not in gate_verdict_v2.judge_seats")
+    if failure_class not in ("infra", "merit", "none"):
+        raise ValueError(f"failure_class {failure_class!r} not in infra|merit|none")
+    schema_axes = block.get("axes") or []
+    if sorted(axes) != sorted(schema_axes):
+        raise ValueError(f"axes {sorted(axes)} != gate_verdict_v2.axes {sorted(schema_axes)}")
+    out_axes: dict = {}
+    for name in schema_axes:
+        a = axes.get(name)
+        if not isinstance(a, dict):
+            raise ValueError(f"axis {name}: not a score/confidence/evidence_quote object")
+        score, conf = a.get("score"), a.get("confidence")
+        for label, val in (("score", score), ("confidence", conf)):
+            if isinstance(val, bool) or not isinstance(val, (int, float)) \
+                    or not 0.0 <= float(val) <= 1.0:
+                raise ValueError(f"axis {name}: {label} must be a number in 0.0..1.0")
+        quote = str(a.get("evidence_quote") or "")
+        if float(score) < 1.0 and not quote.strip():
+            raise ValueError(f"axis {name}: non-1.0 score without a verbatim evidence quote")
+        out_axes[name] = {"score": float(score), "confidence": float(conf),
+                          "evidence_quote": quote}
+    return {
+        "verdict_id": str(uuid.uuid4()),
+        "ts_utc": _ts(),
+        "lane": lane,
+        "task_ref": task_ref,
+        "axes": out_axes,
+        "failure_class": failure_class,
+        "failure_detail": str(failure_detail)[:200],
+        "judge_seat": judge_seat,
+        "escalated_from": escalated_from,
+    }
+
+
+def apply_cascade(verdict: dict, block: dict | None = None,
+                  requires_derivation: bool = False) -> dict:
+    """Two-band cascade (B2-32 registration; falsifier F1 needs both bands
+    live). Band selection: a task whose verdict requires checking a derivation
+    (math, protocol proofs, security claims) goes to band_derivation (policy
+    always_escalate); everything else to band_routine (accept iff
+    failure_class == none AND every band axis score >= tau, else escalate).
+    tau/band axes come only from the block; the judge cannot pass one in.
+    Returns {decision, band, tau} where decision is accept|escalate."""
+    block = block or load_gate_block()
+    cascade = block["cascade"]
+    if requires_derivation:
+        derivation = cascade.get("band_derivation") or {}
+        policy = str(derivation.get("policy") or "always_escalate")
+        if policy == "always_escalate":
+            return {"decision": "escalate", "band": "band_derivation", "tau": None}
+        raise RuntimeError(f"band_derivation policy {policy!r} unsupported")
+    band = cascade["band_routine"]
+    tau = float(band["tau"])
+    if str(verdict.get("failure_class") or "none") != "none":
+        return {"decision": "escalate", "band": "band_routine", "tau": tau}
+    for name in band["axes"]:
+        a = (verdict.get("axes") or {}).get(name)
+        s = a.get("score") if isinstance(a, dict) else None
+        if isinstance(s, bool) or not isinstance(s, (int, float)) or float(s) < tau:
+            return {"decision": "escalate", "band": "band_routine", "tau": tau}
+    return {"decision": "accept", "band": "band_routine", "tau": tau}
+
+
+def gate_drop_v2(lane: str, task_ref: str, axes: dict, judge_seat: str,
+                 failure_class: str = "none", failure_detail: str = "",
+                 escalated_from: str | None = None,
+                 requires_derivation: bool = False) -> tuple[str, dict]:
+    """The V2 emission path: build the three-axis verdict, run the two-band
+    cascade, trail a GATE_VERDICT_V2 row (nested `verdict` object, the shape
+    _trail_verdicts and the cluster organ consume). Returns (decision, verdict)
+    with decision accept|escalate; escalation routing to the frontier seat is
+    the caller's dispatch, the gate itself never moves."""
+    verdict = build_gate_verdict(lane, task_ref, axes, judge_seat,
+                                 failure_class=failure_class,
+                                 failure_detail=failure_detail,
+                                 escalated_from=escalated_from)
+    verdict["requires_derivation"] = bool(requires_derivation)
+    call = apply_cascade(verdict, requires_derivation=requires_derivation)
+    verdict["decision"] = call["decision"]
+    verdict["band"] = call["band"]
+    # one trail row carrying the nested verdict object: the shape _trail_verdicts
+    # and the cluster organ consume
+    lane_dir = LANES / lane
+    row = {"ts": _ts(), "actor": f"{lane}-cage", "event": "GATE_VERDICT_V2",
+           "detail": f"verdict {verdict['verdict_id']} {call['decision']}",
+           "artifacts": [task_ref], "verdict": verdict}
+    with (lane_dir / "trail.jsonl").open("a", encoding="utf-8") as f:
+        f.write(json.dumps(row, ensure_ascii=False) + "\n")
+    return call["decision"], verdict
+
+
 def _inbox_new(lane: str) -> list[dict]:
     """New inbox drops since the last processed offset (gate applies to each)."""
     inbox = LANES / lane / "inbox.jsonl"
@@ -216,50 +406,351 @@ def _inbox_new(lane: str) -> list[dict]:
     return items
 
 
+# -------------------------------------------------------------- cluster organ
+# Build doc sections 2 + 2b (watch/inbox/BURN_JUDGE_LANE_BUILD_20260925.md;
+# 2b amendment filed 2026-09-26 by burn lane B2-34 BEFORE this code): cluster
+# before propose. CLUSTER_REPORT every CLUSTER_WINDOW_N verdicts, keyed
+# failure_class + normalized failure_detail; the infra repeat-rate alarm makes
+# the report a pipe P1 fix-order, never a chooser task; merit rows route to the
+# chooser. Two detectors ride the same report (2b): form_over_substance and
+# confident_and_wrong.
+CLUSTER_WINDOW_N = 20       # build doc section 2: N=20 verdicts per window
+INFRA_REPEAT_ALARM = 0.60   # build doc section 2: infra repeat > 60% -> P1 fix-order
+MIN_RATE_EVENTS = 10        # pass-e convention (BURN_judge-lane-spec_20260926_e.md):
+                            # never gate on a rate below 10 events
+FOS_RECEIPT_HIGH = 0.90     # 2b form_over_substance: receipt_completeness >= 0.90
+FOS_BUILD_LOW = 0.50        #   ...while build_quality <= 0.50 (elaborate-wrong shape)
+CAW_CONF_HIGH = 0.90        # 2b confident_and_wrong: overturned conf >= 0.90 verdicts
+CAW_TRIPWIRE = 0.15         # 2b / falsifier F2 (B2_08): > 15% overturn -> tripwire
+SPOTCHECK_SAMPLE_K = 5      # 2b/F2 spot-check protocol (B2-193, SPOTCHECK_PROTOCOL_20260926.md):
+                            # every CLUSTER_REPORT carries up to K high-confidence ids to re-check
+CLUSTER_TAU = 0.90          # mirrors gate_verdict_v2.cascade.band_routine.tau (B2-32)
+
+# pinned verbs per build doc section 2 ("keep the verb") plus the deterministic
+# gate reason families gate_drop emits (missing:/ttl:/anchor:)
+_PINNED_VERBS = ("timeout", "200-error-body", "404", "empty_content", "parse-fail",
+                 "unjudgeable", "missing:", "ttl:", "anchor:")
+
+
+def normalize_detail(detail: str) -> str:
+    """Build doc section 2 keying: strip lane ids, ts, paths, numbers; keep the
+    verb (timeout, 200-error-body, 404, empty_content, parse-fail)."""
+    s = str(detail or "").lower()
+    s = re.sub(r"\d{4}-\d{2}-\d{2}[t ]\d{2}:\d{2}(:\d{2})?(\.\d+)?(z|\+00:00)?", " ", s)
+    s = re.sub(r"[a-z]:\\[^\"' ]*", " ", s)   # windows paths
+    s = re.sub(r"/[\w.\-]+", " ", s)          # posix paths
+    for verb in _PINNED_VERBS:
+        if verb in s:
+            return verb.rstrip(":")
+    s = re.sub(r"\b\d+(\.\d+)?\b", " ", s)    # bare numbers
+    s = re.sub(r"[^a-z_-]+", " ", s).strip()
+    return " ".join(s.split()[:6]) or "unclassified"
+
+
+def _axes_scores(v: dict) -> dict:
+    axes = v.get("axes")
+    return axes if isinstance(axes, dict) else {}
+
+
+def _axis_score(v: dict, axis: str):
+    a = _axes_scores(v).get(axis)
+    if not isinstance(a, dict):
+        return None
+    s = a.get("score")
+    if isinstance(s, bool) or not isinstance(s, (int, float)):
+        return None
+    return float(s)
+
+
+def _verdict_max_conf(v: dict):
+    confs = [a.get("confidence") for a in _axes_scores(v).values()
+             if isinstance(a, dict) and isinstance(a.get("confidence"), (int, float))
+             and not isinstance(a.get("confidence"), bool)]
+    return max(confs) if confs else None
+
+
+def _verdict_decision(v: dict):
+    """2b decision rule: accept iff every axis score >= CLUSTER_TAU AND
+    failure_class == "none"; anything else rejects. None = undecidable row
+    (no parseable axes), never counted as an overturn in either direction."""
+    if str(v.get("failure_class") or "none") != "none":
+        return "reject"
+    axes = _axes_scores(v)
+    if not axes:
+        return None
+    for name in axes:
+        s = _axis_score(v, name)
+        if s is None or s < CLUSTER_TAU:
+            return "reject"
+    return "accept"
+
+
+def cluster_step(verdicts: list, prev_keys: dict | None = None) -> dict:
+    """Pure CLUSTER_REPORT computation over one window of verdict rows (the
+    GATE_VERDICT_V2 nested `verdict` objects). Build doc section 2: counts per
+    class, cross-window repeat rate per class, intra-window repeat beside it
+    (reported, never gated, per pass d), infra alarm routing. Section 2b: the
+    form_over_substance and confident_and_wrong detectors. Reads nothing,
+    writes nothing. Rates are computed only at >= MIN_RATE_EVENTS events
+    (pass-e convention); counts are always reported."""
+    prev_raw = prev_keys or {}
+    prev = {c: set(k) for c, k in prev_raw.items()}
+    has_prev = bool(prev)   # no previous window on file: cross-window rate is
+                            # undefined (None), never reported as a fake 0.0
+    rows = [v for v in verdicts if isinstance(v, dict)]
+    counts: dict = {}
+    keys_by_class: dict = {}
+    detail_hits: dict = {}
+    for v in rows:
+        cls = str(v.get("failure_class") or "none")
+        counts[cls] = counts.get(cls, 0) + 1
+        d = normalize_detail(str(v.get("failure_detail") or ""))
+        keys_by_class.setdefault(cls, set()).add(d)
+        detail_hits[(cls, d)] = detail_hits.get((cls, d), 0) + 1
+    repeat: dict = {}
+    intra: dict = {}
+    for cls, cnt in counts.items():
+        pk = prev.get(cls, set())
+        rep_rows = sum(n for (c, d), n in detail_hits.items() if c == cls and d in pk)
+        repeat[cls] = (round(rep_rows / cnt, 4)
+                       if cnt >= MIN_RATE_EVENTS and has_prev else None)
+        intra[cls] = sum(n for (c, _), n in detail_hits.items() if c == cls and n >= 2)
+    infra_rep = repeat.get("infra")
+    alarm = infra_rep is not None and infra_rep > INFRA_REPEAT_ALARM
+    # 2b detector 1: form_over_substance (a complete receipt is not a built
+    # thing; spot-check, never auto-accept). Explicit None checks: 0.0 scores
+    # are real scores (build_quality 0.0 is the extreme low case), not missing.
+    def _fos_match(v: dict) -> bool:
+        rc = _axis_score(v, "receipt_completeness")
+        bq = _axis_score(v, "build_quality")
+        return rc is not None and bq is not None and rc >= FOS_RECEIPT_HIGH and bq <= FOS_BUILD_LOW
+
+    fos_ids = [str(v.get("verdict_id") or "") for v in rows if _fos_match(v)]
+    # 2b detector 2: confident_and_wrong (escalation overturns of
+    # confidence >= CAW_CONF_HIGH verdicts; distribution statistics are not
+    # calibration)
+    by_id = {str(v.get("verdict_id") or ""): v for v in rows if v.get("verdict_id")}
+    caw_events = caw_overturns = 0
+    for v in rows:
+        pid = str(v.get("escalated_from") or "")
+        parent = by_id.get(pid)
+        if parent is None or parent is v:
+            continue
+        pconf = _verdict_max_conf(parent)
+        if pconf is None or pconf < CAW_CONF_HIGH:
+            continue
+        caw_events += 1
+        pd, cd = _verdict_decision(parent), _verdict_decision(v)
+        if pd is not None and cd is not None and pd != cd:
+            caw_overturns += 1
+    caw_rate = (round(caw_overturns / caw_events, 4)
+                if caw_events >= MIN_RATE_EVENTS else None)
+    # 2b/F2 spot-check sampler (B2-193, 2026-09-26): the caw detector above is
+    # an escalation-parent PROXY; the true falsifier F2 needs independent
+    # spot-checks. Every CLUSTER_REPORT therefore carries the deterministic
+    # sample to execute: the first SPOTCHECK_SAMPLE_K window verdicts whose
+    # max axis confidence is >= CAW_CONF_HIGH. Who executes, where results
+    # are filed, and the F2 denominator are pinned in
+    # watch/inbox/SPOTCHECK_PROTOCOL_20260926.md; the proxy rate above stays
+    # the automatic tripwire, the spot-check rate is the calibration verdict.
+    spot_ids = []
+    for v in rows:
+        mc = _verdict_max_conf(v)
+        if mc is not None and mc >= CAW_CONF_HIGH and v.get("verdict_id"):
+            spot_ids.append(str(v.get("verdict_id")))
+            if len(spot_ids) >= SPOTCHECK_SAMPLE_K:
+                break
+    return {
+        "tool": "cluster_report",
+        "window_n": len(rows),
+        "counts_by_class": counts,
+        "repeat_rate_by_class": repeat,
+        "intra_window_repeat_by_class": intra,
+        "route": "pipe_p1" if alarm else "split",
+        "route_note": ("infra repeat above INFRA_REPEAT_ALARM: report is a pipe "
+                       "P1 fix-order, not a chooser task" if alarm else
+                       "infra rows -> pipe repair; merit rows -> chooser"),
+        "form_over_substance": {
+            "flagged": bool(fos_ids),
+            "matches": len(fos_ids),
+            "verdict_ids": fos_ids[:10],
+            "action": "spot_check_never_auto_accept",
+        },
+        "spot_check": {
+            "sample_ids": spot_ids,
+            "sample_k": SPOTCHECK_SAMPLE_K,
+            "population": ("verdicts with max axis confidence >= "
+                           f"{CAW_CONF_HIGH} (the F2 denominator)"),
+            "protocol": "watch/inbox/SPOTCHECK_PROTOCOL_20260926.md",
+        },
+        "confident_and_wrong": {
+            "events": caw_events,
+            "overturns": caw_overturns,
+            "rate": caw_rate,
+            "rate_note": (None if caw_rate is not None else
+                          f"below MIN_RATE_EVENTS={MIN_RATE_EVENTS}: events only, never gated"),
+            "calibration_tripwire": bool(caw_rate is not None and caw_rate > CAW_TRIPWIRE),
+        },
+    }
+
+
+def _trail_verdicts(lane: str) -> list:
+    """All GATE_VERDICT_V2 nested verdict objects in the lane trail, in order."""
+    p = LANES / lane / "trail.jsonl"
+    out: list = []
+    if not p.exists():
+        return out
+    for ln in p.read_text(encoding="utf-8").splitlines():
+        ln = ln.strip()
+        if not ln:
+            continue
+        try:
+            row = json.loads(ln)
+        except Exception:  # noqa: BLE001
+            continue
+        if row.get("event") == "GATE_VERDICT_V2" and isinstance(row.get("verdict"), dict):
+            out.append(row["verdict"])
+    return out
+
+
+def cluster_report_step(lane: str) -> str:
+    """Rolling cluster organ (build doc sections 2 + 2b). Emits one
+    CLUSTER_REPORT trail + surface row per CLUSTER_WINDOW_N new verdicts,
+    carrying the two B2-34 detectors. Dormant while the lane emits no
+    GATE_VERDICT_V2 rows: the V2 wiring is a separate gated lane
+    (configs/lanes.yaml gate_verdict_v2 comment), so zero verdicts means zero
+    reports, never an invented one."""
+    verdicts = _trail_verdicts(lane)
+    st = _state(lane)
+    done = int(st.get("cluster_done", 0))
+    pending = verdicts[done:]
+    if not pending:
+        return "dormant(0 pending)"
+    prev_keys = st.get("cluster_prev_keys") or {}
+    emitted = 0
+    while len(pending) >= CLUSTER_WINDOW_N:
+        window, pending = pending[:CLUSTER_WINDOW_N], pending[CLUSTER_WINDOW_N:]
+        rep = cluster_step(window, prev_keys)
+        prev_keys = {}
+        for v in window:
+            cls = str(v.get("failure_class") or "none")
+            prev_keys.setdefault(cls, set()).add(
+                normalize_detail(str(v.get("failure_detail") or "")))
+        prev_keys = {c: sorted(ks) for c, ks in prev_keys.items()}
+        done += len(window)
+        emitted += 1
+        caw = rep["confident_and_wrong"]
+        summary = (f"win={rep['window_n']} classes="
+                   + ",".join(f"{c}:{n}" for c, n in sorted(rep["counts_by_class"].items()))
+                   + f" route={rep['route']} fos={rep['form_over_substance']['matches']}"
+                   + f" caw={caw['overturns']}/{caw['events']}"
+                   + f" tripwire={caw['calibration_tripwire']}")
+        _trail(lane, "CLUSTER_REPORT", summary)
+        _surface_append(lane, f"\n## CLUSTER_REPORT ({_ts()})\n```json\n"
+                        f"{json.dumps(rep, ensure_ascii=False, indent=1, sort_keys=True)}\n```\n")
+    if emitted:
+        st = _state(lane)
+        _save_state(lane, {**st, "cluster_done": done, "cluster_prev_keys": prev_keys})
+    return f"windows={emitted} pending={len(pending)}"
+
+
 # ------------------------------------------------------------------ flash call
-_FLASH_ENDPOINT = "https://api.z.ai/api/paas/v4/chat/completions"
-_FLASH_KEY_VARS = ("ZAI_API_KEY_L", "ZAI_API_KEY_LITE", "ZAI_API_KEY")
+# 2026-10-03 (operator order, receipt watch/inbox/LITE_LANE_PULL_20261003.md):
+# the z.ai Lite endpoint left estate rotation (lane given to adam). The lane
+# door here is openrouter, model pinned by env — the estate's own pin, never
+# a hardcoded model name.
+_FLASH_ENDPOINT = "https://openrouter.ai/api/v1/chat/completions"
+_FLASH_KEY_VARS = ("OPENROUTER_API_KEY",)
+# our OWN pin: OPENROUTER_MODEL is owned by the ox-alpha stealth lane consumer
+# and points at stealth/ox-alpha, which openrouter 404s (caught live by the
+# 2026-10-04 04:19 elder hand-fire). Default = the fleet's proven fuel_feed
+# openrouter lane model.
+_FLASH_MODEL_VARS = ("OPENROUTER_FLASH_MODEL",)
+_FLASH_MODEL_DEFAULT = "openrouter/auto"
+
+
+def _env_key(var: str) -> str:
+    """Strip-at-load law (TS-11 cure 2, 2026-10-05): the elder lane's 14-cycle
+    daily-429 outage (2026-09-20..2026-10-03) was a CRLF .env gluing a literal
+    \r onto the OPENROUTER key - compose env_file carried the trailing \r into
+    the mag-sovereign container env - and urllib rejects "Bearer <key>\r" as an
+    invalid header. Fix cause/evidence comment cites
+    watch/inbox/go_wave_20261004/CSV_VERDICT_20261004.md (root cause chain
+    items 1-2). Strip \r\n at the key LOAD, never trust the load path; the
+    trailing .strip() also clears shell-glued spaces/tabs from any export
+    path. The use site (flash_call) keeps no second strip: one load, one law."""
+    return os.environ.get(var, "").rstrip("\r\n").strip()
 
 
 def flash_call(system: str, user: str, max_tokens: int = 1536) -> str:
-    """LAW-058 pin-check baked in: the ONLY model door here is the Lite coding-plan
-    key (ZAI_API_KEY_L, the Calcifer lane) on glm-5.3-flash. CORRECTED 2026-09-05:
-    this is NOT the fleet's $0 lane — the promo verdict proved Lite metered
-    (10,000 credits/wk real credits; the "zero-metered night window" belief was
-    falsified). Paced by mag/lite_guard.py (law 15 daily ceiling), past it raises.
-    5.x law: thinking cannot be disabled — reasoning_effort low + max_tokens >= 1536
-    (epoch-1 medicine). march_228.py's proven request shape; endpoint passes the
-    SSRF guard; redirects refused (_OPENER)."""
-    from mag import lite_guard
-    g = lite_guard.check("lane_runner")
-    if not g["ok"]:
-        raise RuntimeError(g["deny"])
-    key = next((os.environ[v] for v in _FLASH_KEY_VARS if os.environ.get(v)), "")
-    if not key:
-        raise RuntimeError("no Lite key in cage env (flash lane down)")
+    """LAW-058 AMENDED 2026-10-03: the flash door here is the env-pinned
+    OPENROUTER model (OPENROUTER_MODEL + OPENROUTER_API_KEY). History: the door
+    was the z.ai Lite coding-plan key (ZAI_API_KEY_L, glm-5.3-flash, metered
+    10,000 credits/wk, paced by mag/lite_guard.py law 15) until the operator
+    pulled the lane from rotation 2026-10-03 (given to adam). The pull also
+    kills the old plain-ZAI_API_KEY fallback, which had been riding the
+    operator's own working lane against the 2026-08-29 hands-off fence.
+    Endpoint passes the SSRF guard; redirects refused (_OPENER).
+    Receipt: watch/inbox/LITE_LANE_PULL_20261003.md."""
+    # strip-at-load law (2026-10-05, _env_key): the CR is stripped at the key
+    # load, not at header build - the 2026-10-04 04:19 elder hand-fire rode a
+    # daemon still holding pre-strip code in memory (mag/ bind-mounted, process
+    # not restarted; CSV_VERDICT_20261004.md root cause chain item 2).
+    key = next((_env_key(v) for v in _FLASH_KEY_VARS if os.environ.get(v)), "")
+    model = next((_env_key(v) for v in _FLASH_MODEL_VARS if os.environ.get(v)),
+                 _FLASH_MODEL_DEFAULT)
+    if not (key and model):
+        raise RuntimeError("flash lane down: OPENROUTER_MODEL/OPENROUTER_API_KEY "
+                           "unset (z.ai Lite retired from rotation 2026-10-03)")
     if not _safe_https_url(_FLASH_ENDPOINT):
         raise ValueError("blocked: endpoint failed SSRF guard (scheme/host/resolved-IP)")
-    body = {"model": "glm-5.3-flash",
+    body = {"model": model,
             "messages": [{"role": "system", "content": system},
                          {"role": "user", "content": user}],
-            "max_tokens": max_tokens, "temperature": 0.2,
-            "thinking": {"type": "enabled"}, "reasoning_effort": "low"}
+            "max_tokens": max_tokens, "temperature": 0.2}
+    # INFERENCE_BUDGET SELF-STEAL (2026-10-17): the cage door used to hand-roll
+    # max_tokens, so the elder lens kept dying as "HTTP 200 with empty content"
+    # (the EMPTY_REASONING disease mag/inference_budget.py already cures for
+    # tools/hermes_burn.py + tools/model_garden.py). Same recipe table here:
+    # per-family floor, thinking control injected, forbidden params stripped.
+    # Fail-open: a recipe hiccup falls back to the caller's max_tokens.
+    try:
+        from mag.inference_budget import plan_call as _plan_call
+        _plan = _plan_call(model=model, prompt_chars=len(system) + len(user),
+                           requested_max_tokens=max_tokens)
+        if _plan.max_tokens is None:
+            body.pop("max_tokens", None)
+        else:
+            body["max_tokens"] = _plan.max_tokens
+        body.update(_plan.extra_body)
+    except Exception:  # noqa: BLE001 - recipe is advisory, never a lane-killer
+        pass
     req = urllib.request.Request(_FLASH_ENDPOINT, data=json.dumps(body).encode("utf-8"),
                                  headers={"Content-Type": "application/json",
                                           "Authorization": "Bearer " + key})
     with _OPENER.open(req, timeout=120) as r:
         data = json.loads(r.read())
-    _u = data.get("usage") or {}
-    lite_guard.record("lane_runner",
-                      int(_u.get("prompt_tokens") or 0) + int(_u.get("completion_tokens") or 0))
+    msg = ((data.get("choices") or [{}])[0].get("message", {}) or {})
+    content = (msg.get("content") or "").strip()
+    if not content:
+        # Name the disease instead of returning a bare empty string: callers
+        # already file sub-80-char bodies as lane-down; this logs WHY.
+        try:
+            from mag.inference_budget import EMPTY_REASONING, classify_empty
+            _finish = ((data.get("choices") or [{}])[0].get("finish_reason"))
+            if classify_empty(_finish, data.get("usage") or {}, content) == EMPTY_REASONING:
+                _log(f"flash_call EMPTY_REASONING model={model} finish={_finish} "
+                     f"max_tokens={body.get('max_tokens')}")
+        except Exception:  # noqa: BLE001
+            pass
     # PASSIVE THOUGHT BANK (2026-09-05): one choke point, mag/thought_bank.py —
     # verbatim reasoning to memory/thinking/, silent-fail, all models by design.
     try:
         from mag.thought_bank import bank_response
-        bank_response("glm-5.3-flash", user, data, lane="cage")
+        bank_response(model, user, data, lane="cage")
     except Exception:  # noqa: BLE001 — bank, not break
         pass
-    return ((data.get("choices") or [{}])[0].get("message", {}).get("content") or "").strip()
+    return content
 
 
 # ----------------------------------------------------------------- lane cycles
@@ -324,6 +815,17 @@ def cycle_economist() -> str:
 def cycle_research() -> str:
     rc, out = _run_script("watch/monitor_lane.py", timeout=300)
     _trail("research", "MONITOR", f"monitor_lane rc={rc}: {out[-250:]}")
+    # TERM ROTATION EPOCH MIRROR (2026-10-04): the poller owns the used-ledger
+    # in watch/monitor_lane.state (_rotation); the lane state carries the epoch
+    # so the rotation organ is visible on the runner_state surface without
+    # parsing the poller's state file by hand. Read-only lift, silent-fail.
+    try:
+        _m = json.loads((ROOT / "watch" / "monitor_lane.state").read_text(encoding="utf-8"))
+        _ep = int((_m.get("_rotation") or {}).get("epoch") or 0)
+        st = _state("research")
+        _save_state("research", {**st, "rotation_epoch": _ep})
+    except Exception:  # noqa: BLE001 — the mirror must never break the cycle
+        pass
     n = 0
     for item in _inbox_new("research"):
         ok, why = gate_drop(item, "research")
@@ -410,15 +912,19 @@ def cycle_elder() -> str:
             "You are the Elder lens: read fleet cards and give the emergent pattern in "
             "physics/compsci/esoteric anchors ONLY where real (name them). End with "
             "THE ELDER'S QUESTION: the question the fleet isn't asking. Label as lens, not claim.",
-            "\n\n".join(digest)[:6000], max_tokens=900)
+            "\n\n".join(digest)[:6000], max_tokens=4096)
     except Exception as e:  # noqa: BLE001
         lens = f"lane-down: {e}"
-    # TRI-STATE TRAIL LAW (elder lens 2026-09-18): the trail may not file a
-    # success-shaped CYCLE row when the lens died. lane-down gets CYCLE_FAIL.
-    if lens.startswith("lane-down:"):
+    # TRI-STATE TRAIL LAW (elder lens 2026-09-18; migration audit 2026-09-19):
+    # the trail may not file a success-shaped CYCLE row when the lens died.
+    # lane-down gets CYCLE_FAIL — and so does an EMPTY lens: the always-thinking
+    # channel eats any sub-1536 budget and returns 200 with zero content
+    # (flash_call law: max_tokens >= 1536). A sub-80-char body is not a lens.
+    if lens.startswith("lane-down:") or len(lens.strip()) < 80:
+        body = lens.strip() or "lane-down: HTTP 200 with empty content (thinking channel ate budget)"
         _surface_append("elder", f"\n## ELDER LENS (cage, {_ts()}) — LENS NOT CLAIM, Unproven\n"
-                        f"{lens}\n")
-        _trail("elder", "CYCLE_FAIL", lens[:200])
+                        f"{body}\n")
+        _trail("elder", "CYCLE_FAIL", body[:200])
         return "lane-down"
     _surface_append("elder", f"\n## ELDER LENS (cage, {_ts()}) — LENS NOT CLAIM, Unproven\n"
                     f"{lens}\n")
@@ -449,7 +955,8 @@ def cycle_day_work() -> str:
         if not t.exists():
             continue
         age_h = (time.time() - t.stat().st_mtime) / 3600
-        if age_h > STALLED_HOURS:
+        thresh = DAILY_STALLED_HOURS if ":" in str(SCHEDULE[lane]) else STALLED_HOURS
+        if age_h > thresh:
             stalled.append(f"{lane}({age_h:.1f}h)")
         _mirror(lane)
     for f in ("DAY_WORK_DIGEST.md",):
@@ -477,12 +984,21 @@ def cycle_night() -> str:
     parts = []
     rc, _ = _run_script("watch/monitor_lane.py", timeout=300)
     parts.append(f"monitor rc={rc}")
-    rc, _ = _run_script("watch/march_228.py", timeout=600)
-    # march reads .env for its key — unmounted in-cage; an honest rc=2 is expected
-    # until the operator sanctions an env door. Recorded, never faked.
-    parts.append(f"march rc={rc}")
-    _save_state("night", {**st, "last_night": today})
+    rc, out = _run_script("watch/march_228.py", timeout=600)
+    # march reads .env for its key - unmounted in-cage; an honest rc=2 is
+    # expected until the operator sanctions an env door. Recorded, never
+    # faked. The output tail is kept on rc!=0 (2026-10-04): a month of
+    # "march rc=1" rows hid the real cause because the captured stderr was
+    # discarded here (it was FileNotFoundError on /app/.env; cured same date
+    # in watch/march_228.py to a named rc=2 skip).
+    parts.append(f"march rc={rc}" + (f" :: {out.strip()[-180:]}" if rc else ""))
+    # Trail the composite BEFORE persisting last_night (2026-10-04): an
+    # Errno-22 state-write failure through the cage mount used to land after
+    # monitor+march had already run, so the CYCLE row was lost and last_night
+    # never stuck - the daemon then re-ran the whole night cycle every ~100s
+    # (5x CYCLE_FAIL on 2026-10-03 before the 23:10:55Z success).
     _trail("night", "CYCLE", "night composite: " + "; ".join(parts))
+    _save_state("night", {**st, "last_night": today})
     return "; ".join(parts)
 
 
@@ -648,6 +1164,10 @@ def run_lane(lane: str) -> str:
         _trail(lane, "CYCLE_FAIL", result)
     if result.startswith("EXC") or " rc=1" in result or " rc=2" in result:
         tesuji_pass(lane, result)
+    try:
+        cluster_report_step(lane)
+    except Exception as e:  # noqa: BLE001: the organ never breaks the lane loop
+        _log(f"cluster organ exc {lane}: {e}")
     _mirror(lane)
     st = _state(lane)
     st["last_run"] = _now().isoformat()

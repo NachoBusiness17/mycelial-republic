@@ -27,12 +27,37 @@ ROOT = Path(__file__).resolve().parent.parent
 OUT = ROOT / "memory" / "runs" / "scale_salon_20260916"
 OUT.mkdir(parents=True, exist_ok=True)
 
+# B2-521 DORMANT GATE (2026-09-26): this file hardcodes a cerebras SSRF base plus a
+# cerebras-oss architect and writer lens after B2-36 declared cerebras dormant (card-gated
+# 30-day trial, chat 402 no-credit; mag/doctor.py:607: dormant is a declared state). The
+# base allowlist drops dormant hosts (the B2-133 host-match law), and the gopher and writer
+# lanes resolve through the research_fanout LANES table, which the same flag already gates.
+# Operator GO flips the flag and every row returns with no code edit. Receipt:
+# watch/inbox/burn_wave_20260926/B2_521_cerebras_stragglers_20260926.md
+sys.path.insert(0, str(ROOT))
+
+from mag.dormant import dormant_hosts as _dormant_provider_hosts  # noqa: E402
+
+_DORMANT_HOSTS = _dormant_provider_hosts()
+
+
+def _lane_live(lane_id: str) -> bool:
+    """B2-521: a lane fires only through the gated LANES table, on a non-dormant host."""
+    lane = next((l for l in LANES if l.get("id") == lane_id), None)
+    if lane is None:
+        return False
+    return urllib.parse.urlparse(lane.get("base", "")).hostname not in _DORMANT_HOSTS
+
+
 ALLOWED_BASES = {
-    "https://api.groq.com/openai/v1",
-    "https://api.cerebras.ai/v1",
-    "https://api.mistral.ai/v1",
-    "https://api.z.ai/api/paas/v4",
-    "https://openrouter.ai/api/v1",
+    b for b in (
+        "https://api.groq.com/openai/v1",
+        "https://api.cerebras.ai/v1",
+        "https://api.mistral.ai/v1",
+        "https://api.z.ai/api/paas/v4",
+        "https://openrouter.ai/api/v1",
+    )
+    if urllib.parse.urlparse(b).hostname not in _DORMANT_HOSTS
 }
 
 
@@ -115,6 +140,10 @@ End with exactly two lines:
 HIDDEN: <the most dangerous line, if any>
 MOVE: <the single sanding that would make it bulletproof>""")
 
+# B2-521: the gopher lanes ride the same dormant gate as the base allowlist above, so the
+# cerebras-oss architect cannot be selected while the flag stands.
+_GOPHERS = [g for g in (ARCHITECT, REDTEAM) if _lane_live(g[0])]
+
 WRITER_LENSES = [
     ("groq-qwen",    "Chinese classical register (Zhuangzi: the useless tree that lives, the butcher whose blade never dulls because he follows the grain). Rewrite THE SCALE as if that tradition had written it."),
     ("groq-oss",     "King James biblical cadence. The parable as it would sit between two verses of Luke: 'A certain man had a vineyard...' Keep the vineyard, the traveler, the lists, the blight, the fence."),
@@ -127,6 +156,10 @@ WRITER_LENSES = [
     ("or-nemotron",  "Southern gothic (Flannery O'Connor): grace arrives through something ruined. The blight is not a metaphor, it is a visitation. Keep the not-saying at the fence."),
     ("or-ling3",     "Nursery-simple (ELI5): so plain a child retells it at dinner and so plain nobody suspects it. Same bones, same silence, smaller words."),
 ]
+
+# B2-521: writer lenses ride the same gate; rows whose LANES id is gone (cerebras-oss
+# dormant-gated; zai-air retired 2026-09-16) can no longer be selected by main().
+WRITER_LENSES = [(lane_id, lens) for lane_id, lens in WRITER_LENSES if _lane_live(lane_id)]
 
 
 def call(lane: dict, prompt: str, key: str, temperature: float, timeout: int = 150,
@@ -176,7 +209,7 @@ def main() -> int:
     print(f"lanes live: {len(live)}/{len(LANES)}")
     jobs = []
     by_id = {l["id"]: l for l in live}
-    for lane_id, kind, prompt in [ARCHITECT, REDTEAM]:
+    for lane_id, kind, prompt in _GOPHERS:
         if lane_id in by_id:
             jobs.append((by_id[lane_id], kind, prompt, 0.3))
     for lane_id, lens in WRITER_LENSES:

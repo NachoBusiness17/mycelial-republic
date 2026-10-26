@@ -22,10 +22,14 @@ def test_power_off_flag():
     from mag.power import clear_off, is_off, set_off
 
     clear_off()
-    assert is_off() is False
-    set_off()
-    assert is_off() is True
-    clear_off()
+    try:
+        assert is_off() is False
+        set_off()
+        assert is_off() is True
+    finally:
+        # B2-403: without this, a mid-test crash strands state/mag_power.off
+        # and the whole estate reads powered-off until someone notices.
+        clear_off()
     assert is_off() is False
 
 

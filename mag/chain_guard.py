@@ -75,6 +75,18 @@ def check() -> dict:
     dups = len(sids) - len(set(sids))
     tip_root = _tip_root()
 
+    # ── no-CR tripwire (B2-393, 2026-09-26) ──
+    # B2-83 rev 1 proved live that a text-mode chain write rewrites every LF
+    # to CRLF on Windows while read_text hides it (content verify stayed
+    # green; only a raw-byte diff caught it). The chain's byte law is LF
+    # only: any CR byte means a text-mode writer touched the chain.
+    crlf_rewrite = False
+    if CHAIN.is_file():
+        try:
+            crlf_rewrite = b"\r" in CHAIN.read_bytes()
+        except OSError:
+            crlf_rewrite = False
+
     # ── tip-vs-chain canary (2026-09-11, Hermes boot finding) ──
     # The CHAIN_STOP incident proved that the tip bookmark and the chain rows
     # can diverge silently (tip froze at a poisoned snapshot while rows
@@ -102,7 +114,21 @@ def check() -> dict:
         "tip_root": _tip_root(),
         "chain_root": chain_root[:16] if chain_root else None,
         "tip_matches_chain": chain_root_match,
+        "crlf_bytes": crlf_rewrite,
     }
+
+    if crlf_rewrite:
+        # the no-CR tripwire alarms before anything else: a CR byte means a
+        # text-mode writer touched the chain (the B2-83 damage shape)
+        return {"ok": False, "state": "crlf_rewrite", **live,
+                "dangling_unflagged": 0,
+                "expected_evidence_lost": None,
+                "flag_drift": None,
+                "alarm": ("CRLF REWRITE: the chain carries CR bytes — a "
+                          "text-mode writer (write_text / open without "
+                          "newline='') rewrote LF line endings; re-derive "
+                          "the chain from a byte-exact source per B2-83/B2-393 "
+                          "before trusting reads.")}
 
     if not MARKER.is_file():
         return {"ok": True, "state": "unmarked", **live,
@@ -133,6 +159,19 @@ def check() -> dict:
         state = "regression"
     else:
         state = "healthy"
+    # B2-387 law (2026-09-26): the marker's repair_root is a one-snapshot
+    # bookmark of the chain AT MARK TIME, informational-only. Live boot-lane
+    # amends legitimately move the chain root minutes after any mark (proof:
+    # e26157d613efd104 -> ffee1618af5b1ead -> a7cd0866ba236af7 within two
+    # minutes of the B2-82 mark), so marker-vs-chain difference is EXPECTED
+    # drift, never a failure: ok/state/alarm never key on it (the falsifier
+    # in QUEUE row B2-387), only the tip-vs-chain comparison above alarms on
+    # root divergence. The drift is still COUNTED here so a marker that is
+    # hundreds of amends behind is visible in every check output.
+    marker_root = m.get("repair_root")
+    marker_root_drift = (
+        0 if not marker_root or not chain_root
+        else 0 if chain_root[:16] == str(marker_root)[:16] else 1)
     return {
         "ok": not (regression or tip_stale),
         "state": state,
@@ -140,7 +179,8 @@ def check() -> dict:
         "dangling_unflagged": len(unflagged_dangling),
         "expected_evidence_lost": expected,
         "flag_drift": expected - len(flagged),
-        "marker_root": m.get("repair_root"),
+        "marker_root": marker_root,
+        "marker_root_drift": marker_root_drift,
         "marker_at": m.get("marked_at"),
         "alarm": ("REGRESSION: dangling row(s) lack the evidence_lost flag — a pre-repair "
                   "restore or flag-stripping amend happened.") if regression else (

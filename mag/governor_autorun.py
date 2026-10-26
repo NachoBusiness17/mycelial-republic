@@ -25,17 +25,14 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 TRAIL = ROOT / "memory" / "runs" / "governor_autorun_trail.jsonl"
-DOCKER_ONLY_MARKER = ROOT / "state" / "DOCKER_ONLY"
 _LAST_PLAN_FP: str | None = None
 
-
-def _host_runtime_blocked() -> bool:
-    """Prevent a host drainer from competing with the container supervisor."""
-    return (
-        os.name == "nt"
-        and DOCKER_ONLY_MARKER.is_file()
-        and os.environ.get("MAG_ALLOW_HOST_RUNTIME") != "1"
-    )
+# ONE runtime policy (state/DOCKER_ONLY), shared with mag.ghost and the
+# process supervisor gate. B2-51 2026-09-26: this used to be a private copy
+# here; the copies drifted and the supervisor classified this module's
+# policy exit as a crash (the 2026-09-19 false crash-loop, 28 respawns).
+# Cause + evidence receipt lives in mag/runtime_policy.py.
+from mag.runtime_policy import DOCKER_ONLY_MARKER, host_runtime_blocked as _host_runtime_blocked
 
 from mag.router import DEPTH_JOB_MAP  # single law — ponytail: no duplicate maps
 
@@ -65,6 +62,40 @@ def _pid_alive(pid: int | None) -> bool:
             return True
         except (OSError, ValueError):
             return False
+
+
+def _carrier_lock_verdict(lock_path: Path) -> tuple[bool, str]:
+    """(is_duplicate, why) for the AOS carrier lock (HEARTBEAT CARRIER LOCK, 2026-10-15).
+
+    Heartbeat record {hostname, pid, start_ts, heartbeat_ts}: same host + pid (+ start_ts) is
+    THIS process (a POSIX execv self-restart keeps all three) -> not a duplicate; a fresh
+    heartbeat -> a live duplicate; a stale heartbeat is taken over ONLY on the same host, a
+    foreign-host lock is never taken over. Legacy bare-pid locks keep the old pid probe, minus
+    the self-pid false positive."""
+    from mag.verkle_knot import (LOCK_HEARTBEAT_STALE_SECONDS, _lock_hostname, lock_is_self,
+                                 read_lock_record)
+    if not lock_path.is_file():
+        return False, "no lock"
+    rec = read_lock_record(lock_path)
+    if rec is not None:
+        if lock_is_self(rec):
+            return False, "self (same host+pid+start_ts: self-restart)"
+        age = time.time() - float(rec.get("heartbeat_ts") or 0)
+        same_host = rec.get("hostname") == _lock_hostname()
+        who = f"host={rec.get('hostname')} pid={rec.get('pid')}, heartbeat {int(age)}s ago"
+        if age <= LOCK_HEARTBEAT_STALE_SECONDS:
+            return True, who
+        if not same_host:
+            return True, who + ", foreign host: never taken over cross-host"
+        return False, who + ", same host + stale: taking over"
+    raw = lock_path.read_text(encoding="utf-8", errors="replace").strip()
+    try:
+        other = int(raw.split()[0]) if raw else 0
+    except ValueError:
+        other = 0
+    if other and other != os.getpid() and _pid_alive(other):
+        return True, f"pid={other} (legacy lock)"
+    return False, f"legacy lock pid={other or '?'} is self or dead"
 
 
 def _log_trail(entry: dict[str, Any]) -> None:
@@ -1089,17 +1120,23 @@ def autorun_loop(interval_s: float = 5.0, *, once: bool = False) -> None:
     _lock_path = ROOT / "state" / "aos_carrier.lock"
     try:
         _lock_path.parent.mkdir(parents=True, exist_ok=True)
-        if _lock_path.is_file():
-            _stale = _lock_path.read_text(encoding="utf-8").strip()
-            try:
-                _other_pid = int(_stale)
-            except ValueError:
-                _other_pid = 0
-            if _other_pid and _pid_alive(_other_pid):
-                print(f"[autorun] another carrier already holds the lock (pid={_other_pid}) — "
-                      f"exiting as duplicate. ONE carrier must own the AOS bus.", flush=True)
-                return
-        _lock_path.write_text(str(os.getpid()), encoding="utf-8")
+        # HEARTBEAT CARRIER LOCK (2026-10-15): see _carrier_lock_verdict. Before, the lock held a
+        # bare pid, so a POSIX execv self-restart (tick watchdog / dogfood reload keep the pid)
+        # found ITS OWN pid alive and exited as a "duplicate".
+        _dup, _why = _carrier_lock_verdict(_lock_path)
+        if _dup:
+            print(f"[autorun] another carrier holds the lock ({_why}) - exiting as duplicate. "
+                  "ONE carrier must own the AOS bus.", flush=True)
+            return
+        from mag.verkle_knot import start_lock_heartbeat
+
+        def _write_carrier_lock(rec: dict[str, Any]) -> None:
+            _tmp = _lock_path.with_name(f"{_lock_path.name}.{os.getpid()}.tmp")
+            _tmp.write_text(json.dumps(rec), encoding="utf-8")
+            os.replace(_tmp, _lock_path)
+
+        _carrier_beat_stop, _carrier_rec = start_lock_heartbeat(_write_carrier_lock)
+        _write_carrier_lock(_carrier_rec)
         _lock_held = True
     except Exception as _e:  # noqa: BLE001
         _lock_held = False

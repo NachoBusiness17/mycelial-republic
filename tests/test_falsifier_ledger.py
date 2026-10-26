@@ -36,10 +36,22 @@ def test_grounding_md_exists():
     assert GROUND_MD.exists(), f"Expected {GROUND_MD} in repo"
 
 
+def _live_rows(rows):
+    """v4 admission filter (2026-09-27): rows buried by a cross-signed void
+    are effectively dead — the ledger keeps their bytes (delete-as-append)
+    but schema/pointer checks walk only LIVE rows. The voids for #122/#123
+    (MALFORMED, the frozen truncated row) and #104 (EVIDENCE_DEAD, the
+    misnamed art pointer) were posted + operator-witnessed 2026-09-27."""
+    from mag.grounding_wave import _admission, _live_claim
+    adm = _admission(rows)
+    return [(i, r) for i, r in enumerate(rows)
+            if _live_claim(rows, i + 1, adm["voided_keys"])]
+
+
 def test_grounding_jsonl_chain_and_schema():
     rows = parse_jsonl(GROUND_JSONL)
     prev = None
-    for i, r in enumerate(rows):
+    for i, r in _live_rows(rows):
         # required fields mapping: accept both 'state' or 'verdict', and 'ts' or 'timestamp'
         assert 'claim' in r, f"row {i} missing claim"
         assert 'evidence' in r, f"row {i} missing evidence"
@@ -47,27 +59,23 @@ def test_grounding_jsonl_chain_and_schema():
         assert state_val is not None, f"row {i} missing state/verdict"
         assert state_val in ('SUPPORTED', 'DISPUTED', 'UNPROVEN', 'UNVERIFIED', 'REJECTED'), f"row {i} state invalid: {state_val}"
         assert 'hash' in r, f"row {i} missing hash"
-        # verify prev linkage
+        # v4 re-anchor rule: prev may point past a fully-buried stretch
+        from mag.grounding_wave import _admission, _reanchor_ok
         if prev is None:
-            # first row prev may be None or missing
+            # first live row prev may be None or missing
             pass
         else:
-            assert r.get('prev') == prev, f"row {i} prev mismatch: expected {prev} got {r.get('prev')}"
-        # verify hash shape: 64-hex string and prev linkage
+            adm = _admission(rows)
+            assert r.get('prev') == prev or _reanchor_ok(rows, i + 1, r.get('prev'), adm), (
+                f"row {i} prev mismatch: expected {prev} got {r.get('prev')} (and not a valid re-anchor)")
         h = r['hash']
         assert isinstance(h, str) and len(h) in (64, 128), f"row {i} hash looks wrong: {h[:16]}..."
-        # prev linkage must point to previous row's hash
-        if prev is None:
-            # first row may have prev == '0'*64 or missing
-            pass
-        else:
-            assert r.get('prev') == prev, f"row {i} prev mismatch: expected {prev} got {r.get('prev')}"
         prev = r['hash']
 
 
 def test_evidence_local_pointers_resolve():
     rows = parse_jsonl(GROUND_JSONL)
-    for i, r in enumerate(rows):
+    for i, r in _live_rows(rows):
         evidence = r['evidence']
         if isinstance(evidence, str):
             evs = [evidence]

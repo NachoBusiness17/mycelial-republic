@@ -42,10 +42,21 @@ def _now() -> str:
     return datetime.now(timezone.utc).isoformat()
 
 
+def _trail_path() -> Path:
+    """B2-401 (2026-09-26): MAG_SEAT_REGISTRY_TRAIL overrides the sink, else
+    the production trail. Same shape as the MAG_SEAT_CRASH_LOG seam (B2-86)
+    and the MAG_GAPS_LOG seam (B2-79): tests point the writer at tmp instead
+    of appending register/unregister rows to the production trail (111
+    pytest-parent rows were on disk at fix time). No env set = same path."""
+    env = os.environ.get("MAG_SEAT_REGISTRY_TRAIL")
+    return Path(env) if env else TRAIL
+
+
 def _trail(event: str, task_id: str, **meta: Any) -> None:
-    TRAIL.parent.mkdir(parents=True, exist_ok=True)
+    path = _trail_path()
+    path.parent.mkdir(parents=True, exist_ok=True)
     row = {"ts": _now(), "event": event, "task_id": task_id, **meta}
-    with TRAIL.open("a", encoding="utf-8") as fh:
+    with path.open("a", encoding="utf-8") as fh:
         fh.write(json.dumps(row, ensure_ascii=False, default=str) + "\n")
 
 

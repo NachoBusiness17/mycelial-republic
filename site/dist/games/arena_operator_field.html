@@ -16,7 +16,7 @@ button{background:#0a1412;color:var(--accent);border:1px solid rgba(0,240,255,.3
 .ok{color:#7dfab0}.bad{color:#ff6b6b}
 </style></head><body>
 <h1>OPERATOR FIELD B1a — ∇ wells · ∇· sources · ∇× vortices · ∇² flesh</h1>
-<div class="mut">the Philbrick sheet, rendered: every light is an op-amp cell, the shader is the adder · arrow keys tilt the whole field (your hand = bias voltage) · GPU renders the field, CPU navigates the same math · divergence receipt live</div>
+<div class="mut"><b style="color:#e8c96a">GOAL: TILT the field (arrows/WASD) to roll every gold MARBLE into the glowing PIT. The tornado eats strays.</b> · under the hood: the Philbrick sheet rendered — every light is an op-amp cell, the shader is the adder · GPU renders the field, CPU navigates the same math · divergence receipt live</div>
 <div id="stack"><canvas id="gl" width="480" height="270"></canvas><canvas id="ov" width="480" height="270"></canvas></div>
 <div id="ui">
 <button id="reset">NEW RUN</button> <button id="addM">+1 marble ∇</button> <button id="addS">+1 stepper</button> <button id="addD">+1 dumb</button>
@@ -147,6 +147,9 @@ class Marble{ // momentum + full operator force
   if(this.done)return;this.steps++;
   const[fx,fy]=force(this.x,this.y);
   this.vx+=fx*0.0016;this.vy+=fy*0.0011;
+  const spd=Math.hypot(this.vx,this.vy)||1e-6;const fd=Math.hypot(fx,fy)||1e-6;
+  const align=(this.vx/spd)*(fx/fd)+(this.vy/spd)*(fy/fd);
+  if(align>0.6)this.scorePts=(this.scorePts||0)+Math.round(align*fd*0.4);
   this.vx*=0.985;this.vy*=0.985;
   let nx=this.x+this.vx,ny=this.y+this.vy;
   if(sdf(nx,ny)>=MARG){this.x=nx;this.y=ny;}
@@ -192,7 +195,7 @@ seed();
 // ==== OVERLAY ====
 const ov=document.getElementById('ov'),ctx=ov.getContext('2d');
 function drawOverlay(){
- ctx.clearRect(0,0,W,H);
+ ctx.fillStyle='rgba(3,8,6,0.14)';ctx.fillRect(0,0,W,H); // phosphor fade — trails stay readable
  const kindCol={marble:'#e8c96a',stepper:'#7dfab0',dumb:'#ff9d5c'};
  for(const a of agents){
   ctx.strokeStyle=kindCol[a.kind];ctx.lineWidth=0.6;ctx.globalAlpha=0.55;ctx.beginPath();
@@ -205,7 +208,10 @@ function drawOverlay(){
    ctx.fillStyle=g;ctx.beginPath();ctx.arc(px,py,3.4,0,7);ctx.fill();
   }else{ctx.fillStyle=kindCol[a.kind];ctx.fillRect(px-1.5,py-1.5,3,3);}
  }
- ctx.fillStyle='#e8c96a';ctx.beginPath();ctx.arc(CHEESE.x/2*W,CHEESE.y/2.7*H,CHEESE.R/2*W*0.7,0,7);ctx.fill();
+ const pulse=0.75+0.25*Math.sin(Date.now()*0.006);
+ ctx.fillStyle='#e8c96a';ctx.beginPath();ctx.arc(CHEESE.x/2*W,CHEESE.y/2.7*H,CHEESE.R/2*W*0.7*pulse,0,7);ctx.fill();
+ ctx.fillStyle='#030806';ctx.font='9px monospace';ctx.textAlign='center';
+ ctx.fillText('PIT — GET THE MARBLES HERE',CHEESE.x/2*W,CHEESE.y/2.7*H-CHEESE.R/2*W);
 }
 // ==== TILT (the player's bias voltage) ====
 const keys={};
@@ -231,6 +237,7 @@ function frame(){
   'tick '+tick+' · <span class="m">MARBLES '+done('marble')+'/'+cnt('marble')+' (avg '+avg('marble')+')</span>'+
   ' · <span class="g">STEPPER '+done('stepper')+'/'+cnt('stepper')+' (avg '+avg('stepper')+')</span>'+
   ' · <span class="d">DUMB '+done('dumb')+'/'+cnt('dumb')+' (avg '+avg('dumb')+')</span>'+
+  ' · earned <span class="g">'+agents.reduce((t,a)=>t+(a.scorePts||0),0)+'</span>'+
   ' · tilt '+TILT.map(v=>v.toFixed(1))+
   ' · GPU/CPU Δ '+(glOK
    ?'<span class="'+(divMax<0.02?'ok':'bad')+'">'+divMax.toFixed(4)+(divMax<0.02?' PASS':' FAIL')+'</span>'

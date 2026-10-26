@@ -22,6 +22,12 @@ SCHEMA: context_checkpoint.v1
 LAW: Every turn writes a checkpoint. No orphaned context windows.
 LAW: The pointer is the bridge. Reading the pointer restores state.
 LAW: Checkpoints are content-addressed. Tampering is detectable.
+LAW: No cache resume without a verified-prefix receipt. Reusing a frozen
+     prefix must prove STATE identity (sha256 of the longest verified frozen
+     prefix plus a config-generation tag), never just token identity - a
+     "complete hit" that cannot prove its state costs the same as a miss
+     (arXiv 2609.15030 steal card,
+     watch/inbox/frontier_olm_2026-10-04/steal/kv-cache-and-context-engineering.md).
 """
 
 from __future__ import annotations
@@ -64,6 +70,12 @@ class ContextCheckpoint:
     pending_questions: list[str] = field(default_factory=list)
     state_snapshot: dict[str, Any] = field(default_factory=dict)
     ts: str = field(default_factory=_now)
+    # Strict-prefix receipt law (2026-10-05, build wave B2): the config
+    # generation that produced this state, and the receipt proving the
+    # frozen prefix bytes. Old (pre-law) rows carry "" / {} and never gate
+    # a skip-recompute.
+    config_generation: str = ""
+    prefix_receipt: dict[str, Any] = field(default_factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -80,6 +92,8 @@ class ContextCheckpoint:
             "pending_questions": self.pending_questions,
             "state_snapshot": self.state_snapshot,
             "ts": self.ts,
+            "config_generation": self.config_generation,
+            "prefix_receipt": self.prefix_receipt,
         }
 
     def to_pointer(self) -> str:
@@ -108,6 +122,102 @@ class ContextCheckpoint:
 
 
 # ═══════════════════════════════════════════════════════════════════
+# STRICT-PREFIX RECEIPT LAW (2026-10-05, build wave B2)
+# ═══════════════════════════════════════════════════════════════════
+
+RECEIPT_SCHEMA = "prefix_receipt.v1"
+RECEIPT_BLOCK_BYTES = 64    # fixed block size is part of the determinism pin
+RECEIPT_DIGEST_CHARS = 8    # per-block digest width; the full-prefix sha256
+                            # remains the authority for a complete match
+
+
+def _block_digest(block: bytes) -> str:
+    return hashlib.sha256(block).hexdigest()[:RECEIPT_DIGEST_CHARS]
+
+
+def freeze_receipt(frozen_prefix: str, config_generation: str,
+                   block_bytes: int = RECEIPT_BLOCK_BYTES) -> dict[str, Any]:
+    """Receipt the longest verified frozen prefix (arXiv 2609.15030, move 1).
+
+    Binds three things a resume must prove before it may skip recompute:
+    the frozen prefix bytes (per-block digests, walked block-by-block so a
+    diverged candidate stops at its first bad block), the total prefix
+    hash, and the config generation that produced the state. Token-prefix
+    validity is not state validity.
+    """
+    data = frozen_prefix.encode("utf-8")
+    blocks = [data[i:i + block_bytes] for i in range(0, len(data), block_bytes)]
+    return {
+        "schema": RECEIPT_SCHEMA,
+        "prefix_sha256": hashlib.sha256(data).hexdigest(),
+        "prefix_bytes": len(data),
+        "block_bytes": block_bytes,
+        "verified_blocks": len(blocks),
+        "config_generation": str(config_generation),
+        "block_digests": [_block_digest(b) for b in blocks],
+    }
+
+
+def verify_strict_prefix(candidate: str, receipt: dict[str, Any],
+                         config_generation: str) -> dict[str, Any]:
+    """-> {"verified_bytes": int, "complete": bool, "reason": str}.
+
+    Walks the candidate block-by-block against the receipt's digest chain
+    and stops at the first block that fails (radix strict-prefix lineage,
+    tools/prefix_cache_sim.py). A config-generation mismatch voids the
+    whole prefix - the state was produced under kernels/config the resume
+    cannot assume (the paper's one-fewer-token recovery bug). A candidate
+    longer than the receipted prefix verifies the prefix and treats the
+    tail as new work, never as cached.
+    """
+    if not isinstance(receipt, dict) or receipt.get("schema") != RECEIPT_SCHEMA:
+        return {"verified_bytes": 0, "complete": False, "reason": "no-receipt"}
+    if receipt.get("config_generation") != str(config_generation):
+        return {"verified_bytes": 0, "complete": False,
+                "reason": "config-generation-mismatch"}
+    digests = receipt.get("block_digests") or []
+    prefix_bytes = receipt.get("prefix_bytes")
+    block_bytes = receipt.get("block_bytes") or RECEIPT_BLOCK_BYTES
+    if not isinstance(prefix_bytes, int) or prefix_bytes < 0 or not digests:
+        return {"verified_bytes": 0, "complete": False, "reason": "malformed-receipt"}
+    data = candidate.encode("utf-8")
+    matched = 0
+    for i, want in enumerate(digests):
+        end = (i + 1) * block_bytes if i + 1 < len(digests) else prefix_bytes
+        window = data[i * block_bytes:end]
+        if len(window) < end - i * block_bytes or _block_digest(window) != want:
+            break
+        matched += 1
+    verified_bytes = matched * block_bytes if matched < len(digests) else prefix_bytes
+    complete = (
+        verified_bytes > 0
+        and matched == len(digests)
+        and hashlib.sha256(data[:verified_bytes]).hexdigest()
+        == receipt.get("prefix_sha256")
+    )
+    return {
+        "verified_bytes": verified_bytes,
+        "complete": complete,
+        "reason": "ok" if complete else "prefix-divergence",
+    }
+
+
+def gate_skip_recompute(candidate: str, receipt: dict[str, Any],
+                        config_generation: str) -> dict[str, Any]:
+    """Skip-recompute gate: ONLY a complete receipt match may skip.
+
+    A hit claimed by token identity but unproven by state identity costs
+    the same as a miss (the card's one-line law, minted).
+    """
+    verdict = verify_strict_prefix(candidate, receipt, config_generation)
+    return {
+        "skip_recompute": verdict["complete"],
+        "verified_bytes": verdict["verified_bytes"],
+        "reason": verdict["reason"],
+    }
+
+
+# ═══════════════════════════════════════════════════════════════════
 # CHECKPOINT ENGINE
 # ═══════════════════════════════════════════════════════════════════
 
@@ -129,6 +239,7 @@ class CheckpointEngine:
         key_decisions: list[str] | None = None,
         pending_questions: list[str] | None = None,
         state_snapshot: dict[str, Any] | None = None,
+        config_generation: str = "",
     ) -> ContextCheckpoint:
         """Write a context checkpoint to the Verkle chain.
 
@@ -140,6 +251,10 @@ class CheckpointEngine:
             key_decisions: Decisions made this turn (for quick recall).
             pending_questions: Questions that need answers later.
             state_snapshot: Any state variables to preserve.
+            config_generation: Tag pinning the kernels/config that produced
+                this state (determinism pinning, arXiv 2609.15030 move 2).
+                Defaults to the model name. Every reuse under a different
+                tag is a recompute, whatever the tokens say.
 
         Returns:
             ContextCheckpoint with Verkle knot ID for the next turn's pointer.
@@ -155,6 +270,11 @@ class CheckpointEngine:
         # Hash the full context for tamper detection
         full_hash = hashlib.sha256(full_context.encode()).hexdigest()[:16]
 
+        # Strict-prefix receipt over the frozen prefix the next turn would
+        # otherwise re-read (skip-recompute is gated on it at reuse time).
+        generation = config_generation or model_used
+        receipt = freeze_receipt(full_context, generation)
+
         cp = ContextCheckpoint(
             session_id=session_id,
             turn_number=turn_number,
@@ -166,6 +286,8 @@ class CheckpointEngine:
             key_decisions=key_decisions or [],
             pending_questions=pending_questions or [],
             state_snapshot=state_snapshot or {},
+            config_generation=generation,
+            prefix_receipt=receipt,
         )
 
         # Write to Verkle chain
@@ -192,6 +314,24 @@ class CheckpointEngine:
 
         latest = existing[-1]
         return latest.to_pointer()
+
+    def reuse_prefix(self, session_id: str, candidate_prefix: str,
+                     config_generation: str) -> dict[str, Any]:
+        """Skip-recompute gate for the latest checkpoint's frozen prefix.
+
+        The caller supplies the prefix bytes it is about to reuse (the
+        checkpoint stores hashes, not history). NO CACHE RESUME WITHOUT A
+        VERIFIED-PREFIX RECEIPT: no checkpoint, no receipt (pre-law row),
+        a stale config generation, or a diverged prefix each cost the same
+        as a miss - the caller recomputes.
+        """
+        existing = self._load_session(session_id)
+        if not existing:
+            return {"skip_recompute": False, "verified_bytes": 0,
+                    "reason": "no-checkpoint"}
+        latest = existing[-1]
+        return gate_skip_recompute(candidate_prefix, latest.prefix_receipt,
+                                   config_generation)
 
     def switch_model(
         self,
@@ -340,6 +480,8 @@ class CheckpointEngine:
                     pending_questions=data.get("pending_questions", []),
                     state_snapshot=data.get("state_snapshot", {}),
                     ts=data.get("ts", ""),
+                    config_generation=data.get("config_generation", ""),
+                    prefix_receipt=data.get("prefix_receipt", {}),
                 ))
             except (json.JSONDecodeError, KeyError):
                 continue

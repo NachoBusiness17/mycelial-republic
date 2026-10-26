@@ -9,9 +9,19 @@ import mag.process_supervisor as ps
 
 @pytest.fixture(autouse=True)
 def _isolate_state(tmp_path, monkeypatch):
-    """Point the supervisor at a temp state/log so tests don't touch real state."""
+    """Point the supervisor at a temp state/log so tests don't touch real state.
+
+    Also isolates the Docker-only marker (the real repo carries one) and the
+    host-runtime override so policy-gate tests stay hermetic.
+    """
     monkeypatch.setattr(ps, "STATE_PATH", tmp_path / "state.json")
     monkeypatch.setattr(ps, "LOG_PATH", tmp_path / "supervisor.jsonl")
+    monkeypatch.setattr(ps, "DOCKER_ONLY_MARKER", tmp_path / "DOCKER_ONLY")
+    monkeypatch.delenv("MAG_ALLOW_HOST_RUNTIME", raising=False)
+    # These tests exercise THIS supervisor's own spawn/reap logic, which only runs
+    # when it is the controller. mag_launch being live (normal fleet operation) used
+    # to flip _container_mode() and silently turn these into no-op failures.
+    monkeypatch.setattr(ps, "_container_mode", lambda: False)
     return tmp_path
 
 
@@ -107,3 +117,73 @@ def test_unknown_loop():
     r = ps.start_loop("nope")
     assert r["ok"] is False
     assert "known" in r
+
+
+def test_reap_policy_blocked_no_restart(_isolate_state, monkeypatch):
+    # 2026-09-19 autopsy: the Docker-only drainer self-blocks on the host, and the
+    # supervisor used to respawn it forever as a false crash-loop. With the marker
+    # present, a dead drainer must become blocked_by_policy, never respawn.
+    (_isolate_state / "DOCKER_ONLY").write_text("docker owns the drainer\n", encoding="utf-8")
+    spawns = []
+    monkeypatch.setattr(ps, "_spawn", lambda name: spawns.append(name) or {"pid": 1, "started_at": "t", "cmd": "x"})
+    monkeypatch.setattr(ps, "_pid_alive", lambda pid: False)
+    monkeypatch.setattr(ps, "time", _FakeTime(1000.0))
+    ps._save_state({"autorun": {
+        "status": "crashed", "pid": 37172, "started_at_ts": 900.0,
+        "crash_times": [999.0], "next_retry_at": 900.0, "cmd": "governor_autorun"}})
+    for _ in range(5):
+        ps.reap()
+    assert spawns == []  # never respawned under the marker
+    state = json.loads(ps.STATE_PATH.read_text(encoding="utf-8"))
+    assert state["autorun"]["status"] == "blocked_by_policy"
+    assert "next_retry_at" not in state["autorun"]
+    st = ps.status()
+    autorun = next(l for l in st["loops"] if l["name"] == "autorun")
+    assert autorun["status"] == "blocked_by_policy"
+
+
+def test_reap_policy_unblocks_when_marker_lifts(_isolate_state, monkeypatch):
+    # The gate must lift: marker removed -> the drainer is restartable again.
+    marker = _isolate_state / "DOCKER_ONLY"
+    marker.write_text("x", encoding="utf-8")
+    monkeypatch.setattr(ps, "_pid_alive", lambda pid: False)
+    monkeypatch.setattr(ps, "time", _FakeTime(1000.0))
+    ps._save_state({"autorun": {
+        "status": "blocked_by_policy", "pid": 37172, "started_at_ts": 900.0,
+        "crash_times": [999.0], "cmd": "governor_autorun"}})
+    ps.reap()
+    state = json.loads(ps.STATE_PATH.read_text(encoding="utf-8"))
+    assert state["autorun"]["status"] == "blocked_by_policy"  # still gated
+    marker.unlink()
+    monkeypatch.setattr(ps, "_spawn", lambda name: {"pid": 424242, "started_at": "t", "cmd": "x"})
+    r = ps.reap()
+    assert "autorun" in r["auto_restarted"]
+    state = json.loads(ps.STATE_PATH.read_text(encoding="utf-8"))
+    assert state["autorun"]["status"] == "running"
+
+
+def test_policy_blocked_override_env(_isolate_state, monkeypatch):
+    # MAG_ALLOW_HOST_RUNTIME=1 lifts the gate even with the marker present.
+    (_isolate_state / "DOCKER_ONLY").write_text("x", encoding="utf-8")
+    monkeypatch.setenv("MAG_ALLOW_HOST_RUNTIME", "1")
+    assert ps._policy_blocked("autorun") is False
+    monkeypatch.delenv("MAG_ALLOW_HOST_RUNTIME")
+    assert ps._policy_blocked("autorun") is True
+    assert ps._policy_blocked("ghost") is False  # gate is drainer-scoped
+
+
+def test_policy_gate_matches_child_predicate(_isolate_state, monkeypatch):
+    # B2-51 2026-09-26: the gate and the drainer child must evaluate the SAME
+    # policy (mag.runtime_policy.host_runtime_blocked). The pre-2026-09-26
+    # copies drifted: the children gated on os.name == "nt", the gate did not.
+    import mag.runtime_policy as rp
+
+    marker = _isolate_state / "DOCKER_ONLY"
+    monkeypatch.setattr(rp, "DOCKER_ONLY_MARKER", marker)
+    monkeypatch.setattr(ps, "DOCKER_ONLY_MARKER", marker)
+    marker.write_text("x", encoding="utf-8")
+    child = rp.host_runtime_blocked()
+    assert ps._policy_blocked("autorun") == child  # one policy, two callers
+    marker.unlink()
+    assert ps._policy_blocked("autorun") is False
+    assert ps._policy_blocked("autorun") == rp.host_runtime_blocked()

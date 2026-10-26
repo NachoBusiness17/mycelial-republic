@@ -16,7 +16,7 @@ Repair algorithm (under verkle_lock, whole run):
 
 Default is DRY RUN: prints the plan. --apply executes it.
 Unrecoverable rows (no resolvable file) are reported and KEPT with an
-`evidence_lost` flag — never silently dropped, never fabricated.
+`evidence_lost` flag - never silently dropped, never fabricated.
 
 CLI:
   python scripts/repair_verkle_chain.py            # dry run
@@ -113,9 +113,24 @@ def plan_and_repair(apply: bool) -> int:
     print(f"duplicate-session rows to be dropped by consolidate: {dups}")
 
     if not apply:
-        print("DRY RUN — no changes written. Re-run with --apply.")
+        print("DRY RUN - no changes written. Re-run with --apply.")
         return 0
 
+    # CHAIN_HARDEN_ITER2_20261020: dual gate (env + approval) before any write
+    from mag.verkle_knot import _chain_rewrite_allowed, _refuse_chain_rewrite
+    if not _chain_rewrite_allowed():
+        _refuse_chain_rewrite("repair_verkle_chain.apply")
+
+    # chain:biography lease (2026-10-17, mag/leases.py): REFUSED when another
+    # chain:biography lease (2026-10-17, mag/leases.py): REFUSED when another
+    # seat holds the chain lease (holder keeps); unleased = warn + ledger line.
+    # Take it first: python scripts/lease.py acquire chain:biography --seat <you> --purpose "..."
+    from mag.leases import guard as _lease_guard
+    _g = _lease_guard("chain:biography", "repair_verkle_chain.apply", enforce="conflict")
+    if not _g["allowed"]:
+        print(_g["reason"])
+        print(_g.get("how", ""))
+        return 3
     from mag.verkle_knot import _consolidate_chain_one_leaf_per_session_unlocked
     with verkle_lock():
         # rows were read pre-lock; re-read under lock and re-apply repairs so we

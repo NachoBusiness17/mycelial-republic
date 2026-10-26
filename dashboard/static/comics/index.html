@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Mag Comics (stupid-model strips)</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  body{background:#06070c;color:#dfe6ff;font-family:monospace;margin:0;padding:24px}
+  h1{font-size:18px;color:#7cf5ff}
+  p.sub{color:#5a6a8a;font-size:12px;max-width:760px}
+  #empty{color:#8a6a5a;font-size:13px;border:1px dashed #3a2a2a;padding:14px;max-width:760px}
+  .strip{background:#fff;color:#111;margin:22px 0;max-width:900px;border-radius:4px;overflow:hidden}
+  .strip img{display:block;width:100%;height:auto}
+  .meta{font-size:11px;color:#5a6a8a;margin-top:4px}
+</style>
+</head>
+<body>
+<h1>MAG COMICS: the stupid-model strips</h1>
+<p class="sub">A free lane writes the panel spec (cast enum + POSES vocabulary,
+graded mechanical by the gauntlet register); a deterministic instrument that
+cannot hallucinate renders the strip. New strips land in strips/ and are
+appended to manifest.json by the renderer writer; this page only reads.</p>
+<div id="empty" hidden>NO STRIPS YET: the renderer has not landed a strip.
+When it writes strips/*.svg plus a manifest row, it appears here on reload.</div>
+<div id="board"></div>
+<script>
+// Reader only: fetch manifest.json (same dir), render newest first. The
+// manifest contract (renderer writer owns appends, never rewrites):
+//   {"schema": "comics_manifest.v1", "strips": [
+//     {"file": "strips/2026-10-07_x.svg", "title": str, "ts": ISO8601,
+//      "source": work_id or note}]}
+fetch('manifest.json', {cache: 'no-store'})
+  .then(r => r.ok ? r.json() : {strips: []})
+  .then(m => {
+    const rows = (m.strips || []).slice().reverse();
+    const board = document.getElementById('board');
+    if (!rows.length) { document.getElementById('empty').hidden = false; return; }
+    for (const s of rows) {
+      const div = document.createElement('div');
+      const img = document.createElement('img');
+      img.src = s.file; img.alt = s.title || 'strip'; img.loading = 'lazy';
+      div.className = 'strip'; div.appendChild(img);
+      const meta = document.createElement('div');
+      meta.className = 'meta';
+      meta.textContent = (s.title || '') + ' | ' + (s.ts || '') +
+        (s.source ? ' | ' + s.source : '');
+      div.appendChild(meta);
+      board.appendChild(div);
+    }
+  })
+  .catch(() => { document.getElementById('empty').hidden = false; });
+</script>
+</body>
+</html>

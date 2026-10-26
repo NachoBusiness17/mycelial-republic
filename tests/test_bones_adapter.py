@@ -18,6 +18,12 @@ ROOT = Path(__file__).resolve().parent.parent
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
+# M17 WAVE0 2026-09-29 (watch/inbox/MICKEY17_RUN_PLAN_20260929.md): discord.py
+# is an optional runtime dep (NOT in requirements.txt); the hard import below
+# errored at collection on a requirements-only venv and zero tests ran. Skip
+# gracefully when it is absent instead of faking coverage.
+pytest.importorskip("discord")
+
 import discord  # noqa: E402
 
 import mag.bones_adapter as bones_adapter  # noqa: E402

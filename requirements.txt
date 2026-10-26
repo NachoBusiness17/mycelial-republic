@@ -12,3 +12,7 @@ pytest>=8.0
 chess>=1.10
 textarena>=0.7.0  # arena probes — also pulls chess if missing
 faster-whisper>=1.0.0  # local voice STT — no speaker enroll; CPU int8 on home box
+cryptography>=49.0.0  # ed25519 gwap signatures -- M17 WAVE0 20260929: was missing here while 49.0.0 sat in the venv, so signature tests silently self-skipped on a fresh venv
+pandas>=3.0  # Q49 2026-10-01: pain_replication stack (pandas/sklearn/scipy) was directly imported by tools/pain_replication/* while undeclared here -- same fresh-venv gap disease as the cryptography row. Same-day reconciliation: tabfm chain (tabfm/jaxtyping/wadler-lindig/absl-py, AH9 trial complete, receipt watch/inbox/last_mile_20260930/AH9_TABFM.md) uninstalled and typeguard restored to lock value 4.6.0; pip check exit 0.
+scikit-learn>=1.9  # direct import: tools/pain_replication/runner.py, data/01_extract.py, data/02_build_control_vectors.py
+scipy>=1.17  # direct import: tools/pain_replication/analyze.py

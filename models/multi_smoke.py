@@ -27,6 +27,29 @@ def _fixture_text() -> str:
     )
 
 
+def _warm(model: str) -> None:
+    """Load a local model before timing it.
+
+    Ollama loads on first request; on the 6GB box a cold 7B load takes ~15s, so
+    a smoke that times the first call measures the loader, not the model
+    (2026-10-21: worker/critic both reported "timed out" on a cold box while a
+    direct call answered in 16.4s). Keep one resident at a time per lanes.yaml.
+    """
+    import json as _json
+    import urllib.request as _req
+
+    try:
+        from llm import _resolve_base  # local Ollama base, /v1 stripped
+
+        url = _resolve_base().rstrip("/") + "/api/generate"
+        body = _json.dumps({"model": model, "prompt": "", "keep_alive": "5m"}).encode()
+        r = _req.Request(url, data=body, headers={"Content-Type": "application/json"})
+        with _req.urlopen(r, timeout=180) as resp:
+            resp.read(64)
+    except Exception:
+        pass  # warm is best-effort; the real call still reports its own failure
+
+
 def run_multi_smoke() -> dict[str, Any]:
     from llm import chat, extract_json
     from models.registry import inventory, model_for
@@ -39,6 +62,7 @@ def run_multi_smoke() -> dict[str, Any]:
     # --- 1 clerk / router ---
     clerk_model = model_for("router")
     models_seen.add(clerk_model)
+    _warm(clerk_model)
     try:
         raw = chat(
             "router",
@@ -70,6 +94,7 @@ def run_multi_smoke() -> dict[str, Any]:
     # --- 2 worker brief ---
     worker_model = model_for("worker")
     models_seen.add(worker_model)
+    _warm(worker_model)
     try:
         raw = chat(
             "worker",
@@ -100,6 +125,7 @@ def run_multi_smoke() -> dict[str, Any]:
     # --- 3 critic risk ---
     critic_model = model_for("critic")
     models_seen.add(critic_model)
+    _warm(critic_model)
     try:
         raw = chat(
             "critic",

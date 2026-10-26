@@ -92,6 +92,42 @@ Credit formula: `(input_tok × in_mult + cached_tok × cache_mult + output_tok �
 | 1261 | Prompt too long | Truncate |
 | 1301 | Unsafe content detected | Rephrase |
 
+### 5.1 CLIENT BACKOFF + REASONING FLOOR LAW (spec'd 2026-09-26, lane B2-62; measured by B2-04 same day)
+
+MEASURED (live, `watch/inbox/burn_wave_20260926/B2_04_probe_results2.json`):
+429 body `{"error":{"code":"1305","message":"The service may be temporarily overloaded, please try again later"}}`
+hit ~1 in 3 calls at 6s spacing on the Pro lane; one Lite 429 was STILL 1305 after the
+probe's single 15s wait; adaptive stretch is needed, not one fixed wait. Separately,
+glm-4.7-flash at model-default thinking ate the WHOLE 600-token budget on 2 of 7 burns
+(usage completion=600, content empty).
+
+LAWS for the z.ai lane client (`models/providers.py`, chat_provider + chat_messages):
+
+1. **OVERLOAD BACKOFF**; on HTTP 429 whose body names the overload family (1305 /
+   1302 / "overloaded"), a provider flagged `retry_overload: true` (z_ai2, z_ai3; the
+   funded fleet lanes) retries the SAME request after 15s, then 30s (base 15 = the
+   measured recovery wait, x2 stretch per attempt, 2 attempts max) before failing.
+   Bounded: worst case +45s. Every failed attempt is recorded, so fuel_feed /
+   lane_cadence keep learning. After exhaustion the existing should_burst ->
+   burst_mill(paid) path is unchanged and stays the LAST resort (free-first law,
+   providers.yaml prefer_order). Providers without the flag never sleep (mistral
+   limit-0, groq quota 429s behave exactly as before). A caller holding the
+   concurrency gate keeps its slot during backoff: provider-wide overload is exactly
+   when the single 4.7-flash slot must serialize instead of letting a herd re-collide.
+2. **REASONING FLOOR**; the receipted minimum budget for thinking-on work is
+   max_tokens >= 1536 (EXP-A 08-29 cache doctrine, §3 OVERTURNED note). When the
+   caller did NOT decide thinking (thinking=None) AND max_tokens < 1536 AND the model
+   can disable thinking (4.7-flash / 4.5-flash family; NOT glm-5.3 / glm-5.3-flash , 
+   forced thinking, 1210 scar §10.1), the client disables thinking for that call and
+   reports `reasoning_floor_applied: true`. Explicit thinking=True + a crumb budget
+   keeps the honest empty_reasoning failure (caller override). The client NEVER
+   raises a caller's budget (08-29 law, providers.py:258: callers opt down; never up
+   from crumbs).
+
+Falsifier: rerun B2_04_probe2.py's zai section; if 15s+30s no longer recovers a
+1305 within 2 retries the constants are mis-tuned; if glm-4.7-flash at
+max_tokens >= 1536 still returns content-empty, the floor value is wrong.
+
 ## 6. FLEET LANE MAPPING
 
 | Fleet lane | API model | Cost | Role |

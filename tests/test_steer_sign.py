@@ -1,12 +1,17 @@
 # pytest for steer_sign script
 import subprocess
 import os
+import sys
 
 SCRIPT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "scripts", "steer_sign.py"))
 
+# HEADLESS law: explicit creationflags (ratchet tests/test_headless_law.py; bare-spawn-descent 2026-09-29)
+HEADLESS = getattr(subprocess, "CREATE_NO_WINDOW", 0x08000000) if sys.platform == "win32" else 0
+
 
 def run_cmd(args):
-    result = subprocess.run(["python", SCRIPT] + args, capture_output=True, text=True)
+    result = subprocess.run(["python", SCRIPT] + args, capture_output=True, text=True,
+                            creationflags=HEADLESS)
     return result
 
 def test_sign_creates_key_and_signs(tmp_path, monkeypatch):

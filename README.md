@@ -1,205 +1,114 @@
-# local_sovereign_agent — Mag Resource Harness
+# THE STANDING WAVE — one deduped rib of everything
 
-**For LLMs — load framework first:** [`docs/FRAMEWORK_LOAD.md`](docs/FRAMEWORK_LOAD.md) · [`LOAD.md`](LOAD.md)  
-**Compass — vision, loop, v1–v10 arc:** [`docs/ref/MAG_MYCELIAL_REPUBLIC_COMPASS.md`](docs/ref/MAG_MYCELIAL_REPUBLIC_COMPASS.md)  
-**Mycelial science — biology ↔ protocol:** [`docs/ref/MYCELIAL_SCIENCE_MAP.md`](docs/ref/MYCELIAL_SCIENCE_MAP.md)  
-**Future walkthrough — v2→v10 + subsystems:** [`docs/ref/MAG_FUTURE_WALKTHROUGH.md`](docs/ref/MAG_FUTURE_WALKTHROUGH.md)  
-**Vision — v2 completion + desk loop factory:** [`docs/ref/MAG_VISION_AUTOMATION.md`](docs/ref/MAG_VISION_AUTOMATION.md)  
-**For everyone — full proposal:** [`docs/ref/MAG_PROJECT_PROPOSAL.md`](docs/ref/MAG_PROJECT_PROPOSAL.md)  
-**For humans — dashboard how-to:** [`docs/HOW_TO_MAG_DASHBOARD.md`](docs/HOW_TO_MAG_DASHBOARD.md)  
-**Run — one command, one surface:** [`docs/ref/RUN.md`](docs/ref/RUN.md) — `python main.py wake` brings up the core; `mag_kill.cmd` stops it
+*Compiled 2026-10-16 from 60 rib files, 675 invariants, twelve cards, and the
+drift-patrol record. This file is the entry point. Everything else in the
+repo is implementation detail. Deduplicated: if a law appears twice in your
+head, it belongs here once.*
 
-**Product home for the local orchestrator.** Local models do memory, briefs, and scutwork; **remote specialist seats are scarce** (priority + daily budget). This is **not** the strike demo-knot desk and not R0.
+---
 
-| Lane | Role |
-|------|------|
-| **L0** | Ollama — brief, ask biographer, todos, summarize |
-| **L2** | Remote specialist — hard work only (`[priority]` / `[L2]`) |
-| **L3** | Human — secrets / irreversible |
+## WHAT THIS IS
 
-Strike desk (`sovereign-mirror-scaffold` :8743) is **optional analysis** of Mag data structures. Mag brand lives here on **:8765**.
+A local agent estate on one operator's bench: local Ollama models do memory,
+briefs, and scutwork; remote specialist lanes are scarce and routed by law;
+every window is stateless and carries nothing — all state lives in files,
+chains, and append-only ledgers. The estate is not a process that must stay
+awake. It is a standing wave: a pattern that persists because every part of
+it is re-minted from stored bytes.
 
-## Three doors (layman)
+**The three doors** (the whole interface): **FIND** your real material (X
+search, exports, research-pack) → **FILE** it to disk (bead, trail, receipt)
+→ **LOAD** any AI cheaply (`mag.cmd context-pack`). Run: `python main.py
+wake` brings the core up; `mag_kill.cmd` stops it.
 
-| Door | Do | Example |
-|------|-----|---------|
-| **FIND** | Get your real material | X search, exports, `research-pack` |
-| **FILE** | Save to disk (bead, trail) | SessionEnd, dig leaf, FILE block |
-| **LOAD** | Brief any AI cheaply | `mag.cmd context-pack` |
+## THE LAWS (deduplicated from sixty ribs)
 
-See [`docs/FRAMEWORK_LOAD.md`](docs/FRAMEWORK_LOAD.md) for metaphors, load order, and use cases.
+1. **Chain is record, window is reasoning.** Never store the window as
+   truth. Fidelity lives in files + chain, not in a process.
+2. **Trust bytes, not reports.** Verify with git diff and actual file bytes
+   before declaring done. A count without instrument, moment, and delta is
+   a rumor.
+3. **Duplication is emphasis.** Find the nuance and put them together in a
+   single thing. Recurrence compiles to invariants; noise quarantines;
+   novelty explores.
+4. **Route, don't default.** Name the lane and why before any ask. The
+   estate's own seats outrank mirrors and stranger APIs. An unoccupied
+   predator niche gets filled by wanderers — run your own wolves, scoped.
+5. **Quota classes.** The heavy tier never carries what a scout can carry,
+   and scouts never carry judgment. Cheap-first: local battery, free lanes
+   for sensing, owned tier for verification.
+6. **Width envelope.** Dispatch shape is the retry strategy. Measure width
+   before claiming it. A first rate-limit is a HOLD signal, not a retreat.
+7. **Two contexts.** The resolver and the challenger never share a room.
+   Five agents on one base model replicating is prompt convergence in a
+   mesh costume.
+8. **Falsifier or PARKED.** Every organ mints with the observation that
+   proves it failed. No falsifier, no promotion — PARKED is the honest
+   state. Memory that cannot forget cannot learn; tombstones are part of
+   the palace.
+9. **Deliberate ask.** Frozen spec + small ask + output contract. Pay the
+   context tax once.
+10. **Name the you.** A public post with no addressee is dead. Passive
+    paper register is the AI tell.
+11. **Sniff before acting.** Skipping boot is the root-cause class: a
+    window that cannot name the estate's position is the bug.
 
-## Compass
+## THE SHAPES (the design language, extracted once)
 
-North star for operators and agents — Mycelial Republic vision, forever agent loop, v1–v10 version arc, sovereignty law:
+1. **The Ledger** — append-only, hash-chained event log. Everything true is
+   a row.
+2. **The Compiler** — raw stream in; classified, compact object + pointer
+   out. Recurrence becomes invariants.
+3. **The Pin** — a surface committed by hash. Drift is measurable.
+4. **The Decay** — recency-weighted evaporation, with tombstones for the
+   honest dead.
+5. **The Gate** — a scoped predator at a chokepoint. Territory and
+   seasons, or it becomes the incident.
+6. **The Two Contexts** — resolver and challenger never share a room.
+7. **The Boundary Object** — a session compressed to what transport needs:
+   hash-chained, classifiable, never a transcript.
+8. **The Head Gradient** — waves propagate by elevation differences. Route
+   by where context and heat already live.
 
-→ [`docs/ref/MAG_MYCELIAL_REPUBLIC_COMPASS.md`](docs/ref/MAG_MYCELIAL_REPUBLIC_COMPASS.md)
+## THE ORGANS
 
-Machine arc: [`configs/version_roadmap.yaml`](configs/version_roadmap.yaml) · Version index: [`docs/ref/releases/VERSION_REGISTRY.md`](docs/ref/releases/VERSION_REGISTRY.md)
+- **Memory:** percolator (signal → invariants, noise quarantined), echo
+  embeddings, surface pins, the demotion register, the biography chain.
+- **Law:** the rib vault (mounted at boot, newest close first), five
+  pre-push gates, the patrols, the falsifier index (public).
+- **Fleet:** 29 scheduled clocks, a free-lane miner on OpenRouter at $0/day,
+  the owned local battery for council and certification, rotation across
+  perishable free endpoints.
+- **Chain:** a TON jetton economy with measured burn, consensus-certified
+  runs, and an internal currency backed by on-chain settlement.
+- **Persona:** palace models with falsifiers, memory palaces per persona,
+  horizon objects minted at window close.
+- **Mirrors:** backups and ghosts, patrolled for drift.
 
-## Dashboard (Body · Pulse · Days · Chat)
+## THE STATE (2026-10-16)
 
-```powershell
-python main.py lab
-# → http://127.0.0.1:8765/
-```
+Live: the free-lane miner (five deliverables, $0.00), 29 clocks, the drain
+loop, the veil gate (first fire passed), the mirror patrol (first run), the
+standing beacon. Cured this week: the census drift, the venv, the hermes
+lane (repurposed to free rails). Open: the bridge guardians dossier
+(drafted), the coverage-receipt contract change, the archive tier on the
+10TB volume, the second Gemini Pro lane.
 
-| Tab | Role |
-|-----|------|
-| **Office** | Been → now → next |
-| **Days** | Workday list + 3D bead tree (subsessions, Verkle lattice) |
-| **Body** | Inbound seats (Cursor, Chat), providers, governance |
-| **Pulse** | Honest activity from filed sources |
-| **Chat** | Agent + **guidance queue** (deferred steer at checkpoint) |
+## OWED
 
-Restart dashboard after Python API changes. Hard-refresh static assets: **Ctrl+Shift+R**.
+The operator's hands: mount the archive volume, send the disclosure PR,
+publish the spore posts, fund the mainnet float. The estate's hands:
+everything else.
 
-Publish checklist: [docs/GITHUB_PUBLISH.md](docs/GITHUB_PUBLISH.md)
+## FALSIFIER
 
-## Requirements
+This wave is real if a cold window can act on it alone. If any section
+here is stale against the bytes, this file lied — fix the file, keep the
+wave. Compiled by a seat that skipped no boot.
 
-- Python 3.12+
-- Ollama with `gemma:2b` (router) and `gemma4:latest` (worker/critic)
-- Optional later: `nomic-embed-text` for RAG
+---
 
-## Setup
-
-```powershell
-cd $env:USERPROFILE\Documents\projects\local_sovereign_agent
-python -m venv .venv
-.\.venv\Scripts\Activate.ps1
-pip install -r requirements.txt
-```
-
-## Run
-
-```powershell
-# simple goal
-python main.py run "List files under memory and read locus.md"
-
-# shorthand
-python main.py "List files under ."
-
-python main.py status
-```
-
-## Escalation handoff
-
-When status is `escalated`:
-
-1. Open `queue/handoff/<id>.json` (and `.md`)
-2. Execute the ask in the chosen specialist seat
-3. Write `queue/results/<id>.json` with `{"handoff_id","ok","summary","deliverable"}`
-4. `python main.py ingest <id>`
-
-## Product home (integral — one process)
-
-```powershell
-cd $env:USERPROFILE\Documents\projects\local_sovereign_agent
-.\.venv\Scripts\Activate.ps1
-
-# DEFAULT: watch + Mag companion + dashboard (do not also run watch separately)
-python main.py lab
-# → http://127.0.0.1:8765/
-
-# Sancho boot (self-analysis; --ensure spawns lab if down)
-python main.py boot
-python main.py boot --ensure
-# → memory/boot_report.md  +  watch/boot_latest.json
-# SessionStart hook: watch/sancho_boot_hook.py (ensure=True)
-
-# Records office — lean residual + hot registry
-python main.py pack-status              # complete = residual+card+commit+leaf
-python main.py migrate-lean-registry    # dossiers → residual/ + registry.jsonl
-python main.py backfill-sessions        # fill incomplete (heuristic)
-python main.py refresh-session-cards    # blurb+bullets only
-# layout: residual/{sid}.json  registry.jsonl  derived/  knots/ + tip
-# → memory/biography/kpi.json
-
-# REST API (lab / dashboard on :8765)
-# GET  http://127.0.0.1:8765/api/v1
-# GET  /api/v1/health  /api/v1/registry  /api/v1/sessions  /api/v1/kpi
-# GET  /api/v1/sessions/{id}/residual
-# POST /api/v1/catch-up  /api/v1/ask  /api/v1/brief
-# Audit: docs/AUDIT.md
-# DNA: docs/DNA.md  ·  Zeitgeist: docs/ZEITGEIST.md  ·  Roadmap: docs/ORG_ROADMAP.md
-# Operate tab (dashboard home): forest walk + AI feed templates + DNA
-# CLI:  python main.py org-review
-# API:  GET /api/v1/operator-os
-```
-
-### If you kill Mag
-
-| What freezes | What does not |
-|--------------|----------------|
-| `memory/live_from_grok.md` (eyes) | The specialist chat itself (TUI keeps writing history) |
-| Companion cycles (todos, escalate) | Existing dossier files on disk |
-| Heartbeat → Board shows **DOWN** | Hooks may still fire SessionEnd if the seat loads them |
-
-**Recovery:** `python main.py lab` again. Same session id **amends** the same `.md` / `.dossier.json` / `.pdf` / Verkle leaf — no duplicate session docs.
-
-Do **not** run `main.py watch` + `main.py mag` + dashboard as three processes. Watch is baked into `lab` / `mag`.
-
-Heartbeat: `watch/heartbeat.json`
-
-### Local multi-model (M0 dual-local)
-
-**Clerk** `gemma:2b` (route/judge) · **Worker** `gemma4:latest` (brief/ask/critic). Sequential load — not parallel 3×8B.
-
-```powershell
-python main.py models          # role → model + present?
-python main.py multi-smoke     # MUST pass: two model ids in logs/multi_smoke_latest.json
-python main.py doctor
-```
-
-Board → **Orchestrate** → **Run multi-smoke**. If smoke fails, multi-model is cosplay — fix Ollama before features.
-
-### Research pack (scrape → clean PDF → route)
-
-Local-first info routing: freeze the **ask + fidelity bar + sources**, run lesser models on that pack, elevate to a specialist only when needed.
-
-```powershell
-python main.py research-pack `
-  --ask "Summarize claims about Z from these pages; flag uncertainty." `
-  --url "https://example.com/one" `
-  --url "https://example.com/two" `
-  --criterion "Cite URLs for every claim" `
-  --criterion "Use format: answer / evidence / gaps / next move" `
-  --run
-
-# Produce pack for a specialist (you open PDF/prompt; no full chat dump)
-python main.py research-pack --ask "…" --url "…" --elevate
-```
-
-Outputs: `memory/research_packs/latest.pdf` · `latest.json` · `latest.prompt.txt`
-
-### Sovereign dispatch (auto model + local context)
-
-```powershell
-python main.py dispatch "what was I doing?"
-python main.py dispatch "draft a public summary of X"   # picks remote if key+budget
-python main.py dispatch "refactor the auth module" --dry  # → specialist seat
-python main.py hermes-status
-python main.py dispatch "via hermes draft a public outline" --dry  # → hermes seat
-```
-
-Keeps **history local**, sends **context-pack + goal** only, chooses provider by job + remaining quota.
-
-### Multi-platform (Claude / OpenAI / Gemini / DeepSeek / Llama / …)
-
-Config: `configs/providers.yaml` (models + **your** quota limits + reset period).  
-Keys live in **`.env`** (gitignored). Mag loads them on every `main.py` start.
-
-```powershell
-# seed XAI from scaffold if present
-python scripts/sync_env_from_scaffold.py
-# paste other keys into .env
-notepad .env
-# or
-.\scripts\edit_env.ps1
-
-python main.py providers   # see configured: true/false
-python main.py quota
-```
-
-Also
+*Deep pointers (read only what you need): the load order for LLMs
+(`docs/FRAMEWORK_LOAD.md`), the compass and vision arc, the mesh spec, and
+the runbook — all under `docs/`. The wave is the summary; the repo is the
+proof.*

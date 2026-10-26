@@ -9,6 +9,9 @@ agents/pytest-*/
 *.bak
 *.bak-*
 
+# travel kit: zip is regenerable via scripts/build_travel_kit.py; the manifest.json is the receipt and stays tracked
+memory/portable_bags/travel_kit_*.zip
+
 # IDE / local agent
 .cursor/
 
@@ -16,9 +19,19 @@ agents/pytest-*/
 .env
 .env.local
 .env.*
-!.env.example# live provider/mesh credentials â€" never commit (tracked fix 2026-08-20)
+!.env.example
+# live provider/mesh credentials - never commit (tracked fix 2026-08-20)
 configs/providers.yaml
 deploy/k8s/mag-secret.yaml
+# seal copies of the chain + providers.yaml — local-only snapshots (audit 2026-09-30
+# finding #7; untracked from index 2026-09-30, history left intact per operator).
+# Latest-seal pointer lives on disk at state/seal_latest.json (state/ is ignored).
+memory/seals/
+# trajectory stream - runtime append-only log that carries command output;
+# 7 live .env values were committed in it (audit 2026-09-30 finding #1).
+# Untracked 2026-09-30; history left intact per operator (no rewrite).
+# Hook-side redaction: mag/trajectory_step.py; commit gate: tools/precommit_secret_check.py
+memory/trajectory/steps.jsonl
 # model weights â€" downloadable build artifacts, NOT source (moved out of repo 2026-08-19)
 models/
 *.gguf
@@ -180,6 +193,8 @@ memory/runs/_agent_1010_repro.txt
 # runtime append-only logs — stay on disk, out of history (fixed 2026-09-14)
 watch/*.log
 .pytest-*/
+# fold_gate runtime locks (transient mutex state; the .log audit trail stays on disk, 2026-10-05)
+memory/runs/fold_locks/
 # local machine caches / agent state (2026-09-14)
 _archaeology_out/
 .zcode/
@@ -201,3 +216,198 @@ agents/pytest-*/
 memory/biography_backup_*/
 dashboard/static/ractor_board.full-40k-*
 vendor/
+
+# DFHack local mirror (mined in place, too big for the repo)
+corpus/dfhack_mirror/
+corpus/dfhack_full/
+configs/secrets/
+
+# 2026-09-27 gate-fix window: never-a-blob set (audit LANE4B + checkpoint law;
+# the 2.2GB runaway blob precedent). ESSENTIALS_PACK = 1.59GB single-copy
+# encrypted backup whose key is unversioned; catalog_fts = 155MB derived index
+# rebuilt daily by the sanctioned writer; .tmp_dig + %TEMP%* = lane scratch and
+# env-var-expansion defect residue (the literal-%TEMP% write bug is a filed defect).
+watch/inbox/ESSENTIALS_PACK_*.tar.gz.enc
+catalog/catalog_fts.sqlite
+.tmp_dig/
+%TEMP%*
+
+
+# bash.exe shim at estate root (wave5 fold-gate repair, 2026-09-29): Windows
+# CreateProcess resolves bare `bash` to System32's WSL launcher before PATH, and
+# the WSL default distro had no /bin/bash, so spawned shell gates died exit 1.
+# This compiled forwarder to Git\bin\bash.exe sits in the harness cwd (searched
+# before System32) and forwards argv + std handles verbatim. Source and receipt:
+# watch/inbox/gala_20260925/wave5-repair/bash_shim_forwarder.cs and fold-gate-repair.md
+/bash.exe
+
+
+# AH2 proof signing key (2026-09-30): ed25519 seed for mag/proof.py sign_payload.
+# Auto-generated dev key on first use (0600); env override MAG_PROOF_KEY wins.
+# NEVER commit this file — a committed key makes every "signature" theater.
+configs/.proof_key
+memory/mycelium/
+memory/thinking/
+watch/inbox/INDEX.json
+watch/inbox/index_events.jsonl
+watch/inbox/transcripts/
+watch/receipts/
+
+
+# ask_bank hidden half (AJ2 2026-09-30): rendered hidden asks + draw ledger stay
+# out of the repo and out of any prompt-visible surface; only tools/ask_bank.py
+# reads them. Manifest in configs/ask_bank/v1/ carries the sha256 receipts.
+configs/ask_bank/*/hidden/
+
+# B5 build pipeline (2026-09-30): game export output, regenerable via scripts/build_game.ps1
+/build/
+watch/inbox/last_mile_20260930/imp10_operator_pool.jsonl
+
+# store_io OS locks (server/store_io.py exclusive()) - never commit
+*.lock
+corpus/tools/
+
+# raw scrape exhaust may carry third-party tokens - never track (2026-10-01 secret-gate catch)
+watch/inbox/frontier_olm_*/sweep/_raw/
+# grok-bot estate audit 2026-10-03
+# secrets / key material (lan.key untracked same day; rotate - it remains in history)
+*.env
+*.pem
+*.key
+id.json
+*keypair*
+wallet*.json
+memory/tls/*.key
+# model weights / binaries (2 tracked .pt under tools/pain_replication stay tracked)
+*.safetensors
+*.pt
+*.onnx
+attic/*.tar
+# root scrape exhaust (may carry third-party tokens); already-tracked ones stay tracked
+/sweep_*.html
+/sweep_*.json
+/safereddit_*.html
+/reddit_*
+/arctic_*
+/pullpush_*
+/nulwatch/inbox/frontier_olm_*/sweep/tmp/
+watch/inbox/quarantine_temp_fossils/
+
+# nested repo: the falsifier index publishes to its own github remote (2026-10-14)
+falsifier-index/
+nul
+tools/tor/
+
+# FTS rebuild temp (MagFtsIndexDaily) - atomic-replace residue, never source
+*.sqlite.tmp
+
+# 7GB of scratch (model blobs, dumps) - never a commit surface (2026-10-24)
+Temp/
+
+# data lake: multi-GB regenerable outputs stay on disk, never in git (2026-10-24)
+attic/20260923_biography_rotation/biography_backup_20260825.tar
+attic/20260923_biography_rotation/biography_backup_20260914.tar
+attic/20260923_biography_rotation/biography_backup_20260915.tar
+attic/20260923_biography_rotation/biography_backup_20260916.tar
+attic/20260923_biography_rotation/biography_backup_20260917.tar
+attic/20260923_biography_rotation/biography_backup_20260919.tar
+attic/20260923_biography_rotation/biography_backup_20260920.tar
+attic/20260923_ghost_rotation/leak_reports_pre_2026-09-16.tar
+attic/20260923_mimosa_rotation/hook-state_stale_baselines.tar
+attic/kpi/kpi_2026-09-07_2026-10-03_20261004T105614Z.jsonl.gz
+catalog/catalog.jsonl
+catalog/receipt_fts.sqlite
+catalog/tags.jsonl
+dashboard/data/ESTATE_INDEX.jsonl.retired-20261006
+dashboard/data/ractor_board.jsonl
+dashboard/data/ractor_board.jsonl.runaway-evidence-20260903
+dashboard/static/index_data/ESTATE_INDEX.jsonl
+watch/ESTATE_INDEX/ESTATE_INDEX.jsonl
+artifacts/vertigo_boat_20260908/tokyo_river_depth_1080p.mp4
+attic/20260923_biography_rotation/biography_backup_20260825.tar
+attic/20260923_biography_rotation/biography_backup_20260914.tar
+attic/20260923_biography_rotation/biography_backup_20260915.tar
+attic/20260923_biography_rotation/biography_backup_20260916.tar
+attic/20260923_biography_rotation/biography_backup_20260917.tar
+attic/20260923_biography_rotation/biography_backup_20260919.tar
+attic/20260923_biography_rotation/biography_backup_20260920.tar
+attic/20260923_ghost_rotation/leak_reports_pre_2026-09-16.tar
+attic/20260923_mimosa_rotation/hook-state_stale_baselines.tar
+attic/kpi/kpi_2026-09-07_2026-10-03_20261004T105614Z.jsonl.gz
+canon/books/cyberpunk2020_r_talsorian_corebook.pdf
+canon/riddler_corpus/behold-a-pale-horse_20260423__Behold a Pale Horse - William Cooper.pdf
+canon/riddler_corpus/esoteric_wave/eliphas_levi__2015.219124.Transcendental-Magic_text.pdf
+canon/riddler_corpus/esoteric_wave/isis_unveiled_v1__ilovepdf_merged (9).pdf
+canon/riddler_corpus/esoteric_wave/secret_doctrine_v1__secretdoctrinesy01blav.pdf
+catalog/catalog.jsonl
+catalog/receipt_fts.sqlite
+catalog/tags.jsonl
+corpus/training_materials/tesla/colorado_springs_notes_1899_1900_scan.pdf
+dashboard/data/ESTATE_INDEX.jsonl.retired-20261006
+dashboard/data/ractor_board.jsonl
+dashboard/data/ractor_board.jsonl.runaway-evidence-20260903
+dashboard/static/index_data/ESTATE_INDEX.jsonl
+memory/corpus/ai_canon/sutton_barto_reinforcement_learning_2nd.pdf
+memory/corpus/mycology_canon/arxiv_2506_12803.pdf
+memory/corpus/shadertoy21k/all_codes.zip
+memory/mesh/delta_index.json
+memory/mesh/index_history/index_2026-10-07T012846.894758Z.json
+memory/mesh/index_history/index_2026-10-07T013702.735272Z.json
+memory/mesh/index_history/index_2026-10-07T021653.150270Z.json
+memory/mesh/index_history/index_2026-10-07T133532.844367Z.json
+tools/godot/Godot_v4.3-stable_win64.exe
+tools/godot/godot.zip
+tools/llamacpp/ggml-vulkan.dll
+tools/llamacpp/llama-vulkan.zip
+training/events.jsonl
+watch/ESTATE_INDEX/ESTATE_INDEX.jsonl
+watch/inbox/mem_echo_state.json
+watch/inbox/mrpool_export/media_full/msg_1074.mp4
+watch/inbox/mrpool_export/media_full/msg_1168.mp4
+watch/inbox/mrpool_export/media_full/msg_1418.mp4
+watch/inbox/mrpool_export/media_full/msg_1527.mp4
+watch/inbox/mrpool_export/media_full/msg_1537.mp4
+watch/inbox/mrpool_export/media_full/msg_1542.mp4
+watch/inbox/mrpool_export/media_full/msg_1638.mp4
+watch/inbox/mrpool_export/media_full/msg_1740.mp4
+watch/inbox/mrpool_export/media_full/msg_1869.mp4
+watch/inbox/mrpool_export/media_full/msg_1879.mp4
+watch/inbox/mrpool_export/media_full/msg_1884.mp4
+watch/inbox/mrpool_export/media_full/msg_1900.mp4
+watch/inbox/mrpool_export/media_full/msg_1919.mp4
+watch/inbox/mrpool_export/media_full/msg_1920.mp4
+watch/inbox/mrpool_export/media_full/msg_1929.mp4
+watch/inbox/mrpool_export/media_full/msg_1943.mp4
+watch/inbox/mrpool_export/media_full/msg_2170.mp4
+watch/inbox/mrpool_export/media_full/msg_2683.mp4
+watch/inbox/mrpool_export/media_full/msg_3883.mp4
+watch/inbox/mrpool_export/media_full/msg_4527.mp4
+watch/inbox/mrpool_export/media_full/msg_4569.mp4
+watch/inbox/mrpool_export/media_full/msg_4606.mp4
+watch/inbox/mrpool_export/media_full/msg_4611.mp4
+watch/inbox/mrpool_export/media_full/msg_4614.mp4
+watch/inbox/mrpool_export/media_full/msg_602.mp4
+
+# 2026-10-24 secrets intake lives OUTSIDE git: C:/Users/foste/.mag_secrets_intake/
+watch/inbox/ENV_*
+*KEYS*
+*.env
+*.key
+
+
+# 2026-10-25 boot diag: the biography chain ledger is an append-only data lake
+# (33 MB and growing); it crossed the pre-commit large-blob gate's 32 MB line
+# (gate landed 2026-10-24) and froze every memory-area sweep batch behind it.
+# Gate doctrine: data lakes stay on disk. Untracked, on-disk truth; git keeps
+# all historical versions. Rotation/archival custody = owed operator design call.
+memory/biography_v2/chain_v2.jsonl
+
+# 2026-10-25 push diet: runaway repo-walk dump, 4.4 GB (push hard-block class).
+# On-disk truth kept; see watch/inbox/PUSH_DIET_PRESTATE_20261025.md
+watch/inbox/lite_leak_audit_20261023/pc_repo_list.txt
+
+# 2026-10-25: routing_rules.json is pure data; the 10-24 prior_art gate requires a
+# comment-style header JSON cannot carry (gate regex needs a literal prior_art: line).
+# Gitignored until the gate grows a data-file form; consumer/verifier documented in
+# tools/mag_relay/MAG_RELAY.md and router/router.py docstrings. Gate gap owed to its owner.
+tools/mag_relay/router/routing_rules.json

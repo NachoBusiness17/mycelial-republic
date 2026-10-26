@@ -17,6 +17,22 @@ from typing import Any
 
 from config import ROOT
 
+
+def _rel_posix(path) -> str:
+    """Repo-relative posix path, absolute when outside ROOT.
+
+    Cause (ball3 follow-up sweep 2026-09-29): display/receipt derivations
+    raised ValueError whenever the path lived outside the repo (the suite
+    runs use an out-of-repo pytest basetemp). Same fix as the driver-meter
+    lane's _rel_posix in tools/stealth_driver.py.
+    """
+    try:
+        return Path(path).relative_to(ROOT).as_posix()
+    except ValueError:
+        return Path(path).as_posix()
+
+
+
 SCHEMA = "seat_corpus.v1"
 OUT = ROOT / "memory" / "runs" / "seat_corpus" / "latest.json"
 PROFILE = ROOT / "memory" / "runs" / "fuel_feed" / "lane_profile.jsonl"
@@ -187,6 +203,18 @@ SEND_LAWS: dict[str, dict[str, Any]] = {
     },
 }
 
+# B2-521 DORMANT GATE (2026-09-26): the registry still compiled drive-laws for cerebras and
+# nvidia after B2-36/B2-61 declared both dormant (card-gated 30-day trial, chat 402
+# no-credit; NVIDIA 410 EOL; mag/doctor.py:607: dormant is a declared state). latest.json
+# is what OpenClaw reads to pick a seat, so a dormant row is an invitation to drive a dead
+# lane. Dormant provider rows drop out here, the B2-133 law (mag/dormant.py); operator GO
+# flips the flag and the rows return with no code edit. Receipt:
+# watch/inbox/burn_wave_20260926/B2_521_cerebras_stragglers_20260926.md
+from mag.dormant import dormant_ids as _dormant_provider_ids  # noqa: E402
+
+SEND_LAWS = {pid: law for pid, law in SEND_LAWS.items()
+             if pid not in _dormant_provider_ids()}
+
 
 def _utc() -> str:
     return datetime.now(timezone.utc).isoformat(timespec="seconds").replace("+00:00", "Z")
@@ -264,7 +292,7 @@ def compile_corpus() -> dict[str, Any]:
     }
     OUT.parent.mkdir(parents=True, exist_ok=True)
     OUT.write_text(json.dumps(out, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
-    out["path"] = str(OUT.relative_to(ROOT)).replace("\\", "/")
+    out["path"] = _rel_posix(OUT)
     return out
 
 

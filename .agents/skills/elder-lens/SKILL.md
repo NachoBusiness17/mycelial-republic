@@ -11,6 +11,13 @@ lenses that landed; the question ledger (SELF_STEAL_DEEP 2026-09-18) scores
 their answer-rate: 3 answered / 5 partial / 4 unanswered of 13.
 
 ## Procedure
+0. **Intake:** a finished gala/window synthesis output (STORY.md, laws.md,
+   measure.md, DIGEST.md under watch/inbox/<window>/) is a valid lens input
+   whole, same as a day's cards: the synthesis already read the day, the
+   lens reads the synthesis. (Intake widened by the card's own salvage
+   clause at the 2026-10-02T04:09Z salvage banking, per
+   watch/inbox/ractor50/skills.md section 2.2; first lens banked on this
+   intake: watch/inbox/fillball/elder-salvage.md.)
 1. **Read the day's finished cards whole** (not summaries — the byte-true
    law applies to lenses doubly: a lens on summaries is a lens on lenses).
 2. **Find the ONE pattern** that covers all cards from the same side — not

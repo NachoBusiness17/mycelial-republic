@@ -56,7 +56,9 @@ AUTHORITY_LABELS = [
 
 EFFECTS = [
     "board_write",
-    "verkle_link",
+    # verkle_link KILLED 2026-10-03 (executor-sweep): zero consumers anywhere;
+    # the verkle chain's front door is direct mag.verkle_lance calls.
+    # Receipt: watch/inbox/buildall/executor-sweep.md.
     "tool_invoke",
     "model_call",
     "network_access",
@@ -304,9 +306,9 @@ def _implicit_authority(proposal: dict, granted: list[str]) -> dict:
     else:
         # legacy behavior: previously self-granted — honor for backward compat
         # LAW: a roast can become a proposal; it cannot become a permission.
-        # Tier by impact: low-impact effects (board_write, verkle_link) may
-        # self-grant for ordinary labels — proposals stay cheap and the
-        # flywheel keeps turning. High-impact effects (fs_write, lane_spawn,
+        # Tier by impact: low-impact effect (board_write) may self-grant for
+        # ordinary labels (proposals stay cheap and the flywheel keeps
+        # turning). High-impact effects (fs_write, lane_spawn,
         # model_call, tool_invoke, network_access) and sensitive labels
         # (untrusted-instruction, external-content) NEVER self-grant — they
         # fail closed (DENIED). The operator can still authorize deliberately
@@ -691,14 +693,12 @@ def _load_board(limit: int = 200) -> list[dict]:
 
 def _detect_unmet(notes: list[dict]) -> list[dict]:
     unmet = []
-    seen = {"source_verification": False, "fork_verdict_knot": False,
+    seen = {"source_verification": False,
             "prediction_measurement": False, "principle_protocol": False}
     for n in notes:
         text = (n.get("text") or "").lower()
         if "source" in text and ("verify" in text or "⚠️" in n.get("text", "")):
             seen["source_verification"] = True
-        if "fork" in text and "verdict" in text:
-            seen["fork_verdict_knot"] = True
         if "prediction" in text and "measure" in text:
             seen["prediction_measurement"] = True
         if "principle" in text and "protocol" in text:
@@ -708,10 +708,12 @@ def _detect_unmet(notes: list[dict]) -> list[dict]:
         unmet.append({"condition": "missing_source_verification", "priority": 1,
                       "eligible_organ": "ghost_memlance", "capability": "tool_invoke",
                       "reason": "Board lacks active source verification stream"})
-    if not seen["fork_verdict_knot"]:
-        unmet.append({"condition": "missing_fork_verdicts", "priority": 2,
-                      "eligible_organ": "verkle_lance", "capability": "verkle_link",
-                      "reason": "Fork resolutions are prose-only, not knotted"})
+    # missing_fork_verdicts / verkle_link rule KILLED 2026-10-03
+    # (executor-sweep): in production it proposed 11 times on 2026-08-31
+    # (trail rows reconcile:missing_fork_verdicts:*, 7 DENIED + 4 AUTHORIZED)
+    # and executed ZERO times (0 broker receipts, 0 harness events), the
+    # Atlas AUTO_APPLY shape: a routing row declaring work that never ran.
+    # Receipt: watch/inbox/buildall/executor-sweep.md.
     if len(notes) < 5:
         unmet.append({"condition": "board_quiescent", "priority": 3,
                       "eligible_organ": "swarm_cycle", "capability": "lane_spawn",

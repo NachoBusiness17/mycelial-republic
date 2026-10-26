@@ -17,6 +17,7 @@ Backend chain (first available wins), only if enabled:
 from __future__ import annotations
 
 import os
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -97,6 +98,17 @@ def _backend_powershell(text: str, rate: int) -> bool:
     """Windows SAPI via temp .ps1 — avoids command-line length limits and hangs."""
     if sys.platform != "win32":
         return False
+    # B2-352 2026-09-26: bare "powershell" is not on PATH in every launch
+    # context (disease class sig run_shell:e566037def80 "[Errno 2] ... powershell");
+    # the generic except arm swallowed it into a logged False, voice silently
+    # dead on scrubbed-PATH seats. Resolve the full path; System32 fallback
+    # when PATH lookup misses (pattern mag/process_reaper.py:82-90).
+    ps_exe = shutil.which("powershell") or shutil.which("powershell.exe")
+    if not ps_exe and sys.platform == "win32":
+        ps_exe = r"C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe"
+    if not ps_exe:
+        _log("powershell SAPI skipped: no powershell on PATH or System32")
+        return False
     # Map WPM-ish rate → SAPI -10..10
     sapi_rate = max(-10, min(10, int(round((rate - 150) / 12))))
     # Escape for single-quoted PowerShell string
@@ -116,7 +128,7 @@ def _backend_powershell(text: str, rate: int) -> bool:
         # -File avoids stuffing the whole essay into process args
         proc = subprocess.Popen(
             [
-                "powershell",
+                ps_exe,
                 "-NoProfile",
                 "-NonInteractive",
                 "-ExecutionPolicy",

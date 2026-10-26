@@ -126,10 +126,50 @@ function renderDoctor(d){
     `<div class="kv"><span class="k">modules checked</span><span class="v">${d.n_checked??'—'}</span></div>`;
 }
 function esc(s){return String(s??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+
+/* t47 spec (2026-09-25): this board's ONE fetch (/api/v1/loop/health) has no
+   view of the MagImproveDaily scheduled-task probe (t20 doctor + t33 status);
+   t39 exposed it as gateway GET /status. The gateway (mag/api_server.py) is
+   FastAPI on 127.0.0.1:8001 with CORS allow-*, and mag/api_gateway.py's key
+   gate accepts ?key= for the operator's board page (loopback-bound service);
+   the key default is "mag-local-dev-key", overridable via MAG_API_KEY env.
+   Render rule: warning != null -> visible WARNING kv row (pill warn, the
+   renderCadence row style); warning == null -> ok row (the negative is
+   first-class: "task fine" must be visible too, intentional disables from
+   the logs/magimprove_intentional.flag marker are named); gateway down/401
+   -> muted row, never a fake task alarm. */
+const GATEWAY_STATUS='http://127.0.0.1:8001/status?key=mag-local-dev-key';
+async function loadGatewayStatus(){
+  const el=$('#doctor');
+  try{
+    const r=await fetch(GATEWAY_STATUS,{cache:'no-store'});
+    if(!r.ok) throw new Error('HTTP '+r.status);
+    const d=await r.json();
+    const sched=d.scheduled_task||{};
+    const ints=Object.keys(sched.intentional||{});
+    const sts=Object.entries(sched.statuses||{}).map(([k,v])=>k+'='+esc(v)).join(' · ');
+    let row;
+    if(d.warning!=null){
+      row=`<div class="kv"><span class="k">scheduled task (gateway /status)</span>`+
+          `<span class="v"><span class="pill warn">WARNING</span> ${esc(String(d.warning))}</span></div>`;
+    }else{
+      const note=ints.length?(' · intentional ('+ints.map(esc).join(', ')+')'):'';
+      row=`<div class="kv"><span class="k">scheduled task (gateway /status)</span>`+
+          `<span class="v"><span class="pill ok">ok</span> ${sts}${note}</span></div>`;
+    }
+    el.insertAdjacentHTML('beforeend',row);
+  }catch(e){
+    el.insertAdjacentHTML('beforeend',
+      `<div class="kv"><span class="k">scheduled task (gateway /status)</span>`+
+      `<span class="v"><span class="pill faint">gateway unreachable (${esc(String(e.message||e)).slice(0,60)})</span></span></div>`);
+  }
+}
 $('#refresh').onclick=load;
 $('#goFleet').onclick=()=>location.href='/fleet';
 load();
+loadGatewayStatus();
 setInterval(load, 30000);
+setInterval(loadGatewayStatus, 30000);
 </script>
 <script src="/static/nav.js"></script></body>
 </html>

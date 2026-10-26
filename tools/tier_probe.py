@@ -223,9 +223,22 @@ def _deepseek_call(model: str, system: str, user: str, *, thinking: bool,
 
 def run_cell(task_id: str, tier: dict[str, Any], *, live: bool, cache: bool = False) -> dict[str, Any]:
     t = TASKS[task_id]
+    warm_usage = None
     if live:
         if cache:
-            _deepseek_call(tier["model"], t["system"], t["user"], thinking=tier["thinking"])  # warm-up (cache line)
+            # SW1-07 (SWARM_1.md row 7, kimi+glm converged): the warm-up call's
+            # tokens were discarded, so --cache runs under-reported true spend -
+            # the cache-hit savings looked free because the cache-fill cost
+            # vanished. Count them in the row (warm_tokens); the measured call
+            # stays the cold-after-warm measurement, uncontaminated.
+            warm = _deepseek_call(tier["model"], t["system"], t["user"], thinking=tier["thinking"])
+            if warm.get("ok"):
+                u = warm.get("usage") or {}
+                warm_usage = {
+                    "prompt_tokens": u.get("prompt_tokens", 0),
+                    "completion_tokens": u.get("completion_tokens", 0),
+                    "cost": cost_for(tier["model"], u),
+                }
         res = _deepseek_call(tier["model"], t["system"], t["user"], thinking=tier["thinking"])
         if not res.get("ok"):
             return {"tier": tier["id"], "ok": False, "error": res.get("error")}
@@ -252,6 +265,7 @@ def run_cell(task_id: str, tier: dict[str, Any], *, live: bool, cache: bool = Fa
         "tier": tier["id"], "tier_label": tier["label"], "ok": True,
         "score": score, "note": note, "text": text[:160], "ms": ms,
         "usage": cost, "correctness": correctness, "cnote": cnote,
+        "warm": warm_usage,  # SW1-07: cache-fill spend, counted not discarded
     }
 
 

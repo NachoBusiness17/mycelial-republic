@@ -1,0 +1,67 @@
+{
+  "schema": "restricted_leases.v1",
+  "doc": "watch/LIBRARY/FLEET_COORDINATION_DOCTRINE_20261017.md (P1 leases). The RESTRICTED LIST: only these resources take a lease; mag/leases.py refuses any other name. Holder keeps until expiry; a newcomer is refused with who/until (COLREGs: the give-way vessel is the one arriving). Paths here are globs for resource_for_path() lookups only - nothing ever opens a keys path.",
+  "resources": {
+    "chain:biography": {
+      "description": "the verkle chain files: external edit tooling only (repair / consolidate / heal). Normal runtime appends (append_verkle_knot) never need a lease. CHAIN_FIXES_APPLIED_20261019: consolidate/repair fail-closed; runtime append_verkle_knot still exempt; MAG_ALLOW_CHAIN_REWRITE=1 required for rewrite verbs.",
+      "paths": [
+        "memory/biography/**",
+        "memory/biography_v2/**"
+      ],
+      "enforce": "conflict",
+      "default_ttl_s": 1800,
+      "max_ttl_s": 14400
+    },
+    "file:mag/verkle_knot.py": {
+      "description": "the chain writer source; editing it changes the law every seat's append runs under",
+      "paths": [
+        "mag/verkle_knot.py"
+      ],
+      "enforce": "advisory",
+      "default_ttl_s": 1800,
+      "max_ttl_s": 14400
+    },
+    "proc:lab": {
+      "description": "the lab: compose service mag / container mag-sovereign (main.py lab). Restart, stop, start, freeze (pause) or unfreeze, and compose up/down via mag.docker_ops.",
+      "paths": [],
+      "enforce": "conflict",
+      "default_ttl_s": 1800,
+      "max_ttl_s": 14400
+    },
+    "file:docker-compose.yml": {
+      "description": "the stack definition; an edit is a restart waiting to happen",
+      "paths": [
+        "docker-compose.yml"
+      ],
+      "enforce": "advisory",
+      "default_ttl_s": 1800,
+      "max_ttl_s": 14400
+    },
+    "keys:names": {
+      "description": "key NAME changes (renaming or adding env/key canon names). Names only; values are never read here.",
+      "paths": [
+        ".env",
+        ".env.*",
+        "configs/secrets/**",
+        "**/keys.json"
+      ],
+      "enforce": "advisory",
+      "default_ttl_s": 1800,
+      "max_ttl_s": 14400
+    },
+    "proc:desktop": {
+      "description": "the operator desktop surface: freeze (game mode) or thaw (burn mode) sovereign and worker cages and scan headed surfaces.",
+      "paths": [],
+      "enforce": "conflict",
+      "default_ttl_s": 7200,
+      "max_ttl_s": 86400
+    },
+    "expose:lan": {
+      "description": "FISH_TANK_REMEDIATE_20261019: any LAN-wide (0.0.0.0) Mag listener for untrusted display peers (Roku/phones): gstd_beacon serve with GSTD_BEACON_LAN=1, main.py cast --lan. No live lease = loopback only; listeners shut themselves down at expiry (mag.cast_guard.lan_lease_watchdog) and platform_kill --lan-expired reaps stragglers.",
+      "paths": [],
+      "enforce": "conflict",
+      "default_ttl_s": 3600,
+      "max_ttl_s": 14400
+    }
+  }
+}

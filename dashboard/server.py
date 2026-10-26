@@ -7,6 +7,8 @@
 from __future__ import annotations
 
 import json
+import os
+import sqlite3
 import time
 import threading
 import mimetypes
@@ -97,6 +99,244 @@ def _tail_jsonl(path: Path, limit: int = 500, window: int = 262144) -> dict:
         except json.JSONDecodeError:
             continue
     return {"rows": rows[-limit:], "truncated": truncated, "bytes_read": len(data)}
+
+
+# Verdicts panel organs (Mickey17 W3, 2026-09-29): the new estate (gwap/gps/
+# mountain, wave ledger return 23) had no face. One door joins every organ;
+# a new organ joins by appending one source line here.
+GPS_LEDGER_DB = ROOT / "tools" / "gps_mcp" / "gps_ledger.db3"
+GWAP_STORE = ROOT / "memory" / "runs" / "gwap"
+MOUNTAIN_RECEIPTS = ROOT / "watch" / "inbox" / "mountain_climb_ractor_20260929"
+
+
+def _verdicts_gps_rows(db_path: Path = GPS_LEDGER_DB, limit: int = 50) -> list[dict]:
+    """Newest capability rows from the gps-mcp ledger sqlite.
+
+    Opened READ-ONLY (uri mode=ro): the panel can never write, lock, or
+    schema-migrate the ledger the mcp server owns. Missing file is an empty
+    table (the ledger is born on first seed, not at import).
+    """
+    if not db_path.is_file():
+        return []
+    conn = sqlite3.connect(f"file:{db_path.as_posix()}?mode=ro", uri=True)
+    conn.row_factory = sqlite3.Row
+    try:
+        cur = conn.execute(
+            "SELECT model_id, task_shape, pass_rate, sample_size, updated_at"
+            " FROM capability ORDER BY updated_at DESC LIMIT ?",
+            (limit,),
+        )
+        return [dict(r) for r in cur.fetchall()]
+    finally:
+        conn.close()
+
+
+def _verdicts_recent_files(dir_path: Path, tail: int = 10) -> list[str]:
+    """Newest filenames in a receipt dir (os.listdir, mtime desc, names only).
+
+    No content is ever read: the panel shows that an organ is alive, not its
+    secrets. Missing dir is an empty tail.
+    """
+    try:
+        names = [n for n in os.listdir(dir_path) if not n.startswith(".")]
+    except OSError:
+        return []
+    stamped = []
+    for n in names:
+        try:
+            stamped.append((os.path.getmtime(dir_path / n), n))
+        except OSError:
+            continue
+    stamped.sort(reverse=True)
+    return [n for _, n in stamped[:tail]]
+
+
+def _verdicts_payload(
+    db_path: Path = GPS_LEDGER_DB,
+    gwap_dir: Path = GWAP_STORE,
+    mountain_dir: Path = MOUNTAIN_RECEIPTS,
+) -> dict:
+    """The /api/v1/verdicts body: one source line per organ, zero whole-file reads."""
+    organs = {
+        "gps": {
+            "source": "tools/gps_mcp/gps_ledger.db3 · capability · sqlite read-only",
+            "rows": _verdicts_gps_rows(db_path),
+        },
+        "gwap": {
+            "source": "memory/runs/gwap · newest session ledgers (filenames only)",
+            "files": _verdicts_recent_files(gwap_dir),
+        },
+        "mountain": {
+            "source": "watch/inbox/mountain_climb_ractor_20260929 · newest receipts (filenames only)",
+            "files": _verdicts_recent_files(mountain_dir),
+        },
+    }
+    return {"schema": "verdicts.v1", "organs": organs}
+
+
+# Estate query door (MASTER_READ_ESTATE row 1 unit 2 / r04#4, 2026-10-05): the
+# /data door streams ESTATE_INDEX.jsonl whole (4,150,418,528 B, 10,661,260
+# rows) and the_index.html:118 downloaded all of it per page load. This door
+# bounds the response and honors the D10 skip list: every .mimosa hook-state
+# subtree is dropped from responses (the named root
+# local_sovereign_agent\.mimosa\hook-state\, the '_mimosa' sibling-project
+# lane, and the nested copies under watch\, _archaeology_out\, mag\ — 89.34%
+# of rows per the D10 correction). The sqlite spine (unit 1) has not landed,
+# so the door does one streaming scan per request: grep semantics, exact
+# counts, no writer change. Skip list is a constant so unit 1's writer-side
+# list can extend it.
+ESTATE_INDEX_PATH = DATA / "ESTATE_INDEX.jsonl"
+ESTATE_INDEX_POINTER = DATA / "ESTATE_INDEX.pointer.json"
+ESTATE_QUERY_SKIP_COMPONENTS = frozenset({".mimosa"})
+
+
+def _estate_index_source() -> Path:
+    """Pointer-following resolver (ouroboros r5 close, 2026-10-06): when
+    dashboard/data/ESTATE_INDEX.pointer.json exists and names a master, the
+    estate-query door reads the live master it points at
+    (watch/ESTATE_INDEX/ESTATE_INDEX.jsonl, the one writer
+    tools/index/projects_index.py maintains) instead of a frozen duplicate
+    under dashboard/data. Root cause: the writer landed the pointer on
+    2026-10-05 (r04#2) but this reader never followed it, so the door kept
+    scanning a stale 2,523,006,985-byte copy (frozen 2026-10-04 content)
+    while the live 346,683,794-byte master sat unread behind the pointer;
+    the frozen copy is retired this sitting (receipt
+    watch/inbox/ouroboros_20261005/r5_land_close.md). An absent, unparsable,
+    or repo-escaping pointer keeps the direct dashboard path so the door
+    behaves exactly as it did before pointers existed."""
+    try:
+        ptr = json.loads(ESTATE_INDEX_POINTER.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return ESTATE_INDEX_PATH
+    if not isinstance(ptr, dict) or not ptr.get("pointer"):
+        return ESTATE_INDEX_PATH
+    master_rel = str(ptr.get("master", "")).replace("\\", "/").strip("/")
+    if not master_rel:
+        return ESTATE_INDEX_PATH
+    cand = (ROOT / master_rel).resolve()
+    try:
+        cand.relative_to(ROOT.resolve())
+    except ValueError:
+        return ESTATE_INDEX_PATH
+    return cand if cand.is_file() else ESTATE_INDEX_PATH
+
+
+def _raw_mimosa_component(line: str) -> bool:
+    """Raw-text test: does this JSONL line carry a .mimosa path component?
+
+    In raw JSON the component boundary is an escaped separator backslash or a
+    value-edge quote next to ".mimosa". The quote-quote case (a whole JSON
+    string value exactly ".mimosa") is ambiguous on raw text — it could be
+    the path itself (skip) or ext ".mimosa" for a FILE named x.mimosa
+    (keep) — so raw never skips it; the parsed exact check decides. This is
+    the fast skip for the 9.5M-row hook-state mass; rows that reach
+    json.loads anyway are re-checked exactly against the parsed path.
+    """
+    i = line.find(".mimosa")
+    while i >= 0:
+        prev = line[i - 1] if i > 0 else ""
+        nxt = line[i + 7] if i + 7 < len(line) else ""
+        if prev == "\\" and nxt in ('\\', '"', ""):
+            return True
+        if prev == '"' and nxt == "\\":
+            return True
+        i = line.find(".mimosa", i + 1)
+    return False
+
+
+def _estate_query_payload(
+    path: Path = ESTATE_INDEX_PATH,
+    q: str = "",
+    proj: str = "",
+    rel: str = "",
+    temp: str = "",
+    limit: int = 250,
+) -> dict:
+    """One bounded response over the estate index.
+
+    Filters AND together (q = path substring, proj/rel/temp = exact match),
+    rows capped at limit. Counts are exact for the whole scan: matched,
+    total_kept (non-mimosa), scanned, skipped_mimosa. rels is the filter-
+    independent relation taxonomy for the_index.html's dropdown. A missing
+    index is an honest empty, never a fabricated one.
+    """
+    t0 = time.time()
+    empty = {"schema": "estate_query.v1", "source": str(path), "error": "index missing",
+             "rows": [], "returned": 0, "matched": 0, "truncated": False,
+             "total_kept": 0, "scanned": 0, "skipped_mimosa": 0, "rels": [],
+             "seconds": 0.0}
+    if not path.is_file():
+        return empty
+    q_l = q.strip().lower()
+    rels: dict[str, int] = {}
+    rows: list[dict] = []
+    scanned = skipped_mimosa = total_kept = matched = 0
+    with path.open(encoding="utf-8", errors="replace") as fh:
+        for raw in fh:
+            line = raw.strip()
+            if not line:
+                continue
+            scanned += 1
+            # skip list first: a hook-state row never surfaces, whatever the
+            # filters say (raw fast path; exact check re-runs after parse)
+            has_mimosa_sub = ".mimosa" in line
+            if has_mimosa_sub and _raw_mimosa_component(line):
+                skipped_mimosa += 1
+                continue
+            total_kept += 1
+            # .mimosa present but no separator boundary: the raw text cannot
+            # tell a path component from a whole value like ext ".mimosa", so
+            # this row must reach the parse for the exact decision (raw value
+            # prefilters would risk a wrong keep). Sound for the rest: proj/
+            # rel/temp values in this writer carry no quotes or backslashes.
+            ambiguous = has_mimosa_sub
+            if not ambiguous:
+                if proj and f'"proj": "{proj}"' not in line and f'"proj":"{proj}"' not in line:
+                    continue
+                if rel and f'"rel": "{rel}"' not in line and f'"rel":"{rel}"' not in line:
+                    continue
+                if temp and f'"temp": "{temp}"' not in line and f'"temp":"{temp}"' not in line:
+                    continue
+            try:
+                row = json.loads(line)
+            except json.JSONDecodeError:
+                continue
+            if not isinstance(row, dict):
+                continue
+            r_path = str(row.get("path", ""))
+            if any(p in ESTATE_QUERY_SKIP_COMPONENTS for p in r_path.split("\\")):
+                # raw boundary check let it through; the parsed path is exact
+                skipped_mimosa += 1
+                total_kept -= 1
+                continue
+            r_rel = str(row.get("rel", ""))
+            if r_rel:
+                rels[r_rel] = rels.get(r_rel, 0) + 1
+            if proj and row.get("proj") != proj:
+                continue
+            if rel and row.get("rel") != rel:
+                continue
+            if temp and row.get("temp") != temp:
+                continue
+            if q_l and q_l not in r_path.lower():
+                continue
+            matched += 1
+            if len(rows) < limit:
+                rows.append(row)
+    return {
+        "schema": "estate_query.v1",
+        "source": path.name,
+        "q": q, "proj": proj, "rel": rel, "temp": temp,
+        "rows": rows,
+        "returned": len(rows),
+        "matched": matched,
+        "truncated": matched > len(rows),
+        "total_kept": total_kept,
+        "scanned": scanned,
+        "skipped_mimosa": skipped_mimosa,
+        "rels": sorted(rels),
+        "seconds": round(time.time() - t0, 2),
+    }
 
 
 def _ensure_session(sessions: dict[str, dict[str, Any]], sid: str) -> dict[str, Any]:
@@ -522,12 +762,58 @@ class Handler(BaseHTTPRequestHandler):
             tail = _tail_jsonl(DATA / "ractor_board.jsonl", limit=limit)
             return self._json(200, tail)
 
+        # Links library tail (FW-45, 2026-09-28): watch/inbox/LINKS.jsonl is the
+        # fleet's link library (writers append link-lens rows + scout findings).
+        # Bounded backward read, ?limit= up to 2000 - same door shape as the
+        # ractor tail above; clients must never re-download the file whole.
+        if path == "/api/v1/links/tail":
+            try:
+                limit = min(2000, max(1, int(parse_qs(parsed.query).get("limit", ["200"])[0])))
+            except ValueError:
+                limit = 200
+            tail = _tail_jsonl(ROOT / "watch" / "inbox" / "LINKS.jsonl", limit=limit)
+            return self._json(200, tail)
+
+        # Estate query door (MASTER_READ_ESTATE row 1 unit 2 / r04#4,
+        # 2026-10-05): bounded, skip-list-honored face for the estate index —
+        # the_index.html:118 fetched /data/ESTATE_INDEX.jsonl whole (4.15 GB)
+        # before this. ?q=&proj=&rel=&temp=&limit= (limit default 250, cap
+        # 2000; grep semantics: one streaming scan per request, exact counts,
+        # .mimosa hook-state rows never returned).
+        if path == "/api/v1/estate/query":
+            eq = parse_qs(parsed.query)
+
+            def _s(name: str) -> str:
+                return (eq.get(name, [""])[0] or "").strip()
+
+            try:
+                eq_limit = min(2000, max(1, int(eq.get("limit", ["250"])[0])))
+            except ValueError:
+                eq_limit = 250
+            return self._json(200, _estate_query_payload(
+                path=_estate_index_source(),
+                q=_s("q"), proj=_s("proj"), rel=_s("rel"),
+                temp=_s("temp"), limit=eq_limit))
+
+        # Verdicts panel door (Mickey17 W3, 2026-09-29): one read-only face for
+        # the new estate organs (gps capability rows + gwap/mountain receipt
+        # filename tails). Same spirit as the tail doors above: bounded, no
+        # whole-file reads, no polling pushed by the server.
+        if path == "/api/v1/verdicts":
+            return self._json(200, _verdicts_payload())
+
         # Data door (2026-09-10): the big jsonl archives moved out of the web
         # root into dashboard/data. Only these named files are served; the
         # directory itself is never listed and nothing else escapes.
         if path.startswith("/data/"):
             name = unquote(path[len("/data/"):])
-            allowed = {"ractor_board.jsonl", "ESTATE_INDEX.jsonl"}
+            # r5 close (2026-10-06): ESTATE_INDEX.jsonl is OUT of this
+            # allowlist - serving the estate index whole (2.5 GB) was the
+            # corpse door; the bounded face is /api/v1/estate/query, which
+            # follows dashboard/data/ESTATE_INDEX.pointer.json to the live
+            # watch master (receipt watch/inbox/ouroboros_20261005/
+            # r5_land_close.md).
+            allowed = {"ractor_board.jsonl"}
             fpath = DATA / name
             if name not in allowed or not fpath.is_file():
                 return self._json(404, {"error": "not found"})
@@ -815,7 +1101,12 @@ class Handler(BaseHTTPRequestHandler):
             try:
                 from mag import mcp_server as _mcp
                 if method == "tools/list":
-                    return self._json(200, {"tools": _mcp.tools_manifest()})
+                    # Pin gate (2026-09-29): drifted tools withheld + stderr
+                    # alarm, same contract as the stdio server. Receipt:
+                    # watch/inbox/wave5_repair/mcp-pin-wire.md
+                    gated, _gate = _mcp.pin_gate_filter(
+                        _mcp.tools_manifest(), _mcp.pin_ledger_path())
+                    return self._json(200, {"tools": gated})
                 if method == "tools/call":
                     params = (data or {}).get("params") or {}
                     result = _mcp.call_tool(

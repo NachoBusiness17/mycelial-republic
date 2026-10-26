@@ -146,8 +146,12 @@ def run_loop(interval: float | None = None, once: bool = False) -> None:
                     last_action=d.get("action"),
                     last_reason=(d.get("reason") or "")[:200],
                 )
-            except Exception:
-                pass
+            except Exception as _hb:
+                # LOOP-DEATH GUARD (2026-09-25, t19 except-pass sweep): a heartbeat
+                # writer that swallows its own death leaves the daemon looking alive
+                # while every freshness consumer reads a stale beat. Non-fatal for the
+                # cycle, but visible. (pattern: mag/ghost.py cost-enforcer guard)
+                print(f"[daemon] HEARTBEAT LOOP DEATH GUARD: write_heartbeat exited: {_hb}", flush=True)
             if r.get("handoff_id"):
                 print(f"handoff/harness id={r.get('handoff_id')} via={r.get('via')}")
             if r.get("graph_status"):

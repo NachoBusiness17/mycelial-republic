@@ -1,7 +1,7 @@
 """Living Verkle-knot record of session dossiers (topic evolution).
 
-Filename is the address. Chain tip is a succinct root (Merkle–Verkle hybrid,
-same spirit as sovereign_mirror.core.verkle — IPA/KZG upgrade-compatible).
+Filename is the address. Chain tip is a succinct root (Merkle-Verkle hybrid,
+same spirit as sovereign_mirror.core.verkle - IPA/KZG upgrade-compatible).
 
 Leaf filename pattern (living record):
   {date}_{HHmmUTC}_{dominantTheme}_{session8}_{commit8}.knot.json
@@ -21,6 +21,7 @@ import contextlib
 import hashlib
 import json
 import os
+import sys
 import re
 import time
 from datetime import datetime, timezone
@@ -33,6 +34,7 @@ BIO = ROOT / "memory" / "biography"
 KNOTS = BIO / "knots"
 CHAIN = BIO / "verkle_chain.jsonl"
 TIP = BIO / "verkle_tip.json"
+LATEST = BIO / "latest.knot.json"
 EVOLUTION = BIO / "topic_evolution.json"
 LOCK = BIO / ".verkle.lock"
 SCHEMA = "verkle_knot.v1"
@@ -64,8 +66,188 @@ def session_pointer_v2(session_id: str) -> Path:
     return KNOTS / f"by-session_v2_{_h(sid.encode('utf-8'))[:32]}.json"
 
 
+# AH19 (audit finding #10, 2026-09-29): chain write model selector.
+CHAIN_MODE_V1 = "v1"
+CHAIN_MODE_V2 = "v2"
+
+# CHAIN_REWRITE_GATE_20261019: full-file rewrite (v1 amend / heal / consolidate)
+# is fail-closed unless the operator explicitly sets MAG_ALLOW_CHAIN_REWRITE=1.
+# AH19 v2 append-leaves is the default write model. Receipt:
+# watch/inbox/CHAIN_APPENDONLY_RESEARCH_20261019.md
+
+def _chain_rewrite_approval_path() -> Path:
+    return ROOT / "state" / "chain_rewrite_approval.json"
+
+
+def _chain_rewrite_audit_path() -> Path:
+    return BIO / "chain_rewrite_audit.jsonl"
+
+
+def _fresh_chain_rewrite_approval() -> tuple[bool, str]:
+    """Env bit alone is not enough: need fresh operator approval file OR lease.
+
+    Approval file schema (state/chain_rewrite_approval.json):
+      {"allow": true, "expires_utc": "2026-10-20T18:00:00Z", "by": "operator", "purpose": "..."}
+    """
+    p = _chain_rewrite_approval_path()
+    if p.is_file():
+        try:
+            doc = json.loads(p.read_text(encoding="utf-8"))
+            if doc.get("allow") and doc.get("expires_utc"):
+                from datetime import datetime, timezone
+                exp = datetime.fromisoformat(str(doc["expires_utc"]).replace("Z", "+00:00"))
+                if exp.tzinfo is not None and exp > datetime.now(timezone.utc):
+                    return True, f"approval:{doc.get('by') or 'operator'}"
+        except Exception:  # noqa: BLE001
+            pass
+    try:
+        from mag.leases import guard as _lease_guard
+        g = _lease_guard("chain:biography", "chain_rewrite_gate", enforce="conflict")
+        # Only treat an actively held lease as the second factor (not mere unleased warn).
+        if g.get("allowed") and (g.get("held") or g.get("holder") or g.get("acquired")):
+            return True, "lease:chain:biography"
+    except Exception:  # noqa: BLE001
+        pass
+    return False, "no_fresh_approval"
+
+
+def _audit_chain_rewrite(why: str, via: str) -> None:
+    try:
+        from datetime import datetime, timezone
+        line = {
+            "ts": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+            "why": why,
+            "via": via,
+            "pid": os.getpid(),
+            "flag": os.environ.get("MAG_ALLOW_CHAIN_REWRITE", "0"),
+        }
+        path = _chain_rewrite_audit_path()
+        path.parent.mkdir(parents=True, exist_ok=True)
+        with path.open("a", encoding="utf-8", newline="\n") as f:
+            f.write(json.dumps(line, ensure_ascii=False) + "\n")
+    except Exception:  # noqa: BLE001 - audit must not block refuse path
+        pass
+
+
+def _chain_rewrite_allowed() -> bool:
+    """CHAIN_HARDEN_ITER2_20261020: MAG_ALLOW_CHAIN_REWRITE=1 AND fresh approval/lease."""
+    if os.environ.get("MAG_ALLOW_CHAIN_REWRITE", "0").strip() != "1":
+        return False
+    ok, _via = _fresh_chain_rewrite_approval()
+    return ok
+
+
+def _refuse_chain_rewrite(why: str) -> None:
+    raise PermissionError(
+        "chain rewrite refused (" + why + "): need MAG_ALLOW_CHAIN_REWRITE=1 AND "
+        "fresh state/chain_rewrite_approval.json (expires_utc) or held chain:biography lease. "
+        "Prefer chain_mode=v2 append correction rows. "
+        "receipt: watch/inbox/CHAIN_HARDEN_ITER2_20261020.md"
+    )
+
+
+def _append_chain_line(line: str) -> None:
+    """Append one JSONL line without requesting FILE_WRITE_DATA on Windows.
+
+    Python open(..., "a") uses GENERIC_WRITE (includes WRITE_DATA), which an
+    AD-only ACL correctly denies. On Windows we open with FILE_APPEND_DATA only.
+    """
+    data = (line if line.endswith("\n") else line + "\n").encode("utf-8")
+    CHAIN.parent.mkdir(parents=True, exist_ok=True)
+    if sys.platform == "win32":
+        import ctypes
+        from ctypes import wintypes
+        k = ctypes.WinDLL("kernel32", use_last_error=True)
+        FILE_APPEND_DATA = 0x0004
+        SYNCHRONIZE = 0x00100000
+        FILE_SHARE_READ = 0x00000001
+        FILE_SHARE_WRITE = 0x00000002
+        OPEN_ALWAYS = 4
+        FILE_ATTRIBUTE_NORMAL = 0x80
+        INVALID = 0xFFFFFFFFFFFFFFFF
+        CreateFileW = k.CreateFileW
+        CreateFileW.argtypes = [
+            wintypes.LPCWSTR, wintypes.DWORD, wintypes.DWORD, wintypes.LPVOID,
+            wintypes.DWORD, wintypes.DWORD, wintypes.HANDLE,
+        ]
+        CreateFileW.restype = wintypes.HANDLE
+        h = CreateFileW(
+            str(CHAIN), FILE_APPEND_DATA | SYNCHRONIZE,
+            FILE_SHARE_READ | FILE_SHARE_WRITE, None, OPEN_ALWAYS,
+            FILE_ATTRIBUTE_NORMAL, None,
+        )
+        hv = int(h) if h is not None else -1
+        if hv in (-1, 0xFFFFFFFF, INVALID):
+            raise OSError(ctypes.get_last_error(), f"CreateFile FILE_APPEND_DATA failed for {CHAIN}")
+        try:
+            written = wintypes.DWORD(0)
+            if not k.WriteFile(h, data, len(data), ctypes.byref(written), None):
+                raise OSError(ctypes.get_last_error(), "WriteFile append failed")
+        finally:
+            k.CloseHandle(h)
+        return
+    with CHAIN.open("a", encoding="utf-8", newline="") as fh:
+        fh.write(data.decode("utf-8"))
+
+
+
+def chain_mode() -> str:
+    """configs/mag.yaml top-level ``chain_mode`` - AH19 append-leaves flag.
+
+    v1 (default): amend-in-place - a re-save of an existing session replaces
+    its row and rewrites the WHOLE chain file (O(n) bytes per save; live
+    forensics: 2,821/8,626 rows were amend rewrites). v2: append-leaves -
+    every save appends ONE new row carrying (session_id, session_seq) and
+    readers resolve latest-per-session by pointer (``latest_leaf_for_session``).
+    The live chain stays v1 until an operator migrates; the verifier handles
+    v1 rows forever either way. Unknown/missing values fail closed to v1.
+    Spec: watch/inbox/last_mile_20260930/AH19_AMEND_PERF.md
+    """
+    try:
+        from mag.policy import load_policy
+
+        mode = str(load_policy().get("chain_mode") or CHAIN_MODE_V1).strip().lower()
+    except Exception:
+        return CHAIN_MODE_V1
+    return mode if mode in {CHAIN_MODE_V1, CHAIN_MODE_V2} else CHAIN_MODE_V1
+
+
+def latest_leaf_pointer(session_id: str) -> dict[str, Any] | None:
+    """O(1) read of the current session pointer doc (None when absent/corrupt)."""
+    sid = str(session_id or "")
+    if not sid:
+        return None
+    p = session_pointer_v2(sid)
+    if not p.is_file():
+        return None
+    try:
+        doc = json.loads(p.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return None
+    if isinstance(doc, dict) and doc.get("session_id") == sid:
+        return doc
+    return None
+
+
+def latest_leaf_for_session(session_id: str) -> dict[str, Any] | None:
+    """Canonical latest-per-session resolution (AH19 v2 readers).
+
+    Pointer first (O(1), authoritative - v2 writes maintain it); falls back to
+    the LAST matching chain row, which is exact for v1 chains (amend keeps one
+    row per session) and for mixed chains (v2 saves append at the tail).
+    """
+    sid = str(session_id or "")
+    doc = latest_leaf_pointer(sid)
+    if doc and doc.get("filename"):
+        return doc
+    for r in reversed(_load_chain_rows()):
+        if str(r.get("session_id") or "") == sid:
+            return r
+    return None
+
+
 # ───────────────────────────────────────────────────────────────────────────
-# SINGLE-WRITER LOCK (2026-08-25) — the lost-update fix.
+# SINGLE-WRITER LOCK (2026-08-25) - the lost-update fix.
 #
 # Forensics: 1,044 chain rows referenced knot files that no longer existed.
 # Cause: amend unlinks the old knot file, then rewrites the WHOLE chain file;
@@ -84,6 +266,97 @@ def session_pointer_v2(session_id: str) -> Path:
 _LOCK_STALE_SECONDS = 900.0
 _LOCK_POLL_SECONDS = 0.05
 
+# HEARTBEAT LOCK RECORD (2026-10-15). The lock file now holds JSON
+# {hostname, pid, start_ts, heartbeat_ts}; the holder rewrites heartbeat_ts every
+# LOCK_HEARTBEAT_SECONDS from a daemon thread. A waiter may break the lock ONLY
+# when hostname == its own hostname AND the heartbeat is older than
+# LOCK_HEARTBEAT_STALE_SECONDS. The Windows host and each container have
+# different hostnames and separate PID namespaces, so a cross-host break is now
+# impossible (before: a container waiter's os.kill(<windows pid>, 0) raised
+# ProcessLookupError and it unlinked a lock held on the host). Pre-heartbeat
+# readers parse int(first token) -> ValueError -> owner 0 -> never break a JSON
+# record unless its mtime is 900s old, which the heartbeat prevents. The same
+# record + helpers back the AOS carrier lock in mag.governor_autorun.
+LOCK_HEARTBEAT_SECONDS = 5.0
+LOCK_HEARTBEAT_STALE_SECONDS = 120.0
+
+
+def _lock_hostname() -> str:
+    import socket
+    return socket.gethostname()
+
+
+def _proc_start_ts() -> float | None:
+    """This process's creation time (survives a POSIX execv, so a self-restart keeps it)."""
+    try:
+        import psutil  # type: ignore
+        return round(float(psutil.Process(os.getpid()).create_time()), 2)
+    except Exception:
+        pass
+    try:
+        with open(f"/proc/{os.getpid()}/stat", encoding="utf-8") as f:
+            ticks = int(f.read().rsplit(")", 1)[1].split()[19])
+        with open("/proc/stat", encoding="utf-8") as f:
+            btime = next(int(ln.split()[1]) for ln in f if ln.startswith("btime"))
+        return round(btime + ticks / os.sysconf("SC_CLK_TCK"), 2)
+    except Exception:
+        return None
+
+
+def lock_record(start_ts: float | None = None) -> dict[str, Any]:
+    now = round(time.time(), 3)
+    return {"hostname": _lock_hostname(), "pid": os.getpid(),
+            "start_ts": _proc_start_ts() if start_ts is None else start_ts, "heartbeat_ts": now}
+
+
+def read_lock_record(path: Path) -> dict[str, Any] | None:
+    """The heartbeat record, or None for a legacy / torn / unreadable lock file."""
+    try:
+        rec = json.loads(path.read_text(encoding="utf-8", errors="replace"))
+    except (OSError, ValueError):
+        return None
+    if not isinstance(rec, dict) or not rec.get("hostname") or "heartbeat_ts" not in rec:
+        return None
+    return rec
+
+
+def lock_is_self(rec: dict[str, Any]) -> bool:
+    """Same host + same pid is this very process (a live pid is unique on a host); a POSIX
+    execv self-restart keeps both, and start_ts too when it is known."""
+    if rec.get("hostname") != _lock_hostname() or int(rec.get("pid") or 0) != os.getpid():
+        return False
+    mine, theirs = _proc_start_ts(), rec.get("start_ts")
+    return mine is None or theirs is None or abs(float(theirs) - mine) < 2.0
+
+
+def lock_breakable(rec: dict[str, Any], now: float | None = None) -> bool:
+    """Steal ONLY a same-host lock whose heartbeat is stale. Foreign hosts: never."""
+    if rec.get("hostname") != _lock_hostname():
+        return False
+    try:
+        age = (time.time() if now is None else now) - float(rec.get("heartbeat_ts"))
+    except (TypeError, ValueError):
+        return False
+    return age > LOCK_HEARTBEAT_STALE_SECONDS
+
+
+def start_lock_heartbeat(write, interval: float | None = None):
+    """Daemon thread calling write(record) every interval s; returns a threading.Event to stop it."""
+    import threading
+    stop = threading.Event()
+    rec = lock_record()
+
+    def _beat() -> None:
+        while not stop.wait(LOCK_HEARTBEAT_SECONDS if interval is None else interval):
+            rec["heartbeat_ts"] = round(time.time(), 3)
+            try:
+                write(dict(rec))
+            except Exception:  # noqa: BLE001 - a missed beat is retried next interval
+                pass
+
+    threading.Thread(target=_beat, name="lock-heartbeat", daemon=True).start()
+    return stop, rec
+
 
 @contextlib.contextmanager
 def verkle_lock(timeout: float = 60.0):
@@ -96,11 +369,17 @@ def verkle_lock(timeout: float = 60.0):
             break
         except FileExistsError:
             try:
-                stale = time.time() - LOCK.stat().st_mtime > _LOCK_STALE_SECONDS
+                rec = read_lock_record(LOCK)
+                if rec is not None:
+                    # heartbeat record: same-host + stale heartbeat is the ONLY break
+                    stale = lock_breakable(rec)
+                else:
+                    stale = time.time() - LOCK.stat().st_mtime > _LOCK_STALE_SECONDS
                 # A crashed writer can leave a fresh-looking marker behind (for
                 # example after a test/process is terminated).  Do not wait the
                 # full 15-minute safety window when the recorded owner is gone.
-                if not stale:
+                # (legacy "<pid> <iso>" markers from pre-heartbeat writers only)
+                if rec is None and not stale:
                     try:
                         owner = int(LOCK.read_text(encoding="utf-8", errors="replace").split()[0])
                     except (OSError, ValueError, IndexError):
@@ -121,30 +400,92 @@ def verkle_lock(timeout: float = 60.0):
                             # Windows may report a generic missing-process error.
                             stale = True
                 if stale:
-                    LOCK.unlink()  # crashed holder — break the stale lock
+                    LOCK.unlink()  # crashed holder - break the stale lock
             except OSError:
                 pass
             if time.time() > deadline:
-                raise TimeoutError(f"verkle_lock timeout after {timeout}s (holder pid: "
-                                   f"{LOCK.read_text(encoding='utf-8', errors='replace')[:16] if LOCK.is_file() else '?'})")
+                raise TimeoutError(f"verkle_lock timeout after {timeout}s (holder: "
+                                   f"{LOCK.read_text(encoding='utf-8', errors='replace')[:160] if LOCK.is_file() else '?'})")
             time.sleep(_LOCK_POLL_SECONDS)
+    import threading
+    beat_lock = threading.Lock()
+
+    def _write(rec: dict[str, Any]) -> None:
+        data = json.dumps(rec).encode("utf-8")
+        with beat_lock:
+            if fd is None:
+                return
+            os.lseek(fd, 0, os.SEEK_SET)
+            os.write(fd, data)
+            os.ftruncate(fd, len(data))
+
+    stop = None
     try:
-        os.write(fd, f"{os.getpid()} {datetime.now(timezone.utc).isoformat()}".encode("utf-8"))
+        stop, rec = start_lock_heartbeat(_write)
+        _write(rec)
         yield
     finally:
+        if stop is not None:
+            stop.set()
         try:
-            os.close(fd)
+            with beat_lock:
+                os.close(fd)
+                fd = None
         finally:
             with contextlib.suppress(OSError):
-                LOCK.unlink()
+                cur = read_lock_record(LOCK)
+                # never unlink a lock someone else (legitimately) took over
+                if cur is None or lock_is_self(cur):
+                    LOCK.unlink()
 
 
-def _leaf_hash(obj: Any) -> str:
+# MERKLE CURE (2026-10-07), position-bound leaf hashing, flag-gated OFF.
+#
+# Defect (proven, watch/inbox/MERKLE_COLLISION_PROOF_20261007.md): _merkle_root
+# duplicates the last node at every odd level, so [a,b,c] and [a,b,c,c] build
+# byte-identical roots when leaves do not bind their position (content forgery
+# stays blocked by the b"leaf:" domain; the defect is length ambiguity).
+#
+# Cure (the receipt's Option A): bind the leaf's chain index into its hash
+# domain (b"leaf:<i>:" + raw). Identical content at two positions then hashes
+# differently, so the trailing-duplicate elision can no longer fold the two
+# trees together; the probe flips to COLLISION: False.
+#
+# Flag law: MAG_POSITION_BOUND_LEAVES unset/false keeps the legacy
+# b"leaf:" domain BYTE-IDENTICAL (the live 11k+ leaf chain and every stored
+# leaf_hash verify unchanged). The flag flips only hashes where the caller
+# passes an explicit index; omitting index under a raised flag deliberately
+# stays in the legacy domain so pre-migration verifiers (knot_rehash_patrol,
+# verkle_dangling_repair, VerkleProof.verify) remain coherent. The LIVE chain
+# is NOT migrated by this flag: turning it on for new appends without the
+# operator's full-chain re-hash pass would fork leaf domains mid-chain, so
+# migration stays operator-gated (receipt section "Cure").
+POSITION_BOUND_LEAVES_ENV = "MAG_POSITION_BOUND_LEAVES"
+
+_POSITION_BOUND_TRUTHY = {"1", "true", "yes", "on"}
+
+
+def position_bound_leaves() -> bool:
+    """Read MAG_POSITION_BOUND_LEAVES (default OFF, fail-closed to legacy).
+
+    Mirrors the chain_mode() fail-closed pattern: any value outside the truthy
+    set keeps the legacy b"leaf:" hash domain byte-identical.
+    """
+    return os.environ.get(POSITION_BOUND_LEAVES_ENV, "").strip().lower() in _POSITION_BOUND_TRUTHY
+
+
+def _leaf_hash(obj: Any, index: int | None = None) -> str:
     raw = json.dumps(obj, sort_keys=True, default=str).encode("utf-8")
+    if index is not None and position_bound_leaves():
+        return _h(b"leaf:" + str(int(index)).encode("ascii") + b":" + raw)
     return _h(b"leaf:" + raw)
 
 
 def _merkle_root(leaf_hashes: list[str]) -> str:
+    # Length-ambiguity defect (MERKLE_COLLISION_PROOF_20261007): duplicate-last
+    # padding below means a root alone does not bind the leaf count. Leaf-level
+    # position binding (MAG_POSITION_BOUND_LEAVES, see _leaf_hash) is the cure;
+    # callers may additionally bind n_leaves (VerkleProof.verify, T1W1 ticket 12).
     if not leaf_hashes:
         return _h(b"empty")
     layer = leaf_hashes[:]
@@ -217,11 +558,16 @@ def knot_filename(
     session_id: str,
     commit_hex: str,
     chord_slug: str | None = None,
+    seq: int | None = None,
 ) -> str:
     """Build living-record filename from time + topic + identity + commit.
 
     Optional chord_slug (from strike commitment) replaces theme when present:
       {date}_{HHmm}_{chord-slug}_{session8}_{commit8}.knot.json
+
+    AH19 chain_mode=v2: ``seq`` (the session's save counter) is embedded as a
+    ``.s{seq}`` suffix so every appended leaf of one session gets a unique,
+    history-preserving filename (v2 never unlinks prior knots).
     """
     if start_minute_iso:
         m = re.match(
@@ -244,10 +590,13 @@ def knot_filename(
     else:
         theme = _slug_theme(dominant_theme)
     # Windows-safe: session ids may carry colons (work:test:...) which are invalid in
-    # filenames — collapse any path-invalid chars so every fold lands (2026-08-25).
+    # filenames - collapse any path-invalid chars so every fold lands (2026-08-25).
     sid = re.sub(r"[^A-Za-z0-9._-]+", "-", str(session_id or "unknown"))[:8]
     c8 = (commit_hex or "0" * 8)[:8]
-    return f"{date}_{hh}{mm}_{theme}_{sid}_{c8}.knot.json"
+    base = f"{date}_{hh}{mm}_{theme}_{sid}_{c8}"
+    if seq is not None and int(seq) > 0:
+        base += f".s{int(seq)}"
+    return base + ".knot.json"
 
 
 def build_leaf_from_dossier(dossier: dict[str, Any]) -> dict[str, Any]:
@@ -317,12 +666,61 @@ def _load_chain_rows() -> list[dict[str, Any]]:
     return rows
 
 
+def _attic_dir() -> Path:
+    """Retired-knot attic: a SIBLING of KNOTS, never inside it.
+
+    Every knot scanner globs KNOTS directly (ghost_auto, invariant_lattice,
+    lattice_backfill, socratic_tree, knot_at_close all glob '*.knot.json' /
+    '*.json'), so retired files must leave the directory entirely to keep the
+    single-leaf-per-session view and the tar backups clean.
+    """
+    return KNOTS.parent / "knots_attic"
+
+
+def _retire_knot(path: Path) -> bool:
+    """Move a superseded knot file into the attic instead of unlinking it.
+
+    T1W1 ticket 8 (2026-10-01, RACTOR): the v1 amend path unlinked the old
+    knot BEFORE the chain rewrite, so a crash between the two left the chain
+    pointing at a deleted file and destroyed the pre-amend leaf (the
+    2026-08-25 forensics: 1,044 chain rows referenced knot files that no
+    longer existed). os.replace into the attic keeps the bytes recoverable;
+    a failed move leaves the file in place (data-preserving, never lossy).
+    A same-named attic file is overwritten: the newest retirement wins, and
+    attic contents are archives, not history of archives.
+    """
+    try:
+        if not path.is_file():
+            return False
+        attic = _attic_dir()
+        attic.mkdir(parents=True, exist_ok=True)
+        os.replace(path, attic / path.name)
+        return True
+    except OSError:
+        return False
+
+
 def _consolidate_chain_one_leaf_per_session_unlocked() -> dict[str, Any]:
-    """Drop duplicate chain rows (keep last per session_id). Safe to run anytime."""
+    """Drop duplicate chain rows (keep last per session). Safe to run anytime."""
+    # AH19 (2026-09-30): under chain_mode=v2 multiple rows per session are
+    # canonical HISTORY (append-leaves), not bloat - collapsing them would
+    # destroy the seq pointers' past. Consolidation stays a v1 tool.
+    if chain_mode() == CHAIN_MODE_V2:
+        return {
+            "ok": True,
+            "skipped": True,
+            "reason": "chain_mode=v2: multiple rows per session are canonical history (AH19); refusing to collapse",
+            "before": len(_load_chain_rows()),
+        }
     rows = _load_chain_rows()
     by_sid: dict[str, dict[str, Any]] = {}
     orphan: list[dict[str, Any]] = []
     conflicts: list[dict[str, Any]] = []
+    # T1W1 ticket 8 (2026-10-01, RACTOR): retirement is COLLECTED here and
+    # only executed after the conflicts refusal below has its say; the old
+    # code unlinked inside the scan loop, so a refusing repair (conflicting
+    # leaf hashes) had already deleted knot files it then refused to touch.
+    to_retire: list[Path] = []
     for r in rows:
         sid = str(r.get("session_id") or "")
         if not sid:
@@ -338,12 +736,7 @@ def _consolidate_chain_one_leaf_per_session_unlocked() -> dict[str, Any]:
             })
             continue
         if old and old.get("filename") and old.get("filename") != r.get("filename"):
-            old_path = KNOTS / str(old["filename"])
-            if old_path.is_file():
-                try:
-                    old_path.unlink()
-                except OSError:
-                    pass
+            to_retire.append(KNOTS / str(old["filename"]))
         by_sid[sid] = r
     if conflicts:
         return {
@@ -352,6 +745,8 @@ def _consolidate_chain_one_leaf_per_session_unlocked() -> dict[str, Any]:
             "conflicts": conflicts,
             "before": len(rows),
         }
+    for path in to_retire:
+        _retire_knot(path)
     # preserve first-seen order of sessions
     order: list[str] = []
     for r in rows:
@@ -370,7 +765,10 @@ def _consolidate_chain_one_leaf_per_session_unlocked() -> dict[str, Any]:
         "last_session_id": (kept[-1].get("session_id") if kept else None),
         "note": "Consolidated: one leaf per session.",
     }
-    TIP.write_text(json.dumps(tip, indent=2), encoding="utf-8")
+    TIP.parent.mkdir(parents=True, exist_ok=True)
+    # atomic write (2026-09-25): a torn tip write froze every chain append via the
+    # integrity gate; _write_tip_atomic (tmp + os.replace) closes that window.
+    _write_tip_atomic(tip)
     # evolution series unique by session
     if EVOLUTION.is_file():
         try:
@@ -405,7 +803,13 @@ def _rewrite_chain(rows: list[dict[str, Any]]) -> list[str]:
 
     Prefix roots are computed incrementally so an amend remains bounded on the
     live 6k+ leaf chain.
+
+    CHAIN_REWRITE_GATE_20261019: refuse unless MAG_ALLOW_CHAIN_REWRITE=1.
     """
+    if not _chain_rewrite_allowed():
+        _refuse_chain_rewrite("_rewrite_chain")
+    _ok, _via = _fresh_chain_rewrite_approval()
+    _audit_chain_rewrite("_rewrite_chain", _via)
     hashes = [str(row.get("leaf_hash")) for row in rows if row.get("leaf_hash")]
     prefix_roots = _merkle_prefix_roots(hashes)
     lines: list[str] = []
@@ -424,12 +828,29 @@ def _rewrite_chain(rows: list[dict[str, Any]]) -> list[str]:
         lines.append(json.dumps(row))
         hash_i += 1
     CHAIN.parent.mkdir(parents=True, exist_ok=True)
-    CHAIN.write_text("\n".join(lines) + ("\n" if lines else ""), encoding="utf-8")
+    # B2-393 byte-exact chain law: write_text on Windows translates every LF
+    # in the chain to CRLF (B2-83 rev 1 proved it live on the 9,873-line
+    # chain); the chain is written through bytes so LF stays LF.
+    # T1W1 ticket 9 (2026-10-01, RACTOR): the rewrite used to land as ONE
+    # in-place write, so a crash mid-amend truncated ALL history (an opened
+    # "w" write is empty the moment it starts). tmp + os.replace keeps the
+    # pre-amend chain intact until the full rewrite is on disk, the same
+    # contract _write_tip_atomic already holds for the tip. Proven by
+    # tests/test_t1w1_ractor_fixes.py (no .tmp residue, LF-only bytes, and
+    # the tmp file never observed mid-flight at the CHAIN path).
+    payload = ("\n".join(lines) + ("\n" if lines else "")).encode("utf-8")
+    tmp = CHAIN.with_name(f"{CHAIN.name}.{os.getpid()}.tmp")
+    try:
+        tmp.write_bytes(payload)
+        os.replace(tmp, CHAIN)
+    finally:
+        with contextlib.suppress(OSError):
+            tmp.unlink()
     return hashes
 
 
 # ───────────────────────────────────────────────────────────────────────────
-# PROOF — STOLEN from sovereign_mirror.core.verkle (VerkleProof + prove).
+# PROOF - STOLEN from sovereign_mirror.core.verkle (VerkleProof + prove).
 # Same `_h` / `_leaf` / `node:` pairing scheme, rebuilt against the live chain.
 # O(log n) inclusion path: index + sibling hashes → recompute root == tip.
 # ───────────────────────────────────────────────────────────────────────────
@@ -446,11 +867,29 @@ class VerkleProof:
         self.path = path  # sibling hashes, bottom-up
         self.root = root
 
-    def verify(self, leaf_obj: Any | None = None, leaf_hash: str | None = None) -> bool:
-        """Recreate the root from the pointer + siblings; match the committed root."""
+    def verify(self, leaf_obj: Any | None = None, leaf_hash: str | None = None,
+               n_leaves: int | None = None) -> bool:
+        """Recreate the root from the pointer + siblings; match the committed root.
+
+        T1W1 ticket 12 (2026-10-01, RACTOR law L3): under duplicate-last
+        padding one root covers several leaf counts ([a,b,c] and [a,b,c,c]
+        share a root), so a proof that does not bind the leaf count can be
+        replayed against a different-length chain: an index at or beyond the
+        real n still reconstructs the padded root. When ``n_leaves`` is
+        passed, verify refuses any index outside 0..n_leaves-1 and any path
+        whose depth is not exactly ceil(log2(n)) ((n-1).bit_length(), the
+        depth _merkle_root's halving loop produces). ``prove()`` passes it;
+        callers that cannot know n may omit it and get the legacy root-only
+        check. Pinned by tests/test_t1w1_ractor_fixes.py.
+        """
         h = leaf_hash or (_leaf_hash(leaf_obj) if leaf_obj is not None else self.leaf_hash)
         if h != self.leaf_hash:
             return False
+        if n_leaves is not None:
+            if n_leaves < 1 or not (0 <= self.index < n_leaves):
+                return False
+            if len(self.path) != (n_leaves - 1).bit_length():
+                return False
         idx = self.index
         for sib in self.path:
             if idx % 2 == 0:
@@ -512,7 +951,9 @@ def prove(index: int | None = None) -> dict[str, Any]:
         "leaf_hash": leaves[idx],
         "path": path,
         "root": root,
-        "verified": proof.verify(),
+        # T1W1 ticket 12: the self-verification binds the leaf count it was
+        # proved against, not just the root.
+        "verified": proof.verify(n_leaves=len(leaves)),
         "equation": proof.equation(),
     }
 
@@ -530,7 +971,19 @@ def _verify_chain_consistent() -> tuple[bool, str]:
     """Verify the committed chain is tamper-evident before extending it (party_subchain pattern,
     2026-08-16). Recompute the merkle root over ALL leaves once (O(n), not O(n^2)) and check it
     matches the last committed row's root + the tip. Any tampered leaf -> root mismatch -> False.
-    This is the integrity GATE: refuse to extend an unverified chain (never build on a lie)."""
+    This is the integrity GATE: refuse to extend an unverified chain (never build on a lie).
+
+    T1W1 ticket 7 (2026-10-01, RACTOR distillation, law L3): the tip check used
+    to sit in `except (OSError, JSONDecodeError): pass` and a MISSING tip file
+    read as {}, so a corrupt or absent tip on a non-empty chain cleared the
+    gate while binding nothing (and a root alone does not bind leaf count
+    under duplicate-last padding). The expected tip is now recomputed from the
+    tail and compared: root and n_leaves must match exactly, last_leaf_hash is
+    checked when present (older tips predate the field). Fail-closed is safe:
+    the sanctioned healer is repair_tip_if_consistent (verkle_audit --auto-heal),
+    which re-derives the tip and refuses on row-root disagreement only. Pinned
+    by tests/test_t1w1_ractor_fixes.py: corrupt tip, absent tip, empty-JSON tip
+    and a stale-n tip each refuse the gate; the honest tail still passes."""
     rows = _load_chain_rows()
     if not rows:
         return True, "empty chain (genesis ok)"
@@ -541,12 +994,49 @@ def _verify_chain_consistent() -> tuple[bool, str]:
     if rows[-1].get("verkle_root") != expect:
         return False, f"last row root mismatch (committed {str(rows[-1].get('verkle_root'))[:16]} vs recomputed {expect[:16]})"
     try:
-        tip = json.loads(TIP.read_text(encoding="utf-8")) if TIP.is_file() else {}
-        if tip.get("root") and tip.get("root") != expect:
-            return False, f"tip root mismatch (tip {str(tip.get('root'))[:16]} vs recomputed {expect[:16]})"
+        tip = json.loads(TIP.read_text(encoding="utf-8")) if TIP.is_file() else None
     except (OSError, json.JSONDecodeError):
-        pass
+        tip = None
+    if not isinstance(tip, dict) or not tip:
+        return False, (f"tip missing or unreadable on a non-empty chain "
+                       f"(expected root {expect[:16]}..., {len(hashes)} leaves; "
+                       "heal via repair_tip_if_consistent)")
+    if tip.get("root") != expect:
+        return False, f"tip root mismatch (tip {str(tip.get('root'))[:16]} vs recomputed {expect[:16]})"
+    if tip.get("n_leaves") != len(hashes):
+        return False, f"tip n_leaves mismatch (tip {tip.get('n_leaves')} vs recomputed {len(hashes)})"
+    if tip.get("last_leaf_hash") and tip.get("last_leaf_hash") != hashes[-1]:
+        return False, (f"tip last_leaf_hash mismatch (tip {str(tip.get('last_leaf_hash'))[:16]} "
+                       f"vs tail {str(hashes[-1])[:16]})")
     return True, f"chain consistent ({len(hashes)} leaves)"
+
+
+def _tip_for_tail(rows: list[dict[str, Any]], hashes: list[str], root: str) -> dict[str, Any]:
+    """Boot pointer is the chain tail, never the session that was just amended."""
+    hashed = [r for r in rows if r.get("leaf_hash")]
+    last = hashed[-1] if hashed else {}
+    return {
+        "schema": "verkle_tip.v1",
+        "root": root,
+        "n_leaves": len(hashes),
+        "last_filename": last.get("filename"),
+        "last_leaf_hash": hashes[-1] if hashes else None,
+        "last_session_id": last.get("session_id"),
+        "updated_minute": last.get("end_minute") or last.get("start_minute"),
+        "note": "Tip is the chain tail. An amended older session does not become the boot.",
+    }
+
+
+def _sync_latest_knot(last_filename: str | None, leaf_if_tail: dict[str, Any] | None) -> None:
+    """latest.knot.json mirrors the tail leaf. An older amend must not replace it."""
+    if leaf_if_tail is not None:
+        LATEST.write_text(json.dumps(leaf_if_tail, indent=2), encoding="utf-8")
+        return
+    if not last_filename:
+        return
+    src = KNOTS / str(last_filename)
+    if src.is_file():
+        LATEST.write_text(src.read_text(encoding="utf-8"), encoding="utf-8")
 
 
 def _write_tip_atomic(tip: dict[str, Any]) -> None:
@@ -584,20 +1074,11 @@ def repair_tip_if_consistent() -> dict[str, Any]:
                     old = value
             except (OSError, json.JSONDecodeError):
                 old = {}
-        last = rows[-1] if rows else {}
-        tip = {
-            "schema": "verkle_tip.v1",
-            "root": root,
-            "n_leaves": len(hashes),
-            "last_filename": last.get("filename"),
-            "last_leaf_hash": hashes[-1] if hashes else None,
-            "last_session_id": last.get("session_id"),
-            "updated_minute": last.get("end_minute") or last.get("start_minute"),
-            "note": "Tip repaired from verified chain; chain rows unchanged.",
-        }
+        tip = _tip_for_tail(rows, hashes, root)
         changed = any(old.get(k) != v for k, v in tip.items())
         if changed:
             _write_tip_atomic(tip)
+        _sync_latest_knot(tip.get("last_filename"), None)
         return {"ok": True, "repaired": changed, "n_leaves": len(hashes),
                 "root": root, "tip": str(TIP)}
 
@@ -618,53 +1099,92 @@ def _append_verkle_knot_unlocked(dossier: dict[str, Any], pdf_path: str | None =
                 "verify": why}
     KNOTS.mkdir(parents=True, exist_ok=True)
     leaf = build_leaf_from_dossier(dossier)
+    # AH19 (audit finding #10, 2026-09-30): chain_mode=v2 turns this writer into
+    # append-leaves - a re-save NEVER amends/rewrites prior rows; it appends ONE
+    # new row whose (session_id, session_seq) pointer resolves latest-per-session.
+    # v1 keeps the amend-in-place behavior byte-identical. Spec: AH19_AMEND_PERF.md.
+    mode = chain_mode()
+    sid = str(leaf.get("session_id") or "unknown")
+    pointer = latest_leaf_pointer(sid) if mode == CHAIN_MODE_V2 else None
+    seq = (int(pointer.get("seq") or 0) + 1) if (mode == CHAIN_MODE_V2 and pointer) else 1
     fname = knot_filename(
         start_minute_iso=leaf.get("start_minute"),
         dominant_theme=leaf.get("dominant_theme"),
         session_id=str(leaf.get("session_id") or ""),
         commit_hex=str(leaf.get("dossier_commit") or leaf.get("leaf_hash") or ""),
         chord_slug=leaf.get("chord_commitment"),
+        seq=seq if mode == CHAIN_MODE_V2 else None,
     )
     leaf["filename"] = fname
     if pdf_path:
         leaf["pdf_path"] = pdf_path
 
-    sid = str(leaf.get("session_id") or "unknown")
     rows = _load_chain_rows()
-    existing_i = next(
-        (i for i, r in enumerate(rows) if str(r.get("session_id") or "") == sid),
-        None,
+    existing_i = (
+        next(
+            (i for i, r in enumerate(rows) if str(r.get("session_id") or "") == sid),
+            None,
+        )
+        if mode != CHAIN_MODE_V2
+        else None
     )
+    # V1_APPEND_ONLY (2026-10-17, operator): under chain_mode v2 the re-save row names the row
+    # it supersedes; the newest-row scan also dedupes sessions that have no v2 pointer file.
+    prev_i = (next((i for i in range(len(rows) - 1, -1, -1)
+                    if str(rows[i].get("session_id") or "") == sid), None)
+              if mode == CHAIN_MODE_V2 else None)
 
-    # identical content already recorded for this session
-    if existing_i is not None and rows[existing_i].get("leaf_hash") == leaf["leaf_hash"]:
+    # identical content already recorded for this session - v2 dedupes against
+    # the POINTER's current leaf (O(1)); v1 against the row scan.
+    if (
+        mode == CHAIN_MODE_V2
+        and pointer
+        and pointer.get("leaf_hash") == leaf["leaf_hash"]
+    ) or (
+        existing_i is not None and rows[existing_i].get("leaf_hash") == leaf["leaf_hash"]
+    ) or (
+        mode == CHAIN_MODE_V2 and not pointer and prev_i is not None
+        and rows[prev_i].get("leaf_hash") == leaf["leaf_hash"]
+    ):
         tip = json.loads(TIP.read_text(encoding="utf-8")) if TIP.is_file() else {}
+        # v2 skip: the pointer already committed THIS content at its seq - report
+        # the recorded file, not the would-be .s{seq+1} name that was never written.
+        skip_fname = str(pointer.get("filename") or fname) if pointer else fname
+        skip_seq = int(pointer.get("seq") or 0) if pointer else seq
         return {
             "ok": True,
             "skipped": True,
             "amended": False,
-            "filename": fname,
+            "filename": skip_fname,
             "leaf_hash": leaf["leaf_hash"],
             "verkle_root": tip.get("root"),
-            "path": str(KNOTS / fname),
+            "path": str(KNOTS / skip_fname),
             "n_leaves": tip.get("n_leaves") or len(rows),
+            "chain_mode": mode,
+            "session_seq": skip_seq,
         }
 
-    # drop old knot file for this session if filename changed
+    # drop old knot file for this session if filename changed (v1 ONLY - under
+    # v2 prior knots are canonical history and are never unlinked)
+    # T1W1 ticket 8 (2026-10-01, RACTOR): this used to UNLINK the old knot
+    # before the chain rewrite below; a crash between the two left the chain
+    # pointing at a deleted file and destroyed the pre-amend leaf. The knot
+    # now retires to the attic (out of the KNOTS glob namespace, bytes kept);
+    # v1's single-row-per-session view is unchanged.
     if existing_i is not None:
         old_name = rows[existing_i].get("filename")
         if old_name and old_name != fname:
-            old_path = KNOTS / str(old_name)
-            if old_path.is_file():
-                try:
-                    old_path.unlink()
-                except OSError:
-                    pass
+            _retire_knot(KNOTS / str(old_name))
 
     path = KNOTS / fname
     path.write_text(json.dumps(leaf, indent=2), encoding="utf-8")
     pointer_doc = {"filename": fname, "leaf_hash": leaf["leaf_hash"], "session_id": sid,
                    "schema": "verkle_session_pointer.v2"}
+    if mode == CHAIN_MODE_V2:
+        # AH19: the pointer is the latest-per-session resolver - seq is the
+        # version the next save increments from (readers: latest_leaf_for_session).
+        pointer_doc["seq"] = seq
+        pointer_doc["chain_mode"] = CHAIN_MODE_V2
     _safe_sid = re.sub(r"[^A-Za-z0-9._-]+", "-", sid)[:12]
     (KNOTS / f"by-session_{_safe_sid}.json").write_text(
         json.dumps(pointer_doc, indent=2), encoding="utf-8"
@@ -684,10 +1204,28 @@ def _append_verkle_knot_unlocked(dossier: dict[str, Any], pdf_path: str | None =
         "dossier_commit": leaf.get("dossier_commit"),
         "amended": existing_i is not None,
     }
+    if mode == CHAIN_MODE_V2:
+        chain_row["session_seq"] = seq
+        chain_row["chain_mode"] = CHAIN_MODE_V2
+        if prev_i is not None:  # V1_APPEND_ONLY: reference, never rewrite, the superseded row
+            chain_row["supersedes_index"] = int(rows[prev_i].get("index", prev_i))
+            chain_row["supersedes_leaf_hash"] = rows[prev_i].get("leaf_hash")
     if existing_i is not None:
+        # CHAIN_REWRITE_GATE_20261019: v1 in-place amend rewrites the whole file.
+        # Refuse unless MAG_ALLOW_CHAIN_REWRITE=1; prefer chain_mode=v2.
+        if not _chain_rewrite_allowed():
+            return {
+                "ok": False,
+                "schema": SCHEMA,
+                "error": "v1 in-place amend refused: full-file rewrite gated "
+                         "(use chain_mode=v2 append correction rows, or set "
+                         "MAG_ALLOW_CHAIN_REWRITE=1 for operator repair)",
+                "chain_mode": mode,
+                "session_id": sid,
+            }
         # PRESERVE repair/custom fields across amend (2026-08-25): a flagged
         # evidence_lost row being re-folded must NOT silently lose its flag.
-        # The canary (chain_guard) caught exactly this — flags dropped
+        # The canary (chain_guard) caught exactly this - flags dropped
         # 1,039 -> 1,029 as normal folds amended flagged sessions. The fresh
         # chain_row below is built from a fixed field set, so carry forward
         # any repair fields present on the row being replaced.
@@ -712,8 +1250,9 @@ def _append_verkle_knot_unlocked(dossier: dict[str, Any], pdf_path: str | None =
         chain_row["parent_verkle_root"] = parent_root
         chain_row["verkle_root"] = root
         CHAIN.parent.mkdir(parents=True, exist_ok=True)
-        with CHAIN.open("a", encoding="utf-8") as fh:
-            fh.write(json.dumps(chain_row, ensure_ascii=False) + "\n")
+        # B2-393 byte-exact chain law: newline="" disables the Windows text
+        # translation that turns the appended \n into \r\n.
+        _append_chain_line(json.dumps(chain_row, ensure_ascii=False))
         root = chain_row["verkle_root"]
 
     root = _merkle_root(all_hashes) if all_hashes else _h(b"empty")
@@ -721,18 +1260,77 @@ def _append_verkle_knot_unlocked(dossier: dict[str, Any], pdf_path: str | None =
         _merkle_root(all_hashes[:-1]) if len(all_hashes) > 1 else _h(b"empty")
     )
 
-    tip = {
-        "schema": "verkle_tip.v1",
-        "root": root,
-        "n_leaves": len(all_hashes),
-        "last_filename": fname,
-        "last_leaf_hash": leaf["leaf_hash"],
-        "last_session_id": leaf.get("session_id"),
-        "updated_minute": leaf.get("end_minute") or leaf.get("start_minute"),
-        "note": "One leaf per session; amend in place on re-summarize. Merkle–Verkle hybrid tip.",
-    }
-    TIP.write_text(json.dumps(tip, indent=2), encoding="utf-8")
-    (BIO / "latest.knot.json").write_text(json.dumps(leaf, indent=2), encoding="utf-8")
+    tip = _tip_for_tail(rows, [str(h) for h in all_hashes if h], root)
+    # AG5 (audit finding #3, 2026-09-30): the MAIN append path wrote the tip
+    # with plain write_text while _write_tip_atomic existed for exactly the
+    # torn-write disease (see comment at the consolidate call) - every fold
+    # raced a tear window. Both main-path writes now go through the atomic
+    # replace; proven by the monkeypatch spy in tests/test_ag5_tip_verify.py.
+    _write_tip_atomic(tip)
+    wrote_tail = tip.get("last_leaf_hash") == leaf.get("leaf_hash")
+    _sync_latest_knot(tip.get("last_filename"), leaf if wrote_tail else None)
+
+    # CHAIN_RACE_REPAIR_20260927: a same-second concurrent append (two
+    # sessions, ts 2026-09-27T11:20:03Z) computed its root from a pre-race
+    # read - committed a root missing the sibling row's leaf - and the
+    # verify gate then refused EVERY append for hours (memlang anchoring
+    # froze; 6 suite failures). Post-append self-verify turns the race
+    # class into a self-healed chain: recompute the true root from DISK
+    # rows (never the in-memory set the race poisoned) and rewrite this
+    # row's root fields in place. Amends already ran _rewrite_chain over
+    # the full file, so only the pure-append path needs the guard.
+    if not amended:
+        ok2, why2 = _verify_chain_consistent()
+        if not ok2:
+            disk_rows = _load_chain_rows()
+            disk_hashes = [str(r.get("leaf_hash")) for r in disk_rows
+                           if r.get("leaf_hash")]
+            true_root = _merkle_root(disk_hashes) if disk_hashes else _h(b"empty")
+            true_parent = (_merkle_root(disk_hashes[:-1])
+                           if len(disk_hashes) > 1 else _h(b"empty"))
+            healed = False
+            for r in reversed(disk_rows):
+                if str(r.get("session_id") or "") == sid:
+                    if (r.get("verkle_root") != true_root
+                            or r.get("parent_verkle_root") != true_parent):
+                        r["verkle_root"] = true_root
+                        r["parent_verkle_root"] = true_parent
+                        r["n_leaves"] = len(disk_hashes)
+                        healed = True
+                    break
+            if healed:
+                # CHAIN_REWRITE_GATE_20261019: heal full-file rewrite
+                if not _chain_rewrite_allowed():
+                    return {
+                        "ok": False,
+                        "schema": SCHEMA,
+                        "error": "post-append race detected; full-file heal rewrite gated "
+                                 "(run tools/chain_repair.py with MAG_ALLOW_CHAIN_REWRITE=1)",
+                        "chain_mode": mode,
+                        "session_id": sid,
+                        "leaf_hash": leaf.get("leaf_hash"),
+                        "verify": why2,
+                    }
+                lines = [json.dumps(r, ensure_ascii=False) for r in disk_rows]
+                tmp = CHAIN.with_suffix(".jsonl.tmp")
+                tmp.write_text("\n".join(lines) + "\n", encoding="utf-8",
+                               newline="")
+                tmp.replace(CHAIN)
+                tip2 = _tip_for_tail(disk_rows, disk_hashes, true_root)
+                # AG5: heal-path tip write rides the same atomic replace as
+                # the main path (tmp + os.replace) - no torn-write window here.
+                _write_tip_atomic(tip2)
+                root = true_root
+                parent_root = true_parent
+
+    # V2 shadow (2026-10-17, BINTREE_V2_SEED_SPEC): runs only after the v1 append + tip write are
+    # complete; inert unless configs/mag.yaml chain_v2_shadow: true (env MAG_CHAIN_V2_SHADOW overrides).
+    try:
+        from mag import bintree_v2 as _bt2
+        _bt2.shadow_append(chain_row, knot_path=path)
+    except Exception as _e:  # noqa: BLE001 - v2 must never break a v1 write (A5: log outer failure)
+        with contextlib.suppress(Exception):
+            (ROOT / "memory/biography_v2/shadow_mismatch.jsonl").open("a", encoding="utf-8").write(json.dumps({"ts": _now_iso(), "kind": "outer_hook_exception", "error": f"{type(_e).__name__}: {_e}"}) + "\n")
 
     _update_topic_evolution(leaf, root, len(all_hashes), amend_session=sid)
 
@@ -745,6 +1343,8 @@ def _append_verkle_knot_unlocked(dossier: dict[str, Any], pdf_path: str | None =
         "verkle_root": root,
         "parent_verkle_root": parent_root,
         "n_leaves": len(all_hashes),
+        "chain_mode": mode,
+        "session_seq": seq if mode == CHAIN_MODE_V2 else None,
         "chain": str(CHAIN),
         "tip": str(TIP),
         "evolution": str(EVOLUTION),
@@ -752,7 +1352,7 @@ def _append_verkle_knot_unlocked(dossier: dict[str, Any], pdf_path: str | None =
 
 
 def append_verkle_knot(dossier: dict[str, Any], pdf_path: str | None = None) -> dict[str, Any]:
-    """Locked entry point — see _append_verkle_knot_unlocked for the real body.
+    """Locked entry point - see _append_verkle_knot_unlocked for the real body.
 
     Single-writer lock makes chain read-modify-write + knot unlink + pointer
     write atomic against concurrent seats (the 2026-08-25 lost-update fix).
@@ -762,7 +1362,25 @@ def append_verkle_knot(dossier: dict[str, Any], pdf_path: str | None = None) -> 
 
 
 def consolidate_chain_one_leaf_per_session() -> dict[str, Any]:
-    """Locked entry point — see _consolidate_chain_one_leaf_per_session_unlocked."""
+    """Locked entry point - see _consolidate_chain_one_leaf_per_session_unlocked."""
+    # CHAIN_REWRITE_GATE_20261019: consolidate is whole-file rewrite tooling.
+    if not _chain_rewrite_allowed():
+        return {
+            "ok": False,
+            "skipped": True,
+            "error": "consolidate refused: set MAG_ALLOW_CHAIN_REWRITE=1 "
+                     "(and hold chain:biography lease) for operator rewrite",
+        }
+    try:
+        from mag.leases import guard as _lease_guard
+
+        _g = _lease_guard("chain:biography", "verkle_knot.consolidate", enforce="conflict")
+        if not _g.get("allowed", True):
+            return {"ok": False, "skipped": True, "error": _g.get("reason") or "lease refused"}
+    except PermissionError:
+        raise
+    except Exception as e:  # noqa: BLE001 - unreadable lease state fails closed for consolidate
+        return {"ok": False, "skipped": True, "error": f"lease guard failed: {type(e).__name__}: {e}"}
     with verkle_lock():
         return _consolidate_chain_one_leaf_per_session_unlocked()
 
@@ -774,7 +1392,7 @@ def _update_topic_evolution(
     *,
     amend_session: str | None = None,
 ) -> None:
-    """Maintain series of theme vectors — one row per session (amend if present)."""
+    """Maintain series of theme vectors - one row per session (amend if present)."""
     data: dict[str, Any]
     if EVOLUTION.is_file():
         try:

@@ -26,5 +26,8 @@ def test_show_unknown():
 
 
 def test_send_laws_cover_openclaw_lanes():
-    for k in ("deepseek", "groq", "openrouter", "ollama", "nvidia", "cerebras", "xai"):
+    # B2-521: nvidia/cerebras dropped from the pin; the B2-133 dormant gate
+    # (mag/dormant.py) removes dormant provider rows from SEND_LAWS entirely
+    # (cerebras B2-36, nvidia B2-61), so the corpus only covers drivable seats.
+    for k in ("deepseek", "groq", "openrouter", "ollama", "xai"):
         assert k in SEND_LAWS

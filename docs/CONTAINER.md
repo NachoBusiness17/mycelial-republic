@@ -136,6 +136,10 @@ docker compose logs mag
 docker compose exec mag python main.py doctor
 ```
 
+Dashboard page at `127.0.0.1:8765` dead while `docker ps` says healthy? Ask who holds the
+door: the cure is section 6 of [HOW_TO_MAG_DASHBOARD.md](HOW_TO_MAG_DASHBOARD.md),
+"The dashboard page at 127.0.0.1:8765 will not open."
+
 Rebuild after code changes:
 
 ```powershell

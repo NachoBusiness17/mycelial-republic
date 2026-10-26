@@ -113,7 +113,8 @@ def _tok(s: str) -> set[str]:
 
 
 def consensus_quality(answers: list[str], *, independent: list[bool] | None = None,
-                      rho: float | None = None) -> dict[str, Any]:
+                      rho: float | None = None,
+                      construction: list[str] | None = None) -> dict[str, Any]:
     """Effective independent agreement across the flock's answers (consensus-illusion guard).
 
     RESEARCH FIX (OX_SYNTHESIS consensus_illusion_detection, 2026-08-23): agreement is only REAL
@@ -121,10 +122,22 @@ def consensus_quality(answers: list[str], *, independent: list[bool] | None = No
     overlap, so it could NOT tell two INDEPENDENTLY-CONSTRUCTED verifiers that byte-agree (the
     STRONG case) from one correlated opinion (an illusion) — it under-reported strong consensus.
 
-    `independent` (optional, per-answer bool) supplies the construction-independence signal the
-    token-overlap check cannot see. When provided, a byte-identical answer from an independently-
-    constructed witness counts as an ADDITIONAL independent witness (strong). When omitted, the
-    behavior is unchanged (token-overlap only) — a flock of identical answers stays correlated.
+    R3 TRUST FIX (2026-10-05, fold row 4,
+    watch/inbox/ractor_engine/2026-10-05-ouroboros-r3-trust/SYNTHESIS.md): the
+    `independent` boolean proved to be a witness ticket, not evidence - four
+    byte-identical answers flagged independent=[True]*4 returned n_effective
+    4.0, inverting the CID law this guard exists to enforce. Now:
+    - byte-identical (or token-correlated) answers count as ONE witness
+      regardless of any flag; the boolean alone never adds a witness.
+    - the strong path requires CONSTRUCTION EVIDENCE: `construction` carries a
+      per-answer construction token (a distinct ask digest or a cross-family
+      stamp). A correlated answer joins the witness set only when its token
+      differs from the token of every witness it correlates with, and both
+      sides of the pair carry tokens. Duplicate or missing tokens do not
+      count.
+
+    `independent` is accepted for caller compatibility (length-validated as
+    before) but is advisory only under the R3 law.
 
     `rho` (optional, mean pairwise error correlation in [0,1)) supplies the MEASURED correlation
     between agreeing witnesses (OX burn t0416). When provided, it converts raw agreement into
@@ -143,14 +156,20 @@ def consensus_quality(answers: list[str], *, independent: list[bool] | None = No
                 "n_independent": 0, "n_effective": 0.0, "correlated": False, "verdict": "empty"}
     if independent is not None and len(independent) != n:
         raise ValueError("independent must be None or match len(answers)")
+    if construction is not None and len(construction) != n:
+        raise ValueError("construction must be None or match len(answers)")
     if rho is not None:
         rho = float(rho)
         if not (0.0 <= rho < 1.0):
             raise ValueError("rho must be in [0,1)")
-    # structural independent witnesses (token-overlap + explicit independence signal)
+    # structural independent witnesses (token-overlap + construction evidence).
+    # R3 law: a correlated (incl byte-identical) answer is a NEW witness only
+    # with construction evidence - a construction token distinct from every
+    # correlated witness's token. The bare `independent` boolean is not a ticket.
     wit: set[int] = set()
+    wit_token: dict[int, str] = {}
     for i in range(n):
-        correlated = False
+        correlated_with: set[int] = set()
         ti = _tok(answers[i])
         for j in wit:
             tj = _tok(answers[j])
@@ -158,15 +177,22 @@ def consensus_quality(answers: list[str], *, independent: list[bool] | None = No
                 continue
             ov = len(ti & tj) / len(ti | tj)
             if ov >= 0.6:
-                correlated = True
-                break
-        if not correlated:
+                correlated_with.add(j)
+        token = ""
+        if construction is not None:
+            token = str(construction[i] or "")
+        if not correlated_with:
             wit.add(i)
-        elif independent is not None and independent[i]:
-            # explicit independence signal: a byte-identical answer from an independently-
-            # constructed witness is a NEW independent voice, not a correlated echo (the strong case)
-            if any(answers[i] == answers[j] and independent[j] for j in wit):
-                wit.add(i)
+            wit_token[i] = token
+        elif (token
+              and all(wit_token.get(j) for j in correlated_with)
+              and all(token != wit_token[j] for j in correlated_with)):
+            # construction evidence: distinct ask digest or cross-family stamp
+            # separating this answer from every correlated witness. Both sides
+            # of the pair must carry a token - one token against a tokenless
+            # witness is a ticket, not evidence (R3 fold row 4).
+            wit.add(i)
+            wit_token[i] = token
     n_ind = len(wit)
     # measured effective independent witnesses (correlation-adjusted), when rho is known
     if rho is not None:
@@ -181,6 +207,64 @@ def consensus_quality(answers: list[str], *, independent: list[bool] | None = No
     return {"ok": True, "schema": "memweave.consensus.v1", "n_answers": n,
             "n_independent": n_ind, "n_effective": round(n_effective, 4),
             "rho": rho, "correlated": n_ind < n, "verdict": verdict}
+
+
+# -- CENTRALIZED MERGE ACTOR (steal 2026-10-05) ---------------------------------
+# Google 180-config scaling study (card: watch/inbox/frontier_olm_2026-10-04/steal/
+# swarm-orchestration via x.md, FIND 1, both numbers live-verified there): centralized
+# coordination beats a single agent by +80.9% on parallelizable work, and independent
+# multi-agent systems amplify errors up to 17.2x while one centralized merge turn
+# contains the amplification to 4.4x. Mechanism stolen: the fan-out is only half the
+# machine; the money is the single cheap merge turn after it. The orchestrator acts as
+# a validation bottleneck, catching errors before they propagate.
+#
+# This is the callable integration point: any carrier fans out (its own business),
+# pools the answers, then calls consensus_merge once. The verdict comes from the
+# consensus-illusion guard above (CID law: unanimous pooled answers are usually one
+# correlated opinion, so unanimity takes the quality penalty and dissent reads
+# healthier), and the verdict lands as one shape-matched row in the owning lane's
+# trail.jsonl (shape per live rows in queue/lanes/research/trail.jsonl). No existing
+# carrier is rewritten; adoption is one import + one call post-fanout.
+
+def lane_trail(lane: str) -> Path:
+    """Default trail path for a lane: queue/lanes/<lane>/trail.jsonl (ROOT-anchored)."""
+    return ROOT / "queue" / "lanes" / lane / "trail.jsonl"
+
+
+def consensus_merge(answers: list[str], lane: str, *,
+                    independent: list[bool] | None = None,
+                    rho: float | None = None,
+                    construction: list[str] | None = None,
+                    trail: str | Path | None = None) -> dict[str, Any]:
+    """Centralized post-fan-out merge turn: consensus_quality over pooled answers
+    plus one CONSENSUS_MERGE row appended to the owning lane's trail.jsonl.
+
+    Calls consensus_quality unchanged over the pooled answers (pass-through
+    `independent` / `rho` / `construction`), then appends {"ts", "actor": "<lane>-merge",
+    "event": "CONSENSUS_MERGE", "detail": <verdict dict>, "artifacts": []} to the
+    lane trail (default queue/lanes/<lane>/trail.jsonl, created if the lane has no
+    trail yet; append-only, existing rows preserved). Returns the verdict, the row,
+    and the trail path written. Deterministic + $0 (pure computation + one append).
+
+    Why the merge turn exists (the steal): pooled N-way agreement without it is
+    measured error amplification (17.2x independent); one centralized turn contains
+    it (4.4x). Why the verdict is CID-checked: a unanimous pool is usually one
+    correlated opinion (verdict correlated_weak, quality penalty), genuine dissent
+    is the healthier signal (verdict strong at >=2 effective independent witnesses).
+    """
+    if not lane or "/" in lane or "\\" in lane or lane in (".", ".."):
+        raise ValueError("lane must be a plain lane name, not a path")
+    verdict = consensus_quality(answers, independent=independent, rho=rho,
+                                construction=construction)
+    row: dict[str, Any] = {"ts": _now(), "actor": f"{lane}-merge",
+                           "event": "CONSENSUS_MERGE", "detail": verdict,
+                           "artifacts": []}
+    path = Path(trail) if trail is not None else lane_trail(lane)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with path.open("a", encoding="utf-8") as fh:
+        fh.write(json.dumps(row, default=str) + "\n")
+    return {"ok": True, "schema": SCHEMA, "lane": lane, "verdict": verdict,
+            "row": row, "trail": str(path)}
 
 
 def main(argv: list[str] | None = None) -> int:

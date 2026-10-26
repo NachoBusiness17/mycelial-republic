@@ -87,6 +87,47 @@ def hermes_status() -> dict[str, Any]:
 DEFAULT_HERMES_MODEL = os.environ.get("HERMES_MODEL", "gemma4-hermes")
 DEFAULT_TOOLSETS = os.environ.get("HERMES_TOOLSETS", "terminal,file,todo")
 
+# KEY GUARD (2026-09-20, OpenAI sandbox-escape lesson): the seat inherits a
+# minimal environment, never the operator's standing keys. Every standing key
+# found in os.environ is stripped unless explicitly allowlisted. Escape hatch:
+# HERMES_FULL_ENV=1 restores the old behaviour (operator override, logged).
+_HERMES_ALLOW = {
+    "PATH", "HOME", "USERPROFILE", "LOCALAPPDATA", "APPDATA", "SYSTEMROOT",
+    "COMSPEC", "TEMP", "TMP", "LANG", "TERM", "USERNAME",
+    "HERMES_BIN", "HERMES_MODEL", "HERMES_TOOLSETS", "HERMES_API_TIMEOUT",
+    "OLLAMA_HOST", "OLLAMA_CONTEXT_LENGTH", "HERMES_FULL_ENV",
+    "OPENAI_API_KEY",  # set explicitly below ("ollama") — kept allowlisted
+    "OPENROUTER_API_KEY",  # hermes custom endpoint rides OpenRouter: this IS the lane's needed key
+    "XAI_MODEL", "XAI_API_KEY",  # reserved: grok-lane dispatches only
+}
+_STANDING_KEY_MARKERS = ("API_KEY", "TOKEN", "SECRET")
+
+
+def _scoped_env() -> dict[str, str]:
+    if os.environ.get("HERMES_FULL_ENV") == "1":
+        return os.environ.copy()
+    scoped: dict[str, str] = {}
+    stripped: list[str] = []
+    for k, v in os.environ.items():
+        upper = k.upper()
+        if any(m in upper for m in _STANDING_KEY_MARKERS) and upper not in _HERMES_ALLOW:
+            stripped.append(k)
+            continue
+        scoped[k] = v
+    if stripped:
+        log_path = Path(RESULTS_DIR) / "key_guard.log"
+        try:
+            RESULTS_DIR.mkdir(parents=True, exist_ok=True)
+            with log_path.open("a", encoding="utf-8") as lf:
+                lf.write(
+                    f"{datetime.now(timezone.utc).isoformat()} stripped "
+                    f"{len(stripped)} standing keys from hermes env: "
+                    f"{','.join(sorted(stripped))}\n"
+                )
+        except OSError:
+            pass
+    return scoped
+
 
 def escalate_via_hermes(
     *,
@@ -171,7 +212,7 @@ DELIVERABLE: ...
         tf.write(prompt)
         prompt_path = tf.name
 
-    env = os.environ.copy()
+    env = _scoped_env()
     env.setdefault("OPENAI_API_KEY", "ollama")
     env.setdefault("OLLAMA_CONTEXT_LENGTH", "65536")
     env.setdefault("HERMES_API_TIMEOUT", "1800")

@@ -53,6 +53,14 @@ WITNESSES: list[tuple[str, str, str | None, bool]] = [
     ("together", "together", None, True),  # trial/paid — off-peak
     ("deepseek-pro", "deepseek", None, True),  # paid — off-peak only
 ]
+# B2-133 DORMANT GATE (2026-09-26): a provider declared dormant in configs/providers.yaml
+# never witnesses (mag/doctor.py:607: dormant is a declared state). B2-36 set cerebras
+# dormant (card-gated 30-day trial, chat 402 no-credit); the same gate catches nvidia
+# (dormant per B2-61, 410 EOL). Operator GO flips the flag and the witness returns,
+# no code edit. Receipt: watch/inbox/burn_wave_20260926/B2_133_cerebras_purge_20260926.md
+from mag.dormant import dormant_ids as _dormant_provider_ids
+
+WITNESSES = [w for w in WITNESSES if w[1] not in _dormant_provider_ids()]
 ROOM = ROOT / "watch" / "room.jsonl"
 
 _TOKEN_RE = re.compile(r"[a-z0-9_]+")
@@ -78,14 +86,22 @@ def _witness(label: str, provider: str, model: str | None, paid: bool, question:
     """Ask ONE lane via the API surface (chat_provider). Honest down-reporting, never fabricates.
     Paid lanes defer off-peak unless MAG_ALLOW_PEAK=1 (free-first)."""
     if paid:
+        # SPEC (2026-09-25, t78): this gate FAILED OPEN (the t52 species): an errored
+        # defer_if_peak read was swallowed by 'except Exception: pass' and the paid
+        # witness went out AT PEAK while the gate was blind. Fail CLOSED per the
+        # t43/t52/t61/t75 convention: an errored peak check defers the paid lane,
+        # cause named in error.
         try:
             from mag.offpeak import defer_if_peak
             if defer_if_peak().get("defer"):
                 return {"ok": False, "surface": label, "provider": provider, "paid": True,
                         "error": "deferred_peak — paid lane off-peak only (MAG_ALLOW_PEAK=1 overrides)",
                         "answer": ""}
-        except Exception:  # noqa: BLE001
-            pass
+        except Exception as _dp_e:  # noqa: BLE001 - the gate must never BREAK the witness; it DENIES
+            return {"ok": False, "surface": label, "provider": provider, "paid": True,
+                    "error": ("defer gate errored; failing CLOSED (paid deferred): "
+                              + str(_dp_e)[:110]),
+                    "answer": ""}
     try:
         from models.providers import reload_providers, chat_provider
         reload_providers()

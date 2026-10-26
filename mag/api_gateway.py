@@ -190,6 +190,39 @@ def _health(params: dict, body: Optional[dict]) -> tuple[int, dict]:
     return _ok({"status": "up", "ts": time.time()})
 
 
+@route("GET", "/status")
+def _status(params: dict, body: Optional[dict]) -> tuple[int, dict]:
+    """t39 spec (2026-09-25, SPEC FIRST): product-surface status route.
+
+    Gap: the lab UI could not show t20/t33's MagImproveDaily
+    silent-disablement probe because this gateway had zero improve
+    references (t33 next_steal). This route copies the /health shape
+    (small GET, lazy imports, _ok envelope) and adds to its payload:
+
+    - "scheduled_task": mag.doctor.check_scheduled_tasks() via the same
+      lazy import t33 wired in mag/improve.py; None on non-Windows
+      (null in JSON) so the payload stays clean.
+    - "warning": joined doctor issue strings when the task is not
+      Ready, else None. Negatives are first-class: callers treat
+      warning != null as the alert.
+
+    /health stays a pure fast liveness probe on purpose: a schtasks
+    subprocess (up to a 15s timeout per task) must not ride the
+    heartbeat; the slow probe lives here instead.
+    """
+    sched = None
+    warning = None
+    if os.name == "nt":
+        from mag.doctor import check_scheduled_tasks  # lazy: t33 reuse
+        sched = check_scheduled_tasks()
+        if not sched.get("ok"):
+            issues = sched.get("issues") or []
+            warning = (" | ".join(str(i) for i in issues)
+                       or "scheduled task not Ready")
+    return _ok({"status": "up", "ts": time.time(),
+                "scheduled_task": sched, "warning": warning})
+
+
 @route("GET", "/routes")
 def _routes(params: dict, body: Optional[dict]) -> tuple[int, dict]:
     """List registered routes (method -> paths)."""
@@ -680,9 +713,13 @@ def _room_verify(params: dict, body: Optional[dict]) -> tuple[int, dict]:
         return _err(404, "no room post with that ts")
     claim = claims[0]
     claimant = str(claim.get("seat", ""))
-    # route to a different seat family than the claimant
-    verifier_model = ("deepseek-v4-flash" if "pro" in claimant
-                      else "deepseek-v4-pro")
+    # route to a different seat family than the claimant.
+    # COST FIX 2026-09-22: this defaulted every non-pro claimant's verifier to
+    # deepseek-v4-pro (~$1/call) — 5 verifications = $4.98 on the Sep 22 bill.
+    # Flash verifies by default; pro only for claims explicitly marked contested.
+    contested = bool(claim.get("contested"))
+    verifier_model = ("deepseek-v4-pro" if contested
+                      else "deepseek-v4-flash")
 
     def _run() -> None:
         import json as _json

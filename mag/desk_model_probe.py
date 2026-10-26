@@ -64,6 +64,17 @@ def ensure_qwen_desk(*, pull: bool = True) -> dict[str, Any]:
                 "stderr": (proc.stderr or "")[:300],
             }
 
+    # SW1-05 second half (SWARM_1.md row 5, glm+deepseek converged): with
+    # pull=False (or a pull path that never ran) the Modelfile FROM below
+    # referenced a base model never verified on disk; ollama create then
+    # fails opaque or triggers its own implicit pull outside any budget
+    # contract. Verify the base exists before writing the Modelfile.
+    if not _has_model(base, _tags()):
+        return {
+            "ok": False,
+            "error": f"base model {base!r} not installed and pull did not provide it",
+        }
+
     mf = f"""FROM qwen2.5:3b-instruct
 PARAMETER num_ctx 8192
 PARAMETER temperature 0.35

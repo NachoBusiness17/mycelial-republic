@@ -22,6 +22,7 @@ CLI: python -m mag.fuel_feed status | run [--batch N]
 from __future__ import annotations
 
 import json
+import os
 import re
 import sys
 from datetime import datetime, timezone
@@ -96,7 +97,19 @@ FREE_LANES: list[tuple[str, str, str | None]] = [
 # thinking off, real content. The operator's $5 balance is now just a buffer, not a dependency.
 # CEREBRAS WIRED 2026-08-24: gpt-oss-120b verified answering (~3000 tok/s — the true fast lane
 # while groq's quota recovers). Must ride chat_provider (browser UA defeats Cloudflare 1010);
-# raw urllib probes get 1010-blocked and misread as a bad key.
+# raw urllib probes get 1010-blocked and misread as a bad key. DORMANT-GATED 2026-09-26
+# (B2-133, below): cerebras re-enters the channel only when providers.yaml flips the flag.
+
+# B2-133 DORMANT GATE (2026-09-26): providers.yaml owns lane liveness (mag/doctor.py:607:
+# `dormant: true` is a declared state, never probed) and B2-204 already made a dormant lane
+# never pickable at the quota seam (models/quota.py). The hardcoded channel gets the same
+# law: a lane whose provider id is declared dormant never enters FREE_LANES. B2-36 set
+# cerebras dormant (card-gated 30-day trial, chat 402 no-credit); the same gate catches
+# nvidia (dormant per B2-61, 410 EOL). Operator GO flips the flag and the lane returns,
+# no code edit. Receipt: watch/inbox/burn_wave_20260926/B2_133_cerebras_purge_20260926.md
+from mag.dormant import dormant_ids as _dormant_provider_ids
+
+FREE_LANES = [l for l in FREE_LANES if l[1] not in _dormant_provider_ids()]
 
 # ENTROPY LANE ROUTING (GSTD steal #2, 2026-08-24): route each signal to lanes by its
 # difficulty instead of blind round-robin. STRONG lanes (verified reasoning) carry hard,
@@ -278,10 +291,21 @@ def _read_explore() -> list[dict[str, Any]]:
 
 
 def _write_explore(rows: list[dict[str, Any]]) -> None:
+    """Atomic replace, never in-place truncation.
+
+    2026-10-24: this was a plain `write_text` over the live queue. Two problems:
+    a crash mid-write leaves a truncated queue, and the percolator appends to the
+    same file by the minute (the queue carries two writers: percolator appends,
+    fuel_feed rewrites on clarify). Write beside it, then os.replace - readers see
+    either the old file or the new one, never half of each.
+    """
     EXPLORE_QUEUE.parent.mkdir(parents=True, exist_ok=True)
-    EXPLORE_QUEUE.write_text(
-        "\n".join(json.dumps(r, ensure_ascii=False) for r in rows) + ("\n" if rows else ""),
-        encoding="utf-8")
+    body = "\n".join(json.dumps(r, ensure_ascii=False) for r in rows) + ("\n" if rows else "")
+    from mag.queue_lock import queue_lock
+    with queue_lock(EXPLORE_QUEUE):
+        tmp = EXPLORE_QUEUE.with_suffix(EXPLORE_QUEUE.suffix + f".tmp{os.getpid()}")
+        tmp.write_text(body, encoding="utf-8")
+        os.replace(tmp, EXPLORE_QUEUE)
 
 
 def pending() -> dict[str, Any]:
@@ -475,6 +499,24 @@ def _free_channel(signal: str) -> dict[str, Any]:
         last_err = f"deepseek-burst: {str(b.get('error') or last_err)[:80]}"
     except Exception as e:  # noqa: BLE001
         last_err = f"deepseek-burst: {str(e)[:80]}"
+    # LAW-11 CREDITS-OVER-FAILURE (operator 2026-09-25, canon 87b8cf1750883595): when the $0
+    # channel AND the deepseek burst both fail, the demanded signal escalates to the paid nous
+    # lane (glm-5.3-prime, 200-verified 09-25) instead of dying. Last resort by design: free
+    # lanes, then flash burst, then this. Every attempt records to the same Stage-1 profile
+    # ledger, so the spend is a meter, not a leak. Reasoning-model gotcha (09-25 receipt):
+    # size max_tokens for the thinking burn or the content comes back empty.
+    try:
+        nr = chat_provider("nous", system="You are a sovereign reasoning agent. Be concrete.",
+                           user=prompt, tier="T2", model="z-ai/glm-5.3-prime", max_tokens=4000)
+        ntext = (nr.get("text") or "").strip()
+        if nr.get("ok") and ntext:
+            _profile_record("nous-rescue", True, 0.0, last_err)
+            return {"ok": True, "lane": "nous-rescue", "provider": "nous", "text": ntext,
+                    "entropy": entropy, "law11_rescue": True, "rescue_reason": last_err}
+        _profile_record("nous-rescue", False, 0.0, str(nr.get("error") or "")[:120])
+        last_err = f"nous-rescue: {str(nr.get('error') or last_err)[:80]}"
+    except Exception as e:  # noqa: BLE001
+        last_err = f"nous-rescue: {str(e)[:80]}"
     return {"ok": False, "lane": "none", "text": "", "entropy": entropy,
             "error": f"all free lanes down/unanswered (last: {last_err})"}
 

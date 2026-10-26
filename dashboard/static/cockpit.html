@@ -1,0 +1,15 @@
+<!doctype html><html><head><meta charset="utf-8"><title>cockpit</title>
+<style>body{font:13px/1.45 ui-monospace,Menlo,monospace;color:var(--foreground,#e6e6e6);margin:0}
+h1{font-size:14px;margin:0 0 10px;letter-spacing:.08em;text-transform:uppercase}
+.row{display:grid;grid-template-columns:64px 110px 1fr;gap:8px;padding:4px 0;border-bottom:1px solid var(--border,#2a2a2a)}
+.ok{color:#4ade80}.warn{color:#fbbf24}.red{color:#f87171}
+.next{margin-top:12px;padding:10px;border:1px solid var(--border,#2a2a2a);border-radius:6px}
+code{color:var(--muted-foreground,#9ca3af)}</style></head><body>
+<h1>estate cockpit</h1><div id="rows"></div><div class="next" id="next"></div>
+<script>
+const d={"schema": "cockpit.v1", "ts": "2026-10-24T00:47:52.070696Z", "status": "warn", "next": {"id": "i5-leaf-gate", "why": "promoted invariants are a leaf set; I5 asks for graph edges", "do": "redesign I5 as leaf-or-declared (wave 7), not '10% must declare'"}, "signals": {"git": {"name": "git", "status": "warn", "detail": "16 files waiting on the next sweep (last commit 1m)", "dirty": 16, "last_commit": "ratchet: accept stealth-driver growth by name (sibling lane in flight)", "commit_age_min": 1.0, "lock_age_s": null, "measured_ago_s": 0}, "sweeper": {"name": "sweeper", "status": "warn", "detail": "last start 0m ago, exit 1", "last_exit": "1", "age_min": 0, "measured_ago_s": 0}, "chain": {"name": "chain", "status": "warn", "detail": "leaf 13153 root a5152c9d2888\u2026 10.7h old", "index": 13153, "measured_ago_s": 0}, "fossil": {"name": "fossil", "status": "ok", "detail": "0 WARN, 0 HARD", "warn": 0, "hard": 0, "measured_ago_s": 25}, "percolator": {"name": "percolator", "status": "warn", "detail": "5/6 gates; live 1517/3478; failing I5", "failed": ["I5"], "stats": {"invariants": 17, "repeat_rows": 17, "repeat_share_pct": 100.0, "probe_rows": 0, "dependency_rows": 0, "explore_rows": 3478, "explore_open": 2365, "explore_stale_classified": 848, "explore_live": 1517, "max_count": 29, "median_count": 4, "sum_count": 166}, "measured_ago_s": 23}, "falsifier": {"name": "falsifier", "status": "ok", "detail": "6 PASS / 0 FAIL / 11 UNMEASURED", "counts": {"PASS": 6, "FAIL": 0, "UNMEASURED": 11}, "measured_ago_s": 15}, "smoke": {"name": "smoke", "status": "ok", "detail": "PASS, 12.8h old", "ok": true, "age_h": 12.8, "measured_ago_s": 0}, "tasks": {"name": "tasks", "status": "ok", "detail": "MagCommitSweeper Enabled", "measured_ago_s": 14}}};
+document.getElementById('rows').innerHTML=Object.values(d.signals).map(s=>
+ `<div class="row"><span class="${s.status}">${s.status.toUpperCase()}</span><span>${s.name}</span><span>${s.detail}</span></div>`).join('');
+document.getElementById('next').innerHTML=
+ `<div><strong>NEXT</strong> [${d.next.id}] ${d.next.why}</div><div><code>${d.next.do}</code></div>`;
+</script></body></html>

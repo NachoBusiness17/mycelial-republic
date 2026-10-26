@@ -28,7 +28,7 @@ import numpy as np
 
 ROOT = Path(__file__).resolve().parents[2]
 OUT = ROOT / "dashboard" / "static" / "estate_walk.html"
-OUT_LOD = ROOT / "dashboard" / "static" / "estate_walk.lod.html"
+OUT_LOD = ROOT / "dashboard" / "static" / "museum" / "estate_walk.lod.html"
 SEED = 1197
 ZONE_GRID = 4  # estate index (LOD): 4x4 spatial zones, summaries only until a zone opens
 SPAN_REPLAY_S = 120.0
@@ -99,6 +99,13 @@ def layout_nodes(nodes, edges, iters=400):
             np.add.at(spring, adj[:, 0], -f)
             np.add.at(spring, adj[:, 1], f)
         pos += (repulse + spring - pos * 0.004) * min(1.0, 2.0 * (1.0 - it / iters) + 0.02)
+        # Bound the integration per step (2026-09-29 repair): repulsion sums n^2
+        # pairs, so at 8k+ nodes unclamped positions overflow float64 to inf,
+        # the final clip keeps nan, and compute_lod_zones crashes on int(nan).
+        # Small graphs never approach this box, so their layout is unchanged.
+        np.nan_to_num(pos, copy=False, nan=0.0, posinf=1e6, neginf=-1e6)
+        np.clip(pos, -4000.0, 4000.0, out=pos)
+    pos = np.nan_to_num(pos, copy=False, nan=0.0)
     pos -= pos.min(0)
     pos /= max(pos.max(), 1e-6)
     pos = pos * 1500.0 + 60.0

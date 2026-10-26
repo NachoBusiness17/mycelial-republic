@@ -34,6 +34,8 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
+from mag import runtime_policy
+
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
@@ -74,8 +76,11 @@ LOOP_DEFS: dict[str, dict[str, Any]] = {
     },
     "ghost-daemon": {
         "cmd": ["-m", "mag.ghost", "--daemon", "--port", "9000"],
-        "default": True,
-        "desc": "Ghost daemon (FastAPI :9000): sense + cycle + copilot + autonomous + SSE + REST. The control plane. Auto-starts on up, auto-recovers on crash.",
+        "default": False,
+        "desc": "Ghost daemon (FastAPI :9000). DEFAULT OFF on the host since 2026-09-19: "
+                "state/DOCKER_ONLY reserves ghost runtime for the container supervisor and "
+                "ghost.py blocks host starts anyway, so default True was an eternal "
+                "crash-loop (spawn -> blocked -> exit -> respawn). The container runs it.",
         "health_url": "http://127.0.0.1:9000/api/v1/health",
     },
 }
@@ -287,6 +292,39 @@ def _backoff_seconds(crash_times: list[float], now: float) -> float:
     return min(BACKOFF_BASE_S * (2 ** (len(recent) - 1)), BACKOFF_MAX_S)
 
 
+# Re-exported for tests and callers; the policy itself lives in mag.runtime_policy
+# (B2-51 2026-09-26: was a private copy here that drifted from the child copies).
+DOCKER_ONLY_MARKER = runtime_policy.DOCKER_ONLY_MARKER
+
+
+def _policy_blocked(name: str) -> bool:
+    """True when policy forbids this host from running this loop at all.
+
+    Drainer-scoped: only loops whose cmd carries governor_autorun. Whether the
+    host is blocked at all is decided by mag.runtime_policy.host_runtime_blocked,
+    the SAME predicate the drainer child evaluates at startup, so the gate and
+    the child can never disagree again.
+
+    Receipt (B2-51 autopsy, 2026-09-26; corrects the 2026-09-19 comment, whose
+    "5,708 'blocked' lines" was the last line number of the blocked streak
+    misread as a count and whose "marked 'crashed' for 20 days" claim is
+    unsupported on disk): the Docker-only marker existed continuously
+    2026-08-30 22:56 -0400 until its 2026-09-22 rename to
+    state/DOCKER_ONLY.stale-20260922; the child self-block landed 2026-09-14
+    (d575bc168); from then on a host respawn printed "[autorun] blocked:
+    Docker-only runtime is active" and exited at startup, and this supervisor
+    classified that policy exit as a crash: 28 auto_restarts on 09-19
+    (15:06-17:31Z, final four 17:30:39/46 and 17:31:02/17Z), 44 on 09-16,
+    9 on 09-14; logs/supervisor_autorun.out.log holds 232 consecutive blocked
+    lines (5477-5708). Blocked-by-policy is a state, not a crash; the gate
+    lifts when the marker is removed or MAG_ALLOW_HOST_RUNTIME=1.
+    """
+    cfg = LOOP_DEFS.get(name) or {}
+    if not any("governor_autorun" in str(part) for part in cfg.get("cmd", [])):
+        return False
+    return runtime_policy.host_runtime_blocked(marker=DOCKER_ONLY_MARKER)
+
+
 def reap(auto_restart: bool = True) -> dict[str, Any]:
     """Mark dead loops (crashed); auto-restart default loops with crashLoopBackOff.
 
@@ -301,6 +339,10 @@ def reap(auto_restart: bool = True) -> dict[str, Any]:
     desktop window storm. It never stops retrying (self-healing preserved), and
     a loop that stays up for SUCCESS_WINDOW_S resets its crash counter, so a
     transient blip never accrues into a long backoff.
+
+    A loop this host may not run at all (the Docker-only drainer behind
+    state/DOCKER_ONLY) is marked blocked_by_policy instead of crashed and is not
+    respawned here; the container supervisor owns it (B2-51 autopsy, 2026-09-26).
     """
     if _container_mode():
         # L8: under the container, mag_launch + Docker are the single controller. Be a
@@ -331,6 +373,12 @@ def reap(auto_restart: bool = True) -> dict[str, Any]:
             cur["crash_times"] = crashes
             changed.append(name)
             if auto_restart and LOOP_DEFS.get(name, {}).get("default"):
+                if _policy_blocked(name):
+                    cur["status"] = "blocked_by_policy"
+                    cur.pop("next_retry_at", None)
+                    _log("policy_blocked", name=name)
+                    state[name] = cur
+                    continue
                 wait = _backoff_seconds(crashes, now)
                 cur["next_retry_at"] = now + wait
                 if wait >= BACKOFF_MAX_S:
@@ -351,7 +399,14 @@ def reap(auto_restart: bool = True) -> dict[str, Any]:
               and LOOP_DEFS.get(name, {}).get("default")
               and cur.get("next_retry_at")
               and now >= cur["next_retry_at"]):
-            # backoff expired -> restart
+            # backoff expired -> restart (unless policy forbids this host)
+            if _policy_blocked(name):
+                cur["status"] = "blocked_by_policy"
+                cur.pop("next_retry_at", None)
+                _log("policy_blocked", name=name)
+                changed.append(name)
+                state[name] = cur
+                continue
             spawned = _spawn(name)
             if spawned:
                 state[name] = {"status": "running", "started_at_ts": now,
@@ -360,6 +415,20 @@ def reap(auto_restart: bool = True) -> dict[str, Any]:
                 _log("auto_restarted", name=name, pid=spawned["pid"])
             else:
                 _log("auto_restart_failed", name=name)
+        elif (status == "blocked_by_policy"
+              and auto_restart
+              and LOOP_DEFS.get(name, {}).get("default")
+              and not _policy_blocked(name)):
+            # policy gate lifted (marker removed / MAG_ALLOW_HOST_RUNTIME=1) ->
+            # the loop is this host's to run again; resume self-healing
+            spawned = _spawn(name)
+            if spawned:
+                state[name] = {"status": "running", "started_at_ts": now,
+                               "crash_times": [], **spawned}
+                restarted.append(name)
+                _log("policy_resumed", name=name, pid=spawned["pid"])
+            else:
+                _log("policy_resume_failed", name=name)
     if changed or restarted:
         _save_state(state)
     return {"ok": True, "crashed": changed, "auto_restarted": restarted}

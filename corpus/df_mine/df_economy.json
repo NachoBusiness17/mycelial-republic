@@ -1,0 +1,143 @@
+{
+  "meta": {
+    "mined": "2026-09-25",
+    "miner": "df_raws_economy_agent (fleet stratum: economy)",
+    "source_install": "C:\\Program Files (x86)\\Steam\\steamapps\\common\\Dwarf Fortress (READ ONLY, unmodified)",
+    "source_files": [
+      "data/vanilla/vanilla_items/objects/*.txt (13 files)",
+      "data/vanilla/vanilla_reactions/objects/*.txt (4 files)",
+      "data/vanilla/vanilla_plants/objects/*.txt (5 files)",
+      "data/vanilla/vanilla_materials/objects/*.txt (8 files, for MATERIAL_VALUE cross-reference)",
+      "examples and notes/item_instrument_example.txt"
+    ],
+    "value_chain": "item value = BASE(item VALUE token in raws, else engine class base) x MATERIAL_VALUE(material raws) x QUALITY_MULT(engine) + QUALITY_BONUS(engine) + decorations",
+    "engine_note": "Item-class base values, quality multipliers (x1.1/+3, x1.2/+6, x1.33/+10, x1.5/+15, x2/+30, artifact x20/+300) and craft item classes (crown, scepter, figurine, amulet, ring, earring, bracelet, totem, statue, slab, book, coin, cut gem) are ENGINE-side, not in raws. Sourced from dwarffortresswiki.org Item value (fetched 2026-09-25). All MATERIAL_VALUE / plant VALUE / tool VALUE numbers below are raws-verified byte reads.",
+    "surprise": "The Steam DF install ships NO item_instrument.txt — all vanilla instruments are procedurally generated. Raws only include 'examples and notes/item_instrument_example.txt' showing instruments are assembled from ITEM_TOOL pieces (VALUE:10 each) into an ITEM_INSTRUMENT (VALUE:50)."
+  },
+
+  "item_classes": {
+    "counts_by_class": {
+      "WEAPON": 25, "TOOL": 30, "ARMOR": 12, "PANTS": 9, "HELM": 8,
+      "SHOES": 6, "TOY": 5, "TRAPCOMP": 5, "AMMO": 3, "GLOVES": 3,
+      "FOOD": 3, "SHIELD": 2, "SIEGEAMMO": 1
+    },
+    "total_itemdefs": 112,
+    "files": {
+      "item_weapon.txt": ["whip", "battle axe", "war hammer", "short sword", "spear", "mace", "crossbow", "pick", "bow", "blowgun", "pike", "halberd", "two-handed sword", "long sword", "maul", "great axe", "large dagger", "scourge", "flail", "morningstar", "scimitar", "training axe", "training sword", "training spear", "great pick"],
+      "item_armor.txt": ["breastplate", "mail shirt", "armor", "coat", "shirt", "cloak", "tunic", "toga", "cape", "vest", "dress", "robe"],
+      "item_tool.txt_VALUE_tokens": {
+        "cauldron": 50, "minecart": 50, "wheelbarrow": 50, "stepladder": 50,
+        "scroll": 20, "quire": 20,
+        "bowl": 10, "jug": 10, "large pot": 10, "pouch": 10, "hive": 10, "nest box": 10, "bookcase": 10, "pedestal": 10, "display case": 10, "altar": 10, "mortar": 10, "pestle": 10, "ladle": 10, "knives (carving/boning/slicing/cleaver)": 10, "carving fork": 10, "scroll rollers": 10, "book binding": 10, "helve": 10, "stone axe": 10,
+        "die": 1
+      },
+      "artifact_able_engine_classes_absent_from_raws": ["INSTRUMENT (generated)", "AMULET", "BRACELET", "CROWN", "EARRING", "FIGURINE", "RING", "SCEPTER", "TOTEM", "STATUE", "SLAB", "BOOK", "COIN", "GEM", "LARGE_GEM", "ANVIL", "FURNITURE (door/table/chair)", "GOBLET", "BOX", "CAGE", "MECHANISM"]
+    }
+  },
+
+  "material_values": {
+    "metals_INORGANIC": {
+      "ADAMANTINE": 300, "ALUMINUM": 40, "PLATINUM": 40, "GOLD": 30, "STEEL": 30,
+      "ROSE_GOLD": 23, "ELECTRUM": 20, "BLACK_BRONZE": 11,
+      "IRON": 10, "SILVER": 10, "PIG_IRON": 10,
+      "STERLING_SILVER": 8, "BRASS": 7, "BILLON": 6, "BISMUTH_BRONZE": 6,
+      "BRONZE": 5, "PEWTER_FINE": 5, "PEWTER_TRIFLE": 4, "PEWTER_LAY": 3, "NICKEL_SILVER": 3,
+      "COPPER": 2, "NICKEL": 2, "ZINC": 2, "TIN": 2, "LEAD": 2, "BISMUTH": 2
+    },
+    "material_templates": "all 71 templates MATERIAL_VALUE:1 except PARCHMENT_TEMPLATE:10",
+    "gems": {
+      "total_gem_stones": 127,
+      "tiers_by_MATERIAL_VALUE": {
+        "2-3 (common)": 52, "10": 24, "15": 7, "20 (semi-precious)": 52, "25": 3, "30": 7, "40": 4, "60 (clear diamond)": 1
+      },
+      "top_examples": { "clear diamond": 60, "tsavorite": 30, "demantoid": 30, "blue garnet": 30, "indigo tourmaline": 25, "clear zircon": 25 },
+      "value1_exception": "PARCHMENT_TEMPLATE = 10 (only non-1 template)"
+    }
+  },
+
+  "tradegoods": [
+    {"good": "adamantine wafer", "class": "BAR", "base": 5, "material_value": 300, "unit_value": 1500},
+    {"good": "platinum bar", "class": "BAR", "base": 5, "material_value": 40, "unit_value": 200},
+    {"good": "gold bar", "class": "BAR", "base": 5, "material_value": 30, "unit_value": 150},
+    {"good": "steel bar", "class": "BAR", "base": 5, "material_value": 30, "unit_value": 150},
+    {"good": "iron bar", "class": "BAR", "base": 5, "material_value": 10, "unit_value": 50},
+    {"good": "copper bar", "class": "BAR", "base": 5, "material_value": 2, "unit_value": 10},
+    {"good": "cut clear diamond", "class": "GEM", "base": 20, "material_value": 60, "unit_value": 1200},
+    {"good": "cut tsavorite/demantoid/blue garnet", "class": "GEM", "base": 20, "material_value": 30, "unit_value": 600},
+    {"good": "cut topaz/tanzanite (tier-20 gem)", "class": "GEM", "base": 20, "material_value": 20, "unit_value": 400},
+    {"good": "cut common gem", "class": "GEM", "base": 20, "material_value": 2, "unit_value": 40},
+    {"good": "raw clear diamond", "class": "ROUGH", "base": 6, "material_value": 60, "unit_value": 360},
+    {"good": "gold crown", "class": "CROWN (engine)", "base": 10, "material_value": 30, "unit_value": 300},
+    {"good": "gold scepter", "class": "SCEPTER (engine)", "base": 10, "material_value": 30, "unit_value": 300},
+    {"good": "silver amulet/ring/bracelet/earring", "class": "craft (engine)", "base": 10, "material_value": 10, "unit_value": 100},
+    {"good": "bone figurine", "class": "FIGURINE (engine)", "base": 10, "material_value": 1, "unit_value": 10},
+    {"good": "steel short sword", "class": "WEAPON", "base": 10, "material_value": 30, "unit_value": 300},
+    {"good": "adamantine battle axe", "class": "WEAPON", "base": 10, "material_value": 300, "unit_value": 3000},
+    {"good": "iron pick", "class": "WEAPON", "base": 10, "material_value": 10, "unit_value": 100},
+    {"good": "steel breastplate", "class": "ARMOR", "base": 10, "material_value": 30, "unit_value": 300},
+    {"good": "steel helm", "class": "HELM", "base": 10, "material_value": 30, "unit_value": 300},
+    {"good": "steel shield", "class": "SHIELD", "base": 10, "material_value": 30, "unit_value": 300},
+    {"good": "gold goblet/mug", "class": "GOBLET (engine)", "base": 10, "material_value": 30, "unit_value": 300},
+    {"good": "gold statue", "class": "STATUE (engine)", "base": 25, "material_value": 30, "unit_value": 750},
+    {"good": "steel mechanism", "class": "MECHANISM (engine)", "base": 30, "material_value": 30, "unit_value": 900},
+    {"good": "steel minecart", "class": "TOOL", "raws_value_token": 50, "material_value": 30, "unit_value": 1500},
+    {"good": "wooden minecart", "class": "TOOL", "raws_value_token": 50, "material_value": 1, "unit_value": 50},
+    {"good": "steel cauldron", "class": "TOOL", "raws_value_token": 50, "material_value": 30, "unit_value": 1500},
+    {"good": "parchment sheet", "class": "SHEET", "base": 50, "material_value": 10, "unit_value": 500},
+    {"good": "parchment quire/scroll", "class": "BOOK-family (engine)", "base": 200, "material_value": 10, "unit_value": 2000},
+    {"good": "paper quire (raws TOOL)", "class": "TOOL", "raws_value_token": 20, "material_value": 1, "unit_value": 20},
+    {"good": "bound book", "class": "BOOK (engine)", "base": 10, "material_value": "varies (cover)", "unit_value": "10 x material + contents"},
+    {"good": "engraved slab", "class": "SLAB (engine)", "base": 10, "material_value": 1, "unit_value": 10},
+    {"good": "rope reed thread/cloth", "class": "THREAD/CLOTH", "material_value": 2, "note": "raws THREAD_PLANT material mv:2; cloth engine base 7"},
+    {"good": "dimple dye (bag)", "class": "POWDER_MISC", "material_value": 20, "note": "mill product, POWDER_DYE:MIDNIGHT_BLUE"},
+    {"good": "blade weed emerald dye", "class": "POWDER_MISC", "material_value": 20, "note": "POWDER_DYE:EMERALD"},
+    {"good": "hide root redroot dye", "class": "POWDER_MISC", "material_value": 10, "note": "POWDER_DYE:RED"},
+    {"good": "parchment template material", "class": "material", "material_value": 10, "note": "only material template above 1"},
+    {"good": "prepared meal (biscuit/stew/roast)", "class": "FOOD", "base": 1, "material_value": "sum of ingredient values", "unit_value": "ingredients + base, x quality"},
+    {"good": "barrel/bin/bucket", "class": "FURNITURE-family (engine)", "base": 10, "material_value": 1, "unit_value": 10},
+    {"good": "anvil", "class": "ANVIL (engine)", "base": 10, "material_value": 30, "unit_value": 300}
+  ],
+
+  "reaction_chains": {
+    "total_reactions": 159,
+    "by_file": { "reaction_smelter.txt": 23, "reaction_other.txt": 46, "reaction_dyes.txt": 68, "reaction_adv_carpenter.txt": 22 },
+    "key_chains": [
+      {"chain": "fuel", "flow": "bituminous coal 1 -> coke 9 | lignite 1 -> coke 5 (BAR, PRODUCT_DIMENSION:150)"},
+      {"chain": "ore->bar", "flow": "4 ores of X -> 4 bars (implicit furnace smelting, not in raws); 2 bars -> 8 bars alloy or 1 bar -> 2 bars variants"},
+      {"chain": "steel", "flow": "iron bar + flux + 2 coke -> PIG_IRON 1; pig iron + flux + 2 coke -> STEEL 2"},
+      {"chain": "alloys (pairs 8:2 or small-batch 2:0.5)", "flow": "bronze(copper+tin), brass(copper+zinc), electrum(gold+silver), billon(silver+copper), pewter fine/triflay/lay, nickel silver, black bronze, bismuth bronze, sterling silver, rose gold"},
+      {"chain": "adamantine", "flow": "raw adamantine -> ADAMANTINE wafer 1 (mv 300)"},
+      {"chain": "dyes", "flow": "68 dyer reactions: bark/leaf/cone/shell/nut of named trees -> 1 POWDER_MISC dye into empty bag (PRODUCT_TO_CONTAINER)"},
+      {"chain": "cloth industry", "flow": "PROCESS_PLANT_TO_BAG -> thread; MAKE_SHEET_FROM_PLANT/SLURRY/PRESS_PLANT_PAPER -> paper; MAKE_PARCHMENT (hide+quicklime chain: MAKE_QUICKLIME -> MAKE_MILK_OF_LIME -> MAKE_PARCHMENT) -> MAKE_SCROLL/MAKE_QUIRE -> BIND_BOOK"},
+      {"chain": "bone crafts", "flow": "CARVE_BONE_{FIGURINE,RING,EARRING,SCEPTER,AMULET,BRACELET,CROWN,GEM} -> engine craft items"},
+      {"chain": "clay/pottery", "flow": "clay -> jug/bricks/statue/large pot/crafts/hive, then GLAZE_{JUG,STATUE,LARGE_POT,CRAFT}"},
+      {"chain": "folk economy", "flow": "TAN_A_HIDE, RENDER_FAT -> soap (tallow or oil), PRESS_OIL/PRESS_OIL_FRUIT, PRESS_HONEYCOMB, MAKE_MEAD, BREW_DRINK_FROM_PLANT/GROWTH, MILL_SEEDS_NUTS_TO_PASTE, MAKE_PEARLASH, MAKE_PLASTER_POWDER, MAKE_SHARP_ROCK, MAKE_WAX_CRAFTS"}
+    ]
+  },
+
+  "plants": {
+    "total": 225,
+    "by_file": { "plant_crops.txt": 34, "plant_garden.txt": 57, "plant_grasses.txt": 41, "plant_new_trees.txt": 41, "plant_standard.txt": 52 },
+    "use_tags_raws": { "DRINK (brewable alcohol)": 76, "MILL (milling)": 33, "THREAD (thread industry)": 8, "EXTRACT (vial/barrel)": 2 },
+    "plant_VALUE_tokens": { "2": 97, "1": 1, "3": 1, "5": 2 },
+    "value_outliers": { "kobold bulb": 5, "valley herb": 5, "sun berry": 3, "hide root": 1 },
+    "thread_plants": ["flax", "jute", "hemp", "cotton", "ramie", "kenaf", "pig tail (GRASS_TAIL_PIG)", "rope reed (REED_ROPE)"],
+    "dye_plants_via_mill_POWDER_DYE": [
+      {"plant": "dimple cup (MUSHROOM_CUP_DIMPLE)", "dye": "dimple dye MIDNIGHT_BLUE", "mv": 20},
+      {"plant": "blade weed (WEED_BLADE)", "dye": "emerald dye EMERALD", "mv": 20},
+      {"plant": "hide root (ROOT_HIDE)", "dye": "redroot dye RED", "mv": 10},
+      {"plant": "sliver barb (SLIVER_BARB, EVIL biome)", "dye": "mill dye + gutter cruor drink"}
+    ],
+    "notable_economy_plants": [
+      {"plant": "plump helmet", "uses": ["food (EDIBLE_RAW/COOKED)", "drink"], "mv_structural": 2},
+      {"plant": "cave wheat", "uses": ["mill->flour (mv 20)", "drink"], "mv_structural": 2},
+      {"plant": "sweet pod", "uses": ["mill->sugar", "drink (dwarven rum family)"]},
+      {"plant": "quarry bush", "uses": ["mill->paste/leaves", "seeds edible"]},
+      {"plant": "single/two-grain/soft wheat", "uses": ["drink", "mill->flour mv 20", "seed edible"], "mv": 2},
+      {"plant": "sun berry", "uses": ["drink (sunshine wine family)"], "plant_value": 3, "note": "good-biome, only VALUE:3 crop"},
+      {"plant": "valley herb", "uses": ["extract (vial)"], "plant_value": 5},
+      {"plant": "kobold bulb", "plant_value": 5}
+    ],
+    "food_tag_note": "Food use is expressed per-material as EDIBLE_RAW / EDIBLE_COOKED / EDIBLE_VERMIN, not as a plant-level tag; drink/mill/thread/extract are plant-level hooks into LOCAL_PLANT_MAT sub-materials."
+  }
+}

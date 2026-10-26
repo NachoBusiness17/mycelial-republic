@@ -24,14 +24,9 @@ import httpx
 def _api() -> tuple[str, str, str]:
     """Return (base_url, model, api_key) for DeepSeek."""
     base = "https://api.deepseek.com/v1"
-    key = os.environ.get("DEEPSEEK_API_KEY", "")
-    if not key:
-        env = Path(__file__).resolve().parents[1] / ".env"
-        if env.is_file():
-            for line in env.read_text(encoding="utf-8", errors="replace").splitlines():
-                if line.startswith("DEEPSEEK_API_KEY="):
-                    key = line.split("=", 1)[1].strip().strip('"').strip("'")
-                    break
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+    from tools.estate_env import key as env_key  # the one canonical loader
+    key = env_key("DEEPSEEK_API_KEY") or ""
     return base, key
 
 

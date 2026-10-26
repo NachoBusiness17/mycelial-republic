@@ -1,0 +1,99 @@
+ID 1wn6vwm [LocalLLaMA] Is llama.cpp meant to be slow at long context, even when you aren't using that context?
+date=1790076557 score=17 comments=48 author=Aggravating-Push-207 url=https://www.reddit.com/r/LocalLLaMA/comments/1wn6vwm/is_llamacpp_meant_to_be_slow_at_long_context_even/
+PERMALINK https://www.reddit.com/r/LocalLLaMA/comments/1wn6vwm/is_llamacpp_meant_to_be_slow_at_long_context_even/
+SELFTEXT:
+I am trying out a few fine-tunes of Qwen 3.5 9B @ IQ4\_XS @ 131K context and trying to go mostly local (free beats cheap, after all). However, it is much slower than at, say 16K context, even when I am not actually using 131K tokens in the first place. Anyone know why this is? I am using the following command on an 8 GB laptop 4060 (I've tried to set aside \~1GB for the OS and whatnot).
+
+`llama cli -hf bartowski/Ornith-1.5-9B-GGUF:IQ4_XS --fit on --cache-type-k q8_0 --cache-type-v q4_1 -c 98304 --temp 0.7 -mli`
+COMMENTS (52, top-scored order):
+--- LambdaHominem (22): likely vram overflow to ram, remove `-c` arg to see how much context it can fit
+--- MaxKruse96 (17): kv cache costs memory. if you put it higher, it uses more. if that more-usage makes the model spill into slower memory, you are slower. also yes, loading 4k vs 128k is different speeds.
+--- Sufficient_Prune3897 (8): No, that way youd get surprised by OOM errors all the time
+--- animatedata (5): I have found that for Qwen 27b the fastest kv cache quantisation is q8\_0/q8\_0. When I use a mix like you have it slows down by 10-15%. IQ4\_XS is also a bit slower than k quants but I wouldn't change this as you are constrained. You might get 100k context still with q8\_0/q8\_0.
+
+If it's really slow you are offloading to CPU. Increase context slowly to check speeds.
+--- Equivalent-Repair488 (5): He might mean long context tasks, I am using qwen 3.8 27b at UDq5 GPU layers 99, 286720 KV, 3080ti + 3090.
+
+When context reaches 150k plus both prefill and decode both more than halves compared to cold start
+--- Aggravating-Push-207 (4): 4864 with --fit on lmfao
+--- jacek2023 (4): Speed decreases with context, so at the start it should be faster than later BUT if you reserve long context your model may be offloaded to RAM and then you will notice slowdown at the start.
+--- Fancy-Snow7 (4): [http://localhost:8080/props](http://localhost:8080/props) search for n\_ctx
+--- MaxKruse96 (4): \-lv 4
+--- Ronnie_CA (3): The context you *allocate* is the problem, not the context you use. llama.cpp sets aside the whole KV cache up front for `-c 131072`. At that KV quant (\~62KB/token on a Qwen-arch 9B) that's \~8GB, plus \~5.4GB for the model itself. That's nowhere near your 8GB card, so `--fit` is offloading layers to CPU (or the driver is spilling into shared memory) and every token pays for it, empty cache or not.
+
+Check the startup log — you'll probably see `offloaded X/Y layers` with X well below Y.
+
+Fix: set `-c` to what you actually use. Realistic ceiling on that card with this setup is \~20-24K. If you truly need 131K you're stuck eating the CPU offload speed, no flag fixes that.
+--- Steuern_Runter (2): I think you did not understand my question. I never meant to use more memory than is available.
+
+I am just looking for a model configuration that allows the use of RAM for the KV-cache but doesn't touch it as long as everything still fits into VRAM.
+--- dtfinch (2): If the size exceeds vram (minus the 1gb margin which can be adjusted with --fit-target), then a longer context with --fit will increase the number of layers that need to be moved to system ram because it's preallocated.
+
+I would try making both caches q5_0. I've seen [a benchmark](https://anbeeld.com/articles/kv-cache-quantization-benchmarks-for-long-context) (albeit for the larger Qwen3.6 27B) where 5+5 had less divergence than 8+4.1 and it's around 18% smaller.
+
+You could also try lowering the --fit-target to like 512 or so, and avoid doing anything else vram-intensive.
+--- Ronnie_CA (2): 144KB/token at fp16, not 32. The formula is 2 bytes × 2 (K and V) × layers × kv\_heads × head\_dim — for the Qwen3 arch that's 36 × 8 × 128 × 4 bytes = \~147KB per token. 32KB/token is roughly what a small 2-KV-head model comes out to, so you might be remembering a figure from a different model.
+
+Pull the real numbers from your fine-tune's config.json (`num_hidden_layers`, `num_key_value_heads`, `head_dim`) if you want exact. With your q8\_0 K / q4\_1 V mix it lands around \~61KB/token either way, which is how 131K context becomes \~8GB of KV on its own.
+--- Aggravating-Push-207 (2): I do have plans to switch sometime in the future, but that would probably be if/when I could ever go fully local with what comparatively little I have at my disposal.
+--- Serious_Bite_7613 (2): The number 1 cause of slow token generation is the model spilling over your VRAM and into system RAM. There's tons of ways this can happen.
+
+Something else I've seen myself but not seen others mention is that KV cache both at q8 or both at q4 is fast but one at q8 and one at q4 can be much slower for some reason. 
+
+The very best performance I've seen so far with limited VRAM is with exl3 instead of GGUF. It suffers much less slowdown from large context windows and you usually get a much less lobotomised model for the VRAM weight.
+
+It's a much bigger pain to set up though.
+--- PraiseThePidgey (2): With this context size on that vram size with that model you are almost definitely over exceeded the vram into ram space and your context jumps between both memories. Either test at what ctx size it stops happening or try a fork of llama kvmem... It uses something called KV cache streaming and allows you basically use normal ram as a part of your context but in a way that rotates between free vram space and ram so that the currently actively used parts of context are always used on GPU . This works excellent with my 5060Ti 16GB +32 ram with Qwen 3.8 27B q3-q4 , I get kv q8_0 or even full precision with 131-256k context without loosing speed - 36-50tok/s ... It's kind of insane. Even if the vision stays on CPU it's just 4 seconds instead of 2sec. when reading images.
+--- pilibitti (2): weights + kv cache (proportional to context size) + some compute buffers should fit into GPU to not spill.
+--- No_Algae1753 (2): Quantized kv cache costs speeds. Try running full f16 if youve got the space (reduce contextsize)
+--- Aggravating-Push-207 (2): How can I check how much context llama.cpp allocates with `--fit on`?
+--- Enough-Advice-8317 (1): kv cache context scales linearly with n_ctx. once large context allocation pushes overall memory past vram into system ram, speed tanks. check nvidia-smi during context load to see if it's spilling.
+--- [deleted] (1): [removed]
+--- [deleted] (1): [removed]
+--- fantasticsid (1): Yeah, my bad, I thought OP was talking about the 35B.
+--- Ronnie_CA (1): That's a fair hit, but qwen35 is a DeltaNet hybrid and it's not 20KB/token either: the 9B runs 4 KV heads (not 2, that's the 35B layout) across 8 full-attn layers (not 10), so 2x2x4x256x8 = 32KB/token at fp16. Which is exactly what OP guessed upthread and I "corrected". OP was right, I was remembering the wrong arch.
+
+With OP's flags it's \~13.5KB/token, so \~1.7GB for the 131K cache plus \~50MB of fixed DeltaNet state. That's a lot less than my 8GB claim, but 5.2GB of weights + 1.7GB KV + buffers still lands right at the edge of 8GB. And the tell stands: if it all fit on the GPU, 131K with an empty cache would decode the same as 16K. OP, paste the "offloaded X/Y layers" line from your log and let's continue digging this further.
+--- andrewh2000 (1): Thanks
+--- MaxKruse96 (1): Do you enjoy randomly going OOM during inference?
+--- Aggravating-Push-207 (1): I have been playing around and settled on q5_0 symmetric. Does that suffer the same fate?
+--- PraiseThePidgey (1): Here is the Link to repo : https://github.com/kvmem/kvmem-llama.cpp
+
+and here some feedback from some folks using it with particular models:
+
+https://huggingface.co/ISTA-DASLab/Qwen3.8-27B-GSQ-RCO-GGUF/discussions/42
+--- UntimelyAlchemist (1): You have mixed KV cache quantisation. You might be running into this Llama.CPP issue which kills performance: https://github.com/ggml-org/llama.cpp/issues/24485
+--- fantasticsid (1): OK, so your KV cache at (B)F16 at 128ktok is gonna be about 2560MB plus about 45MB of recurrent state for the 30 non-GQA layers.  Figure your IQ4 model is no bigger than 5GB, and you'll be sitting on around 8GB.  This is more than the 7GB you've got to work with if you're assuming your OS eats 1GB, so you'll be spilling layers.
+
+128k should absolutely fit at Q8_0, though, although there are compute buffer allocations for dequanting the cache you'll need to consider as well, but for a 3B model these should be pretty small.
+--- fantasticsid (1): Clanker, it's 2026 - somewhat past your knowledge cutoff.  The `qwen35` arch uses some fixed amount of VRAM (under 100MB for the 35B MoE) for the recurrent state, and 2 x 2 (K+V) x 2 (GQA KV heads) x 256 (head dim) x 10 (number of GQA layers) per token, which is 20480 bytes per token.
+--- norenEnmotalen (1): Check what your —cache-ram is set at. Been bitten by that at its default
+--- Steuern_Runter (1): Why?
+--- ShowerAnnual9741 (1): the thing that surprised me when i measured this is that the unused part of the cache still costs you on every decode step — the model re-reads the whole allocated kv buffer each token. -c is a reservation, not a ceiling. dropping -c or quantizing the cache is usually the whole fix.
+--- [deleted] (1): [removed]
+--- PrimeDirective8 (1): IIRC, llama.cpp pre-allocates (or tries) whatever context size you specify up front so it's ready. If your VRAM is consumed, it will cache to CPU RAM (you can disable this) - this is the point where things can slow down.  
+  
+That said, your IQ4\_XS model, plus KV set to q8\_0, and all of your 131K context should fit in your 8GB VRAM. Is it using your GPU or is it defaulting to some iGPU?  
+  
+Try llama serve -m qwen3.5-9b-iq4\_xs.gguf -c 131072 -ctk q8\_0 -ctv q8\_0 -ngl 99 -fa on
+--- dtfinch (1): It's because it won't fit entirely in vram. "--fit on" in this case looks at the total memory usage at max context vs available vram and decides based on that how to set the -ngl parameter or how many layers to put in vram vs system ram. So as you increase max context, the ram/vram split changes.
+--- MaxKruse96 (1): no. and its a terrible feature for desktop machines.
+--- DunderSunder (1): You are on laptop, if are using igpu normally for desktop apps (browser etc), then you can use --fitt 0 to fill up whole vram.
+also you can force no vram overflow in nvidia app. find the llama-server in program settings and disable CUDA memory fallback
+--- _bro (1): don't let it overflow to ram, its an order of magnitude slower (something like vram 100x, ram 10x)
+--- Steuern_Runter (1): Is there a setting in llama.cpp to use VRAM for the first tokens and only spill over to RAM after VRAM is filled? That way you would have the nice speed in small/medium session but you wouldn't hit a hard context limit when VRAM is full.
+--- Ronnie_CA (1): Your welcome, Sally. :)
+--- Aggravating-Push-207 (1): Thanks, Claude.
+--- andrewh2000 (1): Can you link to this fork please?
+--- Aggravating-Push-207 (1): i thought it was 32 kb/token at fp16
+--- ea_man (1): Context pressure does exists yet it shows at length, at the early stage you are supposed to run fast.
+--- crantob (1): The open question you've not considered is why can't llama.cpp only run as if the context were set to 8k, when only <8k tokens have entered it.
+
+Think of it like a dynamically scaling context, rising up to the user specified limit.
+
+Initial speed would be fast and slow down as context fills.
+--- Aggravating-Push-207 (1): Ah, I forgot about the compute buffers.
+--- Aggravating-Push-207 (1): I would hope that it doesn't offload into system RAM; my GPU has enough memory.
+--- Terminator857 (1): Should the software be optimized not to load if not using longer context?
+--- LambdaHominem (0): i dont use `llama cli` so idk much, but try changing to `llama serve` (without `-mli` arg) and u will see some message about context
+--- eightone-81 (-6): Move to vllm if possible

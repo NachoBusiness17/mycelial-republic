@@ -344,6 +344,54 @@ def pack_status(
         }
 
 
+def ping_session_record(
+    *,
+    sid: str,
+    seat: str,
+    narrative: str,
+    pack: dict[str, Any],
+    exists: bool,
+    force: bool,
+    incomplete: bool,
+) -> dict[str, Any]:
+    """Operator attention ping that a session narrative exists.
+
+    Ping policy: only on first write, force, or incomplete (amend pings are
+    noise). 2026-09-29 gala wave5 attention-channel: routed through the shared
+    attention contract in mag/act.py (evict_for_prepend) so this newest-first
+    record flood can no longer evict the preserved alert tail -- the old
+    `note + prev[:40000]` behead destroyed the 2026-09-26 COLLECT-DRIFT and
+    2026-09-28 fleet-task-doctor patrol alerts within hours of their append
+    (watch/inbox/burn_reset_20260927/flash50/w4-09.md). Records now evict
+    whole-block, each ping carries a ts line, and the flood meters itself into
+    the daily attention counter (emission parity: the unmetered writer was the
+    survivor; w4-37 law A1/A3).
+    """
+    if exists and not force and not incomplete:
+        return {"pinged": False}
+    from mag.act import bump_attention_count, evict_for_prepend
+
+    att = ROOT / "memory" / "attention.md"
+    pdf_line = f"- pdf: `{pack.get('pdf')}`\n" if pack.get("pdf") else ""
+    json_line = (
+        f"- dossier: `{pack.get('dossier_json')}`\n" if pack.get("dossier_json") else ""
+    )
+    err_line = f"- pdf_error: {pack.get('pdf_error')}\n" if pack.get("pdf_error") else ""
+    note = (
+        f"\n---\n\n### Session record ready ({'first' if not exists else 'amended'})\n\n"
+        f"- ts: {datetime.now(timezone.utc).isoformat()}\n"
+        f"- session: `{sid}`\n"
+        f"- seat: `{seat}`\n"
+        f"- narrative: `{narrative}`\n"
+        f"{pdf_line}{json_line}{err_line}"
+        f"- also: `memory/biography/latest.md` · brief under `memory/briefs/`\n\n"
+    )
+    prev = att.read_text(encoding="utf-8") if att.is_file() else "# Mag attention\n"
+    att.write_text(evict_for_prepend(prev, note, 40000), encoding="utf-8")
+    _day, count = bump_attention_count()
+    return {"pinged": True, "path": str(att), "attention_count_today": count}
+
+
 def summarize_session(
     session_id: str,
     *,
@@ -507,23 +555,15 @@ def summarize_session(
     )
 
     # attention: only ping on first write or force, not every amend (noise)
-    if not exists or force or incomplete:
-        att = ROOT / "memory" / "attention.md"
-        pdf_line = f"- pdf: `{pack.get('pdf')}`\n" if pack.get("pdf") else ""
-        json_line = (
-            f"- dossier: `{pack.get('dossier_json')}`\n" if pack.get("dossier_json") else ""
-        )
-        err_line = f"- pdf_error: {pack.get('pdf_error')}\n" if pack.get("pdf_error") else ""
-        note = (
-            f"\n---\n\n### Session record ready ({'first' if not exists else 'amended'})\n\n"
-            f"- session: `{sid}`\n"
-            f"- seat: `{ref.source}`\n"
-            f"- narrative: `{out_path}`\n"
-            f"{pdf_line}{json_line}{err_line}"
-            f"- also: `memory/biography/latest.md` · brief under `memory/briefs/`\n\n"
-        )
-        prev = att.read_text(encoding="utf-8") if att.is_file() else "# Mag attention\n"
-        att.write_text(note + prev[:40000], encoding="utf-8")
+    att_ping = ping_session_record(
+        sid=sid,
+        seat=ref.source,
+        narrative=str(out_path),
+        pack=pack,
+        exists=exists,
+        force=force,
+        incomplete=incomplete,
+    )
 
     brief_meta: dict[str, Any] = {}
     try:

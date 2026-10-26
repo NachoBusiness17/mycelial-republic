@@ -18,7 +18,16 @@ THE MAP (operator's frame):
   * A loop whose invariant is NOVEL = OPEN = a GAP the swarm/flock should fill.
 
 Schema: dirac_loop.v1 · deterministic · $0
-CLI: python -m mag.dirac_loop scan [--scope operational|knowledge|all] | cycles | rank | spectrum
+CLI: python -m mag.dirac_loop scan [--scope operational|knowledge|all] | cycles | rank | spectrum | bank --edge <loop-edge>
+
+Bank evidence law (2026-10-05, register row 6 of corpus/steal/
+MASTER_READ_ESTATE.md: adoption of the RECEIPT_BINDINGS shape from
+tools/queue_close.py, proven in watch/inbox/QUEUE_CLOSE_VERB_20260927.md):
+the proving receipt resolves EXCLUSIVELY from the literal table below (a
+banked invariant ends the gap's status forever). The runtime cannot point
+the verb at an unregistered file: no --receipt argument exists, and
+unbound-edge / receipt-missing / already-banked refuse with exit 2. Adding
+a bank means editing that table (hook-scanned), never passing a path.
 """
 from __future__ import annotations
 
@@ -189,7 +198,16 @@ def loop_invariant(labels: list[str]) -> str:
 
 
 def _known_invariants(*, scope: str = "operational") -> set[str]:
-    """Existing solved-shapes: hashes of the knot/case-law nodes already in the lattice."""
+    """Existing solved-shapes: knot/case-law/doctrine node hashes UNION the
+    banked loop-invariants ledger (BANKED_FILE).
+
+    2026-09-27 structural fix (found closing loop 3): the two formulas never
+    met — this function hashed individual node labels while loop_invariant()
+    hashes the sorted-joined label-SET, so closed_solved could never fire on
+    any scope. Closure is now a receipt-backed act: bank(loop_edge, receipt)
+    writes the loop's invariant + proving receipt to the banked ledger and
+    scan() honors it. Adding graph edges never closes loops (every non-tree
+    edge is itself a loop generator) — only banking the holonomy does."""
     known: set[str] = set()
     try:
         nodes, _ = _graph(scope)
@@ -199,7 +217,90 @@ def _known_invariants(*, scope: str = "operational") -> set[str]:
                 known.add(_h("dirac_loop:" + lab[:200]))
     except Exception:
         pass
+    try:
+        if BANKED_FILE.is_file():
+            for line in BANKED_FILE.read_text(encoding="utf-8", errors="replace").splitlines():
+                if not line.strip():
+                    continue
+                try:
+                    row = json.loads(line)
+                except json.JSONDecodeError:
+                    continue
+                inv = row.get("invariant")
+                if isinstance(inv, str) and inv:
+                    known.add(inv)
+    except Exception:
+        pass
     return known
+
+
+BANKED_FILE = ROOT / "watch" / "inbox" / "DIRAC_BANKED_INVARIANTS.jsonl"
+
+# Bank evidence registry: loop edge key -> literal repo-relative receipt path.
+# Receipt-binding law (2026-10-05): evidence resolves ONLY from this hardcoded
+# table (tools/queue_close.py shape, register row 6); adding a bank means
+# editing this table. Seeded with the three already-banked loops whose
+# receipts are real files; the prose rows of 2026-09-27/28 are history.
+RECEIPT_BINDINGS: dict[str, str] = {
+    "organ:context_admission->organ:openclaw": "watch/inbox/OPENCLAW_POLICY_HANDSHAKE_20260927.md",
+    "organ:openclaw->organ:context_admission": "watch/inbox/OPENCLAW_POLICY_HANDSHAKE_20260927.md",
+    "organ:context_pack->organ:swarm_surface": "watch/inbox/PACK_OFFLOAD.jsonl",
+}
+
+
+def bank(edge: str, seat: str = "zcode") -> dict[str, Any]:
+    """Bank one loop's holonomy: record its invariant + the receipt proving
+    the closed contract (verify-without-replay from now on; the loop stays
+    in the graph, its GAP status ends). Receipt-binding law (2026-10-05):
+    the receipt resolves exclusively from RECEIPT_BINDINGS, never from the
+    runtime; refusals (unbound-edge, receipt-missing, already-banked) exit 2.
+    """
+    receipt_rel = RECEIPT_BINDINGS.get(edge)
+    if receipt_rel is None:
+        bound = ", ".join(sorted(RECEIPT_BINDINGS)) or "(none)"
+        return {"ok": False, "refusal": "unbound-edge",
+                "error": f"no RECEIPT_BINDINGS entry for edge {edge!r} (bound: "
+                         f"{bound}); register the receipt in mag/dirac_loop.py"}
+    receipt_path = ROOT.joinpath(*receipt_rel.split("/"))
+    if not receipt_path.is_file():
+        return {"ok": False, "refusal": "receipt-missing",
+                "error": f"RECEIPT_BINDINGS entry for {edge!r} does not "
+                         f"byte-exist: {receipt_path}"}
+    fc = fundamental_cycles()
+    target = None
+    for lp in fc["loops"]:
+        if lp["edge"] == edge or edge in lp["edge"]:
+            target = lp
+            break
+    if target is None:
+        return {"ok": False, "error": f"no enumerated loop matches edge {edge!r}; "
+                f"known edges: {[l['edge'] for l in fc['loops']]}"}
+    inv = loop_invariant(target["labels"])
+    # Double-bank guard (queue_close status-guard analog): a second close row
+    # from the same evidence would be a dup, never a new close.
+    if BANKED_FILE.is_file():
+        for line in BANKED_FILE.read_text(encoding="utf-8", errors="replace").splitlines():
+            if not line.strip():
+                continue
+            try:
+                prior = json.loads(line)
+            except json.JSONDecodeError:
+                continue
+            if prior.get("invariant") == inv:
+                return {"ok": False, "refusal": "already-banked",
+                        "error": f"invariant {inv} already banked (edge "
+                                 f"{prior.get('edge')!r}, ts {prior.get('ts')!r}); "
+                                 "the gap is closed"}
+    row = {
+        "ts": _now(), "schema": SCHEMA, "kind": "banked_loop",
+        "edge": target["edge"], "invariant": inv,
+        "labels": target["labels"], "receipt": receipt_rel,
+        "seat": seat,
+    }
+    BANKED_FILE.parent.mkdir(parents=True, exist_ok=True)
+    with BANKED_FILE.open("a", encoding="utf-8") as f:
+        f.write(json.dumps(row, ensure_ascii=False) + "\n")
+    return {"ok": True, "banked": row}
 
 
 def rank(*, scope: str = "operational") -> dict[str, Any]:
@@ -270,6 +371,11 @@ def main(argv: list[str] | None = None) -> int:
             "--scope", choices=("operational", "knowledge", "all"),
             default=argparse.SUPPRESS,
         )
+    p_bank = sub.add_parser("bank", help="bank a loop's holonomy (close the gap; "
+                                         "receipt resolves only from RECEIPT_BINDINGS)")
+    p_bank.add_argument("--edge", required=True)
+    p_bank.add_argument("--seat", default="zcode")
+    # No --receipt argument by law: a runtime path is unrecognized -> argparse exit 2.
     p.add_argument("--scope", choices=("operational", "knowledge", "all"), default="operational")
     a = p.parse_args(argv)
     if a.cmd == "scan":
@@ -277,9 +383,14 @@ def main(argv: list[str] | None = None) -> int:
     elif a.cmd == "cycles":
         print(json.dumps(fundamental_cycles(scope=a.scope), indent=2, ensure_ascii=False, default=str))
     elif a.cmd == "rank":
-        print(json.dumps(rank(scope=a.scope), indent=2, ensure_ascii=False))
+        print(json.dumps(rank(scope=a.scope), indent=2, ensure_ascii=False, default=str))
     elif a.cmd == "spectrum":
-        print(json.dumps(spectrum(scope=a.scope), indent=2, ensure_ascii=False))
+        print(json.dumps(spectrum(scope=a.scope), indent=2, ensure_ascii=False, default=str))
+    elif a.cmd == "bank":
+        res = bank(edge=a.edge, seat=a.seat)
+        print(json.dumps(res, indent=2, ensure_ascii=False, default=str))
+        if not res.get("ok"):
+            return 2  # refused: unbound-edge | receipt-missing | already-banked
     else:
         p.print_help(); return 1
     return 0

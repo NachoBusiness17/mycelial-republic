@@ -15,6 +15,11 @@ Output:
   memory/pile/classified.jsonl      classified rows (idempotent by id)
   memory/pile/training_rows.jsonl   training rows (feeds train/prepare.py)
   skill_ledger                       case-law fold (record_decision)
+
+Write-back: every id landed in classified.jsonl is flagged classified=true
+back into state_summaries.jsonl (atomic rewrite). Without this the in-pile
+flag never moves and mag.state_snapshot.status() counts the rows as
+unclassified forever (fix for the 2026-09-25 wave-1 tier-2 verdict).
 """
 from __future__ import annotations
 
@@ -99,6 +104,11 @@ def run_pile(*, model: str, limit: int | None = None, fold: bool = True, timeout
         except Exception as e:  # noqa: BLE001
             errors.append(f"{row.get('id')}: {str(e)[:120]}")
 
+    # write-back: flag classified=true in the source pile for every id that
+    # exists in classified.jsonl (historical backlog + this run), so the
+    # in-pile flag mag.state_snapshot.status() counts finally moves.
+    written = _write_back(done | {r["id"] for r in classified_out})
+
     return {
         "ok": True,
         "schema": "pile_classify.v1",
@@ -106,9 +116,38 @@ def run_pile(*, model: str, limit: int | None = None, fold: bool = True, timeout
         "pile": len(rows),
         "pending": len(pending),
         "classified_this_run": len(classified_out),
+        "pile_writeback": written,
         "errors": errors,
         "classified_total": len(done) + len(classified_out),
     }
+
+
+def _write_back(ids: set[Any]) -> int:
+    """Flag classified=true on pile rows whose id is in ids. Atomic rewrite.
+
+    Reads raw lines (not _read_lines) so an unparseable historical line is
+    preserved verbatim instead of silently dropped from the record.
+    """
+    if not PILE.is_file() or not ids:
+        return 0
+    out: list[str] = []
+    changed = 0
+    for line in PILE.read_text(encoding="utf-8", errors="replace").splitlines():
+        if not line.strip():
+            continue
+        try:
+            row = json.loads(line)
+        except json.JSONDecodeError:
+            out.append(line)  # preserve verbatim, never drop record lines
+            continue
+        if row.get("id") in ids and not row.get("classified"):
+            row["classified"] = True
+            changed += 1
+        out.append(json.dumps(row, ensure_ascii=False))
+    tmp = PILE.with_suffix(".jsonl.tmp")
+    tmp.write_text("\n".join(out) + "\n", encoding="utf-8")
+    tmp.replace(PILE)
+    return changed
 
 
 def _append(path: Path, row: dict[str, Any]) -> None:

@@ -52,6 +52,79 @@ def _read(path: Path) -> str:
         return ""
 
 
+def _latest_inbox(prefix: str) -> Path | None:
+    """Newest file in watch/inbox matching prefix (date-stamped meter outputs)."""
+    inbox = ROOT / "watch" / "inbox"
+    if not inbox.is_dir():
+        return None
+    hits = sorted(inbox.glob(prefix))
+    return hits[-1] if hits else None
+
+
+def _gather_meters() -> dict[str, Any]:
+    """Default cockpit readings: smith chart Γ + cathedral curvature + dumb floor.
+
+    Dogfood wiring 2026-09-22: the brief is the one artifact every seat already
+    loads, so the meters ride it. Bar law: |Γ| > 0.5 = REFLECTING = fixes only,
+    no prose. Dumb floor: meters older than 24h are RED no matter what they say.
+    """
+    m: dict[str, Any] = {}
+
+    smith_p = _latest_inbox("ESTATE_SMITH_CHART_*.json")
+    if smith_p:
+        try:
+            d = json.loads(_read(smith_p) or "{}")
+            organs = d.get("organs") or {}
+            bar = d.get("bar", 0.5)
+            m["smith_file"] = smith_p.name
+            m["smith_ts"] = d.get("ts")
+            m["bar"] = bar
+            m["organs"] = [
+                {
+                    "name": k,
+                    "gamma": (v or {}).get("gamma"),
+                    "status": (v or {}).get("status"),
+                }
+                for k, v in organs.items()
+            ]
+            m["no_prose"] = [
+                k
+                for k, v in organs.items()
+                if isinstance(v, dict)
+                and (v.get("status") == "REFLECTING" or (v.get("gamma") or 0) > bar)
+            ]
+        except Exception as e:
+            m["smith_error"] = str(e)[:120]
+
+    curv_p = _latest_inbox("CATHEDRAL_CURVATURE_SCAN_*.json")
+    if curv_p:
+        try:
+            d = json.loads(_read(curv_p) or "{}")
+            regions = d.get("regions") or {}
+            m["curv_file"] = curv_p.name
+            m["curv_ts"] = d.get("ts")
+            m["regions_n"] = len(regions)
+            m["saddle_n"] = sum(
+                1 for v in regions.values() if isinstance(v, dict) and v.get("class") == "SADDLE"
+            )
+            m["beta0_wired"] = d.get("beta0_wired_world")
+            dv = d.get("descent_vote") or {}
+            m["descent_shorter"] = dv.get("shorter_in_own_metric")
+        except Exception as e:
+            m["curv_error"] = str(e)[:120]
+
+    try:
+        newest = max((p for p in (smith_p, curv_p) if p), key=lambda p: p.stat().st_mtime)
+        age_h = (datetime.now(timezone.utc).timestamp() - newest.stat().st_mtime) / 3600.0
+        m["age_h"] = round(age_h, 1)
+        m["floor"] = "RED (meters stale >24h)" if age_h > 24.0 else "ok"
+    except ValueError:
+        m["floor"] = "DARK (no readings)"
+    except Exception:
+        m["floor"] = "?"
+    return m
+
+
 def gather_state() -> dict[str, Any]:
     out: dict[str, Any] = {"ts": _now(), "schema": SCHEMA}
 
@@ -145,6 +218,12 @@ def gather_state() -> dict[str, Any]:
     out["current_goal"] = (goal_m.group(1).strip()[:200] if goal_m else "") or "(none)"
     out["current_status"] = (status_m.group(1).strip() if status_m else "") or "?"
 
+    # --- meters (default cockpit) ---
+    try:
+        out["meters"] = _gather_meters()
+    except Exception as e:
+        out["meters"] = {"error": str(e)[:120]}
+
     # --- open loops (working.md) ---
     wm = _read(ROOT / "memory" / "working.md")
     loops = []
@@ -183,6 +262,36 @@ def render_brief(s: dict[str, Any]) -> str:
     lines.append(f"- **pending handoffs:** {s.get('pending_handoffs_n', 0)}")
     lines.append(f"- **status:** {s.get('current_status', '?')} · **current goal:** {s.get('current_goal', '')}")
 
+    m = s.get("meters") or {}
+    organs = m.get("organs") or []
+    lines.append("")
+    lines.append("## METERS (default cockpit · bar 0.5 · REFLECTING = fixes only, no prose)")
+    if organs:
+        lines.append(
+            "- **Γ:** "
+            + " · ".join(
+                (f"{o['name']}={o['gamma']:.2f}" + (" ✓" if o.get("status") == "DELIVERING" else ""))
+                for o in organs
+                if o.get("gamma") is not None
+            )
+        )
+        no_prose = m.get("no_prose") or []
+        lines.append(
+            "- **no-prose list:** " + (", ".join(no_prose) if no_prose else "(none — all delivering)")
+        )
+    if m.get("curv_file"):
+        lines.append(
+            f"- **curvature:** {m.get('saddle_n','?')}/{m.get('regions_n','?')} regions saddle"
+            f" · β0 wired={m.get('beta0_wired')}"
+            f" · descent vote: {m.get('descent_shorter') or 'n/a'}"
+        )
+    if not organs and not m.get("curv_file"):
+        lines.append("- meters DARK (no readings found) — run `tools/estate_smith_chart.py`")
+    lines.append(
+        f"- **floor:** {m.get('floor','?')} · age {m.get('age_h','?')}h"
+        f" · {m.get('smith_file') or '-'} / {m.get('curv_file') or '-'}"
+    )
+
     lines.append("")
     lines.append("## In-flight / queued")
     active = s.get("queue_active") or []
@@ -208,12 +317,43 @@ def render_brief(s: dict[str, Any]) -> str:
 
     lines.append("")
     lines.append("---")
+    lattice = ROOT / "memory" / "lattice" / "latest.md"
+    if lattice.is_file():
+        try:
+            ltxt = lattice.read_text(encoding="utf-8", errors="replace")
+            age_h = (datetime.now(timezone.utc).timestamp()
+                     - lattice.stat().st_mtime) / 3600.0
+            cap = 7000
+            body = ltxt[:cap]
+            if len(ltxt) > cap:
+                body = body.rsplit("\n", 1)[0] + "\n_(lattice truncated at %d chars — full file: memory/lattice/latest.md)_" % cap
+            lines.append("")
+            lines.append("## LATTICE (estate map · warmed · %s bytes · age %.1fh%s)"
+                         % (lattice.stat().st_size, age_h,
+                            " · STALE, regenerate with tools/lattice_build.py" if age_h > 48 else ""))
+            lines.append(body)
+        except OSError:
+            pass
+    else:
+        lines.append("")
+        lines.append("## LATTICE (estate map) — MISSING: run `tools/lattice_build.py`")
+    lines.append("---")
     lines.append("_Regenerate: `python -m mag.session_state_brief`. Next step: load context-pack, "
                  "read CURRENT.md, and continue from the current goal / in-flight work._")
     return "\n".join(lines)
 
 
 def write_brief(s: dict[str, Any] | None = None) -> dict[str, Any]:
+    # P0-1 warm-face law (2026-09-26): honor FROZEN as-of banner on latest.md.
+    if LATEST.is_file():
+        head = LATEST.read_text(encoding="utf-8", errors="replace")[:240]
+        if head.lstrip("\ufeff").startswith("# FROZEN"):
+            return {
+                "ok": False,
+                "error": "latest.md is FROZEN; refuse overwrite (P0-1 warm-face)",
+                "path": str(LATEST),
+                "frozen": True,
+            }
     s = s or gather_state()
     text = render_brief(s)
     BRIEFS.mkdir(parents=True, exist_ok=True)

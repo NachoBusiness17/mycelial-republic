@@ -24,6 +24,25 @@ def test_map_separates_callable_from_live() -> None:
 
 
 def test_operational_graph_has_explicit_cycles_and_unverified_edges() -> None:
+    """SPEC (2026-09-29 wave5 suite-burn repair; the open_gaps>0 clause is superseded
+    by the bank law). The operational graph must have explicit cycles (beta1 > 0),
+    every edge honestly unverified, and Dirac-loop closure must be the receipt-backed
+    act the committed law defines (mag/dirac_loop.py _known_invariants docstring,
+    2026-09-27: "Closure is now a receipt-backed act: bank(loop_edge, receipt) ...
+    Adding graph edges never closes loops - only banking the holonomy does"):
+    closed_solved + open_gaps == n_loops, and every CLOSED loop's invariant must be
+    a receipt-carrying row in watch/inbox/DIRAC_BANKED_INVARIANTS.jsonl.
+
+    The old `assert scan["open_gaps"] > 0` encoded a frontier that legitimately no
+    longer exists: all 6 operational loops were banked closed with receipts (ledger
+    history: 4638646d4 first bank, 79f0f50d5 loops 4+5, 6c43c15d2 loop 6,
+    a23928aca closed 5 / open 1 then the last; all rows carry receipt=True). A
+    positive-gap requirement could now only be satisfied by manufacturing a fake
+    graph edge or un-banking real work, so the enforced law is the accounting and
+    the receipt chain instead of a guaranteed gap."""
+    import json
+    from pathlib import Path
+
     from mag import dirac_loop
     from mag.organ_map import operational_graph
 
@@ -33,7 +52,25 @@ def test_operational_graph_has_explicit_cycles_and_unverified_edges() -> None:
     scan = dirac_loop.scan(scope="operational")
     assert scan["ok"] is True
     assert scan["betti1"] > 0
-    assert scan["open_gaps"] > 0
+    assert scan["closed_solved"] + scan["open_gaps"] == scan["n_loops"], (
+        f"loop accounting must add up: {scan['closed_solved']} closed + "
+        f"{scan['open_gaps']} open != {scan['n_loops']} loops")
+    ledger = (Path(dirac_loop.__file__).resolve().parents[1]
+              / "watch" / "inbox" / "DIRAC_BANKED_INVARIANTS.jsonl")
+    banked: dict[str, dict] = {}
+    for line in ledger.read_text(encoding="utf-8").splitlines():
+        if not line.strip():
+            continue
+        row = json.loads(line)
+        if row.get("invariant") and row.get("receipt"):
+            banked[row["invariant"]] = row
+    for lp in scan["closed"]:
+        assert lp["invariant"] in banked, (
+            f"closed loop without a banked receipt (closure must be a banked act): "
+            f"{lp['edge']}")
+    for lp in scan["open"]:
+        assert lp["status"] == "open" and lp["invariant"] not in banked, (
+            f"an open loop must be honestly labeled and unbanked: {lp['edge']}")
 
 
 def test_map_and_elder_surface_callable_orphans() -> None:

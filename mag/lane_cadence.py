@@ -40,6 +40,8 @@ OVERLOAD_RETRY = 25        # backoff when the failure is a pool overload (1305/4
 MAX_RETRY = 120            # cap on backoff
 DEMOTE_STREAK = 3          # consecutive failures before a lane is pushed to the back
 BRAKE_FREE_FAILS = 3       # full-rotation free failures before the paid brake may fire
+COOLDOWN_GATE_ERROR: str | None = None  # t84: the fail-closed pacing gates name their cause
+BRAKE_GATE_ERROR: str | None = None
 
 
 def _now() -> str:
@@ -127,6 +129,8 @@ def cooldown(lane: str) -> int:
     """Seconds remaining before this lane should be retried (0 = ready). Based on its LAST
     failure's time + retry_after (overload = longer). The drain/router can probe cooled lanes
     LAST instead of hammering them — the cadence, USED."""
+    global COOLDOWN_GATE_ERROR
+    COOLDOWN_GATE_ERROR = None  # a clean read clears the named error
     rows = _ledger_rows()
     for r in reversed(rows):
         if r.get("lane") != lane:
@@ -135,8 +139,18 @@ def cooldown(lane: str) -> int:
             return 0  # last attempt succeeded -> ready
         try:
             ts = datetime.fromisoformat((r.get("ts") or "").replace("Z", "+00:00"))
-        except Exception:  # noqa: BLE001
-            return 0
+        except Exception as _te:  # noqa: BLE001 - an unverifiable lane state must not read as ready
+            # GATE FAIL-CLOSED (2026-09-25, t84): the old 'except Exception: return 0' read
+            # a FAILED row with an unparseable ts as READY (pacing GO). Call sites confirm
+            # the safe direction is the cooled/slower path: queue_gate.preflight denies
+            # dispatch while cd>0 (mag/queue_gate.py:206), fuel_feed._lane_order probes
+            # cooled lanes last (mag/fuel_feed.py:201), pick_free_glm (below) rides the
+            # calmer clerk pool while cd>0. Honor the slower path: a full-cap breather,
+            # cause named in COOLDOWN_GATE_ERROR. Self-heals: the next attempt appends a
+            # fresh parseable row that becomes this lane's last row.
+            # SPEC: tests/test_loop_death_guards.py, t84 SPEC line 3.
+            COOLDOWN_GATE_ERROR = f"FAIL-CLOSED: cooldown() ts parse exited: {_te}"
+            return MAX_RETRY
         elapsed = (datetime.now(timezone.utc) - ts).total_seconds()
         wait = retry_after(lane, str(r.get("error") or ""))
         return max(0, int(wait - elapsed))
@@ -174,13 +188,25 @@ def pick_free_glm(lane: str = "z_ai3") -> str:
 
 def brake_after() -> int:
     """Free-rotation failures (within a 10-min window) before the paid brake may fire."""
+    global BRAKE_GATE_ERROR
+    BRAKE_GATE_ERROR = None  # a clean pass clears the named error
     rows = _ledger_rows()
     now = datetime.now(timezone.utc)
     recent = 0
     for r in rows[-20:]:
         try:
             ts = datetime.fromisoformat((r.get("ts") or "").replace("Z", "+00:00"))
-        except Exception:  # noqa: BLE001
+        except Exception as _te:  # noqa: BLE001 - an unverifiable row must not read as no-failure
+            # GATE FAIL-CLOSED (2026-09-25, t84): the old 'except Exception: continue' let
+            # an unparseable ts row read as NOT a failure, undercounting recent free fails
+            # and delaying the paid brake (the pacing GO: the free rotation keeps pounding
+            # unpaced). No production callers today (repo grep: status() + the dist_audit
+            # copy); the contract is this docstring: the return is the count of free fails
+            # still needed before the brake may fire, so the deny direction is COUNT the
+            # unverifiable row. Cause named in BRAKE_GATE_ERROR.
+            # SPEC: tests/test_loop_death_guards.py, t84 SPEC line 4.
+            recent += 1
+            BRAKE_GATE_ERROR = f"FAIL-CLOSED: brake_after() ts parse exited: {_te}"
             continue
         if (now - ts).total_seconds() > 600:
             break
@@ -209,6 +235,8 @@ def status() -> dict[str, Any]:
         "demote_after": demote_after(),
         "brake_allowed_after_free_fails": BRAKE_FREE_FAILS,
         "ledger_rows": len(rows),
+        "cooldown_gate_error": COOLDOWN_GATE_ERROR,
+        "brake_gate_error": BRAKE_GATE_ERROR,
         "lanes": lanes,
         "note": "retry_after stretches on consecutive failures (overload = longer breather); "
                 "best_utc_hours are calm windows from real outcomes; brake fires only after "

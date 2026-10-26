@@ -1,0 +1,25 @@
+#!/usr/bin/env bash
+# P0 secrets containment (audit 2026-09-30 finding #1): block any commit whose
+# staged blobs contain a live .env value (substring match, values never printed).
+#
+# Wired HERE, not .git/hooks/pre-commit, because core.hooksPath=githooks makes
+# .git/hooks inert on this machine — an inert hook file would be a fake fix.
+# If core.hooksPath is ever unset, re-point this gate before relying on it.
+# Gate: tools/precommit_secret_check.py · Receipt: watch/inbox/last_mile_20260930/AG1_SECRETS_CONTAINMENT.md
+set -euo pipefail
+REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+# 2026-10-20: an MSYS absolute path ("/c/Users/...") handed to the Windows
+# interpreter resolved to "C:\c\Users\..." and made EVERY commit fail
+# ("can't open file"), so the sweeper could not land anything all day.
+# Run from the repo root with relative paths - no path translation involved.
+cd "$REPO_ROOT"
+if [[ "$(uname -s)" =~ Linux|Darwin ]]; then
+  PY="python3"
+else
+  PY=".venv/Scripts/python.exe"
+  command -v "$PY" >/dev/null 2>&1 || PY="python"
+fi
+"$PY" "tools/precommit_secret_check.py" || exit $?
+# 2026-10-24 ractor fold: a law is a statement; this is the mechanism. New files
+# under tools/ must name existing prior art (two paths) or the commit is refused.
+"$PY" "tools/prior_art_check.py" || exit $?

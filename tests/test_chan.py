@@ -4,7 +4,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from mag.chan import catalog, is_play_post, paint_tool, post, seed_keep, slugify, thread, trip_id
+from mag.chan import catalog, check_steer, is_play_post, paint_tool, post, seed_keep, slugify, thread, trip_id
 
 
 def _room(tmp_path: Path) -> Path:
@@ -106,3 +106,72 @@ def test_seed_keep_once(tmp_path: Path):
     t = thread("keep", path=p)
     assert t["count"] == 1
     assert t["posts"][0]["seat"] == "primer"
+
+
+# ---------------------------------------------------------------------------
+# check_steer — the board's own STEER channel consumer (tools/steer_read).
+# The seed row landed in watch/inbox/STEER.md (mate "all", via hand-edit) is
+# copied verbatim into tmp channels; the live channel is never touched.
+# ---------------------------------------------------------------------------
+
+SEED_ROW = (
+    '{"id": "st_20260930_seed_1", "mate": "all", '
+    '"steer": "keep rolling 24 wide; proven seats only; dogfood gps", '
+    '"ts": "2026-09-30T00:00:00Z", "via": "hand-edit"}'
+)
+
+
+def _steer_channel(tmp_path: Path, *rows: str) -> Path:
+    p = tmp_path / "STEER.md"
+    p.write_text("# header comment row (file contract)\n" + "\n".join(rows) + "\n",
+                 encoding="utf-8")
+    return p
+
+
+def test_check_steer_returns_seed_row_when_target_matches(tmp_path: Path):
+    p = _steer_channel(tmp_path, SEED_ROW)
+    out = check_steer("chan", path=p)
+    assert out["ok"] is True
+    # mate "all" applies to any target; the seed row is a hand-edit ORDER
+    assert out["operative"]["id"] == "st_20260930_seed_1"
+    assert out["card"].startswith(">steer from the operator (hand-edit):")
+    assert "24 wide" in out["card"]  # greentext card carries the operator word verbatim
+
+
+def test_check_steer_scoped_row_matches_its_target_only(tmp_path: Path):
+    p = _steer_channel(
+        tmp_path,
+        '{"id":"f1","mate":"w9","steer":"other lane","ts":"2026-09-30T18:00:00Z","via":"hand-edit"}',
+        '{"id":"f2","mate":"chan","steer":"paint slower","ts":"2026-09-30T10:00:00Z","via":"hermes-dm"}',
+    )
+    hit = check_steer("chan", path=p)
+    assert hit["ok"] is True and hit["operative"]["id"] == "f2"
+    miss = check_steer("w3", path=p)  # neither row applies to w3
+    assert miss["ok"] is True and miss["card"] == "" and miss["operative"] is None
+
+
+def test_check_steer_empty_when_proposals_only(tmp_path: Path):
+    p = _steer_channel(
+        tmp_path,
+        '{"id":"p1","mate":"chan","steer":"seat guess","ts":"2026-09-30T11:00:00Z","via":"seat-guess"}',
+        '{"id":"p2","mate":"all","steer":"no provenance","ts":"2026-09-30T12:00:00Z"}',
+    )
+    out = check_steer("chan", path=p)
+    # proposals are asks, not orders: nothing is prepended, the board paints as usual
+    assert out["ok"] is True
+    assert out["card"] == "" and out["steer"] == "" and out["operative"] is None
+
+
+def test_check_steer_latest_proposal_suppresses_older_order(tmp_path: Path):
+    p = _steer_channel(
+        tmp_path,
+        '{"id":"o1","mate":"chan","steer":"older order","ts":"2026-09-30T10:00:00Z","via":"phone-relay"}',
+        '{"id":"p1","mate":"chan","steer":"newer ask","ts":"2026-09-30T15:00:00Z","via":"seat-guess"}',
+    )
+    out = check_steer("chan", path=p)
+    assert out["ok"] is True and out["card"] == ""  # latest wins, even when it is a proposal
+
+
+def test_check_steer_missing_channel_is_dark_not_silent(tmp_path: Path):
+    out = check_steer("chan", path=tmp_path / "nope.md")
+    assert out["ok"] is False and out["card"] == "" and out["operative"] is None

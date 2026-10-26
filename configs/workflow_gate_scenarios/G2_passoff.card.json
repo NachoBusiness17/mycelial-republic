@@ -1,0 +1,22 @@
+{
+  "gate_id": "G2-passoff",
+  "clause": "LAW-12 genesis clause, watch/inbox/BURN_rsi-harness_20260926.md falsifier: one scenario card per G1-G7 minted from real REGISTRY.jsonl FAIL rows within 14 days of registration",
+  "cited_fail_row": {
+    "registry": "memory/workflows/REGISTRY.jsonl",
+    "line": 12,
+    "ts": "2026-09-26T05:30:44Z",
+    "name": "the-50.dwf.ts",
+    "digest": "0937eff9fdda"
+  },
+  "citation_provenance": "Real fleet FAIL row: the first gate run of .zcode/workflows/the-50.dwf.ts at 2026-09-26T05:30:44Z returned verdict FAIL with G2-passoff ok=false (alongside G3, G4, G5, G7). The digest is the row's own recorded script digest.",
+  "scenario_input": "configs/workflow_gate_scenarios/fixtures/fail_g2.dwf.ts",
+  "scenario_description": "Fan-out actors run in isolation and their outputs are merged by an unnamed helper call (merge(head, first)): no earlier actor output (text/json/path) is carried into any later ask, so downstream actors re-derive or hallucinate what upstream already established.",
+  "expected_verdict": {
+    "overall": "FAIL",
+    "failed_checks": ["G2-passoff"],
+    "warn_checks": [],
+    "exit_code": 2
+  },
+  "regression_criterion": "tools/workflow_gate.py check --scenarios configs/workflow_gate_scenarios exits 0 with this card green. The card goes red if (a) the gate stops flagging fail_g2.dwf.ts (G2 regexes for JSON.stringify feeding or + actor.text/issues/stdout/path/quotes weakened or removed), (b) the fixture starts failing gates beyond expected_verdict.failed_checks, or (c) the cited row disappears from REGISTRY.jsonl. Card and fixture are immutable inputs: a G2 semantics change requires a new dated card filed alongside, never a silent edit.",
+  "rollback_note": "Scenario mode is read-only: it writes no registry row and touches no file. Rollback of a G2 gate change is a git revert of tools/workflow_gate.py to the pre-change blob, then re-run check --scenarios expecting green. The cited fleet FAIL row (line 12) is history and is never erased; the fixture stays so the reverted gate can be re-proven."
+}

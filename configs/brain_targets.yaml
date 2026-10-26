@@ -1,0 +1,44 @@
+# brain_targets.yaml: where the brain is replicated (2026-10-17).
+# Read by scripts/brain_replicate.py (private tiers) and
+# scripts/public_lattice_manifest.py (public tier). Copy-only and append-only
+# everywhere: no target is ever synced, pruned or overwritten.
+# Setup steps: docs/BRAIN_HOSTING.md
+schema: brain_targets.v1
+
+targets:
+  # 1. Local vault: the SOURCE of every other copy. Content-addressed
+  #    objects/<sha[:2]>/<sha> + manifests/; grows forever.
+  - name: local_vault
+    kind: vault
+    path: 'C:\MagChainVault\brain'
+
+  # 2. bob over Tailscale SMB. Probed on TCP 445 first; skipped cleanly when
+  #    offline. The share name is a PLACEHOLDER until Nacho creates it on bob.
+  - name: bob
+    kind: smb
+    enabled: true
+    host: 100.125.103.60
+    path: '\\100.125.103.60\MagBrain\brain'
+    probe_timeout_s: 2
+
+  # 3. PRIVATE vault on Google Drive: rclone crypt remote `magbrain:` wrapping
+  #    gdrive:mag-brain/ (filename encryption on). Base remote name is
+  #    configurable; the free-lane notes name gdrive_sd and gdrive_nacho.
+  - name: drive_private
+    kind: rclone_crypt
+    enabled: true
+    remote: 'magbrain:'
+    base_remote: gdrive_sd        # documentation only; the crypt remote wraps it
+
+# PUBLIC tier: a separate 5 TB Google Drive on a separate account, NOT crypt.
+# Strict one-way mirror of the cleaned invariant lattice only (allowlist in
+# scripts/public_lattice_manifest.py). Never pushed automatically: a push needs
+# --approve <public manifest sha> matching the sha Nacho reviewed in
+# PUBLIC_RELEASE_REVIEW.md. Nothing is ever read back from it.
+public:
+  name: drive_public
+  kind: rclone_public
+  remote: 'magpublic:'
+  dest: lattice                   # files land at magpublic:lattice/<manifest sha>/
+  staging: 'C:\MagChainVault\public_staging'
+  auto_push: false                # informational; the code has no auto path

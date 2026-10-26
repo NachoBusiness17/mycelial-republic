@@ -62,7 +62,8 @@ DEFAULT_POLICY = {
     ],
     "effects": [
         "board_write",       # post to blackboard
-        "verkle_link",       # write a verkle knot
+        # verkle_link KILLED 2026-10-03 (executor-sweep): zero consumers
+        # anywhere; receipt watch/inbox/buildall/executor-sweep.md.
         "tool_invoke",       # invoke external tool
         "model_call",        # spend credits on model
         "network_access",    # web fetch

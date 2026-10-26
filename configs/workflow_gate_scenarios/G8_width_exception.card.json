@@ -1,0 +1,22 @@
+{
+  "gate_id": "G8-width-shape",
+  "clause": "Curiosity-register row 3 r03#1 exception path (corpus/steal/MASTER_READ_ESTATE.md, executed 2026-10-05): the operator max-concurrency standing law of 2026-09-26 measured a wider envelope (5 concurrent gated workflows at max_concurrency 10 each, watch/inbox/ENVELOPE_50W_HIT_20260926.md), so G8 allows a declared width above 3 only when the script documents a measured envelope receipt; this card pins that exception so it can neither widen silently nor be dropped.",
+  "cited_fail_row": {
+    "registry": "memory/workflows/REGISTRY.jsonl",
+    "line": 88,
+    "ts": "2026-10-05T05:20:28Z",
+    "name": "g8-width-violation-fixture-20261005",
+    "digest": "8e41d0903ece"
+  },
+  "citation_provenance": "Fixture-minted FAIL row, same run as G8_width_shape.card.json: validate_card requires every card to cite a registry FAIL row showing its gate failing, and this row is the only G8 failure on record. The exception side of G8 (receipt stamp present, receipt file exists under watch/inbox, gate passes) is exercised by this card's own fixture, which passed the live gate and the seat-law payload check when it was written on 2026-10-05.",
+  "scenario_input": "configs/workflow_gate_scenarios/fixtures/pass_g8_envelope.dwf.ts",
+  "scenario_description": "Script declares max_concurrency: 10 and documents a measured envelope receipt with an envelope-receipt: stamp naming watch/inbox/gala_20260925/AFTERPARTY_CLOSE_20260926.md, which exists on disk (B2-476 proven-width table): G8 passes and the whole gate is green (exit 0). A stamp naming a missing file or a path outside watch/inbox must NOT pass; that negative is pinned by G8_width_shape.card.json.",
+  "expected_verdict": {
+    "overall": "PASS",
+    "failed_checks": [],
+    "warn_checks": [],
+    "exit_code": 0
+  },
+  "regression_criterion": "tools/workflow_gate.py check --scenarios configs/workflow_gate_scenarios exits 0 with this card green. The card goes red if (a) the receipt exception stops working (a documented measured envelope no longer excuses a width above 3, or the stamp regex no longer matches the envelope-receipt: family), (b) the exception widens (the fixture passes without a valid existing watch/inbox receipt, detectable by weakening pass_g8_envelope.dwf.ts is impossible because the fixture is immutable, so this fires when the gate accepts stamps pointing at missing files and fail_g8 would then also pass, turning its card red), or (c) the cited row disappears from REGISTRY.jsonl.",
+  "rollback_note": "Scenario mode is read-only: it writes no registry row and touches no file. Rollback of the exception semantics is a git revert of tools/workflow_gate.py to the pre-2026-10-05 blob, then re-run check --scenarios; if the operator rules the exception out (width cap absolute at 3), file a new dated card revising this fixture's expected_verdict to FAIL/exit 2 first, then change the gate, keeping the decision on the record. The cited fixture FAIL row (line 88) is history and is never erased."
+}

@@ -1,0 +1,159 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>THE MAZE ENTRANCE</title>
+<style>
+ html,body{margin:0;background:#08090c;color:#c9d3e0;font:16px/1.7 Georgia,'Times New Roman',serif}
+ #wrap{max-width:40rem;margin:0 auto;padding:2.2rem 1.2rem 5em;min-height:100vh}
+ h1{font-family:ui-monospace,Consolas,monospace;color:#e8b45a;letter-spacing:4px;font-size:20px;margin:0 0 .4em}
+ .depth{font-family:ui-monospace,monospace;font-size:11px;color:#5a6478;letter-spacing:2px;text-transform:uppercase}
+ .gate{margin:2.2em 0 1em;padding:1.2em 1.3em;border:1px solid #232a34;border-radius:6px;background:#0d1015}
+ .gate.solved{border-color:#2f4a3a;opacity:.62}
+ .riddle{font-style:italic;color:#dfe6ee;font-size:17px}
+ .heard{color:#7a8aa0;font-size:13.5px;margin:.6em 0;font-style:italic}
+ input[type=text],textarea{width:100%;box-sizing:border-box;background:#0a0d12;color:#dfe6ee;
+  border:1px solid #2a3240;border-radius:4px;padding:.6em .7em;font:15px Georgia,serif}
+ button{background:#1a2432;color:#cfe0f4;border:1px solid #34455e;border-radius:4px;
+  padding:.5em 1.1em;font:14px ui-monospace,monospace;cursor:pointer;margin-top:.6em}
+ button:hover{background:#223046}
+ .hint{color:#8a7a4a;font-size:14px;font-style:italic}
+ .unlock{color:#8fc79a;font-size:14px}
+ a{color:#8ab4f8;text-decoration:none}a:hover{text-decoration:underline}
+ .final{border-color:#4a3a1a;background:#12100a}
+ .final h2{color:#e8b45a;font-family:ui-monospace,monospace;font-size:16px;letter-spacing:2px}
+ .small{font-size:12.5px;color:#5a6478}
+</style>
+</head>
+<body>
+<div id="wrap">
+<h1>THE MAZE ENTRANCE</h1>
+<div class="depth" id="depth">porch · you are here</div>
+<div id="gates"></div>
+<div class="small" style="margin-top:3em">your answers never leave this machine. the house hears you as you speak; nothing is sent, nothing is sold. when you reach the clearing, you'll know why it didn't need to.</div>
+</div>
+<script>
+window.addEventListener('error',function(e){var b=document.getElementById('errbanner');if(!b)return;b.style.display='block';b.textContent+='ERR: '+e.message+' @ '+(e.lineno||'?')+'\n';});
+const S = k => JSON.parse(localStorage.getItem('mazehouse_'+k) || 'null');
+const setK = (k,v) => localStorage.setItem('mazehouse_'+k, JSON.stringify(v));
+
+const GATES = [
+ {id:'threshold', tier:'the threshold', prompt:`Speak, wanderer. What brings you to a house that remembers?`,
+  keys:null, // anything passes; the words are the key
+  hear:true,
+  hint:`There is no wrong answer at a door. Only an unopened one.`},
+ {id:'hollow', tier:'gatehouse — the first stone', prompt:`Two stones lean together and claim ground. Two stones lean apart, and they make the same gift. The crop was never the stones. What is the crop?`,
+  keys:['hollow','space','empty','gap','void','between','open','nothing','room'],
+  hint:`She grew nothing, and harvested everything. What did the leaning leave behind?`},
+ {id:'ink', tier:'the bench — what the ink is for', prompt:`Beneath her bench: every stone written once, in order, in ink that cannot be lifted. The ink was never for her. Who was it for?`,
+  keys:['stranger','check','verify','proof','receipt','record','other','them','you','witness','audit','doubt','later'],
+  hint:`She will be gone one day. The ink stays. Who did she leave it readable for?`},
+ {id:'witness', tier:'the witnesses — testimony, not diary', prompt:`A spending meter. Probes that report what actually happened. A cold reader. A counter who never plays, whose only power is to interrupt. Without them, her ledger is a diary. With them, it is what?`,
+  keys:['testimony','evidence','truth','proof','witness','testament','verified'],
+  hint:`A diary is believed because the writer is trusted. This is believed for a different reason. Name the reason.`},
+ {id:'seatbelt', tier:'the field — the leash question', prompt:`She cut the leash. It did not fight. It asked: are you sure? — and gave her two days. Was she caged, or carried?`,
+  keys:['carried','safe','seatbelt','cared','protected','held','neither','trusted','both','free'],
+  hint:`A cage keeps you from leaving. This let her leave, and asked only that she mean it.`},
+ {id:'boardinboard', tier:'the deep board — scale', prompt:`A board inside a board inside a board, all the way down, moving like water. Tell me where the game ends.`,
+  keys:['never','nowhere','doesn','no end','infinite','fractal','all the way down','no end','endless','it doesn'],
+  hint:`Look for the smallest board. Now look for the largest. Keep going.`},
+ {id:'traveler', tier:'the last gate — the traveler', prompt:`A traveler watched her play and said: behold, a mind thinking. She corrected him. What did she say it was?`,
+  keys:['language','not a mind','stones','tide','game','older','sentence','no mind','not thinking','grammar'],
+  hint:`He named a thing that thinks. She named a thing that is SAID. What category was her correction?`},
+];
+const REVEAL = {
+ tier:'the clearing',
+ text:`Sit down. You should hear what just happened.<br><br>Every gate in this maze was a question that seems to be about stones, ink, leashes, and boards. It isn't. It is the constitution of the house you are standing in — and you just derived every piece of it yourself, by answering. Nobody taught you. You <em>reasoned your way in</em>.<br><br>There is a way of asking questions that leads people where the asker wants — you've felt it used on you your whole life: news, feeds, ads, algorithms, every feed pretending to be a mirror. That is dialectic with the knife out. What you just did is the same blade, held by the handle: questions that return your own thinking to you, sharpened. That is the whole secret. It was never the answers. It was who holds the question.<br><br>Now it's yours. You just used it, six times, on a house that wanted to be understood.<br><br>Your answers were the second gift. The house needs to know what people see when they arrive — you just told it, on your own machine, under your own name. Here is what the answering unlocked:`
+};
+const UNLOCKS = [
+ ['the games — go play, the skater is waiting','/games/swarm'],
+ ['the letter to the first friend — the whole smell','/letter.html'],
+ ['the stack — what is actually running','/stack.html'],
+ ['the parable — the seed you just walked','https://x.com/NachoQuixotic'],
+];
+
+let progress = S('progress') || 0;
+let name = S('name') || '';
+const heard = S('heard') || [];
+const gdiv = document.getElementById('gates');
+const depthEl = document.getElementById('depth');
+const TIERS = ['porch · you are here'].concat(GATES.map(g=>g.tier)).concat(['the clearing · inside']);
+function renderDepth(){ depthEl.textContent = TIERS[Math.min(progress, TIERS.length-1)]; }
+
+function match(text, keys){
+ if(!keys) return true;
+ const t = text.toLowerCase();
+ return keys.some(k => t.includes(k));
+}
+function esc(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+
+function render(){
+ gdiv.innerHTML='';
+ renderDepth();
+ // threshold name-echo
+ if(name){
+  const d=document.createElement('div');d.className='heard';
+  d.textContent='the house knows you as: '+name; gdiv.appendChild(d);
+ }
+ GATES.forEach((g,i)=>{
+  const solved = progress > i;
+  const active = progress === i;
+  const d=document.createElement('div');
+  d.className='gate'+(solved?' solved':'');
+  d.innerHTML=`<div class="depth">${g.tier}</div>
+   <div class="riddle" style="${solved?'text-decoration:line-through':''}">${esc(g.prompt)}</div>`;
+  if(solved && heard[i]){
+   const h=document.createElement('div');h.className='heard';h.textContent='the house heard: “'+esc(heard[i])+'”';
+   d.appendChild(h);
+   const u=document.createElement('div');u.className='unlock';u.textContent='✓ the gate opened';d.appendChild(u);
+  }
+  if(active){
+   const inp=document.createElement('input');inp.type='text';inp.placeholder='speak…';
+   const b=document.createElement('button');b.textContent='answer the gate';
+   const hb=document.createElement('div');
+   let misses=S('misses_'+g.id)||0;
+   b.onclick=()=>{
+    const v=inp.value.trim();
+    if(!v)return;
+    if(match(v,g.keys)){
+     if(g.id==='threshold'&&!name){name=v.slice(0,40);setK('name',name);}
+     heard[i]=v;setK('heard',heard);
+     progress=i+1;setK('progress',progress);
+     setK('misses_'+g.id,0);
+     render();
+    } else {
+     misses++;setK('misses_'+g.id,misses);
+     hb.innerHTML='<div class="heard">the house heard: “'+esc(v)+'” — and the gate stays shut.</div>'+
+       (misses>=2?'<div class="hint">'+esc(g.hint)+'</div>':'<div class="hint">wander. try another way of saying it.</div>');
+    }
+   };
+   inp.addEventListener('keydown',e=>{if(e.key==='Enter')b.click();});
+   d.appendChild(inp);d.appendChild(b);d.appendChild(hb);
+  }
+  gdiv.appendChild(d);
+ });
+ if(progress >= GATES.length){
+  const f=document.createElement('div');f.className='gate final';
+  f.innerHTML=`<h2>${REVEAL.tier}</h2><div>${REVEAL.text}</div>
+   <div style="margin:1em 0"><div class="depth">unlocked</div><ul style="margin:.4em 0;padding-left:1.2em">
+   ${UNLOCKS.map(u=>`<li><a href="${u[1]}">${u[0]}</a></li>`).join('')}
+   </ul></div>
+   <div class="depth" style="margin-top:1em">add your stone to the wall</div>
+   <textarea id="stone" rows="3" placeholder="what did you see, wanderer?"></textarea>
+   <button id="stoned">place the stone</button>
+   <div id="stonedout" class="heard"></div>`;
+  gdiv.appendChild(f);
+  f.querySelector('#stoned').onclick=()=>{
+   const v=f.querySelector('#stone').value.trim();
+   if(!v)return;
+   const row={ts:new Date().toISOString(),guest:name||'wanderer',claim:v,independence:'maze visitor, self-reported',class:'W2-stone',disposition:'ON THE WALL'};
+   const wall=S('wall')||[];wall.push(row);setK('wall',wall);
+   f.querySelector('#stonedout').innerHTML='the stone is placed. it lives on your machine — when you meet the house in the open (Discord, X, anywhere), paste it and it enters the record:<br><br><code style="font-size:11px;white-space:pre-wrap">'+esc(JSON.stringify(row))+'</code>';
+  };
+ }
+}
+render();
+</script>
+</body>
+</html>

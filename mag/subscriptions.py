@@ -48,6 +48,24 @@ def _usage() -> dict[str, dict[str, Any]]:
 
 
 # ── THE LEDGER ──────────────────────────────────────────────────────────────────────────
+# B2-521 DORMANT GATE (2026-09-26): the free_lanes row still claimed "cerebras 85%" and
+# "nvidia credits" after B2-36/B2-61 declared both dormant (card-gated 30-day trial, chat
+# 402 no-credit; NVIDIA 410 EOL; mag/doctor.py:607: dormant is a declared state). The row
+# is now built from the live roster: dormant ids drop out of name, note, and keys; operator
+# GO flips the flag and the claims return with no code edit. Receipt:
+# watch/inbox/burn_wave_20260926/B2_521_cerebras_stragglers_20260926.md
+from mag.dormant import dormant_ids as _dormant_provider_ids  # noqa: E402
+
+_BACKBONE_CLAIMS: list[tuple[str, str, str]] = [
+    # (provider id, key env exactly as the row carried it, the measured claim in the note)
+    ("groq", "GROQ_API_KEY", "groq 91% ok"),
+    ("cerebras", "CEREBAS_API_KEY", "cerebras 85%"),
+    ("z_ai", "", "z_ai 81%"),
+    ("nvidia", "", "nvidia credits"),
+    ("ollama", "", "ollama local"),
+]
+_LIVE_BACKBONE = [c for c in _BACKBONE_CLAIMS if c[0] not in _dormant_provider_ids()]
+
 SUBSCRIPTIONS: list[dict[str, Any]] = [
     {"id": "deepseek", "name": "DeepSeek API (pay-as-you-go)", "type": "usage",
      "cost_mo": "~$30-90 (was $3/day heavy windows)", "keys": ["DEEPSEEK_API_KEY"],
@@ -127,11 +145,13 @@ SUBSCRIPTIONS: list[dict[str, Any]] = [
      "keys": ["VASTAI_API_KEY"], "verdict": "CHECK",
      "note": "GPU rental (saelis). If the instance is idle/not used, that's recurring cost "
              "with no benefit — terminate it."},
-    {"id": "free_lanes", "name": "Free lanes (groq/cerebras/nvidia/ollama/z_ai free)",
-     "type": "free", "cost_mo": "$0", "keys": ["GROQ_API_KEY", "CEREBAS_API_KEY"],
+    {"id": "free_lanes",
+     "name": "Free lanes (" + "/".join(c[0] for c in _LIVE_BACKBONE) + " free)",
+     "type": "free", "cost_mo": "$0",
+     "keys": [c[1] for c in _LIVE_BACKBONE if c[1]],
      "verdict": "USE",
-     "note": "The backbone: groq 91% ok, cerebras 85%, z_ai 81%, nvidia credits, ollama local. "
-             "No cost. Cadence learned for their calm hours."},
+     "note": "The backbone: " + ", ".join(c[2] for c in _LIVE_BACKBONE)
+             + ". No cost. Cadence learned for their calm hours."},
 ]
 
 

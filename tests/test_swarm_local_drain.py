@@ -58,9 +58,65 @@ def test_drain_pass_does_not_require_deepseek_for_local_work(monkeypatch):
     assert r["done"] == 0
 
 
-def test_run_cadence_daily_cap_guard():
-    # the drain is bounded: it never exceeds the daily cap
+
+# a current backup_chain exposes these; run_cadence refuses a copy without them (2026-10-15)
+_CURRENT = "COMPLETE_MANIFEST = 'BACKUP_COMPLETE.json'\nPINNED = frozenset({'biography_backup_20261004'})\n"
+
+
+def _stub_backup(tmp_path, body):
+    (tmp_path / "scripts").mkdir()
+    (tmp_path / "memory").mkdir()
+    (tmp_path / "scripts" / "backup_chain.py").write_text(body, encoding="utf-8")
+
+
+def test_run_cadence_daily_cap_guard(monkeypatch, tmp_path):
+    # the drain is bounded: it never exceeds the daily cap. The beat's backup step is stubbed so
+    # this test never reaches memory/biography (2026-10-15: it used to run the real backup).
+    _stub_backup(tmp_path, _CURRENT + "def backup(*, force=False):\n    return {'ok': True, 'skipped': 'test-stub'}\n")
+    monkeypatch.setattr(sld, "ROOT", tmp_path)
     r = sld.run_cadence(per_beat=2, daily_cap=0, persist=False)
     assert r["ok"] is True
     assert r["skipped"] == "daily-cap"
     assert r["daily_cap"] == 0
+    assert r["backup"] == {"ok": True, "skipped": "test-stub"}
+
+
+def test_run_cadence_backup_failure_is_loud(monkeypatch, tmp_path, capsys):
+    # 2026-10-15: truncated chain backups (3,370 and 219 of ~48k knots) were swallowed by
+    # `except Exception: pass`. A failure is now printed and alarmed through backup_chain.alarm()
+    # (memory/attention.md, the census/meter patrol channel); the drain beat still runs.
+    _stub_backup(tmp_path, _CURRENT + (
+        "from pathlib import Path\n"
+        "def alarm(verdict, detail=None):\n"
+        "    p = Path(__file__).resolve().parent.parent / 'memory' / 'attention.md'\n"
+        "    with p.open('a', encoding='utf-8') as f:\n"
+        "        f.write('### Chain backup patrol fired\\n- verdict: ' + verdict + '\\n')\n"
+        "def backup(*, force=False):\n"
+        "    raise RuntimeError('chain backup INCOMPLETE: knots 221/48032 files')\n"))
+    monkeypatch.setattr(sld, "ROOT", tmp_path)
+    r = sld.run_cadence(per_beat=2, daily_cap=0, persist=False)
+    assert r["ok"] is True and r["skipped"] == "daily-cap"
+    assert r["backup"]["ok"] is False and "INCOMPLETE" in r["backup"]["error"]
+    assert "CHAIN BACKUP FAILED" in capsys.readouterr().out
+    att = (tmp_path / "memory" / "attention.md").read_text(encoding="utf-8")
+    assert "Chain backup patrol fired" in att and "221/48032" in att
+
+
+def test_run_cadence_backup_module_missing_still_alarms(monkeypatch, tmp_path):
+    (tmp_path / "memory").mkdir()
+    monkeypatch.setattr(sld, "ROOT", tmp_path)
+    r = sld.run_cadence(per_beat=2, daily_cap=0, persist=False)
+    assert r["backup"]["ok"] is False
+    att = (tmp_path / "memory" / "attention.md").read_text(encoding="utf-8")
+    assert "Chain backup patrol fired" in att and "did not load" in att
+
+
+def test_run_cadence_refuses_stale_backup_chain(monkeypatch, tmp_path):
+    # the mag-sovereign image bakes an Aug-25 backup_chain.py (no completeness check, no
+    # 20261004 pin); run_cadence must refuse to run it and alarm instead
+    _stub_backup(tmp_path, "CALLED = []\ndef backup(*, force=False):\n    raise SystemExit('stale backup ran')\n")
+    monkeypatch.setattr(sld, "ROOT", tmp_path)
+    r = sld.run_cadence(per_beat=2, daily_cap=0, persist=False)
+    assert r["backup"]["ok"] is False and "stale backup_chain.py" in r["backup"]["error"]
+    att = (tmp_path / "memory" / "attention.md").read_text(encoding="utf-8")
+    assert "Chain backup patrol fired" in att

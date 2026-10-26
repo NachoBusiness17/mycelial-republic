@@ -1,0 +1,38 @@
+ID 1wlss89 [LocalLLaMA] Postulate: Context compaction is good for Quantized models
+date=1789938017 score=17 comments=17 author=Informal-Trouble2183 url=https://i.redd.it/kq59lruflqqh1.png
+PERMALINK https://www.reddit.com/r/LocalLLaMA/comments/1wlss89/postulate_context_compaction_is_good_for/
+SELFTEXT:
+For quantized models, the quantization error propagates across the context size.
+
+I feel like **128k** is the sweet spot preserving enough information for the current task in hand, and avoiding quality degradation due to **quant error accumulation**.
+
+I argue a 128k with compaction beats raw 256k/ 1M context size. That is valid for quantized models (around Q4), providing a good compaction (e.g. PI agent compaction).
+
+The compaction provides the additional benefit of intelligent noise filtering (getting rid of: file dumps, terminal logs, outdated information, ..).
+
+What is your experience?
+COMMENTS (18, top-scored order):
+--- laterbreh (9): based on some random person that visits this reddit
+--- Aggressive_Aspect436 (9): That may not have anything to do with quatization at all. It's been well established that LLM performance degrades the larger their context gets. The rule of thumb I saw somewhere is that effective intelligence starts to significantly degrade at around 50% of their max context (I believe it's even less for 1M max context models). That why "long context benchmarks" are a thing.
+--- NNN_Throwaway2 (9): Based on what?
+--- ShowerAnnual9741 (3): Compaction is the model writing a summary of the conversation so far and then continuing from that instead of the full history. When the context fills up it squeezes everything down to the summary and throws away the old tokens.
+
+The thing I didn't expect is that it also dumps the prefix cache, so the first reply after a summarize feels noticeably slow. The prefill gets paid again. On a constrained box that's the stall you see right after the summary happens.
+--- audioen (3): I have no idea how this chart is to interpreted. Isn't this saying that 2K or whatever is the best context size? Clearly, that can not be true. It would make more sense to show what context size allows highest pass percentage objectively, rather than relative to unquantized model, as ability must be severely limited at 2K.
+--- audioen (2): It is even worse than that. At least in opencode, the compaction step itself is a full context rewrite. My guess is that reasoning is removed and model only sees tool calls, tool call results, and assistant and user messages. From those, it must produce a summary of the conversation thus far.
+
+That summary and user's last message (command) becomes the starting context of the new message.
+--- Sitkin_Marrel (2): 128k feels like the right working set to me. Past that you're paying the quant error on a pile of tokens you'd want compacted away anyway.
+--- FoxiPanda (2): Generally, I agree, but it is model and quant dependent on where things start to fall apart. I don't have a graph or mathematical evidence of this, just a year+ of experience with quantized models and observing outputs and behaviors.
+--- [deleted] (1): [removed]
+--- Marcus_MSC (1): The part I'd inspect is the first action after compaction. Does the summary still name the requested files, constraints, and unfinished work? If it dropped a "don't modify this file" instruction, the shorter run can look coherent while failing the task. I'd score those failures separately before calling 128k a sweet spot.
+--- Marcus_MSC (1): I'd test the shared policy against a fixed allocation on the same tasks, counting child setup, follow-up calls, and any work the parent repeats. A cheaper worker may need a longer briefing or return an answer that forces the parent to investigate again. Recording those costs alongside verified outcomes would show when reassignment actually helps, rather than just moving tokens between agents.
+--- ShowerAnnual9741 (1): that's the part i'd measure: count compactions, not tokens. a session that survives five resets cleanly tells you more than any token budget, and with a quantized KV i'd expect the cliff earlier. that's the number that decides whether the postulate holds.
+--- Informal-Trouble2183 (1): I don't mind waiting for compaction and a fresh new cache, the concern is more about when the model accumulates enough errors to start behaving like a brainless 1-bit quant (especially true when the KV cache is also quantized, in addition to the weights).
+--- Master_Face_571 (1): what does compaction mean exactly?
+--- ShowerAnnual9741 (1): one cost missing from the accuracy discussion is the prefix cache. a compaction rewrites the context, so the next turn can't reuse the cached prefix and you pay the prefill again. quantization makes that re-prefill cheaper, but it doesn't recover the reuse itself. on a memory-constrained box that's the part you actually feel, the slow first token right after the agent summarizes. usually that's the trade that decides whether compact-at-128k beats just holding the longer window.
+--- [deleted] (1): [removed]
+--- Equivalent_Bit_461 (1): I do agree, keeping at 128k and compacting, avoids bs later
+--- Informal-Trouble2183 (1): as long as tokens are being generated, the model is drifting away from the native accuracy. at 2K we're still good, but you can't use it as context window because it doesn't contain enough information (barely around 200 lines of code). But 128k is around 350 pages of text.
+
+The chart is illustration only based on some initial 1% quant accuracy (btw unsloth reports that initial value), and assuming a KV cache at 8-it, if the KV-cache is 4-bit the degradation is much faster than illustrated.

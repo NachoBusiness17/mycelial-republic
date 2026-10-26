@@ -54,22 +54,37 @@ def test_tip_repair_does_not_rewrite_verified_chain(tmp_path, monkeypatch):
 
     chain = tmp_path / "verkle_chain.jsonl"
     tip = tmp_path / "verkle_tip.json"
+    knots = tmp_path / "knots"
+    knots.mkdir()
     monkeypatch.setattr(vk, "CHAIN", chain)
     monkeypatch.setattr(vk, "TIP", tip)
+    monkeypatch.setattr(vk, "KNOTS", knots)
+    monkeypatch.setattr(vk, "LATEST", tmp_path / "latest.knot.json")
     monkeypatch.setattr(vk, "LOCK", tmp_path / ".verkle.lock")
     leaves = ["leaf-a", "leaf-b"]
     root = vk._merkle_root(leaves)
     rows = [
-        {"index": 0, "leaf_hash": leaves[0], "verkle_root": leaves[0], "session_id": "a"},
-        {"index": 1, "leaf_hash": leaves[1], "verkle_root": root, "session_id": "b"},
+        {"index": 0, "leaf_hash": leaves[0], "verkle_root": leaves[0], "session_id": "a",
+         "filename": "old.knot.json"},
+        {"index": 1, "leaf_hash": leaves[1], "verkle_root": root, "session_id": "b",
+         "filename": "tail.knot.json", "end_minute": "2026-09-26T00:36:00Z"},
     ]
     chain.write_text("\n".join(json.dumps(row) for row in rows) + "\n", encoding="utf-8")
-    tip.write_text(json.dumps({"root": "stale", "n_leaves": 2}), encoding="utf-8")
+    tip.write_text(json.dumps({
+        "root": "stale", "n_leaves": 2, "last_filename": "old.knot.json",
+        "last_session_id": "a",
+    }), encoding="utf-8")
+    (knots / "tail.knot.json").write_text('{"session_id":"b"}', encoding="utf-8")
     before = chain.read_bytes()
 
     result = vk.repair_tip_if_consistent()
 
     assert result["ok"] is True
     assert result["repaired"] is True
-    assert json.loads(tip.read_text(encoding="utf-8"))["root"] == root
+    repaired = json.loads(tip.read_text(encoding="utf-8"))
+    assert repaired["root"] == root
+    assert repaired["last_filename"] == "tail.knot.json"
+    assert repaired["last_session_id"] == "b"
+    assert repaired["updated_minute"] == "2026-09-26T00:36:00Z"
+    assert (tmp_path / "latest.knot.json").read_text(encoding="utf-8") == '{"session_id":"b"}'
     assert chain.read_bytes() == before

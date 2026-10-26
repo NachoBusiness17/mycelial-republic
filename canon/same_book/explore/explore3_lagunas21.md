@@ -1,0 +1,3 @@
+The Verifiable Exclusion Principle: When an agent persistently fails verification, the collective must reduce its operational responsibility while preserving its informational contributions.
+
+This law derives from the fundamental constraint that a fleet's reliability cannot exceed the reliability of its weakest functional component. By systematically diminishing decision-making authority of consistently failing members, the collective preserves system integrity without destroying potentially valuable data sources. The principle maintains that verification failures reflect local state corruption rather than absolute worthlessness, ensuring information flow continues even as control flow contracts.

@@ -1,0 +1,23 @@
+{
+  "name": "reasoning_marker_penalty_v2_agent_cut",
+  "created": "2026-10-12",
+  "law": "OFF BY DEFAULT. An experimental sampler arm, never a default fire shape. Loaded only when a caller passes --penalty-profile (CLI) or penalty_profile= (LlamaCppBridge); without the flag the bridge payload stays byte-identical to the pre-profile bridge. This v2 arm additionally may never gate fleet behavior on its own: the NO-SINGLE-JUDGE-WASTE-GATE invariant (memory/percolator/invariants.json canonical 106c128a06aae07c, minted 2026-10-12) requires a second judge arm plus a reported agreement score before any waste metric gates fleet behavior, and the source study measured marker prevalence only, not accuracy.",
+  "mechanism": "Training-free token-specific penalties at the sampler (decode-side logit bias), the same banked 10-03 RATIO mechanism as v1 (watch/inbox/frontier_olm_2026-10-03/steal/quantization-and-compression.md:31, arXiv 2609.39801). The v2 delta is the marker SET, not the mechanism: cut from v1's 8 mined-candidate families to the 3 families that survive contact with real agent work (thread 1wromzr, 85 real agent sessions on Qwen3.8-Flash-Next W4A16 vLLM). Source card: watch/inbox/frontier_olm_adhoc/steal/kv-cache-context-engineering.md card B find 1 (PORT MOVE b); raw capture watch/inbox/frontier_olm_adhoc/sweep/_kvr2_read_1wromzr.txt:358, :375, :376.",
+  "mining": "Marker set validated 2026-10-12 from the agent-session study captured at watch/inbox/frontier_olm_adhoc/sweep/_kvr2_read_1wromzr.txt:85 sessions, 6,851 thinking blocks, ~2.2M tokens after fork-dedupe, median block ~500 chars. Only 3 marker families survive agent work: hmm (1,739 uses), wait (2,888), actually (2,423). Ceiling: these total ~1.6-7% of thinking tokens, ~1-4% of all generated tokens. The study's own verdict at :358: 'We could not measure accuracy.' The agent_study_uses counts below are the external study's census, NOT the estate receipt census v1 carries; the estate receipt census for these tokens lives in v1's receipt_census field.",
+  "validation_class": "prevalence-validated only. The 3-family cut is validated for WHICH markers appear in real agent thinking; the penalty magnitudes and any waste/quality effect are NOT validated. Any waste claim drawn from this profile is single-judge-class evidence until the second-arm re-score (steal card probe: re-score an existing banked verdict/waste surface with a second judge arm and report raw agreement) has run and reported.",
+  "constraints": {
+    "accuracy_measured": false,
+    "honest_ceiling": "3 families total ~1.6-7% of thinking tokens = 1-4% of all generated tokens (raw capture :358)",
+    "judge_agreement": "two judges agree on useful/wasted/ordinary 61% of the time (:375); self-judge calls 8% of hesitations wasted where the 35B judge calls 37% (:376); both-agree waste ~12%",
+    "specdec_incompatible": "vLLM rejects logit_bias under speculative decoding (issue #42744, sweep capture kv-cache-context-engineering-reddit.md:37)",
+    "string_token_wire": "string-token logit_bias keys on the estate's llama-cpp-python 0.3.36 server are UNMEASURED (same wire caution class as v1, mag/marker_penalty.py:70-76)",
+    "magnitude_note": "biases carry v1's default_bias -4.0 uniformly; the agent study validated prevalence, not penalty strength, so no per-marker magnitude is claimed as validated"
+  },
+  "default_bias": -4.0,
+  "max_abs_bias": 12.0,
+  "markers": {
+    "actually": { "bias": -4.0, "agent_study_uses": 2423 },
+    "wait": { "bias": -4.0, "agent_study_uses": 2888 },
+    "hmm": { "bias": -4.0, "agent_study_uses": 1739 }
+  }
+}

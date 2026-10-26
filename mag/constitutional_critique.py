@@ -63,6 +63,13 @@ class CritiqueResult:
     model_used: str = ""
     tokens_used: int = 0
     cost_usd: float = 0.0
+    # B2-207 (2026-09-26): judge-independence D3 F3 record. producer_model is
+    # the model whose output was critiqued; same_family_refused marks the
+    # same-family refusal path (a model may not audit its own family's output,
+    # so the critique falls back to local heuristics). Falsifier: 30 days of
+    # producer logs with zero same-family-refused events closes the concern.
+    producer_model: str = ""
+    same_family_refused: bool = False
     ts: str = field(default_factory=_now)
 
     def to_dict(self) -> dict[str, Any]:
@@ -75,6 +82,8 @@ class CritiqueResult:
             "revised_len": len(self.revised),
             "delta_chars": len(self.revised) - len(self.original),
             "model_used": self.model_used,
+            "producer_model": self.producer_model,
+            "same_family_refused": self.same_family_refused,
             "tokens_used": self.tokens_used,
             "cost_usd": self.cost_usd,
         }
@@ -553,9 +562,37 @@ def get_filter(model: str = "deepseek") -> ConstitutionalFilter:
     return _FILTER
 
 
-def filter_response(response: str, tier: str = "T2", *, model: str = "deepseek") -> CritiqueResult:
-    """One-call constitutional filter. Use this in Ghost's response path."""
-    return get_filter(model=model).process(response, tier=tier)
+def _model_family(model: str) -> str:
+    """Family key: the first alphanumeric segment of a lowercased model id
+    ('deepseek-chat' -> 'deepseek', 'qwen2.5-coder:7b' -> 'qwen2', 'gemma:2b'
+    -> 'gemma'). Conservative on purpose: it over-refuses mixed families
+    rather than ever letting a family audit itself."""
+    import re as _re
+    m = _re.split(r"[^a-z0-9]+", str(model or "").lower())
+    return m[0] if m and m[0] else ""
+
+
+def filter_response(
+    response: str,
+    tier: str = "T2",
+    *,
+    model: str = "deepseek",
+    producer_model: str = "",
+) -> CritiqueResult:
+    """One-call constitutional filter. Use this in Ghost's response path.
+
+    B2-207 (2026-09-26): on a critic/producer family match the same-family
+    critique is refused and the call falls back to local heuristics with
+    same_family_refused=True (judge-independence D3 F3: a model must not
+    audit its own family's output)."""
+    if producer_model and _model_family(producer_model) == _model_family(model):
+        result = critique(response, tier=tier, dry_run=True)
+        result.producer_model = producer_model
+        result.same_family_refused = True
+        return result
+    result = get_filter(model=model).process(response, tier=tier)
+    result.producer_model = producer_model
+    return result
 
 
 def critique_dry_run(response: str, tier: str = "T2") -> CritiqueResult:

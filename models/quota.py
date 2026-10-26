@@ -385,6 +385,15 @@ def pick_provider(
             continue
         b = provider_budget(pid)
         tier_max = p.get("tier_max") or "T2"
+        # B2-204 (2026-09-26): a dormant lane is NEVER pickable, key or no key.
+        # Until now the only enforcement was hand-edited routing lists (the
+        # B2-61/B2-36 roster purges removed the dead lanes from prefer_order),
+        # so anyone re-adding cerebras/nvidia/gemini/mistral/saelis to a
+        # routing list would get a 401/404-dead provider handed back as ok.
+        # Skip at the seam; doctor already classifies these DORMANT.
+        if p.get("dormant"):
+            candidates.append({**b, "skip": "dormant", "eligible": False})
+            continue
         # private tiers: only free_local
         if tier in never and not p.get("free_local"):
             candidates.append({**b, "skip": "tier_block", "eligible": False})

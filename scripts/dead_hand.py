@@ -209,7 +209,18 @@ def _seal() -> dict:
     seal = {"ts": _now().isoformat(), "surfaces": surfaces,
             "contract": "watch/inbox/SUCCESSION_CONTRACT_20260912.md"}
     seal_path.write_text(json.dumps(seal, indent=2), encoding="utf-8")
-    return {"seal": str(seal_path.relative_to(ROOT)), "surfaces_hashed": len(surfaces)}
+    # Fix 2026-09-29 (gala ball3 live-state): the two display paths below raise
+    # ValueError for sandbox paths outside ROOT (the same class the surface
+    # names above already guard (tests/drill rigs; the wave5 full-suite run
+    # with an external --basetemp failed test_trigger_fires_seal_hold_loud on
+    # exactly this line,
+    # watch/inbox/gala_20260925/wave5-repair/lanes/suite-burn.check.txt).
+    # Display only: seal bytes and trigger semantics unchanged.
+    try:
+        seal_shown = str(seal_path.relative_to(ROOT))
+    except ValueError:  # sandbox path outside ROOT (tests/drill rigs)
+        seal_shown = f"sandbox/{seal_path.name}"
+    return {"seal": seal_shown, "surfaces_hashed": len(surfaces)}
 
 
 def _open_hold(st: dict) -> str:
@@ -223,7 +234,12 @@ def _open_hold(st: dict) -> str:
             "reverts and this queue is presented to him.\n",
             encoding="utf-8",
         )
-    return str(HOLD_DIR.relative_to(ROOT))
+    # Same sandbox guard as _seal (gala ball3 live-state 2026-09-29): hold-queue
+    # paths live in the sandbox under tests/drill rigs, not under ROOT.
+    try:
+        return str(HOLD_DIR.relative_to(ROOT))
+    except ValueError:  # sandbox path outside ROOT (tests/drill rigs)
+        return f"sandbox/{HOLD_DIR.name}"
 
 
 def watch(dry_run: bool = False) -> dict:

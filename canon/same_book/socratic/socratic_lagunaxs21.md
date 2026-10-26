@@ -1,0 +1,8 @@
+1. The house remains unmoved by the archivist’s fall, suggesting it is built on a solid, enduring foundation, possibly magical or symbolic, underscoring its stability and reverence for order.  
+2. The slate note is a concrete, lasting record, while the porter’s verbal accusation is fleeting and subjective; the note enforces accountability without conflict, aligning with the house’s preference for permanent, verifiable actions.  
+3. Miriam folds the map because it holds symbolic or sentimental value, even if functionally flawed. It reflects the house’s history or beauty beyond practical utility, warranting preservation rather than discarding.  
+4. Leaving the blank page visible avoids altering the record, fostering curiosity and honesty about what was erased. Rewriting it would erase history, while the blank space provokes questioning and accountability.  
+5. The house’s answer would be **honesty**: Rules prioritize truth-seeking, as seen in leaving the torn page blank and valuing accurate records, even if imperfect.  
+6. Miriam discovers a second ledger contradicting the first. The house responds by revealing a hidden chamber where both ledgers are placed side by side. She reads conflicting names aloud, and the room’s walls shimmer, forming a translucent timeline showing both versions. A servant appears, bowing and handing her a quill. The house’s voice echoes softly, demanding reconciliation, as warm light pools at Miriam’s feet, guiding her to reconcile the ledgers’ discrepancies into a unified truth.  
+
+7. **Most sure**: Answers 1–4. **Guess**: Answers 5 and 6. Q5 infers underlying values, while Q6 invents new action, making them less certain.

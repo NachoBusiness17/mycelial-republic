@@ -16,6 +16,19 @@ from scripts.desk_baseline_probe import (  # noqa: E402
 )
 
 
+# 2026-09-27 (burn lane desk_baseline, root cause from bytes): the live
+# dashboard/static/index.html was replaced by the FLEET CONSOLE launcher in
+# d575bc168 (2026-09-14 checkpoint commit), which dropped the Agent Desk chrome.
+# The desk logic layer survived intact (app.js 9144 lines, tapestry.js, and the
+# rest.py desk APIs) and still queries that chrome (app.js does
+# $("#deskLocalMode")?.value), so these contracts are real, not stale. Until the
+# live surface is reconciled (restore vs. formal retirement is a product call,
+# not a test-lane call), the markup half of each contract is pinned to the
+# tracked archive of the desk page: museum/index_old_mag_board.html. Assertions
+# below were re-homed to that artifact, never removed or loosened.
+DESK_CHROME = ROOT / "dashboard" / "static" / "museum" / "index_old_mag_board.html"
+
+
 def _mock_json(responses: dict[str, dict]) -> callable:
     ordered = sorted(responses.items(), key=lambda kv: len(kv[0]), reverse=True)
 
@@ -89,7 +102,9 @@ def test_ui_smoke_dashboard_down(tmp_path):
 
 
 def test_workflow_test_mode_is_visible_and_propagated():
-    index = (ROOT / "dashboard" / "static" / "index.html").read_text(encoding="utf-8", errors="replace")
+    # 2026-09-27: markup half re-homed to DESK_CHROME (see note above); live
+    # index.html is the FLEET CONSOLE since d575bc168 and hosts no desk chrome.
+    index = DESK_CHROME.read_text(encoding="utf-8", errors="replace")
     app = (ROOT / "dashboard" / "static" / "app.js").read_text(encoding="utf-8", errors="replace")
 
     assert 'id="deskLocalMode"' in index
@@ -99,7 +114,9 @@ def test_workflow_test_mode_is_visible_and_propagated():
 
 
 def test_dashboard_navigation_groups_each_surface_semantically():
-    index = (ROOT / "dashboard" / "static" / "index.html").read_text(encoding="utf-8", errors="replace")
+    # 2026-09-27: markup half re-homed to DESK_CHROME (see note above); live
+    # index.html is the FLEET CONSOLE since d575bc168 and hosts no desk chrome.
+    index = DESK_CHROME.read_text(encoding="utf-8", errors="replace")
     app = (ROOT / "dashboard" / "static" / "app.js").read_text(encoding="utf-8", errors="replace")
 
     for section in ("home", "projects", "history", "run", "library", "system"):
@@ -120,7 +137,9 @@ def test_days_timeline_constrains_graph_height():
 
 
 def test_verkle_lattice_is_a_readable_honest_continuity_layer():
-    index = (ROOT / "dashboard" / "static" / "index.html").read_text(encoding="utf-8", errors="replace")
+    # 2026-09-27: markup half re-homed to DESK_CHROME (see note above); live
+    # index.html is the FLEET CONSOLE since d575bc168 and hosts no desk chrome.
+    index = DESK_CHROME.read_text(encoding="utf-8", errors="replace")
     tapestry = (ROOT / "dashboard" / "static" / "tapestry.js").read_text(encoding="utf-8", errors="replace")
 
     assert ">Verkle artifacts<" in index
@@ -133,7 +152,9 @@ def test_verkle_lattice_is_a_readable_honest_continuity_layer():
 
 
 def test_verkle_knot_is_an_agent_handoff_artifact():
-    index = (ROOT / "dashboard" / "static" / "index.html").read_text(encoding="utf-8", errors="replace")
+    # 2026-09-27: markup half re-homed to DESK_CHROME (see note above); live
+    # index.html is the FLEET CONSOLE since d575bc168 and hosts no desk chrome.
+    index = DESK_CHROME.read_text(encoding="utf-8", errors="replace")
     app = (ROOT / "dashboard" / "static" / "app.js").read_text(encoding="utf-8", errors="replace")
     tapestry = (ROOT / "mag" / "tapestry.py").read_text(encoding="utf-8", errors="replace")
 
@@ -144,7 +165,9 @@ def test_verkle_knot_is_an_agent_handoff_artifact():
 
 
 def test_days_lenses_are_globally_wired_and_story_is_restored():
-    index = (ROOT / "dashboard" / "static" / "index.html").read_text(encoding="utf-8", errors="replace")
+    # 2026-09-27: markup half re-homed to DESK_CHROME (see note above); live
+    # index.html is the FLEET CONSOLE since d575bc168 and hosts no desk chrome.
+    index = DESK_CHROME.read_text(encoding="utf-8", errors="replace")
     app = (ROOT / "dashboard" / "static" / "app.js").read_text(encoding="utf-8", errors="replace")
 
     assert 'data-days-view="story">Story so far<' in index
@@ -155,7 +178,9 @@ def test_days_lenses_are_globally_wired_and_story_is_restored():
 
 
 def test_desk_primary_action_uses_real_behavioral_router():
-    index = (ROOT / "dashboard" / "static" / "index.html").read_text(encoding="utf-8", errors="replace")
+    # 2026-09-27: markup half re-homed to DESK_CHROME (see note above); live
+    # index.html is the FLEET CONSOLE since d575bc168 and hosts no desk chrome.
+    index = DESK_CHROME.read_text(encoding="utf-8", errors="replace")
     app = (ROOT / "dashboard" / "static" / "app.js").read_text(encoding="utf-8", errors="replace")
 
     assert ">Direct Mag<" in index

@@ -1,0 +1,72 @@
+"""Tests for tools/commit_sweeper.py - the single git writer.
+Verifier: this file. Consumer: module docstring."""
+from __future__ import annotations
+
+import json
+from pathlib import Path
+
+import sys
+
+ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT))
+
+from tools import commit_sweeper as cs  # noqa: E402
+
+
+import pytest
+
+
+@pytest.fixture(autouse=True)
+def _isolate_pid_dir(tmp_path, monkeypatch):
+    """Never claim the live sweeper's pidfile from a test (2026-10-21)."""
+    monkeypatch.setattr(cs, "PID_DIR", tmp_path / "state")
+
+
+def test_malformed_hint_never_blocks_others(tmp_path, monkeypatch):
+    good = tmp_path / "b-good.json"
+    bad = tmp_path / "a-bad.json"
+    bad.write_text("{not json", encoding="utf-8")
+    good.write_text(json.dumps({"paths": [], "message": "m"}), encoding="utf-8")
+    monkeypatch.setattr(cs, "HINTS", tmp_path)
+    monkeypatch.setattr(cs, "lock_busy", lambda: False)
+    calls = []
+    monkeypatch.setattr(cs, "commit_batch", lambda p, m, timeout=900: calls.append(m) or (True, "tip"))
+    rep = cs.sweep()
+    # both hints processed; the malformed one did not stop the good one;
+    # the leftover sweep may append after them
+    assert [r["hint"] for r in rep["results"]][:2] == ["a-bad.json", "b-good.json"]
+    assert rep["results"][0]["committed"] is False
+    assert calls[:1] == ["m"]
+
+
+def test_good_hint_is_consumed(tmp_path, monkeypatch):
+    h = tmp_path / "seat-x.json"
+    h.write_text(json.dumps({"paths": ["a.md"], "message": "named batch"}), encoding="utf-8")
+    monkeypatch.setattr(cs, "HINTS", tmp_path)
+    monkeypatch.setattr(cs, "lock_busy", lambda: False)
+    calls = []
+    monkeypatch.setattr(cs, "commit_batch", lambda p, m, timeout=900: calls.append({"paths": p, "msg": m}) or (True, "tip"))
+    cs.sweep()
+    named = [c for c in calls if c["msg"] == "named batch"]
+    assert named and named[0]["paths"] == ["a.md"], calls
+    assert not h.exists(), "consumed hints are removed"
+
+
+def test_lock_busy_skips_cleanly(tmp_path, monkeypatch):
+    monkeypatch.setattr(cs, "HINTS", tmp_path)
+    monkeypatch.setattr(cs, "lock_busy", lambda: True)
+    # the sweeper now waits out a transient lock; pin the wait to "still held"
+    # so the test exercises the skip path without sleeping 30s.
+    monkeypatch.setattr(cs, "wait_for_git_lock", lambda *a, **k: False)
+    rep = cs.sweep()
+    assert rep == {"skipped": "index.lock held after wait"}
+
+
+def test_dry_mode_touches_nothing(tmp_path, monkeypatch):
+    h = tmp_path / "s.json"
+    h.write_text(json.dumps({"paths": ["x"], "message": "m"}), encoding="utf-8")
+    monkeypatch.setattr(cs, "HINTS", tmp_path)
+    monkeypatch.setattr(cs, "lock_busy", lambda: False)
+    rep = cs.sweep(dry=True)
+    assert rep["hints"][0]["dry"] is True
+    assert h.exists(), "dry mode must not consume hints"

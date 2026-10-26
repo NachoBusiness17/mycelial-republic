@@ -34,20 +34,38 @@ def _now() -> str:
     return datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
 
 
+AFK_GATE_ERROR: str | None = None
+
+
 def _operator_afk() -> bool:
+    # SPEC (2026-09-25, t52): FAIL CLOSED. The old `except: return True` treated a broken
+    # operator_status as "operator AFK" and kept the cadence spending while the operator
+    # was invisible. An errored check now presumes the operator is ACTIVE (deny honored,
+    # work denied) and names the cause in AFK_GATE_ERROR for callers to surface.
+    global AFK_GATE_ERROR
     try:
         from mag.preferences import operator_status
-        return not bool((operator_status() or {}).get("operator_active"))
-    except Exception:
-        return True
+        afk = not bool((operator_status() or {}).get("operator_active"))
+        AFK_GATE_ERROR = None
+        return afk
+    except Exception as _afk_e:
+        AFK_GATE_ERROR = "afk gate errored; failing CLOSED (operator presumed active): " + str(_afk_e)[:110]
+        return False
 
 
 def _right_size() -> dict[str, Any]:
+    # SPEC (2026-09-25, t52): FAIL CLOSED. The old `except: return {"level": "full",
+    # "budget": 4}` handed the cadence FULL BLAST on a broken rightsizer. An errored
+    # sizing now denies work (level none -> run_once skips the tick) and names the error.
     try:
         from mag.afk_loop import system_resources, right_size
-        return right_size(system_resources(), operator_active=not _operator_afk())
-    except Exception:
-        return {"level": "full", "budget": 4}
+        rs = right_size(system_resources(), operator_active=not _operator_afk())
+        if AFK_GATE_ERROR:
+            rs["afk_gate_error"] = AFK_GATE_ERROR
+        return rs
+    except Exception as _rs_e:
+        return {"level": "none", "budget": 0,
+                "right_size_error": "rightsizer errored; failing CLOSED (deny honored): " + str(_rs_e)[:110]}
 
 
 def _safe(label: str, fn: Any) -> dict[str, Any]:
@@ -61,14 +79,24 @@ def _safe(label: str, fn: Any) -> dict[str, Any]:
 def run_once() -> dict[str, Any]:
     """One full AFK loop pass. Each step folds to the learning surface."""
     out: dict[str, Any] = {"schema": "afk_cadence.v1", "ts": _now()}
+    # SPEC (2026-09-25, t43): this operator pause gate FAILED OPEN. If pause_reason()
+    # errored, the bare except fell through and the cadence kept working during an
+    # operator pause. Fix: fail CLOSED. An errored pause check honors the pause and
+    # skips the tick with the error named. Species note for a14's taxonomy: the
+    # loop-death guards make a swallowed death VISIBLE, but a deny-gate must DENY on
+    # error; silence here is the opposite failure (paused work proceeding). Filed in
+    # watch/inbox/gala_20260925/afterparty/lanes/t43.species.md.
     try:
         from mag.operator_mode import pause_reason
         if (reason := pause_reason()):
             out["action"] = "skip"
             out["reason"] = reason
             return out
-    except Exception:
-        pass
+    except Exception as _pg:
+        out["action"] = "skip"
+        out["reason"] = "operator pause gate errored; failing CLOSED (pause honored): " + str(_pg)[:110]
+        out["pause_gate_error"] = str(_pg)[:150]
+        return out
     rs = _right_size()
     out["right_size"] = rs
     if rs.get("level") == "none":
@@ -223,16 +251,23 @@ def _fold(out: dict[str, Any]) -> None:
             tier_max="T1",
             exportable=False,
         )
-    except Exception:
-        pass
+    except Exception as _fe:  # noqa: BLE001 - folding must never break the cadence; it must be VISIBLE
+        # LOOP-DEATH GUARD (2026-09-25, t78): a silently dead training-event fold voids
+        # the cadence's own telemetry while run_once still reports ok_steps. Non-fatal,
+        # but visible. (pattern: work_loop.py verkle-anchor guard, t19.)
+        print(f"[afk-cadence] FOLD LOOP DEATH GUARD: training_events.emit exited: {_fe}", flush=True)
 
 
 def status() -> dict[str, Any]:
-    return {"schema": "afk_cadence.status.v1", "ts": _now(),
-            "afk": _operator_afk(), "right_size": _right_size(),
-            "steps": ["rightsize", "freebie_scan", "seed_chain", "self_advance",
-                      "capability_steal", "emergent_harvest", "learn_rightsize", "scribe",
-                      "cold_boot", "verify_gate"]}
+    st: dict[str, Any] = {"schema": "afk_cadence.status.v1", "ts": _now(),
+                          "afk": _operator_afk(), "right_size": _right_size(),
+                          "steps": ["rightsize", "freebie_scan", "seed_chain", "self_advance",
+                                    "capability_steal", "emergent_harvest", "learn_rightsize", "scribe",
+                                    "cold_boot", "verify_gate"]}
+    # t52: surface the afk gate error so a fail-closed denial is never silent
+    if AFK_GATE_ERROR:
+        st["afk_gate_error"] = AFK_GATE_ERROR
+    return st
 
 
 def main(argv: list[str] | None = None) -> int:

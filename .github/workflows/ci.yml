@@ -1,0 +1,106 @@
+# Estate CI - real gates, not a spelling badge (Q51 fix, 2026-10-01).
+#
+# Born from watch/inbox/mountain_climb/FIFTY_QUESTIONS_ANSWERED.md Q51: the
+# sibling repo the-mountain shipped a CI whose green meant "files parse",
+# and this estate repo had NO .github/workflows at all. This job runs the
+# estate's OWN gate instruments on every push/PR to main:
+#
+#   1. named-core pytest  - real test families (wire protocol, SRP6 auth,
+#                           water-parity harness python side)
+#   2. violation ratchet  - full-tree debt register check (tools/violation_ratchet.py)
+#   3. workflow gates     - LAW-12 scenario card suite, read-only (tools/workflow_gate.py)
+#
+# COVERAGE LEDGER - what this CI does NOT run, and why (no fake green):
+#   - Full pytest suite (~3,800 collected tests, AGENTS.md census law): the
+#     bulk needs surfaces a CI runner does not have - live-server ports,
+#     local Ollama models (gemma:2b / gemma4), the Godot 4.3 win64 binary,
+#     and Windows-path/lock assumptions. Only named, deterministic families
+#     run here; adding a family requires proving it CI-clean first.
+#   - rule_parity all --quick (pre-push D2 arm): executes the GDScript twin
+#     via tools/godot/Godot_v4.3-stable_win64.exe (run_godot spawns the exe
+#     with cwd roblox_to_godot/). The exe is git-tracked but is a win64 PE:
+#     no linux godot binary exists in the repo and ubuntu cannot run the PE,
+#     so the parity gate stays pre-push-only on the operator box.
+#   - tests/test_rule_parity.py end-to-end arm is deselected by -k below:
+#     its skipif checks GODOT_EXE.exists() (existence, not executability),
+#     and the tracked exe makes that True on CI - the spawn would then die
+#     on a PE binary and paint a platform error as a code failure.
+#   - Pre-push-only gates not carried here (they read the dirty worktree,
+#     watch/inbox mtimes, or .git state a CI checkout does not have):
+#     config_seal, description_pin, freshness_gate, census_drift_patrol,
+#     checkbox_receipt_gate, caption_ledger_verify, refold_gate,
+#     secret_gate --changed. Those remain in githooks/pre-push.
+#
+# DEBT STATUS at landing (2026-10-01, HEAD bdbb1714e): the ratchet step below
+# is RED on committed tree with 13 unregistered claims (9 file-too-long, 3
+# except-pass, 1 env-key-read - names in the step log). That is the honest
+# signal this job exists to give: the register is behind the tree. Operator
+# cure is acceptance by NAME (tools/violation_ratchet.py baseline-update
+# --by <who>) or fix-then-prune - NEVER loosening this workflow.
+
+name: estate-ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  # Trigger contract per the Q51 brief: push + pull_request to main. Note the
+  # estate's only remote today is a local backup path and work happens on mag/*
+  # branches; when the repo lands on a real host, widen branches or point them
+  # at the true default branch - do not delete the gates.
+
+jobs:
+  gates:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout (full history)
+        uses: actions/checkout@v4
+        with:
+          # Full history: the ratchet's --changed arm and the census/growth
+          # gates derive their scope from git history; shallow would starve
+          # any future arm even though today's three steps are history-free.
+          fetch-depth: 0
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          # 3.11 matches the estate venv the hooks run on (3.11.15 via
+          # scripts/ensure_venv.ps1) - same instrument, different OS.
+          python-version: "3.11"
+
+      - name: Install deps (requirements.txt)
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements.txt
+        # requirements.txt, NOT requirements.lock: the lock is a 255-pin full
+        # pip freeze of the Windows home box (incl. windows-only wheels); the
+        # venv builder the hooks depend on (scripts/ensure_venv.ps1) installs
+        # requirements.txt, and CI mirrors the hook's environment contract.
+
+      - name: Named-core pytest (deterministic families only)
+        run: |
+          python -m pytest tests/test_protocol_table.py tests/test_auth_srp6.py tests/test_rule_parity.py -q -k "not end_to_end"
+        # What runs: server.protocol_table wire-contract pins; SRP6 auth
+        # (crypto + AuthStore + WorldServer wiring); rule_parity harness
+        # (profiles law, comparator, python-side engine rows). All stdlib +
+        # in-repo deps, no ports, no models, no godot execution.
+        # What does NOT run and why: see the COVERAGE LEDGER at the top.
+
+      - name: Violation ratchet (full-tree)
+        run: |
+          python tools/violation_ratchet.py check
+        # Full-tree, not --changed: on a CI checkout the working tree equals
+        # HEAD and there are no untracked files, so --changed (git diff HEAD +
+        # git ls-files --others) would scan an EMPTY set - a vacuous pass,
+        # i.e. fake green. Full-tree is the honest CI shape.
+        # RED on day one is real committed debt; see DEBT STATUS above.
+
+      - name: Workflow gate scenario suite (LAW-12 cards, read-only)
+        run: |
+          python tools/workflow_gate.py check --scenarios configs/workflow_gate_scenarios
+        # Re-proves all seven gate cards (G1-G7) + the all-pass control
+        # against real registry FAIL rows. Read-only: writes no
+        # memory/workflows/REGISTRY.jsonl row. Cards, fixtures and the
+        # registry are git-tracked, so CI sees exactly what the hook sees.

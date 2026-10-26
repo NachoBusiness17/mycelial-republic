@@ -46,21 +46,11 @@ COPILOT_DIR = ROOT / "memory" / "copilot"
 COPILOT_INBOX = COPILOT_DIR / "inbox.jsonl"
 COPILOT_OUTBOX = COPILOT_DIR / "outbox"
 COPILOT_STATE = COPILOT_DIR / "state.json"
-DOCKER_ONLY_MARKER = ROOT / "state" / "DOCKER_ONLY"
-
-
-def _host_runtime_blocked() -> bool:
-    """Keep autonomous Mag ownership inside Docker when the project declares it.
-
-    The Windows host may still run read-only CLI/tests, but long-lived Ghost
-    cycles and daemons must not compete with the container supervisor. An
-    explicit escape hatch remains available for deliberate maintenance.
-    """
-    return (
-        os.name == "nt"
-        and DOCKER_ONLY_MARKER.is_file()
-        and os.environ.get("MAG_ALLOW_HOST_RUNTIME") != "1"
-    )
+# ONE runtime policy (state/DOCKER_ONLY), shared with mag.governor_autorun and
+# the process supervisor gate. B2-51 2026-09-26: this was a private copy; the
+# copies drifted (the supervisor gate lacked the os.name check). Receipt in
+# mag/runtime_policy.py.
+from mag.runtime_policy import DOCKER_ONLY_MARKER, host_runtime_blocked as _host_runtime_blocked
 
 
 def _now() -> str:
@@ -1306,18 +1296,25 @@ AUTO_TRAIL = GHOST_DIR / "autonomous_trail.jsonl"
 AUTO_DEDUP_MINUTES = 60  # don't re-fix the same signal within 60 min
 
 
+AUTO_MAX_ATTEMPTS = 3  # arch-03 3-fail circuit breaker
+
+
 def _auto_dedup(sig: str) -> bool:
-    """Check if a signal was recently auto-fixed."""
+    """Check if a signal was recently auto-fixed or tripped the 3-fail breaker."""
+    if sys.platform != "win32" and str(sig).startswith("fkb:"):
+        return True  # Linux container guard: fkb janitor jobs require host shell
     cutoff = datetime.now(timezone.utc) - timedelta(minutes=AUTO_DEDUP_MINUTES)
-    trail = _read_jsonl(AUTO_TRAIL, tail=30)
-    for t in trail:
-        if t.get("sig") == sig:
-            try:
-                t_ts = datetime.fromisoformat(str(t.get("ts", "")).replace("Z", "+00:00"))
-                if t_ts > cutoff.replace(tzinfo=timezone.utc):
-                    return True
-            except (ValueError, TypeError):
-                continue
+    trail = _read_jsonl(AUTO_TRAIL, tail=200)
+    hits = [t for t in trail if t.get("sig") == sig]
+    if len(hits) >= AUTO_MAX_ATTEMPTS:
+        return True  # 3-fail circuit breaker tripped
+    for t in hits:
+        try:
+            t_ts = datetime.fromisoformat(str(t.get("ts", "")).replace("Z", "+00:00"))
+            if t_ts > cutoff.replace(tzinfo=timezone.utc):
+                return True
+        except (ValueError, TypeError):
+            continue
     return False
 
 
@@ -1406,6 +1403,17 @@ async def autonomous_task_loop(app, interval_s: float = 60.0) -> None:
                 sig = sig_entry["sig"]
                 count = sig_entry["count"]
                 if count >= 5 and not _auto_dedup(f"fkb:{sig}"):
+                    # loop-close (2026-09-22): a signature whose diagnosis file
+                    # already exists is HANDLED, not re-armable. The old
+                    # behavior re-fired the same diagnosis quest forever — one
+                    # sig spawned 504 times (Aug 8 -> Sep 22) because the trail
+                    # never recorded that the diagnosis landed. New error
+                    # shapes hash to new sigs; same sig after diagnosis is
+                    # suppressed here, and the suppression is itself a trail
+                    # fact the next SENSE pass can see.
+                    _diag = ROOT / "memory" / "runs" / "ghost" / "autonomous_fixes" / (sig.replace(":", "_") + ".md")
+                    if _diag.is_file():
+                        continue
                     tier_model = "deepseek-v4-flash" if count >= 10 else "qwen2.5-coder:7b"
                     tier_provider = "deepseek" if count >= 10 else "ollama"
                     quests.append({
@@ -1480,49 +1488,61 @@ async def autonomous_task_loop(app, interval_s: float = 60.0) -> None:
                 })
 
                 # ── Fold to Verkle (shared map) ──
-                try:
-                    from mag.verkle_knot import append_verkle_knot
-                    dossier = {
-                        "session_id": f"autonomous-{quest.get('id','?')}",
-                        "time": {
-                            "created_at": {"iso_minute": _now(), "unix_minute": None, "date": None},
-                            "updated_at": {"iso_minute": _now(), "unix_minute": None, "date": None},
-                        },
-                        "scalar_knot": {
-                            "duration_minutes": 0.1,
-                            "tension_index": quest.get("sig", "?")[:8],
-                            "residual_weight": 1.0,
-                            "theme_vector": {
-                                "dominant": "autonomous_janitor",
-                                "basis": ["mag_hands", "harness", "biography", "constitution"],
-                                "raw": [1.0, 0.5, 0.3, 0.0],
-                                "normalized": [1.0, 0.5, 0.3, 0.0],
+                # Loop-fill gate (2026-10-17, operator): the janitor quests'
+                # deliverable is a diagnosis file at a known path. A task
+                # that crashed produced nothing - folding it minted an empty
+                # chain row and guaranteed the same signal re-fired an hour
+                # later. Fold only when the diagnosis file actually exists.
+                _sig_bare = str(quest.get("sig", "?")).split(":", 1)[-1]
+                _diag_file = ROOT / "memory" / "runs" / "ghost" / "autonomous_fixes" / (_sig_bare.replace(":", "_") + ".md")
+                _diag_ok = _diag_file.is_file()
+                if not _diag_ok:
+                    print(f"[ghost] FOLD-SKIP: no diagnosis file for {quest.get('sig','?')} "
+                          f"({_diag_file.name}) - task produced nothing, chain row withheld", flush=True)
+                if _diag_ok:
+                    try:
+                        from mag.verkle_knot import append_verkle_knot
+                        dossier = {
+                            "session_id": f"autonomous-{quest.get('id','?')}",
+                            "time": {
+                                "created_at": {"iso_minute": _now(), "unix_minute": None, "date": None},
+                                "updated_at": {"iso_minute": _now(), "unix_minute": None, "date": None},
                             },
-                        },
-                        "content_commit": {"hex": result.get("task_id", "?")[:8]},
-                    }
-                    try:
-                        fold_result = append_verkle_knot(dossier)
-                        if fold_result is None:
-                            print(f"[verkle] WARNING: append_verkle_knot returned None for task {result.get('task_id','?')} — fold may have been refused", flush=True)
-                    except Exception as _ve:
-                        print(f"[verkle] FOLD-SWALLOW GUARD: append_verkle_knot failed: {_ve}", flush=True)
-                    # Publish to event bus so subscribers react
-                    try:
-                        from mag.verkle_bus import publish as bus_publish, CH_TASK, CH_VERKLE
-                        import asyncio as _asyncio
-                        _asyncio.ensure_future(bus_publish(CH_TASK, {
-                            "type": "autonomous_task_completed",
-                            "quest_id": quest.get("id", "?"),
-                            "sig": quest.get("sig", "?"),
-                            "task_id": result.get("task_id", "?"),
-                            "outcome": result.get("outcome", "?"),
-                            "ts": _now(),
-                        }))
+                            "scalar_knot": {
+                                "duration_minutes": 0.1,
+                                "tension_index": quest.get("sig", "?")[:8],
+                                "residual_weight": 1.0,
+                                "theme_vector": {
+                                    "dominant": "autonomous_janitor",
+                                    "basis": ["mag_hands", "harness", "biography", "constitution"],
+                                    "raw": [1.0, 0.5, 0.3, 0.0],
+                                    "normalized": [1.0, 0.5, 0.3, 0.0],
+                                },
+                            },
+                            "content_commit": {"hex": result.get("task_id", "?")[:8]},
+                        }
+                        try:
+                            fold_result = append_verkle_knot(dossier)
+                            if fold_result is None:
+                                print(f"[verkle] WARNING: append_verkle_knot returned None for task {result.get('task_id','?')} — fold may have been refused", flush=True)
+                        except Exception as _ve:
+                            print(f"[verkle] FOLD-SWALLOW GUARD: append_verkle_knot failed: {_ve}", flush=True)
+                        # Publish to event bus so subscribers react
+                        try:
+                            from mag.verkle_bus import publish as bus_publish, CH_TASK, CH_VERKLE
+                            import asyncio as _asyncio
+                            _asyncio.ensure_future(bus_publish(CH_TASK, {
+                                "type": "autonomous_task_completed",
+                                "quest_id": quest.get("id", "?"),
+                                "sig": quest.get("sig", "?"),
+                                "task_id": result.get("task_id", "?"),
+                                "outcome": result.get("outcome", "?"),
+                                "ts": _now(),
+                            }))
+                        except Exception:
+                            pass
                     except Exception:
-                        pass
-                except Exception:
-                    pass  # Verkle fold is best-effort — never block the cycle
+                        pass  # Verkle fold is best-effort — never block the cycle
 
             # ── Leak response: auto-respond to detected signals (every autonomous cycle) ──
             try:
@@ -1551,8 +1571,11 @@ async def _cost_enforcer_loop_wrapper():
         await cost_enforcer_loop(interval_s=15.0)
     except asyncio.CancelledError:
         pass
-    except Exception:
-        pass
+    except Exception as _ce:
+        # LOOP-DEATH GUARD (2026-09-25, except-pass fix queue): a wrapper that
+        # swallows its own death makes cost enforcement silently vanish. Stay
+        # non-fatal for the daemon, but leave a trace (FOLD-SWALLOW GUARD style).
+        print(f"[ghost] COST-ENFORCER LOOP DEATH GUARD: cost_enforcer_loop exited: {_ce}", flush=True)
 
 
 async def _bard_loop_wrapper():
@@ -1565,8 +1588,10 @@ async def _bard_loop_wrapper():
         await bard_subscriber_loop(interval=30.0)
     except asyncio.CancelledError:
         pass
-    except Exception:
-        pass
+    except Exception as _be:
+        # LOOP-DEATH GUARD (2026-09-25, except-pass fix queue): silent death here
+        # loses the Chronicle weave with no trace. Non-fatal, but visible.
+        print(f"[ghost] BARD LOOP DEATH GUARD: bard_subscriber_loop exited: {_be}", flush=True)
 
 
 def _build_story_narrative(qs, q_sessions, breached, cost, lattice) -> str:
@@ -1961,13 +1986,16 @@ async def daemon_mode(port: int = 9000, host: str = "0.0.0.0") -> None:
                                         if output.strip():
                                             try:
                                                 from mag.constitutional_critique import filter_response
-                                                cr = filter_response(output, tier="T2", model="deepseek")
+                                                cr = filter_response(output, tier="T2", model="deepseek", producer_model=model)
                                                 if not cr.clean:
                                                     output = cr.revised
                                                     critique_info = {
                                                         "violations": len(cr.violations),
                                                         "revised": cr.revised != cr.original,
                                                         "model": cr.model_used,
+                                                        # B2-207 judge-independence record:
+                                                        "producer_model": cr.producer_model,
+                                                        "same_family_refused": cr.same_family_refused,
                                                     }
                                             except Exception:
                                                 pass  # filter failure should not block response
@@ -2907,6 +2935,9 @@ GUINEA_TASKS = [
         "list",
     ),
 ]
+# 09-20: TASKS was referenced at spawn sites (3941/3959-era) but never defined —
+# NameError class caught by the Mickey 17 digestion (two packs pre-resolved this).
+TASKS = {kind: i for i, (_p, kind) in enumerate(GUINEA_TASKS)}
 
 
 def run_guinea_pig(whisper_text: str | None = None, *,

@@ -27,6 +27,22 @@ BASE = "http://127.0.0.1:8765"
 API = f"{BASE}/api/v1/desk-dialogue"
 DESK_API = f"{BASE}/api/v1/agent-desk"
 EXPECTED_DESK_API = "handoff_loop.v1"
+# B2-438 (2026-09-26): the desk probe fires only at the local desk API. The
+# coding-session loop and governor_autorun execute this script with
+# config-supplied URLs, so the GET helpers (called with caller URLs) are
+# gated to the BASE host allowlist; anything else is refused before any
+# request is made. Fixture test: tests/test_scripts_path_pins.py.
+ALLOWED_HOSTS = {"127.0.0.1", "localhost"}
+
+
+def _url_allowed(url: str) -> bool:
+    from urllib.parse import urlparse
+
+    try:
+        return (urlparse(url).hostname or "") in ALLOWED_HOSTS
+    except Exception:
+        return False
+
 # A baseline probe is an observer, not a request worker.  Keep a stale or
 # half-open dashboard from holding coding preflight hostage; callers that need
 # a slower check can opt in explicitly through the environment.
@@ -37,6 +53,8 @@ GetTextFn = Callable[[str], tuple[str | None, str | None]]
 
 
 def _http_get_json(url: str, *, timeout: float = DESK_PROBE_TIMEOUT) -> tuple[dict[str, Any] | None, str | None]:
+    if not _url_allowed(url):
+        return None, f"refused: {url} not in desk probe allowlist {sorted(ALLOWED_HOSTS)}"
     try:
         req = urllib.request.Request(url, method="GET")
         with urllib.request.urlopen(req, timeout=timeout) as resp:
@@ -48,6 +66,8 @@ def _http_get_json(url: str, *, timeout: float = DESK_PROBE_TIMEOUT) -> tuple[di
 
 
 def _http_get_text(url: str, *, timeout: float = DESK_PROBE_TIMEOUT) -> tuple[str | None, str | None]:
+    if not _url_allowed(url):
+        return None, f"refused: {url} not in desk probe allowlist {sorted(ALLOWED_HOSTS)}"
     try:
         req = urllib.request.Request(url, method="GET")
         with urllib.request.urlopen(req, timeout=timeout) as resp:

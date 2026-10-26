@@ -9,6 +9,79 @@ co-located with the switchboard (reference-monitor pattern) and enforces:
 
 Each broker produces a full receipt:
     ENQUEUED → RUNNING → COMPLETED / FAILED → RECEIPT_COMMITTED
+
+Dispatch delegates (AH18, 2026-09-29, receipt
+watch/inbox/last_mile_20260930/AH18_BROKER_STUBS.md — these two effects
+were ok=True stubs while this module claimed every side effect routes
+through it; both are now real-but-narrow):
+    model_call  -> models.providers.chat_provider (authorize + max_cost_usd
+                   pre-call gate + call + metered effect row)
+    lane_spawn  -> mag.seat_dispatch.task (authorize + delegate + row)
+
+Metered effects (Q48, 2026-10-01, watch/inbox/mountain_climb/
+FIFTY_QUESTIONS_ANSWERED.md): production effects.jsonl did not exist —
+the meter only grew on model_call/lane_spawn, exactly the two classes
+standing organs are policy-forbidden to dispatch headless (operator-label
+tier gate in switchboard_v2._implicit_authority + policy
+require_confirmation), so broker-metered production coverage was 0 of
+25,427 cost-rollup calls.  board_write — the one production-legal
+headless class — now banks a meter row too (corr_id from the note's
+`event` field or the authority event_id, plus seq/path), so any organ
+following the swarm_cycle propose->grant->execute pattern grows the
+production ledger.  The meter append is fail-visible by construction: an
+exception propagates to execute()'s handler and commits a FAILED receipt
+(post_state still shows the note landed) — an effect that cannot be
+banked is an incident, never a silent pass.  First wired organ:
+mag/state_snapshot.py capture_summary (the pile habit).
+
+ROUTING-TABLE STATUS (executor-sweep, 2026-10-03; the executor law mined in
+watch/inbox/gala_20260925/localfirst-steal/lanes/atlas.json rows[1]: a
+routing bucket that no module consumes is a claim that work happened when
+it did not).  Consumer census run over mag/, tools/, main.py, scripts/,
+configs/ plus the production meter memory/runs/effect_broker/effects.jsonl:
+
+    board_write     LIVE.  Organs state_snapshot.capture_summary (line 169),
+                    swarm_cycle (line 129) and the harness generic loop
+                    (harness.py:295) dispatch it; the only bucket with
+                    production meter rows (3, all 2026-10-01, owner
+                    state_snapshot).
+    tool_invoke     DORMANT.  Zero organ dispatches (harness.py:470 is test
+                    scenario 2); high-impact tier gate in
+                    switchboard_v2._implicit_authority, so the operator CLI
+                    and the harness confirm path are the intended consumers.
+    model_call      DORMANT.  Real dispatch since AH18, zero organ dispatches
+                    by policy (require_confirmation + high-impact tier gate);
+                    the operator path is the intended consumer.
+    network_access  DORMANT.  Zero organ dispatches (test-only consumers);
+                    high-impact tier gate, operator path only.
+    fs_write        DORMANT.  Zero organ dispatches (harness.py:503 is test
+                    scenario 3); require_confirmation + high-impact tier
+                    gate, operator path only.
+    lane_spawn      DORMANT.  Real dispatch since AH18, zero organ dispatches
+                    by policy (require_confirmation + high-impact tier gate);
+                    the operator path is the intended consumer.
+    verkle_link     KILLED 2026-10-03 (this sweep).  Zero consumers anywhere:
+                    grep over mag/, tools/, tests/, main.py, scripts/,
+                    configs/ matched only the three declaring tables (this
+                    module, switchboard_v2.EFFECTS, policy_engine
+                    DEFAULT_POLICY) plus the live memory/policy.json copy;
+                    zero meter rows ever; zero test coverage; not
+                    require_confirmation-gated, so it had no gate rationale
+                    either.  The verkle chain's production front door is
+                    direct mag.verkle_lance calls (9 modules: ask_router,
+                    game_campaign, ghost_server, novelty_lens,
+                    openclaw_catalog, reconstruct, route_trace,
+                    spine_exercise, swarm_cycle).  A declared route nobody
+                    takes is the Atlas AUTO_APPLY shape, so the bucket is
+                    removed from BROKERS, EFFECTS and both policy tables;
+                    execute("verkle_link") now fails closed ("unknown
+                    effect") at the broker and "unknown/disabled effect" at
+                    the authority gate.  Receipt:
+                    watch/inbox/buildall/executor-sweep.md.
+
+Every dispatched metered effect appends one compact row to
+memory/runs/effect_broker/effects.jsonl (model, tokens, cost_usd,
+corr_id / task_id / seq) so cost rollups need not glob the receipt tree.
 """
 from __future__ import annotations
 
@@ -29,41 +102,82 @@ RECEIPTS_DIR = ROOT / "memory" / "runs" / "effect_broker"
 # Configurable allowlists / denylist
 # ---------------------------------------------------------------------------
 
-# fs_write: paths under these prefixes are allowed
-FS_ALLOWLIST = os.environ.get(
-    "MAG_FS_ALLOWLIST",
-    ":".join([
-        str(ROOT / "board"),
-        str(ROOT / "patches"),
-        str(ROOT / "memory"),
-        str(ROOT / "bridge"),
-    ])
-).split(":")
+def _list_from_env(name: str, default: list[str]) -> list[str]:
+    """Parse an allow/denylist from env var `name` as a JSON list of strings.
 
-# tool_invoke: only these cwd values are allowed
-TOOL_CWD_ALLOWLIST = os.environ.get(
-    "MAG_TOOL_CWD_ALLOWLIST",
-    ":".join([
-        str(ROOT),
-        "/mag",
-        "/board",
-    ])
-).split(":")
+    FIX (audit finding #6, watch/inbox/MAG_SYSTEMS_DEEP_ANALYSIS_20260930):
+    the old `":".join(default).split(":")` shredded Windows drive paths
+    ("C:\\repo\\board" -> ["C", "\\repo\\board"]) and shredded the IPv6
+    loopback "::1" into empty strings.  An empty deny entry matches every
+    url ("" in url is always True -> every network_access denied while the
+    self-test still passed) and an empty allow prefix matches every path
+    (str.startswith("")), so malformed or empty entries fail loud here
+    instead of silently widening or collapsing the gates.  JSON is chosen
+    over os.pathsep because ":"-splitting shreds "C:\\..." on Windows and
+    os.pathsep (":") shreds "::1" on POSIX; JSON keeps both intact on
+    every surface (Windows host, WSL, Docker).
+    """
+    raw = os.environ.get(name)
+    if raw is None:
+        values = default
+    else:
+        try:
+            values = json.loads(raw)
+        except ValueError as exc:  # name the env var, not just the JSON offset
+            raise ValueError(f"{name} must be a JSON list of strings: {exc}") from exc
+    if (not isinstance(values, list)
+            or not all(isinstance(v, str) and v for v in values)):
+        raise ValueError(
+            f"{name} must be a JSON list of non-empty strings, got: {raw!r}")
+    return list(values)
 
-# network_access: deny these hosts/patterns
-NETWORK_DENYLIST = os.environ.get(
-    "MAG_NETWORK_DENYLIST",
-    ":".join([
-        "127.0.0.1",
-        "localhost",
-        "0.0.0.0",
-        "::1",
-    ])
-).split(":")
+
+# fs_write: paths under these prefixes are allowed.
+# Intended default list: the repo's board/, patches/, memory/, bridge/ roots.
+FS_ALLOWLIST = _list_from_env("MAG_FS_ALLOWLIST", [
+    str(ROOT / "board"),
+    str(ROOT / "patches"),
+    str(ROOT / "memory"),
+    str(ROOT / "bridge"),
+])
+
+# tool_invoke: only these cwd values are allowed.
+# Intended default list: the repo root plus the container-mount paths
+# /mag and /board (keeps Docker/OpenClaw lanes usable).
+TOOL_CWD_ALLOWLIST = _list_from_env("MAG_TOOL_CWD_ALLOWLIST", [
+    str(ROOT),
+    "/mag",
+    "/board",
+])
+
+# network_access: deny these hosts/patterns.
+# Intended default list: the loopback family 127.0.0.1, localhost,
+# 0.0.0.0, and the IPv6 loopback "::1" (which must survive parsing as a
+# single real entry, never as empty-string fragments).
+NETWORK_DENYLIST = _list_from_env("MAG_NETWORK_DENYLIST", [
+    "127.0.0.1",
+    "localhost",
+    "0.0.0.0",
+    "::1",
+])
 
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
+
+EFFECTS_LOG_NAME = "effects.jsonl"
+
+# AH18 (2026-09-29): single conservative USD ceiling for the model_call
+# budget gate.  The estate has no per-model price table (models/quota.py
+# meters tokens, not dollars; its only dollar figure is the DeepSeek cache
+# comment at $0.14/M miss vs $0.0028/M hit), and inventing per-model prices
+# would fabricate precision the config does not hold.  One blended ceiling
+# over-estimates cost, which fails CLOSED on the pre-call max_cost_usd
+# gate (a denied cheap call is recoverable; an authorized expensive call is
+# not) and keeps the ledger row internally consistent (same rate pre and
+# post).  Operator-tunable via env because the ceiling is policy, not truth.
+USD_PER_MTOK = float(os.environ.get("MAG_MODEL_USD_PER_MTOK", "15.0"))
+
 
 def _now() -> str:
     return time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
@@ -81,6 +195,22 @@ def _hash_file(path: Path) -> str:
 
 def _ensure_dirs():
     RECEIPTS_DIR.mkdir(parents=True, exist_ok=True)
+
+
+def _append_effect_row(effect: str, row: dict) -> dict:
+    """Append one metered effect row to the broker's append-only ledger.
+
+    AH18: receipts (one JSON per event) carry the full audit trail;
+    effects.jsonl is the compact per-effect meter (model, tokens, cost_usd,
+    corr_id / task_id) that cost rollups can scan without globbing the
+    receipt tree.  Lives under RECEIPTS_DIR so redirecting the receipts
+    root in tests redirects the ledger with it.
+    """
+    _ensure_dirs()
+    entry = {"ts": _now(), "effect": effect, **row}
+    with (RECEIPTS_DIR / EFFECTS_LOG_NAME).open("a", encoding="utf-8") as f:
+        f.write(json.dumps(entry, ensure_ascii=False) + "\n")
+    return entry
 
 
 def _load_policy_engine():
@@ -107,8 +237,6 @@ def _pre_state(effect: str, params: dict) -> dict:
         bb = ROOT / "memory" / "runs" / "swarm_worker" / "blackboard"
         existing = sorted(bb.glob("bb-*.json")) if bb.exists() else []
         return {"note_count": len(existing), "last_seq": _last_seq(existing)}
-    if effect == "verkle_link":
-        return {"event_id": params.get("event_id")}
     if effect == "tool_invoke":
         return {"cmd_preview": " ".join(params.get("cmd", []))[:80]}
     return {}
@@ -132,8 +260,6 @@ def _post_state(effect: str, params: dict, result: dict) -> dict:
         bb = ROOT / "memory" / "runs" / "swarm_worker" / "blackboard"
         existing = sorted(bb.glob("bb-*.json")) if bb.exists() else []
         return {"note_count": len(existing), "last_seq": _last_seq(existing)}
-    if effect == "verkle_link":
-        return {"stdout_head": (result.get("stdout") or "")[:80]}
     return {}
 
 
@@ -147,18 +273,37 @@ def _postcondition_evidence(effect: str, params: dict, result: dict) -> dict:
             "hash": _hash_file(path),
         }
     if effect == "board_write":
-        return {"seq": result.get("seq"), "path": result.get("path")}
-    if effect == "verkle_link":
-        return {"stdout_head": (result.get("stdout") or "")[:80],
-                "rc": result.get("rc")}
+        # Q48: effect_row_logged names whether the meter row banked — the
+        # postcondition for a brokered board_write is not just the note file
+        # but the banked ledger row.
+        return {"seq": result.get("seq"), "path": result.get("path"),
+                "effect_row_logged": result.get("effect_row_logged", False)}
     if effect == "tool_invoke":
         return {"rc": result.get("rc"), "stdout_hash": _hash_bytes((result.get("stdout") or "").encode())}
     if effect == "network_access":
         return {"status": result.get("status"), "bytes_fetched": len(result.get("body", ""))}
     if effect == "model_call":
-        return {"stub": True, "lane": params.get("lane", "unknown")}
+        # AH18: real dispatch evidence — delegate ref, metered tokens/cost,
+        # correlation id into effects.jsonl.  (Was {"stub": True}.)
+        return {
+            "delegate": result.get("delegate"),
+            "model": result.get("model"),
+            "total_tokens": (result.get("prompt_tokens") or 0)
+                            + (result.get("completion_tokens") or 0),
+            "cost_usd": result.get("cost_usd"),
+            "corr_id": result.get("corr_id"),
+            "effect_row_logged": result.get("effect_row_logged"),
+        }
     if effect == "lane_spawn":
-        return {"stub": True, "task_head": (params.get("task") or "")[:40]}
+        # AH18: real dispatch evidence — delegate ref + spawner task_id.
+        # (Was {"stub": True}.)
+        return {
+            "delegate": result.get("delegate"),
+            "seat": result.get("seat"),
+            "task_id": result.get("task_id"),
+            "status": result.get("status"),
+            "effect_row_logged": result.get("effect_row_logged"),
+        }
     return {}
 
 
@@ -224,31 +369,53 @@ def _authority_ok(authority: dict, effect: str) -> tuple[bool, str]:
 # ---------------------------------------------------------------------------
 
 def _broker_board_write(params: dict, authority: dict) -> dict:
-    """Wrap switchboard.write_board_note()."""
+    """Wrap switchboard.write_board_note() and bank a meter row (Q48).
+
+    Q48 (2026-10-01, watch/inbox/mountain_climb/FIFTY_QUESTIONS_ANSWERED.md):
+    production effects.jsonl did not exist — the meter only grew on
+    model_call/lane_spawn, exactly the two effect classes standing organs
+    are policy-forbidden to dispatch headless (operator-label tier gate in
+    switchboard_v2._implicit_authority + policy require_confirmation), so
+    broker-metered production coverage was 0 of 25,427 cost-rollup calls.
+    board_write is the one production-legal headless class, so every
+    successful brokered board_write now banks one effects.jsonl row —
+    except evidence-class dispatches (corr_id/event_id starting with
+    "test-" or note kind "test"), which meter nothing (harness.py
+    _record_receipt precedent: test-prefixed events are evidence of the
+    control path, not production side effects; unredirected contract
+    tests must not fabricate broker coverage on the production ledger).
+    corr_id resolution: the note's `event` field (write_board_note persists
+    it into the bb file) wins so the meter joins the ORGAN's corr_id, not
+    just the switchboard event_id (state_snapshot files one board note per
+    capture with event=corr_id while the grant event_id carries a unique
+    suffix for replay protection).
+    """
     from . import switchboard_v2 as sb
     note = params.get("note", {})
     result = sb.write_board_note(note, authority)
+    if result.get("ok"):
+        corr_id = (note.get("event")
+                   or authority.get("event_id")
+                   or params.get("event_id")
+                   or "anon")
+        # Evidence-class dispatch law (harness.py _record_receipt precedent:
+        # a test-prefixed event is "evidence of the control path, not a
+        # production side effect"; the switchboard contract test and the
+        # broker self-test run unredirected against the production receipt
+        # dir): such dispatches meter NOTHING — the ledger meters production
+        # work only, else every pytest run fabricates broker coverage.
+        if str(corr_id).startswith("test-") or note.get("kind") == "test":
+            result["effect_row_logged"] = False
+            result["meter_row_skipped"] = f"evidence-class dispatch ({corr_id})"
+        else:
+            _append_effect_row("board_write", {
+                "corr_id": corr_id,
+                "seq": result.get("seq"),
+                "path": result.get("path"),
+                "owner": note.get("owner", "switchboard"),
+            })
+            result["effect_row_logged"] = True
     return result
-
-
-def _broker_verkle_link(params: dict, authority: dict) -> dict:
-    event_id = params.get("event_id", authority.get("event_id", "unknown"))
-    cmd = [sys.executable, "-m", "mag.verkle_lance", "link", "--event", event_id]
-    try:
-        p = subprocess.run(
-            cmd, capture_output=True, text=True, encoding="utf-8",
-            errors="replace", timeout=60, cwd=str(ROOT)
-        )
-        return {
-            "ok": p.returncode == 0,
-            "rc": p.returncode,
-            "stdout": p.stdout,
-            "stderr": p.stderr[-200:] if p.stderr else "",
-        }
-    except subprocess.TimeoutExpired:
-        return {"ok": False, "rc": -1, "error": "timeout 60s"}
-    except Exception as e:
-        return {"ok": False, "rc": -1, "error": repr(e)}
 
 
 def _broker_tool_invoke(params: dict, authority: dict) -> dict:
@@ -282,14 +449,109 @@ def _broker_tool_invoke(params: dict, authority: dict) -> dict:
         return {"ok": False, "rc": -1, "error": repr(e)}
 
 
+def _estimate_cost_usd(params: dict) -> float:
+    """Worst-case pre-call cost: prompt chars/4 + full max_tokens completion.
+
+    Over-estimates by design (completion rarely fills max_tokens) so the
+    max_cost_usd gate fails closed; the post-call row carries the actual
+    usage-based cost alongside this estimate.
+    """
+    prompt_tok = (len(str(params.get("system", "") or ""))
+                  + len(str(params.get("user", "") or ""))) // 4
+    completion_tok = int(params.get("max_tokens") or 2048)
+    return (prompt_tok + completion_tok) / 1_000_000 * USD_PER_MTOK
+
+
 def _broker_model_call(params: dict, authority: dict) -> dict:
-    """Stub — real wiring via seat_dispatch later."""
-    return {
+    """AH18 (2026-09-29): real dispatch through the provider layer.
+
+    Was a stub (ok=True stub=True) while the broker claimed every side
+    effect routes through it — audit §3.5.  Now: authority gate (execute)
+    → max_cost_usd pre-call gate → models.providers.chat_provider →
+    metered effect row on effects.jsonl.  Narrow by construction: the
+    broker narrows max_tokens to 2048 (the provider layer's own default
+    is the 65k ceiling) and defaults tier to T2 — a brokered model_call
+    is by definition an explicitly authorized remote-capable effect, and
+    free_local lanes (ollama janitors) are unaffected by the tier gate.
+    """
+    provider = str(params.get("provider", "") or "").strip()
+    if not provider:
+        return {"ok": False, "error": "model_call requires provider"}
+    user = str(params.get("user", "") or "")
+    if not user.strip():
+        return {"ok": False, "error": "model_call requires non-empty user prompt"}
+
+    corr_id = authority.get("event_id", params.get("event_id", "anon"))
+    est = _estimate_cost_usd(params)
+    max_cost = params.get("max_cost_usd")
+    if max_cost is not None:
+        try:
+            cap = float(max_cost)
+        except (TypeError, ValueError):
+            return {"ok": False, "error": f"max_cost_usd not a number: {max_cost!r}"}
+        if est > cap:
+            return {
+                "ok": False,
+                "error": f"budget exceeded: worst-case estimate ${est:.6f} > "
+                         f"max_cost_usd ${cap:.6f} (rate ${USD_PER_MTOK}/Mtok)",
+                "estimated_cost_usd": round(est, 8),
+                "max_cost_usd": cap,
+                "corr_id": corr_id,
+            }
+
+    from models.providers import chat_provider
+    r = chat_provider(
+        provider,
+        str(params.get("system", "") or ""),
+        user,
+        model=params.get("model") or None,
+        max_tokens=int(params.get("max_tokens") or 2048),
+        tier=str(params.get("tier", "T2")),
+        session_id=str(params.get("session_id")
+                       or f"broker:{corr_id}"),
+        timeout=params.get("timeout"),
+        allow_peak=bool(params.get("allow_peak", False)),
+    )
+    if not r.get("ok"):
+        return {"ok": False, "error": r.get("error", "provider call failed"),
+                "provider": provider, "corr_id": corr_id,
+                "delegate": "models.providers.chat_provider"}
+
+    usage = r.get("usage") or {}
+    pt = int(usage.get("prompt_tokens") or 0)
+    ct = int(usage.get("completion_tokens") or 0)
+    cost = (pt + ct) / 1_000_000 * USD_PER_MTOK
+    _append_effect_row("model_call", {
+        "corr_id": corr_id,
+        "provider": provider,
+        "model": r.get("model"),
+        "prompt_tokens": pt,
+        "completion_tokens": ct,
+        "cost_usd": round(cost, 8),
+        "estimated_cost_usd": round(est, 8),
+    })
+    out = {
         "ok": True,
-        "stub": True,
-        "lane": params.get("lane", "unknown"),
-        "response": "[MODEL_STUB: not wired to seat_dispatch yet]",
+        "delegate": "models.providers.chat_provider",
+        "provider": provider,
+        "model": r.get("model"),
+        "text": r.get("text", ""),
+        "usage": usage,
+        "prompt_tokens": pt,
+        "completion_tokens": ct,
+        "cost_usd": round(cost, 8),
+        "estimated_cost_usd": round(est, 8),
+        "corr_id": corr_id,
+        "budget_after": r.get("budget_after"),
+        "effect_row_logged": True,
     }
+    if max_cost is not None and cost > cap:
+        # Post-hoc honesty (the pre-call gate passed but actual usage crossed
+        # the cap, e.g. an unknown-model rate mismatch): the call already
+        # happened, so the receipt stays COMPLETED with the overrun flagged,
+        # never hidden and never misreported as a denial.
+        out["budget_exceeded_post"] = True
+    return out
 
 
 def _broker_network_access(params: dict, authority: dict) -> dict:
@@ -342,18 +604,60 @@ def _broker_fs_write(params: dict, authority: dict) -> dict:
 
 
 def _broker_lane_spawn(params: dict, authority: dict) -> dict:
-    """Stub — real session spawning later."""
-    return {
-        "ok": True,
-        "stub": True,
-        "task_head": (params.get("task") or "")[:40],
-        "model": params.get("model", "unknown"),
+    """AH18 (2026-09-29): real delegate to the estate's lane spawner.
+
+    mag/seat_dispatch.py owns spawning (HEADLESS verified launchers +
+    MAILBOX inbox writes); this broker adds the authority gate, the budget
+    decrement (execute) and the metered effect row.  A HEADLESS dispatch is
+    a real subprocess spawn; a MAILBOX seat lands the task in the seat
+    INBOX and returns status "queued" (the operator asks the GUI seat to
+    work it) — both count as dispatched.
+    """
+    goal = str(params.get("task") or "").strip()
+    if not goal:
+        return {"ok": False, "error": "lane_spawn requires non-empty task"}
+
+    corr_id = authority.get("event_id", params.get("event_id", "anon"))
+    from mag import seat_dispatch
+    r = seat_dispatch.task(
+        goal,
+        seat=str(params.get("seat", "auto")),
+        model=str(params.get("model", "") or ""),
+        tag=str(params.get("tag") or f"broker-{corr_id}"),
+    )
+    seat = r.get("seat", params.get("seat", "auto"))
+    status = str(r.get("status", "failed"))
+    ok = bool(r.get("ok")) and status in ("done", "queued")
+    out = {
+        "ok": ok,
+        "delegate": "mag.seat_dispatch.task",
+        "corr_id": corr_id,
+        "seat": seat,
+        "status": status,
+        "task_id": r.get("task_id"),
+        "detail": r.get("detail", r.get("error", "")),
+        "effect_row_logged": False,
     }
+    if not ok:
+        out["error"] = r.get("error") or f"seat_dispatch status {status}"
+        return out
+    _append_effect_row("lane_spawn", {
+        "corr_id": corr_id,
+        "seat": seat,
+        "status": status,
+        "task_id": r.get("task_id"),
+        "goal_head": goal[:80],
+    })
+    out["effect_row_logged"] = True
+    return out
 
 
 BROKERS = {
     "board_write": _broker_board_write,
-    "verkle_link": _broker_verkle_link,
+    # verkle_link KILLED 2026-10-03 (executor-sweep): zero consumers anywhere,
+    # zero meter rows, zero tests; the verkle chain's front door is direct
+    # mag.verkle_lance calls. See ROUTING-TABLE STATUS in the module docstring
+    # and watch/inbox/buildall/executor-sweep.md.
     "tool_invoke": _broker_tool_invoke,
     "model_call": _broker_model_call,
     "network_access": _broker_network_access,

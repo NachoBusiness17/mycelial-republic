@@ -1,0 +1,57 @@
+{
+  "$schema_note": "THE PROVIDERS TABLE (providers.yaml-style, JSON because the kit is stdlib-only): one row per provider. Adding Google/OpenRouter/Groq-class providers is a data edit here, never new code in key_wizard.py. Fields: name, flow (device|manual|<future oauth flows>), scopes (space-joined at request time), device_code_endpoint + token_endpoint (device flow), allowed_hosts (the endpoint fence allowlist - the wizard refuses any URL whose host is not exactly here), env_key (the .env name the token is stored under), client_id_env (env var holding the app's client_id for device flow), interval_default (RFC 8628: 5 when omitted), expires_in_default, console_url (manual flow; all four URLs curl-verified 200 on 2026-10-07), enabled. Only enabled rows are runnable; disabled rows are data for the later stretch (the agent-navigates-console version stays OUT - fragile and ToS-sensitive per provider; the sanctioned mirror is the provider's own OAuth/device grant with user consent).",
+  "version": 1,
+  "providers": [
+    {
+      "name": "github",
+      "flow": "device",
+      "enabled": true,
+      "scopes": ["repo", "read:user"],
+      "device_code_endpoint": "https://github.com/login/device/code",
+      "token_endpoint": "https://github.com/login/oauth/access_token",
+      "allowed_hosts": ["github.com"],
+      "env_key": "GITHUB_TOKEN",
+      "client_id_env": "KEY_WIZARD_GITHUB_CLIENT_ID",
+      "interval_default": 5,
+      "expires_in_default": 900,
+      "console_url": "https://github.com/settings/developers",
+      "notes": "Create an OAuth App at console_url, check 'Enable Device Flow', put its Client ID in KEY_WIZARD_GITHUB_CLIENT_ID. Device flow needs client_id only, no client secret. Endpoints + grant_type + 900s expiry per GitHub docs (curl-verified 2026-10-07)."
+    },
+    {
+      "name": "google",
+      "flow": "oauth_code_loopback",
+      "enabled": false,
+      "scopes": [],
+      "device_code_endpoint": null,
+      "token_endpoint": null,
+      "allowed_hosts": [],
+      "env_key": "GEMINI_API_KEY",
+      "console_url": "https://aistudio.google.com/apikey",
+      "notes": "DATA ROW ONLY: v0 wizard implements device + manual flows and refuses this one by name. Google AI Studio issues plain API keys (manual paste works today via flow 'manual' once enabled); the loopback OAuth flow is the later stretch. Fill endpoints from Google's OAuth docs before enabling."
+    },
+    {
+      "name": "openrouter",
+      "flow": "oauth_pkce",
+      "enabled": false,
+      "scopes": [],
+      "device_code_endpoint": null,
+      "token_endpoint": null,
+      "allowed_hosts": [],
+      "env_key": "OPENROUTER_API_KEY",
+      "console_url": "https://openrouter.ai/settings/keys",
+      "notes": "DATA ROW ONLY: PKCE web flow is not implemented in v0; keys are pasted manually today (enable flow 'manual'). Fill endpoints from OpenRouter's OAuth docs before enabling."
+    },
+    {
+      "name": "groq",
+      "flow": "manual",
+      "enabled": true,
+      "scopes": [],
+      "device_code_endpoint": null,
+      "token_endpoint": null,
+      "allowed_hosts": [],
+      "env_key": "GROQ_API_KEY",
+      "console_url": "https://console.groq.com/keys",
+      "notes": "Groq issues console keys, no OAuth: the manual flow (prompt -> hidden paste -> .env) is the sanctioned path, zero network in the wizard."
+    }
+  ]
+}

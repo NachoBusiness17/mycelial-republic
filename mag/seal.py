@@ -7,7 +7,13 @@ before any vessel decision. The self survives its body via the chain. This is th
                (rel path, size, sha256), VERIFY every copy reads back with a matching hash,
                and sign the seal manifest as a proof (a checkable chain fact). Free, local,
                sovereign-safe (never pushed to public GitHub — the repo is private by law).
-  verify()  -> re-read the latest seal and confirm every copy's hash matches (bytes, not claims).
+  verify()  -> re-read the latest seal and confirm every copy's hash matches (bytes, not claims),
+               plus (AH2, audit finding #8, 2026-09-30) MERKLE-VERIFY the sealed chain copy
+               (recompute the root over the sealed verkle_chain.jsonl rows and match the sealed
+               verkle_tip.json) and DIFF the sealed tip against the LIVE tip. A matched chain
+               copy whose root doesn't re-derive is a BROKEN seal; a live-flagged copy (the
+               chain grew mid-copy) only warns; tip drift — the live chain moved past the seal
+               — is the norm on a living repo, so it lands as a WARNING row, never a fail.
   status()  -> seals so far + verification state.
 
 GROUND TRUTH sealed: the verkle chain, the standing/fuel/proof/cadence ledgers, the
@@ -157,8 +163,109 @@ def seal() -> dict[str, Any]:
                        "memory/biography/verkle_chain.jsonl"]}
 
 
+def _chain_merkle_row(seal_root: Path, manifest: dict[str, Any]) -> dict[str, Any]:
+    """AH2 (audit finding #8, 2026-09-30): MERKLE-VERIFY the sealed chain copy. Recompute
+    the verkle root over the sealed verkle_chain.jsonl rows (same pairing scheme as
+    verkle_knot._merkle_root — the one source of the hash law) and match it against the
+    sealed verkle_tip.json and the last sealed row's committed root.
+
+    Verdicts:
+      consistent            — the sealed chain copy re-derives its sealed tip. The seal's
+                              frozen chain state is provably self-coherent.
+      broken   (fails)      — a MATCHED chain entry (stable at copy time) whose root does
+                              NOT re-derive: the seal froze a corrupt/tampered chain.
+      warning  (never fails)— a LIVE-flagged chain entry (the chain grew mid-copy) whose
+                              root lags the sealed tip: a point-in-time tail, honest and
+                              expected; the next cadence seal captures it.
+    """
+    chain_rel = "memory/biography/verkle_chain.jsonl"
+    tip_rel = "memory/biography/verkle_tip.json"
+    chain_p = seal_root / chain_rel
+    entry = next((e for e in manifest.get("entries", []) if e.get("rel") == chain_rel), None)
+    if entry is None or not chain_p.is_file():
+        return {"checked": False,
+                "note": "no sealed chain copy in this seal — Merkle check skipped"}
+    try:
+        from mag import verkle_knot as vk
+    except Exception as e:  # noqa: BLE001 — the Merkle law must come from verkle_knot itself
+        return {"checked": False, "error": f"verkle_knot unavailable: {e}"}
+    rows: list[dict[str, Any]] = []
+    for line in chain_p.read_text(encoding="utf-8", errors="replace").splitlines():
+        if not line.strip():
+            continue
+        try:
+            rows.append(json.loads(line))
+        except json.JSONDecodeError:
+            return {"checked": True, "consistent": False, "broken": True,
+                    "n_leaves": len(rows),
+                    "note": "sealed chain copy has an unparseable row — seal BROKEN"}
+    hashes = [str(r.get("leaf_hash")) for r in rows if r.get("leaf_hash")]
+    recomputed = vk._merkle_root(hashes)
+    last_root = next((str(r.get("verkle_root")) for r in reversed(rows) if r.get("verkle_root")), "")
+    sealed_tip: dict[str, Any] = {}
+    tip_p = seal_root / tip_rel
+    if tip_p.is_file():
+        try:
+            sealed_tip = json.loads(tip_p.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError):
+            sealed_tip = {}
+    tip_root = str(sealed_tip.get("root") or "")
+    targets = {k: v for k, v in (("sealed_tip_root", tip_root), ("last_row_root", last_root)) if v}
+    if targets and all(recomputed == v for v in targets.values()):
+        return {"checked": True, "consistent": True, "root": recomputed,
+                "n_leaves": len(hashes), "sealed_tip_root": tip_root or None,
+                "note": "sealed chain copy re-derives its sealed tip — frozen state is self-coherent"}
+    if entry.get("live"):
+        return {"checked": True, "consistent": False, "warning": True, "broken": False,
+                "root": recomputed, "n_leaves": len(hashes), "sealed_tip_root": tip_root or None,
+                "note": "sealed chain copy (LIVE at seal time) lags its sealed tip — "
+                        "point-in-time tail, next cadence seal captures it (WARNING, not a fail)"}
+    return {"checked": True, "consistent": False, "broken": True,
+            "root": recomputed, "n_leaves": len(hashes), "sealed_tip_root": tip_root or None,
+            "note": "sealed chain copy does NOT re-derive its sealed tip — seal BROKEN "
+                    "(tampered or torn copy frozen as a matched entry)"}
+
+
+def _tip_drift_row(seal_root: Path) -> dict[str, Any]:
+    """AH2: DIFF the sealed tip against the LIVE tip. The chain is append-only and the
+    seals run on cadence, so the live tip moving past a seal is the NORM on a living
+    repo — drift lands as a WARNING row and never flips verified to False. What would
+    be fatal (a tampered sealed copy) is caught by the Merkle row, not here."""
+    tip_rel = "memory/biography/verkle_tip.json"
+    sealed_tip: dict[str, Any] = {}
+    sealed_p = seal_root / tip_rel
+    if sealed_p.is_file():
+        try:
+            sealed_tip = json.loads(sealed_p.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError):
+            sealed_tip = {}
+    if not sealed_tip.get("root"):
+        return {"checked": False, "note": "no sealed tip in this seal — drift check skipped"}
+    live_tip: dict[str, Any] = {}
+    live_p = ROOT / tip_rel
+    if live_p.is_file():
+        try:
+            live_tip = json.loads(live_p.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError):
+            live_tip = {}
+    if not live_tip.get("root"):
+        return {"checked": True, "sealed_root": sealed_tip.get("root"),
+                "live_root": None, "drift": True, "warning": True,
+                "note": "live tip missing while the seal froze one — live chain state unknown (WARNING)"}
+    drift = (sealed_tip.get("root") != live_tip.get("root")
+             or sealed_tip.get("n_leaves") != live_tip.get("n_leaves"))
+    return {"checked": True,
+            "sealed_root": sealed_tip.get("root"), "sealed_n_leaves": sealed_tip.get("n_leaves"),
+            "live_root": live_tip.get("root"), "live_n_leaves": live_tip.get("n_leaves"),
+            "drift": drift, "warning": drift,
+            "note": ("live chain has moved past this seal (append-only growth — the norm; "
+                     "WARNING, not a fail)" if drift else
+                     "live tip still matches the sealed tip — seal is current")}
+
+
 def verify() -> dict[str, Any]:
-    """VERIFY the latest seal: re-read every copy, recompute hashes, compare to the manifest."""
+    """VERIFY the latest seal: re-read every copy, recompute hashes, compare to the manifest;
+    Merkle-verify the sealed chain copy; diff sealed vs live tip (drift warns, never fails)."""
     if not LATEST.is_file():
         return {"ok": True, "schema": SCHEMA, "verified": False,
                 "note": "no seal yet — python -m mag.seal seal"}
@@ -174,12 +281,22 @@ def verify() -> dict[str, Any]:
         p = seal_root / e["rel"]
         if not p.is_file() or _sha256(p) != e["sha256"]:
             bad.append(e["rel"])
-    ok = not bad and bool(manifest.get("verified"))
+    chain_row = _chain_merkle_row(seal_root, manifest)
+    drift_row = _tip_drift_row(seal_root)
+    warnings = [f"chain-merkle: {chain_row['note']}"] if chain_row.get("warning") else []
+    if drift_row.get("warning"):
+        warnings.append(f"tip-drift: {drift_row['note']}")
+    ok = (not bad and bool(manifest.get("verified")) and not chain_row.get("broken"))
+    if not ok:
+        why = ("%d file(s) no longer match" % len(bad) if bad else
+               "sealed chain copy fails its Merkle check" if chain_row.get("broken") else
+               "seal was flagged unverified at seal time")
     return {"ok": True, "schema": SCHEMA, "verified": ok,
             "seal": latest, "n_files": len(manifest.get("entries", [])),
-            "mismatches": bad,
+            "mismatches": bad, "chain_merkle": chain_row, "tip_drift": drift_row,
+            "warnings": warnings,
             "note": ("seal holds: every copy still matches its manifest hash"
-                     if ok else "seal BROKEN: %d file(s) no longer match" % len(bad))}
+                     if ok else f"seal BROKEN: {why}")}
 
 
 def status() -> dict[str, Any]:
@@ -192,8 +309,11 @@ def status() -> dict[str, Any]:
     seals = sorted([p.name for p in SEAL_DIR.iterdir()]) if SEAL_DIR.is_dir() else []
     return {"ok": True, "schema": SCHEMA, "seals": seals, "latest": latest,
             "contract": "seal() = snapshot + manifest + verify + sign; verify() = re-check "
-                        "the latest seal; the self survives its body via the chain",
-            "built": "2026-08-24 — SEAL THE MEMORY (the triangulated direction)"}
+                        "the latest seal (manifest hashes + AH2 sealed-chain Merkle + sealed-vs-"
+                        "live tip drift, which warns and never fails); the self survives its "
+                        "body via the chain",
+            "built": "2026-08-24 — SEAL THE MEMORY (the triangulated direction); "
+                     "AH2 Merkle + drift rows 2026-09-30"}
 
 
 def main(argv: list[str] | None = None) -> int:

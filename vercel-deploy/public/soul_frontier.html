@@ -1,0 +1,1104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Soul Frontier — Death Must Die × Dark Souls</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: #0a0a0a; overflow: hidden; font-family: 'Courier New', monospace; }
+  canvas { display: block; }
+  #overlay {
+    position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    background: radial-gradient(ellipse at center, #1a0a00 0%, #0a0000 100%);
+    color: #e0c080; z-index: 10;
+  }
+  #overlay.hidden { display: none; }
+  #overlay h1 { font-size: 3em; color: #d4a040; text-shadow: 0 0 20px #8a5020; margin-bottom: 0.2em; }
+  #overlay h2 { font-size: 1.2em; color: #a08060; margin-bottom: 1.5em; font-weight: normal; }
+  #overlay .subtitle { color: #806040; font-size: 0.9em; margin-top: 0.5em; }
+  .btn {
+    background: #2a1a0a; border: 1px solid #8a5020; color: #e0c080;
+    padding: 12px 36px; font-family: inherit; font-size: 1.1em;
+    cursor: pointer; margin: 6px; transition: all 0.2s;
+  }
+  .btn:hover { background: #4a2a10; border-color: #d4a040; color: #fff; }
+  .btn:active { background: #6a3a18; }
+  .char-select { display: flex; gap: 20px; margin: 20px 0; }
+  .char-card {
+    border: 2px solid #3a2a1a; padding: 16px; width: 180px; text-align: center;
+    cursor: pointer; transition: all 0.2s; background: #1a0a00;
+  }
+  .char-card:hover { border-color: #8a5020; }
+  .char-card.selected { border-color: #d4a040; background: #2a1a0a; }
+  .char-card .name { font-size: 1.1em; color: #d4a040; margin-bottom: 8px; }
+  .char-card .stats { font-size: 0.8em; color: #a08060; line-height: 1.6; }
+  #hud {
+    position: absolute; top: 10px; left: 10px; color: #e0c080;
+    font-size: 14px; line-height: 1.7; z-index: 5;
+    text-shadow: 0 0 4px #000; pointer-events: none;
+  }
+  #hud .val { color: #fff; }
+  #hud .stam-bar { width: 150px; height: 10px; background: #222; border: 1px solid #555; display: inline-block; vertical-align: middle; margin-left: 4px; }
+  #hud .stam-fill { height: 100%; background: #c04040; transition: width 0.1s; }
+  #death-screen {
+    position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+    display: none; flex-direction: column; align-items: center; justify-content: center;
+    background: rgba(0,0,0,0.85); z-index: 8; color: #c04040;
+  }
+  #death-screen.show { display: flex; }
+  #death-screen h1 { font-size: 2.5em; margin-bottom: 0.3em; }
+  #death-screen p { color: #a08060; margin-bottom: 1.5em; }
+  #level-trans {
+    position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+    font-size: 2.5em; color: #d4a040; text-shadow: 0 0 30px #8a5020;
+    z-index: 6; display: none; pointer-events: none;
+  }
+  #level-trans.show { display: block; animation: pulse 0.5s infinite alternate; }
+  @keyframes pulse { from { opacity: 0.6; } to { opacity: 1; } }
+  #controls {
+    position: absolute; bottom: 10px; left: 10px; color: #504030;
+    font-size: 11px; z-index: 5; line-height: 1.6;
+  }
+</style>
+</head>
+<body>
+<canvas id="gc"></canvas>
+
+<div id="overlay">
+  <h1>SOUL FRONTIER</h1>
+  <h2>Death Must Die × Dark Souls — Top-Down Survivors</h2>
+  <div class="char-select" id="charSelect">
+    <div class="char-card selected" data-char="0">
+      <div class="name">🔫 Twin Pistols</div>
+      <div class="stats">Speed: FAST<br>Attack: LIGHT<br>Dodge: QUICK<br>Damage: LOW</div>
+    </div>
+    <div class="char-card" data-char="1">
+      <div class="name">🔫⚔️ Shotgun-Axe</div>
+      <div class="stats">Speed: MED<br>Attack: MIXED<br>Dodge: MED<br>Damage: MED</div>
+    </div>
+    <div class="char-card" data-char="2">
+      <div class="name">💥 Heavy Canon</div>
+      <div class="stats">Speed: SLOW<br>Attack: SPLASH<br>Dodge: SLOW<br>Damage: HIGH</div>
+    </div>
+  </div>
+  <button class="btn" id="startBtn">BEGIN THE WALK</button>
+  <div class="subtitle">10,000 steps to Death. No loot. No lock-on. No mercy.</div>
+</div>
+
+<div id="hud" style="display:none">
+  <div>STEPS: <span class="val" id="hudSteps">0</span> / 10000</div>
+  <div>LEVEL: <span class="val" id="hudLevel">1</span></div>
+  <div>HP: <span class="val" id="hudHp">100</span></div>
+  <div>STAM: <span class="val" id="hudStam">100</span>
+    <div class="stam-bar"><div class="stam-fill" id="stamFill"></div></div>
+  </div>
+  <div>KILLS: <span class="val" id="hudKills">0</span></div>
+  <div>WAVE: <span class="val" id="hudWave">1</span></div>
+</div>
+
+<div id="level-trans"></div>
+
+<div id="death-screen">
+  <h1>YOU DIED</h1>
+  <p id="deathStats"></p>
+  <button class="btn" id="respawnBtn">RETURN TO CAMPFIRE</button>
+</div>
+
+<div id="controls" style="display:none">
+  WASD / Arrow Keys — Move<br>
+  Mouse — Aim &amp; Shoot/Attack<br>
+  SPACE — Dodge Roll (1 stam)<br>
+  E — Heavy Attack (3 stam)<br>
+  Q — Light Attack (1 stam)<br>
+  R — Reload / Cooldown
+</div>
+
+<script>
+// ====== SOUL FRONTIER CORE ======
+const canvas = document.getElementById('gc');
+const ctx = canvas.getContext('2d');
+
+function resize() {
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+}
+resize();
+window.addEventListener('resize', resize);
+
+// ====== CONFIG ======
+const CONFIG = {
+  stamRegen: 3,         // stam per sec when idle
+  stamLight: 1,         // light attack cost
+  stamHeavy: 3,         // heavy attack cost
+  stamRoll: 1,          // roll cost
+  rollDuration: 0.25,   // seconds of i-frame during roll
+  maxStam: 100,
+  deathSteps: 10000,
+  levels: [
+    { min: 0,    max: 1000,  name: "Desert",      terrain: 'sand',     enemies: 'slimes',      color: '#e8d5a0' },
+    { min: 1000, max: 2000,  name: "Western Dead", terrain: 'towns',    enemies: 'zombies',     color: '#c4a86a' },
+    { min: 2000, max: 4000,  name: "Pine Gorge",   terrain: 'forest',   enemies: 'slimes_zombie',color: '#4a6a3a' },
+    { min: 4000, max: 6000,  name: "Utah Plateau", terrain: 'plateau',  enemies: 'zombies',     color: '#b8a070' },
+    { min: 6000, max: 9999,  name: "Yellowstone",  terrain: 'geyser',   enemies: 'slimes_zombie',color: '#3a3a2a' },
+  ],
+};
+
+const CHARS = [
+  { name: 'Twin Pistols',  speed: 220, atkSpeed: 0.3, lightDmg: 8,  heavyDmg: 15, heavyRange: 40, splash: false,  knockback: 0,  color: '#4080c0', desc: 'fast light attacks' },
+  { name: 'Shotgun-Axe',   speed: 180, atkSpeed: 0.5, lightDmg: 12, heavyDmg: 28, heavyRange: 60, splash: true,   knockback: 40, color: '#c08040', desc: 'mixed range, area heavy' },
+  { name: 'Heavy Canon',   speed: 140, atkSpeed: 0.9, lightDmg: 6,  heavyDmg: 45, heavyRange: 120,splash: true,   knockback: 80, color: '#c04040', desc: 'splash + knockback' },
+];
+
+// ====== STATE ======
+let state = 'menu'; // menu, playing, dead, transitioning
+let selectedChar = 0;
+let player = null;
+let enemies = [];
+let projectiles = [];
+let particles = [];
+let campfire = null;
+let steps = 0;
+let prevSteps = 0; // for level transition detection
+let prevPlayerX = 0;
+let prevPlayerY = 0;
+let kills = 0;
+let wave = 1;
+let lastTime = 0;
+let screenShake = 0;
+let camX = 0, camY = 0; // camera offset (world → screen)
+let camTargetX = 0, camTargetY = 0;
+let boss = null; // Death boss
+
+// ====== INPUT ======
+const keys = {};
+window.addEventListener('keydown', e => { keys[e.code] = true; e.preventDefault(); });
+window.addEventListener('keyup', e => { keys[e.code] = false; });
+let mouseX = 0, mouseY = 0, mouseDown = false;
+canvas.addEventListener('mousemove', e => { mouseX = e.clientX; mouseY = e.clientY; });
+canvas.addEventListener('mousedown', e => { mouseDown = true; });
+canvas.addEventListener('mouseup', e => { mouseDown = false; });
+
+// ====== CHARACTER SELECT ======
+document.querySelectorAll('.char-card').forEach(card => {
+  card.addEventListener('click', () => {
+    document.querySelectorAll('.char-card').forEach(c => c.classList.remove('selected'));
+    card.classList.add('selected');
+    selectedChar = parseInt(card.dataset.char);
+  });
+});
+
+// ====== UI ======
+const overlay = document.getElementById('overlay');
+const hud = document.getElementById('hud');
+const hudSteps = document.getElementById('hudSteps');
+const hudLevel = document.getElementById('hudLevel');
+const hudHp = document.getElementById('hudHp');
+const hudStam = document.getElementById('hudStam');
+const stamFill = document.getElementById('stamFill');
+const hudKills = document.getElementById('hudKills');
+const hudWave = document.getElementById('hudWave');
+const deathScreen = document.getElementById('death-screen');
+const deathStats = document.getElementById('deathStats');
+const levelTrans = document.getElementById('level-trans');
+const controls = document.getElementById('controls');
+
+document.getElementById('startBtn').addEventListener('click', startGame);
+document.getElementById('respawnBtn').addEventListener('click', respawn);
+
+// ====== GAME LOGIC ======
+function startGame() {
+  overlay.classList.add('hidden');
+  hud.style.display = 'block';
+  controls.style.display = 'block';
+  state = 'playing';
+  const ch = CHARS[selectedChar];
+  player = {
+    x: canvas.width / 2, y: canvas.height / 2,
+    vx: 0, vy: 0, angle: 0,
+    hp: 100, maxHp: 100,
+    stam: CONFIG.maxStam,
+    char: selectedChar,
+    rolling: false, rollTimer: 0,
+    lightCooldown: 0, heavyCooldown: 0,
+    iFrames: 0,
+  };
+  steps = 0; kills = 0; wave = 1;
+  enemies = []; projectiles = []; particles = [];
+  screenShake = 0;
+  spawnWave();
+}
+
+function respawn() {
+  deathScreen.classList.remove('show');
+  hud.style.display = 'block';
+  state = 'playing';
+  const ch = CHARS[selectedChar];
+  player = {
+    x: canvas.width / 2, y: canvas.height / 2,
+    vx: 0, vy: 0, angle: 0,
+    hp: 100, maxHp: 100,
+    stam: CONFIG.maxStam,
+    char: selectedChar,
+    rolling: false, rollTimer: 0,
+    lightCooldown: 0, heavyCooldown: 0,
+    iFrames: 0,
+  };
+  enemies = []; projectiles = []; particles = [];
+  campfire = null;
+  wave = 1;
+  spawnWave();
+}
+
+function getLevel(stepCount) {
+  for (let i = CONFIG.levels.length - 1; i >= 0; i--) {
+    if (stepCount >= CONFIG.levels[i].min) return i;
+  }
+  return 0;
+}
+
+function spawnWave() {
+  const lvl = getLevel(steps);
+  const lvlCfg = CONFIG.levels[lvl];
+  const count = Math.min(3 + wave * 2, 30);
+  for (let i = 0; i < count; i++) {
+    let ex, ey;
+    // Spawn at edges
+    const side = Math.floor(Math.random() * 4);
+    if (side === 0) { ex = -30; ey = Math.random() * canvas.height; }
+    else if (side === 1) { ex = canvas.width + 30; ey = Math.random() * canvas.height; }
+    else if (side === 2) { ex = Math.random() * canvas.width; ey = -30; }
+    else { ex = Math.random() * canvas.width; ey = canvas.height + 30; }
+    const type = Math.random() < 0.7 ? 'slime' : 'zombie';
+    enemies.push({
+      x: ex, y: ey, type,
+      hp: type === 'slime' ? 20 : 40,
+      maxHp: type === 'slime' ? 20 : 40,
+      speed: type === 'slime' ? 60 + wave * 5 : 40 + wave * 3,
+      damage: type === 'slime' ? 8 : 15,
+      size: type === 'slime' ? 14 : 18,
+      color: type === 'slime' ? '#50c050' : '#804020',
+      flashTimer: 0,
+      flailing: false, flailTimer: 0,
+      hitFlash: 0,
+    });
+  }
+  // Campfire safety zone at center (small)
+  campfire = { x: canvas.width / 2, y: canvas.height / 2, radius: 80, respawnTimer: 0 };
+}
+
+function roll() {
+  if (state !== 'playing' || !player) return;
+  if (player.stam < CONFIG.stamRoll || player.rolling) return;
+  player.stam -= CONFIG.stamRoll;
+  player.rolling = true;
+  player.rollTimer = CONFIG.rollDuration;
+  player.iFrames = CONFIG.rollDuration + 0.1;
+  // Roll in mouse direction
+  const dx = mouseX - player.x;
+  const dy = mouseY - player.y;
+  const dist = Math.sqrt(dx * dx + dy * dy) || 1;
+  const spd = 350;
+  player.vx = (dx / dist) * spd;
+  player.vy = (dy / dist) * spd;
+  // Roll particles
+  for (let i = 0; i < 8; i++) {
+    particles.push({
+      x: player.x, y: player.y,
+      vx: (Math.random() - 0.5) * 200, vy: (Math.random() - 0.5) * 200,
+      life: 0.3, maxLife: 0.3, color: '#d4a040', size: 3
+    });
+  }
+}
+
+function lightAttack() {
+  if (state !== 'playing' || !player) return;
+  if (player.stam < CONFIG.stamLight || player.lightCooldown > 0) return;
+  player.stam -= CONFIG.stamLight;
+  player.lightCooldown = CHARS[player.char].atkSpeed;
+  const ch = CHARS[player.char];
+  const atkRange = ch.splash ? 50 : 35;
+  const atkDmg = ch.lightDmg;
+  // Hit check
+  hitEnemies(atkRange, atkDmg, false, 0);
+  // Muzzle flash
+  screenShake = 2;
+}
+
+function heavyAttack() {
+  if (state !== 'playing' || !player) return;
+  if (player.stam < CONFIG.stamHeavy || player.heavyCooldown > 0) return;
+  player.stam -= CONFIG.stamHeavy;
+  player.heavyCooldown = CHARS[player.char].atkSpeed * 2;
+  const ch = CHARS[player.char];
+  hitEnemies(ch.heavyRange, ch.heavyDmg, ch.splash, ch.knockback);
+  screenShake = 6;
+  // Heavy flash
+  for (let i = 0; i < 15; i++) {
+    const a = Math.random() * Math.PI * 2;
+    particles.push({
+      x: player.x, y: player.y,
+      vx: Math.cos(a) * (100 + Math.random() * 200),
+      vy: Math.sin(a) * (100 + Math.random() * 200),
+      life: 0.5, maxLife: 0.5,
+      color: ch.splash ? '#ff6020' : '#ffaa20', size: ch.splash ? 5 : 3
+    });
+  }
+}
+
+function hitEnemies(range, damage, splash, knockback) {
+  const px = player.x + Math.cos(player.angle) * range * 0.5;
+  const py = player.y + Math.sin(player.angle) * range * 0.5;
+  for (const e of enemies) {
+    const dx = e.x - px;
+    const dy = e.y - py;
+    const dist = Math.sqrt(dx * dx + dy * dy);
+    let hit = false;
+    let dmg = damage;
+    if (splash) {
+      // Area damage in front cone
+      const angleToEnemy = Math.atan2(dy, dx);
+      let angleDiff = angleToEnemy - player.angle;
+      while (angleDiff > Math.PI) angleDiff -= Math.PI * 2;
+      while (angleDiff < -Math.PI) angleDiff += Math.PI * 2;
+      if (Math.abs(angleDiff) < 0.6 && dist < range + 30) {
+        hit = true;
+        dmg *= 0.8; // splash slightly less per target
+      }
+    } else {
+      if (dist < range + e.size) hit = true;
+    }
+    if (hit) {
+      e.hp -= dmg;
+      e.hitFlash = 0.15;
+      if (knockback > 0) {
+        const kbAngle = Math.atan2(e.y - player.y, e.x - player.x) || 0;
+        e.x += Math.cos(kbAngle) * knockback;
+        e.y += Math.sin(kbAngle) * knockback;
+      }
+      // Hit particles
+      for (let i = 0; i < 3; i++) {
+        particles.push({
+          x: e.x, y: e.y,
+          vx: (Math.random() - 0.5) * 100, vy: (Math.random() - 0.5) * 100,
+          life: 0.2, maxLife: 0.2, color: '#fff', size: 2
+        });
+      }
+      if (e.hp <= 0) {
+        kills++;
+        steps += 10; // steps earned per kill
+        // Death explosion
+        for (let i = 0; i < 12; i++) {
+          const a = Math.random() * Math.PI * 2;
+          particles.push({
+            x: e.x, y: e.y,
+            vx: Math.cos(a) * (80 + Math.random() * 150),
+            vy: Math.sin(a) * (80 + Math.random() * 150),
+            life: 0.6, maxLife: 0.6,
+            color: e.type === 'slime' ? '#50c050' : '#804020',
+            size: 3 + Math.random() * 3
+          });
+        }
+      }
+    }
+  }
+  // Remove dead enemies
+  enemies = enemies.filter(e => e.hp > 0);
+
+  // Hit boss
+  if (boss && boss.hp > 0) {
+    const bx = boss.x - px;
+    const by = boss.y - py;
+    const bdist = Math.sqrt(bx * bx + by * by);
+    if (splash) {
+      const angleToBoss = Math.atan2(by, bx);
+      let angleDiff = angleToBoss - player.angle;
+      while (angleDiff > Math.PI) angleDiff -= Math.PI * 2;
+      while (angleDiff < -Math.PI) angleDiff += Math.PI * 2;
+      if (Math.abs(angleDiff) < 0.6 && bdist < range + 30) {
+        boss.hp -= dmg * 0.8;
+        boss.hitFlash = 0.15;
+        if (knockback > 0) { boss.x += Math.cos(Math.atan2(by, bx)) * knockback * 0.5; boss.y += Math.sin(Math.atan2(by, bx)) * knockback * 0.5; }
+        for (let i = 0; i < 3; i++) particles.push({ x: boss.x, y: boss.y, vx: (Math.random() - 0.5) * 100, vy: (Math.random() - 0.5) * 100, life: 0.2, maxLife: 0.2, color: '#ff8000', size: 2 });
+      }
+    } else {
+      if (bdist < range + boss.size) {
+        boss.hp -= dmg;
+        boss.hitFlash = 0.15;
+        if (knockback > 0) { boss.x += Math.cos(Math.atan2(by, bx)) * knockback * 0.5; boss.y += Math.sin(Math.atan2(by, bx)) * knockback * 0.5; }
+        for (let i = 0; i < 3; i++) particles.push({ x: boss.x, y: boss.y, vx: (Math.random() - 0.5) * 100, vy: (Math.random() - 0.5) * 100, life: 0.2, maxLife: 0.2, color: '#ff8000', size: 2 });
+      }
+    }
+  }
+}
+
+function update(dt) {
+  if (state !== 'playing' || !player) return;
+
+  // Movement
+  let mx = 0, my = 0;
+  if (keys['KeyW'] || keys['ArrowUp']) my -= 1;
+  if (keys['KeyS'] || keys['ArrowDown']) my += 1;
+  if (keys['KeyA'] || keys['ArrowLeft']) mx -= 1;
+  if (keys['KeyD'] || keys['ArrowRight']) mx += 1;
+  const moving = mx !== 0 || my !== 0;
+  if (moving) {
+    const len = Math.sqrt(mx * mx + my * my) || 1;
+    mx /= len; my /= len;
+    const spd = CHARS[player.char].speed;
+    player.vx = mx * spd;
+    player.vy = my * spd;
+  } else {
+    player.vx *= 0.85;
+    player.vy *= 0.85;
+  }
+
+  // Rolling overrides movement
+  if (player.rolling) {
+    player.rollTimer -= dt;
+    if (player.rollTimer <= 0) {
+      player.rolling = false;
+      player.vx *= 0.3;
+      player.vy *= 0.3;
+    }
+  }
+
+  player.x += player.vx * dt;
+  player.y += player.vy * dt;
+
+  // Clamp to bounds
+  player.x = Math.max(15, Math.min(canvas.width - 15, player.x));
+  player.y = Math.max(15, Math.min(canvas.height - 15, player.y));
+
+  // Aim at mouse
+  const dx = mouseX - player.x;
+  const dy = mouseY - player.y;
+  player.angle = Math.atan2(dy, dx);
+
+  // iFrames timer
+  if (player.iFrames > 0) player.iFrames -= dt;
+
+  // Cooldowns
+  if (player.lightCooldown > 0) player.lightCooldown -= dt;
+  if (player.heavyCooldown > 0) player.heavyCooldown -= dt;
+
+  // Stamina regen (when not moving, not attacking)
+  const regenRate = CONFIG.stamRegen;
+  player.stam = Math.min(CONFIG.maxStam, player.stam + regenRate * dt);
+
+  // Attack inputs
+  if (keys['KeyQ'] && player.lightCooldown <= 0) {
+    lightAttack();
+    player.lightCooldown = CHARS[player.char].atkSpeed * 1.5;
+  }
+  if (keys['KeyE'] && player.heavyCooldown <= 0) {
+    heavyAttack();
+    player.heavyCooldown = CHARS[player.char].atkSpeed * 2.5;
+  }
+  if (keys['Space']) roll();
+
+  // Camera follow — player centered on screen
+  if (player) {
+    const W = canvas.width, H = canvas.height;
+    camTargetX = player.x - W / 2;
+    camTargetY = player.y - H / 2;
+    camX += (camTargetX - camX) * 0.08; // smooth lerp
+    camY += (camTargetY - camY) * 0.08;
+  }
+
+  // Steps progress: 1 step per 5px of player movement
+  if (player) {
+    const dx = player.x - prevPlayerX;
+    const dy = player.y - prevPlayerY;
+    const dist = Math.sqrt(dx * dx + dy * dy);
+    steps += dist / 5;
+    prevPlayerX = player.x;
+    prevPlayerY = player.y;
+  }
+  prevSteps = Math.floor(steps);
+
+  // Mouse attack (left click = light, right click = heavy via E)
+  if (mouseDown && player.lightCooldown <= 0) {
+    lightAttack();
+    player.lightCooldown = CHARS[player.char].atkSpeed * 1.5;
+  }
+
+  // Check level transition
+  const lvl = getLevel(steps);
+  if (lvl > getLevel(prevSteps)) {
+    state = 'transitioning';
+    levelTrans.classList.add('show');
+    levelTrans.textContent = `LEVEL ${lvl + 1}: ${CONFIG.levels[lvl].name}`;
+    setTimeout(() => { levelTrans.classList.remove('show'); state = 'playing'; wave++; spawnWave(); }, 1500);
+  }
+
+  // Death at 10k steps — summon boss
+  if (steps >= CONFIG.deathSteps && !boss) {
+    boss = {
+      x: canvas.width / 2, y: canvas.height / 2,
+      hp: 100, maxHp: 100,
+      size: 30, angle: 0,
+      phase: 'windup',
+      phaseTimer: 0,
+      currentAttack: null,
+      attackTimer: 0,
+      hitFlash: 0,
+      telegraphTimer: 0,
+      pullAngle: 0,
+      moveTimer: 0,
+      moveAngle: Math.random() * Math.PI * 2,
+      speed: 70, // floats toward player
+    };
+    // Boss arrival particles
+    for (let i = 0; i < 30; i++) {
+      const a = Math.random() * Math.PI * 2;
+      particles.push({ x: boss.x, y: boss.y, vx: Math.cos(a) * 150, vy: Math.sin(a) * 150, life: 1, maxLife: 1, color: '#800000', size: 4 });
+    }
+    screenShake = 10;
+  }
+
+  // Update boss
+  if (boss) {
+    boss.phaseTimer -= dt;
+    boss.attackTimer -= dt;
+    if (boss.hitFlash > 0) boss.hitFlash -= dt;
+
+    // Float toward player always
+    if (player) {
+      const bdx = player.x - boss.x;
+      const bdy = player.y - boss.y;
+      const bdist = Math.sqrt(bdx * bdx + bdy * bdy) || 1;
+      if (bdist > 90) {
+        boss.x += (bdx / bdist) * boss.speed * dt;
+        boss.y += (bdy / bdist) * boss.speed * dt;
+      } else if (bdist < 60) {
+        boss.x -= (bdx / bdist) * boss.speed * 0.5 * dt; // orbit out
+        boss.y -= (bdy / bdist) * boss.speed * 0.5 * dt;
+      }
+      boss.angle = Math.atan2(bdy, bdx);
+    }
+
+    if (boss.phase === 'windup') {
+      boss.telegraphTimer -= dt;
+      if (boss.telegraphTimer <= 0) {
+        const attacks = ['wide', 'overhead', 'forcepull'];
+        boss.currentAttack = attacks[Math.floor(Math.random() * attacks.length)];
+        boss.phase = 'attack';
+        boss.attackTimer = boss.currentAttack === 'overhead' ? 0.4 : boss.currentAttack === 'forcepull' ? 0.5 : 0.8;
+        boss.telegraphTimer = 0;
+      }
+    } else if (boss.phase === 'attack') {
+      boss.attackTimer -= dt;
+      // Deal damage during attack window
+      const aRad = boss.angle || 0;
+      if (player && player.iFrames <= 0) {
+        const pdx = player.x - boss.x;
+        const pdy = player.y - boss.y;
+        const pdist = Math.sqrt(pdx * pdx + pdy * pdy);
+        let hit = false;
+        let dmg = 12;
+        if (boss.currentAttack === 'wide') {
+          // Wide scythe arc in front
+          const angleDiff = Math.atan2(pdy, pdx) - aRad;
+          let norm = angleDiff;
+          while (norm > Math.PI) norm -= Math.PI * 2;
+          while (norm < -Math.PI) norm += Math.PI * 2;
+          if (Math.abs(norm) < 0.7 && pdist < 100) hit = true;
+          dmg = 18; // big damage for wide
+        } else if (boss.currentAttack === 'overhead') {
+          // Overhead smash AOE — circular
+          if (pdist < 80) hit = true;
+          dmg = 22; // AOE slam
+          screenShake = 8;
+        } else if (boss.currentAttack === 'forcepull') {
+          // Pulls player toward boss, dodge window = roll away
+          const pullDist = 3;
+          boss.pullAngle = Math.atan2(pdy, pdx);
+          player.x += Math.cos(boss.pullAngle) * pullDist * 60 * dt;
+          player.y += Math.sin(boss.pullAngle) * pullDist * 60 * dt;
+          if (pdist < 60) hit = true;
+          dmg = 10;
+        }
+        if (hit) {
+          player.hp -= dmg;
+          player.iFrames = 0.3;
+          screenShake = 6;
+          for (let i = 0; i < 5; i++) {
+            particles.push({ x: player.x, y: player.y, vx: (Math.random() - 0.5) * 150, vy: (Math.random() - 0.5) * 150, life: 0.3, maxLife: 0.3, color: '#ff2020', size: 3 });
+          }
+        }
+      }
+      if (boss.attackTimer <= 0) {
+        boss.phase = 'cooldown';
+        boss.phaseTimer = 0.8;
+      }
+    } else if (boss.phase === 'cooldown') {
+      boss.phaseTimer -= dt;
+      if (boss.phaseTimer <= 0) {
+        boss.phase = 'windup';
+        boss.telegraphTimer = 0.6; // telegraph before next attack
+        boss.angle = Math.atan2(player.y - boss.y, player.x - boss.x);
+      }
+    }
+
+    // Boss death
+    if (boss.hp <= 0) {
+      kills += 50;
+      steps = 0; // reset — Death defeated, walk again
+      wave++;
+      for (let i = 0; i < 40; i++) {
+        const a = Math.random() * Math.PI * 2;
+        particles.push({ x: boss.x, y: boss.y, vx: Math.cos(a) * 200, vy: Math.sin(a) * 200, life: 1, maxLife: 1, color: '#ff8000', size: 5 });
+      }
+      screenShake = 12;
+      boss = null;
+    }
+  }
+
+  // Check level transition
+
+  // Update enemies
+  for (const e of enemies) {
+    // Move toward player
+    const exd = player.x - e.x;
+    const eyd = player.y - e.y;
+    const edist = Math.sqrt(exd * exd + eyd * eyd) || 1;
+    const chaseDist = 400;
+    if (edist < chaseDist) {
+      const spd = e.speed * dt;
+      e.x += (exd / edist) * spd;
+      e.y += (eyd / edist) * spd;
+    }
+    // Flailing zombie behavior
+    if (e.type === 'zombie') {
+      e.flailTimer -= dt;
+      if (e.flailTimer <= 0) {
+        e.flailing = !e.flailing;
+        e.flailTimer = 0.5 + Math.random() * 0.5;
+      }
+    }
+    // Damage player on contact
+    const pdist = Math.sqrt((e.x - player.x) ** 2 + (e.y - player.y) ** 2);
+    if (pdist < e.size + 12 && player.iFrames <= 0) {
+      player.hp -= e.damage * 0.5; // reduced contact damage vs full hit
+      player.iFrames = 0.3;
+      screenShake = 4;
+      // Damage particles
+      for (let i = 0; i < 5; i++) {
+        particles.push({
+          x: player.x, y: player.y,
+          vx: (Math.random() - 0.5) * 150, vy: (Math.random() - 0.5) * 150,
+          life: 0.3, maxLife: 0.3, color: '#ff2020', size: 3
+        });
+      }
+    }
+    if (e.hitFlash > 0) e.hitFlash -= dt;
+  }
+
+  // Check player death
+  if (player.hp <= 0) {
+    die();
+    return;
+  }
+
+  // Update particles
+  for (const p of particles) {
+    p.x += p.vx * dt;
+    p.y += p.vy * dt;
+    p.life -= dt;
+    p.vx *= 0.95;
+    p.vy *= 0.95;
+  }
+  particles = particles.filter(p => p.life > 0);
+
+  // Screen shake decay
+  if (screenShake > 0) screenShake *= 0.9;
+  if (screenShake < 0.5) screenShake = 0;
+
+  // Update HUD
+  hudSteps.textContent = Math.floor(steps);
+  hudLevel.textContent = lvl + 1;
+  hudHp.textContent = Math.max(0, Math.ceil(player.hp));
+  hudStam.textContent = Math.floor(player.stam);
+  stamFill.style.width = (player.stam / CONFIG.maxStam * 100) + '%';
+  hudKills.textContent = kills;
+  hudWave.textContent = wave;
+}
+
+function die() {
+  state = 'dead';
+  deathScreen.classList.add('show');
+  deathStats.textContent = `Steps: ${Math.floor(steps)} | Kills: ${kills} | Wave: ${wave} | Level: ${getLevel(steps) + 1}`;
+  hud.style.display = 'none';
+  controls.style.display = 'none';
+}
+
+// ====== RENDER ======
+function render() {
+  const W = canvas.width, H = canvas.height;
+  ctx.clearRect(0, 0, W, H);
+
+  // Background (screen-relative)
+  const lvlIdx = player ? getLevel(steps) : 0;
+  const lvl = CONFIG.levels[lvlIdx];
+  ctx.fillStyle = lvl.color || '#1a1a1a';
+  ctx.fillRect(0, 0, W, H);
+
+  // World camera — player centered, ground scrolls
+  ctx.save();
+  ctx.translate(-camX, -camY);
+
+  // Terrain details based on level
+  drawTerrain(lvl, W, H);
+
+  if (state === 'playing' || state === 'transitioning' || state === 'dead') {
+    // Campfire
+    if (campfire) {
+      // Remove campfire once it scrolls off the left edge of the screen
+      if (campfire.x < camX - campfire.radius - 50) {
+        campfire = null;
+      } else {
+        ctx.fillStyle = '#8a4010';
+        ctx.beginPath();
+        ctx.arc(campfire.x, campfire.y, campfire.radius, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = '#d48020';
+        ctx.beginPath();
+        ctx.arc(campfire.x, campfire.y, campfire.radius * 0.6, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = '#ffcc40';
+        ctx.beginPath();
+        ctx.arc(campfire.x, campfire.y, campfire.radius * 0.3, 0, Math.PI * 2);
+        ctx.fill();
+        // Campfire glow
+        const grad = ctx.createRadialGradient(campfire.x, campfire.y, campfire.radius * 0.3, campfire.x, campfire.y, campfire.radius * 2);
+        grad.addColorStop(0, 'rgba(255,180,50,0.15)');
+        grad.addColorStop(1, 'rgba(255,180,50,0)');
+        ctx.fillStyle = grad;
+        ctx.fillRect(0, 0, W, H);
+      }
+    } // end campfire block
+
+    // Enemies
+    for (const e of enemies) {
+      // Hit flash
+      if (e.hitFlash > 0) {
+        ctx.fillStyle = '#fff';
+      } else {
+        ctx.fillStyle = e.color;
+      }
+      ctx.beginPath();
+      ctx.arc(e.x, e.y, e.size, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Zombie flailing arms
+      if (e.type === 'zombie') {
+        ctx.strokeStyle = e.hitFlash > 0 ? '#fff' : '#603010';
+        ctx.lineWidth = 3;
+        const armAngle = e.flailing ? Date.now() * 0.01 : 0;
+        ctx.beginPath();
+        ctx.moveTo(e.x - e.size * 0.5, e.y);
+        ctx.lineTo(e.x - e.size * 1.5 + Math.sin(armAngle) * 10, e.y - e.size);
+        ctx.moveTo(e.x + e.size * 0.5, e.y);
+        ctx.lineTo(e.x + e.size * 1.5 - Math.sin(armAngle) * 10, e.y - e.size);
+        ctx.stroke();
+      }
+
+      // Slime bounce
+      if (e.type === 'slime') {
+        ctx.fillStyle = e.hitFlash > 0 ? '#fff' : '#70e070';
+        ctx.beginPath();
+        ctx.ellipse(e.x, e.y + e.size * 0.3, e.size * 0.8, e.size * 0.4, 0, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      // HP bar (enemies + boss)
+      if (e.hp < e.maxHp) {
+        ctx.fillStyle = '#333';
+        ctx.fillRect(e.x - 15, e.y - e.size - 8, 30, 4);
+        ctx.fillStyle = e.hp / e.maxHp > 0.5 ? '#40c040' : '#c04040';
+        ctx.fillRect(e.x - 15, e.y - e.size - 8, 30 * (e.hp / e.maxHp), 4);
+      }
+    }
+
+    // ====== BOSS: DEATH ======
+    if (boss) {
+      const b = boss;
+      // Telegraph glow before attack
+      if (b.phase === 'windup' && b.telegraphTimer > 0) {
+        const glowAlpha = 0.3 + Math.sin(Date.now() * 0.01) * 0.2;
+        ctx.fillStyle = `rgba(255,0,0,${glowAlpha})`;
+        ctx.beginPath();
+        ctx.arc(b.x, b.y, b.size + 15, 0, Math.PI * 2);
+        ctx.fill();
+        // Attack label
+        ctx.fillStyle = '#fff';
+        ctx.font = '12px Courier New';
+        ctx.textAlign = 'center';
+        const labels = { wide: 'WIDE SWING', overhead: 'OVERHEAD SMASH', forcepull: 'FORCE PULL' };
+        ctx.fillText(labels[b.currentAttack] || '', b.x, b.y - b.size - 22);
+      }
+
+      // Scythe (behind body)
+      const scytheAngle = b.angle + (b.currentAttack === 'wide' ? Math.sin(Date.now() * 0.015) * 0.4 : 0);
+      ctx.strokeStyle = '#c0c0c0';
+      ctx.lineWidth = 5;
+      ctx.beginPath();
+      ctx.moveTo(b.x + Math.cos(scytheAngle) * 10, b.y + Math.sin(scytheAngle) * 10);
+      ctx.lineTo(b.x + Math.cos(scytheAngle) * 45, b.y + Math.sin(scytheAngle) * 45);
+      ctx.stroke();
+      // Blade edge
+      ctx.strokeStyle = '#fff';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(b.x + Math.cos(scytheAngle) * 43, b.y + Math.sin(scytheAngle) * 43);
+      ctx.lineTo(b.x + Math.cos(scytheAngle + 0.3) * 48, b.y + Math.sin(scytheAngle + 0.3) * 48);
+      ctx.stroke();
+
+      // Body (skeleton lord — larger circle)
+      ctx.fillStyle = b.hitFlash > 0 ? '#fff' : '#d0d0d0';
+      ctx.beginPath();
+      ctx.arc(b.x, b.y, b.size, 0, Math.PI * 2);
+      ctx.fill();
+      // Skull markings
+      ctx.fillStyle = '#400000';
+      ctx.fillRect(b.x - 8, b.y - 10, 4, 8);
+      ctx.fillRect(b.x + 4, b.y - 10, 4, 8);
+      // Eye sockets
+      ctx.fillStyle = '#ff2020';
+      ctx.beginPath();
+      ctx.arc(b.x - 5, b.y - 2, 3, 0, Math.PI * 2);
+      ctx.arc(b.x + 5, b.y - 2, 3, 0, Math.PI * 2);
+      ctx.fill();
+
+      // HP bar
+      ctx.fillStyle = '#333';
+      ctx.fillRect(b.x - 25, b.y - b.size - 12, 50, 5);
+      ctx.fillStyle = b.hp / b.maxHp > 0.5 ? '#c04040' : '#ff2020';
+      ctx.fillRect(b.x - 25, b.y - b.size - 12, 50 * (b.hp / b.maxHp), 5);
+
+      // Boss label
+      ctx.fillStyle = '#d4a040';
+      ctx.font = '11px Courier New';
+      ctx.textAlign = 'center';
+      ctx.fillText('DEATH', b.x, b.y + b.size + 14);
+    }
+
+    // Player
+    if (player) {
+      // i-frame flash
+      const visible = player.iFrames <= 0 || Math.floor(Date.now() * 0.02) % 2 === 0;
+      if (visible) {
+        // Body
+        ctx.fillStyle = CHARS[player.char].color;
+        ctx.beginPath();
+        ctx.arc(player.x, player.y, 14, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Weapon direction
+        ctx.strokeStyle = '#ddd';
+        ctx.lineWidth = 4;
+        ctx.beginPath();
+        ctx.moveTo(player.x + Math.cos(player.angle) * 10, player.y + Math.sin(player.angle) * 10);
+        ctx.lineTo(player.x + Math.cos(player.angle) * 28, player.y + Math.sin(player.angle) * 28);
+        ctx.stroke();
+
+        // Char indicator
+        ctx.fillStyle = '#fff';
+        ctx.font = '10px Courier New';
+        ctx.textAlign = 'center';
+        const symbols = ['🔫', '🔫⚔️', '💥'];
+        ctx.fillText(symbols[player.char], player.x, player.y + 4);
+      }
+
+      // Rolling trail
+      if (player.rolling) {
+        ctx.fillStyle = 'rgba(212,160,64,0.3)';
+        ctx.beginPath();
+        ctx.arc(player.x, player.y, 18, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+
+    // Particles
+    for (const p of particles) {
+      const alpha = p.life / p.maxLife;
+      ctx.fillStyle = p.color;
+      ctx.globalAlpha = alpha;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.size * alpha, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+  }
+  ctx.restore(); // end camera transform
+
+  // Screen shake
+  if (screenShake > 0.5) {
+    ctx.translate((Math.random() - 0.5) * screenShake, (Math.random() - 0.5) * screenShake);
+  }
+
+  // Vignette
+  const vig = ctx.createRadialGradient(W / 2, H / 2, W * 0.3, W / 2, H / 2, W * 0.7);
+  vig.addColorStop(0, 'rgba(0,0,0,0)');
+  vig.addColorStop(1, 'rgba(0,0,0,0.5)');
+  ctx.fillStyle = vig;
+  ctx.fillRect(0, 0, W, H);
+}
+
+function drawTerrain(lvl, W, H) {
+  const t = lvl.terrain;
+  const cx = camX; // camera x for scrolling
+  if (t === 'sand') {
+    // Dunes
+    ctx.fillStyle = '#d4b870';
+    for (let i = 0; i < 8; i++) {
+      const bx = (i * 200 + 50 + cx) % W;
+      const by = H - 30 + Math.sin(i * 1.7) * 20;
+      ctx.beginPath();
+      ctx.ellipse(bx, by, 80 + i * 10, 25 + i * 3, 0, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    // Cacti
+    ctx.fillStyle = '#2a5a10';
+    for (let i = 0; i < 6; i++) {
+      const cx2 = (i * 310 + 80 + cx) % W;
+      const cy = H - 20 + Math.sin(i * 2.3) * 15;
+      ctx.fillRect(cx2 - 3, cy - 20, 6, 20);
+      ctx.fillRect(cx2 - 10, cy - 16, 10, 4);
+      ctx.fillRect(cx2 - 15, cy - 10, 8, 4);
+    }
+    // Tumbleweeds (drift across desert) — random count/position
+    const twTime = Date.now() * 0.0003;
+    const twCount = 3 + Math.floor(Math.random() * 4);
+    ctx.fillStyle = '#8a6a3a';
+    for (let i = 0; i < twCount; i++) {
+      const twx = ((i * 350 + 50 + Math.random() * 100 + twTime * 40 + cx * 0.3) % (W + 100)) - 50;
+      const twy = H - 60 + Math.sin(twTime * 2 + i * 1.5 + Math.random()) * 30;
+      const twr = 8 + Math.random() * 6;
+      ctx.beginPath();
+      ctx.arc(twx, twy, twr, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = '#6a4a20';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(twx, twy);
+      ctx.lineTo(twx + Math.sin(twTime + i + Math.random()) * 4, twy - twr);
+      ctx.stroke();
+    }
+  } else if (t === 'towns') {
+    // Gravestones and buildings
+    ctx.fillStyle = '#6a5a3a';
+    for (let i = 0; i < 5; i++) {
+      const tx = (i * 250 + 40 + cx) % W;
+      const ty = H - 30 + Math.sin(i * 1.9) * 10;
+      ctx.fillRect(tx - 2, ty - 20, 4, 20);
+      ctx.fillRect(tx - 8, ty - 24, 16, 6);
+    }
+    // Tumbleweeds (dusty western drift) — random count/position
+    const twTime2 = Date.now() * 0.0002;
+    const twCount2 = 2 + Math.floor(Math.random() * 3);
+    ctx.fillStyle = '#7a6a4a';
+    for (let i = 0; i < twCount2; i++) {
+      const twx = ((i * 400 + 100 + Math.random() * 80 + twTime2 * 30 + cx * 0.2) % (W + 100)) - 50;
+      const twy = H - 50 + Math.sin(twTime2 * 1.5 + i * 2 + Math.random()) * 25;
+      const twr = 6 + Math.random() * 5;
+      ctx.beginPath();
+      ctx.arc(twx, twy, twr, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  } else if (t === 'forest') {
+    // Pine trees
+    ctx.fillStyle = '#3a2a10';
+    for (let i = 0; i < 10; i++) {
+      const tx = (i * 130 + 30 + cx * 0.5) % W;
+      const ty = H - 20;
+      ctx.fillRect(tx - 3, ty - 35, 6, 35);
+      ctx.fillStyle = '#1a5a10';
+      ctx.beginPath();
+      ctx.moveTo(tx, ty - 55);
+      ctx.lineTo(tx - 18, ty - 25);
+      ctx.lineTo(tx + 18, ty - 25);
+      ctx.fill();
+      ctx.fillStyle = '#3a2a10';
+    }
+    // Canyon edge markers
+    ctx.fillStyle = '#2a4a1a';
+    for (let i = 0; i < 3; i++) {
+      const gx = W * 0.3 + i * W * 0.2 + cx * 0.15;
+      ctx.beginPath();
+      ctx.moveTo(gx - 40, H);
+      ctx.lineTo(gx, H - 80);
+      ctx.lineTo(gx + 40, H);
+      ctx.fill();
+    }
+  } else if (t === 'plateau') {
+    // Mesa layers
+    ctx.fillStyle = '#8a7a50';
+    for (let i = 0; i < 4; i++) {
+      const mx = (i * 250 + 20 + cx * 0.4) % W;
+      const my = H - 20;
+      ctx.beginPath();
+      ctx.moveTo(mx - 50, my);
+      ctx.lineTo(mx, my - 50 - i * 10);
+      ctx.lineTo(mx + 50, my);
+      ctx.fill();
+    }
+  } else if (t === 'geyser') {
+    // Dark volcanic ground
+    ctx.fillStyle = '#1a1a1a';
+    ctx.fillRect(0, H - 20, W, 20);
+    // Geysers (animated)
+    const gt = Date.now() * 0.002;
+    ctx.fillStyle = '#4a3020';
+    for (let i = 0; i < 4; i++) {
+      const gx = (i * 300 + 100) % W;
+      const gy = H - 30;
+      ctx.fillRect(gx - 8, gy - 15, 16, 15);
+      // Steam
+      if (Math.sin(gt + i) > 0.5) {
+        ctx.fillStyle = 'rgba(200,200,200,0.4)';
+        ctx.beginPath();
+        ctx.arc(gx, gy - 15 - Math.sin(gt + i) * 10, 5 + Math.sin(gt + i) * 3, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = '#4a3020';
+      }
+    }
+    // Lava cracks
+    ctx.strokeStyle = '#ff4000';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(W * 0.2, H);
+    ctx.lineTo(W * 0.3, H - 40);
+    ctx.lineTo(W * 0.25, H - 60);
+    ctx.stroke();
+  }
+}
+
+// ====== MAIN LOOP ======
+function loop(timestamp) {
+  const dt = Math.min((timestamp - lastTime) / 1000, 0.05);
+  lastTime = timestamp;
+
+  if (state === 'playing') {
+    update(dt);
+  } else if (state === 'dead') {
+    // Still render particles, slow decay
+    for (const p of particles) {
+      p.x += p.vx * dt;
+      p.y += p.vy * dt;
+      p.life -= dt;
+    }
+    particles = particles.filter(p => p.life > 0);
+  }
+
+  render();
+  requestAnimationFrame(loop);
+}
+
+lastTime = performance.now();
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>

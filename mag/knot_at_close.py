@@ -78,7 +78,16 @@ def _seed_session(session_id: str) -> str | None:
 def _worldline_seed_hook(session_id: str) -> None:
     """W1 DEATH RITE v2 (watch/WORLDLINE_SEED_20260907.md): after the knot, emit
     THE WORLDLINE SEED for the closing session. Fail-open: any failure prints one
-    warning line and never blocks the close."""
+    warning line and never blocks the close.
+    ACTOR-CHILD GATE (2026-10-03): dwf-* session ids (dynamic-workflow actor
+    children) skip the rite. The flash-window fleet minted 2,156 near-identical
+    seeds in ~2 days (memory/worldline grew to 45MB of per-actor SEED.json, each
+    emit hashing AGENTS.md + MEMORY.md + the full tape + the 11k-row chain),
+    tripping the gap-sentinel growth alert. Actor children are not seats: their
+    record lives in the run journal + receipts. Receipt:
+    watch/inbox/PROCESS_IMPROVE_WAVE1_20261003.md."""
+    if str(session_id).startswith("dwf-"):
+        return
     try:
         from mag import worldline_seed as ws
         ws.emit(session_id)
@@ -105,11 +114,11 @@ def _chain_session_ids() -> set[str]:
 def _db_rows(conn: sqlite3.Connection, cutoff_ms: int) -> list[dict]:
     rows: list[dict] = []
     cur = conn.execute(
-        "SELECT id, title, time_created, time_updated FROM session "
+        "SELECT id, title, time_created, time_updated, task_type FROM session "
         "WHERE time_updated < ? ORDER BY time_updated ASC",
         (cutoff_ms,),
     )
-    for sid, title, tc, tu in cur.fetchall():
+    for sid, title, tc, tu, task_type in cur.fetchall():
         if tc is None or tu is None:
             continue  # untimeable rows are not knotable honestly
         n_msgs = 0
@@ -131,6 +140,7 @@ def _db_rows(conn: sqlite3.Connection, cutoff_ms: int) -> list[dict]:
                 "title": title or "",
                 "created_ms": int(tc),
                 "updated_ms": int(tu),
+                "task_type": str(task_type or ""),  # 2026-10-03 backfill filter (--skip-subagents)
                 "n_msgs": int(n_msgs),
                 "first_user_excerpt": first_user,
             }
@@ -189,6 +199,15 @@ def main() -> int:
     ap.add_argument("--limit", type=int, default=0, help="cap appends this run")
     ap.add_argument("--skip-knot-backup", action="store_true",
                     help="trust an existing chain .bak and skip the knots-dir tar (appends never modify existing knot files)")
+    # SELECTION FILTERS (2026-10-03, operator-approved backfill of real ZCode
+    # sessions since the 09-11 daemon stall): narrow the candidate set without
+    # touching the dossier/append path. All default OFF = prior behavior.
+    ap.add_argument("--min-messages", type=int, default=0,
+                    help="only sessions with >= N db messages")
+    ap.add_argument("--skip-subagents", action="store_true",
+                    help="drop task_type=subagent_child sessions (workflow_child/interactive/fork kept)")
+    ap.add_argument("--since", default="",
+                    help="only sessions created on/after this local date (YYYY-MM-DD)")
     args = ap.parse_args()
 
     if not DB.is_file():
@@ -199,6 +218,16 @@ def main() -> int:
     have = _chain_session_ids()
     rows = [r for r in _db_rows(conn, cutoff_ms) if r["session_id"] not in have]
     conn.close()
+    # 2026-10-03 selection filters (see argparse block)
+    if args.skip_subagents:
+        rows = [r for r in rows if r["task_type"] != "subagent_child"]
+    if args.min_messages:
+        rows = [r for r in rows if r["n_msgs"] >= args.min_messages]
+    if args.since:
+        since_ms = int(dt.datetime.strptime(args.since, "%Y-%m-%d").timestamp() * 1000)  # local midnight
+        rows = [r for r in rows if r["created_ms"] >= since_ms]
+    if args.skip_subagents or args.min_messages or args.since:
+        print(f"filters: skip_subagents={args.skip_subagents} min_messages={args.min_messages} since={args.since or '-'}")
 
     print(f"chain rows with session ids: {len(have)}")
     print(f"ended >{GRACE_H}h with no chain row: {len(rows)}")
@@ -243,6 +272,12 @@ def main() -> int:
     for r in todo:
         try:
             res = vk.append_verkle_knot(_dossier(r))
+            # 2026-10-03: append_verkle_knot RETURNS ok=False (integrity gate
+            # refusal) rather than raising; count it as a failure and stop the
+            # run fail-closed instead of tallying a phantom success.
+            if not res.get("ok"):
+                failed.append({"session_id": r["session_id"], "error": str(res.get("error"))[:200]})
+                break
             ok += 1
             _seed_session(r["session_id"])  # arc-seed hook: recovery seed rides the knot (silent-fail)
             _worldline_seed_hook(r["session_id"])  # W1 death rite v2: worldline seed (fail-open)

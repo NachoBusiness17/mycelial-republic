@@ -1,11 +1,16 @@
 from pathlib import Path
 import subprocess
+import sys
 
 from mag.repo_readiness import repo_readiness
 
+# HEADLESS law: explicit creationflags (ratchet tests/test_headless_law.py; bare-spawn-descent 2026-09-29)
+HEADLESS = getattr(subprocess, "CREATE_NO_WINDOW", 0x08000000) if sys.platform == "win32" else 0
+
 
 def _run(root: Path, *args: str) -> None:
-    subprocess.run(["git", *args], cwd=root, check=True, capture_output=True)
+    subprocess.run(["git", *args], cwd=root, check=True, capture_output=True,
+                   creationflags=HEADLESS)
 
 
 def test_clean_tracked_repo_is_handoff_ready(tmp_path: Path):

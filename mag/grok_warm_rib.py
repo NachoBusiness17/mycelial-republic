@@ -19,6 +19,8 @@ The mechanism (reuse, not rebuild):
 
 Schema: grok_warm_rib.v1 · deterministic + $0 · reuse: rib_bus, steer_engine, agent_knot,
 ghost_cold_boot, harness.grok_cli
+AH4 (2026-09-30, audit finding #15): the standing knot id + verkle root are derived from
+memory/biography/verkle_tip.json at call time — never hardcoded stale.
 CLI:  python -m mag.grok_warm_rib publish | show | inject "<context>" | status
 """
 from __future__ import annotations
@@ -50,20 +52,50 @@ def _now() -> str:
     return datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
 
 
-def warm_rib_text() -> str:
-    """THE FROZEN standing prefix — byte-stable across calls (that stability IS the cache hit).
+def _verkle_tip() -> dict[str, Any]:
+    """The chain tip read at CALL time (AH4, audit finding #15): the warm rib's knot id
+    + root are derived from memory/biography/verkle_tip.json because the hardcoded ids
+    were stale by construction — the chain moves, frozen text does not, so every call
+    quoted a stone the chain had already buried. Missing/unreadable tip -> {} (the rib
+    then names the gap instead of inventing ids)."""
+    p = ROOT / "memory" / "biography" / "verkle_tip.json"
+    try:
+        return json.loads(p.read_text(encoding="utf-8", errors="replace"))
+    except Exception:
+        return {}
 
-    Deliberately NOT re-derived per call: embedding per-call state (timestamps, counters) would
-    break the warm prefix. Bump the version line ONLY when the standing context genuinely changes.
+
+def _stone_line() -> str:
+    """The standing-identity stone line with tip-derived ids (never hardcoded)."""
+    tip = _verkle_tip()
+    knot = str(tip.get("last_leaf_hash") or "")[:16]
+    root = str(tip.get("root") or "")[:16]
+    if knot and root:
+        return (f"- The stone (standing verkle knot): {knot}… root {root}… "
+                "(verkle-anchored, revisitable with fidelity; ids derived from "
+                "memory/biography/verkle_tip.json at call time)\n")
+    return ("- The stone (standing verkle knot): verkle tip unavailable at composition "
+            "time — no knot id quoted rather than a stale one (ids are tip-derived)\n")
+
+
+def warm_rib_text() -> str:
+    """THE standing warm prefix — byte-stable BETWEEN chain moves (that stability IS the cache hit).
+
+    The knot id + verkle root are DERIVED from memory/biography/verkle_tip.json at call
+    time (AH4, audit finding #15: the hardcodes were stale by construction — a frozen
+    id cannot track a living chain). The tip moves rarely; between moves the text is
+    byte-identical so the cache stays warm, and rib_bus's content-hash dedup means a
+    moved tip republishes as a new rib without churn. No timestamps/counters here.
+    Bump the folded line ONLY when the standing context genuinely changes.
     """
     return (
-        "# WARM CACHE RIB — grok CLI (grok_warm_rib.v1, folded 2026-08-25)\n"
-        "This block is the FROZEN standing prefix for Sovereign Mag's grok CLI lane. It does not "
-        "change between calls, so it rides the cache: each ask is only the delta against it.\n"
+        "# WARM CACHE RIB — grok CLI (grok_warm_rib.v1, folded 2026-08-25; knot/root "
+        "tip-derived since AH4 2026-09-30)\n"
+        "This block is the standing prefix for Sovereign Mag's grok CLI lane. It changes "
+        "only when the chain tip moves; between moves it is byte-identical, so it rides "
+        "the cache: each ask is only the delta against it.\n"
         "\n"
-        "## Standing identity\n"
-        "- The stone (standing verkle knot): 710745b79a0a149d… root caec3c98c7625bda… "
-        "(verkle-anchored, revisitable with fidelity)\n"
+        "## Standing identity\n" + _stone_line() +
         "- Standing invariant: agent.v1 (4edcc061b18f29a3…) — generation 4, population 18, "
         "fitness 0.7641\n"
         "- Constitution: ../mycelial-republic/docs/CONSTITUTION.md — fork equality, no rank/token; "

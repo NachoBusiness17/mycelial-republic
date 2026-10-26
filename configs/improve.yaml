@@ -270,6 +270,28 @@ promote:
   auto_append_practices_to_playbook: true
   auto_apply_model_seats: false
   auto_apply_prompt_diffs: false
+  # Q-002 (2026-09-28): deterministic auto-promote gate (tools/auto_promote.py),
+  # wired into improve_once after eval. Eligible = local_feasible true + kind in
+  # kinds + age >= min_age_hours (from created, falling back to date) + status
+  # new|hold. model/risk/runtime kinds stay on the human gate
+  # (python main.py promote --apply <id>).
+  auto:
+    enabled: true
+    min_age_hours: 48
+    kinds: [practice, tesuji]
+
+# Q-049 (2026-09-28): frontier-gap task-shape route (tools/demote_candidates.py).
+# A candidate kind (task shape) whose CHEAP terminal success rate (promoted vs
+# rejected among local_feasible-true rows, open rows excluded) is below
+# success_bar is a frontier gap (bar + per-shape n>=2 rule from mag/gap_map.py
+# SUCCESS_BAR). Open (new|hold) rows of a gap shape get status "demoted" +
+# one audit row in memory/improve/demoted.jsonl, which removes them from the
+# field-brief ranking and the Q-002 auto-promote surface. Standalone CLI, not
+# wired into improve_once. Run: python tools/demote_candidates.py --dry
+demote:
+  enabled: true
+  success_bar: 0.6
+  min_terminal: 2
 
 # Field brief synthesis (post scout/eval) — local only, Grok reads field_brief.md
 synthesis:
@@ -295,6 +317,29 @@ deep_dive:
   run_local: true
   auto_promote: false
   require_http_or_local: true
+
+# Provider-health cadence (B2-106, 2026-09-26): the FIRST non-dry scout that
+# finds the cadence stale runs the doctor's MAG_PROBE_REMOTE=1 deep probe
+# (ONE one-token ping per deduped (base_url, model, key) triple, ~15 on this
+# estate) so lane state is measured on a cadence, not only during burn waves.
+# Snapshot lands in memory/improve/provider_health/<day>.json + one candidate.
+provider_probe:
+  enabled: true
+  cadence_days: 7
+
+# Paired seen/unseen contamination tripwire (P2, 2026-10-07; steal card
+# watch/inbox/frontier_olm_2026-10-07/steal/evals-self-improvement via
+# reddit.md find 1): each eval also scores the lane on duty_fuzz seen cycle 0
+# (repo bytes) and minted cycle 9999 (post-freeze by construction); delta =
+# seen - minted at or above threshold lands ONE kind=risk candidate + a
+# [priority] attention line. Standing call rides run_eval (MagImproveDaily),
+# so no separate schtask. Ledger: memory/improve/contamination/pairs.jsonl.
+contamination_tripwire:
+  enabled: true
+  lane: "gemma:2b"
+  count: 12
+  threshold: 0.15
+  cadence_days: 1
 
 # ILAP v1 — between-version research ritual (docs/ref/MAG_ILAP_PROTOCOL.md)
 # Scout rotation + research-pack + field-steal = research agent (no second orchestrator)

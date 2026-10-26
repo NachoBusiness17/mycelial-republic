@@ -16,6 +16,14 @@ BIO = ROOT / "memory" / "biography"
 KPI_PATH = BIO / "kpi.json"
 KPI_LOG = ROOT / "logs" / "kpi.jsonl"
 
+# 2026-10-24 locksmith: bound the incomplete_ids embed. The full backlog rode
+# every row (2,199 to 2,992 ids, rows fattened 17,653 to 95,044 bytes/row over
+# 10-10..10-17) and refattened kpi.jsonl after every rotation. Cure: sample +
+# total + flag; the count of record stays n_incomplete. Consumer
+# mag/operator_os.py:238 reads a list, not a complete list. Spec:
+# watch/inbox/KPI_WRITER_SLIM_SPEC_20261024_locksmith.md
+KPI_SAMPLE_CAP = 50
+
 
 def _grok_sessions_dir() -> Path:
     """Lazy ~/.grok resolution (Path.home() can raise in sandbox/service contexts)."""
@@ -144,6 +152,9 @@ def write_kpi(*, source: str = "manual") -> dict[str, Any]:
             tip = json.loads((BIO / "verkle_tip.json").read_text(encoding="utf-8"))
         except (json.JSONDecodeError, OSError):
             tip = {}
+    all_incomplete_ids = [
+        x.get("session_id") for x in (rep.get("incomplete") or []) if x.get("session_id")
+    ]
     kpi = {
         "schema": "mag_records_kpi.v1",
         "ts": datetime.now(timezone.utc).isoformat(),
@@ -154,9 +165,9 @@ def write_kpi(*, source: str = "manual") -> dict[str, Any]:
         "complete_pct": rep.get("complete_pct"),
         "n_leaves": tip.get("n_leaves") or rep.get("n_leaves") or 0,
         "tip_root": (tip.get("root") or "")[:16] or None,
-        "incomplete_ids": [
-            x.get("session_id") for x in (rep.get("incomplete") or []) if x.get("session_id")
-        ],
+        "incomplete_ids": all_incomplete_ids[:KPI_SAMPLE_CAP],
+        "incomplete_ids_total": len(all_incomplete_ids),
+        "incomplete_ids_truncated": len(all_incomplete_ids) > KPI_SAMPLE_CAP,
         "note": "Lean complete = residual+card+commit+leaf; pdf/visual derived",
         "complete_means": "residual + card + content_commit + chain_leaf",
     }

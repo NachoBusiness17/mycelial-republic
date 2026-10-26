@@ -63,7 +63,14 @@ except Exception:  # noqa: BLE001 — cosmetic only
 
 SCHEMA = "arena_bench.v1"
 TRANSCRIPT_SCHEMA = "arena_bench_transcript.v1"
-ARRAKIS_PATH = ROOT / "dashboard" / "static" / "arrakis.html"
+# 2026-10-04 door-2 fix: arrakis.html at static/ root is a 459-byte redirect
+# stub since the 2026-09-22 surfaces dedupe (canonical moved to games/); the
+# bench silently parsed the stub and raised "GATES parse came back empty" on
+# every run. Repointed at the canonical copy - the parse itself stays strict
+# (raise honestly on shape drift, never fabricate a verdict). Tripwire:
+# tests/test_arena_bench.py runs --selftest + this parse at pre-push.
+# Receipt: watch/inbox/ARENA_BENCH_TRIPWIRE_20261004.md
+ARRAKIS_PATH = ROOT / "dashboard" / "static" / "games" / "arrakis.html"
 DUNGEON_PATH = ROOT / "dashboard" / "static" / "dungeon.html"
 WEIGHTS_PATH = ROOT / "mag" / "arena_weights.json"
 SEAL_PATH = ROOT / "memory" / "arena_bench" / "weights_seal.json"

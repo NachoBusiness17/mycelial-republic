@@ -6,7 +6,7 @@ CONSUMES what we already built:
   * behavioral_analytics — the edit/interrupt pattern (minute behavioral signals).
 
 THE DECISION (per turn):
-  * prefix STABLE + edit is APPEND (late)  -> call DeepSeek at cache-HIT economics (50x-120x saved).
+  * prefix STABLE + edit is APPEND (late)  -> call DeepSeek at cache-HIT economics (50x flash / 30x pro saved; pro corrected 2026-09-25 from the stale 120x, pre-Sept-10 pricing table).
   * prefix VOLATILE / edit is EARLY/MID    -> route the volatile tail to a cheap/free tier (ollama /
     grok_free / free) so the invalidated region is NEVER paid at the 50x miss rate.
 

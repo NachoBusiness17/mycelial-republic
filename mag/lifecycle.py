@@ -14,19 +14,200 @@ Policy modes:
   gated      — opt_in AND operator not blocking
   expensive  — remote/token seats: never "wanted on" at rest
   off        — intentionally disabled
+
+t47 spec (2026-09-25): intentional-vs-silent disablement of MagImproveDaily.
+The waste remediation for the "improve" piece (_waste_action) prescribes the
+landed executor, not prose: python main.py improve-off --reason "..." /
+improve-on (spec aligned by t77 to the t73 flow below). A deliberate disable
+must be distinguishable from a silent one, so whoever executes that disable
+leaves a marker file:
+
+  logs/magimprove_intentional.flag   (JSON: {ts, reason, by})
+
+mark_improve_intentional() is the single writer; improve_intentional() is the
+reader. The doctor probe (mag/doctor.check_scheduled_tasks, t20) respects the
+marker: Disabled + marker = intentional, no alarm; a MISSING task still
+alarms even with the marker (disable is not delete).
+
+t73 spec (2026-09-25): the deliberate-off flow is the in-repo executor of the
+t47 prescription above, exposed as two main.py subcommands.
+
+  improve-off --reason "..."   write marker FIRST, then
+                               schtasks /Change /TN MagImproveDaily /Disable.
+                               If the marker write fails, abort WITHOUT
+                               disabling (fail closed: never a silent-disabled
+                               state).
+  improve-on                   re-register the task via
+                               scripts/register_improve_task.ps1, then clear
+                               the marker ONLY on success (if re-register
+                               fails, the marker still explains the Disabled
+                               state to the doctor probe).
+
+Both return the marker write as a cited artifact ({path, payload}) in the
+result JSON. improve_off()/improve_on() take an injectable _run hook so tests
+mock the schtasks/powershell calls and never touch the live task.
 """
 from __future__ import annotations
 
 import json
 import os
+import subprocess
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any
+from typing import Any, Callable
 
 from config import ROOT
+from mag.win_powershell import powershell_exe
 
 SCHEMA = "mag_lifecycle.v1"
 LAUNCH_STATE = ROOT / "state" / "mag_launch.json"
+
+# t47: marker that turns a Disabled MagImproveDaily from "silent" into
+# "intentional". Written only by mark_improve_intentional(); read by the
+# doctor probe. Lives under logs/ beside the other runtime traces.
+IMPROVE_INTENTIONAL_FLAG = ROOT / "logs" / "magimprove_intentional.flag"
+
+
+def improve_intentional_flag_path() -> Path:
+    """Path of the intentional-disable marker (logs/magimprove_intentional.flag)."""
+    return IMPROVE_INTENTIONAL_FLAG
+
+
+def mark_improve_intentional(reason: str = "operator disable") -> dict[str, Any]:
+    """Declare a MagImproveDaily disable deliberate (t47 spec above).
+
+    Writes the marker BEFORE/alongside the disable so the doctor probe can
+    tell intentional from silent. Returns {ok, path, payload|error}.
+    """
+    try:
+        IMPROVE_INTENTIONAL_FLAG.parent.mkdir(parents=True, exist_ok=True)
+        payload = {
+            "ts": datetime.now(timezone.utc).isoformat(),
+            "reason": str(reason)[:200],
+            "by": "mag.lifecycle.mark_improve_intentional",
+        }
+        IMPROVE_INTENTIONAL_FLAG.write_text(
+            json.dumps(payload, indent=2) + "\n", encoding="utf-8"
+        )
+        return {"ok": True, "path": str(IMPROVE_INTENTIONAL_FLAG), "payload": payload}
+    except Exception as exc:  # noqa: BLE001 marker write must never crash the caller
+        return {"ok": False, "path": str(IMPROVE_INTENTIONAL_FLAG), "error": str(exc)[:120]}
+
+
+def improve_intentional() -> dict[str, Any] | None:
+    """Read the intentional-disable marker; None when absent/unreadable."""
+    try:
+        if not IMPROVE_INTENTIONAL_FLAG.is_file():
+            return None
+        return json.loads(IMPROVE_INTENTIONAL_FLAG.read_text(encoding="utf-8"))
+    except Exception:  # noqa: BLE001 unreadable marker means "not declared"
+        return None
+
+
+# t73: fixed names of the task + register script (mirrors
+# scripts/register_improve_task.ps1 and the doctor probe in mag/doctor.py).
+IMPROVE_TASK_NAME = "MagImproveDaily"
+IMPROVE_REGISTER_SCRIPT = ROOT / "scripts" / "register_improve_task.ps1"
+
+# Injectable task-command runner: tests pass a mock so the live schtask is
+# never touched from a test (t73 law).
+CmdRunner = Callable[[list[str]], dict[str, Any]]
+
+
+def _run_cmd(cmd: list[str]) -> dict[str, Any]:
+    """Default task-command runner: {ok, returncode, cmd, stdout, stderr}."""
+    try:
+        proc = subprocess.run(cmd, capture_output=True, text=True, timeout=120)
+        return {
+            "ok": proc.returncode == 0,
+            "returncode": proc.returncode,
+            "cmd": " ".join(cmd),
+            "stdout": (proc.stdout or "")[-2000:],
+            "stderr": (proc.stderr or "")[-2000:],
+        }
+    except Exception as exc:  # noqa: BLE001 scheduler failures must not crash
+        return {
+            "ok": False,
+            "returncode": None,
+            "cmd": " ".join(cmd),
+            "error": str(exc)[:120],
+        }
+
+
+def clear_improve_intentional() -> dict[str, Any]:
+    """Remove the intentional-disable marker (t73 improve-on, success path).
+
+    Returns {ok, path, removed}; removal is idempotent (already-absent is ok).
+    """
+    try:
+        existed = IMPROVE_INTENTIONAL_FLAG.is_file()
+        if existed:
+            IMPROVE_INTENTIONAL_FLAG.unlink()
+        return {"ok": True, "path": str(IMPROVE_INTENTIONAL_FLAG), "removed": existed}
+    except Exception as exc:  # noqa: BLE001
+        return {
+            "ok": False,
+            "path": str(IMPROVE_INTENTIONAL_FLAG),
+            "removed": False,
+            "error": str(exc)[:120],
+        }
+
+
+def improve_off(
+    reason: str = "operator disable", _run: CmdRunner | None = None
+) -> dict[str, Any]:
+    """Deliberate-off flow (t73 spec in this module's docstring).
+
+    Writes the marker FIRST (cited in the result), then disables the
+    MagImproveDaily schtask. Marker write failure aborts WITHOUT disabling
+    (fail closed: never a silent-disabled state). _run is the injectable
+    task-command runner; default shells out to schtasks.
+    """
+    run: CmdRunner = _run or _run_cmd
+    marker = mark_improve_intentional(reason)
+    if not marker.get("ok"):
+        return {
+            "ok": False,
+            "cmd": "improve-off",
+            "marker": marker,
+            "task": None,
+            "error": "marker write failed; task NOT disabled (fail closed)",
+        }
+    task = run(["schtasks", "/Change", "/TN", IMPROVE_TASK_NAME, "/Disable"])
+    return {"ok": bool(task.get("ok")), "cmd": "improve-off", "marker": marker, "task": task}
+
+
+def improve_on(_run: CmdRunner | None = None) -> dict[str, Any]:
+    """Deliberate-on flow (t73 spec): re-register MagImproveDaily via
+    scripts/register_improve_task.ps1, then clear the marker ONLY on success
+    (a failed re-register leaves the marker so the doctor probe still reads
+    the Disabled state as intentional)."""
+    run: CmdRunner = _run or _run_cmd
+    task = run(
+        [
+            powershell_exe(),
+            "-NoProfile",
+            "-ExecutionPolicy",
+            "Bypass",
+            "-File",
+            str(IMPROVE_REGISTER_SCRIPT),
+        ]
+    )
+    if not task.get("ok"):
+        return {
+            "ok": False,
+            "cmd": "improve-on",
+            "task": task,
+            "marker_cleared": False,
+            "error": "task re-register failed; marker kept (disable stays intentional)",
+        }
+    cleared = clear_improve_intentional()
+    return {
+        "ok": bool(cleared.get("ok")),
+        "cmd": "improve-on",
+        "task": task,
+        "marker_cleared": cleared,
+    }
 
 # token_class: what burns when this piece is "on"
 # local_free | local_gpu | scheduled | remote_tokens | interactive
@@ -178,14 +359,46 @@ def _fleet_running() -> int:
         return 0
 
 
-def _ollama_up() -> bool:
-    try:
-        import urllib.request
+OLLAMA_TAGS_URL = "http://127.0.0.1:11434/api/tags"
 
-        with urllib.request.urlopen("http://127.0.0.1:11434/api/tags", timeout=0.6) as r:
-            return r.status == 200
-    except Exception:
-        return False
+
+def _ollama_up() -> tuple[bool, str]:
+    """Probe the local Ollama daemon; return (up, cause-detail).
+
+    Fix B2-81 (2026-09-26, receipt
+    watch/inbox/burn_wave_20260926/B2_81_ollama_truth_20260926.md): the old
+    probe was a bare urllib.urlopen(timeout=0.6), which (a) inherits
+    env/registry proxies, so a process launched with http_proxy set timed out
+    against a LIVE daemon at 0.6s with no request ever reaching the server
+    (reproduced: URLError timeout 0.61s via a dead proxy while /api/tags
+    answered), and (b) had no retry, so load spikes past 600ms read as
+    absent. 20 of the 21 verifiable lifecycle_gap:ollama rows show the server
+    answering /api/tags 200 within 0-14s of the gap observation. Now:
+    ProxyHandler({}) opener so proxies never intercept loopback, 2.0s timeout
+    with two tries, then a raw socket-connect fallback (a listener means the
+    daemon is on even if HTTP is wedged), and the cause names refused vs
+    timeout so future rows carry their own verdict.
+    """
+    import socket
+    import urllib.request
+
+    last = "unknown"
+    for _ in range(2):
+        try:
+            opener = urllib.request.build_opener(urllib.request.ProxyHandler({}))
+            with opener.open(OLLAMA_TAGS_URL, timeout=2.0) as r:
+                if r.status == 200:
+                    return True, "11434"
+                last = f"http {r.status}"
+        except Exception as exc:
+            last = f"{type(exc).__name__}: {exc}"[:90]
+    try:
+        with socket.create_connection(("127.0.0.1", 11434), timeout=1.0):
+            return True, "11434 (socket; http " + last + ")"
+    except Exception as exc:
+        kind = type(exc).__name__
+        flavor = "refused (no listener, daemon absent)" if kind == "ConnectionRefusedError" else "unreachable"
+        return False, f"not answering ({flavor}; http {last}; socket {kind})"
 
 
 def _power_off() -> bool:
@@ -231,8 +444,8 @@ def _actual_process(piece_id: str, ml: dict[str, Any]) -> tuple[bool, str]:
         alive = _pid_alive(pid) if pid else False
         return alive, f"pid={pid}" if alive else "stopped"
     if piece_id == "ollama":
-        up = _ollama_up()
-        return up, "11434" if up else "not answering"
+        up, cause = _ollama_up()
+        return up, cause
     if piece_id == "remote_seats":
         n = _fleet_running()
         return n > 0, f"fleet_running={n}"
@@ -511,13 +724,23 @@ def _waste_action(piece_id: str) -> str:
     if piece_id == "remote_seats":
         return "reap idle agents POST /api/v1/agents/reap"
     if piece_id == "improve":
-        return "disable MagImproveDaily / stop improve jobs"
+        # t47: whoever executes this deliberate disable MUST leave the marker
+        # (mark_improve_intentional) so the doctor probe does not alarm on it.
+        # t77: prescribe the landed t73 executor (improve_off/improve_on) by
+        # name instead of prose; improve-off writes the marker itself
+        # (fail closed) and improve-on clears it only after re-register.
+        return (
+            'python main.py improve-off --reason "..." / python main.py improve-on'
+            "  # off=marker then schtask disable; on=ps1 re-register then clear marker"
+        )
     if piece_id == "scribe":
         return "leave — cheap local; optional stop via supervisor"
     return "POST /api/v1/lifecycle/reconcile"
 
 
 def _toggle_hint(piece_id: str) -> str | None:
+    # t81: improve hint aligned to the landed t73 executor commands for
+    # parity with _waste_action (t77); raw schtasks prose dropped.
     return {
         "drainer": "POST /api/v1/drainer",
         "browser_env": "configs/browser_env.yaml",
@@ -526,7 +749,7 @@ def _toggle_hint(piece_id: str) -> str | None:
         "backend": "POST /api/v1/power/start|stop",
         "mirror": "MAG_NO_MIRROR env",
         "engine": "MAG_ENGINE_CMD env",
-        "improve": "schtasks MagImproveDaily / improve cycle API",
+        "improve": 'python main.py improve-off --reason "..." / python main.py improve-on',
         "remote_seats": "spawn only via agents/dispatch",
         "ollama": "OS Startup Ollama.lnk — demand use",
         "scribe": "supervisor slot",

@@ -1,5 +1,18 @@
 # Sovereign Mag — integral companion (one process owns watch + cycles)
 interval_seconds: 120
+# AH19 (2026-09-30, audit finding #10): verkle chain write model. v1 = amend-in-place
+# (LIVE default — a session re-save rewrites the whole chain file); v2 = append-leaves
+# (one appended row per save, latest-per-session resolved by pointer). Flip to v2 only
+# at operator migration; the verifier handles v1 rows forever. Spec:
+# watch/inbox/last_mile_20260930/AH19_AMEND_PERF.md
+chain_mode: v2   # 2026-10-17 operator (Nacho): append-only amends (AH19); was v1
+# V2 binary-tree chain (2026-10-17, BINTREE_V2_SEED_SPEC): shadow-write v1 rows into
+# memory/biography_v2 via mag.bintree_v2.shadow_append. Flip ONLY after the v2 seed is frozen.
+chain_v2_shadow: true   # 2026-10-17 operator (Nacho): v2 shadow ON
+# Sign v2 checkpoints with the seal key: needs this AND env MAG_CHAIN_V2_SIGNING=1 (operator OK only).
+chain_v2_signing: false
+# Copy SIGNED checkpoints into falsifier-index/evidence/chain_v2 (never runs git); also env MAG_CHAIN_V2_PUBLISH=1.
+chain_v2_publish: false
 watch_interval_seconds: 5       # baked-in session tail (do NOT also run main.py watch)
 integral_watch: true            # start watch thread inside mag loop
 max_attention_per_day: 48   # was 8 — idle "cap reached" felt broken; companion pings still bounded
@@ -14,7 +27,8 @@ watch_before_cycle: true        # also refresh live board once per mag cycle
 # context-budget exhaustion.
 # Auto-repack when est tokens > context_repack_ratio * provider usable window.
 # Repack ratio raised 0.62 → 0.85 (2026-08-02): repack destroys DeepSeek context-cache
-# hits (50x flash / 120x pro cheaper on HIT) and was firing at 3.7% of the real 1M window.
+# hits (50x flash / 30x pro cheaper on HIT; pro ratio corrected 2026-09-25 from the stale
+# 120x = pre-Sept-10 pricing table) and was firing at 3.7% of the real 1M window.
 # Repack is now a last resort, not routine. See memory/improve/deepseek_api/repack_vs_cache_analysis.md
 context_repack_ratio: 0.85
 todo_path: queue/todo.md

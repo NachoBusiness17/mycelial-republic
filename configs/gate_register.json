@@ -1,0 +1,67 @@
+{
+  "schema": "gate_register.v1",
+  "law": "OPERATOR-GATE REGISTER (Q40 fix, 2026-10-01; finding watch/inbox/mountain_climb/FIFTY_QUESTIONS_ANSWERED.md row Q40: 'gates can stall indefinitely without an alarm (row absent IS the answer)'). Every row MUST cite a real receipt that exists on disk and names the gate being opened - no fabricated dates; the patrol fail-closes exit 2 on any row whose receipt is missing. Rows are APPEND-ONLY (the estate law): a decided gate stays as a row with status decided, closing is a named edit citing the close receipt, never a deletion. The patrol (tools/gate_age_patrol.py) never mutates this file. Disposition of the age bar lives in the tool (--days, default 14); WARN-only, enforce/scheduling is operator-gated (no-crons law).",
+  "seed_note": "Seeded 2026-10-01 from bytes on disk: queue/todo.md (the closed Cerebras row was the only owed-since carrier), memory/attention.md (zero operator-gate age rows - the dark alarm surface Q40 named), and watch/inbox receipts. Converges with tools/gate_digest.py (2026-09-30) on the same six live gates and their birth receipts; the digest renders, this register alarms. When a gate closes, update BOTH surfaces in one named edit.",
+  "gates": [
+    {
+      "slug": "cerebras-card-gate",
+      "name": "Cerebras card gate (attach a card GO / skip the lane NO-GO)",
+      "opened": "2026-09-21",
+      "decided": "2026-09-26",
+      "status": "decided",
+      "source_receipt": "watch/inbox/burn_wave_20260926/B2_36_cerebras_reclassify_20260926.md",
+      "note": "SHAPE EXAMPLE (the closed row Q40 grepped for). Opened 2026-09-21: prior operator ask ALERT-CEREBRAS-CARD at watch/inbox/LINKS.jsonl:297, quoted inside the receipt ('operator decision required... 5 days unanswered'). Decided 2026-09-26: receipt verdict reclassifies the lane 'dormant pending operator GO' and queue/todo.md line 3 reads 'DECIDED 2026-09-26 by operator: PARKED' on the row opened 'owed since 2026-09-21'."
+    },
+    {
+      "slug": "adam-invite",
+      "name": "Adam invite to the-mountain (blocked on missing GitHub username)",
+      "opened": "2026-09-30",
+      "status": "open",
+      "source_receipt": "watch/inbox/last_mile_20260930/LW2_ADAM_INVITE.md",
+      "note": "Receipt header 'LW2 - Adam invite to the-mountain (2026-09-30)', result NOT INVITED: no GitHub username for Adam exists in the estate, both handle guesses (AdamCrigler, ItsCommodore) 404, and an invite to a guessed handle would grant a possible stranger push access. The ONE action: ask Adam on Discord (ItsCommodore) for his GitHub username, verify with gh api users/NAME, then gh api -X PUT repos/NachoBusiness17/the-mountain/collaborators/NAME -f permission=push."
+    },
+    {
+      "slug": "nous-portal-topup",
+      "name": "Nous portal check + top-up (402s vs ~$171 rib arithmetic)",
+      "opened": "2026-09-30",
+      "status": "open",
+      "source_receipt": "watch/inbox/last_mile_20260930/AJ9_NOUS_402.md",
+      "note": "Receipt header 'AJ9 - Nous 402 diagnosis (2026-09-30)': prime models 402 on reservation while ribs say ~$171 of the $180/$220 pool should remain; the API has no balance endpoint, so only the operator portal read (credits + top-up history for both key pairs) separates old-account-402 from a dry pool; top up if dry."
+    },
+    {
+      "slug": "key-rotation",
+      "name": "Leaked-key rotation (ZAI_Pro + 6 more, audit finding #1)",
+      "opened": "2026-09-30",
+      "status": "decided",
+      "source_receipt": "watch/inbox/last_mile_20260930/AG1_SECRETS_CONTAINMENT.md",
+      "note": "Receipt header 'AG1 - Secrets containment (P0, audit finding #1), Date: 2026-09-30': containment landed (untrack, .gitignore, write-side redaction, pre-commit gate) but protects future rows only; provider-side rotation at each console (ZAI_Pro, ALIBABA x2, VERCEL_KEY, HERMES x1/2, GROQ) is the operator-only real fix. Sister tool tools/gate_digest.py keeps a live byte probe on this row (live .env value vs the on-disk leak copy).",
+      "decided": "2026-10-01",
+      "decision_note": "Operator confirms rotation done (self-steal arc); bytes corroborate: HERMES keys rotated in 09-30 (AJ9 receipt, .env rewritten 09-30 10:07), steps.jsonl history purged from BOTH repos (main + Mag-backup.git), tip witness PAT scope fixed (live probe rc=0, no 403). Residue: first witness gist needs one --publish --go fire (operator); KEY_ROTATION_JOURNAL never created (receipt gap only)."
+    },
+    {
+      "slug": "verkle-v2-flip",
+      "name": "Verkle v2 flip (chain_mode v1 to v2)",
+      "opened": "2026-09-29",
+      "status": "open",
+      "source_receipt": "watch/inbox/VERKLE_V2_DECISION.md",
+      "note": "Receipt header 'Date: 2026-09-29 - Status: DECISION PENDING - the flag is NOT flipped': GO recommended (471x to 1,800x less write amplification), all preconditions green, waiting on the operator's quiet window (never mid-day). Sister probe: configs/mag.yaml chain_mode reads v1 until flipped."
+    },
+    {
+      "slug": "offsite-medium",
+      "name": "Offsite backup medium pick",
+      "opened": "2026-09-30",
+      "status": "open",
+      "source_receipt": "watch/inbox/OFFSITE_BACKUP_PLAN_20260930.md",
+      "note": "Receipt header '2026-09-30 - DESIGN-COMPLETE, READY-TO-RUN. The medium is the operator's door': one disk holds the estate, its only remote, and the gitignored truth core; pick ONE medium (USB SSD / laptop over Tailscale / Backblaze B2) and run the 3 commands in section 7. Audit row 18 FAIL stands until a restore passes."
+    },
+    {
+      "slug": "phase2-lensing-go",
+      "name": "Phase-2 lensing GO (mountain climb)",
+      "opened": "2026-09-30",
+      "decided": "2026-09-30",
+      "status": "decided",
+      "source_receipt": "watch/inbox/mountain_climb/THE_LENSING.md",
+      "note": "Open evidence: watch/inbox/mountain_climb/OPUS_BRIEF_ASSEMBLED.md (2026-09-30) 'STAGED: this brief fires ONLY on operator GO through tools/lensing_ask.py --fire (the AA1 law)'. Decided same day: the operator GO was given, the lensing fired, and THE_LENSING.md landed (Status: ok, $0.4159, 192.6s) - the cited close receipt. Kept as a decided row per the append-only law."
+    }
+  ]
+}

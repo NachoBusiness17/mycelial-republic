@@ -20,6 +20,22 @@ from typing import Any
 
 from config import ROOT
 
+
+def _rel_posix(path) -> str:
+    """Repo-relative posix path, absolute when outside ROOT.
+
+    Cause (ball3 follow-up sweep 2026-09-29): display/receipt derivations
+    raised ValueError whenever the path lived outside the repo (the suite
+    runs use an out-of-repo pytest basetemp). Same fix as the driver-meter
+    lane's _rel_posix in tools/stealth_driver.py.
+    """
+    try:
+        return Path(path).relative_to(ROOT).as_posix()
+    except ValueError:
+        return Path(path).as_posix()
+
+
+
 SCHEMA = "local_work_order.v1"
 RUN_DIR = ROOT / "memory" / "runs" / "token_chain"
 ALLOWED_OPS = frozenset({"read_file", "list_dir", "count_lines", "write_run_note"})
@@ -363,7 +379,7 @@ def run_token_chain(
         ),
     }
     out["observe"] = {
-        "run_dir": str(RUN_DIR.relative_to(ROOT)).replace("\\", "/"),
+        "run_dir": _rel_posix(RUN_DIR),
         "cli": "python main.py token-chain --goal \"...\"",
         "dashboard": "POST /api/v1/token-chain",
         "latest": "memory/runs/token_chain/latest.json",
@@ -380,7 +396,7 @@ def _write_run(out: dict[str, Any]) -> None:
     (RUN_DIR / "latest.json").write_text(
         json.dumps(out, ensure_ascii=False, indent=2), encoding="utf-8"
     )
-    out["artifact"] = str(path.relative_to(ROOT)).replace("\\", "/")
+    out["artifact"] = _rel_posix(path)
 
 
 def cmd_token_chain(args: Any) -> int:

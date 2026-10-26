@@ -85,18 +85,23 @@ function sweepPLegal(events) {
 }
 
 // ---- the frozen input tapes (static, byte-stable; frames at 60fps) ----
-// TAPE_A: walk in, eat the windup, roll LATE so you roll THROUGH the bite (stays in arc),
-//         turn while the walker stumbles, riposte x2 -> kill inside its recovery.
+// TAPE_A: walk in, roll EARLY so you roll THROUGH the lunge (stays in arc), turn while the
+//         walker stumbles, riposte x2 -> kill inside its recovery.
+//         (Re-landed 2026-09-28 FW01: a5dd96176 raised walker speed 70->95 + 1.35 chase + a
+//         45% lunge at telegraph end + reach 55->38, so the bite moved 0.9s and the old
+//         frame-56 roll landed one frame late — TAPE_A ate the bite and died 8 hits deep.
+//         Roll moved 56->46, turn/swings 74/80/102 -> 60/74/98. Dodge law unchanged: rollT>0
+//         at the bite.)
 const TAPE_A = [
   [0, 'ArrowRight', 1], [40, 'ArrowRight', 0],
-  [56, 'ShiftLeft', 1], [58, 'ShiftLeft', 0],
-  [74, 'ArrowLeft', 1],
-  [80, 'Space', 1], [82, 'Space', 0],
-  [84, 'ArrowLeft', 0],
-  [102, 'Space', 1], [104, 'Space', 0],
+  [46, 'ShiftLeft', 1], [48, 'ShiftLeft', 0],
+  [60, 'ArrowLeft', 1],
+  [74, 'Space', 1], [76, 'Space', 0],
+  [78, 'ArrowLeft', 0],
+  [98, 'Space', 1], [100, 'Space', 0],
 ];
 // TAPE_B: TAPE_A with ONE entry flipped — the roll press becomes a swing press (no roll).
-const TAPE_B = TAPE_A.map(r => (r[0] === 56 && r[1] === 'ShiftLeft' && r[2] === 1) ? [56, 'Space', 1] : r);
+const TAPE_B = TAPE_A.map(r => (r[0] === 46 && r[1] === 'ShiftLeft' && r[2] === 1) ? [46, 'Space', 1] : r);
 // TAPE_C: same seed, different play — facetank and trade, no roll ever.
 const TAPE_C = [
   [0, 'ArrowRight', 1], [40, 'ArrowRight', 0],

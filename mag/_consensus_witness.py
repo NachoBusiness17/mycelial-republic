@@ -23,6 +23,15 @@ LANES = [  # (label, provider, model, extra)
     ("groq", "groq", None, {}),
     ("cerebras", "cerebras", None, {}),
 ]
+# B2-521 DORMANT GATE (2026-09-26): the witness roster hardcoded a cerebras seat after
+# B2-36 declared cerebras dormant (card-gated 30-day trial, chat 402 no-credit;
+# mag/doctor.py:607: dormant is a declared state). Roster entries whose provider id is
+# flagged dormant drop out here, the same gate mag/rotation_harness.LANES got in B2-133;
+# operator GO flips the flag and the seat returns with no code edit. Receipt:
+# watch/inbox/burn_wave_20260926/B2_521_cerebras_stragglers_20260926.md
+from mag.dormant import dormant_ids as _dormant_provider_ids  # noqa: E402
+
+LANES = [ln for ln in LANES if ln[1] not in _dormant_provider_ids()]
 
 
 def ask(label: str, provider: str, model: str | None, extra: dict) -> dict:

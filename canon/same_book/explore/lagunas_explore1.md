@@ -1,0 +1,3 @@
+A record-keeping system must resolve contradictions by preserving the earliest attested record while annotating all subsequent conflicting claims as contested derivatives of that primary truth. 
+
+This principle stems from the foundational need for any knowledge system to maintain temporal coherence and prevent infinite regress in truth-value assignments. By anchoring resolution to attestation order rather than content merit, the system avoids subjective judgment calls that could introduce new contradictions during the resolution process itself. This creates a stable, self-referential framework where the system's integrity depends on its ability to track provenance rather than adjudicate between competing claims.

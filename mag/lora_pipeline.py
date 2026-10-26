@@ -7,7 +7,20 @@ makes the vector persistent across sessions.
 HARDWARE OPTIONS (auto-detected):
   - Local 6B inference card: QLoRA 4-bit on Qwen2.5-1.5B or Gemma-2B
   - Vast.ai: rent a 24GB+ GPU for larger models
+  - Hands box 3090 (machine 138174, tunnel :18000, BOOT_4_7.md:35): the local
+    24GB rung, $0 rent - covers this module's "24GB+ for larger models" clause
+    before vast.ai is reached
   - AdventureNLearn SuperGrok: frontier inference (not training)
+
+WATCH TRIGGER (d08-reflux-delta map, 2026-10-06): if ReFlux-style Gemma3-4B
+finetunes appear on HF (watch/inbox/X_INTEL_REFLUX_20261005.md:62-65, arXiv
+2609.32457), arm this door at target gemma3-4b on the hands box 3090 rung.
+The trigger is watch-only until that HF check fires. Delta-not-state note:
+the LAW below (output is a LoRA adapter, not a full model) is this paper's
+law in weight space - the adapter is the increment, the base model is the
+state, and QLoRA 4-bit is the quantized base state under a low-rank delta.
+Provenance row banked at queue/lanes/builder/runner_state.delta.jsonl seq 2
+(delta_state.v1 chain, tools/reflux_delta_probe.py).
 
 TRAINING DATA: memory/training/sovereign_training_data.jsonl (150 examples)
 OUTPUT: memory/training/lora/ghost-adapter/ (LoRA weights)

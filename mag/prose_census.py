@@ -40,10 +40,29 @@ SKIP_DIRS = {".venv", ".git", "node_modules", "worktrees", "__pycache__",
 WALK_TOPS = ["watch", "docs", "queue", "state", "scripts", "mag", "configs",
              ".agents", "tests", "jobs", "memory", "reference"]
 _REF_RE = re.compile(
+    # mdx joins the extension class 2026-09-28 (FW-07, fifty_wide_20260917): without
+    # it every `*.mdx` ref truncated to `*.md` before the exists() check, which
+    # reported all 31 live docs/mirrors/mcp/INDEX.md spec-mirror refs (files present
+    # under docs/mirrors/mcp/spec/2026-07-28/ as .mdx) as dead — pure instrument
+    # truncation, zero dead bytes. jsonl reordered ahead of json by the same
+    # evidence (FW-10): `json|jsonl` truncated every `*.jsonl` ref to `*.json`,
+    # reporting live ledgers (memory/trajectory/steps.jsonl, state/art_queue.jsonl,
+    # state/fuel/lite_pacing.jsonl...) as dead in the VC2_CHAIN_STATE receipt.
+    # Leftmost-first alternation demands the longer literal first. Also: URL
+    # fragments stripped before scanning (a path inside an https URL is a remote
+    # address, not a repo claim). Receipts:
+    # watch/inbox/fifty_wide_20260917/FW07_mcp_index.md + FW10_vc2_amend.md
     r"(?:watch|docs|state|logs|queue|memory|scripts|mag|configs|dashboard|jobs|tests)"
-    r"/[A-Za-z0-9_\-./]+\.(?:md|py|json|jsonl|yaml|yml|txt|html)")
+    r"/[A-Za-z0-9_\-./]+\.(?:mdx|md|py|jsonl|json|yaml|yml|txt|html)")
 _FENCE_RE = re.compile(r"```[a-z]*\n(.*?)```", re.S)
 _LAUNCH_RE = re.compile(r"docker (?:exec|restart|run)|python -m |python main|schtasks |tasklist ")
+# owner marker, FW-11 2026-09-28 (fifty_wide_20260917): the module docstring always
+# promised "SUPERSEDED/owner marker" but the check below only looked for SUPERSEDED,
+# so an owned standing launcher could never clear the flag. `# fence-owner:` on its
+# own line inside the block is the owner marker; live command cards (README, AGENTS,
+# HANDOFF) carry it, one-shot receipts get SUPERSEDED. Receipt:
+# watch/inbox/fifty_wide_20260917/FW11_fence_owners.md
+_FENCE_OWNER_RE = re.compile(r"^\s*#\s*fence-owner:", re.M)
 _MAX_REFS = 40
 
 
@@ -86,12 +105,19 @@ def run_census(root: Path | str) -> dict[str, Any]:
         except OSError:
             continue
         rel = str(p.relative_to(root))
-        refs = _REF_RE.findall(text)[:_MAX_REFS]
+        # URL strip, same FW-07 fix: a path fragment inside an https URL
+        # (raw.githubusercontent.com/.../docs/specification/...) is a remote
+        # address, not a claim about this repo — mirrors/mcp INDEX carried 31
+        # such refs inside [source](...) links and the regex counted every one
+        # as a dead repo path.
+        text_nourl = re.sub(r"https?://\S+", "", text)
+        refs = _REF_RE.findall(text_nourl)[:_MAX_REFS]
         dead = sorted({r for r in refs if not (root / r).exists()})
         if dead:
             ghost_by_file.append((len(dead), rel, dead[:8]))
         for i, block in enumerate(_FENCE_RE.findall(text)):
-            if _LAUNCH_RE.search(block) and "SUPERSEDED" not in block:
+            if _LAUNCH_RE.search(block) and "SUPERSEDED" not in block \
+                    and not _FENCE_OWNER_RE.search(block):
                 launchers.append(f"{rel}#fence{i + 1}")
 
     stale_list.sort(reverse=True)

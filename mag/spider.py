@@ -14,7 +14,22 @@ from config import ROOT
 
 SPIDER_TRAIL = ROOT / "memory" / "runs" / "spider_trail.jsonl"
 STALL_THRESHOLD_S = 180
-FKB_REPEAT_THRESHOLD = 3
+
+# Q-008 (2026-09-28): the old flat FKB_REPEAT_THRESHOLD=3 plus a [:5] rank
+# slice over recurring_patterns() made the spider blind to 10 of the 15 real
+# signatures in memory/failure_kb/signatures.json (census 2026-09-28): a
+# run_shell sig at x11 with a remedy attached ranked 6th and was sliced away,
+# and the severe "collapse" (x2) / "fake_success" (x1) kinds fell under the
+# count bar. Policy now: no rank cut (the index is already the recurring-class
+# view, failure_kb.rebuild_index keeps count>=2 sigs only); ordinary kinds
+# surface at count>=2, the same bar failure_kb.surface_hits uses; the severe
+# "lying agent" kinds surface on the FIRST occurrence because one instance is
+# already verdict-grade (claimed edits with nothing on disk). Count-1
+# ordinary sigs stay hidden per the FKB's own log-only law
+# (mag/failure_kb.py, rebuild_index: count-1 sigs stay log-only by design).
+FKB_REPEAT_THRESHOLD = 2
+FKB_SEVERE_KINDS = ("collapse", "fake_success")
+FKB_SEVERE_REPEAT_THRESHOLD = 1
 
 
 def _now() -> str:
@@ -113,17 +128,26 @@ def _check_fkb_repeat() -> list[dict[str, Any]]:
     try:
         from mag.failure_kb import recurring_patterns
 
-        for pat in (recurring_patterns() or [])[:5]:
+        # Q-008: min_count=1 so this function owns the whole threshold policy
+        # (the old call leaned on the default min_count=3 and then re-checked
+        # the same 3), and there is no [:5] rank slice: the count floors below
+        # are the only bar between an index signature and a signal.
+        for pat in recurring_patterns(min_count=FKB_SEVERE_REPEAT_THRESHOLD):
             count = int(pat.get("count") or 0)
-            if count >= FKB_REPEAT_THRESHOLD:
-                signals.append({
-                    "kind": "fkb_repeat",
-                    "severity": "warn",
-                    "signature": pat.get("signature") or pat.get("key") or pat.get("sig"),
-                    "count": count,
-                    "action": "surface_remedy",
-                    "message": f"FKB pattern repeated {count}x — remedy may exist",
-                })
+            kind = str(pat.get("kind") or "")
+            severe = kind in FKB_SEVERE_KINDS
+            floor = FKB_SEVERE_REPEAT_THRESHOLD if severe else FKB_REPEAT_THRESHOLD
+            if count < floor:
+                continue
+            signals.append({
+                "kind": "fkb_repeat",
+                "severity": "error" if severe else "warn",
+                "signature": pat.get("signature") or pat.get("key") or pat.get("sig"),
+                "count": count,
+                "fkb_kind": kind,
+                "action": "surface_remedy",
+                "message": f"FKB {kind} pattern repeated {count}x - remedy may exist",
+            })
     except Exception:
         pass
     return signals

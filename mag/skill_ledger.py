@@ -34,6 +34,41 @@ BENCH_DIR = ROOT / "memory" / "runs" / "local_bench"
 
 TARGETS = {"decisions": 1000, "labeled_rows": 5000}
 
+# B2-410 (2026-09-26): the `outcome` field is a REGISTRY, not an open vocabulary.
+# Before this block the field had exactly one special value ("ok", the only one
+# best_moves counts) while icon_drop's fold wrote raw status strings into it
+# ("failed", "skipped_no_powershell", "unknown"; B2-378), so any consumer that
+# must treat a skip differently from a failure had to import icon_drop's
+# private literals. Registry pattern follows the events key registry
+# (mag/events_key_schema.py): the constant lives here, every known value has a
+# meaning line, and new writers register before first use.
+OUTCOME_WIN = "ok"  # verified success; the ONLY value best_moves counts as a win
+OUTCOME_REGISTRY: dict[str, str] = {
+    "ok": "verified success (record_decision contract; seed_bench maps bench ok=True here)",
+    "fail": "verified failure (record_decision contract; seed_bench maps bench ok=False here)",
+    "failed": "icon_drop fold status, pre-B2-378 rows; same meaning as fail, spelled out",
+    "skipped_no_powershell": "icon_drop fold status: attempt never ran (PowerShell unavailable); NOT a failure, must not count as either a win or a fail",
+    "unknown": "icon_drop fold status: outcome could not be determined; neither win nor fail",
+    "skipped": "generic skip: attempt never ran for a named non-failure reason",
+}
+
+
+def normalize_outcome(value: str | None) -> str | None:
+    """Map registered aliases onto the canonical vocabulary; unknown strings
+    pass through unchanged (registry feedback loop: a consumer meeting one
+    files it here). None stays None = decision-only row."""
+    if value is None:
+        return None
+    v = str(value).strip()
+    if v == "failed":
+        return "fail"
+    return v or None
+
+
+def is_win(value: str | None) -> bool:
+    """True only for the registered win value; skips and unknowns are not wins."""
+    return normalize_outcome(value) == OUTCOME_WIN
+
 
 def _now() -> str:
     return datetime.now(timezone.utc).isoformat()
@@ -82,7 +117,7 @@ def proven_moves(*, min_count: int = 3, min_ok_rate: float = 0.7, limit: int = 1
             continue
         b = buckets.setdefault(key, {"count": 0, "ok": 0, "model": row.get("model"), "provider": row.get("provider")})
         b["count"] += 1
-        if row.get("outcome") == "ok":
+        if is_win(row.get("outcome")):
             b["ok"] += 1
     out = []
     for key, b in buckets.items():
@@ -122,7 +157,7 @@ def record_decision(
         "model": model,
         "reasoning_level": reasoning_level,
         "seat": seat,
-        "outcome": outcome,  # None=decision only · ok/fail (verified)
+        "outcome": outcome,  # registry: see OUTCOME_REGISTRY (None = decision only)
         "detail": (detail or "")[:200],
         "source": source,
     }

@@ -58,6 +58,7 @@ _SEAT_MAP = {
     "cursor": "cursor",
     "cursor_ide": "cursor",
     "composer": "cursor",
+    "research": "research",
 }
 
 

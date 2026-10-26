@@ -101,6 +101,31 @@ def estimate_tokens(text: str) -> int:
 # ALGORITHMIC COMPRESSION (zero cost, fast)
 # ═══════════════════════════════════════════════════════════════════
 
+# Compiled once at import: algorithmic_compress re-paid these 10 re.compile calls on
+# every invocation (deepgemm-dossier probe 3 ticket, watch/inbox/x_intel_deepgemm_20261001.md)
+_SHRINK_VERBOSE = [
+    "in order to", "for the purpose of", "at this point in time",
+    "due to the fact that", "in the event that",
+    "it is important to note that", "it should be noted that",
+    "it is worth mentioning that", "as a matter of fact", "needless to say",
+]
+_SHRINK_CONCISE = {
+    "in order to": "to",
+    "for the purpose of": "for",
+    "at this point in time": "now",
+    "due to the fact that": "because",
+    "in the event that": "if",
+    "it is important to note that": "note:",
+    "it should be noted that": "note:",
+    "it is worth mentioning that": "",
+    "as a matter of fact": "",
+    "needless to say": "",
+}
+_SHRINK_PATTERNS = [
+    (re.compile(re.escape(v), re.IGNORECASE), _SHRINK_CONCISE[v]) for v in _SHRINK_VERBOSE
+]
+
+
 def algorithmic_compress(text: str) -> str:
     """Lossless-ish algorithmic compression.
 
@@ -123,23 +148,10 @@ def algorithmic_compress(text: str) -> str:
     # Remove empty leading/trailing lines
     compressed = compressed.strip()
 
-    # Shrink verbose patterns without losing meaning
-    shrink_map = {
-        "in order to": "to",
-        "for the purpose of": "for",
-        "at this point in time": "now",
-        "due to the fact that": "because",
-        "in the event that": "if",
-        "it is important to note that": "note:",
-        "it should be noted that": "note:",
-        "it is worth mentioning that": "",
-        "as a matter of fact": "",
-        "needless to say": "",
-    }
-    for verbose, concise in shrink_map.items():
+    # Shrink verbose patterns without losing meaning (patterns precompiled at module scope)
+    for verbose, concise in _SHRINK_PATTERNS:
         # Case-insensitive replace, preserve capitalization context
-        pattern = re.compile(re.escape(verbose), re.IGNORECASE)
-        compressed = pattern.sub(concise, compressed)
+        compressed = verbose.sub(concise, compressed)
 
     # Collapse multiple blank lines
     compressed = re.sub(r'\n{3,}', '\n\n', compressed)

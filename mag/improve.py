@@ -2,6 +2,34 @@
 
 Files are truth under memory/improve/. No auto ollama pull by default.
 Opt-in deep dive: improve --deep (research-pack + local worker, wall budget).
+
+Spec (t33, 2026-09-25): `improve --status` is the seat surface for the
+MagImproveDaily silent-disablement probe. status_summary() embeds
+mag.doctor.check_scheduled_tasks() (t20's check, reused via import, no
+duplicate schtasks call) and prints ONE WARNING line on stderr when the
+task is not Ready. lifecycle.py prescribes the landed t73 executor
+"python main.py improve-off --reason ... / improve-on" as the remediation
+(aligned by t77, hint by t81), so deliberate disablement is a known
+state: it must be announced at the seat, not only at doctor time.
+
+Spec (B2-106, 2026-09-26): provider-health cadence. Lane state used to be
+measured only during burn waves (B2-04 morning scoreboard vs the
+afternoon mistral 429-zero-quota -> 403-wrong-default flip), so between
+waves the estate guessed. The scout now owns the cadence: the FIRST
+non-dry scout() that finds the cadence stale (state key
+"last_provider_probe" older than configs/improve.yaml
+provider_probe.cadence_days, default 7) runs mag.doctor
+.check_provider_endpoints() under MAG_PROBE_REMOTE=1, the B2-04 deep
+probe (ONE one-token ping per deduped (base_url, model, key) triple,
+~15 pings on this estate, measured classes QUOTA-DEAD / AUTH-DEAD /
+DEGRADED / FENCED / REMOTE-UNVERIFIED). The env opt-in is set for the
+call and restored after; it never leaks into a plain shell. The run
+lands a snapshot JSON under memory/improve/provider_health/<day>.json
+and ONE improve candidate (kind=risk when alarm classes fire, kind=runtime
+when all quiet, status=hold when quiet: a healthy week is evidence, not a
+ticket). dry scout never probes; disabled config never probes. The
+digest day is page-scrape-free, not probe-free: a due probe runs on the
+digest path too, and the digest report note names the exception.
 """
 from __future__ import annotations
 
@@ -9,6 +37,7 @@ import hashlib
 import json
 import os
 import re
+import sys
 import time
 import xml.etree.ElementTree as ET
 from datetime import datetime, timezone
@@ -34,7 +63,20 @@ def _day_str(dt: datetime | None = None) -> str:
 
 def load_config() -> dict[str, Any]:
     if not CFG_PATH.is_file():
-        return {"enabled": False, "sources": {}, "budgets": {}}
+        # FAIL LOUD (gala wave5-repair config-hygiene lane, 2026-09-29): a
+        # missing configs/improve.yaml used to read as {"enabled": False} and
+        # the scout went dark with rc=0 (f-03 finding 5,
+        # watch/inbox/burn_reset_20260927/flash50/f-03.md). Deliberate
+        # disablement is the t73 executor's named act: improve-off writes the
+        # marker logs/magimprove_intentional.flag (mag/lifecycle.py IMPROVE_
+        # INTENTIONAL_FLAG) and never touches this file, so a missing config
+        # is a broken install, not an off state. Name the path instead of
+        # impersonating a sanctioned disabled state.
+        raise FileNotFoundError(
+            f"improve config missing: {CFG_PATH} (configs/improve.yaml is "
+            "git-tracked; restore it from git, and route deliberate "
+            "disablement through 'python main.py improve-off --reason ...')"
+        )
     data = yaml.safe_load(CFG_PATH.read_text(encoding="utf-8")) or {}
     data.setdefault("budgets", {})
     data.setdefault("sources", {})
@@ -358,6 +400,198 @@ def _candidates_from_fetch(
     return rows
 
 
+# B2-106 provider-health cadence. state key + config block shape; the
+# cadence default mirrors the weekly review habit the playbook already
+# names ("review weekly"), config wins.
+_PROVIDER_PROBE_STATE_KEY = "last_provider_probe"
+ATTENTION_PATH = ROOT / "memory" / "attention.md"  # B2-494 alarm surface
+_PROVIDER_PROBE_DIRNAME = "provider_health"
+_PROVIDER_PROBE_DEFAULT_CADENCE_DAYS = 7.0
+
+
+def provider_probe_due(
+    state: dict[str, Any] | None,
+    cadence_days: float = _PROVIDER_PROBE_DEFAULT_CADENCE_DAYS,
+    *,
+    now: datetime | None = None,
+    key: str = _PROVIDER_PROBE_STATE_KEY,
+) -> bool:
+    """Cadence gate for the weekly deep provider probe (B2-106).
+
+    Contract (pinned by tests/test_improve_provider_probe.py): due when the
+    state key is missing, empty, or unparseable (a broken clock must not
+    silence the probe forever: an unreadable ts re-arms the cadence), or
+    when now - ts >= cadence_days. A fresh ts inside the window is not due.
+    cadence_days <= 0 means always due (operator knob, not a footgun).
+    key (2026-10-07): the predicate is state-key generic so the standing
+    contamination tripwire (mag/contamination_tripwire.py, state key
+    last_contamination_check) reuses the same broken-clock semantics instead
+    of hand-rolling a second cadence reader; the default key keeps the
+    pinned provider-probe contract byte-identical.
+    """
+    raw = ""
+    try:
+        raw = str((state or {}).get(key) or "")
+    except Exception:
+        raw = ""
+    if not raw:
+        return True
+    try:
+        last = datetime.fromisoformat(raw)
+    except ValueError:
+        return True
+    if last.tzinfo is None:
+        last = last.replace(tzinfo=timezone.utc)
+    now_dt = now or _utc_now()
+    return (now_dt - last).total_seconds() >= max(float(cadence_days), 0.0) * 86400.0
+
+
+def run_provider_probe(
+    cfg: dict[str, Any],
+    paths: dict[str, Path],
+    *,
+    day: str | None = None,
+    now: datetime | None = None,
+    probe_fn: Any = None,
+) -> dict[str, Any] | None:
+    """Run the B2-04 deep provider probe when the cadence is stale (B2-106).
+
+    Returns None when config disables it, the cadence is fresh, or the
+    caller is only previewing (probe_fn injected without a run is still a
+    run: tests inject probe_fn and drive the gate via state/config).
+    On run: sets MAG_PROBE_REMOTE=1 for the duration and restores the
+    prior value after (the env opt-in never leaks past this function),
+    calls mag.doctor.check_provider_endpoints() (deep probe dedupes
+    (base_url, model, key) triples itself: ~15 one-token pings, never
+    per-lane fan-out), writes memory/improve/provider_health/<day>.json,
+    appends ONE improve candidate, and stamps the state key. Alarm
+    classes (DOWN / QUOTA-DEAD / AUTH-DEAD) make it kind=risk status=new;
+    a quiet week is kind=runtime status=hold (evidence, not a ticket).
+    """
+    pcfg = cfg.get("provider_probe") or {}
+    if pcfg.get("enabled") is False:
+        return None
+    cadence = float(pcfg.get("cadence_days") or _PROVIDER_PROBE_DEFAULT_CADENCE_DAYS)
+    state = _load_state(paths)
+    if not provider_probe_due(state, cadence, now=now):
+        return None
+    if probe_fn is None:
+        from mag.doctor import check_provider_endpoints as probe_fn  # noqa: N813
+
+    prior = os.environ.get("MAG_PROBE_REMOTE")
+    try:
+        os.environ["MAG_PROBE_REMOTE"] = "1"
+        result = probe_fn()
+    finally:
+        if prior is None:
+            os.environ.pop("MAG_PROBE_REMOTE", None)
+        else:
+            os.environ["MAG_PROBE_REMOTE"] = prior
+
+    day = day or _day_str()
+    statuses = dict(result.get("statuses") or {})
+    issues = list(result.get("issues") or [])
+    alarms = bool(issues) or not bool(result.get("ok"))
+    worst_bits: list[str] = []
+    for cls in ("DOWN", "QUOTA-DEAD", "AUTH-DEAD"):
+        hit = sorted(p for p, s in statuses.items() if s == cls)
+        if hit:
+            worst_bits.append("%s %s" % (cls, ",".join(hit)))
+    if not worst_bits:
+        for cls in ("DEGRADED", "FENCED"):
+            hit = sorted(p for p, s in statuses.items() if s == cls)
+            if hit:
+                worst_bits.append("%s %s" % (cls, ",".join(hit)))
+    worst = "; ".join(worst_bits)
+    claim = (
+        "Provider probe (cadence %.0fd): %d probes, %d alarm issues, %d degraded, "
+        "%d fenced" % (
+            cadence,
+            int(result.get("probes_run") or 0),
+            len(issues),
+            len(result.get("degraded") or []),
+            len(result.get("fenced") or []),
+        )
+    ) + ("; " + worst if worst else "")
+    detail = " ".join("%s=%s" % (p, s) for p, s in sorted(statuses.items()))
+    row = {
+        "schema": SCHEMA,
+        "id": _candidate_id(claim, day + ":provider_probe"),
+        "date": day,
+        "kind": "risk" if alarms else "runtime",
+        "claim": claim,
+        "detail": detail[:600],
+        "source": "mag_internal",
+        "source_urls": ["memory/improve/%s/%s.json" % (_PROVIDER_PROBE_DIRNAME, day)],
+        "local_feasible": "true",
+        "status": "new" if alarms else "hold",
+        "created": _utc_now().isoformat(),
+    }
+
+    out_dir = paths["root"] / _PROVIDER_PROBE_DIRNAME
+    out_dir.mkdir(parents=True, exist_ok=True)
+    snap = out_dir / ("%s.json" % day)
+    snap.write_text(
+        json.dumps({"day": day, "ts": _utc_now().isoformat(), "result": result}, default=str, indent=2),
+        encoding="utf-8",
+    )
+    try:
+        snap_ref = str(snap.relative_to(ROOT)).replace("\\", "/")
+    except ValueError:
+        # Isolated callers (tests, alt roots): the absolute path is the honest ref.
+        snap_ref = str(snap).replace("\\", "/")
+    row["source_urls"] = [snap_ref]
+
+    append_candidates([row], paths)
+    # B2-494 (2026-09-26): the alarm surface. Alarm-class probe results no
+    # longer stop at the candidates ledger: the run appends EXACTLY ONE
+    # [priority] line to memory/attention.md naming the lane, the alarm
+    # classes and the snapshot ref. Chosen path: attention.md (the doctor
+    # issue surface stays silent here; two alarm mouths is the fan-out
+    # disease). A quiet run writes nothing.
+    if alarms:
+        try:
+            with ATTENTION_PATH.open("a", encoding="utf-8") as f:
+                f.write("- [priority][probe-alarm] provider_probe %s (run %s) -> %s"
+                        % (worst or ("issues:%d" % len(issues)), day, snap_ref) + "\n")
+        except OSError:
+            pass  # the probe result still lands; the surface write is best-effort
+    state[_PROVIDER_PROBE_STATE_KEY] = _utc_now().isoformat()
+    state["last_provider_probe_summary"] = {
+        "day": day,
+        "probes_run": int(result.get("probes_run") or 0),
+        "alarms": len(issues),
+        "degraded": len(result.get("degraded") or []),
+        "fenced": len(result.get("fenced") or []),
+        "snapshot": snap_ref,
+    }
+    _save_state(paths, state)
+    return {"row": row, "result": result, "snapshot": str(snap)}
+
+
+def _provider_probe_extra(
+    provider_probe: dict[str, Any] | None,
+    *,
+    note: str | None = None,
+    extra: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    """Daily-report extra + scout return payload for the cadence probe (B2-106)."""
+    out: dict[str, Any] = dict(extra or {})
+    if note:
+        out["note"] = note
+    if provider_probe:
+        res = provider_probe.get("result") or {}
+        row = provider_probe.get("row") or {}
+        out["provider_probe"] = {
+            "probes_run": res.get("probes_run"),
+            "alarms": len(res.get("issues") or []),
+            "row_id": row.get("id"),
+            "claim": (row.get("claim") or "")[:200],
+            "snapshot": provider_probe.get("snapshot"),
+        }
+    return out
+
+
 def _mag_internal_candidates(day: str) -> list[dict[str, Any]]:
     rows: list[dict[str, Any]] = []
     smoke = ROOT / "logs" / "multi_smoke_latest.json"
@@ -471,6 +705,197 @@ def _mag_internal_candidates(day: str) -> list[dict[str, Any]]:
     return rows
 
 
+# B2-357 counting-contract constants for logs/seat_crashes.log. One guard
+# stanza per crash: a "[<iso-utc>] stage=<stage>" line written by
+# mag.agent_cli._log_seat_crash followed by the formatted traceback body.
+_CRASH_STANZA_RE = re.compile(r"^\[\d{4}-\d{2}-\d{2}T[^\]]*\]", re.MULTILINE)
+_CRASH_MARKER_RE = re.compile(r"^(?:[A-Za-z_][A-Za-z0-9_.]*: ?)?INJECTED-")
+_CRASH_HEADER = "Traceback (most recent call last):"
+# B2-372: the two sentences CPython prints between chained traceback
+# sections; their count is how the census says "this entry was a chain".
+_CRASH_CHAIN_MARKERS = (
+    "During handling of the above exception",
+    "The above exception was the direct cause",
+)
+# B2-383: counted only at column 0 (CPython prints each sentence on its own
+# line between chained sections) and only in stanzas holding 2+ headers (a
+# chain link needs two sections), so a body that merely QUOTES a sentence
+# mid-message, after a type prefix, in an indented source echo, or alone on
+# a multi-line message line never counts as a chain.
+_CRASH_CHAIN_MARKER_RE = re.compile(
+    "^(?:" + "|".join(re.escape(marker) for marker in _CRASH_CHAIN_MARKERS) + ")",
+    re.MULTILINE,
+)
+
+
+def crash_log_census(text: str) -> dict[str, int]:
+    """Count seat crashes in logs/seat_crashes.log by ENTRY, not by substring.
+
+    Contract (pinned by tests/test_improve_crash_scout.py, B2-357):
+      - The log is a sequence of guard stanzas, each one
+        "[<iso-utc>] stage=<stage>" line (mag.agent_cli._log_seat_crash)
+        plus its traceback body; bytes before the first stanza are preamble.
+      - blocks: total "Traceback (most recent call last):" headers inside
+        stanza bodies (kept for continuity with the old "guard caught N
+        total" phrasing).
+      - entries: stanza bodies containing at least one header. ONE chained
+        exception prints two headers inside one stanza and is ONE crash,
+        so header counting booked it twice.
+      - test: entries whose body has a line STARTING with an INJECTED-
+        marker (bare, or "TypeName: INJECTED-...", the shape the guard-era
+        tests wrote). The B2-86 annotation suffix rides inside marker lines
+        after the message, so start-anchored matching still sees annotated
+        markers, while an operator traceback that merely QUOTES the literal
+        mid-message never reclassifies a real crash as test.
+      - real: entries - test.
+      - chains: total chain links over the same bodies blocks and entries
+        count: lines STARTING at column 0 with one of the two exception-
+        chain-marker sentences ("During handling of the above exception" /
+        "The above exception was the direct cause"), counted only in
+        stanzas holding at least two headers, one per chained join, so
+        real=1 chains=1 names a wrap-and-reraise crash without opening the
+        log (B2-372; the scout row detail carries chains=). B2-383: a body
+        that merely QUOTES a marker sentence mid-message, after a type
+        prefix, inside an indented source echo, or alone on a line of a
+        multi-line message never counts, because CPython prints each
+        sentence at column 0 between two sections and a chain link needs
+        two headers.
+    A body with headers but no stanza line still counts as one entry
+    (defensive: never drop a real crash over a mangled stanza line).
+    Cause: the old real = headers - INJECTED- string count turned one
+    chained real crash quoting the marker into real=0 and one unquoted
+    chained real crash into real=2 (probe:
+    watch/inbox/burn_wave_20260926/B2_357_falsifier_probe.py; receipt
+    watch/inbox/burn_wave_20260926/B2_357_scout_pin_20260926.md). The
+    chains field exists because that entry-level census still could not SAY
+    a crash was chained (falsifier and receipt:
+    watch/inbox/burn_wave_20260926/B2_372_chain_census_20260926.md; red-run
+    artifact watch/inbox/burn_wave_20260926/B2_372_red_run_20260926.txt).
+    B2-383: the B2-372 chains count was itself a plain substring count, so
+    an operator crash quoting a chain-marker sentence mid-message inflated
+    chains with entries and real unchanged (red-run artifact and receipt:
+    watch/inbox/burn_wave_20260926/B2_383_chain_quote_pin_20260926.md).
+    B2-416 OUT-OF-SCOPE NOTE (2026-09-26): crash evidence that never passed
+    through the _log_seat_crash writer seam is out of scope by decision, so
+    stanza-less traceback bodies on disk are NOT owned by this census and
+    this note is their registration. Sweep of watch/inbox on 2026-09-26:
+    7 files / 16 "Traceback (most recent call last):" headers; 1 file / 6
+    headers carry the "[<iso-utc>] stage=" stanza (in scope); 6 files /
+    10 headers are stanza-less, of which 3 files / 5 headers are QUOTED
+    text (QUEUE.md brief rows, B2_373 and B2_86 receipts) and 3 files /
+    5 headers are real captured crash output from other writers
+    (gala b2-stone2b.check.txt, t33.check.txt, dogfood-trajectory save.txt).
+    Stronger gap, same decision: pytest-report-shaped crash evidence has no
+    header at all, so even a stanza-less header sweep cannot see it
+    (gala t39.check.txt carries 4 column-0 chain-marker sentences and 8
+    PermissionError lines in E-line summary shape with zero headers).
+    If a lane later wants these classes counted, that is a NEW writer or a
+    NEW reader contract, not an edit here; this census stays
+    stanza-scoped (receipt:
+    watch/inbox/burn_wave_20260926/B2_416_stanza_census_20260926.md).
+    """
+    if not text:
+        return {"blocks": 0, "entries": 0, "test": 0, "real": 0, "chains": 0}
+    starts = [m.start() for m in _CRASH_STANZA_RE.finditer(text)]
+    if not starts:
+        bodies = [text]
+    else:
+        bounds = starts + [len(text)]
+        bodies = [text[bounds[i]: bounds[i + 1]] for i in range(len(starts))]
+    blocks = entries = test = chains = 0
+    for body in bodies:
+        if _CRASH_HEADER not in body:
+            continue
+        entries += 1
+        blocks += body.count(_CRASH_HEADER)
+        if body.count(_CRASH_HEADER) >= 2:
+            # B2-418: between-headers placement. CPython prints each chain
+            # sentence at column 0 BETWEEN two sections, so a real join line
+            # sits strictly after the first and before the last header of the
+            # stanza. A quoted sentence embedded in the FINAL exception
+            # message lands after the last header and must not count (the
+            # B2-383 column-0 rule alone still let a 2-header stanza with a
+            # quoted marker in its tail message report a phantom second
+            # link; fixture test_quoted_marker_at_end_of_two_header_stanza_
+            # counts_one_join, red chains=2 before this fix).
+            lines = body.splitlines()
+            header_idx = [i for i, ln in enumerate(lines) if _CRASH_HEADER in ln]
+            lo, hi = header_idx[0], header_idx[-1]
+            chains += sum(
+                1 for i in range(lo + 1, hi)
+                if _CRASH_CHAIN_MARKER_RE.match(lines[i])
+            )
+        for line in body.splitlines()[1:]:
+            if _CRASH_MARKER_RE.match(line):
+                test += 1
+                break
+    return {
+        "blocks": blocks,
+        "entries": entries,
+        "test": test,
+        "real": entries - test,
+        "chains": chains,
+    }
+
+
+# B2-374: the behavioral-events scout has always counted the tail of
+# logs/behavioral_events.jsonl as the LAST 80 raw lines; pinned as a named
+# constant so the window arithmetic is contract, not implication.
+_BEHAVIORAL_TAIL = 80
+
+
+def behavioral_events_census(text: str, window: int = _BEHAVIORAL_TAIL) -> dict[str, Any]:
+    """Count behavioral events by ROW over the scout's tail window.
+
+    Contract (pinned by tests/test_improve_behavioral_scout.py, B2-374):
+      - text is a behavioral_events.jsonl dump; the window is the LAST
+        `window` raw lines. Blank and unparseable lines consume window
+        slots exactly as the pre-B2-374 scout did, so today's live
+        census equals the old math's.
+      - events: window lines whose json.loads succeeds AND that parse to
+        a JSON object. ONE line is ONE row; nothing else becomes an
+        event.
+      - kinds: per counted row, str(row.get("kind") or "event"); the
+        "kind" FIELD only. A detail, error, or any other field never
+        adds to a count even when it quotes a counted kind literal.
+      - samples: the first 5 counted rows as "kind:detail[:80]", kept
+        for continuity with the old row detail.
+    Cause: the old scout counted kinds with this same field rule but
+    emitted the census tokens and the samples into ONE string, so a row
+    whose detail quoted a counted kind literal (a digest row reading
+    "tool_fail=12 collapse=3") printed phantom census tokens for kinds
+    the census never counted, with no test able to tell census from
+    prose inside the emitted line. The scout row detail now separates
+    them on a " samples: " marker so the census section carries exactly
+    the counted kinds (falsifier and receipt:
+    watch/inbox/burn_wave_20260926/B2_374_behavioral_pin_20260926.md;
+    pre-fix red run and probe output beside it). Delta on old math: one
+    non-dict JSON row used to raise inside the block and the outer
+    except silently dropped the WHOLE behavioral row; the census skips
+    that row and keeps the rest (never drop real events over one
+    mangled row, the B2-357 defensive stance).
+    """
+    lines = text.splitlines()[-window:] if window > 0 else []
+    kinds: dict[str, int] = {}
+    samples: list[str] = []
+    events = 0
+    for line in lines:
+        if not line.strip():
+            continue
+        try:
+            ev = json.loads(line)
+        except json.JSONDecodeError:
+            continue
+        if not isinstance(ev, dict):
+            continue
+        events += 1
+        k = str(ev.get("kind") or "event")
+        kinds[k] = kinds.get(k, 0) + 1
+        if len(samples) < 5:
+            samples.append(f"{k}:{str(ev.get('detail') or '')[:80]}")
+    return {"events": events, "kinds": kinds, "samples": samples}
+
+
 def _behavioral_candidates(day: str) -> list[dict[str, Any]]:
     """Mine behavioral-analysis leaves + decisions log + seat crash log so the
     overseeing agent learns from recurring seat errors (steering, collapse,
@@ -560,18 +985,27 @@ def _behavioral_candidates(day: str) -> list[dict[str, Any]]:
                 }
             )
 
-    # 3) Seat crash log (tracebacks — crash-guard caught, but learn from them)
+    # 3) Seat crash log (tracebacks, crash-guard caught, learn from them).
     crash_log = ROOT / "logs" / "seat_crashes.log"
     if crash_log.is_file():
         try:
             crash_text = crash_log.read_text(encoding="utf-8", errors="replace")
         except Exception:
             crash_text = ""
-        # Count non-test crash blocks (ignore INJECTED-* test markers)
-        blocks = crash_text.count("Traceback (most recent call last):")
-        real = crash_text.count("Traceback (most recent call last):") - crash_text.count("INJECTED-")
+        # B2-357: entry-level census (contract on crash_log_census above);
+        # the old headers-minus-INJECTED- string count booked a chained
+        # crash's two headers twice and silently reclassified a real crash
+        # whose message quotes the INJECTED- literal mid-line. B2-372: the
+        # detail names chains= so a wrap-and-reraise class is visible
+        # without opening the log.
+        census = crash_log_census(crash_text)
+        blocks, n_test, real = census["blocks"], census["test"], census["real"]
         if blocks:
-            claim = f"Seat crash log: {real} real crash blocks (guard caught {blocks} total)"
+            claim = (
+                f"Seat crash log: real={real} crash entries "
+                f"(census blocks={blocks} test={n_test} real={real}; "
+                f"guard caught {blocks} total)"
+            )
             rows.append(
                 {
                     "schema": SCHEMA,
@@ -579,7 +1013,11 @@ def _behavioral_candidates(day: str) -> list[dict[str, Any]]:
                     "date": day,
                     "kind": "risk",
                     "claim": claim,
-                    "detail": f"Total tracebacks={blocks}, non-test={real}. Guard holding; review newest traceback for recurrence.",
+                    "detail": (
+                        f"census blocks={blocks} test={n_test} real={real} "
+                        f"entries={census['entries']} chains={census['chains']}. "
+                        "Guard holding; review newest traceback for recurrence."
+                    ),
                     "source": "mag_internal",
                     "source_urls": [str(crash_log)],
                     "local_feasible": "true",
@@ -588,42 +1026,67 @@ def _behavioral_candidates(day: str) -> list[dict[str, Any]]:
                 }
             )
 
-    # 4) Live behavioral events (tool_fail, collapse, degenerate — operator_inbox feed)
+    # 4) Live behavioral events (tool_fail, collapse, degenerate etc. from
+    # the operator_inbox feed). B2-374: row-level census (contract on
+    # behavioral_events_census above); the old emission poured the census
+    # kind tokens and the free-form samples into one string, so a row
+    # whose detail quoted a counted kind literal printed phantom census
+    # tokens for kinds never counted, and one non-dict JSON row silently
+    # dropped the whole row via the outer except.
     ev_path = ROOT / "logs" / "behavioral_events.jsonl"
     if ev_path.is_file():
         try:
-            kinds: dict[str, int] = {}
-            samples: list[str] = []
-            for line in ev_path.read_text(encoding="utf-8", errors="replace").splitlines()[-80:]:
-                if not line.strip():
-                    continue
-                try:
-                    ev = json.loads(line)
-                except json.JSONDecodeError:
-                    continue
-                k = str(ev.get("kind") or "event")
-                kinds[k] = kinds.get(k, 0) + 1
-                if len(samples) < 5:
-                    samples.append(f"{k}:{str(ev.get('detail') or '')[:80]}")
-            if kinds:
-                claim = f"Behavioral events log: {sum(kinds.values())} recent seat errors"
-                rows.append(
-                    {
-                        "schema": SCHEMA,
-                        "id": _candidate_id(claim, str(ev_path)),
-                        "date": day,
-                        "kind": "risk",
-                        "claim": claim,
-                        "detail": "; ".join(f"{k}={v}" for k, v in sorted(kinds.items())) + " · " + "; ".join(samples),
-                        "source": "mag_internal",
-                        "source_urls": [str(ev_path)],
-                        "local_feasible": "true",
-                        "status": "new",
-                        "created": _utc_now().isoformat(),
-                    }
-                )
+            ev_text = ev_path.read_text(encoding="utf-8", errors="replace")
         except Exception:
-            pass
+            ev_text = ""
+        census = behavioral_events_census(ev_text)
+        events = census["events"]
+        if events:
+            kinds = census["kinds"]
+            # FIX 2026-09-26 (B2-420, spec-first relabel). CAUSE: the claim
+            # hardcoded "{events} recent seat errors" while the pinned census
+            # counts EVERY tail row kind; the live tail-80 was 70 pro_fire +
+            # 5 cloud_handoff + 5 improve_cycle (pure lifecycle) yet the row
+            # claimed 80 seat errors, and the promote pipeline read it as a
+            # risk signal. EVIDENCE: the falsifier state in
+            # watch/inbox/burn_wave_20260926/B2_420_census_seat_errors_20260926.md.
+            # FIX: kinds are classified error-vs-lifecycle by marker (error,
+            # fail, crash, exception, case-insensitive, on the kind FIELD the
+            # pinned census counts); the "seat errors" number is now the
+            # error-kind count, the full census naming stays in claim and
+            # detail, and a zero-error tail demotes the row kind from "risk"
+            # to "census" so lifecycle chatter stops flagging risk.
+            error_kinds = {
+                k: v for k, v in kinds.items()
+                if any(m in k.lower() for m in ("error", "fail", "crash", "exception"))
+            }
+            error_events = sum(error_kinds.values())
+            claim = (
+                f"Behavioral events log: {error_events} recent seat errors "
+                f"of {events} behavioral rows (census events={events} "
+                f"error_kind_events={error_events} kinds={len(kinds)})"
+            )
+            rows.append(
+                {
+                    "schema": SCHEMA,
+                    "id": _candidate_id(claim, str(ev_path)),
+                    "date": day,
+                    "kind": "risk" if error_events else "census",
+                    "claim": claim,
+                    "detail": (
+                        f"census events={events} error_kind_events={error_events} "
+                        f"error_kinds={sorted(error_kinds)} kinds={len(kinds)} "
+                        + " ".join(f"{k}={v}" for k, v in sorted(kinds.items()))
+                        + " samples: "
+                        + "; ".join(census["samples"])
+                    ),
+                    "source": "mag_internal",
+                    "source_urls": [str(ev_path)],
+                    "local_feasible": "true",
+                    "status": "new",
+                    "created": _utc_now().isoformat(),
+                }
+            )
 
     # 5) Failure KB recurring signatures (deduped tool/collapse patterns)
     try:
@@ -759,10 +1222,20 @@ def scout(*, dry: bool = False) -> dict[str, Any]:
     max_cand = int(budgets.get("candidates_per_day") or 25)
     max_arxiv = int(budgets.get("arxiv_abstracts") or 15)
 
+    # B2-106 provider-health cadence: the first non-dry scout that finds the
+    # cadence stale measures lane state (~15 one-token pings, deduped).
+    # dry scout never probes. Digest day is page-scrape-free, not probe-free.
+    provider_probe = None
+    if not dry:
+        provider_probe = run_provider_probe(cfg, paths, day=day)
+
     if "digest" in keys and keys == ["digest", "mag_internal"] or keys == ["digest"]:
         # Sunday-style: internal only
         rows = _mag_internal_candidates(day)
-        written = 0 if dry else append_candidates(rows[:max_cand], paths)
+        land_rows = rows[:max_cand]
+        if provider_probe:
+            land_rows.append(provider_probe["row"])
+        written = 0 if dry else append_candidates(land_rows, paths)
         report = _write_daily_report(
             paths,
             day,
@@ -770,8 +1243,8 @@ def scout(*, dry: bool = False) -> dict[str, Any]:
             source_keys=keys,
             fetches=[],
             candidates_added=written,
-            candidates_sample=rows[:8],
-            extra={"note": "Digest day — no outbound scrape"},
+            candidates_sample=land_rows[:8],
+            extra=_provider_probe_extra(provider_probe, note="Digest day — no outbound scrape"),
         )
         return {
             "ok": True,
@@ -779,6 +1252,7 @@ def scout(*, dry: bool = False) -> dict[str, Any]:
             "mode": "digest",
             "source_keys": keys,
             "candidates_added": written,
+            "provider_probe": _provider_probe_extra(provider_probe).get("provider_probe"),
             "report": str(report),
         }
 
@@ -788,6 +1262,8 @@ def scout(*, dry: bool = False) -> dict[str, Any]:
 
     # Always internal snapshot
     all_rows.extend(_mag_internal_candidates(day))
+    if provider_probe:
+        all_rows.append(provider_probe["row"])
 
     if "catchup" in keys:
         # Re-list sources that previously failed
@@ -833,6 +1309,10 @@ def scout(*, dry: bool = False) -> dict[str, Any]:
 
     # Cap
     all_rows = all_rows[:max_cand]
+    # B2-106: the probe row rides past the cap; health evidence is not a
+    # scrape candidate to be budgeted away.
+    if provider_probe and not any(r is provider_probe["row"] for r in all_rows):
+        all_rows.append(provider_probe["row"])
     written = 0 if dry else append_candidates(all_rows, paths)
 
     # Mine arXiv the same way we steal: route novel arXiv findings through the ONE primitive
@@ -869,7 +1349,7 @@ def scout(*, dry: bool = False) -> dict[str, Any]:
         fetches=fetches,
         candidates_added=written,
         candidates_sample=all_rows[:12],
-        extra={"failed_urls": failed},
+        extra=_provider_probe_extra(provider_probe, extra={"failed_urls": failed} if failed else None),
     )
     return {
         "ok": True,
@@ -880,6 +1360,7 @@ def scout(*, dry: bool = False) -> dict[str, Any]:
         "fetches_ok": sum(1 for f in fetches if f.get("ok")),
         "candidates_added": written,
         "failed": failed,
+        "provider_probe": _provider_probe_extra(provider_probe).get("provider_probe"),
         "report": str(report),
         "dry": dry,
     }
@@ -1037,6 +1518,38 @@ def run_eval() -> dict[str, Any]:
             result["multi_smoke_ok"] = False
             result["verdict"] = f"multi_smoke error: {e}"
             result["steps"].append({"id": "multi_smoke", "ok": False, "error": str(e)})
+
+    # P2 standing contamination tripwire (2026-10-07, day-7 mine fold port
+    # wave; steal card watch/inbox/frontier_olm_2026-10-07/steal/
+    # evals-self-improvement via reddit.md find 1): every eval that scores a
+    # lane on seen material also scores the same-shape post-freeze minted
+    # twin set and tracks the DIVERGENCE (seen climbs while minted stays flat
+    # = contamination). B2-106 cadence shape: config block
+    # contamination_tripwire (default enabled, cadence_days 1), state key
+    # last_contamination_check. WARN (delta >= threshold, default 0.15)
+    # lands ONE kind=risk status=new candidate + one [priority] attention
+    # line; a quiet pair lands kind=runtime status=hold (evidence, not a
+    # ticket). A down janitor lane is a recorded known env state, not an
+    # eval failure; an exception inside the organ is.
+    try:
+        from mag.contamination_tripwire import standing_check
+
+        trip = standing_check(cfg, paths)
+        trip_step: dict[str, Any] = {"id": "contamination_tripwire"}
+        if trip is None:
+            trip_step["ok"] = None
+            trip_step["note"] = "skipped (disabled or cadence fresh)"
+        elif trip.get("ok"):
+            trip_step["ok"] = True
+            trip_step["tripped"] = bool((trip.get("pair") or {}).get("warn"))
+            trip_step["row_id"] = (trip.get("row") or {}).get("id")
+        else:
+            trip_step["ok"] = False
+            trip_step["error"] = trip.get("reason") or "unknown"
+        result["steps"].append(trip_step)
+    except Exception as e:  # noqa: BLE001
+        result["ok"] = False
+        result["steps"].append({"id": "contamination_tripwire", "ok": False, "error": str(e)})
 
     # Mark model candidates that are already in ollama inventory as queued
     try:
@@ -1674,6 +2187,19 @@ def improve_once(
         out["phases"]["eval"] = e
         if not e.get("ok"):
             out["ok"] = False
+        # Q-002 (2026-09-28): the deterministic auto-promote gate runs after
+        # eval in the daily loop. Eligibility is a pure predicate
+        # (local_feasible true + kind practice|tesuji + age >= 48h + status
+        # new|hold, fail-closed on unparseable age); apply reuses
+        # promote_apply so the mirror-lens gate and playbook append keep a
+        # single promote writer. Receipt:
+        # watch/inbox/burn_reset_20260927/queue/Q-002.md
+        from tools.auto_promote import run as auto_promote_run
+
+        ap = auto_promote_run(dry=False)
+        out["phases"]["auto_promote"] = ap
+        if not ap.get("ok"):
+            out["ok"] = False
     # Field brief after scout/eval (or after scout-only if we still want a brief)
     if not dry:
         syn_cfg = (load_config().get("synthesis") or {})
@@ -2071,6 +2597,76 @@ def deep_dive(
     return out
 
 
+def _scheduled_task_surface() -> dict[str, Any]:
+    """t33: run the doctor's silent-disablement probe for the seat surface.
+
+    Reuses mag.doctor.check_scheduled_tasks (t20) via import; the schtasks
+    subprocess lives only there. Non-Windows and Ready pass through ok=True,
+    so the WARNING in status_summary fires only on a genuinely not-Ready task.
+    """
+    from mag.doctor import check_scheduled_tasks
+
+    return check_scheduled_tasks()
+
+
+def _scenario_citation_liveness(
+    cards_dir: str = str(ROOT / "configs" / "workflow_gate_scenarios"),
+    registry_path: str | None = None,
+) -> dict[str, Any]:
+    """B2-452 (2026-09-26): scenario-card citation liveness on a recurring
+    surface. The seven gate cards validate their cited_fail_row (ts, digest)
+    against memory/workflows/REGISTRY.jsonl only inside the gate's
+    --scenarios run, which fires only when tools/workflow_gate.py itself
+    changes, so a registry rewrite/prune/renumber can orphan a card with no
+    surface naming it. This check names orphans on every improve --status
+    read. Citation liveness only (each card's cited FAIL row still exists):
+    the full fixture replay stays in the gate. Read-only; parameters
+    injectable so the falsifier can run against sandboxed copies."""
+    import glob as _glob
+    import json as _json
+
+    reg_path = registry_path or str(
+        ROOT / "memory" / "workflows" / "REGISTRY.jsonl")
+    index: dict[tuple[str, str], dict[str, Any]] = {}
+    if os.path.exists(reg_path):
+        with open(reg_path, encoding="utf-8") as f:
+            for line in f:
+                line = line.strip()
+                if not line:
+                    continue
+                try:
+                    row = _json.loads(line)
+                except Exception:
+                    continue
+                if isinstance(row, dict):
+                    index[(row.get("ts"), row.get("digest"))] = row
+    cards = sorted(_glob.glob(str(Path(cards_dir) / "*.card.json")))
+    orphaned: list[str] = []
+    checked = 0
+    for card_path in cards:
+        try:
+            card = _json.loads(Path(card_path).read_text(encoding="utf-8"))
+        except Exception:
+            orphaned.append(f"{Path(card_path).name}: unreadable card")
+            continue
+        checked += 1
+        cited = card.get("cited_fail_row") or {}
+        row = index.get((cited.get("ts"), cited.get("digest")))
+        if row is None:
+            orphaned.append(f"{Path(card_path).name}: cited FAIL row "
+                            f"(ts={cited.get('ts')}, digest={str(cited.get('digest'))[:12]}..) "
+                            "not in REGISTRY")
+        elif row.get("verdict") != "FAIL":
+            orphaned.append(f"{Path(card_path).name}: cited row verdict "
+                            f"{row.get('verdict')}, not FAIL")
+    return {
+        "ok": not orphaned,
+        "cards_checked": checked,
+        "orphaned": orphaned,
+        "registry": reg_path,
+    }
+
+
 def status_summary(limit: int = 15) -> dict[str, Any]:
     cfg = load_config()
     paths = ensure_dirs(cfg)
@@ -2087,6 +2683,15 @@ def status_summary(limit: int = 15) -> dict[str, Any]:
     recent.reverse()
     field_brief = paths["root"] / "field_brief.md"
     deep_latest = paths["root"] / "deep" / "latest.md"
+    sched = _scheduled_task_surface()
+    if not sched.get("ok"):
+        issues = sched.get("issues") or ["scheduled task not Ready"]
+        print("WARNING: " + " | ".join(str(i) for i in issues), file=sys.stderr)
+    try:
+        from mag.failure_kb import verify as fkb_verify
+    except Exception:
+        def fkb_verify():
+            return {"ok": None, "violations": None}
     return {
         "ok": True,
         "total_candidates": len(rows),
@@ -2097,6 +2702,29 @@ def status_summary(limit: int = 15) -> dict[str, Any]:
         "max_auto_pull_gb": cfg.get("max_auto_pull_gb", 0),
         "field_brief": str(field_brief) if field_brief.is_file() else None,
         "deep_latest": str(deep_latest) if deep_latest.is_file() else None,
+        "scheduled_task": sched,
+        # B2-493 (2026-09-26): the provider-probe cadence surfaces here so the
+        # seat can tell armed from silently stale (the t33 silent-disablement
+        # disease in a new costume). due comes from provider_probe_due; no
+        # network call, state bytes only.
+        "provider_probe": {
+            "last": str((state or {}).get(_PROVIDER_PROBE_STATE_KEY) or ""),
+            "cadence_days": _PROVIDER_PROBE_DEFAULT_CADENCE_DAYS,
+            "due": provider_probe_due(state),
+        },
+        # B2-361 (2026-09-26): the failure-knowledge-base index-vs-log recount
+        # rides on every status read (recurring surface per the owning brief),
+        # so a mutated/clobbered signatures.json is named here, not only at
+        # the next gate edit. Read-only; violations detail via
+        # python -m mag.failure_kb verify.
+        "failure_kb": (lambda v: {
+            "ok": v.get("ok"),
+            "violations": v.get("violations"),
+        })(fkb_verify()),
+        # B2-452 (2026-09-26): scenario-card citation liveness on a recurring
+        # surface (see _scenario_citation_liveness); detail via
+        # tools/workflow_gate.py check --scenarios.
+        "workflow_scenarios": _scenario_citation_liveness(),
         "paths": {k: str(v) for k, v in paths.items()},
         "recent": [
             {
@@ -2113,8 +2741,15 @@ def status_summary(limit: int = 15) -> dict[str, Any]:
     }
 
 
-def promote_apply(cid: str, *, force_model: bool = False) -> dict[str, Any]:
-    """Human gate: mark promoted; model seats never auto-write lanes unless force_model + future."""
+def promote_apply(
+    cid: str, *, force_model: bool = False, note: str | None = None
+) -> dict[str, Any]:
+    """Human gate: mark promoted; model seats never auto-write lanes unless force_model + future.
+
+    Q-002 (2026-09-28): optional ``note`` kwarg lets the deterministic
+    auto-promote gate (tools/auto_promote.py) stamp its own provenance instead
+    of recording "Promoted by operator" for a promotion no operator made.
+    """
     cfg = load_config()
     paths = ensure_dirs(cfg)
     rows = {r.get("id"): r for r in read_candidates(paths, limit=10000)}
@@ -2144,7 +2779,7 @@ def promote_apply(cid: str, *, force_model: bool = False) -> dict[str, Any]:
         }
 
     if kind == "practice":
-        update_candidate_status(cid, "promoted", note="Practice accepted")
+        update_candidate_status(cid, "promoted", note=note or "Practice accepted")
         pb = paths["playbook"]
         with pb.open("a", encoding="utf-8") as f:
             f.write(
@@ -2154,7 +2789,7 @@ def promote_apply(cid: str, *, force_model: bool = False) -> dict[str, Any]:
             )
         return {"ok": True, "id": cid, "kind": kind, "action": "playbook_promoted"}
 
-    update_candidate_status(cid, "promoted", note="Promoted by operator")
+    update_candidate_status(cid, "promoted", note=note or "Promoted by operator")
     try:
         from mag.training_events import emit
 

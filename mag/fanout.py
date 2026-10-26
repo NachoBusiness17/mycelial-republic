@@ -63,7 +63,7 @@ def fire(pack, lane):
     prompt = pack["shared_head"] + "\n## CONTEXT\n" + lane["context"] + "\n\n## TASK\n" + lane["task"] + "\n"
     payload = json.dumps({"model": model, "messages": [{"role": "user", "content": prompt}],
                           "max_tokens": max_tokens, "temperature": 0.7}).encode()
-    key = os.environ[pack.get("key_env", DEFAULT_KEY_ENV)]
+    key = os.environ[pack.get("key_env", DEFAULT_KEY_ENV)].strip()  # strip-at-use law: 2026-10-04 CR-header outage (CRLF .env key rode into Bearer, urllib rejected the header, elder lane down 14 cycles)
     req = urllib.request.Request(base, data=payload, method="POST",
                                  headers={"Content-Type": "application/json",
                                           "Authorization": "Bearer " + key})

@@ -14,7 +14,7 @@ import re
 import sys
 import threading
 import time
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 from pathlib import Path
 from typing import Any
 from collections import deque
@@ -22,7 +22,14 @@ if os.name == "nt":  # B1 non-blocking stdin listener (Windows)
     import msvcrt
 
 from config import ROOT
-from mag.context_pack import build_context_pack, format_context_pack_text, infer_pack_mode
+from mag.context_pack import (
+    evolving_tail,
+    split_tool_schemas,
+    build_context_pack,
+    format_context_pack_text,
+    freeze_system_prompt,
+    infer_pack_mode,
+)
 from mag.context_admission import assess as assess_context, safe_write_receipt
 from mag.compass import (
     FRAMEWORK_BLOCK,
@@ -33,7 +40,9 @@ from mag.compass import (
 )
 from mag import remedy  # at-will error toolkit: lookup cards from memory/remedies/
 from mag import rails  # deterministic hard rails: configs/constitutional_rails.json (Maelstrom V2)
+from mag.constants import PACK_STALE_DAYS  # the ONE decay bar (AG6 anchor guard shares it)
 from models.providers import _looks_degenerate, chat_messages
+from mag.write_strip import is_write_tool, read_only_from_env, strip_write_tools
 from tools import TOOL_MAP, _normalize_args, dispatch as tool_dispatch
 
 # --- HTTP backend (FastAPI) -------------------------------------------------
@@ -72,8 +81,8 @@ def _load_mag_yaml() -> dict[str, Any]:
         cfg_path = ROOT / "configs" / "mag.yaml"
         if cfg_path.exists():
             return yaml.safe_load(cfg_path.read_text(encoding="utf-8")) or {}
-    except Exception:
-        pass
+    except Exception as exc:  # 2026-09-28 FW-46 silent-pass batch 2: the silent pass turned a corrupt configs/mag.yaml into silent all-defaults (repack ratio, budgets) with no trace; defaults still apply, the reason is now named on stderr
+        print(f"[agent_cli] configs/mag.yaml unreadable, using defaults: {exc}", file=sys.stderr)
     return {}
 
 
@@ -515,6 +524,132 @@ TOOL_SCHEMAS: list[dict[str, Any]] = [
 ]
 
 
+# --- fan-out write-strip (MICKEY-17 owed chore "strip write tools at
+# --- fan-out", discharged 2026-09-26; compiler lives in mag/write_strip.py) --
+# In read-only mode the seat's tool grant is COMPILED DOWN before the first
+# model call: _schemas() is the one grant every provider call site sees, so
+# the model never receives write-tool definitions (schema-level omission, not
+# runtime veto). _run_tool() carries a backstop refusal keyed on the same
+# receipt. Spawned fan-out children (orchestrator/gpipes) get this by default.
+_ACTIVE_TOOL_SCHEMAS: list[dict[str, Any]] = TOOL_SCHEMAS
+_STRIP_RECEIPT: dict[str, Any] | None = None
+_DENIED_TOOL_NAMES: frozenset[str] = frozenset()
+
+
+def activate_read_only(*, strict: bool = False) -> dict[str, Any]:
+    """Compile TOOL_SCHEMAS down to the read-only grant, before the first call."""
+    global _ACTIVE_TOOL_SCHEMAS, _STRIP_RECEIPT, _DENIED_TOOL_NAMES
+    result = strip_write_tools(TOOL_SCHEMAS, strict=strict)
+    _ACTIVE_TOOL_SCHEMAS = result["tools"]
+    _STRIP_RECEIPT = result["receipt"]
+    _DENIED_TOOL_NAMES = frozenset(result["receipt"]["stripped_names"])
+    return result["receipt"]
+
+
+def restore_full_grant() -> None:
+    """Escape hatch (tests / interactive retry): back to the full schema list."""
+    global _ACTIVE_TOOL_SCHEMAS, _STRIP_RECEIPT, _DENIED_TOOL_NAMES
+    _ACTIVE_TOOL_SCHEMAS = TOOL_SCHEMAS
+    _STRIP_RECEIPT = None
+    _DENIED_TOOL_NAMES = frozenset()
+
+
+def _schemas() -> list[dict[str, Any]]:
+    """The single tool grant every provider call sees (read-only-compiled when active)."""
+    return _ACTIVE_TOOL_SCHEMAS
+
+
+def _read_only_notice() -> str:
+    """One static line-block for the system body while a strip is active.
+
+    Static per session (receipt fixed at activation), so the frozen-prefix
+    bytes stay cache-stable. Tells the seat its grant is read-only so it
+    returns proposed writes as data instead of inventing a write call.
+    """
+    if _STRIP_RECEIPT is None:
+        return ""
+    names = _STRIP_RECEIPT["stripped_names"]
+    shown = ", ".join(names[:12]) + (", ..." if len(names) > 12 else "")
+    return (
+        "\n\n## Read-only seat (fan-out write-strip)\n"
+        "This seat's tool grant is READ-ONLY. These tools are not in your schema "
+        f"and cannot be called: {shown or 'none'}. Never attempt a write; return the "
+        "proposed write as text/data in your final answer so the orchestrator applies it."
+    )
+
+
+# --- ANCHOR freshness guard (AG6, 2026-09-29, audit finding #5) ---------------
+# The anchored plan is injected into EVERY agent session (Layer 2 "never forget
+# the goal"), so a stale anchor is worse than no anchor: it re-teaches finished
+# state (2026-08-03 sovereign-steering status) as if current. Same law as
+# tools/freshness_check.py: the one decay bar is mag.constants.PACK_STALE_DAYS
+# (7). The guard REFUSES to inject an anchor whose "## Status YYYY-MM-DD"
+# stamp is older than the bar (or carries no parseable stamp at all) and says
+# so loudly instead: one ANCHOR-STALE router log line (latched per process)
+# plus an in-band marker the seat itself can read and escalate. Refreshing,
+# re-stamping, or re-qualitying memory/plans/ANCHOR.md stays an operator call —
+# this guard only makes staleness loud.
+_ANCHOR_STALE_DAYS = PACK_STALE_DAYS
+_ANCHOR_STATUS_DATE = re.compile(r"^##\s*Status\s+(\d{4}-\d{2}-\d{2})", re.MULTILINE)
+_anchor_stale_logged = False
+
+
+def _anchor_age_days(text: str) -> int | None:
+    """Days since the anchor's '## Status YYYY-MM-DD' line; None when unstamped.
+
+    Parsed from the FULL file text (pre-truncation) — the Status header format
+    is read from the file itself (memory/plans/ANCHOR.md uses '## Status <date>').
+    """
+    m = _ANCHOR_STATUS_DATE.search(text)
+    if not m:
+        return None
+    try:
+        stamped = datetime.strptime(m.group(1), "%Y-%m-%d").date()
+    except ValueError:
+        return None
+    return (date.today() - stamped).days
+
+
+def _anchor_injection(anchor_path: str) -> str:
+    """Anchor block for _system_prompt under the AG6 freshness guard.
+
+    Fresh (stamped <= 7 days old) → inject as before (max 2500 chars).
+    Stale or unstamped → inject a loud refusal marker, log ANCHOR-STALE once
+    per process to logs/router.jsonl. File re-read per call (an operator
+    refresh mid-session takes effect on the next provider call); only the log
+    is latched.
+    """
+    global _anchor_stale_logged
+    path = Path(anchor_path)
+    try:
+        text = path.read_text(encoding="utf-8") if path.is_file() else ""
+    except Exception:
+        text = ""
+    if not text:
+        return ""
+    age = _anchor_age_days(text)
+    if age is not None and age <= _ANCHOR_STALE_DAYS:
+        return f"\n## Anchored plan (survives repack - re-read before acting)\n{text[:2500]}\n"
+    if age is None:
+        days_label, why = "-1", "no parseable '## Status YYYY-MM-DD' stamp — restamp it with today's date"
+    else:
+        days_label, why = str(age), f"Status stamp is {age} days old (bar: {_ANCHOR_STALE_DAYS} days)"
+    if not _anchor_stale_logged:
+        _anchor_stale_logged = True
+        try:
+            from audit import log_event
+
+            log_event({"event": "ANCHOR-STALE", "days": age, "anchor": str(path)})
+        except Exception:
+            pass
+    return (
+        f"\n## Anchored plan withheld (ANCHOR-STALE {days_label})\n"
+        f"{path} was NOT injected: {why}. Refreshing or re-stamping the anchor "
+        "is an operator call; proceed from state/CURRENT.md + the compass, not "
+        "the stale anchor, and tell the operator the anchor is stale.\n"
+    )
+
+
 def _system_prompt(
     pack_text: str,
     *,
@@ -524,18 +659,11 @@ def _system_prompt(
     preamble: dict[str, Any] | None = None,
 ) -> str:
     repack_note = ""
-    anchor_text = ""
     anchor_path = os.environ.get("MAG_ANCHORED_PLAN") or str(ROOT / "memory" / "plans" / "ANCHOR.md")
     try:
-        if Path(anchor_path).is_file():
-            anchor_text = Path(anchor_path).read_text(encoding="utf-8")[:2500]
+        anchor_block = _anchor_injection(anchor_path)
     except Exception:
-        pass
-    anchor_block = (
-        f"\n## Anchored plan (survives repack - re-read before acting)\n{anchor_text}\n"
-        if anchor_text
-        else ""
-    )
+        anchor_block = ""
     framework_block = FRAMEWORK_BLOCK
     law_block = "\n".join(
         [
@@ -729,6 +857,18 @@ def _run_tool_http(name: str, args: dict[str, Any]) -> dict[str, Any]:
 def _run_tool(name: str, args: dict[str, Any]) -> dict[str, Any]:
     if name not in TOOL_MAP:
         return {"ok": False, "error": f"unknown tool: {name}", "tools": list(TOOL_MAP)}
+    # Write-strip backstop: in read-only mode the schema was already omitted,
+    # so a denied call here means the model invented a write tool it never saw.
+    # Refuse, and hand the write back to the orchestrator as data
+    # (write-delegation row 1: lanes return proposed writes, never write directly).
+    if name in _DENIED_TOOL_NAMES:
+        return {
+            "ok": False,
+            "error": (
+                f"read-only seat (fan-out write-strip): tool '{name}' is not in this "
+                "seat's grant; return the proposed write to the orchestrator instead."
+            ),
+        }
     normalized = _normalize_args(name, args)
     if normalized is not None:
         args = normalized
@@ -869,10 +1009,25 @@ def repack_messages(
     traces: list[str],
     provider: str,
     mode: str | None = None,
+    session_id: str | None = None,
+    instructions: str | list[str] | None = None,
 ) -> list[dict[str, Any]]:
     """Rebuild to system pack + residual (pack-first analog).
 
     Drops bloated tool chains. Keeps goal + tool ok flags + short result crumbs.
+
+    A2 context freeze: the system prompt body + TOOL_SCHEMAS are frozen as a
+    byte-identical per-session prefix (freeze_system_prompt); live values —
+    the fresh context pack, the residual, the goal — ride in a small evolving
+    tail appended AFTER that prefix, so consecutive repacks never mutate the
+    prefix bytes the provider prompt cache keys on.
+
+    New instructions (openai-week fold row) ride as TRAILING developer
+    messages, appended at the END of the payload — never spliced into the
+    frozen prefix, where a mid-insert would re-price everything after it.
+    Sources: developer-role messages already in the input history, plus the
+    optional ``instructions`` argument (one string or a list). Byte-stability
+    of the prefix holds regardless of what instructions arrive.
     """
     pack = build_context_pack(
         mode=mode or infer_pack_mode(user_text),
@@ -895,10 +1050,51 @@ def repack_messages(
         f"## Result crumbs (truncated)\n{crumbs or '(no tool bodies kept)'}\n\n"
         "Continue from residual. Call tools only for gaps. Final answer when done."
     )
+    # Frozen prefix: stable _system_prompt body (live pack text deliberately
+    # omitted) + TOOL_SCHEMAS, captured once per session and reused verbatim.
+    # Schema-placement law: only SESSION-STABLE schemas enter the frozen block;
+    # registered-dynamic schemas split off here and render in the tail as
+    # plain-text contracts. With no dynamic registrations (today's default)
+    # this is byte-identical to freezing the whole grant.
+    body = _system_prompt("", repacked=False)
+    marker = "## Context pack (authoritative"
+    cut = body.rfind(marker)
+    stable_body = body[:cut].rstrip() if cut != -1 else body.rstrip()
+    # Fan-out write-strip: the notice is static per session, so the frozen
+    # prefix stays byte-stable (prompt-cache law preserved).
+    stable_body += _read_only_notice()
+    stable_schemas, dynamic_schemas = split_tool_schemas(_schemas())
+    frozen = freeze_system_prompt(
+        stable_body + "\n\n## Context pack (live — evolving tail below; prefix above is frozen)\n",
+        tool_schemas=stable_schemas,
+        session_id=session_id or "agent-cli-default",
+    )
+    tail = evolving_tail(
+        goal=user_text,
+        pack_text=pack_text[:3500],
+        residual=residual,
+        repacked=True,
+        dynamic_tool_schemas=dynamic_schemas,
+    )
+    # Trailing developer messages: new instructions from the input history and
+    # the explicit argument, carried verbatim AFTER the frozen-prefix payload.
+    dev_msgs: list[dict[str, Any]] = []
+    for m in messages:
+        if m.get("role") == "developer":
+            body = str(m.get("content") or "").strip()
+            if body:
+                dev_msgs.append({"role": "developer", "content": body})
+    ins_list: list[str] = (
+        [instructions] if isinstance(instructions, str) else list(instructions or [])
+    )
+    for ins in ins_list:
+        body = str(ins or "").strip()
+        if body:
+            dev_msgs.append({"role": "developer", "content": body})
     return [
-        {"role": "system", "content": _system_prompt(pack_text, repacked=True)},
+        {"role": "system", "content": frozen["prefix_text"] + tail},
         {"role": "user", "content": residual},
-    ]
+    ] + dev_msgs
 
 
 def _clip_history(messages: list[dict[str, Any]], *, provider: str = "deepseek") -> list[dict[str, Any]]:
@@ -1152,6 +1348,7 @@ def run_turn(
                 traces=traces,
                 provider=provider,
                 mode=pack_mode,
+                session_id=session_id,
             )
             repacks += 1
             est2 = _estimate_tokens(messages)
@@ -1231,6 +1428,7 @@ def run_turn(
                     traces=traces,
                     provider=provider,
                     mode=pack_mode,
+                    session_id=session_id,
                 )
                 repacks += 1
                 traces.append(f"repack_on_error#{repacks}: {err[:80]}")
@@ -1276,6 +1474,7 @@ def run_turn(
                         traces=traces,
                         provider=provider,
                         mode=pack_mode,
+                        session_id=session_id,
                     )
                     repacks += 1
                     traces.append(f"timeout_recovery_repack#{repacks}")
@@ -1295,7 +1494,7 @@ def run_turn(
                 res = chat_messages(
                     provider,
                     messages,
-                    tools=TOOL_SCHEMAS,
+                    tools=_schemas(),
                     model=model,
                     tier=tier,
                     max_tokens=4096,
@@ -1420,6 +1619,21 @@ def run_turn(
                     traces.append("escape: remaining tool calls skipped")
                     print(dim("  → escape checkpoint hit - skipping remaining tool calls"), flush=True)
                     break
+                # preflight-flat (2026-09-22): models sometimes nest the real
+                # write_file payload one level deep ({"file": {path, content}},
+                # {"path": {path, content}}, {"write_file": {...}}). Unwrap once
+                # so preflight AND exec see flat args — 76/100 recent
+                # failure-tail rows were this shape bouncing at preflight.
+                if name == "write_file" and isinstance(args, dict):
+                    if isinstance(args.get("path"), dict) and (args["path"].get("path") or args["path"].get("content") is not None):
+                        inner = dict(args["path"])
+                        args = {k: v for k, v in args.items() if k != "path"}
+                        args.update(inner)
+                    elif not args.get("path"):
+                        for _v in list(args.values()):
+                            if isinstance(_v, dict) and (_v.get("path") or _v.get("content") is not None):
+                                args = dict(_v)
+                                break
                 pre_ok, pre_reason = _preflight_tool(name, args, session_id=session_id)
                 if _steer_interrupt.is_set():
                     # escape landed between preflight and exec - bail now
@@ -1676,6 +1890,7 @@ def run_turn(
                 user_text=user_text,
                 traces=traces,
                 provider=provider,
+                session_id=session_id,
             )
             traces.append("empty_repack")
             messages.append(
@@ -2000,7 +2215,7 @@ def _chat_with_heartbeat(
         return chat_messages(
             provider,
             messages,
-            tools=TOOL_SCHEMAS,
+            tools=_schemas(),
             model=model,
             tier=tier,
             stream=on_stream is not None,
@@ -2357,19 +2572,52 @@ def _maybe_status(step: int, last_tool: str) -> None:
 
 
 def _log_seat_crash(stage: str, exc: BaseException) -> None:
-    """Worklist 0: append seat crash traceback; the seat survives and keeps going."""
+    """Worklist 0: append seat crash traceback; the seat survives and keeps going.
+
+    Log path contract (B2-86, 2026-09-26): MAG_SEAT_CRASH_LOG overrides the
+    sink, else the production ROOT/logs/seat_crashes.log. Cause: the path was
+    a bare constant, so tests/test_seat_crash_guard.py had no way to inject
+    the sink and every run appended INJECTED-* traceback blocks to the
+    production log (372 of 424 "guard caught N total" blocks on bytes at fix
+    time, 52 real; receipt
+    watch/inbox/burn_wave_20260926/B2_86_writer_isolation_20260926.md).
+    Same shape as the MAG_GAPS_LOG seam (B2-79); no env set = same path.
+    """
     _mail(phase="crashed", stage=stage, error=str(exc)[:200])
     try:
         import traceback
-        log = ROOT / "logs" / "seat_crashes.log"
+        env_log = os.environ.get("MAG_SEAT_CRASH_LOG")
+        log = Path(env_log) if env_log else ROOT / "logs" / "seat_crashes.log"
         log.parent.mkdir(parents=True, exist_ok=True)
         with log.open("a", encoding="utf-8") as fh:
             fh.write(f"\n[{datetime.now(timezone.utc).isoformat()}] stage={stage}\n")
             fh.write("".join(traceback.format_exception(type(exc), exc, exc.__traceback__)))
         print(dim(f"  [seat-crash-guard] {stage}: {type(exc).__name__}: {str(exc)[:120]} "
-                  f"(logged logs/seat_crashes.log)"), flush=True)
-    except Exception:
-        pass
+                  f"(logged {log.name})"), flush=True)
+    except Exception as log_err:
+        # FIX 2026-09-26 (B2-408). CAUSE: the bare `except Exception: pass`
+        # swallowed sink write failures (unwritable MAG_SEAT_CRASH_LOG target,
+        # disk full, permissions), so a crash that was NOT logged left no
+        # surface naming the loss -- the B2-358 env tripwire only says the
+        # variable is SET, never that its target failed, and the guard console
+        # line above names the log only on success.
+        # EVIDENCE: pre-fix, pointing MAG_SEAT_CRASH_LOG at an unwritable path
+        # and crashing the seat printed nothing anywhere (probe in
+        # watch/inbox/burn_wave_20260926/B2_408_crash_write_surface_20260926.md).
+        # FIX: the failure is recorded twice -- a loud console line naming the
+        # sink and error, and the importable CRASH_LOG_FAILURES counter below
+        # (census/doctor surfaces read it instead of re-deriving).
+        CRASH_LOG_FAILURES["count"] += 1
+        CRASH_LOG_FAILURES["last_error"] = repr(log_err)[:200]
+        CRASH_LOG_FAILURES["last_sink"] = str(log)
+        CRASH_LOG_FAILURES["last_stage"] = stage
+        print(f"  [seat-crash-guard] CRASH LOG WRITE FAILED: stage={stage} "
+              f"sink={log} error={log_err!r} -- this crash is NOT logged; "
+              f"failures so far: {CRASH_LOG_FAILURES['count']}", flush=True)
+
+
+CRASH_LOG_FAILURES = {"count": 0, "last_error": "", "last_sink": "",
+                      "last_stage": ""}
 
 
 def run_agent(
@@ -2378,12 +2626,32 @@ def run_agent(
     model: str | None = None,
     one_shot: str | None = None,
     tier: str = "T1",
+    read_only: bool | None = None,
 ) -> int:
     _enable_windows_vt()
     # optional NO_COLOR
     global _USE_COLOR
     if os.environ.get("NO_COLOR") or os.environ.get("MAG_AGENT_NO_COLOR"):
         _USE_COLOR = False
+
+    # Fan-out write-strip (MICKEY-17 owed chore): spawned one-shot seats come up
+    # read-only unless the caller explicitly opts out (read_only=False). Env
+    # MAG_READ_ONLY / MAG_READ_ONLY_STRICT resolve when the flag is absent.
+    if read_only is None:
+        read_only, strict_ro = read_only_from_env()
+    else:
+        _, strict_ro = read_only_from_env()
+    if read_only:
+        receipt = activate_read_only(strict=strict_ro)
+        stripped_s = ", ".join(receipt["stripped_names"]) or "none"
+        print(
+            dim(
+                f"  read-only seat: {len(receipt['stripped'])} write tool(s) stripped "
+                f"from schema ({stripped_s})"
+            ),
+            file=sys.stderr,
+            flush=True,
+        )
 
     mode = None
     if one_shot:
@@ -2429,6 +2697,7 @@ def run_agent(
     if model is None and one_shot and provider == "deepseek" and _pre.get("model_hint"):
         model = _pre["model_hint"]
     system = _system_prompt(pack_text, goal=one_shot or "", preamble=_pre)
+    system += _read_only_notice()
     messages: list[dict[str, Any]] = [{"role": "system", "content": system}]
     last_answer = ""
     pending_attach: list[str] = []
@@ -2824,6 +3093,7 @@ def api_agent_turn(
                 user_text=goal,
                 traces=traces_pre,
                 provider=provider,
+                session_id=session_id,
             )
             tip = f"desk-auto-repack ({len(messages)} msgs after trim)"
         elif not messages or messages[0].get("role") != "system":
@@ -2923,12 +3193,18 @@ def main_argv(argv: list[str] | None = None) -> int:
     )
     p.add_argument("--model", default="", help="Override model id")
     p.add_argument("--tier", choices=("T0", "T1", "T2", "T3"), default="T1")
+    p.add_argument(
+        "--read-only",
+        action="store_true",
+        help="Strip write tools from the schema grant (fan-out write-strip).",
+    )
     args = p.parse_args(argv)
     return run_agent(
         provider=(args.provider or "ollama").strip(),
         model=(args.model or "").strip() or None,
         one_shot=(args.query or "").strip() or None,
         tier=args.tier,
+        read_only=True if args.read_only else None,
     )
 
 

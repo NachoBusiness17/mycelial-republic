@@ -22,6 +22,9 @@ THE SALON (deterministic coordinator + the seats as the witness seams):
                      reports that, never fabricates an answer.
   salon_project() -> the test the operator asked for: salon OUR OWN project into a new version.
 
+  HUANG GATE (Q-011, 2026-09-28): roundtable() is an ESCALATION and requires a stated `why` plus a
+  single-seat baseline ({'surface','answer'}) before any dispatch; refusals name the gate.
+
 HONEST GATE (grounded): the live salon needs each witness REACHABLE. ChatGPT + SuperGrok go through
 the CDP container browser (:9222) + login; V4-Pro goes through the DeepSeek API/drain (the local
 drain + key reconcile). If a witness is unreachable, the salon reports it and proceeds with the
@@ -52,6 +55,7 @@ except Exception:
     pass
 
 SCHEMA = "frontier_salon.v1"
+GATE = "huang.v1"
 OUT = ROOT / "memory" / "runs" / "frontier_salon"
 
 # The salon's witnesses: (label, seat_steer surface) — the three frontier seats in tandem.
@@ -173,10 +177,14 @@ def _participant(label: str) -> dict[str, str]:
     return {"label": key, "surface": key, "agent": key, "version": "unknown"}
 
 
-def roundtable(question: str, *, participants: list[str] | None = None, rounds: int = 2,
+def roundtable(question: str, *, why: str = "", baseline: dict[str, Any] | None = None,
+               participants: list[str] | None = None, rounds: int = 2,
                max_wait_s: int = 90, transcript_limit: int = 8000,
                record: bool = True) -> dict[str, Any]:
     """Let every selected seat read the attributed prior transcript before contributing.
+
+    HUANG GATE (Q-011, 2026-09-28): an ESCALATION to many scarce seats; the stated `why` plus a
+    single-seat baseline are required before dispatch, else a shaped refusal names the gate.
 
     Coordination is deterministic: there is no hidden synthesizer and no automatic doctrine
     promotion. Unique deltas remain attributed candidates for the operator to judge.
@@ -193,6 +201,18 @@ def roundtable(question: str, *, participants: list[str] | None = None, rounds: 
     if not labels:
         return {"ok": False, "schema": SCHEMA, "mode": "roundtable",
                 "error": "at least one participant required"}
+    # HUANG GATE (Q-011, receipt watch/inbox/burn_reset_20260927/queue/Q-011.md): escalation to
+    # many scarce seats requires a stated why plus a single-seat baseline, enforced BEFORE dispatch.
+    why_txt = (why or "").strip()
+    base = baseline if isinstance(baseline, dict) else {}
+    base_surface = str(base.get("surface") or "").strip()
+    base_answer = str(base.get("answer") or "").strip()
+    if not why_txt or not (base_surface and base_answer):
+        missing = "why" if not why_txt else "single-seat baseline"
+        return {"ok": False, "schema": SCHEMA, "mode": "roundtable", "gate": GATE,
+                "error": f"huang gate: roundtable escalation requires the {missing} "
+                         "(baseline={'surface': seat asked first, 'answer': what it said}; a lone "
+                         "seat needs no roundtable: use seat_steer.send)"}
     rounds = max(1, min(3, int(rounds)))
     transcript_limit = max(1000, min(24000, int(transcript_limit)))
     roundtable_id = uuid.uuid4().hex[:12]
@@ -278,6 +298,8 @@ def roundtable(question: str, *, participants: list[str] | None = None, rounds: 
         "roundtable_id": roundtable_id,
         "ts": _now(),
         "question": q,
+        "why": why_txt, "baseline": {"surface": base_surface, "answer": base_answer},
+        "gate": GATE,
         "participants": labels,
         "rounds": rounds,
         "n_contributions": len(contributions),
@@ -358,8 +380,9 @@ def status() -> dict[str, Any]:
     return {"ok": True, "schema": SCHEMA,
             "contract": "salon(question)->all three frontier seats witness + combine into ONE new "
                         "version + consensus invariant (honest per-witness); salon_project()->salon "
-                        "our own system as the test subject; roundtable(question)->each seat reads "
-                        "the attributed prior transcript before adding a provenance-tagged delta",
+                        "our own system as the test subject; roundtable(question, why, baseline)->"
+                        "transcript roundtable gated by huang.v1 (why + single-seat baseline "
+                        "required before the escalation dispatches)",
             "cost": "deterministic $0 coordinator; the witnesses are the scarce frontier seats "
                     "(frontier_council allowance-tracked)",
             "witnesses": [l for l, _ in WITNESSES],
@@ -369,21 +392,8 @@ def status() -> dict[str, Any]:
 
 
 if __name__ == "__main__":
-    import argparse
-    ap = argparse.ArgumentParser(prog="frontier-salon")
-    ap.add_argument("cmd", nargs="?", default="project",
-                    choices=["status", "project", "salon", "roundtable"])
-    ap.add_argument("question", nargs="?", default="")
-    ap.add_argument("--rounds", type=int, default=2)
-    ap.add_argument("--participants", default="")
-    a = ap.parse_args()
-    if a.cmd == "roundtable":
-        selected = [p.strip() for p in a.participants.split(",") if p.strip()] or None
-        print(json.dumps(roundtable(a.question or "Roundtable this.", participants=selected,
-                                    rounds=a.rounds), indent=2, default=str))
-    elif a.cmd == "salon":
-        print(json.dumps(salon(a.question or "Salon this."), indent=2, default=str))
-    elif a.cmd == "status":
-        print(json.dumps(status(), indent=2, default=str))
-    else:
-        print(json.dumps(salon_project(), indent=2, default=str))
+    # CLI body lives in mag/frontier_salon_cli.py (library/CLI split, Q-011: the gate additions
+    # pushed this file over the 400-line ratchet cap; extraction beats registering new debt).
+    from mag.frontier_salon_cli import main
+
+    raise SystemExit(main())

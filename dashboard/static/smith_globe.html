@@ -1,0 +1,317 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><title>SMITH GLOBE — the map of ourselves</title>
+<!--
+  SMITH GLOBE (2026-10-18) - the estate on the 3D Smith chart.
+
+  PROVENANCE: the 3D Smith chart is the spherical extension of the 1939 planar
+  chart, formalized around 2011 (A. Muller, P. Moldoveanu, V. Asavei et al.,
+  "The 3D Smith Chart and Its Practical Applications", Microwave Journal;
+  3dsmithchart.com). The unit sphere carries the same constant-r / constant-x
+  families, stereographically projected from the SOUTH pole, so the map holds
+  ALL reflection coefficients: Gamma = 0 lands on the north pole, Gamma =
+  infinity lands on the south pole, and negative resistance (|Gamma| > 1)
+  gets a whole hemisphere instead of living off-map. This page is OUR OWN
+  canvas implementation of that geography - no library, no CDN (zero fetch
+  law), same pencil grammar as smith_chart.html.
+
+  THE ESTATE READ (the map of ourselves - every row is a law we already run):
+    NORTH POLE      Gamma = 0, perfect match. The routing law's goal state.
+    NORTH HEMISPHERE  passive, |Gamma| < 1: healthy lanes. Intensity = match.
+    EQUATOR         |Gamma| = 1, pure reactance: all sensing, no work done.
+    SOUTH HEMISPHERE  negative resistance, |Gamma| > 1: ACTIVE elements.
+    SOUTH POLE      Gamma = infinity, total mismatch.
+    EAST / WEST     inductive / capacitive.
+  Estate weather on the globe:
+    FROZEN files -> the north pole (the frozen leaves: checkpoints, the
+                    verkle root - standing-wave nodes, they do not move)
+    HOT files    -> the equator (churn: reactive, re-minted every frame)
+    TURN-FAIL seats -> the SOUTH hemisphere: a retry loop is a negative-
+                    resistance element, an oscillator. The RF word for a
+                    turn-fail is oscillation. They are drawn where the physics
+                    puts them.
+    engines      -> north, by intensity (routed = matched)
+    RACE         -> the 2D chart's matching walk, drawn as a geodesic:
+                    navigation toward the north pole, as in the RF literature.
+  Data: same-origin pulls with embedded fallbacks - index_data/rollup.json
+  (file temperature bands) and steer_field/FIELD.json (fleet lights). The sub
+  line names every datum's age.
+-->
+<style>
+body{margin:0;background:#07080c;color:#cfd6e4;font:13px/1.5 Consolas,monospace}
+#wrap{max-width:2200px;margin:0 auto;padding:0 12px;box-sizing:border-box}
+h1{font-size:14px;letter-spacing:2px;color:#9fb0cc;margin:12px 0 4px}
+.sub{color:#5c6a82;font-size:11px;margin-bottom:8px}
+.law{border:1px solid #1c2230;background:#0b0d13;padding:8px 12px;margin-bottom:10px;font-size:12px;color:#aab6cc}
+.law b{color:#e8d9a0;font-weight:normal}
+.law .res{color:#5c6a82;font-size:11px;line-height:1.7}
+#stage{position:relative;width:100%}
+canvas{display:block;cursor:grab;width:100%;height:auto}
+canvas:active{cursor:grabbing}
+#hud{font-size:11px;color:#8a97ad;margin:8px 0 8px}
+#hud .warn{color:#c98f5a}
+#racerow{margin:0 0 24px;font-size:12px;color:#8a97ad}
+#race{background:#0b0d13;color:#e8d9a0;border:1px solid #1c2230;font:12px Consolas,monospace;padding:4px 12px;cursor:pointer;margin-right:8px}
+#race:hover{border-color:#3d6b8f}
+#raceout{color:#aab6cc}
+</style></head><body><div id="wrap">
+<h1>SMITH GLOBE — THE MAP OF OURSELVES</h1>
+<div class="sub" id="sub">3D Smith chart (Muller, Moldoveanu, Asavei et al. 2011; Microwave Journal; 3dsmithchart.com) · our canvas, zero fetch · drag to steer, wheel to zoom · loading estate weather…</div>
+<div class="law">
+<b>THE SPHERE COMPLETES THE FOLD.</b> The 1939 chart folded the infinite
+half-plane into one disk — but infinity sat outside the fold and negative
+resistance lived off-map. The 3D chart folds the WHOLE Gamma plane onto the
+Riemann sphere, stereographic from the south pole: <b>north pole = perfect
+match (&Gamma;&nbsp;=&nbsp;0)</b>, <b>equator = |&Gamma;|&nbsp;=&nbsp;1 (pure
+reactance)</b>, <b>south = negative resistance</b>, <b>south pole =
+&Gamma;&nbsp;=&nbsp;&infin;</b>, east inductive, west capacitive. Nothing is
+off the map, including the parts of us that oscillate.
+<div class="res">
+FROZEN files &rarr; the north pole — the frozen leaves (checkpoints, the verkle root; standing-wave nodes, they do not move) &nbsp;·&nbsp;
+HOT files &rarr; the equator — churn, re-minted every frame &nbsp;·&nbsp;
+TURN-FAIL seats &rarr; the south hemisphere — a retry loop IS a negative-resistance element: an oscillator &nbsp;·&nbsp;
+engines &rarr; north by intensity: routed = matched &nbsp;·&nbsp;
+RACE &rarr; matching as navigation: the geodesic walk to the north pole
+</div>
+</div>
+<div id="stage"><canvas id="c"></canvas></div>
+<div id="hud">drag: steer the globe (yaw/pitch) · wheel: zoom · <span class="warn">the south is not evil: it is where elements DO work on the world (amplify, oscillate). matched is not the only honest state — unbounded sinks are the actual south pole.</span></div>
+<div id="racerow"><button id="race">RACE to the north pole</button><span id="raceout">the geodesic falsifier: a random load, walked to matched, drawn on the sphere.</span></div>
+</div>
+<script>
+'use strict';
+// ---------- logical space + full-width fit ----------
+const CW = 960, CH = 940;
+const cv = document.getElementById('c'), ctx = cv.getContext('2d');
+const dpr = window.devicePixelRatio || 1;
+let viewScale = 1;
+function fit(){
+  const cssW = Math.max(320, Math.min(document.getElementById('wrap').clientWidth, 2200));
+  const s = cssW / CW;
+  cv.width = Math.round(cssW * dpr);
+  cv.height = Math.round(CH * s * dpr);
+  cv.style.height = (CH * s) + 'px';
+  viewScale = s * dpr;
+}
+window.addEventListener('resize', fit);
+fit();
+const CX = 480, CY = 470;
+
+// ---------- camera ----------
+let yaw = 0.6, pitch = 0.5, zoom = 1;
+const SCALE = 330;
+function proj(p){
+  const cy = Math.cos(yaw), sy = Math.sin(yaw), cp = Math.cos(pitch), sp = Math.sin(pitch);
+  const x1 = p.x * cy - p.y * sy;
+  const y1 = p.x * sy + p.y * cy;
+  const y2 = y1 * cp - p.z * sp;            // depth (viewer at -y)
+  const z2 = y1 * sp + p.z * cp;            // up on screen
+  return { X: CX + SCALE * zoom * x1, Y: CY - SCALE * zoom * z2, depth: y2, front: y2 < 0 };
+}
+
+// ---------- stereographic from the south pole: Gamma plane -> sphere ----------
+function sph(u, v){
+  const p = u * u + v * v;
+  return { x: 2 * u / (1 + p), y: 2 * v / (1 + p), z: (1 - p) / (1 + p) };
+}
+
+// ---------- the printed families (Gamma-plane curves, preprojected) ----------
+const POLOS = [];
+function pushPoly(pts, ink, w){
+  POLOS.push({ pts: pts.map(q => sph(q[0], q[1])), ink: ink, w: w });
+}
+(function printFamilies(){
+  const R_FAM = [0.2, 0.5, 1, 2, 5], X_FAM = [0.2, 0.5, 1, 2, 5, -0.2, -0.5, -1, -2, -5];
+  for (const r of R_FAM){                                  // constant-r circles
+    const c = r / (1 + r), rad = 1 / (1 + r), pts = [];
+    for (let i = 0; i <= 90; i++){ const a = 2 * Math.PI * i / 90;
+      pts.push([c + rad * Math.cos(a), rad * Math.sin(a)]); }
+    pushPoly(pts, '#4a7a5a', 1.1);
+  }
+  for (const x of X_FAM){                                  // constant-x arcs (rr sweep)
+    const pts = [];
+    for (let i = 0; i <= 120; i++){ const rr = Math.exp(-6 + 12 * i / 120);
+      const g = zOfG(rr, x); pts.push([g.u, g.v]); }
+    pushPoly(pts, '#a05252', 1.1);
+  }
+  { const pts = [];                                        // equator |G| = 1
+    for (let i = 0; i <= 120; i++){ const a = 2 * Math.PI * i / 120;
+      pts.push([Math.cos(a), Math.sin(a)]); }
+    pushPoly(pts, '#8a6d3b', 1.8);
+  }
+  { const pts = [];                                        // pure-resistance meridian
+    for (let i = 0; i <= 160; i++){ const t = Math.exp(-7 + 14 * i / 160) * (i < 80 ? -1 : 1);
+      const g = zOfG(Math.abs(t), 0); pts.push([Math.sign(t) * g.u, 0]); }
+    pushPoly(pts, '#3a352c', 1.4);
+  }
+  function zOfG(r, x){ const d = (r + 1) * (r + 1) + x * x;
+    return { u: (r * r + x * x - 1) / d, v: 2 * x / d }; }
+})();
+
+// ---------- estate weather (same-origin, embedded fallbacks) ----------
+const MARKERS = [];                                        // {u,v,label,color,r}
+function addMarker(u, v, label, color, r){
+  MARKERS.push({ u: u, v: v, label: label, color: color || '#e8d9a0', r: r || 4 });
+}
+const FALLBACK_TEMPS = { HOT: 49090, WARM: 31816, COLD: 631627, FROZEN: 592109 };
+function tempMarker(name, count, gamma, lonDeg){
+  const a = lonDeg * Math.PI / 180;
+  addMarker(gamma * Math.cos(a), gamma * Math.sin(a),
+    name + ' ' + count.toLocaleString('en-US'), '#cfd6e4', 3.5 + Math.min(5, Math.log10(count + 1)));
+}
+function wearTemps(t){
+  tempMarker('HOT', t.HOT, 0.97, 45);        // equator churn
+  tempMarker('WARM', t.WARM, 0.72, 135);
+  tempMarker('COLD', t.COLD, 0.42, 225);
+  tempMarker('FROZEN', t.FROZEN, 0.12, 315); // near the pole: the leaves
+}
+wearTemps(FALLBACK_TEMPS);
+const FALLBACK_LIGHTS = [                                  // sept 2026 snapshot
+  { lane: 'glm-flash-free', label: 'A.1 · TURN-FAIL sp_60400550', intensity: 0.1 },
+  { lane: 'glm-flash-free', label: 'A.2', intensity: 0.43 },
+  { lane: 'openclaw', label: 'E.1', intensity: 0.43 },
+  { lane: 'zai-opencode', label: 'Z.1', intensity: 0.51 },
+  { lane: 'zai-opencode', label: 'Z.2', intensity: 0.59 },
+  { lane: 'zai-opencode', label: 'Z.3', intensity: 0.51 },
+  { lane: 'zai-opencode', label: 'Z.4', intensity: 0.43 }];
+function laneLon(lane){ let h = 0; for (const ch of lane) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
+  return (h % 360) * Math.PI / 180; }
+function wearLights(lights){
+  for (const L of lights){
+    const fail = L.label && L.label.indexOf('TURN-FAIL') >= 0;
+    const g = fail ? 1.15 : 1 - 0.9 * (L.intensity == null ? 0.4 : L.intensity);
+    const lon = laneLon(L.lane || 'lane');
+    addMarker(g * Math.cos(lon), g * Math.sin(lon),
+      (fail ? 'OSC ' : '') + (L.label || L.lane), fail ? '#c98f5a' : '#6fd8ff',
+      fail ? 5 : 3.5);
+  }
+}
+wearLights(FALLBACK_LIGHTS);
+let dataNote = 'embedded snapshot';
+fetch('index_data/rollup.json').then(r => r.ok ? r.json() : null).then(roll => {
+  const t = roll && roll.local_sovereign_agent && roll.local_sovereign_agent.temps;
+  if (t){ for (const m of MARKERS.slice()) if (/^(HOT|WARM|COLD|FROZEN) /.test(m.label)) MARKERS.splice(MARKERS.indexOf(m), 1);
+    wearTemps(t); dataNote = 'rollup ' + (roll.generated || 'live'); refresh(); }
+}).catch(() => {});
+fetch('steer_field/FIELD.json').then(r => r.ok ? r.json() : null).then(f => {
+  if (f && f.lights && f.lights.length){
+    for (const m of MARKERS.slice()) if (/^(OSC )?[A-Z]\.\d|^(OSC )?E\.\d|^(OSC )?Z\.\d|^OPERATOR/.test(m.label)) MARKERS.splice(MARKERS.indexOf(m), 1);
+    wearLights(f.lights); dataNote = 'field ' + f.ts + ' + ' + dataNote; refresh();
+  }
+  document.getElementById('sub').textContent =
+    '3D Smith chart (Muller, Moldoveanu, Asavei et al. 2011; Microwave Journal) · our canvas, zero fetch · weather: ' +
+    dataNote + ' · drag to steer, wheel to zoom';
+}).catch(() => {});
+
+// ---------- draw ----------
+const PAPER = '#efe6d0', INK = '#3a352c', LEAD = 'rgba(74,68,58,0.85)';
+function draw(){
+  ctx.setTransform(viewScale, 0, 0, viewScale, 0, 0);
+  ctx.clearRect(0, 0, CW, CH);
+  ctx.fillStyle = '#07080c'; ctx.fillRect(0, 0, CW, CH);
+  const R = SCALE * zoom;
+  ctx.beginPath(); ctx.arc(CX, CY, R + 6, 0, 2 * Math.PI);
+  ctx.fillStyle = PAPER; ctx.fill();
+  ctx.strokeStyle = INK; ctx.lineWidth = 1.5; ctx.stroke();
+  // wireframe: back pass dim, front pass full
+  for (const pass of [0, 1]){
+    ctx.lineWidth = 1; 
+    for (const poly of POLOS){
+      let acc = [], anyFront = false, sumD = 0;
+      const P = poly.pts.map(proj);
+      for (const q of P){ sumD += q.depth; if (q.front) anyFront = true; }
+      const front = sumD / P.length < 0;
+      if ((pass === 1) !== front) continue;
+      ctx.strokeStyle = poly.ink; ctx.globalAlpha = front ? 0.7 : 0.13; ctx.lineWidth = poly.w;
+      ctx.beginPath();
+      P.forEach((q, i) => { const vis = q.front || front === false;
+        i ? ctx.lineTo(q.X, q.Y) : ctx.moveTo(q.X, q.Y); });
+      ctx.stroke();
+    }
+  }
+  ctx.globalAlpha = 1;
+  // poles
+  const N = proj({ x: 0, y: 0, z: 1 }), S = proj({ x: 0, y: 0, z: -1 });
+  for (const [P, name] of [[N, 'MATCHED \u0393 = 0'], [S, '\u221E MISMATCH']]){
+    ctx.globalAlpha = P.front ? 1 : 0.15;
+    ctx.strokeStyle = INK; ctx.lineWidth = 1.4;
+    ctx.beginPath(); ctx.moveTo(P.X - 7, P.Y); ctx.lineTo(P.X + 7, P.Y);
+    ctx.moveTo(P.X, P.Y - 7); ctx.lineTo(P.X, P.Y + 7); ctx.stroke();
+    ctx.fillStyle = INK; ctx.font = '11px Consolas, monospace'; ctx.textAlign = 'center';
+    ctx.fillText(name, P.X, P.Y - (name[0] === 'M' ? 12 : -20));
+  }
+  // markers, depth-sorted
+  const MS = MARKERS.map(m => ({ m: m, s: proj(sph(m.u, m.v)) })).sort((a, b) => b.s.depth - a.s.depth);
+  for (const { m, s } of MS){
+    ctx.globalAlpha = s.front ? 1 : 0.14;
+    ctx.fillStyle = m.color; ctx.strokeStyle = '#0e2740'; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.arc(s.X, s.Y, m.r, 0, 2 * Math.PI); ctx.fill(); ctx.stroke();
+    if (s.front){
+      ctx.fillStyle = '#20313f'; ctx.font = '10px Consolas, monospace'; ctx.textAlign = 'left';
+      ctx.fillText(m.label, s.X + 7, s.Y + 3);
+    }
+  }
+  ctx.globalAlpha = 1;
+  // race geodesic
+  if (racePts.length){
+    ctx.strokeStyle = '#1f4f7a'; ctx.lineWidth = 2.4; ctx.lineCap = 'round';
+    ctx.beginPath();
+    const n = Math.min(racePts.length, raceReveal);
+    for (let i = 0; i < n; i++){ const q = proj(racePts[i]);
+      i ? ctx.lineTo(q.X, q.Y) : ctx.moveTo(q.X, q.Y); }
+    ctx.stroke();
+  }
+}
+let racePts = [], raceReveal = 0, raceLen = 0;
+
+// ---------- RACE: the geodesic to the north pole ----------
+function race(){
+  let z = { r: Math.exp(Math.log(0.15) + Math.random() * (Math.log(4) - Math.log(0.15))),
+            x: (Math.random() * 2 - 1) * 2.5 };
+  const f = (a, b) => { const d = (a + 1) * (a + 1) + b * b;
+    const g = { u: (a * a + b * b - 1) / d, v: 2 * b / d }; return g.u * g.u + g.v * g.v; };
+  const g0 = zOf(z.r, z.x), m0 = Math.hypot(g0.u, g0.v);
+  const trail = [{ r: z.r, x: z.x }];
+  for (let i = 0; i < 600; i++){
+    const h = 1e-4;
+    const dr = (f(z.r + h, z.x) - f(z.r - h, z.x)) / (2 * h);
+    const dx = (f(z.r, z.x + h) - f(z.r, z.x - h)) / (2 * h);
+    const n = Math.hypot(dr, dx); if (n < 1e-12) break;
+    z = { r: Math.max(0.02, z.r - 0.05 * dr / n), x: z.x - 0.05 * dx / n };
+    trail.push(z);
+    if (Math.hypot(zOf(z.r, z.x).u, zOf(z.r, z.x).v) < 0.01) break;
+  }
+  function zOf(r, x){ const d = (r + 1) * (r + 1) + x * x;
+    return { u: (r * r + x * x - 1) / d, v: 2 * x / d }; }
+  racePts = trail.map(t => sph(zOf(t.r, t.x).u, zOf(t.r, t.x).v));
+  raceReveal = 0; raceLen = trail.length;
+  document.getElementById('raceout').textContent =
+    'spawn z = ' + trail[0].r.toFixed(2) + ' ' + (trail[0].x < 0 ? '\u2212' : '+') + ' j' +
+    Math.abs(trail[0].x).toFixed(2) + '  (|\u0393| = ' + m0.toFixed(3) +
+    ')  \u2192  STEERED north: matched in ' + trail.length + ' gradient steps \u2014 the geodesic is the matching walk';
+}
+document.getElementById('race').addEventListener('click', race);
+
+// ---------- input: steer the globe ----------
+let drag = null;
+cv.addEventListener('pointerdown', e => { drag = { x: e.clientX, y: e.clientY }; cv.setPointerCapture(e.pointerId); });
+cv.addEventListener('pointermove', e => {
+  if (!drag) return;
+  const b = cv.getBoundingClientRect(), k = CW / b.width;
+  yaw += (e.clientX - drag.x) * 0.008 * k;
+  pitch = Math.max(-1.35, Math.min(1.35, pitch + (e.clientY - drag.y) * 0.008 * k));
+  drag = { x: e.clientX, y: e.clientY };
+  refresh();
+});
+cv.addEventListener('pointerup', () => { drag = null; });
+cv.addEventListener('wheel', e => {
+  e.preventDefault();
+  zoom = Math.max(0.55, Math.min(2.4, zoom * (e.deltaY > 0 ? 0.92 : 1.08)));
+  refresh();
+}, { passive: false });
+
+function refresh(){ draw(); }
+(function frame(){
+  if (racePts.length && raceReveal < raceLen) raceReveal += Math.max(1, raceLen / 120);
+  draw();
+  requestAnimationFrame(frame);
+})();
+</script></body></html>

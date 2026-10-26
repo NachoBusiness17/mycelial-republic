@@ -13,6 +13,11 @@ data:
   MAG_NO_MIRROR: "1"
   MAG_DRAINER: "1"
   # Service discovery inside the cluster
+  # B2-490 seat-scope (2026-09-26): this name is CLUSTER-INTERNAL only; it
+  # resolves via the ollama Service (deploy/k8s/ollama.yaml) inside the
+  # namespace. On a host shell the same value is the B2-107 locality trap:
+  # doctor reads DOWN none(locality) and every real call fails URLError
+  # (measured live 2026-09-26; the host .env carries this exact shape today).
   OLLAMA_HOST: "http://ollama:11434"
   REDIS_HOST: "redis"
   REDIS_PORT: "6379"

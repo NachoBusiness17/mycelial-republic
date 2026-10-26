@@ -1,0 +1,3 @@
+**Law:** A record-keeping system must resolve contradictions by erasing all mutually exclusive states, retaining only the single most recent valid state.  
+
+**Justification:** First principles demand that a system’s records be coherent and logically consistent to serve their purpose of truthful preservation. Retaining contradictions introduces unreliability, as conflicting records cannot simultaneously represent factual states without undermining trust in the system. By universally prioritizing the latest valid entry, the system eliminates ambiguity, ensuring its integrity and usability for informed decision-making.

@@ -20,6 +20,7 @@ import subprocess
 import sys
 import time
 from datetime import datetime, timezone
+from mag.win_powershell import powershell_exe
 from pathlib import Path
 from typing import Any
 
@@ -41,7 +42,7 @@ def _snapshot() -> dict[int, dict[str, Any]]:
     """pid -> {pid, parent, cmd} for python/pythonw processes WITH a visible window."""
     out: dict[int, dict[str, Any]] = {}
     try:
-        ps = (r"powershell -NoProfile -Command "
+        ps = (powershell_exe() + " -NoProfile -Command "
               r"Get-Process python,pythonw -ErrorAction SilentlyContinue | "
               r"Where-Object { $_.MainWindowTitle } | "
               r"Select-Object Id,@{N='P';E={(Get-CimInstance Win32_Process -Filter ('ProcessId={0}' -f $_.Id)).ParentProcessId}},@{N='C';E={(Get-CimInstance Win32_Process -Filter ('ProcessId={0}' -f $_.Id)).CommandLine}} | "

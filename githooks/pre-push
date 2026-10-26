@@ -1,0 +1,631 @@
+#!/bin/sh
+# Estate pre-push gate - ratchet over mag/+tools/ (ZCode steal, landed 2026-09-25)
+# + config seal verify over configs/ (wired 2026-09-25 gala b2-stone2b, punch 4).
+# Nonzero exit blocks the push. New ratchet debt must be accepted by NAME via
+#   .venv/Scripts/python.exe tools/violation_ratchet.py baseline-update --by <who>
+# Config drift re-seals by NAME via
+#   .venv/Scripts/python.exe tools/config_seal.py update --by WHO --note WHY
+# never by loosening this hook.
+echo "PUSH-GATE: ratchet check --changed"
+.venv/Scripts/python.exe tools/violation_ratchet.py check --changed || exit 1
+# citation lint (a05-r2, 2026-10-01, wired from GAP_REGISTER rank 3 fill spec:
+# "wire one line into githooks/pre-push after the ratchet"). Spec:
+# watch/inbox/ractor50/accuracy.md incident 5 - every file:line citation in a
+# changed record must satisfy (a) the path exists, (b) the line range is
+# non-empty and mentions a token from the claim; plus the phantom-number class
+# the register's founding fixture names (the 191.8M-token headline whose named
+# source carries zero "191" hits; struck from STORY.md by the 2026-10-01
+# ERRATA, and the verbatim fixture lives on in the tool's self-test).
+# ENFORCING like the ratchet: deterministic classes block the push
+# (PATH-MISSING, LINE-OOB, EMPTY-SPAN, PHANTOM-NUMBER). Heuristic classes are
+# WARN-only (TOKEN-MISS, SHORTHAND-UNRESOLVED; --enforce-tokens flips them).
+# Accept a finding by name via --baseline configs/citation_lint_baseline.json
+# (the ratchet's accept-debt-by-NAME law); never loosen this hook.
+echo "PUSH-GATE: citation_lint check --changed"
+.venv/Scripts/python.exe tools/citation_lint.py check --changed || exit 1
+echo "PUSH-GATE: config_seal verify"
+.venv/Scripts/python.exe tools/config_seal.py verify || exit 1
+# description_pin gate (t40, 2026-09-25, wired from t11c next_steal).
+# WARN-ONLY first landing per b2's 2026-09-25 lesson: a new pre-push check
+# can lock operators out, so this block NEVER exits nonzero. Offender names
+# print below; findings do not block the push.
+# TODO-FLIP-TO-ENFORCE: once configs/tools/ manifests exist and are triaged
+# clean, change `|| true` to `|| exit 1` and drop the missing-dir skip.
+echo "PUSH-GATE: description_pin (WARN-ONLY)"
+if [ -d configs/tools ]; then
+  .venv/Scripts/python.exe tools/description_pin.py configs/tools || true
+else
+  echo "PUSH-GATE: description_pin skipped, no configs/tools/ manifests yet"
+fi
+# freshness receipt gate (t51, 2026-09-25, wired from t37 next_steal).
+# Spec: scan today's watch/inbox/*.md receipts (mtime >= local midnight) for
+# freshness stamp lines (source-fetched: YYYY-MM-DD, the t37 format), run
+# tools/freshness_gate.py on at most 5 of them, and print a WARN line for any
+# stale, malformed, or future-dated receipt. WARN-ONLY first landing per t40
+# precedent: no lockouts without operator, so this block NEVER exits nonzero;
+# findings print below and do not block the push.
+# Prefilter tightened (t62, 2026-09-25, wired from t51 next_steal): the scan
+# line must carry a parseable YYYY-MM-DD after the label colon or the receipt
+# is skipped silently, so prose like 'fetched: all present' (the t51 recorded
+# MICKEY17_WAVE2_QUALITY_20260925.md false positive) never reaches the gate.
+# The date group mirrors the gate's own STAMP_RE; label set, WARN-ONLY tail,
+# 5-receipt cap, and || true all unchanged.
+# TODO-FLIP-TO-ENFORCE: once watch/inbox receipts carry stamps routinely and
+# triage clean, flip the gate tail from `|| true` handling to `|| exit 1`
+# as an operator decision (same flip convention as the block above).
+echo "PUSH-GATE: freshness_gate (WARN-ONLY)"
+if [ -d watch/inbox ]; then
+  n=0
+  find watch/inbox -maxdepth 1 -type f -name '*.md' -newermt "$(date +%Y-%m-%d)" 2>/dev/null |
+  while IFS= read -r f; do
+    grep -Eiq '(source[-_ ]fetched|fetched|observed[-_]at)[[:space:]]*:[[:space:]]*[0-9]{4}-[0-9]{2}-[0-9]{2}' "$f" || continue
+    [ "$n" -lt 5 ] || continue
+    n=$((n + 1))
+    out=$(.venv/Scripts/python.exe tools/freshness_gate.py "$f" 2>&1) || true
+    case "$out" in
+      "FRESHNESS-GATE: ok"*) : ;;
+      *) echo "PUSH-GATE: freshness WARN: $f"; echo "$out" ;;
+    esac
+  done
+else
+  echo "PUSH-GATE: freshness_gate skipped, no watch/inbox/ yet"
+fi
+# census drift patrol (B2-215, 2026-09-26, wired from the B2-69 census receipt).
+# Spec: the test-count carrier (AGENTS.md "**Tests:**" bullet) rode 12 days
+# stale (2026-09-14 to 2026-09-26) while tests/ grew 31 files and no gate
+# noticed; tools/census_drift_patrol.py now states that bar in numbers (census
+# date older than 7 days AND tests/ growth since that day is STALE, exit 1;
+# unparseable or future-dated carrier is exit 2 fail-closed). STALE (exit 1)
+# stays WARN-ONLY per t40 precedent (no lockouts without operator).
+# B2-277 (2026-09-26): exit 2 cannot-verify now BLOCKS (see the block below):
+# the TODO-FLIP-TO-ENFORCE note above remains for the exit-1 flip only.
+# Output contract (B2-338, 2026-09-26): the case arm below matches the START
+# of the whole captured output, so the tool's FIRST printed line on a green
+# census must open with the exact lowercase prefix "CENSUS-PATROL: ok"; the
+# old head line printed the uppercase verdict OK there, so every fully green
+# push took the WARN arm and trained operators to dismiss this channel. Red
+# verdicts (STALE, COLLECT-DRIFT, cannot verify) keep their uppercase tokens
+# and must keep falling to the WARN arm; never widen this case arm to accept
+# them (tools/refold_gate.py prints "REFOLD-GATE: ok" under the same
+# lowercase-first-line convention).
+echo "PUSH-GATE: census_drift_patrol (WARN-ONLY for stale; exit 2 blocks)"
+if [ -f AGENTS.md ]; then
+  # B2-277 (2026-09-26) exit-class split. STALE (exit 1) keeps the t40
+  # WARN-ONLY treatment: the gate SAW the carrier and can name the growth and
+  # the counts, so the push may carry the very work that fixes it. BLIND
+  # (exit 2 cannot-verify: unparseable carrier grammar, future-dated census,
+  # git failure) is a different disease: the gate saw NOTHING, so every push
+  # would pass in silence (the 12-day-stale disease in a new costume). A blind
+  # gate is worse than no gate, so exit 2 is distinguishable on disk
+  # (.git/census_blind_last_push.txt) AND blocks the push; the operator
+  # response is to fix or re-parse the carrier, never to bypass in silence.
+  census_rc=0
+  out=$(.venv/Scripts/python.exe tools/census_drift_patrol.py 2>&1) || census_rc=$?
+  case "$out" in
+    "CENSUS-PATROL: ok"*) : ;;
+    *)
+      echo "PUSH-GATE: census WARN:"; echo "$out"
+      if [ "$census_rc" -eq 2 ]; then
+        printf '%s\n' "$out" > .git/census_blind_last_push.txt
+        echo "PUSH-GATE: census BLIND (exit 2 cannot-verify): push blocked, evidence at .git/census_blind_last_push.txt (B2-277 law: blind differs from stale)"
+        exit 2
+      fi
+      ;;
+  esac
+else
+  echo "PUSH-GATE: census_drift_patrol skipped, no AGENTS.md"
+fi
+# checkbox-receipt gate (B2-316, 2026-09-26, wired beside mag.shared_surface
+# validate per the brief's tools-checker arm). Spec: the B2-251 audit proved a
+# checked Open row mutes the dispatcher refill denominator with no trace, and
+# the sweep was hand-run. tools/checkbox_receipt_gate.py makes it standing:
+# every checked row in the queue's Open section must name a receipt path that
+# resolves on disk; B2-251-attached rows are the named baseline. WARN-ONLY at
+# the hook (exit 1 prints the NEW DEBT names, never blocks): the gate's job
+# here is trace on every push, the flip to blocking is an operator decision
+# under the same convention as the census exit-1 flip above.
+if [ -f tools/checkbox_receipt_gate.py ] && [ -f watch/inbox/burn_wave_20260926/QUEUE.md ]; then
+  gate_out=$(.venv/Scripts/python.exe tools/checkbox_receipt_gate.py 2>&1) || true
+  printf '%s\n' "$gate_out" | sed 's/^/PUSH-GATE: /'
+else
+  echo "PUSH-GATE: checkbox_receipt_gate skipped (checker or queue missing)"
+fi
+# caption ledger verify gate (B2-260, 2026-09-26, wired from the B2-244
+# self-feed). Spec: scripts/the50_t21_q_caption_ledger_verify.py (7 checks,
+# incl. the check7 guard-class pin) was hand-run only, nothing hooked or
+# scheduled it, so a generator or verifier refactor could sit silently stale
+# with an unverified ledger. This block runs that verifier only when it can
+# matter (the violation-ratchet --changed idea, applied to two fixed paths):
+#   (a) scripts/the50_t21_q_caption_ledger.py or
+#       scripts/the50_t21_q_caption_ledger_verify.py differs from HEAD
+#       (staged or unstaged) or is untracked, or
+#   (b) the pushed commit range touches either file. pre-push hands refs to
+#       push on stdin (per ref: local_ref local_sha remote_ref remote_sha);
+#       a cleanly committed mutation leaves a clean working tree, so arm (a)
+#       alone would miss exactly the case the brief's falsifier names.
+# Cheap: two git diff --quiet pathspecs and, per pushed ref, one more; the
+# 7-check verifier itself runs in ~0.4s and only when an arm fired.
+# WARN-ONLY first landing per t40 precedent: B2-242/B2-243/B2-244 showed
+# sibling lanes share this one tree, so an enforcing gate could block an
+# unrelated push on a sibling's half-done generator; findings print below
+# and do not block the push.
+# TODO-FLIP-TO-ENFORCE: once it survives a few weeks of pushes, flip the
+# FAIL tail to `|| exit 1` as an operator decision (same flip convention as
+# the blocks above).
+echo "PUSH-GATE: caption_ledger_verify (WARN-ONLY, conditional)"
+CAPTION_GEN=scripts/the50_t21_q_caption_ledger.py
+CAPTION_VER=scripts/the50_t21_q_caption_ledger_verify.py
+# B2-272 (2026-09-26): the inline arms below moved into
+# tools/prepush_paths_changed.py (the extracted changed-path decision,
+# covering the same five cases: dirty-vs-HEAD, untracked, pushed-range hit,
+# branch-deletion zero sha, unborn-remote zero sha; its --selftest runs the
+# battery). The helper NEVER reads stdin: this block still consumes the ref
+# lines once (below) and passes the captured text via --refs, so the
+# single-consumer contract with the later blocks is unchanged.
+# consume the ref lines once; the blocks above never read stdin, so this is
+# the only consumer. tty stdin (manual hook run) reads as empty.
+if [ -t 0 ]; then CAPTION_PUSH_INPUT=""; else CAPTION_PUSH_INPUT="$(cat)"; fi
+.venv/Scripts/python.exe tools/prepush_paths_changed.py \
+  --refs "$CAPTION_PUSH_INPUT" -- "$CAPTION_GEN" "$CAPTION_VER"
+CAPTION_CHANGED=$?
+if [ "$CAPTION_CHANGED" -eq 1 ]; then
+  out=$(.venv/Scripts/python.exe "$CAPTION_VER" 2>&1) || true
+  case "$out" in
+    *"RESULT: PASS"*)
+      echo "PUSH-GATE: caption_ledger_verify ok (generator/verifier changed, verifier ran)" ;;
+    *)
+      echo "PUSH-GATE: caption_ledger WARN (generator/verifier changed but ledger does not verify):"
+      echo "$out" ;;
+  esac
+else
+  echo "PUSH-GATE: caption_ledger_verify skipped, generator and verifier unchanged"
+fi
+# refold gate (B2-328, 2026-09-26, wired from the B2-279 self-feed). Spec:
+# tests/test_index_fold_host.py (21 fold-order pins) and the production-log
+# falsifier watch/inbox/burn_wave_20260926/B2_279_refold_falsifier.py existed
+# but nothing ran either when scripts/index_fold_host.mjs changed, and the gap
+# was executed for real before this block landed: seqOrderKey mutated so the
+# 2^53 quantization band (tier 1) outranked exact seqs (tier 2), file saved,
+# and a git push --dry-run through this hook named the mutation zero times.
+# Load-bearing falsifier finding: the tier swap is REFOLD-STABLE (the mutated
+# comparator is still a deterministic total order), so the stability pin alone
+# PASSES on it; what names the mutation is the demotion and total-order pin
+# set (6 failures incl. test_inexact_band_register_loses_to_later_exact_register),
+# so the gate runs the WHOLE pin file via tools/refold_gate.py, never the
+# stability test alone. Trigger arms, same --changed shape as the caption
+# block above:
+#   (a) scripts/index_fold_host.mjs, tests/test_index_fold_host.py, or
+#       tools/refold_gate.py differs from HEAD (staged or unstaged) or is
+#       untracked, or
+#   (b) the pushed commit range touches any of the three.
+# Payload is the throwaway-inbox pytest pins, NOT the production-log
+# falsifier: that one appends dummy note events to the shared
+# watch/inbox/index_events.jsonl on every run, which a push hook must never
+# do; the pins carry the same pathological event mix via INDEX_INBOX_DIR.
+# Cost when idle: git plumbing only; cost when fired: ~6s wall (21 tests,
+# each a node fold over a throwaway inbox).
+# Operator response when it fires: the WARN output names the red pins;
+# revert or fix the comparator edit until tools/refold_gate.py prints ok
+# (the law is B2-279 sort totality + refold stability, restated in the
+# gate's FAIL output); never loosen this hook.
+# WARN-ONLY first landing per t40 precedent: concurrent lanes share this one
+# checkout (B2-280 holds a live claim on the fold host as this block landed),
+# so an enforcing gate could block an unrelated push on a sibling's half-done
+# comparator edit; findings print below and do not block the push.
+# TODO-FLIP-TO-ENFORCE: once it survives a few weeks of pushes, flip the WARN
+# tail to `|| exit 1` as an operator decision (same flip convention as the
+# blocks above).
+echo "PUSH-GATE: refold_gate (WARN-ONLY, conditional)"
+REFOLD_HOST=scripts/index_fold_host.mjs
+REFOLD_PINS=tests/test_index_fold_host.py
+REFOLD_GATE=tools/refold_gate.py
+REFOLD_CHANGED=0
+git diff --quiet HEAD -- "$REFOLD_HOST" "$REFOLD_PINS" "$REFOLD_GATE" || REFOLD_CHANGED=1
+if [ -n "$(git ls-files --others --exclude-standard -- "$REFOLD_HOST" "$REFOLD_PINS" "$REFOLD_GATE")" ]; then
+  REFOLD_CHANGED=1
+fi
+# stdin: the caption block above is this hook's only stdin consumer and holds
+# the captured ref lines in CAPTION_PUSH_INPUT; this block reuses that value.
+# If the caption block is ever removed, move its [ -t 0 ] capture here.
+set -- $CAPTION_PUSH_INPUT
+while [ "$#" -ge 4 ]; do
+  REFOLD_LSHA=$2; REFOLD_RSHA=$4; shift 4
+  # branch deletion or unborn remote: no range to test
+  case "$REFOLD_LSHA" in 0000000000000000000000000000000000000000|"") continue ;; esac
+  case "$REFOLD_RSHA" in 0000000000000000000000000000000000000000|"") continue ;; esac
+  git diff --quiet "$REFOLD_RSHA" "$REFOLD_LSHA" -- "$REFOLD_HOST" "$REFOLD_PINS" "$REFOLD_GATE" \
+    || REFOLD_CHANGED=1
+done
+if [ "$REFOLD_CHANGED" -eq 1 ]; then
+  out=$(.venv/Scripts/python.exe "$REFOLD_GATE" 2>&1) || true
+  case "$out" in
+    "REFOLD-GATE: ok"*)
+      echo "PUSH-GATE: refold_gate ok (fold host or pins changed, pins ran)" ;;
+    *)
+      echo "PUSH-GATE: refold WARN (fold host or pins changed but fold-order pins are red):"
+      echo "$out" ;;
+  esac
+else
+  echo "PUSH-GATE: refold_gate skipped, fold host and pins unchanged"
+fi
+# workflow-gate scenario-suite gate (B2-164, 2026-09-26, wired from the LAW-12
+# genesis clause cards plus AGENTS.md's scenario-mode prose "run it after any
+# gate change; the suite must stay green", which until this block nothing
+# enforced at push time). Spec: a tools/workflow_gate.py change must re-prove
+# itself against the configs/workflow_gate_scenarios card suite BEFORE it can
+# push, so a gate edit that turns a card red is named at push time instead of
+# being discovered at the next gated CreateWorkflow. Trigger arms, the same
+# --changed shape as the caption and refold blocks above, scoped to the gate
+# script ONLY per the brief:
+#   (a) tools/workflow_gate.py differs from HEAD (staged or unstaged) or is
+#       untracked, or
+#   (b) the pushed commit range touches it (ref lines reused from the caption
+#       block's CAPTION_PUSH_INPUT capture; if that block is ever removed,
+#       move its [ -t 0 ] capture into this block or arm (b) silently disarms;
+#       same stdin contract the refold block documents).
+# Placement note (the brief says "next to the violation ratchet"): this block
+# copies the ratchet's enforcing shape (nonzero exit blocks the push) but sits
+# at the tail because the caption block owns this hook's single stdin capture
+# and every block after it must reuse the captured value; moving the capture
+# would rewrite a sibling block to gain nothing.
+# The card dir stays OUT of the trigger arms at landing: configs/
+# workflow_gate_scenarios is entirely untracked, so an arm on it would fire on
+# every push estate-wide, and a sibling lane holds an active claim on a card
+# (B2-162, 18:27:11Z) at landing. Widening the trigger to the cards once they
+# commit is an operator decision, the same flip convention as the blocks
+# above.
+# Payload is `workflow_gate.py check --scenarios ...`, which is READ-ONLY: it
+# writes no REGISTRY.jsonl row, and a push hook must never write shared state
+# (the B2-328 law). Cost when idle: git plumbing only; cost when fired: one
+# read-only sweep of 7 cards plus the all-pass control (about a quarter
+# second on landing hardware).
+# ENFORCING by brief contract, like the ratchet: red blocks the push (exit 1).
+# Operator response when it fires: the SCENARIOS output names the red card and
+# the mismatch; fix the gate edit until the cards validate, or re-prove the
+# cards against the new gate behavior per the LAW-12 clause (cards cite real
+# registry FAIL rows; a behavior change that invalidates a card's expectation
+# needs the card re-derived, not the check weakened to match); never loosen
+# this hook.
+# Output contract (the B2-338 first-line lesson): on a green run
+# run_scenarios' FIRST printed line is a per-card "SCENARIOS ok ..." row; red
+# runs open with "SCENARIOS FAIL", errors with "SCENARIOS ERROR" (including
+# the no-cards guard), so the case arm matches the lowercase-ok first line and
+# is never widened to accept red tokens. A crashed interpreter (traceback)
+# also falls to the red arm: fail-closed.
+echo "PUSH-GATE: workflow_gate_scenarios (conditional, enforcing)"
+WGATE=tools/workflow_gate.py
+WGATE_CHANGED=0
+git diff --quiet HEAD -- "$WGATE" || WGATE_CHANGED=1
+if [ -n "$(git ls-files --others --exclude-standard -- "$WGATE")" ]; then
+  WGATE_CHANGED=1
+fi
+set -- $CAPTION_PUSH_INPUT
+while [ "$#" -ge 4 ]; do
+  WGATE_LSHA=$2; WGATE_RSHA=$4; shift 4
+  # branch deletion or unborn remote: no range to test
+  case "$WGATE_LSHA" in 0000000000000000000000000000000000000000|"") continue ;; esac
+  case "$WGATE_RSHA" in 0000000000000000000000000000000000000000|"") continue ;; esac
+  git diff --quiet "$WGATE_RSHA" "$WGATE_LSHA" -- "$WGATE" || WGATE_CHANGED=1
+done
+if [ "$WGATE_CHANGED" -eq 1 ]; then
+  out=$(.venv/Scripts/python.exe "$WGATE" check --scenarios configs/workflow_gate_scenarios 2>&1) || true
+  case "$out" in
+    "SCENARIOS ok"*)
+      echo "PUSH-GATE: workflow_gate_scenarios ok (gate changed, card suite green)" ;;
+    *)
+      echo "PUSH-GATE: workflow_gate_scenarios BLOCKS the push (gate changed but the card suite is red):"
+      echo "$out"
+      exit 1 ;;
+  esac
+else
+  echo "PUSH-GATE: workflow_gate_scenarios skipped, gate script unchanged"
+fi
+# rule-parity gate (D2, 2026-09-30, wired from the last_mile Q01 second half;
+# spec watch/inbox/last_mile_20260930/D2_PARITY_GATE.md). The product's core
+# differentiator is deterministic integer water physics with the SAME laws on
+# both sides of the wire: mag/water_graph.py (authoritative server engine)
+# and roblox_to_godot/systems/water_graph.gd (offline client mirror) — the
+# parity twins. The V5 lensing proved the twins can silently diverge (the
+# LW5 probe-time reserve never crossed languages; GDScript double-spent the
+# spring and manufactured water on the SHIPPING board). tools/rule_parity.py
+# measures the twins; this block makes the measurement STANDING: a push that
+# changes EITHER twin must re-prove parity at quick depth before it ships.
+# TRIGGER LAW: runs when either twin changes (dirty vs HEAD, untracked, or
+# the pushed range touches one) — decision via the B2-272 extracted helper
+# tools/prepush_paths_changed.py, fail-closed on its exit 2 (git broke: a
+# blind enforcing gate is worse than no gate, the B2-277 law). The tool
+# itself and its tests are deliberately OUTSIDE the trigger (the D2 brief's
+# exact scope: water-graph/water_graph.gd changes only).
+# Payload: `rule_parity.py all --quick` — 20 sequences, every family, ~2s
+# measured (budget <60s). It writes only its own untracked artifact dir
+# (tools/rule_parity_out/, incl. the standing latest.json verdict) and
+# touches no tracked/shared state (the B2-328 push-hook law).
+# ENFORCING from day one by the D2 mission contract (operator order, not a
+# t40 WARN-first break): the gate exists BECAUSE the divergence shipped
+# invisible — a WARN-only parity gate repeats the disease it exists to close.
+# Output contract (B2-338 law): a green run's FIRST stdout line opens with
+# the exact lowercase prefix "PARITY: ok"; divergence opens "PARITY: FAIL",
+# instrument errors "PARITY: ERROR" (exit 2). The case arm matches the ok
+# prefix only; divergence, instrument error, AND a crashed interpreter
+# (traceback output) all fall to the block arm — fail-closed like the
+# secret gate. Operator response when it fires: the tool's FIRST DIVERGENCE
+# block names the seq/tick/state-diff — fix the twin until parity holds,
+# never loosen this hook; the honest artifact tools/rule_parity_out/
+# latest.json carries the verdict, twin digests, and mode for the record.
+echo "PUSH-GATE: rule_parity quick (conditional, enforcing)"
+PARITY_PY_TWIN=mag/water_graph.py
+PARITY_GD_TWIN=roblox_to_godot/systems/water_graph.gd
+PARITY_TOOL=tools/rule_parity.py
+if [ -f "$PARITY_TOOL" ]; then
+  .venv/Scripts/python.exe tools/prepush_paths_changed.py \
+    --refs "$CAPTION_PUSH_INPUT" -- "$PARITY_PY_TWIN" "$PARITY_GD_TWIN"
+  PARITY_TWINS_RC=$?
+  if [ "$PARITY_TWINS_RC" -eq 1 ]; then
+    parity_out=$(.venv/Scripts/python.exe "$PARITY_TOOL" all --quick --source prepush 2>&1)
+    parity_rc=$?
+    printf '%s\n' "$parity_out" | sed 's/^/PUSH-GATE:   /'
+    case "$parity_out" in
+      "PARITY: ok"*)
+        echo "PUSH-GATE: rule_parity ok (twin changed, quick parity green; verdict banked in tools/rule_parity_out/latest.json)" ;;
+      *)
+        echo "PUSH-GATE: rule_parity BLOCKS the push (twin changed, parity red or instrument error, exit $parity_rc)"
+        echo "PUSH-GATE: fix the twin until PARITY: ok; never loosen this hook"
+        exit 1 ;;
+    esac
+  elif [ "$PARITY_TWINS_RC" -eq 0 ]; then
+    echo "PUSH-GATE: rule_parity skipped, twins unchanged"
+  else
+    echo "PUSH-GATE: rule_parity BLOCKS the push (cannot verify twin change state, prepush_paths_changed exit $PARITY_TWINS_RC — fail-closed)"
+    exit 1
+  fi
+else
+  echo "PUSH-GATE: rule_parity skipped, no $PARITY_TOOL"
+fi
+# secret gate (gate 10, 2026-09-27, operator GO "build the gate right now",
+# built per watch/inbox/PACK_SECRET_GATE_20260926.md). Spec: tools/secret_gate.py
+# is the wired form of the B2-73 scanner (S1 copy-don't-move, S3 entropy-gated
+# noise so critical/high stay readable, S4 slim results rows); blocking tier =
+# specific provider shapes only, masked output, never prints secret values.
+# Runs on the --changed path only (pack section 9: a full scan in pre-push is a
+# 777s gate nobody keeps). ENFORCING by pack contract, like the ratchet: a
+# provider-shaped secret in the pushed changeset blocks the push (acceptance:
+# planted token blocks exit 1, masked tokens exempt, clean passes exit 0,
+# known-true positive memory/tls/lan.key detected critical). Exit contract
+# 0/1/2 with exit 2 = scanner error: BOTH nonzero arms block (fail-closed; the
+# census-gate lesson the pack names: a missing interpreter must never read as
+# a pass, so the catch-all arm swallows 2, 127, and tracebacks alike).
+# Operator response when it fires: excise or rotate the secret, or accept THAT
+# finding by name via --baseline (zero baseline day one; never import the
+# 933-debt ratchet baseline); never loosen this hook.
+echo "PUSH-GATE: secret_gate (--changed, enforcing)"
+sg_out=$(.venv/Scripts/python.exe tools/secret_gate.py --changed --baseline configs/secret_gate_baseline.json 2>&1)
+sg_rc=$?
+printf '%s\n' "$sg_out" | sed 's/^/PUSH-GATE:   /'
+case "$sg_rc" in
+  0) echo "PUSH-GATE: secret_gate ok" ;;
+  1) echo "PUSH-GATE: secret_gate BLOCKS the push (provider-shaped secret in changed files)"; exit 1 ;;
+  *) echo "PUSH-GATE: secret_gate scanner error (exit $sg_rc): fail-closed, push blocked"; exit 1 ;;
+esac
+# golden-vector gate (GO wave 2026-10-04 lane 10 pre-push instruments, #1 of 3;
+# wired after the existing gates per the brief). Spec: a11-commits row 3 (key
+# cc33f22dcafe, memory/runs/mickey17_v2/runs/run-0/lanes/a11-commits.json)
+# byte-verified the FULL CAMPAIGN known answers in tools/dungeon.py at commit
+# a7d7d313d (S2 Lexical Stair, S3 Wiping Vault, S4 Phantom Wyrm + scroll hoard,
+# the 3x [AUDIT root]-at-DC-15 root-anchoring win gate, HP-0 does NOT win) and
+# nothing stood watch after the audit. tools/prepush_golden_vector.py holds
+# that vector as 11 byte tokens (verified 11/11 against BOTH the working tree
+# and the a7d7d313d blob at landing) and names any token that left the bytes.
+# Trigger: the parity-block shape via tools/prepush_paths_changed.py (dirty vs
+# HEAD, untracked, pushed range) scoped to tools/dungeon.py ONLY. A live
+# `dungeon.py --full` run is deliberately NOT the payload: campaign() calls
+# models (dungeon.py:489 _paid) and writes a session DONE file (dungeon.py:577),
+# and a push hook must never write shared state or spend budget (B2-328 law).
+# WARN-ONLY first landing per the t40/B2-215 census-tripwire precedent: this
+# block NEVER exits nonzero; flip to enforce is an operator call.
+# TODO-FLIP-TO-ENFORCE: once the vector survives a few weeks of pushes, flip
+# the WARN tail to `|| exit 1` as an operator decision.
+echo "PUSH-GATE: golden_vector (WARN-ONLY, conditional)"
+GGV_TOOL=tools/prepush_golden_vector.py
+GGV_TARGET=tools/dungeon.py
+if [ -f "$GGV_TOOL" ] && [ -f "$GGV_TARGET" ]; then
+  .venv/Scripts/python.exe tools/prepush_paths_changed.py \
+    --refs "$CAPTION_PUSH_INPUT" -- "$GGV_TARGET"
+  GGV_TRIGGER=$?
+  if [ "$GGV_TRIGGER" -eq 1 ]; then
+    ggv_out=$(.venv/Scripts/python.exe "$GGV_TOOL" 2>&1); ggv_rc=$?
+    case "$ggv_out" in
+      "GOLDEN-VECTOR: ok"*)
+        echo "PUSH-GATE: golden_vector ok (dungeon.py changed, all 11 golden tokens present)" ;;
+      *)
+        echo "PUSH-GATE: golden_vector WARN (dungeon.py changed and a FULL CAMPAIGN known-answer token left the bytes; a11-commits row 3):"
+        echo "$ggv_out"
+        echo "PUSH-GATE: fix: restore the named law line(s) (git show a7d7d313d:tools/dungeon.py is the verified state); the push is NOT blocked (WARN-ONLY)" ;;
+    esac
+  elif [ "$GGV_TRIGGER" -eq 0 ]; then
+    echo "PUSH-GATE: golden_vector skipped, tools/dungeon.py unchanged"
+  else
+    echo "PUSH-GATE: golden_vector WARN (cannot verify trigger state, prepush_paths_changed exit $GGV_TRIGGER; WARN-ONLY, not blocking)"
+  fi
+else
+  echo "PUSH-GATE: golden_vector skipped (tool or target missing)"
+fi
+# credential-shape gate (GO wave 2026-10-04 lane 10 pre-push instruments, #2 of
+# 3). Spec: a11-commits row 4 (key dd44a33dcafe, the leak-audit row) grepped
+# both campaign-commit diffs for credential SHAPES (sk- 16+, xai-, AIza, gsk_,
+# Bearer 15+, api_key=val, password=, BEGIN PRIVATE KEY; zero hits, keys are
+# env-resolved) and found the class the shape set missed: the operator home
+# path (C:/Users/<name>) embedded 3x in a committed receipt. The row's own
+# steal names this landing: "extend the pre-push leak pass with an operator-
+# home-path grep over the pushed range alongside the credential-shape
+# regexes; landing: githooks/pre-push next edit" (the literal is cited once
+# in the lane row; this comment spells it as C:/Users/<name> so the gate's
+# own wiring never plants the string it scans for).
+# tools/prepush_credential_shape.py scans the secret_gate --changed fast path
+# (upstream..HEAD + staged + unstaged + untracked), masks every value to a
+# 4-char head, and starts with a ZERO baseline day one
+# (configs/prepush_credential_baseline.json, citation_lint accept-by-NAME
+# precedent; fingerprints printed with each finding).
+# WARN-ONLY first landing per the t40/B2-215 census-tripwire precedent: this
+# block NEVER exits nonzero (the tool may exit 1 on findings; the hook's
+# capture never propagates it); flip to enforce is an operator call.
+# TODO-FLIP-TO-ENFORCE: once findings triage near-zero for a few weeks, flip
+# to blocking as an operator decision.
+echo "PUSH-GATE: credential_shape (WARN-ONLY)"
+if [ -f tools/prepush_credential_shape.py ]; then
+  cs_out=$(.venv/Scripts/python.exe tools/prepush_credential_shape.py --changed --baseline configs/prepush_credential_baseline.json 2>&1); cs_rc=$?
+  case "$cs_out" in
+    "CRED-SHAPE: ok"*)
+      echo "PUSH-GATE: credential_shape ok"; printf '%s\n' "$cs_out" | sed 's/^/PUSH-GATE:   /' ;;
+    *)
+      echo "PUSH-GATE: credential_shape WARN (a credential SHAPE rode the changed content; a11-commits row 4):"
+      echo "$cs_out"
+      echo "PUSH-GATE: fix: excise or rotate the value, or accept THIS finding by fingerprint into configs/prepush_credential_baseline.json (zero-baseline day one); the push is NOT blocked (WARN-ONLY)" ;;
+  esac
+else
+  echo "PUSH-GATE: credential_shape skipped, tool missing"
+fi
+# seal-patrol gate (GO wave 2026-10-04 lane 10 pre-push instruments, #3 of 3).
+# Spec: a12-ractor-legs row 3 (idem watch/inbox/index_events.jsonl#62f7d596a113)
+# ran CHECK3 over the inbox seal ledger (tmp_a12_verify.py): each file's LATEST
+# sha256-bearing seal row vs the file's actual bytes, 21/21 matched on the
+# surface-migration board, and the row's steal names the landing: "add a
+# last-seal-vs-bytes check ... so post-seal drift on watch/inbox boards alarms
+# instead of waiting for an audit lane."
+# tools/prepush_seal_patrol.py runs that check standing, on the last 150
+# sha-bearing ledger rows (the full ledger is 5,404 distinct files / 1.81 GB,
+# measured at landing: a push hook may not hash that). Two a12 laws held:
+# sealed-but-deleted files are expected (42 sealed vs 21 on disk was ruled
+# normal), and malformed rows are counted, never fatal (3 template rows).
+# WARN-ONLY first landing per the t40/B2-215 census-tripwire precedent: this
+# block NEVER exits nonzero; flip to enforce is an operator call.
+# TODO-FLIP-TO-ENFORCE: once drift triage is routine, flip the DRIFT tail to
+# `|| exit 1` as an operator decision.
+echo "PUSH-GATE: seal_patrol (WARN-ONLY)"
+if [ -f tools/prepush_seal_patrol.py ] && [ -f watch/inbox/index_events.jsonl ]; then
+  sp_out=$(.venv/Scripts/python.exe tools/prepush_seal_patrol.py 2>&1); sp_rc=$?
+  case "$sp_out" in
+    "SEAL-PATROL: ok"*)
+      echo "PUSH-GATE: seal_patrol ok"; printf '%s\n' "$sp_out" | sed 's/^/PUSH-GATE:   /' ;;
+    *)
+      echo "PUSH-GATE: seal_patrol WARN (last-seal-vs-bytes drifted or cannot verify; a12-ractor-legs row 3):"
+      echo "$sp_out"
+      echo "PUSH-GATE: fix: re-seal through the owning writer (register/autoseal append to watch/inbox/index_events.jsonl) or restore the sealed bytes; never hand-edit the ledger; the push is NOT blocked (WARN-ONLY)" ;;
+  esac
+else
+  echo "PUSH-GATE: seal_patrol skipped (tool or seal ledger missing)"
+fi
+# workflow metadata CRLF patrol (build-it-all wave lane B6, 2026-10-05).
+# Spec: the defect class struck twice - ractor-engine.dwf.ts moonshots
+# default read as the STRING "2<CR>" (quoted 2 with a CR inside the quotes,
+# type: number) and refused runs, and the .env CRLF outage (the same byte
+# disease on another surface). tools/prepush_workflow_metadata.py scans the
+# /* zcode-workflow ... */ metadata blocks of .zcode/workflows/*.dwf.ts and
+# .zcode/workflow-drafts/*.dwf.ts for (a) CR bytes inside the block and
+# (b) defaults failing their declared type (a string default where number or
+# boolean is declared). Script bodies are deliberately out of scope: this
+# gate must not force a whole-file line-ending migration.
+# Append-only landing (lane law): this edit adds only the block below and
+# touches nothing above; the workflow_gate.py owner's blocks are untouched.
+# WARN-ONLY, zero baseline day one (the t40/B2-215 census-tripwire
+# precedent): findings print below and NEVER block the push; accept a
+# finding by fingerprint into configs/prepush_workflow_metadata_baseline.json
+# (absent = zero accepted). Output contract (B2-338 law): green first line
+# opens "WORKFLOW-METADATA: ok"; findings open "WORKFLOW-METADATA: WARN",
+# so the case arm matches the ok prefix only and red tokens always take the
+# WARN arm. TODO-FLIP-TO-ENFORCE: once the block-channel findings stay
+# triaged near zero for a few weeks, flip the WARN tail to `|| exit 1` as an
+# operator decision.
+echo "PUSH-GATE: workflow_metadata (WARN-ONLY)"
+if [ -f tools/prepush_workflow_metadata.py ]; then
+  wm_out=$(.venv/Scripts/python.exe tools/prepush_workflow_metadata.py 2>&1); wm_rc=$?
+  case "$wm_out" in
+    "WORKFLOW-METADATA: ok"*)
+      echo "PUSH-GATE: workflow_metadata ok"; printf '%s\n' "$wm_out" | sed 's/^/PUSH-GATE:   /' ;;
+    *)
+      echo "PUSH-GATE: workflow_metadata WARN (CR bytes or a type-failing default in a saved-workflow metadata block; lane B6):"
+      echo "$wm_out"
+      echo "PUSH-GATE: fix: strip CR from the metadata block only (never touch the script body) and rewrite the default as the declared type's literal, or accept the finding by fingerprint into configs/prepush_workflow_metadata_baseline.json; the push is NOT blocked (WARN-ONLY)" ;;
+  esac
+else
+  echo "PUSH-GATE: workflow_metadata skipped, tool missing"
+fi
+# slop patrol (no-slop steal, 2026-10-07). Spec: the operator's standing
+# no-slop law (2026-10-05 GO on petergyang/no-ai-slop, MIT; skill banked at
+# .agents/skills/no-slop/SKILL.md, receipt watch/inbox/NO_SLOP_STEAL_
+# 20261007.md). tools/prepush_slop_patrol.py is the DETERMINISTIC regexable
+# subset of that skill, no model calls: BANNED-WORD (the operator's list),
+# BINARY-CONTRAST (not-just-X-but-Y shapes), THROAT-CLEAR (openers),
+# COLON-REVEAL (structural heuristic, expect noise), FAKE-PROFOUND
+# (kickers), over changed prose records (.md/.txt/.rst vs HEAD, the
+# citation_lint discipline; data .jsonl is the census patrol's class and
+# enters only through an explicit --files audit). Fenced code blocks and
+# inline backtick spans are exempt (quoting a banned word as an example is
+# the skill's own sanctioned move). WARN-ONLY, zero baseline day one
+# (configs/prepush_slop_baseline.json, absent = zero accepted): findings
+# print below and NEVER block the push; accept a finding by FINGERPRINT
+# after triage, never mass-import. Output contract (B2-338 law): green
+# first line opens "SLOP-PATROL: ok"; findings open "SLOP-PATROL: WARN".
+# TODO-FLIP-TO-ENFORCE: once findings triage near zero for a few weeks,
+# flip the WARN tail to `|| exit 1` as an operator decision.
+echo "PUSH-GATE: slop_patrol (WARN-ONLY)"
+if [ -f tools/prepush_slop_patrol.py ]; then
+  slop_out=$(.venv/Scripts/python.exe tools/prepush_slop_patrol.py check --changed 2>&1); slop_rc=$?
+  case "$slop_out" in
+    "SLOP-PATROL: ok"*)
+      echo "PUSH-GATE: slop_patrol ok"; printf '%s\n' "$slop_out" | sed 's/^/PUSH-GATE:   /' ;;
+    *)
+      echo "PUSH-GATE: slop_patrol WARN (AI-slop pattern in changed prose; cut per .agents/skills/no-slop/SKILL.md):"
+      echo "$slop_out"
+      echo "PUSH-GATE: fix: cut the slop or accept THIS finding by fingerprint into configs/prepush_slop_baseline.json; the push is NOT blocked (WARN-ONLY)" ;;
+  esac
+else
+  echo "PUSH-GATE: slop_patrol skipped, tool missing"
+fi
+
+# riddler veil gate (2026-10-12, operator code-as-law order: "built into the
+# machinery; it needs to have truth"). Scope: only prose files that declare
+# themselves RIDDLER-PARABLE in their first 5 lines (the Riddler Protocol,
+# watch/inbox/riddler_protocol_20261012/CARD.md). A marked parable must pass
+# tools/riddler_veil.py's mechanical checks: no party-registry term (NO-DOX),
+# no 8-gram copy-through from its source documents, stands declaration valid
+# (SAME-STANDS mechanical half). Enforcement from first landing: unmarked
+# files never trigger, so the t40 lockout risk does not apply. The certified
+# (consensus) grade stays a publication-time duty, not a push gate.
+echo "PUSH-GATE: riddler_veil (RIDDLER-PARABLE-marked files)"
+if [ -f tools/riddler_veil_gate.py ] && [ -f tools/riddler_veil.py ]; then
+  .venv/Scripts/python.exe tools/riddler_veil_gate.py || exit 1
+else
+  echo "PUSH-GATE: riddler_veil skipped, tools missing"
+fi
+# verkle hermeticity tripwire (2026-10-13, archaeologist mission cycle 4 wiring;
+# tool born 2026-10-11 08:34 EDT, author unattributed, its file-too-long ratchet
+# debt accepted by name 2026-10-12, configs/violation_baseline.json).
+# Spec: receipt_20261010_archaeologist.md finding 5 step 4 ("a cheap pytest-
+# hermeticity patrol that fails any test file calling vk.CHAIN/vk.TIP writers
+# without an estate fixture, wired beside the census patrol"). Cause: the
+# 2026-10-07/08 pytest-fixture clobber of the live chain (same receipt, finding
+# 3), the second non-hermetic live-chain clobber (first: B2-388, 2026-09-26,
+# 9,890 rows to 2, watch/inbox/burn_wave_20260926/B2_388_stale_tip_writer_hunt_
+# 20260926.md). Falsifier at wiring: the tool names the historic clobbering
+# test (test_cross_arm_composition_leaf_domain_untouched, as landed in
+# 6685db6bc) with exit 1, and passes the cured working tree with exit 0;
+# full-tree scan 2.657s over 603 test files; selftest 6/6.
+# WARN-ONLY first landing per the t40/B2-215 precedent: findings NEVER block
+# the push; flip to enforce is an operator call.
+# TODO-FLIP-TO-ENFORCE: once the tripwire survives a few weeks of pushes and
+# the tests/test_merkle_cure_p4b_sized.py cure commits, flip the WARN tail to
+# `|| exit 1` as an operator decision.
+echo "PUSH-GATE: verkle_hermeticity (WARN-ONLY)"
+if [ -f tools/prepush_verkle_hermeticity.py ]; then
+  vh_out=$(.venv/Scripts/python.exe tools/prepush_verkle_hermeticity.py 2>&1); vh_rc=$?
+  case "$vh_out" in
+    "VERKLE-HERMETICITY: ok"*)
+      echo "PUSH-GATE: verkle_hermeticity ok"; printf '%s\n' "$vh_out" | sed 's/^/PUSH-GATE:   /' ;;
+    *)
+      echo "PUSH-GATE: verkle_hermeticity WARN (a test reaches a mag.verkle_knot writer with no redirecting fixture; the 2026-10-08 live-chain clobber class):"
+      echo "$vh_out"
+      echo "PUSH-GATE: fix: take the file's estate fixture or monkeypatch-redirect vk.CHAIN/vk.TIP in the named test (working-tree cure shape in tests/test_merkle_cure_p4b_sized.py); the push is NOT blocked (WARN-ONLY)" ;;
+  esac
+else
+  echo "PUSH-GATE: verkle_hermeticity skipped, tool missing"
+fi

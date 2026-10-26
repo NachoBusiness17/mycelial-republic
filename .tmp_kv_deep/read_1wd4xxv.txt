@@ -1,0 +1,130 @@
+ID 1wd4xxv [LocalLLaMA] Someone apparently managed to kind of replicate what V4.1 flash does on KV for fast prefill on Qwen
+date=1789097805 score=527 comments=80 author=T_rex2700 url=https://i.redd.it/9kh3f6m0atoh1.png
+PERMALINK https://www.reddit.com/r/LocalLLaMA/comments/1wd4xxv/someone_apparently_managed_to_kind_of_replicate/
+SELFTEXT:
+I wonder someone will figure out a way to do this with 27B?  
+  
+Throw Qwen3 on this page for demo  
+[https://kishida.github.io/webdemos/llkvapprox/](https://kishida.github.io/webdemos/llkvapprox/)
+COMMENTS (86, top-scored order):
+--- norenEnmotalen (140): Who be the blessed one to grace us with this for Qwen3.8-27B
+--- pmttyji (104): Found his post on this. Somebody replicate this for other models.
+
+* **Blog Post** : [https://nowokay.hatenablog.com/entry/2026/09/11/120001](https://nowokay.hatenablog.com/entry/2026/09/11/120001)
+* **HuggingFace** : [https://huggingface.co/kishida/Q3-8B-KVA-Projector/tree/main](https://huggingface.co/kishida/Q3-8B-KVA-Projector/tree/main)
+* **GitHub** : [https://github.com/kishida/webdemos](https://github.com/kishida/webdemos)
+--- iamMess (76): working on it :)
+
+[https://github.com/syv-ai/qwen38-27b-rtx3090](https://github.com/syv-ai/qwen38-27b-rtx3090)
+--- pmttyji (50): >Who be the blessed one to grace us with this for ~~Qwen3.8-27B~~ **all models**
+
+FTFY
+--- JLeonsarmiento (33): Nice to meet you, Dr Frankenstein.
+--- shayanx45 (26): I’m currently working on trying to have qwen 3.5 4B use the 51b parameter engram from qwen 3.8 next flash. And looped transformer
+--- Ok-Importance-3529 (22): If that is true why not use mtp draft model for this?
+--- Particular-Award118 (22): Someone with a better harness than me throw qwen 3.8 27b at the issue
+--- norenEnmotalen (22): Priorities. It’s the one that can fit on my memory :)
+--- YearnMar10 (21): Not sure, he seems like quite the mess…
+--- Jimcy-Maffesoli (21): It runs in a browser, so native is going to be a joke in the good way. Someone get this to 27B already
+--- Antique-Ad1012 (20): cant wait for qwen 4 27b / 35b a3b with ngrams and this magic
+--- pmttyji (20): u/T_rex2700 Can you include those links in your thread? Let the experts have these faster to get solutions ASAP.
+--- Luca3700 (17): Intersting work and experiment. But I think this would just be a lossy approximation, because the model is trained to build, in every transformer layer, its own kv-cache, and a projection from the middle of the network will be not particularly accurate especially for the last layers. Even tho, it is an interesting experiment to quantify how much the kv-cache can be predicted from the middle state of the network.
+
+I know that the experiment is about the Qwen 3 family, but I see people below asking about the qwen 3.5 family: I think that even for these models it will be a lossy approximation, especially because, if the prefil halts in the middle, the state of the Gated Delta Net will not have a global knowledge in the top 50% of the network. It would be interesting to quantify how much the model would lose in quality, as a scientific experiment, but I would not expect to use it as daily driver, especially because it is not fine-tuned to work with this layout (and I would expect quality drop especially in long context case scenarios).
+--- a-wiseman-speaketh (14): mess...iah?
+--- Hot_Example_4456 (11): I doubt if it will work without retraining for the engrams but if it does the implications are huge
+--- T_rex2700 (11): ok
+--- Steve_OH (10): So, if I understand correctly the base model runs part and another, smaller model essentially completes the answer?
+--- FoxiPanda (10): It's not quite the same, but oMLX on Macs support 'speculative' prefill using a same-tokenizer-tiny-model to *greatly* increase prefill speeds on Macs. The downside is that it is slightly lossy.  I wonder if you can combine these methods for even additional speed ..hmm..
+--- CxByte (9): I was curious enough to bother, here's v1 of a KV approximator for Qwen 3.8-27B that I cooked up: [https://huggingface.co/alimpfard/qwen3.8-27b-kv-approximation](https://huggingface.co/alimpfard/qwen3.8-27b-kv-approximation)
+
+Needs a patched llama.cpp to read the gguf and I'm still playing with it, but it's so far been pretty nice, clears 3.1k tok/s prefill on my 5090.
+--- Cool-Reflection6130 (9): getting the approximate kv technique working on a 27B would be huge for local inference honestly. fast prefill on long context is one of the main reasons people still default to api calls for document heavy workflows even when they have decent local hardware. if this generalizes cleanly to qwen that opens up a lot of options without needing a 500B server farm
+--- DerDave (9): I wonder if it's possible to load and unload this Decoder/Encoder model to save further RAM. Load it in the beginning let it do it's thing during pp, then kick it out and leave more VRAM during TG for the remaining weights...
+--- bennmann (8): You would have more success using the MTP draft model of Qwen flash next as a small LLm, no?
+--- lnenad (8): I'm running your baby and it's awesome, thanks for your work.
+--- DigThatData (8): neat project, thanks.
+
+For anyone else looking for the "what are the tweaks?" section of the docs: https://github.com/syv-ai/qwen38-27b-rtx3090#what-each-step-buys
+--- iamMess (8): Way faster.
+--- basgil56 (8): Our savior
+--- hyperrealists (7): A slippery slope to mythos level on a laptop 🤞
+--- MrPecunius (6): No, he's a very naughty boy.
+
+https://preview.redd.it/0y5x7ihzixoh1.jpeg?width=639&format=pjpg&auto=webp&s=668532d3aee1695ea705e58a2bda8cbcfcfc6f26
+--- MooseEfficient2151 (5): my vram and power bill are sweating less just reading this
+--- Ledeste (4): https://preview.redd.it/rm5e9v28dwoh1.png?width=1272&format=png&auto=webp&s=d087106103886c04c2c33a5c3fb40a25d5fdaabb
+--- torytyler (4): seems to work, i did a very quick test on my gaming rig with a 5070, but being browser based and I have no idea what backend this project is using, the inference like token generation felt very slow even if all on GPU offload. none the less, comparing the two methods there /is/ an improvement, nearly twice as fast preload.
+
+https://imgur.com/a/CQjrjDT
+--- pmttyji (4): Check my comment
+--- Alheimsed (3): Looks like someone cooked this up. [https://huggingface.co/PixelML/Qwen3.8-27B-KVA-Projector](https://huggingface.co/PixelML/Qwen3.8-27B-KVA-Projector)
+--- gbrhaz (3): Btw, I've set up both club-3090 and this now on my machine and yes, standard decoding is much faster, but prefills are also way slower. Win some lose some I suppose. I did use the benchmark in club-3090 which may be biased, I am not sure. Either way, decode code was 75t/s on club vs 178t/s on syv. Decoding at 90k context 36t/s on club and 122 tok/s on syv. Prefill 90k on club was 1.9mins and 3.9mins on syv. And useable context was 240k on club, but 120k on syv. As ever, probably depends on usecase.
+--- Ok-Direction-4480 (3): Imagine Qwen 4 has better thinking (New High, which achieves better than XHigh 3.8 for less thinking tokens) and they also release a native q4 version, and with Deepseek's efficient KV Cache compression from v4.1 they caan give you 262k context on 16GB. Imagine.
+--- oxygen_addiction (3): For non-agentic, sure.
+--- feverdoingwork (3): You got a project repo? I am interested in seeing what you cooked up so far
+--- JLeonsarmiento (3): Not really. SpecPrefill oMLX has the helper model going trough the input and reducing the input tokens to 1/5 before passing that to the big fat slow denser model. 
+
+It’s lossy. Model feels like numb, drunk. Cannot connect the dots as session turns increase.
+--- lots_of_puppies (3): I think it also doesn't work well and degrades on long contexts too
+--- EitherMarch1255 (3): Source?
+--- Public_Umpire_1099 (2): My tests for Qwen Flash Next show a 1.5x speedup at roughly a deficit of +2% ppl increase. That's a worthy trade in my book, less than one quant step of perplexity. As I continue to modify the architecture, which is already quite divergent from this design, I'm seeing ~85% accuracy roughly. To combat that, im applying it only to the later layers and decided to instead predict inputs to the weights instead of predicting the whole output. Seems to help.
+--- CxByte (2): There will regardless be \_some\_ quality loss, since the estimated space seems to be very bunched up (I couldn't find a threshold for any cheap metric I could find to reject bad estimates.)
+
+That said v2 of this with a bit more parameters and 10x more data has already gone past the v1 accuracy in that repo and it's still midway; so I have some hope.
+--- shayanx45 (2): I am looking for a job in this area 👀
+--- PraiseThePidgey (2): Q4 barely fits on 16gb without vision and no MTP I can crank it up to max 70k q4_0 context without swapping... Seems too good to be true... 
+Lately I've been testing KV cache streaming modified fork of llama.cpp with q3_xs and context set to 90-100k and it started swapping above 50% context anyway ... Maybe someone with Astra subscription needs to make some deep research :)
+--- shayanx45 (2): That’s not a bad idea
+--- shayanx45 (2): I am retraining the engrams that’s the issue.
+--- Ok-Direction-4480 (2): Why don't you work for Anthropic or Qwen? You could give those guys AGI too.
+--- Morning_Gecko24 (2): has anyone tried this with a 7B-ish model at different quant levels? im curious how much of the win survives once the KV is already quantized, since the projector error might stack with q4/q5 noise. also wondering if the cache setup needs a specific batch size to stay ahead in real long-context runs
+--- Morning_Gecko24 (2): This is a really neat shortcut. The part I’m still wondering about is how much quality drops once the prompt gets long or the context has lots of repeated stuff. Has anyone tried this on a real chat history instead of a clean benchmark? Also curious whether the memory savings are big enough to matter on a 12–16 GB card, or if the speedup is the main win.
+--- oxygen_addiction (2): It'd probably increase latency quite a bit at the start of a generation and would only really help if you are unloading to CPU/RAM.
+--- JLeonsarmiento (2): In my case I found it useful for long context one shot scenarios, but totally impractical and counterproductive for long multi turn agentic work. The model feels like it’s drunk, numb.
+--- bobby-chan (2): How is it going?
+--- the_derby (2): I'd actually benched it with Qwen3.5-0.8B-bf16 and the more aggressive keep rate and got the same results. In the end, I had the memory to spare and the (slightly) more conservative keep rate wasn't that much slower so I kept it.
+
+Maybe I should evaluate the 8-bit. =)
+--- MarcelloT254k (2): How to use it? Is there a tl:dr in english?
+--- the_derby (2): \> The downside is that it is slightly lossy.
+
+Is it?
+
+I'm using Qwen3.5-2B-bf16 with the recommended 20% keep rate and I haven't noticed any degradation.
+--- gbrhaz (2): How does this all compare vs club-3090?
+--- Nakidnakid (2): hey if it works and produces the results then that's great, i have a feeling you'll find the limits of it somewhat quickly though. I tried and rejected something similar in my own testing because even if it helped sometimes it'd hurt a lot when it didn't and its just moving the cost not reducing/eliminating it.
+--- returnity (2): This sounds kind of like oMLX spec prefill, no?
+--- [deleted] (1): [removed]
+--- [deleted] (1): [removed]
+--- shayanx45 (1): Not public yet
+--- PraiseThePidgey (1): Nice job! Do you think the quality loss is inevitable or could we see a significant improvement in the future?
+--- [deleted] (1): [removed]
+--- T_rex2700 (1): prefill speed is halved, so quicker time to first token, I guess. no real inference cost change  I think?
+--- Ok-Direction-4480 (1): The status that Qwen 3.8 27B has in this sub, not even legendary can describe it.
+--- Ok-Direction-4480 (1): So input costs for AI models are going to get cut in half (5 for astra, 2 for sol, 5 for fable)?
+--- brakeline (1): I'm trying it but I'm having trouble activating dfalsh2 to try. With mtp it works ok but I wish I had more pp speed
+--- [deleted] (1): [removed]
+--- [deleted] (1): [removed]
+--- returnity (1): That's why I was hesitant to try it out in oMLX, I think LLMs are lossy enough as it is. It seems like there's some degree of lossiness to this approach too, at least it's not perfectly 1:1. But maybe to a lesser degree? It's hard to understand his post through Google Translate unfortunately.
+--- click_clock_woods (1): It's just a modified vllm, but it runs pretty good for me with 2x3090. You can use a model of your own choice, or the w4a16 one mentioned in the repo for speed. You can also use 8-bit activations for more TG/s on 3000 series. I typically see 50-150 TG/s (multi seq) for mixed workloads and PP > 1000 even at 100k context length.
+
+Many /r/localllama readers will turn their nose at quants below 8 bpw... that said I have been pretty impressed with the output of this thing for parallel agents. And most importantly it's been working flawlessly for me. No OOM or weird issues like draft acceptance suddenly going to 0%, prefix cache not working etc.
+--- ohbabythisisgoodlol (1): have you actually put on the 27b yet?//
+--- brakeline (1): Is that based in what? Any chance it would work in split tensor on 2x sm_86 (3060)?
+--- qado (1): Just big wow, praise for Deepseek team
+--- DerDave (1): You could reload the CED as soon as token generation is done, while a human reads the output and types their answer... Could be hidden completely with good scheduling.
+--- [deleted] (1): [removed]
+--- WithoutReason1729 (1): Your post is getting popular and we just featured it on our Discord! [Come check it out!](https://discord.gg/PgFhZ8cnWW)
+
+You've also been given a special flair for your contribution. We appreciate your post!
+
+*I am a bot and this action was performed automatically.*
+--- [deleted] (1): [removed]
+--- Borilentz (1): Most people use 8-bit at best. The majority probably 4-bit.
+--- null-hawk (1): dem
+--- [deleted] (1): [removed]
+--- [deleted] (1): [removed]
+--- norenEnmotalen (1): Spec prefill is just for ttft
+--- XiRw (0): Neat.
+--- Turbulent_Pin7635 (-3): Laughing in MacStudio!!! I hope they keep improving it.

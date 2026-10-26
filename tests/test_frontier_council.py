@@ -60,8 +60,13 @@ def test_spend_records_and_rightsize_guard(tmp_path, monkeypatch):
     assert m.spend("x", "nope")["ok"] is False
 
 
-def test_delegate_routes_and_shapes():
+def test_delegate_routes_and_shapes(tmp_path, monkeypatch):
     import mag.frontier_council as m
+    # Hermetic (2026-09-27): delegate reads the LIVE weekly allowance ledger;
+    # the burn week really spent the frontier caps, so the live-state run
+    # fell through to deepseek. Pin a fresh week like the allowance test does.
+    monkeypatch.setattr(m, "ALLOWANCE", tmp_path / "allowance.jsonl")
+    monkeypatch.setattr(m, "CAPS", tmp_path / "caps.json")
     d = m.delegate("synthesize our strategic direction for the week")
     assert d["ok"] and d["tier"] == "frontier"
     assert d["surface"] in ("chatgpt", "grok_web")
@@ -78,8 +83,13 @@ def test_council_has_all_members():
     assert {"chatgpt", "grok_web", "grok_x", "deepseek", "vram"} <= names
 
 
-def test_recommend_self_stolen_chain():
+def test_recommend_self_stolen_chain(tmp_path, monkeypatch):
     import mag.frontier_council as m
+    # Hermetic (2026-09-27): recommend's surface pick reads the LIVE weekly
+    # allowance ledger; real burn-week spend exhausted chatgpt/grok and the
+    # live run routed frontier work to the cheap shape. Fresh week pinned.
+    monkeypatch.setattr(m, "ALLOWANCE", tmp_path / "allowance.jsonl")
+    monkeypatch.setattr(m, "CAPS", tmp_path / "caps.json")
     # frontier (code planning) -> reasoning shape on a scarce surface
     f = m.recommend("plan the code for the new emulator")
     assert f["ok"] and f["tier"] == "frontier"

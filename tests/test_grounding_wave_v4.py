@@ -197,8 +197,10 @@ class TestTamperDetection:
         ok, msg = wave.verify()
         assert ok, msg
         row = _rows(wave)[0]
+        # T1W1 ticket 11 (2026-10-01): new bindings carry the FULL sha256
+        # (was the 48-bit [:12] cut); read sides accept both widths.
         assert list(row["src_sha256_12"].values()) == [
-            __import__("hashlib").sha256(b"original bytes").hexdigest()[:12]]
+            __import__("hashlib").sha256(b"original bytes").hexdigest()]
         # mutate the evidence bytes AFTER the post: existence holds, identity breaks
         Path(ev).write_text("mutated bytes", encoding="utf-8")
         ok, msg = wave.verify()
@@ -218,13 +220,16 @@ class TestTamperDetection:
         assert w2["checks"]["g3_exit"] == 1
 
     def test_corroboration_blocked_by_failing_warrant(self, wave):
+        # Lineage-prefixed seats (A3 law) so this test exercises the WARRANT
+        # gate, not the seat gate: without prefixes it passed vacuously
+        # because unprefixed witnesses can never corroborate (2026-10-01).
         exe = Path(sys.executable).as_posix()
-        bad = wave.post("failing warrant", "UNPROVEN", "AGENTS.md", seat="a",
+        bad = wave.post("failing warrant", "UNPROVEN", "AGENTS.md", seat="alpha/a",
                         warrant=f'"{exe}" -c "import sys; sys.exit(1)"')
-        wave.witness(bad["hash"], seat="b")
-        wave.witness(bad["hash"], seat="c")
+        wave.witness(bad["hash"], seat="beta/b")
+        wave.witness(bad["hash"], seat="gamma/c")
         assert gw._admission(_rows(wave))["statuses"][1] == "RECORDED", \
-            "two witnesses cannot corroborate a claim whose warrant exits 1"
+            "two distinct lineages cannot corroborate a claim whose warrant exits 1"
 
     def test_witness_cannot_self_sign(self, wave):
         r = wave.post("claim", "UNPROVEN", "AGENTS.md", seat="a")
@@ -237,20 +242,23 @@ class TestTamperDetection:
 class TestLadderAndView:
     def _corroborated_row(self, wave, tmp_path, claim="the finding"):
         ev = _evidence(tmp_path, name=f"{claim[:8].replace(' ', '_')}.md")
-        r = wave.post(claim, "UNPROVEN", ev, seat="a")
-        wave.witness(r["hash"], seat="b")
-        wave.witness(r["hash"], seat="c")
+        # A3 lineage-law fixtures (2026-10-01 owed): CORROBORATED counts
+        # distinct LINEAGES (seat = <lineage>/<instance>), so the author
+        # rides one lineage and the two hands ride two OTHER lineages.
+        r = wave.post(claim, "UNPROVEN", ev, seat="alpha/a")
+        wave.witness(r["hash"], seat="beta/b")
+        wave.witness(r["hash"], seat="gamma/c")
         return r
 
     def test_full_ladder_in_view(self, wave, tmp_path):
-        rec = wave.post("just recorded", "UNPROVEN", "AGENTS.md", seat="a")
+        rec = wave.post("just recorded", "UNPROVEN", "AGENTS.md", seat="alpha/a")
         cor = self._corroborated_row(wave, tmp_path, "corroborated finding")
         con = self._corroborated_row(wave, tmp_path, "contested finding")
-        wave.contest(con["hash"], "i dispute the binding", seat="d")
+        wave.contest(con["hash"], "i dispute the binding", seat="delta/d")
         voy = self._corroborated_row(wave, tmp_path, "voided finding")
-        v = wave.void(voy["hash"], "FORGED", "the evidence was staged", seat="z",
-                      witness="b")
-        wave.witness(v["hash"], seat="b")
+        v = wave.void(voy["hash"], "FORGED", "the evidence was staged",
+                      seat="zeta/z", witness="beta/b")
+        wave.witness(v["hash"], seat="beta/b")
         out = wave.view()
         # the ladder itself is named
         assert "RECORDED -> CORROBORATED -> CONTESTED -> VOID" in out
@@ -268,15 +276,18 @@ class TestLadderAndView:
         assert statuses.count("VOID") == 1
 
     def test_corroboration_needs_two_distinct_non_author_seats(self, wave, tmp_path):
+        # Upgraded to the A3 lineage law (2026-10-01 owed): "distinct seats"
+        # means distinct LINEAGES. Same lineage under two instance names is
+        # the puppet shape and must stay one hand.
         ev = _evidence(tmp_path)
-        r = wave.post("claim", "UNPROVEN", ev, seat="a")
-        wave.witness(r["hash"], seat="b")
+        r = wave.post("claim", "UNPROVEN", ev, seat="alpha/a")
+        wave.witness(r["hash"], seat="beta/b1")
         assert gw._admission(_rows(wave))["statuses"][1] == "RECORDED", \
             "one witness is not corroboration"
-        wave.witness(r["hash"], seat="b")  # same seat twice: still one hand
+        wave.witness(r["hash"], seat="beta/b2")  # same lineage, new instance: one hand
         assert gw._admission(_rows(wave))["statuses"][1] == "RECORDED", \
-            "two rows from ONE seat are still one hand (unanimous prior)"
-        wave.witness(r["hash"], seat="c")
+            "two rows from ONE lineage are still one hand (the puppet kill)"
+        wave.witness(r["hash"], seat="gamma/c")
         assert gw._admission(_rows(wave))["statuses"][1] == "CORROBORATED"
 
     def test_verify_reports_admission_summary(self, wave, tmp_path):
@@ -300,21 +311,21 @@ class TestPlantedFailurePropagation:
         void the premise: the collapse must be visible from the chain alone."""
         premise = _evidence(tmp_path, name="false_premise.md", body="fabricated data")
         f = wave.post("FALSE PREMISE: the repo has 9 seats", "UNPROVEN",
-                      premise, seat="f")
+                      premise, seat="alpha/f")
         # descendant physically chained on the premise (prev = premise hash)
         d = wave.post("descendant: therefore 9-seat rotation is proven", "UNPROVEN",
-                      "AGENTS.md", seat="f")
+                      "AGENTS.md", seat="alpha/f")
         assert d["prev"] == f["hash"], "descendant stands on the premise"
-        # two other hands corroborate the false premise
-        wave.witness(f["hash"], seat="b")
-        wave.witness(f["hash"], seat="c")
+        # two other hands (distinct lineages, A3 law) corroborate the false premise
+        wave.witness(f["hash"], seat="beta/b")
+        wave.witness(f["hash"], seat="gamma/c")
         assert gw._admission(_rows(wave))["statuses"][1] == "CORROBORATED", \
             "pre-corruption state: the false premise reads CORROBORATED"
         # an outside catch voids the premise (cross-signed)
         v = wave.void(f["hash"], "EVIDENCE_DEAD", "the premise evidence was "
-                      "fabricated; descendant inherits the defect", seat="z",
-                      witness="b")
-        wave.witness(v["hash"], seat="b")
+                      "fabricated; descendant inherits the defect", seat="zeta/z",
+                      witness="beta/b")
+        wave.witness(v["hash"], seat="beta/b")
         adm = gw._admission(_rows(wave))
         assert adm["statuses"][1] == "VOID"
         # propagation is CHAIN-VISIBLE: the child and both witnesses are flagged

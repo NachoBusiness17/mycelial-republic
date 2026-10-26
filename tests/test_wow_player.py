@@ -20,6 +20,9 @@ import mag.wow_player as wp
 from mag.wow_player import (SCHEMA, PlayerFile, PlayerLedgerError,
                             canonical, player_id_for, verify_file)
 
+# HEADLESS law: explicit creationflags (ratchet tests/test_headless_law.py; bare-spawn-descent 2026-09-29)
+HEADLESS = getattr(subprocess, "CREATE_NO_WINDOW", 0x08000000) if sys.platform == "win32" else 0
+
 
 @pytest.fixture()
 def store(tmp_path, monkeypatch):
@@ -113,10 +116,12 @@ def test_fresh_process_resume_byte_identical(store):
     ) % (wp.ROOT, store)
 
     w = subprocess.run([sys.executable, "-c", writer],
-                       capture_output=True, text=True, timeout=120)
+                       capture_output=True, text=True, timeout=120,
+                       creationflags=HEADLESS)
     assert w.returncode == 0, w.stderr
     r = subprocess.run([sys.executable, "-c", reader],
-                       capture_output=True, text=True, timeout=120)
+                       capture_output=True, text=True, timeout=120,
+                       creationflags=HEADLESS)
     assert r.returncode == 0, r.stderr
     assert json.loads(w.stdout) == json.loads(r.stdout)
     doc = json.loads(r.stdout)

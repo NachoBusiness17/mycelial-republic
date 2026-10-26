@@ -212,6 +212,14 @@ def commit_day(day: str | None = None, *, dry: bool = False) -> dict[str, Any]:
         if existing_i is not None:
             rows[existing_i] = chain_row
             all_hashes = _rewrite_chain_unlocked(rows)
+            # B2-388 fix: root was never bound on the amend arm, so the tip
+            # construction below raised UnboundLocalError AFTER _rewrite_chain
+            # had already rewritten the chain rows: chain moved, tip stayed
+            # behind, the exact stale-tip disease B2-388 hunted (the live dual
+            # of the 06:12Z tip freeze B2-82 repaired). Evidence: the B2-388
+            # probe caught the UnboundLocalError live pre-fix; post-fix the tip
+            # root equals the recomputed merkle root.
+            root = _merkle_root(all_hashes) if all_hashes else _h(b"empty")
             amended = True
         else:
             rows.append(chain_row)
@@ -239,7 +247,10 @@ def commit_day(day: str | None = None, *, dry: bool = False) -> dict[str, Any]:
             "updated_minute": None,
             "note": "One leaf per session; amend in place on re-summarize. Merkle–Verkle hybrid tip.",
         }
-        TIP.write_text(json.dumps(tip, indent=2), encoding="utf-8")
+        # atomic tip write (2026-09-25): torn tip writes freeze chain appends via
+        # the integrity gate; use verkle_knot's tmp+os.replace helper instead.
+        from mag.verkle_knot import _write_tip_atomic
+        _write_tip_atomic(tip)
 
     return {"ok": True, "schema": SCHEMA, "amended": amended, "day": day,
             "filename": fname, "leaf_hash": leaf["leaf_hash"],

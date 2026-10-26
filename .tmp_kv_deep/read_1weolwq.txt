@@ -1,0 +1,195 @@
+ID 1weolwq [LocalLLaMA] What pi.dev plugin do you suggest for context, compaction and memory management of local models?
+date=1789247998 score=23 comments=54 author=darksteelsteed url=https://www.reddit.com/r/LocalLLaMA/comments/1weolwq/what_pidev_plugin_do_you_suggest_for_context/
+PERMALINK https://www.reddit.com/r/LocalLLaMA/comments/1weolwq/what_pidev_plugin_do_you_suggest_for_context/
+SELFTEXT:
+I have been battling with my Qwen3.8:27b setup on my rtx 5080 16gb.  I am using llama.cpp to run a nvfp4 version of qwen3.8:27b
+
+    llama-b10699-bin-win-cuda-13.3-x64\llama-server.exe -hf williamliao/Qwen3.8-27B-NVFP4-GGUF:NVFP4 --jinja --chat-template-file d:\qwen\chat_template.jinja --reasoning-format deepseek --host 127.0.0.1 --offline -np 1 --threads 16 --threads-batch 16 --log-verbosity 4 --no-log-prefix --no-log-timestamps --no-mmproj-offload --mmproj D:\OllamaModels\blobs\sha256-ac3714bfdddeca31351f2752bf1a63f266f4df87c0b68c895e44945ca704448e --load-mode none --cache-type-k q4_0 --cache-type-v iq4_nl --flash-attn on -b 512 -ub 512 -c 49152 -a qwen3.8:27b
+
+So that is giving me a 48k context, and a speed of around 12t/s
+
+My problem is that pi.dev fails to compact at the right times, and then the model stops early.
+
+I have tried to use 
+
+pi install npm:max-context   //this doesnt work properly at all
+
+pi install npm:pi-observational-memory  //this one works kind of, I had it set to compact on threshold.  It managed to auto compact 4 times, with a 0.75 ratio set, but it still missed the mark and failed.
+
+ pi install npm:pi-blackhole   //seemed promising, but failed to compact at all, I am not sure what I set wrong.
+
+if I look at the [https://pi.dev/packages](https://pi.dev/packages) page, there are lots of plugins for either context management, compaction, memory management, or both.  there are way too many for me to just randomly keep trying.  other AI has been very unhelpful.  Google, OpenAI, Copilot, all full of nonsense.   A lot of these plugins seem to be aimed at frontier model management.
+
+I am also disappointed that compaction settings are best suited to the specific model being used and its context window, but the built in tools in [pi.dev](http://pi.dev) architecturally keep the compaction settings completely separate from model settings, which seems a bit of an issue if you change models often.
+
+I may want to use qwen3.8 like above, but not necessarily for everything.  I also want to use gemma, other qwen models, etc depending on my use case.
+
+I dont want to have to manually resetup context settings in [pi.dev](http://pi.dev) for every different model.
+
+What do you guys suggest, especially for models that have smaller context windows due to my vram shortage ?
+
+Thanks in Advance.
+COMMENTS (60, top-scored order):
+--- noctrex (30): [pi-blackhole](https://pi.dev/packages/pi-blackhole)
+--- i5031337 (8): You will have a better time with a Q3 variant that actually fits in 16GB. Triple speed at double context beats marginal better quality from 4-bit.
+--- MindfulMan1984 (8): Upvote pi-blackhole ! I have been using it for weeks, it’s amazing and it’s been actively developed.
+--- KingCpzombie (5): Tbh since you're so VRAM-limited you might want to go back to 3.6 35B... the main advantage of 3.8 is the long thinking and I feel like constant compaction + heavy quantization is likely to end up hurting results more than using a less-quantized slightly older model
+--- o0genesis0o (4): Try IQ2 of unsloth. I tried it for giggle and I was shocked that it was not incoherent, so I put it in real use cases both coding and agentic assistant, and the little bugger actually completed the task. Not 100% sure I would pick this over ornith 1.5 35B at higher quants, but it's shockingly usable, in agentic work.
+--- noctrex (4): It merges it together with pi-vcc, which is a non-deterministic compaction, meaning no LLM used, so its instantaneous.
+--- mister2d (4): I use the `context-mode` plugin. The savings seem real.
+--- feng_sg (2): blackhole only reads its config once at startup so any changes you make to the json mid session just get ignored. kill the whole pi process and restart it after every config edit, reloading the plugin alone wont cut it.
+--- PavelPivovarov (2): Context compaction is not the problem for me, but for long lasting memory I just wrote [my own wiki engine using golang + sqlite](https://github.com/piv-pav/glow) and added instruction to the system prompt for model to use it + skill. 
+
+Works like a charm, plus memories usually grow into full articles that contain all necessary context for the model. I also like that it's explicit way of working with memories, instead of automation tries to guess what random fact about me to shove into the context.
+--- KingCpzombie (2): Ah, that explains the similar name!
+--- o0genesis0o (2): IQ2_S
+--- Bulky-Priority6824 (2): Yea he must be spilling into sys ram my guess
+--- Mean-Ad1493 (2): The ISTA-DSA lab's iq2xs is good for 12gb VRAM. It's not great, but it just works.
+--- Proper-Damage-1777 (2): I tried pi-observational-memory and didn't really like it... maybe because I use pi more of a pair programming and the extra steps to "record memory" just make each turn slower and waste my GPU cycles... (no idea with cloud provider).
+
+BUT I recently discover pi-vcc and that just solve my nightmare with compaction. Reason is I'm using Qwen 3.8 Flash Next and that is slow but great. I used it 240K context size and if I need to compact with the default Pi... it will take forever while pi-vcc is just like less than a sec... and it still can resume fine. Although there is cases where it "forgets" like the path to a temporary output folder and I stop it, tell it to "recall" the correct path and it will invoke pi-vcc recall method that checks the JSONL session.
+
+I usually run pi without any extra extensions but I highly giving pi-vcc a try first. Previously, I just ask pi to write a handoff so I can start a new session and resume from there... it still need to re-read some codes and docs but that is no different than letting pi trying to compact and waste more GPU cycles... and still fumble a lot after the compaction for older conversation.
+--- Jorlen (2): I'm not OP, but I noticed that unless you give your LLM main agent a break, like asking it to pause as a steering request, it won't trigger the usual 80% blackhole compaction.  Any way around that?
+--- i5031337 (2): You can try the q2 variants but I'm not sure that will be better than a weaker model
+--- Jorlen (2): What model do you use for the three workers?  If I understand correctly, the compaction no longer uses an LLM, but the three workers need their own separate LLM.  I was thinking qwen 3.5 4b or 9b with 16k context for the workers?
+--- philmarcracken (2): what about 12gb (¬‿¬)
+--- DustNearby2848 (2): Tiel coder or Ornith 1.5
+--- DeProgrammer99 (2): I'd suggest *not* the context-watchdog extension little-coder uses. Constantly causes the "Compaction failed: Already compacted" error, often blocking the LLM from continuing when it otherwise could have. And I've tried 4 times to fix it, and this is the latest version after *they* claimed to [have fixed it](https://github.com/itayinbarr/little-coder/issues/109) 3 weeks ago...
+--- Kernoriordan (2): FYI I get 80+TPS and 65k context size out of Qwen 3.8 by using Unsloths UD-Q3 quant with MTP. I recommend that
+--- Most-Dig-1579 (2): Upvoted!  agree with that
+--- omega1612 (2): Wait what? How it is that you go at 12 t/s 
+
+With all the Nvidia optimizations I expected more speed. I have a Rx 7900 xtx and it works in the 35 -60 (mostly 40 ) t/s regardless of the amount of context.
+
+Also for  compaction, the issue I have with the pi approach is that it invalidates the kv cache. They send to the server a block like 
+
+Summary prompt + messages - preserve 
+
+
+While the original state in cache is 
+
+System prompt + old summary (if any) + messages
+
+The invalidation makes it prefill the memory for both, the compaction and the post compaction load. 
+
+I just asked qwen3.8 to work on a custom compactor and I will fine-tune it as much as I need , that may drop my compaction time form 7.5 minutes (worst case, 100k to compact) to 3 minutes.
+--- kmike84 (2): exactly, everyone can do it (this is what i did as well)
+--- KingCpzombie (2): You can have Qwen make a monkey-patching extension to configure the limits yourself; I personally feel like 50Kb is too low so I doubled it
+--- KingCpzombie (2): 48k context? Do you compact halfway through every thinking block?
+--- New-Implement-5979 (1): have you tried tensor override ?
+--- darksteelsteed (1): I wasn't able to get pi blackhole to work right for some reason, however pi-vcc is working great.  It is compacting without needing a llm to run the data through. I also gave my agent instructions to write and update its plan on every step to survive compaction. It follows that like its truly afraid
+--- darksteelsteed (1): I am stuck on ddr4. New ram is too expensive right now
+--- New-Implement-5979 (1): what kind of RAM does your setup have? DDR5?
+--- darksteelsteed (1): I have 16 cores 32 threads. I played around with that,  it only seems to affect the input token processing and not the output rate. 
+
+The major find if you see my post is that the nvidia driver was silently offloading to system ram.  Since disabling that I am getting much higher token rates.  In my newer testing I moved both k and v of the kv cache to q4_0. Playing around with the other options,  while it does seem to be supported makes the model noticeablely dumber.  
+
+So far I have been getting way better speeds without the mtp draft spec. Now that I have a more stable baseline I will try turn it on again. 
+
+Thanks.
+--- Fancy-Snow7 (1): So many optimisations to your command. i have 5070ti and get 80t/s.
+
+First how many physical cores does you CPU have?
+
+Set these to about 75% of your physical not logical cores. Physical is usually half physical. If you have 8 set it to 6 but also test 7, 8 to be sure.
+
+\--threads 16 --threads-batch 16
+
+You are using different KV quants. If you downloaded the binaries, it has not been compiled for all quants and will fall back to CPU. If you compiled it yourself compile with -DGGML\_CUDA\_FA\_ALL\_QUANTS=ON  
+\--cache-type-k q4\_0 --cache-type-v iq4\_nl
+
+Try a lower quant, largest Q3 is pretty good or smallest Q4.
+
+You should be able to enable MTP with Q3 avoid on Q4. Unless you run a small context. But you are going to need closer to 100k cache with 2.8 27B
+--- darksteelsteed (1): Hi Everyone,
+
+Thanks for all your feedback.  I ended up going with unsloth/Qwen3.8-27B-GGUF:UD-Q3\_K\_XL and then tweaking context size upwards.  Disabling mtp greatly increased my token rate, much to my surprise.  I am getting \~49t/s with a 131072 context with kv cache at q4\_0
+
+I am using the npm:@sting8k/pi-vcc plugin for context and compaction, thanks for the comments, it seems to work well.
+
+My command is 
+
+    llama-b10699-bin-win-cuda-13.3-x64\llama-server.exe -hf unsloth/Qwen3.8-27B-GGUF:UD-Q3_K_XL --jinja --chat-template-file d:\qwen\chat_template.jinja --reasoning-format deepseek --host 127.0.0.1 --offline -np 1 --threads 16 --threads-batch 16 --log-verbosity 4 --no-log-prefix --no-log-timestamps --no-mmproj --load-mode none --cache-type-k q4_0 --cache-type-v q4_0 --flash-attn on -b 512 -ub 512 -c 131072 --fit off -ngl 99 -a qwen3.8-27b:ud-q3_k_xl --kv-offload
+
+Now here is the interesting part.  I discovered that the Nvidia driver on windows f\*\*\*s you over by default.  I am using 616.56 for CUDA 13.4 support.  You need to go to Graphics -> Program Settings -> Add a program, select your llama-server.exe, and then find "CUDA Memory Fallback" and set it to "Prefer no fallback".  if you do not do this, it will attempt to not allocate what your calling application requests, and instead shift some vram to windows shared memory (system ram) degrading performance.   With the combination of --load-mode node --fit off -ngl 99 and --kv-offload, it keeps all layers on gpu, all vram cache on gpu, and if it cant allocate, it fails and crashes with oom.  Doing this I have been able to push for a much larger kv cache.
+
+I have a nice powershell command that I built a while back:
+
+    Get-Counter "\GPU Process Memory(*)\Local Usage" | 
+        Select-Object -ExpandProperty CounterSamples | 
+        Where-Object { $_.CookedValue -gt 1MB -and $_.InstanceName -match "pid_(\d+)" } | 
+        Select-Object @{Name="PID"; Expression={ [int]$Matches[1] }}, @{Name="VRAM_MiB"; Expression={ [math]::Round($_.CookedValue / 1MB, 2) }} | 
+        Group-Object PID | 
+        Select-Object @{Name="ProcessName"; Expression={ (Get-Process -Id $_.Name -ErrorAction SilentlyContinue).Name }}, 
+                      @{Name="PID"; Expression={ $_.Name }}, 
+                      @{Name="Total_VRAM_MiB"; Expression={ ($_.Group | Measure-Object VRAM_MiB -Sum).Sum }} | 
+        Sort-Object Total_VRAM_MiB -Descending | 
+        Format-Table -AutoSize
+
+It shows the vram used per process, which is useful for tracking what is active or what can be gotten rid of.  I am literally allocating
+
+ llama-server    14955.27MiB
+
+and that is without adjusting the nvidia drivers, this was impossible as the token rate would not be maintained and would drop off as it would claim to allocate, but was actually shifting part of the workload to system memory.
+
+I am hoping this helps someone.  Cheers !
+--- Legal_Dimension_ (1): heres an extract from my Pi lessons learned - not sure if it will help or not  
+  
+3. Blackhole reads its config once per process. Changing pi-blackhole-config.json (e.g. setting "midRunCompaction": "resume") does nothing until you fully restart Pi. A running session
+
+keeps the old settings and can climb from 158k to 192k tokens unchecked inside one tool loop.
+
+
+
+ 4. Your thresholds are mis-stacked, or something else calls ctx.compact().
+
+\- contextWindow in models.json must leave room for output — prompt + generation share the window. Set it to (served context − max output), e.g. 176,000 for a 196k window with 16k max
+
+output. Otherwise Pi thinks more prompt fits than actually does and you get stop=length truncation (one-token answers, cut-off tool-call JSON).
+
+\- Never call bare ctx.compact() from an extension — it aborts the active run by design. If you have a custom compaction/context-guard extension, make it advisory-only and let blackhole
+
+own compaction.
+
+\- Stack your thresholds so each fires before the next: advisory % < compactAfterTokens (e.g. 140k) < Pi's backstop (contextWindow − reserveTokens) < hard prompt ceiling.
+
+\- Also check the practical prefill ceiling: if your server can't prefill the context inside the client timeout (measure tok/s under a prefill workload, not generation), you'll die
+
+before compaction ever fires — a "dead band".
+--- Razangriff-Raven (1): I gave blackhole a shot and at first it sucked. After configuring it properly (no LLM, adjusted the context sizes and stuff) it turned out to work pretty well. Not half bad really, I don't have to dread the slow compaction steps anymore and it's slightly more accurate recalling user requests somehow. 
+
+Like, it does stuff like "but user said in #XXXX that the rendering has this quirk, I'd better double-check" that didn't happen with the regular compaction. I'll give it a longer test, but so far so good. Thanks for mentioning it.
+--- KingCpzombie (1): Considering how much more context you can fit, that will probably be faster because it won't have to compact every 20k tokens. Also better results because no compaction problems
+--- darksteelsteed (1): I was able to get 6t/s with qwen3.8 flash next with q4_k_xl using ssd offloading for the inactive layers
+--- TerminalNoop (1): I think context-mode mostly helps with reducing the amount of stuff the model would load into it's context without it. So the amount of context you have can be used much more efficiently.
+--- KingCpzombie (1): If you have enough system ram, 3.8 flash-next is a way better option for you than 27B. 27B is great, but I occasionally get compaction (sometimes multiple times for one task) with 220k context. If you don't have the ram for flash-next, I would still recommend 35B tbh just based on being able to use Q8 + unquantized KV + way more context and speed
+--- CapsAdmin (1): I briefly tried this on 3.6 27b and was not satisfied as it felt like it forgot things that a normal compaction wouldn't.
+
+With that said, 3.8 is very good at surviving pi's default compaction, so maybe 3.8 will work better with context-mode.
+--- darksteelsteed (1): So i had the best performance with qwen3-coder-next at 30t/s until 3.8 came along.   It just wasn't smart enough to fully complete things, I had to step in. Qwen3.8 even though its half the speed needs way less intervention, except now for these ugly compaction problems I get on certain tasks
+--- darksteelsteed (1): I will check it out, thanks
+--- philmarcracken (1): Qwen3.8-27B-UD-IQ2_S or the xxs?
+--- mailto_devnull (1): I'm getting fucking whiplash here. I discovered pi-vcc **today**, and it's been around since 6 Sept, and now we've moved on to pi-blackhole, released 10 Sept?
+--- TrentKM (1): I’ve been using billion-context, and I’ve been very happy. I am forced to use cursor at work and the 200k context window was unbearable. I don’t blink an eye anymore. Everything just keeps working. No compaction in the middle of an edit that makes them reimplement a thing we did three turns ago.
+--- Jorlen (1): Yeah I realized after reviewing the blackhole docs that 16k won't be enough.  
+
+I've managed to squeeze in qwen 3.6 35b-a3b (IQ4\_NL) quant for the workers (100k context) along with qwen 3.8 27b (6 bit) as the main LLM.  I'm trying it out now!
+--- Tuned3f (1): i think you meant deterministic. Pi's stock compaction is non-deterministic
+--- noctrex (1): I use Ornith for that, as an MoE its nice and fast.
+--- Muhlwa_Sholanke (1): Observational memory compacting four times and still failing means 0.75 is too late for a 48k window. I'd set the threshold much lower and take shorter memory over dead conversations.
+--- TerminalNoop (1): Same, does a good job i think.
+--- Androoideka (1): Just switched to this after using pi-vcc for a while, thanks!
+--- IslamNofl (1): I created [pi-context-shake](https://pi.dev/packages/pi-context-shake) because of my lovely thinker  qwen3.8 27B
+--- kmike84 (1): Not answering your question directly, but I think pi has output limits which are a bit too high for local models - a single unlucky bash command or file read can get up to 50Kb (\~15K tokens) in a single tool call; for compaction specifically it means it may not get a change to trigger. These limits are not configurable; feature requests for this are closed, there were several in the issue tracker. 
+
+I'm using [https://github.com/kmike/pi-output-limits](https://github.com/kmike/pi-output-limits) with a lower limit (5-10K instead of 50K) when working with local models; it seems some output-trimming pi extension is required for a decent experience. Note that even with lower limit data is not lost, it's saved to a file, and model can still read it in chunks, if needed.
+--- vick2djax (1): I've been using pi-observational-memory for a few months and love it. What does pi-blackhole do better?
+--- darksteelsteed (1): Setting the context larger slows the token speed down considerably, anything from 2 to 6 t/s vs the ~12 at 48k. And i currently am using it with reasoning at either low or medium depending on what I am asking
+--- Legal_Dimension_ (1): 3rd for black hole. It's fantastic. 
+
+OP if you have any issues with compaction not working even after trying black hole, let me know as I tweaked mine as I had a similar issue. I'll dig through my changelog for you.
+--- darksteelsteed (1): I will check out pi-memctx too, thanks
+--- [deleted] (1): [removed]
+--- isty2e (1): I find pi-observational-memory hard to use; It was extremely difficult to correct wrong memories, so if you do have a wrong one, it will be stuck forever. pi-hermes-memory was okay-ish but the database kept growing without bounds so eventually startup took more than a minute. Currently using pi-memctx but it was missing some functionalities I'd like. Consequently I'm working on my own memory system for now.
+--- norenEnmotalen (1): pi-observational-memory is great

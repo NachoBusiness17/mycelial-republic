@@ -110,6 +110,7 @@ def probe_key(key: str) -> dict:
     """$0 read probe. Returns vendor verdict; never the key."""
     if not key:
         return {"ok": None, "detail": "no key (OAuth lane or empty)"}
+    key = key.strip()  # strip-at-use law: 2026-10-04 CR-header outage (CRLF .env key rode into Bearer, urllib rejected the header, elder lane down 14 cycles)
     _guard_probe_url(PROBE_URL)
     req = urllib.request.Request(PROBE_URL, headers={
         "x-api-key": key, "Authorization": "Bearer " + key, "User-Agent": "mag-auth-switchboard/1"})

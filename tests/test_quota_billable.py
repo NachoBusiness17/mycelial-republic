@@ -22,6 +22,26 @@ def test_row_billable_ignores_cache_hits():
     }) == 450
 
 
+def _pin_deepseek_quota(monkeypatch, max_tokens: int = 1_000_000):
+    """Hermetic provider config for these tests.
+
+    Cause (2026-09-27): provider_budget() reads the LIVE untracked
+    configs/providers.yaml quota, and the burn windows (operator
+    max-concurrency standing law, 2026-09-26) raised deepseek max_tokens to
+    30M — so these tests failed on config drift, not code. Tests pin their
+    own quota; live operational caps stay none of pytest's business.
+    """
+    import models.providers as providers_mod
+
+    monkeypatch.setattr(
+        providers_mod, "get_provider",
+        lambda pid: ({"name": "deepseek-test",
+                      "quota": {"period": "monthly",
+                                "max_tokens": max_tokens}}
+                     if pid == "deepseek" else None),
+    )
+
+
 def test_provider_budget_uses_billable_not_inflated_ledger(tmp_path, monkeypatch):
     from models import quota
 
@@ -64,6 +84,7 @@ def test_provider_budget_uses_billable_not_inflated_ledger(tmp_path, monkeypatch
     monkeypatch.setattr(quota, "USAGE_DETAIL", usage)
     monkeypatch.setattr(quota, "STATE_PATH", state)
     quota._BILLABLE_CACHE.clear()
+    _pin_deepseek_quota(monkeypatch)
     monkeypatch.setattr(
         quota, "_now",
         lambda: datetime(2026, 8, 16, 22, 0, tzinfo=timezone.utc),
@@ -98,6 +119,7 @@ def test_provider_budget_trips_when_billable_hits_cap(tmp_path, monkeypatch):
     monkeypatch.setattr(quota, "USAGE_DETAIL", usage)
     monkeypatch.setattr(quota, "STATE_PATH", state)
     quota._BILLABLE_CACHE.clear()
+    _pin_deepseek_quota(monkeypatch)
     monkeypatch.setattr(
         quota, "_now",
         lambda: datetime(2026, 8, 16, 22, 0, tzinfo=timezone.utc),

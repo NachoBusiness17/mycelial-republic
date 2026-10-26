@@ -37,35 +37,73 @@ def _now() -> str:
     return datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
 
 
+AFK_GATE_ERROR: str | None = None
+
+
 def _operator_offline() -> bool:
+    # SPEC (2026-09-25, t65): FAIL CLOSED per the afk_cadence/t52/t61 convention. The old
+    # body had t52's fail-open species ('except Exception: return True'): an errored
+    # operator_status read as "operator offline" and the cadence kept spending while the
+    # operator was invisible. Every call site treats offline=True as GO (run_afk runs the
+    # whole cadence, _right_size grants full budget), so the safe direction on error is
+    # the DENY: operator presumed ACTIVE (return False), cause named in AFK_GATE_ERROR.
+    global AFK_GATE_ERROR
     try:
         from mag.preferences import operator_status
-        return not bool((operator_status() or {}).get("operator_active"))
-    except Exception:
-        return True
+        offline = not bool((operator_status() or {}).get("operator_active"))
+        AFK_GATE_ERROR = None
+        return offline
+    except Exception as _gate_e:
+        AFK_GATE_ERROR = "operator offline gate errored; failing CLOSED (operator presumed active): " + str(_gate_e)[:110]
+        return False
+
+
+RIGHT_SIZE_ERROR: str | None = None
 
 
 def _right_size() -> str:
+    # SPEC (2026-09-25, t75): FAIL CLOSED per the afk_cadence t52 convention. The old
+    # body had t52's rightsizer fail-open species ('except Exception: return "full"'):
+    # an errored sizing handed run_afk the FULL blast (budget 4). The safe direction is
+    # the SMALLEST budget: level "none" (run_afk skips the pass), cause named in
+    # RIGHT_SIZE_ERROR for callers to surface.
+    global RIGHT_SIZE_ERROR
     try:
         from mag.afk_loop import system_resources, right_size
-        return right_size(system_resources(), operator_active=not _operator_offline())["level"]
-    except Exception:
-        return "full"
+        level = right_size(system_resources(), operator_active=not _operator_offline())["level"]
+        RIGHT_SIZE_ERROR = None
+        return level
+    except Exception as _rs_e:
+        RIGHT_SIZE_ERROR = "rightsizer errored; failing CLOSED (smallest budget, none): " + str(_rs_e)[:110]
+        return "none"
 
 
 def run_afk(*, force: bool = False) -> dict[str, Any]:
     """The one-pass AFK advance cadence (right-sized, ghost-routed)."""
+    # SPEC (2026-09-25, t75): this pause gate FAILED OPEN (the t43 species t65 left
+    # standing): an errored pause_reason was swallowed by 'except Exception: pass' and
+    # the cadence worked through an operator pause. Fix: fail CLOSED per the afk_cadence
+    # t43 convention. An errored pause check honors the pause and skips the pass with
+    # the error named; silence here is the opposite failure (paused work proceeding).
     try:
         from mag.operator_mode import pause_reason
         if (reason := pause_reason()):
             return {"ok": True, "action": "skip", "reason": reason}
-    except Exception:
-        pass
+    except Exception as _pg:
+        return {"ok": True, "action": "skip",
+                "reason": "operator pause gate errored; failing CLOSED (pause honored): " + str(_pg)[:110],
+                "pause_gate_error": str(_pg)[:150]}
     if not force and not _operator_offline():
-        return {"ok": True, "action": "skip", "reason": "operator active (AFK-only)"}
+        skip: dict[str, Any] = {"ok": True, "action": "skip", "reason": "operator active (AFK-only)"}
+        if AFK_GATE_ERROR:
+            skip["afk_gate_error"] = AFK_GATE_ERROR  # t65: a fail-closed denial is never silent
+        return skip
     level = _right_size()
     if level == "none":
-        return {"ok": True, "action": "skip", "reason": "right-sized to none (busy/active)"}
+        skip_rs: dict[str, Any] = {"ok": True, "action": "skip", "reason": "right-sized to none (busy/active)"}
+        if RIGHT_SIZE_ERROR:
+            skip_rs["right_size_error"] = RIGHT_SIZE_ERROR  # t75: the fail-closed deny is never silent
+        return skip_rs
     budget = {"light": 1, "medium": 2, "full": 4}[level]
 
     steps: dict[str, Any] = {}
@@ -125,16 +163,23 @@ def _fold(level: str, n_steps: int) -> None:
             tier_max="T1",
             exportable=False,
         )
-    except Exception:
-        pass
+    except Exception as _fe:  # noqa: BLE001 - folding must never break the pass; it must be VISIBLE
+        # LOOP-DEATH GUARD (2026-09-25, t78): a silently dead training-event fold voids
+        # the cadence's own telemetry while run_afk still reports success. Non-fatal,
+        # but visible. (pattern: work_loop.py verkle-anchor guard, t19.)
+        print(f"[afk-orchestrator] FOLD LOOP DEATH GUARD: training_events.emit exited: {_fe}", flush=True)
 
 
 def main(argv: list[str] | None = None) -> int:
     argv = list(sys.argv[1:] if argv is None else argv)
     if argv and argv[0] == "status":
-        print(json.dumps({"schema": "afk_orchestrator.status.v1", "ts": _now(),
-                          "offline": _operator_offline(), "right_size": _right_size()},
-                         indent=2, ensure_ascii=False))
+        st: dict[str, Any] = {"schema": "afk_orchestrator.status.v1", "ts": _now(),
+                              "offline": _operator_offline(), "right_size": _right_size()}
+        if AFK_GATE_ERROR:
+            st["afk_gate_error"] = AFK_GATE_ERROR  # t65: surface the errored gate next to the report
+        if RIGHT_SIZE_ERROR:
+            st["right_size_error"] = RIGHT_SIZE_ERROR  # t75: surface the errored rightsizer next to the report
+        print(json.dumps(st, indent=2, ensure_ascii=False))
         return 0
     print(json.dumps(run_afk(force="--force" in argv), indent=2, ensure_ascii=False))
     return 0

@@ -12,12 +12,31 @@ ROW SCHEMA — JSONL append to watch/flight_recorder.jsonl, one row per call:
   - ts          ISO-8601 UTC with milliseconds, e.g. 2026-09-03T23:41:07.123Z
   - status      "ok" | "error"  (latency percentiles in summarize() use ok rows only)
   - error_code  vendor code (e.g. 1302), "HTTP<status>", or exception class name; None when ok
-  - in/out/cached_tok  from the response usage block when the wrapped fn returns one:
-                usage.prompt_tokens / usage.completion_tokens /
-                usage.prompt_tokens_details.cached_tokens; else None
+  - in/out/cached_tok  from the response usage block when the wrapped fn returns one,
+                normalised across provider usage shapes; else None. cached_tok first
+                non-None of: openai usage.prompt_tokens_details.cached_tokens (or flat
+                usage.cached_tokens), deepseek usage.prompt_cache_hit_tokens, anthropic
+                usage.cache_read_input_tokens. cache_miss_tok captures deepseek
+                usage.prompt_cache_miss_tokens when the vendor exposes it (else None).
+                in/out_tok fall back to anthropic usage.input_tokens/output_tokens so
+                cache share stays computable on every provider.
   - credits_est computed ONLY when the caller passes a rates dict
                 ({"in_per_ktok","out_per_ktok","cached_per_ktok"} — credits per 1K tokens).
                 NEVER hardcoded here; keys/credentials are never logged and never written rows.
+  - cache_receipt stamped at the reuse decision point ONLY when the call
+                reports cache telemetry (cached_tok or cache_miss_tok present):
+                {"ok": bool, "verified_tokens": int, "reason": str}. ok=False is
+                a MEASURED REJECTION by the strict-prefix gate; absent means the
+                row predates the law or the lane supplied no receipt inputs
+                (nominal only). Verdict sources, gate first:
+                (1) caller-supplied cached_prefix + prefix_receipt +
+                config_generation run through mag/context_checkpoint.py
+                gate_skip_recompute (prefix_receipt.v1; verified_bytes // 4
+                converts to the estate chars-per-token convention);
+                (2) pass-through of an upstream producer's
+                usage.cache_receipt dict (stamped verbatim when it carries "ok").
+                Producer law (arXiv 2609.15030): a hit claimed by token identity
+                but unproven by state identity costs the same as a miss.
 
 NETWORK GUARD (same pattern as mag/_probe_burst_20260903.py): validate https + host
 allowlist BEFORE any request via guard_endpoint(); keys come from .env parsed at call time
@@ -33,6 +52,7 @@ probe's call() shape, but return the parsed JSON body so usage tokens get captur
     KEY = load_env()["ZAI_API_KEY_Pro"]               # .env at call time; never printed
 
     def chat(model, prompt, key, max_tokens=8, thinking=None, timeout=75):
+        key = key.strip()                             # strip-at-use law: 2026-10-04 CR-header outage
         body = {"model": model, "messages": [{"role": "user", "content": prompt}],
                 "max_tokens": max_tokens}
         if thinking:
@@ -75,7 +95,8 @@ from datetime import datetime, timezone
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DEFAULT_LOG = os.path.join(ROOT, "watch", "flight_recorder.jsonl")
 ROW_FIELDS = ("ts", "lane", "model", "subsystem", "latency_ms", "status", "error_code",
-              "in_tok", "out_tok", "cached_tok", "credits_est")
+              "in_tok", "out_tok", "cached_tok", "cache_miss_tok", "credits_est",
+              "cache_receipt")
 _LOCK = threading.Lock()  # JSONL appends are lock-serialised (burst probes are multithreaded)
 
 
@@ -133,11 +154,83 @@ def _interpret(result):
 
 
 def _extract_tokens(usage):
+    """-> (in_tok, out_tok, cached_tok, cache_miss_tok), normalised across provider usage
+    shapes. cached_tok is the first non-None of:
+      openai    usage.prompt_tokens_details.cached_tokens (or flat usage.cached_tokens)
+      deepseek  usage.prompt_cache_hit_tokens          (miss -> cache_miss_tok)
+      anthropic usage.cache_read_input_tokens
+      generic   usage.cache_hit_tokens                 (estate usage log split; miss ->
+                cache_miss_tok) - same shape tools/cache_kpi.py accepts, so a
+                response shaped like the estate log still lands telemetry.
+    in/out_tok fall back to anthropic usage.input_tokens/output_tokens. Unknown shapes
+    keep the legacy behaviour (all None); rows written before cache_miss_tok existed
+    simply lack the field (readers must .get it)."""
     if not isinstance(usage, dict):
-        return None, None, None
-    details = usage.get("prompt_tokens_details") or {}
-    return (usage.get("prompt_tokens"), usage.get("completion_tokens"),
-            details.get("cached_tokens") if isinstance(details, dict) else None)
+        return None, None, None, None
+    in_tok = usage.get("prompt_tokens")
+    if in_tok is None:
+        in_tok = usage.get("input_tokens")           # anthropic
+    out_tok = usage.get("completion_tokens")
+    if out_tok is None:
+        out_tok = usage.get("output_tokens")         # anthropic
+    details = usage.get("prompt_tokens_details")
+    cached = None
+    for cand in (details.get("cached_tokens") if isinstance(details, dict) else None,
+                 usage.get("cached_tokens"),         # openai flat variant
+                 usage.get("prompt_cache_hit_tokens"),   # deepseek
+                 usage.get("cache_read_input_tokens"),   # anthropic
+                 usage.get("cache_hit_tokens")):         # generic split
+        if cand is not None:
+            cached = cand
+            break
+    miss = usage.get("prompt_cache_miss_tokens")     # deepseek; None elsewhere
+    if miss is None:
+        miss = usage.get("cache_miss_tokens")        # generic split variant
+    return in_tok, out_tok, cached, miss
+
+
+def _stamp_cache_receipt(row, usage, cached_prefix, prefix_receipt, config_generation):
+    """Stamp row["cache_receipt"] = {"ok", "verified_tokens", "reason"} at the reuse
+    decision point (the row reports cache telemetry). Cache-receipt law, arXiv 2609.15030
+    via mag/context_checkpoint.py: a hit claimed by token identity but unproven by state
+    identity costs the same as a miss, so the vendor's cached_tok alone is nominal only.
+
+    Verdict sources, gate first:
+      1. strict-prefix gate: caller supplied cached_prefix + prefix_receipt (a
+         prefix_receipt.v1 from freeze_receipt/checkpoint) + config_generation ->
+         gate_skip_recompute() decides; verified_bytes // 4 converts to the estate
+         chars-per-token convention (context_checkpoint: len(text) // 4).
+      2. pass-through: an upstream producer that already gated may carry
+         usage["cache_receipt"] (dict with "ok"); stamped verbatim.
+
+    No receipt inputs -> no stamp: the row stays exactly pre-law nominal, which
+    tools/cache_kpi.py reads as nominal-only. Fail-open: any stamping error prints
+    loudly to stderr and leaves the row unstamped; it NEVER breaks the wrapped call.
+    """
+    if row.get("cached_tok") is None and row.get("cache_miss_tok") is None:
+        return  # no reuse claim on this call: nothing to verify
+    try:
+        if cached_prefix is not None and prefix_receipt is not None:
+            from mag.context_checkpoint import gate_skip_recompute
+            gate = gate_skip_recompute(cached_prefix, prefix_receipt, config_generation)
+            row["cache_receipt"] = {
+                "ok": bool(gate.get("skip_recompute")),
+                "verified_tokens": int(gate.get("verified_bytes") or 0) // 4,
+                "reason": gate.get("reason"),
+            }
+            return
+        upstream = usage.get("cache_receipt") if isinstance(usage, dict) else None
+        if isinstance(upstream, dict) and "ok" in upstream:
+            row["cache_receipt"] = upstream
+            return
+        if (cached_prefix is not None or prefix_receipt is not None
+                or config_generation is not None):
+            sys.stderr.write("[flight_recorder] RECEIPT STAMP INCOMPLETE (gate needs "
+                             "cached_prefix AND prefix_receipt together): row left "
+                             "nominal\n")
+    except Exception as e:  # noqa: BLE001 - fail-open by design
+        sys.stderr.write("[flight_recorder] RECEIPT STAMP FAILED (row left nominal): "
+                         "%r\n" % (e,))
 
 
 def _credits_est(in_tok, out_tok, cached_tok, rates):
@@ -168,14 +261,17 @@ def _emit(row, log_path=None):
         sys.stderr.write("[flight_recorder] EMIT FAILED (call result unaffected): %r\n" % (e,))
 
 
-def record_call(fn, lane, model, subsystem, /, rates=None, log_path=None, **call_kwargs):
+def record_call(fn, lane, model, subsystem, /, rates=None, log_path=None,
+                cached_prefix=None, prefix_receipt=None, config_generation=None,
+                **call_kwargs):
     """Wrap ONE API call: run it, time it, emit a typed telemetry row, return (status, result).
 
     fn is called as fn(**call_kwargs). lane/model/subsystem are POSITIONAL-ONLY so a wrapped
     fn may keep its own `model=` (or `lane=`/`subsystem=`) kwarg without collision.
-    `rates` and `log_path` belong to the recorder; every other kwarg is forwarded to fn
-    untouched. If fn raises, the error row is emitted and the exception re-raises — the
-    recorder observes, it never swallows.
+    `rates`, `log_path` and the receipt trio (`cached_prefix`, `prefix_receipt`,
+    `config_generation`, see _stamp_cache_receipt) belong to the recorder; every other
+    kwarg is forwarded to fn untouched. If fn raises, the error row is emitted and the
+    exception re-raises — the recorder observes, it never swallows.
     """
     t0 = time.perf_counter()
     try:
@@ -185,17 +281,19 @@ def record_call(fn, lane, model, subsystem, /, rates=None, log_path=None, **call
         code = ("HTTP%s" % e.code) if hasattr(e, "code") and e.code else type(e).__name__
         _emit({"ts": _utcnow(), "lane": lane, "model": model, "subsystem": subsystem,
                "latency_ms": latency_ms, "status": "error", "error_code": code,
-               "in_tok": None, "out_tok": None, "cached_tok": None, "credits_est": None},
-              log_path)
+               "in_tok": None, "out_tok": None, "cached_tok": None,
+               "cache_miss_tok": None, "credits_est": None}, log_path)
         raise
     latency_ms = round((time.perf_counter() - t0) * 1000.0, 1)
     status, error_code, usage = _interpret(result)
-    in_tok, out_tok, cached_tok = _extract_tokens(usage)
+    in_tok, out_tok, cached_tok, cache_miss_tok = _extract_tokens(usage)
     est = _credits_est(in_tok, out_tok, cached_tok, rates) if rates else None
-    _emit({"ts": _utcnow(), "lane": lane, "model": model, "subsystem": subsystem,
+    row = {"ts": _utcnow(), "lane": lane, "model": model, "subsystem": subsystem,
            "latency_ms": latency_ms, "status": status, "error_code": error_code,
            "in_tok": in_tok, "out_tok": out_tok, "cached_tok": cached_tok,
-           "credits_est": est}, log_path)
+           "cache_miss_tok": cache_miss_tok, "credits_est": est}
+    _stamp_cache_receipt(row, usage, cached_prefix, prefix_receipt, config_generation)
+    _emit(row, log_path)
     return status, result
 
 
@@ -293,6 +391,7 @@ RATES = {
 
 def api_call(model, prompt, key, max_tokens=8, thinking=None, timeout=75):
     """The probe's call() pattern, returning the parsed JSON body so usage is captured."""
+    key = key.strip()  # strip-at-use law: 2026-10-04 CR-header outage (CRLF .env key rode into Bearer, urllib rejected the header, elder lane down 14 cycles)
     guard_endpoint(ENDPOINT, {ALLOWED_HOST})
     body = {"model": model, "messages": [{"role": "user", "content": prompt}],
             "max_tokens": max_tokens}

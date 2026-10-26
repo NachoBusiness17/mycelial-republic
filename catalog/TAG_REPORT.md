@@ -1,48 +1,44 @@
-# TAG REPORT -- corpus map v2 (2026-09-18, post-rebuild)
+# TAG REPORT -- corpus map (refreshed 2026-10-25T08:38:23Z)
 
-Source: catalog/catalog.jsonl rebuilt 2026-09-18 (757,667 rows, v3 walk: junction-pruned, deduped, fresh).
-Sidecar: catalog/tags.jsonl. LAW: estimation must not replace the thing -- corpus_get the bytes before quoting.
+Source: catalog/catalog.jsonl as of the manifest snapshot_ts; sidecar catalog/tags.jsonl via mag/catalog_tags.py (salon Appendix B kind rules, verbatim; tags v2 owner column since Q-031 2026-09-28). LAW: estimation must not replace the thing -- corpus_get the bytes before quoting.
 
-## Total tagged rows: 757667
+## Total tagged rows: 2369167
 
 ## By kind
-- other: 585226
-- code: 63219
-- prose: 52906
-- image: 21363
-- receipt: 10354
-- ledger: 10155
-- test: 5668
-- brief: 3679
-- config: 3198
-- card: 1282
-- state: 382
-- corpus: 235
+- config: 1535891
+- other: 526449
+- prose: 114566
+- code: 89442
+- image: 42920
+- ledger: 25942
+- receipt: 14186
+- test: 9788
+- brief: 3979
+- card: 2860
+- corpus: 2338
+- state: 806
 
-## By age (mtime)
-- aging: 281566
-- fossil: 1084
-- fresh: 117528
-- stale: 357489
+## By age (mtime at run time)
 
-## Where the mass is (top memory subdirs by file count)
-- local_sovereign_agent/memory/biography_backup: 212530
-- local_sovereign_agent/memory/ghost: 142269
-- local_sovereign_agent/memory/runs: 42626
-- local_sovereign_agent/memory/biography_backup_20260825: 42249
-- local_sovereign_agent/memory/biography: 39189
-- local_sovereign_agent/memory/agent_state: 35927
-- local_sovereign_agent/memory/corpus: 22373
-- local_sovereign_agent/memory/mail: 4467
-- local_sovereign_agent/memory/briefs: 3680
-- local_sovereign_agent/memory/agent_sessions: 2798
-- local_sovereign_agent/memory/copilot: 2052
-- local_sovereign_agent/memory/working: 1496
-- local_sovereign_agent/memory/ingest: 958
-- local_sovereign_agent/memory/improve: 749
-- local_sovereign_agent/memory/research_packs: 687
-- local_sovereign_agent/memory/dead_drops: 537
-- local_sovereign_agent/memory/portable_bags: 186
-- local_sovereign_agent/memory/seals: 163
-- local_sovereign_agent/memory/steal: 141
-- local_sovereign_agent/memory/scribe: 118
+- fresh: 425493
+- aging: 1034738
+- stale: 481551
+- fossil: 427385
+
+## By owner (tags v2, top 15)
+
+- memory: 1601313
+- logs: 345919
+- mine: 97867
+- corpus: 75874
+- agents: 64067
+- lsa_reboot_staging: 56344
+- watch: 34635
+- Mag-backup.git: 13627
+- azerothcore-wow: 10356
+- state: 9613
+- the_margin_lean: 9164
+- magpub-door: 8949
+- vmangos-core: 4397
+- tortoise-wow: 3767
+- library_parked: 3748

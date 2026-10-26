@@ -5,9 +5,18 @@ import json
 import sys
 from pathlib import Path
 
+import pytest
+
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 sys.path.insert(0, str(ROOT / "state" / "vast"))
+
+# M17 WAVE0 2026-09-29 (watch/inbox/MICKEY17_RUN_PLAN_20260929.md): blade_buyer
+# hard-imports the vastai SDK (pip name vastai, module vastai_sdk), which is NOT
+# in requirements.txt; on a requirements-only venv this file errored at
+# collection and zero tests ran. Skip the module when the SDK is absent instead
+# of faking coverage; the tests run normally wherever it is installed.
+pytest.importorskip("vastai_sdk")
 
 import blade_buyer as bb  # noqa: E402
 

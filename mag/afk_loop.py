@@ -33,8 +33,8 @@ sys.path.insert(0, str(ROOT))
 
 try:
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")
-except Exception:
-    pass
+except Exception as exc:  # 2026-09-28 FW-46 silent-pass batch 2: the silent pass hid why mojibake could hit the AFK loop's redirected stdout (same disease batch 1 cleared in tools/audio_channel.py:31); valueless consoles keep the default encoding, and the reason is now named on stderr
+    print(f"[afk_loop] stdout reconfigure skipped: {exc}", file=sys.stderr)
 
 # cheap socratic probes about the codebase (rotated; tests ollama + grows insight)
 _SOCRATIC = [
@@ -53,19 +53,33 @@ def _now() -> str:
     return datetime.now(timezone.utc).isoformat()
 
 
+AFK_GATE_ERROR: str | None = None
+
+
 def _operator_afk() -> bool:
-    """AFK = operator not actively coding (MAG_OPERATOR_ACTIVE unset/false)."""
+    # SPEC (2026-09-25, t61): FAIL CLOSED. The old body had the same two defects t43+t52
+    # fixed in afk_cadence: the pause swallow ('except Exception: pass') worked through an
+    # errored pause, and the fail-open return ('except Exception: return True') read a
+    # broken operator_status as "operator AFK", so occupy() kept spending while the
+    # operator was invisible. An errored gate now presumes the operator is ACTIVE (deny
+    # honored, pause honored) and names the cause in AFK_GATE_ERROR for callers to surface.
+    global AFK_GATE_ERROR
     try:
         from mag.operator_mode import pause_reason
         if pause_reason():
+            AFK_GATE_ERROR = None
             return False
-    except Exception:
-        pass
+    except Exception as _pg:
+        AFK_GATE_ERROR = "operator pause gate errored; failing CLOSED (pause honored): " + str(_pg)[:110]
+        return False
     try:
         from mag.preferences import operator_status
-        return not bool((operator_status() or {}).get("operator_active"))
-    except Exception:
-        return True
+        afk = not bool((operator_status() or {}).get("operator_active"))
+        AFK_GATE_ERROR = None
+        return afk
+    except Exception as _afk_e:
+        AFK_GATE_ERROR = "afk gate errored; failing CLOSED (operator presumed active): " + str(_afk_e)[:110]
+        return False
 
 
 def _pending_tesuji() -> bool:
@@ -179,8 +193,12 @@ def _fold(out: dict[str, Any]) -> None:
             tier_max="T1",
             exportable=False,
         )
-    except Exception:
-        pass
+    except Exception as _fe:  # noqa: BLE001 - folding must never break the occupy pass; it must be VISIBLE
+        # LOOP-DEATH GUARD (2026-09-25, t84): the FOURTH t19-species training_events.emit
+        # swallow (byte-identical to the three t78 converted): a silently dead fold voids
+        # the occupy pass's telemetry while occupy() still reports success. Non-fatal,
+        # but visible. SPEC: tests/test_loop_death_guards.py, t84 SPEC line 1.
+        print(f"[afk-loop] FOLD LOOP DEATH GUARD: training_events.emit exited: {_fe}", flush=True)
 
 
 # ───────────────────────────────────────────────────────────────────────────
@@ -231,8 +249,11 @@ def squeeze_free_test_data(*, budget: int) -> dict[str, Any]:
             ans = _ollama_ask(q, timeout=40)
             rows.append({"source": "ollama", "kind": "socratic_test", "prompt": q[:80], "answer": ans[:120]})
             produced += 1
-        except Exception:
-            pass
+        except Exception as _sq:
+            # LOOP-DEATH GUARD (2026-09-25, t19 except-pass sweep): a silently dead
+            # ollama producer makes the AFK loop report produced=0 with no trace, so
+            # the occupation loop looks healthy while doing nothing. Non-fatal, visible.
+            print(f"[afk-loop] SQUEEZE LOOP DEATH GUARD: ollama socratic producer exited: {_sq}", flush=True)
     # 2) deepseek orchestrator — route a free cheap task to produce a test row
     if budget > 1:
         try:
@@ -241,8 +262,12 @@ def squeeze_free_test_data(*, budget: int) -> dict[str, Any]:
             rows.append({"source": "deepseek-orchestrator", "kind": "routing_test",
                          "chain": [s["id"] for s in chain]})
             produced += 1
-        except Exception:
-            pass
+        except Exception as _rt:
+            # LOOP-DEATH GUARD (2026-09-25, t43): a silently dead deepseek routing producer
+            # made squeeze_free_test_data report produced=0 with no trace, so the AFK loop
+            # looks healthy while doing nothing; same species as the ollama guard above.
+            # Non-fatal, visible (ghost.py LOOP-DEATH GUARD pattern, t19 next_steal).
+            print(f"[afk-loop] SQUEEZE LOOP DEATH GUARD: deepseek routing producer exited: {_rt}", flush=True)
     return {"ok": True, "produced": produced, "test_rows": rows,
             "note": "free testing data squeezed from local + deepseek orchestrator"}
 
@@ -250,7 +275,10 @@ def squeeze_free_test_data(*, budget: int) -> dict[str, Any]:
 def occupy(*, force: bool = False) -> dict[str, Any]:
     """The cheap self-occupation pass. TESUJI first, else socratic/tool-test/freebie."""
     if not force and not _operator_afk():
-        return {"ok": True, "action": "skip", "reason": "operator active (not AFK)"}
+        skip: dict[str, Any] = {"ok": True, "action": "skip", "reason": "operator active (not AFK)"}
+        if AFK_GATE_ERROR:
+            skip["afk_gate_error"] = AFK_GATE_ERROR  # t61: a fail-closed denial is never silent
+        return skip
     out: dict[str, Any] = {"schema": "afk_loop.v1", "ts": _now(), "afk": True}
 
     # 0) right-size to system load + operator behavior
@@ -258,6 +286,8 @@ def occupy(*, force: bool = False) -> dict[str, Any]:
     rs = right_size(res, operator_active=not _operator_afk())
     out["resources"] = res
     out["right_size"] = rs
+    if AFK_GATE_ERROR:
+        out["afk_gate_error"] = AFK_GATE_ERROR  # t61: surface the errored gate next to the deny
     if rs["level"] == "none":
         return {**out, "action": "skip", "reason": "right-sized to none (operator active/busy)"}
 

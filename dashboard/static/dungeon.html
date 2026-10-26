@@ -1,7 +1,7 @@
 <!DOCTYPE html><html><head><meta charset="utf-8"><title>THE DUNGEON — invariants as lighting</title>
 <style>
 body{margin:0;background:#07080c;color:#cfd6e4;font:13px/1.5 Consolas,monospace}
-#wrap{width:960px;margin:0 auto}
+#wrap{width:100%;max-width:2200px;margin:0 auto;padding:0 12px;box-sizing:border-box}
 h1{font-size:14px;letter-spacing:2px;color:#9fb0cc;margin:10px 0 2px}
 .sub{color:#5c6a82;font-size:11px;margin-bottom:6px}
 #roombar{display:flex;gap:8px;align-items:center;margin:6px 0}
@@ -9,7 +9,7 @@ h1{font-size:14px;letter-spacing:2px;color:#9fb0cc;margin:10px 0 2px}
 .lens{width:34px;height:26px;border:1px solid #39445c;background:#0d1017;color:#cfd6e4;
   font:11px Consolas;cursor:pointer;border-radius:3px}
 .lens.on{outline:2px solid #fff}
-#cv{display:block;background:#05060a;border:1px solid #1a2030;border-radius:4px}
+#cv{display:block;background:#05060a;border:1px solid #1a2030;border-radius:4px;width:100%;height:auto}
 #stats{font-size:11px;color:#8a97ad;margin-top:6px;white-space:pre-wrap}
 </style></head><body><div id="wrap">
 <h1>THE DUNGEON — the dungeon IS the test suite</h1>
@@ -144,7 +144,8 @@ function step(nx,ny){
 }
 cv.addEventListener("click",e=>{
   const r=cv.getBoundingClientRect(), mx=e.clientX-r.left, my=e.clientY-r.top;
-  const tx=Math.floor(mx/CW), ty=Math.floor(my/CW);
+  const k=960/r.width;                                 // css px -> logical (full width 2026-10-18)
+  const tx=Math.floor(mx*k/CW), ty=Math.floor(my*k/CW);
   if(Math.abs(tx-px)+Math.abs(ty-py)===1) step(tx,ty);
 });
 document.querySelectorAll(".lens").forEach(b=>b.addEventListener("click",()=>{

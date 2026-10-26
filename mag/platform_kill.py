@@ -19,6 +19,7 @@ REST: POST /api/v1/platform/kill {dry:bool}        (GET = report what it WOULD k
 from __future__ import annotations
 
 import json
+import shutil
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
@@ -62,7 +63,16 @@ def _enum_host_pids() -> list[dict[str, Any]]:
                 continue
     except ImportError:
         import subprocess
-        r = subprocess.run(["powershell", "-NoProfile", "-Command",
+        # B2-85 2026-09-26: bare "powershell" is not on PATH in every launch
+        # context (sig run_shell:e566037def80 "[Errno 2] ... powershell",
+        # 7,964 FKB rows since 2026-09-19). Resolve the full path; System32
+        # fallback when PATH lookup misses (pattern mag/process_reaper.py).
+        ps_exe = shutil.which("powershell") or shutil.which("powershell.exe")
+        if not ps_exe and sys.platform == "win32":
+            ps_exe = r"C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe"
+        if not ps_exe:
+            return out
+        r = subprocess.run([ps_exe, "-NoProfile", "-Command",
                             "Get-CimInstance Win32_Process | "
                             "Where-Object { $_.Name -in @('python.exe','pythonw.exe') } | "
                             "Select-Object ProcessId,CommandLine | ConvertTo-Json -Compress"],
@@ -79,6 +89,43 @@ def _enum_host_pids() -> list[dict[str, Any]]:
         except Exception:
             pass
     return out
+
+
+LAN_EXPOSE_MARKERS = ("gstd_beacon.py serve", "main.py cast --lan", "--cast-lan")
+
+
+def kill_lan_expired(*, dry: bool = False, force: bool = False) -> dict[str, Any]:
+    """Stop LAN-exposing processes (beacon serve, cast --lan) when the expose:lan lease is not live."""
+    import os
+    import subprocess
+    try:
+        from mag.cast_guard import lan_lease_live
+        live = lan_lease_live()
+    except Exception:
+        live = False
+    hits: list[dict[str, Any]] = []
+    if live and not force:
+        return {"ok": True, "lease_live": True, "killed": hits}
+    try:
+        import psutil  # type: ignore
+        for proc in psutil.process_iter(["pid", "name", "cmdline"]):
+            cmd = " ".join(proc.info.get("cmdline") or [])
+            if any(m in cmd for m in LAN_EXPOSE_MARKERS) and "platform_kill" not in cmd:
+                hits.append({"pid": proc.info["pid"], "cmd": cmd[:200], "dry": dry})
+    except ImportError:
+        pass
+    for h in hits:
+        if dry:
+            continue
+        try:
+            if os.name == "nt":
+                subprocess.run(["taskkill", "/PID", str(h["pid"]), "/T", "/F"], capture_output=True, timeout=30)
+            else:
+                import signal
+                os.kill(h["pid"], signal.SIGKILL)
+        except Exception as e:
+            h["error"] = str(e)[:100]
+    return {"ok": True, "lease_live": live, "killed": hits}
 
 
 def kill_all(*, dry: bool = False) -> dict[str, Any]:
@@ -133,8 +180,9 @@ def kill_all(*, dry: bool = False) -> dict[str, Any]:
         except Exception as e:
             supervisor["error"] = str(e)[:120]
 
+    lan = kill_lan_expired(dry=dry, force=True)
     return {
-        "schema": SCHEMA, "ts": _now(), "ok": not errors, "dry": dry,
+        "schema": SCHEMA, "ts": _now(), "ok": not errors, "dry": dry, "lan_exposure": lan,
         "host_killed": killed_host, "host_killed_count": len(killed_host),
         "container": container, "supervisor": supervisor, "errors": errors,
     }
@@ -143,6 +191,9 @@ def kill_all(*, dry: bool = False) -> dict[str, Any]:
 def main(argv: list[str] | None = None) -> int:
     argv = list(sys.argv[1:] if argv is None else argv)
     dry = "--dry" in argv
+    if "--lan-expired" in argv:
+        print(json.dumps(kill_lan_expired(dry=dry), indent=2, default=str))
+        return 0
     print(json.dumps(kill_all(dry=dry), indent=2, ensure_ascii=False, default=str))
     return 0
 

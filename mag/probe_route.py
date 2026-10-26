@@ -48,7 +48,7 @@ FALLBACK_CHAIN = ["inclusionai/ling-3.0-flash-sante:free", "meituan/longcat-2.0:
 
 def _assert_public_https(url: str) -> None:
     parsed = urllib.parse.urlparse(url)
-    if parsed.scheme != "https" or parsed.hostname not in {"inference-api.nousresearch.com", "api.deepseek.com", "api.z.ai"}:
+    if parsed.scheme != "https" or parsed.hostname not in {"inference-api.nousresearch.com", "openrouter.ai", "api.deepseek.com", "api.z.ai"}:
         raise ValueError(f"blocked host: {parsed.hostname!r}")
     for *_x, sockaddr in socket.getaddrinfo(parsed.hostname, 443):
         if not ipaddress.ip_address(sockaddr[0]).is_global:

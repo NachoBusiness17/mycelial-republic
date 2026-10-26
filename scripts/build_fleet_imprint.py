@@ -24,6 +24,27 @@ ROOT = Path(__file__).resolve().parent.parent
 OUT = ROOT / "watch" / "inbox" / "FLEET_IMPRINT_20260917.md"
 
 
+def json_row_kind(line: str) -> str:
+    """Classify one LINKS.jsonl line (B2-170, per the B2-28 schema split).
+
+    Event rows carry "kind" (id/kind/detail shape); the migration marker
+    carries "schema": "migration-marker.v1"; everything else with a canonical
+    field is a link row. Unparseable lines count as link-shaped unknowns and
+    surface via the '?' canonical in the preview.
+    """
+    try:
+        r = json.loads(line)
+    except Exception:
+        return "link"
+    if not isinstance(r, dict):
+        return "link"
+    if r.get("schema") == "migration-marker.v1":
+        return "marker"
+    if "kind" in r:
+        return "event"
+    return "link"
+
+
 def _first_docstring(p: Path, limit: int = 240) -> str:
     try:
         src = p.read_text(encoding="utf-8", errors="replace")[:4000]
@@ -290,8 +311,18 @@ def mine_histories(lines: list[str]) -> int:
     lk = ROOT / "watch" / "inbox" / "LINKS.jsonl"
     if lk.is_file():
         rows = [l for l in lk.read_text(encoding="utf-8", errors="replace").splitlines() if l.strip()]
-        lines.append(f"- {len(rows)} canonical rows:")
-        for l in rows[-70:]:
+        # B2-170 denominators: LINKS.jsonl is link rows plus the legacy event
+        # rows the B2-28 schema split left in place (append-only law), so one
+        # "canonical rows" count mixed two ledgers; report each separately.
+        link_rows = [l for l in rows if json_row_kind(l) == "link"]
+        event_ct = sum(1 for l in rows if json_row_kind(l) == "event")
+        marker_ct = sum(1 for l in rows if json_row_kind(l) == "marker")
+        lines.append(
+            f"- {len(link_rows)} link rows + {event_ct} event rows"
+            f"{f' + {marker_ct} migration marker' if marker_ct else ''}"
+            f" = {len(rows)} lines total (B2-28 split):"
+        )
+        for l in link_rows[-70:]:
             try:
                 r = json.loads(l)
                 lines.append(f"  - {r.get('canonical', '?')[:90]} — {(r.get('note') or '')[:140]}")

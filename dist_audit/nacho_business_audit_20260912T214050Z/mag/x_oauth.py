@@ -2,21 +2,21 @@
 
 Why: X API v2 POST /2/tweets requires USER-CONTEXT auth (OAuth 2.0 user token or
 OAuth 1.0a), NOT an app-only bearer token. The X Premium ($8/mo) account carries
-write access, so a user-context token lets us post as @GroundingWave through the
+write access, so a user-context token lets us post as @GHOST_HANDLE through the
 official API — ban-safe, no browser automation, no $100 tier.
 
 Flow:
   1. Operator creates an X developer app (Premium) -> gets Client ID (+Secret).
   2. python -m mag.x_oauth start   -> prints authorize URL + runs a one-shot
      callback server on the redirect URI. Operator opens URL, logs in (their
-     secret), authorizes @GroundingWave.
+     secret), authorizes @GHOST_HANDLE.
   3. python -m mag.x_oauth complete <code>  (or the server auto-captures)
      -> exchanges code for access+refresh tokens, stores locally (never printed).
   4. python -m mag.x_oauth post "<text>"  -> auto-refreshes then POST /2/tweets.
 
 ENV (in .env, operator-filled):
   X_CLIENT_ID, X_CLIENT_SECRET, X_REDIRECT_URI (default http://127.0.0.1:8788/callback),
-  GHOST_X_HANDLE (GroundingWave)
+  GHOST_X_HANDLE (GHOST_HANDLE)
 
 Schema: x_oauth.v1
 """

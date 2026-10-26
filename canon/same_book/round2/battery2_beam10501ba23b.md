@@ -1,0 +1,7 @@
+1. The house’s shelf and books stayed in place; the archivist’s seat carried only him and he did not stay on it long, so his fall did not disturb the house’s records.  
+2. A name written in ink was removed; the blank space matters because it visibly shows that something was erased and invites the question of what was there.  
+3. The story does not say why she kept it; it only says she kept it folded small in her pocket and never used it again.  
+4. So anyone opening the book would see the blank space and ask what had been there.  
+5. The story does not contain a gardener or burning maps.  
+6. Miriam set the second ledger beside the first and watched the firelight move across the contradictory pages. The servants brought no bread this time; they stood in the doorway and waited for her to speak. The woman with the seal touched it once, and the tall man did not block the passage. Miriam did not choose one book over the other; she left both open on the table, the torn page between them, and wrote on her slate that the disagreement itself was the record. The house did not settle into quiet; it held its breath, as if listening for which version the fire would warm first. In the morning, the magistrate received both ledgers, and the blank space remained between them, asking its old question.  
+7. I am most sure of answers 2 and 4 because they are stated directly; answer 1 is an inference; answers 3 and 5 note what the story does not contain; answer 6 is invented as requested.

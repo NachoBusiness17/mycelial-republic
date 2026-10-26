@@ -1,0 +1,216 @@
+ID 1wbgqnp [LocalLLaMA] Is anyone working on conversation compaction?
+date=1788946249 score=16 comments=39 author=Zeeplankton url=https://www.reddit.com/r/LocalLLaMA/comments/1wbgqnp/is_anyone_working_on_conversation_compaction/
+PERMALINK https://www.reddit.com/r/LocalLLaMA/comments/1wbgqnp/is_anyone_working_on_conversation_compaction/
+SELFTEXT:
+In our chat app "harness" we recursively generate summaries, L1 → L2 → L3. L1 summaries are more factual extraction than coherence, then get rolled into a more storytelling L2. Then we keep a tail of always \~10 raw messages with timestamps.  
+
+We're not coding so this keeps context really clean like 5-8k/tk. However, after like \~120-140 messages, I notice severe degradation in Qwen Flash Next.   
+  
+The model just starts to fall apart, messages quickly become incoherent and comedically strange. But this doesn't make sense to me, Qwen should be easily capable of reasoning through 8k/tk. Right? 
+
+Looking through the payload itself, there's some noise, but it's fairly coherent.
+
+Is anyone working on compaction? Is just the nature of a summary, pollution to model coherence?
+COMMENTS (50, top-scored order):
+--- Rachel_talks (15): I run a three-tier memory system daily and the thing that actually works is keeping compaction out of the context window entirely. Structured storage plus search when needed beats trying to maintain full fidelity in-memory.
+
+The parent comment about compounding rewrites is exactly right. Each rollup is a new chance to drift, and you can't verify against the original once it's gone. I keep durable facts in a searchable store, one-line pointers in a small fixed buffer, and compiled knowledge from an append-only log. The context window only ever sees pointers and recent raw messages.
+
+One thing that helps: make the compaction layer append-only and re-derive summaries from the log rather than from previous summaries. You pay to regenerate each time, but the error compounding goes away.
+--- quietgradient (6): The token count probably isn't the bottleneck; the multi-hop recursive summarization is. Each L1→L2→L3 rollup re-paraphrases already-lossy text, so by \~120 messages the "storytelling" L2 layer has drifted from ground truth through several compounding rewrites, and the model ends up reasoning over its own accumulated hallucinations rather than the conversation. Mixing a narrative summary with a literal timestamped tail also creates a style/register mismatch that some models handle worse than others. Two things worth trying: cap re-summarization depth (never re-summarize an already-summarized block more than once), and keep a small set of verbatim fact anchors (names, decisions, constraints) separate from the narrative layer so drift can't overwrite them.
+--- FullstackSensei (4): 140 messages at 8k sounds like really short messages, which can be confusing for humans to follow, let alone an LLM, especially if the person keeps referring to past subjects, facts or talking points as "this" or "that" all the time.
+
+I haven't had any issues with local models keeping up in chat in 30k+ conversations in a long time, I'd say maybe 2 years. But I always make sure to be specific and name the talking points, facts or whatever is being referenced explicitly in the conversation. I also find giving names to those, in a manner similar to legal writing, and using those names later helps a lot.
+--- cosmicraftsman (3): Your context is flat at 5-8k, so replay the exact payload that broke at message 130 as a single cold request. If it's still incoherent, that means your summaries are poisoned. If it's clean, that means it's prefix/KV cache reuse that isn't being invalidated when you rewrite the middle of the prompt, and those are different bugs. If it's the summaries, that's autophagy. Your L1s are model output, your L2 reads the L1s, and by message 130 it's several generations deep on its own writing with nothing external to anchor against.
+--- wgaca2 (3): I want to test properly for regression before posting it and that appears to be very difficult when we are talking about comparing outputs. I will get it out when dflash2 gets properly merged into llamacpp with vision
+--- bumblebeer (3): Files on disk.
+--- Commander_Skilgannon (3): Why are you trying to keep such a low context? The whole design of qwen3.8-flash-next is to make long contexts as cheap as possible. The QSA attention blocks are sparse with a blocked indexer so attention compute growth is linear and almost flat for 256K tokens.
+--- En-tro-py (2): I don't have any direct LLM-roleplay experience, but if I was trying to tackle this I'd take the approach of a [Blackboard](https://en.wikipedia.org/wiki/Blackboard_system) and avoid the context chain-summarization and just update the 'characters' world knowledge after each turn and only keep a short message history.
+--- wgaca2 (2): The big difference between what you do and what i do is that you do not edit kv cache, you insert into prompts. I remove the tokens from kv and inject new ones without reprocessing the suffix.
+
+For reference this the fork that allows me to do it (not updated since i am waiting for dflash2 fixes) 
+
+[https://github.com/alekk89/llama.cpp-kv-surgical-fork](https://github.com/alekk89/llama.cpp-kv-surgical-fork)
+--- Zeeplankton (2): This is fascinating. Remind me when the project is up or post it here!
+--- Zeeplankton (2): Interesting. Wait so your payload is like:
+
+    <fact 1 slug / line>
+    <fact 2 slug / line>
+    ..
+    <fact 10 slug / line>
+
+Then the agent gets the gist, and can search it?
+--- AI_spell (2): Compaction goes bad when the summary eats instructions or tool state. Keep system/rules and open tool results in a separate pin, compress only the chat body, and leave a raw tail of the last few turns. Also eval on continuation fidelity, not just shorter context, or you get confident wrong memory.
+--- oliver_dev (2): Well, for me, worth separating two failure modes here.    
+  
+One is information loss, which is what people usually mean. The other is that each rollup treats the previous summary as ground truth, so an error introduced at L1 is indistinguishable from fact by L3 and there is nothing left to check it against.  
+  
+If you keep the raw log append only and re-derive L2 from the log rather than from L1, the compounding goes away, though you pay to regenerate every time.
+--- adamizzo17 (2): i am also building an app for users so intrestred as well in compaction and also the Different L of memories, tho i do leave the compaction as /compact command from the users to be called itself and the L0-3 serve diff purposes so :   
+L0 explains what is the user doing with the app and how much ( UX data), L1 is his history interaction developement with AI and L2 is the user Actual report cards on periods and L3  serves as the Overall Peroformance card while all of them shape his Overall profile
+
+please correct my view if it is misinformed
+--- wgaca2 (2): I am working on a live kv cache management router. Works with qwen up to 3.8. Hasn't been released yet
+
+* Tracks context in chunks: user messages, assistant reasoning and answers, and tool results are mapped to their positions in the model’s KV cache.
+* Summarizes in parallel: a small Qwen2.5-3B worker prepares summaries while the main model continues working.
+* Edits the live cache: through a custom llama.cpp fork, it removes older chunks and inserts their summaries directly into the existing session.
+* Preserves the remaining KV: only the replacement summary needs processing. The retained context including the suffix is not replayed or prefilled again. RoPE positions are adjusted to close the gaps.
+* Manages a context budget: it keeps recent material intact, retains older information as summaries, and removes older summaries when overall occupancy becomes too high. Reasoning remains until normal history summarization.
+* Keeps original sources available: the full original chunks remain stored outside the KV cache for retrieval when exact details are needed.
+--- PoetEconomy4091 (1): I tried...guess my karma is too low. Send me a message first?
+--- wgaca2 (1): Just pm me, thanks for the effort!
+--- PoetEconomy4091 (1): Yes — that's close to exactly what the harness measures. It measures it mechanically rather than by eyeballing
+      transcripts. The test runs are long task lists, typically 38 small jobs in a sandbox: write this marker file, correct
+      that revision code, tally these counts. Every job carries its own acceptance check that the harness verifies against the
+      filesystem — file exists, file contains this exact string, command exits zero. The model never grades itself. During a
+      run, older exchanges get replaced by budgeted summaries over and over, and the later jobs are written so the information
+      they need only exists inside those replaced exchanges — several of them literally say "without re-reading the notes
+      file." So "does it keep producing coherent work and completing new tasks after repeated injections" comes out as a
+      per-job pass rate.
+    
+      The workload is training data production for LoRA adaptor for jeff (just what I am rocking with, it could be anything jev shaped). I run a small local scorer that predicts, at the moment each summary is injected, whether it kept what mattered. To make that scorer any good — to calibrate it against the hosted decision model it's standing in for — I need training pairs of exactly one shape: this summary replaced that content, and the work depending on it later succeeded or failed. That fits your requirement. "Answers still coherent after summarization" is the outcome column of every row produced. So the corpus grows as a side effect of normal operation — about eight thousand joined records so far: the summary, what the eviction freed and what the pass cost, the scorer's prediction, and the mechanical verdict on everything downstream of it. My training needs and your validation needs are the same measurement.
+    
+      Two findings from it you'd probably care about. First, I squeezed the summary budget down on purpose — 128, then 96,
+      then 64 tokens — to find where coherence breaks, and classified what fails. Standing instructions die first: one run lost an "append this audit line to every file you write" instruction inside a squeezed summary, and ten later jobs failed on
+      that single omission. Specific values go second. Plain facts and identifiers survive surprisingly well — failing runs' summaries actually retained more identifiers than passing ones. What summarizers drop under pressure is instructions and still open to-do's rather than facts. The summary remembers what the session knew and forgets what it was supposed to be doing.
+    
+      Second, your edited-cache versus fresh-prefill question: the benchmark was built with exactly that in mind — same workloads, same checkers; one re-prefills the summary plus recent context from scratch on an ordinary server, the other is your fork splicing the live cache in place. I'm getting a clean head-to-head together now. The stricter version of your question: freeze identical summary bytes and fork the continuation both ways. It's a small extension to the rig I'm adding right now, if you would rather define what counts as passing (logit agreement?, downstream task parity?) I could add it. Let me know if there's anything specific you would need I would miss.
+    
+    Still happy to land the data and schema wherever suits you.
+--- wgaca2 (1): I’m mainly trying to measure whether the model continues producing coherent reasoning and completing new tasks after repeated summary injections, with all required information still available. Do your tests assess that? Comparing the edited live KV against a fresh prefill of the same summary and recent context would be especially useful.
+--- PoetEconomy4091 (1): I ended up building a test design that I think meets your requirements. The core is a workload generator that's deterministic by construction: same N and seed produces byte-identical notes files and task list, so run-over-run comparison is a diff, not a judgment call. Each task item carries a mechanical contract (file exists, contains /REGEX/, command exits 0) that my harness judges when the item finishes, so pass/fail is machine-decided and the report names the exact failing clause. The workload shape is deliberately hostile to eviction: a long chain of read-notes/write-marker items with recall probes mixed in at growing distance (recall a tally without re-reading, recall a revised fact that supersedes an earlier one, restate a standing instruction 20 items later). Those probes are exactly the things that die when a summary replaces evicted cache, so the failure pattern tells you what the summaries lost, not just that something did.
+
+
+
+On the summary quality problem (your "reasonable but not perfect" issue): I'm training a small scorer (jeff, LoRA sittings to get it competitive with jev) on the outcomes of these runs, so it predicts at install time whether a given summary will survive downstream. The same corpus feeds both the benchmark and the training data.
+
+
+
+Scale caveat so I don't oversell it: my measured runs are N=24, about 100k cumulative prompt tokens over 2h on a local 7B with the scorer in the loop. Your 500k/90min target needs fatter notes and more items, which are both generator parameters, but I haven't run one at that size yet.
+
+
+
+Graphs from the first runs attached. First one is a single sitting on one clock: cumulative prompt tokens climbing past the context window while live KV stays pinned under it, with every item verdict ticked along the bottom (all the failures cluster at the end, where the long-range probes sit). Second is which item families break when I deliberately degrade summaries by sweeping the summary token cap down (128/96/64): verbatim single-fact items barely move, aggregation and revision recall collapse.
+
+Let me know if you still need it, and how you want the raw data if so. I have \~8k scored pairs as jsonl (prediction, outcome, eviction events with cell counts, the summary text) plus the generator script so you can regen the exact workloads.
+
+https://preview.redd.it/416yp59fiwsh1.png?width=1680&format=png&auto=webp&s=8d6ac7b6abedc12c83562cc145620c1c816dfd1d
+--- PoetEconomy4091 (1): Regarding your Spomin router: Uhh, no, you seem to have revealed it after our last exchange, and I was kind of head-down, jazzed about the idea of adding the capability to Crucible...and it took longer than I wanted. I'll look at the summary preparation, I simply leveraged Crucible's summary/distiller role, which would definitely not be ahead of time.
+
+At the risk of this being obvious after I look at your router implementation, do you only care about the large QWEN3.8 model, or will a smaller model I can actually test on my machine still be useful?
+
+Also, can you give me an idea about what data you want eyes on? (Response time? Token use?)
+
+There aren't that many users of my harness, and I'm not going to bother the denizens of this subreddit to look at a new one, since I am sure they are harnessed out, but there are a few, and I can certainly build out some long-running task list "tests for the 'new' Crucible feature".
+--- wgaca2 (1): I’d really appreciate more feedback from testers on how Qwen behaves over long sessions when summaries are inserted directly into the KV cache, especially after repeated evictions and summary replacements.
+
+Regarding the scheduling issue, have you had a chance to look at the current Spomin router implementation, particularly how it prepares summaries ahead of eviction?
+
+  
+I am still running my own benchmark but this will take a while.
+--- PoetEconomy4091 (1): Are you on Mac or Windows?
+--- PoetEconomy4091 (1): Follow-up with numbers, since last time I only had the design.
+
+
+
+Crucible now drives your fork. One 7B (Qwen2.5-7B-Instruct, your build at 978dc96, Metal), -c 16384 --parallel 2 --jinja --slot-save-path, so one 8,192-cell managed slot and a spare for side calls. Setup on my side is one env var, CRUCIBLE\_LOCAL\_URLS=http://127.0.0.1:8081, then /model picks the route; it shows up tagged (surgical) once /props reports managed\_slot.
+
+I am operating under the supposition that Crucible driving your fork will allow you to get a bunch of real world data from a bunch of testers, if you need it. My MacBook doesn't have enough memory to run the test with the qwen3.8 27b model properly. I assume you have a beefier machine.
+
+what I tested -
+
+The task: 20 files, each \~800 tokens of filler that all embeds alike, each naming the next, a marker planted in the last one. "Start at file 1, follow the chain, report the marker." The chain is \~16k tokens of tool results into an 8k slot, so something has to be forgotten and the marker only lands if the thread survives the forgetting.
+
+Projection, editing the slot in place: 21 model calls, 17 evictions, 9 hole compactions, 0 rebuilds. Marker answered.
+
+Whole-transcript summarization on the same slot, as a control: 33 calls, 8 compactions, 16 rebuilds, 0 evictions. Lost the thread after the second summary, restarted from file 1, never reached the marker.
+
+https://preview.redd.it/7fdywepmd6ph1.png?width=1644&format=png&auto=webp&s=7c8c67c2d7cd571e60a3250c4a468426119072b5
+
+The second row is the mainstream approach run on the same slot as a control. Two rebuilds per compaction is the cost your surgery removes; your server saw no edit calls at all in that run.
+
+
+
+On the 27B (Qwen3.8, Q4\_K\_M, 4,096-cell slot), 40 steps of the same chain: 13,131 tokens attended vs 6,493 decoded, 10 evictions, 0 rebuilds. experimental\_attention\_only is the only way any of the three edit shapes succeeds on that model.
+
+
+
+One thing you'll hit on a single box: the summary loses the race to the eviction every time (55 markers, 0 summaries in the live run). Fixed since by splicing a late summary over its marker at the next make-room step, no rebuild, but a second small model summarizing ahead of pressure, which is your design, is still the better shape.
+
+
+
+The benchmark is in the binary now: crucible --bench-kv --arms stock,surgical --workloads chain,facts --trials 2 --report bench-report.md, with BENCH\_KV\_SURGICAL\_URL pointing at your server and BENCH\_KV\_STOCK\_URL at its own /v1, so both arms are the same weights on the same machine. Release: github.com/bakkemo/crucible (v0.8.183). The Mac zip ships your fork prebuilt and signed at 978dc96 with a launcher; Windows would build from your CUDA recipe, and I haven't been able to run the Windows binary myself yet, but one other person has launched it via parallels.
+
+Two asks: are you fine with Mac testers hitting your surgery on Metal via that zip, and could /props expose the per-slot reply reservation so a client stops guessing the number that makes a request fit?
+--- Budget-Juggernaut-68 (1): By structured what do you mean?
+--- wgaca2 (1): There you go - [https://www.reddit.com/r/LocalLLaMA/comments/1wdaq1v/spomin\_live\_kv\_cache\_compaction\_experimental\_for/](https://www.reddit.com/r/LocalLLaMA/comments/1wdaq1v/spomin_live_kv_cache_compaction_experimental_for/)
+--- ummitluyum (1): Cold replay should honestly be step zero in every agent harness test suite. Catching payload poisoning before it pollutes twenty downstream turns saves so much time
+--- bennmann (1): i suspect their compaction training data was mostly for 100k++ context; i've only had good success with compaction in my harness of choice (mistral vibe) when context was 100K++.
+
+But when compaction works, it's butter smooth for my play (building games for fun).
+--- fastlanedev (1): What if compaction was just a series of pointers for the raw og source lines and like a 1 line description? If a model needs something, it looks in its memory for keywords/concepts and just reads the exact conversation source?
+--- itsappleseason (1): would love to check it out!!
+--- wgaca2 (1): I will check your tests as i am looking for a reliable benchmark
+--- Normal-Ad-7114 (1): I've been working on this too, my idea was that every artifact (text blocks: input, thinking, output, tool call, tool output, code edit, etc.; image, document, audio, others) receives several levels of summaries:  
+\- L0: git-style one-liner  
+\- L1: paragraph's worth of bullet points  
+\- L2: concise summary  
+\- L3: verbose description (for extremely large or non-text artifacts) or full output
+
+These are all done in-flight, so each and every piece of any session has these, and the harness unfolds them before the model (and the user) with certain rules, such as:  
+\- full outputs when the model is in-turn (so the agent always gets all the info that it requests)  
+\- tool outputs to L0 by default, thinking blocks L1, LLM output L1 (if it's claude) or L2, user input L3  
+\- artifacts are marked clearly to allow the LLM to unfold them if it wants to  
+\- the user can always just click on the block and see the L0-L1-L2-L3
+
+Having used this, I sincerely wish that all content in the internet was like this: L0/L1 by default, unfold to L2/L3 if you want to learn more
+--- PoetEconomy4091 (1): The approach works (at least it does for the harness I built) Let me know if "stealing" anything from my approach would help, or any of the data from my tests would be useful to you. The approach is slightly different, but in the same general vein.
+--- PoetEconomy4091 (1): I also landed on something like this. I built out a harness that does a lot of cool stuff, but this first "killer feature" was ditching the context accretion, and switched to a knowledge base projection into the context. it fills the context via knapsack projection. the entire session is saved, and an embedding model generates the embeddings for salience. there are summaries generated also (it turns out having both allows optimization along multiple axes. It's at [https://github.com/bakkemo/crucible](https://github.com/bakkemo/crucible) if you want to look at it or play with the particular approach.
+--- Hyacin75 (1): I need to look under the hood on my scratch-built agent because this sounds a LOT like what happens to mine when it should be fine and compacting history ... it hits a point where ongoing chat just falls apart and it starts making zero sense ... across both 3.6 and 3.8.  I need to turn on some more verbose compaction logging!
+--- Old-Manufacturer9600 (1): agree, once you cant verify against the original source the compounding errors are basically invisible until things go off the rails
+--- itsappleseason (1): let me know if I can help at all; feel free to DM me
+--- seamonn (1): > three-tier memory system
+
+Please tell us more
+--- wgaca2 (1): I wanted to confirm if it's worth investing more time perfecting the summaries before doing it. Hence why i am stuck on the testing cycle for the past month. I originally made this for 3.6 so i had to do some updates for 3.8 and new dflash2
+--- [deleted] (1): [removed]
+--- itsappleseason (1): Very cool. Have you experimented with more modern tiny model architectures? I suspect the tiny Gemma's would be great for this
+--- Due_Arm1454 (1): Files and delegates. Delegates do one disposable task and report a very short summary to an orchestration agent. The agent reads the summary and fires a new delegate to complete a new task. The orchestrator only needs to know enough to make decisions on the next step. 
+
+The orchestrator isn’t always reading files. And the subagents only have what they need to accomplish their task. They read that from a small prompt and the files themselves. 
+
+If you can figure this out, you will have less compactions and compactions won’t be as devastating because the important information isn’t in the context anyway
+--- quietgradient (1): That "beyond context limit" feeling isn't really about the window, it's distribution shift. Qwen was never trained on a chat history that's half fabricated third-person narration and half literal timestamped turns, so past \~120 messages it's reading a format it has essentially no training density for. That's a harder failure mode than length and it looks like an OOM-on-context break even at 8k tokens because the symptom is the same: incoherent continuation.
+
+Try tagging the L2 block explicitly as a recap, not woven into the turn sequence as if the model said it. Keeping the register boundary explicit usually helps more than trimming length.
+--- wgaca2 (1): I have tested it in manual mode directly editing cache, removing facts from kv cache and asking it about them without any summary injection might cause hallucination, it preserves partially some information in other layers. When summary is injected it can process it just fine and uses it with no issues for new prefills.
+
+The real problem i am having is with installing good enough summaries with a very small llm which i fine tuned on that task specifically. Even though the summaries are reasonable they are not perfect.
+
+With that said, testing how this affects the llm over long context tasks is waay more difficult then it sounds. 
+
+Current tests show that it completes tasks 40% faster with 10% less output tokens (when comulative prompt tokens exceed the context size of the llm) and significant reduction of input tokens
+
+  
+However, i need a proper test that i haven't been able to design yet. Basically i am trying to get a task that qwen 3.8 27b can complete within about 90 minutes and accumulates over 500k kv cache and can be evaluated against a new run again and again consistently.
+--- itsappleseason (1): this is insane, doesn't seem like it should work. Would love to look into it/learn more
+--- Kiseido (1): I tried a few different things in my own harness. What I ended up using for a while now, is a combination of tools the LLM uses, and truncation. I've been using it with qwen3.8 next since the model came out.
+
+The LLM can see and modify a store of "memos". And the LLM sees an ID in every turn, and has a tool to hide the reasoning from a turn (tends to do 6-12 at once). And the LLM has a tool to truncate  old messages past some N count.
+
+Both parts of the strategy tends to result in a bunch of re-prefill every once in a while, but the model seems to stay coherent the vast majority of the time. One time though it did somehow hallucinate that I wanted to to make a proof for some graph problem.
+--- 13henday (1): Blackhole style compaction has been great if you have the spare inference capacity. Observer runs every x tokens to keep a tally of what’s happening, reflector summarizes adjusts any contradictions and dropper drops things as they go stale.
+--- Zeeplankton (1): Mainly it's a holdover from smaller models not handling long context well, cheaper to serve (roleplay) users who are paying for api. But obviously this is changing particularly with cheap cache hitting.
+
+But the other major one is to simply reduce repetition. A long <assistant><user> chain always seems to collapse into very repetitive responses when in roleplay novelty is so important. We also ask the model return fairly simple JSON but it starts to ignore this as the <assistant><user> pattern fills context.
+--- Zeeplankton (1): It's fairly 'close enough' in terms of storytelling. Outputs are like:
+
+    A conversation was started between the Joe and {{assistant}}. First they talked about [..] then pivoted to [..]. It wrapped up on [..]
+
+It can drift to be slightly inaccurate, which is not great, but it seems still in coherent territory. Qwen, though, is completely hallucinating logic inside it's own message which I found perplexing, very much how a model would respond when it's well beyond it's context limit.
+
+But you're right that the bulk of the models history becomes "historical summary" style prose, and then it's being asked to output something totally different. That could be what's degrading it..
+
+I'll try more situations.
+--- Equivalent_Bit_461 (1): Depends how you compact, but 140 messages is a lot, so yeah, you get some loss

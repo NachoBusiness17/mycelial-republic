@@ -1,9 +1,0 @@
-vec3 p;float i,g,d=1.,s=.1,a=2.*sign(ceil(mod(t,3.))-2.);
-for(;++i<72.&&d>.001;){
-  p=vec3((FC.xy-.5*r)/r.y,g-1.)*rotate3D(t+1.,vec3(1));
-  p=a>1.?p:a<0.?p.zxy:p.yzx;
-  p.xz*=rotate2D(PI/2.*pow(fract(t),5.)*step(-s+s*a,p.y)*step(p.y,s+s*a));
-  g+=d=length(max(abs(abs(abs(p)-s)-s)-s*.8,0.))/6.;
-}
-p=floor(p*5.-2.5);
-o+=d<.001?dot(hsv(30./i,1.,1.),vec3(1))-mod(p.x+p.y+p.z,2.):0.;

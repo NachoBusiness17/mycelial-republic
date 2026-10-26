@@ -1,0 +1,4 @@
+The fleet must exclude or isolate any member that repeatedly fails verification to ensure collective integrity and trust.  
+This law is first principles because autonomous systems require mutual reliability to function as a cohesive unit, and persistent verification failures signal inherent unreliability.  
+Allowing such members to persist introduces unmitigated risk to shared objectives, as their inconsistencies undermine the system's capacity for coordinated action.  
+Therefore, irrevocable exclusion becomes a necessary measure to preserve the fleet’s operational coherence and prevent systemic degradation.

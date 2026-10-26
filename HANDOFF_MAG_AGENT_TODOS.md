@@ -28,6 +28,7 @@ Mag is a **freedom lattice**: layman Office at the front, intelligent router/aut
 **After merge on home PC:**
 
 ```powershell
+# fence-owner: implementing agent - handoff boot card. FW-11 2026-09-28; receipt: watch/inbox/fifty_wide_20260917/FW11_fence_owners.md
 mag.cmd doctor
 .\.venv\Scripts\python.exe scripts\routing_smoke.py
 python main.py verkle-audit --dry
@@ -150,6 +151,7 @@ Run: `python main.py verkle-audit` → `reconcile` section.
 ### Improve candidates
 
 ```bash
+# fence-owner: implementing agent - improve cycle card. FW-11 2026-09-28; receipt: watch/inbox/fifty_wide_20260917/FW11_fence_owners.md
 python main.py improve --once
 python main.py improve --status
 python main.py promote --apply c-<id>   # human gate
@@ -181,6 +183,7 @@ Ledger: `memory/improve/candidates.jsonl` (created on first scout).
 ## 6. Tests (trust ritual)
 
 ```bash
+# fence-owner: implementing agent - test suite card. FW-11 2026-09-28; receipt: watch/inbox/fifty_wide_20260917/FW11_fence_owners.md
 .venv/bin/python -m pytest tests/test_verkle_audit.py tests/test_ponytail_audit.py \
   tests/test_router.py tests/test_failure_kb.py tests/test_autorun_v1.py -q
 .venv/bin/python scripts/routing_smoke.py
@@ -231,6 +234,7 @@ Ledger: `memory/improve/candidates.jsonl` (created on first scout).
 **Before meter / access loss — freeze on disk:**
 
 ```powershell
+# fence-owner: implementing agent - context-pack card. FW-11 2026-09-28; receipt: watch/inbox/fifty_wide_20260917/FW11_fence_owners.md
 mag.cmd context-pack
 mag.cmd agent-state --load
 python main.py verkle-audit --dry
@@ -241,6 +245,7 @@ python main.py ponytail-audit
 **Activate any remote seat (stateless):**
 
 ```text
+# fence-owner: implementing agent - context-pack numbered card. FW-11 2026-09-28; receipt: watch/inbox/fifty_wide_20260917/FW11_fence_owners.md
 1. python main.py context-pack
 2. Paste memory/handoff/ACTIVATION.md + pack (not full chat)
 3. One job per session

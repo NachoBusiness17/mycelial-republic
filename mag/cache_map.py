@@ -55,9 +55,10 @@ MODEL_RATES = {
     "claude-3-5-sonnet-20241022": {"hit": 3.0, "miss": 3.0, "out": 15.0},
     # GitHub Models / Copilot free tier
     "Meta-Llama-3.3-70B-Instruct": {"hit": 0.30, "miss": 0.30, "out": 0.90},
-    # Groq
-    "llama-3.3-70b-versatile": {"hit": 0.59, "miss": 0.59, "out": 0.79},
-    "llama-3.1-8b-instant": {"hit": 0.05, "miss": 0.05, "out": 0.08},
+    # Groq (llama chat names retired in the 09-24 contraction; prices from the
+    # models API pricing field, per MTok: prompt / completion / input_cache_read)
+    "openai/gpt-oss-120b": {"hit": 0.075, "miss": 0.15, "out": 0.60},
+    "openai/gpt-oss-20b": {"hit": 0.0375, "miss": 0.075, "out": 0.30},
     # Google / Gemini
     "gemini-2.0-flash": {"hit": 0.10, "miss": 0.10, "out": 0.40},
     "gemini-1.5-flash": {"hit": 0.075, "miss": 0.075, "out": 0.30},
@@ -114,6 +115,37 @@ def _iso_min(ts: str | None) -> str:
     return dt.astimezone(timezone.utc).strftime("%Y-%m-%dT%H:%M")
 
 
+def latest_rows_per_session(chain_rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Latest-per-session resolution for v2 append-leaves chains (AH19, 2026-09-30).
+
+    v1: one row per session (amend-in-place) — this is the identity (input
+    returned unchanged). v2: a re-save APPENDS a new (session_id, session_seq)
+    row, so one session spans multiple rows; the time-window join and session
+    counts must read the session's LATEST row only (last matching row in chain
+    order — the same rule as verkle_knot.latest_leaf_for_session's fallback),
+    or one session double-counts as N windows / N sessions and a stale earlier
+    window shadows the live one (VERKLE_V2_DECISION.md §2.2). Rows with no
+    session_id pass through in place (each is its own entry).
+    """
+    latest: dict[str, dict[str, Any]] = {}
+    for r in chain_rows:
+        sid = str(r.get("session_id") or "")
+        if sid:
+            latest[sid] = r  # chain is append-ordered: last occurrence wins
+    if len(latest) == len(chain_rows):
+        return chain_rows  # pure v1 (no duplicate sids): byte-identical behavior
+    out: list[dict[str, Any]] = []
+    emitted: set[str] = set()
+    for r in chain_rows:
+        sid = str(r.get("session_id") or "")
+        if not sid:
+            out.append(r)
+        elif sid not in emitted and latest.get(sid) is r:
+            out.append(r)
+            emitted.add(sid)
+    return out
+
+
 def is_remote(r: dict[str, Any]) -> bool:
     """Any real, non-local provider call worth pricing (excludes ollama + tests)."""
     prov = str(r.get("provider") or "")
@@ -162,7 +194,12 @@ def _bucket(ts: str, sessions: list[dict[str, Any]]) -> dict[str, Any] | None:
 def build_map(*, usage_rows: list[dict[str, Any]] | None = None,
               chain_rows: list[dict[str, Any]] | None = None) -> dict[str, Any]:
     rows = usage_rows if usage_rows is not None else _read_jsonl(USAGE)
-    chain = chain_rows if chain_rows is not None else _read_jsonl(CHAIN)
+    raw_chain = chain_rows if chain_rows is not None else _read_jsonl(CHAIN)
+    # AH19 (2026-09-30) rows!=sessions: under v2 append-leaves one session
+    # spans multiple rows; the window join and session counts read the LATEST
+    # row per session only (identity on v1 chains). raw row count is kept in
+    # the output — rows and sessions are different denominators (census law).
+    chain = latest_rows_per_session(raw_chain)
     rows_remote = [r for r in rows if is_remote(r)]
 
     # Precompute session windows ONCE.  The old bucket() linearly scanned every
@@ -295,6 +332,9 @@ def build_map(*, usage_rows: list[dict[str, Any]] | None = None,
         "ts": datetime.now(timezone.utc).isoformat(),
         "verkle": {
             "n_sessions": len(chain),
+            "n_chain_rows": len(raw_chain),
+            "note": ("n_sessions is latest-row-per-session (AH19 v2 append-leaves); "
+                     "n_chain_rows is the raw chain length — different denominators"),
             "n_leaves": int(tip.get("n_leaves") or 0),
             "root": tip.get("root") or "",
             "root_short": tip.get("root_short") or (tip.get("root") or "")[:16],

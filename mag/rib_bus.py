@@ -83,11 +83,23 @@ def _save_store(store: dict[str, Any]) -> Path:
 
 
 # ── fold to verkle (durable, content-addressed, tied to the VRAM-anchored bus) ──
-def _fold_verkle(domain: str, invariant: str, source: str, n_total: int) -> dict[str, Any]:
+def _fold_verkle(domain: str, invariant: str, source: str, n_total: int,
+                 *, first_ts: str | None = None) -> dict[str, Any]:
     try:
         from mag.verkle_knot import append_verkle_knot
 
-        minute = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M")
+        # AH19 (audit finding #10, 2026-09-30): the fold minute is PINNED to the
+        # rib's first-seen ts. Before the pin, every republish stamped now()
+        # into time.created_at/updated_at — the dossier hash changed on every
+        # call, so the dedupe gate never fired and each publish of an UNCHANGED
+        # invariant paid a full-chain amend (v1) / an append (v2). With the pin,
+        # an unchanged (invariant, store-size) pair yields a byte-identical
+        # dossier → identical leaf_hash → dedupe skip. Evidence: the live chain
+        # showed 2,821/8,626 rows as amend rewrites, many from this fold.
+        if first_ts and len(first_ts) >= 16:
+            minute = first_ts[:16]  # ISO 8601 → "YYYY-MM-DDTHH:MM"
+        else:
+            minute = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M")
         dossier = {
             "session_id": f"rib_bus_{domain}",  # no colon — colon is invalid in Windows filenames
             "time": {
@@ -130,25 +142,43 @@ def publish_rib(invariant: str, *, domain: str = "general", source: str = "front
     """Fold + publish + store ONE frontier RIB/steer instruction for a domain.
 
     Dedupes by content hash. Returns the store state. Deterministic + $0.
+
+    AH19 (chain_mode=v2): the fold's session_id stays ``rib_bus_{domain}`` —
+    one pointer bucket per domain — and every publish appends ONE leaf whose
+    chain ``session_seq`` IS the version (one leaf per (domain, version); the
+    version pointer is the domain's session pointer). Republishing an
+    UNCHANGED invariant dedupes to a skip (fold minute pinned to first-seen
+    ts, see _fold_verkle). Spec: watch/inbox/last_mile_20260930/AH19_AMEND_PERF.md
     """
     invariant = (invariant or "").strip()
     if not invariant:
         return {"ok": False, "error": "empty invariant"}
     store = _load_store(domain)
     k = _rib_key(domain, invariant)
+    # AH19: preserve the rib's FIRST-SEEN ts — the fold minute pins to it so a
+    # republish of unchanged content is a dedupe skip, not a new chain write.
+    existing = store["ribs"].get(k) or {}
+    first_ts = str(existing.get("first_ts") or existing.get("ts") or "") or _now()
     # default target language = MACHINE (agent-as-OS): every RIB carries a target rank it lowers to
     store["ribs"][k] = {"invariant": invariant, "source": source, "ts": _now(),
+                        "first_ts": first_ts,
                         "target_rank": str(target_rank or "T2").upper()}
     store["updated"] = _now()
     path = _save_store(store)
-    knot = _fold_verkle(domain, invariant, source, len(store["ribs"])) if fold else {}
+    knot = (_fold_verkle(domain, invariant, source, len(store["ribs"]), first_ts=first_ts)
+            if fold else {})
     pub = _publish(domain, invariant, source) if publish else False
     return {
         "ok": True, "schema": SCHEMA, "domain": domain,
         "key": k, "n_total": len(store["ribs"]),
         "target_rank": str(target_rank or "T2").upper(),
         "added": "new" if len(store["ribs"]) == 1 else "updated",
-        "store_path": str(path), "verkle": knot, "published": pub,
+        "store_path": str(path), "verkle": knot,
+        "chain_mode": knot.get("chain_mode"),
+        # AH19 version pointer: the (domain, version) leaf this publish resolves
+        # to — skipped folds report the version already committed at the pointer.
+        "version": knot.get("session_seq"),
+        "published": pub,
     }
 
 

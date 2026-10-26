@@ -85,6 +85,13 @@ FILE_TYPES = {0: "F32", 1: "F16", 2: "Q4_0", 3: "Q4_1", 7: "Q8_0", 8: "Q5_0",
               19: "IQ2_XXS", 20: "IQ2_XS", 21: "Q2_K_S", 22: "Q3_K_XS",
               24: "IQ1_S", 25: "IQ4_NL", 26: "IQ3_S", 27: "IQ2_S", 28: "IQ4_XS",
               29: "IQ1_M", 30: "BF16"}
+# Census-row backend tier (2026-10-04 quantization steal card port, lane B9):
+# this host parses GGUF containers only (magic check in parse_header), so a
+# completed scan is always the GGUF tier; the field exists so the two-clause
+# method-tier rule (within GGUF the Q4_K_M default stands; any non-GGUF
+# backend swap reopens the method question, AQLM sanctioned, QuIP# barred)
+# is machine-checkable at census time instead of memory-resident.
+BACKEND_TIER = "GGUF"
 
 
 class GGUFError(Exception):
@@ -390,6 +397,7 @@ def scan(path: Path, sample_mb: float, out: Path) -> dict:
         "arch": meta.get("general.architecture"),
         "model_name": meta.get("general.name"),
         "quant_file_type": FILE_TYPES.get(ft, ft),
+        "backend_tier": BACKEND_TIER,
         "alignment": doc["alignment"],
         "header_bytes": doc["header_end"],
         "data_start": data_start,

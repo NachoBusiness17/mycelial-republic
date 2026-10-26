@@ -47,8 +47,17 @@ def file_peer_handoff(
     status: str = "filed",
     enqueue: bool = False,
     meta: dict[str, Any] | None = None,
+    claimed: str = "",
+    delivered: str = "",
+    receiver_can_act_on: str = "",
 ) -> dict[str, Any]:
-    """File cross-agent instructions — visible in coordination feed + handoff queue."""
+    """File cross-agent instructions — visible in coordination feed + handoff queue.
+
+    Entanglement check (meters law, 2026-09-22): a handoff is a correlation
+    test across a noisy channel, so it names CLAIMED (what the sender says it
+    did), DELIVERED (the bytes), and what the RECEIVER CAN ACT ON. All three
+    empty = unmetered handoff (Γ = 1.00 by default until measured).
+    """
     goal = (goal or brief or "").strip()
     if not goal:
         return {"ok": False, "error": "goal or brief required"}
@@ -70,6 +79,9 @@ def file_peer_handoff(
         "pr_url": pr_url[:500],
         "merge_target": merge_target[:120],
         "status": status,
+        "claimed": claimed[:500],
+        "delivered": delivered[:500],
+        "receiver_can_act_on": receiver_can_act_on[:500],
         "meta": meta or {},
     }
     path.write_text(json.dumps(payload, indent=2, ensure_ascii=False), encoding="utf-8")
@@ -178,6 +190,10 @@ def format_latest_brief() -> str:
         )
         for cmd in (r.get("commands") or [])[:3]:
             lines.append(f"  cmd: {cmd[:120]}")
+        if r.get("claimed") or r.get("delivered"):
+            lines.append(f"  claimed: {str(r.get('claimed', ''))[:100]}")
+            lines.append(f"  delivered: {str(r.get('delivered', ''))[:100] or '(none — Γ=1.00)'}")
+            lines.append(f"  receiver can act on: {str(r.get('receiver_can_act_on', ''))[:100]}")
     return "\n".join(lines)[:1200]
 
 
@@ -197,6 +213,9 @@ def main(argv: list[str] | None = None) -> int:
     pf.add_argument("--command", action="append", dest="commands", default=[])
     pf.add_argument("--pr", dest="pr_url", default="")
     pf.add_argument("--merge-target", default="")
+    pf.add_argument("--claimed", default="", help="what the sender says it did")
+    pf.add_argument("--delivered", default="", help="the bytes actually on disk")
+    pf.add_argument("--act-on", dest="receiver_can_act_on", default="", help="what the receiver can act on")
     pf.add_argument("--enqueue", action="store_true")
     pf.add_argument("--json", action="store_true")
 
@@ -216,6 +235,9 @@ def main(argv: list[str] | None = None) -> int:
             commands=args.commands or None,
             pr_url=args.pr_url,
             merge_target=args.merge_target,
+            claimed=args.claimed,
+            delivered=args.delivered,
+            receiver_can_act_on=args.act_on,
             enqueue=bool(args.enqueue),
         )
         print(json.dumps(res, indent=2, default=str))

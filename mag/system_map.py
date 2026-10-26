@@ -66,7 +66,7 @@ def _direction_summary() -> dict[str, Any]:
         "proposal": ROOT / "docs" / "ref" / "MAG_PROJECT_PROPOSAL.md",
         "direction": ROOT / "docs" / "ref" / "MAG_DIRECTION_ARTIFACT_v2.md",
         "hand_off": ROOT / "HANDOFF_MAG_AGENT_TODOS.md",
-        "compass": ROOT / "docs" / "ref" / "MAG_MYCELIAL_REPUBLIC_COMPASS.md",
+        "compass": ROOT / "docs" / "ref" / "REPUBLIC_COMPASS.md",
         "constitution": ROOT.parent / "mycelial-republic" / "docs" / "CONSTITUTION.md",
     }
     out: dict[str, Any] = {}

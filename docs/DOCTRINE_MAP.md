@@ -70,7 +70,7 @@ architecture files truth · refuse capture · no center throne. (docs/archive/ZE
 | **Fortress and Republic** | the architectural identity: sovereign self + mycelial many | FORTRESS_AND_REPUBLIC.md | identity — the frame |
 | **The fractal bead** | honest naming: bead before verkle, same soul | FRACTAL_BEADS.md | subsumed into verkle |
 | **The Rashomon Filter** | detect when consensus is illusion (2023 pre-seed) | origin | concept — ties to ox consensus-illusion research |
-| **The compass** | vision → loop → v1–v10 arc | MAG_MYCELIAL_REPUBLIC_COMPASS | exists |
+| **The compass** | vision → loop → v1–v10 arc | REPUBLIC_COMPASS (republic-compass, renamed 2026-10-14) | exists |
 
 ## 6. THE CONSTITUTION (the stable claims — the doctrine's spine)
 

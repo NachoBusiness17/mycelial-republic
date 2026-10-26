@@ -86,6 +86,38 @@ def lens_ocean(ocean: dict[str, float] | None = None) -> dict[str, Any]:
     # dominant traits = the strongest lenses -> the blended personality
     ranked = sorted(OCEAN_INVARIANTS, key=lambda k: -o.get(k, 0.5))
     dominant = ranked[0]
+    # MEASURED (2026-09-29): sorted() on an all-equal vector returns the keys in their ORIGINAL
+    # order, so ranked[0] is a stable alphabetical tie-break being reported as a finding. On a
+    # neutral profile (every trait 0.5) this returned primary_trait "openness",
+    # archetype "builder", lens "compiler/world" and a Dune-quoting voice reference -- a full,
+    # confident personality assembled from a vector that says nothing.
+    #
+    # This is the THIRD instance of one defect at three depths, and it is worth naming as a
+    # pattern rather than three bugs:
+    #     1. mag/ocean_model_mind.fingerprint -- guard tested input LENGTH, not signal
+    #     2. the same file's has_signal        -- guard tested denom AFTER its own `or 1.0` rescue
+    #     3. lens_ocean here                  -- guard assumed a ranking exists on a tied vector
+    # In every case a tie or an absence was silently converted into a confident specific answer,
+    # and in every case the artefact was invisible because the output looked complete.
+    #
+    # The honest answer for an undifferentiated vector is to say so. The hash still works (it is
+    # content-addressed on the vector itself), the blend list still describes the input, and the
+    # caller gets an explicit reason instead of an invented archetype.
+    vals = [float(o.get(k, 0.5)) for k in OCEAN_INVARIANTS]
+    undifferentiated = bool(vals) and (max(vals) - min(vals)) < 1e-9
+    if undifferentiated:
+        return {"ok": True, "schema": SCHEMA, "ocean": o,
+                "personality_hash": hashlib.sha256(
+                    json.dumps({k: round(float(v), 3) for k, v in o.items()},
+                               sort_keys=True).encode("utf-8")).hexdigest()[:16],
+                "primary_trait": None, "primary_invariant": None,
+                "undifferentiated": True,
+                "undifferentiated_reason": (
+                    "every OCEAN trait is equal, so no trait is primary and no archetype can be "
+                    "derived. Returning one would be alphabetical tie-break dressed as a finding. "
+                    "Supply a differentiated profile, or treat the caller as having no signal."),
+                "blend": [], "voice": "",
+                "note": "NO PERSONALITY DERIVED -- the input profile does not differentiate."}
     primary = OCEAN_INVARIANTS[dominant]
     # tie to the persona archetype (persona_recall) for the voice
     try:

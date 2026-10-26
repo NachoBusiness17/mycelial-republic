@@ -1,6 +1,6 @@
 # Mag DNA — residual constitution
 
-**Commitment:** `dna-residual-003` · **Coldest vertex:** `coldest-vertex-001`  
+**Commitment:** `dna-residual-003` (retired 2026-09-29: no residual, registry, knot, chain, or kpi row binds this id) · **Coldest vertex:** `coldest-vertex-001` (anchor: `docs/archive/README.md:5`)  
 **Rule:** Fidelity lives in **files + chain**, not in a process that must stay awake.
 
 ## Daily path (start here)
@@ -39,7 +39,7 @@ tip + registry card  →  residual/{id}.json  (+ session_card)
 
 | Layer | What | Rule |
 |-------|------|------|
-| **Cold** | residual + card + content_commit + chain leaf | SessionEnd **must** write; amend cannot strip `core` |
+| **Cold** | residual + card + content_commit + chain leaf | Session close **must** write (daemon poll, `mag/daemon.py:44`); amend cannot strip `core` |
 | **Warm** | Board + API | Read-only viewports |
 | **Sticker** | PDF / visual under `derived/` | Export on demand only |
 
@@ -57,7 +57,7 @@ tip + registry card  →  residual/{id}.json  (+ session_card)
 | **Fidelity without lab** | Closed day → residual + card + commit + leaf |
 | **Browsable later** | Registry (list) → residual (depth) → derived on demand |
 | **Prompt → display** | "What was I doing?" answers from files, not scroll |
-| **Set and forget** | SessionEnd architecture; optional daily backfill |
+| **Set and forget** | Daemon-poll close files DNA; optional daily backfill |
 | **Portable** | Backup residual + registry + knots + tip = move house |
 | **Data first** | Stats from residual via API/UI. PDF/visual only on **export** |
 | **One vertex** | New features = edges (panel/field/export), never a second DNA store |
@@ -70,10 +70,10 @@ Lab improves **mid-session** comfort (live board, companion, :8765). It does **n
 
 ## Create
 
-### Required (SessionEnd)
+### Required (session close)
 
 ```
-hooks → session_end_hook → summarize_session
+daemon poll → summarize_session (mag/daemon.py:44; def in mag/biography.py)
   → residual/{id}.json      # canonical
   → session_card            # title, blurb, bullets
   → registry.jsonl          # hot row
@@ -81,7 +81,9 @@ hooks → session_end_hook → summarize_session
   → kpi.json
 ```
 
-### Optional derived (export layer — not SessionEnd)
+Trigger note: the old `session_end_hook` trigger is retired. The endpoint `watch/session_end_hook.py` survives on disk but the harness wires no SessionEnd event (config checked 2026-09-29: PreToolUse and PostToolUse only), so the daemon poll above is the live close path. Manual fallback: `python main.py summarize-session`.
+
+### Optional derived (export layer; outside the close write)
 
 `derived/{id}.md|pdf|visual_pack.json` — regenerable stickers.  
 Build with `POST /api/v1/export` `{session_id, pdf?, visual?}` or UI **Export PDF / Export visual**.
@@ -126,7 +128,7 @@ python main.py pack-status
 
 | Lever | Default |
 |-------|---------|
-| **Architecture** | SessionEnd files DNA; lab optional |
+| **Architecture** | Daemon close files DNA; lab optional |
 | **Norms** | Close the seat cleanly so End fires |
 | **Markets** | Heuristic residual free; don't rent memory from a remote seat |
 | **Law** | Private residual never remote |
@@ -140,8 +142,8 @@ Optional: OS daily `backfill-sessions` for crashed sessions.
 Keep:
 
 - `memory/biography/residual/`
-- `registry.jsonl`
-- `knots/`, `verkle_tip.json`, `verkle_chain.jsonl`
-- `kpi.json`
+- `memory/biography/registry.jsonl`
+- `memory/biography/knots/`, `memory/biography/verkle_tip.json`, `memory/biography/verkle_chain.jsonl`
+- `memory/biography/kpi.json`
 
-Skip forever-keeping every P
+Skip forever-keeping every PDF or visual; `derived/` regenerates on demand (`POST /api/v1/export`).

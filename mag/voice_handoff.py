@@ -21,6 +21,15 @@ from typing import Any
 
 from config import ROOT
 
+
+def _under_root(p: Path) -> bool:
+    """True when p sits under ROOT; False for sandbox/external-basetemp paths."""
+    try:
+        p.relative_to(ROOT)
+        return True
+    except ValueError:
+        return False
+
 SCHEMA = "mag_voice_handoff.v1"
 HANDOFF_DIR = ROOT / "memory" / "working" / "voice_handoffs"
 INDEX_PATH = HANDOFF_DIR / "index.jsonl"
@@ -277,7 +286,17 @@ def file_handoff(
         f"- Do not reinvent Mag product spine\n",
         encoding="utf-8",
     )
-    data["card_path"] = str(card.relative_to(ROOT)).replace("\\", "/")
+    # Fix 2026-09-29 (gala ball3 live-state): card.relative_to(ROOT) raised
+    # ValueError whenever HANDOFF_DIR sits outside the repo (tests point it at
+    # tmp_path; the wave5 full-suite run used an external --basetemp), and the
+    # raise was swallowed by the caller's except in mag/voice_turn.py, so the
+    # handoff silently degraded to a local 'frontier'-route answer
+    # (suite-burn.check.txt + live-state repro: assert 'frontier' == 'handoff').
+    # Display only: the card bytes and handoff id are unchanged.
+    try:
+        data["card_path"] = str(card.relative_to(ROOT)).replace("\\", "/")
+    except ValueError:  # sandbox/external-basetemp handoff dir outside ROOT
+        data["card_path"] = str(card)
     path = _write(data)
 
     # Also mirror into voice_tasks ledger for existing cheap-agent path
@@ -330,7 +349,12 @@ def file_handoff(
         "schema": SCHEMA,
         "handoff_id": hid,
         "handoff": data,
-        "path": str(path.relative_to(ROOT)).replace("\\", "/"),
+        # Same sandbox guard as card_path above (gala ball3 live-state
+        # 2026-09-29): this raise fired AFTER card+index were written and was
+        # swallowed by mag/voice_turn.py's except, degrading a completed
+        # handoff to a local 'frontier'-route answer under external basetemp.
+        "path": (str(path.relative_to(ROOT)) if _under_root(path)
+                 else str(path)).replace("\\", "/"),
         "card_path": data.get("card_path"),
     }
 

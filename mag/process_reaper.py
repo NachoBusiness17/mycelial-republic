@@ -55,6 +55,11 @@ def _log(event: str, **meta: Any) -> None:
 
 def _pid_alive(pid: int) -> bool:
     try:
+        import psutil
+        return psutil.pid_exists(pid)
+    except Exception:
+        pass
+    try:
         os.kill(pid, 0)
         return True
     except (OSError, ValueError):
@@ -75,11 +80,42 @@ def _proc_create_time_iso(pid: int) -> str | None:
 def _project_python_procs() -> list[dict[str, Any]]:
     """Enumerate python processes whose command line references this project venv."""
     out: list[dict[str, Any]] = []
+
+    # Fast-path: native psutil enumeration (cross-platform, 5ms, no subprocess)
+    try:
+        import psutil
+        for p in psutil.process_iter(["pid", "name", "cmdline"]):
+            try:
+                name = (p.info["name"] or "").lower()
+                if "python" in name:
+                    cl = " ".join(p.info["cmdline"] or []).strip()
+                    if "local_sovereign_agent" in cl or ".venv" in cl:
+                        pid = p.info["pid"]
+                        if isinstance(pid, int):
+                            out.append({"pid": pid, "cmdline": cl[:400]})
+            except (psutil.NoSuchProcess, psutil.AccessDenied):
+                continue
+        if out:
+            return out
+    except Exception:
+        pass
+
+    # Secondary fallback: PowerShell Get-CimInstance (Windows legacy fallback)
     try:
         import subprocess
+        import shutil
         import json as _j
+        ps = shutil.which("powershell") or shutil.which("powershell.exe")
+        if not ps and sys.platform == "win32":
+            candidate = r"C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe"
+            if os.path.isfile(candidate):
+                ps = candidate
+        if not ps:
+            # If psutil already ran and returned 0 matching project procs, that is normal;
+            # only log if neither psutil nor powershell can inspect processes.
+            return out
         res = subprocess.run(
-            ["powershell", "-NoProfile", "-Command",
+            [ps, "-NoProfile", "-Command",
              "Get-CimInstance Win32_Process | "
              "Where-Object { $_.Name -in @('python.exe','pythonw.exe') } | "
              "Select-Object ProcessId,CommandLine | ConvertTo-Json -Compress"],

@@ -1,0 +1,114 @@
+{
+  "stratum": "labor + economy + logistics automation",
+  "repo": "corpus/dfhack_full (local clone, read-only)",
+  "mined_at": "2026-09-25",
+  "sources": {
+    "workflow": "plugins/workflow.cpp + plugins/lua/workflow.lua",
+    "autolabor": "plugins/autolabor/{autolabor.cpp,laborcommon.cpp,modernengine.cpp,legacyengine.cpp,workdetails.cpp}",
+    "orders": "plugins/orders.cpp + plugins/lua/orders.lua + data/orders/library/*.json",
+    "buildingplan": "plugins/buildingplan/{buildingplan.cpp,buildingplan_cycle.cpp} + plugins/lua/buildingplan/*.lua",
+    "stockpiles": "plugins/stockpiles/{stockpiles.cpp,StockpileSerializer.cpp,proto/stockpiles.proto} + plugins/lua/stockpiles.lua",
+    "automaterial": "REMOVED in this DFHack version (docs/about/Removed.rst) - merged into buildingplan",
+    "autohauler": "REMOVED in this DFHack version (docs/about/Removed.rst) - replaced by labormanager laborer pool in autolabor"
+  },
+
+  "workflow": {
+    "purpose": "Keeps repeat workshop jobs suspended/resumed so specific item stocks stay inside a target band. The fortress thermostat.",
+    "algorithm_shape": {
+      "controller": "bang-bang hysteresis per item constraint. computeRequest(): request_resume = stock <= goalCount - goalGap; request_suspend = stock >= goalCount. Deadband between gap and goal holds last state (no chatter).",
+      "stock_counting": "Every in-play item matched against each constraint: item_count/item_amount (free stock) vs item_inuse_count/item_inuse_amount (worn, in chest, assigned to stockpile, squad equipment, in a non-hauling job, inside busy container). Excludes bad flags (dump/forbid/rotten/trader/artifact...), wear>=1, thread<15000 dim, cloth<10000 dim.",
+      "arbitration": "A job may feed several constraints (one per output item). Max-specificity-weight wins: resume_weight >= suspend_weight -> resume else suspend. Weight is a static specificity score of the constraint token: item subtype +10000, material category mask +100, exact material w/index +5000 / material type +1000, local/quality +10.",
+      "job_protection": "ProtectedJob clones the repeat job; if the game deletes it (save/load, cancel), recover() re-creates it with exponential backoff: resume_delay starts DAY_TICKS(1200), grows 5/3 per failed recovery, capped 28 days (33600 ticks). While actually running, delay decays back toward 1200.",
+      "mapping": "Lua module enumerates each job's outputs (per job_type handlers: smelting -> bars+ingots, meals -> ingredients, crafts -> ANY_CRAFT, custom reactions) and links to constraints by weakening the filter until it matches.",
+      "cadence": "plugin_onupdate: light job recovery every tick; full process_constraints (map jobs, count items, flip suspends) at most every DAY_TICKS/2 = 600 ticks (half game day).",
+      "alerting": "Low-stock announcement at most once per season, only when goalCount >= 3*gap and stock < min(gap*2, (goal-gap)/2). 'Cannot produce' announcement when resume requested but no job can run.",
+      "history": "28-entry ring buffer per constraint (count, amount, in_use_count, in_use_amount) persisted as int28s, powers the graph UI."
+    },
+    "key_tunables": {
+      "goalCount": {"default": 10, "what": "target stock for the constraint"},
+      "goalGap": {"default": "min(5, goalCount/2), clamped [1, goalCount-1]", "what": "resume threshold below goal; the hysteresis band"},
+      "goalByCount": {"default": false, "what": "count items vs sum of stack sizes"},
+      "DAY_TICKS": 1200,
+      "recheck_interval_ticks": 600,
+      "resume_backoff": {"start": 1200, "growth": "5/3x per failed resume", "cap": 33600},
+      "MAX_HISTORY_SIZE": 28,
+      "options": {"dry_buckets": false, "automelt": false}
+    }
+  },
+
+  "autolabor": {
+    "purpose": "Assigns labors so all posted jobs get done while dwarves specialize. One plugin, three engines: legacy (write labor matrix directly), modern = labormanager (express policy through v50 work details), monitor (only watch job board for starvation).",
+    "legacy_engine": {
+      "algorithm_shape": "Per labor: preference order of dwarves by skill (masters of other skills deprioritized). Assign best <minimum> dwarves, then extend to dwarves who are (a) idle with no idle dwarf on this labor, (b) have nonzero skill, (c) hold exclusive labor already - until <maximum>. Exclusive tool labors (MINE/CUTWOOD/HUNT) handled specially to avoid equipment churn. Nobles penalized by responsibility: chief medical +5000, diplomats/trade +3000, manager/bookkeeper +1000. Hunting requires butchers, fishing requires fishery (building scan gate).",
+      "key_tunables": {
+        "hauler_pct": {"default": 33, "what": "percent of workforce reserved as haulers (all HAUL_* labors + clean/levers/recover wounded)"},
+        "default_min": 1, "default_max": 200, "mine_min": 2,
+        "talent_pool": {"default": 0, "what": "optional cap: only consider top-N most skilled"},
+        "noble_penalties": {"HEALTH_MANAGEMENT": 5000, "RECEIVE_DIPLOMATS": 3000, "TRADE": 3000, "MANAGE_PRODUCTION": 1000, "ACCOUNTING": 1000}
+      }
+    },
+    "modern_engine": {
+      "algorithm_shape": "Every CYCLE_TICKS=61 (prime, desyncs from other cycles): (1) scan_demand counts live job postings per labor from the job board; (2) collect assignable citizens (not military/child/visitor/burrowed/limbless/in diplomacy meetings/trader requested) with top_skill + total_skill + noble_penalty + unmet-needs bias; (3) size laborer pool: laborer_target = 1 + unskilled_backlog/2 + round(n * 0.25 * starve_w), starving labors (unclaimed >= STARVE_CYCLES=5 cycles) count double; (4) rank pool by score = state_score(IDLE 0/BUSY 200/EXCLUSIVE 400/other 800) + total_skill*10 + protection(rating*40, quality-affecting skills x1.5, +usage_bonus) * skill_w * 4 + noble_penalty/100 - laborer_need_pull*4 + idle_need_pull*4 (+150 shop-permitted); lowest scores become laborers in shared work detail 'auto:Laborers'; (5) everyone else with a viable skill gets pinned to per-skill details 'auto:Skill:<name>' (pinned units protected while demand remains; tool users keep tools via detail_skill pinning); (6) guild specialists rotate rest via busy_streak; (7) apply, then labor-mapping escalation: if a posting starves despite mapped labor, enable disputed labors on idle dwarves one per cycle to A/B-identify the game's true gating labor.",
+      "balance_slider": "5 stops [staffing, lean-staffing, balanced, lean-skills, skills] interpolated as starve_w vs skill_w weights over the pool score",
+      "key_tunables": {
+        "CYCLE_TICKS": 61,
+        "STARVE_CYCLES": {"default": 5, "what": "unclaimed cycles before a labor counts double and is flagged starving"},
+        "STARVE_TICKS": 1200,
+        "idle_reserve_pct": {"default": 30, "what": "target share of workforce kept unspecialized"},
+        "balance": {"default": "balanced (index 2 of 5)"},
+        "skill_usage_decay": "per-cycle decay; viable skills need usage >= 0.5 to reserve details",
+        "labor_details": ["auto:Laborers", "auto:Care", "auto:Skill:*"]
+      }
+    }
+  },
+
+  "orders": {
+    "purpose": "Export/import/sort/recheck the manager work-order economy as JSON - the shareable 'recipe book' of a fortress economy.",
+    "algorithm_shape": {
+      "export": "Serialize world->manager_orders to JSON: job/item/subtype as enum keys, material token, item_conditions (compare type + value + flag bitfields), frequency, amount_total/left, is_validated/is_active, workshop_id, max_workshops, skill-labor restrictions. Saved to dfhack-config/orders/<name>.json.",
+      "import": "Additive: remaps every order id through id_mapping -> manager_order_next_id++, resolves enum keys/tokens back to raws; on unknown token the whole import fails hard (no silent partial economy).",
+      "sort": "Priority: one-time orders first, then yearly, seasonal, monthly, daily. Prevents high-frequency repeat orders from starving one-time orders in the manager's daily 30-order work slot.",
+      "recheck": "Flips validated orders whose conditions went stale back to Checking status so the manager re-evaluates instead of cancellation-spamming.",
+      "libraries": "data/orders/: basic (food/booze/thread/pots/bags/crafts/mechanisms/soap/ash-potash/beds/paper), furnace (charcoal/glass/adamantine/melting), military (metal arms+armor with best-material checks), smelting (all ores, lower limits than military so both can coexist), rockstock/glassstock (keep small stock of all furniture types so buildingplan always has supply)."
+    },
+    "key_tunables": {
+      "file_format": "JSON, enum_item_key strings, condition compare types as enum keys",
+      "sort_order": ["one-time", "yearly", "seasonal", "monthly", "daily"],
+      "recommended_autosort": "repeat -name orders-sort -time 1 -timeUnits days -command [ orders sort ]"
+    }
+  },
+
+  "buildingplan": {
+    "purpose": "Planning mode for building placement: suspended building jobs wait until matching materials exist, then items are attached and the job finalized. Includes per-building-type default material filters (automaterial's replacement).",
+    "algorithm_shape": {
+      "task_model": "planned_buildings (id -> PlannedBuilding with per-filter ItemFilters + heat safety + specials) and tasks: item_vector_id -> filter_bucket -> deque of (building_id, filter_idx).",
+      "bucketing": "getBucket() serializes filter pickiness into a bucket key: decorated-only Da/Db, heat H magma/fire/any, material-list size M<n> (M9 = unpicky), then full job_item + filter serialization. Buckets sort so the pickiest filters match first - a picky filter that matches nothing must not block loose filters behind it.",
+      "vector_scan_order": "Scan cheap dedicated item vectors first; boulders, wood, bars, and the catch-all IN_PLAY are deliberately scanned LAST (boulders before wood before bars), so blocks are preferred for generic building material.",
+      "matching": "Per bucket: on first task, filter-count available items once and cache; then for each task attach the CLOSEST matching item (distance = max(|dx|,|dy|) + |dz|) that is not in a job, passes bad-flag screen (dump/forbid/owned/in_building/construction...), not assigned to a stockpile, not in a wheelbarrow, not in ignore-burrow, and in a walkability group containing a citizen. Decrement job_item quantity; when all quantities hit 0, finalizeBuilding: sort attached items, derive building material/rough-from-boulders from first item, unsuspend (unless suspendmanager owns suspension), remove from plan.",
+      "cadence": "CYCLE_TICKS = 599 (twice per game day) or immediately on cycle_requested (e.g. after quickfort places many buildings).",
+      "global_settings": "Which generic building-material vectors to search: blocks/boulders/logs true, bars false; reconstruct default true.",
+      "feasibility": "scanAvailableItems/countAvailableItems powers the planner UI (green/red materials, queue position per pending building)."
+    },
+    "key_tunables": {
+      "CYCLE_TICKS": 599,
+      "blocks/boulders/logs": true,
+      "bars": false,
+      "reconstruct": true,
+      "bucket_key": "decorated + heat-safety + material-count + full filter serialization (pickiest first)"
+    }
+  },
+
+  "stockpiles": {
+    "purpose": "Import/export stockpile settings as .dfstock protobuf files - portable logistics configs (categories, item lists, material masks) with library files in data/stockpiles.",
+    "algorithm_shape": {
+      "serialization": "StockpileSerializer walks every stockpile category (animals, food, furniture, stone, ammo, finished goods, cloth/leather, bars, gems...) into protobuf; export takes an includedElements bitmask for partial export.",
+      "import_modes": "SET (replace), ENABLE (union onto existing), DISABLE (subtract) - plus comma-separated category filters so one file can be applied to just e.g. food. Can also apply to a hauling route stop.",
+      "lua_layer": "list/status/export/import commands, safe-filename checks, directory listing of dfhack-config/stockpiles + library."
+    },
+    "key_tunables": {
+      "format": ".dfstock protobuf",
+      "import_modes": ["set", "enable", "disable"],
+      "partial_export": "includedElements bitmask"
+    }
+  }
+}

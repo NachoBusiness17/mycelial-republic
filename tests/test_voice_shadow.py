@@ -24,6 +24,14 @@ def test_start_skips_phatic(tmp_path, monkeypatch):
 
 def test_start_kicks_thread(tmp_path, monkeypatch):
     monkeypatch.setattr(vs, "SHADOW_DIR", tmp_path)
+    # B2-288 fix (2026-09-26): the scout daemon does its first import of
+    # mag.voice_dig_board (note_scout_ready) INSIDE the thread; on a cold
+    # import that single transition measured about 3.4s on this box while the
+    # old deadline polled for 1.5s, so the test read status "running" and
+    # failed standalone. Flake source is the fixed short deadline over a cold
+    # import path, not the product: pre-import the board module on the main
+    # thread and keep polling with an early break up to 15s.
+    import mag.voice_dig_board  # noqa: F401  (move the cold import off the daemon)
 
     def fake_chat(*a, **k):
         return {"ok": True, "text": "FACTS: test\nREADY LINE: ready", "model": "deepseek"}
@@ -34,7 +42,7 @@ def test_start_kicks_thread(tmp_path, monkeypatch):
         # wait briefly for daemon
         import time
 
-        for _ in range(30):
+        for _ in range(300):
             st = vs.shadow_status("sh-3")
             if st.get("status") in ("ready", "failed"):
                 break

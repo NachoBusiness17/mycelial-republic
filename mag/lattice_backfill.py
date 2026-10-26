@@ -299,6 +299,15 @@ def seed_lattice_store(*, dry_run: bool = False) -> dict[str, Any]:
     bond_nodes = _bond_nodes(bonds)
     nodes = knot_nodes + dig_nodes + bond_nodes
 
+
+    # D8 decay-family port (2026-10-05): lattice edges carry supersession
+    # lineage like mycelium.v2 edges - superseded_by (None at birth; set once,
+    # never re-pointed) + valid_at (the edge exists from the moment both
+    # endpoints do: the later endpoint's date, None when unanchored).
+    def _edge_valid_at(*ns: dict[str, Any]) -> str | None:
+        dates = [str(n.get("date"))[:10] for n in ns if n.get("date")]
+        return max(dates) if dates else None
+
     edges: list[dict[str, Any]] = []
     by_id = {n["id"]: n for n in nodes}
 
@@ -314,6 +323,8 @@ def seed_lattice_store(*, dry_run: bool = False) -> dict[str, Any]:
                     "source": prev_knot["id"],
                     "target": kn["id"],
                     "weight": 0.5,
+                    "superseded_by": None,
+                    "valid_at": _edge_valid_at(prev_knot, kn),
                 }
             )
         prev_knot = kn
@@ -330,6 +341,8 @@ def seed_lattice_store(*, dry_run: bool = False) -> dict[str, Any]:
                     "source": prev_dig["id"],
                     "target": dn["id"],
                     "weight": 0.6,
+                    "superseded_by": None,
+                    "valid_at": _edge_valid_at(prev_dig, dn),
                 }
             )
         prev_dig = dn
@@ -355,6 +368,8 @@ def seed_lattice_store(*, dry_run: bool = False) -> dict[str, Any]:
                         "target": dn["id"],
                         "weight": 0.35,
                         "via": "date" if dig_date and kn.get("date") == dig_date else "theme",
+                        "superseded_by": None,
+                        "valid_at": _edge_valid_at(kn, dn),
                     }
                 )
 
@@ -370,6 +385,8 @@ def seed_lattice_store(*, dry_run: bool = False) -> dict[str, Any]:
                     "source": latest_knot["id"],
                     "target": bn["id"],
                     "weight": 0.4,
+                    "superseded_by": None,
+                    "valid_at": _edge_valid_at(latest_knot, bn),
                 }
             )
 

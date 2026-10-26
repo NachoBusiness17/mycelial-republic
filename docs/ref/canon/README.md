@@ -21,3 +21,17 @@ cache the contract; compute the delta; keep the map T0. Re-read receipt: watch/C
 
 Acquired 09-02 from operator's Desktop (New folder). Custody: repo canon/ dir. Wash status: T2-safe (research syntheses,
 no credentials; personal context minimal — spot-check before any public crossing through the art_wash gate).
+
+<!-- MAG P0-2 DEMOTE NOTICE 2026-09-26 -->
+## CANDIDATE shelf (demoted 2026-09-26, Mag / Elder P0-2)
+
+Explicit shelf: [CANDIDATE/](CANDIDATE/). Not doctrine.
+
+| pack | path | note |
+|---|---|---|
+| MAG CHORD v3 | [CANDIDATE/MAG_CHORD_V3_CANDIDATE_20260904.md](CANDIDATE/MAG_CHORD_V3_CANDIDATE_20260904.md) | demoted; stubs at old path |
+| Light Operator Foundation | [CANDIDATE/LIGHT_OPERATOR_FOUNDATION_20260904.md](CANDIDATE/LIGHT_OPERATOR_FOUNDATION_20260904.md) | demoted; stubs at old path |
+
+Stubs remain at prior filenames so ambient loaders hit DEMOTE, not silent doctrine.
+<!-- /MAG P0-2 DEMOTE NOTICE -->
+

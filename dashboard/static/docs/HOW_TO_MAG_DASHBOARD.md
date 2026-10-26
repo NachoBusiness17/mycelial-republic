@@ -242,6 +242,28 @@ Economy bar: rough “local tokens vs if you’d dumped everything into Grok.”
 2. Run suggested fix (`multi-smoke`, catch-up, doctor)  
 3. Don’t invent a new architecture mid-fire  
 
+### “The dashboard page at 127.0.0.1:8765 will not open.”
+
+The room is usually fine; the front door is stuck. Ask who holds the door:
+
+```powershell
+docker port mag-sovereign
+netsh interface portproxy show all
+```
+
+No `8765` in the first answer, or a `0.0.0.0  8765` rule in the second, means an old
+Windows port-forward is holding the door. An administrator terminal evicts it, and the
+container takes its door back:
+
+```powershell
+netsh interface portproxy delete v4tov4 listenport=8765 listenaddress=0.0.0.0
+docker compose up -d mag
+```
+
+Then refresh the page. This exact cure was proven on 2026-10-05 (page answered 200 right
+after); the story lives in `watch/inbox/HEADED_WINDOWS_CURED_20261005.md` and in the
+comment block at the top of `docker-compose.yml`.
+
 ### “I’m researching a hard topic (JFK, dig, etc.).”
 
 1. FIND on X / exports (as presented)  

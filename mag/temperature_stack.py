@@ -7,6 +7,15 @@ Also:
   - PointerKnot — Verkle-style “where to find it” (path/url/github), not bulk dump
   - track_loop_gap — anything not built into the loop becomes a training + improve token
 
+  mag_loop_gap.v1 row shape (spec, B2-80): every row carries the base fields
+  schema/ts/ts_unix/name/detail/where/kind/dedupe/stack. Rows sourced from the
+  lifecycle (track_lifecycle_into_improve) additionally carry `should` (the
+  _policy_should verdict "on"/"off", mag/lifecycle.py), `should_reason` (the
+  policy reason string), and `signals` (the probe inputs queue_depth,
+  fleet_running, operator_active, drainer_allowed, browser_enabled) so a
+  gap-vs-waste flip is auditable from the row alone; non-lifecycle rows stay
+  variable-field (improve_candidate/pointer already appear conditionally).
+
 Usage:
   from mag.temperature_stack import stack_for_goal, timeout_for_goal, file_pointer_knot
   st = stack_for_goal("implement dual-progress fix")
@@ -16,7 +25,10 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
 import re
+import socket
+import sys
 import time
 from dataclasses import asdict, dataclass, field
 from datetime import datetime, timezone
@@ -31,6 +43,21 @@ POINTERS_DIR = ROOT / "memory" / "biography" / "pointer_knots"
 POINTERS_CHAIN = ROOT / "memory" / "biography" / "pointer_chain.jsonl"
 GAPS_LOG = ROOT / "memory" / "training" / "loop_gaps.jsonl"
 SCHEMA = "mag_temperature_stacks.v1"
+
+
+def _gaps_log() -> Path:
+    """Gap log path; MAG_GAPS_LOG env override points it elsewhere (tests use tmp_path).
+
+    Fix receipt B2-79 (2026-09-26, watch/inbox/burn_wave_20260926/B2_79_pollution_fix_20260926.md):
+    cause was tests/test_temperature_stack.py calling track_loop_gap(force=True), which
+    appended test_gap_unique_xyz rows to the production log through the module constant
+    GAPS_LOG (17 rows, 2026-08-06 to 2026-09-26, verified on bytes at fix time); the env
+    override decouples the writer from the production path without touching the rows.
+    """
+    env = os.environ.get("MAG_GAPS_LOG", "").strip()
+    if env:
+        return Path(env)
+    return GAPS_LOG
 
 _CACHE: dict[str, Any] | None = None
 _CACHE_MTIME: float = 0.0
@@ -343,11 +370,12 @@ def _gap_dedupe_key(name: str, detail: str) -> str:
 
 
 def _recently_tracked(key: str, hours: float) -> bool:
-    if not GAPS_LOG.is_file():
+    gaps_log = _gaps_log()
+    if not gaps_log.is_file():
         return False
     cutoff = time.time() - hours * 3600
     try:
-        for line in reversed(GAPS_LOG.read_text(encoding="utf-8", errors="replace").splitlines()[-200:]):
+        for line in reversed(gaps_log.read_text(encoding="utf-8", errors="replace").splitlines()[-200:]):
             try:
                 row = json.loads(line)
             except json.JSONDecodeError:
@@ -361,6 +389,45 @@ def _recently_tracked(key: str, hours: float) -> bool:
     return False
 
 
+def _piece_of(name: str, kind: str) -> str:
+    """The piece a lifecycle row watches: 'lifecycle_gap:drainer' and
+    'lifecycle_waste:drainer' share the piece 'drainer' (B2-346: the differing
+    names are exactly why gap and waste rows never shared a dedupe key)."""
+    prefix = ""
+    if kind.startswith("lifecycle_"):
+        prefix = kind + ":"
+    if name.startswith(prefix):
+        return name[len(prefix):].strip()
+    return ""
+
+
+def _prev_lifecycle_verdict(piece: str) -> dict | None:
+    """Most recent prior lifecycle row for the same piece that carries a
+    should verdict (bounded tail scan, same window as _recently_tracked).
+    B2-346: the flip link - two consecutive opposite-verdict rows for one
+    piece must be traceable from either row alone."""
+    if not piece:
+        return None
+    gaps_log = _gaps_log()
+    if not gaps_log.is_file():
+        return None
+    try:
+        tail = gaps_log.read_text(encoding="utf-8", errors="replace").splitlines()[-200:]
+    except OSError:
+        return None
+    for line in reversed(tail):
+        try:
+            row = json.loads(line)
+        except json.JSONDecodeError:
+            continue
+        if (row.get("kind") in ("lifecycle_gap", "lifecycle_waste")
+                and _piece_of(str(row.get("name") or ""), str(row.get("kind"))) == piece
+                and row.get("should")):
+            return {"ts": row.get("ts"), "should": str(row.get("should"))[:8],
+                    "row": row.get("name")}
+    return None
+
+
 def track_loop_gap(
     name: str,
     *,
@@ -368,11 +435,17 @@ def track_loop_gap(
     where: str = "",
     kind: str = "missing_capability",
     force: bool = False,
+    lifecycle: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Something not built into the loop — auto token for improve + training.
 
     Call from lifecycle waste/gaps, missing browser driver, dead Startup, etc.
     Deduped so it does not spam the queue.
+
+    lifecycle: optional carry from build_lifecycle for one piece; when truthy
+    the row gains should/should_reason/signals per the mag_loop_gap.v1 spec
+    above. Callers with no lifecycle verdict omit it and the row stays
+    variable-field.
     """
     reg = registry()
     gt = reg.gap_tracking
@@ -382,6 +455,26 @@ def track_loop_gap(
     name = (name or "").strip() or "unnamed_gap"
     detail = (detail or "").strip()[:800]
     where = (where or "").strip()[:400]
+    # B2-394 (2026-09-26): every gap row now names its observing process.
+    # Cause: the 89 lifecycle_gap:ollama rows were written by SOME process
+    # whose probe could not reach 127.0.0.1:11434 while an independent
+    # 31s-cadence poller answered 200 at 70-90ms in the same seconds (B2-81),
+    # and the row's where= is a hardcoded route label ("GET /api/v1/lifecycle",
+    # the track_lifecycle_into_improve caller), not an identity, so the
+    # writer was unreconstructable after the fact. The proxy mechanism
+    # reproduces the signature, so proxy env vars ride along with pid/exe/
+    # host, appended into the existing detail field (falsifier: a new
+    # lifecycle_gap row whose detail cannot name the writing process).
+    _proxy = " ".join(
+        ("%s=%s" % (k, os.environ.get(k, "")))[:80]
+        for k in ("HTTP_PROXY", "HTTPS_PROXY", "ALL_PROXY",
+                  "http_proxy", "https_proxy")
+        if os.environ.get(k)
+    ) or "proxies=none"
+    detail = "%s [writer pid=%s exe=%s host=%s %s]" % (
+        detail, os.getpid(), (sys.executable or "")[:80],
+        (socket.gethostname() or "")[:60], _proxy,
+    )[:1000]
     key = _gap_dedupe_key(name, detail)
     hours = float(gt.get("dedupe_hours") or 12)
     if not force and _recently_tracked(key, hours):
@@ -398,9 +491,34 @@ def track_loop_gap(
         "dedupe": key,
         "stack": "improve",
     }
+    if lifecycle:
+        # B2-80 fix (2026-09-26): lifecycle rows previously persisted none of
+        # the _policy_should verdict (mag/lifecycle.py:445) or its probe
+        # inputs, so drainer gap 17 vs waste 87 rows and 4 sub-hour verdict
+        # flips were unauditable after the fact (B2-20 census,
+        # watch/inbox/burn_wave_20260926/B2_20_loop_gaps_20260926.md; 18 vs 88
+        # on bytes at fix time). Evidence: 313-row log, zero rows carrying
+        # should/should_reason/signals pre-fix.
+        row["should"] = str(lifecycle.get("should") or "")[:8]
+        row["should_reason"] = str(lifecycle.get("reason") or "")[:400]
+        row["signals"] = dict(lifecycle.get("signals") or {})
+        # B2-346 (2026-09-26): the per-piece flip link. Piece id (name minus
+        # the lifecycle_gap:/lifecycle_waste: prefix) plus the previous
+        # verdict row for the same piece, so a sub-hour gap/waste flip is
+        # auditable from either row alone instead of landing as two unrelated
+        # dedupe keys. Falsifier precondition held on bytes: the drainer
+        # flip pairs in memory/training/loop_gaps.jsonl shared no linking
+        # field pre-fix.
+        pid = _piece_of(row["name"], row["kind"])
+        row["piece"] = pid
+        prev = _prev_lifecycle_verdict(pid)
+        if prev:
+            row["prev_verdict"] = prev
+            row["flip"] = bool(prev.get("should") and prev["should"] != row["should"])
     try:
-        GAPS_LOG.parent.mkdir(parents=True, exist_ok=True)
-        with GAPS_LOG.open("a", encoding="utf-8") as f:
+        gaps_log = _gaps_log()
+        gaps_log.parent.mkdir(parents=True, exist_ok=True)
+        with gaps_log.open("a", encoding="utf-8") as f:
             f.write(json.dumps(row, ensure_ascii=False) + "\n")
     except OSError:
         pass
@@ -409,9 +527,22 @@ def track_loop_gap(
     try:
         from mag.training_events import emit
 
+        join = {"gap": name[:80]}
+        # B2-345 (2026-09-26): carry the lifecycle verdict into the training
+        # join so the token is attributable whenever the gap row is (B2-80
+        # made the row carry should/should_reason/signals; the emit and the
+        # improve candidate still named only the piece id). Bounded fields,
+        # no schema change to the event shape.
+        if lifecycle:
+            join["should"] = str(lifecycle.get("should") or "")[:8]
+            join["should_reason"] = str(lifecycle.get("reason") or "")[:200]
+            join["signals"] = {
+                str(k)[:40]: str(v)[:80]
+                for k, v in list((lifecycle.get("signals") or {}).items())[:8]
+            }
         emit(
             str(gt.get("train_pattern") or "lifecycle_gap"),
-            join={"gap": name[:80]},
+            join=join,
             input_data={"detail": detail, "where": where, "kind": kind},
             action={"track": "loop_gap"},
             outcome={"dedupe": key},
@@ -428,12 +559,21 @@ def track_loop_gap(
         cfg = load_config()
         paths = ensure_dirs(cfg)
         cid = "gap-" + key
+        claim = f"[loop gap] {name}: {detail or where or kind}"
+        # B2-345 (2026-09-26): the candidate claim carries the lifecycle
+        # verdict too, same attribution law as the training join above.
+        if lifecycle:
+            claim = "%s [should=%s reason=%s]" % (
+                claim,
+                str(lifecycle.get("should") or "")[:8],
+                str(lifecycle.get("reason") or "")[:160],
+            )
         append_candidates(
             [
                 {
                     "id": cid,
                     "ts": _now(),
-                    "claim": f"[loop gap] {name}: {detail or where or kind}",
+                    "claim": claim,
                     "url": where or f"mag://gap/{key}",
                     "source": str(gt.get("improve_source") or "mag_temperature_gap"),
                     "status": "new",
@@ -464,6 +604,23 @@ def track_loop_gap(
     return {"ok": True, "gap": row}
 
 
+def _lifecycle_carry(lc: dict[str, Any], piece_id: str) -> dict[str, Any]:
+    """Should verdict + reason + probe inputs for one lifecycle piece (B2-80).
+
+    Feeds the mag_loop_gap.v1 spec fields: the piece's _policy_should verdict
+    and reason plus the build_lifecycle signal inputs that produced them.
+    """
+    piece = next(
+        (p for p in (lc.get("pieces") or []) if isinstance(p, dict) and p.get("id") == piece_id),
+        {},
+    )
+    return {
+        "should": piece.get("should"),
+        "reason": piece.get("reason"),
+        "signals": dict(lc.get("signals") or {}),
+    }
+
+
 def track_lifecycle_into_improve() -> dict[str, Any]:
     """Pull lifecycle waste/gaps into training tokens (organic)."""
     tracked: list[dict[str, Any]] = []
@@ -481,6 +638,7 @@ def track_lifecycle_into_improve() -> dict[str, Any]:
                 detail=f"should be on but actual off — piece={gid}",
                 where="GET /api/v1/lifecycle",
                 kind="lifecycle_gap",
+                lifecycle=_lifecycle_carry(lc, gid),
             )
         )
     for wid in lc.get("waste") or []:
@@ -490,6 +648,7 @@ def track_lifecycle_into_improve() -> dict[str, Any]:
                 detail=f"should be off but still on — piece={wid} (token/cpu waste)",
                 where="GET /api/v1/lifecycle",
                 kind="lifecycle_waste",
+                lifecycle=_lifecycle_carry(lc, wid),
             )
         )
     # Missing browser driver when operator wants computer-use

@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html><head><meta charset="utf-8"><title>tavern cartridge test</title>
+<style>body{margin:0;background:#000;color:#9fb3cc;font:12px monospace}#c{display:block;width:100vw;height:70vh}#s{padding:8px}</style>
+</head><body>
+<canvas id="c"></canvas><div id="s">loading…</div>
+<script>
+/* one-shot harness: compile tavern.glsl under the runner's exact wrapper,
+   render 40 frames, print the verdict into the DOM for the screenshot */
+const WRAP_TOP=`#version 300 es
+precision highp float;
+uniform vec2 iResolution;uniform float iTime;uniform vec2 iMouse;
+uniform sampler2D iChannel0;uniform float uBass;uniform float uEnergy;uniform float uDay;
+uniform float uBPM;uniform float uSeed;uniform int iFrame;
+out vec4 fragColor;
+`;
+const WRAP_BOT=`void main(){vec4 fc=vec4(0.);mainImage(fc,gl_FragCoord.xy);fragColor=fc;}`;
+const cv=document.getElementById('c'),s=document.getElementById('s');
+const gl=cv.getContext('webgl2');
+if(!gl){s.textContent='FAIL: no webgl2';throw new Error('no webgl2');}
+cv.width=innerWidth;cv.height=Math.floor(innerHeight*0.7);gl.viewport(0,0,cv.width,cv.height);
+fetch('shaders/library/tavern.glsl').then(r=>r.text()).then(src=>{
+  const full=(WRAP_TOP+src+WRAP_BOT).replace(/[^\x00-\x7F]/g,'-');
+  const mk=(t,code)=>{const sh=gl.createShader(t);gl.shaderSource(sh,code);gl.compileShader(sh);
+    if(!gl.getShaderParameter(sh,gl.COMPILE_STATUS)){s.textContent='COMPILE FAILED:\n'+gl.getShaderInfoLog(sh);document.title='ERR';throw new Error(gl.getShaderInfoLog(sh));}return sh;};
+  let prog;try{const v=mk(gl.VERTEX_SHADER,'#version 300 es\nvoid main(){vec2 p=vec2((gl_VertexID<<1)&2,gl_VertexID&2);gl_Position=vec4(p*2.-1.,0,1);}');
+  const f=mk(gl.FRAGMENT_SHADER,full);prog=gl.createProgram();gl.attachShader(prog,v);gl.attachShader(prog,f);gl.linkProgram(prog);
+  if(!gl.getProgramParameter(prog,gl.LINK_STATUS)){s.textContent='LINK FAILED';document.title='ERR';throw new Error('link');}}catch(e){return;}
+  gl.useProgram(prog);
+  const U=n=>gl.getUniformLocation(prog,n);
+  gl.uniform2f(U('iResolution'),cv.width,cv.height);
+  gl.uniform2f(U('iMouse'),0,0);
+  gl.uniform1f(U('uBass'),0.5);gl.uniform1f(U('uEnergy'),0.5);
+  gl.uniform1f(U('uDay'),14);gl.uniform1f(U('uBPM'),117.2);gl.uniform1f(U('uSeed'),42);
+  gl.uniform1i(U('iChannel0'),0);
+  // dummy 1px texture for iChannel0 (never sampled by the tavern, but bind it anyway)
+  const tex=gl.createTexture();gl.bindTexture(gl.TEXTURE_2D,tex);
+  gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA8,1,1,0,gl.RGBA,gl.UNSIGNED_BYTE,new Uint8Array([0,0,0,255]));
+  let frames=0;const t0=performance.now();
+  function draw(){
+    gl.uniform1f(U('iTime'),(performance.now()-t0)/1000+10);
+    gl.drawArrays(gl.TRIANGLES,0,3);
+    if(++frames<40)requestAnimationFrame(draw);
+    else{s.textContent='VERDICT: COMPILE OK - RENDERED 40 FRAMES - tavern.glsl is alive';document.title='tavern OK';}
+  }
+  requestAnimationFrame(draw);
+}).catch(e=>{if(document.title!=='ERR'){s.textContent='LOAD FAILED: '+e;document.title='ERR';}});
+</script></body></html>

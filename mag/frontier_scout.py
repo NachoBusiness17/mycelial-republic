@@ -472,6 +472,23 @@ class FrontierScout:
         if finding["verdict"] not in ("STEAL_NOW", "WATCH"):
             return {"ok": False, "error": f"Finding {finding_id} verdict is {finding['verdict']}, not stealable"}
 
+        # Cialdini intake gate (DOUBLE_DROP_20261001.md, gap 7 in mcp-security.md):
+        # a finding whose text carries a high-risk persuasion payload does not
+        # convert into a task for another lane; the scan rides the refusal.
+        from tools.cialdini_scanner import high_risk_patterns, scan  # lazy: stdlib-only
+        s = scan((finding.get("description") or "") + "\n"
+                 + (finding.get("adaptation_plan") or ""))
+        risky = high_risk_patterns(s)
+        if risky:
+            return {"ok": False,
+                    "error": (f"persuasion-payload gate: {','.join(risky)} at confidence "
+                              f">= {s['worst_confidence']:.2f} (cialdini HIGH_RISK); "
+                              "finding text reads as a Cialdini payload, not a steal"),
+                    "persuasion": {"n_findings": s["n_findings"],
+                                   "worst_confidence": s["worst_confidence"],
+                                   "patterns": risky,
+                                   "verdict": s["verdict"]}}
+
         # Queue through orchestrator
         goal = f"[scout] Steal: {finding['name']} — {finding['adaptation_plan'][:80]}..."
         try:
@@ -483,6 +500,8 @@ class FrontierScout:
                 "finding_name": finding["name"],
                 "task": task,
                 "adaptation_plan": finding["adaptation_plan"],
+                "persuasion": {"n_findings": s["n_findings"],
+                               "worst_confidence": s["worst_confidence"]},
             }
         except Exception as e:
             return {"ok": False, "error": str(e), "manual_plan": finding["adaptation_plan"]}

@@ -223,7 +223,16 @@ def latest_brief_text(session_id: str | None = None) -> str:
             return p.read_text(encoding="utf-8", errors="replace")
     latest = bdir / "latest.md"
     if latest.is_file():
-        return latest.read_text(encoding="utf-8", errors="replace")
+        text = latest.read_text(encoding="utf-8", errors="replace")
+        # Q1 poison fix (2026-09-27, ATLAS_SELF_STEAL GAP 1): briefs/latest.md was
+        # FROZEN 2026-09-26 with an August-fossil body (operator GO); every pack was
+        # injecting the fossil. Evidence: freeze banner names state/CURRENT.md as
+        # truth. Serve the live truth instead of the fossil.
+        if text.lstrip().startswith("# FROZEN"):
+            current = ROOT / "state" / "CURRENT.md"
+            if current.is_file():
+                return current.read_text(encoding="utf-8", errors="replace")
+        return text
     # newest by mtime
     files = sorted(bdir.glob("*.md"), key=lambda x: x.stat().st_mtime, reverse=True)
     for f in files:

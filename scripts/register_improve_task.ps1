@@ -16,7 +16,10 @@ $ErrorActionPreference = "SilentlyContinue"
 schtasks /Delete /TN $TaskName /F 2>$null | Out-Null
 $ErrorActionPreference = $prev
 
-$Tr = "powershell.exe -NoProfile -ExecutionPolicy Bypass -File `"$Script`""
+# Hidden launcher (2026-10-05): bare powershell.exe task actions pop a console
+# on the operator's desktop every fire; run_hidden.vbs runs them windowless.
+$Hidden = Join-Path $PSScriptRoot "run_hidden.vbs"
+$Tr = "wscript.exe //B //Nologo `"$Hidden`" powershell.exe -NoProfile -ExecutionPolicy Bypass -File `"$Script`""
 & schtasks.exe /Create /TN $TaskName /TR $Tr /SC DAILY /ST 08:00 /RL LIMITED /F
 if ($LASTEXITCODE -ne 0) {
     Write-Host "WARN: schtasks create failed (exit $LASTEXITCODE)."

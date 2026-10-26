@@ -154,7 +154,8 @@ def _blackboard_note(rec: dict, ev: str) -> dict:
         return {"ok": False, "err": repr(e)}
 
 
-def cycle(goal: str, rounds: int, participants: str | None, dry: bool) -> tuple[dict, Path]:
+def cycle(goal: str, rounds: int, participants: str | None, dry: bool,
+          why: str = "", baseline_surface: str = "", baseline_answer: str = "") -> tuple[dict, Path]:
     ts = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
     rec: dict = {"ts": ts, "goal": goal, "dry": dry, "steps": {}}
 
@@ -168,6 +169,14 @@ def cycle(goal: str, rounds: int, participants: str | None, dry: bool) -> tuple[
         args = ["mag.frontier_salon", "roundtable", goal, "--rounds", str(rounds)]
         if participants:
             args += ["--participants", participants]
+        # Q-011 huang gate passthrough: the roundtable refuses to escalate without a stated why
+        # plus a single-seat baseline, so the cycle carries them when the operator supplies any.
+        if why:
+            args += ["--why", why]
+        if baseline_surface:
+            args += ["--baseline-surface", baseline_surface]
+        if baseline_answer:
+            args += ["--baseline-answer", baseline_answer]
         rec["steps"]["salon"] = _run(args, 1800)
 
     rec["steps"]["water"] = _run(["mag.water_computer", "glass"], 60)
@@ -200,8 +209,14 @@ def main(argv=None) -> int:
     ap.add_argument("--rounds", type=int, default=2)
     ap.add_argument("--participants", default=None)
     ap.add_argument("--dry", action="store_true")
+    ap.add_argument("--why", default="", help="huang gate: why the escalation is justified")
+    ap.add_argument("--baseline-surface", default="",
+                    help="huang gate: seat consulted first as the single-seat baseline")
+    ap.add_argument("--baseline-answer", default="", help="huang gate: what the baseline seat said")
     a = ap.parse_args(argv)
-    rec, path = cycle(a.goal, a.rounds, a.participants, a.dry)
+    rec, path = cycle(a.goal, a.rounds, a.participants, a.dry,
+                      why=a.why, baseline_surface=a.baseline_surface,
+                      baseline_answer=a.baseline_answer)
     slim = {
         k: (s.get("ok") if isinstance(s, dict) else s)
         for k, s in rec["steps"].items()

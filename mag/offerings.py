@@ -21,6 +21,7 @@ from __future__ import annotations
 
 import os
 import shutil
+import sys
 from pathlib import Path
 from typing import Any
 
@@ -149,7 +150,16 @@ BODIES: dict[str, dict[str, Any]] = {
 def _start_app_exists(name: str) -> bool:
     try:
         import subprocess
-        out = subprocess.run(["powershell", "-NoProfile", "-Command",
+        # B2-85 2026-09-26: bare "powershell" is not on PATH in every launch
+        # context (sig run_shell:e566037def80 "[Errno 2] ... powershell",
+        # 7,964 FKB rows since 2026-09-19). Resolve the full path; System32
+        # fallback when PATH lookup misses (pattern mag/process_reaper.py).
+        ps_exe = shutil.which("powershell") or shutil.which("powershell.exe")
+        if not ps_exe and sys.platform == "win32":
+            ps_exe = r"C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe"
+        if not ps_exe:
+            return False
+        out = subprocess.run([ps_exe, "-NoProfile", "-Command",
                               f"Get-StartApps | Where-Object {{ $_.Name -eq '{name}' }}"],
                              capture_output=True, text=True, timeout=30)
         return name.lower() in (out.stdout or "").lower()

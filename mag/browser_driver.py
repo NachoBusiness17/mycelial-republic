@@ -99,6 +99,17 @@ def _normalize_cdp(ep: str) -> str:
 def connect(*, endpoint: str | None = None) -> Any:
     """Connect to the containerized browser over CDP. Returns a Playwright browser context
     handle (or a dict with error). Requires the `playwright` pip package on the host."""
+    # browser-gate (2026-09-22): the browser container was retired with the docker
+    # world. A seat that reaches for the dead CDP socket dies with an uncaught
+    # EPIPE in the playwright node driver — the whole agent, not just the web
+    # tools. Default OFF; MAG_BROWSER_CDP=1 re-enables when a browser exists.
+    import os as _os
+    if _os.environ.get("MAG_BROWSER_CDP", "").strip().lower() not in ("1", "true", "yes"):
+        return {"ok": False,
+                "error": "browser CDP disabled — browser container retired 2026-09-22; "
+                         "seats run browserless (web tools degrade to fetch-only). "
+                         "Set MAG_BROWSER_CDP=1 when a browser container returns.",
+                "browserless": True}
     ep = _normalize_cdp(endpoint or _cdp_endpoint())
     try:
         from playwright.sync_api import sync_playwright

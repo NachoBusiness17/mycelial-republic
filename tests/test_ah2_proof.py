@@ -1,0 +1,270 @@
+"""tests/test_ah2_proof.py — AH2 (audit finding #8, 2026-09-30): real signatures.
+
+The "signed proof" was an UNKEYED sha256 while cryptography 49.0.0 sat installed —
+anyone could forge a claim_hash. Pinned here:
+  1. ed25519 roundtrip: sign_payload -> verify_signature (mode ED25519, verified).
+  2. Tamper-fails: a mutated payload, a mutated sig, and a wrong embedded pubkey
+     each break verification.
+  3. LEGACY-UNKEYED verifies: pre-AH2 sign() output still holds through BOTH the
+     legacy verify() and verify_signature()'s fallback path.
+  4. Key law: MAG_PROOF_KEY env wins, tmp auto-generation persists + reuses, bad
+     hex errors naming the source — and tests NEVER mint configs/.proof_key
+     (every signing test keys off a fixed env seed / a tmp key file).
+  5. seal.verify AH2 rows: the REAL newest seal gets its sealed-chain Merkle
+     check (consistent or warning, never unchecked), tip drift warns and never
+     fails; a tampered matched chain copy FAILS; a live-flagged lagging copy warns.
+"""
+from __future__ import annotations
+
+import base64
+import json
+import sys
+from pathlib import Path
+
+import pytest
+
+ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT))
+
+from mag import proof, seal, verkle_knot as vk  # noqa: E402
+
+# fixed dev seed (test-only; never the repo key)
+SEED_HEX = "11" * 32
+
+
+@pytest.fixture(autouse=True)
+def _keyed_env(monkeypatch):
+    """Every test signs under a fixed env key — no test mints configs/.proof_key."""
+    monkeypatch.setenv("MAG_PROOF_KEY", SEED_HEX)
+
+
+# ── 1. ed25519 roundtrip ────────────────────────────────────────────────────
+
+def test_sign_payload_roundtrip():
+    payload = {"kind": "claim", "n": 7, "s": "winter moths"}
+    signed = proof.sign_payload(payload)
+    assert signed["ok"] is True
+    assert signed["alg"] == "ed25519"
+    # the sha stays the deterministic canonical hash anyone re-derives
+    import hashlib
+    canonical = json.dumps(payload, sort_keys=True, default=str)
+    assert signed["sha"] == hashlib.sha256(canonical.encode("utf-8")).hexdigest()
+    v = proof.verify_signature(signed)
+    assert v["ok"] is True and v["verified"] is True
+    assert v["mode"] == "ED25519"
+    assert v["pubkey_fingerprint"] == signed["pubkey_fingerprint"]
+
+
+def test_sign_payload_deterministic():
+    p = {"kind": "claim", "x": 1}
+    a, b = proof.sign_payload(p), proof.sign_payload(p)
+    assert a["sha"] == b["sha"]
+    assert a["sig"] == b["sig"]  # ed25519 is deterministic — same bytes, same sig
+
+
+# ── 2. tamper-fails ─────────────────────────────────────────────────────────
+
+def test_tampered_payload_fails():
+    signed = proof.sign_payload({"kind": "claim", "amount": 100})
+    signed["payload"]["amount"] = 1000000  # the classic forgery
+    v = proof.verify_signature(signed)
+    assert v["ok"] is True and v["verified"] is False and v["mode"] == "ED25519"
+
+
+def test_tampered_sig_fails():
+    signed = proof.sign_payload({"kind": "claim"})
+    raw = bytearray(base64.b64decode(signed["sig"]))
+    raw[0] ^= 0xFF
+    signed["sig"] = base64.b64encode(bytes(raw)).decode("ascii")
+    v = proof.verify_signature(signed)
+    assert v["verified"] is False
+
+
+def test_wrong_pubkey_fails(monkeypatch):
+    """A sig re-attached to a different key (the 'transplant' forgery) must fail."""
+    monkeypatch.setenv("MAG_PROOF_KEY", "33" * 32)  # genuinely different key
+    other = proof.sign_payload({"kind": "unrelated"})
+    monkeypatch.setenv("MAG_PROOF_KEY", SEED_HEX)
+    signed = proof.sign_payload({"kind": "claim"})
+    assert other["pubkey_fingerprint"] != signed["pubkey_fingerprint"]
+    signed["pubkey"] = other["pubkey"]
+    signed["pubkey_fingerprint"] = other["pubkey_fingerprint"]
+    v = proof.verify_signature(signed)
+    assert v["verified"] is False
+
+
+# ── 3. legacy unkeyed path still verifies ───────────────────────────────────
+
+def test_legacy_unkeyed_verifies():
+    p = {"kind": "seal", "n_files": 3}
+    legacy = proof.sign(p)  # pre-AH2 API: unkeyed claim_hash, no sig/pubkey
+    assert "sig" not in legacy and "pubkey" not in legacy
+    v1 = proof.verify(legacy)
+    assert v1["verified"] is True  # old verifier unchanged
+    v2 = proof.verify_signature(legacy)
+    assert v2["ok"] is True and v2["verified"] is True
+    assert v2["mode"] == "LEGACY-UNKEYED"  # fallback path named honestly
+
+
+def test_legacy_tamper_fails():
+    legacy = proof.sign({"kind": "seal", "n_files": 3})
+    legacy["payload"]["n_files"] = 4
+    assert proof.verify(legacy)["verified"] is False
+    assert proof.verify_signature(legacy)["verified"] is False
+
+
+# ── 4. key law ──────────────────────────────────────────────────────────────
+
+def test_key_env_wins_over_file(monkeypatch, tmp_path):
+    kf = tmp_path / ".proof_key"
+    kf.write_text("22" * 32, encoding="utf-8")
+    monkeypatch.setenv("MAG_PROOF_KEY", SEED_HEX)
+    k = proof.load_signing_key(key_file=kf)
+    assert k["ok"] is True and k["source"] == "env:MAG_PROOF_KEY"
+
+
+def test_key_autogenerated_then_reused(monkeypatch, tmp_path):
+    monkeypatch.delenv("MAG_PROOF_KEY", raising=False)
+    kf = tmp_path / ".proof_key"
+    k1 = proof.load_signing_key(key_file=kf)
+    assert k1["ok"] is True and k1["source"].startswith("generated:")
+    assert kf.is_file()
+    seed = kf.read_text(encoding="utf-8").strip()
+    assert len(seed) == 64 and bytes.fromhex(seed)  # 32-byte hex seed persisted
+    k2 = proof.load_signing_key(key_file=kf)
+    assert k2["source"] == f"file:{kf.name}"
+    # same persisted seed -> same key -> same fingerprint (the dev key is STABLE)
+    assert proof.pubkey_fingerprint(proof._pubkey_bytes(k1["key"])) == \
+        proof.pubkey_fingerprint(proof._pubkey_bytes(k2["key"]))
+
+
+def test_bad_env_hex_errors(monkeypatch):
+    monkeypatch.setenv("MAG_PROOF_KEY", "zz-not-hex")
+    k = proof.load_signing_key()
+    assert k["ok"] is False and "MAG_PROOF_KEY" in k["error"]
+    s = proof.sign_payload({"kind": "claim"})
+    assert s["ok"] is False and "MAG_PROOF_KEY" in s["error"]
+
+
+# ── 5. seal.verify AH2 rows ─────────────────────────────────────────────────
+
+def test_real_newest_seal_merkle():
+    """REAL newest seal (read-only): the sealed chain copy gets its Merkle check and
+    the live-tip diff — drift warns and NEVER flips verified."""
+    rec = seal.verify()
+    assert rec["ok"] is True
+    cm = rec["chain_merkle"]
+    assert cm["checked"] is True  # newest seal froze a chain copy; the check ran
+    if cm["consistent"]:
+        assert cm["root"] == cm["sealed_tip_root"]
+    else:  # live-flagged lagging tail: warning, not a fail
+        assert cm.get("warning") is True and not cm.get("broken")
+        assert any(w.startswith("chain-merkle") for w in rec["warnings"])
+    td = rec["tip_drift"]
+    assert td["checked"] is True
+    if td["drift"]:  # the norm on a living repo
+        assert td["warning"] is True
+        assert any(w.startswith("tip-drift") for w in rec["warnings"])
+        # drift alone must not fail a seal whose manifest hashes all match
+        assert rec["verified"] is True
+
+
+def _mini_estate(tmp_path: Path, monkeypatch) -> Path:
+    """A tiny synthetic estate: 3-leaf chain + tip under tmp, seal pointed at it."""
+    bio = tmp_path / "memory" / "biography"
+    bio.mkdir(parents=True, exist_ok=True)
+    leaves = [vk._h(f"leaf{i}".encode()) for i in range(3)]
+    root = vk._merkle_root(leaves)
+    rows = [{"session_id": f"s{i}", "leaf_hash": leaves[i]} for i in range(3)]
+    rows[-1]["verkle_root"] = root
+    (bio / "verkle_chain.jsonl").write_bytes(
+        ("\n".join(json.dumps(r) for r in rows) + "\n").encode("utf-8"))
+    (bio / "verkle_tip.json").write_text(json.dumps(
+        {"schema": "verkle_tip.v1", "root": root, "n_leaves": 3,
+         "last_leaf_hash": leaves[-1]}), encoding="utf-8")
+    monkeypatch.setattr(seal, "ROOT", tmp_path)
+    monkeypatch.setattr(seal, "SEAL_DIR", tmp_path / "memory" / "seals")
+    monkeypatch.setattr(seal, "LATEST", tmp_path / "state" / "seal_latest.json")
+    monkeypatch.setattr(seal, "GROUND_TRUTH",
+                        ["memory/biography/verkle_chain.jsonl",
+                         "memory/biography/verkle_tip.json"])
+    # never touch the real anchored ledger / chain from a synthetic seal
+    monkeypatch.setattr(proof, "anchor", lambda p: {"anchored": True, "claim_hash": "synthetic"})
+    return tmp_path
+
+
+def test_synthetic_seal_merkle_consistent(tmp_path, monkeypatch):
+    _mini_estate(tmp_path, monkeypatch)
+    seal.seal()
+    rec = seal.verify()
+    assert rec["verified"] is True
+    assert rec["chain_merkle"]["checked"] is True
+    assert rec["chain_merkle"]["consistent"] is True
+    assert rec["chain_merkle"]["n_leaves"] == 3
+    assert rec["tip_drift"]["drift"] is False  # live tip untouched since the seal
+
+
+def test_sealed_chain_tamper_fails_verify(tmp_path, monkeypatch):
+    _mini_estate(tmp_path, monkeypatch)
+    seal.seal()
+    latest = json.loads(seal.LATEST.read_text(encoding="utf-8"))
+    seal_root = tmp_path / latest["seal_dir"]
+    chain_copy = seal_root / "memory/biography/verkle_chain.jsonl"
+    # rewrite one leaf hash AND mend the manifest sha so ONLY the Merkle check catches it
+    rows = [json.loads(x) for x in chain_copy.read_text(encoding="utf-8").splitlines() if x.strip()]
+    rows[0]["leaf_hash"] = vk._h(b"forged")
+    chain_copy.write_bytes(("\n".join(json.dumps(r) for r in rows) + "\n").encode("utf-8"))
+    manifest_p = seal_root / "manifest.json"
+    manifest = json.loads(manifest_p.read_text(encoding="utf-8"))
+    for e in manifest["entries"]:
+        if e["rel"].endswith("verkle_chain.jsonl"):
+            e["sha256"] = seal._sha256(chain_copy)
+    manifest_p.write_text(json.dumps(manifest, ensure_ascii=False, indent=2), encoding="utf-8")
+    rec = seal.verify()
+    assert rec["mismatches"] == []  # the file-hash gate was mended...
+    assert rec["verified"] is False  # ...but the Merkle gate still catches the forgery
+    assert rec["chain_merkle"]["broken"] is True
+
+
+def test_live_flagged_chain_lag_warns_not_fails(tmp_path, monkeypatch):
+    """A chain that grew mid-copy (entry flagged live) may lag its sealed tip — WARNING."""
+    _mini_estate(tmp_path, monkeypatch)
+    seal.seal()
+    latest = json.loads(seal.LATEST.read_text(encoding="utf-8"))
+    seal_root = tmp_path / latest["seal_dir"]
+    chain_copy = seal_root / "memory/biography/verkle_chain.jsonl"
+    rows = [json.loads(x) for x in chain_copy.read_text(encoding="utf-8").splitlines() if x.strip()]
+    rows.append({"session_id": "s_late", "leaf_hash": vk._h(b"late-arrival")})  # tail after tip
+    chain_copy.write_bytes(("\n".join(json.dumps(r) for r in rows) + "\n").encode("utf-8"))
+    manifest_p = seal_root / "manifest.json"
+    manifest = json.loads(manifest_p.read_text(encoding="utf-8"))
+    for e in manifest["entries"]:
+        if e["rel"].endswith("verkle_chain.jsonl"):
+            e["sha256"] = seal._sha256(chain_copy)
+            e["matched"] = False
+            e["live"] = True
+    manifest_p.write_text(json.dumps(manifest, ensure_ascii=False, indent=2), encoding="utf-8")
+    rec = seal.verify()
+    assert rec["chain_merkle"]["consistent"] is False
+    assert rec["chain_merkle"]["warning"] is True and not rec["chain_merkle"].get("broken")
+    assert rec["verified"] is True  # a live tail never fails the seal
+    assert any(w.startswith("chain-merkle") for w in rec["warnings"])
+
+
+def test_tip_drift_warns_not_fails(tmp_path, monkeypatch):
+    _mini_estate(tmp_path, monkeypatch)
+    seal.seal()
+    # the live chain grows past the seal (the norm between cadence seals)
+    bio = tmp_path / "memory" / "biography"
+    rows = [json.loads(x) for x in (bio / "verkle_chain.jsonl").read_text(encoding="utf-8").splitlines() if x.strip()]
+    leaves = [r["leaf_hash"] for r in rows] + [vk._h(b"new-leaf")]
+    root = vk._merkle_root(leaves)
+    rows.append({"session_id": "s_new", "leaf_hash": leaves[-1], "verkle_root": root})
+    (bio / "verkle_chain.jsonl").write_bytes(("\n".join(json.dumps(r) for r in rows) + "\n").encode("utf-8"))
+    (bio / "verkle_tip.json").write_text(json.dumps(
+        {"schema": "verkle_tip.v1", "root": root, "n_leaves": len(leaves)}), encoding="utf-8")
+    rec = seal.verify()
+    assert rec["tip_drift"]["drift"] is True
+    assert rec["chain_merkle"]["consistent"] is True  # the SEALED copy is untouched
+    assert rec["verified"] is True  # drift = WARNING row, never a fail
+    assert any(w.startswith("tip-drift") for w in rec["warnings"])

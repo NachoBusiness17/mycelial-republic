@@ -12,6 +12,8 @@ REJECTED; that is the drift killer from the trajectory_rib salon fold):
      "step_hash":  sha256(session|ts|command|result)[:16],
      "ts":         ISO-8601 UTC,
      "session_id": harness session or "unknown",
+     "corr_id":    MAG_CORR_ID env (uuid4 hex8) or null — AH14 join field,
+                   deliberately OUTSIDE the step_hash basis,
      "face":       "bash",
      "command":    the invoked command line,
      "result":     {exit: int|null, output_excerpt: str, truncated: bool}}
@@ -19,6 +21,8 @@ REJECTED; that is the drift killer from the trajectory_rib salon fold):
 Stream: memory/trajectory/steps.jsonl — append-only, one row per line.
 Louver law: the stream lives in the cage; the board shows counts, never payloads
 beyond command lines already visible to the seat that ran them.
+Redaction law (2026-09-30, audit #1): every row is scrubbed of live .env VALUES
+before it is written — <REDACTED:name> in place of the value, names only.
 
 CLI:
     python -m mag.trajectory_step hook            # stdin JSON -> row (the hook door)
@@ -38,35 +42,120 @@ import argparse
 import datetime as dt
 import hashlib
 import json
+import os
 import sys
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parent.parent
 STREAM = REPO / "memory" / "trajectory" / "steps.jsonl"
+ENV_PATH = REPO / ".env"
 SCHEMA_VERSION = "trajectory_step.v1"
 EXCERPT_LIMIT = 400
+
+# ---------------------------------------------------------------------------
+# AH14 correlation law (receipt watch/inbox/last_mile_20260930/AH14_CORR_ID.md;
+# canonical definition lives HERE, the provenance spine): every provenance
+# surface — trajectory steps (this stream), the game-flow burns ledger
+# (mag/game_flow.py FLOW_LEDGER.jsonl), and the duel ledger
+# (tools/duel_harness.py duels.jsonl) — carries the SAME optional join field:
+# corr_id, a uuid4 hex8 minted at lane start and carried in the MAG_CORR_ID
+# env var. Seats/lanes that export the var join automatically; unset -> null.
+# Old rows without the field read as null (absent = null, readers must not
+# break) and stay hash-clean: corr_id is NOT part of the step_hash basis, so
+# `verify` recomputes pre-AH14 and post-AH14 rows identically.
+# ---------------------------------------------------------------------------
+
+CORR_ENV = "MAG_CORR_ID"
+
+
+def corr_id() -> str | None:
+    """The lane's corr_id from the env, null when the lane set none."""
+    return os.environ.get(CORR_ENV) or None
+
+# ---------------------------------------------------------------------------
+# P0 containment (audit 2026-09-30 finding #1, receipt
+# watch/inbox/last_mile_20260930/AG1_SECRETS_CONTAINMENT.md): 7 live .env key
+# values were committed through this stream. Every row is scrubbed BEFORE
+# truncation and BEFORE the hash basis is computed, so no live value lands in
+# the stream and `verify` stays self-consistent. Redaction over-matches on
+# purpose (MIN_SECRET_LEN=8 only skips toy values like flags/hosts);
+# under-matching is the unsafe direction. Values are never printed or logged —
+# env NAMES only, everywhere.
+# ---------------------------------------------------------------------------
+
+MIN_SECRET_LEN = 8
+_REDACTION_CACHE: dict[str, list[tuple[str, str]]] = {}
+
+
+def _parse_env_pairs(env_path: Path) -> list[tuple[str, str]]:
+    """(NAME, value) pairs from a .env file. Names only in any output."""
+    if not env_path.is_file():
+        return []
+    pairs: list[tuple[str, str]] = []
+    for raw in env_path.read_text(encoding="utf-8", errors="replace").splitlines():
+        line = raw.strip()
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+        name, _, value = line.partition("=")
+        name = name.strip()
+        if name.startswith("export "):
+            name = name[len("export "):].strip()
+        value = value.strip()
+        if len(value) >= 2 and value[0] == value[-1] and value[0] in "\"'":
+            value = value[1:-1]  # quoted: keep verbatim
+        elif " #" in value:
+            value = value.split(" #", 1)[0].rstrip()  # dotenv-style trailing comment
+        if name and len(value) >= MIN_SECRET_LEN:
+            pairs.append((name, value))
+    return pairs
+
+
+def redactions(env_path: Path | str = ENV_PATH) -> list[tuple[str, str]]:
+    """Live (name, value) pairs, longest value first so value-overlap (one key
+    a prefix of another) cannot leave residue behind."""
+    key = str(env_path)
+    if key not in _REDACTION_CACHE:
+        _REDACTION_CACHE[key] = sorted(_parse_env_pairs(Path(env_path)),
+                                       key=lambda nv: -len(nv[1]))
+    return _REDACTION_CACHE[key]
+
+
+def redact(text: str, env_path: Path | str = ENV_PATH) -> str:
+    """Replace any live .env VALUE substring with <REDACTED:name>."""
+    for name, value in redactions(env_path):
+        if value and value in text:
+            text = text.replace(value, f"<REDACTED:{name}>")
+    return text
 
 
 def _utcnow() -> str:
     return dt.datetime.now(dt.timezone.utc).isoformat(timespec="milliseconds")
 
 
-def _excerpt(obj, limit: int = EXCERPT_LIMIT):
-    if obj is None:
-        return "", False
-    text = obj if isinstance(obj, str) else json.dumps(obj, ensure_ascii=False)
-    return text[:limit], len(text) > limit
-
-
-def make_row(session_id: str, command: str, result, exit_code) -> dict:
+def make_row(session_id: str, command: str, result, exit_code, env_path=ENV_PATH) -> dict:
     ts = _utcnow()
-    excerpt, truncated = _excerpt(result)
+    # Containment order matters: redact the FULL text BEFORE the excerpt cut (a
+    # value straddling the 400-char boundary would otherwise land half-live)
+    # and BEFORE hashing (verify recomputes over the redacted basis).
+    if result is None:
+        text = ""
+    elif isinstance(result, str):
+        text = result
+    else:
+        text = json.dumps(result, ensure_ascii=False)
+    text = redact(text, env_path)
+    excerpt, truncated = text[:EXCERPT_LIMIT], len(text) > EXCERPT_LIMIT
+    command = redact(command[:2000], env_path)
     basis = "|".join([session_id, ts, command, excerpt])
     return {
         "schema_version": SCHEMA_VERSION,
         "step_hash": hashlib.sha256(basis.encode("utf-8", "replace")).hexdigest()[:16],
         "ts": ts,
         "session_id": session_id or "unknown",
+        # AH14 join field: env MAG_CORR_ID or null. Deliberately NOT in the
+        # hash basis above, so verify stays self-consistent across the
+        # pre-AH14 and post-AH14 row shapes.
+        "corr_id": corr_id(),
         "face": "bash",
         "command": command[:2000],
         "result": {"exit": exit_code, "output_excerpt": excerpt, "truncated": truncated},

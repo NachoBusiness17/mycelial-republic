@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import shlex
+import shutil
 import subprocess
 import sys
 
@@ -38,8 +39,17 @@ def run_shell(command: str, timeout: int = 60) -> dict:
         # System32 conhost window you see in the stateless auto-loop). All shell
         # execution must be headless — same LAW as the python spawners.
         if sys.platform == "win32":
+            # B2-85 2026-09-26: bare "powershell" is not on PATH in every launch
+            # context (headless daemons / scrubbed-env spawns): sig
+            # run_shell:e566037def80 "[Errno 2] No such file or directory:
+            # 'powershell'" piled 7,964 rows into logs/failure_kb.jsonl since
+            # 2026-09-19. Resolve the full path; System32 fallback when PATH
+            # lookup misses (pattern from mag/process_reaper.py 2026-09-19).
+            ps_exe = shutil.which("powershell") or shutil.which("powershell.exe")
+            if not ps_exe:
+                ps_exe = r"C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe"
             proc = subprocess.run(
-                ["powershell", "-NoProfile", "-Command", command],
+                [ps_exe, "-NoProfile", "-Command", command],
                 cwd=str(ROOT),
                 capture_output=True,
                 text=True,

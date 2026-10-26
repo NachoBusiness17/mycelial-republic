@@ -204,9 +204,32 @@ def status() -> dict[str, Any]:
     return p
 
 
+def _lease_gate(action: str) -> dict[str, Any] | None:
+    """proc:lab lease gate (2026-10-17, mag/leases.py, configs/restricted_leases.json).
+
+    REFUSES when ANOTHER seat holds a live proc:lab lease (holder keeps);
+    unleased = warn + ledger line, proceeds. The caller proves holding via env
+    MAG_LEASE_SEAT + MAG_LEASE_TOKEN. Returns a refusal dict, or None to proceed.
+    """
+    try:
+        from mag.leases import guard
+    except Exception:  # noqa: BLE001 — organ missing: behave as before
+        return None
+    g = guard("proc:lab", f"docker_ops.{action}", enforce="conflict")
+    if g.get("allowed"):
+        return None
+    _log(f"docker-{action}", ok=False, error="refused: proc:lab lease held by another seat")
+    return {"ok": False, "action": action, "code": -1, "out": "", "refused": True,
+            "err": g.get("reason"), "how": g.get("how"), "lease_holder": g.get("holder"),
+            "lease_until": g.get("until")}
+
+
 def up() -> dict[str, Any]:
     """Bring the stack up (build + start). Explicit action; not auto-called.
     Ensures the Docker engine is running first (self-starts Docker Desktop if needed)."""
+    refused = _lease_gate("up")
+    if refused is not None:
+        return refused
     eng = ensure_engine()
     if not eng.get("engine_reachable"):
         _log("docker-up", ok=False, error="docker engine not reachable after launch attempt")
@@ -220,6 +243,9 @@ def up() -> dict[str, Any]:
 
 def down() -> dict[str, Any]:
     """Tear the stack down. Explicit action; not auto-called."""
+    refused = _lease_gate("down")
+    if refused is not None:
+        return refused
     r = _run(["compose", "down"], timeout=180)
     _log("docker-down", ok=r["ok"], error=r["err"][:200] if r["err"] else None)
     return {"ok": r["ok"], "action": "down", "code": r["code"],

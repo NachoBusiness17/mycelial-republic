@@ -82,7 +82,9 @@ def measure() -> dict[str, Any]:
     except Exception:
         try:
             from mag import lifecycle
-            ollama_up = bool(lifecycle._ollama_up())
+            # B2-81 (2026-09-26): _ollama_up now returns (up, cause); index it
+            # instead of bool(), which is always True on any non-empty tuple.
+            ollama_up = bool(lifecycle._ollama_up()[0])
         except Exception:
             ollama_up = False
     # swarm queue: undrained backlog + last drain

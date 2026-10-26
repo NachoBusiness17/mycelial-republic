@@ -70,3 +70,40 @@ def test_pile_classify_folds_and_is_idempotent(monkeypatch, tmp_path) -> None:  
     train = pc._read_lines(tmp_path / "training_rows.jsonl")
     assert len(train) == 2
     assert json.loads(train[0]["output"])["lesson_kind"] == "metric_bug"
+
+
+def test_pile_classify_writes_back_flag(monkeypatch, tmp_path) -> None:  # type: ignore[no-untyped-def]
+    _iso(monkeypatch, tmp_path)
+    ss.capture_summary(goal="loop on tool", outcome="escalated", tier="local", kind="escalation")
+
+    def fake_classify(row, *, model, timeout=240.0):
+        return {"category": "process", "lesson_kind": "process",
+                "recommendation": "r", "tags": []}
+
+    monkeypatch.setattr(pc, "classify_one", fake_classify)
+    res = pc.run_pile(model="stub")
+    assert res["pile_writeback"] == 1
+    rows = pc._read_lines(tmp_path / "state_summaries.jsonl")
+    assert all(r.get("classified") for r in rows)
+    st = ss.status()
+    assert st["classified"] == 1 and st["unclassified"] == 0
+
+
+def test_pile_write_back_repairs_backlog(monkeypatch, tmp_path) -> None:  # type: ignore[no-untyped-def]
+    """Row already in classified.jsonl but unflagged in the pile gets flagged
+    on the next run (the historical unlink, 35 rows as of 2026-09-25)."""
+    _iso(monkeypatch, tmp_path)
+    r = ss.capture_summary(goal="already done elsewhere", outcome="ok", tier="local")
+    row_id = r["row"]["id"]
+    pc._append(pc.CLASSIFIED, {"id": row_id, "category": "process"})  # backlog: classified file has it, pile flag does not
+
+    def fail_if_called(row, *, model, timeout=240.0):  # noqa: ARG001
+        raise AssertionError("backlog row must not be re-classified")
+
+    monkeypatch.setattr(pc, "classify_one", fail_if_called)
+    res = pc.run_pile(model="stub")
+    assert res["classified_this_run"] == 0
+    assert res["pile_writeback"] == 1
+    rows = pc._read_lines(tmp_path / "state_summaries.jsonl")
+    assert rows[0].get("classified") is True
+    assert ss.status()["unclassified"] == 0

@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import json
 import re
+import shutil
 import subprocess
 import sys
 import time
@@ -39,12 +40,28 @@ def check(cid: str, law: str, why: str):
     return wrap
 
 
+def _ps_exe() -> str:
+    """B2-352 2026-09-26: bare "powershell" is not on PATH in every launch
+    context (disease class sig run_shell:e566037def80 "[Errno 2] ... powershell";
+    unraised, main() would have filed both powershell checks as silent error
+    rows and the lattice reads green-but-blind). Resolve the full path;
+    System32 fallback when PATH lookup misses (pattern
+    mag/process_reaper.py:82-90). Raises when nothing resolves so the check
+    surfaces as a visible divergence row, never a blind pass."""
+    ps = shutil.which("powershell") or shutil.which("powershell.exe")
+    if not ps and sys.platform == "win32":
+        ps = r"C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe"
+    if not ps:
+        raise FileNotFoundError("no powershell on PATH or System32")
+    return ps
+
+
 # --- LAW 11 (corrections): ONE SUPERVISOR ONLY -------------------------------
 @check("single-hunter", "One supervisor only — hunters propose, never race",
        "live: double-hunter race caught 2026-08-28")
 def check_single_hunter():
     r = subprocess.run(
-        ["powershell", "-Command",
+        [_ps_exe(), "-Command",
          "Get-CimInstance Win32_Process -Filter \"Name='python.exe'\" | "
          "Where-Object { $_.CommandLine -match 'seeker|blade_buyer' } | "
          "ForEach-Object { if ($_.CommandLine -match '([a-z_]+)\\.py') { $Matches[1] } }"],
@@ -54,22 +71,61 @@ def check_single_hunter():
 
 
 # --- LAW 11: RETIRED Mag* scheduled tasks stay DISABLED -----------------------
-# mag-docker-watchdog is the SANCTIONED host-side watcher (AGENTS.md law) —
-# whitelisted; the retired supervisor-era Mag* tasks must stay Disabled.
-SANCTIONED_MAG = {"mag-docker-watchdog"}
+# SPEC-FIRST (B2-396, 2026-09-26): the operator-sanctioned task set lives in
+# configs/sanctioned_scheduled_tasks.yaml, one row per task with its register
+# source; this whitelist LOADS that file so the card and the spec cannot drift.
+# CAUSE: the hardcoded whitelist held only mag-docker-watchdog, so every live
+# operator-registered job (MagImproveDaily, MagCensusPatrolDaily, ...) was a
+# permanent diverged row with zero signal (memory/runs/lattice/latest.json
+# 17:32:10Z violators list). EVIDENCE: the falsifier run in
+# watch/inbox/burn_wave_20260926/B2_396_mag_tasks_whitelist_20260926.md shows
+# the pre-fix card diverged on every 2026-09-26 run while AGENTS.md registers
+# the same tasks as sanctioned. The law this check still enforces: a Mag* task
+# that is neither Disabled nor in the sanctioned set is a retired
+# supervisor-era respawn and must scream.
+def _load_sanctioned_mag() -> dict:
+    """name -> row from the sanctioned-set spec (fail loud when unreadable)."""
+    import yaml
+    path = ROOT / "configs" / "sanctioned_scheduled_tasks.yaml"
+    data = yaml.safe_load(path.read_text(encoding="utf-8"))
+    return {row["name"]: row for row in data.get("tasks", [])}
 
 
-@check("mag-tasks-disabled", "Retired Mag* scheduled tasks stay disabled",
-       "corrections law 11: two supervisors fought respawns")
+@check("mag-tasks-disabled", "Unsanctioned Mag* scheduled tasks scream; sanctioned set lives in configs/sanctioned_scheduled_tasks.yaml",
+       "corrections law 11: two supervisors fought respawns; B2-396 spec-first whitelist")
 def check_mag_tasks():
+    sanctioned = _load_sanctioned_mag()
     r = subprocess.run(
-        ["powershell", "-Command",
-         "Get-ScheduledTask | Where-Object { $_.TaskName -like 'Mag*' -and $_.State -ne 'Disabled' } | "
-         "Select-Object -ExpandProperty TaskName"],
+        [_ps_exe(), "-Command",
+         "Get-ScheduledTask | Where-Object { $_.TaskName -like 'Mag*' } | "
+         "Select-Object TaskName,State | ConvertTo-Json -Compress"],
         capture_output=True, text=True, timeout=30)
-    violators = [l.strip() for l in r.stdout.splitlines()
-                 if l.strip() and l.strip() not in SANCTIONED_MAG]
-    return {"violators": violators}
+    raw = r.stdout.strip()
+    try:
+        tasks = json.loads(raw) if raw else []
+    except json.JSONDecodeError:
+        tasks = []
+    if isinstance(tasks, dict):  # ConvertTo-Json single-object shape
+        tasks = [tasks]
+    # ConvertTo-Json serializes the TaskState enum as a number
+    # (Unknown=0, Disabled=1, Queued=2, Ready=3, Running=4)
+    STATE_NAMES = {0: "unknown", 1: "disabled", 2: "queued",
+                   3: "ready", 4: "running"}
+    violators, wrong_state = [], []
+    for t in tasks:
+        name = str(t.get("TaskName", "")).lstrip("\\")
+        state = t.get("State", "")
+        state = STATE_NAMES.get(state, str(state).lstrip("\\"))
+        row = sanctioned.get(name)
+        if row is None:
+            if state != "disabled":
+                violators.append(name)
+            continue
+        want = row.get("state_expected", "ready")
+        if want == "disabled" and state != "disabled":
+            wrong_state.append(name)
+    return {"violators": violators, "state_drift": wrong_state,
+            "sanctioned_count": len(sanctioned)}
 
 
 # --- LINEAGE: hide-alive violation (Aug 12 rib vs live code) -----------------

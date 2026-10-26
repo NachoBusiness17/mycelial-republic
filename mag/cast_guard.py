@@ -139,3 +139,97 @@ if __name__ == "__main__":
     a = ap.parse_args()
     if a.status:
         print(json.dumps(status(), indent=2))
+
+
+# ---------------------------------------------------------------------------
+# FISH_TANK_REMEDIATE_20261019 - untrusted LAN peer law (watch/LIBRARY/STEAL_FISH_TANK_IOT_20261019.md)
+# Any non-tailnet, non-loopback device (Roku, phone on Wi-Fi, IoT) is an UNTRUSTED PEER: it may
+# READ display/beacon routes only. Deny by default, probe-log, NOTICE on first sight. Reuses the
+# cast_probes.jsonl log above; leases via mag.leases resource "expose:lan".
+# ---------------------------------------------------------------------------
+import threading
+
+LAN_LEASE = "expose:lan"
+LAN_PEERS_PATH = ROOT / "memory" / "security" / "lan_peers.json"
+TAILNET_V4 = ipaddress.ip_network("100.64.0.0/10")
+TAILNET_V6 = ipaddress.ip_network("fd7a:115c:a1e0::/48")
+DISPLAY_ROUTES = ("/", "/beacon", "/beacon.json", "/health", "/display", "/cast")
+# host ports an untrusted LAN peer must never reach (Ollama, sshd, dashboard portproxy, gstd-node)
+NON_DISPLAY_PORTS = (11434, 22, 8765, 8080)
+
+
+def peer_class(ip: str) -> str:
+    """loopback | tailnet | lan_untrusted | public."""
+    try:
+        a = ipaddress.ip_address((ip or "").split("%")[0])
+    except ValueError:
+        return "public"
+    if a.is_loopback:
+        return "loopback"
+    if (a.version == 4 and a in TAILNET_V4) or (a.version == 6 and a in TAILNET_V6):
+        return "tailnet"
+    if a.is_private or a.is_link_local:
+        return "lan_untrusted"
+    return "public"
+
+
+def _notice_new_peer(ip: str, path: str, service: str) -> bool:
+    """NOTICE row (cast_probes.jsonl, reason=new_lan_peer) the first time an untrusted LAN ip shows."""
+    try:
+        seen = json.loads(LAN_PEERS_PATH.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        seen = {}
+    if ip in seen:
+        return False
+    seen[ip] = {"first_seen": _now(), "service": service, "path": path}
+    LAN_PEERS_PATH.parent.mkdir(parents=True, exist_ok=True)
+    LAN_PEERS_PATH.write_text(json.dumps(seen, indent=2), encoding="utf-8")
+    _log_probe(ip, path, f"notice:new_lan_peer:{service}")
+    return True
+
+
+def display_gate(ip: str, path: str, *, service: str = "display") -> dict[str, Any]:
+    """Read-only gate for display/beacon servers. Untrusted peers: display routes only, GET only."""
+    cls = peer_class(ip)
+    if cls in ("loopback", "tailnet"):
+        return {"ok": True, "peer": cls}
+    if cls == "public":
+        _log_probe(ip, path, f"non_lan:{service}")
+        return {"ok": False, "deny": "non_lan", "peer": cls}
+    if blocked(ip):
+        return {"ok": False, "deny": "blocked", "peer": cls}
+    _notice_new_peer(ip, path, service)
+    route = (path or "/").split("?", 1)[0]
+    if route not in DISPLAY_ROUTES:
+        _log_probe(ip, path, f"notice:non_display_route:{service}")
+        _register_fail(ip)
+        return {"ok": False, "deny": "display_only", "peer": cls}
+    return {"ok": True, "peer": cls, "read_only": True}
+
+
+def lan_lease_live() -> bool:
+    try:
+        from mag import leases
+        return bool((leases.status(resource=LAN_LEASE).get("lease") or {}).get("live"))
+    except Exception:
+        return False
+
+
+def is_wildcard(host: str) -> bool:
+    return host in ("0.0.0.0", "::", "")
+
+
+def lan_lease_watchdog(on_expire, *, interval_s: float = 30.0, service: str = "lan") -> threading.Thread:
+    """Daemon thread: calls on_expire() once the expose:lan lease is no longer live."""
+    def _loop() -> None:
+        while True:
+            time.sleep(interval_s)
+            if not lan_lease_live():
+                _log_probe("self", service, "notice:lan_lease_expired_shutdown")
+                try:
+                    on_expire()
+                finally:
+                    return
+    t = threading.Thread(target=_loop, name=f"lan-lease-{service}", daemon=True)
+    t.start()
+    return t

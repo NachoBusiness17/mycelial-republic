@@ -95,14 +95,27 @@ class TestSingleTickSubprocess(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             ground = os.path.join(tmp, "GROUNDING_WAVE.jsonl")
             state = os.path.join(tmp, "state.json")
+            # PATH PIN (scripts/path_pin.py, landed after this test): the
+            # driver refuses --ground outside the repo root unless the
+            # selftest flag is set. This IS the selftest the flag names.
+            env = dict(os.environ, MAG_ALLOW_EXTERNAL_PATH="1")
+            # HEADLESS law (spawn_sites_no_window): bare subprocess.run pops
+            # a console window per tick on Windows.
+            headless = getattr(subprocess, "CREATE_NO_WINDOW", 0x08000000) \
+                if sys.platform == "win32" else 0
             for _ in range(2):  # run --tick semantics twice against a fresh ledger
                 proc = subprocess.run(
                     [sys.executable, DRIVER, "--tick", "--ground", ground,
                      "--state", state],
-                    capture_output=True, text=True, cwd=ROOT, timeout=120)
+                    capture_output=True, text=True, cwd=ROOT, timeout=120,
+                    env=env, creationflags=headless)
                 self.assertEqual(proc.returncode, 0, proc.stderr)
                 self.assertIn("[RECORD] ground row posted", proc.stdout)
-                self.assertIn("WAVE_DRIVER v0 TICK", proc.stdout)
+                # version-agnostic (2026-09-27): the banner moved v0 -> v1
+                # and this assert went stale pinning the old numeral
+                import re as _re
+                self.assertTrue(_re.search(r"WAVE_DRIVER v\d+ TICK", proc.stdout),
+                                proc.stdout[:200])
             rows = [json.loads(l) for l in open(ground, encoding="utf-8") if l.strip()]
             self.assertEqual(len(rows), 2)
             self.assertEqual(rows[1]["prev"], rows[0]["hash"], "row 2 chains to row 1")

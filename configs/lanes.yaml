@@ -92,3 +92,67 @@ cursor_markers:
 
 usage_log: logs/usage.jsonl
 briefs_dir: memory/briefs
+
+# Effort tiers for lane fan-outs (mag/lane_effort.py, schema lane_effort.v1).
+# Defaults are Anthropic's three effort tiers, verbatim (fold row
+# corpus/steal/MASTER_MICKEY17_V2_20260924.md #6):
+#   fact_finding: 1 lane, 3-10 calls total | comparison: 2-4 lanes, 10-15 calls each
+#   complex: >10 lanes (call ceiling gate-governed; source gives no count)
+# This block only carries OPERATOR DIALS; leave it absent to use the verbatim
+# defaults. Multi-lane fan-outs must clear premium x baseline value per 1k
+# tokens or the value-per-token admission gate rejects the spend.
+# effort_tiers:
+#   baseline_vpt: 1.0          # value units per 1k tokens, single-lane bar
+#   multiagent_premium: 15.0   # ~15x token premium, gated on task value
+#   tiers:
+#     comparison: {max_calls: 15}   # example: tighten a measured band
+
+# GATE_VERDICT_V2 -- two-band judge cascade, frozen at registration 2026-09-26
+# (burn lane B2-32). Owning docs, read before changing anything in this block:
+#   V1 schema + governor-only law: watch/inbox/BURN_JUDGE_LANE_BUILD_20260925.md
+#   V2 two-band increment: watch/inbox/burn_wave_20260926/B2_08_judge_lane_20260926.md
+# The judge never moves its own gate (judge-lane-spec burn): thresholds live in
+# THIS block and are writable by the governor only. WIRED 2026-09-26 (burn lane
+# B2-111): mag/lane_runner.py load_gate_block reads THIS block on every verdict
+# (no code-side fallback tau); the scalar GATE_VERDICT row (gate_drop) remains
+# the pure schema/ttl/anchor check, GATE_VERDICT_V2 rows carry the nested
+# three-axis verdict + cascade decision.
+gate_verdict_v2:
+  schema: gate_verdict.v2        # three-axis JSON contract, build doc section 1
+  judge_seats: [local, flash, frontier]
+  axes: [brief_fidelity, build_quality, receipt_completeness]
+  scores_range: "0.0 to 1.0"
+  evidence_quote_law: "every non-1.0 score carries a verbatim evidence quote"
+  cascade:
+    band_routine:
+      axes: [brief_fidelity, build_quality, receipt_completeness]
+      tau: 0.90
+      # JEV frozen fallback tau=0.90: accepts ~53.7% of contested pairs, retains
+      # ~99% of comparator accuracy at ~57% blended fee (arxiv 2609.26550).
+      on_pass: accept
+      on_fail: escalate
+    band_derivation:
+      axes_class: "axes whose verdict requires checking a derivation (math, protocol proofs, security claims)"
+      policy: always_escalate
+      # JudgeBench 78.6 vs 93.1; JEV wrong on a third of pairs scored in
+      # [0.9,0.95), so no confidence threshold is safe on this band (B2_08).
+    invalid_output: defer        # invalid first-stage outputs always defer
+    no_referent: unjudgeable     # UNJUDGEABLE axis: never escalated, never accepted
+    contested_merit_only:
+      both_orders_debias: true   # p_bar = 1/2 [p1(A,B) + 1 - p1(B,A)]
+      ties: half_credit
+      rationed: true
+    cascade_exempt_seats: [rule] # deterministic rule backend (mag/desk_conductor.py:319) has no confidence to threshold
+  # V1-TRIGGERS RESOLUTION (governor write 2026-09-26, lane B2-112): the V1
+  # escalation triggers frozen at BURN_JUDGE_LANE_BUILD_20260925.md:29
+  # ((a) any axis confidence < 0.7; (b) any axis score < 0.5 AND confidence
+  # > 0.7) were never registered in this block. Resolution: SUPERSEDED, not
+  # pre-filters. The V2 two-band cascade replaces confidence thresholds on the
+  # routine band (band_routine tau 0.90 passes/escalates on score alone) and
+  # B2_08's JudgeBench evidence bars any confidence threshold on the derivation
+  # band ("no confidence threshold is safe on this band"), so a V1 confidence
+  # pre-filter would re-admit exactly the pairs band_derivation always
+  # escalates. Trigger (c) (derivation checking) survives verbatim as
+  # band_derivation.policy: always_escalate. No code reads these keys yet, so
+  # nothing else changes behavior.
+  writable_by: governor

@@ -1,6 +1,6 @@
 <!doctype html><html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>ARRAKIS — the Dune wing · play = dogfood</title>
+<title>ARRAKIS v2 — RIDE THE MAKER</title>
 <style>
 :root{--bg:#0a0806;--ink:#f0e0c0;--gold:#e8c96a}
 body{margin:0;background:var(--bg);color:var(--ink);font-family:ui-monospace,Consolas,monospace;text-align:center}
@@ -13,25 +13,27 @@ canvas{position:absolute;inset:0;width:960px;height:540px;border:2px solid #6a4a
 #stats{font-size:.78rem;margin:8px auto;max-width:900px}
 .warn{color:#ff6b4a;font-weight:bold}
 .g{color:#7dfab0}
+.goal{font-size:.78rem;color:#e8dcc0;margin:4px auto;max-width:900px}
+.goal b{color:var(--gold)}
 </style></head><body>
 <div id="errbanner" style="display:none;position:fixed;top:0;left:0;right:0;z-index:99;background:#5c1010;color:#ffd9d9;font:12px ui-monospace,monospace;padding:6px 10px;white-space:pre-wrap"></div>
 <script>window.addEventListener('error',function(e){var b=document.getElementById('errbanner');if(!b)return;b.style.display='block';b.textContent+='ERR: '+e.message+' @ '+(e.lineno||'?')+':'+(e.colno||'?')+'\n';});window.addEventListener('unhandledrejection',function(e){var b=document.getElementById('errbanner');if(!b)return;b.style.display='block';b.textContent+='REJ: '+e.reason+'\n';});</script>
-<h1>ARRAKIS — THE DUNE WING</h1>
-<div class="mut">ride the sand · spice blooms are invariants · the worm hunts your speed · WASD/arrows to ride · the Machine follows</div>
+<h1>ARRAKIS v2 — RIDE THE MAKER</h1>
+<div class="mut">speed is score · spice chains are the line · crests are arcs · the Maker hunts the fast · E drops a thumper · the slow are safe and the safe are poor</div>
 <div id="wrap"><canvas id="cv" width="960" height="540"></canvas><canvas id="ov" width="960" height="540"></canvas><div id="toasts"></div></div>
 <div id="stats"></div>
-<div class="mut">fast = the worm comes · slow = it forgets · three gates hold tonight's true quests · every spice is a law from the shelf</div>
+<div class="goal">GOAL: <b>ride fast</b> — spice chained without stopping = LINE ×N · launch off the dark <b>crests</b> for air-tricks · land clean to bank · <b>E</b> drops a thumper (3) to send the Maker elsewhere · touch a gate to bank everything</div>
 <script>
 "use strict";
 const W=960,H=540;
 const cv=document.getElementById('cv'),ctx=cv.getContext('2d');
 const ov=document.getElementById('ov'),oc=ov.getContext('2d');
 
-// ---- rocks + sdf (declared first: everything depends on them) ----
+// ---- rocks + sdf ----
 const ROCKS=[[120,120,60,26],[820,320,70,24],[300,430,80,22],[600,80,50,30],[520,220,40,40],[240,300,34,34]];
 function sdf(x,y){let d=1e9;for(const[cx,cy,hw,hh]of ROCKS){const ax=Math.abs(x-cx)-hw,ay=Math.abs(y-cy)-hh;d=Math.min(d,Math.max(ax,ay));}return d;}
 
-// ---- terrain (drawn once) ----
+// ---- terrain ----
 const ter=document.createElement('canvas');ter.width=W;ter.height=H;
 (function(){
   const t=ter.getContext('2d');
@@ -57,6 +59,24 @@ const ter=document.createElement('canvas');ter.width=W;ter.height=H;
   }
 })();
 
+// ---- dune crests: cross them fast and you FLY (the arcs) ----
+const CRESTS=[
+  {x0:80, y0:180, x1:880, y1:120, amp:6},
+  {x0:60, y0:360, x1:900, y1:330, amp:5},
+  {x0:200,y0:60,  x1:340, y1:500, amp:5},
+  {x0:640, y0:60, x1:760, y1:500, amp:5},
+];
+function crestDist(x,y){ // distance to nearest crest segment
+  let best=1e9;
+  for(const c of CRESTS){
+    const dx=c.x1-c.x0,dy=c.y1-c.y0,L2=dx*dx+dy*dy;
+    let t=((x-c.x0)*dx+(y-c.y0)*dy)/L2;t=Math.max(0,Math.min(1,t));
+    const px=c.x0+dx*t,py=c.y0+dy*t;
+    best=Math.min(best,Math.hypot(x-px,y-py));
+  }
+  return best;
+}
+
 // ---- gates: tonight's three real quests ----
 const GATES=[
   {x:860,y:110,name:'DRAGON OF ASTRA',col:'#ffb347',lore:'$1,000 of wizard coin waits for a signature. The accord is open.',done:false},
@@ -80,14 +100,16 @@ const LAWS=[
 ];
 let lawIdx=0;
 function randPos(){let x,y,t=0;do{x=60+Math.random()*(W-120);y=70+Math.random()*(H-140);t++;}while(sdf(x,y)<20&&t<60);return{x,y};}
-const SPICES=[];for(let i=0;i<8;i++)SPICES.push(Object.assign({r:26,alive:true},randPos()));
+const SPICES=[];for(let i=0;i<10;i++)SPICES.push(Object.assign({r:26,alive:true},randPos()));
 
-// ---- worm ----
-const worm={x:150,y:150,a:0,spd:1.5,segs:[],leap:0};
+// ---- THE MAKER (worm v2 — it hunts, it eats lines, it surfaces) ----
+const worm={x:150,y:150,a:0,spd:1.5,segs:[],surfaced:false};
 for(let i=0;i<16;i++)worm.segs.push({x:150,y:150-i*14});
 
-// ---- player + machine ----
-const P={x:480,y:300,vx:0,vy:0,spice:0,trail:[]};
+// ---- player ----
+const P={x:480,y:300,vx:0,vy:0,spice:0,trail:[],z:0,vz:0,air:false,spin:0,spinPts:0,
+  boost:100,line:0,lineMult:1,lineT:0,score:0,thumpers:3,hurtT:0};
+
 const MACH={x:P.x-30,y:P.y-30};
 let thump=0,wonShown=false;
 const keys={};
@@ -100,15 +122,20 @@ function toast(msg,gold){
   if(!gold){el.style.borderColor='#a89070';el.style.color='#e8dcc0';}
   t.appendChild(el);setTimeout(()=>el.remove(),4200);
 }
+let shake=0;
 
 function stepPlayer(){
   let ax=0,ay=0;
   if(keys.ArrowLeft||keys.a)ax-=1;if(keys.ArrowRight||keys.d)ax+=1;
   if(keys.ArrowUp||keys.w)ay-=1;if(keys.ArrowDown||keys.s)ay+=1;
-  P.vx+=ax*0.11;P.vy+=ay*0.11;
+  const boosting=keys.ShiftLeft||keys.ShiftRight;
+  const accel=boosting&&P.boost>0?0.15:0.11;
+  P.vx+=ax*accel;P.vy+=ay*accel;
+  if(boosting&&P.boost>0&&(ax||ay))P.boost=Math.max(0,P.boost-40*0.016);
   P.vx*=0.982;P.vy*=0.982;
-  const sp=Math.hypot(P.vx,P.vy);
-  if(sp>5.2){P.vx*=5.2/sp;P.vy*=5.2/sp;}
+  let sp=Math.hypot(P.vx,P.vy);
+  const cap=boosting&&P.boost>0?6.8:5.2;
+  if(sp>cap){P.vx*=cap/sp;P.vy*=cap/sp;}
   const nx=P.x+P.vx,ny=P.y+P.vy;
   if(sdf(nx,ny)<8){
     const e=4,gx=(sdf(nx+e,ny)-sdf(nx-e,ny))/(2*e),gy=(sdf(nx,ny+e)-sdf(nx,ny-e))/(2*e);
@@ -116,19 +143,71 @@ function stepPlayer(){
     P.vx-=2*dot*n1*0.75;P.vy-=2*dot*n2*0.75;
   }else{P.x=nx;P.y=ny;}
   P.x=Math.max(10,Math.min(W-10,P.x));P.y=Math.max(10,Math.min(H-10,P.y));
-  P.trail.push([P.x,P.y]);if(P.trail.length>26)P.trail.shift();
+  if(P.hurtT>0)P.hurtT-=0.016;
+
+  // ---- AIR: crests launch you at speed; spin in the air; land banks the trick ----
+  if(!P.air&&P.z<=0){
+    const sp2=Math.hypot(P.vx,P.vy);
+    if(sp2>2.6&&crestDist(P.x,P.y)<9){
+      P.air=true;P.vz=1.4+sp2*0.5;P.spin=0;P.spinPts=0;
+      toast('AIR — spin with A/D',true);
+    }
+  }
+  if(P.air){
+    P.z+=P.vz*0.016*60*0.55;P.vz-=0.34;
+    const spinBefore=Math.abs(P.spin);
+    if(keys.a)P.spin-=0.09;
+    if(keys.d)P.spin+=0.09;
+    P.boost=Math.min(100,P.boost+Math.abs(P.spin-spinBefore)*40); // SSX: spins fuel the boost
+    P.spinPts=Math.floor(Math.abs(P.spin)/(Math.PI))*120; // 120 per full spin
+    if(P.z<=0){
+      P.z=0;P.air=false;
+      const sp=Math.hypot(P.vx,P.vy);
+      if(P.spinPts>0){P.score+=P.spinPts*P.lineMult;toast('LANDED '+Math.round(Math.abs(P.spin)/Math.PI*180)+'° — +'+Math.round(P.spinPts*P.lineMult)+(P.lineMult>1?' (line ×'+P.lineMult.toFixed(1)+')':''),true);}
+      else{shake=Math.max(shake,4);}
+      // OlliOlli landing window: fast flat landing = clean, slow landing scrubs the chain
+      if(sp>2.0){P.lineMult=Math.min(8,P.lineMult+1);P.lineT=7;toast('CLEAN LANDING — line ×'+P.lineMult.toFixed(1),true);}
+      else if(P.lineMult>1){P.vx*=0.55;P.vy*=0.55;P.lineT=0;P.lineMult=1;toast('sloppy landing — line lost');}
+      P.spin=0;
+    }
+  }
+
+  P.trail.push([P.x,P.y,P.z||0]);if(P.trail.length>34)P.trail.shift();
+  sp=Math.hypot(P.vx,P.vy);
   thump=Math.max(0,Math.min(100,thump+(sp>1.6?1.5:-0.9)));
+  // speed is score: fast riding pays continuously
+  if(sp>2.0)P.score+=Math.round(sp*0.5);
+  // the line: chain spice without slowing
+  if(P.lineT>0){
+    P.lineT-=0.016;
+    if(sp<1.2){P.lineT=0;P.lineMult=1;}
+  }
+
   for(const s of SPICES){
     if(!s.alive)continue;
     if(Math.hypot(P.x-s.x,P.y-s.y)<s.r+8){
       s.alive=false;P.spice++;
-      toast('◆ spice — "'+LAWS[lawIdx++%LAWS.length]+'"',true);
+      P.lineMult=Math.min(8,P.lineMult+0.5);P.lineT=7;
+      const pts=Math.round(100*P.lineMult);
+      P.score+=pts;
+      toast('◆ spice +'+pts+(P.lineMult>1?' — LINE ×'+P.lineMult.toFixed(1):''),true);
       setTimeout(()=>{const p=randPos();s.x=p.x;s.y=p.y;s.alive=true;},9000+Math.random()*6000);
     }
   }
+  // Burnout near-miss: threading the Maker's wake at speed pays boost — wormriding
+  if(worm.surfaced||thump>35){
+    const wx=worm.segs[0].x,wy=worm.segs[0].y;
+    const dw=Math.hypot(P.x-wx,P.y-wy);
+    if(dw<90&&dw>34&&sp>2.0&&(P.nearCd||0)<=0){
+      P.boost=Math.min(100,P.boost+12);P.score+=25*P.lineMult;P.nearCd=0.8;
+      toast('WORMRIDE +'+Math.round(25*P.lineMult),true);
+    }
+  }
+  if((P.nearCd||0)>0)P.nearCd-=0.016;
   for(const g of GATES){
     if(!g.done&&Math.hypot(P.x-g.x,P.y-g.y)<34){
-      g.done=true;toast('🕯 '+g.name+' — '+g.lore,true);
+      g.done=true;P.score+=500;P.thumpers=Math.min(3,P.thumpers+1);
+      toast('🕯 '+g.name+' — '+g.lore+' (+500 banked, +1 thumper)',true);
     }
   }
 }
@@ -137,14 +216,25 @@ function stepWorm(){
   const active=thump>35;
   const head=worm.segs[0];
   const d=Math.hypot(head.x-P.x,head.y-P.y);
+  const dx=P.x-head.x,dy=P.y-head.y;
+  if(active&&!worm.surfaced&&thump>55){
+    worm.surfaced=true;shake=14;
+    toast('THE MAKER SURFACES — ride, Boost, or drop a thumper (E)',false);
+  }
+  if(!active)worm.surfaced=false;
   if(active){
-    const want=Math.atan2(P.y-head.y,P.x-head.x);
+    // v2: it leads your motion — aim where you are GOING
+    const lead=P.air?0.5:1.4;
+    const tx=P.x+P.vx*lead*10,ty=P.y+P.vy*lead*10;
+    const want=Math.atan2(ty-head.y,tx-head.x);
     let da=((want-worm.a+Math.PI*3)%(Math.PI*2))-Math.PI;
-    worm.a+=Math.max(-0.045,Math.min(0.045,da));
-    worm.spd=Math.min(2.6,worm.spd+0.008);
+    worm.a+=Math.max(-0.06,Math.min(0.06,da));
+    // v2: it is FASTER than your base ride — only boost and thumpers save you
+    worm.spd=Math.min(6.0,worm.spd+0.012);
   }else{
     worm.a+=0.006;
     worm.spd=Math.max(1.1,worm.spd-0.004);
+    if(worm.spd<2.2)worm.surfaced=false;
   }
   const nx=head.x+Math.cos(worm.a)*worm.spd,ny=head.y+Math.sin(worm.a)*worm.spd;
   if(sdf(nx,ny)<14){worm.a+=0.9;}
@@ -152,15 +242,39 @@ function stepWorm(){
   head.x=Math.max(20,Math.min(W-20,head.x));head.y=Math.max(20,Math.min(H-20,head.y));
   let px=head.x,py=head.y;
   for(const s of worm.segs){
-    const dx=s.x-px,dy=s.y-py,dd=Math.hypot(dx,dy)||1;
-    if(dd>16){s.x=px+dx/dd*16;s.y=py+dy/dd*16;}
+    const dxs=s.x-px,dys=s.y-py,dd=Math.hypot(dxs,dys)||1;
+    if(dd>16){s.x=px+dxs/dd*16;s.y=py+dys/dd*16;}
     px=s.x;py=s.y;
   }
-  if(active&&d<30){
-    toast('THE WORM TAKES YOUR SPICE — ride slow, it forgets.');
-    P.spice=Math.max(0,P.spice-3);thump=0;
-    P.x=480;P.y=300;P.vx=P.vy=0;
-    worm.segs.forEach(s=>{s.x=150;s.y=150;});
+  if(active&&d<34&&P.hurtT<=0){
+    const lost=Math.round(100*P.lineMult*2);
+    P.score=Math.max(0,P.score-lost);
+    toast('THE MAKER TAKES IT — line lost (−'+lost+') · thump reset. ride slow, it forgets.',false);
+    P.spice=Math.max(0,P.spice-3);thump=0;worm.surfaced=false;
+    P.lineMult=1;P.lineT=0;P.hurtT=1.5;shake=18;
+    P.vx=-dx*0.8;P.vy=-dy*0.8; // knocked clear
+  }
+}
+
+// ---- thumpers (E): the Maker diverts to a thumper for 6s ----
+const THUMPERS=[];
+addEventListener('keydown',e=>{
+  if((e.key==='e'||e.key==='E')&&P.thumpers>0){
+    P.thumpers--;
+    THUMPERS.push({x:P.x,y:P.y,t:6});
+    toast('THUMPER DOWN — the Maker answers to rhythm, not to you.',true);
+    thump=Math.max(0,thump-40);
+  }
+});
+function stepThumpers(){
+  for(let i=THUMPERS.length-1;i>=0;i--){
+    const t=THUMPERS[i];t.t-=0.016;
+    const head=worm.segs[0];
+    const want=Math.atan2(t.y-head.y,t.x-head.x);
+    let da=((want-worm.a+Math.PI*3)%(Math.PI*2))-Math.PI;
+    worm.a+=Math.max(-0.06,Math.min(0.06,da));
+    if(Math.hypot(head.x-t.x,head.y-t.y)<30){t.t=0;toast('the thumper is eaten. rhythm buys time, not safety.');}
+    if(t.t<=0)THUMPERS.splice(i,1);
   }
 }
 
@@ -169,6 +283,10 @@ function stepOrn(){for(const o of ORN){o.x+=o.sp;if(o.x>W+30){o.x=-20;o.y=20+Mat
 
 function render(){
   ctx.drawImage(ter,0,0);
+  // crests (the arcs live here)
+  ctx.setLineDash([10,8]);ctx.strokeStyle='rgba(70,40,16,0.55)';ctx.lineWidth=5;
+  for(const c of CRESTS){ctx.beginPath();ctx.moveTo(c.x0,c.y0);ctx.lineTo(c.x1,c.y1);ctx.stroke();}
+  ctx.setLineDash([]);
   for(const g of GATES){
     ctx.globalAlpha=g.done?0.55:1;
     ctx.fillStyle=g.col;ctx.fillRect(g.x-30,g.y-16,60,32);
@@ -186,17 +304,28 @@ function render(){
     ctx.fillStyle=rg;ctx.beginPath();ctx.arc(s.x,s.y,s.r,0,7);ctx.fill();
     ctx.fillStyle='#ffe9a0';ctx.beginPath();ctx.arc(s.x,s.y,3.5,0,7);ctx.fill();
   }
+  for(const t of THUMPERS){
+    ctx.fillStyle='#3a6e4c';ctx.beginPath();ctx.arc(t.x,t.y,7,0,7);ctx.fill();
+    ctx.strokeStyle='rgba(125,250,176,'+(0.4+0.6*Math.sin(Date.now()*0.02))+')';ctx.lineWidth=2;
+    ctx.beginPath();ctx.arc(t.x,t.y,11,0,7);ctx.stroke();
+  }
   MACH.x+=(P.x-34-MACH.x)*0.06;MACH.y+=(P.y-40-MACH.y)*0.06;
   oc.clearRect(0,0,W,H);
   oc.fillStyle='rgba(10,12,16,0.9)';oc.beginPath();oc.arc(MACH.x,MACH.y,7,0,7);oc.fill();
   oc.fillStyle='#7cf5ff';oc.beginPath();oc.arc(MACH.x,MACH.y,3,0,7);oc.fill();
   oc.strokeStyle='rgba(124,245,255,0.35)';oc.lineWidth=1;
   oc.beginPath();oc.arc(MACH.x,MACH.y,11+3*Math.sin(Date.now()*0.005),0,7);oc.stroke();
+  // trail: height shades it — the arcs are visible
   oc.strokeStyle='rgba(240,224,192,0.5)';oc.lineWidth=2;oc.beginPath();
-  P.trail.forEach((p,i)=>{i?oc.lineTo(p[0],p[1]):oc.moveTo(p[0],p[1]);});oc.stroke();
-  const gg=oc.createRadialGradient(P.x-2,P.y-3,1,P.x,P.y,6);
+  P.trail.forEach((p,i)=>{
+    i?oc.lineTo(p[0],p[1]-p[2]):oc.moveTo(p[0],p[1]-p[2]);
+  });oc.stroke();
+  const gy=P.y-(P.z||0);
+  // shadow (ground truth of height)
+  oc.fillStyle='rgba(20,10,4,0.35)';oc.beginPath();oc.ellipse(P.x,P.y+4,6-P.z*0.1,3,0,0,7);oc.fill();
+  const gg=oc.createRadialGradient(P.x-2,gy-3,1,P.x,gy,6);
   gg.addColorStop(0,'#fff3d0');gg.addColorStop(1,'#7a5a18');
-  oc.fillStyle=gg;oc.beginPath();oc.arc(P.x,P.y,5.5,0,7);oc.fill();
+  oc.fillStyle=gg;oc.beginPath();oc.arc(P.x,gy,5.5,0,7);oc.fill();
   for(let i=worm.segs.length-1;i>=0;i--){
     const s=worm.segs[i],r=Math.max(5,26-i*1.1);
     oc.fillStyle=i===0?'#3a2414':'rgba(58,36,20,0.9)';
@@ -204,9 +333,11 @@ function render(){
     oc.fillStyle='rgba(200,150,90,0.25)';oc.beginPath();oc.arc(s.x,s.y-2,r*0.55,0,7);oc.fill();
   }
   const w0=worm.segs[0];
-  if(thump>35){
-    oc.fillStyle='#5a1010';oc.beginPath();oc.arc(w0.x,w0.y,10,0,7);oc.fill();
-    oc.fillStyle='#200606';oc.beginPath();oc.arc(w0.x,w0.y,6,0,7);oc.fill();
+  if(worm.surfaced){
+    oc.fillStyle='#5a1010';oc.beginPath();oc.arc(w0.x,w0.y,12,0,7);oc.fill();
+    oc.fillStyle='#200606';oc.beginPath();oc.arc(w0.x,w0.y,7,0,7);oc.fill();
+    oc.strokeStyle='rgba(255,107,74,'+(0.3+0.3*Math.sin(Date.now()*0.02))+')';oc.lineWidth=2;
+    oc.beginPath();oc.arc(w0.x,w0.y,20,0,7);oc.stroke();
   }
   oc.fillStyle='rgba(40,30,20,0.8)';
   for(const o of ORN){
@@ -222,19 +353,27 @@ function render(){
     vgr.addColorStop(0,'rgba(0,0,0,0)');vgr.addColorStop(1,'rgba(140,30,10,'+a.toFixed(3)+')');
     oc.fillStyle=vgr;oc.fillRect(0,0,W,H);
   }
+  if(worm.surfaced&&d0()<120){
+    const a=(1-d0()/120)*0.28;
+    oc.fillStyle='rgba(120,20,8,'+a.toFixed(3)+')';oc.fillRect(0,0,W,H);
+  }
+  function d0(){const w0=worm.segs[0];return Math.hypot(w0.x-P.x,w0.y-P.y);}
 }
 
 let tick=0;
 function frame(){
   tick++;
-  stepPlayer();stepWorm();stepOrn();render();
+  stepPlayer();stepWorm();stepThumpers();stepOrn();render();
+  if(shake>0){shake-=0.8;
+    ctx.translate((Math.random()-0.5)*shake,(Math.random()-0.5)*shake);
+  }
   const done=GATES.filter(g=>g.done).length;
   const s=document.getElementById('stats');
-  s.innerHTML='spice <span class="g">'+P.spice+'</span> · thump '+Math.round(thump)+
-    (thump>35?' <span class="warn">— THE WORM HEARS YOU</span>':'')+
-    ' · gates '+done+'/3'+
-    (GATES.every(g=>g.done)&&!wonShown?' · <span class="g">THE NIGHT IS WON — the room keeps playing anyway</span>':'');
-  if(GATES.every(g=>g.done)&&!wonShown){wonShown=true;toast('THE NIGHT IS WON — duplication means emphasis.',true);}
+  s.innerHTML='score <span class="g">'+Math.round(P.score)+'</span> · spice '+P.spice+
+    ' · line ×'+P.lineMult.toFixed(1)+(P.lineT>0?' ('+P.lineT.toFixed(1)+'s)':'')+
+    ' · thump '+Math.round(thump)+
+    (thump>35?' <span class="warn">— THE MAKER HEARS YOU'+(worm.surfaced?' — IT IS UP':'')+'</span>':'')+
+    ' · thumpers '+P.thumpers+' · gates '+done+'/3';
   requestAnimationFrame(frame);
 }
 requestAnimationFrame(frame);

@@ -21,6 +21,7 @@ one-liner below — the daemon now REFUSES when stdout is redirected into its ow
 log (one file, one writer). Kept for history only:
 
 ```
+# fence-owner: operator - standing container daemon start (mag-sovereign lane runner). FW-11 2026-09-28; receipt: watch/inbox/fifty_wide_20260917/FW11_fence_owners.md
 docker exec -d mag-sovereign sh -c "python /app/mag/lane_runner.py --daemon >> /app/logs/lane_scheduler.log 2>&1"
 ```
 

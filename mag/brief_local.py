@@ -158,6 +158,20 @@ def write_brief(
     use_llm: bool = True,
     write_visual: bool = False,
 ) -> dict[str, Any]:
+    # P0-1 warm-face law (2026-09-26): a FROZEN as-of banner on latest.md is
+    # deliberate residual. Do not overwrite it with a session-bio fossil that
+    # wears today's Generated stamp (the lie Elder named). Force requires
+    # operator unfreeze (delete/edit the FROZEN header) first.
+    latest_probe = briefs_dir() / "latest.md"
+    if latest_probe.is_file():
+        head = latest_probe.read_text(encoding="utf-8", errors="replace")[:240]
+        if head.lstrip("\ufeff").startswith("# FROZEN"):
+            return {
+                "ok": False,
+                "error": "latest.md is FROZEN; refuse overwrite (P0-1 warm-face)",
+                "latest": str(latest_probe),
+                "frozen": True,
+            }
     sid = resolve_session_id(session_id)
     if not sid:
         return {"ok": False, "error": "no session dossier found"}

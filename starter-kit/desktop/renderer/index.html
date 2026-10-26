@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<!-- zero fetch: nothing loads from the network, ever. frame-src self covers
+     the local smith chart iframe; no img, no font, no connect-src at all. -->
+<meta http-equiv="Content-Security-Policy"
+      content="default-src 'none'; script-src 'self'; style-src 'self'; frame-src 'self'">
+<title>starter kit desk (v0)</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<header>
+  <h1>STARTER KIT DESK <span class="tag">v0 scaffold</span></h1>
+  <nav>
+    <button id="tab-install" class="tab active">INSTALL</button>
+    <button id="tab-surfaces" class="tab">SURFACES</button>
+    <button id="tab-hermes" class="tab">HERMES</button>
+  </nav>
+</header>
+
+<main>
+  <!-- (a) installer: button + streamed output -->
+  <section id="pane-install" class="pane active">
+    <div class="pane-head">
+      <p>The kit installer checks what this machine already has (git, python,
+         docker, ollama) and names each step. Headless by design; everything
+         optional except git.</p>
+      <button id="run-install">Run installer</button>
+    </div>
+    <pre id="install-out" class="out" aria-live="polite">[idle] press Run installer</pre>
+  </section>
+
+  <!-- (b) surfaces: smith chart iframe + BOOT.md via allowlisted IPC read -->
+  <section id="pane-surfaces" class="pane">
+    <div class="pane-head">
+      <p>Kit surfaces, local files only. The smith chart is the fold-law
+         exhibit (single file, canvas + inline JS, zero fetch). BOOT text is
+         the clean-boot loop.</p>
+    </div>
+    <div class="surface-strip">
+      <button id="load-boot">Load BOOT.md</button>
+      <span class="hint">chart: renderer/surfaces/smith_chart.html (iframe, local)</span>
+    </div>
+    <pre id="boot-out" class="out" aria-live="polite">[idle] press Load BOOT.md</pre>
+    <iframe id="smith" src="surfaces/smith_chart.html" title="smith chart exhibit"></iframe>
+  </section>
+
+  <!-- (c) hermes chat: stubbed to the plug -->
+  <section id="pane-hermes" class="pane">
+    <div class="pane-head">
+      <p>Chat pane stubbed to the plug. The live fire leg lives in
+         integrations/hermes/hermes_client.py and refuses to run without an
+         operator key, so v0 answers offline and puts nothing on the wire.</p>
+    </div>
+    <div id="chat-log" class="out"></div>
+    <form id="chat-form">
+      <input id="chat-in" type="text" autocomplete="off"
+             placeholder="say something (stub answers offline)">
+      <button type="submit">Send</button>
+    </form>
+  </section>
+</main>
+
+<script src="app.js"></script>
+</body>
+</html>

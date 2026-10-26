@@ -123,10 +123,14 @@ URL_RE = re.compile(r"https?://[^\s)>\]\"']+")
 def _canonical_footer(text: str) -> list[str]:
     """B7 (2026-09-16): canonical-ledger check on links about to be filed.
 
-    mag.link_library canonicalizes each URL and checks watch/inbox/LINKS.jsonl;
-    the card gets a footer annotating the canonical form and whether this exact
+    Every URL goes through link_library.check_url(), the B2-27 single door
+    (host-safety guard + canonicalize + known-canonicals lookup), instead of
+    re-implementing the lookup inline (B2-124, 2026-09-26: the inline
+    canonicalize + known_canonicals().get copy had already drifted once, skipping
+    the door's validate_host_safety guard; cause named per the fix-comment law).
+    The card gets a footer annotating the canonical form and whether this exact
     canonical is already on file (links-duplicate-of = first URL seen, else empty).
-    Annotate, never gate: any ledger failure degrades to an '(unresolved)' line —
+    Annotate, never gate: any door failure degrades to an '(unresolved)' line —
     a ledger outage can never block intake.
     """
     urls: list[str] = []
@@ -145,16 +149,16 @@ def _canonical_footer(text: str) -> list[str]:
         return out
     for url in urls:
         try:
-            canonical = link_library.canonicalize(url)
-            hit = link_library.known_canonicals().get(canonical)
-            first = hit.get("url", "") if isinstance(hit, dict) else ""
+            verdict = link_library.check_url(url)
+            entry = verdict.get("first_entry")
+            first = entry.get("url", "") if isinstance(entry, dict) else ""
         except Exception as e:
             out.append(f"- {url}")
             out.append(f"  links-canonical: (unresolved: {type(e).__name__}: {str(e)[:80]})")
             out.append("  links-duplicate-of: ")
             continue
         out.append(f"- {url}")
-        out.append(f"  links-canonical: {canonical}")
+        out.append(f"  links-canonical: {verdict.get('canonical', '')}")
         out.append(f"  links-duplicate-of: {first}")
     out.append("")
     return out

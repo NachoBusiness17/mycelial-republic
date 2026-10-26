@@ -11,6 +11,7 @@ import threading
 import urllib.error
 import urllib.request
 from datetime import datetime, timezone
+from mag.win_powershell import powershell_exe
 from pathlib import Path
 from typing import Any
 
@@ -21,7 +22,17 @@ from config import ROOT, ollama_base
 # mag.cmd doctor is the first grab: host venv READ of the body. It does not spawn lab.
 # mag_exec needs Docker engine + (on Windows) ExecutionPolicy Bypass; many seats have neither.
 HOST_DOCTOR = "mag.cmd doctor"
-CAGE_DOCTOR = r"powershell -NoProfile -ExecutionPolicy Bypass -File scripts\mag_exec.ps1 doctor"
+# 2026-10-17: degrade instead of crash - the Linux container has no
+# PowerShell, and this module-level composition raised FileNotFoundError on
+# import, killing every ghost task at mag/health.py:26 before any model
+# call (the janitor crash-loop root cause). CAGE_DOCTOR has no consumers
+# outside this module; None means the cage doctor leg is unavailable.
+try:
+    CAGE_DOCTOR = (
+        powershell_exe() + r" -NoProfile -ExecutionPolicy Bypass -File scripts\mag_exec.ps1 doctor"
+    )
+except FileNotFoundError:
+    CAGE_DOCTOR = None
 CAGE_RESTORE = "docker compose restart mag"
 HOST_LAB_LAST = (
     "python main.py lab  # LAST RESORT. CONTAINER.md disposable-dev only. "

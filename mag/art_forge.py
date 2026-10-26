@@ -43,12 +43,23 @@ _OPENER = urllib.request.build_opener(_NoRedirect)
 def _env_or_dotenv(root: Path, name: str) -> str | None:
     v = os.environ.get(name)
     if v:
-        return v
+        # Strip-at-load law (2026-10-05): a CRLF .env glues a literal \r onto
+        # env values (compose env_file carried one into the container) and
+        # "Bearer <key>\r" is rejected by urllib as an invalid header - the
+        # elder lane's 14-cycle outage class. Fix cause/evidence cites
+        # watch/inbox/go_wave_20261004/CSV_VERDICT_20261004.md. The environ
+        # branch previously stripped nothing: an untreated instance of the
+        # same class, fed straight into _post_json's Bearer header.
+        return v.rstrip("\r\n").strip()
     try:
-        for line in (root / ".env").read_text(encoding="utf-8").splitlines():
-            s = line.strip()
-            if s.startswith(name + "="):
-                return s.split("=", 1)[1].strip()
+        # newline='' keeps a CRLF file's \r visible in the line so the
+        # rstrip below is the load-bearing strip, not newline translation
+        # (CSV_VERDICT_20261004.md).
+        with (root / ".env").open("r", encoding="utf-8", newline="") as fh:
+            for line in fh:
+                s = line.rstrip("\r\n").strip()
+                if s.startswith(name + "="):
+                    return s.split("=", 1)[1].strip().rstrip("\r\n")
     except OSError:
         pass
     return None

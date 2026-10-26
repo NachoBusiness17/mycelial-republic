@@ -1,4 +1,4 @@
-"""Diary nodes on Verkle tip — seal walk/talk into DNA-adjacent leaves + train labels.
+"""Diary nodes on Verkle tip - seal walk/talk into DNA-adjacent leaves + train labels.
 
 Schema: mag_diary_node.v1
 Tesuji: docs/ref/tesuji/diary-verkle-train-2026-08-07.md
@@ -124,7 +124,7 @@ def _intention_goals(sess: dict[str, Any], trail: list[dict[str, Any]]) -> list[
 
 
 def _auto_summary(goals: list[str], turns: list[dict[str, Any]]) -> str:
-    """Cheap local summary — no frontier. Fallback extractive if Ollama down."""
+    """Cheap local summary - no frontier. Fallback extractive if Ollama down."""
     user_bits = [str(t.get("text") or "") for t in turns if t.get("role") == "user"][-6:]
     mag_bits = [str(t.get("text") or "") for t in turns if t.get("role") == "assistant"][-4:]
     blob_goals = "; ".join(goals[:5]) or "(no goals)"
@@ -161,7 +161,7 @@ def _auto_summary(goals: list[str], turns: list[dict[str, Any]]) -> str:
         parts.append("You: " + user_bits[-1][:160])
     if mag_bits:
         parts.append("Mag: " + mag_bits[-1][:120])
-    return " ".join(parts)[:500] or "Empty seal — no turns yet."
+    return " ".join(parts)[:500] or "Empty seal - no turns yet."
 
 
 def freeze_context(
@@ -172,7 +172,7 @@ def freeze_context(
 ) -> dict[str, Any]:
     """Cheap snapshot of agent + day bead + tips at this instant.
 
-    Frozen for fidelity and undefined future use — not a second DNA store.
+    Frozen for fidelity and undefined future use - not a second DNA store.
     Links: agent_state tip, session verkle tip, residual day, working head.
     """
     ts = _utc()
@@ -191,7 +191,7 @@ def freeze_context(
         "nervous": {},
     }
 
-    # Agent state tip (who Mag thought it was — frozen)
+    # Agent state tip (who Mag thought it was - frozen)
     try:
         from mag.agent_state import load_latest
 
@@ -301,7 +301,7 @@ def save_auto_freeze(
     brief: dict[str, Any] | None = None,
     force: bool = False,
 ) -> dict[str, Any]:
-    """Cheap automatic freeze — append-only, no Verkle tip advance.
+    """Cheap automatic freeze - append-only, no Verkle tip advance.
 
     For future undefined purposes: reconstruct 'what Mag/agent believed that day'.
     Throttled per session unless force=True.
@@ -439,14 +439,17 @@ def append_diary_to_verkle(leaf: dict[str, Any]) -> dict[str, Any]:
 
 def _append_diary_to_verkle_unlocked(leaf: dict[str, Any]) -> dict[str, Any]:
     """Locked implementation for :func:`append_diary_to_verkle`."""
+    # CHAIN_HARDEN_ITER2_20261020: diary seals are append-only (unique seal_id);
+    # never call _rewrite_chain here (that was a silent full-file rewrite).
     from mag.verkle_knot import (
         BIO,
         CHAIN,
         KNOTS,
         TIP,
+        _append_chain_line,
         _load_chain_rows,
         _merkle_root,
-        _rewrite_chain,
+        _write_tip_atomic,
     )
 
     KNOTS.mkdir(parents=True, exist_ok=True)
@@ -485,7 +488,7 @@ def _append_diary_to_verkle_unlocked(leaf: dict[str, Any]) -> dict[str, Any]:
         "ts": ts if ts.endswith("Z") else ts.replace("+00:00", "Z"),
         "filename": fname,
         "leaf_hash": leaf["leaf_hash"],
-        "session_id": seal_id,  # unique per seal — always append
+        "session_id": seal_id,  # unique per seal - always append
         "leaf_kind": "diary_node",
         "channel": leaf.get("channel"),
         "title": leaf.get("title"),
@@ -494,7 +497,7 @@ def _append_diary_to_verkle_unlocked(leaf: dict[str, Any]) -> dict[str, Any]:
         "dominant_theme": theme,
         "amended": False,
         "voice_session_id": leaf.get("voice_session_id"),
-        # Fidelity joins — reconstruct agent + day bead later
+        # Fidelity joins - reconstruct agent + day bead later
         "day": frozen.get("day") or (leaf.get("ts") or "")[:10],
         "agent_commit": (frozen.get("agent") or {}).get("content_commit") or "",
         "agent_tip_root8": str((frozen.get("agent") or {}).get("agent_tip_root") or "")[:8],
@@ -504,7 +507,8 @@ def _append_diary_to_verkle_unlocked(leaf: dict[str, Any]) -> dict[str, Any]:
     }
     rows = _load_chain_rows()
     rows.append(chain_row)
-    all_hashes = _rewrite_chain(rows)
+    _append_chain_line(json.dumps(chain_row, ensure_ascii=False))
+    all_hashes = [str(r["leaf_hash"]) for r in rows if r.get("leaf_hash")]
     root = _merkle_root(all_hashes) if all_hashes else _h(b"empty")
     parent_root = _merkle_root(all_hashes[:-1]) if len(all_hashes) > 1 else _h(b"empty")
 
@@ -517,9 +521,9 @@ def _append_diary_to_verkle_unlocked(leaf: dict[str, Any]) -> dict[str, Any]:
         "last_session_id": seal_id,
         "last_leaf_kind": "diary_node",
         "updated_minute": minute.replace("_", "T")[:16] if minute else None,
-        "note": "Session knots + diary seals. Merkle–Verkle hybrid tip.",
+        "note": "Session knots + diary seals. Merkle-Verkle hybrid tip.",
     }
-    TIP.write_text(json.dumps(tip, indent=2), encoding="utf-8")
+    _write_tip_atomic(tip)
     (BIO / "latest.diary.knot.json").write_text(
         json.dumps(leaf, indent=2, default=str), encoding="utf-8"
     )
@@ -584,7 +588,7 @@ def seal_diary(
         return {
             "ok": False,
             "schema": SCHEMA,
-            "error": "nothing to seal — talk first, then Seal diary",
+            "error": "nothing to seal - talk first, then Seal diary",
             "session_id": sid,
         }
 

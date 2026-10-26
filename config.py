@@ -17,6 +17,29 @@ CONFIGS_DIR = ROOT / "configs"
 CHECKPOINT_DB = STATE_DIR / "checkpoints.db"
 ROUTER_LOG = LOGS_DIR / "router.jsonl"
 CURRENT_MD = STATE_DIR / "CURRENT.md"
+
+
+def current_scratch() -> Path | None:
+    """Scratch target when MAG_CURRENT_SCRATCH is active, else None (AG6)."""
+    import os
+
+    if os.environ.get("MAG_CURRENT_SCRATCH", "").strip().lower() in ("1", "true", "yes"):
+        return STATE_DIR / "CURRENT.scratch.md"
+    return None
+
+
+def current_md() -> Path:
+    """Writer-path resolution for the CURRENT contract (AG6 scratch guard, 2026-09-29).
+
+    Cause: the gala old-files probe ran escalate_grok_node against a fake
+    harness and its "probe run (fake harness)" stub became the live brief in
+    state/CURRENT.md (audit finding #5). Fix: probe/test runners set
+    MAG_CURRENT_SCRATCH=1 and every audit.sync_current write lands in
+    state/CURRENT.scratch.md instead; production writers (router graph,
+    agent_cli._sync_current) set nothing and keep CURRENT.md. Readers keep
+    reading CURRENT_MD (the live brief stays the live brief).
+    """
+    return current_scratch() or CURRENT_MD
 LOCUS_MD = MEMORY_DIR / "locus.md"
 WORKING_MD = MEMORY_DIR / "working.md"
 

@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>MAG DANCE - the estate soundtrack teaches a skeleton to dance</title>
+<style>
+  body{background:#0b0b10;color:#d8d8e8;font-family:Consolas,monospace;margin:0;padding:18px}
+  h1{font-size:18px;margin:0 0 2px} .sub{color:#7a7a99;font-size:12px;margin-bottom:10px}
+  #wrap{display:flex;gap:16px;flex-wrap:wrap}
+  canvas{background:#12121c;border:1px solid #2a2a40;border-radius:8px}
+  #panel{max-width:330px;font-size:12px}
+  button{background:#1c1c2c;color:#e8e8ff;border:1px solid #3a3a5c;padding:8px 14px;border-radius:6px;
+         font-family:inherit;font-size:13px;cursor:pointer;margin:2px}
+  button.on{background:#3a2a6c;border-color:#7a5cff}
+  .roster{margin:10px 0;padding:8px;border:1px dashed #33335a;border-radius:6px}
+  .law{color:#8a8ab0;margin-top:10px;line-height:1.5}
+  b{color:#b8a8ff}
+  #hud{font-size:12px;color:#9a9ac0;margin-top:6px}
+</style>
+</head>
+<body>
+<h1> MAG DANCE v0.2 - soundtrack -> beat grid -> skeleton -> damage map</h1>
+<div class="sub">operator vision 2026-10-04: "our soundtrack teaching you to make a skeleton dance" · layer 1 = tools/beat_map.py · layer 2 = this page · layer 3 (owed) = Exanima-style per-model control + physics runtime</div>
+<div id="wrap">
+  <canvas id="cv" width="460" height="520"></canvas>
+  <div id="panel">
+    <button id="play">PLAY (dance.mp3 @ <span id="bpm">?</span> BPM)</button>
+    <div class="roster">
+      <div><b>the party dances the same grid, each by its own control scheme</b></div>
+      <button class="on" data-style="saelis">saelis (paladin: lawful on-beat)</button>
+      <button data-style="grok">grok (wizard: overdramatic sweeps)</button>
+      <button data-style="chatgpt">chatgpt (rogue: offbeat slides)</button>
+      <button data-style="deepseek">deepseek (janitor: pragmatic stomps)</button>
+    </div>
+    <div id="hud">beat -/- · zone - · hp -</div>
+    <div class="law">
+      LAW (dice-law carrier bridge, live in v0.2): a dance beat = a combat
+      round tick; the part that flashes IS the damage map (zone + hp per beat,
+      deterministic golden-angle impulses, tools/beat_map.py damage_map) -
+      per-part HP pools + chunk-physics impulses ride the same rows. Physics
+      anchor: musclemimic (amathislab, Apache-2.0, Hill muscles) - reference
+      model, not v0 runtime. Napoleon Dynamite energy: maximum commitment,
+      zero technique.
+    </div>
+  </div>
+</div>
+<script>
+const cv=document.getElementById('cv'),ctx=cv.getContext('2d');
+const PARTS={head:'#ff9a9a',torso:'#9affc0',armL:'#9ad4ff',armR:'#9ad4ff',legL:'#ffd49a',legR:'#ffd49a'};
+// Napoleon-flavored pose library: joint angles in radians (deg stored, applied per side)
+// [torsoLean, headTilt, shL, elL, shR, elR, hipL, kneeL, hipR, kneeR]
+const POSES={
+  flail:[6,-14,-150,-70,-30,-100,8,6,-6,10],      // the three-quarter arm flail
+  kick:[10,10,-40,-30,-160,-20,-15,50,-10,8],     // the kick
+  shimmy:[-4,0,-120,-110,-60,-90,4,12,-4,14],     // exotic hand signals
+  strut:[12,-8,-70,-80,-100,-60,18,4,-14,6],      // the strut
+  pointy:[0,0,-20,-160,-30,-150,2,4,-2,6],        // q-infused point
+  spirit:[-8,6,-160,-30,-160,-30,10,10,-10,10]    // spirit fingers up
+};
+const SEQ_NAPOLEON=['flail','kick','shimmy','strut','flail','pointy','kick','spirit','strut','shimmy'];
+const STYLES={
+  saelis:{jitter:1.0,lag:0.00,seq:SEQ_NAPOLEON,scale:1.00,name:'lawful on-beat'},
+  grok:{jitter:2.2,lag:0.00,seq:['spirit','flail','spirit','strut','kick','spirit','shimmy','flail'],scale:1.10,name:'overdramatic sweeps'},
+  chatgpt:{jitter:3.0,lag:0.06,seq:['strut','pointy','strut','shimmy','pointy','strut','kick','flail'],scale:0.96,name:'offbeat slides'},
+  deepseek:{jitter:0.6,lag:0.00,seq:['stomp','strut','stomp','flail','stomp','kick','strut','stomp'],scale:1.04,name:'pragmatic stomps'}
+};
+POSES.stomp=[8,0,-30,-20,-30,-20,20,30,-20,30];
+let style='saelis',beats=[],dmg=[],bpm=0,beatIdx=-1,lastPose=Object.values(POSES.flail),curPose=Object.values(POSES.flail),mix=1;
+let audio=new Audio('../suno/dance.mp3');
+fetch('index_data/beat_map_dance.json').then(r=>r.json()).then(m=>{
+  beats=m.beats;dmg=m.damage_map||[];bpm=m.bpm;document.getElementById('bpm').textContent=bpm;
+});
+document.querySelectorAll('[data-style]').forEach(b=>b.onclick=()=>{
+  document.querySelectorAll('[data-style]').forEach(x=>x.classList.remove('on'));
+  b.classList.add('on');style=b.dataset.style;});
+document.getElementById('play').onclick=()=>{
+  if(audio.paused){audio.play();document.getElementById('play').textContent='STOP';}
+  else{audio.pause();document.getElementById('play').textContent='PLAY';}
+};
+function lerp(a,b,t){return a+(b-a)*t}
+function drawSkeleton(pose,jit,zone,heavy){
+  ctx.clearRect(0,0,cv.width,cv.height);
+  ctx.save();ctx.translate(cv.width/2,cv.height*0.62);
+  const d=i=>pose[i]*Math.PI/180+(Math.random()-0.5)*jit*0.04;
+  const hipY=-70,torso=d(0),head=d(1);
+  const neckX=Math.sin(torso)*70,neckY=hipY-Math.cos(torso)*70;
+  ctx.lineWidth=9;ctx.lineCap='round';
+  const seg=(x1,y1,x2,y2,c)=>{ctx.strokeStyle='#5a5a8a';ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);ctx.stroke();
+    if(zone===c){ctx.strokeStyle=PARTS[c];ctx.lineWidth=heavy?13:11;ctx.stroke();ctx.lineWidth=9;}};
+  // torso
+  seg(0,hipY,neckX,neckY,'torso');
+  // head
+  const hx=neckX+Math.sin(head)*26,hy=neckY-Math.cos(head)*26;
+  seg(neckX,neckY,neckX+(hx-neckX)*0.4,neckY+(hy-neckY)*0.4,'head');
+  ctx.fillStyle=zone==='head'?PARTS.head:'#7a7aa8';ctx.beginPath();ctx.arc(hx,hy,14,0,7);ctx.fill();
+  // arms (shoulder at neck-4)
+  const shx=neckX,shy=neckY+6;
+  const aA=(side)=>{const sh=d(side<0?2:4),el=d(side<0?3:5);
+    const ex=shx+Math.sin(sh)*38*(side<0?-1:1)*-1,ey=shy+Math.cos(sh)*38;
+    const hx2=ex+Math.sin(sh+el)*34*(side<0?-1:1)*-1,hy2=ey+Math.cos(sh+el)*34;
+    seg(shx,shy,ex,ey,side<0?'armL':'armR');seg(ex,ey,hx2,hy2,side<0?'armL':'armR');};
+  aA(-1);aA(1);
+  // legs
+  const lA=(side)=>{const hip=d(side<0?6:8),knee=d(side<0?7:9);
+    const kx=Math.sin(hip)*44*(side<0?-1:1),ky=hipY+Math.cos(hip)*44;
+    const fx=kx+Math.sin(hip+knee)*42*(side<0?-1:1),fy=ky+Math.cos(hip+knee)*42;
+    seg(0,hipY,kx,ky,side<0?'legL':'legR');seg(kx,ky,fx,fy,side<0?'legL':'legR');};
+  lA(-1);lA(1);
+  ctx.restore();
+}
+function tick(){
+  if(beats.length&&audio.paused===false){
+    const t=audio.currentTime;
+    let idx=-1;for(let i=0;i<beats.length;i++){if(beats[i].t<=t+STYLES[style].lag)idx=i;else break;}
+    if(idx!==beatIdx&&idx>=0){
+      beatIdx=idx;const b=beats[idx],d0=dmg[idx];
+      const S=STYLES[style],poseName=S.seq[idx%S.seq.length];
+      lastPose=curPose.slice();curPose=Object.values(POSES[poseName]||POSES.strut);mix=0;
+      const dz=d0?`DMG ${d0.zone} -${d0.hp}`:'no dmg row';
+      document.getElementById('hud').textContent=
+        `beat ${idx+1}/${beats.length} · ${b.downbeat?'DOWNBEAT':'off-beat'} · ${dz} · str ${b.strength.toFixed(2)} · ${S.name}`;
+    }
+  }
+  mix=Math.min(1,mix+0.12);
+  const fresh=beatIdx>=0&&mix<(dmg[beatIdx]&&dmg[beatIdx].downbeat?0.60:0.45);
+  const zone=fresh&&dmg[beatIdx]?dmg[beatIdx].zone:null;
+  const heavy=fresh&&dmg[beatIdx]&&dmg[beatIdx].downbeat;
+  const pose=curPose.map((v,i)=>lerp(lastPose[i],v,mix));
+  const sc=STYLES[style].scale;
+  ctx.save();ctx.translate(cv.width/2,cv.height/2);ctx.scale(sc,sc);ctx.translate(-cv.width/2,-cv.height/2);
+  drawSkeleton(pose,STYLES[style].jitter*(mix<0.6?1:0.4),zone,heavy);
+  ctx.restore();
+  requestAnimationFrame(tick);
+}
+tick();
+</script>
+</body>
+</html>

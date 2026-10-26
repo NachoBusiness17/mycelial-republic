@@ -182,27 +182,63 @@ def _today_drained() -> int:
     return n
 
 
+def _backup_alarm_fallback(error: str) -> None:
+    """Alarm when scripts/backup_chain.py could not even load (its own alarm() is unreachable)."""
+    stamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    with (ROOT / "memory" / "attention.md").open("a", encoding="utf-8") as f:
+        f.write("\n---\n\n"
+                f"### Chain backup patrol fired ({stamp})\n\n"
+                f"- verdict: FAILED before backup ran (backup_chain did not load): {error}\n"
+                "- log: logs/drainer_sv.log\n"
+                "- response: run `.venv\\Scripts\\python.exe scripts\\backup_chain.py` by hand and fix "
+                "what it names; no backup was taken this beat.\n")
+
+
 def run_cadence(*, per_beat: int = DEFAULT_PER_BEAT, daily_cap: int = DEFAULT_DAILY_CAP,
                 persist: bool = True) -> dict[str, Any]:
     """The loop's self-healing drain beat: bounded, budget-guarded, key-reconciled. Drains a small
     number of queued swarm tasks per beat locally so the sanctioned path actually executes."""
     # STANDING BACKUP (2026-08-25, sacred-cow fix): the chain is gitignored for opsec, so it needs
     # its own backup path. Once per day, under the verkle lock (the script guards same-day dupes).
-    # Failure is non-fatal — the drain beats on regardless.
+    # LOUD (2026-10-15): this was `except Exception: pass`, which hid two truncated backups
+    # (20261014 held 3,370 and 20261015 held 219 of ~48k knots). A failure still never stops the
+    # drain beat, but it is now printed and alarmed to memory/attention.md (the census / meter
+    # patrol channel), and backup_chain marks + resumes an unverified folder instead of skipping it.
+    backup_result: dict[str, Any] | None = None
+    _bc = None
     try:
         import importlib.util
         spec = importlib.util.spec_from_file_location(
             "backup_chain", ROOT / "scripts" / "backup_chain.py")
-        m = importlib.util.module_from_spec(spec)
-        spec.loader.exec_module(m)
-        m.backup()
-    except Exception:  # noqa: BLE001
-        pass
+        _bc = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(_bc)
+        # 2026-10-15: the mag-sovereign image bakes an Aug-25 scripts/backup_chain.py (scripts/ is
+        # not bind-mounted): no completeness check, no 20261004 pin, so its keep-7 prune could
+        # delete the restore base. Refuse any copy without both; the failure alarms below.
+        if not hasattr(_bc, "COMPLETE_MANIFEST") or "biography_backup_20261004" not in getattr(_bc, "PINNED", ()):
+            raise RuntimeError(f"stale backup_chain.py in this runtime ({spec.origin}): no completeness "
+                               "check / no 20261004 pin; refused (its prune could delete the pinned backup)")
+        backup_result = _bc.backup()
+        if backup_result.get("resumed_from") and not backup_result.get("skipped"):
+            k = (backup_result.get("verify") or {}).get("knots") or {}
+            _bc.alarm(f"RECOVERED: previous attempt left an unverified folder; resumed and verified OK "
+                      f"({k.get('backup_files')}/{k.get('source_files')} knots)", backup_result)
+    except Exception as e:  # noqa: BLE001 - loud, never silent; the drain still beats
+        backup_result = {"ok": False, "error": f"{type(e).__name__}: {str(e)[:300]}"}
+        print(f"  [swarm-local-drain] CHAIN BACKUP FAILED: {backup_result['error']}", flush=True)
+        try:
+            if _bc is not None and hasattr(_bc, "alarm"):
+                _bc.alarm(f"FAILED in drain beat: {backup_result['error']}",
+                          getattr(e, "summary", None) or {})
+            else:
+                _backup_alarm_fallback(backup_result["error"])
+        except Exception as e2:  # noqa: BLE001
+            print(f"  [swarm-local-drain] could not write backup alarm: {e2}", flush=True)
     used = _today_drained()
     remaining = max(0, int(daily_cap) - used)
     if remaining <= 0:
         return {"ok": True, "schema": SCHEMA, "skipped": "daily-cap", "daily_cap": daily_cap,
-                "used_today": used}
+                "used_today": used, "backup": backup_result}
     limit = max(1, min(int(per_beat), remaining))
     r = drain_pass(limit=limit)
     if persist and r.get("ok"):
@@ -213,6 +249,7 @@ def run_cadence(*, per_beat: int = DEFAULT_PER_BEAT, daily_cap: int = DEFAULT_DA
         except Exception:
             pass
     r["used_today"] = used + (int(r.get("done") or 0) + int(r.get("failed") or 0) if r.get("ok") else 0)
+    r["backup"] = backup_result
     return r
 
 

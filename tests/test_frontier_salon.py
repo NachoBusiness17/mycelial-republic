@@ -116,6 +116,8 @@ def test_roundtable_shares_prior_turns_preserves_provenance_and_files(
     monkeypatch.setattr(seat_steer, "send", fake_send)
     r = fs.roundtable(
         "How should the seats communicate?",
+        why="one seat stalled on the transcript mechanism",
+        baseline={"surface": "chatgpt", "answer": "use the shared transcript"},
         participants=["chatgpt", "supergrok", "v4-pro"],
         rounds=2,
     )
@@ -156,7 +158,9 @@ def test_roundtable_keeps_down_seat_and_continues(tmp_path, monkeypatch):
 
     monkeypatch.setattr(seat_steer, "send", fake_send)
     monkeypatch.setattr("mag.agent_corpus.log_chat", lambda *_args, **_kwargs: {"ok": True})
-    r = fs.roundtable("Keep dissent", participants=["chatgpt", "supergrok", "v4-pro"],
+    r = fs.roundtable("Keep dissent", why="dissent stress-test",
+                      baseline={"surface": "chatgpt", "answer": "proceed"},
+                      participants=["chatgpt", "supergrok", "v4-pro"],
                       rounds=1)
     assert r["ok"] is True
     assert r["n_available"] == 2 and r["n_down"] == 1
@@ -164,6 +168,58 @@ def test_roundtable_keeps_down_seat_and_continues(tmp_path, monkeypatch):
     assert down["label"] == "supergrok" and down["ok"] is False
     assert down["error"] == "window unavailable"
     assert "supergrok | grok | round 1 | down" in r["contributions"][2]["prompt"]
+
+
+def test_roundtable_huang_gate_blocks_escalation(tmp_path, monkeypatch):
+    """Q-011 huang gate: a roundtable escalation requires a stated why plus a single-seat
+    baseline; each refusal fires BEFORE any seat is dispatched (sends stays empty), and a
+    gated call that satisfies the gate dispatches and echoes the audit fields."""
+    from mag import party_subchain, seat_steer
+
+    monkeypatch.setattr(fs, "OUT", tmp_path)
+    monkeypatch.setattr(
+        party_subchain, "mount", lambda **_kwargs: {"ok": True, "transcript": "nothing yet"}
+    )
+    monkeypatch.setattr(party_subchain, "append", lambda **_kwargs: {"ok": True})
+    sends: list[tuple[str, str]] = []
+
+    def fail_send(surface, message, *, max_wait_s=90, record_subchain=True):
+        sends.append((surface, message))
+        raise AssertionError("huang gate must block before any seat dispatch")
+
+    monkeypatch.setattr(seat_steer, "send", fail_send)
+
+    no_why = fs.roundtable("escalate this", record=False)
+    assert no_why["ok"] is False
+    assert "huang gate" in no_why["error"] and "why" in no_why["error"]
+    assert no_why["gate"] == "huang.v1" and sends == []
+
+    why_only = fs.roundtable("escalate this", why="one seat stalled on the mechanism",
+                             record=False)
+    assert why_only["ok"] is False
+    assert "huang gate" in why_only["error"] and "baseline" in why_only["error"]
+    assert why_only["gate"] == "huang.v1" and sends == []
+
+    partial = fs.roundtable("escalate this", why="one seat stalled",
+                            baseline={"surface": "chatgpt"}, record=False)
+    assert partial["ok"] is False
+    assert "huang gate" in partial["error"] and "baseline" in partial["error"]
+    assert "seat_steer.send" in partial["error"]
+    assert sends == []
+
+    # gate satisfied -> dispatch happens; the result echoes the why + baseline for the artifact
+    monkeypatch.setattr(seat_steer, "send", lambda surface, message, *, max_wait_s=90,
+                        record_subchain=True: {
+                            "ok": True, "surface": surface,
+                            "answer": "POSITION: proceed\nNOVEL DELTA: relay\nTEST: prior turn"})
+    monkeypatch.setattr("mag.agent_corpus.log_chat", lambda *_args, **_kwargs: {"ok": True})
+    ok = fs.roundtable("escalate this", why="one seat stalled on the mechanism",
+                       baseline={"surface": "chatgpt", "answer": "use the relay"},
+                       participants=["chatgpt"], rounds=1, record=False)
+    assert ok["ok"] is True and ok["n_contributions"] == 1
+    assert ok["why"] == "one seat stalled on the mechanism"
+    assert ok["baseline"] == {"surface": "chatgpt", "answer": "use the relay"}
+    assert ok["gate"] == "huang.v1"
 
 
 def test_roundtable_is_bounded():

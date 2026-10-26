@@ -138,11 +138,16 @@ def _drainer_wanted() -> bool:
     except Exception:
         return True
 
-# Windows: spawn detached so children survive console closes.
+# Windows: spawn without a console window.
+# FLAG FIX 2026-09-22: CREATE_NO_WINDOW and DETACHED_PROCESS are two different
+# console-allocation modes; combined they are undefined behavior and on this
+# Windows build randomly produced VISIBLE console windows on every respawn
+# (the "random python windows" report). CREATE_NO_WINDOW alone is the correct
+# no-console mode; children survive console closes because stdout/stderr are
+# redirected to files and stdin is DEVNULL.
 DETACHED = 0
 if os.name == "nt":
-    DETACHED = getattr(subprocess, "CREATE_NO_WINDOW", 0x08000000) | \
-               getattr(subprocess, "DETACHED_PROCESS", 0x00000008)
+    DETACHED = getattr(subprocess, "CREATE_NO_WINDOW", 0x08000000)
 
 
 def _now() -> str:
@@ -244,7 +249,7 @@ def build_slots() -> list[dict]:
         {
             "name": "lab",
             "cmd": [PY, str(ROOT / "main.py"), "lab", "--no-dashboard"],
-            "wanted": _runtime_is_authoritative(),
+            "wanted": _runtime_is_authoritative() and os.environ.get("MAG_DISABLE_LAB", "0") != "1",
             "proc": None,
         },
         # Lane scheduler — the in-cage lane engine (research/builder/day_work/

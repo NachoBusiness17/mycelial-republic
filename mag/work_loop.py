@@ -120,10 +120,16 @@ def _ceiling_gate() -> dict[str, Any]:
                 "cpu_pct": h.get("cpu_pct"), "ceiling": h.get("ceiling"),
                 "headroom_pct": h.get("headroom_pct"), "drill_width": width or None,
                 "note": "under the ceiling — machine can carry the drill"}
-    except Exception as e:  # noqa: BLE001 — the gate must never break the loop
-        return {"ok": True, "schema": SCHEMA, "gate": "ceiling", "throttled": False,
+    except Exception as e:  # noqa: BLE001 — the gate must never BREAK the loop; it DENIES instead
+        # SPEC (2026-09-25, t52): FAIL CLOSED. The old except returned throttled=False
+        # ("assume safe (no throttle)") so an errored headroom check let the loop claim
+        # work with the ceiling unknown. An errored gate now honors the deny (throttled,
+        # run_once refuses work this tick) and names the error in ceiling_gate_error.
+        return {"ok": False, "schema": SCHEMA, "gate": "ceiling", "throttled": True,
                 "cpu_pct": None, "ceiling": None, "drill_width": None,
-                "note": "ceiling gate unavailable — assume safe (no throttle)"}
+                "ceiling_gate_error": str(e)[:150],
+                "detail": "ceiling gate errored; failing CLOSED (work refused): " + str(e)[:110],
+                "note": "ceiling gate unavailable; deny honored, no work claimed this tick"}
 
 
 def _discover() -> dict[str, Any]:
@@ -185,8 +191,11 @@ def _anchor(action: str, s: dict[str, Any]) -> None:
             "summary": f"[work-loop] action={action} queued={s.get('queued', 0)} "
                        f"running={s.get('running', 0)} cold_pending={s.get('cold_pending', 0)}",
         })
-    except Exception:  # noqa: BLE001 — anchoring must never break the loop
-        pass
+    except Exception as _va:  # noqa: BLE001 — anchoring must never break the loop
+        # LOOP-DEATH GUARD (2026-09-25, t19 except-pass sweep): a silently dead anchor
+        # voids the "every tick anchored to the verkle chain" custody claim while the
+        # loop keeps claiming banked work. Non-fatal, but visible.
+        print(f"[work-loop] VERKLE-ANCHOR LOOP DEATH GUARD: append_verkle_knot exited: {_va}", flush=True)
 
 
 def run_once(*, drill: int | None = None) -> dict[str, Any]:
@@ -262,6 +271,12 @@ def run_once(*, drill: int | None = None) -> dict[str, Any]:
     # FUEL (2026-08-24): the real work sources -> the free lanes. When queue + cold are empty,
     # feed the percolator's explore queue (291 novel signals) through the free-lane channel and
     # fold the answers back. This is "use the seats instead of looking at them."
+    # SPEC (2026-09-25, t43): the fuel swallow below discarded the captured error and fell
+    # through to the halt branch, which then filed a FALSE halt note ("nothing real left to
+    # do") even when the halt was caused by the fuel channel crashing. Fix: trace the crash
+    # (ghost.py LOOP-DEATH GUARD pattern) and record fuel_error so the halt note tells the
+    # truth about why this tick stopped.
+    fuel_error: str | None = None
     try:
         from mag import fuel_feed
         fr = fuel_feed.run(batch=1)
@@ -273,11 +288,22 @@ def run_once(*, drill: int | None = None) -> dict[str, Any]:
             _anchor("fed", s)
             return out
     except Exception as e:  # noqa: BLE001
-        pass
+        # LOOP-DEATH GUARD (2026-09-25, t43): a silently dead fuel channel made the halt
+        # below claim "nothing real left to do" while real work may sit behind the crash.
+        # Non-fatal, but visible and truth-carrying. Evidence: t19 next_steal census;
+        # tests/test_loop_death_guards.py::work_fuel proves the honest halt note.
+        fuel_error = str(e)[:160]
+        print(f"[work-loop] FUEL LOOP DEATH GUARD: fuel_feed.run exited: {e}", flush=True)
     out = {"ok": True, "schema": SCHEMA, "action": "halt", "ts": _now(),
            "queued": 0, "running": 0, "cold_pending": s.get("cold_pending"),
            "detail": "queue empty + all cold vertices banked + no new discovery — halted at 0% CPU",
            "note": "nothing real left to do; sleep, don't spin"}
+    if fuel_error:
+        # the note must tell the truth: this halt is NOT a verified "nothing left" halt
+        out["fuel_error"] = fuel_error
+        out["detail"] += f"; FUEL CHANNEL ERRORED: {fuel_error}"
+        out["note"] = ("halt reached with the fuel channel dead; "
+                       "NOT a verified 'nothing left to do' halt; fix fuel before trusting it")
     _anchor("halt", s)
     return out
 

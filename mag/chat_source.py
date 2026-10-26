@@ -454,6 +454,17 @@ def file_agent_session(
     res["local_session_id"] = local
     res["source"] = SOURCE_MAG_AGENT
     res["bio_session_id"] = agent_bio_id(local)
+    # AH19 (audit finding #10, 2026-09-30): surface the CHAIN write model so
+    # callers can see which shape the fold took — v1 amend-in-place (whole
+    # verkle_chain.jsonl rewrite per save) or v2 append-leaves (one new row;
+    # session_seq is the save counter). ``amend=True`` keeps its residual-pack
+    # meaning (per-session JSON rewrite, small): only the CHAIN write changes
+    # shape under configs chain_mode=v2. Spec: AH19_AMEND_PERF.md.
+    verkle = res.get("verkle") if isinstance(res.get("verkle"), dict) else None
+    if verkle and verkle.get("chain_mode"):
+        res["chain_mode"] = verkle["chain_mode"]
+        if verkle.get("session_seq") is not None:
+            res["session_seq"] = verkle["session_seq"]
     return res
 
 

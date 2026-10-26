@@ -221,7 +221,15 @@ def _dynamic_ceiling(configured: int) -> int:
 
 
 def check(door: str) -> dict:
-    """Gate for any automatic door about to touch the Lite key. ceiling<=0 = unlimited."""
+    """Gate for any automatic door about to touch the Lite key. ceiling<=0 = unlimited.
+    RETIRED (2026-10-03, operator order: the Lite lane was given to adam and is
+    out of estate rotation) — check() denies every door by default, before any
+    pacing math or quota probe; env LITE_LANE_ACTIVE=1 re-arms the pacing gate
+    (operator lever only). Receipt: watch/inbox/LITE_LANE_PULL_20261003.md"""
+    if os.environ.get("LITE_LANE_ACTIVE", "").strip() != "1":
+        return {"ok": False, "retired": True, "door": door,
+                "deny": ("lite lane retired from estate rotation 2026-10-03 "
+                         "(operator: lane given to adam); LITE_LANE_ACTIVE=1 re-arms")}
     c = _dynamic_ceiling(_ceiling())
     s = spent_today()
     out = {"ok": c <= 0 or s < c, "spent": round(s, 2), "ceiling": c, "door": door}

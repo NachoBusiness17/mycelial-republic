@@ -174,6 +174,24 @@ def content_commit_hex(state: dict[str, Any]) -> str:
     return _h(b"agent_state:" + raw)
 
 
+def _display_path(path: Path) -> str:
+    """Repo-relative path for commit receipts, absolute when outside ROOT.
+
+    Cause (ball3 driver-meter 2026-09-29): commit_state recorded
+    fpath.relative_to(ROOT) and raised ValueError when STATE_DIR was
+    monkeypatched into an out-of-repo tmp_path (the wave5 suite-burn run
+    used an out-of-repo pytest basetemp:
+    watch/inbox/gala_20260925/wave5-repair/lanes/suite-burn.check.txt,
+    test_agent_state_commit_hash_excludes_its_own_field). These are
+    display-only receipt fields; with the default STATE_DIR under ROOT the
+    output is byte-identical to the old code.
+    """
+    try:
+        return str(path.relative_to(ROOT))
+    except ValueError:
+        return str(path)
+
+
 def format_load_markdown(state: dict[str, Any] | None = None, *, max_chars: int = 4500) -> str:
     s = state if state is not None else load_latest()
     if not s:
@@ -404,8 +422,8 @@ def commit_state(
         "ok": True,
         "content_commit": c_hex,
         "parent_commit": parent_hex,
-        "path": str(fpath.relative_to(ROOT)),
-        "latest_md": str(LATEST_MD.relative_to(ROOT)),
+        "path": _display_path(fpath),
+        "latest_md": _display_path(LATEST_MD),
         "tip": tip,
         "label": label,
     }

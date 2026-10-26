@@ -25,6 +25,59 @@ def _clip(path: Path, n: int = 4000) -> str:
     return path.read_text(encoding="utf-8", errors="replace")[:n]
 
 
+# SEATS.md loader (2026-10-04, BURNDOWN_20261004.md section 1 finding): the
+# old _clip(SEATS.md, 1200) served only the August hand matrix; the 09-27
+# refresh and the compiled section (tools/compile_seats.py) sat past the
+# window. Serve the COMPILED section instead (drift first, so a cap never
+# cuts it), with a freshness stamp from its own source anchor.
+SEATS_COMPILED_HEADER = "## COMPILED SEAT REALITY"
+SEATS_DRIFT_HEADER = "### Drift"
+SEATS_CAP = 3000
+SEATS_MAX_AGE_DAYS = 7
+_SEATS_ANCHOR_RE = re.compile(
+    r"Source anchor \(newest source timestamp\): "
+    r"(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})?)")
+
+
+def seats_text(path: Path, cap: int = SEATS_CAP, now: Any = None) -> str:
+    """Compiled section of SEATS.md, drift subsection first, capped. A
+    section whose source anchor is older than SEATS_MAX_AGE_DAYS (or a file
+    with no compiled section) is served with a STALE line naming the
+    rebuild command, never silently."""
+    from datetime import datetime, timezone  # noqa: PLC0415
+    if not path.is_file():
+        return ""
+    raw = path.read_text(encoding="utf-8", errors="replace")
+    i = raw.find(SEATS_COMPILED_HEADER)
+    if i < 0:
+        return ("[STALE: SEATS.md has no compiled section; run python "
+                "tools/compile_seats.py --swap]\n" + raw)[:cap]
+    body = raw[i:]
+    j = body.find(SEATS_DRIFT_HEADER)
+    if j > 0:
+        head_end = body.find("\n### ")
+        intro = body[:head_end] if 0 < head_end < j else ""
+        body = intro + "\n" + body[j:] + "\n" + body[len(intro):j]
+    prefix = ""
+    m = _SEATS_ANCHOR_RE.search(raw)
+    if m:
+        try:
+            anchor = datetime.fromisoformat(m.group(1).replace("Z", "+00:00"))
+            if anchor.tzinfo is None:
+                anchor = anchor.replace(tzinfo=timezone.utc)
+            ref = now or datetime.now(timezone.utc)
+            age_days = (ref - anchor).total_seconds() / 86400
+            if age_days > SEATS_MAX_AGE_DAYS:
+                prefix = (f"[STALE: compiled seat section anchored "
+                          f"{m.group(1)}, {age_days:.0f} days old; run python "
+                          "tools/compile_seats.py --swap]\n")
+        except ValueError:
+            prefix = "[STALE: unparseable seat anchor]\n"
+    else:
+        prefix = "[STALE: compiled seat section carries no source anchor]\n"
+    return (prefix + body.strip())[:cap]
+
+
 def _wants_research_pack(question: str) -> bool:
     q = (question or "").lower()
     keys = (
@@ -68,7 +121,7 @@ def _wants_mag_self(question: str) -> bool:
 
 def gather_context(
     session_id: str | None = None,
-    max_chars: int = 10000,
+    max_chars: int = 12000,  # +2000 for the compiled SEATS section (10-04)
     *,
     question: str = "",
 ) -> tuple[str, list[dict[str, str]]]:
@@ -88,13 +141,16 @@ def gather_context(
         ("chat_default prompt (loaded every Ask)", PROMPTS / "chat_default.txt", 2500),
         ("MIRROR.md — sovereign mirror local load", IMPROVE / "MIRROR.md", 1200),
         ("GOAL.md token economy", IMPROVE / "GOAL.md", 1200),
-        ("SEATS.md", IMPROVE / "SEATS.md", 1200),
         ("HABIT.md", IMPROVE / "HABIT.md", 1000),
         ("mag.txt companion", PROMPTS / "mag.txt", 1200),
     ):
         t = _clip(path, n)
         if t:
             add(label, path, t, n)
+    seats_p = IMPROVE / "SEATS.md"
+    t = seats_text(seats_p)
+    if t:
+        add("SEATS.md compiled seat reality", seats_p, t, SEATS_CAP)
 
     # --- Living work memory ---
     brief = latest_brief_text(session_id)

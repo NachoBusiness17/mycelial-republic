@@ -106,8 +106,16 @@ def test_reconcile_dry_run():
     assert "lifecycle" in r
 
 
-def test_auto_reconcile_noop_or_dict(monkeypatch):
+def test_auto_reconcile_noop_or_dict(monkeypatch, tmp_path):
     from mag import lifecycle
+
+    # B2-403: auto_reconcile(force=True) used to write the REAL
+    # state/lifecycle_latest.json (lifecycle._write_lifecycle_state) and the
+    # REAL state/temperature_stacks_latest.json (temperature_stack.STATE_PATH
+    # via track_lifecycle_into_improve); both pointers ride tmp_path now.
+    monkeypatch.setattr(lifecycle, "_write_lifecycle_state", lambda *a, **k: None)
+    import mag.temperature_stack as ts
+    monkeypatch.setattr(ts, "STATE_PATH", tmp_path / "temperature_stacks_latest.json")
 
     # force path always returns a dict
     r = lifecycle.auto_reconcile(force=True)
@@ -117,3 +125,91 @@ def test_auto_reconcile_noop_or_dict(monkeypatch):
     monkeypatch.setenv("MAG_NO_AUTO_PASSIVE", "1")
     assert lifecycle.auto_reconcile() is None
     monkeypatch.delenv("MAG_NO_AUTO_PASSIVE", raising=False)
+
+
+
+# B2-81 (2026-09-26): the ollama probe must not mistake a LIVE daemon for an
+# absent one. The old probe (bare urlopen, 0.6s, proxy-inheriting) logged 89
+# lifecycle_gap:ollama rows while the server answered /api/tags 200 within
+# 0-14s of 20 of the 21 verifiable gap observations. Pins: proxy env is
+# ignored on loopback, an HTTP wedge falls back to the socket listener check,
+# and a truly absent daemon names refusal in the detail.
+def test_ollama_probe_ignores_proxy_env(monkeypatch):
+    import http.server
+    import threading
+
+    from mag import lifecycle
+
+    class Handler(http.server.BaseHTTPRequestHandler):
+        def do_GET(self):
+            self.send_response(200)
+            self.end_headers()
+            self.wfile.write(b"{}")
+
+        def log_message(self, *a):
+            pass
+
+    srv = http.server.HTTPServer(("127.0.0.1", 0), Handler)
+    threading.Thread(target=srv.serve_forever, daemon=True).start()
+    try:
+        port = srv.server_address[1]
+        monkeypatch.setattr(lifecycle, "OLLAMA_TAGS_URL", f"http://127.0.0.1:{port}/api/tags")
+        # dead proxy on the loopback port the old probe would have honored
+        monkeypatch.setenv("http_proxy", "http://127.0.0.1:9")
+        monkeypatch.setenv("HTTP_PROXY", "http://127.0.0.1:9")
+        up, cause = lifecycle._ollama_up()
+        assert up is True, cause
+        assert cause.startswith("11434")
+    finally:
+        srv.shutdown()
+
+
+def test_ollama_probe_socket_fallback_when_http_wedged(monkeypatch):
+    import socket as socket_mod
+
+    from mag import lifecycle
+
+    # tags URL refused instantly (nothing accepts there) ...
+    monkeypatch.setattr(lifecycle, "OLLAMA_TAGS_URL", "http://127.0.0.1:1/api/tags")
+
+    class FakeConn:
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *a):
+            return False
+
+    calls = []
+
+    def fake_create(address, timeout=None):
+        calls.append(address)
+        return FakeConn()
+
+    # ... but a listener answers on the daemon endpoint: present, not absent
+    monkeypatch.setattr(socket_mod, "create_connection", fake_create)
+    up, cause = lifecycle._ollama_up()
+    assert up is True
+    assert "socket" in cause
+    assert calls and calls[0] == ("127.0.0.1", 11434)
+
+
+def test_ollama_probe_absent_names_refusal(monkeypatch):
+    import socket as socket_mod
+
+    from mag import lifecycle
+
+    # port 1 on loopback: nothing listens, connection refused instantly; the
+    # socket fallback is stubbed to refuse too so the test is hermetic (it
+    # must not depend on whether a real daemon holds 11434 on this host)
+    monkeypatch.setattr(lifecycle, "OLLAMA_TAGS_URL", "http://127.0.0.1:1/api/tags")
+
+    def refuse(address, timeout=None):
+        raise ConnectionRefusedError("stubbed")
+
+    monkeypatch.setattr(socket_mod, "create_connection", refuse)
+    up, cause = lifecycle._ollama_up()
+    assert up is False
+    assert "refused" in cause or "unreachable" in cause
+    actual, detail = lifecycle._actual_process("ollama", {})
+    assert actual is False
+    assert detail == cause

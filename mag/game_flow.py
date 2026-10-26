@@ -35,6 +35,12 @@ try:
 except Exception:
     pass
 
+# AH14 correlation law (canonical definition + rationale in
+# mag/trajectory_step.py; receipt watch/inbox/last_mile_20260930/AH14_CORR_ID.md):
+# imported after ROOT lands on sys.path above so this burns ledger joins the
+# trajectory and duel surfaces under the same MAG_CORR_ID env field.
+from mag.trajectory_step import corr_id  # noqa: E402
+
 SCHEMA = "game_flow.v1"
 IMAGE = ROOT / "memory" / "game" / "FLOW_IMAGE.json"   # the build image (what we're building + next)
 LEDGER = ROOT / "memory" / "game" / "FLOW_LEDGER.jsonl"  # every enqueued step (honest accounting)
@@ -61,6 +67,10 @@ def _save_image(img: dict[str, Any]) -> None:
 
 
 def _log(row: dict[str, Any]) -> None:
+    # AH14 correlation law: stamped at the single ledger choke point so every
+    # burns row carries the lane corr_id (env MAG_CORR_ID, null when unset);
+    # absent field on pre-AH14 rows reads as null and breaks no reader.
+    row["corr_id"] = corr_id()
     LEDGER.parent.mkdir(parents=True, exist_ok=True)
     with LEDGER.open("a", encoding="utf-8") as f:
         f.write(json.dumps(row, ensure_ascii=False, default=str) + "\n")

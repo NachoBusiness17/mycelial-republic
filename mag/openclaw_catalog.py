@@ -16,6 +16,22 @@ from typing import Any
 
 from config import ROOT
 
+
+def _rel_posix(path) -> str:
+    """Repo-relative posix path, absolute when outside ROOT.
+
+    Cause (ball3 follow-up sweep 2026-09-29): display/receipt derivations
+    raised ValueError whenever the path lived outside the repo (the suite
+    runs use an out-of-repo pytest basetemp). Same fix as the driver-meter
+    lane's _rel_posix in tools/stealth_driver.py.
+    """
+    try:
+        return Path(path).relative_to(ROOT).as_posix()
+    except ValueError:
+        return Path(path).as_posix()
+
+
+
 SCHEMA = "openclaw_catalog.v1"
 FABRIC_SCHEMA = "tool_fabric.v1"
 OUT = ROOT / "memory" / "runs" / "openclaw_catalog" / "latest.json"
@@ -203,7 +219,7 @@ def compile_fabric() -> dict[str, Any]:
     }
     FABRIC.parent.mkdir(parents=True, exist_ok=True)
     FABRIC.write_text(json.dumps(fabric, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
-    fabric["path"] = str(FABRIC.relative_to(ROOT)).replace("\\", "/")
+    fabric["path"] = _rel_posix(FABRIC)
     return fabric
 
 
@@ -233,7 +249,7 @@ def compile_catalog() -> dict[str, Any]:
     }
     OUT.parent.mkdir(parents=True, exist_ok=True)
     OUT.write_text(json.dumps(out, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
-    out["path"] = str(OUT.relative_to(ROOT)).replace("\\", "/")
+    out["path"] = _rel_posix(OUT)
     return out
 
 

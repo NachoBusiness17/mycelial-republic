@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>THE KEEPER'S VOICE</title>
+<style>
+:root{--bg:#070d0c;--ink:#c8e6d9;--accent:#7cf5ff;--gold:#e8c96a}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:ui-monospace,Consolas,monospace;text-align:center}
+h1{font-size:.9rem;letter-spacing:.12em;color:var(--accent);margin:12px 0 2px}
+.mut{font-size:.7rem;color:#8ab8a4;margin:2px auto}
+#err{display:none;background:#2a0d0d;color:#ff9c9c;border:1px solid rgba(255,120,120,.4);border-radius:8px;font-size:.7rem;padding:6px 12px;max-width:900px;margin:8px auto}
+#bar{max-width:960px;margin:10px auto 0;font-size:.72rem}
+select,input{background:#0a1412;color:var(--ink);border:1px solid rgba(124,245,255,.3);border-radius:8px;padding:5px 8px;font-family:inherit;font-size:.7rem}
+input{width:230px}
+button{background:#0a1412;color:var(--accent);border:1px solid rgba(124,245,255,.3);border-radius:8px;padding:5px 14px;font-family:inherit;font-size:.7rem;cursor:pointer;margin-left:4px}
+button:hover{color:var(--gold);border-color:var(--gold)}
+#voice{max-width:960px;margin:12px auto;text-align:left;font-size:.78rem;line-height:1.65;min-height:180px;border:1px solid rgba(124,245,255,.15);border-radius:10px;padding:14px 18px;background:rgba(10,20,18,.5)}
+#voice .line{margin:0 0 .55em}
+#voice .src{color:#5d7a72;font-size:.62rem;margin-left:.6em}
+#voice .law{color:var(--gold)}
+#voice .head{color:var(--accent);letter-spacing:.08em;font-size:.72rem;border-bottom:1px dashed rgba(124,245,255,.25);padding-bottom:4px;margin-bottom:.8em}
+#stats{font-size:.62rem;color:#5d7a72;max-width:960px;margin:4px auto}
+footer{font-size:.66rem;color:#5d7a72;margin:10px auto 16px;max-width:1000px}
+footer b{color:var(--gold)}
+</style>
+</head>
+<body>
+<h1>THE KEEPER'S VOICE</h1>
+<div class="mut">file-fed narrator of The Room That Remembers &middot; orphaned 09-03, LOOTed 09-06</div>
+<div id="err"></div>
+<div id="bar">
+  <select id="topic"><option>loading the walls&hellip;</option></select>
+  <input id="q" placeholder="or ask the walls&hellip;" onkeydown="if(event.key==='Enter')window.__keeperAsk&amp;&amp;window.__keeperAsk()">
+  <button onclick="window.__keeperAsk&amp;&amp;window.__keeperAsk()">SPEAK</button>
+</div>
+<div id="voice"><div class="mut" style="text-align:center;margin-top:70px">the keeper waits for the files&hellip;</div></div>
+<div id="stats"></div>
+<footer>the narrator is file-fed &middot; <b>the keeper speaks only what the walls hold</b> &middot; resident weights retired per salon verdict</footer>
+<script>
+//<<JS
+"use strict";
+function fnv(s){let h=0x811c9dc5;for(let i=0;i<s.length;i++){h^=s.charCodeAt(i);h=(h*0x01000193)>>>0;}return h;}
+function pick(id,arr){return arr[fnv(id)%arr.length];}
+
+function topics(d){
+  const t=[{id:"the-world",label:"The Room That Remembers (the world)"}];
+  for(const c of d.world.cast)t.push({id:"cast:"+c.name,label:"Cast: "+c.name});
+  d.world.laws.forEach((l,i)=>t.push({id:"law:"+i,label:"Law "+(i+1)+": "+l.text.slice(0,44)+"\u2026"}));
+  d.world.history.forEach((h,i)=>t.push({id:"hist:"+i,label:"History: "+h.beat.slice(0,40)+"\u2026"}));
+  t.push({id:"the-night",label:"The night of 09-06 (THE RUN, the cure, the trial)"});
+  for(const c of d.chunks)
+    t.push({id:"chunk:"+c.id,label:"Chunk "+c.id+" ("+c.biome+(typeof c.slab_id==="number"?(", slab "+c.slab_id):"")+")"});
+  t.push({id:"the-lattice",label:"The whole lattice (every slab in one breath)"});
+  return t;
+}
+
+function lines(d,topicId){
+  const L=[];
+  const W=d.world;
+  if(topicId==="the-world"){
+    L.push({text:"You walk "+W.world.name+". "+W.world.description,src:W.world.src});
+    L.push({text:pick(topicId,[
+      "This place began as a SYSTEM prompt inside a Modelfile \u2014 walls written as weights that were never summoned.",
+      "Before it was a page, this room was a prompt in a file no model ever loaded."]),
+      src:W.provenance.modelfile});
+    L.push({text:"The salon ruled: LOOT as file-fed narrator; the resident-weights form stood DISPUTED. So the walls were stripped to files, and the keeper kept only what the files hold.",
+      src:W.provenance.orphan_entry});
+    return L;
+  }
+  if(topicId==="the-night"){
+    for(const h of W.history.slice(5))L.push({text:"I remember "+h.when+". "+h.beat,src:h.src});
+    return L;
+  }
+  if(topicId==="the-lattice"){
+    let slabs=0,chars=0,laws=0,q=0,tens=0,cells=0;
+    for(const c of d.chunks){cells+=c.stats.cells;tens+=c.stats.tensors;
+      if(c.slab_agg){slabs++;chars+=c.slab_agg.chars;laws+=c.slab_agg.law_hits;q+=c.slab_agg.questions;}}
+    L.push({text:"The lattice holds "+d.chunks.length+" chunks over "+d.manifest_meta.points+" points of the model's own volume \u2014 "+cells+" carved cells, "+tens+" sleeping tensors.",src:"state/shadow_work/chunk_manifest.json"});
+    L.push({text:"Across "+slabs+" behavioral slabs I count "+chars.toLocaleString()+" characters of deep thought, "+laws+" laws sworn, "+q+" questions still hanging.",src:"state/shadow_work/ (slab_*.csv)"});
+    L.push({text:d.manifest_meta.vision_contract+". No hash, no draw; the unsworn chunks stay ghost.",src:"state/shadow_work/chunk_manifest.json"});
+    return L;
+  }
+  if(topicId.startsWith("cast:")){
+    const c=W.cast.find(x=>x.name===topicId.slice(5));
+    if(!c)return miss(d,topicId);
+    L.push({text:c.name+" \u2014 "+c.role,src:c.src});
+    L.push({text:pick(c.name,[
+      "They walk the wings when the lights are low; ask them what they carry.",
+      "Every visitor meets them sooner or later; the room introduces us all in time.",
+      "They were written once, in the world-bible, and so they are forever."]),src:W.provenance.modelfile});
+    return L;
+  }
+  if(topicId.startsWith("law:")){
+    const i=+topicId.slice(4),l=W.laws[i];
+    if(!l)return miss(d,topicId);
+    L.push({text:"Law "+(i+1)+" of the walls: "+l.text,src:l.src,law:true});
+    L.push({text:pick(l.text,[
+      "Break it and the room dims. The walls are not decoration \u2014 they are the maze.",
+      "The keeper does not bend it, and does not let a visitor bend it.",
+      "It holds because it is written; it is written because it holds."]),src:W.provenance.modelfile,law:true});
+    return L;
+  }
+  if(topicId.startsWith("hist:")){
+    const h=W.history[+topicId.slice(5)];
+    if(!h)return miss(d,topicId);
+    L.push({text:"I remember "+h.when+". "+h.beat,src:h.src});
+    return L;
+  }
+  if(topicId.startsWith("chunk:")){
+    const cid=topicId.slice(6),c=d.chunks.find(x=>x.id===cid);
+    if(!c)return miss(d,topicId);
+    return chunkLines(d,c);
+  }
+  return miss(d,topicId);
+}
+
+function chunkLines(d,c){
+  const L=[],s=c.stats;
+  if(c.slab_agg){
+    const a=c.slab_agg;
+    L.push({text:"The keeper remembers slab "+a.slab+": "+a.chars.toLocaleString()+" characters of deep thought, "+a.law_hits+" laws sworn, "+a.questions+" questions hanging \u2014 "+a.rows+" rows of the model's own thinking.",src:a.src});
+  }else if(c.biome==="weights"){
+    L.push({text:"The annex at ("+c.origin[0]+","+c.origin[1]+") holds "+s.tensors+" tensors and no sworn laws \u2014 the weight-rooms where the deep-miner's bones sleep.",src:c.src});
+  }
+  L.push({text:"The chunk "+c.id+" carries "+s.cells+" carved cells at a mean law of "+s.mean_law+"; hash "+c.content_hash+". "+(c.vision_validated?"The eyes have passed over it.":"No eyes have passed over it yet \u2014 it stays ghost until they do."),src:"state/shadow_work/chunk_manifest.json"});
+  return L;
+}
+
+function miss(d,topicId){
+  return [{text:"The walls hold nothing under that name. Ask me of the world, the cast, the laws, the history, or any slab of the volume \u2014 I speak only what the files hold.",
+    src:"state/keeper_world/world.json"}];
+}
+
+function narrate(d,topicId){return lines(d,topicId);}
+
+function keeperLinesFor(d,ts){
+  const out={schema:"keeper_lines/v1",generated:ts,emitter:"dashboard/static/keeper_voice.html (node harness)",
+    source:"state/shadow_work/chunk_manifest.json",lines:[]};
+  for(const c of d.chunks){
+    for(const l of chunkLines(d,c))
+      out.lines.push({chunk:c.id,slab:c.slab_id,biome:c.biome,text:l.text,src:l.src});
+  }
+  return out;
+}
+if(typeof module!=="undefined"&&module.exports){module.exports={fnv,topics,lines,narrate,chunkLines,keeperLinesFor};}
+//JS>>
+if(typeof document!=="undefined")(function(){
+  let DATA=null,IDX=[];
+  function bad(msg){const e=document.getElementById("err");e.style.display="block";e.textContent="THE WALLS ARE DARK: "+msg;
+    document.getElementById("voice").innerHTML="";}
+  function speak(id){
+    const v=document.getElementById("voice");
+    const ls=narrate(DATA,id);
+    const t=IDX.find(x=>x.id===id);
+    let h='<div class="head">THE KEEPER &mdash; '+(t?t.label.toUpperCase():id)+'</div>';
+    for(const l of ls)
+      h+='<p class="line'+(l.law?' law':'')+'">&ldquo;'+l.text+'&rdquo;<span class="src">'+l.src+'</span></p>';
+    v.innerHTML=h;
+  }
+  function ask(){
+    const q=document.getElementById("q").value.trim().toLowerCase();
+    if(!q){speak(document.getElementById("topic").value);return;}
+    const hit=IDX.find(t=>t.label.toLowerCase().includes(q));
+    if(hit){document.getElementById("topic").value=hit.id;speak(hit.id);return;}
+    const v=document.getElementById("voice");
+    v.innerHTML='<div class="head">THE KEEPER &mdash; &ldquo;'+q.replace(/[<>&]/g,"")+'&rdquo;</div>'+
+      narrate(DATA,"?").map(l=>'<p class="line">&ldquo;'+l.text+'&rdquo;<span class="src">'+l.src+'</span></p>').join("");
+  }
+  fetch('keeper_voice_data.json',{cache:'no-store'}).then(r=>{if(!r.ok)throw new Error("HTTP "+r.status);return r.json();})
+   .then(d=>{
+      DATA=d;
+      IDX=topics(DATA);
+      const sel=document.getElementById("topic");
+      sel.innerHTML=IDX.map(t=>'<option value="'+t.id+'">'+t.label.replace(/</g,"&lt;")+'</option>').join("");
+      let slabs=0,chars=0,laws=0;
+      for(const c of DATA.chunks)if(c.slab_agg){slabs++;chars+=c.slab_agg.chars;laws+=c.slab_agg.law_hits;}
+      document.getElementById("stats").textContent=
+        "walls loaded: "+DATA.world.cast.length+" cast \u00b7 "+DATA.world.laws.length+" laws \u00b7 "+DATA.world.history.length+" history beats \u00b7 "+DATA.chunks.length+" chunks ("+slabs+" slabs, "+chars.toLocaleString()+" chars, "+laws+" laws sworn) \u00b7 world.json @ state/keeper_world/";
+      speak(IDX[0].id);
+   }).catch(e=>bad("keeper_voice_data.json \u2014 "+(e&&e.message?e.message:e)));
+  window.__keeperAsk=ask;
+})();
+</script>
+</body>
+</html>

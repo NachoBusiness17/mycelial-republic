@@ -42,6 +42,7 @@ import os
 import subprocess
 import sys
 from mag import headless
+from mag.write_strip import READ_ONLY_ARG
 import threading
 import time
 import uuid
@@ -377,10 +378,22 @@ def _emit_task_lifecycle(phase: str, task_id: str, **extra: Any) -> None:
         pass
 
 
+def _trail_path() -> Path:
+    """B2-401 (2026-09-26): MAG_ORCHESTRATOR_TRAIL overrides the sink, else
+    the production trail. Same shape as the MAG_SEAT_CRASH_LOG seam (B2-86)
+    and the MAG_GAPS_LOG seam (B2-79): tests point the writer at tmp instead
+    of appending q-test queue-add rows to the production trail (571 q-test
+    rows on disk at fix time). No env set = same path."""
+    env = os.environ.get("MAG_ORCHESTRATOR_TRAIL")
+    return Path(env) if env else TRAIL
+
+
 def _trail(event: str, task_id: str, **meta: Any) -> None:
     _ensure_dirs()
     entry = {"timestamp": _now(), "event": event, "task_id": task_id, **meta}
-    with TRAIL.open("a", encoding="utf-8") as f:
+    path = _trail_path()
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with path.open("a", encoding="utf-8") as f:
         f.write(json.dumps(entry, ensure_ascii=False) + "\n")
 
 
@@ -495,6 +508,7 @@ def _spawn_cmd(cmd: list[str], *, task_id: str, timeout: int,
         "tag": tag,
         "status": "running",
         "cmd": cmd,
+        "provider": _provider_from_cmd(cmd),  # top-level stamp: mix queries must not re-parse cmd
         "goal": _goal_from_cmd(cmd),  # persisted so same-goal dedupe works
         "created_at": _now(),
         "started_at": None,
@@ -622,12 +636,21 @@ def _running_tasks() -> list[dict[str, Any]]:
 
 def spawn_task(goal: str, *, provider: str = "deepseek", model: str | None = None,
                timeout: int = DEFAULT_TIMEOUT, tag: str = "",
-               require_build: str | None = None) -> dict[str, Any]:
+               require_build: str | None = None,
+               read_only: bool = True) -> dict[str, Any]:
     """Spawn a one-shot sub-agent for a goal. Returns the task record (async).
 
     Same-goal dedupe (2026-08-03): if a non-terminal task with the SAME goal
     already exists, refuse to spawn a duplicate and return the existing task
     instead. Prevents the 8-identical-smoke-spawns pattern from session mining.
+
+    read_only=True is the fan-out write-strip default (MICKEY-17 owed chore,
+    discharged 2026-09-26 from lanes write-delegation#0 +
+    orchestrator-war-stories#0): the child's tool schema is compiled to
+    read-only before its first model call, so it contributes intelligence and
+    returns any proposed write as data in its stdout log. A spawn that MUST
+    write (rare, explicit) passes read_only=False — that call site owns the
+    exception, visible in the task record.
     """
     goal = goal.strip()
     if not goal:
@@ -826,6 +849,11 @@ def spawn_task(goal: str, *, provider: str = "deepseek", model: str | None = Non
         pass
     cmd = [headless.PYTHON, str(ROOT / "main.py"), "agent", "--query", goal,
            "--provider", provider]
+    if read_only:
+        # Fan-out write-strip (MICKEY-17 owed chore): only the agent-CLI seat
+        # carries a tool schema, so only it takes the flag (the compact
+        # research_worker below has no tools and is read-only by construction).
+        cmd += [READ_ONLY_ARG]
     if tag == "self-steal-research":
         # Research receipts do not need the full interactive tool seat.  The
         # compact worker avoids loading the entire tool schema/REPL path on a
@@ -839,6 +867,7 @@ def spawn_task(goal: str, *, provider: str = "deepseek", model: str | None = Non
     rec = _spawn_cmd(cmd, task_id=task_id, timeout=timeout, tag=tag)
     rec["ok"] = True
     rec["goal"] = goal
+    rec["read_only"] = bool(read_only)
     return rec
 
 
@@ -1254,7 +1283,8 @@ def _provider_running_count(provider: str) -> int:
     for task in _running_tasks():
         if _is_external_task(task):
             continue
-        if str(_provider_from_cmd(task.get("cmd")) or "").strip().lower() == needle:
+        provider = str(task.get("provider") or _provider_from_cmd(task.get("cmd")) or "")
+        if provider.strip().lower() == needle:
             n += 1
     return n
 

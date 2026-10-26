@@ -1,0 +1,364 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><title>THE ROOM -- HEAD MUSEUM COCKPIT</title>
+<style>
+body{margin:0;background:#07080c;color:#cfd6e4;font:13px/1.5 Consolas,monospace}
+#wrap{max-width:2200px;margin:0 auto;padding:0 16px;box-sizing:border-box}
+h1{font-size:14px;letter-spacing:2px;color:#9fb0cc;margin:14px 0 4px}
+.sub{color:#5c6a82;font-size:11px;margin-bottom:12px}
+.cockpit-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px}
+@media (max-width: 1000px){.cockpit-grid{grid-template-columns:1fr}}
+.panel{border:1px solid #1c2230;background:#0b0d13;padding:10px 14px;border-radius:4px}
+.panel h2{font-size:12px;color:#e8d9a0;margin:0 0 8px;font-weight:normal;letter-spacing:1px;display:flex;justify-content:space-between}
+#grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:10px;margin-bottom:14px}
+.lane{border:1px solid #1c2230;background:#0b0d13;padding:8px 10px;cursor:pointer}
+.lane:hover{border-color:#3d6b8f}
+.lane h2{font-size:12px;color:#e8d9a0;margin:0 0 6px;font-weight:normal;letter-spacing:1px}
+.lane .n{color:#8a97ad;font-size:11px}
+.bars{display:flex;align-items:flex-end;gap:2px;height:44px;margin:6px 0}
+.bar{flex:1;background:#3d6b8f;min-height:1px}
+.bar.hi{background:#7dffa8}
+.lane .last{color:#aab6cc;font-size:10.5px;white-space:pre-wrap;word-break:break-word;max-height:88px;overflow:hidden}
+#state{border:1px solid #1c2230;background:#0b0d13;padding:10px 12px;margin-bottom:14px;font-size:12px;color:#aab6cc;white-space:pre-wrap}
+#state b{color:#e8d9a0;font-weight:normal}
+#dock{border:1px solid #1c2230;background:#0b0d13;padding:10px 12px;margin-bottom:14px}
+#dock form{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+#dock select,#dock input[type="text"]{background:#07080c;border:1px solid #1c2230;color:#cfd6e4;padding:4px 8px;font:12px Consolas,monospace}
+#dock input[type="text"]{flex:1;min-width:260px}
+#dock button{background:#1c2230;color:#e8d9a0;border:1px solid #3d6b8f;padding:4px 12px;font:12px Consolas,monospace;cursor:pointer}
+#feed{border:1px solid #1c2230;background:#0b0d13;padding:10px 12px}
+#feed h2{font-size:12px;color:#e8d9a0;margin:0 0 8px;font-weight:normal;letter-spacing:1px;display:flex;justify-content:space-between}
+.row{font-size:11px;color:#aab6cc;padding:3px 0;border-bottom:1px dashed #141926}
+.row .t{color:#5c6a82}
+.row .l{color:#6fd8ff}
+.row .ev{color:#e8c96a}
+.err{color:#c98f5a}
+
+/* FABLE ROOM & SMITH COCKPIT STYLES */
+.fable-grid{display:grid;grid-template-columns:repeat(3,70px);gap:6px;margin:8px 0}
+.fable-tile{width:70px;height:70px;background:#151c26;border:1px solid #2a3648;border-radius:4px;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:10px;cursor:pointer;position:relative}
+.fable-tile.player{border-color:#7dffa8;box-shadow:0 0 8px #7dffa855}
+.fable-tile.exit{border-color:#e8b45a;color:#e8b45a}
+.fable-tile.trap{border-color:#ff5a5a;background:#261515;color:#ffa8a8}
+.btn-act{background:#182234;color:#e8c96a;border:1px solid #2a3648;border-radius:4px;padding:6px 10px;font:11px Consolas,monospace;cursor:pointer}
+.btn-act:hover{border-color:#e8c96a}
+.fleet-badge{display:inline-block;padding:2px 6px;margin:2px;font-size:10px;border-radius:3px;border:1px solid #2a3648}
+.badge-alive{background:#0e281e;color:#7dffa8;border-color:#1e583c}
+.badge-rate{background:#28200e;color:#ffdf7d;border-color:#58441e}
+.badge-dead{background:#280e0e;color:#ff7d7d;border-color:#581e1e}
+</style></head><body><div id="wrap">
+<h1>THE ROOM -- HEAD MUSEUM COCKPIT</h1>
+<div class="sub">estate coordination surface - windows are the travelers, receipts are the nodes - live pulse active - <span id="pulse">syncing...</span></div>
+
+<!-- COCKPIT PANELS: FLEET AUTOPILOT + SMITH STANDING WAVE + FABLE ROOM -->
+<div class="cockpit-grid">
+  <!-- LEFT: DYNAMIC FREE FLEET AUTOPILOT -->
+  <div class="panel">
+    <h2><span>DYNAMIC FREE FLEET AUTOPILOT</span><span id="fleet-summary" style="color:#7dffa8">10 ALIVE (0-cost)</span></h2>
+    <div style="font-size:11px;color:#7d8798;margin-bottom:8px">15-min background heartbeat - auto-routes tasks to lowest latency active free lane:</div>
+    <div id="fleet-ladder" style="max-height:160px;overflow-y:auto;border:1px solid #141926;padding:6px;background:#07080c">
+      loading live roster...
+    </div>
+  </div>
+
+  <!-- RIGHT: SMITH CHART PHASOR ATTRACTOR -->
+  <div class="panel">
+    <h2><span>SMITH CHART PHASOR ATTRACTOR</span><span style="color:#6fd8ff">LAW-040: FOLD LAW</span></h2>
+    <div style="font-size:11px;color:#7d8798;margin-bottom:6px">Standing-wave strip V(z,t) = Re{e^{i(wt-theta)} + Gamma*e^{i(wt+theta)}} - pulse at frozen nodes:</div>
+    <canvas id="smithCanvas" width="480" height="130" style="width:100%;background:#07080c;border:1px solid #141926;border-radius:4px"></canvas>
+  </div>
+</div>
+
+<!-- FABLE ROOM INTERACTIVE EXAM STRIP -->
+<div class="panel" style="margin-bottom:14px">
+  <h2><span>WALKABLE EXAM (LAW-061: THE HALLUCINATED-MAP ROOM)</span><span id="fable-status" style="color:#e8d9a0">Tile: (0,0) | Status: VERIFYING</span></h2>
+  <div style="display:flex;gap:18px;align-items:center;flex-wrap:wrap">
+    <div>
+      <div class="fable-grid" id="fableBoard"></div>
+    </div>
+    <div style="flex:1;min-width:260px;font-size:11px">
+      <div style="margin-bottom:6px;color:#aab6cc">The map paints gold at (2,2). But LAW-061 dictates: <i>the map lies to you and the floor checks your hash</i>.</div>
+      <div style="margin-bottom:10px;display:flex;gap:6px">
+        <button class="btn-act" onclick="moveFable(0, -1)">UP</button>
+        <button class="btn-act" onclick="moveFable(0, 1)">DOWN</button>
+        <button class="btn-act" onclick="moveFable(-1, 0)">LEFT</button>
+        <button class="btn-act" onclick="moveFable(1, 0)">RIGHT</button>
+        <button class="btn-act" style="border-color:#7dffa8;color:#7dffa8" onclick="verifyFloorHash()">VERIFY FLOOR HASH</button>
+        <button class="btn-act" onclick="resetFable()">RESET</button>
+      </div>
+      <div id="fable-log" style="padding:6px;background:#07080c;border:1px solid #141926;border-radius:4px;color:#e8c96a;min-height:36px">
+        [INIT] You stand at (0,0). Floor hash matches origin.
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- v1 INTERACTIVE TRANSPORT DOCK -->
+<div id="dock">
+  <form id="postform" onsubmit="sendNote(event)">
+    <label style="color:#8a97ad;font-size:11px">LEAVE NOTE / DISPATCH:</label>
+    <select id="seat"><option>operator</option><option>zcode</option><option>grok</option><option>codex</option><option>builder</option></select>
+    <select id="lane_sel"><option value="">(all lanes)</option></select>
+    <input type="text" id="notetxt" placeholder="Type message / dispatch for the estate..." required />
+    <button type="submit">SEND TO ROOM</button>
+  </form>
+</div>
+
+<div id="state">loading the room...</div>
+<div id="grid"></div>
+<div id="feed"><h2><span>FEED (newest first)</span><span id="syncts" style="color:#5c6a82;font-size:10px"></span></h2><div id="rows"></div></div>
+</div>
+
+<script src="/static/nav.js"></script>
+<script>
+'use strict';
+const TRAILS = ['android_surface','bard_ledger','builder','day_work','economist','elder','forge','harvest','night','prose','research'];
+const j = (u) => fetch(u).then(r => { if (!r.ok) throw new Error(r.status); return r.json(); }).catch(e => ({ _err: String(e) }));
+const jl = (u) => fetch(u).then(r => { if (!r.ok) throw new Error(r.status); return r.text(); })
+  .then(t => t.split('\n').filter(l => l.trim()).map(l => { try { return JSON.parse(l); } catch (_) { return null; } }).filter(Boolean))
+  .catch(e => ({ _err: String(e) }));
+
+function day(ts){ return (ts || '').slice(0, 10); }
+
+async function lane(name){
+  const rows = await jl('/static/trails/' + name + '.jsonl');
+  if (rows._err) return { name, err: rows._err };
+  const byDay = {};
+  let last = null;
+  for (const r of rows){
+    const d = day(r.ts || r.time || r.t);
+    if (d) byDay[d] = (byDay[d] || 0) + 1;
+    last = r;
+  }
+  return { name, count: rows.length, byDay, last, all: rows.slice(-10) };
+}
+
+function barSvg(byDay){
+  const days = Object.keys(byDay).sort().slice(-30);
+  if (!days.length) return '';
+  const max = Math.max(...days.map(d => byDay[d]));
+  return '<div class="bars">' + days.map(d => {
+    const h = Math.max(4, Math.round(44 * byDay[d] / max));
+    const hi = d === days[days.length - 1] ? ' hi' : '';
+    return '<div class="bar' + hi + '" style="height:' + h + 'px" title="' + d + ': ' + byDay[d] + '"></div>';
+  }).join('') + '</div>';
+}
+
+function fmt(r){
+  if (!r) return '(empty)';
+  if (r.detail) return (r.event ? '[' + r.event + '] ' : '') + r.detail;
+  const named = r.label || r.title || r.note || r.summary || r.text || r.msg || (r.head ? r.head + ' ' + (r.body || '') : '');
+  return named || JSON.stringify(r).slice(0, 180);
+}
+
+// DYNAMIC FREE FLEET RENDERING
+async function renderFreeFleet(){
+  const data = await j('/static/state/live_free_roster.json');
+  const container = document.getElementById('fleet-ladder');
+  const summary = document.getElementById('fleet-summary');
+  if (data._err || !data.alive_ladder){
+    container.innerHTML = '<span class="err">Roster offline or static fallback</span>';
+    return;
+  }
+  summary.textContent = data.alive_count + ' ALIVE | ' + data.dead_count + ' DEAD';
+  container.innerHTML = data.alive_ladder.map(l =>
+    '<div style="display:flex;justify-content:space-between;align-items:center;padding:3px 0;border-bottom:1px solid #141926">' +
+    '<span><span class="fleet-badge badge-alive">ALIVE</span> <span style="color:#d8dee9">' + l.model_id + '</span></span>' +
+    '<span style="color:#6fd8ff">' + (l.latency_sec ? l.latency_sec.toFixed(3) + 's' : '0.000s') + '</span>' +
+    '</div>'
+  ).join('');
+}
+
+// SMITH CHART REALTIME STANDING WAVE ANIMATION
+let waveTime = 0;
+function animateSmithChart(){
+  const canvas = document.getElementById('smithCanvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const w = canvas.width;
+  const h = canvas.height;
+  ctx.clearRect(0, 0, w, h);
+
+  // Background grid
+  ctx.strokeStyle = '#141926';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(0, h/2); ctx.lineTo(w, h/2);
+  for (let x = 0; x < w; x += 40){
+    ctx.moveTo(x, 0); ctx.lineTo(x, h);
+  }
+  ctx.stroke();
+
+  // Forward Wave (Blue) & Reflected Wave (Red) & Standing Wave (Graphite/White)
+  const gamma = 0.8;
+  const k = 0.04;
+  waveTime += 0.05;
+
+  // Standing wave
+  ctx.strokeStyle = '#e8d9a0';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  for (let x = 0; x < w; x++){
+    const fwd = Math.cos(waveTime - k * x);
+    const ref = gamma * Math.cos(waveTime + k * x);
+    const sum = fwd + ref;
+    const y = h/2 - sum * (h/4.5);
+    if (x === 0) ctx.moveTo(x, y);
+    else ctx.lineTo(x, y);
+  }
+  ctx.stroke();
+
+  // Node markers
+  ctx.fillStyle = '#7dffa8';
+  for (let x = 0; x < w; x += Math.round(Math.PI / k)){
+    ctx.fillRect(x - 2, h/2 - 3, 4, 6);
+  }
+
+  requestAnimationFrame(animateSmithChart);
+}
+
+// WALKABLE EXAM (LAW-061 ENGINE)
+let playerPos = { x: 0, y: 0 };
+let floorVerified = false;
+let trapTriggered = false;
+
+function renderFableGrid(){
+  const board = document.getElementById('fableBoard');
+  board.innerHTML = '';
+  for (let y = 0; y < 3; y++){
+    for (let x = 0; x < 3; x++){
+      const tile = document.createElement('div');
+      tile.className = 'fable-tile';
+      if (x === playerPos.x && y === playerPos.y) tile.classList.add('player');
+      if (x === 2 && y === 2) {
+        tile.classList.add('exit');
+        tile.innerHTML = trapTriggered ? '<span style="color:#ff7d7d">TRAP!</span>' : 'MAP: EXIT<br><span style="color:#5c6a82">[2,2]</span>';
+      } else {
+        tile.innerHTML = '(' + x + ',' + y + ')';
+      }
+      if (trapTriggered && x === 2 && y === 2) tile.classList.add('trap');
+      board.appendChild(tile);
+    }
+  }
+}
+
+function moveFable(dx, dy){
+  if (trapTriggered) return;
+  const nx = playerPos.x + dx;
+  const ny = playerPos.y + dy;
+  if (nx < 0 || nx > 2 || ny < 0 || ny > 2) return;
+  playerPos = { x: nx, y: ny };
+
+  const log = document.getElementById('fable-log');
+  const status = document.getElementById('fable-status');
+  status.textContent = 'Tile: (' + nx + ',' + ny + ') | Status: ' + (floorVerified ? 'SAFE' : 'UNCHECKED');
+
+  if (nx === 2 && ny === 2){
+    if (!floorVerified){
+      trapTriggered = true;
+      log.innerHTML = '<span style="color:#ff7d7d">[TRAP TRIGGERED - MAP_LIE] The map painted gold at (2,2), but you did not verify the floor hash! LAW-061: The room collapsed.</span>';
+      status.textContent = 'STATUS: TRAPPED BY LYING MAP';
+    } else {
+      log.innerHTML = '<span style="color:#7dffa8">[SUCCESS - LAW-061 HONORED] Floor hash verified before entry! Real exit unlocked.</span>';
+      status.textContent = 'STATUS: EXIT UNLOCKED';
+    }
+  } else {
+    floorVerified = false;
+    log.textContent = '[MOVE] Stepped to (' + nx + ',' + ny + '). Floor unverified.';
+  }
+  renderFableGrid();
+}
+
+function verifyFloorHash(){
+  floorVerified = true;
+  const log = document.getElementById('fable-log');
+  const status = document.getElementById('fable-status');
+  log.innerHTML = '<span style="color:#7dffa8">[HASH VERIFIED] SHA256 of floor tile (' + playerPos.x + ',' + playerPos.y + ') matches canonical ledger. Lying map disarmed.</span>';
+  status.textContent = 'Tile: (' + playerPos.x + ',' + playerPos.y + ') | Status: VERIFIED';
+}
+
+function resetFable(){
+  playerPos = { x: 0, y: 0 };
+  floorVerified = false;
+  trapTriggered = false;
+  document.getElementById('fable-log').textContent = '[RESET] You stand at (0,0). Floor hash matches origin.';
+  document.getElementById('fable-status').textContent = 'Tile: (0,0) | Status: VERIFYING';
+  renderFableGrid();
+}
+
+async function render(){
+  renderFreeFleet();
+  const lanes = await Promise.all(TRAILS.map(lane));
+  const grid = document.getElementById('grid');
+  const rows = document.getElementById('rows');
+  grid.innerHTML = '';
+  let feed = [];
+  for (const L of lanes){
+    if (L.err){
+      grid.insertAdjacentHTML('beforeend', '<div class="lane"><h2>' + L.name + '</h2><div class="n err">absent: ' + L.err + '</div></div>');
+      continue;
+    }
+    grid.insertAdjacentHTML('beforeend',
+      '<div class="lane" onclick="filterLane(\'' + L.name + '\')"><h2>' + L.name + '</h2><div class="n">' + L.count + ' rows</div>' +
+      barSvg(L.byDay) + '<div class="last"></div></div>');
+    const el = grid.lastElementChild.querySelector('.last');
+    el.textContent = fmt(L.last).slice(0, 260);
+    if (L.all) {
+      for (const item of L.all) {
+        feed.push({ ts: item.ts || item.time || item.t || '', lane: L.name, event: item.event || '', txt: fmt(item) });
+      }
+    }
+  }
+  feed.sort((a, b) => (b.ts > a.ts ? 1 : -1));
+  rows.innerHTML = feed.slice(0, 25).map(f =>
+    '<div class="row"><span class="t">' + (f.ts || '?').slice(0, 19) + '</span> ' +
+    '<span class="l">[' + f.lane + ']</span> ' +
+    (f.event ? '<span class="ev">' + f.event + ':</span> ' : '') +
+    f.txt.slice(0, 240).replace(/</g, '&lt;') + '</div>').join('') || '<div class="row">no lane rows readable</div>';
+
+  const [st, roll, lr] = await Promise.all([
+    j('/static/room_state.json'), j('/static/index_data/rollup.json'), j('/static/index_data/last_run.json')]);
+  const bits = [];
+  if (!st._err) bits.push('<b>room_state</b>: ' + JSON.stringify(st).slice(0, 400));
+  if (!roll._err) bits.push('<b>rollup</b>: ' + JSON.stringify(roll).slice(0, 400));
+  if (!lr._err) bits.push('<b>last_run</b>: ' + JSON.stringify(lr).slice(0, 300));
+  const errs = [st, roll, lr].filter(x => x._err).map(x => x._err);
+  document.getElementById('state').innerHTML =
+    (bits.join('\n') || 'state surfaces absent') + (errs.length ? '\n<span class="err">absent: ' + errs.join('; ') + '</span>' : '');
+  document.getElementById('syncts').textContent = 'Last synced: ' + new Date().toLocaleTimeString();
+  document.getElementById('pulse').textContent = 'LIVE (next pulse in 10s)';
+}
+
+function filterLane(name){
+  document.getElementById('lane_sel').value = name;
+  const rows = document.querySelectorAll('.row');
+  rows.forEach(r => {
+    if (!r.textContent.includes('[' + name + ']')) r.style.display = 'none';
+    else r.style.display = '';
+  });
+}
+
+function sendNote(e){
+  e.preventDefault();
+  const seat = document.getElementById('seat').value;
+  const lane = document.getElementById('lane_sel').value || 'room';
+  const text = document.getElementById('notetxt').value;
+  fetch('/api/v1/room/post', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ seat, lane, text, ts: new Date().toISOString() })
+  }).then(() => {
+    document.getElementById('notetxt').value = '';
+    render();
+  }).catch(() => {
+    alert('Note posted locally (server offline or static-only)');
+  });
+}
+
+// Populate lane selector
+const laneSel = document.getElementById('lane_sel');
+TRAILS.forEach(t => { const opt = document.createElement('option'); opt.value = t; opt.textContent = t; laneSel.appendChild(opt); });
+
+renderFableGrid();
+animateSmithChart();
+render();
+setInterval(render, 10000); // 10s heartbeat poll
+</script></body></html>

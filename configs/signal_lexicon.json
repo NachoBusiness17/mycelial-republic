@@ -1,0 +1,643 @@
+{
+  "schema": "signal_lexicon.v1",
+  "created": "2026-10-21",
+  "purpose": "Cross-discipline keyword map for free-venue signal mining. Each family is an ESTATE LAW (something this repo already enforces or owes), its triggers in the wild, and the same law as it appears in other disciplines. A hit is only useful if it routes to a binding - the tool or ticket that would consume it.",
+  "notes": [
+    "Triggers are mined against free venues only (HN Algolia, Lobsters RSS, Reddit RSS, arXiv Atom). X has no anonymous API and is deliberately absent.",
+    "anti lists exist because keyword mining without negatives is a noise pump (see family 'repeat-gate').",
+    "estate_binding names the artifact that would consume a hit. If a family has no binding, do not mine it - it is curiosity, not signal."
+  ],
+  "families": [
+    {
+      "id": "backpressure",
+      "law": "intake must not exceed drain; a queue that only grows is not a queue",
+      "disciplines": [
+        "systems",
+        "physics",
+        "biology"
+      ],
+      "triggers": [
+        "backpressure",
+        "admission control",
+        "load shedding",
+        "little's law",
+        "queueing delay",
+        "saturation",
+        "rate limiting",
+        "head-of-line blocking"
+      ],
+      "cross_discipline": {
+        "biology": "allostasis - an organism sheds load (sweat, vasodilation) before core temperature fails",
+        "physics": "flow conservation; a pipe narrower than its inflow stores pressure, not throughput",
+        "cs": "bounded queues, 429s, graceful degradation"
+      },
+      "anti": [
+        "backpack",
+        "limiter pedal",
+        "rate my"
+      ],
+      "weight": 1.3,
+      "estate_binding": "tools/commit_sweeper.py - 10-minute drain vs multi-thousand-file intake; observed 20+ min sweeps (2026-10-21)",
+      "action": "chunked draining, intake budget, or a second drain window",
+      "context": [
+        "queue",
+        "throughput",
+        "latency",
+        "consumer",
+        "producer",
+        "bounded"
+      ],
+      "min_hits": 2,
+      "strong": [
+        "backpressure",
+        "admission control",
+        "load shedding"
+      ]
+    },
+    {
+      "id": "append-only-tape",
+      "law": "the record appends; corrections are new rows, never rewrites",
+      "disciplines": [
+        "cs",
+        "law",
+        "biology"
+      ],
+      "triggers": [
+        "event sourcing",
+        "write-ahead log",
+        "append-only",
+        "immutable log",
+        "audit trail",
+        "tamper-evident",
+        "merkle log",
+        "crumble"
+      ],
+      "cross_discipline": {
+        "biology": "epigenetic marks and immune memory - history that cannot be un-written, only out-competed",
+        "law": "chain of custody; a docket is amended, never edited",
+        "cs": "WAL, CRDT op logs, transparency logs (Certificate Transparency)"
+      },
+      "anti": [
+        "append only 40% off"
+      ],
+      "weight": 1.2,
+      "estate_binding": "memory/percolator/explore_decay.jsonl (classify by append), memory/biography/verkle_chain.jsonl",
+      "action": "steal integrity patterns; never import a rewrite-in-place design",
+      "context": [
+        "log",
+        "replay",
+        "immutable",
+        "audit",
+        "snapshot"
+      ],
+      "min_hits": 2,
+      "strong": [
+        "event sourcing",
+        "write-ahead log",
+        "merkle log",
+        "tamper-evident"
+      ]
+    },
+    {
+      "id": "single-writer",
+      "law": "one writer per surface; contention is solved by ownership, not retries",
+      "disciplines": [
+        "cs",
+        "economics",
+        "biology"
+      ],
+      "triggers": [
+        "single writer",
+        "linearizability",
+        "consensus",
+        "raft",
+        "leader election",
+        "lease",
+        "mutex",
+        "compare-and-swap",
+        "optimistic concurrency"
+      ],
+      "cross_discipline": {
+        "biology": "a single pacemaker cell sets the sinoatrial rhythm; competing foci are fibrillation",
+        "economics": "tragedy of the commons; property rights as a lease",
+        "cs": "Raft/Paxos, leases, CAS, advisory locks"
+      },
+      "anti": [
+        "writer's block",
+        "screenwriter"
+      ],
+      "weight": 1.2,
+      "estate_binding": "tools/commit_sweeper.py singleton guard; .git/index.lock discipline (never force-remove)",
+      "action": "lease semantics for long drains; fencing tokens",
+      "context": [
+        "concurrency",
+        "lock",
+        "consensus",
+        "replica",
+        "fencing",
+        "transaction"
+      ],
+      "min_hits": 2,
+      "strong": [
+        "linearizability",
+        "leader election",
+        "compare-and-swap"
+      ]
+    },
+    {
+      "id": "decay-gc",
+      "law": "undrained state is indistinguishable from dead state unless it is aged out",
+      "disciplines": [
+        "cs",
+        "physics",
+        "biology",
+        "cognitive science"
+      ],
+      "triggers": [
+        "garbage collection",
+        "ttl",
+        "expiry",
+        "forgetting curve",
+        "entropy",
+        "half-life",
+        "stale data",
+        "cache invalidation",
+        "retention policy"
+      ],
+      "cross_discipline": {
+        "physics": "the second law - order decays unless work is spent",
+        "biology": "apoptosis and synaptic pruning; unused connections are removed, not kept forever",
+        "cognitive science": "Ebbinghaus forgetting curve; memory is a decay process with rehearsal as refresh"
+      },
+      "anti": [
+        "garbage truck",
+        "expired coupon"
+      ],
+      "weight": 1.1,
+      "estate_binding": "tools/explore_decay.py (wave 6), tools/fossil_check.py tombstone registry",
+      "action": "tune the 14-day bar from observed drain rate, not taste",
+      "context": [
+        "retention",
+        "memory",
+        "eviction",
+        "stale",
+        "prune",
+        "collector"
+      ],
+      "min_hits": 2,
+      "strong": [
+        "garbage collection",
+        "forgetting curve",
+        "retention policy"
+      ]
+    },
+    {
+      "id": "falsifier",
+      "law": "every claim carries the observation that would kill it",
+      "disciplines": [
+        "philosophy",
+        "statistics",
+        "medicine"
+      ],
+      "triggers": [
+        "falsifiable",
+        "kill condition",
+        "pre-registration",
+        "negative result",
+        "null result",
+        "ablation",
+        "falsification",
+        "preregistered report"
+      ],
+      "cross_discipline": {
+        "medicine": "clinical trial stopping rules; a trial that cannot fail is marketing",
+        "physics": "a measurement without an error bar is anecdote",
+        "cs": "property-based testing - the property that would fail is the spec"
+      },
+      "anti": [
+        "unfalsifiable claim meme"
+      ],
+      "weight": 1.5,
+      "estate_binding": "memory/percolator/falsifiers.jsonl + tools/falsifier_lint.py (17 promoted, 6 PASS / 11 manual debts)",
+      "action": "steal new kill-condition types (e.g. distribution shift, drift bounds)",
+      "context": [
+        "hypothesis",
+        "experiment",
+        "test",
+        "claim",
+        "evidence"
+      ],
+      "min_hits": 2,
+      "strong": [
+        "falsifiable",
+        "falsification",
+        "kill condition",
+        "pre-registration"
+      ]
+    },
+    {
+      "id": "repeat-gate",
+      "law": "a single observation is not an invariant",
+      "disciplines": [
+        "statistics",
+        "science studies",
+        "ml"
+      ],
+      "triggers": [
+        "replication crisis",
+        "p-hacking",
+        "effect size",
+        "statistical power",
+        "multiple comparisons",
+        "bonferroni",
+        "garden of forking paths",
+        "sample size"
+      ],
+      "cross_discipline": {
+        "science studies": "Ioannidis - most published findings are false under low power and high flexibility",
+        "ml": "leaderboard overfitting; seed variance swamps claimed gains",
+        "biology": "n=3 mouse studies as the field's standing joke"
+      },
+      "anti": [
+        "replica watch",
+        "replication server"
+      ],
+      "weight": 1.2,
+      "estate_binding": "tools/invariant_promote.py policy v2 (count>=2, span>=1d, cycle sources>=2)",
+      "action": "power analysis for smoke tests: how many runs before a PASS means anything",
+      "context": [
+        "study",
+        "papers",
+        "results",
+        "statistical",
+        "sample",
+        "replication"
+      ],
+      "min_hits": 2,
+      "strong": [
+        "p-hacking",
+        "replication crisis",
+        "multiple comparisons"
+      ]
+    },
+    {
+      "id": "provenance",
+      "law": "who asserted this, and on what evidence - stored with the claim",
+      "disciplines": [
+        "cs",
+        "law",
+        "journalism",
+        "ml"
+      ],
+      "triggers": [
+        "data lineage",
+        "provenance",
+        "attribution",
+        "synthetic data",
+        "watermarking",
+        "content credentials",
+        "c2pa",
+        "source of truth"
+      ],
+      "cross_discipline": {
+        "journalism": "two-source rule; a claim without a source is a rumour",
+        "law": "chain of custody; evidence that cannot be traced is inadmissible",
+        "ml": "model collapse when synthetic data loses its lineage"
+      },
+      "anti": [
+        "provenance hotel"
+      ],
+      "weight": 1.4,
+      "estate_binding": "memory_store.db facts (no provenance column - known gap from the 2026-10-20 paper check); receipts in memory/runs/",
+      "action": "add stated|inferred provenance to facts; only trust 'stated' for biography",
+      "context": [
+        "data",
+        "source",
+        "lineage",
+        "attribution",
+        "metadata",
+        "track"
+      ],
+      "min_hits": 2,
+      "strong": [
+        "provenance",
+        "data lineage",
+        "content credentials"
+      ]
+    },
+    {
+      "id": "leaf-graph",
+      "law": "structure is what survives ablation; a node nothing depends on is a leaf",
+      "disciplines": [
+        "cs",
+        "biology",
+        "physics",
+        "mathematics"
+      ],
+      "triggers": [
+        "dependency graph",
+        "causal graph",
+        "ablation study",
+        "network topology",
+        "graph neural",
+        "centrality",
+        "reachability",
+        "provenance graph"
+      ],
+      "cross_discipline": {
+        "biology": "knockout mice - delete the gene, watch what dies",
+        "physics": "perturbation theory; the response function is the structure",
+        "mathematics": "graph connectivity; leaves carry no paths"
+      },
+      "anti": [
+        "leaf blower",
+        "leafy greens"
+      ],
+      "weight": 1.0,
+      "estate_binding": "I5 gate (0/17 promoted rows declare depends_on; 963 edges elsewhere)",
+      "action": "redesign I5 as leaf-or-declared; or mine ablation methods to earn edges",
+      "context": [
+        "graph",
+        "dependency",
+        "module",
+        "imports",
+        "node",
+        "edges"
+      ],
+      "min_hits": 2,
+      "strong": [
+        "dependency graph",
+        "ablation study",
+        "causal graph"
+      ]
+    },
+    {
+      "id": "tiered-language",
+      "law": "humans read prose, workers read baremetal; the same fact at two resolutions",
+      "disciplines": [
+        "information theory",
+        "linguistics",
+        "cs"
+      ],
+      "triggers": [
+        "information bottleneck",
+        "rate-distortion",
+        "summarization",
+        "schema evolution",
+        "typed protocol",
+        "compression",
+        "semantic layer",
+        "abstraction ladder"
+      ],
+      "cross_discipline": {
+        "information theory": "rate-distortion - the cheapest encoding that preserves the decision",
+        "linguistics": "register shifting; the same content at different formality",
+        "biology": "genotype to phenotype - one code, many readable surfaces"
+      },
+      "anti": [
+        "zip file",
+        "compression socks"
+      ],
+      "weight": 1.0,
+      "estate_binding": "AGENTS.md tiered-language law; memory/runs receipts vs event.v1 rows",
+      "action": "protocol schema for seat briefs (event.v1) if a venue hit offers one",
+      "context": [
+        "schema",
+        "protocol",
+        "encoding",
+        "representation",
+        "summary",
+        "format"
+      ],
+      "min_hits": 2,
+      "strong": [
+        "information bottleneck",
+        "rate-distortion"
+      ]
+    },
+    {
+      "id": "fossil-tombstone",
+      "law": "dead artifacts are named dead, not left looking alive",
+      "disciplines": [
+        "archival science",
+        "cs",
+        "biology"
+      ],
+      "triggers": [
+        "deprecation",
+        "sunset",
+        "tombstone",
+        "end of life",
+        "migration guide",
+        "archival",
+        "bit rot",
+        "dead code",
+        "zombie process"
+      ],
+      "cross_discipline": {
+        "biology": "apoptosis - programmed death keeps the organism coherent",
+        "archival science": "deaccessioning; a catalogue that keeps everything stops being a catalogue",
+        "cs": "deprecation policy; a dead endpoint that still answers is a trap"
+      },
+      "anti": [
+        "tombstone pizza",
+        "sunset boulevard"
+      ],
+      "weight": 0.9,
+      "estate_binding": "tools/fossil_check.py registry (SEATS.md recompiled 2026-10-21; jev trail watch-only)",
+      "action": "borrow deaccession criteria for the 40k-file memory tape",
+      "context": [
+        "deprecat",
+        "migration",
+        "end of life",
+        "shut down",
+        "archiv",
+        "legacy"
+      ],
+      "min_hits": 2,
+      "strong": [
+        "deprecat",
+        "tombstone",
+        "end of life"
+      ]
+    },
+    {
+      "id": "immune-memory",
+      "law": "detect the anomaly you have seen before faster than the one you have not",
+      "disciplines": [
+        "immunology",
+        "security",
+        "ml"
+      ],
+      "triggers": [
+        "anomaly detection",
+        "negative selection",
+        "clonal selection",
+        "intrusion detection",
+        "signature",
+        "zero-day",
+        "immune memory",
+        "self/non-self"
+      ],
+      "cross_discipline": {
+        "immunology": "affinity maturation; the second exposure is a memory response, not a first",
+        "security": "IOC signatures vs behavioural detection",
+        "ml": "one-class classification, isolation forests"
+      },
+      "anti": [
+        "immune booster supplement"
+      ],
+      "weight": 1.0,
+      "estate_binding": "tools/fossil_check.py, precommit_secret_check.py, falsifier log_zero kinds",
+      "action": "mine for cheap behavioural signatures (not hash lists) for the secret gate",
+      "context": [
+        "detection",
+        "signature",
+        "intrusion",
+        "threat",
+        "anomal",
+        "security"
+      ],
+      "min_hits": 2,
+      "strong": [
+        "anomaly detection",
+        "negative selection",
+        "intrusion detection"
+      ]
+    },
+    {
+      "id": "phase-transition",
+      "law": "systems do not degrade linearly; they flip",
+      "disciplines": [
+        "physics",
+        "complexity",
+        "sociology"
+      ],
+      "triggers": [
+        "phase transition",
+        "criticality",
+        "tipping point",
+        "bifurcation",
+        "hysteresis",
+        "regime shift",
+        "percolation threshold",
+        "cascading failure"
+      ],
+      "cross_discipline": {
+        "physics": "order parameters and symmetry breaking",
+        "biology": "ecosystem regime shifts; lakes flip from clear to turbid",
+        "sociology": "Granovetter thresholds; collective behaviour flips on a small parameter change"
+      },
+      "anti": [
+        "phase 3 trial"
+      ],
+      "weight": 0.9,
+      "estate_binding": "commit_sweeper stall (linear backlog -> 20-minute sweeps), chain leaf growth",
+      "action": "find the order parameter for sweeper saturation (intake/drain ratio)",
+      "context": [
+        "network",
+        "system",
+        "threshold",
+        "cascade",
+        "regime",
+        "percolation"
+      ],
+      "min_hits": 2,
+      "strong": [
+        "phase transition",
+        "tipping point",
+        "regime shift",
+        "cascading failure"
+      ]
+    },
+    {
+      "id": "homeostasis",
+      "law": "regulation is a loop with a sensor, a setpoint, and a cost",
+      "disciplines": [
+        "biology",
+        "control theory",
+        "economics"
+      ],
+      "triggers": [
+        "homeostasis",
+        "feedback loop",
+        "setpoint",
+        "pid controller",
+        "allostasis",
+        "thermoregulation",
+        "negative feedback",
+        "oscillation"
+      ],
+      "cross_discipline": {
+        "biology": "body temperature, blood glucose - regulated within bands, not pinned",
+        "economics": "central bank reaction functions; overshoot causes oscillation",
+        "control theory": "PID; too much gain and the loop rings"
+      },
+      "anti": [
+        "homeostasis skincare"
+      ],
+      "weight": 1.0,
+      "estate_binding": "fossil_check bars (168h/720h), falsifier review dates, sweeper cadence",
+      "action": "replace fixed bars with error-driven setpoints where the cost is known",
+      "context": [
+        "feedback",
+        "regulation",
+        "control",
+        "balance",
+        "setpoint",
+        "stability"
+      ],
+      "min_hits": 2,
+      "strong": [
+        "homeostasis",
+        "feedback loop",
+        "pid controller"
+      ]
+    },
+    {
+      "id": "energy-budget",
+      "law": "every operation spends something; unmeasured spend is unbounded spend",
+      "disciplines": [
+        "physics",
+        "economics",
+        "ops"
+      ],
+      "triggers": [
+        "energy budget",
+        "thermodynamic cost",
+        "flops per token",
+        "cost per query",
+        "carbon",
+        "joules",
+        "amortized cost",
+        "unit economics"
+      ],
+      "cross_discipline": {
+        "physics": "Landauer limit - erasure costs kT ln2",
+        "biology": "basal metabolic rate; brains are 20% of body energy at 2% of mass",
+        "economics": "unit economics; growth that loses money per unit is a countdown"
+      },
+      "anti": [
+        "energy drink"
+      ],
+      "weight": 0.8,
+      "estate_binding": "lane spend policy (~$220 credits, conservative default); local 7B on a 6GB box",
+      "action": "record joules/credits per seat-day; the cockpit can then show cost as a signal",
+      "context": [
+        "cost",
+        "compute",
+        "power",
+        "efficiency",
+        "joule",
+        "spend"
+      ],
+      "min_hits": 2,
+      "strong": [
+        "energy budget",
+        "landauer",
+        "joules per token",
+        "cost per query"
+      ]
+    }
+  ]
+}

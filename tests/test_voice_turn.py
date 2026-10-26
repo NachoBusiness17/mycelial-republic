@@ -102,10 +102,25 @@ def test_handle_voice_turn_deepseek_when_forced(tmp_path, monkeypatch):
     assert out["route"] == "frontier"
 
 
-def test_handle_voice_turn_heavy_auto_deepseek(tmp_path, monkeypatch):
+def test_handle_voice_turn_heavy_auto_handoff(tmp_path, monkeypatch):
+    # B2-288 fix (2026-09-26): this test asserted the OLD auto-deepseek answer
+    # for heavy text. Since the intention compiler (mag/intention_brief.py)
+    # classifies "debug this stack trace and implement a fix" as depth
+    # heavy_code with mode handoff (seat_recommend handoff, reason
+    # "handoff_non_blocking; depth=heavy_code", verified live), voice_turn
+    # routes it down the async handoff lane BEFORE seat selection: the answer
+    # is a spoken ack from the local seat while DeepSeek runs in background
+    # (mag/voice_turn.py handoff gate on brief seat_recommend == "handoff",
+    # mag/voice_handoff.py try_handoff_reply). Failure was deterministic, not
+    # test pollution; the expectation was stale, so it now pins the handoff
+    # contract instead.
     trail = tmp_path / "voice_trail.jsonl"
     monkeypatch.setattr(vt, "TRAIL_PATH", trail)
     monkeypatch.setattr(vt, "SESSIONS_DIR", tmp_path / "vs")
+    from mag import voice_handoff as vh
+
+    monkeypatch.setattr(vh, "HANDOFF_DIR", tmp_path / "handoffs")
+    monkeypatch.setattr(vh, "INDEX_PATH", tmp_path / "handoffs" / "index.jsonl")
     fake = {
         "ok": True,
         "text": "I would start by isolating the failing test.",
@@ -123,7 +138,9 @@ def test_handle_voice_turn_heavy_auto_deepseek(tmp_path, monkeypatch):
             )
 
     assert out["ok"] is True
-    assert out["seat"] == "deepseek"
+    assert out["route"] == "handoff"
+    assert out["provider"] == "voice_handoff"
+    assert out["seat"] == "local"  # spoken ack is local; DeepSeek is async
 
 
 def test_tts_clip_shortens():

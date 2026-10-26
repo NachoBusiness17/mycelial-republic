@@ -18,8 +18,18 @@ import uuid
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
+import pytest
 from mag import orchestrator as orc
 from mag import gpipes
+
+
+@pytest.fixture(autouse=True)
+def _isolate_pipes(tmp_path, monkeypatch):
+    """Redirect PIPE_DIR to tmp_path so tests never touch LIVE daemon state."""
+    monkeypatch.setenv("MAG_PIPES_DIR", str(tmp_path))
+    import importlib
+    importlib.reload(gpipes)
+    yield
 
 
 def _wait_terminal(task_id, timeout_s=20):

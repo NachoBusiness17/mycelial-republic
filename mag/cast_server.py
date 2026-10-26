@@ -24,6 +24,9 @@ from urllib.parse import urlparse
 
 STATIC = Path(__file__).resolve().parents[1] / "dashboard" / "static"
 DEFAULT_PORT = 8766
+# C (FISH_TANK_REMEDIATE_20261019): host 127.0.0.1:8766 is OWNED by compose mag-mcp. Loopback cast
+# keeps 8766 for back-compat only when mag-mcp is down; --lan cast moves to LAN_PORT.
+LAN_PORT = 8767
 REFRESH_SECONDS = 15
 
 _ALLOWED = frozenset(
@@ -341,7 +344,12 @@ class Handler(BaseHTTPRequestHandler):
 def run(*, host: str = "127.0.0.1", port: int = DEFAULT_PORT) -> None:
     from config import print_bind_banner
 
+    from mag import cast_guard
+    if cast_guard.is_wildcard(host) and not cast_guard.lan_lease_live():
+        raise SystemExit("refused: cast --lan needs a live 'expose:lan' lease (python scripts/lease.py acquire ...)")
     httpd = ThreadingHTTPServer((host, port), Handler)
+    if cast_guard.is_wildcard(host):
+        cast_guard.lan_lease_watchdog(httpd.shutdown, service="cast")
     print_bind_banner(host=host, port=port, service="cast")
     print("  routes: GET / · GET /voice · POST voice/turn|scratch|stt · GET /health")
     print(f"  auto-refresh every {REFRESH_SECONDS}s — Roku-safe (no JavaScript)")

@@ -31,7 +31,8 @@ if str(ROOT) not in sys.path:
 from mag import orchestrator as orc  # reuse spawn/kill/monitor/log machinery (no reinvent)
 from mag import headless
 
-PIPE_DIR = ROOT / "memory" / "runs" / "gpipes"
+import os
+PIPE_DIR = Path(os.environ.get("MAG_PIPES_DIR", str(ROOT / "memory" / "runs" / "gpipes")))
 TRAIL = ROOT / "memory" / "runs" / "gpipes_trail.jsonl"
 
 

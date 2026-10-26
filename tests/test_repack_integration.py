@@ -18,6 +18,21 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import mag.agent_cli as ac
 from models.providers import chat_messages as real_chat
+import pytest
+
+
+@pytest.fixture(autouse=True)
+def _b2_403_isolate_production_sinks(tmp_path, monkeypatch):
+    """B2-403: real run_turn drains the real operator inbox and appends real
+    decisions-log rows. The decisions sink rides tmp_path via MAG_DECISIONS_LOG
+    (compass seam); the inbox drain is neutered for these tests because they
+    exercise repack/steering machinery, not the inbox, and real operator
+    guidance must never be consumed or re-marked by a test run."""
+    monkeypatch.setenv("MAG_DECISIONS_LOG", str(tmp_path / "decisions_log.jsonl"))
+    import mag.operator_inbox as inbox
+    def _no_drain(*a, **k):
+        return []
+    monkeypatch.setattr(inbox, "drain_pending_at_checkpoint", _no_drain)
 
 
 def tc(tid, n):

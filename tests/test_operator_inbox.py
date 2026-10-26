@@ -15,6 +15,11 @@ def _isolate_inbox(tmp_path, monkeypatch):
     events_path = tmp_path / "behavioral_events.jsonl"
     monkeypatch.setattr(inbox, "INBOX_PATH", inbox_path)
     monkeypatch.setattr(inbox, "EVENTS_PATH", events_path)
+    # B2-403: the decisions sink was the one production file this fixture
+    # did NOT cover; drain_pending_at_checkpoint appended case-law rows to
+    # the real memory/decisions_log.jsonl (75 rows carry this file's test
+    # strings). Redirect it like the other sinks.
+    monkeypatch.setenv("MAG_DECISIONS_LOG", str(tmp_path / "decisions_log.jsonl"))
     yield
 
 

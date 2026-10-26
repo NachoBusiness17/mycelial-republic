@@ -314,6 +314,38 @@ def wake(slug: str, path: Path | None = None) -> dict[str, Any]:
     return {"ok": True, "schema": "chan_wake.v1", "waking": True, "thread": s, "seat": "anon"}
 
 
+def check_steer(target: str, path: Path | str | None = None) -> dict[str, Any]:
+    """STEER channel consumer — the public square is steerable too, not just the mates.
+
+    Reads the operator channel (tools.steer_read.read) for `target` and shapes
+    the operative row as a greentext card the board prepends to its next output
+    (paint the card above the OP — one mouth, operator's word first).
+    Anti-forgery holds on this face: an operative row marked `proposal` is an
+    ask, not an order, so a proposals-only channel yields an empty card and the
+    board paints as usual. Latest-wins holds: an older order does not resurface
+    when the newest applicable row is a proposal. A missing channel is ok=False
+    with an empty card (dark lane, not a silent one); malformed rows are
+    reported by the reader on stderr, never widened into scope here.
+    """
+    try:
+        from tools import steer_read  # lazy: the board paints even without the toolbelt
+        out = steer_read.read(target, path=path)
+    except Exception as e:  # noqa: BLE001 — a dark steer lane never blocks the board
+        return {"ok": False, "schema": "chan_steer.v1", "mate": target, "card": "",
+                "steer": "", "operative": None, "error": str(e)[:120]}
+    row = out.get("operative")
+    if not row or row.get("proposal"):
+        return {"ok": bool(out.get("ok")), "schema": "chan_steer.v1", "mate": target,
+                "card": "", "steer": "", "operative": None,
+                "n_malformed": len(out.get("malformed") or [])}
+    steer_text = str(row.get("steer") or "").strip()
+    body = steer_text.replace("\n", "\n>")[:400]
+    card = f">steer from the operator ({row.get('via')}):\n>{body}"
+    return {"ok": True, "schema": "chan_steer.v1", "mate": target, "card": card,
+            "steer": steer_text, "operative": row,
+            "n_malformed": len(out.get("malformed") or [])}
+
+
 def main(argv: list[str] | None = None) -> int:
     import sys
     args = list(sys.argv[1:] if argv is None else argv)

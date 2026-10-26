@@ -10,7 +10,7 @@ import os
 from datetime import datetime, timezone
 
 from audit import log_event, sync_current
-from config import HANDOFF_DIR, RESULTS_DIR
+from config import HANDOFF_DIR, RESULTS_DIR, ROOT
 from handoff.schema import new_handoff, write_handoff
 from state import AgentState
 

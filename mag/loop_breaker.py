@@ -20,6 +20,7 @@ from __future__ import annotations
 
 import json
 import re
+import shutil
 import sys
 from collections import Counter, defaultdict
 from datetime import datetime, timezone
@@ -96,7 +97,16 @@ def _enum() -> list[dict[str, Any]]:
         # `-Filter "Name='python.exe'..."` nested-quote form is mangled when PowerShell
         # receives it as a subprocess arg on Windows, silently returning 0 procs, which is
         # exactly why ghost could never SEE the duplicate-brain storm it must break.
-        r = subprocess.run(["powershell", "-NoProfile", "-Command",
+        # B2-85 2026-09-26: bare "powershell" is not on PATH in every launch
+        # context (sig run_shell:e566037def80 "[Errno 2] ... powershell",
+        # 7,964 FKB rows since 2026-09-19). Resolve the full path; System32
+        # fallback when PATH lookup misses (pattern mag/process_reaper.py).
+        ps_exe = shutil.which("powershell") or shutil.which("powershell.exe")
+        if not ps_exe and sys.platform == "win32":
+            ps_exe = r"C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe"
+        if not ps_exe:
+            return out
+        r = subprocess.run([ps_exe, "-NoProfile", "-Command",
                             "Get-CimInstance Win32_Process | "
                             "Where-Object { $_.Name -in @('python.exe','pythonw.exe') } | "
                             "Select-Object ProcessId,ParentProcessId,CreationDate,CommandLine | "

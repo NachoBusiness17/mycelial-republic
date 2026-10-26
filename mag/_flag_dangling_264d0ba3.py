@@ -78,7 +78,9 @@ try:
         out.append(ln)
     if found != 1:
         sys.exit(f"expected exactly 1 target row, found {found} — aborting, no write done")
-    CHAIN.write_text("\n".join(out) + ("\n" if out else ""), encoding="utf-8")
+    # B2-393 byte-exact chain law: write_bytes so Windows never rewrites the
+    # chain's LF line endings to CRLF (B2-83 rev 1 proved that live).
+    CHAIN.write_bytes(("\n".join(out) + ("\n" if out else "")).encode("utf-8"))
     print("FLAGGED 1 row (evidence_lost=true)")
 finally:
     if acquired:

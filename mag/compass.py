@@ -14,6 +14,7 @@ Data tier: T2 local. Never reads .env. Diff is scoped to memory/ and filtered.
 from __future__ import annotations
 
 import json
+import os
 import subprocess
 from datetime import datetime, timezone
 from pathlib import Path
@@ -22,6 +23,18 @@ from typing import Any
 from config import ROOT
 
 DECISIONS_LOG = ROOT / "memory" / "decisions_log.jsonl"
+def decisions_log_path() -> Path:
+    """B2-403 (2026-09-26): the decisions sink is redirectable.
+
+    Tests exercising the real run_turn/drain machinery appended case-law
+    rows into PRODUCTION memory/decisions_log.jsonl (measured:
+    test_t1_steering +3/run, test_repack_integration +104/run) and could
+    consume real pending operator guidance mid-test. Setting
+    MAG_DECISIONS_LOG redirects every record_decision write; production
+    default is unchanged when the env is absent.
+    """
+    env = os.environ.get("MAG_DECISIONS_LOG")
+    return Path(env) if env else DECISIONS_LOG
 BLUEPRINT = ROOT / "memory" / "plans" / "sovereign-steering-engine-plan-2026-08-03.md"
 ANCHOR = ROOT / "memory" / "plans" / "ANCHOR.md"
 LAST_STATE = ROOT / "memory" / "agent_state" / "LATEST.md"
@@ -133,8 +146,9 @@ def record_decision(context: str, steer_input: str, outcome: str) -> bool:
     entry = {"timestamp": _now(), "context": context,
              "steer_input": steer_input, "outcome": outcome}
     try:
-        DECISIONS_LOG.parent.mkdir(parents=True, exist_ok=True)
-        with open(DECISIONS_LOG, "a", encoding="utf-8") as f:
+        log_path = decisions_log_path()
+        log_path.parent.mkdir(parents=True, exist_ok=True)
+        with open(log_path, "a", encoding="utf-8") as f:
             f.write(json.dumps(entry, ensure_ascii=False) + "\n")
         return True
     except Exception:

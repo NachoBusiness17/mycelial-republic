@@ -1,0 +1,11 @@
+{
+  "id": "H247_A1_MIRA_LANE_FORECASTER_SPEC",
+  "model": "anthropic/claude-sonnet-5.5",
+  "max_tokens": 4000,
+  "contract": "Produce a DESIGN SPEC (markdown, <=250 lines) for the estate's lane-value forecaster v0, modeled on MIRA's generative critic (arXiv 2610.02525: forecast expected remaining return from partial states at decision boundaries). Sections, all grounded ONLY in the evidence paths: (1) TRAINING ROW SCHEMA - exact JSONL fields mapping partial lane state to outcome: lane id, lane what (first 120 chars), rows-so-far at checkpoint, elapsed minutes, then label remaining_rows and landed flag from the run's final fold; (2) CORPUS JOIN PLAN - which directories hold lane archives (memory/runs/mickey17_v2/runs/*/lanes/*.json) and how checkpoint snapshots can be reconstructed from incremental lane writes without rewriting any live file; (3) VALIDATION PROTOCOL - hold out whole runs, baseline = percolator's current hand-tuned curiosity score, metric = rank correlation between forecast and actual remaining rows; (4) THE ONE-SITTING PROBE - smallest end-to-end experiment (~50 labeled checkpoints, one featureless frequency baseline vs one gradient-boosted baseline on hand features); (5) FALSIFIERS - what result kills the program (forecast no better than mean baseline on held-out runs). Mark every speculative row SPECULATIVE. No em-dashes.",
+  "evidence": [
+    "watch/inbox/MIRA_METAREASONING_20261006.md",
+    "memory/percolator/candidates.jsonl",
+    "mag/percolator.py"
+  ]
+}

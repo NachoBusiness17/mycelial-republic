@@ -1,0 +1,3 @@
+Law: A record must be erased only if its continued existence violates the original purpose for which it was created or contravenes fundamental rights inherent to the subject.  
+
+When data is collected, its purpose defines the scope of its permissible lifespan and use; retaining it beyond this scope commodifies personal identity and erodes trust. Erasing obsolete data prevents unintended secondary uses, respects subjects' evolving autonomy, and mitigates risks from accidental exposure or societal harm. A system’s integrity demands it honor these limits without ambiguity, ensuring data lifecycle aligns with ethical and legal boundaries.

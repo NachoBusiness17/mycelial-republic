@@ -73,13 +73,24 @@ def clippy(*, flat: bool = False) -> str:
         "",
     ]
     for i, (leaf, h) in enumerate(zip(leaves, hashes), 1):
-        lines.append(f"  [{i:02d}] {leaf}  · {h[:8]}")
+        lines.append(f"  [{i:02d}] {leaf}  ·  {h[:8]}")
     lines += [
         "",
         "     ── tie-off ──",
         "     The knot holds 7 reminders. Untying requires operator consent.",
         "     (You do not have a choice. The rope is verkle-committed.)",
         "",
+    ]
+    # D3 clippy-as-prober (2026-10-05): due skill cards get closed-book
+    # free-recall probes in every clippy print - the questions only, never
+    # the answer key; answers bank via mag.skill_fsrs answer
+    try:
+        from mag.skill_fsrs import clippy_block
+
+        lines += [clippy_block(), ""]
+    except Exception:  # noqa: BLE001 - a probe failure never blocks clippy
+        pass
+    lines += [
         "→ /memories/session/next-window-handoff.md · doctrine: repo memory (DELIBERATE-ASK · PUPPETEER · PILE)",
     ]
     return "\n".join(lines)

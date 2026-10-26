@@ -11,7 +11,9 @@ Usage:
 Reference (the proof run, watch/INTAKE_XBATCH_20260905.md): 7 clusters, key
 receipts = the load-bearing primary sources the original interpret attached.
 
-$0: free lanes only (groq, cerebras). READ/FILTER steps are NOT re-run — the
+$0: free lanes only, DORMANT-GATED (B2-133): groq rides; cerebras is dormant in
+configs/providers.yaml (B2-36, card-gated trial) and returns on operator GO.
+READ/FILTER steps are NOT re-run: the
 capture is the frozen input; only INTERPRET varies (seat + order). Deterministic
 shuffles, honest down-reporting, no retries. Stdlib only.
 """
@@ -24,6 +26,13 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 LANES = [("groq", None), ("cerebras", "gpt-oss-120b")]
+# B2-133 DORMANT GATE (2026-09-26): a provider declared dormant in configs/providers.yaml
+# never rides a witness rotation (B2-36 set cerebras dormant: card-gated trial, chat 402;
+# mag/doctor.py:607: dormant is a declared state). Operator GO flips the flag and the
+# witness returns, no code edit.
+from mag.dormant import dormant_ids as _dormant_provider_ids
+
+LANES = [l for l in LANES if l[0] not in _dormant_provider_ids()]
 OUT = ROOT / "state" / "rotation_harness.json"
 REF_COUNT = 7
 # Reference PARTITION (watch/INTAKE_XBATCH_20260905.md clusters A-G, author->letter).

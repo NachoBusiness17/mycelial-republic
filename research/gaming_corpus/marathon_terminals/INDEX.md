@@ -78,3 +78,15 @@ separators; source URL + archive credit in each file header. Harvester:
 - Marker corrections vs intake 005: "godhood" = 0 hits in terminal corpus (the "seek
   godhood" line is lore-page text, cite as lore not terminal); "thoth" is an M2 figure
   (11 mentions in m2/, 1 footnote in m3/).
+
+## ERRATUM (2026-10-19, night shift): voice metrics superseded by a documented instrument
+
+The headline metrics above (1p-sg/1k 11.57 / 12.55 / 7.93; garble 1 / 8 / 154) came
+from an undocumented 09-06 instrument and are now CONTESTED. `tools/marathon_voice_metrics.py`
+(documented heuristic, letter-words denominator, terminal-boundary counting) measures
+15.27 / 15.81 / 13.48 1p-sg/1k and garble 27 / 175 / 822, with terminal counts matching
+this index exactly (76 / 100 / 112). Shape agrees (M2 peak, M3 decline, garble explodes
+into M3); magnitude differs because the M3 collapse is concentrated in envy.txt
+(4.54/1k, the zero-first-person goodbye) and the old instrument's aggregation is
+unknown. Cite `tools/marathon_voice_metrics.py` + `state/probe_features/marathon_rampancy.json`
+for all future uses; census law applies (name instrument, moment).

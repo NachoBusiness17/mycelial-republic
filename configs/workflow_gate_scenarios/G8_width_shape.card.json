@@ -1,0 +1,22 @@
+{
+  "gate_id": "G8-width-shape",
+  "clause": "Curiosity-register row 3 r03#1 (corpus/steal/MASTER_READ_ESTATE.md, executed 2026-10-05): converts the TETHERED_LINK width law (corpus/steal/TETHERED_LINK_STEAL_20260925.md, amended by B2-435) from AGENTS.md prose into a submit-time gate; the card follows the same LAW-12 discipline as the genesis clause (watch/inbox/BURN_rsi-harness_20260926.md), one card per gate minted from a real REGISTRY.jsonl FAIL row.",
+  "cited_fail_row": {
+    "registry": "memory/workflows/REGISTRY.jsonl",
+    "line": 88,
+    "ts": "2026-10-05T05:20:28Z",
+    "name": "g8-width-violation-fixture-20261005",
+    "digest": "8e41d0903ece"
+  },
+  "citation_provenance": "Fixture-minted FAIL row: the first gate run of configs/workflow_gate_scenarios/fixtures/fail_g8.dwf.ts at 2026-10-05T05:20:28Z returned verdict FAIL with G8-width-shape ok=false and G1-G7 all ok (single-fault fixture: the pass_control body plus one max_concurrency 10 line). No historical registry row can show G8 failing because the check did not exist before 2026-10-05; the fault class the card pins is the real fleet failure dwfrun-15738edf (tree-doctrine 50-wide dig, 429 code 1302 storm, workflow children at maxAttempts 0), recorded in corpus/steal/TETHERED_LINK_STEAL_20260925.md and proven-width-tabled in watch/inbox/gala_20260925/AFTERPARTY_CLOSE_20260926.md.",
+  "scenario_input": "configs/workflow_gate_scenarios/fixtures/fail_g8.dwf.ts",
+  "scenario_description": "Script declares max_concurrency: 10 and carries no envelope-receipt stamp: under the 2026-10-05 G8 semantics the row fails hard (exit 2) until the declared width drops to 3 or less or the script documents a measured envelope receipt naming an existing watch/inbox file.",
+  "expected_verdict": {
+    "overall": "FAIL",
+    "failed_checks": ["G8-width-shape"],
+    "warn_checks": [],
+    "exit_code": 2
+  },
+  "regression_criterion": "tools/workflow_gate.py check --scenarios configs/workflow_gate_scenarios exits 0 with this card green. The card goes red if (a) the gate stops flagging fail_g8.dwf.ts (G8 width enforcement weakened: cap raised, regex narrowed, or the receipt exception widened to accept missing files or non-watch/inbox paths), (b) the fixture starts failing gates beyond expected_verdict.failed_checks (G8 leaking into other gates), or (c) the cited row disappears from REGISTRY.jsonl. Card and fixture are immutable inputs: a G8 semantics change requires a new dated card filed alongside, never a silent edit.",
+  "rollback_note": "Scenario mode is read-only: it writes no registry row and touches no file. Rollback of a G8 gate change is a git revert of tools/workflow_gate.py to the pre-2026-10-05 blob, then re-run check --scenarios expecting this card to error on unknown gate_id G8-width-shape (the card and fixture stay as history, matching the G1-G7 pattern). The width law itself stays in AGENTS.md and corpus/steal/TETHERED_LINK_STEAL_20260925.md regardless; the cited fixture FAIL row (line 88) is history and is never erased."
+}

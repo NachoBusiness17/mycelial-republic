@@ -70,6 +70,15 @@ def _strip_comments(text: str) -> str:
     return "\n".join(lines)
 
 
+class ProviderConfigError(RuntimeError):
+    """providers.yaml is missing or unreadable; the roster cannot be loaded.
+
+    Raised instead of the old silent empty-roster fallback (gala wave5-repair
+    config-hygiene lane, 2026-09-29; evidence
+    watch/inbox/burn_reset_20260927/flash50/f-03.md finding 5).
+    """
+
+
 def load_providers() -> dict[str, Any]:
     global _CFG, _CFG_MTIME
     if _CFG is not None and not _cfg_stale():
@@ -80,20 +89,42 @@ def load_providers() -> dict[str, Any]:
         load_dotenv()
     except Exception:
         pass
-    path = ROOT / "configs" / "providers.yaml"
+    path = _cfg_path()
     if not path.is_file():
-        _CFG = {"providers": {}, "defaults": {}, "routing": {}}
-        return _CFG
+        # FAIL LOUD (gala wave5-repair config-hygiene lane, 2026-09-29): the
+        # old code returned an empty roster here AND on any parse error, so a
+        # corrupted providers.yaml read as "zero providers configured" with
+        # rc=0 and every lane died later as "unknown provider". providers.yaml
+        # is gitignored (disk is the only copy), so a missing file is roster
+        # loss; no default roster exists anywhere in the repo to fall back to,
+        # the empty map was the failure dressed as a default, so there is NO
+        # marked fallback here. Name the file and the recovery path instead.
+        raise ProviderConfigError(
+            f"providers roster missing: {path} does not exist "
+            "(configs/providers.yaml is gitignored; restore it from the "
+            "providers.yaml.bak-* beside it or recreate it)"
+        )
     try:
         import yaml  # type: ignore
 
-        _CFG = yaml.safe_load(_strip_comments(path.read_text(encoding="utf-8"))) or {}
-        try:
-            _CFG_MTIME = path.stat().st_mtime_ns
-        except OSError:
-            _CFG_MTIME = 0
-    except Exception:
-        _CFG = {"providers": {}, "defaults": {}, "routing": {}}
+        data = yaml.safe_load(_strip_comments(path.read_text(encoding="utf-8")))
+    except Exception as e:
+        raise ProviderConfigError(
+            f"providers roster unreadable: {path}: {type(e).__name__}: {e}"
+        ) from e
+    if not isinstance(data, dict):
+        raise ProviderConfigError(
+            f"providers roster malformed: {path} must parse to a yaml mapping "
+            f"(providers:/defaults:/routing:), got {type(data).__name__}"
+        )
+    data.setdefault("providers", {})
+    data.setdefault("defaults", {})
+    data.setdefault("routing", {})
+    _CFG = data
+    try:
+        _CFG_MTIME = path.stat().st_mtime_ns
+    except OSError:
+        _CFG_MTIME = 0
     return _CFG
 
 
@@ -151,6 +182,37 @@ def _api_key(pcfg: dict[str, Any]) -> str | None:
     return keys[0] if keys else None
 
 
+# --- base_url surface policy (B2-445 spec, pinned 2026-09-26) --------------
+# OWNER OF THE POLICY: this doc block, next to the only resolution funnel
+# (provider_base_url below). The B2-94 mimosa registration accepted 4 of the
+# 12 registered claims on the grounds that base_url is operator-owned config
+# with no untrusted input; this block is the spec that decision rests on.
+#
+# Allowed base_url sources (exhaustive):
+#   1. configs/providers.yaml `base_url:` (operator hand-edited config).
+#   2. the per-provider `base_url_env:` override (e.g. VAST_OPENAI_BASE_URL),
+#      read from the process environment at call time. The env value is set
+#      by the operator (or the operator's own tooling), never by a caller,
+#      never by model output, and never by watch/inbox content.
+# Nothing else feeds a request URL: provider ids from callers resolve through
+# configs only; model refs, prompts, and receipts never reach URL space.
+#
+# Scheme policy: https expected for all remote lanes. Non-loopback http is a
+# DECLARED NON-GOAL, not an accident: free/local lanes either speak https or
+# live on loopback (ollama 127.0.0.1:11434, bionic 127.0.0.1:1234, lm studio),
+# where http-in-URL is the local transport, not a downgrade of a remote call.
+# No scheme/host allowlist is enforced in code on purpose: a host allowlist
+# would break the designed base_url_env override (fresh endpoint probes,
+# seat-scoped base URLs, container-vs-host names) that the operator relies on.
+#
+# Threat model line (why this is registered-not-fixed in the B2-94/B2-445
+# mimosa tails): a caller that could smuggle a URL-shaped provider id or an
+# attacker-set env var would bypass this policy; both are declared out of
+# scope because provider ids come from estate code and configs/lanes.yaml and
+# the environment is operator-owned. The falsifier gate lives in
+# configs/providers.yaml review: any new caller that passes a URL (not an id)
+# into these chat functions re-opens this policy and must amend this block
+# BEFORE the code lands (spec-before-behavior law).
 def provider_base_url(pcfg: dict[str, Any]) -> str:
     """Resolve base_url, honoring an env override (e.g. VAST_OPENAI_BASE_URL)."""
     env_name = pcfg.get("base_url_env")
@@ -209,6 +271,49 @@ def _thinking_off(pcfg: dict[str, Any], payload: dict[str, Any]) -> dict[str, An
     if pcfg.get("disable_thinking"):
         payload["thinking"] = {"type": "disabled"}
     return payload
+
+
+# ── B2-62 (2026-09-26): overload backoff + reasoning floor for the z.ai lanes ──
+# SPEC: docs/ref/ZAI_API_EXPERT_REFERENCE.md §5.1. MEASURED (B2-04 live probe,
+# watch/inbox/burn_wave_20260926/B2_04_probe_results2.json): 429 code 1305
+# "temporarily overloaded" hit ~1 in 3 calls at 6s spacing on the funded z.ai
+# lanes; one 429 survived a single 15s wait, so the wait STRETCHES per attempt.
+OVERLOAD_BASE_S = 15     # the wait the B2-04 probe measured recovering the lane
+OVERLOAD_ATTEMPTS = 2    # 15s then 30s, then the paid burst path stays last resort
+OVERLOAD_CAP_S = 60      # hard cap on any single wait
+# The receipted minimum budget for thinking-on work (EXP-A 08-29, §3 cache doctrine:
+# frozen prefix + max_tokens>=1536). B2-04: 2 of 7 burns at 600 ended completion=600,
+# content empty because default thinking ate the whole budget.
+REASONING_FLOOR = 1536
+
+
+def _is_overload_body(err: str) -> bool:
+    """True when a 429 body names the z.ai overload family (1305/1302/overloaded)."""
+    e = (err or "").lower()
+    return "1305" in e or "1302" in e or "overloaded" in e
+
+
+def _thinking_disable_ok(model: str | None) -> bool:
+    """glm-5.3 + glm-5.3-flash FORCE thinking (disabled -> 1210 error, §10.1 lived
+    scar); 4.7-flash/4.5-flash and the auto-decide family allow it."""
+    return "5.3" not in (model or "")
+
+
+def _apply_reasoning_floor(
+    payload: dict[str, Any], *, thinking: bool | None, max_tokens: int, model: str | None
+) -> tuple[dict[str, Any], bool]:
+    """REASONING FLOOR (spec §5.1 law 2): below the receipted thinking-on minimum
+    (1536, EXP-A), UNDECIDED thinking (thinking=None, provider left it on) is
+    disabled so the caller's budget serves content instead of being eaten by
+    reasoning (B2-04: 2 of 7 burns ended completion=600, content empty). Explicit
+    thinking=True keeps the honest empty_reasoning failure; forced-thinking models
+    (5.3) are never sent thinking:disabled (1210). Never raises the budget."""
+    if thinking is not None or payload.get("thinking"):
+        return payload, False
+    if max_tokens >= REASONING_FLOOR or not _thinking_disable_ok(model):
+        return payload, False
+    payload["thinking"] = {"type": "disabled"}
+    return payload, True
 
 
 def status_table() -> dict[str, Any]:
@@ -326,10 +431,38 @@ def chat_provider(
         return {"ok": False, "error": f"missing API key ({envs})"}
 
     model = model or provider_default_model(pcfg)
+    # B2-286 (2026-09-26): a null model is a named refusal, never a live call.
+    # MEASURED (the B2-286 brief disease, B2-62 first probe): a bare call on a
+    # lane with no default_model (z_ai2/z_ai3 carried none) sent "model": null
+    # and got HTTP 200 with empty content + empty usage, so a dead lane read ok.
+    # Applies to BOTH chat paths (chat_provider and chat_messages).
+    if model is None and not pcfg.get("free_local"):
+        return {
+            "ok": False,
+            "error": f"null_model_refused: {provider_id} resolved no model "
+                     "(no default_model in configs/providers.yaml, none passed); "
+                     "pass model= or set default_model",
+            "provider": provider_id,
+        }
     kind = (pcfg.get("kind") or "openai_compat").lower()
 
     if kind == "anthropic_messages":
         return _chat_anthropic(
+            provider_id,
+            pcfg,
+            keys[0] if keys else "",
+            system,
+            user,
+            model=str(model),
+            temperature=temperature,
+            max_tokens=max_tokens,
+        )
+
+    if kind == "gemini_native":
+        # B2-194 (2026-09-26): the express key's native home is Vertex
+        # generateContent (B2-63 receipt); openai_compat lanes stay on the
+        # generic path below, untouched.
+        return _chat_gemini_native(
             provider_id,
             pcfg,
             keys[0] if keys else "",
@@ -361,6 +494,10 @@ def chat_provider(
         elif thinking is False:
             payload["thinking"] = {"type": "disabled"}
         # thinking True -> leave DeepSeek v4's default thinking ON (coherence)
+        # B2-62 REASONING FLOOR (spec §5.1): an undecided call under the thinking-on
+        # minimum gets thinking disabled so the budget serves content (see helper).
+        payload, floor_applied = _apply_reasoning_floor(
+            payload, thinking=thinking, max_tokens=max_tokens, model=str(model))
         body = json.dumps(payload).encode("utf-8")
         headers = {
             "Content-Type": "application/json",
@@ -373,91 +510,108 @@ def chat_provider(
         for hk, hv in (pcfg.get("extra_headers") or {}).items():
             headers[str(hk)] = str(hv)
         req = urllib.request.Request(url, data=body, headers=headers, method="POST")
-        t0 = time.perf_counter()
         to = timeout if timeout is not None else int(pcfg.get("timeout_seconds") or 90)
-        try:
-            with urllib.request.urlopen(req, timeout=to) as r:
-                data = json.loads(r.read().decode("utf-8"))
-            lat_ms = int((time.perf_counter() - t0) * 1000)
-            choice = (data.get("choices") or [{}])[0]
-            msg = choice.get("message") or {}
-            text = (msg.get("content") or "")
-            # EMPTY-CONTENT HONESTY (2026-08-24): a reasoning model that spends the whole
-            # budget thinking returns ok-but-empty (content "", finish_reason length). That is
-            # NOT a successful empty answer — it is a budget failure. Report it honestly so the
-            # loop treats it as retryable, not as a dead lane. (Reasoning fields vary: some
-            # providers put it in message.reasoning, others message.reasoning_details.)
-            if not text and (choice.get("finish_reason") == "length"
-                             or msg.get("reasoning") or msg.get("reasoning_details")):
-                return {"ok": False,
-                        "error": "empty content — reasoning model consumed the budget "
-                                  "(max_tokens too small; raise it or disable thinking)",
-                        "provider": provider_id, "model": model, "empty_reasoning": True}
-            if _looks_degenerate(text):
+        # B2-62 OVERLOAD BACKOFF (spec docs/ref/ZAI_API_EXPERT_REFERENCE.md §5.1 law 1):
+        # on 429 + overload body (1305/1302/"overloaded"), a retry_overload provider
+        # retries the SAME request after 15s then 30s (B2-04 measured recovery wait,
+        # stretched because one Lite 429 survived a single 15s wait) before failing.
+        # Every failed attempt is recorded below, so the cadence keeps learning. After
+        # exhaustion the normal failover/burst paths run unchanged (paid burst = last
+        # resort). Providers without retry_overload never sleep.
+        attempt = 0
+        while True:
+            t0 = time.perf_counter()
+            try:
+                with urllib.request.urlopen(req, timeout=to) as r:
+                    data = json.loads(r.read().decode("utf-8"))
+                lat_ms = int((time.perf_counter() - t0) * 1000)
+                choice = (data.get("choices") or [{}])[0]
+                msg = choice.get("message") or {}
+                text = (msg.get("content") or "")
+                # EMPTY-CONTENT HONESTY (2026-08-24): a reasoning model that spends the whole
+                # budget thinking returns ok-but-empty (content "", finish_reason length). That is
+                # NOT a successful empty answer — it is a budget failure. Report it honestly so the
+                # loop treats it as retryable, not as a dead lane. (Reasoning fields vary: some
+                # providers put it in message.reasoning, others message.reasoning_details.)
+                if not text and (choice.get("finish_reason") == "length"
+                                 or msg.get("reasoning") or msg.get("reasoning_details")):
+                    return {"ok": False,
+                            "error": "empty content — reasoning model consumed the budget "
+                                     "(max_tokens too small; raise it or disable thinking)",
+                            "provider": provider_id, "model": model, "empty_reasoning": True}
+                if _looks_degenerate(text):
+                    record_usage(
+                        provider_id, model=str(model), ok=False,
+                        session_id=session_id,
+                        meta={"degenerate": True, "key_idx": ki},
+                    )
+                    return {
+                        "ok": False,
+                        "error": "degenerate repetition output (model lock loop) - retry",
+                        "provider": provider_id,
+                        "model": model,
+                        "degenerate": True,
+                    }
+                usage = data.get("usage") or {}
+                pt = int(usage.get("prompt_tokens") or 0)
+                ct = int(usage.get("completion_tokens") or 0)
+                # Cache split: DeepSeek exposes prompt_cache_hit/miss at top level;
+                # OpenAI-compat exposes prompt_tokens_details.cached_tokens. Capture both so the
+                # ledger carries hit/miss on EVERY call (cache_map hit ratio becomes self-contained).
+                details = usage.get("prompt_tokens_details") or {}
+                ch = int(usage.get("prompt_cache_hit_tokens") or details.get("cached_tokens") or 0)
+                cm = int(usage.get("prompt_cache_miss_tokens") or max(0, pt - ch) or 0)
                 record_usage(
-                    provider_id, model=str(model), ok=False,
+                    provider_id,
+                    model=str(model),
+                    prompt_tokens=pt,
+                    completion_tokens=ct,
+                    cache_hit_tokens=ch,
+                    cache_miss_tokens=cm,
+                    ok=True,
                     session_id=session_id,
-                    meta={"degenerate": True, "key_idx": ki},
+                    latency_ms=lat_ms,
+                    meta={"chars": len(text), "key_idx": ki, "multi_key": len(keys) > 1,
+                          "key_env": (_key_env_names(pcfg)[ki] if ki < len(_key_env_names(pcfg)) else "")},
                 )
-                return {
-                    "ok": False,
-                    "error": "degenerate repetition output (model lock loop) - retry",
+                out = {
+                    "ok": True,
+                    "text": text,
                     "provider": provider_id,
                     "model": model,
-                    "degenerate": True,
+                    "usage": usage,
+                    "budget_after": provider_budget(provider_id),
+                    "key_idx": ki,
                 }
-            usage = data.get("usage") or {}
-            pt = int(usage.get("prompt_tokens") or 0)
-            ct = int(usage.get("completion_tokens") or 0)
-            # Cache split: DeepSeek exposes prompt_cache_hit/miss at top level;
-            # OpenAI-compat exposes prompt_tokens_details.cached_tokens. Capture both so the
-            # ledger carries hit/miss on EVERY call (cache_map hit ratio becomes self-contained).
-            details = usage.get("prompt_tokens_details") or {}
-            ch = int(usage.get("prompt_cache_hit_tokens") or details.get("cached_tokens") or 0)
-            cm = int(usage.get("prompt_cache_miss_tokens") or max(0, pt - ch) or 0)
-            record_usage(
-                provider_id,
-                model=str(model),
-                prompt_tokens=pt,
-                completion_tokens=ct,
-                cache_hit_tokens=ch,
-                cache_miss_tokens=cm,
-                ok=True,
-                session_id=session_id,
-                latency_ms=lat_ms,
-                meta={"chars": len(text), "key_idx": ki, "multi_key": len(keys) > 1,
-                      "key_env": (_key_env_names(pcfg)[ki] if ki < len(_key_env_names(pcfg)) else "")},
-            )
-            return {
-                "ok": True,
-                "text": text,
-                "provider": provider_id,
-                "model": model,
-                "usage": usage,
-                "budget_after": provider_budget(provider_id),
-                "key_idx": ki,
-            }
-        except urllib.error.HTTPError as e:
-            err = e.read().decode("utf-8", errors="replace")[:300]
-            last_err = f"HTTP {e.code}: {err}"
-            record_usage(
-                provider_id, model=str(model or ""), ok=False,
-                session_id=session_id,
-                meta={"http": e.code, "key_idx": ki},
-            )
-            if e.code in (401, 403, 429) and ki + 1 < len(keys):
-                continue  # try next key in the chain
-            return {"ok": False, "error": last_err, "provider": provider_id, "key_idx": ki}
-        except Exception as e:
-            last_err = str(e)[:200]
-            record_usage(
-                provider_id, model=str(model or ""), ok=False,
-                session_id=session_id,
-                meta={"error": str(e)[:200], "key_idx": ki},
-            )
-            if ki + 1 < len(keys):
-                continue
-            return {"ok": False, "error": last_err, "provider": provider_id, "key_idx": ki}
+                if floor_applied:
+                    out["reasoning_floor_applied"] = True
+                return out
+            except urllib.error.HTTPError as e:
+                err = e.read().decode("utf-8", errors="replace")[:300]
+                last_err = f"HTTP {e.code}: {err}"
+                record_usage(
+                    provider_id, model=str(model or ""), ok=False,
+                    session_id=session_id,
+                    meta={"http": e.code, "key_idx": ki},
+                )
+                if (e.code == 429 and pcfg.get("retry_overload")
+                        and attempt < OVERLOAD_ATTEMPTS and _is_overload_body(err)):
+                    time.sleep(min(OVERLOAD_BASE_S * (2 ** attempt), OVERLOAD_CAP_S))
+                    attempt += 1
+                    continue  # retry the SAME request on the SAME key
+                if e.code in (401, 403, 429) and ki + 1 < len(keys):
+                    break  # exit the backoff loop: try next key in the chain
+                return {"ok": False, "error": last_err, "provider": provider_id, "key_idx": ki}
+            except Exception as e:
+                last_err = str(e)[:200]
+                record_usage(
+                    provider_id, model=str(model or ""), ok=False,
+                    session_id=session_id,
+                    meta={"error": str(e)[:200], "key_idx": ki},
+                )
+                if ki + 1 < len(keys):
+                    break
+                return {"ok": False, "error": last_err, "provider": provider_id, "key_idx": ki}
     return {"ok": False, "error": last_err, "provider": provider_id}
 
 
@@ -607,9 +761,28 @@ def chat_messages(
         return {"ok": False, "error": f"missing API key ({envs})"}
 
     model = model or provider_default_model(pcfg)
+    # B2-286 (2026-09-26): a null model is a named refusal, never a live call.
+    # MEASURED (the B2-286 brief disease, B2-62 first probe): a bare call on a
+    # lane with no default_model (z_ai2/z_ai3 carried none) sent "model": null
+    # and got HTTP 200 with empty content + empty usage, so a dead lane read ok.
+    # Applies to BOTH chat paths (chat_provider and chat_messages).
+    if model is None and not pcfg.get("free_local"):
+        return {
+            "ok": False,
+            "error": f"null_model_refused: {provider_id} resolved no model "
+                     "(no default_model in configs/providers.yaml, none passed); "
+                     "pass model= or set default_model",
+            "provider": provider_id,
+        }
     kind = (pcfg.get("kind") or "openai_compat").lower()
     if kind == "anthropic_messages":
         return {"ok": False, "error": "tool loop not wired for anthropic in agent v1 — use deepseek"}
+    if kind == "gemini_native":
+        # B2-194: gemini_native is a SPEAKING lane; the tool loop stays
+        # openai_compat. A named refusal here beats posting openai-shaped
+        # bodies at a generateContent endpoint and calling the 404 an answer.
+        return {"ok": False,
+                "error": "tool loop not wired for gemini_native in agent v1 — speaking lanes only (B2-194)"}
 
     base = provider_base_url(pcfg)
     url = f"{base}/chat/completions"
@@ -629,7 +802,11 @@ def chat_messages(
         if stream and on_stream is not None:
             payload["stream"] = True
         payload = _thinking_off(pcfg, payload)
-
+        # B2-62 REASONING FLOOR (spec docs/ref/ZAI_API_EXPERT_REFERENCE.md §5.1): same
+        # undecided-call protection as chat_provider. chat_messages has no thinking
+        # param, so the floor only sees the undecided case by construction.
+        payload, floor_applied = _apply_reasoning_floor(
+            payload, thinking=None, max_tokens=max_tokens, model=str(model))
         body = json.dumps(payload).encode("utf-8")
         headers = {
             "Content-Type": "application/json",
@@ -695,7 +872,7 @@ def chat_messages(
                 meta={"chars": len(text or ""), "tool_calls": len(tool_calls), "key_idx": ki,
                       "key_env": (_key_env_names(pcfg)[ki] if ki < len(_key_env_names(pcfg)) else "")},
             )
-            return {
+            out = {
                 "ok": True,
                 "text": text or "",
                 "tool_calls": tool_calls,
@@ -707,6 +884,9 @@ def chat_messages(
                 "budget_after": provider_budget(provider_id),
                 "key_idx": ki,
             }
+            if floor_applied:
+                out["reasoning_floor_applied"] = True
+            return out
         except urllib.error.HTTPError as e:
             err = e.read().decode("utf-8", errors="replace")[:600]
             last_err = f"HTTP {e.code}: {err}"
@@ -775,6 +955,79 @@ def _chat_anthropic(
         usage = data.get("usage") or {}
         pt = int(usage.get("input_tokens") or 0)
         ct = int(usage.get("output_tokens") or 0)
+        record_usage(
+            provider_id,
+            model=model,
+            prompt_tokens=pt,
+            completion_tokens=ct,
+            ok=True,
+            meta={"chars": len(text)},
+        )
+        return {
+            "ok": True,
+            "text": text,
+            "provider": provider_id,
+            "model": model,
+            "usage": {"prompt_tokens": pt, "completion_tokens": ct},
+            "budget_after": provider_budget(provider_id),
+        }
+    except urllib.error.HTTPError as e:
+        err = e.read().decode("utf-8", errors="replace")[:400]
+        record_usage(provider_id, model=model, ok=False, meta={"http": e.code})
+        return {"ok": False, "error": f"HTTP {e.code}: {err}", "provider": provider_id}
+    except Exception as e:
+        record_usage(provider_id, model=model, ok=False, meta={"error": str(e)[:200]})
+        return {"ok": False, "error": str(e), "provider": provider_id}
+
+
+def _chat_gemini_native(
+    provider_id: str,
+    pcfg: dict[str, Any],
+    key: str,
+    system: str,
+    user: str,
+    *,
+    model: str,
+    temperature: float,
+    max_tokens: int,
+) -> dict[str, Any]:
+    """Native Vertex/Gemini generateContent (B2-194, spec: B2-63 receipt).
+
+    Wire contract (fixture-pinned in tests/test_gemini_native.py):
+    POST {base_url}/publishers/google/models/{model}:generateContent with
+    x-goog-api-key auth (both auth shapes measured in
+    B2_63_vertex_probe_results.json; the header shape is canonical here).
+    Live traffic stays 403 PERMISSION_DENIED until the operator enables
+    aiplatform.googleapis.com on the key's project (B2-63 GO card); the
+    brief's live falsifier is a 200 with candidates[0].content from the
+    B2_63_vertex_probe.py rerun.
+    """
+    from models.quota import provider_budget, record_usage
+
+    if not key:
+        return {"ok": False, "error": "missing gemini express/Vertex API key"}
+    base = (pcfg.get("base_url") or "https://aiplatform.googleapis.com/v1").rstrip("/")
+    url = f"{base}/publishers/google/models/{model}:generateContent"
+    payload = {
+        "contents": [{"role": "user", "parts": [{"text": user}]}],
+        "systemInstruction": {"parts": [{"text": system}]},
+        "generationConfig": {"temperature": temperature, "maxOutputTokens": max_tokens},
+    }
+    body = json.dumps(payload).encode("utf-8")
+    headers = {"Content-Type": "application/json", "x-goog-api-key": key}
+    req = urllib.request.Request(url, data=body, headers=headers, method="POST")
+    try:
+        with urllib.request.urlopen(req, timeout=120) as r:
+            data = json.loads(r.read().decode("utf-8"))
+        cands = data.get("candidates") or []
+        parts = ((cands[0].get("content") or {}).get("parts") or []) if cands else []
+        text = ""
+        for p in parts:
+            if isinstance(p, dict):
+                text += str(p.get("text") or "")
+        usage = data.get("usageMetadata") or {}
+        pt = int(usage.get("promptTokenCount") or 0)
+        ct = int(usage.get("candidatesTokenCount") or 0)
         record_usage(
             provider_id,
             model=model,

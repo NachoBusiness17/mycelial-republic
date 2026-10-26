@@ -93,6 +93,35 @@ def _ledger_entries(surface: str | None = None) -> list[dict[str, Any]]:
     return out
 
 
+def _outcome(task_id: str) -> str:
+    """Grounded outcome for one ledger task_id: live queue-spec status, else a filed result,
+    else 'vanished' (no verifiable trace anywhere).
+
+    FIX RECEIPT (LM10, 2026-09-29): cause — the sent.jsonl ledger is an ENQUEUE ledger, so
+    progress() counted rows whose work had evaporated: anchors 9fd392d3a126d4c1 /
+    021b129e9844ab6f (task sw-12205a0a9c / sw-9309fab2e0, enqueued 2026-08-12) have no spec
+    in the live queue, none in queue_backup_20260827_preRepoint, and no results/<id>.json —
+    yet progress() reported pct_of_target 25->100% as if the work stood. Evidence fixed:
+    progress() now joins ledger task_ids against queue spec + results bytes and reports the
+    census, so 'vanished' rows are visible instead of silently credited."""
+    if not task_id:
+        return "no-task-id"
+    try:
+        from mag import swarm_worker
+    except Exception:
+        return "unknown-no-worker"
+    spec = swarm_worker.QUEUE_DIR / f"{task_id}.json"
+    if spec.is_file():
+        try:
+            return str(json.loads(spec.read_text(encoding="utf-8")).get("status", "unknown"))
+        except Exception:
+            return "unreadable-spec"
+    if (getattr(swarm_worker, "RESULTS_DIR", None) is not None
+            and (swarm_worker.RESULTS_DIR / f"{task_id}.json").is_file()):
+        return "result-filed"
+    return "vanished"
+
+
 def plan() -> dict[str, Any]:
     """The deterministic moonshot estimate (throughput_model). Grounded: measured facts vs labeled
     estimates clearly separated, never over-claimed."""
@@ -128,10 +157,21 @@ def progress() -> dict[str, Any]:
     entries = _ledger_entries(SURFACE)
     anchors = sorted({e.get("anchor", "") for e in entries if e.get("anchor")})
     target = len(MOONSHOT_GOALS)
+    # LM10 2026-09-29: outcome join — the ledger proves ENQUEUE, not DONE; census the bytes
+    # (queue spec status + results/<id>.json) so vanished rows are seen, never credited.
+    outcomes: dict[str, int] = {}
+    for e in entries:
+        o = _outcome(e.get("task_id", ""))
+        outcomes[o] = outcomes.get(o, 0) + 1
+    verified_done = outcomes.get("done", 0) + outcomes.get("result-filed", 0)
     return {"ok": True, "schema": SCHEMA, "target": target,
             "queued_unique": len(anchors), "ledger_rows": len(entries),
             "pct_of_target": round(100.0 * len(anchors) / target, 1) if target else 0.0,
-            "note": "grounded in sent.jsonl ledger (measured); 0 means nothing landed yet",
+            "verified_done": verified_done,
+            "outcomes": dict(sorted(outcomes.items(), key=lambda kv: -kv[1])),
+            "note": "grounded in sent.jsonl ledger (measured); 0 means nothing landed yet; "
+                    "pct_of_target counts ENQUEUED goals — verified_done joins the outcome "
+                    "bytes, and 'vanished' rows (purged spec + no result) are visible",
             "anchors": anchors}
 
 

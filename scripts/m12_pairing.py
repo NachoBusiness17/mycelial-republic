@@ -330,6 +330,12 @@ def close_run(run_path: Path = RUN_DEFAULT, report_path: Path = REPORT_DEFAULT,
 
 # ---------------------------------------------------------------------- CLI
 def main() -> int:
+    # B2-438 (2026-09-26): the run state path is repo-derived (REPO /
+    # "state" / m12_pairing_run.json) and no CLI flag overrides it; refuse
+    # to run if that derivation ever lands outside the repo. Fixture test:
+    # tests/test_scripts_path_pins.py.
+    if not str(RUN_DEFAULT.resolve()).startswith(str(Path(__file__).resolve().parents[1])):
+        sys.exit(f"PATH PIN REFUSED: RUN_DEFAULT={RUN_DEFAULT} resolves outside the repo root")
     try:
         sys.stdout.reconfigure(encoding="utf-8", errors="replace")
     except Exception:  # noqa: BLE001

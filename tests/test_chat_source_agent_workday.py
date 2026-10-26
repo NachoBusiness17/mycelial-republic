@@ -49,6 +49,33 @@ def test_extract_agent_messages_skips_system():
 
 
 def test_resolve_and_file_agent_session(tmp_path, monkeypatch):
+    # B2-402 (2026-09-26): the biography write roots are injected (the
+    # surface-fixture shape): residual dir, registry, derived, latest-session
+    # and the summarized-state file are module constants; the verkle leaf
+    # append is stubbed at mag.verkle_knot.append_verkle_knot so the test
+    # never touches the real chain. Pre-fix this test left
+    # memory/biography/residual/mag-agent-_pytest_agent_wd.json on bytes and
+    # 5 pytest-session rows in memory/biography/registry.jsonl (the residual
+    # file was removed with the B2-402 cleanup; the append-only registry rows
+    # are registered in
+    # watch/inbox/burn_wave_20260926/B2_402_test_isolation_20260926.md).
+    (tmp_path / "residual").mkdir()
+    import mag.registry as reg
+
+    monkeypatch.setattr(reg, "RESIDUAL_DIR", tmp_path / "residual")
+    monkeypatch.setattr(reg, "DERIVED_DIR", tmp_path / "derived")
+    monkeypatch.setattr(reg, "REGISTRY", tmp_path / "registry.jsonl")
+    monkeypatch.setattr(reg, "LATEST_SESSION", tmp_path / "latest_session.json")
+    import mag.biography as bio
+
+    monkeypatch.setattr(bio, "SUMMARIZED", tmp_path / "summarized.json")
+    import mag.verkle_knot as vk
+
+    monkeypatch.setattr(
+        vk, "append_verkle_knot",
+        lambda *a, **k: {"ok": True, "filename": "sandbox.knot.json",
+                         "leaf_hash": "0" * 64, "verkle_root": "0" * 64,
+                         "n_leaves": 1, "amended": False})
     # Point agent dir at temp under real ROOT structure is hard; use real agent_sessions
     # with a disposable seat id.
     seat = "_pytest_agent_wd"
@@ -85,7 +112,7 @@ def test_resolve_and_file_agent_session(tmp_path, monkeypatch):
         assert res.get("ok"), res
         bio = res.get("bio_session_id") or res.get("session_id")
         assert bio == agent_bio_id(seat)
-        residual = ROOT / "memory" / "biography" / "residual" / f"{bio}.json"
+        residual = reg.RESIDUAL_DIR / f"{bio}.json"
         assert residual.is_file(), f"missing residual {residual}"
         dossier = json.loads(residual.read_text(encoding="utf-8"))
         assert dossier.get("session_id") == bio

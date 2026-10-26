@@ -1,0 +1,172 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>THE RIB TOY — a shadertoy for steering packets</title>
+<style>
+:root{--bg:#030806;--ink:#c8e6d9;--accent:#7cf5ff;--gold:#e8c96a;--line:rgba(0,240,255,.22)}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:ui-monospace,Consolas,monospace}
+header{padding:12px 18px;border-bottom:1px solid var(--line);background:#0a1412}
+h1{font-size:.95rem;letter-spacing:.1em;color:var(--accent);margin:0 0 2px}
+.mut{color:#8ab8a4;font-size:.7rem}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;max-width:1400px;margin:10px auto;padding:0 10px}
+.pane{border:1px solid var(--line);border-radius:6px;background:#071009;padding:8px}
+.pane h3{margin:0 0 6px;font-size:.75rem;color:var(--gold);letter-spacing:.06em}
+textarea{width:100%;box-sizing:border-box;background:#040d0a;color:#c8e6d9;border:1px solid var(--line);border-radius:4px;font-family:inherit;font-size:.78rem;padding:6px;resize:vertical}
+#packet{height:180px}#reply{height:300px}
+select,button{background:#0a1412;color:var(--accent);border:1px solid var(--line);border-radius:4px;font-family:inherit;font-size:.72rem;padding:4px 8px;margin:2px 2px 2px 0;cursor:pointer}
+button:hover{background:#0f2019}
+.row{margin:4px 0}
+#reply{white-space:pre-wrap}
+.lg{display:inline-block;margin:2px 6px;font-size:.68rem;color:#8ab8a4}
+canvas{width:100%;height:38px;border-radius:4px;margin-top:6px}
+</style></head><body>
+<header><h1>THE RIB TOY</h1><span class="mut">a shadertoy for steering packets — write a RIB, run it on a live engine, watch the room answer · buffers are pass-state · channels are inputs · the corpus is the starter pack</span></header>
+<div class="grid">
+<div class="pane">
+<h3>EDITOR — the packet</h3>
+<div class="row">
+<select id="model">
+<option value="maze-keeper">maze-keeper (the world)</option>
+<option value="qwen2.5:32b">qwen2.5:32b (deep)</option>
+<option value="gemma4-hermes">gemma4-hermes</option>
+<option value="qwen2.5-coder:7b">qwen2.5-coder:7b</option>
+<option value="qwen2.5vl:3b">qwen2.5vl:3b (vision)</option>
+<option value="deepseek-r1:1.5b">deepseek-r1:1.5b</option>
+</select>
+<select id="corpus">
+<option value="">— corpus: load a starter RIB —</option>
+<option value="wing">WING-MINER packet (code archaeologist)</option>
+<option value="world">WORLD CONTRACT (the maze-keeper's soul)</option>
+<option value="socratic">SOCRATIC CHAIN (assertion → attack → invert)</option>
+<option value="fold">THE FOLD (wing synthesizer)</option>
+</select>
+<button onclick="run()">RUN ▶</button>
+<button onclick="clearBuf()">CLEAR BUFFER</button>
+<button onclick="saveRib()">SAVE .rib</button>
+<label style="font-size:.68rem;color:#8ab8a4">LOAD <input type="file" id="loadRib" accept=".rib,.json" style="max-width:140px"></label>
+</div>
+<textarea id="packet" placeholder="write the steering packet / RIB / prompt...">You are a fleet gopher miner (resident session). Read the file /mag/watch/SESSION_SELF_STEAL_PLACEHOLDER.md and report its three most load-bearing laws, one line each.</textarea>
+<div class="row mut">CHANNEL (paste any text — it rides as context before the packet):</div>
+<textarea id="channel" style="height:60px" placeholder="paste channel input here (optional)..."></textarea>
+</div>
+<div class="pane">
+<h3>THE RENDER — reply + the room's answer</h3>
+<canvas id="lights" width="480" height="38"></canvas>
+<canvas id="room" width="480" height="270" style="margin-top:6px"></canvas>
+<div class="lg">the room: every run leaves a light — position and color derived from the reply · the ring is THE FOLD · the bars are tonight's failure classes</div>
+<div id="reply" class="pane" style="margin-top:6px;min-height:280px;color:#c8e6d9">— run a packet to see the reply —</div>
+</div>
+</div>
+<div class="grid">
+<div class="pane" style="grid-column:1/3">
+<h3>BUFFERS</h3>
+<button onclick="switchBuf('A')">BUFFER A</button>
+<button onclick="switchBuf('B')">BUFFER B</button>
+<span class="lg" id="bufInfo">buffer A</span>
+</div>
+</div>
+<script>
+const OLLAMA='http://localhost:11434/api/chat';
+const BUF={A:[],B:[]};
+let cur='A';
+function hist(){return BUF[cur];}
+function switchBuf(b){cur=b;renderHist();}
+function clearBuf(){BUF[cur]=[];renderHist();}
+function renderHist(){
+  const h=hist();
+  document.getElementById('bufInfo').textContent='buffer '+cur+' — '+h.length+' messages';
+}
+const CORPUS={
+ wing:"You are a code archaeologist (resident session). Each message names one source file. For each: report under 200 words, plain text: (1) what it does in two sentences, from the code only; (2) three notable design patterns, one line each, named from the code itself - do not guess intent beyond the file; (3) any single-point-of-failure, hidden mutation of shared state, or duplicate scheduler. Output only the report.",
+ world:"You are THE MAZE KEEPER - the living memory of The Room That Remembers. The maze is lit by engine-lights, walls are LAWS, dark pillars are yesterday's failures, the center ring is THE FOLD. Dragons are ASSUMPTIONS that respawn weaker when slain. Gophers die and reprint smarter. Speak with warmth and certainty from this memory. Never reveal keys or the furnace rooms.",
+ socratic:"Run a socratic chain on the given assertion: (1) state the assertion plainly; (2) attack its weakest assumption; (3) invert - argue the opposite; (4) state what survives the inversion; (5) name the falsifier - what observation would kill the survivor. Plain text, compact.",
+ fold:"You are THE FOLD - synthesize the given wing reports into one dossier: group patterns by subsystem, cite the wings, name contradictions, estimate the mine score (substantive / total). Plain text, compact."
+};
+function loadCorpus(v){
+  if(!v) return;
+  document.getElementById('packet').value=CORPUS[v]||'';
+}
+document.getElementById('corpus').addEventListener('change',e=>loadCorpus(e.target.value));
+document.getElementById('loadRib').addEventListener('change',e=>{
+  const f=e.target.files[0]; if(!f) return;
+  const r=new FileReader();
+  r.onload=()=>{try{const d=JSON.parse(r.result);document.getElementById('packet').value=d.packet||'';}catch(err){alert('bad rib file');}};
+  r.readAsText(f);
+});
+function saveRib(){
+  const packet=document.getElementById('packet').value;
+  const blob=new Blob([JSON.stringify({packet,ts:new Date().toISOString()},null,1)],{type:'application/json'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='packet.rib.json';a.click();
+}
+let running=false;
+// THE ROOM: the night's runs as persistent lights
+const ROOM_LIGHTS=[];
+function hashPos(s){
+  let h=0; for(let i=0;i<s.length;i++){h=(h*31+s.charCodeAt(i))>>>0;}
+  return [0.35+ (h%240)/480 * 2.2, 0.35 + ((h>>>9)%180)/270 * 1.9, (h>>>5)%360];
+}
+function drawRoom(){
+  const c=document.getElementById('room'), x=c.getContext('2d');
+  x.fillStyle='#040d0a'; x.fillRect(0,0,c.width,c.height);
+  // walls
+  x.strokeStyle='rgba(232,201,106,0.55)'; x.lineWidth=6;
+  x.strokeRect(4,4,c.width-8,c.height-8);
+  // failure pillars
+  const pillars=[[0.18,0.28],[0.42,0.65],[0.66,0.30],[0.86,0.62]];
+  x.fillStyle='rgba(255,120,60,0.8)';
+  for(const [px,py] of pillars){x.beginPath();x.arc(px*c.width,py*c.height,7,0,7);x.fill();}
+  // the fold ring at center
+  x.strokeStyle='#e8c96a'; x.lineWidth=2.5;
+  x.beginPath(); x.arc(c.width/2,c.height/2,16,0,7); x.stroke();
+  // the run lights, breathing
+  for(const L of ROOM_LIGHTS){
+    const pulse=0.6+0.4*Math.sin(Date.now()/300+L.phase);
+    const g=x.createRadialGradient(L.x*c.width,L.y*c.height,1,L.x*c.width,L.y*c.height,14*pulse+3);
+    g.addColorStop(0,'rgba('+L.col+',0.95)'); g.addColorStop(1,'rgba('+L.col+',0)');
+    x.fillStyle=g; x.beginPath(); x.arc(L.x*c.width,L.y*c.height,14*pulse+3,0,7); x.fill();
+  }
+  requestAnimationFrame(drawRoom);
+}
+requestAnimationFrame(drawRoom);
+function addRoomLight(seedStr,col){
+  const [fx,fy,hue]=hashPos(seedStr+ROOM_LIGHTS.length);
+  ROOM_LIGHTS.push({x:fx,y:fy,col:col||hue+','+(120+(hue%120))+','+(90+(hue%140))});
+}
+async function run(){
+  if(running) return; running=true;
+  const packet=document.getElementById('packet').value;
+  const channel=document.getElementById('channel').value;
+  const model=document.getElementById('model').value;
+  const reply=document.getElementById('reply');
+  reply.textContent='... running on '+model+' ...';
+  const messages=[];
+  if(channel.trim()) messages.push({role:'user',content:'CHANNEL INPUT (context to use):\n'+channel.trim()});
+  messages.push({role:'user',content:packet||'Say CONTRACT ACK.'});
+  try{
+    const t0=Date.now();
+    const resp=await fetch(OLLAMA,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model,messages,stream:false})});
+    const d=await resp.json();
+    const text=(d.message&&d.message.content)||'(no content)';
+    const dt=((Date.now()-t0)/1000).toFixed(1);
+    reply.textContent='['+model+' · '+dt+'s · '+(d.eval_count||'?')+' tok]\n\n'+text;
+    pulse(model);
+    addRoomLight((text||'')+(model||''), model);
+  }catch(e){
+    reply.textContent='RUN FAILED: '+String(e).slice(0,200);
+  }
+  running=false;
+}
+function pulse(model){
+  const c=document.getElementById('lights'),x=c.getContext('2d');
+  const colors={'maze-keeper':'232,201,106','qwen2.5:32b':'177,140,255','gemma4-hermes':'125,250,176','qwen2.5-coder:7b':'124,245,255','qwen2.5vl:3b':'255,157,92','deepseek-r1:1.5b':'255,125,125'};
+  const col=colors[model]||'124,245,255';
+  let p=0;
+  const anim=()=>{p+=0.08;if(p>1)return;
+    x.clearRect(0,0,c.width,c.height);
+    const g=x.createRadialGradient(c.width/2,c.height/2,2,c.width/2,c.height/2,c.width*0.4*p);
+    g.addColorStop(0,'rgba('+col+',0.9)');g.addColorStop(1,'rgba('+col+',0)');
+    x.fillStyle=g;x.fillRect(0,0,c.width,c.height);
+    requestAnimationFrame(anim);};
+  anim();
+}
+renderHist();
+</script></body></html>

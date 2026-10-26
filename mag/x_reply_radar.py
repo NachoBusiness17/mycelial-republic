@@ -23,9 +23,17 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-GROK = Path.home() / ".grock" / "bin" / "grok"
-if not GROK.is_file():
-    GROK = Path("C:/Users/foste/.grok/bin/grok")
+# 2026-10-03: the grok CLI update ships grok.exe (grok.exe.old remains beside
+# it); the old probe checked a ".grock"-typo dir then a no-extension fallback,
+# so every daily check exited 2 and the radar went dark 09-30..10-03
+# (logs/x_radar.log). Try .exe first, then the legacy name, home then pinned.
+_GROK_CANDIDATES = (
+    Path.home() / ".grok" / "bin" / "grok.exe",
+    Path.home() / ".grok" / "bin" / "grok",
+    Path("C:/Users/foste/.grok/bin/grok.exe"),
+    Path("C:/Users/foste/.grok/bin/grok"),
+)
+GROK = next((p for p in _GROK_CANDIDATES if p.is_file()), _GROK_CANDIDATES[0])
 OUT_DIR = ROOT / "memory" / "runs" / "x_reply_radar"
 CARD = ROOT / "watch" / ("X_REPLY_RADAR_" + datetime.now(timezone.utc).strftime("%Y%m%d") + ".md")
 RADAR_JSON = ROOT / "dashboard" / "static" / "x_radar.json"
@@ -83,7 +91,7 @@ def run() -> None:
     raw_path = OUT_DIR / f"out_{today}.json"
     proc = subprocess.run(
         [str(GROK), "-p", PROMPT.replace("__TODAY__", today), "--no-plan", "--max-turns", "12"],
-        capture_output=True, text=True, timeout=420)
+        capture_output=True, text=True, timeout=900)
     (OUT_DIR / f"err_{today}.log").write_text(proc.stderr or "(empty stderr)", encoding="utf-8")
     raw_path.write_text(proc.stdout, encoding="utf-8")
     emit(_parse(proc.stdout), raw_path)

@@ -67,7 +67,11 @@ def test_behavioral_candidates_mines_crash_log(behavioral_fixture):
     rows = imp._behavioral_candidates("2026-08-04")
     crash_rows = [r for r in rows if "Seat crash log" in r.get("claim", "")]
     assert crash_rows
-    assert "real crash blocks" in crash_rows[0]["claim"]
+    # B2-357 rewrote the crash row claim to name its census ("real=N
+    # crash entries"); this file's "real crash blocks" token went stale
+    # and sat red from that landing until B2-374 repaired it here.
+    assert "crash entries" in crash_rows[0]["claim"]
+    assert "real=" in crash_rows[0]["claim"]
     assert crash_rows[0]["kind"] == "risk"
 
 

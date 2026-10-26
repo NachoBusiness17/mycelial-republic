@@ -46,6 +46,7 @@ GAMES = [
 ]
 
 SURFACES = [
+    ("tide.html", "TIDE", "nightly compaction card + amendment strike clock (scripts/tide_dashboard.py)"),
     ("estate_walk.html", "ESTATE WALK", "the repo as a dark navigable space"),
     ("estate_walk.lod.html", "ESTATE LOD", "zone-index spectator (D21)"),
     ("vislab/catalog.html", "VISLAB CATALOG", "render catalog (build_vislab_catalog.py)"),
@@ -125,18 +126,42 @@ def mine_lanes(now):
     return lanes
 
 
+def _links_row_kind(row):
+    """Classify one LINKS.jsonl row (B2-170, per the B2-28 schema split)."""
+    if not isinstance(row, dict):
+        return "link"
+    if row.get("schema") == "migration-marker.v1":
+        return "marker"
+    if "kind" in row:
+        return "event"
+    return "link"
+
+
 def mine_ledgers():
     led = {}
     links = ROOT / "watch" / "inbox" / "LINKS.jsonl"
     lines = [l for l in read(links).splitlines() if l.strip()]
-    last5 = []
-    for l in lines[-5:]:
+    parsed = []
+    for l in lines:
         try:
-            r = json.loads(l)
-            last5.append({"ts": r.get("ts", ""), "url": r.get("canonical") or r.get("url", "")})
+            parsed.append(json.loads(l))
         except json.JSONDecodeError:
+            parsed.append(None)
+    # B2-170 denominators: one mixed "rows" count hid the B2-28 split (legacy
+    # event rows still cohabit LINKS.jsonl per the append-only law); the deck
+    # now reports link rows and event rows separately.
+    link_rows = [p for p in parsed if _links_row_kind(p) == "link"]
+    event_rows = [p for p in parsed if _links_row_kind(p) == "event"]
+    marker_rows = [p for p in parsed if _links_row_kind(p) == "marker"]
+    last5 = []
+    for r in link_rows[-5:]:
+        if r is None:
             last5.append({"ts": "?", "url": "(unparseable row)"})
-    led["links"] = {"rows": len(lines), "last5": last5, "path": "watch/inbox/LINKS.jsonl"}
+        else:
+            last5.append({"ts": r.get("ts", ""), "url": r.get("canonical") or r.get("url", "")})
+    led["links"] = {"rows": len(link_rows), "events": len(event_rows),
+                    "markers": len(marker_rows), "total_lines": len(lines),
+                    "last5": last5, "path": "watch/inbox/LINKS.jsonl"}
 
     gw = ROOT / "watch" / "GROUNDING_WAVE.jsonl"
     gw_lines = [l for l in read(gw).splitlines() if l.strip()]
@@ -637,7 +662,7 @@ function receipts() {
 function ledgers() {
   const L = D.ledgers, l5 = L.links.last5.map(r => `<li class="wrap">${esc(r.ts || '')} <a href="${esc(r.url)}">${esc(r.url)}</a></li>`).join('');
   return `<section id="ledgers"><h2>LEDGERS <span class="n">// counts + claim statuses</span></h2><div class="grid cards">
-    <div class="card"><h3>LINKS LEDGER</h3><p><span class="v" style="font-size:20px;color:var(--hi)">${L.links.rows}</span> rows</p>
+    <div class="card"><h3>LINKS LEDGER</h3><p><span class="v" style="font-size:20px;color:var(--hi)">${L.links.rows}</span> link rows + ${L.links.events ?? 0} event rows (B2-28 split; legacy rows cohabit per append-only law)</p>
       <ul>${l5}</ul><div class="src">${esc(L.links.path)}</div></div>
     <div class="card"><h3>GROUNDING WAVE</h3><p><span class="v" style="font-size:20px;color:var(--hi)">${L.grounding.rows}</span> rows · verify: <span class="${L.grounding.verify_ok ? 'good' : 'bad'}">${esc(L.grounding.verify_line)}</span></p>
       <ul><li>chain broken at row 122 (prev-hash mismatch) — repair lane owed</li></ul><div class="src">${esc(L.grounding.path)}</div></div>
@@ -738,6 +763,7 @@ def main():
     print(f"programs={len(data['programs'])} source={data['programs_source']}")
     print(f"lanes={len(data['lanes'])} receipts={len(data['receipts'])} "
           f"links_rows={data['ledgers'].get('links', {}).get('rows')} "
+          f"links_events={data['ledgers'].get('links', {}).get('events')} "
           f"verify={data['ledgers'].get('grounding', {}).get('verify_line', '')[:60]}")
     return 0
 

@@ -46,7 +46,7 @@
 <div class="err" id="err" hidden></div>
 <script>
 (function () {
-  var ROWS = [], shown = 0;
+  var ROWS = []; // retired: rows now stream from /api/v1/estate/query (server-side skip list)
   var q = document.getElementById("q"), proj = document.getElementById("proj"),
       rel = document.getElementById("rel"), temp = document.getElementById("temp"),
       stat = document.getElementById("stat"), rowsEl = document.getElementById("rows"),
@@ -62,27 +62,44 @@
       var o = document.createElement("option"); o.value = v; o.textContent = v; sel.appendChild(o);
     });
   }
-  function render() {
-    var needle = q.value.trim().toLowerCase();
-    var fProj = proj.value, fRel = rel.value, fTemp = temp.value;
-    var out = [];
-    for (var i = 0; i < ROWS.length && out.length < 250; i++) {
-      var r = ROWS[i];
-      if (fProj && r.proj !== fProj) continue;
-      if (fRel && r.rel !== fRel) continue;
-      if (fTemp && r.temp !== fTemp) continue;
-      if (needle && r.path.toLowerCase().indexOf(needle) < 0) continue;
-      out.push(r);
-    }
-    var html = "";
-    for (var j = 0; j < out.length; j++) {
-      var r2 = out[j];
-      html += "<tr><td class='" + r2.temp + "'>" + r2.temp + "</td><td>" + r2.mtime +
-              "</td><td>" + fmtSize(r2.size) + "</td><td>" + r2.path +
-              "</td><td style='color:var(--dim)'>" + r2.rel + "</td></tr>";
-    }
-    rowsEl.innerHTML = html;
-    el("stat").textContent = out.length >= 250 ? "250+ of " + ROWS.length + " files" : out.length + " of " + ROWS.length + " files";
+  var aborter = null;
+  function runQuery() {
+    var params = new URLSearchParams();
+    var needle = q.value.trim();
+    if (needle) params.set("q", needle);
+    if (proj.value) params.set("proj", proj.value);
+    if (rel.value) params.set("rel", rel.value);
+    if (temp.value) params.set("temp", temp.value);
+    params.set("limit", "250");
+    if (aborter) aborter.abort();
+    aborter = new AbortController();
+    // the query door (server.py /api/v1/estate/query): bounded response, the
+    // .mimosa hook-state skip list honored server-side — this page used to
+    // download /data/ESTATE_INDEX.jsonl whole (4.15 GB) per load
+    fetch("/api/v1/estate/query?" + params.toString(), { cache: "no-store", signal: aborter.signal })
+      .then(function (r) { return r.json(); })
+      .then(function (d) {
+        if (d.error) throw new Error(d.error);
+        var cur = rel.value;
+        rel.innerHTML = "<option value=''>all relations</option>";
+        fill(rel, d.rels || []);
+        if (cur && (d.rels || []).indexOf(cur) >= 0) rel.value = cur;
+        var html = "";
+        (d.rows || []).forEach(function (r2) {
+          html += "<tr><td class='" + r2.temp + "'>" + r2.temp + "</td><td>" + r2.mtime +
+                  "</td><td>" + fmtSize(r2.size) + "</td><td>" + r2.path +
+                  "</td><td style='color:var(--dim)'>" + r2.rel + "</td></tr>";
+        });
+        rowsEl.innerHTML = html;
+        el("stat").textContent = d.matched + (d.truncated ? "+" : "") + " of " +
+          d.total_kept + " files (skipped " + d.skipped_mimosa + " hook-state rows, " +
+          d.seconds + "s)";
+      })
+      .catch(function (e) {
+        if (e && e.name === "AbortError") return;
+        errEl.hidden = false;
+        errEl.textContent = "Estate query door failed — " + e + ". See watch/inbox/night_shift_20261004/estate_index_compaction_design.md (P5).";
+      });
   }
   fetch("./index_data/last_run.json", { cache: "no-store" })
     .then(function (r) { return r.json(); })
@@ -107,7 +124,7 @@
       Array.prototype.forEach.call(cardsEl.children, function (c) {
         c.addEventListener("click", function () {
           proj.value = (proj.value === c.getAttribute("data-p")) ? "" : c.getAttribute("data-p");
-          render();
+          runQuery();
         });
       });
     })
@@ -115,27 +132,13 @@
       errEl.hidden = false;
       errEl.textContent = "No rollup data — the spine hasn't run yet. See watch/OPEN_RIB_SPINE_20260909.md (promote, run once, refresh).";
     });
-  fetch("/data/ESTATE_INDEX.jsonl", { cache: "no-store" })
-    .then(function (r) { return r.text(); })
-    .then(function (t) {
-      var lines = t.split("\n");
-      for (var i = 0; i < lines.length; i++) {
-        if (lines[i]) { try { ROWS.push(JSON.parse(lines[i])); } catch (e) {} }
-      }
-      var rels = {};
-      ROWS.forEach(function (r) { rels[r.rel] = 1; });
-      fill(rel, Object.keys(rels).sort());
-      render();
-    })
-    .catch(function (e) {
-      errEl.hidden = false;
-      errEl.textContent = "No index data — the spine hasn't run yet. See watch/OPEN_RIB_SPINE_20260909.md.";
-    });
   var debounce = null;
-  q.addEventListener("input", function () { clearTimeout(debounce); debounce = setTimeout(render, 160); });
-  proj.addEventListener("change", render);
-  rel.addEventListener("change", render);
-  temp.addEventListener("change", render);
+  q.addEventListener("input", function () { clearTimeout(debounce); debounce = setTimeout(runQuery, 900); });
+  q.addEventListener("keydown", function (e) { if (e.key === "Enter") { clearTimeout(debounce); runQuery(); } });
+  proj.addEventListener("change", runQuery);
+  rel.addEventListener("change", runQuery);
+  temp.addEventListener("change", runQuery);
+  runQuery();
 })();
 </script>
 </body>

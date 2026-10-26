@@ -11,11 +11,42 @@ handshake (initialize → notifications/initialized → tools/list, tools/call) 
 small enough to implement exactly, and every byte is inspectable.
 
 SECURITY POSTURE: the tool registry ALREADY runs inside this repo's backend
-(dashboard /run_task dispatches the same TOOL_MAP). Spawning this server grants
+(the /run_task dispatch lives in backend/server.py, which imports TOOL_MAP
+and its dispatch directly; dashboard/rest.py imports no TOOL_MAP -- B2-506
+correction 2026-09-26, this doc previously said the dashboard dispatched it).
+Spawning this server grants
 nothing the local process doesn't already have; it is transport, not authority.
 It does NOT expose file paths outside what filesystem.py itself allows.
 
+PIN GATE (2026-09-29, wave5-repair mcp-pin-wire): tools/mcp_pin.py
+check_drift() is wired at every connect surface -- serve() gates the profile
+surface once at boot and every tools/list through handle() is gated; the
+gateway adapter (mag/mcp_http.py) and the dashboard /mcp route pass the same
+ledger. First connect pins the surface; a drifted description/schema is
+WITHHELD from the served list and alarmed on stderr (fail loud); repin() is
+the only way a changed surface returns. Ledger: MAG_MCP_PIN_LEDGER env
+override, default state/mcp_pins.jsonl; MAG_MCP_PIN_GATE=off|0|false is the
+operator disarm hatch. Direct handle() callers pass pin_ledger=None (gate
+off) unless they opt in. Receipt:
+watch/inbox/wave5_repair/mcp-pin-wire.md. Closes the dormant-gate gap banked
+in watch/inbox/burn_reset_20260927/flash50/mcp-security.md (gap 1) and
+flash50/w4-41.md (class-W wiring truth).
+
 Schema: mcp_tool_map.v1 · stdio transport · reuse: tools.TOOL_MAP (single source)
+BRIDGE (R1, 2026-09-29): the estate verbs (water tick, dirac scan/rank, dry
+chain verify, OUT_DIR-pinned compile, driver status) are registered as static
+tools.TOOL_MAP entries wrapping mag/estate_bridge.py and served through the
+"bridge" profile; design + per-tool rulings:
+watch/inbox/burn_reset_20260927/flash50/mcp-bridge.md (repair, bank, driver
+control words and keys are NEVER exposed).
+WARM (2026-10-17, shared surface): resources/list + resources/read serve the
+fixed mag://warm/* warm pack (mag/warm_surface.py: live chain tip,
+warm_state, zknot LATEST, watch/LIBRARY/INDEX.md, rib_boot law cards, a
+per-seat preamble), every body redacted, no path arguments. The "warm"
+profile serves only estate_warm_read, estate_chain_verify (dry) and
+estate_shared_receipt (writes watch/receipts/ only). Plan + inventory:
+watch/LIBRARY/SHARED_SURFACE_SELFSTEAL_20261017.md; clients:
+docs/SHARED_SURFACE_CLIENTS.md.
 CLI:  python -m mag.mcp_server            (speak MCP on stdio — for clients)
       python -m mag.mcp_server --list     (human list of exposed tools)
       python -m mag.mcp_server --quantize archivist  (stable compact cartridge)
@@ -85,6 +116,38 @@ ROLE_TOOLSETS: dict[str, tuple[str, ...]] = {
         "list_dir", "read_file", "search_files", "blackboard_read", "vision",
         "whisper_decode",
     ),
+    # estate bridge R1 (2026-09-29, mcp-bridge.md 4.2.1): exactly the estate
+    # verbs, nothing else. A profile is a projection, not a permission set;
+    # authority stays with the guards/switchboard. Per-tool rulings:
+    # chain verify is DRY ONLY (repair never exposed), thought compile is
+    # OUT_DIR-pinned, driver status is read-only (control words + keys never
+    # cross). R2.5 (2026-10-01, watch/inbox/ractor50/mcp.md section 9) adds
+    # exactly one name: the receipt writer, pinned to watch/inbox/<wave>/.
+    # Watch: watch/inbox/burn_reset_20260927/flash50/mcp-bridge.md.
+    "bridge": (
+        "estate_water_graph_tick", "estate_dirac_scan", "estate_dirac_rank",
+        "estate_chain_verify", "estate_thought_compile", "estate_driver_status",
+        "estate_receipt_append",
+    ),
+    # shared surface (2026-10-17): read-mostly boot door for every seat.
+    # The warm pack itself rides resources/list+read (served on every
+    # profile); these are the only tools: a fixed-URI read for clients
+    # that ignore resources, the dry chain verify, and the one write-back
+    # (watch/receipts/ only, server-named files). No write/exec tools.
+    "warm": (
+        "estate_warm_read", "estate_chain_verify", "estate_shared_receipt",
+        # seat proposals (2026-10-17): signed propose/review + read-only
+        # list/show/tally, confined to watch/receipts/proposals/. They
+        # mark quorum only; nothing is applied or merged.
+        "estate_propose", "estate_review", "estate_proposals",
+        # fleet coordination (2026-10-17, FLEET_COORDINATION_DOCTRINE_20261017.md):
+        # validated fleet_report.v1 filing (through estate_shared_receipt's
+        # writer) + the notices read, and restricted-list leases whose state
+        # lives under watch/receipts/leases/ only. No write/exec tools.
+        "estate_fleet_report", "estate_notices",
+        "estate_lease_acquire", "estate_lease_renew", "estate_lease_release",
+        "estate_lease_transfer", "estate_leases",
+    ),
     "full": (),
 }
 
@@ -98,6 +161,14 @@ ROLE_DESCRIPTIONS = {
     "salon": "canon-bound analysis and proposal synthesis",
     "steward": "resource, route, and reservoir analysis",
     "book": "Primer/ractor design review over canonical pointers",
+    "bridge": "estate compute bridge: deterministic water physics, read-only "
+              "Dirac census, dry chain verify, OUT_DIR-pinned compile, driver "
+              "status, receipt filing pinned to watch/inbox/; no repair, no "
+              "bank, no keys",
+    "warm": "shared-surface boot door: fixed mag://warm/* resources (live tip, "
+            "warm state, notes, law cards, seat preamble), dry chain verify, "
+            "one receipt writer pinned to watch/receipts/, and signed seat "
+            "proposals/reviews under watch/receipts/proposals/; no write/exec",
     "full": "backward-compatible complete local tool projection",
 }
 
@@ -109,9 +180,40 @@ _READ_TOOLS = {
     "corpus_search", "corpus_get", "corpus_tail", "corpus_stats",
     # research — the fleet's research corpus surface, read-only (2026-09-18)
     "research_search", "research_sources", "research_stats",
+    # estate bridge R1 (2026-09-29): tick is deterministic compute, dirac
+    # scan/rank read-only census, chain verify is DRY ONLY, driver status is a
+    # read (mcp-bridge.md 3.7 effect-class table)
+    "estate_water_graph_tick", "estate_dirac_scan", "estate_dirac_rank",
+    "estate_chain_verify", "estate_driver_status",
+    # shared surface (2026-10-17): fixed-URI warm-pack read
+    "estate_warm_read",
+    # seat proposals (2026-10-17): list/show/tally are reads
+    "estate_proposals",
+    # fleet coordination (2026-10-17): notices in force + lease board are reads
+    "estate_notices", "estate_leases",
 }
 _MUTATING_TOOLS = {"write_file", "apply_patch", "run_shell", "run_python",
-                   "pheromone_drop", "blackboard_post"}
+                   "pheromone_drop", "blackboard_post",
+                   # estate bridge R1 (2026-09-29): compile writes, but the
+                   # allowlist is one OUT_DIR (mcp-bridge.md 3.5: mutating,
+                   # canned-authority tier, not operator-tier)
+                   "estate_thought_compile"}
+# estate bridge R2.5 (2026-10-01, ractor50 mcp.md section 9): mutating verbs
+# whose allowlist is one canned directory (the thought_compile class,
+# mcp-bridge.md 3.5): receipt_append writes only under watch/inbox/<wave>/.
+# authority is canned_broker, cost is deterministic_local (the write is a
+# local file append, $0 marginal), exhaustion retry_or_defer.
+# shared surface (2026-10-17): estate_shared_receipt is the same class,
+# pinned to watch/receipts/ with server-built filenames.
+# seat proposals (2026-10-17): propose/review are the same class, pinned to
+# watch/receipts/proposals/<id>/ with server-built filenames.
+_CANNED_BROKER_TOOLS = {"estate_receipt_append", "estate_shared_receipt",
+                        "estate_propose", "estate_review",
+                        # fleet coordination (2026-10-17): the report rides the
+                        # shared-receipt writer; leases write watch/receipts/leases/
+                        "estate_fleet_report", "estate_lease_acquire",
+                        "estate_lease_renew", "estate_lease_release",
+                        "estate_lease_transfer"}
 _MODEL_OR_EXTERNAL_TOOLS = {"research", "vision", "voice_turn"}
 
 
@@ -121,6 +223,14 @@ def _tool_meta(name: str) -> dict[str, str]:
     This metadata describes the surface; it never grants the capability.  The
     values intentionally use UNKNOWN where a call-specific meter is required.
     """
+    if name in _CANNED_BROKER_TOOLS:
+        return {
+            "effect_class": "mutating_or_executing",
+            "risk": "guarded",
+            "authority": "canned_broker",
+            "cost_kind": "deterministic_local",
+            "exhaustion": "retry_or_defer",
+        }
     if name in _MUTATING_TOOLS:
         return {
             "effect_class": "mutating_or_executing",
@@ -223,6 +333,25 @@ def _param_schema(fn: Any) -> dict[str, Any]:
     return {"type": "object", "properties": props, "required": required}
 
 
+def _input_schema(name: str, fn: Any) -> dict[str, Any]:
+    """Input schema for one tool.
+
+    The estate bridge tools carry EXPLICIT hand-written schemas (enum for
+    scope, min/max bounds for ticks/sizes that a signature guess cannot
+    express, mag/estate_bridge.py BRIDGE_INPUT_SCHEMAS); everything else
+    stays signature-derived. Keying the explicit table on the estate_ prefix
+    keeps every existing tool's schema byte-identical, so no existing pin in
+    the mcp_pin ledger drifts when bridge R1 lands.
+    """
+    if name.startswith("estate_"):
+        from mag.estate_bridge import BRIDGE_INPUT_SCHEMAS
+
+        schema = BRIDGE_INPUT_SCHEMAS.get(name)
+        if schema is not None:
+            return schema
+    return _param_schema(fn)
+
+
 def tools_manifest(profile: str = "full") -> list[dict[str, Any]]:
     """Return a compact, profile-scoped manifest from live callable signatures."""
     functions = _load_tool_functions()
@@ -233,10 +362,60 @@ def tools_manifest(profile: str = "full") -> list[dict[str, Any]]:
         out.append({
             "name": name,
             "description": (doc[0] if doc else f"mag tool: {name}")[:240],
-            "inputSchema": _param_schema(fn),
+            "inputSchema": _input_schema(name, fn),
             "_meta": {"mag": {"profile": profile, "quantized": True, **_tool_meta(name)}},
         })
     return out
+
+
+def pin_ledger_path() -> Path | None:
+    """Ledger for the connect-time pin gate, or None when the gate is disarmed.
+
+    MAG_MCP_PIN_LEDGER overrides the ledger path (default state/mcp_pins.jsonl,
+    tools/mcp_pin.py DEFAULT_LEDGER).  MAG_MCP_PIN_GATE=off|0|false disarms the
+    gate entirely: an operator escape hatch, not the default posture.
+    """
+    if os.environ.get("MAG_MCP_PIN_GATE", "").strip().lower() in ("0", "off", "false"):
+        return None
+    override = os.environ.get("MAG_MCP_PIN_LEDGER", "").strip()
+    if override:
+        return Path(override)
+    from tools.mcp_pin import DEFAULT_LEDGER  # lazy: module import stays stdlib-only
+
+    return DEFAULT_LEDGER
+
+
+def pin_gate_filter(
+    manifest: list[dict[str, Any]], ledger_path: str | Path | None
+) -> tuple[list[dict[str, Any]], dict[str, Any]]:
+    """Connect-time rug-pull gate: run tools/mcp_pin.py check_drift, fail loud.
+
+    NEW and PINNED tools pass unchanged.  A DRIFTED tool (description and/or
+    inputSchema hash differs from its pin) is WITHHELD from the served list --
+    the mutated description never reaches a model -- and alarmed on stderr;
+    tools/mcp_pin.py --repin <tools_list.json> --reason "reviewed" is the only
+    way a changed surface returns (the pin doctrine at tools/mcp_pin.py:140-145:
+    the alarm blocks, repin is the only way past).  ledger_path=None is a
+    passthrough so an operator can disarm without a code edit.
+    """
+    if ledger_path is None:
+        return manifest, {"alarm": False, "enabled": False, "counts": {"drift": 0}, "verdicts": []}
+    from tools.mcp_pin import check_drift  # lazy: module import stays stdlib-only
+
+    report = check_drift(manifest, ledger_path=Path(ledger_path))
+    if report["alarm"]:
+        for alarm in report["alarms"]:
+            sys.stderr.write(
+                "[mcp_pin] DRIFT ALARM: tool %r %s changed since pin (first_seen %s); "
+                "WITHHELD from served surface. Accept after review: "
+                'python -m mag.mcp_server --list > tools_list.json && '
+                'python tools/mcp_pin.py --repin tools_list.json --reason "reviewed"\n'
+                % (alarm["tool_name"], " and ".join(alarm["kind"]), alarm["first_seen"])
+            )
+        sys.stderr.flush()
+    verdict_by_name = {v["tool_name"]: v["verdict"] for v in report["verdicts"]}
+    served = [t for t in manifest if verdict_by_name.get(str(t.get("name") or "")) in ("NEW", "PINNED")]
+    return served, report
 
 
 def quantized_manifest(profile: str = "full") -> dict[str, Any]:
@@ -336,21 +515,54 @@ def _err(id_: Any, code: int, message: str) -> dict[str, Any]:
     return {"jsonrpc": "2.0", "id": id_, "error": {"code": code, "message": message}}
 
 
-def handle(msg: dict[str, Any], profile: str = "full") -> dict[str, Any] | None:
+def handle(
+    msg: dict[str, Any],
+    profile: str = "full",
+    pin_ledger: str | Path | None = None,
+) -> dict[str, Any] | None:
+    """Serve one JSON-RPC message.
+
+    pin_ledger: when given, every tools/list response is gated through
+    pin_gate_filter() against the mcp_pin ledger (drifted tools withheld,
+    stderr alarm).  serve() and the HTTP adapters pass the resolved ledger so
+    real connects are always gated; direct callers default to None (gate off).
+    """
     method = msg.get("method")
     id_ = msg.get("id")
     if method == "initialize":
         return _rpc(id_, {
             "protocolVersion": PROTOCOL_VERSION,
-            "capabilities": {"tools": {}},
+            "capabilities": {"tools": {}, "resources": {}},
             "serverInfo": SERVER_INFO,
         })
     if method == "notifications/initialized":
         return None  # notification — no response
     if method == "ping":
         return _rpc(id_, {})
+    # shared surface (2026-10-17): the warm pack as fixed, redacted resources
+    # (mag/warm_surface.py; pattern from tools/seed_mcp.py resources).
+    if method == "resources/list":
+        from mag import warm_surface
+
+        return _rpc(id_, {"resources": warm_surface.list_resources()})
+    if method == "resources/templates/list":
+        return _rpc(id_, {"resourceTemplates": []})  # fixed URIs only
+    if method == "resources/read":
+        from mag import warm_surface
+
+        uri = str((msg.get("params") or {}).get("uri") or "")
+        try:
+            item = warm_surface.read_resource(uri)
+        except KeyError:
+            return _err(id_, -32002, f"resource not found: {uri}")
+        except Exception as e:  # noqa: BLE001 - report, never crash the session
+            return _err(id_, -32603, f"resource read failed: {type(e).__name__}")
+        return _rpc(id_, {"contents": [item]})
     if method == "tools/list":
-        return _rpc(id_, {"tools": tools_manifest(profile)})
+        manifest: list[dict[str, Any]] = tools_manifest(profile)
+        if pin_ledger is not None:
+            manifest, _gate = pin_gate_filter(manifest, pin_ledger)
+        return _rpc(id_, {"tools": manifest})
     if method == "tools/call":
         p = msg.get("params") or {}
         return _rpc(id_, call_tool(str(p.get("name") or ""), p.get("arguments"),
@@ -361,6 +573,18 @@ def handle(msg: dict[str, Any], profile: str = "full") -> dict[str, Any] | None:
 
 
 def serve(profile: str = "full") -> int:
+    ledger = pin_ledger_path()
+    if ledger is not None:
+        # Boot gate: alarm at connect even if the client never asks tools/list.
+        # The tools/list branch gates again per response (serve passes the
+        # ledger through), so a drifted surface can never be served.
+        boot, gate = pin_gate_filter(tools_manifest(profile), ledger)
+        if gate["alarm"]:
+            sys.stderr.write(
+                "[mcp_pin] serving %d of %d %s tools; drifted tools withheld until repin\n"
+                % (len(boot), gate["counts"]["observed"], profile)
+            )
+            sys.stderr.flush()
     for line in sys.stdin:
         line = line.strip()
         if not line:
@@ -370,7 +594,7 @@ def serve(profile: str = "full") -> int:
         except json.JSONDecodeError:
             resp = _err(None, -32700, "parse error")
         else:
-            resp = handle(msg, profile)
+            resp = handle(msg, profile, ledger)
         if resp is not None:
             sys.stdout.write(json.dumps(resp, ensure_ascii=False) + "\n")
             sys.stdout.flush()

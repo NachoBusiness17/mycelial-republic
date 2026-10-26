@@ -1,0 +1,45 @@
+# MagBoxBurnNightly driver: the box-burn load curve watcher (tools/box_burn_watch.py).
+# Wiring landed 2026-10-07 (queue/todo.md Stone 7 sub-item 3 rewrite, m2-todo-truths
+# lane): the watcher's only prior sample window was the one-shot 09-25/09-26 night
+# run and state/fuel/box_burn_watch.jsonl went dark at 2026-09-26T10:59:18Z because
+# nothing owned its clock; the planned "nightly burn driver on grounding_chain"
+# routing is dead too (watch/inbox/union_fullsend_20260917/grounding_chain.jsonl
+# last row 2026-09-26T13:13:30Z, no scheduled trigger). This task IS the nightly
+# trigger for the watcher half: fire at 22:00, the carrier self-stops at 07:00
+# (the family-box law is inside the tool), rows append to
+# state/fuel/box_burn_watch.jsonl. Still open (the job-firing half of sub-item 3):
+# read backlogs (pile, briefs, whisper, training) -> fire top-N local jobs to a
+# target utilization. This script only owns the measurement clock (MagFtsIndexDaily
+# pattern: append-only log, attention.md row on nonzero exit).
+$ErrorActionPreference = "Continue"
+$Root = Split-Path $PSScriptRoot -Parent
+$Py = Join-Path $Root ".venv\Scripts\python.exe"
+$Carrier = Join-Path $Root "tools\box_burn_watch.py"
+$Log = Join-Path $Root "logs\box_burn_nightly.log"
+$Stamp = (Get-Date).ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ")
+
+if (-not (Test-Path (Split-Path $Log -Parent))) {
+    New-Item -ItemType Directory -Path (Split-Path $Log -Parent) -Force | Out-Null
+}
+$FireCarrier = Join-Path $Root "tools\box_burn_fire.py"
+"[$Stamp] MagBoxBurnNightly fire watcher: $Carrier" | Out-File -FilePath $Log -Append -Encoding utf8
+"[$Stamp] MagBoxBurnNightly fire runner:  $FireCarrier" | Out-File -FilePath $Log -Append -Encoding utf8
+
+# Start the job-firing runner concurrently in background
+$FireProc = Start-Process -FilePath $Py -ArgumentList "$FireCarrier --stop 07:00 --target-cpu 85 --target-gpu 85" -PassThru -NoNewWindow
+
+# Run the utilization watcher in foreground until 07:00
+& $Py $Carrier --stop 07:00 --every 55 *>> $Log
+$ExitCode = $LASTEXITCODE
+
+# Ensure fire runner is reaped
+if ($FireProc -and -not $FireProc.HasExited) {
+    Stop-Process -Id $FireProc.Id -Force -ErrorAction SilentlyContinue
+}
+"[$Stamp] exit $ExitCode" | Out-File -FilePath $Log -Append -Encoding utf8
+
+if ($ExitCode -ne 0) {
+    $Alert = Join-Path $Root "memory\attention.md"
+    "[$Stamp] MagBoxBurnNightly exit $ExitCode - box burn watcher died mid-window; check logs/box_burn_nightly.log" | Out-File -FilePath $Alert -Append -Encoding utf8
+}
+exit $ExitCode

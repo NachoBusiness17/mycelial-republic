@@ -1,0 +1,91 @@
+#!/usr/bin/env python3
+"""seat_keygen: a seat mints its OWN Ed25519 handshake key (2026-10-17).
+
+Run BY THE SEAT on the machine the seat lives on. The private key is written
+to a path the seat chooses OUTSIDE this repo (default
+%USERPROFILE%/.mag_seat/<seat>.key, i.e. ~/.mag_seat/<seat>.key), created
+exclusively (an existing key is never overwritten) and permission-tightened
+where the OS allows. Only the PUBLIC key is printed, as the JSON row the
+operator pastes into configs/seat_allowlist.json under "seats". The private
+key never touches stdout, the repo, or any log.
+
+Usage:
+  .venv/Scripts/python.exe scripts/seat_keygen.py --seat gemini
+  .venv/Scripts/python.exe scripts/seat_keygen.py --seat bob-agy --out D:/keys/bob-agy.key
+Then the seat points its client at the key with env MAG_SEAT_KEY_PATH.
+"""
+from __future__ import annotations
+
+import argparse
+import json
+import os
+import stat
+import subprocess
+import sys
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT))
+
+from mag import seat_handshake as sh  # noqa: E402
+
+
+def default_key_path(seat: str) -> Path:
+    home = Path(os.environ.get("USERPROFILE") or Path.home())
+    return home / ".mag_seat" / f"{seat}.key"
+
+
+def _inside_repo(p: Path) -> bool:
+    try:
+        p.resolve().relative_to(ROOT.resolve())
+        return True
+    except ValueError:
+        return False
+
+
+def _tighten(p: Path) -> None:
+    try:
+        os.chmod(p, stat.S_IRUSR | stat.S_IWUSR)
+    except OSError:
+        pass
+    if os.name == "nt":  # owner-only ACL; best effort, never fatal
+        user = os.environ.get("USERNAME")
+        if user:
+            subprocess.run(["icacls", str(p), "/inheritance:r", "/grant:r", f"{user}:(R,W)"],
+                           capture_output=True, check=False)
+
+
+def keygen(seat: str, out: str | Path | None = None) -> dict:
+    if not sh.SEAT_RE.fullmatch(seat or ""):
+        raise SystemExit(f"--seat must match {sh.SEAT_RE.pattern}")
+    path = Path(out) if out else default_key_path(seat)
+    if _inside_repo(path):
+        raise SystemExit("refusing: the private key must live OUTSIDE the repo")
+    path.parent.mkdir(parents=True, exist_ok=True)
+    rec = sh.key_record(seat, sh.generate_seed())
+    try:
+        with open(path, "x", encoding="utf-8") as fh:  # exclusive: never overwrite a key
+            fh.write(json.dumps(rec, indent=1) + "\n")
+    except FileExistsError:
+        raise SystemExit(f"refusing: a key already exists at {path} (delete it yourself to rotate)")
+    _tighten(path)
+    return {"seat_id": seat, "public_hex": rec["public_hex"], "key_path": str(path)}
+
+
+def main(argv: list[str] | None = None) -> int:
+    ap = argparse.ArgumentParser(prog="seat_keygen", description=__doc__.splitlines()[0])
+    ap.add_argument("--seat", required=True)
+    ap.add_argument("--out", help="private key path (outside the repo)")
+    a = ap.parse_args(argv)
+    res = keygen(a.seat, a.out)
+    row = {res["seat_id"]: {"public_hex": res["public_hex"], "added": "<yyyy-mm-dd>",
+                            "note": "<who/where>"}}
+    print("# private key written (NOT printed) to:", res["key_path"], file=sys.stderr)
+    print("# set MAG_SEAT_KEY_PATH to that path in the seat's client config", file=sys.stderr)
+    print("# add this row under \"seats\" in configs/seat_allowlist.json:", file=sys.stderr)
+    print(json.dumps(row, indent=1))
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

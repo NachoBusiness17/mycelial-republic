@@ -1,7 +1,13 @@
 """research -- read-only surfacing tools over the fleet's research corpus.
 
 Sources unified here (all local, all read-only):
-  * watch/inbox/LINKS.jsonl            -- the canonical link ledger (245+ rows)
+  * watch/inbox/LINKS.jsonl            -- the canonical link ledger (245+ rows;
+                                          event-derived rows carry no canonical
+                                          and are excluded here, see EVENTS)
+  * watch/inbox/EVENTS.jsonl           -- the 51 split-out event rows (event.v1),
+                                          searched as their own source so their
+                                          titles/details stay reachable without
+                                          minting empty pointers
   * memory/lenses/corpus_index.json    -- research packs (107 indexed asks)
   * memory/corpus/*/                   -- the canon lanes (ai, esoteric, games,
                                           mycology, electronics, steering,
@@ -19,6 +25,7 @@ from pathlib import Path
 
 REPO = Path(__file__).resolve().parents[1]
 LINKS = REPO / "watch" / "inbox" / "LINKS.jsonl"
+EVENTS = REPO / "watch" / "inbox" / "EVENTS.jsonl"
 CORPUS_INDEX = REPO / "memory" / "lenses" / "corpus_index.json"
 CANON = REPO / "memory" / "corpus"
 
@@ -37,7 +44,7 @@ def _hit(terms: list[str], *texts: str) -> bool:
 def research_search(query: str = "", source: str = "all", limit: int = 20) -> dict:
     """Search the research corpus: links ledger, pack index, canon filenames.
 
-    source: all | links | packs | canon. Returns pointers + short snippets.
+    source: all | links | events | packs | canon. Returns pointers + short snippets.
     """
     limit = max(1, min(int(limit), 100))
     terms = _terms(query)
@@ -50,12 +57,38 @@ def research_search(query: str = "", source: str = "all", limit: int = 20) -> di
                     row = json.loads(line)
                 except json.JSONDecodeError:
                     continue
+                canonical = str(row.get("canonical") or "")
+                # B2-169: event-derived LINKS rows carry an empty canonical; a hit
+                # on them would emit an empty pointer, so they are excluded here
+                # and searchable as their own source below (watch/inbox/EVENTS.jsonl).
+                if not canonical.strip():
+                    continue
                 note = str(row.get("note") or "")
                 title = str(row.get("title") or "")
-                if _hit(terms, row.get("canonical") or "", title, note):
-                    hits.append({"src": "links", "title": title or str(row.get("canonical"))[:80],
-                                 "pointer": str(row.get("canonical") or ""),
+                if _hit(terms, canonical, title, note):
+                    hits.append({"src": "links", "title": title or canonical[:80],
+                                 "pointer": canonical,
                                  "snippet": note[:220],
+                                 "ts": row.get("ts") or ""})
+                if len(hits) >= limit:
+                    break
+        except OSError:
+            pass
+
+    if source in ("all", "events") and len(hits) < limit:
+        try:
+            for line in open(EVENTS, encoding="utf-8", errors="replace"):
+                try:
+                    row = json.loads(line)
+                except json.JSONDecodeError:
+                    continue
+                title = str(row.get("title") or "")
+                detail = str(row.get("detail") or "")
+                ev_id = str(row.get("id") or "")
+                if _hit(terms, title, detail, ev_id):
+                    hits.append({"src": "events", "title": title or ev_id,
+                                 "pointer": "watch/inbox/EVENTS.jsonl#" + ev_id,
+                                 "snippet": detail[:220],
                                  "ts": row.get("ts") or ""})
                 if len(hits) >= limit:
                     break

@@ -163,6 +163,91 @@ def _risk_present(goal: str) -> bool:
     return any(m in g for m in _RISK_MARKERS)
 
 
+# --- comms_trail consumption wire (Q-009, 2026-09-28) ---
+# The mycelium graph carries consumption edges (producer seat -> artifact -> consumer) and
+# mag.comms_trail.consumption_signal() reduces them to per-seat {count, weight}. The 09-14
+# wiring (gather_signals -> local-janitor branch) only used the BINARY cheap flip. This wire
+# finishes the job the consumption_signal() spec states (mag/comms_trail.py:191-199: "The
+# router consumes this to trust seats that have a PROVEN consumption record"): the per-seat
+# records promote the provider lanes whose seat family has a proven comms round-trip, in
+# EVERY branch that picks a provider.
+# Seat-name token -> provider lane in configs/providers.yaml. Grounded in the seat titles the
+# graph actually carries (verified live 2026-09-28: grok_free, cheap_swarm, aos_grok seat).
+# A seat maps to at most one lane: first matching token wins, so provider-name tokens are
+# listed BEFORE generic family tokens (a seat like "deepseek_swarm" must map to deepseek,
+# not to the generic swarm->ollama alias).
+_COMMS_SEAT_LANES: tuple[tuple[str, str], ...] = (
+    ("deepseek", "deepseek"),
+    ("openrouter", "openrouter"),
+    ("groq", "groq"),
+    ("nous", "nous"),
+    ("z_ai", "z_ai"),
+    ("ollama", "ollama"),
+    ("grok", "xai"),
+    ("cheap", "ollama"),
+    ("swarm", "ollama"),
+    ("local", "ollama"),
+)
+
+# Mirrors the proven floor in mag/comms_trail.py:220 (count > 0 and weight >= 0.5).
+_COMMS_PROVEN_WEIGHT_FLOOR = 0.5
+
+
+def _proven_comms_lanes(cc: Any) -> list[str]:
+    """Provider lanes matched from proven comms-consumer seats (deduped, sorted)."""
+    if not isinstance(cc, dict):
+        return []
+    seats = cc.get("seats")
+    proven: list[str] = []
+    if isinstance(seats, dict) and seats:
+        for name, st in seats.items():
+            if not isinstance(st, dict):
+                continue
+            try:
+                cnt = int(st.get("count") or 0)
+                w = float(st.get("weight") or 0.0)
+            except (TypeError, ValueError):
+                continue
+            if cnt > 0 and w >= _COMMS_PROVEN_WEIGHT_FLOOR:
+                proven.append(str(name))
+    else:
+        proven = [str(s) for s in (cc.get("proven_seats") or [])]
+    lanes: set[str] = set()
+    for s in proven:
+        low = s.lower()
+        for token, lane in _COMMS_SEAT_LANES:
+            if token in low:
+                lanes.add(lane)
+                break
+    return sorted(lanes)
+
+
+def _comms_lane_boost(base_prefer: list[str], cc: Any) -> tuple[list[str], list[str]]:
+    """Promote provider lanes with a proven comms-consumption record within a branch's
+    prefer order. Cost-doctrine guard: the free local lane (ollama) is NEVER displaced;
+    when it is present in the list, only lanes after it may reorder. Promoted lanes keep
+    their relative base order; non-promoted lanes keep theirs. Returns (new_order,
+    lanes_actually_promoted); empty second element means no movement (identity)."""
+    base = list(base_prefer or [])
+    lanes = [ln for ln in _proven_comms_lanes(cc) if ln in base]
+    if not lanes:
+        return base, []
+    head: list[str] = []
+    tail = base
+    if "ollama" in base:
+        i = base.index("ollama")
+        head, tail = base[: i + 1], base[i + 1 :]
+        lanes = [ln for ln in lanes if ln != "ollama" and ln in tail]
+    if not lanes:
+        return base, []
+    promoted = [p for p in tail if p in lanes]
+    rest = [p for p in tail if p not in lanes]
+    new = head + promoted + rest
+    if new == base:
+        return base, []
+    return new, promoted
+
+
 def gather_signals() -> dict[str, Any]:
     """Runtime probes used for routing (no network unless bridge env set)."""
     out: dict[str, Any] = {
@@ -615,6 +700,12 @@ def route(
         else:
             prefer = ["deepseek", "deepseek_overmind", "ollama", "groq", "openrouter"]
             why.append(f"comms_trail={ctc}\u2192conservative")
+        # Q-009 wire: the granular per-seat proven record promotes specific lanes in the
+        # tail (the binary flip above stays the tier decision; this only reorders lanes
+        # within it, never ahead of ollama).
+        prefer, _ct_boost = _comms_lane_boost(prefer, sig.get("comms_consumption"))
+        if _ct_boost:
+            why.append("comms_lane_boost=" + ",".join(_ct_boost))
         pick = pick_provider(job=job if job != "default" else "scut", tier=tier, prefer=prefer)
         if pick.get("ok"):
             if not force_provider:
@@ -649,6 +740,11 @@ def route(
             why.append("rental=vast")
         else:
             prefer = ["deepseek", "deepseek_overmind", "anthropic", "vast"]
+        # Q-009 wire: proven comms-consumer lanes get preferential order within the
+        # branch's allowed lanes (no lane is added, ollama is absent here by design).
+        prefer, _ct_boost = _comms_lane_boost(prefer, sig.get("comms_consumption"))
+        if _ct_boost:
+            why.append("comms_lane_boost=" + ",".join(_ct_boost))
 
         pick = pick_provider(job="hard_code", tier=tier, prefer=prefer)
         if pick.get("ok"):
@@ -690,7 +786,24 @@ def route(
         )
 
     # --- remote summarize / default ---
-    pick = pick_provider(job=job, tier=tier)
+    # Q-009 wire: read the configured routing order, promote proven comms-consumer lanes
+    # within it, then hand the boosted order to pick_provider. An empty boosted order
+    # (config unread) falls back to prefer=None, which is the exact pre-wire path.
+    try:
+        from models.providers import load_providers
+
+        _cfgp = load_providers()
+        _base_order = list(
+            (_cfgp.get("routing") or {}).get(job)
+            or (_cfgp.get("defaults") or {}).get("prefer_order")
+            or []
+        )
+    except Exception:
+        _base_order = []
+    _base_order, _ct_boost = _comms_lane_boost(_base_order, sig.get("comms_consumption"))
+    if _ct_boost:
+        why.append("comms_lane_boost=" + ",".join(_ct_boost))
+    pick = pick_provider(job=job, tier=tier, prefer=_base_order or None)
     if pick.get("ok"):
         provider = str(pick.get("provider"))
         seat = "remote"

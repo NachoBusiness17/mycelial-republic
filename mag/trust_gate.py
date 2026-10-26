@@ -11,11 +11,22 @@ THE GATE (deterministic + $0, three checks before anything writes):
                 swarm-worker=0.6, unknown=0.3) + groundedness (real bytes present, not fabricated)
                 + doctrine alignment (resonates with our mounted RIBs).
   3. POISON   — heuristics: low entropy (repetitive spam), fabrication markers, forbidden
-                patterns, anomaly. Suspicious = QUARANTINE, never auto-write.
-  VERDICT: ACCEPT (novel + high-trust + clean) -> write; QUARANTINE (suspicious) -> hold for
-           review, do NOT auto-write; REJECT (duplicate / low-trust / poison) -> drop.
+                patterns, anomaly.
+  VERDICT (MemSentry 4-way, fold row agent-memory-sota#0):
+    ACCEPT     novel + high-trust + clean -> write (trust_score stamped in the register)
+    REVIEW     SUSPICIOUS but from a TRUSTED source (source_trust >= TRUST_THRESHOLD) -> held in
+               quarantine AND an advisory is routed to operator_inbox (human review tier).
+               Trusted-source suspicions are escalated to the operator instead of silently
+               excluded (the old v1 behavior quarantined them with no notification).
+    QUARANTINE suspicious from an UNTRUSTED source -> held in quarantine, never auto-written,
+               no operator advisory (untrusted content does not earn operator attention)
+    REJECT     duplicate / low-trust -> drop. Nothing suspicious or low-trust ever auto-writes:
+               the ingest stays fail-closed.
+  The accepted-writes register (seen.json) carries a trust_score per entry; quarantine/review
+  records carry trust_score + verdict too, so every gate decision is auditable from disk.
 
-Schema: trust_gate.v1 · reuse: percolator (dedupe), rib_bus (doctrine), ghost_leak_detector
+Schema: trust_gate.v2 · reuse: percolator (dedupe), rib_bus (doctrine), ghost_leak_detector,
+        operator_inbox (the Review advisory tier)
 """
 from __future__ import annotations
 
@@ -37,9 +48,9 @@ try:
 except Exception:
     pass
 
-SCHEMA = "trust_gate.v1"
+SCHEMA = "trust_gate.v2"
 GATE_DIR = ROOT / "memory" / "trust_gate"
-SEEN_FILE = GATE_DIR / "seen.json"          # content-hashes already accepted (novelty dedupe)
+SEEN_FILE = GATE_DIR / "seen.json"          # accepted-writes register (hash -> ts/source/domain/trust_score)
 QUARANTINE_DIR = GATE_DIR / "quarantine"
 
 # Source reputation (provenance trust). Operator = highest; unknown = lowest.
@@ -128,13 +139,44 @@ def poison(content: str) -> dict[str, Any]:
 
 
 # ── THE GATE ──────────────────────────────────────────────────────────────────
+def _is_trusted_source(source: str) -> bool:
+    """A source is trusted when its reputation meets the trust threshold
+    (operator/grok/frontier/swarm-worker yes; seed/unknown no)."""
+    return SOURCE_TRUST.get((source or "unknown").lower(), 0.3) >= TRUST_THRESHOLD
+
+
+def _route_review(content: str, *, source: str, domain: str, flags: list[str],
+                  t: dict[str, Any], qpath: Path) -> dict[str, Any]:
+    """REVIEW tier: route a trusted-source suspicion to operator_inbox (advisory, never
+    auto-applied) so the operator sees the exclusion instead of it happening silently.
+    Best-effort: an inbox failure never un-holds the item (fail-closed preserved)."""
+    advisory = (
+        f"[trust_gate REVIEW] trusted source '{source}' gated on domain '{domain}' "
+        f"(trust_score {t['score']}, flags: {', '.join(flags)}). Held, not written. "
+        f"Examine and admit or drop: {qpath.as_posix()} :: {(content or '')[:160]}"
+    )
+    routed = False
+    detail = ""
+    try:
+        from mag import operator_inbox
+        res = operator_inbox.commit_guidance(advisory, source="trust_gate")
+        routed = bool(res.get("ok"))
+        detail = str(res.get("item", {}).get("id") or res.get("error") or "")
+    except Exception as e:  # inbox unavailable — the quarantine hold stands either way
+        detail = f"inbox route failed: {str(e)[:120]}"
+    return {"routed": routed, "channel": "operator_inbox.commit_guidance", "detail": detail,
+            "advisory": advisory}
+
+
 def gate(content: str, *, source: str = "unknown", domain: str = "general") -> dict[str, Any]:
-    """The full SANITY GATE: NOVEL + HIGH-TRUST + CLEAN -> ACCEPT (write); suspicious ->
-    QUARANTINE (hold, never auto-write); duplicate / low-trust / poison -> REJECT (drop).
-    Deterministic + $0."""
+    """The full SANITY GATE (MemSentry 4-way): NOVEL + HIGH-TRUST + CLEAN -> ACCEPT (write);
+    suspicious from a trusted source -> REVIEW (held + operator_inbox advisory); suspicious
+    from an untrusted source -> QUARANTINE (held); duplicate / low-trust -> REJECT (drop).
+    Only ACCEPT writes. Deterministic + $0."""
     n = novelty(content)
     t = trust(content, source)
     p = poison(content)
+    review: dict[str, Any] | None = None
     if not n["novel"]:
         verdict = "REJECT"
         reason = "duplicate (already in the chain — poisoning via spam)"
@@ -142,33 +184,58 @@ def gate(content: str, *, source: str = "unknown", domain: str = "general") -> d
         verdict = "REJECT"
         reason = f"low-trust (score {t['score']} < {TRUST_THRESHOLD}, source '{source}')"
     elif not p["ok"]:
-        verdict = "QUARANTINE"
-        reason = f"suspicious ({', '.join(p['flags'])}) — held, not auto-written"
+        QUARANTINE_DIR.mkdir(parents=True, exist_ok=True)
+        trusted = _is_trusted_source(source)
+        verdict = "REVIEW" if trusted else "QUARANTINE"
+        qpath = QUARANTINE_DIR / f"q-{n['hash']}.json"
+        qpath.write_text(
+            json.dumps({"schema": SCHEMA, "ts": _now(), "verdict": verdict,
+                        "source": source, "domain": domain, "flags": p["flags"],
+                        "trust_score": t["score"], "content": (content or "")[:1000]},
+                       ensure_ascii=False, indent=2), encoding="utf-8")
+        if trusted:
+            reason = (f"suspicious ({', '.join(p['flags'])}) from trusted source '{source}' "
+                      f"— held + advisory routed to operator_inbox (human review)")
+            review = _route_review(content, source=source, domain=domain, flags=p["flags"],
+                                   t=t, qpath=qpath)
+            stamped = json.loads(qpath.read_text(encoding="utf-8"))
+            stamped["review"] = {"routed": review["routed"], "channel": review["channel"]}
+            qpath.write_text(json.dumps(stamped, ensure_ascii=False, indent=2),
+                             encoding="utf-8")
+        else:
+            reason = f"suspicious ({', '.join(p['flags'])}) from source '{source}' — held, not auto-written"
     else:
         verdict = "ACCEPT"
         reason = "novel + high-trust + clean"
     if verdict == "ACCEPT":
         seen = _load_seen()
-        seen["seen"][n["hash"]] = {"ts": _now(), "source": source, "domain": domain}
+        seen["seen"][n["hash"]] = {"ts": _now(), "source": source, "domain": domain,
+                                   "trust_score": t["score"]}
         _save_seen(seen)
-    elif verdict == "QUARANTINE":
-        QUARANTINE_DIR.mkdir(parents=True, exist_ok=True)
-        (QUARANTINE_DIR / f"q-{n['hash']}.json").write_text(
-            json.dumps({"schema": SCHEMA, "ts": _now(), "source": source, "domain": domain,
-                        "flags": p["flags"], "content": (content or "")[:1000]},
-                       ensure_ascii=False, indent=2), encoding="utf-8")
     return {"ok": True, "schema": SCHEMA, "verdict": verdict, "reason": reason,
             "novelty": n, "trust": t, "poison": p, "domain": domain,
+            "trusted_source": _is_trusted_source(source),
+            "review": review,
             "note": f"{verdict}: {reason}"}
 
 
 def status() -> dict[str, Any]:
     seen = _load_seen()
-    n_q = len(list(QUARANTINE_DIR.glob("q-*.json"))) if QUARANTINE_DIR.is_dir() else 0
+    n_q = n_review = 0
+    if QUARANTINE_DIR.is_dir():
+        for f in QUARANTINE_DIR.glob("q-*.json"):
+            n_q += 1
+            try:
+                if json.loads(f.read_text(encoding="utf-8")).get("verdict") == "REVIEW":
+                    n_review += 1
+            except Exception:
+                pass
     return {"ok": True, "schema": SCHEMA, "n_accepted": len(seen.get("seen", {})),
-            "n_quarantined": n_q,
-            "contract": "gate(content, source)->ACCEPT (novel+high-trust+clean) / QUARANTINE "
-                        "(suspicious) / REJECT (duplicate/low-trust/poison). Only ACCEPT writes."}
+            "n_quarantined": n_q, "n_review": n_review,
+            "contract": "gate(content, source)->ACCEPT (novel+high-trust+clean, trust_score "
+                        "stamped in register) / REVIEW (suspicious+trusted-source: held + "
+                        "operator_inbox advisory) / QUARANTINE (suspicious+untrusted: held) / "
+                        "REJECT (duplicate/low-trust). Only ACCEPT writes."}
 
 
 def main(argv: list[str] | None = None) -> int:

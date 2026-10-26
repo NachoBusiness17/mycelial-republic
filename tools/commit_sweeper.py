@@ -299,7 +299,7 @@ def _sweep_inner(dry: bool = False, hints_only: bool = False) -> dict:
             staged_out = git(["diff", "--cached", "--name-only"], timeout=10).stdout.strip()
             staged = [s for s in staged_out.splitlines() if s.strip()]
             if staged:
-                git(["reset", "-q", "--"] + staged[:100], timeout=30)
+                git(["reset", "-q", "--"] + staged[:100], timeout=300)
                 log(f"index reset {len(staged)} staged files before sweep")
             else:
                 log("index clean before sweep; zero reset needed")

@@ -69,6 +69,15 @@ def paths_changed(cwd: str, refs_text: str, pathspecs: list[str]) -> int:
             continue
         if rsha == ZERO or rsha == "":   # (e) unborn remote
             continue
+        # mirror-topology guard (2026-10-19): a rolling-mirror remote tip can
+        # be a rebase ghost whose object does not exist in the local repo at
+        # all (exit 128 on diff = "unknown revision", previously misread as
+        # git-broke -> fail-closed deadlock on every push). Skip the range
+        # arm with a notice; the dirty/untracked arms still guard the tree.
+        r = _git(cwd, "cat-file", "-e", f"{rsha}^{{commit}}")
+        if r.returncode != 0:
+            print(f"SKIPPED (remote sha {rsha[:8]} not in local repo - mirror topology)")
+            continue
         r = _git(cwd, "diff", "--quiet", rsha, lsha, "--", *pathspecs)
         if r.returncode == 2 or (r.returncode not in (0, 1)):
             print(f"UNCHANGED? git failed: {(r.stderr or '').strip()[:160]}")
